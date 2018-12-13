@@ -3,7 +3,7 @@
 === Comparison: {project_openshift_product_name} Image and Red Hat Single Sign-On
 The {project_openshift_product_name} image version number {project_version} is based on {project_name} {project_version}. There are some differences in functionality between the {project_openshift_product_name} image and {project_name}:
 
-* The {project_openshift_product_name} image includes all of the functionality of {project_name}. In addition, the {project_name_abbr}-enabled JBoss EAP image automatically handles OpenID Connect or SAML client registration and configuration for *_.war_* deployments that contain *<auth-method>KEYCLOAK</auth-method>* or *<auth-method>KEYCLOAK-SAML</auth-method>* in their respective *web.xml* files.
+* The {project_openshift_product_name} image includes all of the functionality of {project_name}. In addition, the {project_name}-enabled JBoss EAP image automatically handles OpenID Connect or SAML client registration and configuration for *_.war_* deployments that contain *<auth-method>KEYCLOAK</auth-method>* or *<auth-method>KEYCLOAK-SAML</auth-method>* in their respective *web.xml* files.
 
 === Version Compatibility and Support
 See the xPaaS part of the https://access.redhat.com/articles/2176281[OpenShift and Atomic Platform Tested Integrations page] for details about OpenShift image version compatibility.

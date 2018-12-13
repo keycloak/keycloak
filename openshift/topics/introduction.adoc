@@ -1,33 +1,33 @@
 == Introduction
 
-=== What Is Red Hat Single Sign-On?
-Red Hat Single Sign-On ({project_name_abbr}) is an integrated sign-on solution available as a Red Hat JBoss Middleware for OpenShift containerized image. The {project_openshift_product_name} image provides an authentication server for users to centrally log in, log out, register, and manage user accounts for web applications, mobile applications, and RESTful web services.
+=== What Is {openshift_name}?
+{openshift_name} is an integrated sign-on solution available as a Red Hat JBoss Middleware for OpenShift containerized image. The {project_openshift_product_name} image provides an authentication server for users to centrally log in, log out, register, and manage user accounts for web applications, mobile applications, and RESTful web services.
 
 [[sso-templates]]
 Red Hat offers multiple OpenShift application templates utilizing the {project_openshift_product_name} image version number {project_version}. These define the resources needed to develop {project_name} {project_version} server based deployment and can be split into the following two categories:
 
 [[passthrough-templates]]
-* Templates using HTTPS and JGroups keystores and a truststore for the {project_name_abbr} server, all prepared beforehand. These secure the TLS communication using link:https://docs.openshift.com/container-platform/latest/architecture/networking/routes.html#passthrough-termination[passthrough TLS termination]:
+* Templates using HTTPS and JGroups keystores and a truststore for the {project_name} server, all prepared beforehand. These secure the TLS communication using link:https://docs.openshift.com/container-platform/latest/architecture/networking/routes.html#passthrough-termination[passthrough TLS termination]:
 
-** *_{project_templates_version}-https_*: {project_name_abbr} {project_version} backed by internal H2 database on the same pod.
-** *_{project_templates_version}-mysql_*: {project_name_abbr} {project_version} backed by ephemeral MySQL database on a separate pod.
-** *_{project_templates_version}-mysql-persistent_*: {project_name_abbr} {project_version} backed by persistent MySQL database on a separate pod.
-** *_{project_templates_version}-postgresql_*: {project_name_abbr} {project_version} backed by ephemeral PostgreSQL database on a separate pod.
-** *_{project_templates_version}-postgresql-persistent_*: {project_name_abbr} {project_version} backed by persistent PostgreSQL database on a separate pod.
+** *_{project_templates_version}-https_*: {project_name} {project_version} backed by internal H2 database on the same pod.
+** *_{project_templates_version}-mysql_*: {project_name} {project_version} backed by ephemeral MySQL database on a separate pod.
+** *_{project_templates_version}-mysql-persistent_*: {project_name} {project_version} backed by persistent MySQL database on a separate pod.
+** *_{project_templates_version}-postgresql_*: {project_name} {project_version} backed by ephemeral PostgreSQL database on a separate pod.
+** *_{project_templates_version}-postgresql-persistent_*: {project_name} {project_version} backed by persistent PostgreSQL database on a separate pod.
 
 [[reencrypt-templates]]
-* Templates using OpenShift's internal link:https://docs.openshift.com/container-platform/latest/dev_guide/secrets.html#service-serving-certificate-secrets[service serving x509 certificate secrets] to automatically create the HTTPS keystore used for serving secure content. The JGroups cluster traffic is authenticated using the `AUTH` protocol and encrypted using the `ASYM_ENCRYPT` protocol. The {project_name_abbr} server truststore is also created automatically, containing the */var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt* CA certificate file, which is used to sign the certificate for HTTPS keystore. Moreover, the truststore for the {project_name_abbr} server is pre-populated with the all known, trusted CA certificate files found in the Java system path. These templates secure the TLS communication using link:https://docs.openshift.com/container-platform/latest/architecture/networking/routes.html#re-encryption-termination[re-encryption TLS termination]:
+* Templates using OpenShift's internal link:https://docs.openshift.com/container-platform/latest/dev_guide/secrets.html#service-serving-certificate-secrets[service serving x509 certificate secrets] to automatically create the HTTPS keystore used for serving secure content. The JGroups cluster traffic is authenticated using the `AUTH` protocol and encrypted using the `ASYM_ENCRYPT` protocol. The {project_name} server truststore is also created automatically, containing the */var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt* CA certificate file, which is used to sign the certificate for HTTPS keystore. Moreover, the truststore for the {project_name} server is pre-populated with the all known, trusted CA certificate files found in the Java system path. These templates secure the TLS communication using link:https://docs.openshift.com/container-platform/latest/architecture/networking/routes.html#re-encryption-termination[re-encryption TLS termination]:
 
-** *_{project_templates_version}-x509-https_*: {project_name_abbr} {project_version} with auto-generated HTTPS keystore and {project_name_abbr} truststore, backed by internal H2 database. The `ASYM_ENCRYPT` JGroups protocol is used for encryption of cluster traffic.
-** *_{project_templates_version}-x509-mysql-persistent_*: {project_name_abbr} {project_version} with auto-generated HTTPS keystore and {project_name_abbr} truststore, backed by persistent MySQL database. The `ASYM_ENCRYPT` JGroups protocol is used for encryption of cluster traffic.
-** *_{project_templates_version}-x509-postgresql-persistent_*: {project_name_abbr} {project_version} with auto-generated HTTPS keystore and {project_name_abbr} truststore, backed by persistent PostgreSQL database. The `ASYM_ENCRYPT` JGroups protocol is used for encryption of cluster traffic.
+** *_{project_templates_version}-x509-https_*: {project_name} {project_version} with auto-generated HTTPS keystore and {project_name} truststore, backed by internal H2 database. The `ASYM_ENCRYPT` JGroups protocol is used for encryption of cluster traffic.
+** *_{project_templates_version}-x509-mysql-persistent_*: {project_name} {project_version} with auto-generated HTTPS keystore and {project_name} truststore, backed by persistent MySQL database. The `ASYM_ENCRYPT` JGroups protocol is used for encryption of cluster traffic.
+** *_{project_templates_version}-x509-postgresql-persistent_*: {project_name} {project_version} with auto-generated HTTPS keystore and {project_name} truststore, backed by persistent PostgreSQL database. The `ASYM_ENCRYPT` JGroups protocol is used for encryption of cluster traffic.
 
-Other templates that integrate with {project_name_abbr} are also available:
+Other templates that integrate with {project_name} are also available:
 
-* *_eap64-sso-s2i_*: {project_name_abbr}-enabled Red Hat JBoss Enterprise Application Platform 6.4.
-* *_eap71-sso-s2i_*: {project_name_abbr}-enabled Red Hat JBoss Enterprise Application Platform 7.1.
-* *_datavirt63-secure-s2i_*: {project_name_abbr}-enabled Red Hat JBoss Data Virtualization 6.3.
+* *_eap64-sso-s2i_*: {project_name}-enabled Red Hat JBoss Enterprise Application Platform 6.4.
+* *_eap71-sso-s2i_*: {project_name}-enabled Red Hat JBoss Enterprise Application Platform 7.1.
+* *_datavirt63-secure-s2i_*: {project_name}-enabled Red Hat JBoss Data Virtualization 6.3.
 
-These templates contain environment variables specific to {project_name_abbr} that enable automatic {project_name_abbr} client registration when deployed.
+These templates contain environment variables specific to {project_name} that enable automatic {project_name} client registration when deployed.
 
-See xref:Auto-Man-Client-Reg[Automatic and Manual {project_name_abbr} Client Registration Methods] for more information.
+See xref:Auto-Man-Client-Reg[Automatic and Manual {project_name} Client Registration Methods] for more information.

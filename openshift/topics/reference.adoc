@@ -306,14 +306,14 @@ option, printing the commands and their arguments as they are executed.
 |*_true_*
 
 |*_SSO_ADMIN_PASSWORD_*
-|Password of the administrator account for the `master` realm of the {project_name_abbr}
+|Password of the administrator account for the `master` realm of the {project_name}
 server. *Required.* If no value is specified, it is auto generated and
 displayed as an OpenShift Instructional message when the template is
 instantiated.
 |*_adm-password_*
 
 |*_SSO_ADMIN_USERNAME_*
-|Username of the administrator account for the `master` realm of the {project_name_abbr}
+|Username of the administrator account for the `master` realm of the {project_name}
 server. *Required.* If no value is specified, it is auto generated and
 displayed as an OpenShift Instructional message when the template is
 instantiated.
@@ -331,17 +331,17 @@ is set.
 |*_rh-sso-server.openshift.example.com_*
 
 |*_SSO_REALM_*
-|Name of the realm to be created in the {project_name_abbr} server if this environment variable
+|Name of the realm to be created in the {project_name} server if this environment variable
 is provided.
 |*_demo_*
 
 |*_SSO_SERVICE_PASSWORD_*
-|The password for the {project_name_abbr} service user.
+|The password for the {project_name} service user.
 |*_mgmt-password_*
 
 |*_SSO_SERVICE_USERNAME_*
-|The username used to access the {project_name_abbr} service. This is used by clients to create
-the application client(s) within the specified {project_name_abbr} realm. This user is created
+|The username used to access the {project_name} service. This is used by clients to create
+the application client(s) within the specified {project_name} realm. This user is created
 if this environment variable is provided.
 |*_sso-mgmtuser_*
 
@@ -371,13 +371,13 @@ configuration variables] with common OpenShift variables (for example
 (e.g. *_HORNETQ_CLUSTER_PASSWORD_*), or configuration variables typical to
 database images (e.g. *_MYSQL_FT_MAX_WORD_LEN_*) yet. All of these different
 types of configuration variables can be adjusted as desired to achieve the
-deployed {project_name_abbr}-enabled application will align with the intended use case as much
+deployed {project_name}-enabled application will align with the intended use case as much
 as possible. The list of configuration variables, available for each category
-of application templates for {project_name_abbr}-enabled applications, is described below.
+of application templates for {project_name}-enabled applications, is described below.
 
-==== Template variables for all {project_name_abbr} images
+==== Template variables for all {project_name} images
 
-.Configuration Variables Available For All {project_name_abbr} Images
+.Configuration Variables Available For All {project_name} Images
 [cols="2*", options="header"]
 |===
 |Variable
@@ -445,28 +445,28 @@ ImageStreams in a different namespace/project.
 |The name of the secret containing the keystore file.
 
 |*_SSO_ADMIN_USERNAME_*
-|Username of the administrator account for the `master` realm of the {project_name_abbr}
+|Username of the administrator account for the `master` realm of the {project_name}
 server. *Required.* If no value is specified, it is auto generated and
 displayed as an OpenShift instructional message when the template is
 instantiated.
 
 |*_SSO_ADMIN_PASSWORD_*
-|Password of the administrator account for the `master` realm of the {project_name_abbr}
+|Password of the administrator account for the `master` realm of the {project_name}
 server. *Required.* If no value is specified, it is auto generated and
 displayed as an OpenShift instructional message when the template is
 instantiated.
 
 |*_SSO_REALM_*
-|Name of the realm to be created in the {project_name_abbr} server if this environment variable
+|Name of the realm to be created in the {project_name} server if this environment variable
 is provided.
 
 |*_SSO_SERVICE_USERNAME_*
-|The username used to access the {project_name_abbr} service. This is used by clients to create
-the application client(s) within the specified {project_name_abbr} realm. This user is created
+|The username used to access the {project_name} service. This is used by clients to create
+the application client(s) within the specified {project_name} realm. This user is created
 if this environment variable is provided.
 
 |*_SSO_SERVICE_PASSWORD_*
-|The password for the {project_name_abbr} service user.
+|The password for the {project_name} service user.
 
 |*_SSO_TRUSTSTORE_*
 |The name of the truststore file within the secret.
@@ -481,7 +481,7 @@ if this environment variable is provided.
 
 ==== Template variables specific to *_{project_templates_version}-mysql_*, *_{project_templates_version}-mysql-persistent_*, and *_{project_templates_version}-x509-mysql-persistent_*
 
-.Configuration Variables Specific To {project_name_abbr}-enabled MySQL Applications With Ephemeral Or Persistent Storage
+.Configuration Variables Specific To {project_name}-enabled MySQL Applications With Ephemeral Or Persistent Storage
 [cols="2*", options="header"]
 |===
 |Variable
@@ -515,7 +515,7 @@ broken.
 
 ==== Template variables specific to *_{project_templates_version}-postgresql_*, *_{project_templates_version}-postgresql-persistent_*, and *_{project_templates_version}-x509-postgresql-persistent_*
 
-.Configuration Variables Specific To {project_name_abbr}-enabled PostgreSQL Applications With Ephemeral Or Persistent Storage
+.Configuration Variables Specific To {project_name}-enabled PostgreSQL Applications With Ephemeral Or Persistent Storage
 [cols="2*", options="header"]
 |===
 |Variable
@@ -540,7 +540,7 @@ number of prepared transactions.
 
 ==== Template variables specific to *_{project_templates_version}-mysql-persistent_*, *_{project_templates_version}-x509-mysql-persistent_*, *_{project_templates_version}-postgresql-persistent_*, and *_{project_templates_version}-x509-postgresql-persistent_*
 
-.Configuration Variables Specific To {project_name_abbr}-enabled MySQL / PostgreSQL Applications With Persistent Storage
+.Configuration Variables Specific To {project_name}-enabled MySQL / PostgreSQL Applications With Persistent Storage
 [cols="2*", options="header"]
 |===
 |Variable
@@ -642,35 +642,35 @@ ImageStreams in a different namespace/project.
 
 ==== Template variables specific to *_eap64-sso-s2i_* and *_eap71-sso-s2i_* for automatic client registration
 
-.Configuration Variables For EAP 6.4 and EAP 7 {project_name_abbr}-enabled Applications Built Via S2I
+.Configuration Variables For EAP 6.4 and EAP 7 {project_name}-enabled Applications Built Via S2I
 [cols="2*", options="header"]
 |===
 |Variable
 |Description
 |*_SSO_URL_*
-|{project_name_abbr} server location.
+|{project_name} server location.
 
 |*_SSO_REALM_*
-|Name of the realm to be created in the {project_name_abbr} server if this environment variable
+|Name of the realm to be created in the {project_name} server if this environment variable
 is provided.
 
 |*_SSO_USERNAME_*
-|The username used to access the {project_name_abbr} service. This is used to create the
-application client(s) within the specified {project_name_abbr} realm. This should match the
+|The username used to access the {project_name} service. This is used to create the
+application client(s) within the specified {project_name} realm. This should match the
 *_SSO_SERVICE_USERNAME_* specified through one of the *{project_templates_version}-* templates.
 
 |*_SSO_PASSWORD_*
-|The password for the {project_name_abbr} service user.
+|The password for the {project_name} service user.
 
 |*_SSO_PUBLIC_KEY_*
-|{project_name_abbr} public key. Public key is recommended to be passed into the template to
+|{project_name} public key. Public key is recommended to be passed into the template to
 avoid man-in-the-middle security attacks.
 
 |*_SSO_SECRET_*
-|The {project_name_abbr} client secret for confidential access.
+|The {project_name} client secret for confidential access.
 
 |*_SSO_SERVICE_URL_*
-|{project_name_abbr} service location.
+|{project_name} service location.
 
 |*_SSO_TRUSTSTORE_SECRET_*
 |The name of the secret containing the truststore file. Used for
@@ -683,19 +683,19 @@ avoid man-in-the-middle security attacks.
 |The password for the truststore and certificate.
 
 |*_SSO_BEARER_ONLY_*
-|{project_name_abbr} client access type.
+|{project_name} client access type.
 
 |*_SSO_DISABLE_SSL_CERTIFICATE_VALIDATION_*
-|If true SSL communication between EAP and the {project_name_abbr} Server is insecure
+|If true SSL communication between EAP and the {project_name} Server is insecure
 (i.e. certificate validation is disabled with curl)
 
 |*_SSO_ENABLE_CORS_*
-|Enable CORS for {project_name_abbr} applications.
+|Enable CORS for {project_name} applications.
 |===
 
 ==== Template variables specific to *_eap64-sso-s2i_* and *_eap71-sso-s2i_* for automatic client registration with SAML clients
 
-.Configuration Variables For EAP 6.4 and EAP 7 {project_name_abbr}-enabled Applications Built Via S2I Using SAML Protocol
+.Configuration Variables For EAP 6.4 and EAP 7 {project_name}-enabled Applications Built Via S2I Using SAML Protocol
 [cols="2*", options="header"]
 |===
 |Variable
@@ -713,7 +713,7 @@ avoid man-in-the-middle security attacks.
 |The name of the secret containing the keystore file.
 
 |*_SSO_SAML_LOGOUT_PAGE_*
-|{project_name_abbr} logout page for SAML applications.
+|{project_name} logout page for SAML applications.
 |===
 
 === Exposed Ports

@@ -5,7 +5,6 @@
 :project_versionMvn: 4.8.3.Final-redhat-00001
 :project_versionNpm: 4.8.3.Final-redhat-00001
 :project_images: rhsso-images
-:project_openshift_product_name: RH-SSO for OpenShift
 
 ifeval::[{project_product_cd}==false]
 :project_name_full: Red Hat Single Sign-On
@@ -30,6 +29,8 @@ ifeval::[{project_product_cd}==true]
 :project_doc_base_url: https://access.redhat.com/documentation/en-us/red_hat_single_sign-on_continuous_delivery/{project_versionDoc}/html-single
 :maven_repository: https://maven.repository.redhat.com/earlyaccess/
 endif::[]
+
+:project_openshift_product_name: {project_name} for OpenShift
 
 :project_dirref: RHSSO_HOME
 

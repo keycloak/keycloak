@@ -1,4 +1,4 @@
-[[{project_name_abbr}-Binary-Builds-Tutorial]]
+[[{project_name}-Binary-Builds-Tutorial]]
 === Example Workflow: Creating OpenShift Application from Existing Maven Binaries and Securing it Using Red Hat Single Sing-On
 
 == Tutorials
@@ -6,7 +6,7 @@
 [[Example-Deploying-SSO]]
 === Example Workflow: Preparing and Deploying the {project_openshift_product_name} image
 [[Preparing-SSO-Authentication-for-OpenShift-Deployment]]
-==== Preparing {project_name_abbr} Authentication for OpenShift Deployment
+==== Preparing {project_name} Authentication for OpenShift Deployment
 Log in to the OpenShift CLI with a user that holds the _cluster:admin_ role.
 
 To deploy existing applications on OpenShift, you can use the link:https://docs.openshift.com/container-platform/latest/dev_guide/builds/build_inputs.html#binary-source[binary source] capability.
@@ -29,17 +29,17 @@ This guide assumes the {project_openshift_product_name} image has been previousl
 * *_{project_templates_version}-x509-postgresql-persistent_*
 ====
 
-===== Create {project_name_abbr} Realm, Roles, and User for the EAP 6.4 / 7.1 JSP Application
+===== Create {project_name} Realm, Roles, and User for the EAP 6.4 / 7.1 JSP Application
 
-The EAP 6.4 / 7.1 JSP service application requires dedicated {project_name_abbr} realm, username, and password to be able to authenticate using Red Hat Single Sign-On. Perform the following steps after the {project_openshift_product_name} image has been deployed:
+The EAP 6.4 / 7.1 JSP service application requires dedicated {project_name} realm, username, and password to be able to authenticate using Red Hat Single Sign-On. Perform the following steps after the {project_openshift_product_name} image has been deployed:
 
-*Create the {project_name_abbr} Realm*
+*Create the {project_name} Realm*
 
-. Login to the administration console of the {project_name_abbr} server.
+. Login to the administration console of the {project_name} server.
 +
 *\https://secure-sso-sso-app-demo.openshift.example.com/auth/admin*
 +
-Use the xref:sso_server.adoc#sso-administrator-setup[credentials of the {project_name_abbr} administrator user].
+Use the xref:sso_server.adoc#sso-administrator-setup[credentials of the {project_name} administrator user].
 . Hover your cursor over the realm namespace (default is *Master*) at the top of the sidebar and click *Add Realm*.
 . Enter a realm name (this example uses `demo`) and click *Create*.
 
@@ -58,7 +58,7 @@ Use the xref:sso_server.adoc#sso-administrator-setup[credentials of the {project
 
 [NOTE]
 ====
-By default the database is automatically migrated when you start {project_name_abbr} {project_version} for the first time.
+By default the database is automatically migrated when you start {project_name} {project_version} for the first time.
 ====
 
 [[automatic-db-migration]]
@@ -72,12 +72,12 @@ This process assumes that you are running {project_openshift_product_name} {proj
 
 [IMPORTANT]
 ====
-Stop all {project_name_abbr} {project_previous_version} pods before upgrading to {project_name_abbr} {project_version}, as they cannot run concurrently against the same database.
+Stop all {project_name} {project_previous_version} pods before upgrading to {project_name} {project_version}, as they cannot run concurrently against the same database.
 ====
 
 Use the following steps to automatically migrate the database schema:
 
-. Identify existing deployment config for {project_name_abbr} {project_previous_version} containers.
+. Identify existing deployment config for {project_name} {project_previous_version} containers.
 +
 [subs="verbatim,macros,attributes"]
 ----
@@ -85,28 +85,28 @@ $ oc get dc -o name --selector=application=sso
 deploymentconfig/sso
 deploymentconfig/sso-postgresql
 ----
-. Stop all {project_name_abbr} {project_previous_version} containers in the current namespace.
+. Stop all {project_name} {project_previous_version} containers in the current namespace.
 +
 [subs="verbatim,macros,attributes"]
 ----
 $ oc scale --replicas=0 dc/sso
 deploymentconfig "sso" scaled
 ----
-. Update the image change trigger in the existing deployment config to reference the {project_name_abbr} {project_version} image.
+. Update the image change trigger in the existing deployment config to reference the {project_name} {project_version} image.
 +
 [subs="verbatim,macros,attributes"]
 ----
 $ oc patch dc/sso --type=json -p '[{"op": "replace", "path": "/spec/triggers/0/imageChangeParams/from/name", "value": "redhat-{project_templates_version}-openshift:{project_latest_image_tag}"}]'
 "sso" patched
 ----
-. Start rollout of the new {project_name_abbr} {project_version} images based on the latest image defined in the image change triggers.
+. Start rollout of the new {project_name} {project_version} images based on the latest image defined in the image change triggers.
 +
 [subs="verbatim,macros,attributes"]
 ----
 $ oc rollout latest dc/sso
 deploymentconfig "sso" rolled out
 ----
-. Deploy {project_name_abbr} {project_version} containers using the modified deployment config.
+. Deploy {project_name} {project_version} containers using the modified deployment config.
 +
 [subs="verbatim,macros,attributes"]
 ----
@@ -134,17 +134,17 @@ $ oc logs sso-4-vg21r | grep 'Updating'
 
 [IMPORTANT]
 ====
-Pre-generated scripts are not available. They are generated dynamically depending on the database. With {project_name_abbr} {project_version} one can generate and export these to an SQL file that can be manually applied to the database afterwards. To dynamically generate the SQL migration file for the database:
+Pre-generated scripts are not available. They are generated dynamically depending on the database. With {project_name} {project_version} one can generate and export these to an SQL file that can be manually applied to the database afterwards. To dynamically generate the SQL migration file for the database:
 
-. Configure {project_name_abbr} {project_version} with the correct datasource,
+. Configure {project_name} {project_version} with the correct datasource,
 . Set following configuration options in the `standalone-openshift.xml` file:
 .. `initializeEmpty=false`,
 .. `migrationStrategy=manual`, and
 .. `migrationExport` to the location on the file system of the pod, where the output SQL migration file should be stored (e.g. `migrationExport="${jboss.home.dir}/keycloak-database-update.sql"`).
 
-See link:https://access.redhat.com/documentation/en-us/red_hat_single_sign-on/7.2/html/server_installation_and_configuration_guide/database-1#database_configuration[database configuration of {project_name_abbr} {project_version}] for further details.
+See link:https://access.redhat.com/documentation/en-us/red_hat_single_sign-on/7.2/html/server_installation_and_configuration_guide/database-1#database_configuration[database configuration of {project_name} {project_version}] for further details.
 
-The database migration process handles the data schema update and performs manipulation of the data, therefore, stop all {project_name_abbr} {project_previous_version} instances before dynamic generation of the SQL migration file.
+The database migration process handles the data schema update and performs manipulation of the data, therefore, stop all {project_name} {project_previous_version} instances before dynamic generation of the SQL migration file.
 ====
 
 This guide assumes the {project_openshift_product_name} image version {project_previous_version} has been previously link:https://access.redhat.com/documentation/en-us/red_hat_jboss_middleware_for_openshift/3/html-single/red_hat_single_sign-on_for_openshift/index#Example-Deploying-SSO[deployed using one of the following templates:]
@@ -210,7 +210,7 @@ spec:
 $ cp {project_previous_templates_version}-to-{project_templates_version}-db-migrate-job.yaml.orig \
      {project_previous_templates_version}-to-{project_templates_version}-db-migrate-job.yaml
 ----
-. Copy the datasource definition and database access credentials from {project_name_abbr} {project_version} deployment config to appropriate places in database job migration template.
+. Copy the datasource definition and database access credentials from {project_name} {project_version} deployment config to appropriate places in database job migration template.
 +
 Use the following script to copy `DB_SERVICE_PREFIX_MAPPING` and `TX_DATABASE_PREFIX_MAPPING` variable values, together with values of environment variables specific to particular datasource (`<PREFIX>_JNDI`, `<PREFIX>_USERNAME`, `<PREFIX>_PASSWORD`, and `<PREFIX>_DATABASE`) from the deployment config named `sso` to the database job migration template named `{project_previous_templates_version}-to-{project_templates_version}-db-migrate-job.yaml`.
 +
@@ -365,7 +365,7 @@ Successfully updated DB_PASSWORD to:                        tsWNhQHK
 Successfully updated DB_DATABASE to:                        root
 Successfully updated TX_DATABASE_PREFIX_MAPPING to:         sso-postgresql=DB
 ----
-. Build the {project_name_abbr} {project_version} database migration image using the link:https://github.com/iankko/openshift-examples/tree/sso_manual_db_migration[pre-configured source] and wait for the build to finish.
+. Build the {project_name} {project_version} database migration image using the link:https://github.com/iankko/openshift-examples/tree/sso_manual_db_migration[pre-configured source] and wait for the build to finish.
 +
 [subs="verbatim,macros,attributes"]
 ----
@@ -427,10 +427,10 @@ job "{project_previous_templates_version}-to-{project_templates_version}-db-migr
 +
 [IMPORTANT]
 ====
-The database migration process handles the data schema update and performs manipulation of the data, therefore, stop all {project_name_abbr} {project_version} instances before dynamic generation of the SQL migration file.
+The database migration process handles the data schema update and performs manipulation of the data, therefore, stop all {project_name} {project_version} instances before dynamic generation of the SQL migration file.
 ====
 +
-. Identify existing deployment config for {project_name_abbr} {project_version} containers.
+. Identify existing deployment config for {project_name} {project_version} containers.
 +
 [subs="verbatim,macros,attributes"]
 ----
@@ -438,7 +438,7 @@ $ oc get dc -o name --selector=application=sso
 deploymentconfig/sso
 deploymentconfig/sso-postgresql
 ----
-. Stop all {project_name_abbr} {project_version} containers in the current namespace.
+. Stop all {project_name} {project_version} containers in the current namespace.
 +
 [subs="verbatim,macros,attributes"]
 ----
@@ -485,7 +485,7 @@ keycloak-database-update.sql
 sent 30 bytes  received 29,726 bytes  59,512.00 bytes/sec
 total size is 29,621  speedup is 1.00
 ----
-. Inspect the `keycloak-database-update.sql` file for changes to be performed within manual {project_name_abbr} {project_version} database update.
+. Inspect the `keycloak-database-update.sql` file for changes to be performed within manual {project_name} {project_version} database update.
 . Apply the database update manually.
 * Run the following commands for *_{project_previous_templates_version}-postgresql_* and *_{project_previous_templates_version}-postgresql-persistent_* templates (PostgreSQL database):
 ... Copy the generated SQL migration file to the PostgreSQL pod.
@@ -574,21 +574,21 @@ Replace `<PREFIX>_USERNAME` and `<PREFIX>_DATABASE` with the actual database cre
 
 [[image-change-trigger-update-step]]
 [start=12]
-. Update image change trigger in the existing deployment config of {project_name_abbr} {project_version} to reference the {project_name_abbr} {project_version} image.
+. Update image change trigger in the existing deployment config of {project_name} {project_version} to reference the {project_name} {project_version} image.
 +
 [subs="verbatim,macros,attributes"]
 ----
 $ oc patch dc/sso --type=json -p '[{"op": "replace", "path": "/spec/triggers/0/imageChangeParams/from/name", "value": "redhat-{project_templates_version}-openshift:{project_latest_image_tag}"}]'
 "sso" patched
 ----
-. Start rollout of the new {project_name_abbr} {project_version} images based on the latest image defined in the image change triggers.
+. Start rollout of the new {project_name} {project_version} images based on the latest image defined in the image change triggers.
 +
 [subs="verbatim,macros,attributes"]
 ----
 $ oc rollout latest dc/sso
 deploymentconfig "sso" rolled out
 ----
-. Deploy {project_name_abbr} {project_version} containers using the modified deployment config.
+. Deploy {project_name} {project_version} containers using the modified deployment config.
 +
 [subs="verbatim,macros,attributes"]
 ----
@@ -596,39 +596,39 @@ $ oc scale --replicas=1 dc/sso
 deploymentconfig "sso" scaled
 ----
 
-=== Example Workflow: Migrating Entire {project_name_abbr} Server Database Across The Environments
-This tutorial focuses on migrating the Red Hat Single Sign-On server database from one environment to another or migrating to a different database. It assumes steps described in xref:Preparing-SSO-Authentication-for-OpenShift-Deployment[Preparing {project_name_abbr} Authentication for OpenShift Deployment] section have been performed already.
+=== Example Workflow: Migrating Entire {project_name} Server Database Across The Environments
+This tutorial focuses on migrating the Red Hat Single Sign-On server database from one environment to another or migrating to a different database. It assumes steps described in xref:Preparing-SSO-Authentication-for-OpenShift-Deployment[Preparing {project_name} Authentication for OpenShift Deployment] section have been performed already.
 
-==== Deploying the {project_name_abbr} MySQL Application Template
+==== Deploying the {project_name} MySQL Application Template
 
 . Log in to the OpenShift web console and select the _sso-app-demo_ project space.
 . Click *Add to project* to list the default image streams and templates.
 . Use the *Filter by keyword* search bar to limit the list to those that match _sso_. You may need to click *See all* to show the desired application template.
-. Select *_{project_templates_version}-mysql_* {project_name_abbr} application template. When deploying the template ensure to *keep the _SSO_REALM_ variable unset* (default value).
+. Select *_{project_templates_version}-mysql_* {project_name} application template. When deploying the template ensure to *keep the _SSO_REALM_ variable unset* (default value).
 +
 [IMPORTANT]
 ====
-Export and import of {project_name} {project_version} database link:https://access.redhat.com/documentation/en-us/red_hat_single_sign-on/7.2/html-single/server_administration_guide/#export_import[is triggered at {project_name_abbr} server boot time and its paramaters are passed in via Java system properties.] This means during one {project_name_abbr} server boot only one of the possible migration actions (either *_export_*, or *_import_*) can be performed.
+Export and import of {project_name} {project_version} database link:https://access.redhat.com/documentation/en-us/red_hat_single_sign-on/7.2/html-single/server_administration_guide/#export_import[is triggered at {project_name} server boot time and its paramaters are passed in via Java system properties.] This means during one {project_name} server boot only one of the possible migration actions (either *_export_*, or *_import_*) can be performed.
 ====
 +
 [WARNING]
 ====
-When the *_SSO_REALM_* configuration variable is set on the {project_openshift_product_name} image, a database import is performed in order to create the {project_name_abbr} server realm requested in the variable. For the database export to be performed correctly, the *_SSO_REALM_* configuration variable cannot be simultaneously defined on such image.
+When the *_SSO_REALM_* configuration variable is set on the {project_openshift_product_name} image, a database import is performed in order to create the {project_name} server realm requested in the variable. For the database export to be performed correctly, the *_SSO_REALM_* configuration variable cannot be simultaneously defined on such image.
 ====
 +
 . Click *Create* to deploy the application template and start pod deployment. This may take a couple of minutes.
 +
-Then access the {project_name_abbr} web console at *$$https://secure-sso-$$_<sso-app-demo>_._<openshift32.example.com>_/auth/admin* using the xref:../advanced_concepts/advanced_concepts.adoc#sso-administrator-setup[administrator account].
+Then access the {project_name} web console at *$$https://secure-sso-$$_<sso-app-demo>_._<openshift32.example.com>_/auth/admin* using the xref:../advanced_concepts/advanced_concepts.adoc#sso-administrator-setup[administrator account].
 +
 [NOTE]
 ====
-This example workflow uses a self-generated CA to provide an end-to-end workflow for demonstration purposes. Accessing the {project_name_abbr} web console will prompt an insecure connection warning. +
+This example workflow uses a self-generated CA to provide an end-to-end workflow for demonstration purposes. Accessing the {project_name} web console will prompt an insecure connection warning. +
 For production environments, Red Hat recommends that you use an SSL certificate purchased from a verified Certificate Authority.
 ====
 
-==== (Optional) Creating additional {project_name_abbr} link:https://access.redhat.com/documentation/en-us/red_hat_single_sign-on/7.2/html-single/server_administration_guide/#core_concepts_and_terms[realm and users] to be also exported
+==== (Optional) Creating additional {project_name} link:https://access.redhat.com/documentation/en-us/red_hat_single_sign-on/7.2/html-single/server_administration_guide/#core_concepts_and_terms[realm and users] to be also exported
 
-When performing link:https://access.redhat.com/documentation/en-us/red_hat_single_sign-on/7.2/html-single/server_administration_guide/#export_import[{project_name} {project_version} server database export] only {project_name_abbr} realms and users currently present in the database will be exported. If the exported JSON file should include also additional {project_name_abbr} realms and users, these need to be created first:
+When performing link:https://access.redhat.com/documentation/en-us/red_hat_single_sign-on/7.2/html-single/server_administration_guide/#export_import[{project_name} {project_version} server database export] only {project_name} realms and users currently present in the database will be exported. If the exported JSON file should include also additional {project_name} realms and users, these need to be created first:
 
 . link:https://access.redhat.com/documentation/en-us/red_hat_single_sign-on/7.2/html-single/server_administration_guide/#create-realm[Create a new realm]
 . link:https://access.redhat.com/documentation/en-us/red_hat_single_sign-on/7.2/html-single/server_administration_guide/#create-new-user[Create new users]
@@ -636,9 +636,9 @@ When performing link:https://access.redhat.com/documentation/en-us/red_hat_singl
 Upon their creation xref:sso-export-the-database[the database can be exported.]
 
 [[sso-export-the-database]]
-==== Export the {project_name_abbr} database as a JSON file on the OpenShift pod
+==== Export the {project_name} database as a JSON file on the OpenShift pod
 
-. Get the {project_name_abbr} deployment config and scale it down to zero.
+. Get the {project_name} deployment config and scale it down to zero.
 +
 [subs="verbatim,macros,attributes"]
 ----
@@ -649,13 +649,13 @@ deploymentconfig/sso-mysql
 $ oc scale --replicas=0 dc sso
 deploymentconfig "sso" scaled
 ----
-. Instruct the {project_name_abbr} {project_version} server deployed on {project_openshift_product_name} image to perform database export at {project_name_abbr} server boot time.
+. Instruct the {project_name} {project_version} server deployed on {project_openshift_product_name} image to perform database export at {project_name} server boot time.
 +
 [subs="verbatim,macros,attributes"]
 ----
 oc env dc/sso -e "JAVA_OPTS_APPEND=-Dkeycloak.migration.action=export -Dkeycloak.migration.provider=singleFile -Dkeycloak.migration.file=/tmp/demorealm-export.json"
 ----
-. Scale the {project_name_abbr} deployment config back up. This will start the {project_name_abbr} server and export its database.
+. Scale the {project_name} deployment config back up. This will start the {project_name} server and export its database.
 +
 [subs="verbatim,macros,attributes"]
 ----
@@ -678,7 +678,7 @@ $ oc logs sso-4-ejr0k | grep 'Export'
 
 ==== Retrieve and import the exported JSON file
 
-. Retrieve the JSON file of the {project_name_abbr} database from the pod.
+. Retrieve the JSON file of the {project_name} database from the pod.
 +
 [subs="verbatim,macros,attributes"]
 ----
@@ -690,20 +690,20 @@ sso-mysql-1-ozzl0   1/1       Running   0          4h
 $ oc rsync sso-4-ejr0k:/tmp/demorealm-export.json .
 ----
 
-. (Optional) Import the JSON file of the {project_name_abbr} database into an {project_name_abbr} server running in another environment.
+. (Optional) Import the JSON file of the {project_name} database into an {project_name} server running in another environment.
 +
 [NOTE]
 ====
-For importing into an {project_name_abbr} server not running on OpenShift, see the link:https://access.redhat.com/documentation/en-us/red_hat_single_sign-on/7.2/html/server_administration_guide/export_import[Export and Import section] of the RH SSO Server Administration Guide.
+For importing into an {project_name} server not running on OpenShift, see the link:https://access.redhat.com/documentation/en-us/red_hat_single_sign-on/7.2/html/server_administration_guide/export_import[Export and Import section] of the RH SSO Server Administration Guide.
 ====
 +
-Use the link:https://access.redhat.com/documentation/en-us/red_hat_single_sign-on/7.2/html-single/server_administration_guide/#admin_console_export_import[administration console] of the {project_name_abbr} server to import the resources from previously exported JSON file into the {project_name_abbr} server's database, when the {project_name_abbr} server is running as a {project_name} {project_version} container on OpenShift:
+Use the link:https://access.redhat.com/documentation/en-us/red_hat_single_sign-on/7.2/html-single/server_administration_guide/#admin_console_export_import[administration console] of the {project_name} server to import the resources from previously exported JSON file into the {project_name} server's database, when the {project_name} server is running as a {project_name} {project_version} container on OpenShift:
 
-.. Log into the `master` realm's administration console of the {project_name_abbr} server using the credentials used to create the administrator user. In the browser, navigate to *\http://sso-<project-name>.<hostname>/auth/admin*  for the {project_name_abbr} web server, or to *\https://secure-sso-<project-name>.<hostname>/auth/admin* for the encrypted {project_name_abbr} web server.
-.. At the top of the sidebar choose the name of the {project_name_abbr} realm, the users, clients, realm roles, and client roles should be imported to. This example uses `master` realm.
+.. Log into the `master` realm's administration console of the {project_name} server using the credentials used to create the administrator user. In the browser, navigate to *\http://sso-<project-name>.<hostname>/auth/admin*  for the {project_name} web server, or to *\https://secure-sso-<project-name>.<hostname>/auth/admin* for the encrypted {project_name} web server.
+.. At the top of the sidebar choose the name of the {project_name} realm, the users, clients, realm roles, and client roles should be imported to. This example uses `master` realm.
 .. Click the *Import* link under *Manage* section at the bottom of the sidebar.
 .. In the page that opens, click *Select file* and then specify the location of the exported `demorealm-export.json` JSON file on the local file system.
-.. From the *Import from realm* drop-down menu, select the name of the {project_name_abbr} realm from which the data should be imported. This example uses `master` realm.
+.. From the *Import from realm* drop-down menu, select the name of the {project_name} realm from which the data should be imported. This example uses `master` realm.
 .. Choose which of users, clients, realm roles, and client roles should be imported (all of them are imported by default).
 .. Choose a strategy to perform, when a resource already exists (one of *Fail*, *Skip*, or *Overwrite*).
 +
@@ -721,7 +721,7 @@ When importing objects from a non-master realm to `master` realm or vice versa, 
 [.text-center]
 image:images/import_realm_error.png[Example of Possible Error Message when Performing Partial Import from Previously Exported JSON File]
 
-In such cases, it is necessary first to create the missing clients, having the *Access Type* set to *bearer-only*. These clients can be created by manual copy of their characteristics from the source {project_name_abbr} server, on which the export JSON file was created, to the target {project_name_abbr} server, where the JSON file is imported. After creation of the necessary clients, click the *Import* button again.
+In such cases, it is necessary first to create the missing clients, having the *Access Type* set to *bearer-only*. These clients can be created by manual copy of their characteristics from the source {project_name} server, on which the export JSON file was created, to the target {project_name} server, where the JSON file is imported. After creation of the necessary clients, click the *Import* button again.
 
 To suppress the xref:realm-import-error-message[above] error message, it is needed to create the missing `realm-management` client, of the *bearer-only* *Access Type*, and click the *Import* button again.
 ====
@@ -737,13 +737,13 @@ The administration console import allows you to *overwrite* resources if you cho
 ====
 
 [[OSE-SSO-AUTH-TUTE]]
-=== Example Workflow: Configuring OpenShift to use {project_name_abbr} for Authentication
-Configure OpenShift to use the {project_name_abbr} deployment as the authorization gateway for OpenShift. This follows on from xref:Example-Deploying-SSO[Example Workflow: Preparing and Deploying the {project_openshift_product_name} image], in which {project_name_abbr} was deployed on OpenShift.
+=== Example Workflow: Configuring OpenShift to use {project_name} for Authentication
+Configure OpenShift to use the {project_name} deployment as the authorization gateway for OpenShift. This follows on from xref:Example-Deploying-SSO[Example Workflow: Preparing and Deploying the {project_openshift_product_name} image], in which {project_name} was deployed on OpenShift.
 
-This example adds {project_name_abbr} as an authentication method alongside the HTPasswd method configured in the https://access.redhat.com/documentation/en/red-hat-xpaas/0/single/openshift-primer/#understand_roles_and_authentication[OpenShift Primer]. Once configured, both methods will be available for user login to your OpenShift web console.
+This example adds {project_name} as an authentication method alongside the HTPasswd method configured in the https://access.redhat.com/documentation/en/red-hat-xpaas/0/single/openshift-primer/#understand_roles_and_authentication[OpenShift Primer]. Once configured, both methods will be available for user login to your OpenShift web console.
 
-==== Configuring {project_name_abbr} Credentials
-Log in to the encrypted {project_name_abbr} web server at *$$https://secure-sso-$$_sso-app-demo_._openshift32.example.com_/auth/admin* using the xref:../advanced_concepts/advanced_concepts.adoc#sso-administrator-setup[administrator account] created during the {project_name_abbr} deployment.
+==== Configuring {project_name} Credentials
+Log in to the encrypted {project_name} web server at *$$https://secure-sso-$$_sso-app-demo_._openshift32.example.com_/auth/admin* using the xref:../advanced_concepts/advanced_concepts.adoc#sso-administrator-setup[administrator account] created during the {project_name} deployment.
 
 *Create a Realm*
 
@@ -752,7 +752,7 @@ Log in to the encrypted {project_name_abbr} web server at *$$https://secure-sso-
 
 *Create a User*
 
-Create a test user that can be used to demonstrate the {project_name_abbr}-enabled OpenShift login:
+Create a test user that can be used to demonstrate the {project_name}-enabled OpenShift login:
 
 . Click *Users* in the *Manage* sidebar to view the user information for the realm.
 . Click *Add User*.
@@ -790,7 +790,7 @@ identityProviders:
     kind: HTPasswdPasswordIdentityProvider
 ----
 +
-Add {project_name_abbr} as a secondary identity provider with content similar to the following snippet:
+Add {project_name} as a secondary identity provider with content similar to the following snippet:
 +
 [subs="verbatim,macros,attributes"]
 ----
@@ -818,8 +818,8 @@ Add {project_name_abbr} as a secondary identity provider with content similar to
       email:
       - email
 ----
-.. The {project_name_abbr} *Secret* hash for the *clientSecret* can be found in the {project_name_abbr} web console: *Clients* -> *_openshift-demo_* -> *Credentials*
-.. The endpoints for the *urls* can be found by making a request with the {project_name_abbr} application. For example:
+.. The {project_name} *Secret* hash for the *clientSecret* can be found in the {project_name} web console: *Clients* -> *_openshift-demo_* -> *Credentials*
+.. The endpoints for the *urls* can be found by making a request with the {project_name} application. For example:
 +
 [subs="verbatim,macros,attributes"]
 ----
@@ -840,7 +840,7 @@ $ systemctl restart atomic-openshift-master
 
 Navigate to the OpenShift web console, which in this example is _https://openshift.example.com:8443/console_. The OpenShift login page now has the option to use either *htpasswd_auth* or *rh-sso*. The former is still available because it is present in the */etc/origin/master/master-config.yaml*.
 
-Select *rh-sso* and log in to OpenShift with the _testuser_ user created earlier in {project_name_abbr}. No projects are visible to _testuser_ until they are added in the OpenShift CLI. This is the only way to provide user privileges in OpenShift because it currently does not accept external role mapping.
+Select *rh-sso* and log in to OpenShift with the _testuser_ user created earlier in {project_name}. No projects are visible to _testuser_ until they are added in the OpenShift CLI. This is the only way to provide user privileges in OpenShift because it currently does not accept external role mapping.
 
 To provide _testuser_ `view` privileges for the _sso-app-demo_, use the OpenShift CLI:
 [subs="verbatim,macros,attributes"]
@@ -849,15 +849,15 @@ $ oadm policy add-role-to-user view testuser -n sso-app-demo
 ----
 
 [[Example-EAP-Auto]]
-=== Example Workflow: Automatically Registering EAP Application in {project_name_abbr} with OpenID-Connect Client
-This follows on from xref:Example-Deploying-SSO[Example Workflow: Preparing and Deploying the {project_openshift_product_name} image], in which {project_name_abbr} was deployed on OpenShift. This example prepares {project_name_abbr} realm, role, and user credentials for an EAP project using an OpenID-Connect client adapter. These credentials are then provided in the EAP for OpenShift template for automatic {project_name_abbr} client registration. Once deployed, the {project_name_abbr} user can be used to authenticate and access JBoss EAP.
+=== Example Workflow: Automatically Registering EAP Application in {project_name} with OpenID-Connect Client
+This follows on from xref:Example-Deploying-SSO[Example Workflow: Preparing and Deploying the {project_openshift_product_name} image], in which {project_name} was deployed on OpenShift. This example prepares {project_name} realm, role, and user credentials for an EAP project using an OpenID-Connect client adapter. These credentials are then provided in the EAP for OpenShift template for automatic {project_name} client registration. Once deployed, the {project_name} user can be used to authenticate and access JBoss EAP.
 
 [NOTE]
 ====
-This example uses a OpenID-Connect client but an SAML client could also be used. See xref:SSO-Clients[{project_name_abbr} Clients] and xref:Auto-Man-Client-Reg[Automatic and Manual {project_name_abbr} Client Registration Methods] for more information on the differences between OpenID-Connect and SAML clients.
+This example uses a OpenID-Connect client but an SAML client could also be used. See xref:SSO-Clients[{project_name} Clients] and xref:Auto-Man-Client-Reg[Automatic and Manual {project_name} Client Registration Methods] for more information on the differences between OpenID-Connect and SAML clients.
 ====
 
-==== Preparing {project_name_abbr} Authentication for OpenShift Deployment
+==== Preparing {project_name} Authentication for OpenShift Deployment
 Log in to the OpenShift CLI with a user that holds the _cluster:admin_ role.
 
 . Create a new project:
@@ -866,7 +866,7 @@ Log in to the OpenShift CLI with a user that holds the _cluster:admin_ role.
 ----
 $ oc new-project eap-app-demo
 ----
-//. Create a service account to be used for the {project_name_abbr} deployment:
+//. Create a service account to be used for the {project_name} deployment:
 //+
 //[subs="verbatim,macros,attributes"]
 //----
@@ -906,8 +906,8 @@ $ oc secret new eap-jgroup-secret eapjgroups.jceks
 $ oc secrets link default eap-ssl-secret eap-jgroup-secret
 ----
 
-==== Preparing the {project_name_abbr} Credentials
-Log in to the encrypted {project_name_abbr} web server at *$$https://secure-sso-$$_<project-name>_._<hostname>_/auth/admin* using the xref:../advanced_concepts/advanced_concepts.adoc#sso-administrator-setup[administrator account] created during the {project_name_abbr} deployment.
+==== Preparing the {project_name} Credentials
+Log in to the encrypted {project_name} web server at *$$https://secure-sso-$$_<project-name>_._<hostname>_/auth/admin* using the xref:../advanced_concepts/advanced_concepts.adoc#sso-administrator-setup[administrator account] created during the {project_name} deployment.
 
 *Create a Realm*
 
@@ -916,11 +916,11 @@ Log in to the encrypted {project_name_abbr} web server at *$$https://secure-sso-
 
 *Copy the Public Key*
 
-In the newly created _eap-demo_ realm, click the *Keys* tab and copy the generated public key. This example uses the variable _<realm-public-key>_ for brevity. This is used later to deploy the {project_name_abbr}-enabled JBoss EAP image.
+In the newly created _eap-demo_ realm, click the *Keys* tab and copy the generated public key. This example uses the variable _<realm-public-key>_ for brevity. This is used later to deploy the {project_name}-enabled JBoss EAP image.
 
 *Create a Role*
 
-Create a role in {project_name_abbr} with a name that corresponds to the JEE role defined in the *web.xml* of the example EAP application. This role is assigned to an {project_name_abbr} _application user_ to authenticate access to user applications.
+Create a role in {project_name} with a name that corresponds to the JEE role defined in the *web.xml* of the example EAP application. This role is assigned to an {project_name} _application user_ to authenticate access to user applications.
 
 . Click *Roles* in the *Configure* sidebar to list the roles for this realm. This is a new realm, so there should only be the default _offline_access_ role.
 . Click *Add Role*.
@@ -929,7 +929,7 @@ Create a role in {project_name_abbr} with a name that corresponds to the JEE rol
 *Create Users and Assign Roles*
 
 Create two users:
-- Assign the _realm management user_ the *realm-management* roles to handle automatic {project_name_abbr} client registration in the {project_name_abbr} server.
+- Assign the _realm management user_ the *realm-management* roles to handle automatic {project_name} client registration in the {project_name} server.
 - Assign the _application user_ the JEE role, created in the previous step, to authenticate access to user applications.
 
 Create the _realm management user_:
@@ -938,7 +938,7 @@ Create the _realm management user_:
 . Click *Add User*.
 . Enter a valid *Username* (this example uses the user _eap-mgmt-user_) and click *Save*.
 . Edit the user configuration. Click the *Credentials* tab in the user space and enter a password for the user. After the password has been confirmed you can click *Reset Password* to set the user password. A pop-up window prompts for additional confirmation.
-. Click *Role Mappings* to list the realm and client role configuration. In the *Client Roles* drop-down menu, select *realm-management* and add all of the available roles to the user. This provides the user {project_name_abbr} server rights that can be used by the JBoss EAP image to create clients.
+. Click *Role Mappings* to list the realm and client role configuration. In the *Client Roles* drop-down menu, select *realm-management* and add all of the available roles to the user. This provides the user {project_name} server rights that can be used by the JBoss EAP image to create clients.
 
 Create the _application user_:
 
@@ -948,11 +948,11 @@ Create the _application user_:
 . Edit the user configuration. Click the *Credentials* tab in the user space and enter a password for the user. After the password has been confirmed you can click *Reset Password* to set the user password. A pop-up window prompts for additional confirmation.
 . Click *Role Mappings* to list the realm and client role configuration. In *Available Roles*, add the role created earlier.
 
-==== Deploy the {project_name_abbr}-enabled JBoss EAP Image
+==== Deploy the {project_name}-enabled JBoss EAP Image
 
 . Return to the OpenShift web console and click *Add to project* to list the default image streams and templates.
 . Use the *Filter by keyword* search bar to limit the list to those that match _sso_. You may need to click *See all* to show the desired application template.
-. Select the *_eap71-sso-s2i_* image to list all of the deployment parameters. Include the following {project_name_abbr} parameters to configure the {project_name_abbr} credentials during the EAP build:
+. Select the *_eap71-sso-s2i_* image to list all of the deployment parameters. Include the following {project_name} parameters to configure the {project_name} credentials during the EAP build:
 +
 [cols="2*", options="header"]
 |===
@@ -1007,25 +1007,25 @@ Create the _application user_:
 
 It may take several minutes for the JBoss EAP image to deploy.
 
-==== Log in to the JBoss EAP Server Using {project_name_abbr}
+==== Log in to the JBoss EAP Server Using {project_name}
 
-. Access the JBoss EAP application server and click *Login*. You are redirected to the {project_name_abbr} login.
-. Log in using the {project_name_abbr} user created in the example. You are authenticated against the {project_name_abbr} server and returned to the JBoss EAP application server.
+. Access the JBoss EAP application server and click *Login*. You are redirected to the {project_name} login.
+. Log in using the {project_name} user created in the example. You are authenticated against the {project_name} server and returned to the JBoss EAP application server.
 
 
 [[Example-EAP-Manual]]
-=== Example Workflow: Manually Registering EAP Application in {project_name_abbr} with SAML Client
-This follows on from xref:Example-Deploying-SSO[Example Workflow: Preparing and Deploying the {project_openshift_product_name} image], in which {project_name_abbr} was deployed on OpenShift.
+=== Example Workflow: Manually Registering EAP Application in {project_name} with SAML Client
+This follows on from xref:Example-Deploying-SSO[Example Workflow: Preparing and Deploying the {project_openshift_product_name} image], in which {project_name} was deployed on OpenShift.
 
-This example prepares {project_name_abbr} realm, role, and user credentials for an EAP project and configures an EAP for OpenShift deployment. Once deployed, the {project_name_abbr} user can be used to authenticate and access JBoss EAP.
+This example prepares {project_name} realm, role, and user credentials for an EAP project and configures an EAP for OpenShift deployment. Once deployed, the {project_name} user can be used to authenticate and access JBoss EAP.
 
 [NOTE]
 ====
-This example uses a SAML client but an OpenID-Connect client could also be used. See xref:SSO-Clients[{project_name_abbr} Clients] and xref:Auto-Man-Client-Reg[Automatic and Manual {project_name_abbr} Client Registration Methods] for more information on the differences between SAML and OpenID-Connect clients.
+This example uses a SAML client but an OpenID-Connect client could also be used. See xref:SSO-Clients[{project_name} Clients] and xref:Auto-Man-Client-Reg[Automatic and Manual {project_name} Client Registration Methods] for more information on the differences between SAML and OpenID-Connect clients.
 ====
 
-==== Preparing the {project_name_abbr} Credentials
-Log in to the encrypted {project_name_abbr} web server at *$$https://secure-sso-$$_<project-name>_._<hostname>_/auth/admin* using the xref:../advanced_concepts/advanced_concepts.adoc#sso-administrator-setup[administrator account] created during the {project_name_abbr} deployment.
+==== Preparing the {project_name} Credentials
+Log in to the encrypted {project_name} web server at *$$https://secure-sso-$$_<project-name>_._<hostname>_/auth/admin* using the xref:../advanced_concepts/advanced_concepts.adoc#sso-administrator-setup[administrator account] created during the {project_name} deployment.
 
 *Create a Realm*
 
@@ -1034,11 +1034,11 @@ Log in to the encrypted {project_name_abbr} web server at *$$https://secure-sso-
 
 *Copy the Public Key*
 
-In the newly created _saml-demo_ realm, click the *Keys* tab and copy the generated public key. This example uses the variable _realm-public-key_ for brevity. This is needed later to deploy the {project_name_abbr}-enabled JBoss EAP image.
+In the newly created _saml-demo_ realm, click the *Keys* tab and copy the generated public key. This example uses the variable _realm-public-key_ for brevity. This is needed later to deploy the {project_name}-enabled JBoss EAP image.
 
 *Create a Role*
 
-Create a role in {project_name_abbr} with a name that corresponds to the JEE role defined in the *web.xml* of the example EAP application. This role will be assigned to an {project_name_abbr} _application user_ to authenticate access to user applications.
+Create a role in {project_name} with a name that corresponds to the JEE role defined in the *web.xml* of the example EAP application. This role will be assigned to an {project_name} _application user_ to authenticate access to user applications.
 
 . Click *Roles* in the *Configure* sidebar to list the roles for this realm. This is a new realm, so there should only be the default _offline_access_ role.
 . Click *Add Role*.
@@ -1047,7 +1047,7 @@ Create a role in {project_name_abbr} with a name that corresponds to the JEE rol
 *Create Users and Assign Roles*
 
 Create two users:
-- Assign the _realm management user_ the *realm-management* roles to handle automatic {project_name_abbr} client registration in the {project_name_abbr} server.
+- Assign the _realm management user_ the *realm-management* roles to handle automatic {project_name} client registration in the {project_name} server.
 - Assign the _application user_ the JEE role, created in the previous step, to authenticate access to user applications.
 
 Create the _realm management user_:
@@ -1058,7 +1058,7 @@ Create the _realm management user_:
 . Edit the user configuration. Click the *Credentials* tab in the user space and enter a password for the user. After the password has been confirmed you can click *Reset Password* to set the user password. A pop-up window prompts for additional confirmation.
 ////
 Need for the SAML?
-. Click *Role Mappings* to list the realm and client role configuration. In the *Client Roles* drop-down menu, select *realm-management* and add all of the available roles to the user. This provides the user {project_name_abbr} server rights that can be used by the JBoss EAP image to create clients.
+. Click *Role Mappings* to list the realm and client role configuration. In the *Client Roles* drop-down menu, select *realm-management* and add all of the available roles to the user. This provides the user {project_name} server rights that can be used by the JBoss EAP image to create clients.
 ////
 
 Create the _application user_:
@@ -1071,7 +1071,7 @@ Create the _application user_:
 
 *Create and Configure a SAML Client*:
 
-Clients are {project_name_abbr} entities that request user authentication. This example configures a SAML client to handle authentication for the EAP application. This section saves two files, *keystore.jks* and *keycloak-saml-subsystem.xml* that are needed later in the procedure.
+Clients are {project_name} entities that request user authentication. This example configures a SAML client to handle authentication for the EAP application. This section saves two files, *keystore.jks* and *keycloak-saml-subsystem.xml* that are needed later in the procedure.
 
 Create the SAML Client:
 
@@ -1105,7 +1105,7 @@ Download the Client Adapter:
 The *keystore-saml.jks* will be used with the other EAP keystores in the next section to create an OpenShift secret for the EAP application project. Copy the *keystore-saml.jks* file to an OpenShift node. +
 The *keycloak-saml-subsystem.xml* will be modified and used in the application deployment. Copy it into the */configuration* folder of the application as *secure-saml-deployments*.
 
-==== Preparing {project_name_abbr} Authentication for OpenShift Deployment
+==== Preparing {project_name} Authentication for OpenShift Deployment
 Log in to the OpenShift CLI with a user that holds the _cluster:admin_ role.
 
 . Create a new project:
@@ -1158,7 +1158,7 @@ $ oc secrets link default eap-ssl-secret eap-jgroup-secret
 [[modified-saml-xml]]
 ==== Modifying the *secure-saml-deployments* File
 
-The *keycloak-saml-subsystem.xml*, exported from the {project_name_abbr} client in a previous section, should have been copied into the */configuration* folder of the application and renamed *secure-saml-deployments*. EAP searches for this file when it starts and copies it to the *standalone-openshift.xml* file inside the {project_name_abbr} SAML adapter configuration.
+The *keycloak-saml-subsystem.xml*, exported from the {project_name} client in a previous section, should have been copied into the */configuration* folder of the application and renamed *secure-saml-deployments*. EAP searches for this file when it starts and copies it to the *standalone-openshift.xml* file inside the {project_name} SAML adapter configuration.
 
 . Open the */configuration/secure-saml-deployments* file in a text editor.
 . Replace the *YOUR-WAR.war* value of the *secure-deployment name* tag with the application *.war* file. This example uses _sso-saml-demo.war_.
@@ -1179,7 +1179,7 @@ The *keycloak-saml-subsystem.xml*, exported from the {project_name_abbr} client 
 ----
 +
 The mount path of the *keystore-saml.jks* (in this example *_/etc/eap-secret-volume/keystore-saml.jks_*) can be specified in the application template with the parameter *EAP_HTTPS_KEYSTORE_DIR*. +
-The aliases and passwords for the *PrivateKey* and the *Certificate* were configured when the SAML Keys were exported from the {project_name_abbr} client.
+The aliases and passwords for the *PrivateKey* and the *Certificate* were configured when the SAML Keys were exported from the {project_name} client.
 . Delete the second *<CertificatePem>* tag and key and replace it with the the realm certificate information:
 +
 [subs="verbatim,macros,attributes"]
@@ -1195,7 +1195,7 @@ The aliases and passwords for the *PrivateKey* and the *Certificate* were config
 ...
 ----
 +
-The certificate alias and password were configured when the SAML Keys were exported from the {project_name_abbr} client.
+The certificate alias and password were configured when the SAML Keys were exported from the {project_name} client.
 . Save and close the */configuration/secure-saml-deployments* file.
 
 ==== Configuring SAML Client Registration in the Application *web.xml*
@@ -1214,4 +1214,4 @@ Open the application *web.xml* file and ensure it includes the following:
 
 ==== Deploying the Application
 
-You do not need to include any {project_name_abbr} configuration for the image because that has been configured in the application itself. Navigating to the application login page redirects you to the {project_name_abbr} login. Log in to the application through {project_name_abbr} using the _application user_ user created earlier.
+You do not need to include any {project_name} configuration for the image because that has been configured in the application itself. Navigating to the application login page redirects you to the {project_name} login. Log in to the application through {project_name} using the _application user_ user created earlier.

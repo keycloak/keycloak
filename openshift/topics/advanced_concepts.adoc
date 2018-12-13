@@ -1,8 +1,8 @@
 == Advanced Concepts
 
-These cover additional configuration topics, such as seting up keystores and a truststore for the {project_name_abbr} server, creating an administrator account, an overview of available {project_name_abbr} client registration methods, and guidance on configuring clustering.
+These cover additional configuration topics, such as seting up keystores and a truststore for the {project_name} server, creating an administrator account, an overview of available {project_name} client registration methods, and guidance on configuring clustering.
 
-=== Requirements and Deploying xref:../introduction/introduction.adoc#passthrough-templates[Passthrough TLS Termination] {project_name_abbr} Templates
+=== Requirements and Deploying xref:../introduction/introduction.adoc#passthrough-templates[Passthrough TLS Termination] {project_name} Templates
 
 ==== Preparing the Deployment
 Log in to the OpenShift CLI with a user that holds the _cluster:admin_ role.
@@ -21,22 +21,22 @@ $ oc policy add-role-to-user view system:serviceaccount:$(oc project -q):default
 ----
 
 [[advanced-concepts-Configuring-Keystores]]
-==== Creating HTTPS and JGroups Keystores, and Truststore for the {project_name_abbr} Server
+==== Creating HTTPS and JGroups Keystores, and Truststore for the {project_name} Server
 
-The {project_name_abbr} application templates using xref:../introduction/introduction.adoc#passthrough-templates[passthrough TLS termination] require:
+The {project_name} application templates using xref:../introduction/introduction.adoc#passthrough-templates[passthrough TLS termination] require:
 
 * An xref:create-https-keystore[HTTPS keystore] used for encryption of https traffic,
 * The xref:create-jgroups-keystore[JGroups keystore] used for encryption of JGroups communications between nodes in the cluster, and
-* xref:create-server-truststore[{project_name_abbr} server truststore] used for securing the {project_name_abbr} requests
+* xref:create-server-truststore[{project_name} server truststore] used for securing the {project_name} requests
 
 the {project_openshift_product_name} image to be deployed properly.
 
 [IMPORTANT]
 ====
-The {project_name_abbr} application templates using xref:../introduction/introduction.adoc#reencrypt-templates[re-encryption TLS termination] do not *require* or *expect* the aforementioned HTTPS and JGroups keystores and {project_name_abbr} server truststore to be prepared beforehand. The templates use OpenShift's internal link:https://docs.openshift.com/container-platform/latest/dev_guide/secrets.html#service-serving-certificate-secrets[service serving x509 certificate secrets] to automatically create the HTTPS and JGroups keystores. The {project_name_abbr} server truststore is also created automatically, containing the */var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt* CA certificate file, which is used to create these cluster certificates. Moreover, the truststore for the {project_name_abbr} server is pre-populated with the all known, trusted CA certificate files found in the Java system path.
+The {project_name} application templates using xref:../introduction/introduction.adoc#reencrypt-templates[re-encryption TLS termination] do not *require* or *expect* the aforementioned HTTPS and JGroups keystores and {project_name} server truststore to be prepared beforehand. The templates use OpenShift's internal link:https://docs.openshift.com/container-platform/latest/dev_guide/secrets.html#service-serving-certificate-secrets[service serving x509 certificate secrets] to automatically create the HTTPS and JGroups keystores. The {project_name} server truststore is also created automatically, containing the */var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt* CA certificate file, which is used to create these cluster certificates. Moreover, the truststore for the {project_name} server is pre-populated with the all known, trusted CA certificate files found in the Java system path.
 ====
 
-The *_openssl_* toolkit is used in the following example to generate a CA certificate to sign the HTTPS keystore, and create a truststore for the {project_name_abbr} server. *_keytool_*, a package *included with the Java Development Kit*, is then utilized to the generate self-signed certificates for these keystores.
+The *_openssl_* toolkit is used in the following example to generate a CA certificate to sign the HTTPS keystore, and create a truststore for the {project_name} server. *_keytool_*, a package *included with the Java Development Kit*, is then utilized to the generate self-signed certificates for these keystores.
 
 [WARNING]
 ====
@@ -100,7 +100,7 @@ $ keytool -genseckey -alias secret-key -storetype JCEKS -keystore jgroups.jceks
 ----
 
 [[create-server-truststore]]
-*_Import the CA certificate into a new {project_name_abbr} server truststore:_*
+*_Import the CA certificate into a new {project_name} server truststore:_*
 
 Provide `mykeystorepass` as the truststore password. Reply `yes` to `Trust this certificate? [no]:` question:
 
@@ -114,28 +114,28 @@ $ keytool -import -file xpaas.crt -alias xpaas.ca -keystore truststore.jks
 
 OpenShift uses objects called link:https://docs.openshift.com/container-platform/latest/dev_guide/secrets.html[secrets] to hold sensitive information, such as passwords or keystores.
 
-. Create the secrets for the HTTPS and JGroups keystores, and {project_name_abbr} server truststore, generated in the xref:Configuring-Keystores[previous section].
+. Create the secrets for the HTTPS and JGroups keystores, and {project_name} server truststore, generated in the xref:Configuring-Keystores[previous section].
 +
 [subs="verbatim,macros,attributes"]
 ----
 $ oc secret new sso-app-secret keystore.jks jgroups.jceks truststore.jks
 ----
-. Link these secrets to the link:https://docs.openshift.com/container-platform/latest/dev_guide/service_accounts.html#default-service-accounts-and-roles[default] service account, which is used to run {project_name_abbr} pods.
+. Link these secrets to the link:https://docs.openshift.com/container-platform/latest/dev_guide/service_accounts.html#default-service-accounts-and-roles[default] service account, which is used to run {project_name} pods.
 +
 [subs="verbatim,macros,attributes"]
 ----
 $ oc secrets link default sso-app-secret
 ----
 
-==== Deploying the Chosen {project_name_abbr} Passthrough TLS Template via OpenShift CLI
+==== Deploying the Chosen {project_name} Passthrough TLS Template via OpenShift CLI
 
 After the aforementioned xref:Configuring-Keystores[keystores] and xref:Configuring-Secrets[secrets] are created, deploy some of the available xref:../introduction/introduction.adoc#passthrough-templates[passthrough TLS termination] as follows:
 
 [WARNING]
 ====
-For simplicity, the values of *_SSO_ADMIN_USERNAME_*, *_SSO_ADMIN_PASSWORD_*, *_HTTPS_PASSWORD_*, *_JGROUPS_ENCRYPT_PASSWORD_*, and *_SSO_TRUSTSTORE_PASSWORD_* variables xref:advanced-topics-deploy-{project_templates_version}-https-template[in the following command] have been chosen to match the default values of the respective parameters of the *_{project_templates_version}-https_* {project_name_abbr} application template.
+For simplicity, the values of *_SSO_ADMIN_USERNAME_*, *_SSO_ADMIN_PASSWORD_*, *_HTTPS_PASSWORD_*, *_JGROUPS_ENCRYPT_PASSWORD_*, and *_SSO_TRUSTSTORE_PASSWORD_* variables xref:advanced-topics-deploy-{project_templates_version}-https-template[in the following command] have been chosen to match the default values of the respective parameters of the *_{project_templates_version}-https_* {project_name} application template.
 
-For production environments, Red Hat recommends that you consult the on-site policy, specific to your organization for guidance on how to generate sufficiently strong user name and password for the administrator user account of the {project_name_abbr} server, and passwords for the HTTPS and JGroups keystores, and the truststore of the {project_name_abbr} server.
+For production environments, Red Hat recommends that you consult the on-site policy, specific to your organization for guidance on how to generate sufficiently strong user name and password for the administrator user account of the {project_name} server, and passwords for the HTTPS and JGroups keystores, and the truststore of the {project_name} server.
 
 Be aware that *the passwords provided when provisioning the template need to match the passwords provided when creating the keystores*. If using different username and passwords, modify the values of respective xref:advanced-topics-deploy-{project_templates_version}-https-template[template parameters] as appropriate for your environment.
 ====
@@ -184,9 +184,9 @@ $ oc new-app --template={project_templates_version}-https \
 
      {project_name} {project_version} (Ephemeral with passthrough TLS)
      ---------
-     An example {project_name_abbr} 7 application. For more information about using this template, see https://github.com/jboss-openshift/application-templates.
+     An example {project_name} 7 application. For more information about using this template, see https://github.com/jboss-openshift/application-templates.
 
-     A new {project_name_abbr} service has been created in your project. The admin username/password for accessing the master realm via the {project_name_abbr} console is admin/redhat. Please be sure to create the following secrets: "sso-app-secret" containing the keystore.jks file used for serving secure content; "sso-app-secret" containing the jgroups.jceks file used for securing JGroups communications; "sso-app-secret" containing the truststore.jks file used for securing {project_name_abbr} requests.
+     A new {project_name} service has been created in your project. The admin username/password for accessing the master realm via the {project_name} console is admin/redhat. Please be sure to create the following secrets: "sso-app-secret" containing the keystore.jks file used for serving secure content; "sso-app-secret" containing the jgroups.jceks file used for securing JGroups communications; "sso-app-secret" containing the truststore.jks file used for securing {project_name} requests.
 
      * With parameters:
         * Application Name=sso
@@ -206,14 +206,14 @@ $ oc new-app --template={project_templates_version}-https \
         * JGroups Keystore Password=password
         * JGroups Cluster Password=yeSppLfp # generated
         * ImageStream Namespace=openshift
-        * {project_name_abbr} Administrator Username=admin
-        * {project_name_abbr} Administrator Password=redhat
-        * {project_name_abbr} Realm=demorealm
-        * {project_name_abbr} Service Username=
-        * {project_name_abbr} Service Password=
-        * {project_name_abbr} Trust Store=truststore.jks
-        * {project_name_abbr} Trust Store Password=mykeystorepass
-        * {project_name_abbr} Trust Store Secret=sso-app-secret
+        * {project_name} Administrator Username=admin
+        * {project_name} Administrator Password=redhat
+        * {project_name} Realm=demorealm
+        * {project_name} Service Username=
+        * {project_name} Service Password=
+        * {project_name} Trust Store=truststore.jks
+        * {project_name} Trust Store Password=mykeystorepass
+        * {project_name} Trust Store Secret=sso-app-secret
         * Container Memory Limit=1Gi
 
 --> Creating resources ...
@@ -227,7 +227,7 @@ $ oc new-app --template={project_templates_version}-https \
     Run 'oc status' to view your app.
 ----
 
-==== Accessing the Administrator Console of the {project_name_abbr} Pod
+==== Accessing the Administrator Console of the {project_name} Pod
 
 After the template got deployed, identify the available routes:
 
@@ -257,7 +257,7 @@ $ oc get routes
 |None
 |===
 
-and access the {project_name_abbr} administrator console at:
+and access the {project_name} administrator console at:
 
 * *\https://secure-sso-sso-app-demo.openshift.example.com/auth/admin*
 * *\http://sso-sso-app-demo.openshift.example.com/auth/admin*
@@ -325,8 +325,8 @@ Red Hat Single Sign-On does not provide any pre-configured management account ou
 
 The administrator account can be created:
 
-* By providing values for the xref:sso-admin-template-parameters[*_SSO_ADMIN_USERNAME_* and *_SSO_ADMIN_PASSWORD_* parameters], when deploying the {project_name_abbr} application template, or
-* By xref:sso-admin-remote-shell[a remote shell session to particular {project_name_abbr} pod], if the {project_openshift_product_name} image is deployed without an application template.
+* By providing values for the xref:sso-admin-template-parameters[*_SSO_ADMIN_USERNAME_* and *_SSO_ADMIN_PASSWORD_* parameters], when deploying the {project_name} application template, or
+* By xref:sso-admin-remote-shell[a remote shell session to particular {project_name} pod], if the {project_openshift_product_name} image is deployed without an application template.
 
 [NOTE]
 ====
@@ -334,9 +334,9 @@ Red Hat Single Sign-On allows an initial administrator account to be created via
 ====
 
 [[advanced-concepts-sso-admin-template-parameters]]
-==== Creating {project_name_abbr} Administrator Account via Template Parameters
+==== Creating {project_name} Administrator Account via Template Parameters
 
-When deploying {project_name_abbr} application template, *_SSO_ADMIN_USERNAME_* and *_SSO_ADMIN_PASSWORD_* parameters denote the username and password of the {project_name_abbr} server's administrator account to be created for the `master` realm.
+When deploying {project_name} application template, *_SSO_ADMIN_USERNAME_* and *_SSO_ADMIN_PASSWORD_* parameters denote the username and password of the {project_name} server's administrator account to be created for the `master` realm.
 
 [NOTE]
 ====
@@ -345,25 +345,25 @@ When deploying {project_name_abbr} application template, *_SSO_ADMIN_USERNAME_* 
 
 [IMPORTANT]
 ====
-The lifespan of the {project_name_abbr} server's administrator account depends upon the storage type used to store the {project_name_abbr} server's database:
+The lifespan of the {project_name} server's administrator account depends upon the storage type used to store the {project_name} server's database:
 
-* For an in-memory database mode (*_{project_templates_version}-https_* and *_{project_templates_version}-x509-https_* templates) the account exists throughout the lifecycle of the particular {project_name_abbr} pod (stored account data is lost upon pod destruction),
-* For an ephemeral database mode (*_{project_templates_version}-mysql_* and *_{project_templates_version}-postgresql_* templates) the account exists throughout the lifecycle of the database pod (even if the {project_name_abbr} pod is destructed, the stored account data is preserved under the assumption that the database pod is still running),
-* For persistent database mode (*_{project_templates_version}-mysql-persistent_*, *_{project_templates_version}-x509-mysql-persistent_*, *_{project_templates_version}-postgresql-persistent_*, and *_{project_templates_version}-x509-postgresql-persistent_* templates) the account exists throughout the lifecycle of the persistent medium used to hold the database data. This means that the stored account data is preserved even when both the {project_name_abbr} and the database pods are destructed.
+* For an in-memory database mode (*_{project_templates_version}-https_* and *_{project_templates_version}-x509-https_* templates) the account exists throughout the lifecycle of the particular {project_name} pod (stored account data is lost upon pod destruction),
+* For an ephemeral database mode (*_{project_templates_version}-mysql_* and *_{project_templates_version}-postgresql_* templates) the account exists throughout the lifecycle of the database pod (even if the {project_name} pod is destructed, the stored account data is preserved under the assumption that the database pod is still running),
+* For persistent database mode (*_{project_templates_version}-mysql-persistent_*, *_{project_templates_version}-x509-mysql-persistent_*, *_{project_templates_version}-postgresql-persistent_*, and *_{project_templates_version}-x509-postgresql-persistent_* templates) the account exists throughout the lifecycle of the persistent medium used to hold the database data. This means that the stored account data is preserved even when both the {project_name} and the database pods are destructed.
 
-It is a common practice to deploy an {project_name_abbr} application template to get the corresponding OpenShift deployment config for the application, and then reuse that deployment config multiple times (every time a new {project_name_abbr} application needs to be instantiated).
+It is a common practice to deploy an {project_name} application template to get the corresponding OpenShift deployment config for the application, and then reuse that deployment config multiple times (every time a new {project_name} application needs to be instantiated).
 ====
 
 [WARNING]
 ====
-In the case of *ephemeral or persistent database mode*, after creating the RH_SSO server's administrator account, remove the *_SSO_ADMIN_USERNAME_* and *_SSO_ADMIN_PASSWORD_* variables from the deployment config before deploying new {project_name_abbr} applications.
+In the case of *ephemeral or persistent database mode*, after creating the RH_SSO server's administrator account, remove the *_SSO_ADMIN_USERNAME_* and *_SSO_ADMIN_PASSWORD_* variables from the deployment config before deploying new {project_name} applications.
 ====
 
 [IMPORTANT]
 ====
-Run the following commands to prepare the previously created deployment config of the {project_name_abbr} application for reuse after the administrator account has been created:
+Run the following commands to prepare the previously created deployment config of the {project_name} application for reuse after the administrator account has been created:
 
-. Identify the deployment config of the {project_name_abbr} application.
+. Identify the deployment config of the {project_name} application.
 +
 [subs="verbatim,macros,attributes"]
 ----
@@ -380,11 +380,11 @@ $ oc env dc/sso -e SSO_ADMIN_USERNAME="" SSO_ADMIN_PASSWORD=""
 ====
 
 [[advanced-concepts-sso-admin-remote-shell]]
-==== Creating {project_name_abbr} Administrator Account via Remote Shell Session to {project_name_abbr} Pod
+==== Creating {project_name} Administrator Account via Remote Shell Session to {project_name} Pod
 
-Run following commands to create an administrator account for the `master` realm of the {project_name_abbr} server, when deploying the {project_openshift_product_name} image directly from the image stream (without the xref:../introduction/introduction.adoc#sso-templates[template]), after the {project_name_abbr} application pod has been started:
+Run following commands to create an administrator account for the `master` realm of the {project_name} server, when deploying the {project_openshift_product_name} image directly from the image stream (without the xref:../introduction/introduction.adoc#sso-templates[template]), after the {project_name} application pod has been started:
 
-. Identify the {project_name_abbr} application pod.
+. Identify the {project_name} application pod.
 +
 [subs="verbatim,macros,attributes"]
 ----
@@ -400,7 +400,7 @@ sso-mysql-6-d97pf   1/1       Running   0          2m
 $ oc rsh sso-12-pt93n
 sh-4.2$
 ----
-. Create the {project_name_abbr} server administrator account for the `master` realm at the command line with the `add-user-keycloak.sh` script.
+. Create the {project_name} server administrator account for the `master` realm at the command line with the `add-user-keycloak.sh` script.
 +
 [subs="verbatim,macros,attributes"]
 ----
@@ -426,27 +426,27 @@ sh-4.2$ ./jboss-cli.sh --connect ':reload'
 +
 [WARNING]
 ====
-When restarting the server it is important to restart just the JBoss EAP process within the running {project_name_abbr} container, and not the whole container. This is because restarting the whole container will recreate it from scratch, without the {project_name_abbr} server administration account for the `master` realm.
+When restarting the server it is important to restart just the JBoss EAP process within the running {project_name} container, and not the whole container. This is because restarting the whole container will recreate it from scratch, without the {project_name} server administration account for the `master` realm.
 ====
-. Log in to the `master` realm's administration console of the {project_name_abbr} server using the credentials created in the steps above. In the browser, navigate to *\http://sso-<project-name>.<hostname>/auth/admin*  for the {project_name_abbr} web server, or to *\https://secure-sso-<project-name>.<hostname>/auth/admin* for the encrypted {project_name_abbr} web server, and specify the user name and password used to create the administrator user.
+. Log in to the `master` realm's administration console of the {project_name} server using the credentials created in the steps above. In the browser, navigate to *\http://sso-<project-name>.<hostname>/auth/admin*  for the {project_name} web server, or to *\https://secure-sso-<project-name>.<hostname>/auth/admin* for the encrypted {project_name} web server, and specify the user name and password used to create the administrator user.
 
 === Deployment Process
 
-Once deployed, the *_{project_templates_version}-https_* and *_{project_templates_version}-x509-https_* templates create a single pod that contains both the database and the {project_name_abbr} servers. The *_{project_templates_version}-mysql_*, *_{project_templates_version}-mysql-persistent_*, *_{project_templates_version}-x509-mysql-persistent_*, *_{project_templates_version}-postgresql_*, *_{project_templates_version}-postgresql-persistent_*, and *_{project_templates_version}-x509-postgresql-persistent_* templates create two pods, one for the database server and one for the {project_name_abbr} web server.
+Once deployed, the *_{project_templates_version}-https_* and *_{project_templates_version}-x509-https_* templates create a single pod that contains both the database and the {project_name} servers. The *_{project_templates_version}-mysql_*, *_{project_templates_version}-mysql-persistent_*, *_{project_templates_version}-x509-mysql-persistent_*, *_{project_templates_version}-postgresql_*, *_{project_templates_version}-postgresql-persistent_*, and *_{project_templates_version}-x509-postgresql-persistent_* templates create two pods, one for the database server and one for the {project_name} web server.
 
-After the {project_name_abbr} web server pod has started, it can be accessed from its custom configured hostnames, or from the default hostnames:
+After the {project_name} web server pod has started, it can be accessed from its custom configured hostnames, or from the default hostnames:
 
-* *\http://sso-_<project-name>_._<hostname>_/auth/admin*: for the {project_name_abbr} web server, and
-* *\https://secure-sso-_<project-name>_._<hostname>_/auth/admin*: for the encrypted {project_name_abbr} web server.
+* *\http://sso-_<project-name>_._<hostname>_/auth/admin*: for the {project_name} web server, and
+* *\https://secure-sso-_<project-name>_._<hostname>_/auth/admin*: for the encrypted {project_name} web server.
 
 Use the xref:../advanced_concepts/advanced_concepts.adoc#advanced-concepts-sso-administrator-setup[administrator user credentials] to log in into the `master` realm’s administration console.
 
 [[advanced-concepts-SSO-Clients]]
-=== {project_name_abbr} Clients
+=== {project_name} Clients
 
-Clients are {project_name_abbr} entities that request user authentication. A client can be an application requesting {project_name_abbr} to provide user authentication, or it can make requests for access tokens to start services on behalf of an authenticated user. See the link:https://access.redhat.com/documentation/en-us/red_hat_single_sign-on/7.2/html/server_administration_guide/clients[Managing Clients chapter of the Red Hat Single Sign-On documentation] for more information.
+Clients are {project_name} entities that request user authentication. A client can be an application requesting {project_name} to provide user authentication, or it can make requests for access tokens to start services on behalf of an authenticated user. See the link:https://access.redhat.com/documentation/en-us/red_hat_single_sign-on/7.2/html/server_administration_guide/clients[Managing Clients chapter of the Red Hat Single Sign-On documentation] for more information.
 
-{project_name_abbr} provides link:https://access.redhat.com/documentation/en-us/red_hat_single_sign-on/7.2/html/server_administration_guide/clients#oidc_clients[OpenID-Connect] and link:https://access.redhat.com/documentation/en-us/red_hat_single_sign-on/7.2/html/server_administration_guide/clients#saml_clients[SAML] client protocols. +
+{project_name} provides link:https://access.redhat.com/documentation/en-us/red_hat_single_sign-on/7.2/html/server_administration_guide/clients#oidc_clients[OpenID-Connect] and link:https://access.redhat.com/documentation/en-us/red_hat_single_sign-on/7.2/html/server_administration_guide/clients#saml_clients[SAML] client protocols. +
 OpenID-Connect is the preferred protocol and utilizes three different access types:
 
 - *public*: Useful for JavaScript applications that run directly in the browser and require no server configuration.
@@ -470,16 +470,16 @@ The following is an example snippet for the application *web.xml* to configure a
 ----
 
 [[advanced-concepts-Auto-Man-Client-Reg]]
-==== Automatic and Manual {project_name_abbr} Client Registration Methods
-A client application can be automatically registered to an {project_name_abbr} realm by using credentials passed in variables specific to the *_eap64-sso-s2i_*, *_eap71-sso-s2i_*, and *_datavirt63-secure-s2i_* templates.
+==== Automatic and Manual {project_name} Client Registration Methods
+A client application can be automatically registered to an {project_name} realm by using credentials passed in variables specific to the *_eap64-sso-s2i_*, *_eap71-sso-s2i_*, and *_datavirt63-secure-s2i_* templates.
 
-Alternatively, you can manually register the client application by configuring and exporting the {project_name_abbr} client adapter and including it in the client application configuration.
+Alternatively, you can manually register the client application by configuring and exporting the {project_name} client adapter and including it in the client application configuration.
 
-===== Automatic {project_name_abbr} Client Registration
+===== Automatic {project_name} Client Registration
 
-Automatic {project_name_abbr} client registration is determined by {project_name_abbr} environment variables specific to the *_eap64-sso-s2i_*, *_eap71-sso-s2i_*, and *_datavirt63-secure-s2i_* templates. The {project_name_abbr} credentials supplied in the template are then used to register the client to the {project_name_abbr} realm during deployment of the client application.
+Automatic {project_name} client registration is determined by {project_name} environment variables specific to the *_eap64-sso-s2i_*, *_eap71-sso-s2i_*, and *_datavirt63-secure-s2i_* templates. The {project_name} credentials supplied in the template are then used to register the client to the {project_name} realm during deployment of the client application.
 
-The {project_name_abbr} environment variables included in the *_eap64-sso-s2i_*, *_eap71-sso-s2i_*, and *_datavirt63-secure-s2i_* templates are:
+The {project_name} environment variables included in the *_eap64-sso-s2i_*, *_eap71-sso-s2i_*, and *_datavirt63-secure-s2i_* templates are:
 
 [cols="2*", options="header"]
 |===
@@ -492,10 +492,10 @@ The {project_name_abbr} environment variables included in the *_eap64-sso-s2i_*,
 |Custom hostname for https service route. Leave blank for default hostname of <application-name>.<project>.<default-domain-suffix>
 
 |*_SSO_URL_*
-|The {project_name_abbr} web server authentication address: $$https://secure-sso-$$_<project-name>_._<hostname>_/auth
+|The {project_name} web server authentication address: $$https://secure-sso-$$_<project-name>_._<hostname>_/auth
 
 |*_SSO_REALM_*
-|The {project_name_abbr} realm created for this procedure.
+|The {project_name} realm created for this procedure.
 
 |*_SSO_USERNAME_*
 |The name of the _realm management user_.
@@ -504,16 +504,16 @@ The {project_name_abbr} environment variables included in the *_eap64-sso-s2i_*,
 | The password of the user.
 
 |*_SSO_PUBLIC_KEY_*
-|The public key generated by the realm. It is located in the *Keys* tab of the *Realm Settings* in the {project_name_abbr} console.
+|The public key generated by the realm. It is located in the *Keys* tab of the *Realm Settings* in the {project_name} console.
 
 |*_SSO_BEARER_ONLY_*
 |If set to *true*, the OpenID Connect client is registered as bearer-only.
 
 |*_SSO_ENABLE_CORS_*
-|If set to *true*, the {project_name_abbr} adapter enables Cross-Origin Resource Sharing (CORS).
+|If set to *true*, the {project_name} adapter enables Cross-Origin Resource Sharing (CORS).
 |===
 
-If the {project_name_abbr} client uses the SAML protocol, the following additional variables need to be configured:
+If the {project_name} client uses the SAML protocol, the following additional variables need to be configured:
 
 [cols="2*", options="header"]
 |===
@@ -532,29 +532,29 @@ If the {project_name_abbr} client uses the SAML protocol, the following addition
 |Alias for keys/certificate to use for SAML. The default is _jboss_.
 |===
 
-See xref:Example-EAP-Auto[Example Workflow: Automatically Registering EAP Application in {project_name_abbr} with OpenID-Connect Client] for an end-to-end example of the automatic client registration method using an OpenID-Connect client.
+See xref:Example-EAP-Auto[Example Workflow: Automatically Registering EAP Application in {project_name} with OpenID-Connect Client] for an end-to-end example of the automatic client registration method using an OpenID-Connect client.
 
-===== Manual {project_name_abbr} Client Registration
+===== Manual {project_name} Client Registration
 
-Manual {project_name_abbr} client registration is determined by the presence of a deployment file in the client application's _../configuration/_ directory. These files are exported from the client adapter in the {project_name_abbr} web console. The name of this file is different for OpenID-Connect and SAML clients:
+Manual {project_name} client registration is determined by the presence of a deployment file in the client application's _../configuration/_ directory. These files are exported from the client adapter in the {project_name} web console. The name of this file is different for OpenID-Connect and SAML clients:
 
 [horizontal]
 *OpenID-Connect*:: _../configuration/secure-deployments_
 *SAML*:: _../configuration/secure-saml-deployments_
 
-These files are copied to the {project_name_abbr} adapter configuration section in the _standalone-openshift.xml_ at when the application is deployed.
+These files are copied to the {project_name} adapter configuration section in the _standalone-openshift.xml_ at when the application is deployed.
 
-There are two methods for passing the {project_name_abbr} adapter configuration to the client application:
+There are two methods for passing the {project_name} adapter configuration to the client application:
 
-* Modify the deployment file to contain the {project_name_abbr} adapter configuration so that it is included in the _standalone-openshift.xml_ file at deployment, or
+* Modify the deployment file to contain the {project_name} adapter configuration so that it is included in the _standalone-openshift.xml_ file at deployment, or
 * Manually include the OpenID-Connect _keycloak.json_ file, or the SAML _keycloak-saml.xml_ file in the client application's *../WEB-INF* directory.
 
-See xref:Example-EAP-Manual[Example Workflow: Manually Configure an Application to Use {project_name_abbr} Authentication, Using SAML Client] for an end-to-end example of the manual {project_name_abbr} client registration method using a SAML client.
+See xref:Example-EAP-Manual[Example Workflow: Manually Configure an Application to Use {project_name} Authentication, Using SAML Client] for an end-to-end example of the manual {project_name} client registration method using a SAML client.
 
 === Limitations
-OpenShift does not currently accept OpenShift role mapping from external providers. If {project_name_abbr} is used as an authentication gateway for OpenShift, users created in {project_name_abbr} must have the roles added using the OpenShift Administrator `oadm policy` command.
+OpenShift does not currently accept OpenShift role mapping from external providers. If {project_name} is used as an authentication gateway for OpenShift, users created in {project_name} must have the roles added using the OpenShift Administrator `oadm policy` command.
 
-For example, to allow an {project_name_abbr}-created user to view a project namespace in OpenShift:
+For example, to allow an {project_name}-created user to view a project namespace in OpenShift:
 [subs="verbatim,macros,attributes"]
 ----
 oadm policy add-role-to-user view <pass:quotes[_user-name_]> -n <pass:quotes[_project-name_]>
