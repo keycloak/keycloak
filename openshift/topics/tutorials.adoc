@@ -63,21 +63,16 @@ By default the database is automatically migrated when you start {project_name} 
 
 [[automatic-db-migration]]
 ==== Automatic Database Migration
-This process assumes that you are running {project_openshift_product_name} {project_previous_version} image link:https://access.redhat.com/documentation/en-us/red_hat_jboss_middleware_for_openshift/3/html-single/red_hat_single_sign-on_for_openshift/index#Example-Deploying-SSO[deployed using one of the following templates]:
-
-* *_{project_previous_templates_version}-mysql_*
-* *_{project_previous_templates_version}-postgresql_*
-* *_{project_previous_templates_version}-mysql-persistent_*
-* *_{project_previous_templates_version}-postgresql-persistent_*
+This process assumes that you are link:https://access.redhat.com/documentation/en-us/red_hat_jboss_middleware_for_openshift/3/html-single/red_hat_single_sign-on_for_openshift/index#Example-Deploying-SSO[running] some previous version of the {project_openshift_product_name} image, backed by MySQL or PostgreSQL database (deployed in ephemeral or persistent mode), running on a separate pod.
 
 [IMPORTANT]
 ====
-Stop all {project_name} {project_previous_version} pods before upgrading to {project_name} {project_version}, as they cannot run concurrently against the same database.
+Stop all pods running the previous version of the {project_openshift_product_name} image before upgrading to {project_name} {project_version}, as they cannot run concurrently against the same database.
 ====
 
 Use the following steps to automatically migrate the database schema:
 
-. Identify existing deployment config for {project_name} {project_previous_version} containers.
+. Identify the deployment config used to deploy the containers, running previous version of the {project_openshift_product_name} image.
 +
 [subs="verbatim,macros,attributes"]
 ----
@@ -85,7 +80,7 @@ $ oc get dc -o name --selector=application=sso
 deploymentconfig/sso
 deploymentconfig/sso-postgresql
 ----
-. Stop all {project_name} {project_previous_version} containers in the current namespace.
+. Stop all pods running the previous version of the {project_openshift_product_name} image in the current namespace.
 +
 [subs="verbatim,macros,attributes"]
 ----
@@ -144,17 +139,10 @@ Pre-generated scripts are not available. They are generated dynamically dependin
 
 See link:https://access.redhat.com/documentation/en-us/red_hat_single_sign-on/7.2/html/server_installation_and_configuration_guide/database-1#database_configuration[database configuration of {project_name} {project_version}] for further details.
 
-The database migration process handles the data schema update and performs manipulation of the data, therefore, stop all {project_name} {project_previous_version} instances before dynamic generation of the SQL migration file.
+The database migration process handles the data schema update and performs manipulation of the data, therefore, stop all pods running the previous version of the {project_openshift_product_name} image before dynamic generation of the SQL migration file.
 ====
 
-This guide assumes the {project_openshift_product_name} image version {project_previous_version} has been previously link:https://access.redhat.com/documentation/en-us/red_hat_jboss_middleware_for_openshift/3/html-single/red_hat_single_sign-on_for_openshift/index#Example-Deploying-SSO[deployed using one of the following templates:]
-
-* *_{project_previous_templates_version}-mysql_*
-* *_{project_previous_templates_version}-mysql-persistent_*
-* *_{project_previous_templates_version}-postgresql_*
-* *_{project_previous_templates_version}-postgresql-persistent_*
-* *_{project_previous_templates_version}-x509-mysql-persistent_*
-* *_{project_previous_templates_version}-x509-postgresql-persistent_*
+This process assumes that you are link:https://access.redhat.com/documentation/en-us/red_hat_jboss_middleware_for_openshift/3/html-single/red_hat_single_sign-on_for_openshift/index#Example-Deploying-SSO[running] some previous version of the {project_openshift_product_name} image, backed by MySQL or PostgreSQL database (deployed in ephemeral or persistent mode), running on a separate pod.
 
 Perform the following to generate and get the SQL migration file for the database:
 
@@ -162,18 +150,18 @@ Perform the following to generate and get the SQL migration file for the databas
 +
 [source,yaml,subs="verbatim,macros,attributes"]
 ----
-$ cat {project_previous_templates_version}-to-{project_templates_version}-db-migrate-job.yaml.orig
+$ cat job-to-migrate-db-to-{project_templates_version}.yaml.orig
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: {project_previous_templates_version}-to-{project_templates_version}-db-migrate-job
+  name: job-to-migrate-db-to-{project_templates_version}
 spec:
   autoSelector: true
   parallelism: 0
   completions: 1
   template:
     metadata:
-      name: {project_previous_templates_version}-to-{project_templates_version}-db-migrate-job
+      name: job-to-migrate-db-to-{project_templates_version}
     spec:
       containers:
       - env:
@@ -195,7 +183,7 @@ spec:
           value: pass:[&lt;&lt;SERVICE_PORT_VALUE&gt;&gt;]
         image: pass:[&lt;&lt;SSO_IMAGE_VALUE&gt;&gt;]
         imagePullPolicy: Always
-        name: {project_previous_templates_version}-to-{project_templates_version}-db-migrate-job
+        name: job-to-migrate-db-to-{project_templates_version}
         # Keep the pod running after the SQL migration
         # file was generated, so we can retrieve it
         command:
@@ -207,12 +195,12 @@ spec:
 +
 [subs="verbatim,macros,attributes"]
 ----
-$ cp {project_previous_templates_version}-to-{project_templates_version}-db-migrate-job.yaml.orig \
-     {project_previous_templates_version}-to-{project_templates_version}-db-migrate-job.yaml
+$ cp job-to-migrate-db-to-{project_templates_version}.yaml.orig \
+     job-to-migrate-db-to-{project_templates_version}.yaml
 ----
-. Copy the datasource definition and database access credentials from {project_name} {project_version} deployment config to appropriate places in database job migration template.
+. From deployment config used to run the previous version of the {project_openshift_product_name} image, copy the datasource definition and database access credentials to appropriate places of the template of the database migration job.
 +
-Use the following script to copy `DB_SERVICE_PREFIX_MAPPING` and `TX_DATABASE_PREFIX_MAPPING` variable values, together with values of environment variables specific to particular datasource (`<PREFIX>_JNDI`, `<PREFIX>_USERNAME`, `<PREFIX>_PASSWORD`, and `<PREFIX>_DATABASE`) from the deployment config named `sso` to the database job migration template named `{project_previous_templates_version}-to-{project_templates_version}-db-migrate-job.yaml`.
+Use the following script to copy `DB_SERVICE_PREFIX_MAPPING` and `TX_DATABASE_PREFIX_MAPPING` variable values, together with values of environment variables specific to particular datasource (`<PREFIX>_JNDI`, `<PREFIX>_USERNAME`, `<PREFIX>_PASSWORD`, and `<PREFIX>_DATABASE`) from the deployment config named `sso` to the database job migration template named `job-to-migrate-db-to-{project_templates_version}.yaml`.
 +
 [NOTE]
 ====
@@ -230,7 +218,7 @@ $ cat mirror_sso_dc_db_vars.sh
 # or if the file name of the YAML definition of the migration
 # job is different, update the following two variables
 SSO_DC_NAME="sso"
-JOB_MIGRATION_YAML="{project_previous_templates_version}-to-{project_templates_version}-db-migrate-job.yaml"
+JOB_MIGRATION_YAML="job-to-migrate-db-to-{project_templates_version}.yaml"
 
 # Get existing variables of the $SSO_DC_NAME deployment config
 # in an array
@@ -365,7 +353,7 @@ Successfully updated DB_PASSWORD to:                        tsWNhQHK
 Successfully updated DB_DATABASE to:                        root
 Successfully updated TX_DATABASE_PREFIX_MAPPING to:         sso-postgresql=DB
 ----
-. Build the {project_name} {project_version} database migration image using the link:https://github.com/iankko/openshift-examples/tree/sso_manual_db_migration[pre-configured source] and wait for the build to finish.
+. Build the {project_name} {project_version} database migration image using the link:https://github.com/iankko/openshift-examples/tree/KEYCLOAK-8500/sso-manual-db-migration[pre-configured source] and wait for the build to finish.
 +
 [subs="verbatim,macros,attributes"]
 ----
@@ -375,16 +363,18 @@ redhat-{project_templates_version}-openshift
 +
 [subs="verbatim,macros,attributes"]
 ----
-$ oc new-build redhat-{project_templates_version}-openshift:{project_latest_image_tag}~https://github.com/jboss-openshift/openshift-examples --context-dir=sso-manual-db-migration --name={project_templates_version}-db-migration-image
+$ oc new-build redhat-{project_templates_version}-openshift:{project_latest_image_tag}~https://github.com/iankko/openshift-examples.git#KEYCLOAK-8500 \
+  --context-dir=sso-manual-db-migration \
+  --name={project_templates_version}-db-migration-image
 --> Found image bf45ac2 (7 days old) in image stream "openshift/redhat-{project_templates_version}-openshift" under tag "{project_latest_image_tag}" for "redhat-{project_templates_version}-openshift:{project_latest_image_tag}"
 
-    Red Hat SSO 7.2
+    Red Hat SSO {project_version}
     ---------------
     Platform for running Red Hat SSO
 
     Tags: sso, sso7, keycloak
 
-    * A source build using source code from https://github.com/jboss-openshift/openshift-examples will be created
+    * A source build using source code from \https://github.com/iankko/openshift-examples.git#KEYCLOAK-8500 will be created
       * The resulting image will be pushed to image stream "{project_templates_version}-db-migration-image:latest"
       * Use 'start-build' to trigger a new build
 
@@ -399,11 +389,11 @@ $ oc new-build redhat-{project_templates_version}-openshift:{project_latest_imag
 [subs="verbatim,macros,attributes"]
 ----
 $ oc logs -f bc/{project_templates_version}-db-migration-image --follow
-Cloning "https://github.com/iankko/openshift-examples.git" ...
+Cloning "https://github.com/iankko/openshift-examples.git#KEYCLOAK-8500" ...
 ...
 Push successful
 ----
-. Update the template of the database migration job (`{project_previous_templates_version}-to-{project_templates_version}-db-migrate-job.yaml`) with reference to the built `{project_templates_version}-db-migration-image` image.
+. Update the template of the database migration job (`job-to-migrate-db-to-{project_templates_version}.yaml`) with reference to the built `{project_templates_version}-db-migration-image` image.
 .. Get the docker pull reference for the image.
 +
 [subs="verbatim,macros,attributes"]
@@ -414,23 +404,23 @@ $ PULL_REF=$(oc get istag -n $(oc project -q) --no-headers | grep {project_templ
 +
 [subs="verbatim,macros,attributes"]
 ----
-$ sed -i "s#pass:[&lt;&lt;SSO_IMAGE_VALUE&gt;&gt;]#$PULL_REF#g" {project_previous_templates_version}-to-{project_templates_version}-db-migrate-job.yaml
+$ sed -i "s#pass:[&lt;&lt;SSO_IMAGE_VALUE&gt;&gt;]#$PULL_REF#g" job-to-migrate-db-to-{project_templates_version}.yaml
 ----
 .. Verify that the field is updated.
 . Instantiate database migration job from the job template.
 +
 [subs="verbatim,macros,attributes"]
 ----
-$ oc create -f {project_previous_templates_version}-to-{project_templates_version}-db-migrate-job.yaml
-job "{project_previous_templates_version}-to-{project_templates_version}-db-migrate-job" created
+$ oc create -f job-to-migrate-db-to-{project_templates_version}.yaml
+job "job-to-migrate-db-to-{project_templates_version}" created
 ----
 +
 [IMPORTANT]
 ====
-The database migration process handles the data schema update and performs manipulation of the data, therefore, stop all {project_name} {project_version} instances before dynamic generation of the SQL migration file.
+The database migration process handles the data schema update and performs manipulation of the data, therefore, stop all pods running the previous version of the {project_openshift_product_name} image before dynamic generation of the SQL migration file.
 ====
 +
-. Identify existing deployment config for {project_name} {project_version} containers.
+. Identify the deployment config used to deploy the containers, running previous version of the {project_openshift_product_name} image.
 +
 [subs="verbatim,macros,attributes"]
 ----
@@ -438,7 +428,7 @@ $ oc get dc -o name --selector=application=sso
 deploymentconfig/sso
 deploymentconfig/sso-postgresql
 ----
-. Stop all {project_name} {project_version} containers in the current namespace.
+. Stop all pods running the previous version of the {project_openshift_product_name} image in the current namespace.
 +
 [subs="verbatim,macros,attributes"]
 ----
@@ -451,13 +441,13 @@ deploymentconfig "sso" scaled
 ----
 $ oc get jobs
 NAME                            DESIRED   SUCCESSFUL   AGE
-{project_previous_templates_version}-to-{project_templates_version}-db-migrate-job   1         0            3m
+job-to-migrate-db-to-{project_templates_version}   1         0            3m
 ----
 +
 [subs="verbatim,macros,attributes"]
 ----
-$ oc scale --replicas=1 job/{project_previous_templates_version}-to-{project_templates_version}-db-migrate-job
-job "{project_previous_templates_version}-to-{project_templates_version}-db-migrate-job" scaled
+$ oc scale --replicas=1 job/job-to-migrate-db-to-{project_templates_version}
+job "job-to-migrate-db-to-{project_templates_version}" scaled
 ----
 +
 [subs="verbatim,macros,attributes"]
@@ -465,7 +455,7 @@ job "{project_previous_templates_version}-to-{project_templates_version}-db-migr
 $ oc get pods
 NAME                                  READY     STATUS      RESTARTS   AGE
 sso-postgresql-1-n5p16                1/1       Running     1          19h
-{project_previous_templates_version}-to-{project_templates_version}-db-migrate-job-b87bb   1/1       Running     0          1m
+job-to-migrate-db-to-{project_templates_version}-b87bb   1/1       Running     0          1m
 {project_templates_version}-db-migration-image-1-build      0/1       Completed   0          27m
 ----
 +
@@ -478,16 +468,16 @@ By default, the database migration job terminates automatically after `600 secon
 [subs="verbatim,macros,attributes"]
 ----
 $ mkdir -p ./db-update
-$ oc rsync {project_previous_templates_version}-to-{project_templates_version}-db-migrate-job-b87bb:/opt/eap/keycloak-database-update.sql ./db-update
+$ oc rsync job-to-migrate-db-to-{project_templates_version}-b87bb:/opt/eap/keycloak-database-update.sql ./db-update
 receiving incremental file list
 keycloak-database-update.sql
 
 sent 30 bytes  received 29,726 bytes  59,512.00 bytes/sec
 total size is 29,621  speedup is 1.00
 ----
-. Inspect the `keycloak-database-update.sql` file for changes to be performed within manual {project_name} {project_version} database update.
+. Inspect the `keycloak-database-update.sql` file for changes to be performed within manual database update to {project_name} {project_version} version.
 . Apply the database update manually.
-* Run the following commands for *_{project_previous_templates_version}-postgresql_* and *_{project_previous_templates_version}-postgresql-persistent_* templates (PostgreSQL database):
+* Run the following commands if running some previous version of the {project_openshift_product_name} image, backed by the PostgreSQL database deployed in ephemeral or persistent mode, running on a separate pod:
 ... Copy the generated SQL migration file to the PostgreSQL pod.
 +
 [subs="verbatim,macros,attributes"]
@@ -524,15 +514,15 @@ INSERT 0 1
 Replace `<PREFIX>_USERNAME` and `<PREFIX>_DATABASE` with the actual database credentials retrieved xref:get-db-credentials[in previous section]. Also use value of `<PREFIX>_PASSWORD` as the password for the database, when prompted.
 ====
 ... Close the shell session to the PostgreSQL pod. Continue with xref:image-change-trigger-update-step[updating image change trigger step].
-* Run the following commands for *_{project_previous_templates_version}-mysql_* and *_{project_previous_templates_version}-mysql-persistent_* templates (MySQL database):
-... Given pod situation similar to the following:
+* Run the following commands if running some previous version of the {project_openshift_product_name} image, backed by the MySQL database deployed in ephemeral or persistent mode, running on a separate pod:
+... Given the pod situation similar to the following:
 +
 [subs="verbatim,macros,attributes"]
 ----
 $ oc get pods
 NAME                                  READY     STATUS      RESTARTS   AGE
 sso-mysql-1-zvhk3                     1/1       Running     0          1h
-{project_previous_templates_version}-to-{project_templates_version}-db-migrate-job-m202t   1/1       Running     0          11m
+job-to-migrate-db-to-{project_templates_version}-m202t   1/1       Running     0          11m
 {project_templates_version}-db-migration-image-1-build      0/1       Completed   0          13m
 ----
 ... Copy the generated SQL migration file to the MySQL pod.
@@ -574,7 +564,7 @@ Replace `<PREFIX>_USERNAME` and `<PREFIX>_DATABASE` with the actual database cre
 
 [[image-change-trigger-update-step]]
 [start=12]
-. Update image change trigger in the existing deployment config of {project_name} {project_version} to reference the {project_name} {project_version} image.
+. Update the image change trigger in the existing deployment config to reference the {project_name} {project_version} image.
 +
 [subs="verbatim,macros,attributes"]
 ----
@@ -588,7 +578,7 @@ $ oc patch dc/sso --type=json -p '[{"op": "replace", "path": "/spec/triggers/0/i
 $ oc rollout latest dc/sso
 deploymentconfig "sso" rolled out
 ----
-. Deploy {project_name} {project_version} containers using the modified deployment config.
+. Deploy the {project_name} {project_version} containers using the modified deployment config.
 +
 [subs="verbatim,macros,attributes"]
 ----
