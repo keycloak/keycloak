@@ -53,7 +53,7 @@ Features marked for technology preview are not supported for use in production.
 
 == OpenShift Integration
 
-RH-SSO now has the ability to replace the internal OpenShift IdP. This provides a better and tighter integration when securing OpenShift with RH-SSO. More details and documentation to follow. For now demo setup is available at https://github.com/keycloak/openshift-integration. This feature is currently in technology preview.
+It is now possible to fully secure OpenShift 3.11 with {project_name}, including the ability to automatically expose Service Accounts as OAuth clients as clients to {project_name}. This feature is currently in technology preview.
 
 Features marked for technology preview are not supported for use in production.
 
@@ -115,6 +115,18 @@ We have also added support to override the theme for specific clients. If that i
 * Updated design for the welcome page
 
 * Updated design for the login page
+
+== Enhanced Remember Me
+Introduced the ability to specify different session idle and max timeouts for remember me sessions. This enables remember me sessions to live longer than regular sessions.
+
+== Pagination support for Groups
+Large numbers of groups have previously caused issues in the admin console. This is now resolved by the introduction of pagination of groups.
+
+== Improve startup time with large number of offline sessions
+In the past, starting the server could take a long time if there were many offline sessions. This startup time has now been significantly reduced.
+
+== Support for DB2 removed
+DB2 support has been deprecated for a while. With this release we have removed all support for DB2.
 
 == Minor Improvements
 
