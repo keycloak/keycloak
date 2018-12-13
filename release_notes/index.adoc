@@ -11,6 +11,9 @@ include::topics/templates/document-attributes-community.adoc[]
 == {project_name_full} 4.8.0.Final
 include::topics/4_8_0_final.adoc[leveloffset=2]
 
+== {project_name_full} 4.7.0.Final
+include::topics/4_7_0_final.adoc[leveloffset=2]
+
 == {project_name_full} 4.6.0.Final
 include::topics/4_6_0_final.adoc[leveloffset=2]
 
