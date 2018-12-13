@@ -13,9 +13,39 @@ endif::[]
 
 Extract the contents of this file into the root directory of your {appserver_name} distribution.
 
-ifeval::[{project_community}==true]
 Run the appropriate script for your platform:
 
+ifeval::[{project_product}==true]
+.EAP 6.3 and Linux/Unix
+[source,bash,subs=+attributes]
+----
+$ cd bin
+$ ./jboss-cli.sh --file=adapter-install-offline.cli
+----
+
+.EAP 6.3 and Windows
+[source,bash,subs=+attributes]
+----
+> cd bin
+> jboss-cli.bat --file=adapter-install-offline.cli
+----
+
+.EAP 7.2.5 and Linux/Unix
+[source,bash,subs=+attributes]
+----
+$ cd bin
+$ ./jboss-cli.sh --file=adapter-elytron-install-offline.cli
+----
+
+.EAP 7.2.5 and Windows
+[source,bash,subs=+attributes]
+----
+> cd bin
+> jboss-cli.bat --file=adapter-elytron-install-offline.cli
+----
+endif::[]
+
+ifeval::[{project_community}==true]
 .WildFly 10 and Linux/Unix
 [source,bash,subs=+attributes]
 ----
@@ -43,9 +73,10 @@ $ ./jboss-cli.sh --file=adapter-elytron-install-offline.cli
 > cd bin
 > jboss-cli.bat --file=adapter-elytron-install-offline.cli
 ----
+endif::[]
 
 NOTE: This script will make the necessary edits to the `.../standalone/configuration/standalone.xml` file of your app server distribution and may take some time to complete.
-endif::[]
+
 
 Start the application server.
 
