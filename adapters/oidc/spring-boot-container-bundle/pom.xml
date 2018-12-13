@@ -25,6 +25,11 @@
             <artifactId>keycloak-jetty93-adapter</artifactId>
             <scope>compile</scope>
         </dependency>
+         <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-jetty94-adapter</artifactId>
+            <scope>compile</scope>
+        </dependency>
     </dependencies>
     <build>
         <plugins>
