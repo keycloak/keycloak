@@ -48,7 +48,7 @@ public class SAMLAuthnStatementParser extends AbstractStaxSamlAssertionParser<Au
         AuthnStatementType res = new AuthnStatementType(authnInstant);
 
         res.setSessionIndex(StaxParserUtil.getAttributeValue(element, SAMLAssertionQNames.ATTR_SESSION_INDEX));
-        res.setSessionNotOnOrAfter(StaxParserUtil.getXmlTimeAttributeValue(element, SAMLAssertionQNames.ATTR_NOT_ON_OR_AFTER));
+        res.setSessionNotOnOrAfter(StaxParserUtil.getXmlTimeAttributeValue(element, SAMLAssertionQNames.ATTR_SESSION_NOT_ON_OR_AFTER));
         return res;
     }
 
