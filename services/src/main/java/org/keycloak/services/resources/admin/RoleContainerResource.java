@@ -23,6 +23,7 @@ import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
+import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
@@ -30,6 +31,7 @@ import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.ModelToRepresentation;
+import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.ManagementPermissionReference;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -41,6 +43,7 @@ import org.keycloak.services.resources.admin.permissions.AdminPermissions;
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
@@ -54,6 +57,7 @@ import javax.ws.rs.core.UriInfo;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * @resource Roles
@@ -402,4 +406,35 @@ public class RoleContainerResource extends RoleResource {
         return results; 
         
     }    
+    
+    /**
+     * Return List of Groups that have the specified role name 
+     *
+     *
+     * @param roleName
+     * @param firstResult
+     * @param maxResults
+     * @param fullRepresentation if true, return a full representation of the GroupRepresentation objects
+     * @return
+     */
+    @Path("{role-name}/groups")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @NoCache
+    public  List<GroupRepresentation> getGroupsInRole(final @PathParam("role-name") String roleName, 
+                                                    @QueryParam("first") Integer firstResult,
+                                                    @QueryParam("max") Integer maxResults,
+                                                    @QueryParam("full") @DefaultValue("false") boolean fullRepresentation) {
+        
+        auth.roles().requireView(roleContainer);
+        firstResult = firstResult != null ? firstResult : 0;
+        maxResults = maxResults != null ? maxResults : Constants.DEFAULT_MAX_RESULTS;
+        
+        RoleModel role = roleContainer.getRole(roleName);
+        List<GroupModel> groupsModel = session.realms().getGroupsByRole(realm, role, firstResult, maxResults);
+
+        return groupsModel.stream()
+        		.map(g -> ModelToRepresentation.toRepresentation(g, fullRepresentation))
+        		.collect(Collectors.toList());
+    }   
 }
