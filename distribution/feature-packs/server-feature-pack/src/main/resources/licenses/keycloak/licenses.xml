@@ -2,6 +2,28 @@
 <licenseSummary>
   <dependencies>
     <dependency>
+      <groupId>com.openshift</groupId>
+      <artifactId>openshift-restclient-java</artifactId>
+      <version>6.1.3.Final</version>
+      <licenses>
+        <license>
+          <name>Eclipse Public License 1.0</name>
+          <url>https://raw.githubusercontent.com/openshift/openshift-restclient-java/openshift-restclient-java-6.1.3.Final/license</url>
+        </license>
+      </licenses>
+    </dependency>
+    <dependency>
+      <groupId>com.googlecode.owasp-java-html-sanitizer</groupId>
+      <artifactId>owasp-java-html-sanitizer</artifactId>
+      <version>20180219.1</version>
+      <licenses>
+        <license>
+          <name>Apache Software License 2.0</name>
+          <url>https://raw.githubusercontent.com/OWASP/java-html-sanitizer/release-20180219.1/COPYING</url>
+        </license>
+      </licenses>
+    </dependency>
+    <dependency>
       <groupId>com.google.zxing</groupId>
       <artifactId>core</artifactId>
       <version>3.2.1</version>
@@ -52,7 +74,7 @@
       <licenses>
         <license>
           <name>Apache Software License 2.0</name>
-          <url>https://git-wip-us.apache.org/repos/asf?p=incubator-freemarker.git;a=blob_plain;f=LICENSE.txt;hb=v2.3.23</url>
+          <url>https://git-wip-us.apache.org/repos/asf?p=freemarker.git;a=blob_plain;f=LICENSE;hb=v2.3.26</url>
         </license>
       </licenses>
     </dependency>
@@ -184,7 +206,7 @@
       <licenses>
         <license>
           <name>Apache Software License 2.0</name>
-          <url>https://git-wip-us.apache.org/repos/asf?p=maven.git;a=blob_plain;f=LICENSE;hb=maven-3.2.5</url>
+          <url>https://gitbox.apache.org/repos/asf?p=maven.git;a=blob_plain;f=LICENSE;hb=maven-3.3.9</url>
         </license>
       </licenses>
     </dependency>
@@ -195,7 +217,7 @@
       <licenses>
         <license>
           <name>Apache Software License 2.0</name>
-          <url>https://git-wip-us.apache.org/repos/asf?p=maven.git;a=blob_plain;f=LICENSE;hb=maven-3.2.5</url>
+          <url>https://gitbox.apache.org/repos/asf?p=maven.git;a=blob_plain;f=LICENSE;hb=maven-3.3.9</url>
         </license>
       </licenses>
     </dependency>
@@ -206,7 +228,7 @@
       <licenses>
         <license>
           <name>Apache Software License 2.0</name>
-          <url>https://git-wip-us.apache.org/repos/asf?p=maven.git;a=blob_plain;f=LICENSE;hb=maven-3.2.5</url>
+          <url>https://gitbox.apache.org/repos/asf?p=maven.git;a=blob_plain;f=LICENSE;hb=maven-3.3.9</url>
         </license>
       </licenses>
     </dependency>
@@ -217,7 +239,7 @@
       <licenses>
         <license>
           <name>Apache Software License 2.0</name>
-          <url>https://git-wip-us.apache.org/repos/asf?p=maven.git;a=blob_plain;f=LICENSE;hb=maven-3.2.5</url>
+          <url>https://gitbox.apache.org/repos/asf?p=maven.git;a=blob_plain;f=LICENSE;hb=maven-3.3.9</url>
         </license>
       </licenses>
     </dependency>
@@ -228,7 +250,7 @@
       <licenses>
         <license>
           <name>Apache Software License 2.0</name>
-          <url>https://git-wip-us.apache.org/repos/asf?p=maven.git;a=blob_plain;f=LICENSE;hb=maven-3.2.5</url>
+          <url>https://gitbox.apache.org/repos/asf?p=maven.git;a=blob_plain;f=LICENSE;hb=maven-3.3.9</url>
         </license>
       </licenses>
     </dependency>
@@ -239,7 +261,7 @@
       <licenses>
         <license>
           <name>Apache Software License 2.0</name>
-          <url>https://git-wip-us.apache.org/repos/asf?p=maven.git;a=blob_plain;f=LICENSE;hb=maven-3.2.5</url>
+          <url>https://gitbox.apache.org/repos/asf?p=maven.git;a=blob_plain;f=LICENSE;hb=maven-3.3.9</url>
         </license>
       </licenses>
     </dependency>
@@ -250,7 +272,7 @@
       <licenses>
         <license>
           <name>Apache Software License 2.0</name>
-          <url>https://git-wip-us.apache.org/repos/asf?p=maven.git;a=blob_plain;f=LICENSE;hb=maven-3.2.5</url>
+          <url>https://gitbox.apache.org/repos/asf?p=maven.git;a=blob_plain;f=LICENSE;hb=maven-3.3.9</url>
         </license>
       </licenses>
     </dependency>
@@ -261,7 +283,7 @@
       <licenses>
         <license>
           <name>Apache Software License 2.0</name>
-          <url>https://git-wip-us.apache.org/repos/asf?p=maven.git;a=blob_plain;f=LICENSE;hb=maven-3.2.5</url>
+          <url>https://gitbox.apache.org/repos/asf?p=maven.git;a=blob_plain;f=LICENSE;hb=maven-3.3.9</url>
         </license>
       </licenses>
     </dependency>
@@ -272,7 +294,7 @@
       <licenses>
         <license>
           <name>Apache Software License 2.0</name>
-          <url>https://git-wip-us.apache.org/repos/asf?p=maven.git;a=blob_plain;f=LICENSE;hb=maven-3.2.5</url>
+          <url>https://gitbox.apache.org/repos/asf?p=maven.git;a=blob_plain;f=LICENSE;hb=maven-3.3.9</url>
         </license>
       </licenses>
     </dependency>
