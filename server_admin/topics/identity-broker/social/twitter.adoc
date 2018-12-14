@@ -11,7 +11,7 @@ You can't click save yet, as you'll need to obtain a `Client ID` and `Client Sec
 page is the `Redirect URI`.  You'll have to provide that to Twitter when you register {project_name} as a client there, so
 copy this URI to your clipboard.
 
-To enable login with Twtter you first have to create an application in the https://apps.twitter.com[Twitter Application Management].
+To enable login with Twtter you first have to create an application in the https://developer.twitter.com/apps/[Twitter Application Management].
 
 .Register Application
 image:images/twitter-app-register.png[]
