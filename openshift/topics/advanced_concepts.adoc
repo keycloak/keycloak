@@ -443,10 +443,10 @@ After the {project_name} web server pod has started, it can be accessed at its c
 
 Use the xref:../advanced_concepts/advanced_concepts.adoc#advanced-concepts-sso-administrator-setup[administrator user credentials] to log in into the `master` realm’s administration console.
 
-[[advanced-concepts-SSO-Clients]]
+[[SSO-Clients]]
 === {project_name} Clients
 
-Clients are {project_name} entities that request user authentication. A client can be an application requesting {project_name} to provide user authentication, or it can make requests for access tokens to start services on behalf of an authenticated user. See the link:https://access.redhat.com/documentation/en-us/red_hat_single_sign-on/7.2/html/server_administration_guide/clients[Managing Clients chapter of the Red Hat Single Sign-On documentation] for more information.
+Clients are {project_name} entities that request user authentication. A client can be an application requesting {project_name} to provide user authentication, or it can be making requests for access tokens to start services on behalf of an authenticated user. See the link:https://access.redhat.com/documentation/en-us/red_hat_single_sign-on/7.2/html/server_administration_guide/clients[Managing Clients chapter of the {project_name} documentation] for more information.
 
 {project_name} provides link:https://access.redhat.com/documentation/en-us/red_hat_single_sign-on/7.2/html/server_administration_guide/clients#oidc_clients[OpenID-Connect] and link:https://access.redhat.com/documentation/en-us/red_hat_single_sign-on/7.2/html/server_administration_guide/clients#saml_clients[SAML] client protocols. +
 OpenID-Connect is the preferred protocol and utilizes three different access types:
@@ -471,7 +471,7 @@ The following is an example snippet for the application *web.xml* to configure a
 ...
 ----
 
-[[advanced-concepts-Auto-Man-Client-Reg]]
+[[Auto-Man-Client-Reg]]
 ==== Automatic and Manual {project_name} Client Registration Methods
 A client application can be automatically registered to an {project_name} realm by using credentials passed in variables specific to the *_eap64-sso-s2i_*, *_eap71-sso-s2i_*, and *_datavirt63-secure-s2i_* templates.
 

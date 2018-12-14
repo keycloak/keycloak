@@ -848,7 +848,7 @@ This follows on from xref:Example-Deploying-SSO[Example Workflow: Preparing and 
 
 [NOTE]
 ====
-This example uses a OpenID-Connect client but an SAML client could also be used. See xref:SSO-Clients[{project_name} Clients] and xref:Auto-Man-Client-Reg[Automatic and Manual {project_name} Client Registration Methods] for more information on the differences between OpenID-Connect and SAML clients.
+This example uses a OpenID-Connect client but an SAML client could also be used. See xref:../advanced_concepts/advanced_concepts.adoc#SSO-Clients[{project_name} Clients] and xref:../advanced_concepts/advanced_concepts.adoc#Auto-Man-Client-Reg[Automatic and Manual {project_name} Client Registration Methods] for more information on the differences between OpenID-Connect and SAML clients.
 ====
 
 ==== Preparing {project_name} Authentication for OpenShift Deployment
@@ -1015,7 +1015,7 @@ This example prepares {project_name} realm, role, and user credentials for an EA
 
 [NOTE]
 ====
-This example uses a SAML client but an OpenID-Connect client could also be used. See xref:SSO-Clients[{project_name} Clients] and xref:Auto-Man-Client-Reg[Automatic and Manual {project_name} Client Registration Methods] for more information on the differences between SAML and OpenID-Connect clients.
+This example uses a SAML client but an OpenID-Connect client could also be used. See xref:../advanced_concepts/advanced_concepts.adoc#SSO-Clients[{project_name} Clients] and xref:../advanced_concepts/advanced_concepts.adoc#Auto-Man-Client-Reg[Automatic and Manual {project_name} Client Registration Methods] for more information on the differences between SAML and OpenID-Connect clients.
 ====
 
 ==== Preparing the {project_name} Credentials
