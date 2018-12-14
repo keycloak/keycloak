@@ -289,17 +289,6 @@ The {project_openshift_product_name} templates use TLS passthrough termination f
 
 For more information on OpenShift route types, see the link:https://docs.openshift.com/container-platform/3.7/architecture/networking/routes.html#route-types[Networking chapter] of the OpenShift Architecture Guide.
 
-==== Deployment Process
-
-Once deployed, the *_{project_templates_version}-https_* and *_{project_templates_version}-x509-https_* templates create a single pod that contains both the database and the {project_name} servers. The *_{project_templates_version}-mysql_*, *_{project_templates_version}-mysql-persistent_*, *_{project_templates_version}-x509-mysql-persistent_*, *_{project_templates_version}-postgresql_*, *_{project_templates_version}-postgresql-persistent_*, and *_{project_templates_version}-x509-postgresql-persistent_* templates create two pods, one for the database server and one for the {project_name} web server.
-
-After the {project_name} web server pod has started, it can be accessed at its custom configured hostnames, or at the default hostnames:
-
-* *\http://sso-_<project-name>_._<hostname>_/auth/admin*: for the {project_name} web server, and
-* *\https://secure-sso-_<project-name>_._<hostname>_/auth/admin*: for the encrypted {project_name} web server.
-
-Use the xref:../get_started/get_started.adoc#sso-administrator-setup[administrator user credentials] to log in into the `master` realm’s administration console.
-
 [[SSO-Clients]]
 ==== {project_name} Clients
 
