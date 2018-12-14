@@ -26,3 +26,5 @@ https://keycloak.example.com/auth/realms/REALM_NAME/protocol/openid-connect/logo
 http://127.0.0.1:3000/oauth/callback
 https://access.redhat.com/documentation/en-us/red_hat_jboss_enterprise_application_platform/*
 https://api.linkedin.com/v2/me
+https://raw.githubusercontent.com/jboss-container-images/redhat-sso-7-openshift-image/sso-cd-dev/templates/${resource}
+https://raw.githubusercontent.com/jboss-container-images/redhat-sso-7-openshift-image/sso73-dev/templates/${resource}

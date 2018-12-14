@@ -30,23 +30,24 @@ build configuration of the application as follows:
 . Identify the name of the build configuration to apply `MAVEN_MIRROR_URL`
   variable against:
 +
-[subs="verbatim,macros,attributes"]
+[source,bash,subs="attributes+,macros+"]
 ----
 $ oc get bc -o name
 buildconfig/sso
 ----
 . Update build configuration of `sso` with a `MAVEN_MIRROR_URL` environment variable
 +
-[subs="verbatim,macros,attributes"]
+[source,bash,subs="attributes+,macros+"]
 ----
-$ oc env bc/sso MAVEN_MIRROR_URL="http://10.0.0.1:8080/repository/internal/"
+$ oc set env bc/sso \
+  -e MAVEN_MIRROR_URL="http://10.0.0.1:8080/repository/internal/"
 buildconfig "sso" updated
 ----
 . Verify the setting
 +
-[subs="verbatim,macros,attributes"]
+[source,bash,subs="attributes+,macros+"]
 ----
-$ oc env bc/sso --list
+$ oc set env bc/sso --list
 # buildconfigs sso
 MAVEN_MIRROR_URL=http://10.0.0.1:8080/repository/internal/
 ----
@@ -83,23 +84,24 @@ build configuration of the application as follows:
 . Identify the name of the build configuration to apply `MAVEN_MIRROR_URL`
   variable against:
 +
-[subs="verbatim,macros,attributes"]
+[source,bash,subs="attributes+,macros+"]
 ----
 $ oc get bc -o name
 buildconfig/sso
 ----
 . Update build configuration of `sso` with a `MAVEN_MIRROR_URL` environment variable
 +
-[subs="verbatim,macros,attributes"]
+[source,bash,subs="attributes+,macros+"]
 ----
-$ oc env bc/sso MAVEN_MIRROR_URL="http://10.0.0.1:8080/repository/internal/"
+$ oc set env bc/sso \
+  -e MAVEN_MIRROR_URL="http://10.0.0.1:8080/repository/internal/"
 buildconfig "sso" updated
 ----
 . Verify the setting
 +
-[subs="verbatim,macros,attributes"]
+[source,bash,subs="attributes+,macros+"]
 ----
-$ oc env bc/sso --list
+$ oc set env bc/sso --list
 # buildconfigs sso
 MAVEN_MIRROR_URL=http://10.0.0.1:8080/repository/internal/
 ----
@@ -109,10 +111,6 @@ NOTE: During application build, you will notice that Maven dependencies are
 pulled from the repository manager, instead of the default public repositories.
 Also, after the build is finished, you will see that the mirror is filled with
 all the dependencies that were retrieved and used during the build.
-
-
-
-
 
 [[env_vars]]
 === Environment Variables

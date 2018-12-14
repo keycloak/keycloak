@@ -74,7 +74,7 @@ Use the following steps to automatically migrate the database schema:
 
 . Identify the deployment config used to deploy the containers, running previous version of the {project_openshift_product_name} image.
 +
-[subs="verbatim,macros,attributes"]
+[source,bash,subs="attributes+,macros+"]
 ----
 $ oc get dc -o name --selector=application=sso
 deploymentconfig/sso
@@ -82,35 +82,35 @@ deploymentconfig/sso-postgresql
 ----
 . Stop all pods running the previous version of the {project_openshift_product_name} image in the current namespace.
 +
-[subs="verbatim,macros,attributes"]
+[source,bash,subs="attributes+,macros+"]
 ----
 $ oc scale --replicas=0 dc/sso
 deploymentconfig "sso" scaled
 ----
 . Update the image change trigger in the existing deployment config to reference the {project_name} {project_version} image.
 +
-[subs="verbatim,macros,attributes"]
+[source,bash,subs="attributes+,macros+"]
 ----
 $ oc patch dc/sso --type=json -p '[{"op": "replace", "path": "/spec/triggers/0/imageChangeParams/from/name", "value": "redhat-{project_templates_version}-openshift:{project_latest_image_tag}"}]'
 "sso" patched
 ----
 . Start rollout of the new {project_name} {project_version} images based on the latest image defined in the image change triggers.
 +
-[subs="verbatim,macros,attributes"]
+[source,bash,subs="attributes+,macros+"]
 ----
 $ oc rollout latest dc/sso
 deploymentconfig "sso" rolled out
 ----
 . Deploy {project_name} {project_version} containers using the modified deployment config.
 +
-[subs="verbatim,macros,attributes"]
+[source,bash,subs="attributes+,macros+"]
 ----
 $ oc scale --replicas=1 dc/sso
 deploymentconfig "sso" scaled
 ----
 . (Optional) Verify the database has been successfully updated.
 +
-[subs="verbatim,macros,attributes"]
+[source,bash,subs="attributes+,macros+"]
 ----
 $ oc get pods --selector=application=sso
 NAME                     READY     STATUS    RESTARTS   AGE
@@ -118,7 +118,7 @@ sso-4-vg21r              1/1       Running   0          1h
 sso-postgresql-1-t871r   1/1       Running   0          2h
 ----
 +
-[subs="verbatim,macros,attributes"]
+[source,bash,subs="attributes+,macros+"]
 ----
 $ oc logs sso-4-vg21r | grep 'Updating'
 11:23:45,160 INFO  [org.keycloak.connections.jpa.updater.liquibase.LiquibaseJpaUpdaterProvider] (ServerService Thread Pool -- 58) Updating database. Using changelog META-INF/jpa-changelog-master.xml
@@ -193,7 +193,7 @@ spec:
       restartPolicy: Never
 ----
 +
-[subs="verbatim,macros,attributes"]
+[source,bash,subs="attributes+,macros+"]
 ----
 $ cp job-to-migrate-db-to-{project_templates_version}.yaml.orig \
      job-to-migrate-db-to-{project_templates_version}.yaml
@@ -342,7 +342,7 @@ done
 [[get-db-credentials]]
 Run the script.
 +
-[subs="verbatim,macros,attributes"]
+[source,bash,subs="attributes+,macros+"]
 ----
 $ chmod +x ./mirror_sso_dc_db_vars.sh
 $ ./mirror_sso_dc_db_vars.sh
@@ -355,13 +355,13 @@ Successfully updated TX_DATABASE_PREFIX_MAPPING to:         sso-postgresql=DB
 ----
 . Build the {project_name} {project_version} database migration image using the link:https://github.com/iankko/openshift-examples/tree/KEYCLOAK-8500/sso-manual-db-migration[pre-configured source] and wait for the build to finish.
 +
-[subs="verbatim,macros,attributes"]
+[source,bash,subs="attributes+,macros+"]
 ----
 $ oc get is -n openshift | grep {project_templates_version} | cut -d ' ' -f1
 redhat-{project_templates_version}-openshift
 ----
 +
-[subs="verbatim,macros,attributes"]
+[source,bash,subs="attributes+,macros+"]
 ----
 $ oc new-build redhat-{project_templates_version}-openshift:{project_latest_image_tag}~https://github.com/iankko/openshift-examples.git#KEYCLOAK-8500 \
   --context-dir=sso-manual-db-migration \
@@ -386,7 +386,7 @@ $ oc new-build redhat-{project_templates_version}-openshift:{project_latest_imag
     Run 'oc logs -f bc/{project_templates_version}-db-migration-image' to stream the build progress.
 ----
 +
-[subs="verbatim,macros,attributes"]
+[source,bash,subs="attributes+,macros+"]
 ----
 $ oc logs -f bc/{project_templates_version}-db-migration-image --follow
 Cloning "https://github.com/iankko/openshift-examples.git#KEYCLOAK-8500" ...
@@ -396,20 +396,20 @@ Push successful
 . Update the template of the database migration job (`job-to-migrate-db-to-{project_templates_version}.yaml`) with reference to the built `{project_templates_version}-db-migration-image` image.
 .. Get the docker pull reference for the image.
 +
-[subs="verbatim,macros,attributes"]
+[source,bash,subs="attributes+,macros+"]
 ----
 $ PULL_REF=$(oc get istag -n $(oc project -q) --no-headers | grep {project_templates_version}-db-migration-image | tr -s ' ' | cut -d ' ' -f 2)
 ----
 .. Replace the pass:[&lt;&lt;SSO_IMAGE_VALUE&gt;&gt;] field in the job template with the pull specification.
 +
-[subs="verbatim,macros,attributes"]
+[source,bash,subs="attributes+,macros+"]
 ----
 $ sed -i "s#pass:[&lt;&lt;SSO_IMAGE_VALUE&gt;&gt;]#$PULL_REF#g" job-to-migrate-db-to-{project_templates_version}.yaml
 ----
 .. Verify that the field is updated.
 . Instantiate database migration job from the job template.
 +
-[subs="verbatim,macros,attributes"]
+[source,bash,subs="attributes+,macros+"]
 ----
 $ oc create -f job-to-migrate-db-to-{project_templates_version}.yaml
 job "job-to-migrate-db-to-{project_templates_version}" created
@@ -422,7 +422,7 @@ The database migration process handles the data schema update and performs manip
 +
 . Identify the deployment config used to deploy the containers, running previous version of the {project_openshift_product_name} image.
 +
-[subs="verbatim,macros,attributes"]
+[source,bash,subs="attributes+,macros+"]
 ----
 $ oc get dc -o name --selector=application=sso
 deploymentconfig/sso
@@ -430,27 +430,27 @@ deploymentconfig/sso-postgresql
 ----
 . Stop all pods running the previous version of the {project_openshift_product_name} image in the current namespace.
 +
-[subs="verbatim,macros,attributes"]
+[source,bash,subs="attributes+,macros+"]
 ----
 $ oc scale --replicas=0 dc/sso
 deploymentconfig "sso" scaled
 ----
 . Run the database migration job and wait for the pod to be running correctly.
 +
-[subs="verbatim,macros,attributes"]
+[source,bash,subs="attributes+,macros+"]
 ----
 $ oc get jobs
 NAME                            DESIRED   SUCCESSFUL   AGE
 job-to-migrate-db-to-{project_templates_version}   1         0            3m
 ----
 +
-[subs="verbatim,macros,attributes"]
+[source,bash,subs="attributes+,macros+"]
 ----
 $ oc scale --replicas=1 job/job-to-migrate-db-to-{project_templates_version}
 job "job-to-migrate-db-to-{project_templates_version}" scaled
 ----
 +
-[subs="verbatim,macros,attributes"]
+[source,bash,subs="attributes+,macros+"]
 ----
 $ oc get pods
 NAME                                  READY     STATUS      RESTARTS   AGE
@@ -465,7 +465,7 @@ By default, the database migration job terminates automatically after `600 secon
 ====
 . Get the dynamically generated SQL database migration file from the pod.
 +
-[subs="verbatim,macros,attributes"]
+[source,bash,subs="attributes+,macros+"]
 ----
 $ mkdir -p ./db-update
 $ oc rsync job-to-migrate-db-to-{project_templates_version}-b87bb:/opt/eap/keycloak-database-update.sql ./db-update
@@ -480,7 +480,7 @@ total size is 29,621  speedup is 1.00
 * Run the following commands if running some previous version of the {project_openshift_product_name} image, backed by the PostgreSQL database deployed in ephemeral or persistent mode, running on a separate pod:
 ... Copy the generated SQL migration file to the PostgreSQL pod.
 +
-[subs="verbatim,macros,attributes"]
+[source,bash,subs="attributes+,macros+"]
 ----
 $ oc rsync --no-perms=true ./db-update/ sso-postgresql-1-n5p16:/tmp
 sending incremental file list
@@ -490,14 +490,14 @@ total size is 26,333  speedup is 299.24
 ----
 ... Start a shell session to the PostgreSQL pod.
 +
-[subs="verbatim,macros,attributes"]
+[source,bash,subs="attributes+,macros+"]
 ----
 $ oc rsh sso-postgresql-1-n5p16
 sh-4.2$
 ----
 ... Use the `psql` tool to apply database update manually.
 +
-[subs="verbatim,macros,attributes"]
+[source,bash,subs="attributes+,macros+"]
 ----
 sh-4.2$ alias psql="/opt/rh/rh-postgresql95/root/bin/psql"
 sh-4.2$ psql --version
@@ -517,7 +517,7 @@ Replace `<PREFIX>_USERNAME` and `<PREFIX>_DATABASE` with the actual database cre
 * Run the following commands if running some previous version of the {project_openshift_product_name} image, backed by the MySQL database deployed in ephemeral or persistent mode, running on a separate pod:
 ... Given the pod situation similar to the following:
 +
-[subs="verbatim,macros,attributes"]
+[source,bash,subs="attributes+,macros+"]
 ----
 $ oc get pods
 NAME                                  READY     STATUS      RESTARTS   AGE
@@ -527,7 +527,7 @@ job-to-migrate-db-to-{project_templates_version}-m202t   1/1       Running     0
 ----
 ... Copy the generated SQL migration file to the MySQL pod.
 +
-[subs="verbatim,macros,attributes"]
+[source,bash,subs="attributes+,macros+"]
 ----
 $ oc rsync --no-perms=true ./db-update/ sso-mysql-1-zvhk3:/tmp
 sending incremental file list
@@ -538,14 +538,14 @@ total size is 24,594  speedup is 0.99
 ----
 ... Start a shell session to the MySQL pod.
 +
-[subs="verbatim,macros,attributes"]
+[source,bash,subs="attributes+,macros+"]
 ----
 $ oc rsh sso-mysql-1-zvhk3
 sh-4.2$
 ----
 ... Use the `mysql` tool to apply database update manually.
 +
-[subs="verbatim,macros,attributes"]
+[source,bash,subs="attributes+,macros+"]
 ----
 sh-4.2$ alias mysql="/opt/rh/rh-mysql57/root/bin/mysql"
 sh-4.2$ mysql --version
@@ -566,21 +566,21 @@ Replace `<PREFIX>_USERNAME` and `<PREFIX>_DATABASE` with the actual database cre
 [start=12]
 . Update the image change trigger in the existing deployment config to reference the {project_name} {project_version} image.
 +
-[subs="verbatim,macros,attributes"]
+[source,bash,subs="attributes+,macros+"]
 ----
 $ oc patch dc/sso --type=json -p '[{"op": "replace", "path": "/spec/triggers/0/imageChangeParams/from/name", "value": "redhat-{project_templates_version}-openshift:{project_latest_image_tag}"}]'
 "sso" patched
 ----
 . Start rollout of the new {project_name} {project_version} images based on the latest image defined in the image change triggers.
 +
-[subs="verbatim,macros,attributes"]
+[source,bash,subs="attributes+,macros+"]
 ----
 $ oc rollout latest dc/sso
 deploymentconfig "sso" rolled out
 ----
 . Deploy the {project_name} {project_version} containers using the modified deployment config.
 +
-[subs="verbatim,macros,attributes"]
+[source,bash,subs="attributes+,macros+"]
 ----
 $ oc scale --replicas=1 dc/sso
 deploymentconfig "sso" scaled
@@ -630,7 +630,7 @@ Upon their creation xref:sso-export-the-database[the database can be exported.]
 
 . Get the {project_name} deployment config and scale it down to zero.
 +
-[subs="verbatim,macros,attributes"]
+[source,bash,subs="attributes+,macros+"]
 ----
 $ oc get dc -o name
 deploymentconfig/sso
@@ -641,20 +641,24 @@ deploymentconfig "sso" scaled
 ----
 . Instruct the {project_name} {project_version} server deployed on {project_openshift_product_name} image to perform database export at {project_name} server boot time.
 +
-[subs="verbatim,macros,attributes"]
+[source,bash,subs="attributes+,macros+"]
 ----
-oc env dc/sso -e "JAVA_OPTS_APPEND=-Dkeycloak.migration.action=export -Dkeycloak.migration.provider=singleFile -Dkeycloak.migration.file=/tmp/demorealm-export.json"
+$ oc set env dc/sso \
+  -e "JAVA_OPTS_APPEND= \
+    -Dkeycloak.migration.action=export \
+    -Dkeycloak.migration.provider=singleFile \
+    -Dkeycloak.migration.file=/tmp/demorealm-export.json"
 ----
 . Scale the {project_name} deployment config back up. This will start the {project_name} server and export its database.
 +
-[subs="verbatim,macros,attributes"]
+[source,bash,subs="attributes+,macros+"]
 ----
 $ oc scale --replicas=1 dc sso
 deploymentconfig "sso" scaled
 ----
 . (Optional) Verify that the export was successful.
 +
-[subs="verbatim,macros,attributes"]
+[source,bash,subs="attributes+,macros+"]
 ----
 $ oc get pods
 NAME                READY     STATUS    RESTARTS   AGE
@@ -670,7 +674,7 @@ $ oc logs sso-4-ejr0k | grep 'Export'
 
 . Retrieve the JSON file of the {project_name} database from the pod.
 +
-[subs="verbatim,macros,attributes"]
+[source,bash,subs="attributes+,macros+"]
 ----
 $ oc get pods
 NAME                READY     STATUS    RESTARTS   AGE
@@ -768,7 +772,7 @@ Log in to the OpenShift master CLI. You must have the required permissions to ed
 
 . Edit the */etc/origin/master/master-config.yaml* file and find the *identityProviders*. The OpenShift master, which was deployed using the OpenShift Primer, is configured with HTPassword and shows the following:
 +
-[subs="verbatim,macros,attributes"]
+[source,bash,subs="attributes+,macros+"]
 ----
 identityProviders:
 - challenge: true
@@ -782,7 +786,7 @@ identityProviders:
 +
 Add {project_name} as a secondary identity provider with content similar to the following snippet:
 +
-[subs="verbatim,macros,attributes"]
+[source,bash,subs="attributes+,macros+"]
 ----
 - name: rh_sso
   challenge: false
@@ -811,7 +815,7 @@ Add {project_name} as a secondary identity provider with content similar to the 
 .. The {project_name} *Secret* hash for the *clientSecret* can be found in the {project_name} web console: *Clients* -> *_openshift-demo_* -> *Credentials*
 .. The endpoints for the *urls* can be found by making a request with the {project_name} application. For example:
 +
-[subs="verbatim,macros,attributes"]
+[source,bash,subs="attributes+,macros+"]
 ----
 <pass:quotes[_curl -k https://secure-sso-sso-app-demo.openshift32.example.com/auth/realms/OpenShift/.well-known/openid-configuration | python -m json.tool_]>
 ----
@@ -821,7 +825,7 @@ The response includes the *authorization_endpoint*, *token_endpoint*, and *useri
 .. This example workflow uses a self-generated CA to provide an end-to-end workflow for demonstration purposes. For this reason, the *ca* is provided as <pass:quotes[_ca: xpaas.crt_]>. This CA certificate must also be copied into the */etc/origin/master* folder. This is not necessary if using a certificate purchased from a verified Certificate Authority.
 . Save the configuration and restart the OpenShift master:
 +
-[subs="verbatim,macros,attributes"]
+[source,bash,subs="attributes+,macros+"]
 ----
 $ systemctl restart atomic-openshift-master
 ----
@@ -833,9 +837,9 @@ Navigate to the OpenShift web console, which in this example is _https://openshi
 Select *rh-sso* and log in to OpenShift with the _testuser_ user created earlier in {project_name}. No projects are visible to _testuser_ until they are added in the OpenShift CLI. This is the only way to provide user privileges in OpenShift because it currently does not accept external role mapping.
 
 To provide _testuser_ `view` privileges for the _sso-app-demo_, use the OpenShift CLI:
-[subs="verbatim,macros,attributes"]
+[source,bash,subs="attributes+,macros+"]
 ----
-$ oadm policy add-role-to-user view testuser -n sso-app-demo
+$ oc adm policy add-role-to-user view testuser -n sso-app-demo
 ----
 
 [[Example-EAP-Auto]]
@@ -852,19 +856,19 @@ Log in to the OpenShift CLI with a user that holds the _cluster:admin_ role.
 
 . Create a new project:
 +
-[subs="verbatim,macros,attributes"]
+[source,bash,subs="attributes+,macros+"]
 ----
 $ oc new-project eap-app-demo
 ----
 //. Create a service account to be used for the {project_name} deployment:
 //+
-//[subs="verbatim,macros,attributes"]
+//[source,bash,subs="attributes+,macros+"]
 //----
 //$ oc create serviceaccount eap-service-account
 //----
 . Add the `view` role to the link:https://docs.openshift.com/container-platform/latest/dev_guide/service_accounts.html#default-service-accounts-and-roles[`default`] service account. This enables the service account to view all the resources in the `eap-app-demo` namespace, which is necessary for managing the cluster.
 +
-[subs="verbatim,macros,attributes"]
+[source,bash,subs="attributes+,macros+"]
 ----
 $ oc policy add-role-to-user view system:serviceaccount:$(oc project -q):default
 ----
@@ -872,26 +876,26 @@ $ oc policy add-role-to-user view system:serviceaccount:$(oc project -q):default
 This example uses `keytool`, a package included with the Java Development Kit, to generate self-signed certificates for these keystores. The following commands will prompt for passwords. +
 .. Generate a secure key for the SSL keystore:
 +
-[subs="verbatim,macros,attributes"]
+[source,bash,subs="attributes+,macros+"]
 ----
 $ keytool -genkeypair -alias https -storetype JKS -keystore eapkeystore.jks
 ----
 .. Generate a secure key for the JGroups keystore:
 +
-[subs="verbatim,macros,attributes"]
+[source,bash,subs="attributes+,macros+"]
 ----
 $ keytool -genseckey -alias jgroups -storetype JCEKS -keystore eapjgroups.jceks
 ----
 . Generate the EAP for OpenShift secrets with the SSL and JGroup keystore files:
 +
-[subs="verbatim,macros,attributes"]
+[source,bash,subs="attributes+,macros+"]
 ----
 $ oc secret new eap-ssl-secret eapkeystore.jks
 $ oc secret new eap-jgroup-secret eapjgroups.jceks
 ----
 . Add the EAP secret to the `default` service account:
 +
-[subs="verbatim,macros,attributes"]
+[source,bash,subs="attributes+,macros+"]
 ----
 $ oc secrets link default eap-ssl-secret eap-jgroup-secret
 ----
@@ -1100,19 +1104,19 @@ Log in to the OpenShift CLI with a user that holds the _cluster:admin_ role.
 
 . Create a new project:
 +
-[subs="verbatim,macros,attributes"]
+[source,bash,subs="attributes+,macros+"]
 ----
 $ oc new-project eap-app-demo
 ----
 //. Create a service account to be used for the SSO deployment:
 //+
-//[subs="verbatim,macros,attributes"]
+//[source,bash,subs="attributes+,macros+"]
 //----
 //$ oc create serviceaccount app-service-account
 //----
 . Add the `view` role to the link:https://docs.openshift.com/container-platform/latest/dev_guide/service_accounts.html#default-service-accounts-and-roles[`default`] service account. This enables the service account to view all the resources in the `eap-app-demo` namespace, which is necessary for managing the cluster.
 +
-[subs="verbatim,macros,attributes"]
+[source,bash,subs="attributes+,macros+"]
 ----
 $ oc policy add-role-to-user view system:serviceaccount:$(oc project -q):default
 ----
@@ -1121,26 +1125,26 @@ $ oc policy add-role-to-user view system:serviceaccount:$(oc project -q):default
 This example uses `keytool`, a package included with the Java Development Kit, to generate self-signed certificates for these keystores. The following commands will prompt for passwords. +
 .. Generate a secure key for the SSL keystore:
 +
-[subs="verbatim,macros,attributes"]
+[source,bash,subs="attributes+,macros+"]
 ----
 $ keytool -genkeypair -alias https -storetype JKS -keystore eapkeystore.jks
 ----
 .. Generate a secure key for the JGroups keystore:
 +
-[subs="verbatim,macros,attributes"]
+[source,bash,subs="attributes+,macros+"]
 ----
 $ keytool -genseckey -alias jgroups -storetype JCEKS -keystore eapjgroups.jceks
 ----
 . Generate the EAP for OpenShift secrets with the SSL and JGroup keystore files:
 +
-[subs="verbatim,macros,attributes"]
+[source,bash,subs="attributes+,macros+"]
 ----
 $ oc secret new eap-ssl-secret eapkeystore.jks
 $ oc secret new eap-jgroup-secret eapjgroups.jceks
 ----
 . Add the EAP application secret to the EAP service account created earlier:
 +
-[subs="verbatim,macros,attributes"]
+[source,bash,subs="attributes+,macros+"]
 ----
 $ oc secrets link default eap-ssl-secret eap-jgroup-secret
 ----
@@ -1155,7 +1159,7 @@ The *keycloak-saml-subsystem.xml*, exported from the {project_name} client in a 
 . Replace the *SPECIFY YOUR LOGOUT PAGE!* value of the *logout page* tag with the url to redirect users when they log out of the application. This example uses */index.jsp*.
 . Delete the *<PrivateKeyPem>* and *<CertificatePem>* tags and keys and replace it with keystore information:
 +
-[subs="verbatim,macros,attributes"]
+[source,bash,subs="attributes+,macros+"]
 ----
 ...
 <Keys>
@@ -1172,7 +1176,7 @@ The mount path of the *keystore-saml.jks* (in this example *_/etc/eap-secret-vol
 The aliases and passwords for the *PrivateKey* and the *Certificate* were configured when the SAML Keys were exported from the {project_name} client.
 . Delete the second *<CertificatePem>* tag and key and replace it with the the realm certificate information:
 +
-[subs="verbatim,macros,attributes"]
+[source,bash,subs="attributes+,macros+"]
 ----
 ...
 <Keys>
@@ -1193,7 +1197,7 @@ The certificate alias and password were configured when the SAML Keys were expor
 The client type must also be specified by the *<auth-method>* key in the application *web.xml*. This file is read by the image at deployment.
 
 Open the application *web.xml* file and ensure it includes the following:
-[subs="verbatim,macros,attributes"]
+[source,bash,subs="attributes+,macros+"]
 ----
 ...
 <login-config>

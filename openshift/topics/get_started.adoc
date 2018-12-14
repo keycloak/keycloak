@@ -24,13 +24,13 @@ To update to the latest {project_openshift_product_name} images, run the followi
 
 . On your master host(s), ensure that you are logged in as a cluster administrator or a user with project administrator access to the global `openshift` project.
 +
-[subs="verbatim,macros,attributes"]
+[source,bash,subs="attributes+,macros+"]
 ----
 $ oc login -u system:admin
 ----
 . Run the following commands to update the core set of {project_name} {project_version} resources for OpenShift in the `openshift` project:
 +
-[subs="verbatim,macros,attributes"]
+[source,bash,subs="attributes+,macros+"]
 ----
 $ for resource in {project_templates_version}-image-stream.json \
   {project_templates_version}-https.json \
@@ -43,12 +43,12 @@ $ for resource in {project_templates_version}-image-stream.json \
   {project_templates_version}-x509-postgresql-persistent.json
 do
   oc replace -n openshift --force -f \
-  https://raw.githubusercontent.com/jboss-container-images/redhat-sso-7-openshift-image/{project_templates_version}-dev/templates/${resource}
+  \https://raw.githubusercontent.com/jboss-container-images/redhat-sso-7-openshift-image/{project_templates_version}-dev/templates/${resource}
 done
 ----
 . Run the following command to install the {project_name} {project_version} OpenShift image streams in the `openshift` project:
 +
-[subs="verbatim,macros,attributes"]
+[source,bash,subs="attributes+,macros+"]
 ----
 $ oc -n openshift import-image redhat-{project_templates_version}-openshift:{project_latest_image_tag}
 ----
@@ -76,7 +76,7 @@ OpenShift uses objects called `Secrets` to hold sensitive information, such as p
 The {project_openshift_product_name} image requires one or more secrets that hold the two keystores described earlier. This provides the necessary authorization to applications in the project.
 
 Use the SSL and JGroups keystore files to create secrets for the project:
-[subs="verbatim,macros,attributes"]
+[source,bash,subs="attributes+,macros+"]
 ----
 $ oc secret new <pass:quotes[_sso-ssl-secret_]> <pass:quotes[_ssl.jks_]>
 $ oc secret new <pass:quotes[_sso-jgroups-secret_]> <pass:quotes[_jgroups.jceks_]>
@@ -91,19 +91,19 @@ The service account that you create must be configured with the correct permissi
 
 . Create a service account to be used for the SSO deployment:
 +
-[subs="verbatim,macros,attributes"]
+[source,bash,subs="attributes+,macros+"]
 ----
 $ oc create serviceaccount <pass:quotes[_service-account-name_]>
 ----
 . Add the *view* role to the service account. This enables the service account to view all the resources in the application namespace in OpenShift, which is necessary for managing the cluster.
 +
-[subs="verbatim,macros,attributes"]
+[source,bash,subs="attributes+,macros+"]
 ----
 $ oc policy add-role-to-user view system:serviceaccount:<pass:quotes[_project-name_]>:<pass:quotes[_service-account-name_]> -n <pass:quotes[_project-name_]>
 ----
 . Link the secrets created for the project to the service account:
 +
-[subs="verbatim,macros,attributes"]
+[source,bash,subs="attributes+,macros+"]
 ----
 $ oc secrets link <pass:quotes[_service-account-name_]> <pass:quotes[_sso-ssl-secret_]> <pass:quotes[_sso-jgroups-secret_]>
 ----
@@ -156,7 +156,7 @@ Run the following commands to prepare the previously created deployment config o
 
 . Identify the deployment config of the {project_name} application.
 +
-[subs="verbatim,macros,attributes"]
+[source,bash,subs="attributes+,macros+"]
 ----
 $ oc get dc -o name
 deploymentconfig/sso
@@ -164,9 +164,11 @@ deploymentconfig/sso-mysql
 ----
 . Clear the *_SSO_ADMIN_USERNAME_* and *_SSO_ADMIN_PASSWORD_* variables setting.
 +
-[subs="verbatim,macros,attributes"]
+[source,bash,subs="attributes+,macros+"]
 ----
-$ oc env dc/sso -e SSO_ADMIN_USERNAME="" SSO_ADMIN_PASSWORD=""
+$ oc set env dc/sso \
+  -e SSO_ADMIN_USERNAME="" \
+  -e SSO_ADMIN_PASSWORD=""
 ----
 ====
 
@@ -177,7 +179,7 @@ Run following commands to create administrator account for the `master` realm of
 
 . Identify the {project_name} application pod.
 +
-[subs="verbatim,macros,attributes"]
+[source,bash,subs="attributes+,macros+"]
 ----
 $ oc get pods
 NAME                READY     STATUS    RESTARTS   AGE
@@ -186,14 +188,14 @@ sso-mysql-6-d97pf   1/1       Running   0          2m
 ----
 . Open a remote shell session to {project_openshift_product_name} container.
 +
-[subs="verbatim,macros,attributes"]
+[source,bash,subs="attributes+,macros+"]
 ----
 $ oc rsh sso-12-pt93n
 sh-4.2$
 ----
 . Create the {project_name} server administrator account for the `master` realm at the command line with the `add-user-keycloak.sh` script.
 +
-[subs="verbatim,macros,attributes"]
+[source,bash,subs="attributes+,macros+"]
 ----
 sh-4.2$ cd /opt/eap/bin/
 sh-4.2$ ./add-user-keycloak.sh -r master -u sso_admin -p sso_password
@@ -206,7 +208,7 @@ The `sso_admin`/`sso_password` credentials in the example above are for demonstr
 ====
 . Restart the underlying JBoss EAP server instance to load the newly added user account. Wait for the server to restart properly.
 +
-[subs="verbatim,macros,attributes"]
+[source,bash,subs="attributes+,macros+"]
 ----
 sh-4.2$ ./jboss-cli.sh --connect ':reload'
 {
@@ -317,7 +319,7 @@ It is required to specify the client type in the *<auth-method>* key of the appl
 
 The following is an example snippet for the application *web.xml* to configure an OIDC client:
 
-[subs="verbatim,macros,attributes"]
+[source,bash,subs="attributes+,macros+"]
 ----
 ...
 <login-config>
@@ -409,12 +411,12 @@ There are two methods for passing the {project_name} adapter configuration to th
 See xref:Example-EAP-Manual[Example Workflow: Manually Configure an Application to Use {project_name} Authentication, Using SAML Client] for an end-to-end example of the manual {project_name} client registration method using a SAML client.
 
 ==== Limitations
-OpenShift does not currently accept OpenShift role mapping from external providers. If {project_name} is used as an authentication gateway for OpenShift, users created in {project_name} must have the roles added using the OpenShift Administrator `oadm policy` command.
+OpenShift does not currently accept OpenShift role mapping from external providers. If {project_name} is used as an authentication gateway for OpenShift, users created in {project_name} must have the roles added using the OpenShift Administrator `oc adm policy` command.
 
 For example, to allow an {project_name}-created user to view a project namespace in OpenShift:
-[subs="verbatim,macros,attributes"]
+[source,bash,subs="attributes+,macros+"]
 ----
-oadm policy add-role-to-user view <pass:quotes[_user-name_]> -n <pass:quotes[_project-name_]>
+$ oc adm policy add-role-to-user view <pass:quotes[_user-name_]> -n <pass:quotes[_project-name_]>
 ----
 
 === Binary Builds
@@ -515,20 +517,20 @@ You can select multiple items at once by holding the *Ctrl* key and simultaneous
 
 . Create a new project for the EAP 6.4 / 7.1 JSP application.
 +
-[subs="verbatim,macros,attributes"]
+[source,bash,subs="attributes+,macros+"]
 ----
 $ oc new-project eap-app-demo
 ----
 . Add the `view` role to the link:https://docs.openshift.com/container-platform/latest/dev_guide/service_accounts.html#default-service-accounts-and-roles[`default`] service account. This enables the service account to view all the resources in the `eap-app-demo` namespace, which is necessary for managing the cluster.
 +
-[subs="verbatim,macros,attributes"]
+[source,bash,subs="attributes+,macros+"]
 ----
 $ oc policy add-role-to-user view system:serviceaccount:$(oc project -q):default
 ----
 . The EAP template requires an link:https://access.redhat.com/documentation/en-us/red_hat_jboss_middleware_for_openshift/3/html-single/red_hat_single_sign-on_for_openshift/index#Configuring-Keystores[SSL keystore and a JGroups keystore]. This example uses `keytool`, a package included with the Java Development Kit, to generate self-signed certificates for these keystores.
 .. Generate a secure key for the SSL keystore (this example uses `password` as password for the keystore).
 +
-[subs="verbatim,macros,attributes"]
+[source,bash,subs="attributes+,macros+"]
 ----
 $ keytool -genkeypair \
 -dname "CN=secure-eap-app-eap-app-demo.openshift.example.com" \
@@ -538,7 +540,7 @@ $ keytool -genkeypair \
 ----
 .. Generate a secure key for the JGroups keystore (this example uses `password` as password for the keystore).
 +
-[subs="verbatim,macros,attributes"]
+[source,bash,subs="attributes+,macros+"]
 ----
 $ keytool -genseckey \
 -alias jgroups \
@@ -547,18 +549,18 @@ $ keytool -genseckey \
 ----
 .. Generate the EAP 6.4 / 7.1 for OpenShift secrets with the SSL and JGroup keystore files.
 +
-[subs="verbatim,macros,attributes"]
+[source,bash,subs="attributes+,macros+"]
 ----
 $ oc secret new eap-ssl-secret eapkeystore.jks
 ----
 +
-[subs="verbatim,macros,attributes"]
+[source,bash,subs="attributes+,macros+"]
 ----
 $ oc secret new eap-jgroup-secret eapjgroups.jceks
 ----
 .. Add the EAP application secret to the link:https://docs.openshift.com/container-platform/latest/dev_guide/service_accounts.html#default-service-accounts-and-roles[`default`] service account.
 +
-[subs="verbatim,macros,attributes"]
+[source,bash,subs="attributes+,macros+"]
 ----
 $ oc secrets link default eap-ssl-secret eap-jgroup-secret
 ----
@@ -567,20 +569,20 @@ $ oc secrets link default eap-ssl-secret eap-jgroup-secret
 
 . Clone the source code.
 +
-[subs="verbatim,macros,attributes"]
+[source,bash,subs="attributes+,macros+"]
 ----
-$ git clone https://github.com/keycloak/keycloak-quickstarts.git
+$ git clone \https://github.com/keycloak/keycloak-quickstarts.git
 ----
 . link:https://access.redhat.com/documentation/en-us/red_hat_jboss_enterprise_application_platform/7.1/html-single/development_guide/#use_the_maven_repository[Configure] the link:https://access.redhat.com/maven-repository[Red Hat JBoss Middleware Maven repository].
 . Build both the link:https://github.com/keycloak/keycloak-quickstarts/tree/latest/service-jee-jaxrs[service-jee-jaxrs] and link:https://github.com/keycloak/keycloak-quickstarts/tree/latest/app-jee-jsp[app-jee-jsp] applications.
 .. Build the `service-jee-jaxrs` application.
 +
-[subs="verbatim,macros,attributes"]
+[source,bash,subs="attributes+,macros+"]
 ----
 $ cd keycloak-quickstarts/service-jee-jaxrs/
 ----
 +
-[subs="verbatim,macros,attributes"]
+[source,bash,subs="attributes+,macros+"]
 ----
 $ mvn clean package -DskipTests
 [INFO] Scanning for projects...
@@ -599,22 +601,22 @@ $ mvn clean package -DskipTests
 ----
 .. *Comment out* the `app-jee-jsp/config/keycloak.json` requirement of the `maven-enforcer-plugin` plugin and build the `app-jee-jsp` application.
 +
-[subs="verbatim,macros,attributes"]
+[source,bash,subs="attributes+,macros+"]
 ----
 service-jee-jaxrs]$ cd ../app-jee-jsp/
 ----
 +
-[subs="verbatim,macros,attributes"]
+[source,bash,subs="attributes+,macros+"]
 ----
 app-jee-jsp]$ sed -i /\<executions\>/s/^/\<\!--/ pom.xml
 ----
 +
-[subs="verbatim,macros,attributes"]
+[source,bash,subs="attributes+,macros+"]
 ----
 app-jee-jsp]$ sed -i '/\(<\/executions>\)/a\-->' pom.xml
 ----
 +
-[subs="verbatim,macros,attributes"]
+[source,bash,subs="attributes+,macros+"]
 ----
 app-jee-jsp]$ mvn clean package -DskipTests
 [INFO] Scanning for projects...
@@ -646,28 +648,28 @@ Application archives in the *deployments/* subdirectory of the main binary build
 +
 Create main directory for the binary build on the local file system and *deployments/* subdirectory within it. Copy the previously built WAR archives of both the *service-jee-jaxrs* and *app-jee-jsp* quickstarts to the *deployments/* subdirectory:
 +
-[subs="verbatim,macros,attributes"]
+[source,bash,subs="attributes+,macros+"]
 ----
 app-jee-jsp]$ ls
 config  pom.xml  README.md  src  target
 ----
 +
-[subs="verbatim,macros,attributes"]
+[source,bash,subs="attributes+,macros+"]
 ----
 app-jee-jsp]$ mkdir -p sso-eap7-bin-demo/deployments
 ----
 +
-[subs="verbatim,macros,attributes"]
+[source,bash,subs="attributes+,macros+"]
 ----
 app-jee-jsp]$ cp target/app-jsp.war sso-eap7-bin-demo/deployments/
 ----
 +
-[subs="verbatim,macros,attributes"]
+[source,bash,subs="attributes+,macros+"]
 ----
 app-jee-jsp]$ cp ../service-jee-jaxrs/target/service.war sso-eap7-bin-demo/deployments/
 ----
 +
-[subs="verbatim,macros,attributes"]
+[source,bash,subs="attributes+,macros+"]
 ----
 app-jee-jsp]$ tree sso-eap7-bin-demo/
 sso-eap7-bin-demo/
@@ -699,7 +701,7 @@ Location of the standard deployments directory depends on the underlying base im
 ====
 . Identify the image stream for EAP 6.4 / 7.1 image.
 +
-[subs="verbatim,macros,attributes"]
+[source,bash,subs="attributes+,macros+"]
 ----
 $ oc get is -n openshift | grep eap | cut -d ' ' -f 1
 jboss-eap64-openshift
@@ -715,7 +717,7 @@ jboss-eap71-openshift
 Replace `--image-stream=jboss-eap71-openshift` parameter with the `--image-stream=jboss-eap64-openshift` one in the following oc command to deploy the JSP application on top of JBoss EAP 6.4 for OpenShift image.
 ====
 +
-[subs="verbatim,macros,attributes"]
+[source,bash,subs="attributes+,macros+"]
 ----
 $ oc new-build --binary=true \
 --image-stream=jboss-eap71-openshift \
@@ -739,7 +741,7 @@ $ oc new-build --binary=true \
 ----
 . Start the binary build. Instruct `oc` executable to use main directory of the binary build we created xref:directory-structure-binary-builds[in previous step] as the directory containing binary input for the OpenShift build. In the working directory of *app-jee-jsp* issue the following command.
 +
-[subs="verbatim,macros,attributes"]
+[source,bash,subs="attributes+,macros+"]
 ----
 app-jee-jsp]$ oc start-build eap-app \
 --from-dir=./sso-eap7-bin-demo/ \
@@ -764,7 +766,7 @@ Push successful
 ----
 . Create a new OpenShift application based on the build.
 +
-[subs="verbatim,macros,attributes"]
+[source,bash,subs="attributes+,macros+"]
 ----
 $ oc new-app eap-app
 --> Found image 6b13d36 (2 minutes old) in image stream "eap-app-demo/eap-app" under tag "latest" for "eap-app"
@@ -787,13 +789,13 @@ $ oc new-app eap-app
 ----
 . Stop all running containers of the EAP 6.4 / 7.1 JSP application in the current namespace.
 +
-[subs="verbatim,macros,attributes"]
+[source,bash,subs="attributes+,macros+"]
 ----
 $ oc get dc -o name
 deploymentconfig/eap-app
 ----
 +
-[subs="verbatim,macros,attributes"]
+[source,bash,subs="attributes+,macros+"]
 ----
 $ oc scale dc/eap-app --replicas=0
 deploymentconfig "eap-app" scaled
@@ -807,7 +809,7 @@ deploymentconfig "eap-app" scaled
 Ensure to replace the value of *_SSO_PUBLIC_KEY_* variable below with the actual content of the RSA public key for the `demo` realm, that has been xref:copy-rsa-public-key[copied].
 ====
 +
-[subs="verbatim,macros,attributes"]
+[source,bash,subs="attributes+,macros+"]
 ----
 $ oc set env dc/eap-app \
 -e HOSTNAME_HTTP="eap-app-eap-app-demo.openshift.example.com" \
@@ -823,7 +825,7 @@ deploymentconfig "eap-app" updated
 ----
 .. Configure the application with details about both the SSL and JGroups keystore.
 +
-[subs="verbatim,macros,attributes"]
+[source,bash,subs="attributes+,macros+"]
 ----
 $ oc set env dc/eap-app \
 -e HTTPS_KEYSTORE_DIR="/etc/eap-secret-volume" \
@@ -837,7 +839,7 @@ deploymentconfig "eap-app" updated
 ----
 .. Define OpenShift volumes for both the SSL and JGroups secrets created earlier.
 +
-[subs="verbatim,macros,attributes"]
+[source,bash,subs="attributes+,macros+"]
 ----
 $ oc volume dc/eap-app --add \
 --name="eap-keystore-volume" \
@@ -847,7 +849,7 @@ $ oc volume dc/eap-app --add \
 deploymentconfig "eap-app" updated
 ----
 +
-[subs="verbatim,macros,attributes"]
+[source,bash,subs="attributes+,macros+"]
 ----
 $ oc volume dc/eap-app --add \
 --name="eap-jgroups-keystore-volume" \
@@ -858,7 +860,7 @@ deploymentconfig "eap-app" updated
 ----
 .. Configure the deployment config of the application to run application pods under the `default` OpenShift service account (default setting).
 +
-[subs="verbatim,macros,attributes"]
+[source,bash,subs="attributes+,macros+"]
 ----
 $ oc patch dc/eap-app --type=json \
 -p '[{"op": "add", "path": "/spec/template/spec/serviceAccountName", "value": "default"}]'
@@ -866,32 +868,32 @@ $ oc patch dc/eap-app --type=json \
 ----
 . Deploy container of the EAP 6.4 / 7.1 JSP application using the modified deployment config.
 +
-[subs="verbatim,macros,attributes"]
+[source,bash,subs="attributes+,macros+"]
 ----
 $ oc scale dc/eap-app --replicas=1
 deploymentconfig "eap-app" scaled
 ----
 . Expose the service as route.
 +
-[subs="verbatim,macros,attributes"]
+[source,bash,subs="attributes+,macros+"]
 ----
 $ oc get svc -o name
 service/eap-app
 ----
 +
-[subs="verbatim,macros,attributes"]
+[source,bash,subs="attributes+,macros+"]
 ----
 $ oc get route
 No resources found.
 ----
 +
-[subs="verbatim,macros,attributes"]
+[source,bash,subs="attributes+,macros+"]
 ----
 $ oc expose svc/eap-app
 route "eap-app" exposed
 ----
 +
-[subs="verbatim,macros,attributes"]
+[source,bash,subs="attributes+,macros+"]
 ----
 $ oc get route
 NAME      HOST/PORT                                    PATH      SERVICES   PORT       TERMINATION   WILDCARD
