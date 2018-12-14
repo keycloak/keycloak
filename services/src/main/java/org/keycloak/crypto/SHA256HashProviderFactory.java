@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2017 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,16 +14,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.keycloak.crypto;
 
-public interface SignatureSignerContext {
+import org.keycloak.models.KeycloakSession;
 
-    String getKid();
+/**
+ * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
+ */
+public class SHA256HashProviderFactory implements HashProviderFactory {
 
-    String getAlgorithm();
+    public static final String ID = JavaAlgorithm.SHA256;
 
-    String getHashAlgorithm();
+    @Override
+    public String getId() {
+        return ID;
+    }
 
-    byte[] sign(byte[] data) throws SignatureException;
+    @Override
+    public HashProvider create(KeycloakSession session) {
+        return new JavaAlgorithmHashProvider(ID);
+    }
 
 }

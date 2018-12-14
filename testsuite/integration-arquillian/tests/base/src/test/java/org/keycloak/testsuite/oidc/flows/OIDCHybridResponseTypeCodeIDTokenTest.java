@@ -20,7 +20,7 @@ package org.keycloak.testsuite.oidc.flows;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.events.Details;
-import org.keycloak.jose.jws.crypto.HashProvider;
+import org.keycloak.jose.jws.crypto.HashUtils;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.idm.EventRepresentation;
@@ -64,14 +64,14 @@ public class OIDCHybridResponseTypeCodeIDTokenTest extends AbstractOIDCResponseT
         Assert.assertNull(idToken.getAccessTokenHash());
         Assert.assertNotNull(idToken.getCodeHash());
 
-        Assert.assertEquals(idToken.getCodeHash(), HashProvider.oidcHash(getSignatureAlgorithm(), authzResponse.getCode()));
+        Assert.assertEquals(idToken.getCodeHash(), HashUtils.oidcHash(getSignatureAlgorithm(), authzResponse.getCode()));
 
         // Financial API - Part 2: Read and Write API Security Profile
         // http://openid.net/specs/openid-financial-api-part-2.html#authorization-server
         // Validate "s_hash"
         Assert.assertNotNull(idToken.getStateHash());
 
-        Assert.assertEquals(idToken.getStateHash(), HashProvider.oidcHash(getSignatureAlgorithm(), authzResponse.getState()));
+        Assert.assertEquals(idToken.getStateHash(), HashUtils.oidcHash(getSignatureAlgorithm(), authzResponse.getState()));
 
         // IDToken exchanged for the code
         IDToken idToken2 = sendTokenRequestAndGetIDToken(loginEvent);
