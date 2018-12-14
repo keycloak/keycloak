@@ -25,11 +25,13 @@ import org.keycloak.TokenCategory;
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.util.Time;
+import org.keycloak.crypto.HashProvider;
+import org.keycloak.crypto.SignatureProvider;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.jose.jws.JWSInputException;
-import org.keycloak.jose.jws.crypto.HashProvider;
+import org.keycloak.jose.jws.crypto.HashUtils;
 import org.keycloak.migration.migrators.MigrationUtils;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
@@ -763,14 +765,14 @@ public class TokenManager {
         }
 
         public AccessTokenResponseBuilder generateCodeHash(String code) {
-            codeHash = HashProvider.oidcHash(session.tokens().signatureAlgorithm(TokenCategory.ID), code);
+            codeHash = generateOIDCHash(code);
             return this;
         }
 
         // Financial API - Part 2: Read and Write API Security Profile
         // http://openid.net/specs/openid-financial-api-part-2.html#authorization-server
         public AccessTokenResponseBuilder generateStateHash(String state) {
-            stateHash = HashProvider.oidcHash(session.tokens().signatureAlgorithm(TokenCategory.ID), state);
+            stateHash = generateOIDCHash(state);
             return this;
         }
 
@@ -801,7 +803,7 @@ public class TokenManager {
             }
 
             if (generateAccessTokenHash) {
-                String atHash = HashProvider.oidcHash(session.tokens().signatureAlgorithm(TokenCategory.ID), res.getToken());
+                String atHash = generateOIDCHash(res.getToken());
                 idToken.setAccessTokenHash(atHash);
             }
             if (codeHash != null) {
@@ -836,6 +838,18 @@ public class TokenManager {
             event.detail(Details.SCOPE, responseScope);
 
             return res;
+        }
+
+
+        private String generateOIDCHash(String input) {
+            String signatureAlgorithm = session.tokens().signatureAlgorithm(TokenCategory.ID);
+            SignatureProvider signatureProvider = session.getProvider(SignatureProvider.class, signatureAlgorithm);
+            String hashAlgorithm = signatureProvider.signer().getHashAlgorithm();
+
+            HashProvider hashProvider = session.getProvider(HashProvider.class, hashAlgorithm);
+            byte[] hash = hashProvider.hash(input);
+
+            return HashUtils.encodeHashToOIDC(hash);
         }
 
     }
