@@ -39,7 +39,7 @@ The EAP 6.4 / 7.1 JSP service application requires dedicated {project_name} real
 +
 *\https://secure-sso-sso-app-demo.openshift.example.com/auth/admin*
 +
-Use the xref:sso_server.adoc#sso-administrator-setup[credentials of the {project_name} administrator user].
+Use the xref:sso-administrator-setup[credentials of the {project_name} administrator user].
 . Hover your cursor over the realm namespace (default is *Master*) at the top of the sidebar and click *Add Realm*.
 . Enter a realm name (this example uses `demo`) and click *Create*.
 
@@ -608,7 +608,7 @@ When the *_SSO_REALM_* configuration variable is set on the {project_openshift_p
 +
 . Click *Create* to deploy the application template and start pod deployment. This may take a couple of minutes.
 +
-Then access the {project_name} web console at *$$https://secure-sso-$$_<sso-app-demo>_._<openshift32.example.com>_/auth/admin* using the xref:../advanced_concepts/advanced_concepts.adoc#sso-administrator-setup[administrator account].
+Then access the {project_name} web console at *$$https://secure-sso-$$_<sso-app-demo>_._<openshift32.example.com>_/auth/admin* using the xref:sso-administrator-setup[administrator account].
 +
 [NOTE]
 ====
@@ -737,7 +737,7 @@ Configure OpenShift to use the {project_name} deployment as the authorization ga
 This example adds {project_name} as an authentication method alongside the HTPasswd method configured in the https://access.redhat.com/documentation/en/red-hat-xpaas/0/single/openshift-primer/#understand_roles_and_authentication[OpenShift Primer]. Once configured, both methods will be available for user login to your OpenShift web console.
 
 ==== Configuring {project_name} Credentials
-Log in to the encrypted {project_name} web server at *$$https://secure-sso-$$_sso-app-demo_._openshift32.example.com_/auth/admin* using the xref:../advanced_concepts/advanced_concepts.adoc#sso-administrator-setup[administrator account] created during the {project_name} deployment.
+Log in to the encrypted {project_name} web server at *$$https://secure-sso-$$_sso-app-demo_._openshift32.example.com_/auth/admin* using the xref:sso-administrator-setup[administrator account] created during the {project_name} deployment.
 
 *Create a Realm*
 
@@ -901,7 +901,7 @@ $ oc secrets link default eap-ssl-secret eap-jgroup-secret
 ----
 
 ==== Preparing the {project_name} Credentials
-Log in to the encrypted {project_name} web server at *$$https://secure-sso-$$_<project-name>_._<hostname>_/auth/admin* using the xref:../advanced_concepts/advanced_concepts.adoc#sso-administrator-setup[administrator account] created during the {project_name} deployment.
+Log in to the encrypted {project_name} web server at *$$https://secure-sso-$$_<project-name>_._<hostname>_/auth/admin* using the xref:sso-administrator-setup[administrator account] created during the {project_name} deployment.
 
 *Create a Realm*
 
@@ -1019,7 +1019,7 @@ This example uses a SAML client but an OpenID-Connect client could also be used.
 ====
 
 ==== Preparing the {project_name} Credentials
-Log in to the encrypted {project_name} web server at *$$https://secure-sso-$$_<project-name>_._<hostname>_/auth/admin* using the xref:../advanced_concepts/advanced_concepts.adoc#sso-administrator-setup[administrator account] created during the {project_name} deployment.
+Log in to the encrypted {project_name} web server at *$$https://secure-sso-$$_<project-name>_._<hostname>_/auth/admin* using the xref:sso-administrator-setup[administrator account] created during the {project_name} deployment.
 
 *Create a Realm*
 

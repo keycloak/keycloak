@@ -262,7 +262,7 @@ and access the {project_name} administrator console at:
 * *\https://secure-sso-sso-app-demo.openshift.example.com/auth/admin*
 * *\http://sso-sso-app-demo.openshift.example.com/auth/admin*
 
-using the xref:../advanced_concepts/advanced_concepts.adoc#advanced-concepts-sso-administrator-setup[administrator account].
+using the xref:sso-administrator-setup[administrator account].
 
 [[advanced-concepts-sso-hostname-spi-setup]]
 === Customizing Hostname for the {project_name} Server
@@ -318,10 +318,10 @@ If successful, the previous command will return the following output:
 route "sso" patched
 ----
 
-[[advanced-concepts-sso-administrator-setup]]
-=== Creating Administrator Account for Red Hat Single Sign-On Server
+[[sso-administrator-setup]]
+=== Creating the Administrator Account for {project_name} Server
 
-Red Hat Single Sign-On does not provide any pre-configured management account out of the box. This administrator account is necessary for logging into the `master` realm's management console and perform server maintenance operations such as, creating realms or users, or registering applications intended to be secured by Red Hat Single Sign-On.
+{project_name} does not provide any pre-configured management account out of the box. This administrator account is necessary for logging into the `master` realm's management console and perform server maintenance operations such as, creating realms or users, or registering applications intended to be secured by {project_name}.
 
 The administrator account can be created:
 
@@ -330,13 +330,13 @@ The administrator account can be created:
 
 [NOTE]
 ====
-Red Hat Single Sign-On allows an initial administrator account to be created via the link:https://access.redhat.com/documentation/en-us/red_hat_single_sign-on/7.2/html-single/getting_started_guide/#creating_the_admin_account[Welcome Page] web form, but only if the Welcome Page is accessed from localhost; this method of administrator account creation is not applicable for the {project_openshift_product_name} image.
+{project_name} allows an initial administrator account to be created via the link:https://access.redhat.com/documentation/en-us/red_hat_single_sign-on/7.2/html-single/getting_started_guide/#creating_the_admin_account[Welcome Page] web form, but only if the Welcome Page is accessed from localhost; this method of administrator account creation is not applicable for the {project_openshift_product_name} image.
 ====
 
-[[advanced-concepts-sso-admin-template-parameters]]
-==== Creating {project_name} Administrator Account via Template Parameters
+[[sso-admin-template-parameters]]
+==== Creating the Administrator Account Using Template Parameters
 
-When deploying {project_name} application template, *_SSO_ADMIN_USERNAME_* and *_SSO_ADMIN_PASSWORD_* parameters denote the username and password of the {project_name} server's administrator account to be created for the `master` realm.
+When deploying {project_name} application template, the *_SSO_ADMIN_USERNAME_* and *_SSO_ADMIN_PASSWORD_* parameters denote the username and password of the {project_name} server's administrator account to be created for the `master` realm.
 
 [NOTE]
 ====
@@ -381,8 +381,8 @@ $ oc set env dc/sso \
 ----
 ====
 
-[[advanced-concepts-sso-admin-remote-shell]]
-==== Creating {project_name} Administrator Account via Remote Shell Session to {project_name} Pod
+[[sso-admin-remote-shell]]
+==== Creating the Administrator Account via Remote Shell Session to {project_name} Pod
 
 Run following commands to create an administrator account for the `master` realm of the {project_name} server, when deploying the {project_openshift_product_name} image directly from the image stream (without the xref:../introduction/introduction.adoc#sso-templates[template]), after the {project_name} application pod has been started:
 
@@ -407,13 +407,16 @@ sh-4.2$
 [source,bash,subs="attributes+,macros+"]
 ----
 sh-4.2$ cd /opt/eap/bin/
-sh-4.2$ ./add-user-keycloak.sh -r master -u sso_admin -p sso_password
+sh-4.2$ ./add-user-keycloak.sh \
+        -r master \
+        -u sso_admin \
+        -p sso_password
 Added 'sso_admin' to '/opt/eap/standalone/configuration/keycloak-add-user.json', restart server to load user
 ----
 +
 [NOTE]
 ====
-The `sso_admin`/`sso_password` credentials in the example above are for demonstration purposes only. Refer to the password policy applicable within your organization for guidance on how to create a secure user name and password.
+The 'sso_admin' / 'sso_password' credentials in the example above are for demonstration purposes only. Refer to the password policy applicable within your organization for guidance on how to create a secure user name and password.
 ====
 . Restart the underlying JBoss EAP server instance to load the newly added user account. Wait for the server to restart properly.
 +
@@ -441,7 +444,7 @@ After the {project_name} web server pod has started, it can be accessed at its c
 * *\http://sso-_<project-name>_._<hostname>_/auth/admin*: for the {project_name} web server, and
 * *\https://secure-sso-_<project-name>_._<hostname>_/auth/admin*: for the encrypted {project_name} web server.
 
-Use the xref:../advanced_concepts/advanced_concepts.adoc#advanced-concepts-sso-administrator-setup[administrator user credentials] to log in into the `master` realm’s administration console.
+Use the xref:sso-administrator-setup[administrator user credentials] to log in into the `master` realm’s administration console.
 
 [[SSO-Clients]]
 === {project_name} Clients

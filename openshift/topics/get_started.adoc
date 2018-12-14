@@ -109,120 +109,6 @@ $ oc secrets link <pass:quotes[_service-account-name_]> <pass:quotes[_sso-ssl-se
 ----
 ////
 
-[[sso-administrator-setup]]
-==== Creating Administrator Account for {project_name} Server
-
-{project_name} does not provide any pre-configured management account out of the box. This administrator account is necessary for logging into the `master` realm's management console and perform server maintenance operations such as, creating realms or users, or registering applications intended to be secured by {project_name}.
-
-The administrator account can be created:
-
-* By providing values for the xref:sso-admin-template-parameters[*_SSO_ADMIN_USERNAME_* and *_SSO_ADMIN_PASSWORD_* parameters], when deploying the {project_name} application template, or
-* By xref:sso-admin-remote-shell[a remote shell session to particular {project_name} pod], if the {project_openshift_product_name} image is deployed without an application template.
-
-[NOTE]
-====
-{project_name} allows an initial administrator account creation via the link:https://access.redhat.com/documentation/en-us/red_hat_single_sign-on/7.2/html-single/getting_started_guide/#creating_the_admin_account[Welcome Page] web form. But only if the `Welcome Page` is accessed from a localhost, this method of administrator account creation is not applicable for {project_openshift_product_name} image.
-====
-
-[[sso-admin-template-parameters]]
-===== Creating {project_name} Administrator Account via Template Parameters
-
-When deploying {project_name} application template, *_SSO_ADMIN_USERNAME_* and *_SSO_ADMIN_PASSWORD_* parameters denote the username and password of the {project_name} server's administrator account to be created for the `master` realm.
-
-[NOTE]
-====
-*Both of these parameters are required.* If not specified, they are auto generated and displayed as an OpenShift instructional message when the template is instantiated.
-====
-
-[IMPORTANT]
-====
-The lifespan of the {project_name} server's administrator account depends upon the the storage type used to store the {project_name} server's database:
-
-* For an in-memory database mode (*_{project_templates_version}-https_* and *_{project_templates_version}-x509-https_* templates) the account exist throughout the lifecycle of the particular {project_name} pod (stored account data is lost upon pod destruction),
-* For an ephemeral database mode (*_{project_templates_version}-mysql_* and *_{project_templates_version}-postgresql_* templates) the account exist throughout the lifecycle of the database pod (even if {project_name} pod is destructed, the stored account data is preserved under the assumption that the database pod is still running),
-* For persistent database mode (*_{project_templates_version}-mysql-persistent_*, *_{project_templates_version}-x509-mysql-persistent_*, *_{project_templates_version}-postgresql-persistent_*, and *_{project_templates_version}-x509-postgresql-persistent_* templates) the account exists throughout the lifecycle of the persistent medium used to hold the database data. This means that the stored account data is preserved even when both, the {project_name} and the database pods are destructed.
-
-It is a common practice to deploy an {project_name} application template to get the corresponding OpenShift deployment config for the application, and then reuse that deployment config multiple times (every time a new {project_name} application needs to be instantiated).
-====
-
-[WARNING]
-====
-In the case of *ephemeral or persistent database mode*, after creating the RH_SSO server's administrator account, remove the *_SSO_ADMIN_USERNAME_* and *_SSO_ADMIN_PASSWORD_* variables from the deployment config before deploying new {project_name} applications.
-====
-
-[IMPORTANT]
-====
-Run the following commands to prepare the previously created deployment config of the {project_name} application for reuse after the administrator account has been created:
-
-. Identify the deployment config of the {project_name} application.
-+
-[source,bash,subs="attributes+,macros+"]
-----
-$ oc get dc -o name
-deploymentconfig/sso
-deploymentconfig/sso-mysql
-----
-. Clear the *_SSO_ADMIN_USERNAME_* and *_SSO_ADMIN_PASSWORD_* variables setting.
-+
-[source,bash,subs="attributes+,macros+"]
-----
-$ oc set env dc/sso \
-  -e SSO_ADMIN_USERNAME="" \
-  -e SSO_ADMIN_PASSWORD=""
-----
-====
-
-[[sso-admin-remote-shell]]
-===== Creating {project_name} Administrator Account via Remote Shell Session to {project_name} Pod
-
-Run following commands to create administrator account for the `master` realm of the {project_name} server, when deploying the {project_openshift_product_name} image directly from the image stream (without the xref:../introduction/introduction.adoc#sso-templates[template]), after the {project_name} application pod has been started:
-
-. Identify the {project_name} application pod.
-+
-[source,bash,subs="attributes+,macros+"]
-----
-$ oc get pods
-NAME                READY     STATUS    RESTARTS   AGE
-sso-12-pt93n        1/1       Running   0          1m
-sso-mysql-6-d97pf   1/1       Running   0          2m
-----
-. Open a remote shell session to {project_openshift_product_name} container.
-+
-[source,bash,subs="attributes+,macros+"]
-----
-$ oc rsh sso-12-pt93n
-sh-4.2$
-----
-. Create the {project_name} server administrator account for the `master` realm at the command line with the `add-user-keycloak.sh` script.
-+
-[source,bash,subs="attributes+,macros+"]
-----
-sh-4.2$ cd /opt/eap/bin/
-sh-4.2$ ./add-user-keycloak.sh -r master -u sso_admin -p sso_password
-Added 'sso_admin' to '/opt/eap/standalone/configuration/keycloak-add-user.json', restart server to load user
-----
-+
-[NOTE]
-====
-The `sso_admin`/`sso_password` credentials in the example above are for demonstration purposes only. Refer to the password policy applicable within your organization for guidance on how to create a secure user name and password.
-====
-. Restart the underlying JBoss EAP server instance to load the newly added user account. Wait for the server to restart properly.
-+
-[source,bash,subs="attributes+,macros+"]
-----
-sh-4.2$ ./jboss-cli.sh --connect ':reload'
-{
-    "outcome" => "success",
-    "result" => undefined
-}
-----
-+
-[WARNING]
-====
-When restarting the server it is important to restart just the JBoss EAP process within the running {project_name} container, and not the whole container. Because restarting the whole container recreates it from scratch, without the {project_name} server administration account for the `master` realm to be created.
-====
-. Log into the `master` realm's administration console of the {project_name} server using the the credentials created in the steps above. In the browser, navigate to *\http://sso-<project-name>.<hostname>/auth/admin*  for the {project_name} web server, or to *\https://secure-sso-<project-name>.<hostname>/auth/admin* for the encrypted {project_name} web server, and specify user name and password used to create the administrator user.
-
 ==== Using the OpenShift Web Console
 Log in to the OpenShift web console:
 
@@ -321,7 +207,7 @@ The EAP 6.4 / 7.1 JSP service application requires dedicated {project_name} real
 +
 *\https://secure-sso-sso-app-demo.openshift.example.com/auth/admin*
 +
-Use the xref:sso_server.adoc#sso-administrator-setup[credentials of the {project_name} administrator user].
+Use the xref:sso-administrator-setup[credentials of the {project_name} administrator user].
 . Hover your cursor over the realm namespace (default is *Master*) at the top of the sidebar and click *Add Realm*.
 . Enter a realm name (this example uses `demo`) and click *Create*.
 
@@ -807,7 +693,7 @@ Perform the following steps to add the `appuser` to the `admin` {project_name} r
 +
 *\https://secure-sso-sso-app-demo.openshift.example.com/auth/admin*.
 +
-Use the xref:sso_server.adoc#sso-administrator-setup[credentials of the {project_name} administrator user].
+Use the xref:sso-administrator-setup[credentials of the {project_name} administrator user].
 . Click *Users* in the *Manage* sidebar to view the user information for the `demo` realm.
 . Click *View all users* button.
 . Click the ID link for the *appuser* or alternatively click the *Edit* button in the *Actions* column.
