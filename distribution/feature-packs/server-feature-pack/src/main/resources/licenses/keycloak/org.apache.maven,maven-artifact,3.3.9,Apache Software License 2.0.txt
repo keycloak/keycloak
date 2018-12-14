@@ -13,14 +13,14 @@
 </head>
 <body>
 <div class="page_header">
-<a href="http://git-scm.com/" title="git homepage"><img src="/static/git-logo.png" class="logo" width="72" alt="git" height="27" /></a><a href="/repos/asf">projects</a> / </div>
+<a href="http://git-scm.com/" title="git homepage"><img class="logo" width="72" alt="git" src="/static/git-logo.png" height="27" /></a><a href="/repos/asf">projects</a> / </div>
 <div class="page_body">
 <br /><br />
 404 - No such project
 <br />
 </div>
 <div class="page_footer">
-<a href="/repos/asf?a=opml" class="rss_logo">OPML</a> <a href="/repos/asf?a=project_index" class="rss_logo">TXT</a>
+<a href="/repos/asf?a=opml" class="rss_logo">OPML</a> <a class="rss_logo" href="/repos/asf?a=project_index">TXT</a>
 </div>
 <script type="text/javascript" src="/static/gitweb.js"></script>
 <script type="text/javascript">
