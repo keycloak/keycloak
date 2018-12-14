@@ -13,7 +13,7 @@
 </head>
 <body>
 <div class="page_header">
-<a href="http://git-scm.com/" title="git homepage"><img height="27" width="72" class="logo" alt="git" src="/static/git-logo.png" /></a><a href="/repos/asf">projects</a> / </div>
+<a href="http://git-scm.com/" title="git homepage"><img alt="git" height="27" src="/static/git-logo.png" width="72" class="logo" /></a><a href="/repos/asf">projects</a> / </div>
 <div class="page_body">
 <br /><br />
 404 - No such project
