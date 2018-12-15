@@ -224,6 +224,42 @@ public class ClientTest extends AbstractAdminTest {
     }
 
     @Test
+    public void updateClientWithAuthzServices() throws Exception {
+      // create a new client
+      ClientRepresentation client = new ClientRepresentation();
+      client.setClientId("my-app");
+      client.setPublicClient(false);
+      client.setBearerOnly(false);
+      client.setStandardFlowEnabled(true);
+      client.setImplicitFlowEnabled(false);
+      client.setDirectAccessGrantsEnabled(true);
+      client.setServiceAccountsEnabled(true);
+      client.setAuthorizationServicesEnabled(true); // TRIGGER!
+      client.setRedirectUris(Collections.singletonList("/"));
+      assertEquals(201, realm.clients().create(client).getStatus());
+
+      // find the ID of the client we just created from its name
+      List<ClientRepresentation> possibleClients =
+          realm.clients().findByClientId(client.getClientId());
+      assertEquals(1, possibleClients.size());
+      client.setId(possibleClients.get(0).getId());
+      
+      // verify the client that we created matches what we asked for
+      ClientRepresentation storedClient =
+          realm.clients().get(client.getId()).toRepresentation();
+      client.setId(storedClient.getId());
+      assertClient(client, storedClient);
+      
+      // attempt to update the client
+      ClientRepresentation newClient = storedClient;
+      newClient.setClientId("my-app-newname");
+      realm.clients().get(newClient.getId()).update(newClient); // HTTP 409 here!
+      ClientRepresentation newStoredClient =
+          realm.clients().get(newClient.getId()).toRepresentation();
+      assertClient(newClient, newStoredClient);
+    }
+
+    @Test
     public void serviceAccount() {
         Response response = realm.clients().create(ClientBuilder.create().clientId("serviceClient").serviceAccount().build());
         String id = ApiUtil.getCreatedId(response);
