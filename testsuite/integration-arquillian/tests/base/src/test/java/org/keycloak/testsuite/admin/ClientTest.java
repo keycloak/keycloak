@@ -227,14 +227,14 @@ public class ClientTest extends AbstractAdminTest {
     public void updateClientWithAuthzServices() throws Exception {
       // create a new client
       ClientRepresentation client = new ClientRepresentation();
-      client.setClientId("my-app");
+      client.setClientId("my-app-oldname");
       client.setPublicClient(false);
       client.setBearerOnly(false);
       client.setStandardFlowEnabled(true);
       client.setImplicitFlowEnabled(false);
       client.setDirectAccessGrantsEnabled(true);
       client.setServiceAccountsEnabled(true);
-      client.setAuthorizationServicesEnabled(true); // TRIGGER!
+      client.setAuthorizationServicesEnabled(true);
       client.setRedirectUris(Collections.singletonList("/"));
       assertEquals(201, realm.clients().create(client).getStatus());
 
@@ -253,7 +253,7 @@ public class ClientTest extends AbstractAdminTest {
       // attempt to update the client
       ClientRepresentation newClient = storedClient;
       newClient.setClientId("my-app-newname");
-      realm.clients().get(newClient.getId()).update(newClient); // HTTP 409 here!
+      realm.clients().get(newClient.getId()).update(newClient);
       ClientRepresentation newStoredClient =
           realm.clients().get(newClient.getId()).toRepresentation();
       assertClient(newClient, newStoredClient);
