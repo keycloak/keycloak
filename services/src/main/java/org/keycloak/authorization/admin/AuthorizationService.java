@@ -57,12 +57,15 @@ public class AuthorizationService {
     }
 
     public void enable(boolean newClient) {
-        this.resourceServer = resourceServer().create(newClient);
+		if (!isEnabled()) {
+			this.resourceServer = resourceServer().create(newClient);
+		}
     }
 
     public void disable() {
         if (isEnabled()) {
             resourceServer().delete();
+            this.resourceServer = null;
         }
     }
 
