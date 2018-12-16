@@ -379,7 +379,6 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
         assertEquals("HS256", algorithm);
 
         try {
-            TokenSignatureUtil.registerKeyProvider("P-256", adminClient, testContext);
             TokenSignatureUtil.changeRealmTokenSignatureProvider(adminClient, Algorithm.ES256);
 
             oauth.openLoginForm();

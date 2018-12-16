@@ -73,7 +73,6 @@ public class InitialAccessTokenTest extends AbstractClientRegistrationTest {
     @Test
     public void createWithES256() throws JWSInputException, ClientRegistrationException {
         try {
-            TokenSignatureUtil.registerKeyProvider("P-256", adminClient, testContext);
             TokenSignatureUtil.changeRealmTokenSignatureProvider(adminClient, Algorithm.ES256);
 
             ClientInitialAccessPresentation response = resource.create(new ClientInitialAccessCreatePresentation());
@@ -82,7 +81,7 @@ public class InitialAccessTokenTest extends AbstractClientRegistrationTest {
             String token = response.getToken();
 
             JWSHeader header = new JWSInput(token).getHeader();
-            assertEquals("HS256", header.getAlgorithm().name());
+            assertEquals(Algorithm.HS256, header.getAlgorithm().name());
 
             ClientRepresentation rep = new ClientRepresentation();
             ClientRepresentation created = reg.create(rep);

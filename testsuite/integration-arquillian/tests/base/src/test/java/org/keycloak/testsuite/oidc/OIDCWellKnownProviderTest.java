@@ -124,9 +124,11 @@ public class OIDCWellKnownProviderTest extends AbstractKeycloakTest {
             assertContains(oidcConfig.getResponseModesSupported(), "query", "fragment");
 
             Assert.assertNames(oidcConfig.getSubjectTypesSupported(), "pairwise", "public");
-            Assert.assertNames(oidcConfig.getIdTokenSigningAlgValuesSupported(), Algorithm.RS256, Algorithm.RS384, Algorithm.RS512, Algorithm.ES256, Algorithm.ES384, Algorithm.ES512, Algorithm.HS256, Algorithm.HS384, Algorithm.HS512);
-            Assert.assertNames(oidcConfig.getUserInfoSigningAlgValuesSupported(), "none", Algorithm.RS256, Algorithm.RS384, Algorithm.RS512, Algorithm.ES256, Algorithm.ES384, Algorithm.ES512, Algorithm.HS256, Algorithm.HS384, Algorithm.HS512);
-            Assert.assertNames(oidcConfig.getRequestObjectSigningAlgValuesSupported(), "none", Algorithm.RS256, Algorithm.RS384, Algorithm.RS512, Algorithm.ES256, Algorithm.ES384, Algorithm.ES512);
+
+            // Signature algorithms
+            Assert.assertNames(oidcConfig.getIdTokenSigningAlgValuesSupported(), Algorithm.RS256, Algorithm.RS384, Algorithm.RS512, Algorithm.ES256, Algorithm.ES384, Algorithm.ES512, Algorithm.HS256, Algorithm.HS384, Algorithm.HS512, Algorithm.PS256, Algorithm.PS384, Algorithm.PS512);
+            Assert.assertNames(oidcConfig.getUserInfoSigningAlgValuesSupported(), "none", Algorithm.RS256, Algorithm.RS384, Algorithm.RS512, Algorithm.ES256, Algorithm.ES384, Algorithm.ES512, Algorithm.HS256, Algorithm.HS384, Algorithm.HS512, Algorithm.PS256, Algorithm.PS384, Algorithm.PS512);
+            Assert.assertNames(oidcConfig.getRequestObjectSigningAlgValuesSupported(), "none", Algorithm.RS256, Algorithm.RS384, Algorithm.RS512, Algorithm.ES256, Algorithm.ES384, Algorithm.ES512, Algorithm.PS256, Algorithm.PS384, Algorithm.PS512);
 
             // Client authentication
             Assert.assertNames(oidcConfig.getTokenEndpointAuthMethodsSupported(), "client_secret_basic", "client_secret_post", "private_key_jwt", "client_secret_jwt");
@@ -194,7 +196,7 @@ public class OIDCWellKnownProviderTest extends AbstractKeycloakTest {
 
     @Test
     public void certs() throws IOException {
-        TokenSignatureUtil.registerKeyProvider("P-256", adminClient, testContext);
+        TokenSignatureUtil.registerKeyProvider(Algorithm.ES256, adminClient, testContext);
 
         OIDCConfigurationRepresentation representation = SimpleHttp.doGet(getAuthServerRoot().toString() + "realms/test/.well-known/openid-configuration", client).asJson(OIDCConfigurationRepresentation.class);
         String jwksUri = representation.getJwksUri();
