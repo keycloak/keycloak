@@ -280,64 +280,14 @@ public class UserInfoTest extends AbstractKeycloakTest {
 
     @Test
     public void testSuccessSignedResponseES256() throws Exception {
-
-        try {
-            TokenSignatureUtil.registerKeyProvider("P-256", adminClient, testContext);
-
-            // Require signed userInfo request
-            ClientResource clientResource = ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app");
-            ClientRepresentation clientRep = clientResource.toRepresentation();
-            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setUserInfoSignedResponseAlg(Algorithm.ES256);
-            clientResource.update(clientRep);
-
-            // test signed response
-            Client client = ClientBuilder.newClient();
-
-            try {
-                AccessTokenResponse accessTokenResponse = executeGrantAccessTokenRequest(client);
-
-                Response response = UserInfoClientUtil.executeUserInfoRequest_getMethod(client, accessTokenResponse.getToken());
-
-                events.expect(EventType.USER_INFO_REQUEST)
-                        .session(Matchers.notNullValue(String.class))
-                        .detail(Details.AUTH_METHOD, Details.VALIDATE_ACCESS_TOKEN)
-                        .detail(Details.USERNAME, "test-user@localhost")
-                        .detail(Details.SIGNATURE_REQUIRED, "true")
-                        .detail(Details.SIGNATURE_ALGORITHM, Algorithm.ES256.toString())
-                        .assertEvent();
-
-                Assert.assertEquals(200, response.getStatus());
-                Assert.assertEquals(response.getHeaderString(HttpHeaders.CONTENT_TYPE), MediaType.APPLICATION_JWT);
-                String signedResponse = response.readEntity(String.class);
-                response.close();
-
-                JWSInput jwsInput = new JWSInput(signedResponse);
-
-                assertEquals("ES256", jwsInput.getHeader().getAlgorithm().name());
-
-                UserInfo userInfo = JsonSerialization.readValue(jwsInput.getContent(), UserInfo.class);
-
-                Assert.assertNotNull(userInfo);
-                Assert.assertNotNull(userInfo.getSubject());
-                Assert.assertEquals("test-user@localhost", userInfo.getEmail());
-                Assert.assertEquals("test-user@localhost", userInfo.getPreferredUsername());
-
-                Assert.assertTrue(userInfo.hasAudience("test-app"));
-                String expectedIssuer = Urls.realmIssuer(new URI(AUTH_SERVER_ROOT), "test");
-                Assert.assertEquals(expectedIssuer, userInfo.getIssuer());
-
-            } finally {
-                client.close();
-            }
-
-            // Revert signed userInfo request
-            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setUserInfoSignedResponseAlg(null);
-            clientResource.update(clientRep);
-        } finally {
-            TokenSignatureUtil.changeRealmTokenSignatureProvider(adminClient, org.keycloak.crypto.Algorithm.RS256);
-        }
+        testSuccessSignedResponse(Algorithm.ES256);
     }
 
+    @Test
+    public void testSuccessSignedResponsePS256() throws Exception {
+        testSuccessSignedResponse(Algorithm.PS256);
+    }
+ 
     @Test
     public void testSessionExpired() {
         Client client = ClientBuilder.newClient();
@@ -510,4 +460,62 @@ public class UserInfoTest extends AbstractKeycloakTest {
                 .assertEvent();
         UserInfoClientUtil.testSuccessfulUserInfoResponse(response, "test-user@localhost", "test-user@localhost");
     }
+
+    private void testSuccessSignedResponse(Algorithm sigAlg) throws Exception {
+
+        try {
+            // Require signed userInfo request
+            ClientResource clientResource = ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app");
+            ClientRepresentation clientRep = clientResource.toRepresentation();
+            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setUserInfoSignedResponseAlg(sigAlg);
+            clientResource.update(clientRep);
+
+            // test signed response
+            Client client = ClientBuilder.newClient();
+
+            try {
+                AccessTokenResponse accessTokenResponse = executeGrantAccessTokenRequest(client);
+
+                Response response = UserInfoClientUtil.executeUserInfoRequest_getMethod(client, accessTokenResponse.getToken());
+
+                events.expect(EventType.USER_INFO_REQUEST)
+                        .session(Matchers.notNullValue(String.class))
+                        .detail(Details.AUTH_METHOD, Details.VALIDATE_ACCESS_TOKEN)
+                        .detail(Details.USERNAME, "test-user@localhost")
+                        .detail(Details.SIGNATURE_REQUIRED, "true")
+                        .detail(Details.SIGNATURE_ALGORITHM, sigAlg.toString())
+                        .assertEvent();
+
+                Assert.assertEquals(200, response.getStatus());
+                Assert.assertEquals(response.getHeaderString(HttpHeaders.CONTENT_TYPE), MediaType.APPLICATION_JWT);
+                String signedResponse = response.readEntity(String.class);
+                response.close();
+
+                JWSInput jwsInput = new JWSInput(signedResponse);
+
+                assertEquals(sigAlg.toString(), jwsInput.getHeader().getAlgorithm().name());
+
+                UserInfo userInfo = JsonSerialization.readValue(jwsInput.getContent(), UserInfo.class);
+
+                Assert.assertNotNull(userInfo);
+                Assert.assertNotNull(userInfo.getSubject());
+                Assert.assertEquals("test-user@localhost", userInfo.getEmail());
+                Assert.assertEquals("test-user@localhost", userInfo.getPreferredUsername());
+
+                Assert.assertTrue(userInfo.hasAudience("test-app"));
+                String expectedIssuer = Urls.realmIssuer(new URI(AUTH_SERVER_ROOT), "test");
+                Assert.assertEquals(expectedIssuer, userInfo.getIssuer());
+
+            } finally {
+                client.close();
+            }
+
+            // Revert signed userInfo request
+            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setUserInfoSignedResponseAlg(null);
+            clientResource.update(clientRep);
+        } finally {
+            TokenSignatureUtil.changeRealmTokenSignatureProvider(adminClient, org.keycloak.crypto.Algorithm.RS256);
+        }
+    }
+
 }

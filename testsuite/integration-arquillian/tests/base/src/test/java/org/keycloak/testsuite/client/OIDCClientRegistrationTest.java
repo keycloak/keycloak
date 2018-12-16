@@ -206,33 +206,42 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
 
     @Test
     public void testSignaturesRequired() throws Exception {
-        OIDCClientRepresentation clientRep = createRep();
-        clientRep.setUserinfoSignedResponseAlg(Algorithm.ES256.toString());
-        clientRep.setRequestObjectSigningAlg(Algorithm.ES256.toString());
+        OIDCClientRepresentation clientRep = null;
+        OIDCClientRepresentation response = null;
+        try {
+            clientRep = createRep();
+            clientRep.setUserinfoSignedResponseAlg(Algorithm.ES256.toString());
+            clientRep.setRequestObjectSigningAlg(Algorithm.ES256.toString());
 
-        OIDCClientRepresentation response = reg.oidc().create(clientRep);
-        Assert.assertEquals(Algorithm.ES256.toString(), response.getUserinfoSignedResponseAlg());
-        Assert.assertEquals(Algorithm.ES256.toString(), response.getRequestObjectSigningAlg());
-        Assert.assertNotNull(response.getClientSecret());
+            response = reg.oidc().create(clientRep);
+            Assert.assertEquals(Algorithm.ES256.toString(), response.getUserinfoSignedResponseAlg());
+            Assert.assertEquals(Algorithm.ES256.toString(), response.getRequestObjectSigningAlg());
+            Assert.assertNotNull(response.getClientSecret());
 
-        // Test Keycloak representation
-        ClientRepresentation kcClient = getClient(response.getClientId());
-        OIDCAdvancedConfigWrapper config = OIDCAdvancedConfigWrapper.fromClientRepresentation(kcClient);
-        Assert.assertEquals(config.getUserInfoSignedResponseAlg(), Algorithm.ES256);
-        Assert.assertEquals(config.getRequestObjectSignatureAlg(), Algorithm.ES256);
+            // Test Keycloak representation
+            ClientRepresentation kcClient = getClient(response.getClientId());
+            OIDCAdvancedConfigWrapper config = OIDCAdvancedConfigWrapper.fromClientRepresentation(kcClient);
+            Assert.assertEquals(config.getUserInfoSignedResponseAlg(), Algorithm.ES256);
+            Assert.assertEquals(config.getRequestObjectSignatureAlg(), Algorithm.ES256);
 
-        // update (ES256 to RS256)
-        clientRep.setUserinfoSignedResponseAlg(Algorithm.RS256.toString());
-        clientRep.setRequestObjectSigningAlg(Algorithm.RS256.toString());
-        response = reg.oidc().create(clientRep);
-        Assert.assertEquals(Algorithm.RS256.toString(), response.getUserinfoSignedResponseAlg());
-        Assert.assertEquals(Algorithm.RS256.toString(), response.getRequestObjectSigningAlg());
+            // update (ES256 to PS256)
+            clientRep.setUserinfoSignedResponseAlg(Algorithm.PS256.toString());
+            clientRep.setRequestObjectSigningAlg(Algorithm.PS256.toString());
+            response = reg.oidc().create(clientRep);
+            Assert.assertEquals(Algorithm.PS256.toString(), response.getUserinfoSignedResponseAlg());
+            Assert.assertEquals(Algorithm.PS256.toString(), response.getRequestObjectSigningAlg());
 
-        // keycloak representation
-        kcClient = getClient(response.getClientId());
-        config = OIDCAdvancedConfigWrapper.fromClientRepresentation(kcClient);
-        Assert.assertEquals(config.getUserInfoSignedResponseAlg(), Algorithm.RS256);
-        Assert.assertEquals(config.getRequestObjectSignatureAlg(), Algorithm.RS256);
+            // keycloak representation
+            kcClient = getClient(response.getClientId());
+            config = OIDCAdvancedConfigWrapper.fromClientRepresentation(kcClient);
+            Assert.assertEquals(config.getUserInfoSignedResponseAlg(), Algorithm.PS256);
+            Assert.assertEquals(config.getRequestObjectSignatureAlg(), Algorithm.PS256);
+        } finally {
+            // back to RS256 for other tests
+            clientRep.setUserinfoSignedResponseAlg(Algorithm.RS256.toString());
+            clientRep.setRequestObjectSigningAlg(Algorithm.RS256.toString());
+            response = reg.oidc().create(clientRep);
+        }
     }
 
     @Test

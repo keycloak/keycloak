@@ -55,9 +55,10 @@ public interface Attributes {
             "16", "24", "32", "64", "128", "256", "512");
 
     String ALGORITHM_KEY = "algorithm";
+
     ProviderConfigProperty RS_ALGORITHM_PROPERTY = new ProviderConfigProperty(ALGORITHM_KEY, "Algorithm", "Intended algorithm for the key", LIST_TYPE,
             Algorithm.RS256,
-            Algorithm.RS256, Algorithm.RS384, Algorithm.RS512);
+            Algorithm.RS256, Algorithm.RS384, Algorithm.RS512, Algorithm.PS256, Algorithm.PS384, Algorithm.PS512);
 
     ProviderConfigProperty HS_ALGORITHM_PROPERTY = new ProviderConfigProperty(ALGORITHM_KEY, "Algorithm", "Intended algorithm for the key", LIST_TYPE,
             Algorithm.HS256,
