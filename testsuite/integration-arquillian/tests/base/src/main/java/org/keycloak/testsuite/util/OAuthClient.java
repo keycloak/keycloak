@@ -1205,7 +1205,7 @@ public class OAuthClient {
                 PublicKey publicKey = JWKParser.create(k).toPublicKey();
 
                 KeyWrapper key = new KeyWrapper();
-                key.setKid(key.getKid());
+                key.setKid(k.getKeyId());
                 key.setAlgorithm(k.getAlgorithm());
                 key.setVerifyKey(publicKey);
                 key.setUse(KeyUse.SIG);

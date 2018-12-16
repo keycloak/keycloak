@@ -27,6 +27,9 @@ public class JavaAlgorithm {
     public static final String ES256 = "SHA256withECDSA";
     public static final String ES384 = "SHA384withECDSA";
     public static final String ES512 = "SHA512withECDSA";
+    public static final String PS256 = "SHA256withRSAandMGF1";
+    public static final String PS384 = "SHA384withRSAandMGF1";
+    public static final String PS512 = "SHA512withRSAandMGF1";
     public static final String AES = "AES";
 
     public static final String SHA256 = "SHA-256";
@@ -53,6 +56,12 @@ public class JavaAlgorithm {
                 return ES384;
             case Algorithm.ES512:
                 return ES512;
+            case Algorithm.PS256:
+                return PS256;
+            case Algorithm.PS384:
+                return PS384;
+            case Algorithm.PS512:
+                return PS512;
             case Algorithm.AES:
                 return AES;
             default:
@@ -80,6 +89,12 @@ public class JavaAlgorithm {
             case Algorithm.ES384:
                 return SHA384;
             case Algorithm.ES512:
+                return SHA512;
+            case Algorithm.PS256:
+                return SHA256;
+            case Algorithm.PS384:
+                return SHA384;
+            case Algorithm.PS512:
                 return SHA512;
             case Algorithm.AES:
                 return AES;

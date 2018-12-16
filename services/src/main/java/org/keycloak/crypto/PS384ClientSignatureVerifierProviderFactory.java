@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2019 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,20 +16,19 @@
  */
 package org.keycloak.crypto;
 
-public interface Algorithm {
+import org.keycloak.models.KeycloakSession;
 
-    String HS256 = "HS256";
-    String HS384 = "HS384";
-    String HS512 = "HS512";
-    String RS256 = "RS256";
-    String RS384 = "RS384";
-    String RS512 = "RS512";
-    String ES256 = "ES256";
-    String ES384 = "ES384";
-    String ES512 = "ES512";
-    String PS256 = "PS256";
-    String PS384 = "PS384";
-    String PS512 = "PS512";
+public class PS384ClientSignatureVerifierProviderFactory implements ClientSignatureVerifierProviderFactory {
 
-    String AES = "AES";
+    public static final String ID = Algorithm.PS384;
+
+    @Override
+    public String getId() {
+        return ID;
+    }
+
+    @Override
+    public ClientSignatureVerifierProvider create(KeycloakSession session) {
+        return new AsymmetricClientSignatureVerifierProvider(session, Algorithm.PS384);
+    }
 }

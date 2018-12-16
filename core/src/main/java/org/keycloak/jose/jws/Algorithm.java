@@ -34,6 +34,9 @@ public enum Algorithm {
     RS256(AlgorithmType.RSA, new RSAProvider()),
     RS384(AlgorithmType.RSA, new RSAProvider()),
     RS512(AlgorithmType.RSA, new RSAProvider()),
+    PS256(AlgorithmType.RSA, null),
+    PS384(AlgorithmType.RSA, null),
+    PS512(AlgorithmType.RSA, null),
     ES256(AlgorithmType.ECDSA, null),
     ES384(AlgorithmType.ECDSA, null),
     ES512(AlgorithmType.ECDSA, null)

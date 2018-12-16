@@ -23,7 +23,6 @@ import java.security.PublicKey;
 import java.security.Signature;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
-import java.util.Map;
 
 import javax.ws.rs.core.Response;
 
@@ -32,9 +31,11 @@ import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.common.util.Base64;
 import org.keycloak.common.util.MultivaluedHashMap;
+import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.JavaAlgorithm;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.keys.GeneratedEcdsaKeyProviderFactory;
+import org.keycloak.keys.GeneratedRsaKeyProviderFactory;
 import org.keycloak.keys.KeyProvider;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -47,9 +48,6 @@ import org.keycloak.testsuite.arquillian.TestContext;
 public class TokenSignatureUtil {
     private static Logger log = Logger.getLogger(TokenSignatureUtil.class);
 
-    private static final String COMPONENT_SIGNATURE_ALGORITHM_KEY = "token.signed.response.alg";
-    
-    private static final String ECDSA_ELLIPTIC_CURVE_KEY = "ecdsaEllipticCurveKey";
     private static final String TEST_REALM_NAME = "test";
 
     public static void changeRealmTokenSignatureProvider(Keycloak adminClient, String toSigAlgName) {
@@ -58,10 +56,8 @@ public class TokenSignatureUtil {
 
     public static void changeRealmTokenSignatureProvider(String realm, Keycloak adminClient, String toSigAlgName) {
         RealmRepresentation rep = adminClient.realm(realm).toRepresentation();
-        Map<String, String> attributes = rep.getAttributes();
-        log.tracef("change realm test signature algorithm from %s to %s", attributes.get(COMPONENT_SIGNATURE_ALGORITHM_KEY), toSigAlgName);
+        log.tracef("change realm test signature algorithm from %s to %s", rep.getDefaultSignatureAlgorithm(), toSigAlgName);
         rep.setDefaultSignatureAlgorithm(toSigAlgName);
-        rep.setAttributes(attributes);
         adminClient.realm(realm).update(rep);
     }
 
@@ -88,17 +84,48 @@ public class TokenSignatureUtil {
         return verifier.verify(jws.getSignature());
     }
 
-    public static void registerKeyProvider(String ecNistRep, Keycloak adminClient, TestContext testContext) {
-        registerKeyProvider(TEST_REALM_NAME, ecNistRep, adminClient, testContext);
+    public static void registerKeyProvider(String jwaAlgorithmName, Keycloak adminClient, TestContext testContext) {
+        registerKeyProvider(TEST_REALM_NAME, jwaAlgorithmName, adminClient, testContext);
     }
 
-    public static void registerKeyProvider(String realm, String ecNistRep, Keycloak adminClient, TestContext testContext) {
+    public static void registerKeyProvider(String realm, String jwaAlgorithmName, Keycloak adminClient, TestContext testContext) {
+        switch(jwaAlgorithmName) {
+            case Algorithm.RS256:
+            case Algorithm.RS384:
+            case Algorithm.RS512:
+            case Algorithm.PS256:
+            case Algorithm.PS384:
+            case Algorithm.PS512:
+                registerKeyProvider(realm, "algorithm", jwaAlgorithmName, GeneratedRsaKeyProviderFactory.ID, adminClient, testContext);
+                break;
+            case Algorithm.ES256:
+            case Algorithm.ES384:
+            case Algorithm.ES512:
+                registerKeyProvider(realm, "ecdsaEllipticCurveKey", convertAlgorithmToECDomainParamNistRep(jwaAlgorithmName), GeneratedEcdsaKeyProviderFactory.ID, adminClient, testContext);
+                break;
+        }
+    }
+
+    public static String convertAlgorithmToECDomainParamNistRep(String algorithm) {
+        switch(algorithm) {
+            case Algorithm.ES256 :
+                return "P-256";
+            case Algorithm.ES384 :
+                return "P-384";
+            case Algorithm.ES512 :
+                return "P-521";
+            default :
+                return null;
+        }
+    }
+
+    private static void registerKeyProvider(String realm, String providerSpecificKey, String providerSpecificValue, String providerId, Keycloak adminClient, TestContext testContext) {
         long priority = System.currentTimeMillis();
 
-        ComponentRepresentation rep = createKeyRep("valid", GeneratedEcdsaKeyProviderFactory.ID);
+        ComponentRepresentation rep = createKeyRep("valid", providerId);
         rep.setConfig(new MultivaluedHashMap<>());
         rep.getConfig().putSingle("priority", Long.toString(priority));
-        rep.getConfig().putSingle(ECDSA_ELLIPTIC_CURVE_KEY, ecNistRep);
+        rep.getConfig().putSingle(providerSpecificKey, providerSpecificValue);
 
         try (Response response = adminClient.realm(realm).components().add(rep)) {
             String id = ApiUtil.getCreatedId(response);
