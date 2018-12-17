@@ -146,6 +146,13 @@ bin/{generic_adapter_name} \
 
 By default the roles defined on a resource perform a logical `AND` so all roles specified must be present in the claims, this behavior can be altered by the `require-any-role` option, however, so as long as one role is present the permission is granted.
 
+==== OpenID Provider Communication
+By default the communication with the OpenID provider is direct. If you wish, you can specify a forwarding proxy server in your configuration file:
+[source,yaml]
+----
+openid-provider-proxy: http://proxy.example.com:8080
+----
+
 ==== HTTP routing
 
 By default all requests will be proxyed on to the upstream, if you wish to ensure all requests are authentication you can use this:
