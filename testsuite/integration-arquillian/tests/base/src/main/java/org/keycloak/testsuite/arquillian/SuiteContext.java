@@ -24,6 +24,7 @@ import java.util.Set;
 
 import org.keycloak.testsuite.arquillian.migration.MigrationContext;
 
+import org.keycloak.testsuite.util.TextFileChecker;
 import java.util.LinkedList;
 import static org.keycloak.testsuite.util.MailServerConfiguration.FROM;
 import static org.keycloak.testsuite.util.MailServerConfiguration.HOST;
@@ -48,6 +49,8 @@ public final class SuiteContext {
     private boolean adminPasswordUpdated;
     private final Map<String, String> smtpServer = new HashMap<>();
 
+    private TextFileChecker serverLogChecker;
+
     /**
      * True if the testsuite is running in the adapter backward compatibility testing mode,
      * i.e. if the tests are running against newer auth server
@@ -60,6 +63,14 @@ public final class SuiteContext {
         smtpServer.put("from", FROM);
         smtpServer.put("host", HOST);
         smtpServer.put("port", PORT);
+    }
+
+    public TextFileChecker getServerLogChecker() {
+        return this.serverLogChecker;
+    }
+
+    public void setServerLogChecker(TextFileChecker serverLogChecker) {
+        this.serverLogChecker = serverLogChecker;
     }
 
     public boolean isAdminPasswordUpdated() {

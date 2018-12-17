@@ -36,6 +36,8 @@ import org.jboss.arquillian.test.spi.event.suite.BeforeSuite;
 import org.jboss.logging.Logger;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.services.error.KeycloakErrorHandler;
+import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
 import org.keycloak.testsuite.util.LogChecker;
 import org.keycloak.testsuite.util.OAuthClient;
@@ -44,6 +46,7 @@ import org.wildfly.extras.creaper.commands.undertow.RemoveUndertowListener;
 import org.wildfly.extras.creaper.commands.undertow.SslVerifyClient;
 import org.wildfly.extras.creaper.commands.undertow.UndertowListenerType;
 import org.wildfly.extras.creaper.core.CommandFailedException;
+import org.keycloak.testsuite.util.TextFileChecker;
 import org.wildfly.extras.creaper.core.ManagementClient;
 import org.wildfly.extras.creaper.core.online.CliException;
 import org.wildfly.extras.creaper.core.online.OnlineManagementClient;
@@ -58,11 +61,18 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 
 import java.util.concurrent.TimeoutException;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import javax.ws.rs.NotFoundException;
+import org.jboss.arquillian.test.spi.event.suite.After;
+import org.jboss.arquillian.test.spi.event.suite.Before;
+import org.junit.Assert;
 
 /**
  *
@@ -321,12 +331,34 @@ public class AuthServerTestEnricher {
         startContainerEvent.fire(new StartContainer(suiteContext.getAuthServerInfo().getArquillianContainer()));
     }
 
-    public void checkServerLogs(@Observes(precedence = -1) BeforeSuite event) throws IOException, InterruptedException {
-        boolean checkLog = Boolean.parseBoolean(System.getProperty("auth.server.log.check", "true"));
-        if (checkLog && suiteContext.getAuthServerInfo().isJBossBased()) {
-            String jbossHomePath = suiteContext.getAuthServerInfo().getProperties().get("jbossHome");
-            LogChecker.checkJBossServerLog(jbossHomePath);
+    private static final Pattern RECOGNIZED_ERRORS = Pattern.compile("ERROR|SEVERE|Exception ");
+    private static final Pattern IGNORED = Pattern.compile("Jetty ALPN support not found|org.keycloak.events");
+
+    private static final boolean isRecognizedErrorLog(String logText) {
+        //There is expected string "Exception" in server log: Adding provider
+        //singleton org.keycloak.services.resources.ModelExceptionMapper
+        return RECOGNIZED_ERRORS.matcher(logText).find() && ! IGNORED.matcher(logText).find();
+    }
+
+    private static final void failOnRecognizedErrorInLog(Stream<String> logStream) {
+        Optional<String> anyRecognizedError = logStream.filter(AuthServerTestEnricher::isRecognizedErrorLog).findAny();
+        if (anyRecognizedError.isPresent()) {
+            throw new RuntimeException(String.format("Server log file contains ERROR: '%s'", anyRecognizedError.get()));
         }
+    }
+
+    public void checkServerLogs(@Observes(precedence = -1) BeforeSuite event) throws IOException, InterruptedException {
+        if (! suiteContext.getAuthServerInfo().isJBossBased()) {
+            suiteContext.setServerLogChecker(new TextFileChecker());    // checks nothing
+            return;
+        }
+
+        boolean checkLog = Boolean.parseBoolean(System.getProperty("auth.server.log.check", "true"));
+        String jbossHomePath = suiteContext.getAuthServerInfo().getProperties().get("jbossHome");
+        if (checkLog) {
+            LogChecker.getJBossServerLogsChecker(true, jbossHomePath).checkFiles(AuthServerTestEnricher::failOnRecognizedErrorInLog);
+        }
+        suiteContext.setServerLogChecker(LogChecker.getJBossServerLogsChecker(false, jbossHomePath));
     }
 
     public void initializeTestContext(@Observes(precedence = 2) BeforeClass event) {
@@ -388,6 +420,31 @@ public class AuthServerTestEnricher {
         OAuthClient.updateURLs(suiteContext.getAuthServerInfo().getContextRoot().toString());
         OAuthClient oAuthClient = new OAuthClient();
         oAuthClientProducer.set(oAuthClient);
+    }
+
+    public void beforeTest(@Observes(precedence = 100) Before event) throws IOException {
+        suiteContext.getServerLogChecker().updateLastCheckedPositionsOfAllFilesToEndOfFile();
+    }
+
+    private static final Pattern UNEXPECTED_UNCAUGHT_ERROR = Pattern.compile(
+      KeycloakErrorHandler.class.getSimpleName()
+        + ".*"
+        + Pattern.quote(KeycloakErrorHandler.UNCAUGHT_SERVER_ERROR_TEXT)
+        + "[\\s:]*(.*)$"
+    );
+
+    private void checkForNoUnexpectedUncaughtError(Stream<String> logStream) {
+        Optional<Matcher> anyUncaughtError = logStream.map(UNEXPECTED_UNCAUGHT_ERROR::matcher).filter(Matcher::find).findAny();
+        if (anyUncaughtError.isPresent()) {
+            Matcher m = anyUncaughtError.get();
+            Assert.fail("Uncaught server error detected: " + m.group(1));
+        }
+    }
+
+    public void afterTest(@Observes(precedence = -1) After event) throws IOException {
+        if (event.getTestMethod().getAnnotation(UncaughtServerErrorExpected.class) == null) {
+            suiteContext.getServerLogChecker().checkFiles(this::checkForNoUnexpectedUncaughtError);
+        }
     }
 
     public void afterClass(@Observes(precedence = 2) AfterClass event) {
