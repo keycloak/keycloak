@@ -382,7 +382,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
                     String contentType = response.getFirstHeader(HttpHeaders.CONTENT_TYPE);
                     JsonNode userInfo;
 
-                    if (MediaType.APPLICATION_JSON.equals(contentType)) {
+                    if (MediaType.APPLICATION_JSON_TYPE.isCompatible(MediaType.valueOf(contentType))) {
                         userInfo = response.asJson();
                     } else if ("application/jwt".equals(contentType)) {
                         JWSInput jwsInput;
