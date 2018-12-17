@@ -986,7 +986,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
         try {
             TokenSignatureUtil.changeRealmTokenSignatureProvider(adminClient, Algorithm.RS256);
             TokenSignatureUtil.changeClientAccessTokenSignatureProvider(ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), Algorithm.ES256);
-            TokenSignatureUtil.registerKeyProvider("P-256", adminClient, testContext);
+            TokenSignatureUtil.registerEcdsaKeyProvider("P-256", adminClient, testContext);
             refreshTokenSignatureVerifyOnly(Algorithm.HS256, Algorithm.ES256, Algorithm.RS256);
         } finally {
             TokenSignatureUtil.changeClientAccessTokenSignatureProvider(ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), Algorithm.RS256);
@@ -998,7 +998,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
         try {
             TokenSignatureUtil.changeRealmTokenSignatureProvider(adminClient, Algorithm.ES384);
             TokenSignatureUtil.changeClientAccessTokenSignatureProvider(ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), Algorithm.ES384);
-            TokenSignatureUtil.registerKeyProvider("P-384", adminClient, testContext);
+            TokenSignatureUtil.registerEcdsaKeyProvider("P-384", adminClient, testContext);
             refreshTokenSignatureVerifyOnly(Algorithm.HS256, Algorithm.ES384, Algorithm.ES384);
         } finally {
             TokenSignatureUtil.changeRealmTokenSignatureProvider(adminClient, Algorithm.RS256);
@@ -1011,7 +1011,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
         try {
             TokenSignatureUtil.changeRealmTokenSignatureProvider(adminClient, Algorithm.RS256);
             TokenSignatureUtil.changeClientAccessTokenSignatureProvider(ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), Algorithm.ES512);
-            TokenSignatureUtil.registerKeyProvider("P-521", adminClient, testContext);
+            TokenSignatureUtil.registerEcdsaKeyProvider("P-521", adminClient, testContext);
             refreshTokenSignatureVerifyOnly(Algorithm.HS256, Algorithm.ES512, Algorithm.RS256);
         } finally {
             TokenSignatureUtil.changeClientAccessTokenSignatureProvider(ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), Algorithm.RS256);

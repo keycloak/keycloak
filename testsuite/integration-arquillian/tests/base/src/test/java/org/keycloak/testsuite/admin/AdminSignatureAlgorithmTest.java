@@ -47,7 +47,7 @@ public class AdminSignatureAlgorithmTest extends AbstractKeycloakTest {
 
     @Test
     public void changeRealmTokenAlgorithm() throws Exception {
-        TokenSignatureUtil.registerKeyProvider("master", "P-256", adminClient, testContext);
+        TokenSignatureUtil.registerEcdsaKeyProvider("master", "P-256", adminClient, testContext);
         TokenSignatureUtil.changeRealmTokenSignatureProvider("master", adminClient, Algorithm.ES256);
 
         Keycloak adminClient = AdminClientUtil.createAdminClient(suiteContext.isAdapterCompatTesting(), suiteContext.getAuthServerInfo().getContextRoot().toString());

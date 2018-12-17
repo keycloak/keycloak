@@ -263,10 +263,42 @@ public abstract class AbstractOIDCResponseTypeTest extends AbstractTestRealmKeyc
             TokenSignatureUtil.changeClientIdTokenSignatureProvider(ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), "RS256");
         }
     }
+
+    @Test
+    public void oidcFlow_RealmRS256_ClientES256_EffectiveES256() throws Exception {
+        oidcFlow_RealmRS256_ClientES256_EffectiveES("P-256", "ES256");
+    }
+
+    @Test
+    public void oidcFlow_RealmRS256_ClientES256_EffectiveES384() throws Exception {
+        oidcFlow_RealmRS256_ClientES256_EffectiveES("P-384", "ES384");
+    }
+
+    @Test
+    public void oidcFlow_RealmRS256_ClientES256_EffectiveES512() throws Exception {
+        oidcFlow_RealmRS256_ClientES256_EffectiveES("P-521", "ES512");
+    }
+
+    private void oidcFlow_RealmRS256_ClientES256_EffectiveES(String ecNistRep, String jwaAlgorithmName) throws Exception {
+        try {
+            setSignatureAlgorithm(jwaAlgorithmName);
+            TokenSignatureUtil.changeRealmTokenSignatureProvider(adminClient, "RS256");
+            TokenSignatureUtil.changeClientIdTokenSignatureProvider(ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), jwaAlgorithmName);
+            TokenSignatureUtil.registerEcdsaKeyProvider(ecNistRep, adminClient, testContext);
+            oidcFlow("RS256", jwaAlgorithmName);
+        } finally {
+            setSignatureAlgorithm("RS256");
+            TokenSignatureUtil.changeClientIdTokenSignatureProvider(ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), "RS256");
+        }
+    }
+
+    // ID token signatur algorithm
     private String sigAlgName = "RS256";
+
     private void setSignatureAlgorithm(String sigAlgName) {
         this.sigAlgName = sigAlgName;
     }
+
     protected String getSignatureAlgorithm() {
         return this.sigAlgName;
     }

@@ -50,10 +50,13 @@ public class HashProvider {
     private static String getJavaDigestAlgorithm(String alg) {
         switch (alg) {
             case "RS256":
+            case "ES256":
                 return "SHA-256";
             case "RS384":
+            case "ES384":
                 return "SHA-384";
             case "RS512":
+            case "ES512":
                 return "SHA-512";
             default:
                 throw new IllegalArgumentException("Not an RSA Algorithm");

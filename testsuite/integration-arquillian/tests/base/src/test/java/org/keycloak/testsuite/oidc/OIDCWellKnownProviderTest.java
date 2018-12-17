@@ -194,7 +194,7 @@ public class OIDCWellKnownProviderTest extends AbstractKeycloakTest {
 
     @Test
     public void certs() throws IOException {
-        TokenSignatureUtil.registerKeyProvider("P-256", adminClient, testContext);
+        TokenSignatureUtil.registerEcdsaKeyProvider("P-256", adminClient, testContext);
 
         OIDCConfigurationRepresentation representation = SimpleHttp.doGet(getAuthServerRoot().toString() + "realms/test/.well-known/openid-configuration", client).asJson(OIDCConfigurationRepresentation.class);
         String jwksUri = representation.getJwksUri();

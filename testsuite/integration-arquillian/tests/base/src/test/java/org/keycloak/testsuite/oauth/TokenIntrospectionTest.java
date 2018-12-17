@@ -250,7 +250,7 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
     @Test
     public void testIntrospectAccessTokenES256() throws Exception {
         try {
-            TokenSignatureUtil.registerKeyProvider("P-256", adminClient, testContext);
+            TokenSignatureUtil.registerEcdsaKeyProvider("P-256", adminClient, testContext);
             TokenSignatureUtil.changeClientAccessTokenSignatureProvider(ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), Algorithm.ES256);
 
             oauth.doLogin("test-user@localhost", "password");

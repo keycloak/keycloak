@@ -230,7 +230,7 @@ public class UserInfoTest extends AbstractKeycloakTest {
     public void testSuccessSignedResponseES256() throws Exception {
 
         try {
-            TokenSignatureUtil.registerKeyProvider("P-256", adminClient, testContext);
+            TokenSignatureUtil.registerEcdsaKeyProvider("P-256", adminClient, testContext);
 
             // Require signed userInfo request
             ClientResource clientResource = ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app");

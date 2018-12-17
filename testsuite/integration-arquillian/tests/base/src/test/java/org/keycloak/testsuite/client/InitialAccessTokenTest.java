@@ -73,7 +73,7 @@ public class InitialAccessTokenTest extends AbstractClientRegistrationTest {
     @Test
     public void createWithES256() throws JWSInputException, ClientRegistrationException {
         try {
-            TokenSignatureUtil.registerKeyProvider("P-256", adminClient, testContext);
+            TokenSignatureUtil.registerEcdsaKeyProvider("P-256", adminClient, testContext);
             TokenSignatureUtil.changeRealmTokenSignatureProvider(adminClient, Algorithm.ES256);
 
             ClientInitialAccessPresentation response = resource.create(new ClientInitialAccessCreatePresentation());

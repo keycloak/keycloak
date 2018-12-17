@@ -34,6 +34,7 @@ import org.keycloak.common.util.Base64;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.crypto.JavaAlgorithm;
 import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.keys.AbstractEcdsaKeyProviderFactory;
 import org.keycloak.keys.GeneratedEcdsaKeyProviderFactory;
 import org.keycloak.keys.KeyProvider;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
@@ -88,11 +89,11 @@ public class TokenSignatureUtil {
         return verifier.verify(jws.getSignature());
     }
 
-    public static void registerKeyProvider(String ecNistRep, Keycloak adminClient, TestContext testContext) {
-        registerKeyProvider(TEST_REALM_NAME, ecNistRep, adminClient, testContext);
+    public static void registerEcdsaKeyProvider(String ecNistRep, Keycloak adminClient, TestContext testContext) {
+        registerEcdsaKeyProvider(TEST_REALM_NAME, ecNistRep, adminClient, testContext);
     }
 
-    public static void registerKeyProvider(String realm, String ecNistRep, Keycloak adminClient, TestContext testContext) {
+    public static void registerEcdsaKeyProvider(String realm, String ecNistRep, Keycloak adminClient, TestContext testContext) {
         long priority = System.currentTimeMillis();
 
         ComponentRepresentation rep = createKeyRep("valid", GeneratedEcdsaKeyProviderFactory.ID);
