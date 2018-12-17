@@ -16,57 +16,38 @@
  */
 package org.keycloak.testsuite.util;
 
-import org.apache.commons.io.FileUtils;
-import org.jboss.logging.Logger;
-
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
+import java.util.Arrays;
 
 /**
  *
- * @author vramik
- * @author tkyjovsk
+ * @author hmlnarik
  */
 public class LogChecker {
 
-    private static final Logger log = Logger.getLogger(LogChecker.class);
-
-    private static final String[] IGNORED = new String[] { ".*Jetty ALPN support not found.*", ".*org.keycloak.events.*" };
-
-    public static void checkServerLog(File logFile) throws IOException {
-        log.info(String.format("Checking server log: '%s'", logFile.getAbsolutePath()));
-        String[] logContent = FileUtils.readFileToString(logFile, "UTF-8").split("\n");
-
-        for (String logText : logContent) {
-            boolean containsError = logText.contains("ERROR") || logText.contains("SEVERE") || logText.contains("Exception ");
-            //There is expected string "Exception" in server log: Adding provider
-            //singleton org.keycloak.services.resources.ModelExceptionMapper
-            if (containsError) {
-                boolean ignore = false;
-                for (String i : IGNORED) {
-                    if (logText.matches(i)) {
-                        ignore = true;
-                        break;
-                    }
-                }
-                if (!ignore) {
-                    throw new RuntimeException(String.format("Server log file contains ERROR: '%s'", logText));
-                }
-            }
-        }
-
-    }
-
-    public static void checkJBossServerLog(String jbossHome) throws IOException {
+    public static String[] getJBossServerLogFiles(String jbossHome) {
         boolean domain = System.getProperty("auth.server.config.property.name", "standalone").contains("domain");
         if (domain) {
-            checkServerLog(new File(jbossHome + "/domain/log/process-controller.log"));
-            checkServerLog(new File(jbossHome + "/domain/log/host-controller.log"));
-            checkServerLog(new File(jbossHome + "/domain/servers/load-balancer/log/server.log"));
-            checkServerLog(new File(jbossHome + "/domain/servers/server-one/log/server.log"));
+            return new String[] {
+              jbossHome + "/domain/log/process-controller.log",
+              jbossHome + "/domain/log/host-controller.log",
+              jbossHome + "/domain/servers/load-balancer/log/server.log",
+              jbossHome + "/domain/servers/server-one/log/server.log"
+            };
         } else {
-            checkServerLog(new File(jbossHome + "/standalone/log/server.log"));
+            return new String[] {
+                jbossHome + "/standalone/log/server.log"
+            };
         }
+    }
+
+    public static TextFileChecker getJBossServerLogsChecker(boolean verbose, String jbossHome) throws IOException {
+        String[] pathsToCheck = getJBossServerLogFiles(jbossHome);
+        Path[] pathsArray = Arrays.stream(pathsToCheck).map(File::new).map(File::toPath).toArray(Path[]::new);
+
+        return new TextFileChecker(verbose, pathsArray);
     }
 
 }
