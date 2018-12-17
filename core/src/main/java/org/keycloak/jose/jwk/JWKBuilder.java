@@ -84,14 +84,34 @@ public class JWKBuilder {
         ECPublicJWK k = new ECPublicJWK();
 
         String kid = this.kid != null ? this.kid : KeyUtils.createKeyId(key);
+        int fieldSize = ecKey.getParams().getCurve().getField().getFieldSize();
+        int fieldSizeBytes = fieldSize % 8;
         k.setKeyId(kid);
         k.setKeyType(KeyType.EC);
         k.setAlgorithm(algorithm);
         k.setPublicKeyUse(DEFAULT_PUBLIC_KEY_USE);
-        k.setCrv("P-" + ecKey.getParams().getCurve().getField().getFieldSize());
-        k.setX(Base64Url.encode(ecKey.getW().getAffineX().toByteArray()));
-        k.setY(Base64Url.encode(ecKey.getW().getAffineY().toByteArray()));
+        k.setCrv("P-" + fieldSize);
+        
+        byte[] affineX = ecKey.getW().getAffineX().toByteArray();
+        byte[] affineY = ecKey.getW().getAffineY().toByteArray();
 
+        // fieldSizeBytes + 1 = 33 bytes for P-256, 49 bytes for P-384, 65 bytes for P-521.
+        if (affineX.length == fieldSizeBytes + 1) {
+            byte[] x = new byte[fieldSizeBytes];
+            System.arraycopy(affineX, 1, x, 0, fieldSizeBytes);
+            k.setX(Base64Url.encode(x));
+        } else {
+            k.setX(Base64Url.encode(affineX));
+        }
+
+        if (affineY.length == fieldSizeBytes + 1) {
+            byte[] y = new byte[fieldSizeBytes];
+            System.arraycopy(affineY, 1, y, 0, fieldSizeBytes);
+            k.setY(Base64Url.encode(y));
+
+        } else {
+            k.setY(Base64Url.encode(affineY));
+        }
         return k;
     }
 
