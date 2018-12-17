@@ -18,6 +18,7 @@
 package org.keycloak.jose.jwk;
 
 import org.junit.Test;
+import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.crypto.JavaAlgorithm;
 import org.keycloak.util.JsonSerialization;
@@ -86,9 +87,17 @@ public class JWKTest {
 
         assertTrue(jwk instanceof ECPublicJWK);
 
-        assertNotNull(((ECPublicJWK) jwk).getCrv());
-        assertNotNull(((ECPublicJWK) jwk).getX());
-        assertNotNull(((ECPublicJWK) jwk).getY());
+        ECPublicJWK ecJwk = (ECPublicJWK) jwk;
+
+        assertNotNull(ecJwk.getCrv());
+        assertNotNull(ecJwk.getX());
+        assertNotNull(ecJwk.getY());
+
+        byte[] xBytes = Base64Url.decode(ecJwk.getX());
+        byte[] yBytes = Base64Url.decode(ecJwk.getY());
+
+        assertEquals(256/8, xBytes.length);
+        assertEquals(256/8, yBytes.length);
 
         String jwkJson = JsonSerialization.writeValueAsString(jwk);
 

@@ -77,21 +77,24 @@ public class JWKBuilder {
         return k;
     }
 
-
     public JWK ec(Key key) {
         ECPublicKey ecKey = (ECPublicKey) key;
 
         ECPublicJWK k = new ECPublicJWK();
 
         String kid = this.kid != null ? this.kid : KeyUtils.createKeyId(key);
+        int fieldSize = ecKey.getParams().getCurve().getField().getFieldSize();
+        BigInteger affineX = ecKey.getW().getAffineX();
+        BigInteger affineY = ecKey.getW().getAffineY();
+
         k.setKeyId(kid);
         k.setKeyType(KeyType.EC);
         k.setAlgorithm(algorithm);
         k.setPublicKeyUse(DEFAULT_PUBLIC_KEY_USE);
-        k.setCrv("P-" + ecKey.getParams().getCurve().getField().getFieldSize());
-        k.setX(Base64Url.encode(ecKey.getW().getAffineX().toByteArray()));
-        k.setY(Base64Url.encode(ecKey.getW().getAffineY().toByteArray()));
-
+        k.setCrv("P-" + fieldSize);
+        k.setX(Base64Url.encode(toIntegerBytes(ecKey.getW().getAffineX())));
+        k.setY(Base64Url.encode(toIntegerBytes(ecKey.getW().getAffineY())));
+        
         return k;
     }
 
