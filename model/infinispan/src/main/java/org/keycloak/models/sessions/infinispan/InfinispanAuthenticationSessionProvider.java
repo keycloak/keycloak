@@ -17,6 +17,7 @@
 
 package org.keycloak.models.sessions.infinispan;
 
+import org.infinispan.container.entries.CacheEntry;
 import org.keycloak.cluster.ClusterProvider;
 import java.util.Iterator;
 import java.util.Map;
@@ -29,6 +30,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.cache.infinispan.events.AuthenticationSessionAuthNoteUpdateEvent;
+import org.keycloak.models.sessions.infinispan.entities.AuthenticationSessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.RootAuthenticationSessionEntity;
 import org.keycloak.models.sessions.infinispan.events.RealmRemovedSessionEvent;
 import org.keycloak.models.sessions.infinispan.events.SessionEventsSenderTransaction;
@@ -183,6 +185,17 @@ public class InfinispanAuthenticationSessionProvider implements AuthenticationSe
     public RootAuthenticationSessionModel getRootAuthenticationSession(RealmModel realm, String authenticationSessionId) {
         RootAuthenticationSessionEntity entity = getRootAuthenticationSessionEntity(authenticationSessionId);
         return wrap(realm, entity);
+    }
+
+    @Override
+    public RootAuthenticationSessionModel getRootAuthenticationSessionForTabId(RealmModel realm, String tabId) {
+        for (RootAuthenticationSessionEntity entity : cache.values()) {
+            if (entity.getAuthenticationSessions().containsKey(tabId)) {
+                return wrap(realm, entity);
+            }
+        }
+
+        return null;
     }
 
 

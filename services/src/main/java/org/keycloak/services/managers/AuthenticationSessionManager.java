@@ -26,6 +26,7 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.RestartLoginCookie;
 import org.keycloak.services.util.CookieHelper;
 import org.keycloak.sessions.AuthenticationSessionModel;
+import org.keycloak.sessions.AuthenticationSessionProvider;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 import org.keycloak.sessions.StickySessionEncoderProvider;
 
@@ -221,7 +222,22 @@ public class AuthenticationSessionManager {
 
     // Don't look at cookie. Just lookup authentication session based on the ID and client. Return null if not found
     public AuthenticationSessionModel getAuthenticationSessionByIdAndClient(RealmModel realm, String authSessionId, ClientModel client, String tabId) {
-        RootAuthenticationSessionModel rootAuthSession = session.authenticationSessions().getRootAuthenticationSession(realm, authSessionId);
-        return rootAuthSession==null ? null : rootAuthSession.getAuthenticationSession(client, tabId);
+        final AuthenticationSessionProvider sessions = session.authenticationSessions();
+        RootAuthenticationSessionModel rootAuthSession = sessions.getRootAuthenticationSession(realm, authSessionId);
+        if (rootAuthSession == null) {
+            return null;
+        }
+
+        final AuthenticationSessionModel authenticationSession = rootAuthSession.getAuthenticationSession(client, tabId);
+        if (authenticationSession != null) {
+            return authenticationSession;
+        }
+
+        final RootAuthenticationSessionModel rootSession = sessions.getRootAuthenticationSessionForTabId(realm, tabId);
+        if (rootSession != null) {
+            return rootSession.getAuthenticationSession(client, tabId);
+        }
+
+        return null;
     }
 }

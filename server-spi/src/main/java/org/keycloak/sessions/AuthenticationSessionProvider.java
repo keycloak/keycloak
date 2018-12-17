@@ -38,6 +38,8 @@ public interface AuthenticationSessionProvider extends Provider {
 
     RootAuthenticationSessionModel getRootAuthenticationSession(RealmModel realm, String authenticationSessionId);
 
+    RootAuthenticationSessionModel getRootAuthenticationSessionForTabId(RealmModel realm, String tabId);
+
     void removeRootAuthenticationSession(RealmModel realm, RootAuthenticationSessionModel authenticationSession);
 
     void removeExpired(RealmModel realm);
