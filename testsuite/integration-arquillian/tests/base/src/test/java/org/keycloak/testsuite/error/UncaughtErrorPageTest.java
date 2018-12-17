@@ -7,6 +7,7 @@ import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.common.util.StreamUtil;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
+import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
 import org.keycloak.testsuite.pages.ErrorPage;
 
 import javax.ws.rs.core.Response;
@@ -49,6 +50,7 @@ public class UncaughtErrorPageTest extends AbstractKeycloakTest {
     }
 
     @Test
+    @UncaughtServerErrorExpected
     public void uncaughtErrorJson() throws IOException {
         Response response = testingClient.testing().uncaughtError();
         assertEquals(500, response.getStatus());
@@ -60,6 +62,7 @@ public class UncaughtErrorPageTest extends AbstractKeycloakTest {
     }
 
     @Test
+    @UncaughtServerErrorExpected
     public void uncaughtError() throws MalformedURLException {
         URI uri = suiteContext.getAuthServerInfo().getUriBuilder().path("/auth/realms/master/testing/uncaught-error").build();
         driver.navigate().to(uri.toURL());
