@@ -1,7 +1,7 @@
 == Introduction
 
-=== What Is {openshift_name}?
-{openshift_name} is an integrated sign-on solution available as a Red Hat JBoss Middleware for OpenShift containerized image. The {project_openshift_product_name} image provides an authentication server for users to centrally log in, log out, register, and manage user accounts for web applications, mobile applications, and RESTful web services.
+=== What Is {project_name}?
+{project_name} is an integrated sign-on solution available as a Red Hat JBoss Middleware for OpenShift containerized image. The {project_openshift_product_name} image provides an authentication server for users to centrally log in, log out, register, and manage user accounts for web applications, mobile applications, and RESTful web services.
 
 [[sso-templates]]
 Red Hat offers multiple OpenShift application templates utilizing the {project_openshift_product_name} image version number {project_version}. These define the resources needed to develop {project_name} {project_version} server based deployment and can be split into the following two categories:
