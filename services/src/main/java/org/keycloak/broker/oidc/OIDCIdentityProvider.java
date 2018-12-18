@@ -365,6 +365,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
         }
     }
 
+    private static final MediaType APPLICATION_JWT_TYPE = MediaType.valueOf("application/jwt");
 
     protected BrokeredIdentityContext extractIdentity(AccessTokenResponse tokenResponse, String accessToken, JsonWebToken idToken) throws IOException {
         String id = idToken.getSubject();
@@ -380,11 +381,20 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
                 if (accessToken != null) {
                     SimpleHttp.Response response = executeRequest(userInfoUrl, SimpleHttp.doGet(userInfoUrl, session).header("Authorization", "Bearer " + accessToken));
                     String contentType = response.getFirstHeader(HttpHeaders.CONTENT_TYPE);
+                    MediaType contentMediaType;
+                    try {
+                        contentMediaType = MediaType.valueOf(contentType);
+                    } catch (IllegalArgumentException ex) {
+                        contentMediaType = null;
+                    }
+                    if (contentMediaType == null || contentMediaType.isWildcardSubtype() || contentMediaType.isWildcardType()) {
+                        throw new RuntimeException("Unsupported content-type [" + contentType + "] in response from [" + userInfoUrl + "].");
+                    }
                     JsonNode userInfo;
 
-                    if (MediaType.APPLICATION_JSON.equals(contentType)) {
+                    if (MediaType.APPLICATION_JSON_TYPE.isCompatible(contentMediaType)) {
                         userInfo = response.asJson();
-                    } else if ("application/jwt".equals(contentType)) {
+                    } else if (APPLICATION_JWT_TYPE.isCompatible(contentMediaType)) {
                         JWSInput jwsInput;
 
                         try {
