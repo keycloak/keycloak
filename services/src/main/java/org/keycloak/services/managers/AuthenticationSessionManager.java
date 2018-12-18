@@ -224,13 +224,11 @@ public class AuthenticationSessionManager {
     public AuthenticationSessionModel getAuthenticationSessionByIdAndClient(RealmModel realm, String authSessionId, ClientModel client, String tabId) {
         final AuthenticationSessionProvider sessions = session.authenticationSessions();
         RootAuthenticationSessionModel rootAuthSession = sessions.getRootAuthenticationSession(realm, authSessionId);
-        if (rootAuthSession == null) {
-            return null;
-        }
-
-        final AuthenticationSessionModel authenticationSession = rootAuthSession.getAuthenticationSession(client, tabId);
-        if (authenticationSession != null) {
-            return authenticationSession;
+        if (rootAuthSession != null) {
+            final AuthenticationSessionModel authenticationSession = rootAuthSession.getAuthenticationSession(client, tabId);
+            if (authenticationSession != null) {
+                return authenticationSession;
+            }
         }
 
         final RootAuthenticationSessionModel rootSession = sessions.getRootAuthenticationSessionForTabId(realm, tabId);
