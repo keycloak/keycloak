@@ -1,19 +1,26 @@
 = Overview
 
-The Red Hat Single Sign-On (RH-SSO) Server, based on the Keycloak project, enables you to secure your web applications by providing Web SSO capabilities based on popular standards such as SAML 2.0, OpenID Connect, and OAuth 2.0. The Server can act as a SAML or OpenID Connect-based identity provider (IdP), mediating with your enterprise user directory or third-party identity provider for identity information and your applications using standards-based tokens.
+Red Hat is proud to announce the release of version 7.3 of Red Hat Single Sign-On (RH-SSO). RH-SSO is based on the Keycloak project, and enables you to secure your web applications by providing Web SSO capabilities based on popular standards such as SAML 2.0, OpenID Connect, and OAuth 2.0. The RH-SSO server acts as a SAML or an OpenID Connect-based identity provider (IdP), mediating with your enterprise user directory or third-party identity provider for identity information, and your applications using standards-based tokens.
 
 The following notes apply to the RH-SSO 7.3 release.
 
-= Fixed Issues
-More than 1,200 issues were resolved in this release.
+Contents:
 
-* link:https://issues.jboss.org/issues/?filter=12337585[https://issues.jboss.org/issues/?filter=12337585]
+* <<_new_or_improved_features>>
 
-= New or Improved Feature Overview
+* <<_fixed_issues>>
+
+* <<_known_issues>>
+
+* <<_supported_configurations>>
+
+* <<_component_versions>>
+
+= New or Improved Features
 
 Some of the new features in this release are technology preview features, which means they are available, but not fully supported. You may use these for testing, but features marked for technology preview are not supported for use in production. These are marked as technology preview in this list and in our documentation. Because they are not fully supported for production use, technology preview features are disabled by default, but the features can be enabled if you want to try them out. We are seeking feedback on the technology preview features, so please log a support ticket if you have comments on a technology preview feature.
 
-Features that remain in tech preview in this release include:
+Existing features that remain in tech preview in this release include:
 
 * Token exchange
 
@@ -114,9 +121,11 @@ We have also added support to override the theme for specific clients. If that i
 
 == UI improvements
 
-* Updated design for the welcome page
+The design of the following pages are updated in the 7.3 release:
 
-* Updated design for the login page
+* The welcome page
+
+* The login page
 
 == Enhanced Remember Me
 Introduced the ability to specify different session idle and max timeouts for remember me sessions. This enables remember me sessions to live longer than regular sessions.
@@ -125,7 +134,7 @@ Introduced the ability to specify different session idle and max timeouts for re
 Large numbers of groups have previously caused issues in the admin console. This is now resolved by the introduction of pagination of groups.
 
 == Improve startup time with large number of offline sessions
-In the past, starting the server could take a long time if there were many offline sessions. This startup time has now been significantly reduced.
+In the past, starting RH-SSO could take a long time if there were many offline sessions. This startup time has now been significantly reduced.
 
 == Support for DB2 removed
 DB2 support has been deprecated for a while. With this release we have removed all support for DB2.
@@ -144,9 +153,17 @@ DB2 support has been deprecated for a while. With this release we have removed a
 
 * Search by User ID in Admin Console
 
-* Support Hosted Domain for Google Logins using the hd parameter
+* Support Hosted Domain for Google Logins using the `hd` parameter
 
-* Added Option to Create Claims with Dots (.) in Them
+* Added option to create claims with dots (.) in them
+
+= Fixed Issues
+More than 1,200 issues were resolved in this release.
+
+* link:https://issues.jboss.org/issues/?filter=12337585[https://issues.jboss.org/issues/?filter=12337585]
+
+= Known Issues
+The following are known issues for this release. TO COME.
 
 = Supported Configurations
 
@@ -155,8 +172,5 @@ The set of supported features and configurations for RH-SSO Server 7.3 is availa
 = Component Versions
 
 The list of supported component versions for RH-SSO 7.3 is available on the link:https://access.redhat.com/articles/2342881[Customer Portal]. 
-
-= Known Issues
-The following are known issues for this release.
 
 
