@@ -63,6 +63,7 @@
         <h2.version>1.4.193</h2.version>
         <javax.persistence.version>2.2</javax.persistence.version>
         <hibernate.core.version>5.3.6.Final</hibernate.core.version>
+        <hibernate.c3p0.version>5.3.6.Final</hibernate.c3p0.version>
         <infinispan.version>9.3.1.Final</infinispan.version>
         <jackson.version>2.9.5</jackson.version>
         <javax.mail.version>1.6.1</javax.mail.version>
@@ -75,7 +76,9 @@
         <jboss.spec.javax.servlet.jsp.jboss-jsp-api_2.3_spec.version>1.0.3.Final</jboss.spec.javax.servlet.jsp.jboss-jsp-api_2.3_spec.version>
         <log4j.version>1.2.17</log4j.version>
         <resteasy.version>3.6.1.Final</resteasy.version>
+        <resteasy.undertow.version>3.6.1.Final</resteasy.undertow.version>
         <owasp.html.sanitizer.version>20180219.1</owasp.html.sanitizer.version>
+        <slf4j-api.version>1.7.22</slf4j-api.version>
         <slf4j.version>1.7.22</slf4j.version>
         <sun.istack.version>3.0.5</sun.istack.version>
         <sun.jaxb.version>2.3.0</sun.jaxb.version>
@@ -304,7 +307,7 @@
             <dependency>
                 <groupId>org.jboss.resteasy</groupId>
                 <artifactId>resteasy-undertow</artifactId>
-                <version>${resteasy.version}</version>
+                <version>${resteasy.undertow.version}</version>
                 <exclusions>
                     <exclusion>
                         <groupId>io.undertow</groupId>
@@ -444,7 +447,7 @@
             <dependency>
                 <groupId>org.hibernate</groupId>
                 <artifactId>hibernate-c3p0</artifactId>
-                <version>${hibernate.core.version}</version>
+                <version>${hibernate.c3p0.version}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
@@ -571,7 +574,7 @@
             <dependency>
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-api</artifactId>
-                <version>${slf4j.version}</version>
+                <version>${slf4j-api.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.slf4j</groupId>
