@@ -4,19 +4,6 @@ Red Hat is proud to announce the release of version 7.3 of Red Hat Single Sign-O
 
 The following notes apply to the RH-SSO 7.3 release.
 
-Contents:
-
-* xref:new-or-improved-features[New or Improved Features]
-
-* xref:fixed-issues[Fixed Issues]
-
-* xref:known-issues[Known Issues]
-
-* xref:supported-configurations[Supported Configurations]
-
-* xref:component-versions[Component Versions]
-
-[[new-or-improved-features]]
 = New or Improved Features
 
 Some of the new features in this release are technology preview features, which means they are available, but not fully supported. You may use these for testing, but features marked for technology preview are not supported for use in production. These are marked as technology preview in this list and in our documentation. Because they are not fully supported for production use, technology preview features are disabled by default, but the features can be enabled if you want to try them out. We are seeking feedback on the technology preview features, so please log a support ticket if you have comments on a technology preview feature. Once a feature transitions from technology preview to production supported, the API and functionality are fixed for the lifecyle of the major version, so comments during the tech preview period are critical to influencing a feature in the way you want.
@@ -158,22 +145,18 @@ DB2 support has been deprecated for a while. With this release we have removed a
 
 * Added option to create claims with dots (.) in them
 
-[[fixed-issues]]
 = Fixed Issues
 More than 1,200 issues were resolved in this release.
 
 * link:https://issues.jboss.org/issues/?filter=12337585[https://issues.jboss.org/issues/?filter=12337585]
 
-[[known-issues]]
 = Known Issues
 The following are known issues for this release. TO COME.
 
-[[supported-configurations]]
 = Supported Configurations
 
 The set of supported features and configurations for RH-SSO Server 7.3 is available on the link:https://access.redhat.com/articles/2342861[Customer Portal].
 
-[[component-versions]]
 = Component Versions
 
 The list of supported component versions for RH-SSO 7.3 is available on the link:https://access.redhat.com/articles/2342881[Customer Portal]. 
