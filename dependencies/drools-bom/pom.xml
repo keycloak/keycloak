@@ -21,6 +21,7 @@
         <xstream.version>1.4.10</xstream.version>
         <antlr-runtime.version>3.5.2</antlr-runtime.version>
         <ant.version>1.8.4</ant.version>
+        <ant-launcher.version>1.8.4</ant-launcher.version>
         <maven.version>3.3.9</maven.version>
         <wagon.version>3.0.0</wagon.version>
         <plexus-classworlds.version>2.5.2</plexus-classworlds.version>
@@ -77,7 +78,7 @@
             <dependency>
                 <groupId>org.apache.ant</groupId>
                 <artifactId>ant-launcher</artifactId>
-                <version>${ant.version}</version>
+                <version>${ant-launcher.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.maven</groupId>
