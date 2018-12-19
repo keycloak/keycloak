@@ -42,8 +42,6 @@
             </#if>
         </script>
         
-        <base href="${baseUrl}/">
-
         <link rel="icon" href="${resourceUrl}/app/assets/img/favicon.ico" type="image/x-icon"/>
 
         <!-- PatternFly -->
@@ -142,7 +140,7 @@
 
 <div id="main_react_container"></div>
 
-<div id="welcomeScreen">
+<div id="welcomeScreen" style="display:none">
 <!-- Top Navigation -->
         <nav class="navbar navbar-pf-alt">
 
@@ -199,7 +197,7 @@
                             <div class="card-pf-content col-xs-10 col-sm-12 col-md-12 col-lg-12">
                               <h2>${msg("personalInfoHtmlTitle")}</h2>
                               <p class="card-pf-content-intro">${msg("personalInfoIntroMessage")}</p>
-                              <h3 id="personalInfoLink"><a href="${baseUrl}/#/app/account">${msg("personalInfoHtmlTitle")}</a></h3>
+                              <h3 id="personalInfoLink"><a href="#/app/account">${msg("personalInfoHtmlTitle")}</a></h3>
                             </div>
                         </div>
                     </div>
@@ -213,10 +211,10 @@
                             <div class="card-pf-content col-xs-10 col-sm-12 col-md-12 col-lg-12">
                               <h2>${msg("accountSecurityTitle")}</h2>
                               <p class="card-pf-content-intro">${msg("accountSecurityIntroMessage")}</p>
-                              <h3 id="changePasswordLink"><a href="${baseUrl}/#/app/password">${msg("changePasswordHtmlTitle")}</a></h3>
-                              <h3 id="authenticatorLink"><a href="${baseUrl}/#/app/authenticator">${msg("authenticatorTitle")}</a></h3>
-                              <h3 id="deviceActivityLink"><a href="${baseUrl}/#/app/device-activity">${msg("deviceActivityHtmlTitle")}</a></h3>
-                              <h3 id="linkedAccountsLink"><a href="${baseUrl}/#/app/linked-accounts">${msg("linkedAccountsHtmlTitle")}</a></h3>
+                              <h3 id="changePasswordLink"><a href="#/app/password">${msg("changePasswordHtmlTitle")}</a></h3>
+                              <h3 id="authenticatorLink"><a href="#/app/authenticator">${msg("authenticatorTitle")}</a></h3>
+                              <h3 id="deviceActivityLink"><a href="#/app/device-activity">${msg("deviceActivityHtmlTitle")}</a></h3>
+                              <h3 id="linkedAccountsLink" style="display:none"><a href="#/app/linked-accounts">${msg("linkedAccountsHtmlTitle")}</a></h3>
                             </div>
                         </div>
                     </div>
@@ -230,12 +228,12 @@
                             <div class="card-pf-content col-xs-10 col-sm-12 col-md-12 col-lg-12">
                               <h2>${msg("applicationsHtmlTitle")}</h2>
                               <p class="card-pf-content-intro">${msg("applicationsIntroMessage")}</p>
-                              <h3 id="applicationsLink"><a href="${baseUrl}/#/app/applications">${msg("applicationsHtmlTitle")}</a></h3>
+                              <h3 id="applicationsLink"><a href="#/app/applications">${msg("applicationsHtmlTitle")}</a></h3>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="col-xs-12 col-sm-4 col-md-4 col-lg-3" id="myResourcesCard">
+                <div class="col-xs-12 col-sm-4 col-md-4 col-lg-3" style="display:none" id="myResourcesCard">
                     <div class="card-pf card-pf-view card-pf-view-select card-pf-view-single-select">
                         <div class="card-pf-body text-center row">
                             <div class="card-pf-top-element col-xs-2 col-sm-12 col-md-12 col-lg-12">
@@ -244,7 +242,7 @@
                             <div class="card-pf-content col-xs-10 col-sm-12 col-md-12 col-lg-12">
                               <h2>${msg("myResources")}</h2>
                               <p class="card-pf-content-intro">${msg("resourceIntroMessage")}</p>
-                              <h3 id="myResourcesLink"><a href="${baseUrl}/#/app/my-resources">${msg("myResources")}</a></h3>
+                              <h3 id="myResourcesLink"><a href="#/app/my-resources">${msg("myResources")}</a></h3>
                             </div>
                         </div>
                     </div>
@@ -271,16 +269,15 @@
                 }
             };
         </script>
+                
         <script>
-            if (!features.isLinkedAccountsEnabled) {
-                document.getElementById("linkedAccountsLink").style.display='none';
+            if (features.isLinkedAccountsEnabled) {
+                document.getElementById("linkedAccountsLink").style.display='block';
             };
                 
-            if (!features.isMyResourcesEnabled) {
-                document.getElementById("myResourcesCard").style.display='none';
+            if (features.isMyResourcesEnabled) {
+                document.getElementById("myResourcesCard").style.display='block';
             };
-                
-            toggleReact(); 
         </script>
 
     </body>

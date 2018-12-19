@@ -35,6 +35,7 @@ export class Msg extends React.Component<MsgProps> {
         
         if (this.props.params !== undefined) {
             this.props.params.forEach((value: string, index: number) => {
+                value = this.processParam(value);
                 message = message.replace('{{param_'+ index + '}}', value);
             })
         }
@@ -42,5 +43,18 @@ export class Msg extends React.Component<MsgProps> {
         return (
             <span>{message}</span>
         );
+    }
+    
+    // if the param has Freemarker syntax, try to look up its value
+    private processParam(param:string): string {
+        if (!(param.startsWith('${') && param.endsWith('}'))) return param;
+
+        // remove Freemarker syntax
+        const key:string = param.substring(2, param.length - 1);
+        
+        let value:string = l18n_msg[key];
+        if (value === undefined) return param;
+        
+        return value;
     }
 }
