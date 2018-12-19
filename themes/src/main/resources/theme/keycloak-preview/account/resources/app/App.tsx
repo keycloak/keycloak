@@ -23,6 +23,8 @@ import {KeycloakService} from './keycloak-service/keycloak.service';
 
 import {Logout} from './widgets/Logout';
 import {Msg} from './widgets/Msg';
+import {Referrer} from './page/Referrer';
+
 import {AccountPage} from './content/account-page/AccountPage';
 import {ApplicationsPage} from './content/applications-page/ApplicationsPage';
 import {PasswordPage} from './content/password-page/PasswordPage';
@@ -57,6 +59,7 @@ export class App extends React.Component<AppProps> {
         
         return (
             <span>
+                <Referrer/>
                 <nav>
                     <Link to="/app/account" className="btn btn-primary btn-lg btn-sign" type="button"><Msg msgKey="account"/></Link>
                     <Link to="/app/applications" className="btn btn-primary btn-lg btn-sign" type="button"><Msg msgKey="applications"/></Link>
