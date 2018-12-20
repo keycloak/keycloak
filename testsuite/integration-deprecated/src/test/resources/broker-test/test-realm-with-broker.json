@@ -252,6 +252,21 @@
                 "backchannelSupported": "true",
                 "hideOnLoginPage": true
             }
+        },
+        {
+            "alias" : "model-vkontakte",
+            "providerId" : "vkontakte",
+            "enabled": true,
+            "storeToken": false,
+            "postBrokerLoginFlowAlias" : "browser",
+            "config": {
+                "sandbox": false,
+                "authorizationUrl": "authorizationUrl",
+                "tokenUrl": "tokenUrl",
+                "userInfoUrl": "userInfoUrl",
+                "clientId": "clientId",
+                "clientSecret": "clientSecret"
+            }
         }
     ],
     "identityProviderMappers": [

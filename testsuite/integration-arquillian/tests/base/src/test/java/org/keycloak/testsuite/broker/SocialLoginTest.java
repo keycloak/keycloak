@@ -33,16 +33,17 @@ import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.social.AbstractSocialLoginPage;
 import org.keycloak.testsuite.pages.social.BitbucketLoginPage;
 import org.keycloak.testsuite.pages.social.FacebookLoginPage;
-import org.keycloak.testsuite.pages.social.InstagramLoginPage;
 import org.keycloak.testsuite.pages.social.GitHubLoginPage;
 import org.keycloak.testsuite.pages.social.GitLabLoginPage;
 import org.keycloak.testsuite.pages.social.GoogleLoginPage;
+import org.keycloak.testsuite.pages.social.InstagramLoginPage;
 import org.keycloak.testsuite.pages.social.LinkedInLoginPage;
 import org.keycloak.testsuite.pages.social.MicrosoftLoginPage;
 import org.keycloak.testsuite.pages.social.OpenShiftLoginPage;
 import org.keycloak.testsuite.pages.social.PayPalLoginPage;
 import org.keycloak.testsuite.pages.social.StackOverflowLoginPage;
 import org.keycloak.testsuite.pages.social.TwitterLoginPage;
+import org.keycloak.testsuite.pages.social.VKontakteLoginPage;
 import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
 import org.keycloak.testsuite.util.IdentityProviderBuilder;
 import org.keycloak.testsuite.util.OAuthClient;
@@ -69,19 +70,20 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assume.assumeTrue;
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.BITBUCKET;
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.FACEBOOK;
-import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.INSTAGRAM;
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.GITHUB;
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.GITHUB_PRIVATE_EMAIL;
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.GITLAB;
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.GOOGLE;
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.GOOGLE_HOSTED_DOMAIN;
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.GOOGLE_NON_MATCHING_HOSTED_DOMAIN;
+import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.INSTAGRAM;
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.LINKEDIN;
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.MICROSOFT;
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.OPENSHIFT;
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.PAYPAL;
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.STACKOVERFLOW;
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.TWITTER;
+import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.VKONTAKTE;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -116,7 +118,8 @@ public class SocialLoginTest extends AbstractKeycloakTest {
         OPENSHIFT("openshift-v3", OpenShiftLoginPage.class),
         GITLAB("gitlab", GitLabLoginPage.class),
         BITBUCKET("bitbucket", BitbucketLoginPage.class),
-        INSTAGRAM("instagram", InstagramLoginPage.class);
+        INSTAGRAM("instagram", InstagramLoginPage.class),
+        VKONTAKTE("vkontakte", VKontakteLoginPage.class);
 
         private String id;
         private Class<? extends AbstractSocialLoginPage> pageObjectClazz;
@@ -350,6 +353,13 @@ public class SocialLoginTest extends AbstractKeycloakTest {
         setTestProvider(STACKOVERFLOW);
         performLogin();
         assertUpdateProfile(false, false, true);
+        assertAccount();
+    }
+
+    @Test
+    public void vkontakteLogin() throws InterruptedException {
+        setTestProvider(VKONTAKTE);
+        performLogin();
         assertAccount();
     }
 

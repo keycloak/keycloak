@@ -26,6 +26,7 @@ import org.keycloak.social.google.GoogleIdentityProviderFactory;
 import org.keycloak.social.linkedin.LinkedInIdentityProviderFactory;
 import org.keycloak.social.stackoverflow.StackoverflowIdentityProviderFactory;
 import org.keycloak.social.twitter.TwitterIdentityProviderFactory;
+import org.keycloak.social.vkontakte.VKontakteIdentityProviderFactory;
 import org.keycloak.testsuite.model.AbstractModelTest;
 
 import java.util.Collections;
@@ -52,6 +53,7 @@ public abstract class AbstractIdentityProviderModelTest extends AbstractModelTes
         this.expectedProviders.add(TwitterIdentityProviderFactory.PROVIDER_ID);
         this.expectedProviders.add(LinkedInIdentityProviderFactory.PROVIDER_ID);
         this.expectedProviders.add(StackoverflowIdentityProviderFactory.PROVIDER_ID);
+        this.expectedProviders.add(VKontakteIdentityProviderFactory.PROVIDER_ID);
 
         this.expectedProviders = Collections.unmodifiableSet(this.expectedProviders);
     }

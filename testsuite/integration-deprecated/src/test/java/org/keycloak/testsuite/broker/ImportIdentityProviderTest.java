@@ -48,6 +48,9 @@ import org.keycloak.social.stackoverflow.StackoverflowIdentityProvider;
 import org.keycloak.social.stackoverflow.StackoverflowIdentityProviderFactory;
 import org.keycloak.social.twitter.TwitterIdentityProvider;
 import org.keycloak.social.twitter.TwitterIdentityProviderFactory;
+import org.keycloak.social.vkontakte.VKontakteIdentityProvider;
+import org.keycloak.social.vkontakte.VKontakteIdentityProviderConfig;
+import org.keycloak.social.vkontakte.VKontakteIdentityProviderFactory;
 
 import java.io.IOException;
 import java.util.HashSet;
@@ -156,6 +159,8 @@ public class ImportIdentityProviderTest extends AbstractIdentityProviderModelTes
                     assertStackoverflowIdentityProviderConfig(identityProvider);
                 } else if (OpenshiftV3IdentityProviderFactory.PROVIDER_ID.equals(providerId)) {
                     assertOpenshiftIdentityProviderConfig(identityProvider);
+                } else if (VKontakteIdentityProviderFactory.PROVIDER_ID.equals(providerId)) {
+                    assertVkontakteIdentityProviderConfig(identityProvider);
                 } else {
                     continue;
                 }
@@ -324,6 +329,20 @@ public class ImportIdentityProviderTest extends AbstractIdentityProviderModelTes
         assertEquals(false, config.isAuthenticateByDefault());
         assertEquals(true, config.isStoreToken());
         assertEquals(OpenshiftV3IdentityProvider.BASE_URL, config.getBaseUrl());
+        assertEquals("clientId", config.getClientId());
+        assertEquals("clientSecret", config.getClientSecret());
+    }
+
+    private void assertVkontakteIdentityProviderConfig(IdentityProviderModel identityProvider) {
+        VKontakteIdentityProvider vKontakteIdentityProvider = new VKontakteIdentityProviderFactory().create(session, identityProvider);
+        VKontakteIdentityProviderConfig config = vKontakteIdentityProvider.getConfig();
+
+        assertEquals("model-vkontakte", config.getAlias());
+        assertEquals(VKontakteIdentityProviderFactory.PROVIDER_ID, config.getProviderId());
+        assertEquals(true, config.isEnabled());
+        assertEquals(false, config.isTrustEmail());
+        assertEquals(false, config.isAuthenticateByDefault());
+        assertEquals(false, config.isStoreToken());
         assertEquals("clientId", config.getClientId());
         assertEquals("clientSecret", config.getClientSecret());
     }
