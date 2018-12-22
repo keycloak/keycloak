@@ -16,6 +16,7 @@
  */
 package org.keycloak.social.google;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.broker.oidc.OIDCIdentityProvider;
@@ -23,6 +24,7 @@ import org.keycloak.broker.oidc.OIDCIdentityProviderConfig;
 import org.keycloak.broker.provider.AuthenticationRequest;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.IdentityBrokerException;
+import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.broker.social.SocialIdentityProvider;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.util.KeycloakUriBuilder;
@@ -30,26 +32,59 @@ import org.keycloak.events.EventBuilder;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.representations.JsonWebToken;
 
+import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.UriBuilder;
+import java.io.IOException;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class GoogleIdentityProvider extends OIDCIdentityProvider implements SocialIdentityProvider<OIDCIdentityProviderConfig> {
 
-    public static final String AUTH_URL = "https://accounts.google.com/o/oauth2/auth";
-    public static final String TOKEN_URL = "https://www.googleapis.com/oauth2/v3/token";
-    public static final String PROFILE_URL = "https://www.googleapis.com/plus/v1/people/me/openIdConnect";
+    public static final String DISCOVERY_URL = "https://accounts.google.com/.well-known/openid-configuration";
+
+    public static final String FALLBACK_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth";
+    public static final String FALLBACK_TOKEN_URL = "https://oauth2.googleapis.com/token";
+    public static final String FALLBACK_PROFILE_URL = "https://openidconnect.googleapis.com/v1/userinfo";
     public static final String DEFAULT_SCOPE = "openid profile email";
 
     private static final String OIDC_PARAMETER_HOSTED_DOMAINS = "hd";
 
     public GoogleIdentityProvider(KeycloakSession session, GoogleIdentityProviderConfig config) {
         super(session, config);
-        config.setAuthorizationUrl(AUTH_URL);
-        config.setTokenUrl(TOKEN_URL);
-        config.setUserInfoUrl(PROFILE_URL);
+        try {
+
+            SimpleHttp.Response response = SimpleHttp.doGet(DISCOVERY_URL, session).header("accept", "application/json").asResponse();
+
+            if (response.getStatus() == 200) {
+                String contentType = response.getFirstHeader(HttpHeaders.CONTENT_TYPE);
+                MediaType contentMediaType;
+                try {
+                    contentMediaType = MediaType.valueOf(contentType);
+                } catch (IllegalArgumentException ex) {
+                    contentMediaType = null;
+                }
+                if (contentMediaType == null || contentMediaType.isWildcardSubtype() || contentMediaType.isWildcardType()
+                    || (!MediaType.APPLICATION_JSON_TYPE.isCompatible(contentMediaType))) {
+                    logger.warn("Unsupported content-type while retrieving Google OpenID Connect configuration.");
+                    throw new IOException("Unsupported content-type while retrieving Google OpenID Connect configuration.");
+                }
+
+                JsonNode googleOpenIdConfiguration = response.asJson();
+                config.setAuthorizationUrl(getJsonProperty(googleOpenIdConfiguration, "authorization_endpoint"));
+                config.setTokenUrl(getJsonProperty(googleOpenIdConfiguration, "token_endpoint"));
+                config.setUserInfoUrl(getJsonProperty(googleOpenIdConfiguration, "userinfo_endpoint"));
+            } else {
+                logger.warn("Error getting Google OpenID Connect configuration.");
+                throw new IOException("Error getting Google OpenID Connect configuration.");
+            }
+        } catch (IOException e) {
+            config.setAuthorizationUrl(FALLBACK_AUTH_URL);
+            config.setTokenUrl(FALLBACK_TOKEN_URL);
+            config.setUserInfoUrl(FALLBACK_PROFILE_URL);
+        }
     }
 
     @Override
