@@ -18,10 +18,12 @@ package org.keycloak.testsuite.authz;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 
@@ -33,9 +35,11 @@ import org.keycloak.authorization.client.resource.AuthorizationResource;
 import org.keycloak.authorization.client.resource.PolicyResource;
 import org.keycloak.authorization.client.resource.ProtectionResource;
 import org.keycloak.authorization.client.util.HttpResponseException;
+import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.authorization.AuthorizationRequest;
 import org.keycloak.representations.idm.authorization.AuthorizationResponse;
+import org.keycloak.representations.idm.authorization.Permission;
 import org.keycloak.representations.idm.authorization.PermissionRequest;
 import org.keycloak.representations.idm.authorization.PermissionResponse;
 import org.keycloak.representations.idm.authorization.PermissionTicketRepresentation;
@@ -612,6 +616,74 @@ public class UserManagedPermissionServiceTest extends AbstractResourceServerTest
         assertEquals(10, policy.find(null, "Scope A", null, null).size());
         assertEquals(5, policy.find(null, null, -1, 5).size());
         assertEquals(2, policy.find(null, null, -1, 2).size());
+    }
+
+    @Test
+    public void testGrantRequestedScopesOnly() {
+        ResourceRepresentation resource = new ResourceRepresentation();
+
+        resource.setName(UUID.randomUUID().toString());
+        resource.setOwnerManagedAccess(true);
+        resource.setOwner("marta");
+        resource.addScope("view", "delete");
+
+        ProtectionResource protection = getAuthzClient().protection("marta", "password");
+
+        resource = protection.resource().create(resource);
+
+        UmaPermissionRepresentation permission = new UmaPermissionRepresentation();
+
+        permission.setName("Custom User-Managed Permission");
+        permission.addScope("view");
+        permission.addUser("kolo");
+
+        permission = protection.policy(resource.getId()).create(permission);
+
+        AuthorizationRequest request = new AuthorizationRequest();
+
+        request.addPermission(resource.getId(), "view");
+
+        AuthorizationResponse response = getAuthzClient().authorization("kolo", "password").authorize(request);
+        AccessToken rpt = toAccessToken(response.getToken());
+        Collection<Permission> permissions = rpt.getAuthorization().getPermissions();
+
+        assertPermissions(permissions, resource.getId(), "view");
+
+        assertTrue(permissions.isEmpty());
+
+        request = new AuthorizationRequest();
+
+        request.addPermission(resource.getId(), "delete");
+
+        try {
+            getAuthzClient().authorization("kolo", "password").authorize(request);
+            fail("User should not have permission");
+        } catch (Exception e) {
+            assertTrue(AuthorizationDeniedException.class.isInstance(e));
+        }
+
+        request = new AuthorizationRequest();
+
+        request.addPermission(resource.getId(), "delete");
+
+        try {
+            getAuthzClient().authorization("kolo", "password").authorize(request);
+            fail("User should not have permission");
+        } catch (Exception e) {
+            assertTrue(AuthorizationDeniedException.class.isInstance(e));
+        }
+
+        request = new AuthorizationRequest();
+
+        request.addPermission(resource.getId());
+
+        response = getAuthzClient().authorization("kolo", "password").authorize(request);
+        rpt = toAccessToken(response.getToken());
+        permissions = rpt.getAuthorization().getPermissions();
+
+        assertPermissions(permissions, resource.getId(), "view");
+
+        assertTrue(permissions.isEmpty());
     }
 
     private List<PolicyRepresentation> getAssociatedPolicies(UmaPermissionRepresentation permission) {
