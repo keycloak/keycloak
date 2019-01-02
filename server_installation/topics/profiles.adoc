@@ -14,10 +14,12 @@ The features that can be enabled and disabled are:
 |Enabled by default
 |Support level
 
+ifeval::[{project_community}==true]
 |account2
 |New Account Management Console
 |No
 |Experimental
+endif::[]
 
 |account_api
 |Account Management REST API
