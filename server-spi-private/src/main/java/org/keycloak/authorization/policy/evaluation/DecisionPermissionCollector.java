@@ -114,7 +114,13 @@ public class DecisionPermissionCollector extends AbstractDecisionCollector {
                 }
             } else {
                 for (Result.PolicyResult userManagedPermission : userManagedPermissions) {
-                    grantedScopes.addAll(userManagedPermission.getPolicy().getScopes());
+                    Set<Scope> scopes = new HashSet<>(userManagedPermission.getPolicy().getScopes());
+
+                    if (!requestedScopes.isEmpty()) {
+                        scopes.retainAll(requestedScopes);
+                    }
+
+                    grantedScopes.addAll(scopes);
                 }
 
                 if (grantedScopes.isEmpty() && !resource.getScopes().isEmpty()) {
