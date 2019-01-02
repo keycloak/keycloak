@@ -25,6 +25,7 @@ import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.common.util.PemUtils;
+import org.keycloak.common.util.Time;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
@@ -338,7 +339,7 @@ public class UserInfoTest extends AbstractKeycloakTest {
     }
 
     @Test
-    public void testSessionExpired() throws Exception {
+    public void testSessionExpired() {
         Client client = ClientBuilder.newClient();
 
         try {
@@ -359,6 +360,33 @@ public class UserInfoTest extends AbstractKeycloakTest {
                     .detail(Details.AUTH_METHOD, Details.VALIDATE_ACCESS_TOKEN)
                     .assertEvent();
 
+        } finally {
+            client.close();
+        }
+    }
+
+    @Test
+    public void testAccessTokenExpired() {
+        Client client = ClientBuilder.newClient();
+
+        try {
+            AccessTokenResponse accessTokenResponse = executeGrantAccessTokenRequest(client);
+
+            setTimeOffset(600);
+
+            Response response = UserInfoClientUtil.executeUserInfoRequest_getMethod(client, accessTokenResponse.getToken());
+
+            assertEquals(Status.UNAUTHORIZED.getStatusCode(), response.getStatus());
+
+            response.close();
+
+            events.expect(EventType.USER_INFO_REQUEST_ERROR)
+                    .error(Errors.INVALID_TOKEN)
+                    .user(Matchers.nullValue(String.class))
+                    .session(Matchers.nullValue(String.class))
+                    .detail(Details.AUTH_METHOD, Details.VALIDATE_ACCESS_TOKEN)
+                    .client((String) null)
+                    .assertEvent();
         } finally {
             client.close();
         }
