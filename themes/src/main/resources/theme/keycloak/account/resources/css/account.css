@@ -275,3 +275,26 @@ hr + .form-horizontal {
     padding: 10px;
     margin: 50px 0;
 }
+
+@media (max-width: 767px) {
+    .container {
+        padding: 0;
+    }
+
+    .content-area {
+        border-width: 1px;
+        padding: 0 16px;
+    }
+
+    .form-horizontal .control-label {
+        text-align: left;
+    }    
+
+    .control-label + .required {
+        top: 30px;
+        right: 8px;
+    }
+
+}
+
+
