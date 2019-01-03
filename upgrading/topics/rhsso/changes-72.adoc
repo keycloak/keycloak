@@ -47,7 +47,7 @@ This can be done for the particular client in the {project_name} admin console, 
 described in <<_compatibility_with_older_adapters>>. There is the `Exclude Session State From Authentication Response` switch,
 which can be turned on to prevent adding the `session_state` parameter to the Authentication Response.
 
-==== Microsoft Identity Provider updated to use the Microsoft Graph API
+=== Microsoft Identity Provider updated to use the Microsoft Graph API
 
 The Microsoft Identity Provider implementation in {project_name} up to version 7.2.4 relies on the Live SDK
 endpoints for authorization and obtaining the user profile. From November 2018 onwards, Microsoft is removing support
@@ -58,3 +58,17 @@ Legacy client applications registered under "Live SDK applications" won't work w
 due to changes in the id format of the applications. If you run into an error saying that the application identifier
 was not found in the directory, you will have to register the client application again in the
 https://account.live.com/developers/applications/create[Microsoft Application Registration] portal to obtain a new application id.
+
+=== Google Identity Provider updated to use Google Sign-in authentication system
+
+The Google Identity Provider implementation in {project_name} up to version 7.2.5 relies on the Google+ API endpoints
+endpoints for authorization and obtaining the user profile. From March 2019 onwards, Google is removing support
+for the Google+ API in favor of the new Google Sign-in authentication system. The {project_name} identity provider has been updated
+to use the new endpoints so if this integration is in use make sure you upgrade to {project_name} version 7.2.6 or later.
+
+If you run into an error saying that the application identifier was not found in the directory, you will have to register the client application again in the
+https://console.developers.google.com/apis/credentials[Google API Console] portal to obtain a new application id and secret.
+
+It is possible that you will need to adjust custom mappers for non-standard claims that were provided by Google+ user
+information endpoint and are provided under different name by Google Sign-in API. Please consult Google documentation
+for the most up-to-date information on available claims.
