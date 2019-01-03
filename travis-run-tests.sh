@@ -65,7 +65,7 @@ if [ $1 == "unit" ]; then
 fi
 
 if [ $1 == "server-group1" ]; then
-    run-server-tests org.keycloak.testsuite.adm.**.*Test,org.keycloak.testsuite.add.**.*Test
+    run-server-tests org.keycloak.testsuite.adm*.**.*Test,org.keycloak.testsuite.add*.**.*Test
 fi
 
 if [ $1 == "server-group2" ]; then
