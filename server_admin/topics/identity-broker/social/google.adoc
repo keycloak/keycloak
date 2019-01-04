@@ -24,7 +24,6 @@ Log in to the link:https://console.cloud.google.com/project[Google Developer Con
 .Google Developer Console
 image:images/google-developer-console.png[]
 
-
 Click the `Create Project` button.
 Use any value for `Project name` and `Project ID` you want, then click the `Create` button.
 Wait for the project to be created (this may take a while).  Once created you will be brought to the project's dashboard.
@@ -32,42 +31,29 @@ Wait for the project to be created (this may take a while).  Once created you wi
 .Dashboard
 image:images/google-dashboard.png[]
 
-To be able to retrieve the profiles of Google users, you need to turn on the Google+ APIs.  Select the `Enable and manage APIs`
-and click the `Google+ API` link.
-
-.APIs
-image:images/google-api-list.png[]
-
-Click the `Enable` button on this page.  You will get a message that you must create the credentials of your project.
-So click the `Go to Credentials` button.
-
-.Go To Credentials
-image:images/google-go-to-credentials.png[]
-
-You will then be brought to the credentials page.
-
-NOTE:  If you logout in the middle of this, there is a menu in the top left hand corner.  Select `API Manager` and it
-       will bring you to your desired screen.
-
-You will then be asked to specify what credentials you need and what type of data you will be accessing.
-
-.Add Credentials
-image:images/google-add-credentials.png[]
-
-Select `Web server` and `User data` and click the `What credentials do I need?` button.
-
-.Create OAuth ID
-image:images/google-create-oauth-id.png[]
-
-Next you'll need to create an OAuth 2.0 client ID.  Specify the name you want for your client.  You'll also need to
-copy and paste the `Redirect URI` from the {project_name} `Add Identity Provider` page into the
-`Authorized redirect URIs` field.  After you do this, click the `Create client ID` button.
+Then navigate to the `APIs & Services` section in the Google Developer Console. On that screen, navigate to `Credentials` administration.
 
 When users log into Google from {project_name} they will see a consent screen from Google which will ask the user
-if {project_name} is allowed to view information about their user profile.  The next Google config screen asks
-you for information about this screen.
+if {project_name} is allowed to view information about their user profile. Thus Google requires some basic information about the product before creating any secrets for it. For a new project, you have first to configure `OAuth consent screen`.
 
-Once you click `Done` you will be brought to the `Credentials` page.  Click on your new OAuth 2.0 Client ID to view
+For the very basic setup, filling in the Application name is sufficient. You can also set additional details like scopes for Google APIs in this page.
+
+.Fill in OAuth consent screen details
+image:images/google-oauth-consent-screen.png[]
+
+The next step is to create OAuth client ID and client secret. Back in `Credentials` administration, navigate to `Credentials` tab and select `OAuth client ID` under the `Create credentials` button.
+
+.Create credentials
+image:images/google-create-credentials.png[]
+
+You will then be brought to the `Create OAuth client ID` page. Select `Web application` as the application type. Specify the name you want for your client.  You'll also need to
+copy and paste the `Redirect URI` from the {project_name} `Add Identity Provider` page into the
+`Authorized redirect URIs` field.  After you do this, click the `Create` button.
+
+.Create OAuth client ID
+image:images/google-create-oauth-id.png[]
+
+After you click `Create` you will be brought to the `Credentials` page. Click on your new OAuth 2.0 Client ID to view
 the settings of your new Google Client.
 
 .Google Client Credentials
