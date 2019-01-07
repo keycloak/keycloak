@@ -32,7 +32,7 @@ Resource Registration Endpoint to create a resource in the server representing A
 At this moment, if Bob tries to access Alice's Bank Account, access will be denied. The Internet Banking Service defines a few default
 policies for banking accounts. One of them is that only the owner, in this case Alice, is allowed to access her bank account.
 
-However, Internet Banking Service in respect to Alice's privacy also allows her to change specific policies for he banking account. One of these
+However, Internet Banking Service in respect to Alice's privacy also allows her to change specific policies for the banking account. One of these
 policies that she can change is to define which people are allowed to view her bank account. For that, Internet Banking Service relies on {project_name}
 to provide to Alice a space where she can select individuals and the operations (or data) they are allowed to access. At any time, Alice
 can revoke access or grant additional permissions to Bob.
