@@ -17,6 +17,9 @@
 
 package org.keycloak.models;
 
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -50,4 +53,15 @@ public interface RoleModel {
 
     boolean hasRole(RoleModel role);
 
+    void setSingleAttribute(String name, String value);
+
+    void setAttribute(String name, Collection<String> values);
+
+    void removeAttribute(String name);
+
+    String getFirstAttribute(String name);
+
+    List<String> getAttribute(String name);
+
+    Map<String, List<String>> getAttributes();
 }

@@ -33,7 +33,6 @@ import javax.security.auth.login.AppConfigurationEntry;
 import javax.security.auth.login.Configuration;
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
-import javax.ws.rs.core.Response;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -68,9 +67,8 @@ public class LoginModulesTest extends AbstractKeycloakTest {
         }
 
         // Generate audience client scope
-        Response resp = adminClient.realm("demo").clientScopes().generateAudienceClientScope("customer-db-audience-required");
-        String clientScopeId = ApiUtil.getCreatedId(resp);
-        resp.close();
+        String clientScopeId = testingClient.testing().generateAudienceClientScope("demo", "customer-db-audience-required");
+
         ClientResource client = ApiUtil.findClientByClientId(adminClient.realm("demo"), "customer-portal");
         client.addOptionalClientScope(clientScopeId);
     }

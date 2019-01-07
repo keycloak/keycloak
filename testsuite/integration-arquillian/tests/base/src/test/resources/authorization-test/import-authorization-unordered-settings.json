@@ -54,17 +54,11 @@
     {
       "name": "Only Owner Policy",
       "description": "Defines that only the resource owner is allowed to do something",
-      "type": "rules",
+      "type": "js",
       "logic": "POSITIVE",
       "decisionStrategy": "UNANIMOUS",
       "config": {
-        "mavenArtifactVersion": "${project.version}",
-        "mavenArtifactId": "photoz-authz-policy",
-        "sessionName": "MainOwnerSession",
-        "mavenArtifactGroupId": "org.keycloak.testsuite",
-        "moduleName": "PhotozAuthzOwnerPolicy",
-        "scannerPeriod": "1",
-        "scannerPeriodUnit": "Hours"
+        "code": "var permission = $evaluation.getPermission();\nvar identity = $evaluation.getContext().getIdentity();\nvar resource = permission.getResource();\nif (resource) {\nif (resource.getOwner().equals(identity.getId())) {\n$evaluation.grant();\n}}"
       }
     },
     {

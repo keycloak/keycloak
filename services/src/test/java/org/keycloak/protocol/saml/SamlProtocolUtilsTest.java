@@ -17,7 +17,10 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.util.UUID;
 
-import static org.junit.Assert.*;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.lessThan;
+import static org.junit.Assert.assertThat;
 
 public class SamlProtocolUtilsTest {
 
@@ -44,14 +47,14 @@ public class SamlProtocolUtilsTest {
         Document artifactResponseDoc = SamlProtocolUtils.buildArtifactResponse(responseDoc);
         String artifactResponse = DocumentUtil.asString(artifactResponseDoc);
 
-        assertTrue(artifactResponse.contains("samlp:ArtifactResponse"));
-        assertTrue(artifactResponse.contains("samlp:Response"));
-        assertTrue(artifactResponse.contains("saml:Assertion"));
-        assertTrue(artifactResponse.indexOf("samlp:ArtifactResponse") < artifactResponse.indexOf("samlp:Response"));
-        assertTrue(artifactResponse.indexOf("samlp:Response") < artifactResponse.indexOf("saml:Assertion"));
-        assertEquals(4, artifactResponse.split("\\Q<saml:Issuer>http://saml.idp/saml</saml:Issuer>\\E").length);
-        assertEquals(3, artifactResponse.split(
-                "\\Q<samlp:StatusCode Value=\"urn:oasis:names:tc:SAML:2.0:status:Success\"/>\\E").length);
+        assertThat(artifactResponse, containsString("samlp:ArtifactResponse"));
+        assertThat(artifactResponse, containsString("samlp:Response"));
+        assertThat(artifactResponse, containsString("saml:Assertion"));
+        assertThat(artifactResponse.indexOf("samlp:ArtifactResponse"), lessThan(artifactResponse.indexOf("samlp:Response")));
+        assertThat(artifactResponse.indexOf("samlp:Response"), lessThan(artifactResponse.indexOf("saml:Assertion")));
+        assertThat(artifactResponse.split("\\Q<saml:Issuer>http://saml.idp/saml</saml:Issuer>\\E").length, is(4));
+        assertThat(artifactResponse.split(
+                "\\Q<samlp:StatusCode Value=\"urn:oasis:names:tc:SAML:2.0:status:Success\"/>\\E").length, is(3));
     }
 
 }

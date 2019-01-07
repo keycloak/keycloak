@@ -196,6 +196,64 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
         assertFalse(pageSource.contains("Scan barcode?"));
     }
 
+    // KEYCLOAK-7081
+    @Test
+    public void setupTotpRegisterManualModeSwitchesOnBadSubmit() {
+        loginPage.open();
+        loginPage.clickRegister();
+        registerPage.register("firstName", "lastName", "setupTotpRegisterManualModeSwitchesOnBadSubmit@mail.com", "setupTotpRegisterManualModeSwitchesOnBadSubmit", "password", "password");
+
+        String pageSource = driver.getPageSource();
+
+        assertTrue(pageSource.contains("Unable to scan?"));
+        assertFalse(pageSource.contains("Scan barcode?"));
+
+        totpPage.clickManual();
+
+        pageSource = driver.getPageSource();
+
+        assertFalse(pageSource.contains("Unable to scan?"));
+        assertTrue(pageSource.contains("Scan barcode?"));
+
+        totpPage.submit();
+
+        pageSource = driver.getPageSource();
+
+        assertFalse(pageSource.contains("Unable to scan?"));
+        assertTrue(pageSource.contains("Scan barcode?"));
+
+        assertEquals("Please specify authenticator code.", totpPage.getError());
+    }
+
+    // KEYCLOAK-7081
+    @Test
+    public void setupTotpRegisterBarcodeModeSwitchesOnBadSubmit() {
+        loginPage.open();
+        loginPage.clickRegister();
+        registerPage.register("firstName", "lastName", "setupTotpRegisterBarcodeModeSwitchesOnBadSubmit@mail.com", "setupTotpRegisterBarcodeModeSwitchesOnBadSubmit", "password", "password");
+
+        String pageSource = driver.getPageSource();
+
+        assertTrue(pageSource.contains("Unable to scan?"));
+        assertFalse(pageSource.contains("Scan barcode?"));
+
+        totpPage.submit();
+
+        pageSource = driver.getPageSource();
+
+        assertTrue(pageSource.contains("Unable to scan?"));
+        assertFalse(pageSource.contains("Scan barcode?"));
+
+        assertEquals("Please specify authenticator code.", totpPage.getError());
+
+        totpPage.clickManual();
+
+        pageSource = driver.getPageSource();
+
+        assertFalse(pageSource.contains("Unable to scan?"));
+        assertTrue(pageSource.contains("Scan barcode?"));
+    }
+
     @Test
     public void setupTotpModifiedPolicy() {
         RealmResource realm = testRealm();

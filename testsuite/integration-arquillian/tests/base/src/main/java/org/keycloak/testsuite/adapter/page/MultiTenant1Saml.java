@@ -45,7 +45,7 @@ public class MultiTenant1Saml extends SAMLServlet {
     
     @Override
     public void logout() {
-        driver.navigate().to(getUriBuilder().queryParam("GLO", "true").queryParam("realm", "tenant1").build().toASCIIString());
+        driver.navigate().to(getUriBuilder().clone().queryParam("GLO", "true").queryParam("realm", "tenant1").build().toASCIIString());
         getUriBuilder().replaceQueryParam("GLO");
         pause(300);
     }

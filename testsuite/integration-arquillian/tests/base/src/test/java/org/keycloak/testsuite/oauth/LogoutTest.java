@@ -107,6 +107,27 @@ public class LogoutTest extends AbstractKeycloakTest {
         }
     }
 
+
+    @Test
+    public void postLogoutFailWithCredentialsOfDifferentClient() throws Exception {
+        oauth.doLogin("test-user@localhost", "password");
+
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+
+        oauth.clientSessionState("client-session");
+        OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
+        String refreshTokenString = tokenResponse.getRefreshToken();
+
+        oauth.clientId("test-app-scope");
+
+        // Assert logout fails with 400 when trying to use different client credentials
+        try (CloseableHttpResponse response = oauth.doLogout(refreshTokenString, "password")) {
+            assertThat(response, Matchers.statusCodeIsHC(Status.BAD_REQUEST));
+        }
+
+        oauth.clientId("test-app");
+    }
+
     @Test
     public void postLogoutWithValidIdToken() throws Exception {
         oauth.doLogin("test-user@localhost", "password");

@@ -11,6 +11,7 @@ import org.keycloak.testsuite.arquillian.containers.ContainerConstants;
 /**
  * @author mhajas
  */
+@AppServerContainer(ContainerConstants.APP_SERVER_UNDERTOW)
 @AppServerContainer(ContainerConstants.APP_SERVER_WILDFLY)
 @AppServerContainer(ContainerConstants.APP_SERVER_WILDFLY_DEPRECATED)
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP)
@@ -92,6 +93,20 @@ public class SAMLFilterServletAdapterTest extends SAMLServletAdapterTest {
     @Override
     @Ignore
     public void testErrorHandlingSigned() {
+
+    }
+
+    @Test
+    @Override
+    @Ignore
+    public void multiTenant1SamlTest() throws Exception {
+
+    }
+
+    @Test
+    @Override
+    @Ignore
+    public void multiTenant2SamlTest() throws Exception {
 
     }
 }

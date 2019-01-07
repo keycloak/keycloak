@@ -59,6 +59,10 @@ public class SamlEcpProfileService extends SamlService {
     }
 
     public Response authenticate(InputStream inputStream) {
+        return authenticate(Soap.extractSoapMessage(inputStream));
+    }
+
+    public Response authenticate(Document soapMessage) {
         try {
             return new PostBindingProtocol() {
                 @Override
@@ -73,7 +77,7 @@ public class SamlEcpProfileService extends SamlService {
                     requestAbstractType.setDestination(session.getContext().getUri().getAbsolutePath());
                     return super.loginRequest(relayState, requestAbstractType, client);
                 }
-            }.execute(Soap.toSamlHttpPostMessage(Soap.extractSoapMessage(inputStream)), null, null, null);
+            }.execute(Soap.toSamlHttpPostMessage(soapMessage), null, null, null);
         } catch (Exception e) {
             String reason = "Some error occurred while processing the AuthnRequest.";
             String detail = e.getMessage();

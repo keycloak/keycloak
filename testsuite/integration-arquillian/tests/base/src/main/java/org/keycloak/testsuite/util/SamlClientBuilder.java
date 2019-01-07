@@ -27,7 +27,15 @@ import java.util.List;
 import java.util.function.Consumer;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
-import org.keycloak.testsuite.util.saml.*;
+import org.keycloak.testsuite.util.saml.CreateArtifactMessageStepBuilder;
+import org.keycloak.testsuite.util.saml.CreateAuthnRequestStepBuilder;
+import org.keycloak.testsuite.util.saml.CreateLogoutRequestStepBuilder;
+import org.keycloak.testsuite.util.saml.HandleArtifactStepBuilder;
+import org.keycloak.testsuite.util.saml.IdPInitiatedLoginBuilder;
+import org.keycloak.testsuite.util.saml.LoginBuilder;
+import org.keycloak.testsuite.util.saml.UpdateProfileBuilder;
+import org.keycloak.testsuite.util.saml.ModifySamlResponseStepBuilder;
+import org.keycloak.testsuite.util.saml.RequiredConsentBuilder;
 
 import javax.ws.rs.core.Response.Status;
 import org.apache.http.HttpResponse;

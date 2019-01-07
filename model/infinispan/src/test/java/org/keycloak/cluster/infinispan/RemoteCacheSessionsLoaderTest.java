@@ -31,6 +31,7 @@ import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
 import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
+import org.keycloak.models.sessions.infinispan.initializer.SessionLoader;
 import org.keycloak.models.sessions.infinispan.remotestore.RemoteCacheSessionsLoader;
 import org.keycloak.models.sessions.infinispan.remotestore.RemoteCacheSessionsLoaderContext;
 import org.keycloak.models.sessions.infinispan.util.InfinispanUtil;
@@ -110,7 +111,7 @@ public class RemoteCacheSessionsLoaderTest {
             Set<String> visitedKeys = new HashSet<>();
             for (int currentSegment=0 ; currentSegment<ctx.getSegmentsCount() ; currentSegment++) {
                 logger.infof("Loading segment %d", currentSegment);
-                loader.loadSessions(null, ctx, currentSegment);
+                loader.loadSessions(null, ctx, new SessionLoader.WorkerContext(currentSegment, currentSegment));
 
                 logger.infof("Loaded %d keys for segment %d", cache2.keySet().size(), currentSegment);
                 totalCount = totalCount + cache2.keySet().size();

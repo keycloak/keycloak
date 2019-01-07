@@ -87,4 +87,11 @@ public class DemoFilterServletAdapterTest extends DemoServletsAdapterTest {
     public void testTokenInCookieRefresh() {
         
     }
+
+    @Test
+    @Override
+    @Ignore
+    public void testTokenInCookieSSORoot() {
+
+    }
 }

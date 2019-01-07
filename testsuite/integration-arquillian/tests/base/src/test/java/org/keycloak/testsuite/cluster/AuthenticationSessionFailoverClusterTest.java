@@ -161,7 +161,7 @@ public class AuthenticationSessionFailoverClusterTest extends AbstractFailoverCl
         appPage.assertCurrent();
     }
 
-    static String getAuthSessionCookieValue(WebDriver driver) {
+    public static String getAuthSessionCookieValue(WebDriver driver) {
         Cookie authSessionCookie = driver.manage().getCookieNamed(AuthenticationSessionManager.AUTH_SESSION_ID);
         Assert.assertNotNull(authSessionCookie);
         return authSessionCookie.getValue();

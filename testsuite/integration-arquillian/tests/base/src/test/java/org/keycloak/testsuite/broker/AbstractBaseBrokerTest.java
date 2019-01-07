@@ -20,6 +20,7 @@ package org.keycloak.testsuite.broker;
 import java.util.List;
 
 import org.hamcrest.Matchers;
+import org.apache.commons.lang.StringUtils;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.After;
 import org.keycloak.admin.client.resource.RealmResource;
@@ -163,10 +164,16 @@ public abstract class AbstractBaseBrokerTest extends AbstractKeycloakTest {
     }
 
     protected void logoutFromRealm(String realm) {
+        logoutFromRealm(realm, null);
+    }
+
+    protected void logoutFromRealm(String realm, String initiatingIdp) {
         driver.navigate().to(BrokerTestTools.getAuthRoot(suiteContext)
                 + "/auth/realms/" + realm
                 + "/protocol/" + "openid-connect"
-                + "/logout?redirect_uri=" + encodeUrl(getAccountUrl(realm)));
+                + "/logout?redirect_uri=" + encodeUrl(getAccountUrl(realm))
+                + (!StringUtils.isBlank(initiatingIdp) ? "&initiating_idp=" + initiatingIdp : "")
+        );
 
         try {
             Retry.execute(() -> {

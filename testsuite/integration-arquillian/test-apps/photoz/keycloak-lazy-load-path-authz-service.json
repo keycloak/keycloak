@@ -32,7 +32,7 @@
       },
       {
         "name" : "Album Resource",
-        "path" : "/album/{id}",
+        "path" : "/album/{id}/",
         "methods" : [
           {
             "method": "DELETE",

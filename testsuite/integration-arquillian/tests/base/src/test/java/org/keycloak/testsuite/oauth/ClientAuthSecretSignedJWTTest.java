@@ -88,7 +88,48 @@ public class ClientAuthSecretSignedJWTTest extends AbstractKeycloakTest {
         assertEquals(400, response.getStatusCode());
         assertEquals("unauthorized_client", response.getError());
     }
-    
+
+
+    @Test
+    public void testAssertionReuse() throws Exception {
+        oauth.clientId("test-app");
+        oauth.doLogin("test-user@localhost", "password");
+        EventRepresentation loginEvent = events.expectLogin()
+                .client("test-app")
+                .assertEvent();
+
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        String clientSignedJWT = getClientSignedJWT("password", 20);
+
+        OAuthClient.AccessTokenResponse response = doAccessTokenRequest(code, clientSignedJWT);
+        assertEquals(200, response.getStatusCode());
+        events.expectCodeToToken(loginEvent.getDetails().get(Details.CODE_ID), loginEvent.getSessionId())
+                .client(oauth.getClientId())
+                .detail(Details.CLIENT_AUTH_METHOD, JWTClientSecretAuthenticator.PROVIDER_ID)
+                .assertEvent();
+
+
+        // 2nd attempt to use same clientSignedJWT should fail
+        oauth.openLoginForm();
+        loginEvent = events.expectLogin()
+                .client("test-app")
+                .assertEvent();
+
+        String code2 = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        response = doAccessTokenRequest(code2, clientSignedJWT);
+        events.expectCodeToToken(loginEvent.getDetails().get(Details.CODE_ID), loginEvent.getSessionId())
+                .error("invalid_client_credentials")
+                .clearDetails()
+                .user((String) null)
+                .session((String) null)
+                .assertEvent();
+
+
+        assertEquals(400, response.getStatusCode());
+        assertEquals("unauthorized_client", response.getError());
+    }
+
+
     private String getClientSignedJWT(String secret, int timeout) {
         JWTClientSecretCredentialsProvider jwtProvider = new JWTClientSecretCredentialsProvider();
         jwtProvider.setClientSecret(secret);

@@ -176,6 +176,39 @@ public class AuthzClientCredentialsTest extends AbstractAuthzTest {
         assertEquals(1, userSessions.size());
     }
 
+    @Test
+    public void testSingleSessionPerUser() throws Exception {
+        ClientsResource clients = getAdminClient().realm("authz-test-session").clients();
+        ClientRepresentation clientRepresentation = clients.findByClientId("resource-server-test").get(0);
+        List<UserSessionRepresentation> userSessions = clients.get(clientRepresentation.getId()).getUserSessions(-1, -1);
+
+        assertEquals(0, userSessions.size());
+
+        AuthzClient authzClient = getAuthzClient("default-session-keycloak.json");
+        org.keycloak.authorization.client.resource.AuthorizationResource authorization = authzClient.authorization("marta", "password");
+        AuthorizationResponse response = authorization.authorize();
+        AccessToken accessToken = toAccessToken(response.getToken());
+        String sessionState = accessToken.getSessionState();
+
+        assertEquals(1, accessToken.getAuthorization().getPermissions().size());
+        assertEquals("Default Resource", accessToken.getAuthorization().getPermissions().iterator().next().getResourceName());
+
+        userSessions = clients.get(clientRepresentation.getId()).getUserSessions(null, null);
+
+        assertEquals(1, userSessions.size());
+
+        for (int i = 0; i < 3; i++) {
+            response = authorization.authorize();
+            accessToken = toAccessToken(response.getToken());
+            assertEquals(sessionState, accessToken.getSessionState());
+            Thread.sleep(1000);
+        }
+
+        userSessions = clients.get(clientRepresentation.getId()).getUserSessions(null, null);
+
+        assertEquals(1, userSessions.size());
+    }
+
     private RealmBuilder configureRealm(RealmBuilder builder, ClientBuilder clientBuilder) {
         return builder
                 .roles(RolesBuilder.create().realmRole(new RoleRepresentation("uma_authorization", "", false)))

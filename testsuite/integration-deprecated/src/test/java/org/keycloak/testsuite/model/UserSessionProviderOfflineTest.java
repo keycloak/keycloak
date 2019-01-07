@@ -363,24 +363,45 @@ public class UserSessionProviderOfflineTest {
         // sessions are in persister too
         Assert.assertEquals(3, persister.getUserSessionsCount(true));
 
-        // Set lastSessionRefresh to session[0] to 0
-        session0.setLastSessionRefresh(0);
-
-        resetSession();
-
-        session.sessions().removeExpired(realm);
-
-        resetSession();
-
-        // assert session0 not found now
-        Assert.assertNull(session.sessions().getOfflineUserSession(realm, origSessions[0].getId()));
-
-        Assert.assertEquals(2, persister.getUserSessionsCount(true));
-
-        // Expire everything and assert nothing found
-        Time.setOffset(3000000);
+        // Increase timeOffset - 5 minutes
+        Time.setOffset(300);
         try {
+
+            // Update lastSessionRefresh of session0. This will update lastSessionRefresh of all the sessions to DB as they were not yet updated to DB
+            session0.setLastSessionRefresh(Time.currentTime());
+
+            resetSession();
+
+            // Increase timeOffset - 20 days
+            Time.setOffset(1728000);
+
+            session0 = session.sessions().getOfflineUserSession(realm, origSessions[0].getId());
+            session0.setLastSessionRefresh(Time.currentTime());
+
+            resetSession();
+
+            // Increase timeOffset - 40 days
+            Time.setOffset(3456000);
+
+            // Expire and ensure that all sessions despite session0 were removed
+
             session.sessions().removeExpired(realm);
+            persister.removeExpired(realm);
+
+            resetSession();
+
+            // assert session0 is the only session found
+            Assert.assertNotNull(session.sessions().getOfflineUserSession(realm, origSessions[0].getId()));
+            Assert.assertNull(session.sessions().getOfflineUserSession(realm, origSessions[1].getId()));
+            Assert.assertNull(session.sessions().getOfflineUserSession(realm, origSessions[2].getId()));
+
+            Assert.assertEquals(1, persister.getUserSessionsCount(true));
+
+            // Expire everything and assert nothing found
+            Time.setOffset(6000000);
+
+            session.sessions().removeExpired(realm);
+            persister.removeExpired(realm);
 
             resetSession();
 

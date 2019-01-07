@@ -20,9 +20,10 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
 import org.junit.Test;
-import org.keycloak.common.Version;
+import org.keycloak.common.Profile;
 import org.keycloak.representations.idm.authorization.Logic;
 import org.keycloak.representations.idm.authorization.RulePolicyRepresentation;
+import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.console.page.clients.authorization.policy.RulePolicy;
 
 /**
@@ -31,7 +32,8 @@ import org.keycloak.testsuite.console.page.clients.authorization.policy.RulePoli
 public class RulePolicyManagementTest extends AbstractAuthorizationSettingsTest {
 
     @Test
-    public void testUpdate() throws InterruptedException {
+    public void testUpdate() {
+        ProfileAssume.assumeFeatureEnabled(Profile.Feature.AUTHZ_DROOLS_POLICY);
         authorizationPage.navigateTo();
         RulePolicyRepresentation expected = createDefaultRepresentation("Test Rule Policy");
 
@@ -59,7 +61,8 @@ public class RulePolicyManagementTest extends AbstractAuthorizationSettingsTest 
     }
 
     @Test
-    public void testDelete() throws InterruptedException {
+    public void testDelete() {
+        ProfileAssume.assumeFeatureEnabled(Profile.Feature.AUTHZ_DROOLS_POLICY);
         authorizationPage.navigateTo();
         RulePolicyRepresentation expected =createDefaultRepresentation("Delete Rule Policy");
 
@@ -72,7 +75,8 @@ public class RulePolicyManagementTest extends AbstractAuthorizationSettingsTest 
     }
 
     @Test
-    public void testDeleteFromList() throws InterruptedException {
+    public void testDeleteFromList() {
+        ProfileAssume.assumeFeatureEnabled(Profile.Feature.AUTHZ_DROOLS_POLICY);
         authorizationPage.navigateTo();
         RulePolicyRepresentation expected =createDefaultRepresentation("Delete Rule Policy");
 
@@ -90,7 +94,7 @@ public class RulePolicyManagementTest extends AbstractAuthorizationSettingsTest 
         expected.setDescription("description");
         expected.setArtifactGroupId("org.keycloak.testsuite");
         expected.setArtifactId("photoz-authz-policy");
-        expected.setArtifactVersion(Version.VERSION);
+        expected.setArtifactVersion(System.getProperty("project.version"));
         expected.setModuleName("PhotozAuthzOwnerPolicy");
         expected.setSessionName("MainOwnerSession");
         expected.setScannerPeriod("1");

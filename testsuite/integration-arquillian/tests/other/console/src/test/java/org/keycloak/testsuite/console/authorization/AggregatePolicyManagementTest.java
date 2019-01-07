@@ -21,7 +21,6 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -32,7 +31,7 @@ import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.RolePoliciesResource;
 import org.keycloak.admin.client.resource.RolesResource;
 import org.keycloak.admin.client.resource.UsersResource;
-import org.keycloak.common.Version;
+import org.keycloak.common.Profile;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.authorization.AggregatePolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ClientPolicyRepresentation;
@@ -43,9 +42,7 @@ import org.keycloak.representations.idm.authorization.RolePolicyRepresentation;
 import org.keycloak.representations.idm.authorization.RulePolicyRepresentation;
 import org.keycloak.representations.idm.authorization.TimePolicyRepresentation;
 import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
-import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.console.page.clients.authorization.policy.AggregatePolicy;
-import org.keycloak.testsuite.console.page.clients.authorization.policy.UserPolicy;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.GroupBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
@@ -231,19 +228,21 @@ public class AggregatePolicyManagementTest extends AbstractAuthorizationSettings
         policy.createPolicy(childTimePolicy);
         expected.addPolicy(childTimePolicy.getName());
 
-        RulePolicyRepresentation rulePolicy = new RulePolicyRepresentation();
+        if (Profile.isFeatureEnabled(Profile.Feature.AUTHZ_DROOLS_POLICY)) {
+            RulePolicyRepresentation rulePolicy = new RulePolicyRepresentation();
 
-        rulePolicy.setName(UUID.randomUUID().toString());
-        rulePolicy.setDescription("description");
-        rulePolicy.setArtifactGroupId("org.keycloak.testsuite");
-        rulePolicy.setArtifactId("photoz-authz-policy");
-        rulePolicy.setArtifactVersion(Version.VERSION);
-        rulePolicy.setModuleName("PhotozAuthzOwnerPolicy");
-        rulePolicy.setSessionName("MainOwnerSession");
-        rulePolicy.setScannerPeriod("1");
-        rulePolicy.setScannerPeriodUnit("Minutes");
-        policy.createPolicy(rulePolicy);
-        expected.addPolicy(rulePolicy.getName());
+            rulePolicy.setName(UUID.randomUUID().toString());
+            rulePolicy.setDescription("description");
+            rulePolicy.setArtifactGroupId("org.keycloak.testsuite");
+            rulePolicy.setArtifactId("photoz-authz-policy");
+            rulePolicy.setArtifactVersion(System.getProperty("project.version"));
+            rulePolicy.setModuleName("PhotozAuthzOwnerPolicy");
+            rulePolicy.setSessionName("MainOwnerSession");
+            rulePolicy.setScannerPeriod("1");
+            rulePolicy.setScannerPeriodUnit("Minutes");
+            policy.createPolicy(rulePolicy);
+            expected.addPolicy(rulePolicy.getName());
+        }
 
         GroupPolicyRepresentation childGroupPolicy = new GroupPolicyRepresentation();
 

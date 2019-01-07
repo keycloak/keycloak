@@ -27,7 +27,6 @@ import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
 
 import org.jboss.logging.Logger;
-import org.keycloak.adapters.AdapterDeploymentContext;
 import org.keycloak.adapters.saml.AdapterConstants;
 import org.keycloak.adapters.saml.DefaultSamlDeployment;
 import org.keycloak.adapters.saml.SamlConfigResolver;
@@ -35,7 +34,17 @@ import org.keycloak.adapters.saml.SamlDeployment;
 import org.keycloak.adapters.saml.SamlDeploymentContext;
 import org.keycloak.adapters.saml.config.parsers.DeploymentBuilder;
 import org.keycloak.adapters.saml.config.parsers.ResourceLoader;
+import org.keycloak.adapters.saml.elytron.infinispan.InfinispanSessionCacheIdMapperUpdater;
+import org.keycloak.adapters.spi.InMemorySessionIdMapper;
+import org.keycloak.adapters.spi.SessionIdMapper;
+import org.keycloak.adapters.spi.SessionIdMapperUpdater;
 import org.keycloak.saml.common.exceptions.ParsingException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.util.Collection;
+import java.util.LinkedList;
+import java.util.Objects;
 
 /**
  * <p>A {@link ServletContextListener} that parses the keycloak adapter configuration and set the same configuration
@@ -50,8 +59,14 @@ public class KeycloakConfigurationServletListener implements ServletContextListe
 
     protected static Logger log = Logger.getLogger(KeycloakConfigurationServletListener.class);
 
-    static final String ADAPTER_DEPLOYMENT_CONTEXT_ATTRIBUTE = SamlDeploymentContext.class.getName();
-    static final String ADAPTER_DEPLOYMENT_CONTEXT_ATTRIBUTE_ELYTRON = SamlDeploymentContext.class.getName() + ".elytron";
+    public static final String ADAPTER_DEPLOYMENT_CONTEXT_ATTRIBUTE = SamlDeploymentContext.class.getName();
+    public static final String ADAPTER_DEPLOYMENT_CONTEXT_ATTRIBUTE_ELYTRON = SamlDeploymentContext.class.getName() + ".elytron";
+    public static final String ADAPTER_SESSION_ID_MAPPER_ATTRIBUTE_ELYTRON = SessionIdMapper.class.getName() + ".elytron";
+    public static final String ADAPTER_SESSION_ID_MAPPER_UPDATER_ATTRIBUTE_ELYTRON = SessionIdMapperUpdater.class.getName() + ".elytron";
+
+    private final SessionIdMapper idMapper = new InMemorySessionIdMapper();
+    private SessionIdMapperUpdater idMapperUpdater = SessionIdMapperUpdater.DIRECT;
+    private Collection<AutoCloseable> toClose = new LinkedList<>();
 
     @Override
     public void contextInitialized(ServletContextEvent sce) {
@@ -93,13 +108,23 @@ public class KeycloakConfigurationServletListener implements ServletContextListe
             }
         }
 
+        addTokenStoreUpdaters(servletContext);
+
         servletContext.setAttribute(ADAPTER_DEPLOYMENT_CONTEXT_ATTRIBUTE, deploymentContext);
         servletContext.setAttribute(ADAPTER_DEPLOYMENT_CONTEXT_ATTRIBUTE_ELYTRON, deploymentContext);
+        servletContext.setAttribute(ADAPTER_SESSION_ID_MAPPER_ATTRIBUTE_ELYTRON, idMapper);
+        servletContext.setAttribute(ADAPTER_SESSION_ID_MAPPER_UPDATER_ATTRIBUTE_ELYTRON, idMapperUpdater);
     }
 
     @Override
     public void contextDestroyed(ServletContextEvent sce) {
-
+        for (AutoCloseable c : toClose) {
+            try {
+                c.close();
+            } catch (Exception e) {
+                log.warnf(e, "Exception while destroying servlet context");
+            }
+        }
     }
 
     private static InputStream getConfigInputStream(ServletContext context) {
@@ -126,5 +151,65 @@ public class KeycloakConfigurationServletListener implements ServletContextListe
             return null;
         }
         return new ByteArrayInputStream(json.getBytes());
+    }
+
+    public void addTokenStoreUpdaters(ServletContext servletContext) {
+        SessionIdMapperUpdater updater = this.idMapperUpdater;
+
+        try {
+            String idMapperSessionUpdaterClasses = servletContext.getInitParameter("keycloak.sessionIdMapperUpdater.classes");
+            if (idMapperSessionUpdaterClasses == null) {
+                return;
+            }
+
+            servletContext.addListener(new IdMapperUpdaterSessionListener(idMapper));    // This takes care of HTTP sessions manipulated locally
+
+            updater = SessionIdMapperUpdater.DIRECT;
+
+            for (String clazz : idMapperSessionUpdaterClasses.split("\\s*,\\s*")) {
+                if (! clazz.isEmpty()) {
+                    if (Objects.equals("org.keycloak.adapters.saml.wildfly.infinispan.InfinispanSessionCacheIdMapperUpdater", clazz)) {
+                        clazz = InfinispanSessionCacheIdMapperUpdater.class.getName();  // exchange wildfly/undertow for elytron one
+                    }
+                    updater = invokeAddTokenStoreUpdaterMethod(clazz, servletContext, updater);
+                    if (updater instanceof AutoCloseable) {
+                        toClose.add((AutoCloseable) updater);
+                    }
+                }
+            }
+        } finally {
+            setIdMapperUpdater(updater);
+        }
+    }
+
+    private SessionIdMapperUpdater invokeAddTokenStoreUpdaterMethod(String idMapperSessionUpdaterClass, ServletContext servletContext,
+      SessionIdMapperUpdater previousIdMapperUpdater) {
+        try {
+            Class<?> clazz = servletContext.getClassLoader().loadClass(idMapperSessionUpdaterClass);
+            Method addTokenStoreUpdatersMethod = clazz.getMethod("addTokenStoreUpdaters", ServletContext.class, SessionIdMapper.class, SessionIdMapperUpdater.class);
+            if (! Modifier.isStatic(addTokenStoreUpdatersMethod.getModifiers())
+              || ! Modifier.isPublic(addTokenStoreUpdatersMethod.getModifiers())
+              || ! SessionIdMapperUpdater.class.isAssignableFrom(addTokenStoreUpdatersMethod.getReturnType())) {
+                log.errorv("addTokenStoreUpdaters method in class {0} has to be public static. Ignoring class.", idMapperSessionUpdaterClass);
+                return previousIdMapperUpdater;
+            }
+
+            log.debugv("Initializing sessionIdMapperUpdater class {0}", idMapperSessionUpdaterClass);
+            return (SessionIdMapperUpdater) addTokenStoreUpdatersMethod.invoke(null, servletContext, idMapper, previousIdMapperUpdater);
+        } catch (ClassNotFoundException | NoSuchMethodException | SecurityException ex) {
+            log.warnv(ex, "Cannot use sessionIdMapperUpdater class {0}", idMapperSessionUpdaterClass);
+            return previousIdMapperUpdater;
+        } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException ex) {
+            log.warnv(ex, "Cannot use {0}.addTokenStoreUpdaters(DeploymentInfo, SessionIdMapper) method", idMapperSessionUpdaterClass);
+            return previousIdMapperUpdater;
+        }
+    }
+
+    public SessionIdMapperUpdater getIdMapperUpdater() {
+        return idMapperUpdater;
+    }
+
+    protected void setIdMapperUpdater(SessionIdMapperUpdater idMapperUpdater) {
+        this.idMapperUpdater = idMapperUpdater;
     }
 }

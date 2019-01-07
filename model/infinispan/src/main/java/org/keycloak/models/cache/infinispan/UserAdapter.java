@@ -31,6 +31,7 @@ import org.keycloak.models.utils.RoleUtils;
 
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -256,7 +257,7 @@ public class UserAdapter implements CachedUserModel {
     public void setFederationLink(String link) {
         getDelegateForUpdate();
         updated.setFederationLink(link);
-   }
+    }
 
     @Override
     public String getServiceAccountClientLink() {
@@ -346,7 +347,7 @@ public class UserAdapter implements CachedUserModel {
     @Override
     public Set<GroupModel> getGroups() {
         if (updated != null) return updated.getGroups();
-        Set<GroupModel> groups = new HashSet<GroupModel>();
+        Set<GroupModel> groups = new LinkedHashSet<>();
         for (String id : cached.getGroups(modelSupplier)) {
             GroupModel groupModel = keycloakSession.realms().getGroupById(id, realm);
             if (groupModel == null) {

@@ -3,14 +3,12 @@ package org.keycloak.example.photoz.album;
 import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.authorization.client.AuthzClient;
 import org.keycloak.authorization.client.ClientAuthorizationContext;
+import org.keycloak.example.photoz.CustomDatabase;
+import org.keycloak.example.photoz.entity.Album;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 import org.keycloak.authorization.client.resource.ProtectionResource;
-import org.keycloak.example.photoz.entity.Album;
-import org.keycloak.example.photoz.util.Transaction;
 
-import javax.inject.Inject;
-import javax.persistence.EntityManager;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -29,7 +27,6 @@ import javax.ws.rs.core.HttpHeaders;
 import org.jboss.logging.Logger;
 
 @Path("/album")
-@Transaction
 public class AlbumService {
 
     private final Logger log = Logger.getLogger(AlbumService.class);
@@ -37,8 +34,7 @@ public class AlbumService {
     public static final String SCOPE_ALBUM_VIEW = "album:view";
     public static final String SCOPE_ALBUM_DELETE = "album:delete";
 
-    @Inject
-    private EntityManager entityManager;
+    private CustomDatabase customDatabase = CustomDatabase.create();
 
     @Context
     private HttpServletRequest request;
@@ -57,28 +53,28 @@ public class AlbumService {
         newAlbum.setUserId(userId);
 
         log.debug("PERSISTING " + newAlbum);
-        entityManager.persist(newAlbum);
+        customDatabase.addAlbum(newAlbum);
         try {
             createProtectedResource(newAlbum);
         } catch (RuntimeException e) {
             log.debug("ERROR " + e);
-            entityManager.remove(newAlbum);
-            throw e;
+            customDatabase.remove(newAlbum);
+            return Response.status(500).entity(e.getMessage()).build(); //
         }
 
         return Response.ok(newAlbum).build();
     }
 
-    @Path("{id}")
+    @Path("{name}")
     @DELETE
-    public Response delete(@PathParam("id") String id, @Context HttpHeaders headers) {
+    public Response delete(@PathParam("name") String name, @Context HttpHeaders headers) {
         printAuthHeaders(headers);
         
-        Album album = this.entityManager.find(Album.class, Long.valueOf(id));
+        Album album = this.customDatabase.findByName(name);
 
         try {
             deleteProtectedResource(album);
-            this.entityManager.remove(album);
+            this.customDatabase.remove(album);
         } catch (Exception e) {
             throw new RuntimeException("Could not delete album.", e);
         }
@@ -90,23 +86,23 @@ public class AlbumService {
     @Produces("application/json")
     public Response findAll(@QueryParam("getAll") Boolean getAll) {
         if (getAll != null && getAll) {
-            return Response.ok(this.entityManager.createQuery("from Album").getResultList()).build();
+            return Response.ok(this.customDatabase.getAll()).build();
         } else {
-            return Response.ok(this.entityManager.createQuery("from Album where userId = '" + request.getUserPrincipal().getName() + "'").getResultList()).build();
+            return Response.ok(this.customDatabase.findByUserId(request.getUserPrincipal().getName())).build();
         }
     }
 
     @GET
-    @Path("{id}")
+    @Path("{name}")
     @Produces("application/json")
-    public Response findById(@PathParam("id") String id) {
-        List result = this.entityManager.createQuery("from Album where id = " + Long.valueOf(id)).getResultList();
+    public Response findById(@PathParam("name") String name) {
+        Album result = this.customDatabase.findByName(name);
 
-        if (result.isEmpty()) {
+        if (result == null) {
             return Response.status(Status.NOT_FOUND).build();
         }
 
-        return Response.ok(result.get(0)).build();
+        return Response.ok(result).build();
     }
 
     private void createProtectedResource(Album album) {
@@ -117,7 +113,7 @@ public class AlbumService {
             scopes.add(new ScopeRepresentation(SCOPE_ALBUM_VIEW));
             scopes.add(new ScopeRepresentation(SCOPE_ALBUM_DELETE));
 
-            ResourceRepresentation albumResource = new ResourceRepresentation(album.getName(), scopes, "/album/" + album.getId(), "http://photoz.com/album");
+            ResourceRepresentation albumResource = new ResourceRepresentation(album.getName(), scopes, "/album/" + album.getName(), "http://photoz.com/album");
 
             albumResource.setOwner(album.getUserId());
 
@@ -132,7 +128,7 @@ public class AlbumService {
     }
 
     private void deleteProtectedResource(Album album) {
-        String uri = "/album/" + album.getId();
+        String uri = "/album/" + album.getName();
 
         try {
             ProtectionResource protection = getAuthzClient().protection();

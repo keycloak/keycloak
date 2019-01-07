@@ -22,10 +22,13 @@ import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.arquillian.test.api.ArquillianResource;
 import org.keycloak.testsuite.auth.page.login.OIDCLogin;
 import org.keycloak.testsuite.page.AbstractPageWithInjectedUrl;
-import org.keycloak.testsuite.pages.ConsentPage;
 import org.keycloak.testsuite.util.JavascriptBrowser;
 import org.keycloak.testsuite.util.UIUtils;
 import org.keycloak.testsuite.util.URLUtils;
+import org.keycloak.testsuite.util.javascript.JavascriptStateValidator;
+import org.keycloak.testsuite.util.javascript.JavascriptTestExecutorWithAuthorization;
+import org.keycloak.testsuite.util.javascript.ResponseValidator;
+import org.keycloak.testsuite.util.javascript.XMLHttpRequest;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
@@ -33,8 +36,6 @@ import org.openqa.selenium.support.FindBy;
 
 import java.net.URL;
 
-import static org.hamcrest.Matchers.containsString;
-import static org.junit.Assert.assertThat;
 import static org.keycloak.testsuite.util.UIUtils.clickLink;
 import static org.keycloak.testsuite.util.WaitUtils.pause;
 import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
@@ -61,9 +62,6 @@ public class PhotozClientAuthzTestApp extends AbstractPageWithInjectedUrl {
     @JavascriptBrowser
     protected OIDCLogin loginPage;
 
-    @Page
-    @JavascriptBrowser
-    protected ConsentPage consentPage;
 
     @FindBy(xpath = "//a[@ng-click = 'Identity.logout()']")
     @JavascriptBrowser
@@ -85,74 +83,59 @@ public class PhotozClientAuthzTestApp extends AbstractPageWithInjectedUrl {
     @JavascriptBrowser
     private WebElement output;
 
+    private JavascriptTestExecutorWithAuthorization testExecutor;
+    private String apiUrl;
+
+    public void setTestExecutorPlayground(JavascriptTestExecutorWithAuthorization executor, String apiUrl) {
+        testExecutor = executor;
+        this.apiUrl = apiUrl;
+    }
+
     public void createAlbum(String name) {
         createAlbum(name, false);
     }
 
     public void createAlbum(String name, boolean managed) {
-        if (managed) {
-            createAlbum(name, "save-managed-album");
-        } else {
-            createAlbum(name, "save-album");
-        }
+        createAlbum(name, managed, false, null);
     }
 
-    public void createAlbum(String name, String buttonId) {
-        log.debugf("Creating album {0} with buttonId: {1}", name, buttonId);
-        navigateTo();
-        WebElement createAlbum = driver.findElement(By.id("create-album"));
-        waitUntilElement(createAlbum).is().clickable();
-        createAlbum.click();
-        WebElement albumNameInput = driver.findElement(By.id("album.name"));
-        waitUntilElement(albumNameInput).is().present();
-        UIUtils.setTextInputValue(albumNameInput, name);
-        waitUntilElement(albumNameInput).attribute(UIUtils.VALUE_ATTR_NAME).contains(name);
-        WebElement button = driver.findElement(By.id(buttonId));
-        waitUntilElement(button).is().clickable();
-        button.click();
-        pause(WAIT_AFTER_OPERATION);
-        if (buttonId.equals("save-album-invalid")) {
-            waitForPageToLoad();
-            assertThat(driver.getPageSource(), containsString("Could not register protected resource."));
-        } else {
-            waitUntilElement(albumNameInput).is().not().present();
-        }
+    public void createAlbum(String name, boolean managed, boolean invalidUser, ResponseValidator validator) {
+        testExecutor.sendXMLHttpRequest(
+                XMLHttpRequest.create()
+                        .method("POST")
+                        .url(apiUrl + "/album" + (invalidUser ? "?user=invalidUser" : ""))
+                        .content("JSON.stringify(JSON.parse('{\"name\" : \"" + name + "\", \"userManaged\": " + Boolean.toString(managed) + " }'))")
+                        .addHeader("Content-Type", "application/json; charset=UTF-8")
+                , validator);
     }
 
-    public void createAlbumWithInvalidUser(String name) {
-        createAlbum(name, "save-album-invalid");
+
+    public void createAlbumWithInvalidUser(String name, ResponseValidator validator) {
+        createAlbum(name, false, true, validator);
     }
+
+
 
     @Override
     public URL getInjectedUrl() {
         return this.url;
     }
 
-    public void deleteAlbum(String name, boolean shouldBeDenied) {
-        log.debugf("Deleting album {0}", name);
-        WebElement delete = driver.findElement(By.id("delete-" + name));
-        waitUntilElement(delete).is().clickable();
-        delete.click();
-        pause(WAIT_AFTER_OPERATION);
-        if (shouldBeDenied) {
-            waitForDenial();
-        } else {
-            waitUntilElement(delete).is().not().present();
-        }
+    public void deleteAlbum(String name, ResponseValidator validator) {
+        testExecutor.sendXMLHttpRequest(
+                XMLHttpRequest.create()
+                        .method("DELETE")
+                        .url(apiUrl + "/album/" + name + "/") // it doesn't work without ending "/"
+                , validator);
     }
 
-    public void navigateToAdminAlbum(boolean shouldBeDenied) {
-        log.debug("Navigating to Admin Album");
-        URLUtils.navigateToUri(toString() + "/#/admin/album");
-        
-        driver.navigate().refresh(); // This is sometimes necessary for loading the new policy settings
-        waitForPageToLoad();
-        pause(WAIT_AFTER_OPERATION);
-        if (shouldBeDenied) {
-            waitForDenial();
-        } else {
-            waitUntilElement(output).text().equalTo("");
-        }
+    public void navigateToAdminAlbum(ResponseValidator validator) {
+        testExecutor.sendXMLHttpRequest(
+                XMLHttpRequest.create()
+                        .method("GET")
+                        .addHeader("Accept", "application/json")
+                        .url(apiUrl + "/admin/album")
+                , validator);
     }
 
     public void logOut() {
@@ -161,73 +144,24 @@ public class PhotozClientAuthzTestApp extends AbstractPageWithInjectedUrl {
         clickLink(signOutButton);
     }
     
-    public void requestEntitlement() {
-        waitUntilElement(entitlement).is().clickable();
-        entitlement.click();
-        waitForPageToLoad();
-        pause(WAIT_AFTER_OPERATION);
-        pause(WAIT_AFTER_OPERATION);
+    public void requestEntitlement(JavascriptStateValidator validator) {
+        testExecutor.executeAsyncScript("var callback = arguments[arguments.length - 1];" +
+                "window.authorization.entitlement('photoz-restful-api', {" +
+                "    \"permissions\": [" +
+                "        {" +
+                "            \"id\" : \"Album Resource\"" +
+                "        }" +
+                "    ]" +
+                "}).then(function (rpt) {" +
+                "    callback(JSON.stringify(jwt_decode(rpt), null, '  '));" +
+                "});", validator);
     }
     
-    public void requestEntitlements() {
-        waitUntilElement(entitlements).is().clickable();
-        entitlements.click();
-        waitForPageToLoad();
-        pause(WAIT_AFTER_OPERATION);
-        pause(WAIT_AFTER_OPERATION);
-    }
-
-    public void login(String username, String password, String... scopes) throws InterruptedException {
-        String currentUrl = this.driver.getCurrentUrl();
-
-        if (scopes.length > 0) {
-            StringBuilder scopesValue = new StringBuilder();
-
-            for (String scope : scopes) {
-                if (scopesValue.length() != 0) {
-                    scopesValue.append(" ");
-                }
-                scopesValue.append(scope);
-            }
-
-            scopesValue.append(" openid");
-
-
-            StringBuilder urlWithScopeParam = new StringBuilder(currentUrl);
-
-            int scopeIndex = currentUrl.indexOf("scope");
-
-            if (scopeIndex != -1) {
-                // Remove scope param from url
-                urlWithScopeParam.delete(scopeIndex, currentUrl.indexOf('&', scopeIndex));
-                // Add scope param to the end of query
-                urlWithScopeParam.append("&").append("scope=");
-            }
-
-            if (!currentUrl.contains("?")) {
-                urlWithScopeParam.append("?scope=");
-            }
-
-            urlWithScopeParam.append(scopesValue);
-
-            URLUtils.navigateToUri(urlWithScopeParam.toString());
-        }
-
-        this.loginPage.form().login(username, password);
-        waitForPageToLoad();//guess
-
-        try {
-            if (!isCurrent()) {
-                // simple check if we are at the consent page, if so just click 'Yes'
-                if (this.consentPage.isCurrent(driver)) {
-                    consentPage.confirm();
-                }
-            }
-        } catch (Exception ignore) {
-            // ignore errors when checking consent page, if an error tests will also fail
-        }
-
-        pause(WAIT_AFTER_OPERATION);
+    public void requestEntitlements(JavascriptStateValidator validator) {
+        testExecutor.executeAsyncScript("var callback = arguments[arguments.length - 1];" +
+                "window.authorization.entitlement('photoz-restful-api').then(function (rpt) {" +
+                "     callback(JSON.stringify(jwt_decode(rpt), null, '  '));" +
+                "});", validator);
     }
 
     private void waitForDenial() {
@@ -243,28 +177,18 @@ public class PhotozClientAuthzTestApp extends AbstractPageWithInjectedUrl {
         pause(WAIT_AFTER_OPERATION);
     }
 
-    public void viewAlbum(String name, boolean shouldBeDenied) {
-        WebElement viewalbum = driver.findElement(By.xpath("//a[text() = '" + name + "']"));
-        waitUntilElement(viewalbum).is().clickable();
-        viewalbum.click();
-        waitForPageToLoad();
-        driver.navigate().refresh(); // This is sometimes necessary for loading the new policy settings
-        if (shouldBeDenied) {
-            waitForDenial();
-        } else {
-            waitForNotDenial();
-        }
-        waitForPageToLoad();
-        pause(WAIT_AFTER_OPERATION);
+    public void viewAlbum(String name, ResponseValidator validator) {
+        testExecutor.sendXMLHttpRequest(
+                XMLHttpRequest.create()
+                        .method("GET")
+                        .addHeader("Accept", "application/json")
+                        .url(apiUrl + "/album/" + name + "/")
+                , validator);
     }
 
     public void accountPage() {
-        navigateTo();
-        WebElement myAccount = driver.findElement(By.id("my-account"));
-        waitUntilElement(myAccount).is().clickable();
-        myAccount.click();
+        testExecutor.openAccountPage(null);
         waitForPageToLoad();
-        pause(WAIT_AFTER_OPERATION);
     }
 
     public void accountMyResources() {
@@ -273,7 +197,6 @@ public class PhotozClientAuthzTestApp extends AbstractPageWithInjectedUrl {
         waitUntilElement(myResources).is().clickable();
         myResources.click();
         waitForPageToLoad();
-        pause(WAIT_AFTER_OPERATION);
     }
 
     public void accountMyResource(String name) {
@@ -282,7 +205,6 @@ public class PhotozClientAuthzTestApp extends AbstractPageWithInjectedUrl {
         waitUntilElement(myResource).is().clickable();
         myResource.click();
         waitForPageToLoad();
-        pause(WAIT_AFTER_OPERATION);
     }
 
     public void accountGrantResource(String name, String requester) {
@@ -291,7 +213,6 @@ public class PhotozClientAuthzTestApp extends AbstractPageWithInjectedUrl {
         waitUntilElement(grantResource).is().clickable();
         grantResource.click();
         waitForPageToLoad();
-        pause(WAIT_AFTER_OPERATION);
     }
 
     public void accountGrantRemoveScope(String name, String requester, String scope) {
@@ -300,7 +221,6 @@ public class PhotozClientAuthzTestApp extends AbstractPageWithInjectedUrl {
         waitUntilElement(grantRemoveScope).is().clickable();
         grantRemoveScope.click();
         waitForPageToLoad();
-        pause(WAIT_AFTER_OPERATION);
     }
 
     public void accountRevokeResource(String name, String requester) {
@@ -309,7 +229,6 @@ public class PhotozClientAuthzTestApp extends AbstractPageWithInjectedUrl {
         waitUntilElement(revokeResource).is().clickable();
         revokeResource.click();
         waitForPageToLoad();
-        pause(WAIT_AFTER_OPERATION);
     }
 
     public void accountShareResource(String name, String user) {
@@ -323,7 +242,6 @@ public class PhotozClientAuthzTestApp extends AbstractPageWithInjectedUrl {
         waitUntilElement(shareButton).is().clickable();
         shareButton.click();
         waitForPageToLoad();
-        pause(WAIT_AFTER_OPERATION);
     }
 
     public void accountShareRemoveScope(String name, String user, String scope) {
@@ -344,7 +262,6 @@ public class PhotozClientAuthzTestApp extends AbstractPageWithInjectedUrl {
         shareButton.click();
         
         waitForPageToLoad();
-        pause(WAIT_AFTER_OPERATION);
     }
 
     public void accountDenyResource(String name) {
@@ -353,25 +270,22 @@ public class PhotozClientAuthzTestApp extends AbstractPageWithInjectedUrl {
         waitUntilElement(denyLink).is().clickable();
         denyLink.click();
         waitForPageToLoad();
-        pause(WAIT_AFTER_OPERATION);
     }
 
-    public void requestResourceProtectedAnyScope(boolean shouldBeDenied) {
-        navigateTo();
-        WebElement requestPathWithAnyProtectedScope = driver.findElement(By.id("requestPathWithAnyProtectedScope"));
-        waitUntilElement(requestPathWithAnyProtectedScope).is().clickable();
-        requestPathWithAnyProtectedScope.click();
-        if (shouldBeDenied) waitForDenial();
-        pause(WAIT_AFTER_OPERATION);
+    public void requestResourceProtectedAnyScope(ResponseValidator validator) {
+        testExecutor.sendXMLHttpRequest(
+                XMLHttpRequest.create()
+                        .method("GET")
+                        .url(apiUrl + "/scope-any")
+                , validator);
     }
 
-    public void requestResourceProtectedAllScope(boolean shouldBeDenied) {
-        navigateTo();
-        WebElement requestPathWithAllProtectedScope = driver.findElement(By.id("requestPathWithAllProtectedScope"));
-        waitUntilElement(requestPathWithAllProtectedScope).is().clickable();
-        requestPathWithAllProtectedScope.click();
-        if (shouldBeDenied) waitForDenial();
-        pause(WAIT_AFTER_OPERATION);
+    public void requestResourceProtectedAllScope(ResponseValidator validator) {
+        testExecutor.sendXMLHttpRequest(
+                XMLHttpRequest.create()
+                        .method("GET")
+                        .url(apiUrl + "/scope-all")
+                , validator);
     }
 
     public WebElement getOutput() {
@@ -380,8 +294,8 @@ public class PhotozClientAuthzTestApp extends AbstractPageWithInjectedUrl {
 
     @Override
     public void navigateTo() {
-        super.navigateTo();
-        pause(WAIT_AFTER_OPERATION);
+        driver.navigate().to(toString() + "/");
+        waitForPageToLoad();
     }
 
     @Override
