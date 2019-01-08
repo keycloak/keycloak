@@ -19,7 +19,7 @@
       "dependencyExclusion.org.jboss.web:jbossweb@*": "$EAP6SUPPORTED_ORG_JBOSS_WEB_JBOSSWEB",
       "dependencyOverride.com.google.guava:guava@org.keycloak.testsuite:integration-arquillian": "",
       "dependencyOverride.org.apache.httpcomponents:httpclient@org.keycloak.testsuite:integration-arquillian-tests": "",
-      "dependencyOverride.org.jboss.logging:jboss-logging-processor@org.keycloak:keycloak-as7-subsystem": ""
+      "dependencyOverride.org.jboss.logging:jboss-logging-processor@*": ""
     }
   }
 }
