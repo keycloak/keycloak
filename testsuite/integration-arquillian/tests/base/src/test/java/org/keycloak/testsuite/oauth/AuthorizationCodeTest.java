@@ -151,4 +151,22 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
         String codeId = events.expectLogin().assertEvent().getDetails().get(Details.CODE_ID);
     }
 
+
+    @Test
+    public void authorizationRequestFormPostResponseModeWithCustomState() throws IOException {
+        oauth.responseMode(OIDCResponseMode.FORM_POST.toString().toLowerCase());
+        oauth.stateParamHardcoded("\"><foo>bar_baz(2)far</foo>");
+        oauth.doLoginGrant("test-user@localhost", "password");
+
+        String sources = driver.getPageSource();
+        System.out.println(sources);
+
+        String code = driver.findElement(By.id("code")).getText();
+        String state = driver.findElement(By.id("state")).getText();
+
+        assertEquals("\"><foo>bar_baz(2)far</foo>", state);
+
+        String codeId = events.expectLogin().assertEvent().getDetails().get(Details.CODE_ID);
+    }
+
 }

@@ -38,7 +38,7 @@ public class SamlMultiTenantResolver implements SamlConfigResolver {
             throw new IllegalStateException("Not able to resolve realm from the request path!");
         }
 
-        InputStream is = getClass().getResourceAsStream("/" + realm + "-keycloak-saml.xml");
+        InputStream is = Thread.currentThread().getContextClassLoader().getResourceAsStream("/" + realm + "-keycloak-saml.xml");
         if (is == null) {
             throw new IllegalStateException("Not able to find the file /" + realm + "-keycloak-saml.xml");
         }
@@ -46,10 +46,10 @@ public class SamlMultiTenantResolver implements SamlConfigResolver {
         ResourceLoader loader = new ResourceLoader() {
             @Override
             public InputStream getResourceAsStream(String path) {
-                return getClass().getResourceAsStream(path);
+                return Thread.currentThread().getContextClassLoader().getResourceAsStream(path);
             }
         };
-        
+
         try {
             return new DeploymentBuilder().build(is, loader);
         } catch (ParsingException e) {

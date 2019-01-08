@@ -54,16 +54,23 @@ public class OTPFormAuthenticator extends AbstractUsernameFormAuthenticator impl
             context.resetFlow();
             return;
         }
+
+        UserModel userModel = context.getUser();
+        if (!enabledUser(context, userModel)) {
+            // error in context is set in enabledUser/isTemporarilyDisabledByBruteForce
+            return;
+        }
+
         String password = inputData.getFirst(CredentialRepresentation.TOTP);
         if (password == null) {
             Response challengeResponse = challenge(context, null);
             context.challenge(challengeResponse);
             return;
         }
-        boolean valid = context.getSession().userCredentialManager().isValid(context.getRealm(), context.getUser(),
+        boolean valid = context.getSession().userCredentialManager().isValid(context.getRealm(), userModel,
                 UserCredentialModel.otp(context.getRealm().getOTPPolicy().getType(), password));
         if (!valid) {
-            context.getEvent().user(context.getUser())
+            context.getEvent().user(userModel)
                     .error(Errors.INVALID_USER_CREDENTIALS);
             Response challengeResponse = challenge(context, Messages.INVALID_TOTP);
             context.failureChallenge(AuthenticationFlowError.INVALID_CREDENTIALS, challengeResponse);
@@ -77,11 +84,14 @@ public class OTPFormAuthenticator extends AbstractUsernameFormAuthenticator impl
         return true;
     }
 
-    protected Response challenge(AuthenticationFlowContext context, String error) {
-        LoginFormsProvider forms = context.form();
-        if (error != null) forms.setError(error);
+    @Override
+    protected String tempDisabledError() {
+        return Messages.INVALID_TOTP;
+    }
 
-        return forms.createLoginTotp();
+    @Override
+    protected Response createLoginForm(LoginFormsProvider form) {
+        return form.createLoginTotp();
     }
 
     @Override

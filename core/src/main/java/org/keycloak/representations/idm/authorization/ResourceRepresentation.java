@@ -17,12 +17,7 @@
 package org.keycloak.representations.idm.authorization;
 
 import java.net.URI;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -33,7 +28,7 @@ import org.keycloak.json.StringListMapDeserializer;
 
 /**
  * <p>One or more resources that the resource server manages as a set of protected resources.
- *
+ * <p>
  * <p>For more details, <a href="https://docs.kantarainitiative.org/uma/draft-oauth-resource-reg.html#rfc.section.2.2">OAuth-resource-reg</a>.
  *
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -62,15 +57,18 @@ public class ResourceRepresentation {
     @JsonDeserialize(using = StringListMapDeserializer.class)
     private Map<String, List<String>> attributes;
 
-    private Set<ResourceRepresentation> subResources;
+    private List<ResourceRepresentation> subResources;
 
+    private Integer sort;
+    private String permission;
+    private boolean enabled;
     /**
      * Creates a new instance.
      *
-     * @param name a human-readable string describing a set of one or more resources
-     * @param uris a {@link List} of {@link URI} that provides network locations for the resource set being registered
-     * @param type a string uniquely identifying the semantics of the resource set
-     * @param scopes the available scopes for this resource set
+     * @param name    a human-readable string describing a set of one or more resources
+     * @param uris    a {@link List} of {@link URI} that provides network locations for the resource set being registered
+     * @param type    a string uniquely identifying the semantics of the resource set
+     * @param scopes  the available scopes for this resource set
      * @param iconUri a {@link URI} for a graphic icon representing the resource set
      */
     public ResourceRepresentation(String name, Set<ScopeRepresentation> scopes, Set<String> uris, String type, String iconUri) {
@@ -79,7 +77,6 @@ public class ResourceRepresentation {
         this.uris = uris;
         this.type = type;
         this.iconUri = iconUri;
-        this.subResources=new HashSet<>();
     }
 
     public ResourceRepresentation(String name, Set<ScopeRepresentation> scopes, String uri, String type, String iconUri) {
@@ -89,9 +86,9 @@ public class ResourceRepresentation {
     /**
      * Creates a new instance.
      *
-     * @param name a human-readable string describing a set of one or more resources
-     * @param uris a {@link List} of {@link URI} that provides the network location for the resource set being registered
-     * @param type a string uniquely identifying the semantics of the resource set
+     * @param name   a human-readable string describing a set of one or more resources
+     * @param uris   a {@link List} of {@link URI} that provides the network location for the resource set being registered
+     * @param type   a string uniquely identifying the semantics of the resource set
      * @param scopes the available scopes for this resource set
      */
     public ResourceRepresentation(String name, Set<ScopeRepresentation> scopes, Set<String> uris, String type) {
@@ -105,9 +102,9 @@ public class ResourceRepresentation {
     /**
      * Creates a new instance.
      *
-     * @param name a human-readable string describing a set of one or more resources
+     * @param name      a human-readable string describing a set of one or more resources
      * @param serverUri a {@link URI} that identifies this resource server
-     * @param scopes the available scopes for this resource set
+     * @param scopes    the available scopes for this resource set
      */
     public ResourceRepresentation(String name, Set<ScopeRepresentation> scopes) {
         this(name, scopes, (Set<String>) null, null, null);
@@ -120,12 +117,10 @@ public class ResourceRepresentation {
             ScopeRepresentation rep = new ScopeRepresentation(s);
             this.scopes.add(rep);
         }
-        this.subResources=new HashSet<>();
     }
 
     /**
      * Creates a new instance.
-     *
      */
     public ResourceRepresentation() {
         this(null, null, (Set<String>) null, null, null);
@@ -278,11 +273,11 @@ public class ResourceRepresentation {
         this.attributes = attributes;
     }
 
-    public Set<ResourceRepresentation> getSubResources() {
+    public List<ResourceRepresentation> getSubResources() {
         return subResources;
     }
 
-    public void setSubResources(Set<ResourceRepresentation> subResources) {
+    public void setSubResources(List<ResourceRepresentation> subResources) {
         this.subResources = subResources;
     }
 
@@ -295,5 +290,29 @@ public class ResourceRepresentation {
 
     public int hashCode() {
         return Objects.hash(getName());
+    }
+
+    public Integer getSort() {
+        return this.sort;
+    }
+
+    public void setSort(Integer sort) {
+        this.sort = sort;
+    }
+
+    public String getPermission() {
+        return this.permission;
+    }
+
+    public void setPermission(String permission) {
+        this.permission = permission;
+    }
+
+    public boolean isEnabled() {
+        return enabled;
+    }
+
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
     }
 }

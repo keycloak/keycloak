@@ -65,7 +65,7 @@ if [ $1 == "unit" ]; then
 fi
 
 if [ $1 == "server-group1" ]; then
-    run-server-tests org.keycloak.testsuite.ad*.**.*Test
+    run-server-tests org.keycloak.testsuite.adm.**.*Test,org.keycloak.testsuite.add.**.*Test
 fi
 
 if [ $1 == "server-group2" ]; then
@@ -78,6 +78,10 @@ fi
 
 if [ $1 == "server-group4" ]; then
     run-server-tests org.keycloak.testsuite.k*.**.*Test,org.keycloak.testsuite.m*.**.*Test,org.keycloak.testsuite.o*.**.*Test,org.keycloak.testsuite.s*.**.*Test,org.keycloak.testsuite.u*.**.*Test
+fi
+
+if [ $1 == "adapter-tests" ]; then
+    run-server-tests org.keycloak.testsuite.adapter.**.*Test
 fi
 
 if [ $1 == "crossdc-server" ]; then

@@ -21,8 +21,10 @@ package org.keycloak.models.cache.infinispan.authorization.entities;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.Scope;
 import org.keycloak.common.util.MultivaluedHashMap;
+import org.keycloak.models.GroupModel;
 import org.keycloak.models.cache.infinispan.DefaultLazyLoader;
 import org.keycloak.models.cache.infinispan.LazyLoader;
+import org.keycloak.models.cache.infinispan.authorization.ResourceAdapter;
 import org.keycloak.models.cache.infinispan.entities.AbstractRevisioned;
 
 import java.util.Collections;
@@ -48,6 +50,13 @@ public class CachedResource extends AbstractRevisioned implements InResourceServ
     private LazyLoader<Resource, Set<String>> scopesIds;
     private LazyLoader<Resource, Set<String>> uris;
     private LazyLoader<Resource, MultivaluedHashMap<String, String>> attributes;
+    private Resource parent;
+    private String parentId;
+    private LazyLoader<Resource, Set<String>> subResources;
+    private Integer sort;
+    private String permission;
+    private boolean enabled;
+
 
     public CachedResource(Long revision, Resource resource) {
         super(revision, resource.getId());
@@ -79,6 +88,14 @@ public class CachedResource extends AbstractRevisioned implements InResourceServ
         } else {
             this.attributes = new DefaultLazyLoader<>(source -> new MultivaluedHashMap<>(source.getAttributes()), MultivaluedHashMap::new);
         }
+        this.parent = resource.getParent();
+        this.parentId = resource.getParentId();
+        if (resource.isFetched("subResources")) {
+            this.subResources = new DefaultLazyLoader<>(source -> source.getSubResources().stream().map(Resource::getId).collect(Collectors.toSet()), Collections::emptySet);
+        }
+        this.sort = resource.getSort();
+        this.permission = resource.getPermission();
+        this.enabled = resource.isEnabled();
     }
 
 
@@ -120,5 +137,29 @@ public class CachedResource extends AbstractRevisioned implements InResourceServ
 
     public Map<String, List<String>> getAttributes(Supplier<Resource> source) {
         return attributes.get(source);
+    }
+
+    public Resource getParent() {
+        return parent;
+    }
+
+    public Set<String> getSubResources(Supplier<Resource> resource) {
+        return subResources.get(resource);
+    }
+
+    public Integer getSort() {
+        return sort;
+    }
+
+    public String getPermission() {
+        return permission;
+    }
+
+    public boolean isEnabled() {
+        return enabled;
+    }
+
+    public String getParentId() {
+        return parentId;
     }
 }

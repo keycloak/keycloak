@@ -36,7 +36,6 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
 import org.keycloak.util.TokenUtil;
 
-import javax.ws.rs.core.Response;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -148,6 +147,13 @@ public class AssertEvents implements TestRule {
         return expect(EventType.LOGOUT).client((String) null)
                 .detail(Details.REDIRECT_URI, defaultRedirectUri)
                 .session(sessionId);
+    }
+
+    public ExpectedEvent expectLogoutError(String error) {
+        return expect(EventType.LOGOUT_ERROR)
+                .error(error)
+                .client((String) null)
+                .user((String) null);
     }
 
     public ExpectedEvent expectRegister(String username, String email) {

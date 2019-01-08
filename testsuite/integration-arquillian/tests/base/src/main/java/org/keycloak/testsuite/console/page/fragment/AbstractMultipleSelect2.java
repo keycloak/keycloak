@@ -31,6 +31,7 @@ import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
+import static org.keycloak.testsuite.util.UIUtils.clickLink;
 import static org.keycloak.testsuite.util.WaitUtils.pause;
 import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 
@@ -93,7 +94,7 @@ public abstract class AbstractMultipleSelect2<R> {
 
         for (WebElement result : result) {
             if (result.getText().equalsIgnoreCase(id)) {
-                result.click();
+                clickLink(result);
                 return;
             }
         }

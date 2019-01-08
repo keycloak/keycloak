@@ -86,7 +86,7 @@ public class ResourceService {
 
         owner.setId(ownerId);
 
-        ResourceRepresentation newResource = resourceManager.create(resource);
+        ResourceRepresentation newResource = resourceManager.createToRepresentation(resource);
 
         resourceManager.audit(resource, resource.getId(), OperationType.CREATE);
 

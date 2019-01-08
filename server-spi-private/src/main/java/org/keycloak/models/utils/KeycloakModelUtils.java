@@ -54,6 +54,7 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -409,14 +410,25 @@ public final class KeycloakModelUtils {
     }
 
 
-    public static List<String> resolveAttribute(UserModel user, String name) {
+    public static Collection<String> resolveAttribute(UserModel user, String name, boolean aggregateAttrs) {
         List<String> values = user.getAttribute(name);
-        if (!values.isEmpty()) return values;
+        Set<String> aggrValues = new HashSet<String>();
+        if (!values.isEmpty()) {
+            if (!aggregateAttrs) {
+                return values;
+            }
+            aggrValues.addAll(values);
+        }
         for (GroupModel group : user.getGroups()) {
             values = resolveAttribute(group, name);
-            if (values != null) return values;
+            if (values != null && !values.isEmpty()) {
+                if (!aggregateAttrs) {
+                    return values;
+                }
+                aggrValues.addAll(values);
+            }
         }
-        return Collections.emptyList();
+        return aggrValues;
     }
 
 

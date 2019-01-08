@@ -6,7 +6,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian-test-apps-photoz-parent</artifactId>
-        <version>4.6.0.Final-SNAPSHOT</version>
+        <version>4.7.0.Final-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -68,6 +68,14 @@
                 <artifactId>wildfly-maven-plugin</artifactId>
                 <configuration>
                     <skip>false</skip>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-war-plugin</artifactId>
+                <version>3.0.0</version>
+                <configuration>
+                    <attachClasses>true</attachClasses>
                 </configuration>
             </plugin>
         </plugins>

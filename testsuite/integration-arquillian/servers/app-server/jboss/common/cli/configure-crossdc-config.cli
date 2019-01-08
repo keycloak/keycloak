@@ -25,4 +25,16 @@ embed-server --server-config=standalone-ha.xml
 /subsystem=infinispan/cache-container=web/replicated-cache=employee-distributable-cache/store=remote:add(remote-servers=[cache-server],cache=employee-distributable-cache,passivation=false,purge=false,preload=false,shared=true)
 
 /subsystem=infinispan/cache-container=web/replicated-cache=employee-distributable-cache.ssoCache:add(statistics-enabled=true,mode=SYNC)
-/subsystem=infinispan/cache-container=web/replicated-cache=employee-distributable-cache.ssoCache/store=remote:add(remote-servers=[cache-server],cache=employee-distributable-cache.ssoCache,passivation=false,purge=false,preload=false,shared=true)
+/subsystem=infinispan/cache-container=web/replicated-cache=employee-distributable-cache.ssoCache/store=remote:add( \
+    remote-servers=["cache-server"], \
+    cache=employee-distributable-cache.ssoCache, \
+    passivation=false, \
+    purge=false, \
+    preload=false, \
+    shared=true, \
+    fetch-state=false, \
+    properties={ \
+        rawValues=true, \
+        protocolVersion=${keycloak.connectionsInfinispan.hotrodProtocolVersion:2.6} \
+    } \
+)

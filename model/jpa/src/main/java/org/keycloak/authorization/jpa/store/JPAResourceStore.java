@@ -17,6 +17,7 @@
  */
 package org.keycloak.authorization.jpa.store;
 
+import org.jboss.logging.Logger;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.jpa.entities.ResourceEntity;
 import org.keycloak.authorization.model.Resource;
@@ -25,21 +26,12 @@ import org.keycloak.authorization.store.ResourceStore;
 import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
-import javax.persistence.EntityManager;
-import javax.persistence.FlushModeType;
-import javax.persistence.NoResultException;
-import javax.persistence.Query;
-import javax.persistence.TypedQuery;
-import javax.persistence.criteria.CriteriaBuilder;
-import javax.persistence.criteria.CriteriaQuery;
-import javax.persistence.criteria.Expression;
-import javax.persistence.criteria.Predicate;
-import javax.persistence.criteria.Root;
+import javax.persistence.*;
+import javax.persistence.criteria.*;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.function.Consumer;
 
 /**
@@ -49,6 +41,7 @@ public class JPAResourceStore implements ResourceStore {
 
     private final EntityManager entityManager;
     private final AuthorizationProvider provider;
+
 
     public JPAResourceStore(EntityManager entityManager, AuthorizationProvider provider) {
         this.entityManager = entityManager;
@@ -73,6 +66,28 @@ public class JPAResourceStore implements ResourceStore {
         entity.setName(name);
         entity.setResourceServer(ResourceServerAdapter.toEntity(entityManager, resourceServer));
         entity.setOwner(owner);
+        entity.setEnabled(true);
+
+        this.entityManager.persist(entity);
+        this.entityManager.flush();
+
+        return new ResourceAdapter(entity, entityManager, provider.getStoreFactory());
+    }
+
+
+    @Override
+    public Resource create(String id,String name, Resource parent, ResourceServer resourceServer, String owner) {
+        ResourceEntity entity = new ResourceEntity();
+        if (id == null) {
+            entity.setId(KeycloakModelUtils.generateId());
+        } else {
+            entity.setId(id);
+        }
+        entity.setName(name);
+        entity.setResourceServer(ResourceServerAdapter.toEntity(entityManager, resourceServer));
+        entity.setOwner(owner);
+        entity.setEnabled(true);
+        entity.setParent(ResourceAdapter.toEntity(entityManager,parent));
 
         this.entityManager.persist(entity);
         this.entityManager.flush();
@@ -304,4 +319,52 @@ public class JPAResourceStore implements ResourceStore {
                 .map(entity -> new ResourceAdapter(entity, entityManager, storeFactory))
                 .forEach(consumer);
     }
+
+
+    @Override
+    public List<Resource> findByParent(String resourceServerId, String parent) {
+        List<Resource> list = new LinkedList<>();
+
+        findByParent(parent, resourceServerId, list::add);
+
+        return list;
+    }
+
+    @Override
+    public void findByParent(String resourceServerId, String parent, Consumer<Resource> consumer) {
+        ResourceEntity resourceEntity = entityManager.find(ResourceEntity.class, parent);
+        TypedQuery<String> query = entityManager.createNamedQuery("getResourceIdsByParent", String.class);
+
+        query.setFlushMode(FlushModeType.COMMIT);
+        query.setParameter("parent", resourceEntity);
+        query.setParameter("ownerId", resourceServerId);
+        query.setParameter("serverId", resourceServerId);
+
+        query.getResultList().stream()
+                .map(id -> findById(id, resourceServerId))
+                .forEach(consumer);
+    }
+
+    @Override
+    public List<Resource> findTopLevel(String resourceServerId, int firstResult, int maxResult) {
+        TypedQuery<ResourceEntity> query = entityManager.createNamedQuery("getTopLevelResource", ResourceEntity.class);
+
+        query.setParameter("ownerId", resourceServerId);
+        query.setParameter("serverId", resourceServerId);
+
+        if (firstResult != -1) {
+            query.setFirstResult(firstResult);
+        }
+        if (maxResult != -1) {
+            query.setMaxResults(maxResult);
+        }
+
+        List<ResourceEntity> result = query.getResultList();
+        List<Resource> list = new LinkedList<>();
+        for (ResourceEntity resourceEntity : result) {
+            list.add(new ResourceAdapter(resourceEntity, entityManager, provider.getStoreFactory()));
+        }
+        return list;
+    }
+
 }

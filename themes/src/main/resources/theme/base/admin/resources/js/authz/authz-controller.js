@@ -198,50 +198,16 @@ module.controller('ResourceServerResourceCtrl', function($scope, $http, $route, 
             $scope.searchLoaded = true;
             $scope.lastSearch = $scope.query.search;
             $scope.resources = response;
-            if ($scope.detailsFilter) {
-                $scope.showDetails();
-            }
         });
     };
 
-    $scope.loadDetails = function (resource) {
-        if (resource.details) {
-            resource.details.loaded = !resource.details.loaded;
+    $scope.showSub=function(resource){
+        if(resource.sub){
+            resource.sub.loaded = !resource.sub.loaded;
             return;
         }
-
-        resource.details = {loaded: false};
-
-        ResourceServerResource.scopes({
-            realm : $route.current.params.realm,
-            client : client.id,
-            rsrid : resource._id
-        }, function(response) {
-            resource.scopes = response;
-            ResourceServerResource.permissions({
-                realm : $route.current.params.realm,
-                client : client.id,
-                rsrid : resource._id
-            }, function(response) {
-                resource.policies = response;
-                resource.details.loaded = true;
-            });
-        });
+        resource.sub = {loaded: true};
     }
-
-    $scope.showDetails = function(item, event) {
-        if (event.target.localName == 'a' || event.target.localName == 'button') {
-            return;
-        }
-
-        if (item) {
-            $scope.loadDetails(item);
-        } else {
-            for (i = 0; i < $scope.resources.length; i++) {
-                $scope.loadDetails($scope.resources[i]);
-            }
-        }
-    };
 
     $scope.delete = function(resource) {
         $scope.resource = resource;
@@ -302,6 +268,7 @@ module.controller('ResourceServerResourceDetailCtrl', function($scope, $http, $r
             resource.scopes = [];
             resource.attributes = {};
             resource.uris = [];
+            resource.enabled = true;
 
             for (i = 0; i < client.resourceKeys.length; i++) {
                 resource.attributes[client.resourceKeys[i]]=[];
@@ -409,6 +376,144 @@ module.controller('ResourceServerResourceDetailCtrl', function($scope, $http, $r
                     $route.reload();
                 }
             });
+        }
+    });
+
+    $scope.checkNewNameAvailability = function () {
+        $instance.checkNameAvailability(function () {});
+    }
+
+    this.checkNameAvailability = function (onSuccess) {
+        if (!$scope.resource.name || $scope.resource.name.trim().length == 0) {
+            return;
+        }
+        ResourceServerResource.search({
+            realm : $route.current.params.realm,
+            client : client.id,
+            rsrid : $route.current.params.rsrid,
+            name: $scope.resource.name
+        }, function(data) {
+            if (data && data._id && data._id != $scope.resource._id) {
+                Notifications.error("Name already in use by another resource, please choose another one.");
+            } else {
+                onSuccess();
+            }
+        });
+    }
+
+    $scope.addAttribute = function() {
+        $scope.resource.attributes[$scope.newAttribute.key] = $scope.newAttribute.value;
+        delete $scope.newAttribute;
+    }
+
+    $scope.removeAttribute = function(key) {
+        delete $scope.resource.attributes[key];
+    }
+
+    $scope.addUri = function() {
+        $scope.resource.uris.push($scope.newUri);
+        $scope.newUri = "";
+    }
+
+    $scope.deleteUri = function(index) {
+        $scope.resource.uris.splice(index, 1);
+    }
+});
+
+
+
+module.controller('ResourceServerResourceCreateChildrenCtrl', function($scope, $http, $route, $location, realm, ResourceServer, client, ResourceServerResource, ResourceServerScope, AuthzDialog, Notifications) {
+    $scope.realm = realm;
+    $scope.client = client;
+
+    $scope.scopesUiSelect = {
+        minimumInputLength: 1,
+        delay: 500,
+        allowClear: true,
+        query: function (query) {
+            var data = {results: []};
+            if ('' == query.term.trim()) {
+                query.callback(data);
+                return;
+            }
+            $scope.query = {
+                realm: realm.realm,
+                client : client.id,
+                name: query.term.trim(),
+                deep: false,
+                max : 20,
+                first : 0
+            };
+            ResourceServerScope.query($scope.query, function(response) {
+                data.results = response;
+                query.callback(data);
+            });
+        },
+        formatResult: function(object, container, query) {
+            return object.name;
+        },
+        formatSelection: function(object, container, query) {
+            return object.name;
+        }
+    };
+
+    var $instance = this;
+
+    ResourceServer.get({
+        realm : $route.current.params.realm,
+        client : client.id
+    }, function(data) {
+        $scope.server = data;
+
+        var resourceId = $route.current.params.rsrid;
+
+        if (resourceId) {
+            $scope.create = true;
+            $scope.changed = false;
+
+            var resource = {};
+            resource.scopes = [];
+            resource.attributes = {};
+            resource.uris = [];
+            resource.enabled = true;
+
+            for (i = 0; i < client.resourceKeys.length; i++) {
+                resource.attributes[client.resourceKeys[i]]=[];
+            }
+
+            $scope.resource = angular.copy(resource);
+
+            $scope.$watch('resource', function() {
+                if (!angular.equals($scope.resource, resource)) {
+                    $scope.changed = true;
+                }
+            }, true);
+
+            $scope.$watch('newUri', function() {
+                if ($scope.newUri && $scope.newUri.length > 0) {
+                    $scope.changed = true;
+                }
+            }, true);
+
+            $scope.save = function() {
+                if ($scope.newUri && $scope.newUri.length > 0) {
+                    $scope.addUri();
+                }
+
+                for (i = 0; i < $scope.resource.scopes.length; i++) {
+                    delete $scope.resource.scopes[i].text;
+                }
+                $instance.checkNameAvailability(function () {
+                    ResourceServerResource.children({realm : realm.realm, client : $scope.client.id, rsrid: resourceId}, $scope.resource, function(data) {
+                        $location.url("/realms/" + realm.realm + "/clients/" + $scope.client.id + "/authz/resource-server/resource/" + data._id);
+                        Notifications.success("The resource has been created.");
+                    });
+                });
+            }
+
+            $scope.reset = function() {
+                $location.url("/realms/" + realm.realm + "/clients/" + $scope.client.id + "/authz/resource-server/resource/");
+            }
         }
     });
 

@@ -16,6 +16,7 @@ module.factory('ResourceServerResource', function($resource) {
         rsrid : '@rsrid'
     }, {
         'update' : {method : 'PUT'},
+        'children' : {url: authUrl + '/admin/realms/:realm/clients/:client/authz/resource-server/resource/:rsrid/children', method : 'POST'},
         'search' : {url: authUrl + '/admin/realms/:realm/clients/:client/authz/resource-server/resource/search', method : 'GET'},
         'scopes' : {url: authUrl + '/admin/realms/:realm/clients/:client/authz/resource-server/resource/:rsrid/scopes', method : 'GET', isArray: true},
         'permissions' : {url: authUrl + '/admin/realms/:realm/clients/:client/authz/resource-server/resource/:rsrid/permissions', method : 'GET', isArray: true}

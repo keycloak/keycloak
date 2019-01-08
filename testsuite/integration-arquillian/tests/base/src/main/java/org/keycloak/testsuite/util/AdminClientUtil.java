@@ -64,7 +64,9 @@ public class AdminClientUtil {
         // We need to ignore unknown JSON properties e.g. in the adapter configuration representation
         // during adapter backward compatibility testing
         if (ignoreUnknownProperties) {
-            jacksonProvider = new ResteasyJackson2Provider();
+            // We need to use anonymous class to avoid the following error from RESTEasy:
+            // Provider class org.jboss.resteasy.plugins.providers.jackson.ResteasyJackson2Provider is already registered.  2nd registration is being ignored.
+            jacksonProvider = new ResteasyJackson2Provider() {};
             ObjectMapper objectMapper = new ObjectMapper();
             objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
             jacksonProvider.setMapper(objectMapper);

@@ -43,7 +43,7 @@
                 <validation>
                     <check-valid-connection-sql>SELECT 1</check-valid-connection-sql>
                     <background-validation>true</background-validation>
-                    <background-validation-millis>60000</background-validation-millis>
+                    <background-validation-millis>20000</background-validation-millis>
                 </validation>
             </datasource>
             <drivers>

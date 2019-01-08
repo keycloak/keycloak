@@ -101,7 +101,7 @@ public final class AuthorizationProvider implements Provider {
 
     /**
      * Cache sits in front of this
-     *
+     * <p>
      * Returns a {@link StoreFactory}.
      *
      * @return the {@link StoreFactory}
@@ -138,7 +138,7 @@ public final class AuthorizationProvider implements Provider {
      * Returns a {@link PolicyProviderFactory} given a <code>type</code>.
      *
      * @param type the type of the policy provider
-     * @param <F> the expected type of the provider
+     * @param <F>  the expected type of the provider
      * @return a {@link PolicyProviderFactory} with the given <code>type</code>
      */
     public <F extends PolicyProviderFactory> F getProviderFactory(String type) {
@@ -149,7 +149,7 @@ public final class AuthorizationProvider implements Provider {
      * Returns a {@link PolicyProviderFactory} given a <code>type</code>.
      *
      * @param type the type of the policy provider
-     * @param <P> the expected type of the provider
+     * @param <P>  the expected type of the provider
      * @return a {@link PolicyProvider} with the given <code>type</code>
      */
     public <P extends PolicyProvider> P getProvider(String type) {
@@ -452,6 +452,11 @@ public final class AuthorizationProvider implements Provider {
             }
 
             @Override
+            public Resource create(String id, String name, Resource parent, ResourceServer resourceServer, String owner) {
+                return delegate.create(id, name, parent, resourceServer, owner);
+            }
+
+            @Override
             public void delete(String id) {
                 Resource resource = findById(id, null);
                 StoreFactory storeFactory = AuthorizationProvider.this.getStoreFactory();
@@ -535,6 +540,22 @@ public final class AuthorizationProvider implements Provider {
             public void findByType(String type, String resourceServerId, Consumer<Resource> consumer) {
                 delegate.findByType(type, resourceServerId, consumer);
             }
+
+            @Override
+            public List<Resource> findByParent(String resourceServerId, String parent) {
+                return delegate.findByParent(resourceServerId, parent);
+            }
+
+            @Override
+            public void findByParent(String resourceServerId, String parent, Consumer<Resource> consumer) {
+                delegate.findByParent(resourceServerId, parent, consumer);
+            }
+
+            @Override
+            public List<Resource> findTopLevel(String resourceServerId, int firstResult, int maxResult) {
+                return delegate.findTopLevel(resourceServerId, firstResult, maxResult);
+            }
+
         };
     }
 }

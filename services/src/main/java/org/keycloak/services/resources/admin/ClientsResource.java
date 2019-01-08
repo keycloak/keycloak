@@ -67,9 +67,9 @@ import java.util.stream.Collectors;
 /**
  * Base resource class for managing a realm's clients.
  *
+ * @resource Clients
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
- * @resource Clients
  */
 public class ClientsResource {
     protected static final Logger logger = Logger.getLogger(ClientsResource.class);
@@ -89,10 +89,10 @@ public class ClientsResource {
 
     /**
      * Get clients belonging to the realm
-     * <p>
+     *
      * Returns a list of clients belonging to the realm
      *
-     * @param clientId     filter by clientId
+     * @param clientId filter by clientId
      * @param viewableOnly filter clients that cannot be viewed in full by admin
      */
     @GET
@@ -110,7 +110,7 @@ public class ClientsResource {
                     ClientRepresentation representation = ModelToRepresentation.toRepresentation(clientModel, session);
                     rep.add(representation);
                     representation.setAccess(auth.clients().getAccess(clientModel));
-                } else if (!viewableOnly) {
+                } else if (!viewableOnly && auth.clients().canView(clientModel)) {
                     ClientRepresentation client = new ClientRepresentation();
                     client.setId(clientModel.getId());
                     client.setClientId(clientModel.getClientId());
@@ -125,7 +125,7 @@ public class ClientsResource {
                     ClientRepresentation representation = ModelToRepresentation.toRepresentation(clientModel, session);
                     representation.setAccess(auth.clients().getAccess(clientModel));
                     rep.add(representation);
-                } else if (!viewableOnly && auth.clients().canList()) {
+                } else if (!viewableOnly && auth.clients().canView(clientModel)){
                     ClientRepresentation client = new ClientRepresentation();
                     client.setId(clientModel.getId());
                     client.setClientId(clientModel.getClientId());
@@ -146,7 +146,7 @@ public class ClientsResource {
 
     /**
      * Create a new client
-     * <p>
+     *
      * Client's client_id must be unique!
      *
      * @param rep

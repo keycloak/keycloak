@@ -24,7 +24,6 @@ import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.policy.provider.PolicyProviderFactory;
-import org.keycloak.common.Profile;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.Time;
 import org.keycloak.component.ComponentModel;
@@ -43,7 +42,6 @@ import java.util.stream.Collectors;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.function.Consumer;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -80,7 +78,7 @@ public class ModelToRepresentation {
             if (role.getContainer() instanceof RealmModel) {
                 realmRoleNames.add(role.getName());
             } else {
-                ClientModel client = (ClientModel)role.getContainer();
+                ClientModel client = (ClientModel) role.getContainer();
                 String clientId = client.getClientId();
                 List<String> currentClientRoles = clientRoleNames.computeIfAbsent(clientId, k -> new ArrayList<>());
                 currentClientRoles.add(role.getName());
@@ -185,7 +183,7 @@ public class ModelToRepresentation {
         rep.setEnabled(user.isEnabled());
         rep.setEmailVerified(user.isEmailVerified());
         rep.setFederationLink(user.getFederationLink());
-
+        rep.setIdcard(user.getIdcard());
         List<String> groups = new LinkedList<>();
         for (GroupModel group : user.getGroups()) {
             groups.add(group.getName());
@@ -335,9 +333,12 @@ public class ModelToRepresentation {
         if (realm.getBrowserFlow() != null) rep.setBrowserFlow(realm.getBrowserFlow().getAlias());
         if (realm.getRegistrationFlow() != null) rep.setRegistrationFlow(realm.getRegistrationFlow().getAlias());
         if (realm.getDirectGrantFlow() != null) rep.setDirectGrantFlow(realm.getDirectGrantFlow().getAlias());
-        if (realm.getResetCredentialsFlow() != null) rep.setResetCredentialsFlow(realm.getResetCredentialsFlow().getAlias());
-        if (realm.getClientAuthenticationFlow() != null) rep.setClientAuthenticationFlow(realm.getClientAuthenticationFlow().getAlias());
-        if (realm.getDockerAuthenticationFlow() != null) rep.setDockerAuthenticationFlow(realm.getDockerAuthenticationFlow().getAlias());
+        if (realm.getResetCredentialsFlow() != null)
+            rep.setResetCredentialsFlow(realm.getResetCredentialsFlow().getAlias());
+        if (realm.getClientAuthenticationFlow() != null)
+            rep.setClientAuthenticationFlow(realm.getClientAuthenticationFlow().getAlias());
+        if (realm.getDockerAuthenticationFlow() != null)
+            rep.setDockerAuthenticationFlow(realm.getDockerAuthenticationFlow().getAlias());
 
         List<String> defaultRoles = realm.getDefaultRoles();
         if (!defaultRoles.isEmpty()) {
@@ -371,7 +372,7 @@ public class ModelToRepresentation {
         }
 
         rep.setInternationalizationEnabled(realm.isInternationalizationEnabled());
-        if(realm.getSupportedLocales() != null){
+        if (realm.getSupportedLocales() != null) {
             rep.setSupportedLocales(new HashSet<String>());
             rep.getSupportedLocales().addAll(realm.getSupportedLocales());
         }
@@ -392,7 +393,7 @@ public class ModelToRepresentation {
         return rep;
     }
 
-     public static void exportGroups(RealmModel realm, RealmRepresentation rep) {
+    public static void exportGroups(RealmModel realm, RealmRepresentation rep) {
         List<GroupRepresentation> groups = toGroupHierarchy(realm, true);
         rep.setGroups(groups);
     }
@@ -453,7 +454,7 @@ public class ModelToRepresentation {
             rep.setEventsListeners(new LinkedList<>(realm.getEventsListeners()));
         }
 
-        if(realm.getEnabledEventTypes() != null) {
+        if (realm.getEnabledEventTypes() != null) {
             rep.setEnabledEventTypes(new LinkedList<>(realm.getEnabledEventTypes()));
         }
 
@@ -665,7 +666,7 @@ public class ModelToRepresentation {
         return consentRep;
     }
 
-    public static AuthenticationFlowRepresentation  toRepresentation(RealmModel realm, AuthenticationFlowModel model) {
+    public static AuthenticationFlowRepresentation toRepresentation(RealmModel realm, AuthenticationFlowModel model) {
         AuthenticationFlowRepresentation rep = new AuthenticationFlowRepresentation();
         rep.setId(model.getId());
         rep.setBuiltIn(model.isBuiltIn());
@@ -692,7 +693,7 @@ public class ModelToRepresentation {
         if (model.getFlowId() != null) {
             AuthenticationFlowModel flow = realm.getAuthenticationFlowById(model.getFlowId());
             rep.setFlowAlias(flow.getAlias());
-       }
+        }
         rep.setPriority(model.getPriority());
         rep.setRequirement(model.getRequirement().name());
         return rep;
@@ -833,6 +834,16 @@ public class ModelToRepresentation {
 
         owner.setId(model.getOwner());
 
+        resource.setSort(model.getSort());
+        resource.setPermission(model.getPermission());
+        resource.setEnabled(model.isEnabled());
+
+        List<ResourceRepresentation> subResources = new LinkedList<>();
+        for (Resource subResource : model.getSubResources()) {
+            subResources.add(toRepresentation(subResource, resourceServer, authorization, deep));
+        }
+        resource.setSubResources(subResources);
+
         KeycloakSession keycloakSession = authorization.getKeycloakSession();
         RealmModel realm = authorization.getRealm();
 
@@ -917,7 +928,6 @@ public class ModelToRepresentation {
         }
         return result;
     }
-
 
 
     /**

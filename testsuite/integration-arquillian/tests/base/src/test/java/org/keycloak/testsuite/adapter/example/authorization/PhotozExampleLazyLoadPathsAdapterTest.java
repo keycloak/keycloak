@@ -34,6 +34,7 @@ import org.keycloak.testsuite.arquillian.containers.ContainerConstants;
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP)
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP6)
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP71)
+@AppServerContainer(ContainerConstants.APP_SERVER_UNDERTOW)
 public class PhotozExampleLazyLoadPathsAdapterTest extends AbstractPhotozExampleAdapterTest {
 
     @Deployment(name = PhotozClientAuthzTestApp.DEPLOYMENT_NAME)
@@ -43,15 +44,7 @@ public class PhotozExampleLazyLoadPathsAdapterTest extends AbstractPhotozExample
 
     @Deployment(name = RESOURCE_SERVER_ID, managed = false, testable = false)
     public static WebArchive deploymentResourceServer() throws IOException {
-        WebArchive war = exampleDeployment(RESOURCE_SERVER_ID)
+        return exampleDeployment(RESOURCE_SERVER_ID)
                 .addAsWebInfResource(new File(TEST_APPS_HOME_DIR + "/photoz/keycloak-lazy-load-path-authz-service.json"), "keycloak.json");
-        
-        // cannot use EAP6DeploymentArchiveProcessor because the deployment is marked
-        // as non managed by arquillian
-        if (AppServerTestEnricher.isEAP6AppServer()) {
-            updatePersistenceXml(war);
-        }
-        return war;
     }
-
 }

@@ -153,7 +153,8 @@ public class RepresentationToModel {
         if (rep.getDisplayName() != null) newRealm.setDisplayName(rep.getDisplayName());
         if (rep.getDisplayNameHtml() != null) newRealm.setDisplayNameHtml(rep.getDisplayNameHtml());
         if (rep.isEnabled() != null) newRealm.setEnabled(rep.isEnabled());
-        if (rep.isUserManagedAccessAllowed() != null) newRealm.setUserManagedAccessAllowed(rep.isUserManagedAccessAllowed());
+        if (rep.isUserManagedAccessAllowed() != null)
+            newRealm.setUserManagedAccessAllowed(rep.isUserManagedAccessAllowed());
         if (rep.isBruteForceProtected() != null) newRealm.setBruteForceProtected(rep.isBruteForceProtected());
         if (rep.isPermanentLockout() != null) newRealm.setPermanentLockout(rep.isPermanentLockout());
         if (rep.getMaxFailureWaitSeconds() != null) newRealm.setMaxFailureWaitSeconds(rep.getMaxFailureWaitSeconds());
@@ -175,7 +176,8 @@ public class RepresentationToModel {
 
         if (rep.getNotBefore() != null) newRealm.setNotBefore(rep.getNotBefore());
 
-        if (rep.getDefaultSignatureAlgorithm() != null) newRealm.setDefaultSignatureAlgorithm(rep.getDefaultSignatureAlgorithm());
+        if (rep.getDefaultSignatureAlgorithm() != null)
+            newRealm.setDefaultSignatureAlgorithm(rep.getDefaultSignatureAlgorithm());
 
         if (rep.getRevokeRefreshToken() != null) newRealm.setRevokeRefreshToken(rep.getRevokeRefreshToken());
         else newRealm.setRevokeRefreshToken(false);
@@ -200,7 +202,8 @@ public class RepresentationToModel {
         else newRealm.setOfflineSessionIdleTimeout(Constants.DEFAULT_OFFLINE_SESSION_IDLE_TIMEOUT);
 
         // KEYCLOAK-7688 Offline Session Max for Offline Token
-        if (rep.getOfflineSessionMaxLifespanEnabled() != null) newRealm.setOfflineSessionMaxLifespanEnabled(rep.getOfflineSessionMaxLifespanEnabled());
+        if (rep.getOfflineSessionMaxLifespanEnabled() != null)
+            newRealm.setOfflineSessionMaxLifespanEnabled(rep.getOfflineSessionMaxLifespanEnabled());
         else newRealm.setOfflineSessionMaxLifespanEnabled(false);
 
         if (rep.getOfflineSessionMaxLifespan() != null)
@@ -877,7 +880,8 @@ public class RepresentationToModel {
         if (rep.getDisplayName() != null) realm.setDisplayName(rep.getDisplayName());
         if (rep.getDisplayNameHtml() != null) realm.setDisplayNameHtml(rep.getDisplayNameHtml());
         if (rep.isEnabled() != null) realm.setEnabled(rep.isEnabled());
-        if (rep.isUserManagedAccessAllowed() != null) realm.setUserManagedAccessAllowed(rep.isUserManagedAccessAllowed());
+        if (rep.isUserManagedAccessAllowed() != null)
+            realm.setUserManagedAccessAllowed(rep.isUserManagedAccessAllowed());
         if (rep.isBruteForceProtected() != null) realm.setBruteForceProtected(rep.isBruteForceProtected());
         if (rep.isPermanentLockout() != null) realm.setPermanentLockout(rep.isPermanentLockout());
         if (rep.getMaxFailureWaitSeconds() != null) realm.setMaxFailureWaitSeconds(rep.getMaxFailureWaitSeconds());
@@ -908,7 +912,8 @@ public class RepresentationToModel {
         if (rep.getActionTokenGeneratedByUserLifespan() != null)
             realm.setActionTokenGeneratedByUserLifespan(rep.getActionTokenGeneratedByUserLifespan());
         if (rep.getNotBefore() != null) realm.setNotBefore(rep.getNotBefore());
-        if (rep.getDefaultSignatureAlgorithm() != null) realm.setDefaultSignatureAlgorithm(rep.getDefaultSignatureAlgorithm());
+        if (rep.getDefaultSignatureAlgorithm() != null)
+            realm.setDefaultSignatureAlgorithm(rep.getDefaultSignatureAlgorithm());
         if (rep.getRevokeRefreshToken() != null) realm.setRevokeRefreshToken(rep.getRevokeRefreshToken());
         if (rep.getRefreshTokenMaxReuse() != null) realm.setRefreshTokenMaxReuse(rep.getRefreshTokenMaxReuse());
         if (rep.getAccessTokenLifespan() != null) realm.setAccessTokenLifespan(rep.getAccessTokenLifespan());
@@ -919,7 +924,8 @@ public class RepresentationToModel {
         if (rep.getOfflineSessionIdleTimeout() != null)
             realm.setOfflineSessionIdleTimeout(rep.getOfflineSessionIdleTimeout());
         // KEYCLOAK-7688 Offline Session Max for Offline Token
-        if (rep.getOfflineSessionMaxLifespanEnabled() != null) realm.setOfflineSessionMaxLifespanEnabled(rep.getOfflineSessionMaxLifespanEnabled());
+        if (rep.getOfflineSessionMaxLifespanEnabled() != null)
+            realm.setOfflineSessionMaxLifespanEnabled(rep.getOfflineSessionMaxLifespanEnabled());
         if (rep.getOfflineSessionMaxLifespan() != null)
             realm.setOfflineSessionMaxLifespan(rep.getOfflineSessionMaxLifespan());
         if (rep.getRequiredCredentials() != null) {
@@ -1086,7 +1092,7 @@ public class RepresentationToModel {
      * @return
      */
     public static ClientModel createClient(KeycloakSession session, RealmModel realm, ClientRepresentation resourceRep, boolean addDefaultRoles) {
-        logger.debug("Create client: {0}" + resourceRep.getClientId());
+        logger.debugv("Create client: {0}", resourceRep.getClientId());
 
         ClientModel client = resourceRep.getId() != null ? realm.addClient(resourceRep.getId(), resourceRep.getClientId()) : realm.addClient(resourceRep.getClientId());
         if (resourceRep.getName() != null) client.setName(resourceRep.getName());
@@ -1584,7 +1590,7 @@ public class RepresentationToModel {
         if (cred.getValue() != null) {
             PasswordUserCredentialModel plainTextCred = convertCredential(cred);
             plainTextCred.setAdminRequest(adminRequest);
-            
+
             //if called from import we need to change realm in context to load password policies from the newly created realm
             RealmModel origRealm = session.getContext().getRealm();
             try {
@@ -2235,7 +2241,7 @@ public class RepresentationToModel {
 
         if (policyIds != null) {
             if (policyIds.isEmpty()) {
-                for (Policy associated: new HashSet<Policy>(policy.getAssociatedPolicies())) {
+                for (Policy associated : new HashSet<Policy>(policy.getAssociatedPolicies())) {
                     policy.removeAssociatedPolicy(associated);
                 }
                 return;
@@ -2397,6 +2403,9 @@ public class RepresentationToModel {
                     existing.setAttribute(name, attributes.get(name));
                 }
             }
+            existing.setPermission(resource.getPermission());
+            existing.setSort(resource.getSort());
+            existing.setEnabled(resource.isEnabled());
 
             return existing;
         }
@@ -2408,6 +2417,116 @@ public class RepresentationToModel {
         model.updateUris(resource.getUris());
         model.setIconUri(resource.getIconUri());
         model.setOwnerManagedAccess(Boolean.TRUE.equals(resource.getOwnerManagedAccess()));
+
+        model.setPermission(resource.getPermission());
+        model.setSort(resource.getSort());
+        model.setEnabled(resource.isEnabled());
+
+        Set<ScopeRepresentation> scopes = resource.getScopes();
+
+        if (scopes != null) {
+            model.updateScopes(scopes.stream().map((Function<ScopeRepresentation, Scope>) scope -> toModel(scope, resourceServer, authorization)).collect(Collectors.toSet()));
+        }
+
+        Map<String, List<String>> attributes = resource.getAttributes();
+
+        if (attributes != null) {
+            for (Entry<String, List<String>> entry : attributes.entrySet()) {
+                model.setAttribute(entry.getKey(), entry.getValue());
+            }
+        }
+
+        resource.setId(model.getId());
+
+        return model;
+    }
+
+    public static Resource toModel(ResourceRepresentation resource, Resource parent, ResourceServer resourceServer, AuthorizationProvider authorization) {
+        ResourceStore resourceStore = authorization.getStoreFactory().getResourceStore();
+        ResourceOwnerRepresentation owner = resource.getOwner();
+
+        if (owner == null) {
+            owner = new ResourceOwnerRepresentation();
+            owner.setId(resourceServer.getId());
+        }
+
+        String ownerId = owner.getId();
+
+        if (ownerId == null) {
+            ownerId = resourceServer.getId();
+        }
+
+        if (!resourceServer.getId().equals(ownerId)) {
+            RealmModel realm = authorization.getRealm();
+            KeycloakSession keycloakSession = authorization.getKeycloakSession();
+            UserProvider users = keycloakSession.users();
+            UserModel ownerModel = users.getUserById(ownerId, realm);
+
+            if (ownerModel == null) {
+                ownerModel = users.getUserByUsername(ownerId, realm);
+            }
+
+            if (ownerModel == null) {
+                throw new RuntimeException("Owner must be a valid username or user identifier. If the resource server, the client id or null.");
+            }
+
+            ownerId = ownerModel.getId();
+        }
+
+        Resource existing;
+
+        if (resource.getId() != null) {
+            existing = resourceStore.findById(resource.getId(), resourceServer.getId());
+        } else {
+            existing = resourceStore.findByName(resource.getName(), ownerId, resourceServer.getId());
+        }
+
+        if (existing != null) {
+            existing.setName(resource.getName());
+            existing.setDisplayName(resource.getDisplayName());
+            existing.setType(resource.getType());
+            existing.updateUris(resource.getUris());
+            existing.setIconUri(resource.getIconUri());
+            existing.setOwnerManagedAccess(Boolean.TRUE.equals(resource.getOwnerManagedAccess()));
+            existing.updateScopes(resource.getScopes().stream()
+                    .map((ScopeRepresentation scope) -> toModel(scope, resourceServer, authorization))
+                    .collect(Collectors.toSet()));
+            Map<String, List<String>> attributes = resource.getAttributes();
+
+            if (attributes != null) {
+                Set<String> existingAttrNames = existing.getAttributes().keySet();
+
+                for (String name : existingAttrNames) {
+                    if (attributes.containsKey(name)) {
+                        existing.setAttribute(name, attributes.get(name));
+                        attributes.remove(name);
+                    } else {
+                        existing.removeAttribute(name);
+                    }
+                }
+
+                for (String name : attributes.keySet()) {
+                    existing.setAttribute(name, attributes.get(name));
+                }
+            }
+            existing.setPermission(resource.getPermission());
+            existing.setSort(resource.getSort());
+            existing.setEnabled(resource.isEnabled());
+
+            return existing;
+        }
+
+        Resource model = resourceStore.create(resource.getId(), resource.getName(), parent, resourceServer, ownerId);
+
+        model.setDisplayName(resource.getDisplayName());
+        model.setType(resource.getType());
+        model.updateUris(resource.getUris());
+        model.setIconUri(resource.getIconUri());
+        model.setOwnerManagedAccess(Boolean.TRUE.equals(resource.getOwnerManagedAccess()));
+
+        model.setPermission(resource.getPermission());
+        model.setSort(resource.getSort());
+        model.setEnabled(resource.isEnabled());
 
         Set<ScopeRepresentation> scopes = resource.getScopes();
 

@@ -23,13 +23,10 @@ import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.store.PermissionTicketStore;
 import org.keycloak.authorization.store.PolicyStore;
+import org.keycloak.models.GroupModel;
 import org.keycloak.models.cache.infinispan.authorization.entities.CachedResource;
 
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -288,5 +285,88 @@ public class ResourceAdapter implements Resource, CachedModel<Resource> {
 
     private Resource getResourceModel() {
         return cacheSession.getResourceStoreDelegate().findById(cached.getId(), cached.getResourceServerId());
+    }
+
+    @Override
+    public Resource getParent() {
+        if (isUpdated()) return updated.getParent();
+        return cached.getParent();
+    }
+
+    @Override
+    public String getParentId() {
+        if (isUpdated()) return updated.getParentId();
+        return cached.getParentId();
+    }
+
+    @Override
+    public Set<Resource> getSubResources() {
+        if (isUpdated()) return updated.getSubResources();
+        Set<Resource> subResources = new HashSet<>();
+        for (String id : cached.getSubResources(modelSupplier)) {
+            Resource resource = cacheSession.getResourceStoreDelegate().findById(id, cached.getResourceServerId());
+            if (resource == null) {
+                getDelegateForUpdate();
+                return updated.getSubResources();
+            }
+            subResources.add(resource);
+        }
+        return subResources;
+    }
+
+    @Override
+    public Integer getSort() {
+        if (isUpdated()) return updated.getSort();
+        return cached.getSort();
+    }
+
+    @Override
+    public String getPermission() {
+        if (isUpdated()) return updated.getPermission();
+        return cached.getPermission();
+    }
+
+    @Override
+    public boolean isEnabled() {
+        if (isUpdated()) return updated.isEnabled();
+        return cached.isEnabled();
+    }
+
+    @Override
+    public void setEnabled(boolean enabled) {
+        getDelegateForUpdate();
+        updated.setEnabled(enabled);
+    }
+
+
+    @Override
+    public void setSort(Integer sort) {
+        getDelegateForUpdate();
+        updated.setSort(sort);
+    }
+
+    @Override
+    public void setPermission(String permission) {
+        getDelegateForUpdate();
+        updated.setPermission(permission);
+    }
+
+
+    @Override
+    public void setParent(Resource resource) {
+        getDelegateForUpdate();
+        updated.setParent(resource);
+    }
+
+    @Override
+    public void addChild(Resource subResource) {
+        getDelegateForUpdate();
+        updated.addChild(subResource);
+    }
+
+    @Override
+    public void removeChild(Resource subResource) {
+        getDelegateForUpdate();
+        updated.removeChild(subResource);
     }
 }

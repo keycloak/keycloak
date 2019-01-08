@@ -1077,9 +1077,17 @@ public class RealmAdminResource {
     @Produces(MediaType.APPLICATION_JSON)
     public RealmRepresentation partialExport(@QueryParam("exportGroupsAndRoles") Boolean exportGroupsAndRoles,
                                                      @QueryParam("exportClients") Boolean exportClients) {
+        auth.realm().requireViewRealm();
 
         boolean groupsAndRolesExported = exportGroupsAndRoles != null && exportGroupsAndRoles;
         boolean clientsExported = exportClients != null && exportClients;
+
+        if (groupsAndRolesExported) {
+            auth.groups().requireList();
+        }
+        if (clientsExported) {
+            auth.clients().requireView();
+        }
 
         ExportOptions options = new ExportOptions(false, clientsExported, groupsAndRolesExported);
         RealmRepresentation rep = ExportUtils.exportRealm(session, realm, options, false);

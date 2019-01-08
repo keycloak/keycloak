@@ -23,13 +23,17 @@ import org.keycloak.authorization.model.AbstractAuthorizationModel;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
+import org.keycloak.authorization.store.ResourceStore;
 import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.common.util.MultivaluedHashMap;
+import org.keycloak.models.GroupModel;
 import org.keycloak.models.jpa.JpaModel;
+import org.keycloak.models.jpa.entities.GroupEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
 import javax.persistence.EntityManager;
 import javax.persistence.Query;
+import javax.persistence.TypedQuery;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -249,7 +253,7 @@ public class ResourceAdapter extends AbstractAuthorizationModel implements Resou
 
     public static ResourceEntity toEntity(EntityManager em, Resource resource) {
         if (resource instanceof ResourceAdapter) {
-            return ((ResourceAdapter)resource).getEntity();
+            return ((ResourceAdapter) resource).getEntity();
         } else {
             return em.getReference(ResourceEntity.class, resource.getId());
         }
@@ -269,5 +273,94 @@ public class ResourceAdapter extends AbstractAuthorizationModel implements Resou
         return getId().hashCode();
     }
 
+    @Override
+    public Resource getParent() {
+        ResourceEntity parent = entity.getParent();
+        if (parent == null) return null;
+        return storeFactory.getResourceStore().findById(parent.getId(), entity.getResourceServer().getId());
+    }
 
+    @Override
+    public String getParentId() {
+        ResourceEntity parent = entity.getParent();
+        if (parent == null) return null;
+        return parent.getId();
+    }
+
+    @Override
+    public void setParent(Resource resource) {
+        if (resource == null) {
+            resource.setParent(null);
+        } else if (resource.getId().equals(getId())) {
+            return;
+        } else {
+            ResourceEntity parent = toEntity(em, resource);
+            entity.setParent(parent);
+        }
+    }
+
+    @Override
+    public Set<Resource> getSubResources() {
+        TypedQuery<ResourceEntity> query = em.createNamedQuery("getResourceByParent", ResourceEntity.class);
+        query.setParameter("parent", entity);
+        query.setParameter("serverId", entity.getResourceServer().getId());
+        query.setParameter("ownerId", entity.getResourceServer().getId());
+        List<ResourceEntity> resources = query.getResultList();
+        Set<Resource> set = new HashSet<>();
+        for (ResourceEntity resourceEntity : resources) {
+            set.add(new ResourceAdapter(resourceEntity, em, storeFactory));
+        }
+        return set;
+    }
+
+    @Override
+    public Integer getSort() {
+        return entity.getSort();
+    }
+
+    @Override
+    public String getPermission() {
+        return entity.getPermission();
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return entity.isEnabled();
+    }
+
+    @Override
+    public void setEnabled(boolean enabled) {
+        throwExceptionIfReadonly();
+        entity.setEnabled(enabled);
+    }
+
+
+    @Override
+    public void setSort(Integer sort) {
+        throwExceptionIfReadonly();
+        entity.setSort(sort);
+    }
+
+    @Override
+    public void setPermission(String permission) {
+        throwExceptionIfReadonly();
+        entity.setPermission(permission);
+    }
+
+
+    @Override
+    public void addChild(Resource subResource) {
+        if (subResource.getId().equals(getId())) {
+            return;
+        }
+        subResource.setParent(this);
+    }
+
+    @Override
+    public void removeChild(Resource subResource) {
+        if (subResource.getId().equals(getId())) {
+            return;
+        }
+        subResource.setParent(null);
+    }
 }

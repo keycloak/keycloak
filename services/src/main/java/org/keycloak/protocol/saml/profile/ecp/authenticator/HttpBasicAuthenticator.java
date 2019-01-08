@@ -4,7 +4,9 @@ import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.Authenticator;
+import org.keycloak.authentication.authenticators.browser.AbstractUsernameFormAuthenticator;
 import org.keycloak.common.util.Base64;
+import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -34,15 +36,21 @@ public class HttpBasicAuthenticator implements Authenticator {
             final String username = usernameAndPassword[0];
             final UserModel user = context.getSession().users().getUserByUsername(username, realm);
 
+            // to allow success/failure logging for brute force
+            context.getEvent().detail(Details.USERNAME, username);
+            context.getAuthenticationSession().setAuthNote(AbstractUsernameFormAuthenticator.ATTEMPTED_USERNAME, username);
+
             if (user != null) {
                 final String password = usernameAndPassword[1];
                 final boolean valid = context.getSession().userCredentialManager().isValid(realm, user, UserCredentialModel.password(password));
 
                 if (valid) {
-                    if (user.isEnabled()) {
+                    if (isTemporarilyDisabledByBruteForce(context, user)) {
+                        userDisabledAction(context, realm, user, Errors.USER_TEMPORARILY_DISABLED);
+                    } else if (user.isEnabled()) {
                         userSuccessAction(context, user);
                     } else {
-                        userDisabledAction(context, realm, user);
+                        userDisabledAction(context, realm, user, Errors.USER_DISABLED);
                     }
                 } else {
                     notValidCredentialsAction(context, realm, user);
@@ -58,8 +66,12 @@ public class HttpBasicAuthenticator implements Authenticator {
         context.success();
     }
 
-    protected void userDisabledAction(AuthenticationFlowContext context, RealmModel realm, UserModel user) {
-        userSuccessAction(context, user);
+    protected void userDisabledAction(AuthenticationFlowContext context, RealmModel realm, UserModel user, String eventError) {
+        context.getEvent().user(user);
+        context.getEvent().error(eventError);
+        context.failure(AuthenticationFlowError.INVALID_USER, Response.status(Response.Status.UNAUTHORIZED)
+                .header(HttpHeaders.WWW_AUTHENTICATE, BASIC_PREFIX + "realm=\"" + realm.getName() + "\"")
+                .build());
     }
 
     protected void nullUserAction(final AuthenticationFlowContext context, final RealmModel realm, final String user) {
@@ -72,6 +84,11 @@ public class HttpBasicAuthenticator implements Authenticator {
         context.failure(AuthenticationFlowError.INVALID_USER, Response.status(Response.Status.UNAUTHORIZED)
                 .header(HttpHeaders.WWW_AUTHENTICATE, BASIC_PREFIX + "realm=\"" + realm.getName() + "\"")
                 .build());
+    }
+
+    private boolean isTemporarilyDisabledByBruteForce(AuthenticationFlowContext context, UserModel user) {
+        return (context.getRealm().isBruteForceProtected())
+           && (context.getProtector().isTemporarilyDisabled(context.getSession(), context.getRealm(), user));
     }
 
     private String[] getUsernameAndPassword(final HttpHeaders httpHeaders) {

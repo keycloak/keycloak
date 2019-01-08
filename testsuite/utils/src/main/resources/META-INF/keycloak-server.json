@@ -57,8 +57,8 @@
 
     "theme": {
         "staticMaxAge": "${keycloak.theme.staticMaxAge:2592000}",
-        "cacheTemplates": "${keycloak.theme.cacheTemplates:true}",
-        "cacheThemes": "${keycloak.theme.cacheThemes:true}",
+        "cacheTemplates": "${keycloak.theme.cacheTemplates:false}",
+        "cacheThemes": "${keycloak.theme.cacheThemes:false}",
         "folder": {
             "dir": "${keycloak.theme.dir}"
         }
@@ -82,7 +82,7 @@
             "initializeEmpty": true,
             "migrationStrategy": "update",
             "showSql": "${keycloak.connectionsJpa.showSql:false}",
-            "formatSql": "${keycloak.connectionsJpa.formatSql:true}",
+            "formatSql": "${keycloak.connectionsJpa.formatSql:false}",
             "globalStatsInterval": "${keycloak.connectionsJpa.globalStatsInterval:-1}"
         }
     },

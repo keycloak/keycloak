@@ -51,4 +51,19 @@
     </changeSet>
 
 
+
+    <changeSet author="liubinwang@govnet.com.cn" id="4.3.0.beta4.uc">
+
+        <addColumn tableName="RESOURCE_SERVER_RESOURCE">
+            <column name="PARENT_RESOURCE" type="VARCHAR(36)"/>
+            <column name="PERMISSION" type="VARCHAR(36)"/>
+            <column name="SORT" type="INT" defaultValue="0"/>
+            <column name="ENABLED" type="BOOLEAN" defaultValueBoolean="true">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+
+    </changeSet>
+
+
 </databaseChangeLog>
