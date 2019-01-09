@@ -43,7 +43,7 @@
 
         <wildfly.version>14.0.1.Final</wildfly.version>
         <wildfly.build-tools.version>1.2.10.Final</wildfly.build-tools.version>
-        <eap.version>7.2.0.GA-redhat-00004</eap.version>
+        <eap.version>7.2.0.GA-redhat-00005</eap.version>
         <eap.build-tools.version>1.2.10.Final</eap.build-tools.version>
         <wildfly.core.version>6.0.2.Final</wildfly.core.version>
 
