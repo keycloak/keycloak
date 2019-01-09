@@ -2,9 +2,9 @@
 :project_name_full: Keycloak
 :project_community: true
 :project_product: false
-:project_version: 4.8.2.Final
-:project_versionMvn: 4.8.2.Final
-:project_versionNpm: 4.8.2
+:project_version: 4.8.3.Final
+:project_versionMvn: 4.8.3.Final
+:project_versionNpm: 4.8.3
 :project_versionDoc: 4.8
 :project_images: keycloak-images
 :project_doc_base_url: https://www.keycloak.org/docs/{project_versionDoc}
