@@ -150,3 +150,20 @@ https://console.developers.google.com/apis/credentials[Google API Console] porta
 It is possible that you will need to adjust custom mappers for non-standard claims that were provided by Google+ user
 information endpoint and are provided under different name by Google Sign-in API. Please consult Google documentation
 for the most up-to-date information on available claims.
+
+=== LinkedIn Social Broker Updated to Version 2 of LinkedIn APIs
+
+Accordingly with LinkedIn, all developers need to migrate to version 2.0 of their APIs and OAuth 2.0. As such, we have updated
+our LinkedIn Social Broker.
+
+Existing deployments using this broker may start experiencing errors when fetching user's profile using version 2 of
+LinkedIn APIs. This error may be related with the lack of permissions granted to the client application used to configure the broker
+which may not be authorized to access the Profile API or request specific OAuth2 scopes during the authentication process.
+
+Even for newly created LinkedIn client applications, you need to make sure that the client is able to request the `r_liteprofile` and
+`r_emailaddress` OAuth2 scopes, at least, as well that the client application can fetch current member's profile from the `https://api.linkedin.com/v2/me` endpoint.
+
+Due to these privacy restrictions imposed by LinkedIn in regards to access to member's information and the limited set of claims returned by the
+current member's Profile API, the LinkedIn Social Broker
+is now using the member's email address as the default username. That means that the `r_emailaddress` is always set when
+sending authorization requests during the authentication.

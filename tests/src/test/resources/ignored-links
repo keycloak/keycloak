@@ -25,3 +25,4 @@ https://accounts.google.com/o/oauth2/revoke
 https://keycloak.example.com/auth/realms/REALM_NAME/protocol/openid-connect/logout
 http://127.0.0.1:3000/oauth/callback
 https://access.redhat.com/documentation/en-us/red_hat_jboss_enterprise_application_platform/*
+https://api.linkedin.com/v2/me
