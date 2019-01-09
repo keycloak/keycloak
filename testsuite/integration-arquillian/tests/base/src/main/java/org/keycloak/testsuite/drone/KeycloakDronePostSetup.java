@@ -31,6 +31,7 @@ import org.jboss.logging.Logger;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.htmlunit.HtmlUnitDriver;
+import org.openqa.selenium.remote.RemoteWebDriver;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -43,6 +44,11 @@ public class KeycloakDronePostSetup {
     public void configureWebDriver(@Observes AfterDroneEnhanced event, DroneContext droneContext) {
         DronePoint<?> dronePoint = event.getDronePoint();
         Object drone = droneContext.get(dronePoint).getInstance();
+
+        if (drone instanceof RemoteWebDriver) {
+            RemoteWebDriver remoteWebDriver = (RemoteWebDriver) drone;
+            log.infof("Detected browser: %s %s", remoteWebDriver.getCapabilities().getBrowserName(), remoteWebDriver.getCapabilities().getVersion());
+        }
 
 
         if (drone instanceof WebDriver && !(drone instanceof AppiumDriver)) {
