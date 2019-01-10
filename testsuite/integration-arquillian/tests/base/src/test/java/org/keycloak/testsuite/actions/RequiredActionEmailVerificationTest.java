@@ -817,14 +817,9 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
 
                 driver2.navigate().to(verificationUrl.trim());
 
-                // Browser 2: Confirm email belongs to the user
-                final WebElement proceedLink = driver2.findElement(By.linkText("» Click here to proceed"));
-                assertThat(proceedLink, Matchers.notNullValue());
-                proceedLink.click();
-
-                // Browser 2: Expect confirmation
-                assertThat(driver2.getPageSource(), Matchers.containsString("kc-info-message"));
-                assertThat(driver2.getPageSource(), Matchers.containsString("Your email address has been verified."));
+                // admin console should be shown in the second browser due to redirect
+                assertThat(driver2.getPageSource(), Matchers.containsString("admin-console"));
+                assertThat(driver2.getPageSource(), Matchers.containsString("Keycloak Account Management"));
 
                 // Browser 1: Expect land back to account after refresh
                 driver.navigate().refresh();
@@ -936,22 +931,9 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
         // confirm in the second browser
         driver2.navigate().to(verificationUrl);
 
-        // follow the link
-        final WebElement proceedLink = driver2.findElement(By.linkText("» Click here to proceed"));
-        assertThat(proceedLink, Matchers.notNullValue());
-        proceedLink.click();
-
-        // confirmation in the second browser
-        assertThat(driver2.getPageSource(), Matchers.containsString("kc-info-message"));
-        assertThat(driver2.getPageSource(), Matchers.containsString("Your email address has been verified."));
-
-        final WebElement backToApplicationLink = driver2.findElement(By.linkText("« Back to Application"));
-        assertThat(backToApplicationLink, Matchers.notNullValue());
-        backToApplicationLink.click();
-
-        // login page should be shown in the second browser
-        assertThat(driver2.getPageSource(), Matchers.containsString("kc-login"));
-        assertThat(driver2.getPageSource(), Matchers.containsString("Log In"));
+        // admin console should be shown in the second browser due to redirect
+        assertThat(driver2.getPageSource(), Matchers.containsString("admin-console"));
+        assertThat(driver2.getPageSource(), Matchers.containsString("Keycloak Account Management"));
 
         // email should be verified and required actions empty
         UserRepresentation user = testRealm().users().get(testUserId).toRepresentation();
