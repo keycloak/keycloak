@@ -197,6 +197,8 @@ public class RepresentationToModel {
         else newRealm.setSsoSessionIdleTimeout(1800);
         if (rep.getSsoSessionMaxLifespan() != null) newRealm.setSsoSessionMaxLifespan(rep.getSsoSessionMaxLifespan());
         else newRealm.setSsoSessionMaxLifespan(36000);
+        if (rep.getSsoSessionMaxLifespanRememberMe() != null) newRealm.setSsoSessionMaxLifespanRememberMe(rep.getSsoSessionMaxLifespanRememberMe());
+        if (rep.getSsoSessionIdleTimeoutRememberMe() != null) newRealm.setSsoSessionIdleTimeoutRememberMe(rep.getSsoSessionIdleTimeoutRememberMe());
         if (rep.getOfflineSessionIdleTimeout() != null)
             newRealm.setOfflineSessionIdleTimeout(rep.getOfflineSessionIdleTimeout());
         else newRealm.setOfflineSessionIdleTimeout(Constants.DEFAULT_OFFLINE_SESSION_IDLE_TIMEOUT);
@@ -259,7 +261,7 @@ public class RepresentationToModel {
         if (rep.getOtpPolicyType() != null) newRealm.setOTPPolicy(toPolicy(rep));
         else newRealm.setOTPPolicy(OTPPolicy.DEFAULT_POLICY);
 
-        importAuthenticationFlows(newRealm, rep);
+        Map<String, String> mappedFlows = importAuthenticationFlows(newRealm, rep);
         if (rep.getRequiredActions() != null) {
             for (RequiredActionProviderRepresentation action : rep.getRequiredActions()) {
                 RequiredActionProviderModel model = toModel(action);
@@ -301,7 +303,7 @@ public class RepresentationToModel {
         }
 
         if (rep.getClients() != null) {
-            createClients(session, rep, newRealm);
+            createClients(session, rep, newRealm, mappedFlows);
         }
 
         importRoles(rep.getRoles(), newRealm);
@@ -585,7 +587,8 @@ public class RepresentationToModel {
         }
     }
 
-    public static void importAuthenticationFlows(RealmModel newRealm, RealmRepresentation rep) {
+    public static Map<String, String> importAuthenticationFlows(RealmModel newRealm, RealmRepresentation rep) {
+        Map<String, String> mappedFlows = new HashMap<>();
         if (rep.getAuthenticationFlows() == null) {
             // assume this is an old version being imported
             DefaultAuthenticationFlows.migrateFlows(newRealm);
@@ -597,8 +600,11 @@ public class RepresentationToModel {
             for (AuthenticationFlowRepresentation flowRep : rep.getAuthenticationFlows()) {
                 AuthenticationFlowModel model = toModel(flowRep);
                 // make sure new id is generated for new AuthenticationFlowModel instance
+                String previousId = model.getId();
                 model.setId(null);
                 model = newRealm.addAuthenticationFlow(model);
+                // store the mapped ids so that clients can reference the correct flow when importing the authenticationFlowBindingOverrides
+                mappedFlows.put(previousId, model.getId());
             }
             for (AuthenticationFlowRepresentation flowRep : rep.getAuthenticationFlows()) {
                 AuthenticationFlowModel model = newRealm.getFlowByAlias(flowRep.getAlias());
@@ -676,6 +682,8 @@ public class RepresentationToModel {
         }
 
         DefaultAuthenticationFlows.addIdentityProviderAuthenticator(newRealm, defaultProvider);
+
+        return mappedFlows;
     }
 
     private static void convertDeprecatedSocialProviders(RealmRepresentation rep) {
@@ -921,6 +929,8 @@ public class RepresentationToModel {
             realm.setAccessTokenLifespanForImplicitFlow(rep.getAccessTokenLifespanForImplicitFlow());
         if (rep.getSsoSessionIdleTimeout() != null) realm.setSsoSessionIdleTimeout(rep.getSsoSessionIdleTimeout());
         if (rep.getSsoSessionMaxLifespan() != null) realm.setSsoSessionMaxLifespan(rep.getSsoSessionMaxLifespan());
+        if (rep.getSsoSessionIdleTimeoutRememberMe() != null) realm.setSsoSessionIdleTimeoutRememberMe(rep.getSsoSessionIdleTimeoutRememberMe());
+        if (rep.getSsoSessionMaxLifespanRememberMe() != null) realm.setSsoSessionMaxLifespanRememberMe(rep.getSsoSessionMaxLifespanRememberMe());
         if (rep.getOfflineSessionIdleTimeout() != null)
             realm.setOfflineSessionIdleTimeout(rep.getOfflineSessionIdleTimeout());
         // KEYCLOAK-7688 Offline Session Max for Offline Token
@@ -1075,10 +1085,10 @@ public class RepresentationToModel {
 
     // CLIENTS
 
-    private static Map<String, ClientModel> createClients(KeycloakSession session, RealmRepresentation rep, RealmModel realm) {
+    private static Map<String, ClientModel> createClients(KeycloakSession session, RealmRepresentation rep, RealmModel realm, Map<String, String> mappedFlows) {
         Map<String, ClientModel> appMap = new HashMap<String, ClientModel>();
         for (ClientRepresentation resourceRep : rep.getClients()) {
-            ClientModel app = createClient(session, realm, resourceRep, false);
+            ClientModel app = createClient(session, realm, resourceRep, false, mappedFlows);
             appMap.put(app.getClientId(), app);
         }
         return appMap;
@@ -1092,6 +1102,10 @@ public class RepresentationToModel {
      * @return
      */
     public static ClientModel createClient(KeycloakSession session, RealmModel realm, ClientRepresentation resourceRep, boolean addDefaultRoles) {
+        return createClient(session, realm, resourceRep, addDefaultRoles, null);
+    }
+
+    private static ClientModel createClient(KeycloakSession session, RealmModel realm, ClientRepresentation resourceRep, boolean addDefaultRoles, Map<String, String> mappedFlows) {
         logger.debugv("Create client: {0}", resourceRep.getClientId());
 
         ClientModel client = resourceRep.getId() != null ? realm.addClient(resourceRep.getId(), resourceRep.getClientId()) : realm.addClient(resourceRep.getClientId());
@@ -1166,10 +1180,14 @@ public class RepresentationToModel {
                     continue;
                 } else {
                     String flowId = entry.getValue();
+                    // check if flow id was mapped when the flows were imported
+                    if (mappedFlows != null && mappedFlows.containsKey(flowId)) {
+                        flowId = mappedFlows.get(flowId);
+                    }
                     if (client.getRealm().getAuthenticationFlowById(flowId) == null) {
                         throw new RuntimeException("Unable to resolve auth flow binding override for: " + entry.getKey());
                     }
-                    client.setAuthenticationFlowBindingOverride(entry.getKey(), entry.getValue());
+                    client.setAuthenticationFlowBindingOverride(entry.getKey(), flowId);
                 }
             }
         }

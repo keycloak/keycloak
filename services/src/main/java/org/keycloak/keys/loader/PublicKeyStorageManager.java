@@ -19,6 +19,7 @@ package org.keycloak.keys.loader;
 
 import org.jboss.logging.Logger;
 import org.keycloak.broker.oidc.OIDCIdentityProviderConfig;
+import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.keys.PublicKeyLoader;
 import org.keycloak.keys.PublicKeyStorageProvider;
@@ -37,15 +38,21 @@ public class PublicKeyStorageManager {
     private static final Logger logger = Logger.getLogger(PublicKeyStorageManager.class);
 
     public static PublicKey getClientPublicKey(KeycloakSession session, ClientModel client, JWSInput input) {
+        KeyWrapper keyWrapper = getClientPublicKeyWrapper(session, client, input);
+        PublicKey publicKey = null;
+        if (keyWrapper != null) {
+            publicKey = (PublicKey)keyWrapper.getVerifyKey();
+        }
+        return publicKey;
+    }
+
+    public static KeyWrapper getClientPublicKeyWrapper(KeycloakSession session, ClientModel client, JWSInput input) {
         String kid = input.getHeader().getKeyId();
-
         PublicKeyStorageProvider keyStorage = session.getProvider(PublicKeyStorageProvider.class);
-
         String modelKey = PublicKeyStorageUtils.getClientModelCacheKey(client.getRealm().getId(), client.getId());
         ClientPublicKeyLoader loader = new ClientPublicKeyLoader(session, client);
         return keyStorage.getPublicKey(modelKey, kid, loader);
     }
-
 
     public static PublicKey getIdentityProviderPublicKey(KeycloakSession session, RealmModel realm, OIDCIdentityProviderConfig idpConfig, JWSInput input) {
         boolean keyIdSetInConfiguration = idpConfig.getPublicKeySignatureVerifierKeyId() != null
@@ -73,6 +80,6 @@ public class PublicKeyStorageManager {
                 : kid, pem);
         }
 
-        return keyStorage.getPublicKey(modelKey, kid, loader);
+        return (PublicKey)keyStorage.getPublicKey(modelKey, kid, loader).getVerifyKey();
     }
 }

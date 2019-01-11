@@ -71,6 +71,9 @@ public class UserFederationLdapConnectionTest extends AbstractAdminTest {
 
         response = realm.testLDAPConnection(LDAPConnectionTestManager.TEST_AUTHENTICATION, "ldaps://localhost:10636", "uid=admin,ou=system", "secret", "true", null);
         assertStatus(response, 204);
+
+        response = realm.testLDAPConnection(LDAPConnectionTestManager.TEST_AUTHENTICATION, "ldaps://localhost:10636", "uid=admin,ou=system", "secret", "true", "10000");
+        assertStatus(response, 204);
     }
 
     private void assertStatus(Response response, int status) {

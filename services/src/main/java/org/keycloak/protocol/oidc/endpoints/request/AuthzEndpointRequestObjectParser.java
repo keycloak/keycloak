@@ -17,16 +17,15 @@
 package org.keycloak.protocol.oidc.endpoints.request;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import java.security.PublicKey;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.keycloak.crypto.SignatureProvider;
+import org.keycloak.crypto.SignatureVerifierContext;
 import org.keycloak.jose.jws.Algorithm;
 import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.jose.jws.JWSInput;
-import org.keycloak.jose.jws.crypto.RSAProvider;
-import org.keycloak.keys.loader.PublicKeyStorageManager;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
@@ -44,29 +43,24 @@ class AuthzEndpointRequestObjectParser extends AuthzEndpointRequestParser {
     public AuthzEndpointRequestObjectParser(KeycloakSession session, String requestObject, ClientModel client) throws Exception {
         JWSInput input = new JWSInput(requestObject);
         JWSHeader header = input.getHeader();
+        Algorithm headerAlgorithm = header.getAlgorithm();
 
         Algorithm requestedSignatureAlgorithm = OIDCAdvancedConfigWrapper.fromClientModel(client).getRequestObjectSignatureAlg();
 
-        if (requestedSignatureAlgorithm != null && requestedSignatureAlgorithm != header.getAlgorithm()) {
+        if (headerAlgorithm == null) {
+            throw new RuntimeException("Request object signed algorithm not specified");
+        }
+        if (requestedSignatureAlgorithm != null && requestedSignatureAlgorithm != headerAlgorithm) {
             throw new RuntimeException("Request object signed with different algorithm than client requested algorithm");
         }
 
         if (header.getAlgorithm() == Algorithm.none) {
             this.requestParams = JsonSerialization.readValue(input.getContent(), JsonNode.class);
-        } else if (header.getAlgorithm() == Algorithm.RS256) {
-            PublicKey clientPublicKey = PublicKeyStorageManager.getClientPublicKey(session, client, input);
-            if (clientPublicKey == null) {
-                throw new RuntimeException("Client public key not found");
-            }
-
-            boolean verified = RSAProvider.verify(input, clientPublicKey);
-            if (!verified) {
-                throw new RuntimeException("Failed to verify signature on 'request' object");
-            }
-
-            this.requestParams = JsonSerialization.readValue(input.getContent(), JsonNode.class);
         } else {
-            throw new RuntimeException("Unsupported JWA algorithm used for signed request");
+            this.requestParams = session.tokens().decodeClientJWT(requestObject, client, JsonNode.class);
+            if (this.requestParams == null) {
+            	throw new RuntimeException("Failed to verify signature on 'request' object");
+            }
         }
     }
 

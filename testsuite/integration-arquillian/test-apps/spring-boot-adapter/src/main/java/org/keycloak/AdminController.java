@@ -107,7 +107,7 @@ public class AdminController {
                             KeycloakSecurityContext.class.getName(),
                             RequestAttributes.SCOPE_REQUEST);
             AccessToken token = keycloakSession.getToken();
-            String clientId = token.getAudience()[0];
+            String clientId = token.getIssuedFor();
             String nonce = UUID.randomUUID().toString();
             MessageDigest md;
             try {

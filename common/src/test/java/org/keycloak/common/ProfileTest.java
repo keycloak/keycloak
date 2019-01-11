@@ -22,8 +22,8 @@ public class ProfileTest {
     @Test
     public void checkDefaults() {
         Assert.assertEquals("community", Profile.getName());
-        assertEquals(Profile.getDisabledFeatures(), Profile.Feature.ACCOUNT2, Profile.Feature.ACCOUNT_API, Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ, Profile.Feature.DOCKER, Profile.Feature.SCRIPTS, Profile.Feature.TOKEN_EXCHANGE, Profile.Feature.AUTHZ_DROOLS_POLICY);
-        assertEquals(Profile.getPreviewFeatures(), Profile.Feature.ACCOUNT_API, Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ, Profile.Feature.SCRIPTS, Profile.Feature.TOKEN_EXCHANGE, Profile.Feature.AUTHZ_DROOLS_POLICY);
+        assertEquals(Profile.getDisabledFeatures(), Profile.Feature.ACCOUNT2, Profile.Feature.ACCOUNT_API, Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ, Profile.Feature.DOCKER, Profile.Feature.SCRIPTS, Profile.Feature.TOKEN_EXCHANGE, Profile.Feature.AUTHZ_DROOLS_POLICY, Profile.Feature.OPENSHIFT_INTEGRATION);
+        assertEquals(Profile.getPreviewFeatures(), Profile.Feature.ACCOUNT_API, Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ, Profile.Feature.SCRIPTS, Profile.Feature.TOKEN_EXCHANGE, Profile.Feature.AUTHZ_DROOLS_POLICY, Profile.Feature.OPENSHIFT_INTEGRATION);
         assertEquals(Profile.getExperimentalFeatures(), Profile.Feature.ACCOUNT2);
     }
 
@@ -31,6 +31,7 @@ public class ProfileTest {
     public void configWithSystemProperties() {
         Assert.assertEquals("community", Profile.getName());
         Assert.assertFalse(Profile.isFeatureEnabled(Profile.Feature.DOCKER));
+        Assert.assertFalse(Profile.isFeatureEnabled(Profile.Feature.OPENSHIFT_INTEGRATION));
         Assert.assertTrue(Profile.isFeatureEnabled(Profile.Feature.IMPERSONATION));
 
         System.setProperty("keycloak.profile", "preview");
@@ -41,6 +42,7 @@ public class ProfileTest {
 
         Assert.assertEquals("preview", Profile.getName());
         Assert.assertTrue(Profile.isFeatureEnabled(Profile.Feature.DOCKER));
+        Assert.assertTrue(Profile.isFeatureEnabled(Profile.Feature.OPENSHIFT_INTEGRATION));
         Assert.assertFalse(Profile.isFeatureEnabled(Profile.Feature.IMPERSONATION));
 
         System.getProperties().remove("keycloak.profile");
@@ -73,6 +75,7 @@ public class ProfileTest {
 
         Assert.assertEquals("preview", Profile.getName());
         Assert.assertTrue(Profile.isFeatureEnabled(Profile.Feature.DOCKER));
+        Assert.assertTrue(Profile.isFeatureEnabled(Profile.Feature.OPENSHIFT_INTEGRATION));
         Assert.assertFalse(Profile.isFeatureEnabled(Profile.Feature.IMPERSONATION));
 
         System.getProperties().remove("jboss.server.config.dir");

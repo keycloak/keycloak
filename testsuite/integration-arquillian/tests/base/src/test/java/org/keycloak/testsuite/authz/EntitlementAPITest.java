@@ -77,6 +77,7 @@ import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
 import org.keycloak.testsuite.util.ClientBuilder;
+import org.keycloak.testsuite.util.ContainerAssume;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.RoleBuilder;
@@ -1169,6 +1170,8 @@ public class EntitlementAPITest extends AbstractAuthzTest {
 
     @Test
     public void testOfflineRequestingPartyToken() throws Exception {
+        ContainerAssume.assumeNotAuthServerUndertow();
+
         ClientResource client = getClient(getRealm(), RESOURCE_SERVER_TEST);
         AuthorizationResource authorization = client.authorization();
 
@@ -1366,11 +1369,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
 
     private AuthzClient getAuthzClient(String configFile) {
         if (authzClient == null) {
-            try {
-                authzClient = AuthzClient.create(JsonSerialization.readValue(getClass().getResourceAsStream("/authorization-test/" + configFile), Configuration.class));
-            } catch (IOException cause) {
-                throw new RuntimeException("Failed to create authz client", cause);
-            }
+            authzClient = AuthzClient.create(getClass().getResourceAsStream("/authorization-test/" + configFile));
         }
 
         return authzClient;

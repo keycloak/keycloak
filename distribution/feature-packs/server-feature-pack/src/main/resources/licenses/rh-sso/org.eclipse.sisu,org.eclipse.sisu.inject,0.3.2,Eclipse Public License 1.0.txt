@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+<title>LICENSE.txt - org.eclipse.sisu.inject.git - Sisu: @Inject support</title>
+<meta name='generator' content='cgit v1.2.1'/>
+<meta name='robots' content='index, nofollow'/>
+<link rel='stylesheet' type='text/css' href='/cgit.css'/>
+<link rel='shortcut icon' href='/favicon.ico'/>
+<link rel='alternate' title='Atom feed' href='http://git.eclipse.org/c/sisu/org.eclipse.sisu.inject.git/atom/LICENSE.txt?h=releases/0.3.2' type='application/atom+xml'/>
+<link rel='vcs-git' href='git://git.eclipse.org/gitroot/sisu/org.eclipse.sisu.inject.git' title='org.eclipse.sisu.inject.git Git repository'/>
+<link rel='vcs-git' href='https://git.eclipse.org/r/sisu/org.eclipse.sisu.inject.git' title='org.eclipse.sisu.inject.git Git repository'/>
+<link rel='vcs-git' href='ssh://user_id@git.eclipse.org:29418/sisu/org.eclipse.sisu.inject.git' title='org.eclipse.sisu.inject.git Git repository'/>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="keywords" content="eclipse.org, Eclipse Foundation, Eclipse, Git, Source code, Source" />
+    <link href="//fonts.googleapis.com/css?family=Open+Sans:400,700,300,600,100" rel="stylesheet" type="text/css">
+    <link rel="shortcut icon" href="/eclipse.org-common/themes/solstice/public/images/favicon.ico"/>
+    <link rel="stylesheet" href="/eclipse.org-common/themes/solstice/public/stylesheets/barebone-footer.min.css">
+    <link rel="stylesheet" type="text/css" href="/cgit.css" media="screen" />
+
+</head>
+<body>
+<div class="barebone-layout">
+<a class="sr-only" href="#content">Skip to main content</a>
+<header role="banner" class="thin-header padding-top-10" id="header-wrapper">
+ <link rel="stylesheet" type="text/css" href="//www.eclipse.org/eclipse.org-common/themes/solstice/public/stylesheets/vendor/cookieconsent/cookieconsent.min.css" />
+ <script src="//www.eclipse.org/eclipse.org-common/themes/solstice/public/javascript/vendor/cookieconsent/default.min.js"></script>
+
+  <div class="container-fluid">
+    <div class="row" id="header-row">
+      <div class="col-sm-6 col-md-6 col-lg-5" id="header-left">
+        <div class="wrapper-logo-default"><a href="https://www.eclipse.org/"><img class="logo-eclipse-default img-responsive hidden-xs" alt="logo" src="/eclipse.org-common/themes/solstice/public/images/logo/eclipse-426x100.png"/></a></div>
+      </div>
+      <div class="col-sm-18 col-md-18 col-lg-19" id="main-menu-wrapper">
+        <div class="navbar yamm navbar-right" id="main-menu">
+          <div id="navbar-collapse-1" class="navbar-collapse collapse">
+            <ul class="nav navbar-nav">
+              <li class="visible-thin"><a href="https://www.eclipse.org/downloads/" target="_self">Download</a></li>
+              <li><a href="https://www.eclipse.org/users/" target="_self">Getting Started</a></li>
+              <li><a href="https://www.eclipse.org/membership/" target="_self">Members</a></li>
+              <li><a href="https://www.eclipse.org/projects/" target="_self">Projects</a></li>
+              <li class="dropdown visible-xs">
+                <a href="#" data-toggle="dropdown" class="dropdown-toggle">Community <b class="caret"></b></a>
+                <ul class="dropdown-menu">
+                  <li><a href="http://marketplace.eclipse.org">Marketplace</a></li>
+                  <li><a href="http://events.eclipse.org">Events</a></li>
+                  <li><a href="http://www.planeteclipse.org/">Planet Eclipse</a></li>
+                  <li><a href="https://www.eclipse.org/community/eclipse_newsletter/">Newsletter</a></li>
+                  <li><a href="https://www.youtube.com/user/EclipseFdn">Videos</a></li>
+                </ul>
+              </li>
+              <li class="dropdown visible-xs">
+                <a href="#" data-toggle="dropdown" class="dropdown-toggle">Participate <b class="caret"></b></a>
+                <ul class="dropdown-menu">
+                  <li><a href="https://bugs.eclipse.org/bugs/">Report a Bug</a></li>
+                  <li><a href="https://www.eclipse.org/forums/">Forums</a></li>
+                  <li><a href="https://www.eclipse.org/mail/">Mailing Lists</a></li>
+                  <li><a href="https://wiki.eclipse.org/">Wiki</a></li>
+                  <li><a href="https://wiki.eclipse.org/IRC">IRC</a></li>
+                  <li><a href="https://www.eclipse.org/contribute/">How to Contribute</a></li>
+                </ul>
+              </li>
+              <li class="dropdown visible-xs">
+                <a href="#" data-toggle="dropdown" class="dropdown-toggle">Working Groups <b class="caret"></b></a>
+                <ul class="dropdown-menu">
+                  <li><a href="http://wiki.eclipse.org/Auto_IWG">Automotive</a></li>
+                  <li><a href="http://iot.eclipse.org">Internet of Things</a></li>
+                  <li><a href="http://locationtech.org">LocationTech</a></li>
+                  <li><a href="http://lts.eclipse.org">Long-Term Support</a></li>
+                  <li><a href="http://polarsys.org">PolarSys</a></li>
+                  <li><a href="http://science.eclipse.org">Science</a></li>
+                  <li><a href="http://www.openmdm.org">OpenMDM</a></li>
+                </ul>
+              </li>
+              <!-- More -->
+              <li class="dropdown eclipse-more hidden-xs">
+                <a data-toggle="dropdown" class="dropdown-toggle">More<b class="caret"></b></a>
+                <ul class="dropdown-menu">
+                  <li>
+                    <!-- Content container to add padding -->
+                    <div class="yamm-content">
+                      <div class="row">
+                        <ul class="col-sm-8 list-unstyled">
+                          <li>
+                            <p><strong>Community</strong></p>
+                          </li>
+                          <li><a href="http://marketplace.eclipse.org">Marketplace</a></li>
+                          <li><a href="http://events.eclipse.org">Events</a></li>
+                          <li><a href="http://www.planeteclipse.org/">Planet Eclipse</a></li>
+                          <li><a href="https://www.eclipse.org/community/eclipse_newsletter/">Newsletter</a></li>
+                          <li><a href="https://www.youtube.com/user/EclipseFdn">Videos</a></li>
+                        </ul>
+                        <ul class="col-sm-8 list-unstyled">
+                          <li>
+                            <p><strong>Participate</strong></p>
+                          </li>
+                          <li><a href="https://bugs.eclipse.org/bugs/">Report a Bug</a></li>
+                          <li><a href="https://www.eclipse.org/forums/">Forums</a></li>
+                          <li><a href="https://www.eclipse.org/mail/">Mailing Lists</a></li>
+                          <li><a href="https://wiki.eclipse.org/">Wiki</a></li>
+                          <li><a href="https://wiki.eclipse.org/IRC">IRC</a></li>
+                          <li><a href="https://www.eclipse.org/contribute/">How to Contribute</a></li>
+                        </ul>
+                        <ul class="col-sm-8 list-unstyled">
+                          <li>
+                            <p><strong>Working Groups</strong></p>
+                          </li>
+                          <li><a href="http://wiki.eclipse.org/Auto_IWG">Automotive</a></li>
+                          <li><a href="http://iot.eclipse.org">Internet of Things</a></li>
+                          <li><a href="http://locationtech.org">LocationTech</a></li>
+                          <li><a href="http://lts.eclipse.org">Long-Term Support</a></li>
+                          <li><a href="http://polarsys.org">PolarSys</a></li>
+                          <li><a href="http://science.eclipse.org">Science</a></li>
+                          <li><a href="http://www.openmdm.org">OpenMDM</a></li>
+                        </ul>
+                      </div>
+                    </div>
+                  </li>
+                </ul>
+              </li>
+            </ul>
+          </div>
+          <div class="navbar-header">
+            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar-collapse-1">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            </button>
+            <div class="wrapper-logo-mobile"><a class="navbar-brand visible-xs" href="https://www.eclipse.org/"><img class="logo-eclipse-default-mobile img-responsive" alt="logo" src="/eclipse.org-common/themes/solstice/public/images/logo/eclipse-800x188.png"/></a></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+<section class="hidden-print default-breadcrumbs" id="breadcrumb">
+  <div class="container-fluid">
+    <h3 class="sr-only">Breadcrumbs</h3>
+    <div class="col-xs-24">
+      <ol class="breadcrumb">
+        <li><a href="https://www.eclipse.org/">Home</a></li>
+        <li><a href="https://www.eclipse.org/contribute/">Contribute</a></li>
+        <li><a href="/c/">Source code</a></li>
+      </ol>
+    </div>
+  </div>
+</section>
+<main role="main">
+<div class="container-fluid background-image-none" id="novaContent">
+<br /><br />
+<div id='cgit'><table id='header'>
+<tr>
+<td class='logo' rowspan='2'><a href='/c/'><img src='/git.png' alt='cgit logo'/></a></td>
+<td class='main'><a href='/c/'>index</a> : <a title='org.eclipse.sisu.inject.git' href='/c/sisu/org.eclipse.sisu.inject.git/'>org.eclipse.sisu.inject.git</a></td><td class='form'><form method='get'>
+<select name='h' onchange='this.form.submit();'>
+<option value='master'>master</option>
+</select> <input type='submit' value='switch'/></form></td></tr>
+<tr><td class='sub'>Sisu: @Inject support</td><td class='sub right'>Code Review</td></tr></table>
+<table class='tabs'><tr><td>
+<a href='/c/sisu/org.eclipse.sisu.inject.git/about/?h=releases/0.3.2'>about</a><a href='/c/sisu/org.eclipse.sisu.inject.git/?h=releases/0.3.2'>summary</a><a href='/c/sisu/org.eclipse.sisu.inject.git/refs/?h=releases/0.3.2'>refs</a><a href='/c/sisu/org.eclipse.sisu.inject.git/log/LICENSE.txt?h=releases/0.3.2'>log</a><a class='active' href='/c/sisu/org.eclipse.sisu.inject.git/tree/LICENSE.txt?h=releases/0.3.2'>tree</a><a href='/c/sisu/org.eclipse.sisu.inject.git/commit/LICENSE.txt?h=releases/0.3.2'>commit</a><a href='/c/sisu/org.eclipse.sisu.inject.git/diff/LICENSE.txt?h=releases/0.3.2'>diff</a><a href='/c/sisu/org.eclipse.sisu.inject.git/stats/LICENSE.txt?h=releases/0.3.2'>stats</a></td><td class='form'><form class='right' method='get' action='/c/sisu/org.eclipse.sisu.inject.git/log/LICENSE.txt'>
+<input type='hidden' name='h' value='releases/0.3.2'/><select name='qt'>
+<option value='grep'>log msg</option>
+<option value='author'>author</option>
+<option value='committer'>committer</option>
+<option value='range'>range</option>
+</select>
+<input class='txt' type='search' size='10' name='q' value=''/>
+<input type='submit' value='search'/>
+</form>
+</td></tr></table>
+<div class='path'>path: <a href='/c/sisu/org.eclipse.sisu.inject.git/tree/?h=releases/0.3.2'>root</a>/<a href='/c/sisu/org.eclipse.sisu.inject.git/tree/LICENSE.txt?h=releases/0.3.2'>LICENSE.txt</a></div><div class='content'>blob: 79e486c3d2c20397a987cc8785b8e62b8bbcbb52 (<a href='/c/sisu/org.eclipse.sisu.inject.git/plain/LICENSE.txt?h=releases/0.3.2'>plain</a>) (<a href='/c/sisu/org.eclipse.sisu.inject.git/blame/LICENSE.txt?h=releases/0.3.2'>blame</a>)
+<table summary='blob content' class='blob'>
+<tr><td class='linenumbers'><pre><a id='n1' href='#n1'>1</a>
+<a id='n2' href='#n2'>2</a>
+<a id='n3' href='#n3'>3</a>
+<a id='n4' href='#n4'>4</a>
+<a id='n5' href='#n5'>5</a>
+<a id='n6' href='#n6'>6</a>
+<a id='n7' href='#n7'>7</a>
+<a id='n8' href='#n8'>8</a>
+<a id='n9' href='#n9'>9</a>
+<a id='n10' href='#n10'>10</a>
+<a id='n11' href='#n11'>11</a>
+<a id='n12' href='#n12'>12</a>
+<a id='n13' href='#n13'>13</a>
+<a id='n14' href='#n14'>14</a>
+<a id='n15' href='#n15'>15</a>
+<a id='n16' href='#n16'>16</a>
+<a id='n17' href='#n17'>17</a>
+<a id='n18' href='#n18'>18</a>
+<a id='n19' href='#n19'>19</a>
+<a id='n20' href='#n20'>20</a>
+<a id='n21' href='#n21'>21</a>
+<a id='n22' href='#n22'>22</a>
+<a id='n23' href='#n23'>23</a>
+<a id='n24' href='#n24'>24</a>
+<a id='n25' href='#n25'>25</a>
+<a id='n26' href='#n26'>26</a>
+<a id='n27' href='#n27'>27</a>
+<a id='n28' href='#n28'>28</a>
+<a id='n29' href='#n29'>29</a>
+<a id='n30' href='#n30'>30</a>
+<a id='n31' href='#n31'>31</a>
+<a id='n32' href='#n32'>32</a>
+<a id='n33' href='#n33'>33</a>
+<a id='n34' href='#n34'>34</a>
+<a id='n35' href='#n35'>35</a>
+<a id='n36' href='#n36'>36</a>
+<a id='n37' href='#n37'>37</a>
+<a id='n38' href='#n38'>38</a>
+<a id='n39' href='#n39'>39</a>
+<a id='n40' href='#n40'>40</a>
+<a id='n41' href='#n41'>41</a>
+<a id='n42' href='#n42'>42</a>
+<a id='n43' href='#n43'>43</a>
+<a id='n44' href='#n44'>44</a>
+<a id='n45' href='#n45'>45</a>
+<a id='n46' href='#n46'>46</a>
+<a id='n47' href='#n47'>47</a>
+<a id='n48' href='#n48'>48</a>
+<a id='n49' href='#n49'>49</a>
+<a id='n50' href='#n50'>50</a>
+<a id='n51' href='#n51'>51</a>
+<a id='n52' href='#n52'>52</a>
+<a id='n53' href='#n53'>53</a>
+<a id='n54' href='#n54'>54</a>
+<a id='n55' href='#n55'>55</a>
+<a id='n56' href='#n56'>56</a>
+<a id='n57' href='#n57'>57</a>
+<a id='n58' href='#n58'>58</a>
+<a id='n59' href='#n59'>59</a>
+<a id='n60' href='#n60'>60</a>
+<a id='n61' href='#n61'>61</a>
+<a id='n62' href='#n62'>62</a>
+<a id='n63' href='#n63'>63</a>
+<a id='n64' href='#n64'>64</a>
+<a id='n65' href='#n65'>65</a>
+<a id='n66' href='#n66'>66</a>
+<a id='n67' href='#n67'>67</a>
+<a id='n68' href='#n68'>68</a>
+<a id='n69' href='#n69'>69</a>
+<a id='n70' href='#n70'>70</a>
+</pre></td>
+<td class='lines'><pre><code>Eclipse Public License - v 1.0
+
+THE ACCOMPANYING PROGRAM IS PROVIDED UNDER THE TERMS OF THIS ECLIPSE PUBLIC LICENSE ("AGREEMENT"). ANY USE, REPRODUCTION OR DISTRIBUTION OF THE PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THIS AGREEMENT.
+
+1. DEFINITIONS
+
+"Contribution" means:
+
+a) in the case of the initial Contributor, the initial code and documentation distributed under this Agreement, and
+b) in the case of each subsequent Contributor:
+i) changes to the Program, and
+ii) additions to the Program;
+where such changes and/or additions to the Program originate from and are distributed by that particular Contributor. A Contribution 'originates' from a Contributor if it was added to the Program by such Contributor itself or anyone acting on such Contributor's behalf. Contributions do not include additions to the Program which: (i) are separate modules of software distributed in conjunction with the Program under their own license agreement, and (ii) are not derivative works of the Program.
+"Contributor" means any person or entity that distributes the Program.
+
+"Licensed Patents" mean patent claims licensable by a Contributor which are necessarily infringed by the use or sale of its Contribution alone or when combined with the Program.
+
+"Program" means the Contributions distributed in accordance with this Agreement.
+
+"Recipient" means anyone who receives the Program under this Agreement, including all Contributors.
+
+2. GRANT OF RIGHTS
+
+a) Subject to the terms of this Agreement, each Contributor hereby grants Recipient a non-exclusive, worldwide, royalty-free copyright license to reproduce, prepare derivative works of, publicly display, publicly perform, distribute and sublicense the Contribution of such Contributor, if any, and such derivative works, in source code and object code form.
+b) Subject to the terms of this Agreement, each Contributor hereby grants Recipient a non-exclusive, worldwide, royalty-free patent license under Licensed Patents to make, use, sell, offer to sell, import and otherwise transfer the Contribution of such Contributor, if any, in source code and object code form. This patent license shall apply to the combination of the Contribution and the Program if, at the time the Contribution is added by the Contributor, such addition of the Contribution causes such combination to be covered by the Licensed Patents. The patent license shall not apply to any other combinations which include the Contribution. No hardware per se is licensed hereunder.
+c) Recipient understands that although each Contributor grants the licenses to its Contributions set forth herein, no assurances are provided by any Contributor that the Program does not infringe the patent or other intellectual property rights of any other entity. Each Contributor disclaims any liability to Recipient for claims brought by any other entity based on infringement of intellectual property rights or otherwise. As a condition to exercising the rights and licenses granted hereunder, each Recipient hereby assumes sole responsibility to secure any other intellectual property rights needed, if any. For example, if a third party patent license is required to allow Recipient to distribute the Program, it is Recipient's responsibility to acquire that license before distributing the Program.
+d) Each Contributor represents that to its knowledge it has sufficient copyright rights in its Contribution, if any, to grant the copyright license set forth in this Agreement.
+3. REQUIREMENTS
+
+A Contributor may choose to distribute the Program in object code form under its own license agreement, provided that:
+
+a) it complies with the terms and conditions of this Agreement; and
+b) its license agreement:
+i) effectively disclaims on behalf of all Contributors all warranties and conditions, express and implied, including warranties or conditions of title and non-infringement, and implied warranties or conditions of merchantability and fitness for a particular purpose;
+ii) effectively excludes on behalf of all Contributors all liability for damages, including direct, indirect, special, incidental and consequential damages, such as lost profits;
+iii) states that any provisions which differ from this Agreement are offered by that Contributor alone and not by any other party; and
+iv) states that source code for the Program is available from such Contributor, and informs licensees how to obtain it in a reasonable manner on or through a medium customarily used for software exchange.
+When the Program is made available in source code form:
+
+a) it must be made available under this Agreement; and
+b) a copy of this Agreement must be included with each copy of the Program.
+Contributors may not remove or alter any copyright notices contained within the Program.
+
+Each Contributor must identify itself as the originator of its Contribution, if any, in a manner that reasonably allows subsequent Recipients to identify the originator of the Contribution.
+
+4. COMMERCIAL DISTRIBUTION
+
+Commercial distributors of software may accept certain responsibilities with respect to end users, business partners and the like. While this license is intended to facilitate the commercial use of the Program, the Contributor who includes the Program in a commercial product offering should do so in a manner which does not create potential liability for other Contributors. Therefore, if a Contributor includes the Program in a commercial product offering, such Contributor ("Commercial Contributor") hereby agrees to defend and indemnify every other Contributor ("Indemnified Contributor") against any losses, damages and costs (collectively "Losses") arising from claims, lawsuits and other legal actions brought by a third party against the Indemnified Contributor to the extent caused by the acts or omissions of such Commercial Contributor in connection with its distribution of the Program in a commercial product offering. The obligations in this section do not apply to any claims or Losses relating to any actual or alleged intellectual property infringement. In order to qualify, an Indemnified Contributor must: a) promptly notify the Commercial Contributor in writing of such claim, and b) allow the Commercial Contributor to control, and cooperate with the Commercial Contributor in, the defense and any related settlement negotiations. The Indemnified Contributor may participate in any such claim at its own expense.
+
+For example, a Contributor might include the Program in a commercial product offering, Product X. That Contributor is then a Commercial Contributor. If that Commercial Contributor then makes performance claims, or offers warranties related to Product X, those performance claims and warranties are such Commercial Contributor's responsibility alone. Under this section, the Commercial Contributor would have to defend claims against the other Contributors related to those performance claims and warranties, and if a court requires any other Contributor to pay any damages as a result, the Commercial Contributor must pay those damages.
+
+5. NO WARRANTY
+
+EXCEPT AS EXPRESSLY SET FORTH IN THIS AGREEMENT, THE PROGRAM IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED INCLUDING, WITHOUT LIMITATION, ANY WARRANTIES OR CONDITIONS OF TITLE, NON-INFRINGEMENT, MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. Each Recipient is solely responsible for determining the appropriateness of using and distributing the Program and assumes all risks associated with its exercise of rights under this Agreement , including but not limited to the risks and costs of program errors, compliance with applicable laws, damage to or loss of data, programs or equipment, and unavailability or interruption of operations.
+
+6. DISCLAIMER OF LIABILITY
+
+EXCEPT AS EXPRESSLY SET FORTH IN THIS AGREEMENT, NEITHER RECIPIENT NOR ANY CONTRIBUTORS SHALL HAVE ANY LIABILITY FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING WITHOUT LIMITATION LOST PROFITS), HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OR DISTRIBUTION OF THE PROGRAM OR THE EXERCISE OF ANY RIGHTS GRANTED HEREUNDER, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.
+
+7. GENERAL
+
+If any provision of this Agreement is invalid or unenforceable under applicable law, it shall not affect the validity or enforceability of the remainder of the terms of this Agreement, and without further action by the parties hereto, such provision shall be reformed to the minimum extent necessary to make such provision valid and enforceable.
+
+If Recipient institutes patent litigation against any entity (including a cross-claim or counterclaim in a lawsuit) alleging that the Program itself (excluding combinations of the Program with other software or hardware) infringes such Recipient's patent(s), then such Recipient's rights granted under Section 2(b) shall terminate as of the date such litigation is filed.
+
+All Recipient's rights under this Agreement shall terminate if it fails to comply with any of the material terms or conditions of this Agreement and does not cure such failure in a reasonable period of time after becoming aware of such noncompliance. If all Recipient's rights under this Agreement terminate, Recipient agrees to cease use and distribution of the Program as soon as reasonably practicable. However, Recipient's obligations under this Agreement and any licenses granted by Recipient relating to the Program shall continue and survive.
+
+Everyone is permitted to copy and distribute copies of this Agreement, but in order to avoid inconsistency the Agreement is copyrighted and may only be modified in the following manner. The Agreement Steward reserves the right to publish new versions (including revisions) of this Agreement from time to time. No one other than the Agreement Steward has the right to modify this Agreement. The Eclipse Foundation is the initial Agreement Steward. The Eclipse Foundation may assign the responsibility to serve as the Agreement Steward to a suitable separate entity. Each new version of the Agreement will be given a distinguishing version number. The Program (including Contributions) may always be distributed subject to the version of the Agreement under which it was received. In addition, after a new version of the Agreement is published, Contributor may elect to distribute the Program (including its Contributions) under the new version. Except as expressly stated in Sections 2(a) and 2(b) above, Recipient receives no rights or licenses to the intellectual property of any Contributor under this Agreement, whether expressly, by implication, estoppel or otherwise. All rights in the Program not expressly granted under this Agreement are reserved.
+
+This Agreement is governed by the laws of the State of New York and the intellectual property laws of the United States of America. No party to this Agreement will bring a legal action under this Agreement more than one year after the cause of action arose. Each party waives its rights to a jury trial in any resulting litigation.
+</code></pre></td></tr></table>
+</div> <!-- class=content -->
+</div>
+</main> <!-- /#main-content-container-row -->
+<p id="back-to-top">
+  <a class="visible-xs" href="#top">Back to the top</a>
+</p>
+<footer role="contentinfo" id="solstice-footer">
+  <div class="container">
+    <div class="row">
+      <section class="col-sm-offset-1 col-xs-11 col-sm-7 col-md-6 col-md-offset-0 hidden-print" id="footer-eclipse-foundation">
+            <h2 class="section-title">Eclipse Foundation</h2>
+    <ul class="nav">
+    <li><a href="https://www.eclipse.org/org/">About us</a></li>
+    <li><a href="https://www.eclipse.org/org/foundation/contact.php">Contact Us</a></li>
+    <li><a href="https://www.eclipse.org/donate">Donate</a></li>
+      <li><a href="https://www.eclipse.org/org/documents/">Governance</a></li>
+      <li><a href="https://www.eclipse.org/artwork/">Logo and Artwork</a></li>
+      <li><a href="https://www.eclipse.org/org/foundation/directors.php">Board of Directors</a></li>
+    </ul>      </section>
+      <section class="col-sm-offset-1 col-xs-11 col-sm-7 col-md-6 col-md-offset-0 hidden-print" id="footer-legal">
+            <h2 class="section-title">Legal</h2>
+    <ul class="nav">
+      <li><a href="https://www.eclipse.org/legal/privacy.php">Privacy Policy</a></li>
+      <li><a href="https://www.eclipse.org/legal/termsofuse.php">Terms of Use</a></li>
+      <li><a href="https://www.eclipse.org/legal/copyright.php">Copyright Agent</a></li>
+      <li><a href="https://www.eclipse.org/org/documents/epl-2.0">Eclipse Public License </a></li>
+      <li><a href="https://www.eclipse.org/legal/">Legal Resources </a></li>
+    </ul>      </section>
+      <section class="col-sm-offset-1 col-xs-11 col-sm-7 col-md-6 col-md-offset-0 hidden-print" id="footer-useful-links">
+            <h2 class="section-title">Useful Links</h2>
+    <ul class="nav">
+      <li><a href="https://bugs.eclipse.org/bugs/">Report a Bug</a></li>
+      <li><a href="//help.eclipse.org/">Documentation</a></li>
+      <li><a href="https://www.eclipse.org/contribute/">How to Contribute</a></li>
+      <li><a href="https://www.eclipse.org/mail/">Mailing Lists</a></li>
+      <li><a href="https://www.eclipse.org/forums/">Forums</a></li>
+      <li><a href="//marketplace.eclipse.org">Marketplace</a></li>
+    </ul>      </section>
+      <section class="col-sm-offset-1 col-xs-11 col-sm-7 col-md-6 col-md-offset-0 hidden-print" id="footer-other">
+            <h2 class="section-title">Other</h2>
+    <ul class="nav">
+      <li><a href="https://www.eclipse.org/ide/">IDE and Tools</a></li>
+      <li><a href="https://www.eclipse.org/projects">Community of Projects</a></li>
+      <li><a href="https://www.eclipse.org/org/workinggroups/">Working Groups</a></li>
+      <li><a href="https://wiki.eclipse.org/Ssh_fingerprints">Server fingerprints</a></li>
+    </ul>
+
+    <ul class="list-inline social-media">
+      <li><a href="https://twitter.com/EclipseFdn"><i class="fa fa-twitter-square"></i></a></li>
+      <li><a href="https://plus.google.com/+Eclipse"><i class="fa fa-google-plus-square"></i></a></li>
+      <li><a href="https://www.facebook.com/eclipse.org"><i class="fa fa-facebook-square"></i> </a></li>
+      <li><a href="https://www.youtube.com/user/EclipseFdn"><i class="fa fa-youtube-square"></i></a></li>
+    </ul>      </section>
+            <div id="copyright" class="col-sm-offset-1 col-sm-14 col-md-24 col-md-offset-0">
+        <span class="hidden-print"><div class="wrapper-logo-eclipse-white"><a href="https://www.eclipse.org"><img class="logo-eclipse-white img-responsive" alt="logo" src="/eclipse.org-common/themes/solstice/public/images/logo/eclipse-logo-bw-332x78.png"/></a></div></span>
+        <p id="copyright-text">Copyright &copy; 2017 The Eclipse Foundation. All Rights Reserved.</p>
+      </div>      <a href="#" class="scrollup">Back to the top</a>
+    </div>
+  </div>
+</footer>
+<!-- Placed at the end of the document so the pages load faster -->
+<script src="/eclipse.org-common/themes/solstice/public/javascript/main.min.js"></script>
+</div>
+</div> <!-- id=cgit -->
+</body>
+</html>

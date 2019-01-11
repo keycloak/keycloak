@@ -20,6 +20,7 @@ import org.jboss.logging.Logger;
 import org.keycloak.Token;
 import org.keycloak.TokenCategory;
 import org.keycloak.crypto.Algorithm;
+import org.keycloak.crypto.ClientSignatureVerifierProvider;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.SignatureProvider;
 import org.keycloak.crypto.SignatureSignerContext;
@@ -76,6 +77,29 @@ public class DefaultTokenManager implements TokenManager {
             }
 
             boolean valid = signatureProvider.verifier(kid).verify(jws.getEncodedSignatureInput().getBytes("UTF-8"), jws.getSignature());
+            return valid ? jws.readJsonContent(clazz) : null;
+        } catch (Exception e) {
+            logger.debug("Failed to decode token", e);
+            return null;
+        }
+    }
+
+    @Override
+    public <T> T decodeClientJWT(String token, ClientModel client, Class<T> clazz) {
+        if (token == null) {
+            return null;
+        }
+        try {
+            JWSInput jws = new JWSInput(token);
+
+            String signatureAlgorithm = jws.getHeader().getAlgorithm().name();
+
+            ClientSignatureVerifierProvider signatureProvider = session.getProvider(ClientSignatureVerifierProvider.class, signatureAlgorithm);
+            if (signatureProvider == null) {
+                return null;
+            }
+
+            boolean valid = signatureProvider.verifier(client, jws).verify(jws.getEncodedSignatureInput().getBytes("UTF-8"), jws.getSignature());
             return valid ? jws.readJsonContent(clazz) : null;
         } catch (Exception e) {
             logger.debug("Failed to decode token", e);

@@ -68,6 +68,11 @@ public class ClientModelTest extends AbstractKeycloakTest {
     }
 
     @Override
+    protected boolean isImportAfterEachMethod() {
+        return true;
+    }
+
+    @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
         RealmRepresentation realm = new RealmRepresentation();
         realm.setRealm(realmName);
@@ -301,6 +306,7 @@ public class ClientModelTest extends AbstractKeycloakTest {
 
             currentSession.realms().removeClient(client.getId(), realm);
             currentSession.realms().removeClient(copyClient.getId(), realm);
+            currentSession.realms().removeRealm(realm.getId());
         });
     }
 

@@ -18,6 +18,7 @@ package org.keycloak.services.resources.admin;
 
 import static java.lang.Boolean.TRUE;
 
+import com.google.common.collect.Maps;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
@@ -67,9 +68,9 @@ import java.util.stream.Collectors;
 /**
  * Base resource class for managing a realm's clients.
  *
- * @resource Clients
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
+ * @resource Clients
  */
 public class ClientsResource {
     protected static final Logger logger = Logger.getLogger(ClientsResource.class);
@@ -89,10 +90,10 @@ public class ClientsResource {
 
     /**
      * Get clients belonging to the realm
-     *
+     * <p>
      * Returns a list of clients belonging to the realm
      *
-     * @param clientId filter by clientId
+     * @param clientId     filter by clientId
      * @param viewableOnly filter clients that cannot be viewed in full by admin
      */
     @GET
@@ -125,7 +126,7 @@ public class ClientsResource {
                     ClientRepresentation representation = ModelToRepresentation.toRepresentation(clientModel, session);
                     representation.setAccess(auth.clients().getAccess(clientModel));
                     rep.add(representation);
-                } else if (!viewableOnly && auth.clients().canView(clientModel)){
+                } else if (!viewableOnly && auth.clients().canView(clientModel)) {
                     ClientRepresentation client = new ClientRepresentation();
                     client.setId(clientModel.getId());
                     client.setClientId(clientModel.getClientId());
@@ -146,7 +147,7 @@ public class ClientsResource {
 
     /**
      * Create a new client
-     *
+     * <p>
      * Client's client_id must be unique!
      *
      * @param rep
@@ -228,40 +229,75 @@ public class ClientsResource {
     @NoCache
     public Set<ResourceRepresentation> getClientRoleResourceByUser(final @PathParam("id") String id, final @PathParam("userId") String userId) {
         auth.clients().requireView();
-
-        final Set<ResourceRepresentation> resourceRepresentations = new LinkedHashSet<>();
         AuthorizationProvider authorizationProvider = session.getProvider(AuthorizationProvider.class);
         StoreFactory storeFactory = authorizationProvider.getStoreFactory();
-        PolicyStore policyStore = storeFactory.getPolicyStore();
         ResourceServer resourceServer = storeFactory.getResourceServerStore().findById(id);
-        ClientModel clientModel = realm.getClientById(id);
+        final Set<Resource> resources = getResourceByUser(authorizationProvider, resourceServer, id, userId);
+        return convert(authorizationProvider, resourceServer, resources);
+    }
+
+    private Set<ResourceRepresentation> convert(AuthorizationProvider authorizationProvider, ResourceServer resourceServer, Set<Resource> resources) {
+        if (resources == null || resources.isEmpty()) {
+            return new HashSet<>();
+        }
+        Set<ResourceRepresentation> resourceRepresentations = new LinkedHashSet<>();
+        Map<String, Resource> alls = Maps.newLinkedHashMap();
+        for (Resource resource : resources) {
+            alls.put(resource.getId(), resource);
+        }
+        for (Resource resource : resources) {
+            if (resource.getParent() != null) {
+                Resource parent = alls.get(resource.getParent().getId());
+                if (parent != null) {
+                    parent.getSubResources().add(resource);
+                } else {
+                    resourceRepresentations.add(ModelToRepresentation.toRepresentation(resource, resourceServer, authorizationProvider));
+                }
+            } else {
+                resourceRepresentations.add(ModelToRepresentation.toRepresentation(resource, resourceServer, authorizationProvider));
+            }
+        }
+        return resourceRepresentations;
+    }
+
+    /**
+     * @param authorizationProvider
+     * @param resourceServer
+     * @param clientId
+     * @param userId
+     * @return
+     */
+    private Set<Resource> getResourceByUser(AuthorizationProvider authorizationProvider, ResourceServer resourceServer, String clientId, String userId) {
+        StoreFactory storeFactory = authorizationProvider.getStoreFactory();
+        PolicyStore policyStore = storeFactory.getPolicyStore();
+        ClientModel clientModel = realm.getClientById(clientId);
+        final Set<Resource> resources = new LinkedHashSet<>();
         if (clientModel != null && resourceServer != null && auth.clients().canView(clientModel)) {
             UserModel user = session.users().getUserById(userId, realm);
             Set<RoleModel> userRoles = getUserRoles(user, clientModel);
             policyStore.findByType("resource", resourceServer.getId()).forEach(policy -> {
-                policyToResource(resourceRepresentations, authorizationProvider, resourceServer, userRoles, policy);
+                resources.addAll(policyToResource(authorizationProvider, resourceServer, userRoles, policy));
             });
             policyStore.findByType("scope", resourceServer.getId()).forEach(policy -> {
-                policyScopeToResource(resourceRepresentations, authorizationProvider, resourceServer, userRoles, policy);
+                resources.addAll(policyScopeToResource(authorizationProvider, resourceServer, userRoles, policy));
             });
         } else {
             throw new ForbiddenException();
         }
-
-        return resourceRepresentations;
+        return resources;
     }
 
 
     /**
-     * @param resourceRepresentations
      * @param authorizationProvider
      * @param resourceServer
      * @param userRoles
      * @param policy
      */
-    private void policyScopeToResource(Set<ResourceRepresentation> resourceRepresentations, AuthorizationProvider authorizationProvider, ResourceServer resourceServer, Set<RoleModel> userRoles, Policy policy) {
+    private Set<Resource> policyScopeToResource(AuthorizationProvider authorizationProvider, ResourceServer resourceServer, Set<RoleModel> userRoles, Policy policy) {
         Set<Policy> associatedPolicies = policy.getAssociatedPolicies();
         Iterator<Policy> associatedPoliciesIterable = associatedPolicies.iterator();
+        Set<Resource> resources = new LinkedHashSet<>();
         while (associatedPoliciesIterable.hasNext()) {
             Policy associatedPolicie = associatedPoliciesIterable.next();
             Map<String, String> config = new HashMap(associatedPolicie.getConfig());
@@ -277,25 +313,26 @@ public class ClientsResource {
                     for (Map<String, Object> roleMap : roleConfig) {
                         if (containRole(userRoles, String.valueOf(roleMap.get("id")))) {
                             for (Resource resource : authorizationProvider.getStoreFactory().getResourceStore().findByScope(policy.getScopes().stream().map(Scope::getId).collect(Collectors.toList()), resourceServer.getId())) {
-                                resourceRepresentations.add(ModelToRepresentation.toRepresentation(resource, resourceServer, authorizationProvider));
+                                resources.add(resource);
                             }
                         }
                     }
                 }
             }
         }
+        return resources;
     }
 
     /**
-     * @param resourceRepresentations
      * @param authorizationProvider
      * @param resourceServer
      * @param userRoles
      * @param policy
      */
-    private void policyToResource(Set<ResourceRepresentation> resourceRepresentations, AuthorizationProvider authorizationProvider, ResourceServer resourceServer, Set<RoleModel> userRoles, Policy policy) {
+    private Set<Resource> policyToResource(AuthorizationProvider authorizationProvider, ResourceServer resourceServer, Set<RoleModel> userRoles, Policy policy) {
         Set<Policy> associatedPolicies = policy.getAssociatedPolicies();
         Iterator<Policy> associatedPoliciesIterable = associatedPolicies.iterator();
+        Set<Resource> resources = new LinkedHashSet<>();
         while (associatedPoliciesIterable.hasNext()) {
             Policy associatedPolicie = associatedPoliciesIterable.next();
             Map<String, String> config = new HashMap(associatedPolicie.getConfig());
@@ -311,13 +348,14 @@ public class ClientsResource {
                     for (Map<String, Object> roleMap : roleConfig) {
                         if (containRole(userRoles, String.valueOf(roleMap.get("id")))) {
                             for (Resource resource : policy.getResources()) {
-                                resourceRepresentations.add(ModelToRepresentation.toRepresentation(resource, resourceServer, authorizationProvider));
+                                resources.add(resource);
                             }
                         }
                     }
                 }
             }
         }
+        return resources;
     }
 
 
@@ -327,52 +365,37 @@ public class ClientsResource {
     @NoCache
     public Set<ResourceRepresentation> getClientRoleSubResourceByUser(final @PathParam("id") String id, final @PathParam("userId") String userId) {
         auth.clients().requireView();
-
-        final Set<ResourceRepresentation> representations = getClientRoleResourceByUser(id, userId);
-        final Map<String, Set<ResourceRepresentation>> representationMap = new HashMap<>();
-        final Set<ResourceRepresentation> resourceRepresentations = new LinkedHashSet<>();
-        Set<ResourceRepresentation> subResourceRepresentations;
-        for (ResourceRepresentation resourceRepresentation : representations) {
-            String parent = getSingleAttribute("parent", resourceRepresentation);
-            if (parent != null) {
-                if (representationMap.containsKey(parent)) {
-                    representationMap.get(parent).add(resourceRepresentation);
-                } else {
-                    subResourceRepresentations = new LinkedHashSet<>();
-                    subResourceRepresentations.add(resourceRepresentation);
-                    representationMap.put(parent, subResourceRepresentations);
-                }
-            } else {
-                resourceRepresentations.add(resourceRepresentation);
-            }
-        }
-
-        for (ResourceRepresentation resourceRepresentation : representations) {
-            String name = resourceRepresentation.getName();
-            if (representationMap.containsKey(name)) {
-                resourceRepresentation.getSubResources().addAll(representationMap.get(name));
-            }
-        }
-
-        return resourceRepresentations;
+        AuthorizationProvider authorizationProvider = session.getProvider(AuthorizationProvider.class);
+        StoreFactory storeFactory = authorizationProvider.getStoreFactory();
+        ResourceServer resourceServer = storeFactory.getResourceServerStore().findById(id);
+        final Set<Resource> resources = getResourceByUser(authorizationProvider, resourceServer, id, userId);
+        return convertSub(authorizationProvider, resourceServer, resources);
     }
 
 
-    /**
-     * @param name
-     * @param resourceRepresentation
-     * @return
-     */
-    public String getSingleAttribute(String name, ResourceRepresentation resourceRepresentation) {
-        if (resourceRepresentation.getAttributes() == null) {
-            return null;
+    private Set<ResourceRepresentation> convertSub(AuthorizationProvider authorizationProvider, ResourceServer resourceServer, Set<Resource> resources) {
+        if (resources == null || resources.isEmpty()) {
+            return new HashSet<>();
         }
-        List<String> values = resourceRepresentation.getAttributes().getOrDefault(name, Collections.emptyList());
-        if (values.isEmpty()) {
-            return null;
+        Set<ResourceRepresentation> resourceRepresentations = new LinkedHashSet<>();
+        Map<String, Resource> alls = Maps.newLinkedHashMap();
+        for (Resource resource : resources) {
+            alls.put(resource.getName(), resource);
         }
-
-        return values.get(0);
+        for (Resource resource : resources) {
+            String parentKey = resource.getSingleAttribute("parent");
+            if (parentKey != null) {
+                Resource parent = alls.get(parentKey);
+                if (parent != null) {
+                    parent.getSubResources().add(resource);
+                } else {
+                    resourceRepresentations.add(ModelToRepresentation.toRepresentation(resource, resourceServer, authorizationProvider));
+                }
+            } else {
+                resourceRepresentations.add(ModelToRepresentation.toRepresentation(resource, resourceServer, authorizationProvider));
+            }
+        }
+        return resourceRepresentations;
     }
 
 

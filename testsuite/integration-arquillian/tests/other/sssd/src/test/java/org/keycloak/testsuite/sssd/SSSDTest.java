@@ -190,7 +190,7 @@ public class SSSDTest extends AbstractKeycloakTest {
 
         profilePage.updateProfile("New first", "New last", "new@email.com");
 
-        Assert.assertEquals("You can't update your account as it is read only.", profilePage.getError());
+        Assert.assertEquals("You can't update your account as it is read-only.", profilePage.getError());
     }
 
     @Test

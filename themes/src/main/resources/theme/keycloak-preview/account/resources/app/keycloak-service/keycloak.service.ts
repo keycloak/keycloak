@@ -49,7 +49,7 @@ export class KeycloakService {
      *                       for details.
      * @returns {Promise<T>}
      */
-    static init(configOptions?: string|{}, initOptions?: InitOptions): Promise<any> {
+    static init(configOptions?: string|{}, initOptions: InitOptions = {}): Promise<any> {
         KeycloakService.keycloakAuth = Keycloak(configOptions);
 
         return new Promise((resolve, reject) => {
@@ -64,7 +64,7 @@ export class KeycloakService {
     }
     
     authenticated(): boolean {
-        return KeycloakService.keycloakAuth.authenticated;
+        return KeycloakService.keycloakAuth.authenticated ? KeycloakService.keycloakAuth.authenticated : false;
     }
 
     login(options?: KeycloakLoginOptions) {
@@ -79,11 +79,11 @@ export class KeycloakService {
         KeycloakService.keycloakAuth.accountManagement();
     }
     
-    authServerUrl(): string {
+    authServerUrl(): string | undefined {
         return KeycloakService.keycloakAuth.authServerUrl;
     }
     
-    realm(): string {
+    realm(): string | undefined {
         return KeycloakService.keycloakAuth.realm;
     }
 

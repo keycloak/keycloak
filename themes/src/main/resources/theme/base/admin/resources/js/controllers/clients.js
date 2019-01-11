@@ -99,7 +99,7 @@ module.controller('ClientCredentialsCtrl', function($scope, $location, realm, cl
     };
 });
 
-module.controller('ClientSecretCtrl', function($scope, $location, ClientSecret, Notifications) {
+module.controller('ClientSecretCtrl', function($scope, $location, ClientSecret, Notifications,Dialog) {
     var secret = ClientSecret.get({ realm : $scope.realm.realm, client : $scope.client.id },
         function() {
             $scope.secret = secret.value;
@@ -107,7 +107,7 @@ module.controller('ClientSecretCtrl', function($scope, $location, ClientSecret, 
     );
 
     $scope.changePassword = function() {
-         if(!$scope.secret){
+         Dialog.confirm("生成密钥","您确定重新生成密钥!",function(){
             var secret = ClientSecret.update({ realm : $scope.realm.realm, client : $scope.client.id },
                 function() {
                     Notifications.success('The secret has been changed.');
@@ -118,9 +118,9 @@ module.controller('ClientSecretCtrl', function($scope, $location, ClientSecret, 
                     $scope.secret = "error";
                 }
             );
-         }else{
-            Notifications.error("The secret was not changed.");
-         }
+         },function(){
+             Notifications.error("The secret was not changed.");
+         });
     };
 
     $scope.$watch(function() {
@@ -963,12 +963,6 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, flows, $ro
         {name: "INCLUSIVE_WITH_COMMENTS", value: "http://www.w3.org/TR/2001/REC-xml-c14n-20010315#WithComments"}
     ];
 
-    $scope.requestObjectSignatureAlgorithms = [
-        "any",
-        "none",
-        "RS256"
-    ];
-    
     $scope.requestObjectRequiredOptions = [
         "not required",
         "request or request_uri",

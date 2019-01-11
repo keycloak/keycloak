@@ -18,7 +18,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian-servers-app-server</artifactId>
-        <version>4.7.0.Final-SNAPSHOT</version>
+        <version>4.8.2.Final-SNAPSHOT</version>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
@@ -35,6 +35,10 @@
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-saml-undertow-adapter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-saml-servlet-filter-adapter</artifactId>
         </dependency>
         <dependency>
             <groupId>org.keycloak.testsuite</groupId>

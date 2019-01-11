@@ -31,6 +31,8 @@ import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.CrossDCTestEnricher;
 import org.keycloak.testsuite.arquillian.annotation.InitialDcState;
 import org.keycloak.testsuite.util.OAuthClient;
+import java.util.Set;
+import org.hamcrest.Matchers;
 
 /**
  * Tests userSessions and offline sessions preloading at startup
@@ -72,11 +74,10 @@ public class SessionsPreloadCrossDCTest extends AbstractAdminCrossDCTest {
         enableLoadBalancerNode(DC.SECOND, 0);
 
         // Ensure sessions are loaded in both 1st DC and 2nd DC
-        int sessions01 = getTestingClientForStartedNodeInDc(0).testing().cache(InfinispanConnectionProvider.USER_SESSION_CACHE_NAME).size();
-        int sessions02 = getTestingClientForStartedNodeInDc(1).testing().cache(InfinispanConnectionProvider.USER_SESSION_CACHE_NAME).size();
-        log.infof("sessions01: %d, sessions02: %d", sessions01, sessions02);
-        Assert.assertEquals(sessions01, sessionsBefore + SESSIONS_COUNT);
-        Assert.assertEquals(sessions02, sessionsBefore + SESSIONS_COUNT);
+        Set<String> sessions01keys = getTestingClientForStartedNodeInDc(0).testing().cache(InfinispanConnectionProvider.USER_SESSION_CACHE_NAME).enumerateKeys();
+        Set<String> sessions02keys = getTestingClientForStartedNodeInDc(1).testing().cache(InfinispanConnectionProvider.USER_SESSION_CACHE_NAME).enumerateKeys();
+        log.infof("sessions01keys: %s, sessions02keys: %s", sessions01keys, sessions02keys);
+        Assert.assertThat(sessions01keys, Matchers.equalTo(sessions02keys));
 
         // On DC2 sessions were preloaded from remoteCache
         Assert.assertTrue(getTestingClientForStartedNodeInDc(1).testing().cache(InfinispanConnectionProvider.WORK_CACHE_NAME).contains("distributed::remoteCacheLoad::sessions"));
@@ -117,11 +118,10 @@ public class SessionsPreloadCrossDCTest extends AbstractAdminCrossDCTest {
         enableLoadBalancerNode(DC.SECOND, 0);
 
         // Ensure sessions are loaded in both 1st DC and 2nd DC
-        int offlineSessions11 = getTestingClientForStartedNodeInDc(0).testing().cache(InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME).size();
-        int offlineSessions12 = getTestingClientForStartedNodeInDc(1).testing().cache(InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME).size();
-        log.infof("offlineSessions11: %d, offlineSessions12: %d", offlineSessions11, offlineSessions12);
-        Assert.assertEquals(offlineSessions11, offlineSessionsBefore + SESSIONS_COUNT);
-        Assert.assertEquals(offlineSessions12, offlineSessionsBefore + SESSIONS_COUNT);
+        Set<String> offlineSessions11keys = getTestingClientForStartedNodeInDc(0).testing().cache(InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME).enumerateKeys();
+        Set<String> offlineSessions12keys = getTestingClientForStartedNodeInDc(1).testing().cache(InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME).enumerateKeys();
+        log.infof("offlineSessions11keys: %s, offlineSessions12keys: %s", offlineSessions11keys, offlineSessions12keys);
+        Assert.assertThat(offlineSessions11keys, Matchers.equalTo(offlineSessions12keys));
 
         // On DC1 sessions were preloaded from DB. On DC2 sessions were preloaded from remoteCache
         Assert.assertTrue(getTestingClientForStartedNodeInDc(0).testing().cache(InfinispanConnectionProvider.WORK_CACHE_NAME).contains("distributed::offlineUserSessions"));
@@ -164,18 +164,17 @@ public class SessionsPreloadCrossDCTest extends AbstractAdminCrossDCTest {
 
         Retry.execute(() -> {
             // Ensure loginFailures are loaded in both 1st DC and 2nd DC
-            int size1 = getTestingClientForStartedNodeInDc(0).testing().cache(InfinispanConnectionProvider.LOGIN_FAILURE_CACHE_NAME).size();
-            int size2 = getTestingClientForStartedNodeInDc(1).testing().cache(InfinispanConnectionProvider.LOGIN_FAILURE_CACHE_NAME).size();
+            Set<String> keys1 = getTestingClientForStartedNodeInDc(0).testing().cache(InfinispanConnectionProvider.LOGIN_FAILURE_CACHE_NAME).enumerateKeys();
+            Set<String> keys2 = getTestingClientForStartedNodeInDc(1).testing().cache(InfinispanConnectionProvider.LOGIN_FAILURE_CACHE_NAME).enumerateKeys();
             int loginFailures1 = (Integer) getAdminClientForStartedNodeInDc(0).realm("test").attackDetection().bruteForceUserStatus(userId).get("numFailures");
             int loginFailures2 = (Integer) getAdminClientForStartedNodeInDc(1).realm("test").attackDetection().bruteForceUserStatus(userId).get("numFailures");
-            log.infof("size1: %d, size2: %d, loginFailures1: %d, loginFailures2: %d", size1, size2, loginFailures1, loginFailures2);
-            Assert.assertEquals(size1, 1);
-            Assert.assertEquals(size2, 1);
-            Assert.assertEquals(loginFailures1, loginFailuresBefore + SESSIONS_COUNT);
-            Assert.assertEquals(loginFailures2, loginFailuresBefore + SESSIONS_COUNT);
+            log.infof("keys1: %d, keys2: %d, loginFailures1: %d, loginFailures2: %d", keys1, keys2, loginFailures1, loginFailures2);
+            Assert.assertThat(keys1, Matchers.equalTo(keys2));
+            Assert.assertEquals(loginFailuresBefore + SESSIONS_COUNT, loginFailures1);
+            Assert.assertEquals(loginFailuresBefore + SESSIONS_COUNT, loginFailures2);
         }, 3, 400);
 
-        // On DC2 sessions were preloaded from from remoteCache
+        // On DC2 sessions were preloaded from remoteCache
         Assert.assertTrue(getTestingClientForStartedNodeInDc(1).testing().cache(InfinispanConnectionProvider.WORK_CACHE_NAME).contains("distributed::remoteCacheLoad::loginFailures"));
 
         // Disable brute force protector
@@ -202,7 +201,4 @@ public class SessionsPreloadCrossDCTest extends AbstractAdminCrossDCTest {
 
         return responses;
     }
-
-
-
 }
