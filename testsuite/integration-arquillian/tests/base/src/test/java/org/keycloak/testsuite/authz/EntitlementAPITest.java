@@ -35,6 +35,11 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
 
+import org.apache.http.client.HttpClient;
+import org.apache.http.impl.client.BasicCookieStore;
+import org.apache.http.impl.client.DefaultHttpRequestRetryHandler;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.hamcrest.Matchers;
 import org.jboss.arquillian.container.test.api.ContainerController;
 import org.jboss.arquillian.test.api.ArquillianResource;
@@ -1367,7 +1372,19 @@ public class EntitlementAPITest extends AbstractAuthzTest {
 
     private AuthzClient getAuthzClient(String configFile) {
         if (authzClient == null) {
-            authzClient = AuthzClient.create(getClass().getResourceAsStream("/authorization-test/" + configFile));
+            Configuration configuration;
+            try {
+                configuration = JsonSerialization.readValue(getClass().getResourceAsStream("/authorization-test/" + configFile), Configuration.class);
+            } catch (IOException e) {
+                throw new RuntimeException("Failed to read configuration", e);
+            }
+            PoolingHttpClientConnectionManager connectionManager = new PoolingHttpClientConnectionManager();
+            connectionManager.setValidateAfterInactivity(10);
+            connectionManager.setMaxTotal(10);
+            HttpClient client = HttpClients.custom()
+                    .setConnectionManager(connectionManager)
+                    .build();
+            authzClient = AuthzClient.create(new Configuration(configuration.getAuthServerUrl(), configuration.getRealm(), configuration.getResource(), configuration.getCredentials(), client));
         }
 
         return authzClient;
