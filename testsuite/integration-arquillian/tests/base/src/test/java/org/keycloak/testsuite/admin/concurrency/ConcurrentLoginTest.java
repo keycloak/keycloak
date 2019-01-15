@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -312,7 +311,7 @@ public class ConcurrentLoginTest extends AbstractConcurrencyTest {
     }
 
     private static Map<String, String> getQueryFromUrl(String url) throws URISyntaxException {
-        return URLEncodedUtils.parse(new URI(url), Charset.forName("UTF-8")).stream()
+        return URLEncodedUtils.parse(new URI(url), "UTF-8").stream()
                 .collect(Collectors.toMap(p -> p.getName(), p -> p.getValue()));
     }
 

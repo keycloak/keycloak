@@ -127,22 +127,23 @@ public class OIDCKeyCloakServerBrokerBasicTest extends AbstractKeycloakIdentityP
 
     @Test
     public void testLogoutWorksWithTokenTimeout() {
-        Keycloak keycloak = Keycloak.getInstance("http://localhost:8081/auth", "master", "admin", "admin", org.keycloak.models.Constants.ADMIN_CLI_CLIENT_ID);
-        RealmRepresentation realm = keycloak.realm("realm-with-oidc-identity-provider").toRepresentation();
-        assertNotNull(realm);
-        int oldLifespan = realm.getAccessTokenLifespan();
-        realm.setAccessTokenLifespan(1);
-        keycloak.realm("realm-with-oidc-identity-provider").update(realm);
-        IdentityProviderRepresentation idp =  keycloak.realm("realm-with-broker").identityProviders().get("kc-oidc-idp").toRepresentation();
-        idp.getConfig().put("backchannelSupported", "false");
-        keycloak.realm("realm-with-broker").identityProviders().get("kc-oidc-idp").update(idp);
-        logoutTimeOffset = 2;
-        super.testSuccessfulAuthentication();
-        logoutTimeOffset = 0;
-        realm.setAccessTokenLifespan(oldLifespan);
-        keycloak.realm("realm-with-oidc-identity-provider").update(realm);
-        idp.getConfig().put("backchannelSupported", "true");
-        keycloak.realm("realm-with-broker").identityProviders().get("kc-oidc-idp").update(idp);
+        try (Keycloak keycloak = Keycloak.getInstance("http://localhost:8081/auth", "master", "admin", "admin", org.keycloak.models.Constants.ADMIN_CLI_CLIENT_ID)) {
+            RealmRepresentation realm = keycloak.realm("realm-with-oidc-identity-provider").toRepresentation();
+            assertNotNull(realm);
+            int oldLifespan = realm.getAccessTokenLifespan();
+            realm.setAccessTokenLifespan(1);
+            keycloak.realm("realm-with-oidc-identity-provider").update(realm);
+            IdentityProviderRepresentation idp =  keycloak.realm("realm-with-broker").identityProviders().get("kc-oidc-idp").toRepresentation();
+            idp.getConfig().put("backchannelSupported", "false");
+            keycloak.realm("realm-with-broker").identityProviders().get("kc-oidc-idp").update(idp);
+            logoutTimeOffset = 2;
+            super.testSuccessfulAuthentication();
+            logoutTimeOffset = 0;
+            realm.setAccessTokenLifespan(oldLifespan);
+            keycloak.realm("realm-with-oidc-identity-provider").update(realm);
+            idp.getConfig().put("backchannelSupported", "true");
+            keycloak.realm("realm-with-broker").identityProviders().get("kc-oidc-idp").update(idp);
+        }
     }
 
     @Test

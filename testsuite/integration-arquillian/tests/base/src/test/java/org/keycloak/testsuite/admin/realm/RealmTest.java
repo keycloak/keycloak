@@ -271,8 +271,9 @@ public class RealmTest extends AbstractAdminTest {
     public void loginAfterRemoveRealm() {
         realm.remove();
 
-        ServerInfoResource serverInfoResource = Keycloak.getInstance(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth", "master", "admin", "admin", Constants.ADMIN_CLI_CLIENT_ID).serverInfo();
-        serverInfoResource.getInfo();
+        try (Keycloak client = Keycloak.getInstance(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth", "master", "admin", "admin", Constants.ADMIN_CLI_CLIENT_ID)) {
+            client.serverInfo().getInfo();
+        }
 
         reCreateRealm();
     }

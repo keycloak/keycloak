@@ -439,7 +439,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
 
         if (realmId != null) {
             query.realm(realmId);
-        };
+        }
 
         if (authRealm != null) {
             query.authRealm(authRealm);
@@ -548,7 +548,9 @@ public class TestingResourceProvider implements RealmResourceProvider {
     @Produces(MediaType.APPLICATION_JSON)
     public String getSSOCookieValue() {
         Map<String, Cookie> cookies = request.getHttpHeaders().getCookies();
-        return cookies.get(AuthenticationManager.KEYCLOAK_IDENTITY_COOKIE).getValue();
+        Cookie cookie = cookies.get(AuthenticationManager.KEYCLOAK_IDENTITY_COOKIE);
+        if (cookie == null) return null;
+        return cookie.getValue();
     }
 
 

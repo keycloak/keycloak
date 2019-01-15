@@ -20,7 +20,6 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.client.LaxRedirectStrategy;
-import org.hamcrest.CoreMatchers;
 import org.jboss.arquillian.container.test.api.Deployer;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.arquillian.test.api.ArquillianResource;
@@ -52,7 +51,6 @@ import org.keycloak.testsuite.adapter.page.PhotozClientAuthzTestApp;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.AppServerTestEnricher;
 import org.keycloak.testsuite.auth.page.login.OAuthGrant;
-import org.keycloak.testsuite.util.ContainerAssume;
 import org.keycloak.testsuite.util.DroneUtils;
 import org.keycloak.testsuite.util.JavascriptBrowser;
 import org.keycloak.testsuite.util.javascript.JavascriptTestExecutorWithAuthorization;
@@ -227,8 +225,6 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractPhotozJav
 
     @Test
     public void testOnlyOwnerCanDeleteAlbum() throws Exception {
-        ContainerAssume.assumeNotAppServerUndertow();
-
         loginToClientPage(aliceUser);
         clientPage.createAlbum(ALICE_ALBUM_NAME);
 
@@ -301,8 +297,6 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractPhotozJav
 
     @Test
     public void testAdminWithoutPermissionsToTypedResource() throws Exception {
-        ContainerAssume.assumeNotAppServerUndertow();
-
         loginToClientPage(aliceUser);
         clientPage.createAlbum(ALICE_ALBUM_NAME);
         
@@ -538,8 +532,6 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractPhotozJav
 
     @Test
     public void testInheritPermissionFromResourceParent() throws Exception {
-        ContainerAssume.assumeNotAppServerUndertow();
-
         loginToClientPage(aliceUser);
 
         final String RESOURCE_NAME = "My-Resource-Instance";

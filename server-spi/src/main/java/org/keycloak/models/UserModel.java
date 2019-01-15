@@ -36,6 +36,8 @@ public interface UserModel extends RoleMapperModel {
     String EMAIL = "email";
     String LOCALE = "locale";
     String IDCARD = "idcard";
+    String INCLUDE_SERVICE_ACCOUNT = "keycloak.session.realm.users.query.include_service_account";
+    String GROUPS = "keycloak.session.realm.users.query.groups";
 
     interface UserRemovedEvent extends ProviderEvent {
         RealmModel getRealm();

@@ -170,13 +170,10 @@ public class PermissionsTest extends AbstractKeycloakTest {
 
     @AfterClass
     public static void removeTestUsers() throws Exception {
-        Keycloak adminClient = AdminClientUtil.createAdminClient();
-        try {
+        try (Keycloak adminClient = AdminClientUtil.createAdminClient()) {
             for (UserRepresentation u : adminClient.realm("master").users().search("permissions-test-master-", 0, 100)) {
                 adminClient.realm("master").users().get(u.getId()).remove();
             }
-        } finally {
-            adminClient.close();
         }
     }
 
