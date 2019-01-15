@@ -36,6 +36,7 @@ import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.testsuite.ActionURIUtils;
+import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
 import org.keycloak.testsuite.util.KerberosRule;
 import org.keycloak.util.ldap.KerberosEmbeddedServer;
 
@@ -156,6 +157,7 @@ public class KerberosStandaloneTest extends AbstractKerberosSingleRealmTest {
      * @throws Exception
      */
     @Test
+    @UncaughtServerErrorExpected
     public void handleUnknownKerberosRealm() throws Exception {
         // Switch kerberos realm to "unavailable"
         List<ComponentRepresentation> reps = testRealmResource().components().query("test", UserStorageProvider.class.getName());
