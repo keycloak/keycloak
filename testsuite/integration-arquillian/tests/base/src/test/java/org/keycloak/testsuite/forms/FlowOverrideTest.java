@@ -41,6 +41,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
 import org.keycloak.testsuite.authentication.PushButtonAuthenticatorFactory;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.ErrorPage;
@@ -556,9 +557,16 @@ public class FlowOverrideTest extends AbstractTestRealmKeycloakTest {
         clientRep.getAuthenticationFlowBindingOverrides().put(AuthenticationFlowBindings.BROWSER_BINDING, browserFlowId);
         clients.get(clientRep.getId()).update(clientRep);
         testWithClientBrowserOverride();
+    }
 
-        query = clients.findByClientId(TEST_APP_FLOW);
-        clientRep = query.get(0);
+    @Test
+    @UncaughtServerErrorExpected
+    public void testRestInterfaceWithBadId() throws Exception {
+        ClientsResource clients = adminClient.realm("test").clients();
+        List<ClientRepresentation> query = clients.findByClientId(TEST_APP_FLOW);
+        ClientRepresentation clientRep = query.get(0);
+        String browserFlowId = clientRep.getAuthenticationFlowBindingOverrides().get(AuthenticationFlowBindings.BROWSER_BINDING);
+
         clientRep.getAuthenticationFlowBindingOverrides().put(AuthenticationFlowBindings.BROWSER_BINDING, "bad-id");
         try {
             clients.get(clientRep.getId()).update(clientRep);

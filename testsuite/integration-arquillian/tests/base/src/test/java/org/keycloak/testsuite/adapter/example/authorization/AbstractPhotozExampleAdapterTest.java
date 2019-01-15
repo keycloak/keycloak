@@ -50,6 +50,7 @@ import org.keycloak.representations.idm.authorization.ResourceServerRepresentati
 import org.keycloak.testsuite.adapter.page.PhotozClientAuthzTestApp;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.AppServerTestEnricher;
+import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
 import org.keycloak.testsuite.auth.page.login.OAuthGrant;
 import org.keycloak.testsuite.util.DroneUtils;
 import org.keycloak.testsuite.util.JavascriptBrowser;
@@ -214,6 +215,7 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractPhotozJav
     }
 
     @Test
+    @UncaughtServerErrorExpected
     public void createAlbumWithInvalidUser() throws Exception {
         loginToClientPage(aliceUser);
 

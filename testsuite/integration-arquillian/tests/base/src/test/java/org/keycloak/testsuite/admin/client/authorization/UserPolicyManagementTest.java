@@ -41,6 +41,7 @@ import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.representations.idm.authorization.Logic;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
+import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
 
@@ -200,6 +201,7 @@ public class UserPolicyManagementTest extends AbstractPolicyManagementTest {
     }
 
     @Test
+    @UncaughtServerErrorExpected
     public void failInvalidUser() {
         AuthorizationResource authorization = getClient().authorization();
 
