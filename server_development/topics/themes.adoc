@@ -25,7 +25,7 @@ NOTE: To set the theme for the `master` admin console you need to set the admin 
 refresh the page.
 
 To change the welcome theme you need to edit `standalone.xml`, `standalone-ha.xml`, or `domain.xml`.
-For more information on where the `standalone.xml`, `standalone-ha.xml`, or `domain.xml` file resides see the link:{installguide_link}[{installguide_name}].
+For more information on where these files reside see the link:{installguide_link}[{installguide_name}].
 
 Add `welcomeTheme` to the theme element, for example:
 
@@ -43,7 +43,7 @@ If the server is running you need to restart the server for the changes to the w
 === Default Themes
 
 {project_name} comes bundled with default themes in the server's root `themes` directory. To simplify upgrading you should not edit the bundled themes
-directly. Instead create your own theme that extends one of the bundle themes.
+directly. Instead create your own theme that extends one of the bundled themes.
 
 === Creating a Theme
 
@@ -117,7 +117,7 @@ You can also add your own custom properties and use them from custom templates.
 
 ==== Stylesheets
 
-A theme can have one or more stylesheets, to add a stylesheet create a file in the `<THEME TYPE>/resources/css` directory of your theme. Then add it to the `styles`
+A theme can have one or more stylesheets. To add a stylesheet create a file in the `<THEME TYPE>/resources/css` directory of your theme. Then add it to the `styles`
 property in `theme.properties`.
 
 For example to add `styles.css` to the `mytheme` create `themes/mytheme/login/resources/css/styles.css` with the following content:
@@ -192,7 +192,7 @@ Or to use directly in HTML templates add the following to a custom HTML template
 
 ==== Messages
 
-Text in the templates are loaded from message bundles. A theme that extends another theme will inherit all messages from the parents message bundle and you can
+Text in the templates is loaded from message bundles. A theme that extends another theme will inherit all messages from the parent's message bundle and you can
 override individual messages by adding `<THEME TYPE>/messages/messages_en.properties` to your theme.
 
 For example to replace `Username` on the login form with `Your Username` for the `mytheme` create the file
@@ -278,7 +278,7 @@ Check out the https://freemarker.apache.org/docs/index.html[FreeMarker Manual] f
 
 ==== Emails
 
-To edit the subject and contents for emails, for example password recovery email, add a message bundle to the `email` type of your theme. There's three messages for each email. One for the subject, one for the plain text body and one for the html body.
+To edit the subject and contents for emails, for example password recovery email, add a message bundle to the `email` type of your theme. There are three messages for each email. One for the subject, one for the plain text body and one for the html body.
 
 To see all emails available take a look at `themes/base/email/messages/messages_en.properties`.
 
@@ -293,7 +293,7 @@ passwordResetBodyHtml=<a href="{0}">Reset password</a>
 
 === Deploying Themes
 
-Themes can be deployed to {project_name} by copying the theme directory to `themes` or it can be deployed as an archive. During development copying the
+Themes can be deployed to {project_name} by copying the theme directory to `themes` or it can be deployed as an archive. During development you can copy the
 theme to the `themes` directory, but in production you may want to consider using an `archive`. An `archive` makes it simpler to have a versioned copy of
 the theme, especially when you have multiple instances of {project_name} for example with clustering.
 

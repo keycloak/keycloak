@@ -8,7 +8,7 @@ Also note that provider JARs can make use of the `jboss-deployment-structure.xml
 can use in a {appserver_name} environment. For more details on this file, see the {appserver_name} documentation. It
 allows you to pull in external dependencies among other fine-grained actions.
 
-Implementations of `UserStorageProviderFactory` are required to be plain java objects. But we also currently support
+Provider implementations are required to be plain java objects. But we also currently support
 implementing `UserStorageProvider` classes as Stateful EJBs. This is especially useful if you want to use JPA
 to connect to a relational store. This is how you would do it:
 

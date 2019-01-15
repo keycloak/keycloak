@@ -1,19 +1,19 @@
 
-=== Client Initiated Account Linking
+=== Client-initiated Account Linking
 
 Some applications want to integrate with social providers like Facebook, but do not want to provide an option to login via
 these social providers.  {project_name} offers a browser-based API that applications can use to link an existing
-user account to a specific external IDP.  This is called client initiated account linking.
+user account to a specific external IDP.  This is called client-initiated account linking. Account linking can only be initiated by OIDC applications.
 
-The way it works is that the application forward's the user's browser to a URL on the {project_name} server requesting
+The way it works is that the application forwards the user's browser to a URL on the {project_name} server requesting
 that it wants to link the user's account to a specific external provider (i.e. Facebook).  The server
 initiates a login with the external provider.  The browser logs in at the external provider and is redirected
-back to the auth server.  The auth server establishes the link and redirects back to the application with a confirmation.
+back to the server.  The server establishes the link and redirects back to the application with a confirmation.
 
 There are some preconditions that must be met by the client application before it can initiate this protocol:
 
 * The desired identity provider must be configured and enabled for the user's realm in the admin console.
-* The application must already be logged in as an existing user via the OIDC protocol
+* The user account must already be logged in as an existing user via the OIDC protocol
 * The user must have an `account.manage-account` or `account.manage-account-links` role mapping.
 * The application must be granted the scope for those roles within its access token
 * The application must have access to its access token as it needs information within it to generate the redirect URL.
