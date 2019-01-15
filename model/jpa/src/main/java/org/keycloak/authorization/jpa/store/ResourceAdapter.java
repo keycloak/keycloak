@@ -315,16 +315,19 @@ public class ResourceAdapter extends AbstractAuthorizationModel implements Resou
 
     @Override
     public Integer getSort() {
+        throwExceptionIfReadonly();
         return entity.getSort();
     }
 
     @Override
     public String getPermission() {
+        throwExceptionIfReadonly();
         return entity.getPermission();
     }
 
     @Override
     public boolean isEnabled() {
+        throwExceptionIfReadonly();
         return entity.isEnabled();
     }
 

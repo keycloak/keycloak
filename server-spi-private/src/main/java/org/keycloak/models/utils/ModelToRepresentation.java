@@ -361,9 +361,12 @@ public class ModelToRepresentation {
         if (realm.getBrowserFlow() != null) rep.setBrowserFlow(realm.getBrowserFlow().getAlias());
         if (realm.getRegistrationFlow() != null) rep.setRegistrationFlow(realm.getRegistrationFlow().getAlias());
         if (realm.getDirectGrantFlow() != null) rep.setDirectGrantFlow(realm.getDirectGrantFlow().getAlias());
-        if (realm.getResetCredentialsFlow() != null) rep.setResetCredentialsFlow(realm.getResetCredentialsFlow().getAlias());
-        if (realm.getClientAuthenticationFlow() != null) rep.setClientAuthenticationFlow(realm.getClientAuthenticationFlow().getAlias());
-        if (realm.getDockerAuthenticationFlow() != null) rep.setDockerAuthenticationFlow(realm.getDockerAuthenticationFlow().getAlias());
+        if (realm.getResetCredentialsFlow() != null)
+            rep.setResetCredentialsFlow(realm.getResetCredentialsFlow().getAlias());
+        if (realm.getClientAuthenticationFlow() != null)
+            rep.setClientAuthenticationFlow(realm.getClientAuthenticationFlow().getAlias());
+        if (realm.getDockerAuthenticationFlow() != null)
+            rep.setDockerAuthenticationFlow(realm.getDockerAuthenticationFlow().getAlias());
 
         List<String> defaultRoles = realm.getDefaultRoles();
         if (!defaultRoles.isEmpty()) {
@@ -848,6 +851,16 @@ public class ModelToRepresentation {
         return toRepresentation(model, resourceServer, authorization, true);
     }
 
+    public static ResourceRepresentation toResourceHierarchy(Resource model, ResourceServer resourceServer, AuthorizationProvider authorization, Boolean deep) {
+        ResourceRepresentation resource = toRepresentation(model, resourceServer, authorization, deep);
+        List<ResourceRepresentation> subResources = new LinkedList<>();
+        for (Resource subResource : model.getSubResources()) {
+            subResources.add(toResourceHierarchy(subResource, resourceServer, authorization, deep));
+        }
+        resource.setSubResources(subResources);
+        return resource;
+    }
+
     public static ResourceRepresentation toRepresentation(Resource model, ResourceServer resourceServer, AuthorizationProvider authorization, Boolean deep) {
         ResourceRepresentation resource = new ResourceRepresentation();
 
@@ -867,11 +880,6 @@ public class ModelToRepresentation {
         resource.setPermission(model.getPermission());
         resource.setEnabled(model.isEnabled());
 
-        List<ResourceRepresentation> subResources = new LinkedList<>();
-        for (Resource subResource : model.getSubResources()) {
-            subResources.add(toRepresentation(subResource, resourceServer, authorization, deep));
-        }
-        resource.setSubResources(subResources);
 
         KeycloakSession keycloakSession = authorization.getKeycloakSession();
         RealmModel realm = authorization.getRealm();
@@ -890,7 +898,7 @@ public class ModelToRepresentation {
         }
 
         resource.setOwner(owner);
-
+        resource.setAttributes(new HashMap<>(model.getAttributes()));
         if (deep) {
             resource.setScopes(model.getScopes().stream().map(model1 -> {
                 ScopeRepresentation scope = new ScopeRepresentation();
@@ -902,12 +910,11 @@ public class ModelToRepresentation {
                 }
                 return scope;
             }).collect(Collectors.toSet()));
-
-            resource.setAttributes(new HashMap<>(model.getAttributes()));
         }
 
         return resource;
     }
+
 
     public static PermissionTicketRepresentation toRepresentation(PermissionTicket ticket, AuthorizationProvider authorization) {
         return toRepresentation(ticket, authorization, false);

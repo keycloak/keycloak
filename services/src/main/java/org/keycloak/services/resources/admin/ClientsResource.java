@@ -233,28 +233,32 @@ public class ClientsResource {
         StoreFactory storeFactory = authorizationProvider.getStoreFactory();
         ResourceServer resourceServer = storeFactory.getResourceServerStore().findById(id);
         final Set<Resource> resources = getResourceByUser(authorizationProvider, resourceServer, id, userId);
-        return convert(authorizationProvider, resourceServer, resources);
+        Map<String, ResourceRepresentation> alls = Maps.newLinkedHashMap();
+        Set<ResourceRepresentation> allsResource = new LinkedHashSet<>();
+        for (Resource resource : resources) {
+            ResourceRepresentation resourceRepresentation = ModelToRepresentation.toRepresentation(resource, resourceServer, authorizationProvider, false);
+            resourceRepresentation.setParent(resource.getParentId());
+            allsResource.add(resourceRepresentation);
+            alls.put(resource.getId(), resourceRepresentation);
+        }
+        return convert(alls, allsResource);
     }
 
-    private Set<ResourceRepresentation> convert(AuthorizationProvider authorizationProvider, ResourceServer resourceServer, Set<Resource> resources) {
+    private Set<ResourceRepresentation> convert(Map<String, ResourceRepresentation> alls, Set<ResourceRepresentation> resources) {
         if (resources == null || resources.isEmpty()) {
             return new HashSet<>();
         }
         Set<ResourceRepresentation> resourceRepresentations = new LinkedHashSet<>();
-        Map<String, Resource> alls = Maps.newLinkedHashMap();
-        for (Resource resource : resources) {
-            alls.put(resource.getId(), resource);
-        }
-        for (Resource resource : resources) {
-            if (resource.getParent() != null) {
-                Resource parent = alls.get(resource.getParent().getId());
+        for (ResourceRepresentation resourceRepresentation : resources) {
+            if (resourceRepresentation.getParent() != null) {
+                ResourceRepresentation parent = alls.get(resourceRepresentation.getParent());
                 if (parent != null) {
-                    parent.getSubResources().add(resource);
+                    parent.getSubResources().add(resourceRepresentation);
                 } else {
-                    resourceRepresentations.add(ModelToRepresentation.toRepresentation(resource, resourceServer, authorizationProvider));
+                    resourceRepresentations.add(resourceRepresentation);
                 }
             } else {
-                resourceRepresentations.add(ModelToRepresentation.toRepresentation(resource, resourceServer, authorizationProvider));
+                resourceRepresentations.add(resourceRepresentation);
             }
         }
         return resourceRepresentations;
@@ -274,7 +278,7 @@ public class ClientsResource {
         final Set<Resource> resources = new LinkedHashSet<>();
         if (clientModel != null && resourceServer != null && auth.clients().canView(clientModel)) {
             UserModel user = session.users().getUserById(userId, realm);
-            Set<RoleModel> userRoles = getUserRoles(user, clientModel);
+            Set<RoleModel> userRoles = user.getClientRoleMappings(clientModel);
             policyStore.findByType("resource", resourceServer.getId()).forEach(policy -> {
                 resources.addAll(policyToResource(authorizationProvider, resourceServer, userRoles, policy));
             });
@@ -369,51 +373,16 @@ public class ClientsResource {
         StoreFactory storeFactory = authorizationProvider.getStoreFactory();
         ResourceServer resourceServer = storeFactory.getResourceServerStore().findById(id);
         final Set<Resource> resources = getResourceByUser(authorizationProvider, resourceServer, id, userId);
-        return convertSub(authorizationProvider, resourceServer, resources);
-    }
-
-
-    private Set<ResourceRepresentation> convertSub(AuthorizationProvider authorizationProvider, ResourceServer resourceServer, Set<Resource> resources) {
-        if (resources == null || resources.isEmpty()) {
-            return new HashSet<>();
-        }
-        Set<ResourceRepresentation> resourceRepresentations = new LinkedHashSet<>();
-        Map<String, Resource> alls = Maps.newLinkedHashMap();
+        Map<String, ResourceRepresentation> alls = Maps.newLinkedHashMap();
+        Set<ResourceRepresentation> allsResource = new LinkedHashSet<>();
         for (Resource resource : resources) {
-            alls.put(resource.getName(), resource);
-        }
-        for (Resource resource : resources) {
+            ResourceRepresentation resourceRepresentation = ModelToRepresentation.toRepresentation(resource, resourceServer, authorizationProvider, false);
             String parentKey = resource.getSingleAttribute("parent");
-            if (parentKey != null) {
-                Resource parent = alls.get(parentKey);
-                if (parent != null) {
-                    parent.getSubResources().add(resource);
-                } else {
-                    resourceRepresentations.add(ModelToRepresentation.toRepresentation(resource, resourceServer, authorizationProvider));
-                }
-            } else {
-                resourceRepresentations.add(ModelToRepresentation.toRepresentation(resource, resourceServer, authorizationProvider));
-            }
+            resourceRepresentation.setParent(parentKey);
+            allsResource.add(resourceRepresentation);
+            alls.put(resource.getName(), resourceRepresentation);
         }
-        return resourceRepresentations;
-    }
-
-
-    /**
-     * 获得用户角色
-     *
-     * @param user
-     * @param client
-     * @return
-     */
-    private Set<RoleModel> getUserRoles(UserModel user, ClientModel client) {
-        Set<RoleModel> userRoles = new HashSet<>();
-        for (RoleModel roleModel : client.getRoles()) {
-            if (user.hasRole(roleModel)) {
-                userRoles.add(roleModel);
-            }
-        }
-        return userRoles;
+        return convert(alls, allsResource);
     }
 
 

@@ -49,6 +49,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static org.keycloak.models.utils.ModelToRepresentation.toRepresentation;
+import static org.keycloak.models.utils.ModelToRepresentation.toResourceHierarchy;
 import static org.keycloak.models.utils.RepresentationToModel.toModel;
 
 /**
@@ -375,10 +376,13 @@ public class ResourceSetService {
                          @QueryParam("deep") Boolean deep,
                          @QueryParam("first") Integer firstResult,
                          @QueryParam("max") Integer maxResult) {
-        if (id != null || name != null || uri != null || type != null) {
-            return find(id, name, uri, owner, type, scope, matchingUri, deep, firstResult, maxResult, (BiFunction<Resource, Boolean, ResourceRepresentation>) (resource, deep1) -> toRepresentation(resource, resourceServer, authorization, deep1));
+        if (deep == null) {
+            deep = true;
         }
-        return find(deep, firstResult, maxResult, (BiFunction<Resource, Boolean, ResourceRepresentation>) (resource, deep1) -> toRepresentation(resource, resourceServer, authorization, deep1));
+        if (id != null || name != null || uri != null || type != null) {
+            return find(id, name, uri, owner, type, scope, matchingUri, deep, firstResult, maxResult, (BiFunction<Resource, Boolean, ResourceRepresentation>) (resource, deep1) -> toResourceHierarchy(resource, resourceServer, authorization, deep1));
+        }
+        return find(deep, firstResult, maxResult, (BiFunction<Resource, Boolean, ResourceRepresentation>) (resource, deep1) -> toResourceHierarchy(resource, resourceServer, authorization, deep1));
     }
 
     public Response find(Boolean deep,
@@ -387,11 +391,6 @@ public class ResourceSetService {
                          BiFunction<Resource, Boolean, ?> toRepresentation) {
 
         StoreFactory storeFactory = authorization.getStoreFactory();
-
-        if (deep == null) {
-            deep = true;
-        }
-
         List<Resource> resources = storeFactory.getResourceStore().findTopLevel(this.resourceServer.getId(), firstResult != null ? firstResult : -1, maxResult != null ? maxResult : Constants.DEFAULT_MAX_RESULTS);
 
         Boolean finalDeep = deep;
@@ -418,10 +417,6 @@ public class ResourceSetService {
         requireView();
 
         StoreFactory storeFactory = authorization.getStoreFactory();
-
-        if (deep == null) {
-            deep = true;
-        }
 
         Map<String, String[]> search = new HashMap<>();
 

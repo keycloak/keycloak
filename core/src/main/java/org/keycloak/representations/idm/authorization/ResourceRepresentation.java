@@ -62,6 +62,7 @@ public class ResourceRepresentation {
     private Integer sort;
     private String permission;
     private boolean enabled;
+    private String parent;
     /**
      * Creates a new instance.
      *
@@ -77,6 +78,7 @@ public class ResourceRepresentation {
         this.uris = uris;
         this.type = type;
         this.iconUri = iconUri;
+        this.subResources=new LinkedList<>();
     }
 
     public ResourceRepresentation(String name, Set<ScopeRepresentation> scopes, String uri, String type, String iconUri) {
@@ -314,5 +316,13 @@ public class ResourceRepresentation {
 
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
+    }
+
+    public String getParent() {
+        return parent;
+    }
+
+    public void setParent(String parent) {
+        this.parent = parent;
     }
 }
