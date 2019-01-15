@@ -159,7 +159,7 @@ public class PhotozClientAuthzTestApp extends AbstractPageWithInjectedUrl {
     
     public void requestEntitlements(JavascriptStateValidator validator) {
         testExecutor.executeAsyncScript("var callback = arguments[arguments.length - 1];" +
-                "window.authorization.entitlement('photoz-restful-api').then(function (rpt) {" +
+                "window.authorization.entitlement('photoz-restful-api', {}).then(function (rpt) {" +
                 "     callback(JSON.stringify(jwt_decode(rpt), null, '  '));" +
                 "});", validator);
     }
