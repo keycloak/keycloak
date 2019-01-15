@@ -20,8 +20,10 @@ import org.jboss.arquillian.container.test.spi.client.deployment.ApplicationArch
 import org.jboss.arquillian.test.spi.TestClass;
 import org.jboss.logging.Logger;
 import org.jboss.shrinkwrap.api.Archive;
+import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.keycloak.testsuite.utils.annotation.UseServletFilter;
 import org.keycloak.testsuite.utils.arquillian.DeploymentArchiveProcessorUtils;
+import static org.keycloak.testsuite.utils.arquillian.DeploymentArchiveProcessorUtils.WEBXML_PATH;
 import org.keycloak.testsuite.utils.io.IOUtil;
 import org.w3c.dom.Document;
 
@@ -49,21 +51,23 @@ public class EAP6DeploymentArchiveProcessor implements ApplicationArchiveProcess
 
     private void modifyWebXML(Archive<?> archive, TestClass testClass) {
         if (!archive.contains(DeploymentArchiveProcessorUtils.WEBXML_PATH)) return;
-        if (!testClass.getJavaClass().isAnnotationPresent(UseServletFilter.class)) return;
-        if (!archive.contains(DeploymentArchiveProcessorUtils.JBOSS_DEPLOYMENT_XML_PATH)) return;
+        if (testClass.getJavaClass().isAnnotationPresent(UseServletFilter.class) &&
+                archive.contains(DeploymentArchiveProcessorUtils.JBOSS_DEPLOYMENT_XML_PATH)) {
+            log.debug("Modifying WEB.XML in " + archive.getName() + " for Servlet Filter.");
+            DeploymentArchiveProcessorUtils.modifyWebXMLForServletFilter(archive, testClass);
+            DeploymentArchiveProcessorUtils.addFilterDependencies(archive, testClass);
+        }
 
-        log.debug("Modifying WEB.XML in " + archive.getName() + " for Servlet Filter.");
-        DeploymentArchiveProcessorUtils.modifyWebXMLForServletFilter(archive, testClass);
-        DeploymentArchiveProcessorUtils.addFilterDependencies(archive, testClass);
-
-        Document webXmlDoc;
         try {
-            webXmlDoc = IOUtil.loadXML(archive.get(DeploymentArchiveProcessorUtils.WEBXML_PATH).getAsset().openStream());
+            Document webXmlDoc = IOUtil.loadXML(archive.get(DeploymentArchiveProcessorUtils.WEBXML_PATH).getAsset().openStream());
+
+            IOUtil.modifyDocElementValue(webXmlDoc, "param-value", ".*infinispan\\.InfinispanSessionCacheIdMapperUpdater", 
+                "org.keycloak.adapters.saml.jbossweb.infinispan.InfinispanSessionCacheIdMapperUpdater");
+
+            archive.add(new StringAsset((IOUtil.documentToString(webXmlDoc))), WEBXML_PATH);
         } catch (IllegalArgumentException ex) {
             throw new RuntimeException("Error when processing " + archive.getName(), ex);
         }
-        IOUtil.modifyDocElementValue(webXmlDoc, "param-value", "wildfly.infinispan.InfinispanSessionCacheIdMapperUpdater", 
-                "org.keycloak.adapters.saml.jbossweb.infinispan.InfinispanSessionCacheIdMapperUpdater");
     }
 
     private void modifyOIDCAdapterConfig(Archive<?> archive, String adapterConfigPath) {
