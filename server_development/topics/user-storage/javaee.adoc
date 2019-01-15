@@ -53,7 +53,7 @@ not proxy the user correctly and your provider won't work.
 You must put the `@Remove` annotation on the `close()` method of your provider. If you do not, the stateful bean
 will never be cleaned up and you might eventually see error messages.
 
-Implementations of `UserStorageProviderFactory` are required to be plain java objects. Your factory class would
+Implementations of `UserStorageProvider` are required to be plain Java objects. Your factory class would
 perform a JNDI lookup of the Stateful EJB in its create() method.
 
 [source,java]
@@ -81,9 +81,7 @@ file as well as any JPA `@Entity` classes.
 
 WARNING: When using JPA any additional datasource must be an XA datasource. The {project_name} datasource
          is not an XA datasource. If you interact with two or more non-XA datasources in the same transaction, the server returns
-         an error message. Only one non-XA resource is permitted in a single transaction.
-
-See the {appserver_name} manual for more details on deploying an XA datasource.
+         an error message. Only one non-XA resource is permitted in a single transaction. See the {appserver_name} manual for more details on deploying an XA datasource.
 
 CDI is not supported.
 

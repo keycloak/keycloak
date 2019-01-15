@@ -56,7 +56,7 @@ Notice that when adding a user we set the password value of the property map to 
 we can't have null values for a property in the property value. We also have to modify the `CredentialInputValidator`
 methods to reflect this.
 
-`addUser()` will be called if the provider implements the `UserRegistrationProvider` interface. If your provider has
+The `addUser()` method will be called if the provider implements the `UserRegistrationProvider` interface. If your provider has
 a configuration switch to turn of adding a user, returning `null` from this method will skip the provider and call
 the next one.
 
@@ -92,7 +92,7 @@ Since we can now save our property file, it also makes sense to allow password u
     }
 ----
 
-We can now also implement disabling a password too.
+We can now also implement disabling a password.
 
 .PropertyFileUserStorageProvider
 [source,java]

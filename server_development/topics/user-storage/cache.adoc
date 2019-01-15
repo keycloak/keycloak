@@ -1,9 +1,9 @@
 
 === User Caches
 
-When a user is loaded by ID, username, or email queries it is cached. When a user is cached, it iterates through
+When a user object is loaded by ID, username, or email queries it is cached. When a user object is bing cached, it iterates through
 the entire `UserModel` interface and pulls this information to a local in-memory-only cache. In a cluster, this cache
-is still local, but it becomes an invalidation cache. When a user is modified, it is evicted. This eviction event
+is still local, but it becomes an invalidation cache. When a user object is modified, it is evicted. This eviction event
 is propagated to the entire cluster so that the other nodes' user cache is also invalidated.
 
 ==== Managing the user cache

@@ -66,7 +66,7 @@ package org.keycloak.storage;
 public interface UserStorageProviderFactory<T extends UserStorageProvider> extends ComponentFactory<T, UserStorageProvider> {
 
     /**
-     * This is the name of the provider and will be showed in the admin console as an option.
+     * This is the name of the provider and will be shown in the admin console as an option.
      *
      * @return
      */
@@ -102,10 +102,10 @@ public class FileProviderFactory implements UserStorageProviderFactory<FileProvi
 ----
 
 The `getId()` method returns the name of the User Storage provider.  This id will be displayed in the admin console's
-`UserFederation` page when you want to enable the provider for a specific realm.
+User Federation page when you want to enable the provider for a specific realm.
 
 The `create()` method is responsible for allocating an instance of the provider class.  It takes a `org.keycloak.models.KeycloakSession`
-parameter.  This object can be used to lookup other information and metadata as well as provide access to various other
+parameter.  This object can be used to look up other information and metadata as well as provide access to various other
 components within the runtime.  The `ComponentModel` parameter represents how the provider was enabled and configured within
 a specific realm.  It contains the instance id of the enabled provider as well as any configuration you may have specified
 for it when you enabled through the admin console.

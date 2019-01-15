@@ -4,7 +4,7 @@
 NOTE:  This chapter is only applicable if you have implemented a provider using the earlier (and now removed)
        User Federation SPI.
 
-In Keycloak version 2.4.0 and earlier there was a User Federation SPI. Red Hat Single Sign-On version 7.0, although unsupported, also had
+In Keycloak version 2.4.0 and earlier there was a User Federation SPI. Red Hat Single Sign-On version 7.0, although unsupported, had
 this earlier SPI available as well. This earlier User Federation SPI has been removed from Keycloak version 2.5.0 and Red Hat Single Sign-On version 7.1.
 However, if you have written a provider with this earlier SPI, this chapter discusses some strategies you can use to port it.
 
@@ -28,7 +28,7 @@ There are some obvious disadvantages though to using an import strategy:
 * Looking up a user for the first time will require multiple updates to {project_name} database. This can
 be a big performance loss under load and put a lot of strain on the {project_name} database. The user federated
 storage approach will only store extra data as needed and might never be used depending on the capabilities of your external store.
-* With the import approach, you have to keep local keycloak storage and external storage in sync. The User Storage SPI
+* With the import approach, you have to keep local {project_name} storage and external storage in sync. The User Storage SPI
 has capability interfaces that you can implement to support synchronization, but this can quickly become painful and messy.
 
 ==== UserFederationProvider vs. UserStorageProvider
@@ -44,7 +44,7 @@ Also note that in the earlier SPI, this method was called every time the user wa
 In the later SPI, this method is only called when the local user is loaded from local storage. If the local user is cached,
 then the `ImportedUserValidation.validate()` method is not called at all.
 
-The `UserFederationProvider.isValid()` method no longer exists in the later model.
+The `UserFederationProvider.isValid()` method no longer exists in the later SPI.
 
 The `UserFederationProvider` methods `synchronizeRegistrations()`, `registerUser()`, and `removeUser()` have been
 moved to the `UserRegistrationProvider` capability interface. This new interface is optional to implement so if your
@@ -80,8 +80,8 @@ with the same provider ID (i.e., "ldap", "kerberos") as the earlier User Federat
 
 So, knowing this there are different approaches you can take.
 
-. You can remove the earlier provider in your earlier {project_name} deployment. This will remove all local linked copies
-  of imported users.  Then, when you upgrade {project_name}, just deploy and configure your new provider for your realm.
+. You can remove the earlier provider in your earlier {project_name} deployment. This will remove thedd local linked copies
+  of all users you imported.  Then, when you upgrade {project_name}, just deploy and configure your new provider for your realm.
 . The second option is to write your new provider making sure it has the same provider ID: `UserStorageProviderFactory.getId()`.
   Make sure this provider is in the `deploy/` directory of the new {project_name} installation.  Boot the server, and have
   the built-in migration script convert from the earlier data model to the later data model. In this case all your earlier linked imported

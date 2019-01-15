@@ -16,7 +16,7 @@ There are some obvious disadvantages though to using an import strategy:
 * Looking up a user for the first time will require multiple updates to {project_name} database. This can
 be a big performance loss under load and put a lot of strain on the {project_name} database. The user federated
 storage approach will only store extra data as needed and may never be used depending on the capabilities of your external store.
-* With the import approach, you have to keep local keycloak storage and external storage in sync. The User Storage SPI
+* With the import approach, you have to keep local {project_name} storage and external storage in sync. The User Storage SPI
 has capability interfaces that you can implement to support synchronization, but this can quickly become painful and messy.
 
 To implement the import strategy you simply check to see first if the user has been imported locally. If so return the
@@ -51,7 +51,7 @@ begin first by modifying the `createAdapter()` method.
 
 In this method we call the `KeycloakSession.userLocalStorage()` method to obtain a reference to local {project_name}
 user storage. We see if the user is stored locally, if not, we add it locally. Do not set the `id` of the local user.
-Let {project_name} set auto generate the `id`.  Also note that we call
+Let {project_name} automatically generate the `id`.  Also note that we call
 `UserModel.setFederationLink()` and pass in the ID of the `ComponentModel` of our provider. This sets a link between
 the provider and the imported user.
 
