@@ -127,6 +127,10 @@ module.controller('GroupListCtrl', function($scope, $route, $q, realm, Groups, G
 
     $scope.remove = function(selected) {
         if (selected === null) return;
+        if (selected.hasChild) {
+            Notifications.error("The group has children and cannot be deleted!");
+            return;
+        }
         Dialog.confirmDelete(selected.name, 'group', function() {
             Group.remove({ realm: realm.realm, groupId : selected.id }, function() {
                 $route.reload();

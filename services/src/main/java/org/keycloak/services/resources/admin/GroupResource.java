@@ -107,6 +107,9 @@ public class GroupResource {
     @DELETE
     public void deleteGroup() {
         this.auth.groups().requireManage(group);
+        if(group.isHasChild()){
+            throw new RuntimeException("Group has children and cannot be deleted!");
+        }
         realm.removeGroup(group);
         GroupModel parent = group.getParent();
         if (parent != null) {

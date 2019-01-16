@@ -20,7 +20,11 @@
             <td width="10%">
                 <a href="#/realms/{{realm.realm}}/clients/{{client.id}}/authz/resource-server/resource/{{resource._id}}">{{resource.name}}</a>
             </td>
-            <td width="70%">{{resource.displayName}}</td>
+            <td width="35%">{{resource.displayName}}</td>
+            <td width="35%">
+                <span data-ng-show="resource.scopes && !resource.scopes.length">{{:: 'authz-no-scopes-assigned' | translate}}</span>
+                <span ng-repeat="scope in resource.scopes" data-ng-show="resource.scopes.length > 0"><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/authz/resource-server/scope/{{scope.id}}">{{scope.name}}</a>{{$last ? '' : ', '}} </span>
+            </td>
             <td width="19%" align="center">
                 <div class="dropdown dropdown-kebab-pf">
                     <a id="createChildrenResource" class="btn btn-default"
@@ -100,7 +104,8 @@
         <tr data-ng-hide="resources.length == 0">
             <th width="1%"></th>
             <th width="10%">{{:: 'name' | translate}}</th>
-            <th width="70%">{{:: 'displayName' | translate}}</th>
+            <th width="35%">{{:: 'displayName' | translate}}</th>
+            <th width="35%">{{:: 'authz-scopes' | translate}}</th>
             <th width="19%">{{:: 'actions' | translate}}</th>
         </tr>
         </thead>

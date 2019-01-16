@@ -151,7 +151,7 @@ module.controller('ResourceServerResourceCtrl', function($scope, $http, $route, 
     $scope.query = {
         realm: realm.realm,
         client : client.id,
-        deep: false,
+        deep: true,
         max : 20,
         first : 0
     };

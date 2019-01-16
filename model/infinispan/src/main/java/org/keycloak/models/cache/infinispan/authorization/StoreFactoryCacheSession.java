@@ -368,7 +368,7 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
     }
 
     public static String getResourceByParentCacheKey(String parent, String serverId) {
-        return "resource.scope." + parent + "." + serverId;
+        return "resource.parent." + parent + "." + serverId;
     }
 
     public static String getPolicyByNameCacheKey(String name, String serverId) {
