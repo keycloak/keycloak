@@ -113,11 +113,11 @@ endif::[]
 :jdgserver_version: 7.2.3
 :jdgserver_crossdcdocs_link: https://access.redhat.com/documentation/en-us/red_hat_jboss_data_grid/7.2/html/administration_and_configuration_guide/set_up_cross_datacenter_replication
 
-:fuseVersion: JBoss Fuse 6.3.0 Rollup 5
+:fuseVersion: JBoss Fuse 6.3.0 Rollup 10
 :fuseHawtioEAPVersion: JBoss EAP 6.4
 :fuseHawtioWARVersion: hawtio-wildfly-1.4.0.redhat-630254.war
 
-:fuse7Version: JBoss Fuse 7.0.1
+:fuse7Version: JBoss Fuse 7.2.0
 
 :subsystem_undertow_xml_urn: urn:jboss:domain:undertow:6.0
 :subsystem_infinispan_xml_urn: urn:jboss:domain:infinispan:6.0

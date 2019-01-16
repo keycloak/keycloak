@@ -13,7 +13,7 @@ ifeval::[{project_product}==true]
 endif::[]
 as {fuse7Version} is bundled with http://undertow.io/[Undertow HTTP engine] under the covers and Undertow is used for running various kinds of web applications.
 
-WARNING: The only supported versions of Fuse 7 is {fuse7Version}. If you use earlier versions of Fuse 7, it is possible that some functions will not work correctly. In particular, integration will not work at all for earlier versions of Fuse 7 than 7.0.1.
+WARNING: The only supported version of Fuse 7 is the latest release. If you use earlier versions of Fuse 7, it is possible that some functions will not work correctly. In particular, integration will not work at all for versions of Fuse 7 lower than 7.0.1.
 
 Security for the following items is supported for Fuse:
 
