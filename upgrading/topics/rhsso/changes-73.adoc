@@ -103,11 +103,11 @@ specific {project_name} server functionality, but there are few changes related 
   Cross-Datacenter Replication changes::
     * You will need to upgrade {jdgserver_name} server to version {jdgserver_version}. The older version may still work, but it is
     not guaranteed as we don't test it anymore.
-  ifeval::[{project_product}==true]
+ifeval::[{project_product}==true]
     * There is a need to add `protocolVersion` property with the value `2.6` to the configuration of the `remote-store` element in the
     {project_name} configuration. This is required as there is a need to downgrade the version of HotRod protocol to be compatible
     with the version used by {jdgserver_name} {jdgserver_version}.
-  endif::[]
+endif::[]
 
 === Hostname configuration
 
@@ -127,10 +127,10 @@ resulted in `Uncaught (in promise)` error.
 
 === Microsoft Identity Provider updated to use the Microsoft Graph API
 
-The Microsoft Identity Provider implementation in {project_name} up to version 4.5.0 relies on the Live SDK
+The Microsoft Identity Provider implementation in {project_name} up to version 7.2 relies on the Live SDK
 endpoints for authorization and obtaining the user profile. From November 2018 onwards, Microsoft is removing support
 for the Live SDK API in favor of the new Microsoft Graph API. The {project_name} identity provider has been updated
-to use the new endpoints so if this integration is in use make sure you upgrade to {project_name} version 4.6.0 or later.
+to use the new endpoints so if this integration is in use make sure you upgrade to {project_name} version 7.3 or later.
 
 Legacy client applications registered under "Live SDK applications" won't work with the Microsoft Graph endpoints
 due to changes in the id format of the applications. If you run into an error saying that the application identifier
