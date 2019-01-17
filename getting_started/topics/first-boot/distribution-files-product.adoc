@@ -3,22 +3,22 @@
 
 Download the {project_name} Server:
 
-* *rh-sso-{project_version}.GA.zip*
+* *rh-sso-{project_version}.zip*
 
 NOTE: This file can be downloaded from https://access.redhat.com/jbossnetwork/restricted/listSoftware.html?downloadType=distributions&product=core.service.rhsso[the Red Hat customer portal].
 
-The *rh-sso-{project_version}.GA.zip* file is the server-only distribution. It contains only the scripts and binaries to run the {project_name} server.
+The *rh-sso-{project_version}.zip* file is the server-only distribution. It contains only the scripts and binaries to run the {project_name} server.
 
 Place the file in a directory you choose and use the `unzip` utility to unpack it, like this:
 
 .Linux/Unix
 [source,bash,subs=+attributes]
 ----
-$ unzip rh-sso-{project_version}.GA.zip
+$ jar xf rh-sso-{project_version}.zip
 ----
 
 .Windows
 [source,bash,subs=+attributes]
 ----
-> unzip rh-sso-{project_version}.GA.zip
+> unzip rh-sso-{project_version}.zip
 ----

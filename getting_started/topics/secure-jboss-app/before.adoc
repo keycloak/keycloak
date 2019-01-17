@@ -3,7 +3,7 @@
 
 Before you can secure a Java servlet application, you must complete the installation of {project_name} and create the initial admin user as shown in  <<_install-boot, Installing and Booting>>.
 
-There is one caveat: Even though {appserver_name} is bundled with keycloak, you cannot use this as an application container.  Instead, you must run a separate {appserver_name} instance on the same machine as the {project_name} server to run your Java servlet application. Run the {project_name} using a different port than the {appserver_name}, to avoid port conflicts.
+There is one caveat: Even though {appserver_name} is bundled with {project_name}, you cannot use this as an application container.  Instead, you must run a separate {appserver_name} instance on the same machine as the {project_name} server to run your Java servlet application. Run the {project_name} using a different port than the {appserver_name}, to avoid port conflicts.
 
 To adjust the port used, change the value of the `jboss.socket.binding.port-offset` system property when starting the server from the command line. The value of this property is a number that will be added to the base value of every port opened by the {project_name} server.
 
