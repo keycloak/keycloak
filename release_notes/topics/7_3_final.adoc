@@ -151,7 +151,31 @@ More than 1,200 issues were resolved in this release.
 * link:https://issues.jboss.org/issues/?filter=12337585[https://issues.jboss.org/issues/?filter=12337585]
 
 = Known Issues
-The following are known issues for this release. TO COME.
+The following are known issues for this release.
+
+* link:https://issues.jboss.org/browse/KEYCLOAK-6127[KEYCLOAK-6127] - Role manage-users still required for some operations regardless granted permission
+
+* link:https://issues.jboss.org/browse/KEYCLOAK-8043[KEYCLOAK-8043] - prompt=none doesn't work with default identity provider
+
+* link:https://issues.jboss.org/browse/KEYCLOAK-8049[KEYCLOAK-8049] - Nullpointer when create group policy for the root node
+
+* link:https://issues.jboss.org/browse/KEYCLOAK-8766[KEYCLOAK-8766] - CORS with OIDC requests fails when using elytron adapter
+
+* link:https://issues.jboss.org/browse/KEYCLOAK-8821[KEYCLOAK-8821] - When KeycloakApplication is not successfully deployed server.log's content is erased
+
+* link:https://issues.jboss.org/browse/KEYCLOAK-8867[KEYCLOAK-8867] - Return resource associated with policies when querying via uma-policy
+
+* link:https://issues.jboss.org/browse/KEYCLOAK-8957[KEYCLOAK-8957] - Federated ID Login results in broken user accounts
+
+* link:https://issues.jboss.org/browse/KEYCLOAK-9093[KEYCLOAK-9093] - False-Positive UMA Policy Evaluation
+
+* link:https://issues.jboss.org/browse/KEYCLOAK-9095[KEYCLOAK-9095] - NullpointerException in AuthenticatedActionsHandler when Web Origins is null
+
+* link:https://issues.jboss.org/browse/KEYCLOAK-9183[KEYCLOAK-9183] - NullPointerException when validating password via LDAPStorageProvider for a no longer existing LDAP entry
+
+* link:https://issues.jboss.org/browse/KEYCLOAK-9272[KEYCLOAK-9272] - NullPointer if truststore password is missing
+
+* link:https://issues.jboss.org/browse/KEYCLOAK-9310[KEYCLOAK-9310] - Removing custom required action provider corrupts the Realm model
 
 = Supported Configurations
 
