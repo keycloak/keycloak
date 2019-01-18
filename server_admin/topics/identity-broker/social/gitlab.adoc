@@ -1,7 +1,7 @@
 
 ==== GitLab
 
-There are a number of steps you have to complete to be able to login to GitLab.
+There are a number of steps you have to complete to be able to enable login with GitLab.
 
 First, go to the `Identity Providers` left menu item and select `GitLab` from the `Add provider` drop down list. This will bring you to the `Add identity provider` page.
 
@@ -10,9 +10,9 @@ image:{project_images}/gitlab-add-identity-provider.png[]
 
 Before you can click `Save`, you must obtain a `Client ID` and `Client Secret` from GitLab.
 
-NOTE: You will the `Redirect URI` from this page in a later step, which you will provide to GitLab when you register {project_name} as a client there.
+NOTE: You will the use `Redirect URI` from this page in a later step, which you will provide to GitLab when you register {project_name} as a client there.
 
-To enable login with GitLab you first have to register an application project in
+To enable login with GitLab you first have to register an application in
 https://docs.gitlab.com/ee/integration/oauth_provider.html[GitLab as OAuth2 authentication service provider].
 
 NOTE: GitLab often changes the look and feel of application registration, so what you see on the GitLab site may differ. If in doubt, see the GitLab documentation.
@@ -20,7 +20,7 @@ NOTE: GitLab often changes the look and feel of application registration, so wha
 .Add a New App
 image:images/gitlab-developer-applications.png[]
 
-Copy the `Redirect URI` from the {project_name} `Add Identity Provider` page and enter it into the `Authorization callback URL` field on the GitLab `Register a new OAuth application` page.
+Copy the `Redirect URI` from the {project_name} `Add Identity Provider` page and enter it into the Redirect URI field on the GitLab Add new application page.
 
 .GitLab App Page
 image:images/gitlab-app-page.png[]

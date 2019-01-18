@@ -27,7 +27,7 @@ image:{project_images}/identity-provider-login-page.png[]
 Social::
   Social providers allow you to enable social authentication in your realm.
   {project_name} makes it easy to let users log in to your application using an existing account with a social network.
-  Currently Facebook, Google, Twitter, GitHub, LinkedIn, Microsoft, and StackOverflow are supported with more planned for the future.
+  Currently supported providers include: Twitter, Facebook, Google, LinkedIn, Instagram, Microsoft, PayPal, Openshift v3, GitHub, GitLab, Bitbucket, and Stack Overflow.
 
 Protocol-based::
   Protocol-based providers are those that rely on a specific protocol in order to authenticate and authorize users.
@@ -36,7 +36,7 @@ Protocol-based::
   It makes it easy to configure and broker any identity provider based on these open standards.
 
 Although each type of identity provider has its own configuration options, all of them share some very common configuration.
-Regardless the identity provider you are creating, you'll see the following configuration options available:
+Regardless of which identity provider you are creating, you'll see the following configuration options available:
 
 .Common Configuration
 [cols="1,1", options="header"]
@@ -44,18 +44,18 @@ Regardless the identity provider you are creating, you'll see the following conf
 |Configuration|Description
 
 |Alias
-|The alias is an unique identifier for an identity provider. It is used to reference an identity provider internally.
+|The alias is a unique identifier for an identity provider. It is used to reference an identity provider internally.
  Some protocols such as OpenID Connect require a redirect URI or callback url in order to communicate with an identity provider.
  In this case, the alias is used to build the redirect URI.
- Every single identity provider must have an alias. Examples are facebook, google, idp.acme.com, etc.
+ Every single identity provider must have an alias. Examples are `facebook`, `google`, `idp.acme.com`, etc.
 
 |Enabled
-|Turn the provider on/off
+|Turn the provider on/off.
 
-|Hide On Login Page
+|Hide on Login Page
 |When this switch is on, this provider will not be shown as a login option on the login page.  Clients can still request to use this provider by using the 'kc_idp_hint' parameter in the URL they use to request a login.
 
-|Link Only
+|Account Linking Only
 |When this switch is on, this provider cannot be used to login users and will not be shown as an option on the login page.  Existing accounts can still be linked with this provider though.
 
 
@@ -64,14 +64,14 @@ Regardless the identity provider you are creating, you'll see the following conf
 
 |Stored Tokens Readable
 |Whether or not users are allowed to retrieve the stored identity provider token.  This also applies to the _broker_ client-level
- role _read token_
+ role _read token_.
 
-|Trust email
+|Trust Email
 |If the identity provider supplies an email address this email address will be trusted.  If the realm required email validation,
  users that log in from this IDP will not have to go through the email verification process.
 
-|GUI order
-|The order number that sorts how the available IDPs are listed on the {project_name} login page.
+|GUI Order
+|The order number that sorts how the available IDPs are listed on the login page.
 
 |First Login Flow
 |This is the authentication flow that will be triggered for users that log into {project_name} through this IDP

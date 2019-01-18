@@ -18,10 +18,10 @@ You must define the OpenID Connect configuration options as well.  They basicall
 |Configuration|Description
 
 |Authorization URL
-|Authorization URL endpoint required by the OIDC protocol
+|Authorization URL endpoint required by the OIDC protocol.
 
 |Token URL
-|Token URL endpoint required by the OIDC protocol
+|Token URL endpoint required by the OIDC protocol.
 
 |Logout URL
 |Logout URL endpoint defined in the OIDC protocol.  This value is optional.
@@ -34,8 +34,8 @@ You must define the OpenID Connect configuration options as well.  They basicall
 |User Info URL endpoint defined by the OIDC protocol.  This is an endpoint from which user profile information can be downloaded.
 
 |Client ID
-|This realm will act as an OIDC client to the external federation IDP you are configuring here.  Your realm will need a OIDC client ID when using the Authorization Code Flow
- to interact with the external IDP
+|This realm will act as an OIDC client to the external IDP.  Your realm will need an OIDC client ID when using the Authorization Code Flow
+ to interact with the external IDP.
 
 |Client Secret
 |This realm will need a client secret to use when using the Authorization Code Flow.
@@ -44,28 +44,28 @@ You must define the OpenID Connect configuration options as well.  They basicall
 |Responses from the IDP may contain an issuer claim.  This config value is optional.  If specified, this claim will be validated against the value you provide.
 
 |Default Scopes
-|Space-separated list of OIDC scopes to send with the authentication request.  The default is `openid`
+|Space-separated list of OIDC scopes to send with the authentication request.  The default is `openid`.
 
 |Prompt
 |Another optional switch.  This is the prompt parameter defined by the OIDC specification. Through it you can force re-authentication and other options.  See the specification for
- more details
+ more details.
 
 |Validate Signatures
-|Another optional switch. This is to specify if {project_name} will verify the signatures on the external ID Token signed by this Identity provider. If this is on,
-the {project_name} will need to know the public key of the external OIDC identity provider. See below for how to setup it.
-WARNING: For the performance purposes, {project_name} caches the public key of the external OIDC identity provider. If you think that private key of your Identity provider
+|Another optional switch. This is to specify if {project_name} will verify the signatures on the external ID Token signed by this identity provider. If this is on,
+the {project_name} will need to know the public key of the external OIDC identity provider. See below for how to set it up.
+WARNING: For the performance purposes, {project_name} caches the public key of the external OIDC identity provider. If you think that private key of your identity provider
 was compromised, it is obviously good to update your keys, but it's also good to clear the keys cache. See
 <<_clear-cache, Clearing the cache>> section for more details.
 
 |Use JWKS URL
-|Applicable if `Validate Signatures` is on. If the switch is on, then identity provider public keys  will be downloaded from given JWKS URL.
- This allows great flexibility because new keys will be always re-downloaded again when identity provider generates new keypair. If the switch is off,
- then public key (or certificate) from the {project_name} DB is used, so when identity provider keypair changes, you always need to import new key to the {project_name} DB as well.
+|Applicable if `Validate Signatures` is on. If the switch is on, then identity provider public keys will be downloaded from given JWKS URL.
+ This allows great flexibility because new keys will be always re-downloaded when the identity provider generates new keypair. If the switch is off,
+ then public key (or certificate) from the {project_name} DB is used, so whenever the identity provider keypair changes, you will always need to import the new key to the {project_name} DB as well.
 
 |JWKS URL
-|URL where identity provider keys in JWK format are stored. See https://self-issued.info/docs/draft-ietf-jose-json-web-key.html[JWK specification] for more details.
- If you use external {project_name} identity provider, then you can use URL like http://broker-keycloak:8180/auth/realms/test/protocol/openid-connect/certs assuming your brokered
- {project_name} is running on http://broker-keycloak:8180 and it's realm is `test` .
+|URL where the identity provider JWK keys are stored. See the https://self-issued.info/docs/draft-ietf-jose-json-web-key.html[JWK specification] for more details.
+ If you use an external {project_name} as an identity provider, then you can use URL like http://broker-keycloak:8180/auth/realms/test/protocol/openid-connect/certs assuming your brokered
+ {project_name} is running on http://broker-keycloak:8180 and it's realm is `test`.
 
 |Validating Public Key
 |Applicable if `Use JWKS URL` is off. Here is the public key in PEM format that must be used to verify external IDP signatures.

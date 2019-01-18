@@ -1,7 +1,7 @@
 
 ==== GitHub
 
-There are a number of steps you have to complete to be able to login to GitHub.  First, go to the `Identity Providers` left menu item
+There are a number of steps you have to complete to be able to enable login with GitHub.  First, go to the `Identity Providers` left menu item
 and select `GitHub` from the `Add provider` drop down list.  This will bring you to the `Add identity provider` page.
 
 .Add Identity Provider

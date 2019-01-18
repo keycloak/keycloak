@@ -5,7 +5,7 @@
 When using {project_name} as an identity broker, users are not forced to provide their credentials in order to authenticate in a specific realm.
 Instead, they are presented with a list of identity providers from which they can authenticate.
 
-You can also configure a default broker. In this case the user will not be given a choice, but instead be redirected directly to the parent broker.
+You can also configure a default identity provider. In this case the user will not be given a choice, but will instead be redirected directly to the default provider.
 
 The following diagram demonstrates the steps involved when using {project_name} to broker an external identity provider:
 
@@ -14,12 +14,12 @@ image:images/identity_broker_flow.png[]
 
 . User is not authenticated and requests a protected resource in a client application.
 . The client applications redirects the user to {project_name} to authenticate.
-. At this point the user is presented with the login page where there is a list of identity providers supported by a realm.
+. At this point the user is presented with the login page where there is a list of identity providers configured in a realm.
 . User selects one of the identity providers by clicking on its respective button or link.
 . {project_name} issues an authentication request to the target identity provider asking for authentication and the user
   is redirected to the login page of the identity provider.
   The connection properties and other configuration options for the identity provider were previously set by the administrator in the Admin Console.
-. User provides his credentials or consent in order to authenticate in the identity provider.
+. User provides his credentials or consent in order to authenticate with the identity provider.
 . Upon a successful authentication by the identity provider, the user is redirected back to {project_name} with an authentication response.
   Usually this response contains a security token that will be used by {project_name} to trust the authentication performed by the identity provider
   and retrieve information about the user.
@@ -27,9 +27,9 @@ image:images/identity_broker_flow.png[]
   If valid, it will import and create a new user or just skip that if the user already exists.
   If it is a new user, {project_name} may ask the identity provider for information about the user if that info doesn't already exist in the token.
   This is what we call _identity federation_.
-  If the user already exists {project_name} may ask him to link the identity returned from the identity provider with his existing account.
+  If the user already exists {project_name} may ask him to link the identity returned from the identity provider with the existing account.
   We call this process _account linking_.
-  What exactly is done is configurable and can be specified by setup of <<_identity_broker_first_login,First Login Flow>> . At the end of this step, {project_name} authenticates the user and issues its own token in order to access the requested resource in the service provider.
+  What exactly is done is configurable and can be specified by setup of <<_identity_broker_first_login,First Login Flow>>. At the end of this step, {project_name} authenticates the user and issues its own token in order to access the requested resource in the service provider.
 . Once the user is locally authenticated, {project_name} redirects the user to the service provider by sending the token previously issued during the local authentication.
 . The service provider receives the token from {project_name} and allows access to the protected resource.
 
@@ -39,7 +39,7 @@ Or you can tell {project_name} to force the user to provide additional informati
 
 NOTE: Different protocols may require different authentication flows.
       At this moment, all the identity providers supported by {project_name} use a flow just like described above.
-      However, despite the protocol in use, user experience should be pretty much the same.
+      However, regardless of the protocol in use, user experience should be pretty much the same.
 
 As you may notice, at the end of the authentication process {project_name} will always issue its own token to client applications.
 What this means is that client applications are completely decoupled from external identity providers.

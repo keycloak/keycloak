@@ -1,7 +1,7 @@
 
 ==== Google
 
-There are a number of steps you have to complete to be able to login to Google.  First, go to the `Identity Providers` left menu item
+There are a number of steps you have to complete to be able to enable login with Google.  First, go to the `Identity Providers` left menu item
 and select `Google` from the `Add provider` drop down list.  This will bring you to the `Add identity provider` page.
 
 .Add Identity Provider
@@ -12,7 +12,7 @@ page is the `Redirect URI`.  You'll have to provide that to Google when you regi
 copy this URI to your clipboard.
 
 To enable login with Google you first have to create a project and a client in the https://console.cloud.google.com/project[Google Developer Console].
-Then you need to copy the client id and secret into the {project_name} Admin Console.
+Then you need to copy the client ID and secret into the {project_name} Admin Console.
 
 NOTE: Google often changes the look and feel of the Google Developer Console, so these directions might not always be up to date and the
       configuration steps might be slightly different.

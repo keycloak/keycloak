@@ -3,7 +3,7 @@
 
 NOTE: OpenShift Online is currently in the developer preview mode. This documentation has been based on on-premise installations and local `minishift` development environment.
 
-There are a just a few steps you have to complete to be able to login to OpenShift.  First, go to the `Identity Providers` left menu item
+There are a just a few steps you have to complete to be able to enable login with OpenShift.  First, go to the `Identity Providers` left menu item
 and select `OpenShift` from the `Add provider` drop down list.  This will bring you to the `Add identity provider` page.
 
 .Add Identity Provider

@@ -1,7 +1,7 @@
 
 ==== Twitter
 
-There are a number of steps you have to complete to be able to login to Twitter.  First, go to the `Identity Providers` left menu item
+There are a number of steps you have to complete to be able to enable login with Twitter.  First, go to the `Identity Providers` left menu item
 and select `Twitter` from the `Add provider` drop down list.  This will bring you to the `Add identity provider` page.
 
 .Add Identity Provider
@@ -26,8 +26,7 @@ image:images/twitter-app-create.png[]
 Enter in a Name and Description.  The Website can be anything, but cannot have a `localhost` address.  For the
 `Callback URL` you must copy the `Redirect URI` from the {project_name} `Add Identity Provider` page.
 
-WARNING: You cannot use `localhost` in the `Callback URL`.  Instead replace it with `127.0.0.1` if you are trying to
-         testdrive Twitter login on your laptop.
+WARNING: You cannot use `localhost` in the `Callback URL`.  Instead replace it with `127.0.0.1` if you are trying to test drive Twitter login on your laptop.
 
 After clicking save you will be brought to the `Details` page.
 
