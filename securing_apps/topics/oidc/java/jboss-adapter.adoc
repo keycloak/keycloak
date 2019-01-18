@@ -159,6 +159,8 @@ ifeval::[{project_product}==true]
 $ ./bin/jboss-cli.sh -c --file=bin/adapter-elytron-install.cli
 ----
 
+NOTE: It is possible to use the legacy non-Elytron adapter on JBoss EAP 7.1 or newer as well, meaning you can use `adapter-install-offline.cli`
+
 .JBoss EAP 6.4
 [source]
 ----

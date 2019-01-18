@@ -5,7 +5,7 @@ Install the EAP 7 Adapters from an RPM:
 
 NOTE: With Red Hat Enterprise Linux 7, the term channel was replaced with the term repository. In these instructions only the term repository is used.
 
-You must subscribe to the JBoss EAP 7.0 repository before you can install the EAP 7 adapters from an RPM.
+You must subscribe to the JBoss EAP 7 repository before you can install the EAP 7 adapters from an RPM.
 
 .Prerequisites
 
@@ -13,7 +13,7 @@ You must subscribe to the JBoss EAP 7.0 repository before you can install the EA
 
 . If you are already subscribed to another JBoss EAP repository, you must unsubscribe from that repository first.
 
-Using Red Hat Subscription Manager, subscribe to the JBoss EAP 7.0 repository using the following command. Replace <RHEL_VERSION> with either 6 or 7 depending on your Red Hat Enterprise Linux version.
+Using Red Hat Subscription Manager, subscribe to the JBoss EAP 7 repository using the following command. Replace <RHEL_VERSION> with either 6 or 7 depending on your Red Hat Enterprise Linux version.
 
 ----
 $ sudo subscription-manager repos --enable=jb-eap-7-for-rhel-<RHEL_VERSION>-server-rpms
@@ -42,7 +42,7 @@ Install the EAP 6 Adapters from an RPM:
 
 NOTE: With Red Hat Enterprise Linux 7, the term channel was replaced with the term repository. In these instructions only the term repository is used.
 
-You must subscribe to the JBoss EAP 6.0 repository before you can install the EAP 6 adapters from an RPM.
+You must subscribe to the JBoss EAP 6 repository before you can install the EAP 6 adapters from an RPM.
 
 .Prerequisites
 
@@ -50,7 +50,7 @@ You must subscribe to the JBoss EAP 6.0 repository before you can install the EA
 
 . If you are already subscribed to another JBoss EAP repository, you must unsubscribe from that repository first.
 
-Using Red Hat Subscription Manager, subscribe to the JBoss EAP 6.0 repository using the following command. Replace <RHEL_VERSION> with either 6 or 7 depending on your Red Hat Enterprise Linux version.
+Using Red Hat Subscription Manager, subscribe to the JBoss EAP 6 repository using the following command. Replace <RHEL_VERSION> with either 6 or 7 depending on your Red Hat Enterprise Linux version.
 
 ----
 $ sudo subscription-manager repos --enable=jb-eap-6-for-rhel-<RHEL_VERSION>-server-rpms
