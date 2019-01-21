@@ -1,43 +1,3 @@
-////
-[[{project_name}-Binary-Builds-Tutorial]]
-=== Example Workflow: Creating OpenShift Application from Existing Maven Binaries and Securing it Using Red Hat Single Sing-On
-
-To deploy existing applications on OpenShift, you can use the link:https://docs.openshift.com/container-platform/latest/dev_guide/builds/build_inputs.html#binary-source[binary source] capability.
-
-==== Deploy Binary Build of EAP 6.4 / 7.1 JSP Service Invocation Application and Secure it Using Red Hat Single Sign-On
-
-The following example uses both link:https://github.com/keycloak/keycloak-quickstarts/tree/latest/app-jee-jsp[app-jee-jsp] and link:https://github.com/keycloak/keycloak-quickstarts/tree/latest/service-jee-jaxrs[service-jee-jaxrs] quickstarts to deploy EAP 6.4 / 7.1 JSP service application that authenticates using the Red Hat Single Sign-On.
-
-*Prerequisite:*
-
-[IMPORTANT]
-====
-This guide assumes the {project_openshift_product_name} image has been previously link:https://access.redhat.com/documentation/en-us/red_hat_jboss_middleware_for_openshift/3/html-single/red_hat_single_sign-on_for_openshift/index#Example-Deploying-SSO[deployed using one of the following templates:]
-
-* *_{project_templates_version}-mysql_*
-* *_{project_templates_version}-mysql-persistent_*
-* *_{project_templates_version}-postgresql_*
-* *_{project_templates_version}-postgresql-persistent_*
-* *_{project_templates_version}-x509-mysql-persistent_*
-* *_{project_templates_version}-x509-postgresql-persistent_*
-====
-
-===== Create {project_name} Realm, Roles, and User for the EAP 6.4 / 7.1 JSP Application
-
-The EAP 6.4 / 7.1 JSP service application requires dedicated {project_name} realm, username, and password to be able to authenticate using Red Hat Single Sign-On. Perform the following steps after the {project_openshift_product_name} image has been deployed:
-
-*Create the {project_name} Realm*
-
-. Login to the administration console of the {project_name} server.
-+
-*\https://secure-sso-sso-app-demo.openshift.example.com/auth/admin*
-+
-Use the xref:sso-administrator-setup[credentials of the {project_name} administrator user].
-. Hover your cursor over the realm namespace (default is *Master*) at the top of the sidebar and click *Add Realm*.
-. Enter a realm name (this example uses `demo`) and click *Create*.
-
-////
-
 == Tutorials
 
 [[upgrading-sso-db-from-previous-version]]
@@ -837,9 +797,544 @@ To provide _testuser_ `view` privileges for the _sso-app-demo_, use the OpenShif
 $ oc adm policy add-role-to-user view testuser -n sso-app-demo
 ----
 
+[[binary-builds]]
+=== Example Workflow: Creating OpenShift Application from Existing Maven Binaries and Securing it Using {project_name}
+
+To deploy existing applications on OpenShift, you can use the link:https://docs.openshift.com/container-platform/latest/dev_guide/builds/build_inputs.html#binary-source[binary source] capability.
+
+==== Deploy Binary Build of EAP 6.4 / 7.1 JSP Service Invocation Application and Secure it Using {project_name}
+
+The following example uses both link:https://github.com/keycloak/keycloak-quickstarts/tree/latest/app-jee-jsp[app-jee-jsp] and link:https://github.com/keycloak/keycloak-quickstarts/tree/latest/service-jee-jaxrs[service-jee-jaxrs] quickstarts to deploy EAP 6.4 / 7.1 JSP service application that authenticates using the {project_name}.
+
+*Prerequisite:*
+
+[IMPORTANT]
+====
+This guide assumes the {project_openshift_product_name} image has been previously link:https://access.redhat.com/documentation/en-us/red_hat_jboss_middleware_for_openshift/3/html-single/red_hat_single_sign-on_for_openshift/index#Example-Deploying-SSO[deployed using one of the following templates:]
+
+* *_{project_templates_version}-mysql_*
+* *_{project_templates_version}-mysql-persistent_*
+* *_{project_templates_version}-postgresql_*
+* *_{project_templates_version}-postgresql-persistent_*
+* *_{project_templates_version}-x509-mysql-persistent_*
+* *_{project_templates_version}-x509-postgresql-persistent_*
+====
+
+===== Create {project_name} Realm, Roles, and User for the EAP 6.4 / 7.1 JSP Application
+
+The EAP 6.4 / 7.1 JSP service application requires dedicated {project_name} realm, username, and password to be able to authenticate using {project_name}. Perform the following steps after the {project_openshift_product_name} image has been deployed:
+
+*Create the {project_name} Realm*
+
+. Login to the administration console of the {project_name} server.
++
+*\https://secure-sso-sso-app-demo.openshift.example.com/auth/admin*
++
+Use the xref:sso-administrator-setup[credentials of the {project_name} administrator user].
+. Hover your cursor over the realm namespace (default is *Master*) at the top of the sidebar and click *Add Realm*.
+. Enter a realm name (this example uses `demo`) and click *Create*.
+
+[[copy-rsa-public-key]]
+*Copy the Public Key*
+
+In the newly created `demo` realm, click the *Keys* tab, then select *Active* tab, and copy the public key of type *RSA* that has been generated.
+
+[NOTE]
+====
+The {project_openshift_product_name} image version {project_version} generates multiple keys by default, for example *HS256*, *RS256*, or *AES*. To copy the public key information for the {project_openshift_product_name} {project_version} image, click the *Keys* tab, then select *Active* tab, and click the *Public key* button of that row in the keys table, where type of the key matches *RSA*. Then select and copy the content of the pop-up window that appears.
+====
+
+The information about the public key is necessary xref:sso-public-key-details[later to deploy] the {project_name}-enabled EAP 6.4 / 7.1 JSP application.
+
+*Create {project_name} Roles*
+
+[NOTE]
+====
+The link:https://github.com/keycloak/keycloak-quickstarts/tree/latest/service-jee-jaxrs[service-jee-jaxrs] quickstart exposes three endpoints by the service:
+
+* `public` - Requires no authentication.
+* `secured` - Can be invoked by users with the `user` role.
+* `admin` - Can be invoked by users with the `admin` role.
+====
+
+Create `user` and `admin` roles in {project_name}. These roles will be assigned to an {project_name} application user to authenticate access to user applications.
+
+. Click *Roles* in the *Configure* sidebar to list the roles for this realm.
++
+[NOTE]
+====
+This is a new realm, so there should only be the default (`offline_access` and `uma_authorization`) roles.
+====
+. Click *Add Role*.
+. Enter the role name (`user`) and click *Save*.
+
+Repeat these steps for the `admin` role.
+
+*Create the {project_name} Realm Management User*
+
+. Click *Users* in the *Manage* sidebar to view the user information for the realm.
+. Click *Add User.*
+. Enter a valid *Username* (this example uses the user `appuser`) and click *Save*.
+. Edit the user configuration:
+.. Click the *Credentials* tab in the user space and enter a password for the user (this example uses the password `apppassword`).
+.. Ensure the *Temporary Password* option is set to *Off* so that it does not prompt for a password change later on, and click *Reset Password* to set the user password. A pop-up window prompts for additional confirmation.
+
+===== Assign `user` {project_name} Role to the Realm Management User
+
+Perform the following steps to tie the previously created `appuser` with the `user` {project_name} role:
+
+. Click *Role Mappings* to list the realm and client role configuration. In *Available Roles*, select the `user` role created earlier, and click *Add selected>*.
+. Click *Client Roles*, select *realm-management* entry from the list, select each record in the *Available Roles* list.
++
+[NOTE]
+====
+You can select multiple items at once by holding the *Ctrl* key and simultaneously clicking the first `impersonation` entry. While keeping the *Ctrl* key and the left mouse button pressed, move to the end of the list to the `view-clients` entry and ensure each record is selected.
+====
+. Click *Add selected>* to assign the roles to the client.
+
+===== Prepare {project_name} Authentication for OpenShift Deployment of the EAP 6.4 / 7.1 JSP Application
+
+. Create a new project for the EAP 6.4 / 7.1 JSP application.
++
+[source,bash,subs="attributes+,macros+"]
+----
+$ oc new-project eap-app-demo
+----
+. Add the `view` role to the link:https://docs.openshift.com/container-platform/latest/dev_guide/service_accounts.html#default-service-accounts-and-roles[`default`] service account. This enables the service account to view all the resources in the `eap-app-demo` namespace, which is necessary for managing the cluster.
++
+[source,bash,subs="attributes+,macros+"]
+----
+$ oc policy add-role-to-user view system:serviceaccount:$(oc project -q):default
+----
+. The EAP template requires an link:https://access.redhat.com/documentation/en-us/red_hat_jboss_middleware_for_openshift/3/html-single/red_hat_single_sign-on_for_openshift/index#Configuring-Keystores[SSL keystore and a JGroups keystore]. This example uses `keytool`, a package included with the Java Development Kit, to generate self-signed certificates for these keystores.
+.. Generate a secure key for the SSL keystore (this example uses `password` as password for the keystore).
++
+[source,bash,subs="attributes+,macros+"]
+----
+$ keytool -genkeypair \
+-dname "CN=secure-eap-app-eap-app-demo.openshift.example.com" \
+-alias https \
+-storetype JKS \
+-keystore eapkeystore.jks
+----
+.. Generate a secure key for the JGroups keystore (this example uses `password` as password for the keystore).
++
+[source,bash,subs="attributes+,macros+"]
+----
+$ keytool -genseckey \
+-alias jgroups \
+-storetype JCEKS \
+-keystore eapjgroups.jceks
+----
+.. Generate the EAP 6.4 / 7.1 for OpenShift secrets with the SSL and JGroup keystore files.
++
+[source,bash,subs="attributes+,macros+"]
+----
+$ oc secret new eap-ssl-secret eapkeystore.jks
+----
++
+[source,bash,subs="attributes+,macros+"]
+----
+$ oc secret new eap-jgroup-secret eapjgroups.jceks
+----
+.. Add the EAP application secret to the link:https://docs.openshift.com/container-platform/latest/dev_guide/service_accounts.html#default-service-accounts-and-roles[`default`] service account.
++
+[source,bash,subs="attributes+,macros+"]
+----
+$ oc secrets link default eap-ssl-secret eap-jgroup-secret
+----
+
+===== Deploy Binary Build of the EAP 6.4 / 7.1 JSP Application
+
+. Clone the source code.
++
+[source,bash,subs="attributes+,macros+"]
+----
+$ git clone \https://github.com/keycloak/keycloak-quickstarts.git
+----
+. link:https://access.redhat.com/documentation/en-us/red_hat_jboss_enterprise_application_platform/7.1/html-single/development_guide/#use_the_maven_repository[Configure] the link:https://access.redhat.com/maven-repository[Red Hat JBoss Middleware Maven repository].
+. Build both the link:https://github.com/keycloak/keycloak-quickstarts/tree/latest/service-jee-jaxrs[service-jee-jaxrs] and link:https://github.com/keycloak/keycloak-quickstarts/tree/latest/app-jee-jsp[app-jee-jsp] applications.
+.. Build the `service-jee-jaxrs` application.
++
+[source,bash,subs="attributes+,macros+"]
+----
+$ cd keycloak-quickstarts/service-jee-jaxrs/
+----
++
+[source,bash,subs="attributes+,macros+"]
+----
+$ mvn clean package -DskipTests
+[INFO] Scanning for projects...
+[INFO]
+[INFO] ------------------------------------------------------------------------
+[INFO] Building Keycloak Quickstart: service-jee-jaxrs 3.1.0.Final
+[INFO] ------------------------------------------------------------------------
+...
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time: 2.153 s
+[INFO] Finished at: 2017-06-26T12:06:12+02:00
+[INFO] Final Memory: 25M/241M
+[INFO] ------------------------------------------------------------------------
+----
+.. *Comment out* the `app-jee-jsp/config/keycloak.json` requirement of the `maven-enforcer-plugin` plugin and build the `app-jee-jsp` application.
++
+[source,bash,subs="attributes+,macros+"]
+----
+service-jee-jaxrs]$ cd ../app-jee-jsp/
+----
++
+[source,bash,subs="attributes+,macros+"]
+----
+app-jee-jsp]$ sed -i /\<executions\>/s/^/\<\!--/ pom.xml
+----
++
+[source,bash,subs="attributes+,macros+"]
+----
+app-jee-jsp]$ sed -i '/\(<\/executions>\)/a\-->' pom.xml
+----
++
+[source,bash,subs="attributes+,macros+"]
+----
+app-jee-jsp]$ mvn clean package -DskipTests
+[INFO] Scanning for projects...
+[INFO]
+[INFO] ------------------------------------------------------------------------
+[INFO] Building Keycloak Quickstart: app-jee-jsp 3.1.0.Final
+[INFO] ------------------------------------------------------------------------
+...
+[INFO] Building war: /tmp/github/keycloak-quickstarts/app-jee-jsp/target/app-jsp.war
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time: 3.018 s
+[INFO] Finished at: 2017-06-26T12:22:25+02:00
+[INFO] Final Memory: 35M/310M
+[INFO] ------------------------------------------------------------------------
+----
++
+[IMPORTANT]
+====
+The link:https://github.com/keycloak/keycloak-quickstarts/tree/latest/app-jee-jsp[app-jee-jsp] quickstart requires to configure the adapter, and adapter configuration file (`keycloak.json`) to be present at the `config/` directory in the root of the quickstart to successfully build the quickstart. But since this example configures the adapter later via selected environment variables available for the EAP 6.4 / 7.1 for OpenShift image, it is not necessary to specify the form of `keycloak.json` adapter configuration file at this moment.
+====
+
+[[directory-structure-binary-builds]]
+[start=4]
+. Prepare the directory structure on the local file system.
++
+Application archives in the *deployments/* subdirectory of the main binary build directory are copied directly to the xref:standard-deployments-directory[standard deployments directory] of the image being built on OpenShift. For the application to deploy, the directory hierarchy containing the web application data must be correctly structured.
++
+Create main directory for the binary build on the local file system and *deployments/* subdirectory within it. Copy the previously built WAR archives of both the *service-jee-jaxrs* and *app-jee-jsp* quickstarts to the *deployments/* subdirectory:
++
+[source,bash,subs="attributes+,macros+"]
+----
+app-jee-jsp]$ ls
+config  pom.xml  README.md  src  target
+----
++
+[source,bash,subs="attributes+,macros+"]
+----
+app-jee-jsp]$ mkdir -p sso-eap7-bin-demo/deployments
+----
++
+[source,bash,subs="attributes+,macros+"]
+----
+app-jee-jsp]$ cp target/app-jsp.war sso-eap7-bin-demo/deployments/
+----
++
+[source,bash,subs="attributes+,macros+"]
+----
+app-jee-jsp]$ cp ../service-jee-jaxrs/target/service.war sso-eap7-bin-demo/deployments/
+----
++
+[source,bash,subs="attributes+,macros+"]
+----
+app-jee-jsp]$ tree sso-eap7-bin-demo/
+sso-eap7-bin-demo/
+|__ deployments
+    |__ app-jsp.war
+    |__ service.war
+
+1 directory, 2 files
+
+----
++
+[[standard-deployments-directory]]
+[NOTE]
+====
+Location of the standard deployments directory depends on the underlying base image, that was used to deploy the application. See the following table:
+
+.Standard Location of the Deployments Directory
+[cols="2", options="header"]
+|===
+| Name of the Underlying Base Image(s) | Standard Location of the Deployments Directory
+
+| EAP for OpenShift 6.4 and 7.1 | *_$JBOSS_HOME/standalone/deployments_*
+
+| Java S2I for OpenShift | *_/deployments_*
+
+| JWS for OpenShift | *_$JWS_HOME/webapps_*
+
+|===
+====
+. Identify the image stream for EAP 6.4 / 7.1 image.
++
+[source,bash,subs="attributes+,macros+"]
+----
+$ oc get is -n openshift | grep eap | cut -d ' ' -f 1
+jboss-eap64-openshift
+jboss-eap71-openshift
+----
+
+[[eap-new-binary-build]]
+[start=6]
+. Create new binary build, specifying image stream and application name.
++
+[NOTE]
+====
+Replace `--image-stream=jboss-eap71-openshift` parameter with the `--image-stream=jboss-eap64-openshift` one in the following oc command to deploy the JSP application on top of {appserver_name} 6.4 for OpenShift image.
+====
++
+[source,bash,subs="attributes+,macros+"]
+----
+$ oc new-build --binary=true \
+--image-stream=jboss-eap71-openshift \
+--name=eap-app
+--> Found image 31895a4 (3 months old) in image stream "openshift/jboss-eap71-openshift" under tag "latest" for "jboss-eap71-openshift"
+
+    {appserver_name} {appserver_version}
+    -------------
+    Platform for building and running JavaEE applications on {appserver_name} {appserver_version}
+
+    Tags: builder, javaee, eap, eap7
+
+    * A source build using binary input will be created
+      * The resulting image will be pushed to image stream "eap-app:latest"
+      * A binary build was created, use 'start-build --from-dir' to trigger a new build
+
+--> Creating resources with label build=eap-app ...
+    imagestream "eap-app" created
+    buildconfig "eap-app" created
+--> Success
+----
+. Start the binary build. Instruct `oc` executable to use main directory of the binary build we created xref:directory-structure-binary-builds[in previous step] as the directory containing binary input for the OpenShift build. In the working directory of *app-jee-jsp* issue the following command.
++
+[source,bash,subs="attributes+,macros+"]
+----
+app-jee-jsp]$ oc start-build eap-app \
+--from-dir=./sso-eap7-bin-demo/ \
+--follow
+Uploading directory "sso-eap7-bin-demo" as binary input for the build ...
+build "eap-app-1" started
+Receiving source from STDIN as archive ...
+Copying all war artifacts from /home/jboss/source/. directory into /opt/eap/standalone/deployments for later deployment...
+Copying all ear artifacts from /home/jboss/source/. directory into /opt/eap/standalone/deployments for later deployment...
+Copying all rar artifacts from /home/jboss/source/. directory into /opt/eap/standalone/deployments for later deployment...
+Copying all jar artifacts from /home/jboss/source/. directory into /opt/eap/standalone/deployments for later deployment...
+Copying all war artifacts from /home/jboss/source/deployments directory into /opt/eap/standalone/deployments for later deployment...
+'/home/jboss/source/deployments/app-jsp.war' -> '/opt/eap/standalone/deployments/app-jsp.war'
+'/home/jboss/source/deployments/service.war' -> '/opt/eap/standalone/deployments/service.war'
+Copying all ear artifacts from /home/jboss/source/deployments directory into /opt/eap/standalone/deployments for later deployment...
+Copying all rar artifacts from /home/jboss/source/deployments directory into /opt/eap/standalone/deployments for later deployment...
+Copying all jar artifacts from /home/jboss/source/deployments directory into /opt/eap/standalone/deployments for later deployment...
+Pushing image 172.30.82.129:5000/eap-app-demo/eap-app:latest ...
+Pushed 6/7 layers, 86% complete
+Pushed 7/7 layers, 100% complete
+Push successful
+----
+. Create a new OpenShift application based on the build.
++
+[source,bash,subs="attributes+,macros+"]
+----
+$ oc new-app eap-app
+--> Found image 6b13d36 (2 minutes old) in image stream "eap-app-demo/eap-app" under tag "latest" for "eap-app"
+
+    eap-app-demo/eap-app-1:aa2574d9
+    -------------------------------
+    Platform for building and running JavaEE applications on {appserver_name} {appserver_version}
+
+    Tags: builder, javaee, eap, eap7
+
+    * This image will be deployed in deployment config "eap-app"
+    * Ports 8080/tcp, 8443/tcp, 8778/tcp will be load balanced by service "eap-app"
+      * Other containers can access this service through the hostname "eap-app"
+
+--> Creating resources ...
+    deploymentconfig "eap-app" created
+    service "eap-app" created
+--> Success
+    Run 'oc status' to view your app.
+----
+. Stop all running containers of the EAP 6.4 / 7.1 JSP application in the current namespace.
++
+[source,bash,subs="attributes+,macros+"]
+----
+$ oc get dc -o name
+deploymentconfig/eap-app
+----
++
+[source,bash,subs="attributes+,macros+"]
+----
+$ oc scale dc/eap-app --replicas=0
+deploymentconfig "eap-app" scaled
+----
+. Further configure the EAP 6.4 / 7.1 JSP application prior the deployment.
+[[sso-public-key-details]]
+.. Configure the application with proper details about the {project_name} server instance.
++
+[WARNING]
+====
+Ensure to replace the value of *_SSO_PUBLIC_KEY_* variable below with the actual content of the RSA public key for the `demo` realm, that has been xref:copy-rsa-public-key[copied].
+====
++
+[source,bash,subs="attributes+,macros+"]
+----
+$ oc set env dc/eap-app \
+-e HOSTNAME_HTTP="eap-app-eap-app-demo.openshift.example.com" \
+-e HOSTNAME_HTTPS="secure-eap-app-eap-app-demo.openshift.example.com" \
+-e SSO_DISABLE_SSL_CERTIFICATE_VALIDATION="true" \
+-e SSO_USERNAME="appuser" \
+-e SSO_PASSWORD="apppassword" \
+-e SSO_REALM="demo" \
+-e SSO_URL="https://secure-sso-sso-app-demo.openshift.example.com/auth" \
+-e SSO_PUBLIC_KEY="MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAkdhXyKx97oIoO6HwnV/MiX2EHO55Sn+ydsPzbjJevI5F31UvUco9uA8dGl6oM8HrnaWWv+i8PvmlaRMhhl6Xs68vJTEc6d0soP+6A+aExw0coNRp2PDwvzsXVWPvPQg3+iytStxu3Icndx+gC0ZYnxoRqL7rY7zKcQBScGEr78Nw6vZDwfe6d/PQ6W4xVErNytX9KyLFVAE1VvhXALyqEM/EqYGLmpjw5bMGVKRXnhmVo9E88CkFDH8E+aPiApb/gFul1GJOv+G8ySLoR1c8Y3L29F7C81odkVBp2yMm3RVFIGSPTjHqjO/nOtqYIfY4Wyw9mRIoY5SyW7044dZXRwIDAQAB" \
+-e SSO_SECRET="0bb8c399-2501-4fcd-a183-68ac5132868d"
+deploymentconfig "eap-app" updated
+----
+.. Configure the application with details about both the SSL and JGroups keystore.
++
+[source,bash,subs="attributes+,macros+"]
+----
+$ oc set env dc/eap-app \
+-e HTTPS_KEYSTORE_DIR="/etc/eap-secret-volume" \
+-e HTTPS_KEYSTORE="eapkeystore.jks" \
+-e HTTPS_PASSWORD="password" \
+-e JGROUPS_ENCRYPT_SECRET="eap-jgroup-secret" \
+-e JGROUPS_ENCRYPT_KEYSTORE_DIR="/etc/jgroups-encrypt-secret-volume" \
+-e JGROUPS_ENCRYPT_KEYSTORE="eapjgroups.jceks" \
+-e JGROUPS_ENCRYPT_PASSWORD="password"
+deploymentconfig "eap-app" updated
+----
+.. Define OpenShift volumes for both the SSL and JGroups secrets created earlier.
++
+[source,bash,subs="attributes+,macros+"]
+----
+$ oc volume dc/eap-app --add \
+--name="eap-keystore-volume" \
+--type=secret \
+--secret-name="eap-ssl-secret" \
+--mount-path="/etc/eap-secret-volume"
+deploymentconfig "eap-app" updated
+----
++
+[source,bash,subs="attributes+,macros+"]
+----
+$ oc volume dc/eap-app --add \
+--name="eap-jgroups-keystore-volume" \
+--type=secret \
+--secret-name="eap-jgroup-secret" \
+--mount-path="/etc/jgroups-encrypt-secret-volume"
+deploymentconfig "eap-app" updated
+----
+.. Configure the deployment config of the application to run application pods under the `default` OpenShift service account (default setting).
++
+[source,bash,subs="attributes+,macros+"]
+----
+$ oc patch dc/eap-app --type=json \
+-p '[{"op": "add", "path": "/spec/template/spec/serviceAccountName", "value": "default"}]'
+"eap-app" patched
+----
+. Deploy container of the EAP 6.4 / 7.1 JSP application using the modified deployment config.
++
+[source,bash,subs="attributes+,macros+"]
+----
+$ oc scale dc/eap-app --replicas=1
+deploymentconfig "eap-app" scaled
+----
+. Expose the service as route.
++
+[source,bash,subs="attributes+,macros+"]
+----
+$ oc get svc -o name
+service/eap-app
+----
++
+[source,bash,subs="attributes+,macros+"]
+----
+$ oc get route
+No resources found.
+----
++
+[source,bash,subs="attributes+,macros+"]
+----
+$ oc expose svc/eap-app
+route "eap-app" exposed
+----
++
+[source,bash,subs="attributes+,macros+"]
+----
+$ oc get route
+NAME      HOST/PORT                                    PATH      SERVICES   PORT       TERMINATION   WILDCARD
+eap-app   eap-app-eap-app-demo.openshift.example.com             eap-app    8080-tcp                 None
+----
+
+===== Access the Application
+
+Access the application in your browser using the URL *\http://eap-app-eap-app-demo.openshift.example.com/app-jsp*. You should see output like on the following image:
+
+[.text-center]
+image:images/sso_app_jee_jsp.png[{project_name} Example JSP Application]
+
+Perform the following to test the application:
+
+* Click the *INVOKE PUBLIC* button to access the `public` endpoint that doesn't require authentication.
++
+You should see the *Message: public* output.
+* Click the *LOGIN* button to be redirected for user authentication to the {project_name} server instance against the `demo` realm.
++
+Specify username and password of the {project_name} user configured earlier (`appuser` / `apppassword`). Click *Log in*. The look of the application changes as detailed in the following image:
++
+[.text-center]
+image:images/sso_app_jee_jsp_logged_in.png[]
+
+* Click the *INVOKE SECURED* button to access the `secured` endpoint.
++
+You should see the *Message: secured* output.
+* Click the *INVOKE ADMIN* button to access the `admin` endpoint.
++
+You should see *403 Forbidden* output.
++
+[NOTE]
+====
+The `admin` endpoint requires users with `admin` {project_name} role to invoke properly. Access for the `appuser` is forbidden because they only have `user` role privilege, which allows them to access the `secured` endpoint.
+====
++
+Perform the following steps to add the `appuser` to the `admin` {project_name} role:
++
+. Access the administration console of the {project_name} server's instance.
++
+*\https://secure-sso-sso-app-demo.openshift.example.com/auth/admin*.
++
+Use the xref:sso-administrator-setup[credentials of the {project_name} administrator user].
+. Click *Users* in the *Manage* sidebar to view the user information for the `demo` realm.
+. Click *View all users* button.
+. Click the ID link for the *appuser* or alternatively click the *Edit* button in the *Actions* column.
+. Click the *Role Mappings* tab.
+. Select `admin` entry from the *Available Roles* list in the *Realm Roles* row.
+. Click *Add selected>* button to add the `admin` role to the user.
+. Return to EAP 6.4 / 7.1 JSP service application.
++
+*\http://eap-app-eap-app-demo.openshift.example.com/app-jsp*.
+. Click the *LOGOUT* button to reload role mappings for the `appuser`.
+. Click the *LOGIN* button again and provider `appuser` credentials.
+. Click the *INVOKE ADMIN* button again.
++
+You should see the *Message: admin* output already.
+
 [[Example-EAP-Auto]]
 === Example Workflow: Automatically Registering EAP Application in {project_name} with OpenID-Connect Client
-This follows on from xref:Example-Deploying-SSO[Example Workflow: Preparing and Deploying the {project_openshift_product_name} image], in which {project_name} was deployed on OpenShift. This example prepares {project_name} realm, role, and user credentials for an EAP project using an OpenID-Connect client adapter. These credentials are then provided in the EAP for OpenShift template for automatic {project_name} client registration. Once deployed, the {project_name} user can be used to authenticate and access JBoss EAP.
+This follows on from xref:Example-Deploying-SSO[Example Workflow: Preparing and Deploying the {project_openshift_product_name} image], in which {project_name} was deployed on OpenShift. This example prepares {project_name} realm, role, and user credentials for an EAP project using an OpenID-Connect client adapter. These credentials are then provided in the EAP for OpenShift template for automatic {project_name} client registration. Once deployed, the {project_name} user can be used to authenticate and access {appserver_name}.
 
 [NOTE]
 ====
@@ -905,7 +1400,7 @@ Log in to the encrypted {project_name} web server at *$$https://secure-sso-$$_<p
 
 *Copy the Public Key*
 
-In the newly created _eap-demo_ realm, click the *Keys* tab and copy the generated public key. This example uses the variable _<realm-public-key>_ for brevity. This is used later to deploy the {project_name}-enabled JBoss EAP image.
+In the newly created _eap-demo_ realm, click the *Keys* tab and copy the generated public key. This example uses the variable _<realm-public-key>_ for brevity. This is used later to deploy the {project_name}-enabled {appserver_name} image.
 
 *Create a Role*
 
@@ -927,7 +1422,7 @@ Create the _realm management user_:
 . Click *Add User*.
 . Enter a valid *Username* (this example uses the user _eap-mgmt-user_) and click *Save*.
 . Edit the user configuration. Click the *Credentials* tab in the user space and enter a password for the user. After the password has been confirmed you can click *Reset Password* to set the user password. A pop-up window prompts for additional confirmation.
-. Click *Role Mappings* to list the realm and client role configuration. In the *Client Roles* drop-down menu, select *realm-management* and add all of the available roles to the user. This provides the user {project_name} server rights that can be used by the JBoss EAP image to create clients.
+. Click *Role Mappings* to list the realm and client role configuration. In the *Client Roles* drop-down menu, select *realm-management* and add all of the available roles to the user. This provides the user {project_name} server rights that can be used by the {appserver_name} image to create clients.
 
 Create the _application user_:
 
@@ -937,7 +1432,7 @@ Create the _application user_:
 . Edit the user configuration. Click the *Credentials* tab in the user space and enter a password for the user. After the password has been confirmed you can click *Reset Password* to set the user password. A pop-up window prompts for additional confirmation.
 . Click *Role Mappings* to list the realm and client role configuration. In *Available Roles*, add the role created earlier.
 
-==== Deploy the {project_name}-enabled JBoss EAP Image
+==== Deploy the {project_name}-enabled {appserver_name} Image
 
 . Return to the OpenShift web console and click *Add to project* to list the default image streams and templates.
 . Use the *Filter by keyword* search bar to limit the list to those that match _sso_. You may need to click *See all* to show the desired application template.
@@ -992,21 +1487,21 @@ Create the _application user_:
 |*_JGROUPS_ENCRYPT_SECRET_*
 |_eap-jgroup-secret_
 |===
-. Click *Create* to deploy the JBoss EAP image.
+. Click *Create* to deploy the {appserver_name} image.
 
-It may take several minutes for the JBoss EAP image to deploy.
+It may take several minutes for the {appserver_name} image to deploy.
 
-==== Log in to the JBoss EAP Server Using {project_name}
+==== Log in to the {appserver_name} Server Using {project_name}
 
-. Access the JBoss EAP application server and click *Login*. You are redirected to the {project_name} login.
-. Log in using the {project_name} user created in the example. You are authenticated against the {project_name} server and returned to the JBoss EAP application server.
+. Access the {appserver_name} application server and click *Login*. You are redirected to the {project_name} login.
+. Log in using the {project_name} user created in the example. You are authenticated against the {project_name} server and returned to the {appserver_name} application server.
 
 
 [[Example-EAP-Manual]]
 === Example Workflow: Manually Registering EAP Application in {project_name} with SAML Client
 This follows on from xref:Example-Deploying-SSO[Example Workflow: Preparing and Deploying the {project_openshift_product_name} image], in which {project_name} was deployed on OpenShift.
 
-This example prepares {project_name} realm, role, and user credentials for an EAP project and configures an EAP for OpenShift deployment. Once deployed, the {project_name} user can be used to authenticate and access JBoss EAP.
+This example prepares {project_name} realm, role, and user credentials for an EAP project and configures an EAP for OpenShift deployment. Once deployed, the {project_name} user can be used to authenticate and access {appserver_name}.
 
 [NOTE]
 ====
@@ -1023,7 +1518,7 @@ Log in to the encrypted {project_name} web server at *$$https://secure-sso-$$_<p
 
 *Copy the Public Key*
 
-In the newly created _saml-demo_ realm, click the *Keys* tab and copy the generated public key. This example uses the variable _realm-public-key_ for brevity. This is needed later to deploy the {project_name}-enabled JBoss EAP image.
+In the newly created _saml-demo_ realm, click the *Keys* tab and copy the generated public key. This example uses the variable _realm-public-key_ for brevity. This is needed later to deploy the {project_name}-enabled {appserver_name} image.
 
 *Create a Role*
 
@@ -1047,7 +1542,7 @@ Create the _realm management user_:
 . Edit the user configuration. Click the *Credentials* tab in the user space and enter a password for the user. After the password has been confirmed you can click *Reset Password* to set the user password. A pop-up window prompts for additional confirmation.
 ////
 Need for the SAML?
-. Click *Role Mappings* to list the realm and client role configuration. In the *Client Roles* drop-down menu, select *realm-management* and add all of the available roles to the user. This provides the user {project_name} server rights that can be used by the JBoss EAP image to create clients.
+. Click *Role Mappings* to list the realm and client role configuration. In the *Client Roles* drop-down menu, select *realm-management* and add all of the available roles to the user. This provides the user {project_name} server rights that can be used by the {appserver_name} image to create clients.
 ////
 
 Create the _application user_:
