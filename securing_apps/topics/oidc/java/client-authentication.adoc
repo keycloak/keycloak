@@ -1,4 +1,4 @@
-[[client_authentication_adapter]]
+[[_client_authentication_adapter]]
 ==== Client Authentication
 
 When a confidential OIDC client needs to send a backchannel request (for example, to exchange code for the token, or to refresh the token) it needs to authenticate against the {project_name} server. By default, there are three ways to authenticate the client: client ID and client secret, client authentication with signed JWT, or client authentication with signed JWT using client secret.

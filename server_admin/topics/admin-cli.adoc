@@ -884,7 +884,7 @@ $ kcadm.sh get clients/c7b8547f-e748-4333-95d0-410b76b3f4a3/installation/provide
 ----
 
 [discrete]
-==== Getting a {appserver_name} subsystem adapter configuration for a specific client
+==== Getting a WildFly subsystem adapter configuration for a specific client
 
 Use a client's ID to construct an endpoint URI that targets a specific client, such as [filename]`clients/ID/installation/providers/keycloak-oidc-jboss-subsystem`.
 

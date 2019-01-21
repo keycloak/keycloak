@@ -1,5 +1,5 @@
 
-[[fuse_install_feature]]
+[[_fuse_install_feature]]
 ===== Installing the Keycloak Feature
 
 You must first install the `keycloak` feature in the JBoss Fuse environment. The keycloak feature includes the Fuse adapter and all third-party dependencies. You can install it either from the Maven repository or from an archive.

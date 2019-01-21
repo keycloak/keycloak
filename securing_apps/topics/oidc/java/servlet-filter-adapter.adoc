@@ -1,4 +1,4 @@
-[[servlet_filter_adapter]]
+[[_servlet_filter_adapter]]
 ==== Java Servlet Filter Adapter
 
 If you are deploying your Java Servlet application on a platform where there is no {project_name} adapter you opt to use the servlet filter adapter.

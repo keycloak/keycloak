@@ -1,4 +1,4 @@
-[[mod_auth_mellon]]
+[[_mod_auth_mellon]]
 
 === mod_auth_mellon Apache HTTPD Module
 

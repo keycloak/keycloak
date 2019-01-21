@@ -55,7 +55,7 @@ The user agent can be redirected to the endpoint, in which case the active user 
 
 The endpoint can also be invoked directly by the application. To invoke this endpoint directly the refresh token needs to be included as well as the credentials required to authenticate the client.
 
-[[certificate_endpoint]]
+[[_certificate_endpoint]]
 ===== Certificate Endpoint
 ....
 /realms/{realm-name}/protocol/openid-connect/certs
@@ -63,7 +63,7 @@ The endpoint can also be invoked directly by the application. To invoke this end
 
 The certificate endpoint returns the public keys enabled by the realm, encoded as a JSON Web Key (JWK). Depending on the realm settings there can be one or more keys enabled for verifying tokens. For more information see the link:{adminguide_link}[{adminguide_name}] and the https://tools.ietf.org/html/rfc7517[JSON Web Key specification].
 
-[[token_introspection_endpoint]]
+[[_token_introspection_endpoint]]
 ===== Introspection Endpoint
 ....
 /realms/{realm-name}/protocol/openid-connect/token/introspect
@@ -122,7 +122,7 @@ browser history. This is somewhat mitigated by using short expiration for Access
 
 For more details refer to the https://openid.net/specs/openid-connect-core-1_0.html#ImplicitFlowAuth[Implicit Flow] in the OpenID Connect specification.
 
-[[resource_owner_password_credentials_flow]]
+[[_resource_owner_password_credentials_flow]]
 ===== Resource Owner Password Credentials
 
 Resource Owner Password Credentials, referred to as Direct Grant in {project_name}, allows exchanging user credentials for tokens. It's not recommended
@@ -182,13 +182,13 @@ In production for web applications always use `https` for all redirect URIs. Do 
 
 There's also a few special redirect URIs:
 
-[[installed_applications_url]]
+[[_installed_applications_url]]
 `$$http://localhost$$`::
 
   This redirect URI is useful for native applications and allows the native application to create a web server on a random port that can be used to obtain the
   authorization code. This redirect uri allows any port.
 
-[[installed_applications_urn]]
+[[_installed_applications_urn]]
 `urn:ietf:wg:oauth:2.0:oob`::
 
   If its not possible to start a web server in the client (or a browser is not available) it is possible to use the special `urn:ietf:wg:oauth:2.0:oob` redirect uri.

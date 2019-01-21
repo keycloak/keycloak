@@ -1,5 +1,5 @@
 
-[[fuse7_install_feature]]
+[[_fuse7_install_feature]]
 ===== Installing the Keycloak Feature
 
 You must first install the `keycloak-pax-http-undertow` and `keycloak-jaas` features in the JBoss Fuse environment. The `keycloak-pax-http-undertow` feature includes the Fuse adapter and all third-party dependencies. The `keycloak-jaas` contains JAAS module used in realm for SSH and JMX authentication. You can install it either from the Maven repository or from an archive.

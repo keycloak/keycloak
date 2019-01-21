@@ -1,4 +1,4 @@
-[[params_forwarding]]
+[[_params_forwarding]]
 ==== Parameters Forwarding
 
 The {project_name}  initial authorization endpoint request has support for various parameters. Most of the parameters are described in

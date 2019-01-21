@@ -1,5 +1,5 @@
 
-[[fuse7_adapter_admin]]
+[[_fuse7_adapter_admin]]
 ===== Securing Fuse Administration Services
 
 ====== Using SSH Authentication to Fuse Terminal

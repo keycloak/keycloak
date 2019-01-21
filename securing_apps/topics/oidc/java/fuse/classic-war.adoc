@@ -1,5 +1,5 @@
 
-[[fuse_adapter_classic_war]]
+[[_fuse_adapter_classic_war]]
 ===== Securing a Classic WAR Application
 
 The needed steps to secure your WAR application are:

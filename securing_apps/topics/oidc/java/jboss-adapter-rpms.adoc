@@ -1,4 +1,4 @@
-[[jboss_adapter_rpm]]
+[[_jboss_adapter_rpm]]
 ==== Installing JBoss EAP Adapter from an RPM
 
 Install the EAP 7 Adapters from an RPM:

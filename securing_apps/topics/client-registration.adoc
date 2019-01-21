@@ -1,4 +1,4 @@
-[[client_registration]]
+[[_client_registration]]
 == Client Registration
 
 In order for an application or service to utilize {project_name} it has to register a client in {project_name}.
@@ -32,7 +32,7 @@ The bearer token can be issued on behalf of a user or a Service Account. The fol
 
 If you are using a bearer token to create clients it's recommend to use a token from a Service Account with only the `create-client` role (see link:{adminguide_link}[{adminguide_name}] for more details).
 
-[[initial_access_token]]
+[[_initial_access_token]]
 ==== Initial Access Token
 
 The recommended approach to registering new clients is by using initial access tokens.
@@ -55,7 +55,7 @@ For example:
 ----
 Authorization: bearer eyJhbGciOiJSUz...
 ----            
-[[registration_access_token]]
+[[_registration_access_token]]
 ==== Registration Access Token
 
 When you create a client through the Client Registration Service the response will include a registration access token.

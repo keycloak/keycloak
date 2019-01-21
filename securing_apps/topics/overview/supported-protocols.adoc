@@ -1,4 +1,4 @@
-[[supported_protocols]]
+[[_supported_protocols]]
 
 === Supported Protocols
 

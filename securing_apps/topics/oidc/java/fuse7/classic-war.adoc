@@ -1,5 +1,5 @@
 
-[[fuse7_adapter_classic_war]]
+[[_fuse7_adapter_classic_war]]
 ===== Securing a Classic WAR Application
 
 The needed steps to secure your WAR application are:
@@ -68,7 +68,7 @@ For example:
 
 . Contrary to the Fuse 6 adapter, there are no special OSGi imports needed in MANIFEST.MF. 
 
-[[fuse7_config_external_adapter]]
+[[_fuse7_config_external_adapter]]
 ====== Configuration Resolvers
 
 The `keycloak.json` adapter configuration file can be stored inside a bundle,

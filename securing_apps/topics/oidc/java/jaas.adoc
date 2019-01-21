@@ -1,4 +1,4 @@
-[[jaas_adapter]]
+[[_jaas_adapter]]
 ==== JAAS plugin
 
 It's generally not needed to use JAAS for most of the applications, especially if they are HTTP based, and you should most likely choose one of our other adapters.

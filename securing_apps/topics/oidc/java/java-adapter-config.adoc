@@ -1,5 +1,5 @@
 
-[[java_adapter_config]]
+[[_java_adapter_config]]
 ==== Java Adapter Config
 
 Each Java adapter supported by {project_name} can be configured by a simple JSON file.

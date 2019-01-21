@@ -1,5 +1,5 @@
 
-[[saml-jboss-adapter-installation]]
+[[_saml-jboss-adapter-installation]]
 ===== Adapter Installation
 
 Each adapter is a separate download on the {project_name} download site.
@@ -26,8 +26,6 @@ Install on JBoss EAP 6.x:
 $ cd $JBOSS_HOME
 $ unzip keycloak-saml-eap6-adapter-dist.zip
 ----
-
-These zip files create new JBoss Modules specific to the WildFly/JBoss EAP SAML Adapter within your WildFly or JBoss EAP distro.
 endif::[]
 
 ifeval::[{project_product}==true]
@@ -46,10 +44,10 @@ Install on JBoss EAP 6.x:
 $ cd $EAP_HOME
 $ unzip rh-sso-saml-eap6-adapter.zip
 ----
-
-These zip files create new JBoss Modules specific to the JBoss EAP SAML Adapter within your JBoss EAP distro.
 endif::[]
 
+
+These zip files create new JBoss Modules specific to the WildFly/JBoss EAP SAML Adapter within your WildFly or JBoss EAP distro.
 
 After adding the modules, you must then enable the {project_name} SAML Subsystem within your app server's server configuration: `domain.xml` or `standalone.xml`.
 

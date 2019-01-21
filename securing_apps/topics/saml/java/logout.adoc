@@ -5,7 +5,7 @@ For Java EE servlet containers, you can call `HttpServletRequest.logout()`. For 
 the browser at any url of your web application that has a security constraint and pass in a query parameter GLO, i.e. `$$http://myapp?GLO=true$$`.
 This will log you out if you have an SSO session with your browser. 
 
-[[saml_logout_in_cluster]]
+[[_saml_logout_in_cluster]]
 ===== Logout in Clustered Environment
 
 Internally, the SAML adapter stores a mapping between the SAML session index, principal name (when known), and HTTP session ID.
@@ -48,7 +48,7 @@ Currently, to provide reliable service, it is recommended to use replicated cach
 Using distributed cache may lead to results where the SAML logout request would land to a node with no access
 to SAML session index to HTTP session mapping which would lead to unsuccessful logout.
 
-[[saml_logout_in_cross_dc]]
+[[_saml_logout_in_cross_dc]]
 ===== Logout in Cross DC Scenario
 
 The cross DC scenario only applies to WildFly 10 and higher, and EAP 7 and higher.

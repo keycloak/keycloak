@@ -1,4 +1,4 @@
-[[saml_jboss_adapter]]
+[[_saml_jboss_adapter]]
 
 ifeval::[{project_community}==true]
 ==== JBoss EAP/WildFly Adapter

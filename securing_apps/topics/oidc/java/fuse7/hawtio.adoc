@@ -1,5 +1,5 @@
 
-[[fuse7_hawtio]]
+[[_fuse7_hawtio]]
 ===== Securing the Hawtio Administration Console
 
 To secure the Hawtio Administration Console with {project_name}, complete the following steps:

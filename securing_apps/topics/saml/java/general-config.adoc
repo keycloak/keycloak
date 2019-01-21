@@ -1,4 +1,4 @@
-[[saml-general-config]]
+[[_saml-general-config]]
 
 ==== General Adapter Config
 
