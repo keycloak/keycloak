@@ -22,7 +22,7 @@ $ sudo subscription-manager repos --enable=jb-eap-7-for-rhel-<RHEL_VERSION>-serv
 Install the EAP 7 adapters for OIDC using the following command:
 
 ----
-$ sudo yum install eap7-keycloak-adapter-sso7_2
+$ sudo yum install eap7-keycloak-adapter-sso7_3
 ----
 
 NOTE: The default EAP_HOME path for the RPM installation is /opt/rh/eap7/root/usr/share/wildfly.
@@ -59,7 +59,7 @@ $ sudo subscription-manager repos --enable=jb-eap-6-for-rhel-<RHEL_VERSION>-serv
 Install the EAP 6 adapters for OIDC using the following command:
 
 ----
-$ sudo yum install keycloak-adapter-sso7_2-eap6
+$ sudo yum install keycloak-adapter-sso7_3-eap6
 ----
 
 NOTE: The default EAP_HOME path for the RPM installation is /opt/rh/eap6/root/usr/share/wildfly.
