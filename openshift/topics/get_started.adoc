@@ -480,9 +480,9 @@ $ oc new-build --binary=true \
 --name=eap-app
 --> Found image 31895a4 (3 months old) in image stream "openshift/jboss-eap71-openshift" under tag "latest" for "jboss-eap71-openshift"
 
-    JBoss EAP 7.2
+    {appserver_name} {appserver_version}
     -------------
-    Platform for building and running JavaEE applications on JBoss EAP 7.2
+    Platform for building and running JavaEE applications on {appserver_name} {appserver_version}
 
     Tags: builder, javaee, eap, eap7
 
@@ -529,7 +529,7 @@ $ oc new-app eap-app
 
     eap-app-demo/eap-app-1:aa2574d9
     -------------------------------
-    Platform for building and running JavaEE applications on JBoss EAP 7.2
+    Platform for building and running JavaEE applications on {appserver_name} {appserver_version}
 
     Tags: builder, javaee, eap, eap7
 

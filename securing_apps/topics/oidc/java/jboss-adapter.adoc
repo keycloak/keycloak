@@ -126,7 +126,7 @@ even on those versions. However, we recommend to use the newer Elytron adapter.
 endif::[]
 
 ifeval::[{project_product}==true]
-.JBoss EAP 7.2 or newer
+.JBoss EAP 7.1 or newer
 [source]
 ----
 $ ./bin/jboss-cli.sh --file=bin/adapter-elytron-install-offline.cli
@@ -153,7 +153,7 @@ $ ./bin/jboss-cli.sh -c --file=bin/adapter-install.cli
 endif::[]
 
 ifeval::[{project_product}==true]
-.JBoss EAP 7.2 or newer
+.JBoss EAP 7.1 or newer
 [source]
 ----
 $ ./bin/jboss-cli.sh -c --file=bin/adapter-elytron-install.cli

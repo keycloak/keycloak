@@ -76,14 +76,14 @@ even on those versions. However, we recommend to use the newer Elytron adapter.
 endif::[]
 
 ifeval::[{project_product}==true]
-.JBoss EAP 7.2 or newer
+.JBoss EAP 7.1 or newer
 [source]
 ----
 $ cd $JBOSS_HOME
 $ ./bin/jboss-cli.sh -c --file=bin/adapter-elytron-install-saml.cli
 ----
 
-.JBoss EAP 6.4
+.JBoss EAP 7.0 and EAP 6.4
 [source]
 ----
 
@@ -91,7 +91,7 @@ $ cd $JBOSS_HOME
 $ ./bin/boss-cli.sh -c --file=bin/adapter-install-saml.cli
 ----
 
-NOTE: It is possible to use the legacy non-Elytron adapter on JBoss EAP 7.2 or newer as well, meaning you can use `adapter-install-saml.cli`
+NOTE: It is possible to use the legacy non-Elytron adapter on JBoss EAP 7.1 or newer as well, meaning you can use `adapter-install-saml.cli`
 even on those versions. However, we recommend to use the newer Elytron adapter.
 
 endif::[]
