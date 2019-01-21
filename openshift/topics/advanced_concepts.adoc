@@ -228,7 +228,7 @@ $ oc new-app --template={project_templates_version}-https \
 ----
 
 [[advanced-concepts-sso-hostname-spi-setup]]
-=== Customizing Hostname for the {project_name} Server
+=== Customizing the Hostname for {project_name} Server
 
 The hostname SPI introduced a flexible way to configure the hostname for the {project_name} server. There are two built-in providers. The first is `request`, which uses the request headers to determine the hostname. This is the *default setting* for {project_openshift_product_name} image. The second is `fixed`, which allows configuring a fixed hostname. The latter makes sure that only valid hostnames can be used and allows internal applications to invoke {project_name} server through an alternative URL.
 
