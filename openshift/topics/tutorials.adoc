@@ -1,13 +1,6 @@
+////
 [[{project_name}-Binary-Builds-Tutorial]]
 === Example Workflow: Creating OpenShift Application from Existing Maven Binaries and Securing it Using Red Hat Single Sing-On
-
-== Tutorials
-
-[[Example-Deploying-SSO]]
-=== Example Workflow: Preparing and Deploying the {project_openshift_product_name} image
-[[Preparing-SSO-Authentication-for-OpenShift-Deployment]]
-==== Preparing {project_name} Authentication for OpenShift Deployment
-Log in to the OpenShift CLI with a user that holds the _cluster:admin_ role.
 
 To deploy existing applications on OpenShift, you can use the link:https://docs.openshift.com/container-platform/latest/dev_guide/builds/build_inputs.html#binary-source[binary source] capability.
 
@@ -43,9 +36,11 @@ Use the xref:sso-administrator-setup[credentials of the {project_name} administr
 . Hover your cursor over the realm namespace (default is *Master*) at the top of the sidebar and click *Add Realm*.
 . Enter a realm name (this example uses `demo`) and click *Create*.
 
+////
 
+== Tutorials
 
-[[upgrading-sso-db-from-previous-to-{project_version}]]
+[[upgrading-sso-db-from-previous-version]]
 === Example Workflow: Updating Existing Database when Migrating {project_openshift_product_name} Image to a new version
 [IMPORTANT]
 ====
@@ -586,10 +581,10 @@ $ oc scale --replicas=1 dc/sso
 deploymentconfig "sso" scaled
 ----
 
-=== Example Workflow: Migrating Entire {project_name} Server Database Across The Environments
+==== Migrating The Entire {project_name} Server Database Across The Environments
 This tutorial focuses on migrating the Red Hat Single Sign-On server database from one environment to another or migrating to a different database. It assumes steps described in xref:Preparing-SSO-Authentication-for-OpenShift-Deployment[Preparing {project_name} Authentication for OpenShift Deployment] section have been performed already.
 
-==== Deploying the {project_name} MySQL Application Template
+===== Deploying the {project_name} MySQL Application Template
 
 . Log in to the OpenShift web console and select the _sso-app-demo_ project space.
 . Click *Add to project* to list the default image streams and templates.
@@ -616,7 +611,7 @@ This example workflow uses a self-generated CA to provide an end-to-end workflow
 For production environments, Red Hat recommends that you use an SSL certificate purchased from a verified Certificate Authority.
 ====
 
-==== (Optional) Creating additional {project_name} link:https://access.redhat.com/documentation/en-us/red_hat_single_sign-on/7.2/html-single/server_administration_guide/#core_concepts_and_terms[realm and users] to be also exported
+===== (Optional) Creating additional {project_name} link:https://access.redhat.com/documentation/en-us/red_hat_single_sign-on/7.2/html-single/server_administration_guide/#core_concepts_and_terms[realm and users] to be also exported
 
 When performing link:https://access.redhat.com/documentation/en-us/red_hat_single_sign-on/7.2/html-single/server_administration_guide/#export_import[{project_name} {project_version} server database export] only {project_name} realms and users currently present in the database will be exported. If the exported JSON file should include also additional {project_name} realms and users, these need to be created first:
 
@@ -626,7 +621,7 @@ When performing link:https://access.redhat.com/documentation/en-us/red_hat_singl
 Upon their creation xref:sso-export-the-database[the database can be exported.]
 
 [[sso-export-the-database]]
-==== Export the {project_name} database as a JSON file on the OpenShift pod
+===== Export the {project_name} database as a JSON file on the OpenShift pod
 
 . Get the {project_name} deployment config and scale it down to zero.
 +
@@ -670,7 +665,7 @@ $ oc logs sso-4-ejr0k | grep 'Export'
 09:24:59,998 INFO  [org.keycloak.services] (ServerService Thread Pool -- 57) KC-SERVICES0035: Export finished successfully
 ----
 
-==== Retrieve and import the exported JSON file
+===== Retrieve and import the exported JSON file
 
 . Retrieve the JSON file of the {project_name} database from the pod.
 +

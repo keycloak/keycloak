@@ -22,5 +22,5 @@ The Tutorials in this guide follow on from and assume an OpenShift instance simi
 
 [IMPORTANT]
 ====
-For information related to updating the existing database when migrating {project_openshift_product_name} image from previous versions to version {project_version}, see the xref:../tutorials/tutorials.adoc#upgrading-sso-db-from-previous-to-{project_version}[Updating Existing Database when Migrating {project_openshift_product_name} Image to a new version] section.
+For information related to updating the existing database when migrating {project_openshift_product_name} image from previous versions to version {project_version}, see the xref:upgrading-sso-db-from-previous-version[Updating Existing Database when Migrating {project_openshift_product_name} Image to a new version] section.
 ====

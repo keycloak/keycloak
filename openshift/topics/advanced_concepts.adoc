@@ -20,7 +20,7 @@ $ oc new-project sso-app-demo
 $ oc policy add-role-to-user view system:serviceaccount:$(oc project -q):default
 ----
 
-[[advanced-concepts-Configuring-Keystores]]
+[[Configuring-Keystores]]
 ==== Creating HTTPS and JGroups Keystores, and Truststore for the {project_name} Server
 
 The {project_name} application templates using xref:../introduction/introduction.adoc#passthrough-templates[passthrough TLS termination] require:
@@ -226,43 +226,6 @@ $ oc new-app --template={project_templates_version}-https \
 --> Success
     Run 'oc status' to view your app.
 ----
-
-==== Accessing the Administrator Console of the {project_name} Pod
-
-After the template got deployed, identify the available routes:
-
-[source,bash,subs="attributes+,macros+"]
-----
-$ oc get routes
-----
-
-[cols="7",options="header"]
-|===
-|NAME |HOST/PORT |PATH |SERVICES |PORT |TERMINATION |WILDCARD
-
-|secure-sso
-|secure-sso-sso-app-demo.openshift.example.com
-|
-|secure-sso
-|<all>
-|passthrough
-|None
-
-|sso
-|sso-sso-app-demo.openshift.example.com
-|
-|sso
-|<all>
-|
-|None
-|===
-
-and access the {project_name} administrator console at:
-
-* *\https://secure-sso-sso-app-demo.openshift.example.com/auth/admin*
-* *\http://sso-sso-app-demo.openshift.example.com/auth/admin*
-
-using the xref:sso-administrator-setup[administrator account].
 
 [[advanced-concepts-sso-hostname-spi-setup]]
 === Customizing Hostname for the {project_name} Server

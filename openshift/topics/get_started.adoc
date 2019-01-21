@@ -53,6 +53,123 @@ done
 $ oc -n openshift import-image redhat-{project_templates_version}-openshift:{project_latest_image_tag}
 ----
 
+[[Example-Deploying-SSO]]
+=== Deploying the {project_name} Image
+[[Preparing-SSO-Authentication-for-OpenShift-Deployment]]
+==== Preparing the Deployment
+Log in to the OpenShift CLI with a user that holds the _cluster:admin_ role.
+
+. Create a new project:
++
+[source,bash,subs="attributes+,macros+"]
+----
+$ oc new-project sso-app-demo
+----
+. Add the `view` role to the link:https://docs.openshift.com/container-platform/latest/dev_guide/service_accounts.html#default-service-accounts-and-roles[`default`] service account. This enables the service account to view all the resources in the sso-app-demo namespace, which is necessary for managing the cluster.
++
+[source,bash,subs="attributes+,macros+"]
+----
+$ oc policy add-role-to-user view system:serviceaccount:$(oc project -q):default
+----
+
+==== Deploying the {project_name} Image using Application Template
+
+===== Deploying the Template via OpenShift CLI
+
+. List the available {project_name} application templates:
++
+[source,bash,subs="attributes+,macros+"]
+----
+$ oc get templates -n openshift -o name | grep -o '{project_templates_version}.\+'
+{project_templates_version}-https
+{project_templates_version}-mysql
+{project_templates_version}-mysql-persistent
+{project_templates_version}-postgresql
+{project_templates_version}-postgresql-persistent
+{project_templates_version}-x509-https
+{project_templates_version}-x509-mysql-persistent
+{project_templates_version}-x509-postgresql-persistent
+----
+. Deploy the selected one:
++
+[source,bash,subs="attributes+,macros+"]
+----
+$ oc new-app --template={project_templates_version}-x509-https
+--> Deploying template "openshift/{project_templates_version}-x509-https" to project sso-app-demo
+
+     {project_name} {project_versionDoc} (Ephemeral)
+     ---------
+     An example {project_name} 7 application. For more information about using this template, see https://github.com/jboss-openshift/application-templates.
+
+     A new {project_name} service has been created in your project. The admin username/password for accessing the master realm via the {project_name} console is IACfQO8v/nR7llVSVb4Dye3TNRbXoXhRpAKTmiCRc. The HTTPS keystore used for serving secure content, the JGroups keystore used for securing JGroups communications, and server truststore used for securing {project_name} requests were automatically created via OpenShift's service serving x509 certificate secrets.
+
+     * With parameters:
+        * Application Name=sso
+        * JGroups Cluster Password=jg0Rssom0gmHBnooDF3Ww7V4Mu5RymmB # generated
+        * Datasource Minimum Pool Size=
+        * Datasource Maximum Pool Size=
+        * Datasource Transaction Isolation=
+        * ImageStream Namespace=openshift
+        * {project_name} Administrator Username=IACfQO8v # generated
+        * {project_name} Administrator Password=nR7llVSVb4Dye3TNRbXoXhRpAKTmiCRc # generated
+        * {project_name} Realm=
+        * {project_name} Service Username=
+        * {project_name} Service Password=
+        * Container Memory Limit=1Gi
+
+--> Creating resources ...
+    service "sso" created
+    service "secure-sso" created
+    service "sso-ping" created
+    route "sso" created
+    route "secure-sso" created
+    deploymentconfig "sso" created
+--> Success
+    Run 'oc status' to view your app.
+----
+
+===== Deploying the Template via OpenShift Web Console
+
+Alternatively, perform the following steps to deploy the {project_name} template via OpenShift web console:
+
+. Log in to the OpenShift web console and select the _sso-app-demo_ project space.
+. Click *Add to Project*, then *Browse Catalog* to list the default image streams and templates.
+. Use the *Filter by Keyword* search bar to limit the list to those that match _sso_. You may need to click *Middleware*, then *Integration* to show the desired application template.
+. Select an {project_name} application template. This example uses *_{project_name} {project_versionDoc} (Ephemeral)_*.
+. Click *Next* in the *Information* step.
+. From the *Add to Project* drop-down menu, select the _sso-app-demo_ project space. Then click *Next*.
+. Select *Do not bind at this time* radio button in the *Binding* step. Click *Create* to continue.
+. In the *Results* step, click the *Continue to the project overview* link to verify the status of the deployment.
+
+==== Accessing the Administrator Console of the {project_name} Pod
+
+After the template got deployed, identify the available routes:
+
+[source,bash,subs="attributes+,macros+"]
+----
+$ oc get routes
+----
+
+[cols="7",options="header"]
+|===
+|NAME |HOST/PORT |PATH |SERVICES |PORT |TERMINATION |WILDCARD
+
+|sso
+|sso-sso-app-demo.openshift.example.com
+|
+|sso
+|<all>
+|reencrypt
+|None
+|===
+
+and access the {project_name} administrator console at:
+
+* *\https://sso-sso-app-demo.openshift.example.com/auth/admin*
+
+using the xref:sso-administrator-setup[administrator account].
+
+////
 === Preparing and Deploying the {project_openshift_product_name} Application Templates
 
 [[Configuring-Keystores]]
@@ -81,6 +198,7 @@ Use the SSL and JGroups keystore files to create secrets for the project:
 $ oc secret new <pass:quotes[_sso-ssl-secret_]> <pass:quotes[_ssl.jks_]>
 $ oc secret new <pass:quotes[_sso-jgroups-secret_]> <pass:quotes[_jgroups.jceks_]>
 ----
+////
 
 ////
 ==== Creating the Service Account
@@ -107,7 +225,6 @@ $ oc policy add-role-to-user view system:serviceaccount:<pass:quotes[_project-na
 ----
 $ oc secrets link <pass:quotes[_service-account-name_]> <pass:quotes[_sso-ssl-secret_]> <pass:quotes[_sso-jgroups-secret_]>
 ----
-////
 
 ==== Using the OpenShift Web Console
 Log in to the OpenShift web console:
@@ -174,6 +291,8 @@ See the xref:Example-Deploying-SSO[Example Workflow: Preparing and Deploying the
 The {project_openshift_product_name} templates use TLS passthrough termination for routes by default. This means that the destination route receives encrypted traffic without the OpenShift router providing TLS termination. Users do not need the relevant SSL certificate to connect to the {project_name} login page.
 
 For more information on OpenShift route types, see the link:https://docs.openshift.com/container-platform/3.7/architecture/networking/routes.html#route-types[Networking chapter] of the OpenShift Architecture Guide.
+
+////
 
 === Binary Builds
 
@@ -281,7 +400,8 @@ $ oc new-project eap-app-demo
 +
 [source,bash,subs="attributes+,macros+"]
 ----
-$ oc policy add-role-to-user view system:serviceaccount:$(oc project -q):default
+$ oc policy add-role-to-user view \
+system:serviceaccount:$(oc project -q):default
 ----
 . The EAP template requires an link:https://access.redhat.com/documentation/en-us/red_hat_jboss_middleware_for_openshift/3/html-single/red_hat_single_sign-on_for_openshift/index#Configuring-Keystores[SSL keystore and a JGroups keystore]. This example uses `keytool`, a package included with the Java Development Kit, to generate self-signed certificates for these keystores.
 .. Generate a secure key for the SSL keystore (this example uses `password` as password for the keystore).
