@@ -5,12 +5,11 @@ You can import the SAML and OpenID Connect metadata provided by the external IDP
 of the realm.  This allows you to extract user profile metadata and other information so that you can make it available to your
 applications.
 
-Each new user that logs into your realm via an external identity provider will have an entry for it created in the local
-{project_name} database.  The act of importing metadata from the SAML or OIDC assertions and claims will create this data
-with the local realm database.
+Each new user that logs into your realm via an external identity provider will have an entry for them created in the local
+{project_name} database, based on the metadata from the SAML or OIDC assertions and claims.
 
 If you click on an identity provider listed in the `Identity Providers` page for your realm, you will be brought to the IDPs
-`Settings` tab.  On this page is also a `Mappers` tab.  Click on that tab to start mapping your incoming IDP metadata.
+`Settings` tab.  On this page there is also a `Mappers` tab.  Click on that tab to start mapping your incoming IDP metadata.
 
 image:{project_images}/identity-provider-mappers.png[]
 
