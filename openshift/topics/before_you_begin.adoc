@@ -18,7 +18,7 @@ The {project_openshift_product_name} image version number 7.0 and 7.1 are deprec
 ====
 
 === Initial Setup
-The Tutorials in this guide follow on from and assume an OpenShift instance similar to that created in the https://access.redhat.com/documentation/en/red-hat-xpaas/0/single/openshift-primer[OpenShift Primer].
+The Tutorials in this guide follow on from and assume an OpenShift instance similar to that created by performing https://docs.openshift.com/container-platform/latest/install/index.html[the installation of the OpenShift Container Platform cluster].
 
 [IMPORTANT]
 ====

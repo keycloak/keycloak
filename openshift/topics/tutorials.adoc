@@ -734,7 +734,7 @@ The administration console import allows you to *overwrite* resources if you cho
 === Example Workflow: Configuring OpenShift to use {project_name} for Authentication
 Configure OpenShift to use the {project_name} deployment as the authorization gateway for OpenShift. This follows on from xref:Example-Deploying-SSO[Example Workflow: Preparing and Deploying the {project_openshift_product_name} image], in which {project_name} was deployed on OpenShift.
 
-This example adds {project_name} as an authentication method alongside the HTPasswd method configured in the https://access.redhat.com/documentation/en/red-hat-xpaas/0/single/openshift-primer/#understand_roles_and_authentication[OpenShift Primer]. Once configured, both methods will be available for user login to your OpenShift web console.
+This example adds {project_name} as an authentication method alongside https://docs.openshift.com/container-platform/latest/install_config/configuring_authentication.html#identity-providers-configuring[the identity providers] configured during https://docs.openshift.com/container-platform/latest/install/index.html[the installation of the OpenShift Container Platform cluster]. Once configured, the {project_name} method will be also available (together with the configured identity providers) for the user login to your OpenShift web console.
 
 ==== Configuring {project_name} Credentials
 Log in to the encrypted {project_name} web server at *$$https://secure-sso-$$_sso-app-demo_._openshift32.example.com_/auth/admin* using the xref:sso-administrator-setup[administrator account] created during the {project_name} deployment.
@@ -767,10 +767,10 @@ See the link:https://access.redhat.com/documentation/en-us/red_hat_single_sign-o
 
 The client *Secret* is needed to configure OpenID-Connect on the OpenShift master in the next section. You can copy it now from under the *Credentials* tab. The secret is <pass:quotes[_7b0384a2-b832-16c5-9d73-2957842e89h7_]> for this example.
 
-==== Configuring OpenShift Master for Red Hat Single Sign-On Authentication
+==== Configuring OpenShift Master for {project_name} Authentication
 Log in to the OpenShift master CLI. You must have the required permissions to edit the */etc/origin/master/master-config.yaml* file.
 
-. Edit the */etc/origin/master/master-config.yaml* file and find the *identityProviders*. The OpenShift master, which was deployed using the OpenShift Primer, is configured with HTPassword and shows the following:
+. Edit the */etc/origin/master/master-config.yaml* file and find the *identityProviders*. For example, in the case the OpenShift master is configured with the https://docs.openshift.com/container-platform/latest/install_config/configuring_authentication.html#HTPasswdPasswordIdentityProvider[HTPassword identity provider], the *identityProviders* section will look similar to the following one:
 +
 [source,bash,subs="attributes+,macros+"]
 ----
