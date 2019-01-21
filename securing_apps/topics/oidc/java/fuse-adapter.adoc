@@ -11,9 +11,6 @@ endif::[]
 
 WARNING: The only supported version of Fuse 6 is the latest release. If you use earlier versions of Fuse 6, it is possible that some functions will not work correctly. In particular, the https://hawt.io/[Hawtio] integration will not work with earlier versions of Fuse 6.
 
-
-ARNING: The only supported version of Fuse 7 is the latest release. If you use earlier versions of Fuse 7, it is possible that some functions will not work correctly. In particular, integration will not work at all for versions of Fuse 7 lower than 7.0.1.
-
 Security for the following items is supported for Fuse:
 
 * Classic WAR applications deployed on Fuse with Pax Web War Extender
