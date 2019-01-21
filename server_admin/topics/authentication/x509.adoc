@@ -8,7 +8,7 @@ A typical workflow is as follows:
 
 - A client sends an authentication request over SSL/TLS channel
 - During SSL/TLS handshake, the server and the client exchange their x.509/v3 certificates
-- The container (WildFly) validates the certificate PKIX path and the certificate expiration
+- The container ({appserver_name}) validates the certificate PKIX path and the certificate expiration
 - The x.509 client certificate authenticator validates the client certificate as follows:
 * Optionally checks the certificate revocation status using CRL and/or CRL Distribution Points
 * Optionally checks the Certificate revocation status using OCSP (Online Certificate Status Protocol)
@@ -54,11 +54,11 @@ Other Features: Extended Certificate Validation::
 
 ==== Enable X.509 Client Certificate User Authentication
 
-The following sections describe how to configure WildFly/Undertow and the {project_name} Server to enable X.509 client certificate authentication.
+The following sections describe how to configure {appserver_name}/Undertow and the {project_name} Server to enable X.509 client certificate authentication.
 
 [[_enable-mtls-wildfly]]
-Enable mutual SSL in WildFly::
-See link:https://docs.jboss.org/author/display/WFLY10/Admin+Guide#AdminGuide-EnableSSL[Enable SSL] and link:https://docs.jboss.org/author/display/WFLY10/Admin+Guide#AdminGuide-%7B%7B%3Cssl%2F%3E%7D%7D[SSL] for the instructions how to enable SSL in WildFly.
+Enable mutual SSL in {appserver_name}::
+See link:https://docs.jboss.org/author/display/WFLY10/Admin+Guide#AdminGuide-EnableSSL[Enable SSL] and link:https://docs.jboss.org/author/display/WFLY10/Admin+Guide#AdminGuide-%7B%7B%3Cssl%2F%3E%7D%7D[SSL] for the instructions how to enable SSL in {appserver_name}.
 
 * Open {project_dirref}/standalone/configuration/standalone.xml and add a new realm:
 ```xml
