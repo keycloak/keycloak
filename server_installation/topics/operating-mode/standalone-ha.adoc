@@ -13,7 +13,7 @@ you'll have to modify each distribution on each machine.  For a large cluster th
 The distribution has a mostly pre-configured app server configuration file for running within a cluster.  It has all the specific
 infrastructure settings for networking, databases, caches, and discovery.  This file resides
 in _.../standalone/configuration/standalone-ha.xml_.  There's a few things missing from this configuration.
-You can't run {project_name} in a cluster without a configuring a shared database connection.  You also need to
+You can't run {project_name} in a cluster without configuring a shared database connection.  You also need to
 deploy some type of load balancer in front of the cluster.  The <<_clustering,clustering>> and
 <<_database,database>> sections of this guide walk you though these things.
 
