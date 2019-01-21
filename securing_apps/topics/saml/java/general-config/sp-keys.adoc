@@ -1,4 +1,4 @@
-[[_saml-sp-keys]]
+[[saml-sp-keys]]
 
 ===== Service Provider Keys and Key Elements
 

@@ -1,5 +1,5 @@
 
-[[_fuse_adapter_cxf_builtin]]
+[[fuse_adapter_cxf_builtin]]
 ===== Securing an Apache CXF Endpoint on the Default Jetty Engine
 
 Some services automatically come with deployed servlets on startup. One such service is the CXF servlet running in the $$http://localhost:8181/cxf$$ context. Securing such endpoints can be complicated. One approach, which {project_name} is currently using, is ServletReregistrationService, which undeploys a built-in servlet at startup, enabling you to redeploy it on a context secured by {project_name}.

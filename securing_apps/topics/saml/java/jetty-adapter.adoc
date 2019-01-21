@@ -1,4 +1,4 @@
-[[_jetty_saml_adapter]]
+[[jetty_saml_adapter]]
 
 ==== Jetty SAML Adapters
 

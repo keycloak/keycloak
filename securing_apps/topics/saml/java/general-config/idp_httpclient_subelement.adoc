@@ -1,4 +1,4 @@
-[[_sp-idp-httpclient]]
+[[sp-idp-httpclient]]
 
 ===== IDP HttpClient sub element
 

@@ -1,5 +1,5 @@
 
-[[_fuse7_adapter]]
+[[fuse7_adapter]]
 ==== JBoss Fuse 7 Adapter
 
 {project_name} supports securing your web applications running inside https://developers.redhat.com/products/fuse/overview/[JBoss Fuse 7].

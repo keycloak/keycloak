@@ -1,4 +1,4 @@
-[[_javascript_adapter]]
+[[javascript_adapter]]
 === JavaScript Adapter
 
 {project_name} comes with a client-side JavaScript library that can be used to secure HTML5/JavaScript applications. The JavaScript adapter has built-in support for Cordova applications.
@@ -118,7 +118,7 @@ This feature can be disabled by setting `checkLoginIframe: false` in the options
 You should not rely on looking at this cookie directly. Its format can change and it's also associated with the URL of the {project_name} server, not
 your application.
 
-[[_javascript_implicit_flow]]
+[[javascript_implicit_flow]]
 ==== Implicit and Hybrid Flow
 
 By default, the JavaScript adapter uses the https://openid.net/specs/openid-connect-core-1_0.html#CodeFlowAuth[Authorization Code] flow.

@@ -1,4 +1,4 @@
-[[_saml-tomcat-adapter]]
+[[saml-tomcat-adapter]]
 
 ==== Tomcat SAML adapters
 

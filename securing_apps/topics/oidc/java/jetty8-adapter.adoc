@@ -1,12 +1,12 @@
 
-[[_jetty8_adapter]]
+[[jetty8_adapter]]
 ==== Jetty 8.1.x Adapter
 
 Keycloak has a separate adapter for Jetty 8.1.x that you will have to install into your Jetty installation.
 You then have to provide some extra configuration in each WAR you deploy to Jetty.
 Let's go over these steps. 
 
-[[_jetty8_adapter_installation]]
+[[jetty8_adapter_installation]]
 ===== Adapter Installation
 
 Adapters are no longer included with the appliance or war distribution. Each adapter is a separate download on the Keycloak download site.

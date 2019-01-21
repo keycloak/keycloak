@@ -1,4 +1,4 @@
-[[_mod_auth_openidc]]
+[[mod_auth_openidc]]
 ==== mod_auth_openidc Apache HTTPD Module
 
 The https://github.com/zmartzone/mod_auth_openidc[mod_auth_openidc] is an Apache HTTP plugin for OpenID Connect. If your language/environment supports using Apache HTTPD

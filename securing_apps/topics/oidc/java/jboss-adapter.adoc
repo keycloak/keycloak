@@ -1,4 +1,4 @@
-[[_jboss_adapter]]
+[[jboss_adapter]]
 
 ifeval::[{project_community}==true]
 ==== JBoss EAP/WildFly Adapter
@@ -21,7 +21,7 @@ You can provide an adapter config file in your WAR and change the auth-method to
 Alternatively, you don't have to modify your WAR at all and you can secure it via the {project_name} adapter subsystem configuration in the configuration file, such as `standalone.xml`.
 Both methods are described in this section.
 
-[[_jboss_adapter_installation]]
+[[jboss_adapter_installation]]
 ===== Installing the adapter
 
 Adapters are available as a separate archive depending on what server version you are using.

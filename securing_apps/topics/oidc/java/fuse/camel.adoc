@@ -1,4 +1,4 @@
-[[_fuse_adapter_camel]]
+[[fuse_adapter_camel]]
 
 ===== Securing an Apache Camel Application
 

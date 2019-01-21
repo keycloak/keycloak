@@ -1,4 +1,4 @@
-[[_applicationclustering]]
+[[applicationclustering]]
 ==== Application Clustering
 
 ifeval::[{project_community}==true]
@@ -67,7 +67,7 @@ For example the way backchannel logout works is:
 
 If admin URL contains `${application.session.host}` it will be replaced with the URL to the node associated with the HTTP session.
 
-[[_registration_app_nodes]]
+[[registration_app_nodes]]
 ===== Registration of application nodes
 
 The previous section describes how {project_name} can send logout request to node associated with a specific HTTP session.
@@ -99,7 +99,7 @@ In the {project_name} Administration Console you can specify the maximum node re
 the adapter configuration). You can also manually add and remove cluster nodes in through the Adminstration Console, which is useful if you don't want to rely
 on the automatic registration feature or if you want to remove stale application nodes in the event your not using the automatic unregistration feature.
 
-[[_refresh_token_each_req]]
+[[refresh_token_each_req]]
 ===== Refresh token in each request
 
 By default the application adapter will only refresh the access token when it's expired. However, you can also configure the adapter to refresh the token on every

@@ -1,4 +1,4 @@
-[[_installed_adapter]]
+[[installed_adapter]]
 ==== CLI / Desktop Applications
 
 {project_name} supports securing desktop 
@@ -36,7 +36,7 @@ id_token) which can then be used to call backend services.
 
 The `KeycloakInstalled` adapter provides support for renewal of stale tokens.
 
-[[_installed_adapter_installation]]
+[[installed_adapter_installation]]
 ===== Adapter Installation
 
 [source,xml,subs="attributes+"]

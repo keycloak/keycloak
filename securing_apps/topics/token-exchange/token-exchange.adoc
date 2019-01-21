@@ -1,5 +1,5 @@
 
-[[_token-exchange]]
+[[token-exchange]]
 
 == Token Exchange
 
@@ -121,7 +121,7 @@ claims and permissions within the access token.  Other reasons this type of exch
 need to perform a "permission downgrade" where your app needs to invoke on a less trusted app and you don't want
 to propagate your current access token.
 
-[[_client_to_client_permission]]
+[[client_to_client_permission]]
 ==== Granting Permission for the Exchange
 
 Clients that want to exchange tokens for a different client need to be authorized in the admin console to do so.
@@ -206,7 +206,7 @@ have been performed with the same user session as the internal token you are exc
 If the account is not linked, the exchange response will contain a link you can use to establish it.  This is
 discussed more in the <<_internal_external_making_request, Making the Request>> section.
 
-[[_grant_permission_external_exchange]]
+[[grant_permission_external_exchange]]
 ==== Granting Permission for the Exchange
 
 Internal to external token exchange requests will be denied with a 403, Forbidden response until you grant
@@ -243,7 +243,7 @@ image:{project_images}/exchange-idp-apply-policy.png[]
 Your client now has permission to invoke.  If you do not do this correctly, you will get a 403 Forbidden response if you
 try to make an exchange.
 
-[[_internal_external_making_request]]
+[[internal_external_making_request]]
 ==== Making the Request
 
 When your client is exchanging an existing internal token to an external one, you must provide the

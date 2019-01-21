@@ -1,5 +1,5 @@
 
-[[_saml-tomcat-adapter-installation]]
+[[saml-tomcat-adapter-installation]]
 ===== Adapter Installation
 
 Adapters are no longer included with the appliance or war distribution.

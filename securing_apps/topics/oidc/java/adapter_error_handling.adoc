@@ -1,5 +1,5 @@
 
-[[_adapter_error_handling]]
+[[adapter_error_handling]]
 ==== Error Handling
 
 {project_name} has some error handling facilities for servlet based client adapters.

@@ -1,5 +1,5 @@
 
-[[_fuse7_adapter_servlet_whiteboard]]
+[[fuse7_adapter_servlet_whiteboard]]
 ===== Securing a Servlet Deployed as an OSGI Service
 
 You can use this method if you have a servlet class inside your OSGI bundled project that is not deployed as a classic WAR application. Fuse uses Pax Web Whiteboard Extender to deploy such servlets as web applications.

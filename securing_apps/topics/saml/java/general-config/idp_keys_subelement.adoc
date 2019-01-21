@@ -1,4 +1,4 @@
-[[_sp-idp-keys]]
+[[sp-idp-keys]]
 
 ===== IDP Keys sub element
 
@@ -7,7 +7,7 @@ It is defined in the same way as the <<_saml-sp-keys,SP's Keys element>>.
 But again, you only have to define one certificate or public key reference. Note that, if both IDP and SP are realized by
 {project_name} server and adapter, respectively, there is no need to specify the keys for signature validation, see below.
 
-[[_sp-idp-keys-automatic]]
+[[sp-idp-keys-automatic]]
 It is possible to configure SP to obtain public keys for IDP signature validation
 from published certificates automatically, provided both SP and IDP are
 implemented by {project_name}.

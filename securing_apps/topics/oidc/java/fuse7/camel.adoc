@@ -1,5 +1,5 @@
 
-[[_fuse7_adapter_camel]]
+[[fuse7_adapter_camel]]
 ===== Securing an Apache Camel Application
 
 You can secure Apache Camel endpoints implemented with the http://camel.apache.org/undertow.html[camel-undertow] component by injecting the proper security constraints via blueprint and updating the used component to `undertow-keycloak`. You have to add the `OSGI-INF/blueprint/blueprint.xml` file to your Camel application with a similar configuration as below. The roles and security constraint mappings, and adapter configuration might differ slightly depending on your environment and needs.

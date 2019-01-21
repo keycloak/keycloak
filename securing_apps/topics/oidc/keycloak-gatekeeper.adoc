@@ -1,4 +1,4 @@
-[[_keycloak_generic_adapter]]
+[[keycloak_generic_adapter]]
 === {generic_adapter_name_full}
 
 {project_name} provides a Go programming language adapter for use with OpenID Connect (OIDC) that supports both access tokens in a browser cookie or bearer tokens.

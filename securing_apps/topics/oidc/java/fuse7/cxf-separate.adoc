@@ -1,5 +1,5 @@
 
-[[_fuse7_adapter_cxf_separate]]
+[[fuse7_adapter_cxf_separate]]
 ===== Securing an Apache CXF Endpoint on a Separate Undertow Engine
 
 To run your CXF endpoints secured by {project_name} on a separate Undertow engine, complete the following steps:
