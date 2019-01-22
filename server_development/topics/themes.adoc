@@ -300,7 +300,7 @@ the theme, especially when you have multiple instances of {project_name} for exa
 To deploy a theme as an archive you need to create a JAR archive with the theme resources. You also need to add a file `META-INF/keycloak-themes.json` to the
 archive that lists the available themes in the archive as well as what types each theme provides.
 
-For example for the `mytheme` theme create `mytheme.zip` with the contents:
+For example for the `mytheme` theme create `mytheme.jar` with the contents:
 
 * META-INF/keycloak-themes.json
 * theme/mytheme/login/theme.properties
