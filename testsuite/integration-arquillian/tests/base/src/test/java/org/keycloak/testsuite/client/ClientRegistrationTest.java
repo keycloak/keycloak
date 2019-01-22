@@ -24,21 +24,19 @@ import org.keycloak.client.registration.Auth;
 import org.keycloak.client.registration.ClientRegistration;
 import org.keycloak.client.registration.ClientRegistrationException;
 import org.keycloak.client.registration.HttpErrorException;
-import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
-import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
-import org.keycloak.testsuite.runonserver.RunOnServerTest;
 
 import javax.ws.rs.NotFoundException;
+import java.util.ArrayList;
 import java.util.Collections;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.fail;
+import static org.hamcrest.Matchers.nullValue;
+import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.*;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -243,6 +241,68 @@ public class ClientRegistrationTest extends AbstractClientRegistrationTest {
         ClientRepresentation updatedClient = reg.get(CLIENT_ID);
 
         assertEquals("mysecret", updatedClient.getSecret());
+    }
+
+    @Test
+    public void addClientProtcolMappers() throws ClientRegistrationException {
+        authManageClients();
+
+        ClientRepresentation initialClient = buildClient();
+
+        registerClient(initialClient);
+        ClientRepresentation client = reg.get(CLIENT_ID);
+
+        addProtocolMapper(client, "mapperA");
+        reg.update(client);
+
+        ClientRepresentation updatedClient = reg.get(CLIENT_ID);
+        assertThat("Adding protocolMapper failed", updatedClient.getProtocolMappers().size(), is(1));
+    }
+
+    @Test
+    public void removeClientProtcolMappers() throws ClientRegistrationException {
+        authManageClients();
+
+        ClientRepresentation initialClient = buildClient();
+        addProtocolMapper(initialClient, "mapperA");
+        registerClient(initialClient);
+        ClientRepresentation client = reg.get(CLIENT_ID);
+        client.setProtocolMappers(new ArrayList<>());
+        reg.update(client);
+
+        ClientRepresentation updatedClient = reg.get(CLIENT_ID);
+        assertThat("Removing protocolMapper failed", updatedClient.getProtocolMappers(), nullValue());
+    }
+
+    @Test
+    public void updateClientProtcolMappers() throws ClientRegistrationException {
+        authManageClients();
+
+        ClientRepresentation initialClient = buildClient();
+        addProtocolMapper(initialClient, "mapperA");
+        registerClient(initialClient);
+        ClientRepresentation client = reg.get(CLIENT_ID);
+        client.getProtocolMappers().get(0).getConfig().put("claim.name", "updatedClaimName");
+        reg.update(client);
+
+        ClientRepresentation updatedClient = reg.get(CLIENT_ID);
+        assertThat("Updating protocolMapper failed", updatedClient.getProtocolMappers().get(0).getConfig().get("claim.name"), is("updatedClaimName"));
+    }
+
+    private void addProtocolMapper(ClientRepresentation client, String mapperName) {
+        ProtocolMapperRepresentation mapper = new ProtocolMapperRepresentation();
+        mapper.setName(mapperName);
+        mapper.setProtocol("openid-connect");
+        mapper.setProtocolMapper("oidc-usermodel-attribute-mapper");
+        mapper.getConfig().put("userinfo.token.claim", "true");
+        mapper.getConfig().put("user.attribute", "someAttribute");
+        mapper.getConfig().put("id.token.claim", "true");
+        mapper.getConfig().put("access.token.claim", "true");
+        mapper.getConfig().put("claim.name", "someClaimName");
+        mapper.getConfig().put("jsonType.label", "long");
+
+        client.setProtocolMappers(new ArrayList<>());
+        client.getProtocolMappers().add(mapper);
     }
 
     @Test
