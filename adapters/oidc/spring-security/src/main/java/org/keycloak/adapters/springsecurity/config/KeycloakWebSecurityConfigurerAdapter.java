@@ -60,6 +60,8 @@ public abstract class KeycloakWebSecurityConfigurerAdapter extends WebSecurityCo
     private Resource keycloakConfigFileResource;
     @Autowired(required = false)
     private KeycloakConfigResolver keycloakConfigResolver;
+    @Autowired
+    HttpSessionManager httpSessionManager;
 
     @Bean
     protected AdapterDeploymentContext adapterDeploymentContext() throws Exception {
@@ -98,9 +100,8 @@ public abstract class KeycloakWebSecurityConfigurerAdapter extends WebSecurityCo
         return new KeycloakCsrfRequestMatcher();
     }
 
-    @Bean
     protected HttpSessionManager httpSessionManager() {
-        return new HttpSessionManager();
+        return httpSessionManager;
     }
 
     protected KeycloakLogoutHandler keycloakLogoutHandler() throws Exception {
