@@ -74,9 +74,11 @@
                 }
 
                 if (initOptions.promiseType === 'native') {
-                    kc.useNativePromise = typeof Promise === "function";
+                   kc.useNativePromise = true;
+                }  if (initOptions.promiseType === 'legacy') {
+                    kc.useNativePromise = true;
                 } else {
-                    kc.useNativePromise = false;
+                   kc.useNativePromise = typeof Promise === "function";
                 }
 
                 if (initOptions.onLoad === 'login-required') {
