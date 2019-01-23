@@ -877,7 +877,7 @@ Repeat these steps for the `admin` role.
 . Enter a valid *Username* (this example uses the user `appuser`) and click *Save*.
 . Edit the user configuration:
 .. Click the *Credentials* tab in the user space and enter a password for the user (this example uses the password `apppassword`).
-.. Ensure the *Temporary Password* option is set to *Off* so that it does not prompt for a password change later on, and click *Reset Password* to set the user password. A pop-up window prompts for additional confirmation.
+.. Ensure the *Temporary Password* option is set to *Off* so that it does not prompt for a password change later on, and click *Reset Password* to set the user password. A pop-up window will prompt you to confirm.
 
 ===== Assign `user` {project_name} Role to the Realm Management User
 
@@ -1016,7 +1016,7 @@ app-jee-jsp]$ mvn clean package -DskipTests
 +
 [IMPORTANT]
 ====
-The link:https://github.com/keycloak/keycloak-quickstarts/tree/latest/app-jee-jsp[app-jee-jsp] quickstart requires to configure the adapter, and adapter configuration file (`keycloak.json`) to be present at the `config/` directory in the root of the quickstart to successfully build the quickstart. But since this example configures the adapter later via selected environment variables available for the EAP 6.4 / 7.1 for OpenShift image, it is not necessary to specify the form of `keycloak.json` adapter configuration file at this moment.
+The link:https://github.com/keycloak/keycloak-quickstarts/tree/latest/app-jee-jsp[app-jee-jsp] quickstart requires you to configure the adapter, and that the adapter configuration file (`keycloak.json`) is present in the `config/` directory in the root of the quickstart to successfully build the quickstart. But since this example configures the adapter later via selected environment variables available for the EAP 6.4 / 7.1 for OpenShift image, it is not necessary to specify the form of `keycloak.json` adapter configuration file at this moment.
 ====
 
 [[directory-structure-binary-builds]]
@@ -1025,7 +1025,7 @@ The link:https://github.com/keycloak/keycloak-quickstarts/tree/latest/app-jee-js
 +
 Application archives in the *deployments/* subdirectory of the main binary build directory are copied directly to the xref:standard-deployments-directory[standard deployments directory] of the image being built on OpenShift. For the application to deploy, the directory hierarchy containing the web application data must be correctly structured.
 +
-Create main directory for the binary build on the local file system and *deployments/* subdirectory within it. Copy the previously built WAR archives of both the *service-jee-jaxrs* and *app-jee-jsp* quickstarts to the *deployments/* subdirectory:
+Create the main directory for the binary build on the local file system and *deployments/* subdirectory within it. Copy the previously built WAR archives of both the *service-jee-jaxrs* and *app-jee-jsp* quickstarts to the *deployments/* subdirectory:
 +
 [source,bash,subs="attributes+,macros+"]
 ----
@@ -1063,7 +1063,7 @@ sso-eap7-bin-demo/
 [[standard-deployments-directory]]
 [NOTE]
 ====
-Location of the standard deployments directory depends on the underlying base image, that was used to deploy the application. See the following table:
+The location of the standard deployments directory depends on the underlying base image, that was used to deploy the application. See the following table:
 
 .Standard Location of the Deployments Directory
 [cols="2", options="header"]
@@ -1293,7 +1293,7 @@ Perform the following to test the application:
 You should see the *Message: public* output.
 * Click the *LOGIN* button to be redirected for user authentication to the {project_name} server instance against the `demo` realm.
 +
-Specify username and password of the {project_name} user configured earlier (`appuser` / `apppassword`). Click *Log in*. The look of the application changes as detailed in the following image:
+Specify the username and password of the {project_name} user configured earlier (`appuser` / `apppassword`). Click *Log in*. The look of the application changes as detailed in the following image:
 +
 [.text-center]
 image:images/sso_app_jee_jsp_logged_in.png[]

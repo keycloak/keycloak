@@ -72,7 +72,7 @@ $ oc new-project sso-app-demo
 $ oc policy add-role-to-user view system:serviceaccount:$(oc project -q):default
 ----
 
-==== Deploying the {project_name} Image using Application Template
+==== Deploying the {project_name} Image using the Application Template
 
 ===== Deploying the Template via OpenShift CLI
 
@@ -128,9 +128,9 @@ $ oc new-app --template={project_templates_version}-x509-https
     Run 'oc status' to view your app.
 ----
 
-===== Deploying the Template via OpenShift Web Console
+===== Deploying the Template via the OpenShift Web Console
 
-Alternatively, perform the following steps to deploy the {project_name} template via OpenShift web console:
+Alternatively, perform the following steps to deploy the {project_name} template via the OpenShift web console:
 
 . Log in to the OpenShift web console and select the _sso-app-demo_ project space.
 . Click *Add to Project*, then *Browse Catalog* to list the default image streams and templates.
