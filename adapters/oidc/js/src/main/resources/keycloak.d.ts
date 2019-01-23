@@ -197,10 +197,10 @@ declare namespace Keycloak {
 	}
 
 	interface KeycloakAdapter {
-		login(options?: KeycloakLoginOptions): KeycloakPromise<void, void>;
-		logout(options?: any): KeycloakPromise<void, void>;
-		register(options?: KeycloakLoginOptions): KeycloakPromise<void, void>;
-		accountManagement(): KeycloakPromise<void, void>;
+		login(options?: KeycloakLoginOptions): KeycloakPromise<void, void> | Promise<void>;
+		logout(options?: any): KeycloakPromise<void, void> | Promise<void>;
+		register(options?: KeycloakLoginOptions): KeycloakPromise<void, void> | Promise<void>;
+		accountManagement(): KeycloakPromise<void, void> | Promise<void>;
 		redirectUri(options: { redirectUri: string; }, encodeHash: boolean): string;
 	}
 
@@ -405,32 +405,32 @@ declare namespace Keycloak {
 		 * @param initOptions Initialization options.
 		 * @returns A promise to set functions to be invoked on success or error.
 		 */
-		init(initOptions: KeycloakInitOptions): KeycloakPromise<boolean, KeycloakError>;
+		init(initOptions: KeycloakInitOptions): KeycloakPromise<boolean, KeycloakError> | Promise<boolean>;
 
 		/**
 		 * Redirects to login form.
 		 * @param options Login options.
 		 */
-		login(options?: KeycloakLoginOptions): KeycloakPromise<void, void>;
+		login(options?: KeycloakLoginOptions): KeycloakPromise<void, void> | Promise<void>;
 
 		/**
 		 * Redirects to logout.
 		 * @param options Logout options.
 		 * @param options.redirectUri Specifies the uri to redirect to after logout.
 		 */
-		logout(options?: any): KeycloakPromise<void, void>;
+		logout(options?: any): KeycloakPromise<void, void> | Promise<void>;
 
 		/**
 		 * Redirects to registration form.
 		 * @param options Supports same options as Keycloak#login but `action` is
 		 *                set to `'register'`.
 		 */
-		register(options?: any): KeycloakPromise<void, void>;
+		register(options?: any): KeycloakPromise<void, void> | Promise<void>;
 
 		/**
 		 * Redirects to the Account Management Console.
 		 */
-		accountManagement(): KeycloakPromise<void, void>;
+		accountManagement(): KeycloakPromise<void, void> | Promise<void>;
 
 		/**
 		 * Returns the URL to login form.
@@ -482,7 +482,7 @@ declare namespace Keycloak {
 		 *   alert('Failed to refresh the token, or the session has expired');
 		 * });
 		 */
-		updateToken(minValidity: number): KeycloakPromise<boolean, boolean>;
+		updateToken(minValidity: number): KeycloakPromise<boolean, boolean> | Promise<boolean>;
 
 		/**
 		 * Clears authentication state, including tokens. This can be useful if
@@ -509,11 +509,11 @@ declare namespace Keycloak {
 		 * Loads the user's profile.
 		 * @returns A promise to set functions to be invoked on success or error.
 		 */
-		loadUserProfile(): KeycloakPromise<KeycloakProfile, void>;
+		loadUserProfile(): KeycloakPromise<KeycloakProfile, void> | Promise<KeycloakProfile>;
 
 		/**
 		 * @private Undocumented.
 		 */
-		loadUserInfo(): KeycloakPromise<{}, void>;
+		loadUserInfo(): KeycloakPromise<{}, void> | Promise<any>;
 	}
 }
