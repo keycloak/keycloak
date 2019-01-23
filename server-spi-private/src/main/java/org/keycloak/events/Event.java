@@ -17,6 +17,8 @@
 
 package org.keycloak.events;
 
+import org.keycloak.models.UserModel;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -42,6 +44,8 @@ public class Event {
     private String error;
 
     private Map<String, String> details;
+
+    private UserModel user;
 
     public long getTime() {
         return time;
@@ -115,6 +119,14 @@ public class Event {
         this.details = details;
     }
 
+    public UserModel getUser() {
+        return user;
+    }
+
+    public void setUser(UserModel user) {
+        this.user = user;
+    }
+
     public Event clone() {
         Event clone = new Event();
         clone.time = time;
@@ -126,6 +138,7 @@ public class Event {
         clone.ipAddress = ipAddress;
         clone.error = error;
         clone.details = details != null ? new HashMap<>(details) : null;
+        clone.user= user;
         return clone;
     }
 

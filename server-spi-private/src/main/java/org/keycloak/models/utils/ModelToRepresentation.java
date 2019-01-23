@@ -211,6 +211,11 @@ public class ModelToRepresentation {
         rep.setFederationLink(user.getFederationLink());
         rep.setIdcard(user.getIdcard());
         List<String> groups = new LinkedList<>();
+        if (user.getAttributes() != null && !user.getAttributes().isEmpty()) {
+            Map<String, List<String>> attrs = new HashMap<>();
+            attrs.putAll(user.getAttributes());
+            rep.setAttributes(attrs);
+        }
         for (GroupModel group : user.getGroups()) {
             groups.add(group.getName());
         }
@@ -229,6 +234,9 @@ public class ModelToRepresentation {
         rep.setIpAddress(event.getIpAddress());
         rep.setError(event.getError());
         rep.setDetails(event.getDetails());
+        if (event.getUser() != null) {
+            rep.setUser(toBriefRepresentation(event.getUser()));
+        }
         return rep;
     }
 

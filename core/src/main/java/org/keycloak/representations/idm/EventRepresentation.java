@@ -33,6 +33,7 @@ public class EventRepresentation {
     private String ipAddress;
     private String error;
     private Map<String, String> details;
+    private UserRepresentation user;
 
     public long getTime() {
         return time;
@@ -104,6 +105,14 @@ public class EventRepresentation {
 
     public void setDetails(Map<String, String> details) {
         this.details = details;
+    }
+
+    public UserRepresentation getUser() {
+        return user;
+    }
+
+    public void setUser(UserRepresentation user) {
+        this.user = user;
     }
 
     @Override
