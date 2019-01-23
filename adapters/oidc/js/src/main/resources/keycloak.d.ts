@@ -109,6 +109,14 @@ declare namespace Keycloak {
 		 * @default standard
 		 */
 		flow?: KeycloakFlow;
+		
+		/**
+		 *
+		 * Set the type of Promises to be returned for all Promise based actions
+		 * Set to 'native' to use native ES6 Promises instead of the legacy Promises
+		 * which use .success() and .error() callbacks.
+		 */
+		promiseType: string;
 	}
 
 	interface KeycloakLoginOptions {
