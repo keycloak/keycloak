@@ -34,6 +34,7 @@ declare namespace Keycloak {
 	type KeycloakResponseMode = 'query'|'fragment';
 	type KeycloakResponseType = 'code'|'id_token token'|'code id_token token';
 	type KeycloakFlow = 'standard'|'implicit'|'hybrid';
+	type KeycloakPromiseType = 'native' | undefined;
 
 	interface KeycloakInitOptions {
 		/**
@@ -116,7 +117,7 @@ declare namespace Keycloak {
 		 * Set to 'native' to use native ES6 Promises instead of the legacy Promises
 		 * which use .success() and .error() callbacks.
 		 */
-		promiseType: string;
+		promiseType: KeycloakPromiseType;
 	}
 
 	interface KeycloakLoginOptions {
