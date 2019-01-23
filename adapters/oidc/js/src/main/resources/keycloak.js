@@ -76,7 +76,7 @@
                 if (initOptions.promiseType === 'native') {
                    kc.useNativePromise = true;
                 }  if (initOptions.promiseType === 'legacy') {
-                    kc.useNativePromise = true;
+                    kc.useNativePromise = false;
                 } else {
                    kc.useNativePromise = typeof Promise === "function";
                 }
