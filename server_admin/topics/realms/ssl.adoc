@@ -6,8 +6,7 @@ Each realm has an SSL Mode associated with it.  The SSL Mode defines the SSL/HTT
 Browsers and applications that interact with the realm must honor the SSL/HTTPS requirements defined by the SSL Mode or they
 will not be allowed to interact with the server.
 
-WARNING:  {project_name} is not set up by default to handle SSL/HTTPS.
-          It is highly recommended that you either enable SSL on the {project_name} server itself or on a reverse proxy in front of the {project_name} server.
+WARNING:  {project_name} generates a self-signed certificate the first time it runs.  Please note that self-signed certificates are not secure, and should only be used for testing purposes.  It is highly recommended that you install a CA-signed certificate on the {project_name} server itself or on a reverse proxy in front of the {project_name} server.  See the link:{installguide_link}[{installguide_name}].
 
 To configure the SSL Mode of your realm, you need to click on the `Realm Settings` left menu item and go to the `Login` tab.
 
