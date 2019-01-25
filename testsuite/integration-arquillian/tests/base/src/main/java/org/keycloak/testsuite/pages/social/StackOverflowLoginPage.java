@@ -30,7 +30,7 @@ public class StackOverflowLoginPage extends AbstractSocialLoginPage {
     @FindBy(id = "password")
     private WebElement passwordInput;
 
-    @FindBy(xpath = "//input[@value='Log in']")
+    @FindBy(xpath = "//button[@name='submit-button']")
     private WebElement loginButton;
 
     @Override
