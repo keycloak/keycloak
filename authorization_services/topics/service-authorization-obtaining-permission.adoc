@@ -22,19 +22,19 @@ permissions for the resource(s) and scope(s) being requested. This parameter all
 +
 * **claim_token_format**
 +
-This parameter is *optional. A string indicating the format of the token specified in the `claim_token` parameter. {project_name} supports two token
+This parameter is *optional*. A string indicating the format of the token specified in the `claim_token` parameter. {project_name} supports two token
 formats: `urn:ietf:params:oauth:token-type:jwt` and `https://openid.net/specs/openid-connect-core-1_0.html#IDToken`. The `urn:ietf:params:oauth:token-type:jwt` format
 indicates that the `claim_token` parameter references an access token. The `https://openid.net/specs/openid-connect-core-1_0.html#IDToken` indicates that the
 `claim_token` parameter references an OpenID Connect ID Token.
 +
 * **rpt**
 +
-This parameter is *optional. A previously issued RPT which permissions should also be evaluated and added in a new one. This parameter
+This parameter is *optional*. A previously issued RPT which permissions should also be evaluated and added in a new one. This parameter
 allows clients in possession of an RPT to perform incremental authorization where permissions are added on demand.
 +
 * **permission**
 +
-This parameter is *optional. A string representing a set of one or more resources and scopes the client is seeking access. This parameter can be defined multiple times
+This parameter is *optional*. A string representing a set of one or more resources and scopes the client is seeking access. This parameter can be defined multiple times
 in order to request permission for multiple resource and scopes. This parameter is an extension to `urn:ietf:params:oauth:grant-type:uma-ticket` grant type in order to allow clients to send authorization requests without a
 permission ticket. The format of the string must be: `RESOURCE_ID#SCOPE_ID`. For instance: `Resource A#Scope A`, `Resource A#Scope A, Scope B, Scope C`, `Resource A`, `#Scope A`.
 +
