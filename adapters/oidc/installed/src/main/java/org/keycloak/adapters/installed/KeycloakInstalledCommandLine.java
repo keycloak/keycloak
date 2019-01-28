@@ -16,19 +16,6 @@
  */
 package org.keycloak.adapters.installed;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
-import java.io.Reader;
-import java.util.concurrent.TimeUnit;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import javax.ws.rs.client.Entity;
-import javax.ws.rs.core.Form;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.Response;
 import org.jboss.resteasy.client.jaxrs.ResteasyClient;
 import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
 import org.keycloak.OAuth2Constants;
@@ -36,6 +23,15 @@ import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.ServerRequest;
 import org.keycloak.adapters.installed.core.AbstractKeycloakInstalled;
 import org.keycloak.common.VerificationException;
+
+import javax.ws.rs.client.Entity;
+import javax.ws.rs.core.Form;
+import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.Response;
+import java.io.*;
+import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 class KeycloakInstalledCommandLine extends AbstractKeycloakInstalled {
 
@@ -91,79 +87,75 @@ class KeycloakInstalledCommandLine extends AbstractKeycloakInstalled {
                         System.err.println("Forbidden to login");
                     }
                     return false;
-                } else {
-                    if (response.getStatus() == 401) {
-                        String authenticationHeader = response.getHeaderString(HttpHeaders.WWW_AUTHENTICATE);
-                        if (authenticationHeader == null) {
-                            System.err.println("Failure:  Invalid protocol.  No WWW-Authenticate header");
-                            return false;
+                } else if (response.getStatus() == 401) {
+                    String authenticationHeader = response.getHeaderString(HttpHeaders.WWW_AUTHENTICATE);
+                    if (authenticationHeader == null) {
+                        System.err.println("Failure:  Invalid protocol.  No WWW-Authenticate header");
+                        return false;
+                    }
+                    //System.err.println("got header: " + authenticationHeader);
+                    if (!authenticationHeader.contains("X-Text-Form-Challenge")) {
+                        System.err.println("Failure:  Invalid WWW-Authenticate header.");
+                        return false;
+                    }
+                    if (response.getMediaType() != null) {
+                        String splash = response.readEntity(String.class);
+                        console().writer().println(splash);
+                    } else {
+                        response.close();
+                    }
+                    Matcher m = callbackPattern.matcher(authenticationHeader);
+                    if (!m.find()) {
+                        System.err.println("Failure: Invalid WWW-Authenticate header.");
+                        return false;
+                    }
+                    String callback = m.group(1);
+                    //System.err.println("callback: " + callback);
+                    m = paramPattern.matcher(authenticationHeader);
+                    Form form = new Form();
+                    while (m.find()) {
+                        String param = m.group(1);
+                        String label = m.group(2);
+                        String mask = m.group(3).trim();
+                        boolean maskInput = mask.equals("true");
+                        String value = null;
+                        if (maskInput) {
+                            char[] txt = console().readPassword(label);
+                            value = new String(txt);
+                        } else {
+                            value = console().readLine(label);
                         }
-                        //System.err.println("got header: " + authenticationHeader);
-                        if (!authenticationHeader.contains("X-Text-Form-Challenge")) {
-                            System.err.println("Failure:  Invalid WWW-Authenticate header.");
-                            return false;
-                        }
-                        if (response.getMediaType() != null) {
-                            String splash = response.readEntity(String.class);
-                            console().writer().println(splash);
+                        form.param(param, value);
+                    }
+                    response.close();
+                    client.close();
+                    client = createResteasyClient();
+                    response = client.target(callback).request().post(Entity.form(form));
+                } else if (response.getStatus() == 302) {
+                    int redirectCount = 0;
+                    do {
+                        String location = response.getLocation().toString();
+                        Matcher m = codePattern.matcher(location);
+                        if (!m.find()) {
+                            response.close();
+                            client.close();
+                            client = createResteasyClient();
+                            response = client.target(location).request().get();
                         } else {
                             response.close();
+                            client.close();
+                            String code = m.group(1);
+                            processCode(code, redirectUri);
+                            return true;
                         }
-                        Matcher m = callbackPattern.matcher(authenticationHeader);
-                        if (!m.find()) {
-                            System.err.println("Failure: Invalid WWW-Authenticate header.");
+                        if (response.getStatus() == 302 && redirectCount++ > 4) {
+                            System.err.println("Too many redirects.  Aborting");
                             return false;
                         }
-                        String callback = m.group(1);
-                        //System.err.println("callback: " + callback);
-                        m = paramPattern.matcher(authenticationHeader);
-                        Form form = new Form();
-                        while (m.find()) {
-                            String param = m.group(1);
-                            String label = m.group(2);
-                            String mask = m.group(3).trim();
-                            boolean maskInput = mask.equals("true");
-                            String value = null;
-                            if (maskInput) {
-                                char[] txt = console().readPassword(label);
-                                value = new String(txt);
-                            } else {
-                                value = console().readLine(label);
-                            }
-                            form.param(param, value);
-                        }
-                        response.close();
-                        client.close();
-                        client = createResteasyClient();
-                        response = client.target(callback).request().post(Entity.form(form));
-                    } else {
-                        if (response.getStatus() == 302) {
-                            int redirectCount = 0;
-                            do {
-                                String location = response.getLocation().toString();
-                                Matcher m = codePattern.matcher(location);
-                                if (!m.find()) {
-                                    response.close();
-                                    client.close();
-                                    client = createResteasyClient();
-                                    response = client.target(location).request().get();
-                                } else {
-                                    response.close();
-                                    client.close();
-                                    String code = m.group(1);
-                                    processCode(code, redirectUri);
-                                    return true;
-                                }
-                                if (response.getStatus() == 302 && redirectCount++ > 4) {
-                                    System.err.println("Too many redirects.  Aborting");
-                                    return false;
-                                }
-                            } while (response.getStatus() == 302);
-                        } else {
-                            System.err.println("Unknown response from server: " + response.getStatus());
-                            return false;
-                        }
-                    }
+                    } while (response.getStatus() == 302);
+                } else {
+                    System.err.println("Unknown response from server: " + response.getStatus());
+                    return false;
                 }
             }
         } catch (Exception ex) {
@@ -223,9 +215,7 @@ class KeycloakInstalledCommandLine extends AbstractKeycloakInstalled {
         }
 
         protected BufferedReader getReader() {
-            if (reader != null) {
-                return reader;
-            }
+            if (reader != null) return reader;
             reader = new BufferedReader(new BufferedReader(new InputStreamReader(System.in)));
             return reader;
         }

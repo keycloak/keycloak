@@ -61,7 +61,6 @@ class KeycloakInstalledManual extends AbstractKeycloakInstalled {
 
         String code = readCode(reader);
         processCode(code, redirectUri);
-
     }
 
     private String readCode(Reader reader) throws IOException {

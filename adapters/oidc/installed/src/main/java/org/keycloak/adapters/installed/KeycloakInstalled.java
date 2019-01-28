@@ -39,6 +39,7 @@ import org.keycloak.representations.IDToken;
  */
 public class KeycloakInstalled {
 
+    @Deprecated
     public interface HttpResponseWriter {
         void success(PrintWriter pw, KeycloakInstalled ki);
 
@@ -50,7 +51,9 @@ public class KeycloakInstalled {
     private KeycloakDeployment deployment;
 
     private Locale locale;
+    @Deprecated
     private HttpResponseWriter loginResponseWriter;
+    @Deprecated
     private HttpResponseWriter logoutResponseWriter;
     private final KeycloakInstalledDesktop desktop;
     private final KeycloakInstalledManual manual;
@@ -74,18 +77,22 @@ public class KeycloakInstalled {
         this.currentInstalled = desktop;
     }
 
+    @Deprecated
     public HttpResponseWriter getLoginResponseWriter() {
         return null;
     }
 
+    @Deprecated
     public HttpResponseWriter getLogoutResponseWriter() {
         return null;
     }
 
+    @Deprecated
     public void setLoginResponseWriter(HttpResponseWriter loginResponseWriter) {
         this.loginResponseWriter = loginResponseWriter;
     }
 
+    @Deprecated
     public void setLogoutResponseWriter(HttpResponseWriter logoutResponseWriter) {
         this.logoutResponseWriter = logoutResponseWriter;
     }

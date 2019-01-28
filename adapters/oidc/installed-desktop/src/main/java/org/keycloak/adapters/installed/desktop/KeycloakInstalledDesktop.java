@@ -18,6 +18,14 @@
 package org.keycloak.adapters.installed.desktop;
 
 
+import org.keycloak.OAuth2Constants;
+import org.keycloak.OAuthErrorException;
+import org.keycloak.adapters.KeycloakDeployment;
+import org.keycloak.adapters.ServerRequest;
+import org.keycloak.adapters.installed.core.AbstractKeycloakInstalled;
+import org.keycloak.common.VerificationException;
+import org.keycloak.common.util.KeycloakUriBuilder;
+
 import java.awt.*;
 import java.io.*;
 import java.net.ServerSocket;
@@ -27,13 +35,6 @@ import java.net.URISyntaxException;
 import java.util.Locale;
 import java.util.UUID;
 import java.util.regex.Pattern;
-import org.keycloak.OAuth2Constants;
-import org.keycloak.OAuthErrorException;
-import org.keycloak.adapters.KeycloakDeployment;
-import org.keycloak.adapters.ServerRequest;
-import org.keycloak.adapters.installed.core.AbstractKeycloakInstalled;
-import org.keycloak.common.VerificationException;
-import org.keycloak.common.util.KeycloakUriBuilder;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -139,7 +140,6 @@ public class KeycloakInstalledDesktop extends AbstractKeycloakInstalled {
         }
 
         processCode(callback.code, redirectUri);
-
     }
     
     @Override
@@ -227,13 +227,13 @@ public class KeycloakInstalledDesktop extends AbstractKeycloakInstalled {
                 }
 
                 if (error == null) {
-                     if (writer != null) {
-                         writer.success(pw, KeycloakInstalledDesktop.this);
-                     } else {
-                         pw.println("HTTP/1.1 302 Found");
-                         pw.println("Location: " + getDeployment().getTokenUrl().replace("/token", "/delegated"));
+                    if (writer != null) {
+                        writer.success(pw, KeycloakInstalledDesktop.this);
+                    } else {
+                        pw.println("HTTP/1.1 302 Found");
+                        pw.println("Location: " + getDeployment().getTokenUrl().replace("/token", "/delegated"));
 
-                     }
+                    }
                 } else {
                     if (writer != null) {
                         writer.failure(pw, KeycloakInstalledDesktop.this);
