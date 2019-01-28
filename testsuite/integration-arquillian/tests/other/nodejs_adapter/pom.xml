@@ -38,6 +38,7 @@
         <auth.server.https.port>8443</auth.server.https.port>
         <auth.server.management.port>9990</auth.server.management.port>
         <auth.server.management.port.jmx>9999</auth.server.management.port.jmx>
+        <auth.server.ssl.required>false</auth.server.ssl.required>
     </properties>
 
     <build>
