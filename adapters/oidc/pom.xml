@@ -33,6 +33,7 @@
     <modules>
         <module>adapter-core</module>
         <module>as7-eap6</module>
+        <module>installed-desktop</module>
         <module>installed</module>
         <module>fuse7</module>
         <module>kcinit</module>
