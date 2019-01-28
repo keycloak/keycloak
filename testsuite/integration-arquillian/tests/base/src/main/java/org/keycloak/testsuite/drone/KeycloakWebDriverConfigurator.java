@@ -54,13 +54,16 @@ public class KeycloakWebDriverConfigurator {
         updateCapabilityKeys("htmlUnit", webDriverCfg, capabilitiesToAdd);
         updateCapabilityKeys("appium", webDriverCfg, capabilitiesToAdd);
         configurePhantomJSDriver(webDriverCfg, capabilitiesToAdd);
-        acceptAllSSLCerts(capabilitiesToAdd);
+        acceptAllSSLCerts(webDriverCfg, capabilitiesToAdd);
 
         BrowserCapabilities browserCap = registryInstance.get().getEntryFor(webDriverCfg.getBrowser());
         webDriverCfg.setBrowserInternal(new KcBrowserCapabilities(capabilitiesToAdd, browserCap));
     }
 
-    private void acceptAllSSLCerts(DesiredCapabilities capabilitiesToAdd) {
+    private void acceptAllSSLCerts(WebDriverConfiguration webDriverCfg, DesiredCapabilities capabilitiesToAdd) {
+        if (webDriverCfg.getBrowser().equals("internetexplorer")) {
+            return; // IE not supported
+        }
         capabilitiesToAdd.setCapability(CapabilityType.ACCEPT_SSL_CERTS, true);
         capabilitiesToAdd.setCapability(CapabilityType.ACCEPT_INSECURE_CERTS, true);
     }
