@@ -434,7 +434,8 @@ Although technically they can be run with almost every test in the testsuite, th
 * **Supported test modules:** `console`, `base-ui`
 * **Supported version:** 11
 * **Driver download required:** [Internet Explorer Driver Server](http://www.seleniumhq.org/download/); recommended version [3.5.1 32-bit](http://selenium-release.storage.googleapis.com/3.5/IEDriverServer_Win32_3.5.1.zip)
-* **Run with:** `-Dbrowser=internetExplorer -Dwebdriver.ie.driver=path/to/IEDriverServer.exe`
+* **Run with:** `-Dbrowser=internetExplorer -Dwebdriver.ie.driver=path/to/IEDriverServer.exe -Dauth.server.ssl.required=false`   
+Note: We currently do not support SSL in IE.
 
 #### Apple Safari
 * **Supported test modules:** `base-ui`
