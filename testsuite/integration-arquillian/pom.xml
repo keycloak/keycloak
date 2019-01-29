@@ -72,6 +72,9 @@
         <migration.70.version>1.9.8.Final</migration.70.version>
         <migration.71.version>2.5.5.Final</migration.71.version>
         <migration.72.version>3.4.3.Final</migration.72.version>
+
+        <!-- By default, skip docker-maven-plugin when running base tests-->
+        <docker.database.skip>true</docker.database.skip>
     </properties>
 
     <dependencyManagement>
@@ -319,6 +322,54 @@
                     </plugins>
                 </pluginManagement>
             </build>
+        </profile>
+        <profile>
+            <id>db-mysql</id>
+            <properties>
+                <keycloak.connectionsJpa.driver>com.mysql.jdbc.Driver</keycloak.connectionsJpa.driver>
+                <keycloak.connectionsJpa.database>keycloak</keycloak.connectionsJpa.database>
+                <keycloak.connectionsJpa.user>keycloak</keycloak.connectionsJpa.user>
+                <keycloak.connectionsJpa.password>keycloak</keycloak.connectionsJpa.password>
+                <keycloak.connectionsJpa.url>jdbc:mysql://${auth.server.db.host}/${keycloak.connectionsJpa.database}</keycloak.connectionsJpa.url>
+                <jdbc.mvn.groupId>mysql</jdbc.mvn.groupId>
+                <jdbc.mvn.artifactId>mysql-connector-java</jdbc.mvn.artifactId>
+                <jdbc.mvn.version>${mysql.version}</jdbc.mvn.version>
+                <docker.database.image>mysql:5.7.25</docker.database.image>
+                <docker.database.port>3306</docker.database.port>
+                <docker.database.skip>false</docker.database.skip>
+            </properties>
+        </profile>
+        <profile>
+            <id>db-postgres</id>
+            <properties>
+                <keycloak.connectionsJpa.driver>org.postgresql.Driver</keycloak.connectionsJpa.driver>
+                <keycloak.connectionsJpa.database>keycloak</keycloak.connectionsJpa.database>
+                <keycloak.connectionsJpa.user>keycloak</keycloak.connectionsJpa.user>
+                <keycloak.connectionsJpa.password>keycloak</keycloak.connectionsJpa.password>
+                <keycloak.connectionsJpa.url>jdbc:postgresql://${auth.server.db.host}/${keycloak.connectionsJpa.database}</keycloak.connectionsJpa.url>
+                <jdbc.mvn.groupId>org.postgresql</jdbc.mvn.groupId>
+                <jdbc.mvn.artifactId>postgresql</jdbc.mvn.artifactId>
+                <jdbc.mvn.version>${postgresql.version}</jdbc.mvn.version>
+                <docker.database.image>postgres:9.6.11</docker.database.image>
+                <docker.database.port>5432</docker.database.port>
+                <docker.database.skip>false</docker.database.skip>
+            </properties>
+        </profile>
+        <profile>
+            <id>db-mariadb</id>
+            <properties>
+                <keycloak.connectionsJpa.driver>org.mariadb.jdbc.Driver</keycloak.connectionsJpa.driver>
+                <keycloak.connectionsJpa.database>keycloak</keycloak.connectionsJpa.database>
+                <keycloak.connectionsJpa.user>keycloak</keycloak.connectionsJpa.user>
+                <keycloak.connectionsJpa.password>keycloak</keycloak.connectionsJpa.password>
+                <keycloak.connectionsJpa.url>jdbc:mariadb://${auth.server.db.host}/${keycloak.connectionsJpa.database}</keycloak.connectionsJpa.url>
+                <jdbc.mvn.groupId>org.mariadb.jdbc</jdbc.mvn.groupId>
+                <jdbc.mvn.artifactId>mariadb-java-client</jdbc.mvn.artifactId>
+                <jdbc.mvn.version>${mariadb.version}</jdbc.mvn.version>
+                <docker.database.image>mariadb:10.2.21</docker.database.image>
+                <docker.database.port>3306</docker.database.port>
+                <docker.database.skip>false</docker.database.skip>
+            </properties>
         </profile>
     </profiles>
 

@@ -51,5 +51,24 @@ Run tests:
     
 Stop MySQl:
 
-    docker rm -f mariadb    
+    docker rm -f mariadb
 
+Using built-in profiles to run database tests using docker containers
+-------
+
+The project provides specific profiles to run database tests using containers. The supported databases and their respective profiles are:
+
+* `db-mysql`
+* `db-postgres`
+* `db-mariadb`
+
+As an example, to run tests using a MySQL docker container:
+
+    mvn -f testsuite/integration-arquillian clean verify -Pdb-mysql,jpa
+
+If you want to run tests using a pre-configured Keycloak distribution (instead of Undertow):
+
+    mvn -f testsuite/integration-arquillian clean verify -Pdb-mysql,jpa,auth-server-wildfly
+    
+Note that you must always activate the `jpa` profile.
+    

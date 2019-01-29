@@ -127,6 +127,7 @@
                 ${kie.maven.settings}
                 -Dauth.server.truststore=${auth.server.truststore}
                 -Dauth.server.truststore.password=${auth.server.truststore.password}
+                -Dauth.server.db.host=${auth.server.db.host}
             </property>
             <property name="javaVmArguments">
                 ${auth.server.jboss.jvm.debug.args}
@@ -154,6 +155,7 @@
                     ${auth.server.profile}
                     -Dauth.server.truststore=${auth.server.truststore}
                     -Dauth.server.truststore.password=${auth.server.truststore.password}
+                    -Dauth.server.db.host=${auth.server.db.host}
                 </property>
                 <property name="javaVmArguments">
                     ${auth.server.memory.settings}
@@ -179,6 +181,7 @@
                     ${auth.server.profile}
                     -Dauth.server.truststore=${auth.server.truststore}
                     -Dauth.server.truststore.password=${auth.server.truststore.password}
+                    -Dauth.server.db.host=${auth.server.db.host}
                 </property>
                 <property name="javaVmArguments">
                     ${auth.server.memory.settings}
@@ -258,6 +261,7 @@
                     ${auth.server.profile}
                     -Dauth.server.truststore=${auth.server.truststore}
                     -Dauth.server.truststore.password=${auth.server.truststore.password}
+                    -Dauth.server.db.host=${auth.server.db.host}
                 </property>
                 <property name="javaVmArguments">
                     ${auth.server.memory.settings}
@@ -287,6 +291,7 @@
                     ${auth.server.profile}
                     -Dauth.server.truststore=${auth.server.truststore}
                     -Dauth.server.truststore.password=${auth.server.truststore.password}
+                    -Dauth.server.db.host=${auth.server.db.host}
                 </property>
                 <property name="javaVmArguments">
                     ${auth.server.memory.settings}
@@ -423,6 +428,7 @@
                     -Dauth.server.truststore.password=${auth.server.truststore.password}
                     -Dkeycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled=${keycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled}
                     -Dkeycloak.connectionsInfinispan.hotrodProtocolVersion=${keycloak.connectionsInfinispan.hotrodProtocolVersion}
+                    -Dauth.server.db.host=${auth.server.db.host}
                 </property>
                 <property name="javaVmArguments">
                     ${auth.server.memory.settings}
@@ -452,6 +458,7 @@
                     -Dauth.server.truststore.password=${auth.server.truststore.password}
                     -Dkeycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled=${keycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled}
                     -Dkeycloak.connectionsInfinispan.hotrodProtocolVersion=${keycloak.connectionsInfinispan.hotrodProtocolVersion}
+                    -Dauth.server.db.host=${auth.server.db.host}
                 </property>
                 <property name="javaVmArguments">
                     ${auth.server.memory.settings}
@@ -482,6 +489,7 @@
                     -Dauth.server.truststore.password=${auth.server.truststore.password}
                     -Dkeycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled=${keycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled}
                     -Dkeycloak.connectionsInfinispan.hotrodProtocolVersion=${keycloak.connectionsInfinispan.hotrodProtocolVersion}
+                    -Dauth.server.db.host=${auth.server.db.host}
                 </property>
                 <property name="javaVmArguments">
                     ${auth.server.memory.settings}
@@ -511,6 +519,7 @@
                     -Dauth.server.truststore.password=${auth.server.truststore.password}
                     -Dkeycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled=${keycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled}
                     -Dkeycloak.connectionsInfinispan.hotrodProtocolVersion=${keycloak.connectionsInfinispan.hotrodProtocolVersion}
+                    -Dauth.server.db.host=${auth.server.db.host}
                 </property>
                 <property name="javaVmArguments">
                     ${auth.server.memory.settings}
@@ -551,6 +560,7 @@
                 ${auth.server.memory.settings}
                 -Dauth.server.truststore=${auth.server.truststore}
                 -Dauth.server.truststore.password=${auth.server.truststore.password}
+                -Dauth.server.db.host=${auth.server.db.host}
             </property>
             <property name="managementPort">${auth.server.management.port}</property>
             <property name="startupTimeoutInSeconds">${auth.server.jboss.startup.timeout}</property>
