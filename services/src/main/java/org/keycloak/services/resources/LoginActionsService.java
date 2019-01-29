@@ -845,8 +845,8 @@ public class LoginActionsService {
         boolean updateConsentRequired = false;
 
         for (String clientScopeId : authSession.getClientScopes()) {
-            ClientScopeModel clientScope = KeycloakModelUtils.findClientScopeById(realm, clientScopeId);
-            if (clientScope != null) {
+            ClientScopeModel clientScope = KeycloakModelUtils.findClientScopeById(realm, client, clientScopeId);
+            if (clientScope != null && clientScope.isDisplayOnConsentScreen()) {
                 if (!grantedConsent.isClientScopeGranted(clientScope)) {
                     grantedConsent.addGrantedClientScope(clientScope);
                     updateConsentRequired = true;
@@ -864,7 +864,7 @@ public class LoginActionsService {
         event.success();
 
         ClientSessionContext clientSessionCtx = AuthenticationProcessor.attachSession(authSession, null, session, realm, clientConnection, event);
-        return AuthenticationManager.redirectAfterSuccessfulFlow(session, realm, clientSessionCtx.getClientSession().getUserSession(), clientSessionCtx, request, session.getContext().getUri(), clientConnection, event, authSession.getProtocol());
+        return AuthenticationManager.redirectAfterSuccessfulFlow(session, realm, clientSessionCtx.getClientSession().getUserSession(), clientSessionCtx, request, session.getContext().getUri(), clientConnection, event, authSession);
     }
 
     private void initLoginEvent(AuthenticationSessionModel authSession) {

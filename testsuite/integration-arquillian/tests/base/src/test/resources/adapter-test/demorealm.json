@@ -271,6 +271,16 @@
             "secret": "password"
         },
         {
+            "clientId": "session-portal-distributable",
+            "enabled": true,
+            "adminUrl": "http://localhost:8580/session-portal-distributable",
+            "baseUrl": "http://localhost:8580/session-portal-distributable",
+            "redirectUris": [
+                "http://localhost:8580/session-portal-distributable/*"
+            ],
+            "secret": "password"
+        },
+        {
             "clientId": "input-portal",
             "enabled": true,
             "adminUrl": "/input-portal",

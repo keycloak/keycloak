@@ -1,21 +1,3 @@
-/*
- * Copyright 2017 Analytical Graphics, Inc. and/or its affiliates
- * and other contributors as indicated by the @author tags.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
-
 package org.keycloak.services.x509;
 
 import java.io.UnsupportedEncodingException;
@@ -63,7 +45,7 @@ import org.keycloak.truststore.TruststoreProviderFactory;
  * <code>
  * server { 
  *    ...
- *    ssl_client_certificate                  path-to-my-trustyed-cas-for client auth.pem;
+ *    ssl_client_certificate                  path-to-my-trustyed-cas-for-client-auth.pem;
  *    ssl_verify_client                       on|optional_no_ca;
  *    ssl_verify_depth                        2;
  *    ...
@@ -84,6 +66,8 @@ import org.keycloak.truststore.TruststoreProviderFactory;
 public class NginxProxySslClientCertificateLookup extends AbstractClientCertificateFromHttpHeadersLookup {
 
 	private static final Logger log = Logger.getLogger(NginxProxySslClientCertificateLookup.class);
+
+	private static boolean isTruststoreLoaded = false;
 	
 	private static KeyStore  truststore = null;
 	private static Set<X509Certificate> trustedRootCerts = null;
@@ -97,14 +81,14 @@ public class NginxProxySslClientCertificateLookup extends AbstractClientCertific
         super(sslCientCertHttpHeader, sslCertChainHttpHeaderPrefix, certificateChainLength);
 
     	if (!loadKeycloakTrustStore(kcsession)) {
-            log.warn("Keycloak Truststore is null or empty, but it's needed to rebuild client certificate chain with nginx Keycloak Provider");
+            log.warn("Keycloak Truststore is null or empty, but it's required for NGINX x509cert-lookup provider");
             log.warn("   see Keycloak documentation here : https://www.keycloak.org/docs/latest/server_installation/index.html#_truststore");
     	}
-    	log.debug(" Keycloak truststore loaded for NGINX client certificate provider.");
     }
 
     /**
      * Removing PEM Headers and end of lines
+     * 
      * @param pem
      * @return
      */
@@ -123,7 +107,7 @@ public class NginxProxySslClientCertificateLookup extends AbstractClientCertific
     protected X509Certificate decodeCertificateFromPem(String pem) throws PemException {
 
         if (pem == null) {
-        	log.info("End user TLS Certificate is NULL! ");
+        	log.warn("End user TLS Certificate is NULL! ");
             return null;
         }
     	try {
@@ -145,28 +129,34 @@ public class NginxProxySslClientCertificateLookup extends AbstractClientCertific
 
         // Get the client certificate
         X509Certificate clientCert = getCertificateFromHttpHeader(httpRequest, sslClientCertHttpHeader);
-        log.debugf("End user certificate found : DN=[%s]  SerialNumber=[%s]", clientCert.getSubjectDN().toString(), clientCert.getSerialNumber().toString() );
+        log.debugf("End user certificate found : Subject DN=[%s]  SerialNumber=[%s]", clientCert.getSubjectDN().toString(), clientCert.getSerialNumber().toString() );
         
         if (clientCert != null) {
             
         	// Rebuilding the end user certificate chain using Keycloak Truststore
             X509Certificate[] certChain = buildChain(clientCert);
-            for (X509Certificate cacert : certChain) {
-            	chain.add(cacert);
-            	log.debugf("Rebuilded user cert chain DN : %s", cacert.getSubjectDN().toString() );
+            if ( certChain == null || certChain.length == 0 ) {
+            	log.info("Impossible to rebuild end user cert chain : client certificate authentication will fail." );
+            	chain.add(clientCert);
+            } else {
+            	for (X509Certificate cacert : certChain) {
+            		chain.add(cacert);
+            		log.debugf("Rebuilded user cert chain DN : %s", cacert.getSubjectDN().toString() );
+            	}
             }
         }
         return chain.toArray(new X509Certificate[0]);
     }
 
     /**
-     * As NGINX cannot actually  send the CA Chain in http header, 
+     *  As NGINX cannot actually send the CA Chain in http header(s), 
+     *  we are rebuilding here the end user certificate chain with Keycloak truststore.
+     *  <br>
+     *  Please note that Keycloak truststore must contain root and intermediate CA's certificates.
      * @param end_user_auth_cert
      * @return
      */
 	public X509Certificate[] buildChain(X509Certificate end_user_auth_cert) {
-		
-		String javasecuritydebugoriginalsettings = setJVMDebuggingForCertPathBuilder();
 		
 		X509Certificate[] user_cert_chain = null;
 		
@@ -207,10 +197,7 @@ public class NginxProxySslClientCertificateLookup extends AbstractClientCertific
             // Build and verify the certification chain (revocation status excluded)
             CertPathBuilder certPathBuilder = CertPathBuilder.getInstance("PKIX","BC");
             CertPath certPath = certPathBuilder.build(pkixParams).getCertPath();
-            log.debug("Certification path building OK, and contains " + certPath.getCertificates().size() + " X509 Certificates");            
-            
-            //Remove end user certificate
-            intermediateCerts.remove(end_user_auth_cert);
+            log.debug("Certification path building OK, and contains " + certPath.getCertificates().size() + " X509 Certificates");
             
             user_cert_chain = convertCertPathtoX509CertArray( certPath );
             
@@ -225,40 +212,14 @@ public class NginxProxySslClientCertificateLookup extends AbstractClientCertific
         	log.error(e.getLocalizedMessage(),e);
         } catch (NoSuchProviderException e) {
         	log.error(e.getLocalizedMessage(),e);
+		} finally {
+	        //Remove end user certificate
+	        intermediateCerts.remove(end_user_auth_cert);
 		}
         
-        //Reset java security debug property to original value
-        if (javasecuritydebugoriginalsettings!=null)
-        	System.setProperty("java.security.debug",javasecuritydebugoriginalsettings);
-        
-        //Remove end user certificate
-        intermediateCerts.remove(end_user_auth_cert);
-        
-        return null;
+        return user_cert_chain;
 	}
-	
-	/**
-	 * Add setting JVM system properties for helping debugging CertPathBuilder
-	 * only if the trace log level is enabled.
-	 * 
-	 * @return the original value of system property java.security.debug
-	 */
-	private String setJVMDebuggingForCertPathBuilder() {
-    	
-		String origjvmsecdebprop = null;
-    	if ( log.isEnabled(Level.TRACE) ) {
-    		origjvmsecdebprop =  System.getProperty("java.security.debug");
-    		if (origjvmsecdebprop.indexOf("certpath") == -1) {
-    			if (origjvmsecdebprop.length() == 0)
-    				System.setProperty("java.security.debug","certpath");
-    			else
-    				System.setProperty("java.security.debug",origjvmsecdebprop + ",certpath");
-    		}
-    		
-    	}
-    	return origjvmsecdebprop;
-    	
-	}
+
 
 	public X509Certificate[] convertCertPathtoX509CertArray( CertPath certPath ) {
         
@@ -276,21 +237,30 @@ public class NginxProxySslClientCertificateLookup extends AbstractClientCertific
 		
 	}
 	
+	/**  Loading truststore @ first login
+	 * 
+	 * @param kcsession
+	 * @return
+	 */
 	public boolean loadKeycloakTrustStore(KeycloakSession kcsession) {
 
-		boolean isTSLoaded = false;
-		KeycloakSessionFactory factory = kcsession.getKeycloakSessionFactory();
-        TruststoreProviderFactory truststoreFactory = (TruststoreProviderFactory) factory.getProviderFactory(TruststoreProvider.class, "file");
-        
-        TruststoreProvider provider = truststoreFactory.create(kcsession);
-        if ( ! (provider != null && provider.getTruststore() == null ) ) {
-        	truststore = provider.getTruststore();
-        	readTruststore();
-        	
-        	isTSLoaded = true;
+		if (!isTruststoreLoaded) {
+			log.debug(" Loading Keycloak truststore ...");
+			KeycloakSessionFactory factory = kcsession.getKeycloakSessionFactory();
+	        TruststoreProviderFactory truststoreFactory = (TruststoreProviderFactory) factory.getProviderFactory(TruststoreProvider.class, "file");
+	        
+	        TruststoreProvider provider = truststoreFactory.create(kcsession);
+	        
+	        if ( provider != null && provider.getTruststore() != null ) {
+	        	truststore = provider.getTruststore();
+	        	readTruststore();
+				log.debug("Keycloak truststore loaded for NGINX x509cert-lookup provider.");
+	
+	        	isTruststoreLoaded = true;
+	        }
         }
 
-		return isTSLoaded;
+		return isTruststoreLoaded;
 	}
 
 	/**
@@ -300,12 +270,14 @@ public class NginxProxySslClientCertificateLookup extends AbstractClientCertific
 		
     	//Reading truststore aliases & certificates
     	Enumeration enumeration;
+    	
     	trustedRootCerts  = new HashSet<X509Certificate>();
     	intermediateCerts = new HashSet<X509Certificate>();
+    	
 		try {
 
 			enumeration = truststore.aliases();
-
+			log.trace("Checking " + truststore.size() + " entries from the truststore.");
             while(enumeration.hasMoreElements()) {
 
                 String alias = (String)enumeration.nextElement();
@@ -315,13 +287,13 @@ public class NginxProxySslClientCertificateLookup extends AbstractClientCertific
                 	X509Certificate cax509cert = (X509Certificate) certificate;
                 	if (isSelfSigned(cax509cert)) {
                         trustedRootCerts.add(cax509cert);
-                        log.debug("Adding certificate from trustore as trsusted root CA (alias : "+alias + " | Subject DN : " + ((X509Certificate) certificate).getSubjectDN() +")");
+                        log.debug("Trusted root CA found in trustore : alias : "+alias + " | Subject DN : " + ((X509Certificate) certificate).getSubjectDN() );
                     } else {
                         intermediateCerts.add(cax509cert);
-                        log.debug("Adding certificate from trustore as intermediate CA (alias : "+alias + " | Subject DN : " + ((X509Certificate) certificate).getSubjectDN() +")");
+                        log.debug("Intermediate CA found in trustore : alias : "+alias + " | Subject DN : " + ((X509Certificate) certificate).getSubjectDN() );
                     }
                 } else
-                	log.warn("Skipping certificate in "+ alias + " because it's not an X509Certificate");
+                	log.info("Skipping certificate with alias ["+ alias + "] from truststore, because it's not an X509Certificate");
                 
             }
 		} catch (KeyStoreException e) {
@@ -349,7 +321,7 @@ public class NginxProxySslClientCertificateLookup extends AbstractClientCertific
             return true;
         } catch (SignatureException sigEx) {
             // Invalid signature --> not self-signed
-        	log.trace("certificate have a bad signature : " + sigEx.getMessage(),sigEx);
+        	log.trace("certificate " + cert.getSubjectDN() + " detected as intermediate CA");
         } catch (InvalidKeyException keyEx) {
             // Invalid key --> not self-signed
         	log.trace("certificate " + cert.getSubjectDN() + " detected as intermediate CA");

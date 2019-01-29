@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -312,7 +311,7 @@ public class ConcurrentLoginTest extends AbstractConcurrencyTest {
     }
 
     private static Map<String, String> getQueryFromUrl(String url) throws URISyntaxException {
-        return URLEncodedUtils.parse(new URI(url), Charset.forName("UTF-8")).stream()
+        return URLEncodedUtils.parse(new URI(url), "UTF-8").stream()
                 .collect(Collectors.toMap(p -> p.getName(), p -> p.getValue()));
     }
 
@@ -326,7 +325,8 @@ public class ConcurrentLoginTest extends AbstractConcurrencyTest {
                     OAuthClient oauth1 = new OAuthClient();
                     oauth1.init(driver);
 
-                    // Add some randomness to nonce and redirectUri. Verify that login is successful and nonce will match
+                    // Add some randomness to state, nonce and redirectUri. Verify that login is successful and "state" and "nonce" will match
+                    oauth1.stateParamHardcoded(KeycloakModelUtils.generateId());
                     oauth1.nonce(KeycloakModelUtils.generateId());
                     oauth1.redirectUri(oauth.getRedirectUri() + "?some=" + new Random().nextInt(1024));
                     return oauth1;
@@ -371,7 +371,12 @@ public class ConcurrentLoginTest extends AbstractConcurrencyTest {
             Assert.assertThat(context.getRedirectLocations(), Matchers.notNullValue());
             Assert.assertThat(context.getRedirectLocations(), Matchers.not(Matchers.empty()));
             String currentUrl = context.getRedirectLocations().get(0).toString();
-            String code = getQueryFromUrl(currentUrl).get(OAuth2Constants.CODE);
+
+            Map<String, String> query = getQueryFromUrl(currentUrl);
+            String code = query.get(OAuth2Constants.CODE);
+            String state = query.get(OAuth2Constants.STATE);
+
+            Assert.assertEquals("Invalid state.", state, oauth1.getState());
 
             AtomicReference<OAuthClient.AccessTokenResponse> accessResRef = new AtomicReference<>();
             totalInvocations.incrementAndGet();

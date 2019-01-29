@@ -97,7 +97,8 @@ public class EAPAppServerProvider implements AppServerContainerProvider {
         createChild("javaVmArguments", 
                 System.getProperty("app.server.jboss.jvm.debug.args", "") + " " +
                 System.getProperty("app.server.memory.settings", "") + " " +
-                "-Djava.net.preferIPv4Stack=true"
+                "-Djava.net.preferIPv4Stack=true" + " " +
+                System.getProperty("app.server.jvm.args.extra")
         );
         createChild("managementProtocol", managementProtocol);
         createChild("managementPort", managementPort);
@@ -144,7 +145,8 @@ public class EAPAppServerProvider implements AppServerContainerProvider {
         createChild("javaVmArguments", 
                 "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=790" + number + " " +
                 System.getProperty("app.server.memory.settings", "") + " " +
-                "-Djava.net.preferIPv4Stack=true"
+                "-Djava.net.preferIPv4Stack=true" + " " +
+                System.getProperty("app.server.jvm.args.extra")
         );
         createChild("managementProtocol", managementProtocol);
         createChild("managementPort", managementPort);

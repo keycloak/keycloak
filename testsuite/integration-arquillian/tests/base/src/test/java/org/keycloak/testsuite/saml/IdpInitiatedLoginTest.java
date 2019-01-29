@@ -16,11 +16,11 @@
  */
 package org.keycloak.testsuite.saml;
 
-import org.apache.http.client.HttpResponseException;
+import java.io.Closeable;
+import java.io.IOException;
 import org.junit.Assert;
 import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.admin.client.resource.UsersResource;
-import org.keycloak.client.registration.HttpErrorException;
 import org.keycloak.dom.saml.v2.protocol.ResponseType;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.saml.SamlProtocol;
@@ -45,6 +45,7 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.hasSize;
 import static org.junit.Assert.assertThat;
+import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import static org.keycloak.testsuite.util.Matchers.bodyHC;
 import static org.keycloak.testsuite.util.Matchers.statusCodeIsHC;
 
@@ -55,7 +56,7 @@ import static org.keycloak.testsuite.util.Matchers.statusCodeIsHC;
 public class IdpInitiatedLoginTest extends AbstractSamlTest {
 
     @Test
-    public void testIdpInitiatedLogin() {
+    public void testIdpInitiatedLoginPost() {
         new SamlClientBuilder()
           .idpInitiatedLogin(getAuthServerSamlEndpoint(REALM_NAME), "sales-post").build()
           .login().user(bburkeUser).build()
@@ -69,6 +70,53 @@ public class IdpInitiatedLoginTest extends AbstractSamlTest {
             .build()
           .execute()
         ;
+    }
+
+    @Test
+    public void testIdpInitiatedLoginPostAdminUrl() throws IOException {
+        String url = adminClient.realm(REALM_NAME).clients().findByClientId(SAML_CLIENT_ID_SALES_POST).get(0)
+                .getAttributes().get(SamlProtocol.SAML_ASSERTION_CONSUMER_URL_POST_ATTRIBUTE);
+        try (Closeable c = ClientAttributeUpdater.forClient(adminClient, REALM_NAME, SAML_CLIENT_ID_SALES_POST)
+                .setAdminUrl(url)
+                .setAttribute(SamlProtocol.SAML_ASSERTION_CONSUMER_URL_POST_ATTRIBUTE, null)
+                .setAttribute(SamlProtocol.SAML_ASSERTION_CONSUMER_URL_REDIRECT_ATTRIBUTE, null)
+                .update()) {
+            new SamlClientBuilder()
+                    .idpInitiatedLogin(getAuthServerSamlEndpoint(REALM_NAME), "sales-post").build()
+                    .login().user(bburkeUser).build()
+                    .processSamlResponse(Binding.POST)
+                    .transformObject(ob -> {
+                        assertThat(ob, Matchers.isSamlResponse(JBossSAMLURIConstants.STATUS_SUCCESS));
+                        ResponseType resp = (ResponseType) ob;
+                        assertThat(resp.getDestination(), is(SAML_ASSERTION_CONSUMER_URL_SALES_POST));
+                        return null;
+                    })
+                    .build()
+                    .execute();
+        }
+    }
+
+    @Test
+    public void testIdpInitiatedLoginRedirect() throws IOException {
+        String url = adminClient.realm(REALM_NAME).clients().findByClientId(SAML_CLIENT_ID_SALES_POST).get(0)
+                .getAttributes().get(SamlProtocol.SAML_ASSERTION_CONSUMER_URL_POST_ATTRIBUTE);
+        try (Closeable c = ClientAttributeUpdater.forClient(adminClient, REALM_NAME, SAML_CLIENT_ID_SALES_POST)
+                .setAttribute(SamlProtocol.SAML_ASSERTION_CONSUMER_URL_POST_ATTRIBUTE, null)
+                .setAttribute(SamlProtocol.SAML_ASSERTION_CONSUMER_URL_REDIRECT_ATTRIBUTE, url)
+                .update()) {
+            new SamlClientBuilder()
+                    .idpInitiatedLogin(getAuthServerSamlEndpoint(REALM_NAME), "sales-post").build()
+                    .login().user(bburkeUser).build()
+                    .processSamlResponse(Binding.REDIRECT)
+                    .transformObject(ob -> {
+                        assertThat(ob, Matchers.isSamlResponse(JBossSAMLURIConstants.STATUS_SUCCESS));
+                        ResponseType resp = (ResponseType) ob;
+                        assertThat(resp.getDestination(), is(SAML_ASSERTION_CONSUMER_URL_SALES_POST));
+                        return null;
+                    })
+                    .build()
+                    .execute();
+        }
     }
 
     @Test

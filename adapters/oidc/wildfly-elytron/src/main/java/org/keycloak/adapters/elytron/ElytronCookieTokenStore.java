@@ -26,15 +26,17 @@ import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.OidcKeycloakAccount;
 import org.keycloak.adapters.RefreshableKeycloakSecurityContext;
 import org.keycloak.adapters.RequestAuthenticator;
+import org.keycloak.adapters.spi.UserSessionManagement;
 import org.wildfly.security.http.HttpScope;
 import org.wildfly.security.http.Scope;
 
 import javax.security.auth.callback.CallbackHandler;
+import java.util.List;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-public class ElytronCookieTokenStore implements ElytronTokeStore {
+public class ElytronCookieTokenStore implements ElytronTokeStore, UserSessionManagement {
 
     protected static Logger log = Logger.getLogger(ElytronCookieTokenStore.class);
 
@@ -157,5 +159,15 @@ public class ElytronCookieTokenStore implements ElytronTokeStore {
                 ((RefreshableKeycloakSecurityContext) ksc).logout(deployment);
             }
         }
+    }
+
+    @Override
+    public void logoutAll() {
+        //no-op
+    }
+
+    @Override
+    public void logoutHttpSessions(List<String> ids) {
+        //no-op
     }
 }

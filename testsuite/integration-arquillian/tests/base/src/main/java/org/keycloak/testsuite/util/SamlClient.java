@@ -49,7 +49,6 @@ import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
-import java.nio.charset.Charset;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.util.Arrays;
@@ -296,7 +295,7 @@ public class SamlClient {
      * @return
      */
     public static SAMLDocumentHolder extractSamlResponseFromRedirect(String responseUri) {
-        List<NameValuePair> params = URLEncodedUtils.parse(URI.create(responseUri), Charset.forName("UTF-8"));
+        List<NameValuePair> params = URLEncodedUtils.parse(URI.create(responseUri), "UTF-8");
 
         String samlDoc = null;
         for (NameValuePair param : params) {

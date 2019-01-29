@@ -141,16 +141,16 @@ public class GroupTest extends AbstractGroupTest {
     }
 
     private GroupRepresentation createGroup(RealmResource realm, GroupRepresentation group) {
-        Response response = realm.groups().add(group);
-        String groupId = ApiUtil.getCreatedId(response);
-        getCleanup().addGroupId(groupId);
-        response.close();
+        try (Response response = realm.groups().add(group)) {
+            String groupId = ApiUtil.getCreatedId(response);
+            getCleanup().addGroupId(groupId);
 
-        assertAdminEvents.assertEvent("test", OperationType.CREATE, AdminEventPaths.groupPath(groupId), group, ResourceType.GROUP);
+            assertAdminEvents.assertEvent("test", OperationType.CREATE, AdminEventPaths.groupPath(groupId), group, ResourceType.GROUP);
 
-        // Set ID to the original rep
-        group.setId(groupId);
-        return group;
+            // Set ID to the original rep
+            group.setId(groupId);
+            return group;
+        }
     }
 
     @Test
@@ -420,13 +420,12 @@ public class GroupTest extends AbstractGroupTest {
             UserRepresentation user = UserBuilder.create().username("user" + i).build();
             usernames.add(user.getUsername());
             
-            Response create = realm.users().create(user);
-            assertEquals(Status.CREATED, create.getStatusInfo());
-            
-            String userAId = ApiUtil.getCreatedId(create);
-            realm.users().get(userAId).joinGroup(groupId);
-            
-            create.close();
+            try (Response create = realm.users().create(user)) {
+                assertEquals(Status.CREATED, create.getStatusInfo());
+                
+                String userAId = ApiUtil.getCreatedId(create);
+                realm.users().get(userAId).joinGroup(groupId);
+            }
         }
         
         List<String> memberUsernames = new ArrayList<>();
@@ -463,69 +462,69 @@ public class GroupTest extends AbstractGroupTest {
         realm.roles().create(RoleBuilder.create().name("realm-child").build());
         realm.roles().get("realm-composite").addComposites(Collections.singletonList(realm.roles().get("realm-child").toRepresentation()));
 
-        Response response = realm.clients().create(ClientBuilder.create().clientId("myclient").build());
-        String clientId = ApiUtil.getCreatedId(response);
-        response.close();
+        try (Response response = realm.clients().create(ClientBuilder.create().clientId("myclient").build())) {
+            String clientId = ApiUtil.getCreatedId(response);
 
-        realm.clients().get(clientId).roles().create(RoleBuilder.create().name("client-role").build());
-        realm.clients().get(clientId).roles().create(RoleBuilder.create().name("client-role2").build());
-        realm.clients().get(clientId).roles().create(RoleBuilder.create().name("client-composite").build());
-        realm.clients().get(clientId).roles().create(RoleBuilder.create().name("client-child").build());
-        realm.clients().get(clientId).roles().get("client-composite").addComposites(Collections.singletonList(realm.clients().get(clientId).roles().get("client-child").toRepresentation()));
+            realm.clients().get(clientId).roles().create(RoleBuilder.create().name("client-role").build());
+            realm.clients().get(clientId).roles().create(RoleBuilder.create().name("client-role2").build());
+            realm.clients().get(clientId).roles().create(RoleBuilder.create().name("client-composite").build());
+            realm.clients().get(clientId).roles().create(RoleBuilder.create().name("client-child").build());
+            realm.clients().get(clientId).roles().get("client-composite").addComposites(Collections.singletonList(realm.clients().get(clientId).roles().get("client-child").toRepresentation()));
 
 
-        // Roles+clients tested elsewhere
-        assertAdminEvents.clear();
+            // Roles+clients tested elsewhere
+            assertAdminEvents.clear();
 
-        GroupRepresentation group = new GroupRepresentation();
-        group.setName("group");
-        String groupId = createGroup(realm, group).getId();
+            GroupRepresentation group = new GroupRepresentation();
+            group.setName("group");
+            String groupId = createGroup(realm, group).getId();
 
-        RoleMappingResource roles = realm.groups().group(groupId).roles();
-        assertEquals(0, roles.realmLevel().listAll().size());
+            RoleMappingResource roles = realm.groups().group(groupId).roles();
+            assertEquals(0, roles.realmLevel().listAll().size());
 
-        // Add realm roles
-        List<RoleRepresentation> l = new LinkedList<>();
-        l.add(realm.roles().get("realm-role").toRepresentation());
-        l.add(realm.roles().get("realm-composite").toRepresentation());
-        roles.realmLevel().add(l);
-        assertAdminEvents.assertEvent("test", OperationType.CREATE, AdminEventPaths.groupRolesRealmRolesPath(group.getId()), l, ResourceType.REALM_ROLE_MAPPING);
+            // Add realm roles
+            List<RoleRepresentation> l = new LinkedList<>();
+            l.add(realm.roles().get("realm-role").toRepresentation());
+            l.add(realm.roles().get("realm-composite").toRepresentation());
+            roles.realmLevel().add(l);
+            assertAdminEvents.assertEvent("test", OperationType.CREATE, AdminEventPaths.groupRolesRealmRolesPath(group.getId()), l, ResourceType.REALM_ROLE_MAPPING);
 
-        // Add client roles
-        RoleRepresentation clientRole = realm.clients().get(clientId).roles().get("client-role").toRepresentation();
-        RoleRepresentation clientComposite = realm.clients().get(clientId).roles().get("client-composite").toRepresentation();
-        roles.clientLevel(clientId).add(Collections.singletonList(clientRole));
-        roles.clientLevel(clientId).add(Collections.singletonList(clientComposite));
-        assertAdminEvents.assertEvent("test", OperationType.CREATE, AdminEventPaths.groupRolesClientRolesPath(group.getId(), clientId), Collections.singletonList(clientRole), ResourceType.CLIENT_ROLE_MAPPING);
-        assertAdminEvents.assertEvent("test", OperationType.CREATE, AdminEventPaths.groupRolesClientRolesPath(group.getId(), clientId), Collections.singletonList(clientComposite), ResourceType.CLIENT_ROLE_MAPPING);
+            // Add client roles
+            RoleRepresentation clientRole = realm.clients().get(clientId).roles().get("client-role").toRepresentation();
+            RoleRepresentation clientComposite = realm.clients().get(clientId).roles().get("client-composite").toRepresentation();
+            roles.clientLevel(clientId).add(Collections.singletonList(clientRole));
+            roles.clientLevel(clientId).add(Collections.singletonList(clientComposite));
+            assertAdminEvents.assertEvent("test", OperationType.CREATE, AdminEventPaths.groupRolesClientRolesPath(group.getId(), clientId), Collections.singletonList(clientRole), ResourceType.CLIENT_ROLE_MAPPING);
+            assertAdminEvents.assertEvent("test", OperationType.CREATE, AdminEventPaths.groupRolesClientRolesPath(group.getId(), clientId), Collections.singletonList(clientComposite), ResourceType.CLIENT_ROLE_MAPPING);
 
-        // List realm roles
-        assertNames(roles.realmLevel().listAll(), "realm-role", "realm-composite");
-        assertNames(roles.realmLevel().listAvailable(), "admin", "offline_access", Constants.AUTHZ_UMA_AUTHORIZATION, "user", "customer-user-premium", "realm-composite-role", "sample-realm-role", "attribute-role");
-        assertNames(roles.realmLevel().listEffective(), "realm-role", "realm-composite", "realm-child");
+            // List realm roles
+            assertNames(roles.realmLevel().listAll(), "realm-role", "realm-composite");
+            assertNames(roles.realmLevel().listAvailable(), "admin", "offline_access", Constants.AUTHZ_UMA_AUTHORIZATION, "user", "customer-user-premium", "realm-composite-role", "sample-realm-role", "attribute-role");
+            assertNames(roles.realmLevel().listEffective(), "realm-role", "realm-composite", "realm-child");
 
-        // List client roles
-        assertNames(roles.clientLevel(clientId).listAll(), "client-role", "client-composite");
-        assertNames(roles.clientLevel(clientId).listAvailable(), "client-role2");
-        assertNames(roles.clientLevel(clientId).listEffective(), "client-role", "client-composite", "client-child");
+            // List client roles
+            assertNames(roles.clientLevel(clientId).listAll(), "client-role", "client-composite");
+            assertNames(roles.clientLevel(clientId).listAvailable(), "client-role2");
+            assertNames(roles.clientLevel(clientId).listEffective(), "client-role", "client-composite", "client-child");
 
-        // Get mapping representation
-        MappingsRepresentation all = roles.getAll();
-        assertNames(all.getRealmMappings(), "realm-role", "realm-composite");
-        assertEquals(1, all.getClientMappings().size());
-        assertNames(all.getClientMappings().get("myclient").getMappings(), "client-role", "client-composite");
+            // Get mapping representation
+            MappingsRepresentation all = roles.getAll();
+            assertNames(all.getRealmMappings(), "realm-role", "realm-composite");
+            assertEquals(1, all.getClientMappings().size());
+            assertNames(all.getClientMappings().get("myclient").getMappings(), "client-role", "client-composite");
 
-        // Remove realm role
-        RoleRepresentation realmRoleRep = realm.roles().get("realm-role").toRepresentation();
-        roles.realmLevel().remove(Collections.singletonList(realmRoleRep));
-        assertAdminEvents.assertEvent("test", OperationType.DELETE, AdminEventPaths.groupRolesRealmRolesPath(group.getId()), Collections.singletonList(realmRoleRep), ResourceType.REALM_ROLE_MAPPING);
-        assertNames(roles.realmLevel().listAll(), "realm-composite");
+            // Remove realm role
+            RoleRepresentation realmRoleRep = realm.roles().get("realm-role").toRepresentation();
+            roles.realmLevel().remove(Collections.singletonList(realmRoleRep));
+            assertAdminEvents.assertEvent("test", OperationType.DELETE, AdminEventPaths.groupRolesRealmRolesPath(group.getId()), Collections.singletonList(realmRoleRep), ResourceType.REALM_ROLE_MAPPING);
+            assertNames(roles.realmLevel().listAll(), "realm-composite");
 
-        // Remove client role
-        RoleRepresentation clientRoleRep = realm.clients().get(clientId).roles().get("client-role").toRepresentation();
-        roles.clientLevel(clientId).remove(Collections.singletonList(clientRoleRep));
-        assertAdminEvents.assertEvent("test", OperationType.DELETE, AdminEventPaths.groupRolesClientRolesPath(group.getId(), clientId), Collections.singletonList(clientRoleRep), ResourceType.CLIENT_ROLE_MAPPING);
-        assertNames(roles.clientLevel(clientId).listAll(), "client-composite");
+            // Remove client role
+            RoleRepresentation clientRoleRep = realm.clients().get(clientId).roles().get("client-role").toRepresentation();
+            roles.clientLevel(clientId).remove(Collections.singletonList(clientRoleRep));
+            assertAdminEvents.assertEvent("test", OperationType.DELETE, AdminEventPaths.groupRolesClientRolesPath(group.getId(), clientId), Collections.singletonList(clientRoleRep), ResourceType.CLIENT_ROLE_MAPPING);
+            assertNames(roles.clientLevel(clientId).listAll(), "client-composite");
+        }
     }
 
 
@@ -540,12 +539,13 @@ public class GroupTest extends AbstractGroupTest {
         final String realmName = AuthRealm.MASTER;
         createUser(realmName, userName, "pwd");
 
-        Keycloak userClient = Keycloak.getInstance(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth",
-          realmName, userName, "pwd", Constants.ADMIN_CLI_CLIENT_ID);
+        try (Keycloak userClient = Keycloak.getInstance(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth",
+          realmName, userName, "pwd", Constants.ADMIN_CLI_CLIENT_ID)) {
 
-        expectedException.expect(ClientErrorException.class);
-        expectedException.expectMessage(String.valueOf(Response.Status.FORBIDDEN.getStatusCode()));
-        userClient.realms().findAll();  // Any admin operation will do
+            expectedException.expect(ClientErrorException.class);
+            expectedException.expectMessage(String.valueOf(Response.Status.FORBIDDEN.getStatusCode()));
+            userClient.realms().findAll();  // Any admin operation will do
+        }
     }
 
     /**
@@ -592,20 +592,20 @@ public class GroupTest extends AbstractGroupTest {
 
         String userId = createUser(realmName, userName, "pwd");
         GroupRepresentation group = GroupBuilder.create().name(groupName).build();
-        Response response = realm.groups().add(group);
-        String groupId = ApiUtil.getCreatedId(response);
-        response.close();
+        try (Response response = realm.groups().add(group)) {
+            String groupId = ApiUtil.getCreatedId(response);
+        
+            RoleMappingResource mappings = realm.groups().group(groupId).roles();
+            mappings.realmLevel().add(Collections.singletonList(adminRole));
 
-        RoleMappingResource mappings = realm.groups().group(groupId).roles();
-        mappings.realmLevel().add(Collections.singletonList(adminRole));
+            realm.users().get(userId).joinGroup(groupId);
+        }
+        try (Keycloak userClient = Keycloak.getInstance(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth",
+          realmName, userName, "pwd", Constants.ADMIN_CLI_CLIENT_ID)) {
 
-        realm.users().get(userId).joinGroup(groupId);
-
-        Keycloak userClient = Keycloak.getInstance(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth",
-          realmName, userName, "pwd", Constants.ADMIN_CLI_CLIENT_ID);
-
-        assertThat(userClient.realms().findAll(),  // Any admin operation will do
-          not(empty()));
+            assertThat(userClient.realms().findAll(),  // Any admin operation will do
+                not(empty()));
+        }
     }
 
 
@@ -626,46 +626,45 @@ public class GroupTest extends AbstractGroupTest {
 
         String userId = createUser(realmName, userName, "pwd");
         GroupRepresentation group = GroupBuilder.create().name(groupName).build();
-        Response response = realm.groups().add(group);
-        String groupId = ApiUtil.getCreatedId(response);
-        response.close();
+        try (Response response = realm.groups().add(group)) {
+            String groupId = ApiUtil.getCreatedId(response);
 
-        realm.users().get(userId).joinGroup(groupId);
+            realm.users().get(userId).joinGroup(groupId);
 
-        RoleMappingResource mappings = realm.groups().group(groupId).roles();
-        mappings.realmLevel().add(Collections.singletonList(adminRole));
+            RoleMappingResource mappings = realm.groups().group(groupId).roles();
 
-        Keycloak userClient = Keycloak.getInstance(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth",
-          realmName, userName, "pwd", Constants.ADMIN_CLI_CLIENT_ID);
+            mappings.realmLevel().add(Collections.singletonList(adminRole));
+        }
+        try (Keycloak userClient = Keycloak.getInstance(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth",
+          realmName, userName, "pwd", Constants.ADMIN_CLI_CLIENT_ID)) {
 
-        assertThat(userClient.realms().findAll(),  // Any admin operation will do
-          not(empty()));
+            assertThat(userClient.realms().findAll(),  // Any admin operation will do
+                not(empty()));
+        }
     }
 
     @Test
     public void defaultMaxResults() {
         GroupsResource groups = adminClient.realms().realm("test").groups();
-        Response response = groups.add(GroupBuilder.create().name("test").build());
-        String groupId = ApiUtil.getCreatedId(response);
-        response.close();
+        try (Response response = groups.add(GroupBuilder.create().name("test").build())) {
+            String groupId = ApiUtil.getCreatedId(response);
 
-        GroupResource group = groups.group(groupId);
+            GroupResource group = groups.group(groupId);
 
-        UsersResource users = adminClient.realms().realm("test").users();
+            UsersResource users = adminClient.realms().realm("test").users();
 
-        for (int i = 0; i < 110; i++) {
-            Response r = users.create(UserBuilder.create().username("test-" + i).build());
-            String userId = ApiUtil.getCreatedId(r);
-            r.close();
+            for (int i = 0; i < 110; i++) {
+                try (Response r = users.create(UserBuilder.create().username("test-" + i).build())) {
+                    users.get(ApiUtil.getCreatedId(r)).joinGroup(groupId);
+                }
+            }
 
-            users.get(userId).joinGroup(groupId);
+            assertEquals(100, group.members(null, null).size());
+            assertEquals(100, group.members().size());
+            assertEquals(105, group.members(0, 105).size());
+            assertEquals(110, group.members(0, 1000).size());
+            assertEquals(110, group.members(-1, -2).size());
         }
-
-        assertEquals(100, group.members(null, null).size());
-        assertEquals(100, group.members().size());
-        assertEquals(105, group.members(0, 105).size());
-        assertEquals(110, group.members(0, 1000).size());
-        assertEquals(110, group.members(-1, -2).size());
     }
 
     @Test

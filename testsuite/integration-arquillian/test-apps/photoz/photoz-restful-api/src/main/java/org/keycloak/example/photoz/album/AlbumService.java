@@ -41,6 +41,7 @@ public class AlbumService {
 
     @POST
     @Consumes("application/json")
+    @Produces("application/json")
     public Response create(Album newAlbum, @QueryParam("user") String invalidUser, @Context HttpHeaders headers) {
         printAuthHeaders(headers);
         

@@ -48,6 +48,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static junit.framework.TestCase.assertNotNull;
+import org.junit.Assume;
 import static org.keycloak.testsuite.utils.io.IOUtil.loadRealm;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
 import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
@@ -105,6 +106,7 @@ public class CorsExampleAdapterTest extends AbstractExampleAdapterTest {
 
     @Before
     public void onBefore() {
+        Assume.assumeFalse(System.getProperty("os.name").startsWith("Windows"));
         deployer.deploy(CorsDatabaseServiceTestApp.DEPLOYMENT_NAME);
     }
 
