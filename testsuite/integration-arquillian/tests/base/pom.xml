@@ -193,10 +193,16 @@
                     </excludes>
                     <systemPropertyVariables>
                         <com.mchange.v2.c3p0.VMID>testsuiteVmId</com.mchange.v2.c3p0.VMID>
+                        <auth.server.db.host>${docker.container.testdb.ip}</auth.server.db.host>
+                        <keycloak.connectionsJpa.driver>${keycloak.connectionsJpa.driver}</keycloak.connectionsJpa.driver>
+                        <keycloak.connectionsJpa.url>${keycloak.connectionsJpa.url}</keycloak.connectionsJpa.url>
+                        <keycloak.connectionsJpa.database>${keycloak.connectionsJpa.database}</keycloak.connectionsJpa.database>
+                        <keycloak.connectionsJpa.user>${keycloak.connectionsJpa.user}</keycloak.connectionsJpa.user>
+                        <keycloak.connectionsJpa.password>${keycloak.connectionsJpa.password}</keycloak.connectionsJpa.password>
                     </systemPropertyVariables>
                 </configuration>
             </plugin>
-        
+
             <plugin>
                 <artifactId>maven-resources-plugin</artifactId>
                 <executions>
@@ -301,6 +307,64 @@
                             <goPath>${project.build.directory}/gopath</goPath>
                             <tag>0.5</tag>
                         </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>io.fabric8</groupId>
+                <artifactId>docker-maven-plugin</artifactId>
+                <version>${docker.maven.plugin.version}</version>
+                <configuration>
+                    <skip>${docker.database.skip}</skip>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>start-db-container</id>
+                        <phase>process-test-classes</phase>
+                        <goals>
+                            <goal>start</goal>
+                        </goals>
+                        <configuration>
+                            <showLogs>true</showLogs>
+                            <images>
+                                <image>
+                                    <alias>testdb</alias>
+                                    <name>${docker.database.image}</name>
+                                    <run>
+                                        <ports>
+                                            <port>${docker.database.port}</port>
+                                        </ports>
+                                        <env>
+                                            <!-- MYSQL and MariaDB -->
+                                            <MYSQL_DATABASE>${keycloak.connectionsJpa.database}</MYSQL_DATABASE>
+                                            <MYSQL_USER>${keycloak.connectionsJpa.user}</MYSQL_USER>
+                                            <MYSQL_PASSWORD>${keycloak.connectionsJpa.password}</MYSQL_PASSWORD>
+                                            <MYSQL_RANDOM_ROOT_PASSWORD>true</MYSQL_RANDOM_ROOT_PASSWORD>
+
+                                            <!-- PostgreSQL -->
+                                            <POSTGRES_DB>${keycloak.connectionsJpa.database}</POSTGRES_DB>
+                                            <POSTGRES_USER>${keycloak.connectionsJpa.user}</POSTGRES_USER>
+                                            <POSTGRES_PASSWORD>${keycloak.connectionsJpa.password}</POSTGRES_PASSWORD>
+                                        </env>
+                                        <wait>
+                                            <tcp>
+                                                <ports>
+                                                    <port>${docker.database.port}</port>
+                                                </ports>
+                                            </tcp>
+                                            <time>120000</time>
+                                        </wait>
+                                    </run>
+                                </image>
+                            </images>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>stop-db-container</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>stop</goal>
+                        </goals>
                     </execution>
                 </executions>
             </plugin>
