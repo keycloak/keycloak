@@ -22,6 +22,7 @@ import org.hibernate.engine.transaction.jta.platform.internal.AbstractJtaPlatfor
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.ServerStartupError;
+import org.keycloak.common.util.StringPropertyReplacer;
 import org.keycloak.connections.jpa.updater.JpaUpdaterProvider;
 import org.keycloak.connections.jpa.util.JpaUtils;
 import org.keycloak.models.KeycloakSession;
@@ -375,7 +376,7 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
                 return dataSource.getConnection();
             } else {
                 Class.forName(config.get("driver"));
-                return DriverManager.getConnection(config.get("url"), config.get("user"), config.get("password"));
+                return DriverManager.getConnection(StringPropertyReplacer.replaceProperties(config.get("url"), System.getProperties()), config.get("user"), config.get("password"));
             }
         } catch (Exception e) {
             throw new RuntimeException("Failed to connect to database", e);
