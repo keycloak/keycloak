@@ -22,6 +22,8 @@
 		<IDPSSODescriptor WantAuthnRequestsSigned="true"
 			protocolSupportEnumeration="urn:oasis:names:tc:SAML:2.0:protocol">
 ${idp.signing.certificates}
+            <ArtifactResolutionService index="0" isDefault="true" Binding="urn:oasis:names:tc:SAML:2.0:bindings:SOAP"
+                                       Location="${idp.sso.HTTP-POST}"/>
 			<SingleLogoutService
 					Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST"
 					Location="${idp.sls.HTTP-POST}" />
@@ -40,6 +42,9 @@ ${idp.signing.certificates}
 			<SingleSignOnService
 				Binding="urn:oasis:names:tc:SAML:2.0:bindings:SOAP"
 				Location="${idp.sso.HTTP-POST}" />
+			<SingleSignOnService
+					Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Artifact"
+					Location="${idp.sso.HTTP-POST}" />
 		</IDPSSODescriptor>
 	</EntityDescriptor>
 </EntitiesDescriptor>

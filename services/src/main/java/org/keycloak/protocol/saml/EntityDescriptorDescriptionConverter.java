@@ -103,6 +103,45 @@ public class EntityDescriptorDescriptionConverter implements ClientDescriptionCo
         return null;
     }
 
+    /**
+     * Gets from a SPSSO descriptor the artifact resolution service for a given index
+     * @param sp an SPSSO descriptor
+     * @param index the index of the artifact resolution service to return
+     * @return the location of the artifact resolution service
+     */
+    private static String getArtifactResolutionService(SPSSODescriptorType sp, int index) {
+        List<IndexedEndpointType> endpoints = sp.getArtifactResolutionService();
+        for (IndexedEndpointType endpoint : endpoints) {
+            if (endpoint.getIndex() == index) {
+                return endpoint.getLocation().toString();
+            }
+        }
+        return null;
+    }
+
+
+    /**
+     * Tries to get from a SPSSO descriptor the default artifact resolution service. If this fails, it attempts to get
+     * the one with index 0, and if that fails, it tries to get any artifact resolution service.
+     * @param sp an SPSSO descriptor
+     * @return the location of the artifact resolution service
+     */
+    private static String getArtifactResolutionService(SPSSODescriptorType sp) {
+        List<IndexedEndpointType> endpoints = sp.getArtifactResolutionService();
+        for (IndexedEndpointType endpoint : endpoints) {
+            if (endpoint.isIsDefault()) {
+                return endpoint.getLocation().toString();
+            }
+        }
+        String artifactResolutionService = getArtifactResolutionService(sp, 0);
+        if (artifactResolutionService != null) {
+            return artifactResolutionService;
+        } else if (!endpoints.isEmpty()) {
+            return endpoints.get(0).getLocation().toString();
+        }
+        return null;
+    }
+
     private static ClientRepresentation loadEntityDescriptors(InputStream is) {
         Object metadata;
         try {
@@ -168,6 +207,16 @@ public class EntityDescriptorDescriptionConverter implements ClientDescriptionCo
         if (assertionConsumerServicePaosBinding != null) {
             redirectUris.add(assertionConsumerServicePaosBinding);
         }
+        String assertionConsumerServiceArtifactBinding = getServiceURL(spDescriptorType, JBossSAMLURIConstants.SAML_HTTP_ARTIFACT_BINDING.get());
+        if (assertionConsumerServiceArtifactBinding != null) {
+            attributes.put(SamlProtocol.SAML_ASSERTION_CONSUMER_URL_ARTIFACT_ATTRIBUTE, assertionConsumerServiceArtifactBinding);
+            redirectUris.add(assertionConsumerServiceArtifactBinding);
+        }
+        String artifactResolutionService = getArtifactResolutionService(spDescriptorType);
+        if (artifactResolutionService != null) {
+            attributes.put(SamlProtocol.SAML_ARTIFACT_RESOLUTION_SERVICE_URL_ATTRIBUTE, artifactResolutionService);
+        }
+
         if (spDescriptorType.getNameIDFormat() != null) {
             for (String format : spDescriptorType.getNameIDFormat()) {
                 String attribute = SamlClient.samlNameIDFormatToClientAttribute(format);

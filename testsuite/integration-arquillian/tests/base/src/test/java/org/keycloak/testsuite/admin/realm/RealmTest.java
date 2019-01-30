@@ -533,8 +533,9 @@ public class RealmTest extends AbstractAdminTest {
 
         ClientRepresentation converted = realm.convertClientDescription(description);
         assertEquals("loadbalancer-9.siroe.com", converted.getClientId());
-        assertEquals(1, converted.getRedirectUris().size());
+        assertEquals(2, converted.getRedirectUris().size());
         assertEquals("https://LoadBalancer-9.siroe.com:3443/federation/Consumer/metaAlias/sp", converted.getRedirectUris().get(0));
+        assertEquals("https://LoadBalancer-9.siroe.com:3443/federation/Consumer/metaAlias/sp", converted.getRedirectUris().get(1));
     }
 
     public static void assertRealm(RealmRepresentation realm, RealmRepresentation storedRealm) {

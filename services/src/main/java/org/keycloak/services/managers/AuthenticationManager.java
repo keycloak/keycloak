@@ -103,6 +103,7 @@ public class AuthenticationManager {
     public static final String SET_REDIRECT_URI_AFTER_REQUIRED_ACTIONS= "SET_REDIRECT_URI_AFTER_REQUIRED_ACTIONS";
     public static final String END_AFTER_REQUIRED_ACTIONS = "END_AFTER_REQUIRED_ACTIONS";
     public static final String INVALIDATE_ACTION_TOKEN = "INVALIDATE_ACTION_TOKEN";
+    public static final String DEFER_CLEANUP = "DEFER_CLEANUP";
 
     /**
      * Auth session note on client logout state (when logging out)
@@ -568,7 +569,9 @@ public class AuthenticationManager {
                 .setUriInfo(uriInfo)
                 .setEventBuilder(event);
         Response response = protocol.finishLogout(userSession);
-        session.sessions().removeUserSession(realm, userSession);
+        if (!"true".equals(userSession.getNote(DEFER_CLEANUP))) {
+            session.sessions().removeUserSession(realm, userSession);
+        }
         session.authenticationSessions().removeRootAuthenticationSession(realm, logoutAuthSession.getParentSession());
         return response;
     }
