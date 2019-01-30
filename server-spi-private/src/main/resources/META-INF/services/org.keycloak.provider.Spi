@@ -21,6 +21,7 @@ org.keycloak.storage.federated.UserFederatedStorageProviderSpi
 org.keycloak.models.RealmSpi
 org.keycloak.models.ActionTokenStoreSpi
 org.keycloak.models.CodeToTokenStoreSpi
+org.keycloak.models.SingleUseTokenStoreSpi
 org.keycloak.models.UserSessionSpi
 org.keycloak.models.UserSpi
 org.keycloak.models.session.UserSessionPersisterSpi
@@ -72,3 +73,5 @@ org.keycloak.keys.PublicKeyStorageSpi
 org.keycloak.keys.KeySpi
 org.keycloak.storage.client.ClientStorageProviderSpi
 org.keycloak.crypto.SignatureSpi
+org.keycloak.crypto.ClientSignatureVerifierSpi
+org.keycloak.crypto.HashSpi

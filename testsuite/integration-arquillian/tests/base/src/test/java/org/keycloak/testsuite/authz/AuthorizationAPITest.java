@@ -19,7 +19,6 @@ package org.keycloak.testsuite.authz;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
-import java.io.IOException;
 import java.util.List;
 
 import javax.ws.rs.core.Response;
@@ -31,8 +30,9 @@ import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.authorization.client.AuthzClient;
-import org.keycloak.authorization.client.Configuration;
+import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.authorization.AuthorizationRequest;
 import org.keycloak.representations.idm.authorization.AuthorizationResponse;
@@ -40,6 +40,7 @@ import org.keycloak.representations.idm.authorization.JSPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.PermissionRequest;
 import org.keycloak.representations.idm.authorization.ResourcePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
+import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RealmBuilder;
@@ -184,6 +185,12 @@ public class AuthorizationAPITest extends AbstractAuthzTest {
 
         String accessToken = new OAuthClient().realm("authz-test").clientId(clientId).doGrantAccessTokenRequest("secret", "marta", "password").getAccessToken();
         String ticket = authzClient.protection().permission().create(request).getTicket();
+
+        // Ticket is opaque to client or resourceServer. The audience should be just an authorization server itself
+        JsonWebToken ticketDecoded = JsonSerialization.readValue(new JWSInput(ticket).getContent(), JsonWebToken.class);
+        Assert.assertFalse(ticketDecoded.hasAudience(clientId));
+        Assert.assertFalse(ticketDecoded.hasAudience(resourceServerClientId));
+
         AuthorizationResponse response = authzClient.authorization(accessToken).authorize(new AuthorizationRequest(ticket));
 
         assertNotNull(response.getToken());
@@ -201,10 +208,6 @@ public class AuthorizationAPITest extends AbstractAuthzTest {
     }
 
     private AuthzClient getAuthzClient(String configFile) {
-        try {
-            return AuthzClient.create(JsonSerialization.readValue(getClass().getResourceAsStream("/authorization-test/" + configFile), Configuration.class));
-        } catch (IOException cause) {
-            throw new RuntimeException("Failed to create authz client", cause);
-        }
+        return AuthzClient.create(getClass().getResourceAsStream("/authorization-test/" + configFile));
     }
 }

@@ -26,6 +26,7 @@ import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -53,7 +54,7 @@ public class AttributeStatementHelper {
     }
 
     public static void addAttributes(AttributeStatementType attributeStatement, ProtocolMapperModel mappingModel,
-                                    List<String> attributeValues) {
+                                    Collection<String> attributeValues) {
 
         AttributeType attribute = createAttributeType(mappingModel);
         attributeValues.forEach(attribute::addAttributeValue);

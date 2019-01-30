@@ -319,13 +319,6 @@ public class PolicyService {
         return authorization.getProviderFactory(policyType);
     }
 
-    private void findAssociatedPolicies(Policy policy, List<Policy> policies) {
-        policy.getAssociatedPolicies().forEach(associated -> {
-            policies.add(associated);
-            findAssociatedPolicies(associated, policies);
-        });
-    }
-
     private void audit(AbstractPolicyRepresentation resource, String id, OperationType operation, KeycloakSession session) {
         if (authorization.getRealm().isAdminEventsEnabled()) {
             if (id != null) {

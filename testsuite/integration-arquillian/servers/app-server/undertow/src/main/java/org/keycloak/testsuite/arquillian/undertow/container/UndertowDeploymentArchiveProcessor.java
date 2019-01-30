@@ -39,6 +39,12 @@ public class UndertowDeploymentArchiveProcessor implements ApplicationArchivePro
         modifyWebXML(archive, testClass);
 
         modifyOIDCAdapterConfig(archive, DeploymentArchiveProcessorUtils.ADAPTER_CONFIG_PATH);
+
+        modifySAMLAdapterConfig(archive, DeploymentArchiveProcessorUtils.SAML_ADAPTER_CONFIG_PATH);
+        modifySAMLAdapterConfig(archive, DeploymentArchiveProcessorUtils.SAML_ADAPTER_CONFIG_PATH_TENANT1);
+        modifySAMLAdapterConfig(archive, DeploymentArchiveProcessorUtils.SAML_ADAPTER_CONFIG_PATH_TENANT2);
+
+        modifyOIDCAdapterConfig(archive, DeploymentArchiveProcessorUtils.ADAPTER_CONFIG_PATH_JS);
     }
 
     private void modifyWebXML(Archive<?> archive, TestClass testClass) {
@@ -55,5 +61,12 @@ public class UndertowDeploymentArchiveProcessor implements ApplicationArchivePro
         log.debug("Modifying adapter config " + adapterConfigPath + " in " + archive.getName());
 
         DeploymentArchiveProcessorUtils.modifyOIDCAdapterConfig(archive, adapterConfigPath);
+    }
+
+    private void modifySAMLAdapterConfig(Archive<?> archive, String adapterConfigPath) {
+        if (!archive.contains(adapterConfigPath)) return;
+
+        log.debug("Modifying adapter config " + adapterConfigPath + " in " + archive.getName());
+        DeploymentArchiveProcessorUtils.modifySAMLAdapterConfig(archive, adapterConfigPath);
     }
 }

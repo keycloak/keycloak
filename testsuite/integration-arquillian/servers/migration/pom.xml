@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian-servers</artifactId>
-        <version>4.6.0.Final-SNAPSHOT</version>
+        <version>4.8.3.Final</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -31,7 +31,7 @@
 
     <properties>
         <keycloak.server.home>${project.build.directory}/unpacked/keycloak-${migrated.auth.server.version}</keycloak.server.home>
-        <jdbc.mvn.driver.deployment.dir>${keycloak.server.home}/modules/system/layers/base/com/${jdbc.mvn.artifactId}/main</jdbc.mvn.driver.deployment.dir>
+        <jdbc.mvn.driver.deployment.dir>${keycloak.server.home}/modules/system/layers/base/test/jdbc/${jdbc.mvn.artifactId}/main</jdbc.mvn.driver.deployment.dir>
     </properties>
 
     <build>

@@ -23,7 +23,6 @@ import org.junit.Test;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
-import org.keycloak.jose.jws.Algorithm;
 import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.representations.IDToken;
@@ -55,9 +54,6 @@ import static org.junit.Assert.assertNull;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public abstract class AbstractOIDCResponseTypeTest extends AbstractTestRealmKeycloakTest {
-
-    // Harcoded for now
-    Algorithm jwsAlgorithm = Algorithm.RS256;
 
     @Rule
     public AssertEvents events = new AssertEvents(this);
@@ -263,6 +259,20 @@ public abstract class AbstractOIDCResponseTypeTest extends AbstractTestRealmKeyc
             TokenSignatureUtil.changeClientIdTokenSignatureProvider(ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), "RS256");
         }
     }
+
+    @Test
+    public void oidcFlow_RealmES256_ClientES384_EffectiveES384() throws Exception {
+        try {
+            setSignatureAlgorithm("ES384");
+            TokenSignatureUtil.changeRealmTokenSignatureProvider(adminClient, "ES256");
+            TokenSignatureUtil.changeClientIdTokenSignatureProvider(ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), "ES384");
+            oidcFlow("ES256", "ES384");
+        } finally {
+            setSignatureAlgorithm("RS256");
+            TokenSignatureUtil.changeClientIdTokenSignatureProvider(ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), "RS256");
+        }
+    }
+
     private String sigAlgName = "RS256";
     private void setSignatureAlgorithm(String sigAlgName) {
         this.sigAlgName = sigAlgName;

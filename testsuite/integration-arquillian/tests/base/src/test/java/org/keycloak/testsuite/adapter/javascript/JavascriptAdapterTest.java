@@ -24,6 +24,9 @@ import org.keycloak.testsuite.util.JavascriptBrowser;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
+import org.keycloak.testsuite.util.javascript.JSObjectBuilder;
+import org.keycloak.testsuite.util.javascript.JavascriptTestExecutor;
+import org.keycloak.testsuite.util.javascript.XMLHttpRequest;
 import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebDriverException;
@@ -55,7 +58,7 @@ import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
 public class JavascriptAdapterTest extends AbstractJavascriptTest {
 
     private String testAppUrl;
-    private JavascriptTestExecutor testExecutor;
+    protected JavascriptTestExecutor testExecutor;
     private static int TIME_SKEW_TOLERANCE = 3;
 
     @Rule
@@ -83,17 +86,17 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
         applicationsPage.setAuthRealm(REALM_NAME);
 
         jsDriver.navigate().to(testAppUrl);
-        testExecutor = JavascriptTestExecutor.create(jsDriver, jsDriverTestRealmLoginPage);
 
         waitUntilElement(outputArea).is().present();
         assertCurrentUrlStartsWith(testAppUrl, jsDriver);
+        testExecutor = JavascriptTestExecutor.create(jsDriver, jsDriverTestRealmLoginPage);
 
         jsDriver.manage().deleteAllCookies();
 
         setStandardFlowForClient();
     }
 
-    private JSObjectBuilder defaultArguments() {
+    protected JSObjectBuilder defaultArguments() {
         return JSObjectBuilder.create().defaultSettings();
     }
 
@@ -168,6 +171,8 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
 
     @Test
     public void grantBrowserBasedApp() {
+        Assume.assumeTrue("This test doesn't work with phantomjs", !"phantomjs".equals(System.getProperty("js.browser")));
+
         ClientResource clientResource = ApiUtil.findClientResourceByClientId(adminClient.realm(REALM_NAME), CLIENT_ID);
         ClientRepresentation client = clientResource.toRepresentation();
         client.setConsentRequired(true);
@@ -403,7 +408,7 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
                             List<UserRepresentation> users = adminClient.realm(REALM_NAME).users().search("mhajas", 0, 1);
                             assertEquals("There should be created user mhajas", 1, users.size());
 
-                            assertThat((String) response.get("responseHeaders"), containsString("location: " + authServerContextRootPage.toString() + "/auth/admin/realms/" + REALM_NAME + "/users/" + users.get(0).getId()));
+                            assertThat(((String) response.get("responseHeaders")).toLowerCase(), containsString("location: " + authServerContextRootPage.toString() + "/auth/admin/realms/" + REALM_NAME + "/users/" + users.get(0).getId()));
                         });
     }
 

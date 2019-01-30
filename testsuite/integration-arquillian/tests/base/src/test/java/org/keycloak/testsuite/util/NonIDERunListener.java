@@ -40,12 +40,27 @@ public class NonIDERunListener extends RunListener {
     }
 
     private void disableKeycloakLogging() {
-        String loggingLevel = System.getProperty(KEYCLOAK_LOGGING_LEVEL_NAME);
-        if (loggingLevel == null || loggingLevel.isEmpty()) {
+        String loggingLevel = System.getProperty(KEYCLOAK_LOGGING_LEVEL_NAME, "").toLowerCase();
+        if (loggingLevel.isEmpty()) {
 
             log.infof("Setting %s to off. Keycloak server logging will be disabled", KEYCLOAK_LOGGING_LEVEL_NAME);
             System.setProperty(KEYCLOAK_LOGGING_LEVEL_NAME, "off");
             org.apache.log4j.Logger.getLogger("org.keycloak").setLevel(Level.OFF);
+        } else {
+            switch (loggingLevel) {
+                case "debug":
+                    org.apache.log4j.Logger.getLogger("org.keycloak").setLevel(Level.DEBUG);
+                    break;
+                case "trace":
+                    org.apache.log4j.Logger.getLogger("org.keycloak").setLevel(Level.TRACE);
+                    break;
+                case "all":
+                    org.apache.log4j.Logger.getLogger("org.keycloak").setLevel(Level.ALL);
+                    break;
+                default:
+                    org.apache.log4j.Logger.getLogger("org.keycloak").setLevel(Level.INFO);
+                    break;
+            }
         }
     }
 

@@ -4,7 +4,7 @@
     <parent>
         <groupId>org.keycloak</groupId>
         <artifactId>keycloak-parent</artifactId>
-        <version>4.6.0.Final-SNAPSHOT</version>
+        <version>4.8.3.Final</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
@@ -21,6 +21,7 @@
         <xstream.version>1.4.10</xstream.version>
         <antlr-runtime.version>3.5.2</antlr-runtime.version>
         <ant.version>1.8.4</ant.version>
+        <ant-launcher.version>1.8.4</ant-launcher.version>
         <maven.version>3.3.9</maven.version>
         <wagon.version>3.0.0</wagon.version>
         <plexus-classworlds.version>2.5.2</plexus-classworlds.version>
@@ -28,7 +29,8 @@
         <plexus-interpolation.version>1.21</plexus-interpolation.version>
         <plexus-utils.version>3.0.22</plexus-utils.version>
         <aether.version>1.1.0</aether.version>
-        <org.eclipse.sisu>0.3.2</org.eclipse.sisu>
+        <org.eclipse.sisu.inject>0.3.2</org.eclipse.sisu.inject>
+        <org.eclipse.sisu.plexus>0.3.2</org.eclipse.sisu.plexus>
         <mvel2.version>2.4.0.Final</mvel2.version>
         <plexus-cipher.version>1.7</plexus-cipher.version>
         <plexus-sec-dispatcher.version>1.3</plexus-sec-dispatcher.version>
@@ -76,7 +78,7 @@
             <dependency>
                 <groupId>org.apache.ant</groupId>
                 <artifactId>ant-launcher</artifactId>
-                <version>${ant.version}</version>
+                <version>${ant-launcher.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.maven</groupId>
@@ -211,12 +213,12 @@
             <dependency>
                 <groupId>org.eclipse.sisu</groupId>
                 <artifactId>org.eclipse.sisu.inject</artifactId>
-                <version>${org.eclipse.sisu}</version>
+                <version>${org.eclipse.sisu.inject}</version>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.sisu</groupId>
                 <artifactId>org.eclipse.sisu.plexus</artifactId>
-                <version>${org.eclipse.sisu}</version>
+                <version>${org.eclipse.sisu.plexus}</version>
             </dependency>
             <dependency>
                 <groupId>org.mvel</groupId>

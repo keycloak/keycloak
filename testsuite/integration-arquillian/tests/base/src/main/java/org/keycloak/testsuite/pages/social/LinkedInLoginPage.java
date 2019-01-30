@@ -25,13 +25,13 @@ import org.openqa.selenium.support.FindBy;
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
 public class LinkedInLoginPage extends AbstractSocialLoginPage {
-    @FindBy(id = "session_key-login")
+    @FindBy(id = "username")
     private WebElement usernameInput;
 
-    @FindBy(id = "session_password-login")
+    @FindBy(id = "password")
     private WebElement passwordInput;
 
-    @FindBy(name = "signin")
+    @FindBy(xpath = "//button[text() = 'Sign in']")
     private WebElement loginButton;
 
     @FindBy(name = "action")

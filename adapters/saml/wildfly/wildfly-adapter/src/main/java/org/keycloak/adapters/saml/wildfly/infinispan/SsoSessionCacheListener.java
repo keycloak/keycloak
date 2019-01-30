@@ -171,19 +171,25 @@ public class SsoSessionCacheListener {
             return;
         }
 
-        String[] value = ssoCache.get((String) httpSessionId);
+        this.executor.submit(new Runnable() {
 
-        if (value != null) {
-            String ssoId = value[0];
-            String principal = value[1];
+            @Override
+            public void run() {
+                String[] value = ssoCache.get((String) httpSessionId);
 
-            LOG.tracev("remoteCacheEntryCreated {0}:{1}", httpSessionId, ssoId);
+                if (value != null) {
+                    String ssoId = value[0];
+                    String principal = value[1];
 
-            this.idMapper.map(ssoId, principal, httpSessionId);
-        } else {
-            LOG.tracev("remoteCacheEntryCreated {0}", event.getKey());
+                    LOG.tracev("remoteCacheEntryCreated {0}:{1}", httpSessionId, ssoId);
 
-        }
+                    idMapper.map(ssoId, principal, httpSessionId);
+                } else {
+                    LOG.tracev("remoteCacheEntryCreated {0}", event.getKey());
+
+                }
+            }
+          });
     }
 
     @ClientCacheEntryRemoved

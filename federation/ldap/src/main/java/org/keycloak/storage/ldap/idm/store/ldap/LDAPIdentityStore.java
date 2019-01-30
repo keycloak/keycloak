@@ -92,7 +92,7 @@ public class LDAPIdentityStore implements IdentityStore {
         }
 
         String entryDN = ldapObject.getDn().toString();
-        BasicAttributes ldapAttributes = extractAttributes(ldapObject, true);
+        BasicAttributes ldapAttributes = extractAttributesForSaving(ldapObject, true);
         this.operationManager.createSubContext(entryDN, ldapAttributes);
         ldapObject.setUuid(getEntryIdentifier(ldapObject));
 
@@ -105,7 +105,7 @@ public class LDAPIdentityStore implements IdentityStore {
     public void update(LDAPObject ldapObject) {
         checkRename(ldapObject);
 
-        BasicAttributes updatedAttributes = extractAttributes(ldapObject, false);
+        BasicAttributes updatedAttributes = extractAttributesForSaving(ldapObject, false);
         NamingEnumeration<Attribute> attributes = updatedAttributes.getAll();
 
         String entryDn = ldapObject.getDn().toString();
@@ -396,47 +396,36 @@ public class LDAPIdentityStore implements IdentityStore {
     }
 
 
-    protected BasicAttributes extractAttributes(LDAPObject ldapObject, boolean isCreate) {
+    protected BasicAttributes extractAttributesForSaving(LDAPObject ldapObject, boolean isCreate) {
         BasicAttributes entryAttributes = new BasicAttributes();
 
         for (Map.Entry<String, Set<String>> attrEntry : ldapObject.getAttributes().entrySet()) {
             String attrName = attrEntry.getKey();
             Set<String> attrValue = attrEntry.getValue();
 
-            // ldapObject.getReadOnlyAttributeNames() are lower-cased
-            if (!ldapObject.getReadOnlyAttributeNames().contains(attrName.toLowerCase()) && (isCreate || !ldapObject.getRdnAttributeName().equalsIgnoreCase(attrName))) {
+            if (attrValue == null) {
+                // Shouldn't happen
+                logger.warnf("Attribute '%s' is null on LDAP object '%s' . Using empty value to be saved to LDAP", attrName, ldapObject.getDn().toString());
+                attrValue = Collections.emptySet();
+            }
 
-                if (attrValue == null) {
-                    // Shouldn't happen
-                    logger.warnf("Attribute '%s' is null on LDAP object '%s' . Using empty value to be saved to LDAP", attrName, ldapObject.getDn().toString());
-                    attrValue = Collections.emptySet();
+            if (
+                // Ignore empty attributes on create (changetype: add)
+                !(isCreate && attrValue.isEmpty()) &&
+
+                // Since we're extracting for saving, skip read-only attributes. ldapObject.getReadOnlyAttributeNames() are lower-cased
+                !ldapObject.getReadOnlyAttributeNames().contains(attrName.toLowerCase()) &&
+
+                // Only extract RDN for create since it can't be changed on update
+                (isCreate || !ldapObject.getRdnAttributeName().equalsIgnoreCase(attrName))
+            ) {
+                if (getConfig().getBinaryAttributeNames().contains(attrName)) {
+                    // Binary attribute
+                    entryAttributes.put(createBinaryBasicAttribute(attrName, attrValue));
+                } else {
+                    // Text attribute
+                    entryAttributes.put(createBasicAttribute(attrName, attrValue));
                 }
-
-                // Ignore empty attributes during create
-                if (isCreate && attrValue.isEmpty()) {
-                    continue;
-                }
-
-                BasicAttribute attr = new BasicAttribute(attrName);
-                for (String val : attrValue) {
-                    if (val == null || val.toString().trim().length() == 0) {
-                        val = LDAPConstants.EMPTY_ATTRIBUTE_VALUE;
-                    }
-
-                    if (getConfig().getBinaryAttributeNames().contains(attrName)) {
-                        // Binary attribute
-                        try {
-                            byte[] bytes = Base64.decode(val);
-                            attr.add(bytes);
-                        } catch (IOException ioe) {
-                            logger.warnf("Wasn't able to Base64 decode the attribute value. Ignoring attribute update. LDAP DN: %s, Attribute: %s, Attribute value: %s" + ldapObject.getDn(), attrName, attrValue);
-                        }
-                    } else {
-                        attr.add(val);
-                    }
-                }
-
-                entryAttributes.put(attr);
             }
         }
 
@@ -446,13 +435,6 @@ public class LDAPIdentityStore implements IdentityStore {
 
             for (String objectClassValue : ldapObject.getObjectClasses()) {
                 objectClassAttribute.add(objectClassValue);
-
-                if ((objectClassValue.equalsIgnoreCase(LDAPConstants.GROUP_OF_NAMES)
-                        || objectClassValue.equalsIgnoreCase(LDAPConstants.GROUP_OF_ENTRIES)
-                        || objectClassValue.equalsIgnoreCase(LDAPConstants.GROUP_OF_UNIQUE_NAMES)) &&
-                        (entryAttributes.get(LDAPConstants.MEMBER) == null)) {
-                    entryAttributes.put(LDAPConstants.MEMBER, LDAPConstants.EMPTY_MEMBER_ATTRIBUTE_VALUE);
-                }
             }
 
             entryAttributes.put(objectClassAttribute);
@@ -461,6 +443,38 @@ public class LDAPIdentityStore implements IdentityStore {
         return entryAttributes;
     }
 
+    private BasicAttribute createBasicAttribute(String attrName, Set<String> attrValue) {
+        BasicAttribute attr = new BasicAttribute(attrName);
+
+        for (String value : attrValue) {
+            if (value == null || value.trim().length() == 0) {
+                value = LDAPConstants.EMPTY_ATTRIBUTE_VALUE;
+            }
+
+            attr.add(value);
+        }
+
+        return attr;
+    }
+
+    private BasicAttribute createBinaryBasicAttribute(String attrName, Set<String> attrValue) {
+        BasicAttribute attr = new BasicAttribute(attrName);
+
+        for (String value : attrValue) {
+            if (value == null || value.trim().length() == 0) {
+                value = LDAPConstants.EMPTY_ATTRIBUTE_VALUE;
+            }
+
+            try {
+                byte[] bytes = Base64.decode(value);
+                attr.add(bytes);
+            } catch (IOException ioe) {
+                logger.warnf("Wasn't able to Base64 decode the attribute value. Ignoring attribute update. Attribute: %s, Attribute value: %s", attrName, attrValue);
+            }
+        }
+
+        return attr;
+    }
 
     protected String getEntryIdentifier(final LDAPObject ldapObject) {
         try {

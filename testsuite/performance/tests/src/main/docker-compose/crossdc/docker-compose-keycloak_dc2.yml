@@ -19,6 +19,8 @@
             MARIADB_PASSWORD: keycloak
             INFINISPAN_HOST: infinispan_dc2
             SITE: dc2
+            HOTROD_VERSION: 2.8
+            CACHE_STATISTICS: "true"
 
             JAVA_OPTS: ${KEYCLOAK_JVM_MEMORY:--Xms64m -Xmx2g -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=256m} -Djava.net.preferIPv4Stack=true -Djboss.modules.system.pkgs=org.jboss.byteman -Djava.awt.headless=true
             HTTP_MAX_CONNECTIONS: ${KEYCLOAK_HTTP_MAX_CONNECTIONS:-50000}

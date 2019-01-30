@@ -21,7 +21,7 @@
     <parent>
         <artifactId>keycloak-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>4.6.0.Final-SNAPSHOT</version>
+        <version>4.8.3.Final</version>
         <relativePath>../../../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
@@ -31,6 +31,9 @@
     <description/>
 
     <properties>
+        <maven.compiler.target>1.7</maven.compiler.target>
+        <maven.compiler.source>1.7</maven.compiler.source>
+
         <keycloak.osgi.export>
             org.keycloak.adapters.servlet.*
         </keycloak.osgi.export>

@@ -487,6 +487,41 @@ public class ServletPolicyEnforcerTest extends AbstractExampleAdapterTest {
         });
     }
 
+    @Test
+    public void testOverloadedTemplateUri() {
+        performTests(() -> {
+            login("alice", "alice");
+            navigateTo("/keycloak-8823/resource/v1/subresource/123/entities");
+            assertFalse(wasDenied());
+            navigateTo("/keycloak-8823/resource/v1/subresource/123/someother");
+            assertFalse(wasDenied());
+            
+            updatePermissionPolicies("Pattern 17 Entities Permission", "Deny Policy");
+            
+            login("alice", "alice");
+            navigateTo("/keycloak-8823/resource/v1/subresource/123/entities");
+            assertTrue(wasDenied());
+            navigateTo("/keycloak-8823/resource/v1/subresource/123/someother");
+            assertFalse(wasDenied());
+            
+            updatePermissionPolicies("Pattern 17 Entities Permission", "Default Policy");
+            updatePermissionPolicies("Pattern 17 Permission", "Deny Policy");
+            login("alice", "alice");
+            navigateTo("/keycloak-8823/resource/v1/subresource/123/entities");
+            assertFalse(wasDenied());
+            navigateTo("/keycloak-8823/resource/v1/subresource/123/someother");
+            assertTrue(wasDenied());
+            
+            updatePermissionPolicies("Pattern 17 Entities Permission", "Default Policy");
+            updatePermissionPolicies("Pattern 17 Permission", "Default Policy");
+            login("alice", "alice");
+            navigateTo("/keycloak-8823/resource/v1/subresource/123/entities");
+            assertFalse(wasDenied());
+            navigateTo("/keycloak-8823/resource/v1/subresource/123/someother");
+            assertFalse(wasDenied());
+        });
+    }
+
     private void navigateTo(String path) {
         this.driver.navigate().to(getResourceServerUrl() + path);
     }

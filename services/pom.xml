@@ -21,7 +21,7 @@
     <parent>
         <artifactId>keycloak-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>4.6.0.Final-SNAPSHOT</version>
+        <version>4.8.3.Final</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
@@ -177,6 +177,10 @@
                     <artifactId>slf4j-api</artifactId>
                 </exclusion>
             </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>com.openshift</groupId>
+            <artifactId>openshift-restclient-java</artifactId>
         </dependency>
     </dependencies>
     <build>

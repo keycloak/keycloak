@@ -22,6 +22,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
+import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
@@ -37,7 +38,11 @@ import org.keycloak.models.UserManager;
 import org.keycloak.testsuite.rule.KeycloakRule;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -112,51 +117,6 @@ public class UserSessionPersisterProviderTest {
         assertSessionLoaded(loadedSessions, origSessions[2].getId(), session.users().getUserByUsername("user2", realm), "127.0.0.3", started, started, "test-app");
     }
 
-    @Test
-    public void testUpdateTimestamps() {
-        // Create some sessions in infinispan
-        int started = Time.currentTime();
-        UserSessionModel[] origSessions = createSessions();
-
-        resetSession();
-
-        // Persist 3 created userSessions and clientSessions as offline
-        ClientModel testApp = realm.getClientByClientId("test-app");
-        List<UserSessionModel> userSessions = session.sessions().getUserSessions(realm, testApp);
-        for (UserSessionModel userSession : userSessions) {
-            persistUserSession(userSession, true);
-        }
-
-        // Persist 1 online session
-        UserSessionModel userSession = session.sessions().getUserSession(realm, origSessions[0].getId());
-        persistUserSession(userSession, false);
-
-        resetSession();
-
-        // update timestamps
-        int newTime = started + 50;
-        persister.updateAllTimestamps(newTime);
-
-        // Assert online session
-        List<UserSessionModel> loadedSessions = loadPersistedSessionsPaginated(false, 1, 1, 1);
-        Assert.assertEquals(2, assertTimestampsUpdated(loadedSessions, newTime));
-
-        // Assert offline sessions
-        loadedSessions = loadPersistedSessionsPaginated(true, 2, 2, 3);
-        Assert.assertEquals(4, assertTimestampsUpdated(loadedSessions, newTime));
-    }
-
-    private int assertTimestampsUpdated(List<UserSessionModel> loadedSessions, int expectedTime) {
-        int clientSessionsCount = 0;
-        for (UserSessionModel loadedSession : loadedSessions) {
-            Assert.assertEquals(expectedTime, loadedSession.getLastSessionRefresh());
-            for (AuthenticatedClientSessionModel clientSession : loadedSession.getAuthenticatedClientSessions().values()) {
-                Assert.assertEquals(expectedTime, clientSession.getTimestamp());
-                clientSessionsCount++;
-            }
-        }
-        return clientSessionsCount;
-    }
 
     @Test
     public void testUpdateAndRemove() {
@@ -177,48 +137,30 @@ public class UserSessionPersisterProviderTest {
         UserSessionModel persistedSession = loadedSessions.get(0);
         UserSessionProviderTest.assertSession(persistedSession, session.users().getUserByUsername("user1", realm), "127.0.0.2", started, started, "test-app");
 
-        // Update userSession
-        Time.setOffset(10);
-        try {
-            persistedSession.setLastSessionRefresh(Time.currentTime());
-            persistedSession.setNote("foo", "bar");
-            persistedSession.setState(UserSessionModel.State.LOGGED_IN);
-            persister.updateUserSession(persistedSession, true);
+        // create new clientSession
+        AuthenticatedClientSessionModel clientSession = createClientSession(realm.getClientByClientId("third-party"), session.sessions().getUserSession(realm, persistedSession.getId()),
+                "http://redirect", "state");
+        persister.createClientSession(clientSession, true);
 
-            // create new clientSession
-            AuthenticatedClientSessionModel clientSession = createClientSession(realm.getClientByClientId("third-party"), session.sessions().getUserSession(realm, persistedSession.getId()),
-                    "http://redirect", "state");
-            persister.createClientSession(clientSession, true);
+        resetSession();
 
-            resetSession();
+        // Remove clientSession
+        persister.removeClientSession(userSession.getId(), realm.getClientByClientId("third-party").getId(), true);
 
-            // Assert session updated
-            loadedSessions = loadPersistedSessionsPaginated(true, 10, 1, 1);
-            persistedSession = loadedSessions.get(0);
-            UserSessionProviderTest.assertSession(persistedSession, session.users().getUserByUsername("user1", realm), "127.0.0.2", started, started+10, "test-app", "third-party");
-            Assert.assertEquals("bar", persistedSession.getNote("foo"));
-            Assert.assertEquals(UserSessionModel.State.LOGGED_IN, persistedSession.getState());
+        resetSession();
 
-            // Remove clientSession
-            persister.removeClientSession(userSession.getId(), realm.getClientByClientId("third-party").getId(), true);
+        // Assert clientSession removed
+        loadedSessions = loadPersistedSessionsPaginated(true, 10, 1, 1);
+        persistedSession = loadedSessions.get(0);
+        UserSessionProviderTest.assertSession(persistedSession, session.users().getUserByUsername("user1", realm), "127.0.0.2", started, started , "test-app");
 
-            resetSession();
+        // Remove userSession
+        persister.removeUserSession(persistedSession.getId(), true);
 
-            // Assert clientSession removed
-            loadedSessions = loadPersistedSessionsPaginated(true, 10, 1, 1);
-            persistedSession = loadedSessions.get(0);
-            UserSessionProviderTest.assertSession(persistedSession, session.users().getUserByUsername("user1", realm), "127.0.0.2", started, started + 10, "test-app");
+        resetSession();
 
-            // Remove userSession
-            persister.removeUserSession(persistedSession.getId(), true);
-
-            resetSession();
-
-            // Assert nothing found
-            loadPersistedSessionsPaginated(true, 10, 0, 0);
-        } finally {
-            Time.setOffset(0);
-        }
+        // Assert nothing found
+        loadPersistedSessionsPaginated(true, 10, 0, 0);
     }
 
     @Test
@@ -302,8 +244,8 @@ public class UserSessionPersisterProviderTest {
 
         resetSession();
 
-        // Assert nothing loaded - userSession was removed as well because it was last userSession
-        loadPersistedSessionsPaginated(true, 10, 0, 0);
+        // Assert loading still works - last userSession is still there, but no clientSession on it
+        loadPersistedSessionsPaginated(true, 10, 1, 1);
 
         // Cleanup
         realmMgr = new RealmManager(session);
@@ -340,20 +282,105 @@ public class UserSessionPersisterProviderTest {
         UserSessionModel persistedSession = loadedSessions.get(0);
         UserSessionProviderTest.assertSession(persistedSession, session.users().getUserByUsername("user2", realm), "127.0.0.3", started, started, "test-app");
 
-        // KEYCLOAK-2431 Assert that userSessionPersister is resistent even to situation, when users are deleted "directly"
+        // KEYCLOAK-2431 Assert that userSessionPersister is resistent even to situation, when users are deleted "directly".
+        // No exception will happen. However session will be still there
         UserModel user2 = session.users().getUserByUsername("user2", realm);
         session.users().removeUser(realm, user2);
 
-        loadedSessions = loadPersistedSessionsPaginated(true, 10, 0, 0);
+        loadedSessions = loadPersistedSessionsPaginated(true, 10, 1, 1);
 
+        // Cleanup
+        UserSessionModel userSession = loadedSessions.get(0);
+        session.sessions().removeUserSession(realm, userSession);
+        persister.removeUserSession(userSession.getId(), userSession.isOffline());
     }
 
     // KEYCLOAK-1999
     @Test
     public void testNoSessions() {
         UserSessionPersisterProvider persister = session.getProvider(UserSessionPersisterProvider.class);
-        List<UserSessionModel> sessions = persister.loadUserSessions(0, 1, true);
+        List<UserSessionModel> sessions = persister.loadUserSessions(0, 1, true, 0, "abc");
         Assert.assertEquals(0, sessions.size());
+    }
+
+
+    @Test
+    public void testMoreSessions() {
+        // Create 10 userSessions - each having 1 clientSession
+        List<UserSessionModel> userSessions = new ArrayList<>();
+        UserModel user = session.users().getUserByUsername("user1", realm);
+
+        for (int i=0 ; i<20 ; i++) {
+            // Having different offsets for each session (to ensure that lastSessionRefresh is also different)
+            Time.setOffset(i);
+
+            UserSessionModel userSession = session.sessions().createUserSession(realm, user, "user1", "127.0.0.1", "form", true, null, null);
+            createClientSession(realm.getClientByClientId("test-app"), userSession, "http://redirect", "state");
+            userSessions.add(userSession);
+        }
+
+        resetSession();
+
+        for (UserSessionModel userSession : userSessions) {
+            UserSessionModel userSession2 = session.sessions().getUserSession(realm, userSession.getId());
+            persistUserSession(userSession2, true);
+        }
+
+        resetSession();
+
+        List<UserSessionModel> loadedSessions = loadPersistedSessionsPaginated(true, 2, 10, 20);
+        user = session.users().getUserByUsername("user1", realm);
+        ClientModel testApp = realm.getClientByClientId("test-app");
+
+        for (UserSessionModel loadedSession : loadedSessions) {
+            assertEquals(user.getId(), loadedSession.getUser().getId());
+            assertEquals("127.0.0.1", loadedSession.getIpAddress());
+            assertEquals(user.getUsername(), loadedSession.getLoginUsername());
+
+            assertEquals(1, loadedSession.getAuthenticatedClientSessions().size());
+            assertTrue(loadedSession.getAuthenticatedClientSessions().containsKey(testApp.getId()));
+        }
+    }
+
+
+    @Test
+    public void testExpiredSessions() {
+        // Create some sessions in infinispan
+        int started = Time.currentTime();
+        UserSessionModel[] origSessions = createSessions();
+
+        resetSession();
+
+        // Persist 2 offline sessions of 2 users
+        UserSessionModel userSession1 = session.sessions().getUserSession(realm, origSessions[1].getId());
+        UserSessionModel userSession2 = session.sessions().getUserSession(realm, origSessions[2].getId());
+        persistUserSession(userSession1, true);
+        persistUserSession(userSession2, true);
+
+        resetSession();
+
+        // Update one of the sessions with lastSessionRefresh of 20 days ahead
+        int lastSessionRefresh = Time.currentTime() + 1728000;
+        persister.updateLastSessionRefreshes(realm, lastSessionRefresh, Collections.singleton(userSession1.getId()), true);
+
+        resetSession();
+
+        // Increase time offset - 40 days
+        Time.setOffset(3456000);
+        try {
+            // Run expiration thread
+            persister.removeExpired(realm);
+
+            // Test the updated session is still in persister. Not updated session is not there anymore
+            List<UserSessionModel> loadedSessions = loadPersistedSessionsPaginated(true, 10, 1, 1);
+            UserSessionModel persistedSession = loadedSessions.get(0);
+            UserSessionProviderTest.assertSession(persistedSession, session.users().getUserByUsername("user1", realm), "127.0.0.2", started, lastSessionRefresh, "test-app");
+
+        } finally {
+            // Cleanup
+            Time.setOffset(0);
+        }
+
     }
 
 
@@ -407,19 +434,32 @@ public class UserSessionPersisterProviderTest {
     private List<UserSessionModel> loadPersistedSessionsPaginated(boolean offline, int sessionsPerPage, int expectedPageCount, int expectedSessionsCount) {
         int count = persister.getUserSessionsCount(offline);
 
-        int start = 0;
+
         int pageCount = 0;
         boolean next = true;
         List<UserSessionModel> result = new ArrayList<>();
-        while (next && start < count) {
-            List<UserSessionModel> sess = persister.loadUserSessions(start, sessionsPerPage, offline);
-            if (sess.size() == 0) {
+        int lastCreatedOn = 0;
+        String lastSessionId = "abc";
+
+        while (next) {
+            List<UserSessionModel> sess = persister.loadUserSessions(0, sessionsPerPage, offline, lastCreatedOn, lastSessionId);
+
+            if (sess.size() < sessionsPerPage) {
                 next = false;
+
+                // We had at least some session
+                if (sess.size() > 0) {
+                    pageCount++;
+                }
             } else {
                 pageCount++;
-                start += sess.size();
-                result.addAll(sess);
+
+                UserSessionModel lastSession = sess.get(sess.size() - 1);
+                lastCreatedOn = lastSession.getStarted();
+                lastSessionId = lastSession.getId();
             }
+
+            result.addAll(sess);
         }
 
         Assert.assertEquals(pageCount, expectedPageCount);

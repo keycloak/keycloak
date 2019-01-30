@@ -405,3 +405,16 @@ table.kc-authz-table-expanded {
   font-family: 'text-security-disc';
   font-size: 14px;
 }
+
+/* Deactivation styles for user-group membership tree models */
+
+div[tree-model] li .deactivate {
+    color: #4a5053;
+    opacity: 0.4;
+}
+
+div[tree-model] li .deactivate_selected {
+    background-color: #dcdcdc;
+    font-weight: bold;
+    padding: 1px 5px;
+}

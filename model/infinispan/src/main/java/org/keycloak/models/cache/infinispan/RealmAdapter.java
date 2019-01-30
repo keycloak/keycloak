@@ -418,6 +418,30 @@ public class RealmAdapter implements CachedRealmModel {
     }
 
     @Override
+    public int getSsoSessionIdleTimeoutRememberMe() {
+        if (updated != null) return updated.getSsoSessionIdleTimeoutRememberMe();
+        return cached.getSsoSessionIdleTimeoutRememberMe();
+    }
+
+    @Override
+    public void setSsoSessionIdleTimeoutRememberMe(int seconds) {
+        getDelegateForUpdate();
+        updated.setSsoSessionIdleTimeoutRememberMe(seconds);
+    }
+
+    @Override
+    public int getSsoSessionMaxLifespanRememberMe() {
+        if (updated != null) return updated.getSsoSessionMaxLifespanRememberMe();
+        return cached.getSsoSessionMaxLifespanRememberMe();
+    }
+
+    @Override
+    public void setSsoSessionMaxLifespanRememberMe(int seconds) {
+        getDelegateForUpdate();
+        updated.setSsoSessionMaxLifespanRememberMe(seconds);
+    }
+
+    @Override
     public int getOfflineSessionIdleTimeout() {
         if (isUpdated()) return updated.getOfflineSessionIdleTimeout();
         return cached.getOfflineSessionIdleTimeout();

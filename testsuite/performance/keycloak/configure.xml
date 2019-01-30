@@ -38,10 +38,6 @@
             <env key="JBOSS_HOME" value="${server.unpacked.home}"/>
         </exec>
         <exec executable="./${jboss.cli.script}" dir="${server.unpacked.home}/bin" failonerror="true">
-            <arg value="--file=modcluster-simple-load-provider.cli"/>
-            <env key="JBOSS_HOME" value="${server.unpacked.home}"/>
-        </exec>
-        <exec executable="./${jboss.cli.script}" dir="${server.unpacked.home}/bin" failonerror="true">
             <arg value="--file=io-worker-threads.cli"/>
             <env key="JBOSS_HOME" value="${server.unpacked.home}"/>
         </exec>

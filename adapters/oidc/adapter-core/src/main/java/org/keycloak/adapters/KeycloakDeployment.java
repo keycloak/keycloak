@@ -70,6 +70,7 @@ public class KeycloakDeployment {
     protected SslRequired sslRequired = SslRequired.ALL;
     protected int confidentialPort = -1;
     protected TokenStore tokenStore = TokenStore.SESSION;
+    protected String adapterStateCookiePath = "";
     protected String stateCookieName = "OAuth_Token_Request_State";
     protected boolean useResourceRoleMappings;
     protected boolean cors;
@@ -295,6 +296,14 @@ public class KeycloakDeployment {
 
     public void setTokenStore(TokenStore tokenStore) {
         this.tokenStore = tokenStore;
+    }
+
+    public String getAdapterStateCookiePath() {
+        return adapterStateCookiePath;
+    }
+
+    public void setAdapterStateCookiePath(String adapterStateCookiePath) {
+        this.adapterStateCookiePath = adapterStateCookiePath;
     }
 
     public String getStateCookieName() {

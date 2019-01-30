@@ -26,7 +26,7 @@
 
     <groupId>org.keycloak.bom</groupId>
     <artifactId>keycloak-bom-parent</artifactId>
-    <version>4.6.0.Final-SNAPSHOT</version>
+    <version>4.8.3.Final</version>
 
     <packaging>pom</packaging>
 
@@ -46,6 +46,7 @@
     <modules>
         <module>adapter</module>
         <module>spi</module>
+        <module>misc</module>
     </modules>
     
     <build>

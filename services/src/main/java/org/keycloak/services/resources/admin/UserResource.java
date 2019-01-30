@@ -100,6 +100,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -741,13 +742,39 @@ public class UserResource {
     @Path("groups")
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
-    public List<GroupRepresentation> groupMembership() {
+    public List<GroupRepresentation> groupMembership(@QueryParam("search") String search,
+                                                     @QueryParam("first") Integer firstResult,
+                                                     @QueryParam("max") Integer maxResults) {
         auth.users().requireView(user);
-        List<GroupRepresentation> memberships = new LinkedList<>();
-        for (GroupModel group : user.getGroups()) {
-            memberships.add(ModelToRepresentation.toRepresentation(group, false));
+        List<GroupRepresentation> results;
+
+        if (Objects.nonNull(search) && Objects.nonNull(firstResult) && Objects.nonNull(maxResults)) {
+            results = ModelToRepresentation.searchForGroupByName(user, false, search.trim(), firstResult, maxResults);
+        } else if(Objects.nonNull(firstResult) && Objects.nonNull(maxResults)) {
+            results = ModelToRepresentation.toGroupHierarchy(user, false, firstResult, maxResults);
+        } else {
+            results = ModelToRepresentation.toGroupHierarchy(user, false);
         }
-        return memberships;
+
+        return results;
+    }
+
+    @GET
+    @NoCache
+    @Path("groups/count")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Map<String, Long> getGroupMembershipCount(@QueryParam("search") String search) {
+        auth.users().requireView(user);
+        Long results;
+
+        if (Objects.nonNull(search)) {
+            results = user.getGroupsCountByNameContaining(search);
+        } else {
+            results = user.getGroupsCount();
+        }
+        Map<String, Long> map = new HashMap<>();
+        map.put("count", results);
+        return map;
     }
 
     @DELETE

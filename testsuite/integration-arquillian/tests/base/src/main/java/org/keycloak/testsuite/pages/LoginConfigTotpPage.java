@@ -39,8 +39,15 @@ public class LoginConfigTotpPage extends AbstractPage {
     @FindBy(id = "mode-manual")
     private WebElement manualLink;
 
+    @FindBy(className = "alert-error")
+    private WebElement loginErrorMessage;
+
     public void configure(String totp) {
         totpInput.sendKeys(totp);
+        submitButton.click();
+    }
+
+    public void submit() {
         submitButton.click();
     }
 
@@ -62,6 +69,10 @@ public class LoginConfigTotpPage extends AbstractPage {
 
     public void clickBarcode() {
         barcodeLink.click();
+    }
+
+    public String getError() {
+        return loginErrorMessage.getText();
     }
 
 }

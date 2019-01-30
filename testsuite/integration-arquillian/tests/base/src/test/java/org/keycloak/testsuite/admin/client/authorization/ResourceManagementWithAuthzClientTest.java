@@ -20,27 +20,20 @@ package org.keycloak.testsuite.admin.client.authorization;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
 
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.hamcrest.Matcher;
 import org.hamcrest.Matchers;
-import org.hamcrest.collection.IsMapContaining;
 import org.junit.Test;
 import org.keycloak.authorization.client.AuthzClient;
-import org.keycloak.authorization.client.Configuration;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
-import org.keycloak.util.JsonSerialization;
 
 /**
  *
@@ -221,11 +214,7 @@ public class ResourceManagementWithAuthzClientTest extends ResourceManagementTes
 
     private AuthzClient getAuthzClient() {
         if (authzClient == null) {
-            try {
-                authzClient = AuthzClient.create(JsonSerialization.readValue(getClass().getResourceAsStream("/authorization-test/default-keycloak.json"), Configuration.class));
-            } catch (IOException cause) {
-                throw new RuntimeException("Failed to create authz client", cause);
-            }
+            authzClient = AuthzClient.create(getClass().getResourceAsStream("/authorization-test/default-keycloak.json"));
         }
 
         return authzClient;

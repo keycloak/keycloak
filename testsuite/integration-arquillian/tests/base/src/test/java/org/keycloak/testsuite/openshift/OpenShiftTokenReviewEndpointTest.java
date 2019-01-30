@@ -34,7 +34,6 @@ import org.keycloak.testsuite.util.UserBuilder;
 
 import javax.ws.rs.core.Response;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -42,6 +41,8 @@ import java.util.Map;
 
 import static org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder;
 import static org.junit.Assert.*;
+import static org.keycloak.common.Profile.Feature.OPENSHIFT_INTEGRATION;
+import static org.keycloak.testsuite.ProfileAssume.assumeFeatureEnabled;
 
 public class OpenShiftTokenReviewEndpointTest extends AbstractTestRealmKeycloakTest {
 
@@ -76,6 +77,8 @@ public class OpenShiftTokenReviewEndpointTest extends AbstractTestRealmKeycloakT
 
     @Before
     public void enablePassthroughAuthenticator() {
+        assumeFeatureEnabled(OPENSHIFT_INTEGRATION);
+
         if (!flowConfigured) {
             HashMap<String, String> data = new HashMap<>();
             data.put("newName", "testsuite-client-dummy");

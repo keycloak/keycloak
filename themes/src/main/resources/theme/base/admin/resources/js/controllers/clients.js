@@ -685,12 +685,14 @@ module.controller('ClientRoleDetailCtrl', function($scope, realm, client, role, 
     $scope.changed = $scope.create;
 
     $scope.save = function() {
+        convertAttributeValuesToLists();
         if ($scope.create) {
             ClientRole.save({
                 realm: realm.realm,
                 client : client.id
             }, $scope.role, function (data, headers) {
                 $scope.changed = false;
+                convertAttributeValuesToString($scope.role);
                 role = angular.copy($scope.role);
 
                 ClientRole.get({ realm: realm.realm, client : client.id, role: role.name }, function(role) {
@@ -721,6 +723,34 @@ module.controller('ClientRoleDetailCtrl', function($scope, realm, client, role, 
         $location.url("/realms/" + realm.realm + "/clients/" + client.id + "/roles");
     };
 
+    $scope.addAttribute = function() {
+        $scope.role.attributes[$scope.newAttribute.key] = $scope.newAttribute.value;
+        delete $scope.newAttribute;
+    }
+
+    $scope.removeAttribute = function(key) {    
+        delete $scope.role.attributes[key];
+    }
+
+    function convertAttributeValuesToLists() {
+        var attrs = $scope.role.attributes;
+        for (var attribute in attrs) {
+            if (typeof attrs[attribute] === "string") {
+                var attrVals = attrs[attribute].split("##");
+                attrs[attribute] = attrVals;
+            }
+        }
+    }
+
+    function convertAttributeValuesToString(role) {
+        var attrs = role.attributes;
+        for (var attribute in attrs) {
+            if (typeof attrs[attribute] === "object") {
+                var attrVals = attrs[attribute].join("##");
+                attrs[attribute] = attrVals;
+            }
+        }
+    }
 
     roleControl($scope, realm, role, roles, clients,
         ClientRole, RoleById, RoleRealmComposites, RoleClientComposites,
@@ -929,12 +959,6 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, flows, $ro
         {name: "INCLUSIVE_WITH_COMMENTS", value: "http://www.w3.org/TR/2001/REC-xml-c14n-20010315#WithComments"}
     ];
 
-    $scope.requestObjectSignatureAlgorithms = [
-        "any",
-        "none",
-        "RS256"
-    ];
-    
     $scope.requestObjectRequiredOptions = [
         "not required",
         "request or request_uri",
@@ -2593,85 +2617,6 @@ module.controller('ClientScopesRealmDefaultCtrl', function($scope, realm, Realm,
                 }
             });
         }
-    };
-});
-
-module.controller('ClientScopeCreateStep1Ctrl', function($scope, realm, clients, $route, ClientScopeGenerateAudienceClientScope, Client, $location, $modal, Dialog, Notifications) {
-    console.log('ClientScopeCreateStep1Ctrl');
-
-    $scope.realm = realm;
-    $scope.clientScopeTemplate = "none";
-
-    $scope.serviceClients = [];
-    for (var i = 0; i < clients.length; i++) {
-        if (clients[i].bearerOnly) {
-            $scope.serviceClients.push(clients[i]);
-        }
-    }
-
-    $scope.clientScopeTemplates = [
-        { name: "No template", value:  "none"  },
-        { name: "Audience template", value: "audience" }
-    ];
-
-    $scope.audienceClientUiSelect = {
-        minimumInputLength: 1,
-        delay: 500,
-        allowClear: true,
-        query: function (query) {
-            var data = {results: []};
-            if ('' == query.term.trim()) {
-                query.callback(data);
-                return;
-            }
-            Client.query({realm: $route.current.params.realm, search: query.term.trim(), max: 20}, function(response) {
-                for (i = 0; i < response.length; i++) {
-                    if (response[i].clientId.indexOf(query.term) != -1) {
-                        data.results.push(response[i]);
-                    }
-                }
-                query.callback(data);
-            });
-        },
-        formatResult: function(object, container, query) {
-            object.text = object.clientId;
-            return object.clientId;
-        }
-    };
-
-    $scope.selectedAudienceClient = null;
-
-    $scope.selectAudienceClient = function(audienceClient) {
-
-        if (!audienceClient || !audienceClient.id) {
-            $scope.selectedAudienceClient = null;
-            $scope.audienceClientId = '';
-            return;
-        }
-
-        $scope.audienceClientId = audienceClient.clientId;
-    }
-
-    $scope.next = function() {
-        if ($scope.clientScopeTemplate !== 'audience') {
-            $location.url("/create/client-scope/step-2/" + realm.realm);
-        } else {
-            if (!$scope.audienceClientId) {
-                Notifications.error("You must select audience (service client)");
-            } else {
-                ClientScopeGenerateAudienceClientScope.save({ realm: realm.realm, clientId : $scope.audienceClientId }, function (data, headers) {
-                    $scope.changed = false;
-                    var l = headers().location;
-                    var id = l.substring(l.lastIndexOf("/") + 1);
-                    $location.url("/realms/" + realm.realm + "/client-scopes/" + id);
-                    Notifications.success("The client scope has been created.");
-                });
-            }
-        }
-    };
-
-    $scope.cancel = function() {
-        $location.url("/realms/" + realm.realm + "/client-scopes");
     };
 });
 

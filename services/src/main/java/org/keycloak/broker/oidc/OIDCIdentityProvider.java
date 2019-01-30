@@ -55,7 +55,7 @@ import org.keycloak.util.JsonSerialization;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
+import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
@@ -365,6 +365,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
         }
     }
 
+    private static final MediaType APPLICATION_JWT_TYPE = MediaType.valueOf("application/jwt");
 
     protected BrokeredIdentityContext extractIdentity(AccessTokenResponse tokenResponse, String accessToken, JsonWebToken idToken) throws IOException {
         String id = idToken.getSubject();
@@ -378,20 +379,38 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
             if (userInfoUrl != null && !userInfoUrl.isEmpty() && (id == null || name == null || preferredUsername == null || email == null)) {
 
                 if (accessToken != null) {
-                    SimpleHttp.Response response = SimpleHttp.doGet(userInfoUrl, session)
-                            .header("Authorization", "Bearer " + accessToken).asResponse();
-                    if (response.getStatus() != 200) {
-                        String msg = "failed to invoke user info url";
-                        try {
-                            String tmp = response.asString();
-                            if (tmp != null) msg = tmp;
-
-                        } catch (IOException e) {
-
-                        }
-                        throw new IdentityBrokerException("Failed to invoke on user info url: " + msg);
+                    SimpleHttp.Response response = executeRequest(userInfoUrl, SimpleHttp.doGet(userInfoUrl, session).header("Authorization", "Bearer " + accessToken));
+                    String contentType = response.getFirstHeader(HttpHeaders.CONTENT_TYPE);
+                    MediaType contentMediaType;
+                    try {
+                        contentMediaType = MediaType.valueOf(contentType);
+                    } catch (IllegalArgumentException ex) {
+                        contentMediaType = null;
                     }
-                    JsonNode userInfo = response.asJson();
+                    if (contentMediaType == null || contentMediaType.isWildcardSubtype() || contentMediaType.isWildcardType()) {
+                        throw new RuntimeException("Unsupported content-type [" + contentType + "] in response from [" + userInfoUrl + "].");
+                    }
+                    JsonNode userInfo;
+
+                    if (MediaType.APPLICATION_JSON_TYPE.isCompatible(contentMediaType)) {
+                        userInfo = response.asJson();
+                    } else if (APPLICATION_JWT_TYPE.isCompatible(contentMediaType)) {
+                        JWSInput jwsInput;
+
+                        try {
+                            jwsInput = new JWSInput(response.asString());
+                        } catch (JWSInputException cause) {
+                            throw new RuntimeException("Failed to parse JWT userinfo response", cause);
+                        }
+
+                        if (verify(jwsInput)) {
+                            userInfo = JsonSerialization.readValue(jwsInput.getContent(), JsonNode.class);
+                        } else {
+                            throw new RuntimeException("Failed to verify signature of userinfo response from [" + userInfoUrl + "].");
+                        }
+                    } else {
+                        throw new RuntimeException("Unsupported content-type [" + contentType + "] in response from [" + userInfoUrl + "].");
+                    }
 
                     id = getJsonProperty(userInfo, "sub");
                     name = getJsonProperty(userInfo, "name");
@@ -434,6 +453,21 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
         return getConfig().getUserInfoUrl();
     }
 
+    private SimpleHttp.Response executeRequest(String url, SimpleHttp request) throws IOException {
+        SimpleHttp.Response response = request.asResponse();
+        if (response.getStatus() != 200) {
+            String msg = "failed to invoke url [" + url + "]";
+            try {
+                String tmp = response.asString();
+                if (tmp != null) msg = tmp;
+
+            } catch (IOException e) {
+
+            }
+            throw new IdentityBrokerException("Failed to invoke url [" + url + "]: " + msg);
+        }
+        return  response;
+    }
 
     private String verifyAccessToken(AccessTokenResponse tokenResponse) {
         String accessToken = tokenResponse.getToken();

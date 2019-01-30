@@ -17,6 +17,8 @@
 
 package org.keycloak.representations.idm;
 
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -35,6 +37,7 @@ public class RoleRepresentation {
     protected Composites composites;
     private Boolean clientRole;
     private String containerId;
+    protected Map<String, List<String>> attributes;
 
     public static class Composites {
         protected Set<String> realm;
@@ -137,5 +140,22 @@ public class RoleRepresentation {
 
     public void setContainerId(String containerId) {
         this.containerId = containerId;
+    }
+
+    public Map<String, List<String>> getAttributes() {
+        return attributes;
+    }
+
+    public void setAttributes(Map<String, List<String>> attributes) {
+        this.attributes = attributes;
+    }
+
+    public RoleRepresentation singleAttribute(String name, String value) {
+        if (attributes == null) {
+            attributes = new HashMap<>();
+        }
+
+        attributes.put(name, Arrays.asList(value));
+        return this;
     }
 }

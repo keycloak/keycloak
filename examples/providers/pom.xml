@@ -20,7 +20,7 @@
     <parent>
         <artifactId>keycloak-examples-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>4.6.0.Final-SNAPSHOT</version>
+        <version>4.8.3.Final</version>
     </parent>
 
     <name>Provider Examples</name>
@@ -31,9 +31,6 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>event-listener-sysout</module>
-        <module>event-store-mem</module>
-        <module>authenticator</module>
         <module>rest</module>
         <module>domain-extension</module>
     </modules>

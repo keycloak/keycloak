@@ -24,7 +24,6 @@ import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.policy.provider.PolicyProviderFactory;
-import org.keycloak.common.Profile;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.Time;
 import org.keycloak.component.ComponentModel;
@@ -38,12 +37,17 @@ import org.keycloak.representations.idm.*;
 import org.keycloak.representations.idm.authorization.*;
 import org.keycloak.storage.StorageId;
 
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -102,6 +106,12 @@ public class ModelToRepresentation {
         return result;
     }
 
+    public static List<GroupRepresentation> searchForGroupByName(UserModel user, boolean full, String search, Integer first, Integer max) {
+        return user.getGroups(search, first, max).stream()
+                .map(group -> toRepresentation(group, full))
+                .collect(Collectors.toList());
+    }
+
     public static List<GroupRepresentation> toGroupHierarchy(RealmModel realm, boolean full, Integer first, Integer max) {
         List<GroupRepresentation> hierarchy = new LinkedList<>();
         List<GroupModel> groups = realm.getTopLevelGroups(first, max);
@@ -113,6 +123,12 @@ public class ModelToRepresentation {
         return hierarchy;
     }
 
+    public static List<GroupRepresentation> toGroupHierarchy(UserModel user, boolean full, Integer first, Integer max) {
+        return user.getGroups(first, max).stream()
+                .map(group -> toRepresentation(group, full))
+                .collect(Collectors.toList());
+    }
+
     public static List<GroupRepresentation> toGroupHierarchy(RealmModel realm, boolean full) {
         List<GroupRepresentation> hierarchy = new LinkedList<>();
         List<GroupModel> groups = realm.getTopLevelGroups();
@@ -122,6 +138,12 @@ public class ModelToRepresentation {
             hierarchy.add(rep);
         }
         return hierarchy;
+    }
+
+    public static List<GroupRepresentation> toGroupHierarchy(UserModel user, boolean full) {
+        return user.getGroups().stream()
+                .map(group -> toRepresentation(group, full))
+                .collect(Collectors.toList());
     }
 
     public static GroupRepresentation toGroupHierarchy(GroupModel group, boolean full) {
@@ -230,6 +252,18 @@ public class ModelToRepresentation {
         rep.setComposite(role.isComposite());
         rep.setClientRole(role.isClientRole());
         rep.setContainerId(role.getContainerId());
+        rep.setAttributes(role.getAttributes());
+        return rep;
+    }
+
+    public static RoleRepresentation toBriefRepresentation(RoleModel role) {
+        RoleRepresentation rep = new RoleRepresentation();
+        rep.setId(role.getId());
+        rep.setName(role.getName());
+        rep.setDescription(role.getDescription());
+        rep.setComposite(role.isComposite());
+        rep.setClientRole(role.isClientRole());
+        rep.setContainerId(role.getContainerId());
         return rep;
     }
 
@@ -281,6 +315,8 @@ public class ModelToRepresentation {
         rep.setAccessTokenLifespanForImplicitFlow(realm.getAccessTokenLifespanForImplicitFlow());
         rep.setSsoSessionIdleTimeout(realm.getSsoSessionIdleTimeout());
         rep.setSsoSessionMaxLifespan(realm.getSsoSessionMaxLifespan());
+        rep.setSsoSessionIdleTimeoutRememberMe(realm.getSsoSessionIdleTimeoutRememberMe());
+        rep.setSsoSessionMaxLifespanRememberMe(realm.getSsoSessionMaxLifespanRememberMe());
         rep.setOfflineSessionIdleTimeout(realm.getOfflineSessionIdleTimeout());
         // KEYCLOAK-7688 Offline Session Max for Offline Token
         rep.setOfflineSessionMaxLifespanEnabled(realm.isOfflineSessionMaxLifespanEnabled());
@@ -346,7 +382,7 @@ public class ModelToRepresentation {
         }
 
         rep.setInternationalizationEnabled(realm.isInternationalizationEnabled());
-        if(realm.getSupportedLocales() != null){
+        if (realm.getSupportedLocales() != null) {
             rep.setSupportedLocales(new HashSet<String>());
             rep.getSupportedLocales().addAll(realm.getSupportedLocales());
         }
@@ -367,7 +403,7 @@ public class ModelToRepresentation {
         return rep;
     }
 
-     public static void exportGroups(RealmModel realm, RealmRepresentation rep) {
+    public static void exportGroups(RealmModel realm, RealmRepresentation rep) {
         List<GroupRepresentation> groups = toGroupHierarchy(realm, true);
         rep.setGroups(groups);
     }
@@ -428,7 +464,7 @@ public class ModelToRepresentation {
             rep.setEventsListeners(new LinkedList<>(realm.getEventsListeners()));
         }
 
-        if(realm.getEnabledEventTypes() != null) {
+        if (realm.getEnabledEventTypes() != null) {
             rep.setEnabledEventTypes(new LinkedList<>(realm.getEnabledEventTypes()));
         }
 
@@ -624,7 +660,11 @@ public class ModelToRepresentation {
 
         List<String> grantedClientScopes = new LinkedList<>();
         for (ClientScopeModel clientScope : model.getGrantedClientScopes()) {
-            grantedClientScopes.add(clientScope.getName());
+            if (clientScope instanceof ClientModel) {
+                grantedClientScopes.add(((ClientModel) clientScope).getClientId());
+            } else {
+                grantedClientScopes.add(clientScope.getName());
+            }
         }
 
         UserConsentRepresentation consentRep = new UserConsentRepresentation();
@@ -635,7 +675,7 @@ public class ModelToRepresentation {
         return consentRep;
     }
 
-    public static AuthenticationFlowRepresentation  toRepresentation(RealmModel realm, AuthenticationFlowModel model) {
+    public static AuthenticationFlowRepresentation toRepresentation(RealmModel realm, AuthenticationFlowModel model) {
         AuthenticationFlowRepresentation rep = new AuthenticationFlowRepresentation();
         rep.setId(model.getId());
         rep.setBuiltIn(model.isBuiltIn());
@@ -662,7 +702,7 @@ public class ModelToRepresentation {
         if (model.getFlowId() != null) {
             AuthenticationFlowModel flow = realm.getAuthenticationFlowById(model.getFlowId());
             rep.setFlowAlias(flow.getAlias());
-       }
+        }
         rep.setPriority(model.getPriority());
         rep.setRequirement(model.getRequirement().name());
         return rep;

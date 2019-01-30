@@ -1,0 +1,20 @@
+{
+  "kind": "APIGroupList",
+  "apiVersion": "v1",
+  "groups": [
+    {
+      "name": "route.openshift.io",
+      "versions": [
+        {
+          "groupVersion": "route.openshift.io/v1",
+          "version": "v1"
+        }
+      ],
+      "preferredVersion": {
+        "groupVersion": "route.openshift.io/v1",
+        "version": "v1"
+      },
+      "serverAddressByClientCIDRs": null
+    }
+  ]
+}

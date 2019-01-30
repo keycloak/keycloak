@@ -26,6 +26,7 @@ import org.keycloak.admin.client.resource.ResourceResource;
 import org.keycloak.admin.client.resource.ResourceScopeResource;
 import org.keycloak.admin.client.resource.ResourceScopesResource;
 import org.keycloak.admin.client.resource.ResourcesResource;
+import org.keycloak.common.Profile;
 import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.representations.idm.authorization.Logic;
 import org.keycloak.representations.idm.authorization.PolicyProviderRepresentation;
@@ -34,6 +35,7 @@ import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 
 import javax.ws.rs.core.Response;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -142,7 +144,13 @@ public class GenericPolicyManagementTest extends AbstractAuthorizationTest {
                 .policyProviders().stream().map(PolicyProviderRepresentation::getType).collect(Collectors.toList());
 
         assertFalse(providers.isEmpty());
-        assertTrue(providers.containsAll(Arrays.asList(EXPECTED_BUILTIN_POLICY_PROVIDERS)));
+        List expected = new ArrayList(Arrays.asList(EXPECTED_BUILTIN_POLICY_PROVIDERS));
+
+        if (!Profile.isFeatureEnabled(Profile.Feature.AUTHZ_DROOLS_POLICY)) {
+            expected.remove("rules");
+        }
+
+        assertTrue(providers.containsAll(expected));
     }
 
     private PolicyResource createTestingPolicy() {

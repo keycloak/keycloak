@@ -8,11 +8,11 @@ module.controller('GroupListCtrl', function($scope, $route, $q, realm, Groups, G
         }
     ];
 
-
-    $scope.searchTerms = '';
+    $scope.searchCriteria = '';
     $scope.currentPage = 1;
     $scope.currentPageInput = $scope.currentPage;
     $scope.pageSize = 20;
+    $scope.numberOfPages = 1;
     $scope.tree = [];
 
     var refreshGroups = function (search) {
@@ -41,9 +41,7 @@ module.controller('GroupListCtrl', function($scope, $route, $q, realm, Groups, G
         }, function() {
             promiseGetGroups.reject('Unable to fetch ' + queryParams);
         });
-        var promiseGetGroupsChain   = promiseGetGroups.promise.then(function(groups) {
-            console.log('*** group call groups size: ' + groups.length);
-            console.log('*** group call groups size: ' + groups.length);
+        promiseGetGroups.promise.then(function(groups) {
             $scope.groupList = [
                 {
                     "id" : "realm",
@@ -51,6 +49,8 @@ module.controller('GroupListCtrl', function($scope, $route, $q, realm, Groups, G
                     "subGroups" : groups
                 }
             ];
+        }, function (failed) {
+            Notifications.error(failed);
         });
 
         var promiseCount = $q.defer();
@@ -60,27 +60,33 @@ module.controller('GroupListCtrl', function($scope, $route, $q, realm, Groups, G
         }, function() {
             promiseCount.reject('Unable to fetch ' + countParams);
         });
-        var promiseCountChain   = promiseCount.promise.then(function(groupsCount) {
-            $scope.numberOfPages = Math.ceil(groupsCount.count/$scope.pageSize);
-         });
+        promiseCount.promise.then(function(entry) {
+            if(angular.isDefined(entry.count) && entry.count > $scope.pageSize) {
+                $scope.numberOfPages = Math.ceil(entry.count/$scope.pageSize);
+            } else {
+                $scope.numberOfPages = 1;
+            }
+        }, function (failed) {
+            Notifications.error(failed);
+        });
     };
     refreshGroups();
 
     $scope.$watch('currentPage', function(newValue, oldValue) {
         if(newValue !== oldValue) {
-            refreshGroups($scope.searchTerms);
+            refreshGroups($scope.searchCriteria);
         }
     });
 
     $scope.clearSearch = function() {
-        $scope.searchTerms = '';
+        $scope.searchCriteria = '';
         $scope.currentPage = 1;
         refreshGroups();
     };
 
     $scope.searchGroup = function() {
         $scope.currentPage = 1;
-        refreshGroups($scope.searchTerms);
+        refreshGroups($scope.searchCriteria);
     };
 
     $scope.edit = function(selected) {
@@ -442,16 +448,88 @@ module.controller('GroupMembersCtrl', function($scope, realm, group, GroupMember
 
 });
 
-module.controller('DefaultGroupsCtrl', function($scope, $route, realm, groups, DefaultGroups, Notifications) {
+module.controller('DefaultGroupsCtrl', function($scope, $q, realm, Groups, GroupsCount, DefaultGroups, Notifications) {
     $scope.realm = realm;
-    $scope.groupList = groups;
+    $scope.groupList = [];
     $scope.selectedGroup = null;
     $scope.tree = [];
 
-    DefaultGroups.query({realm: realm.realm}, function(data) {
-        $scope.defaultGroups = data;
+    $scope.searchCriteria = '';
+    $scope.currentPage = 1;
+    $scope.currentPageInput = $scope.currentPage;
+    $scope.pageSize = 20;
+    $scope.numberOfPages = 1;
 
+    var refreshDefaultGroups = function () {
+        DefaultGroups.query({realm: realm.realm}, function(data) {
+            $scope.defaultGroups = data;
+        });
+    }
+
+    var refreshAvailableGroups = function (search) {
+        var first = ($scope.currentPage * $scope.pageSize) - $scope.pageSize;
+        var queryParams = {
+            realm : realm.realm,
+            first : first,
+            max : $scope.pageSize
+        };
+        var countParams = {
+            realm : realm.realm,
+            top : 'true'
+        };
+
+        if(angular.isDefined(search) && search !== '') {
+            queryParams.search = search;
+            countParams.search = search;
+        }
+
+        var promiseGetGroups = $q.defer();
+        Groups.query(queryParams, function(entry) {
+            promiseGetGroups.resolve(entry);
+        }, function() {
+            promiseGetGroups.reject('Unable to fetch ' + queryParams);
+        });
+        promiseGetGroups.promise.then(function(groups) {
+            $scope.groupList = groups;
+        }, function (failed) {
+            Notifications.success(failed);
+        });
+
+        var promiseCount = $q.defer();
+        GroupsCount.query(countParams, function(entry) {
+            promiseCount.resolve(entry);
+        }, function() {
+            promiseCount.reject('Unable to fetch ' + countParams);
+        });
+        promiseCount.promise.then(function(entry) {
+            if(angular.isDefined(entry.count) && entry.count > $scope.pageSize) {
+                $scope.numberOfPages = Math.ceil(entry.count/$scope.pageSize);
+            }
+        }, function (failed) {
+            Notifications.success(failed);
+        });
+    };
+
+    refreshAvailableGroups();
+
+    $scope.$watch('currentPage', function(newValue, oldValue) {
+        if(newValue !== oldValue) {
+            refreshAvailableGroups($scope.searchCriteria);
+        }
     });
+
+    $scope.clearSearch = function() {
+        $scope.searchCriteria = '';
+        $scope.currentPage = 1;
+        refreshAvailableGroups();
+    };
+
+    $scope.searchGroup = function() {
+        $scope.currentPage = 1;
+        refreshAvailableGroups($scope.searchCriteria);
+    };
+
+    refreshDefaultGroups();
 
     $scope.addDefaultGroup = function() {
         if (!$scope.tree.currentNode) {
@@ -460,16 +538,16 @@ module.controller('DefaultGroupsCtrl', function($scope, $route, realm, groups, D
         }
 
         DefaultGroups.update({realm: realm.realm, groupId: $scope.tree.currentNode.id}, function() {
+            refreshDefaultGroups();
             Notifications.success('Added default group');
-            $route.reload();
         });
 
     };
 
     $scope.removeDefaultGroup = function() {
         DefaultGroups.remove({realm: realm.realm, groupId: $scope.selectedGroup.id}, function() {
+            refreshDefaultGroups();
             Notifications.success('Removed default group');
-            $route.reload();
         });
 
     };

@@ -132,7 +132,7 @@ public class UserInfoEndpoint {
 
         AccessToken token;
         try {
-            TokenVerifier<AccessToken> verifier = TokenVerifier.create(tokenString, AccessToken.class)
+            TokenVerifier<AccessToken> verifier = TokenVerifier.create(tokenString, AccessToken.class).withDefaultChecks()
                     .realmUrl(Urls.realmIssuer(session.getContext().getUri().getBaseUri(), realm.getName()));
 
             SignatureVerifierContext verifierContext = session.getProvider(SignatureProvider.class, verifier.getHeader().getAlgorithm().name()).verifier(verifier.getHeader().getKeyId());

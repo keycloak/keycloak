@@ -85,7 +85,12 @@
 
      </changeSet>
 
-    <changeSet author="mposolda@redhat.com" id="4.0.0-KEYCLOAK-5579">
+    <changeSet author="mposolda@redhat.com" id="4.0.0-KEYCLOAK-5579-fixed">
+        <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
+            <not>
+                <changeSetExecuted id="4.0.0-KEYCLOAK-5579" author="mposolda@redhat.com" changeLogFile="META-INF/jpa-changelog-4.0.0.xml" />
+            </not>
+        </preConditions>
 
         <!-- 1 - Rename clientTemplate to clientScope and drop some unused things from clientTemplate -->
         <dropForeignKeyConstraint baseTableName="CLIENT_TEMPLATE_ATTRIBUTES" constraintName="FK_CL_TEMPL_ATTR_TEMPL" />
@@ -147,15 +152,6 @@
                                  constraintName="FK_CL_SCOPE_ATTR_SCOPE" referencedTableName="CLIENT_SCOPE" referencedColumnNames="ID" />
 
         <!-- 2 - Client binding to more clientScopes -->
-        <!-- Foreign key dropped above TODO:mposolda migration existing clientTemplate to default clientScope -->
-        <dropColumn tableName="CLIENT" columnName="CLIENT_TEMPLATE_ID" />
-        <dropDefaultValue tableName="CLIENT" columnName="USE_TEMPLATE_CONFIG"/>
-        <dropDefaultValue tableName="CLIENT" columnName="USE_TEMPLATE_SCOPE" />
-        <dropDefaultValue tableName="CLIENT" columnName="USE_TEMPLATE_MAPPERS" />
-        <dropColumn tableName="CLIENT" columnName="USE_TEMPLATE_CONFIG" />
-        <dropColumn tableName="CLIENT" columnName="USE_TEMPLATE_SCOPE" />
-        <dropColumn tableName="CLIENT" columnName="USE_TEMPLATE_MAPPERS" />
-
         <createTable tableName="CLIENT_SCOPE_CLIENT">
             <column name="CLIENT_ID" type="VARCHAR(36)">
                 <constraints nullable="false"/>
@@ -170,6 +166,16 @@
         <addPrimaryKey columnNames="CLIENT_ID, SCOPE_ID" constraintName="C_CLI_SCOPE_BIND" tableName="CLIENT_SCOPE_CLIENT"/>
         <addForeignKeyConstraint baseColumnNames="CLIENT_ID" baseTableName="CLIENT_SCOPE_CLIENT" constraintName="FK_C_CLI_SCOPE_CLIENT" referencedColumnNames="ID" referencedTableName="CLIENT"/>
         <addForeignKeyConstraint baseColumnNames="SCOPE_ID" baseTableName="CLIENT_SCOPE_CLIENT" constraintName="FK_C_CLI_SCOPE_SCOPE" referencedColumnNames="ID" referencedTableName="CLIENT_SCOPE"/>
+
+        <customChange class="org.keycloak.connections.jpa.updater.liquibase.custom.JpaUpdate4_0_0_DefaultClientScopes" />
+
+        <dropColumn tableName="CLIENT" columnName="CLIENT_TEMPLATE_ID" />
+        <dropDefaultValue tableName="CLIENT" columnName="USE_TEMPLATE_CONFIG"/>
+        <dropDefaultValue tableName="CLIENT" columnName="USE_TEMPLATE_SCOPE" />
+        <dropDefaultValue tableName="CLIENT" columnName="USE_TEMPLATE_MAPPERS" />
+        <dropColumn tableName="CLIENT" columnName="USE_TEMPLATE_CONFIG" />
+        <dropColumn tableName="CLIENT" columnName="USE_TEMPLATE_SCOPE" />
+        <dropColumn tableName="CLIENT" columnName="USE_TEMPLATE_MAPPERS" />
 
         <!-- Default client scopes (global scopes configured at realm level) -->
         <createTable tableName="DEFAULT_CLIENT_SCOPE">

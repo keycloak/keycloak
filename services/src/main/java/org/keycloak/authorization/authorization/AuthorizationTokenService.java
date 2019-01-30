@@ -65,6 +65,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.UserSessionProvider;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.oidc.TokenManager.AccessTokenResponseBuilder;
 import org.keycloak.representations.AccessToken;
@@ -78,7 +79,11 @@ import org.keycloak.representations.idm.authorization.Permission;
 import org.keycloak.representations.idm.authorization.PermissionTicketToken;
 import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.ErrorResponseException;
+import org.keycloak.services.Urls;
+import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.resources.Cors;
+import org.keycloak.sessions.AuthenticationSessionModel;
+import org.keycloak.sessions.RootAuthenticationSessionModel;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.services.util.DefaultClientSessionContext;
 
@@ -246,17 +251,34 @@ public class AuthorizationTokenService {
         }
 
         ClientModel client = realm.getClientByClientId(accessToken.getIssuedFor());
-        AuthenticatedClientSessionModel clientSession = userSessionModel.getAuthenticatedClientSessionByClient(client.getId());
-        ClientSessionContext clientSessionCtx = DefaultClientSessionContext.fromClientSessionScopeParameter(clientSession);
+        AuthenticatedClientSessionModel clientSession = userSessionModel.getAuthenticatedClientSessionByClient(targetClient.getId());
+        ClientSessionContext clientSessionCtx;
+
+        if (clientSession == null) {
+            RootAuthenticationSessionModel rootAuthSession = keycloakSession.authenticationSessions().getRootAuthenticationSession(realm, userSessionModel.getId());
+
+            if (rootAuthSession == null) {
+                rootAuthSession = keycloakSession.authenticationSessions().createRootAuthenticationSession(userSessionModel.getId(), realm);
+            }
+
+            AuthenticationSessionModel authSession = rootAuthSession.createAuthenticationSession(targetClient);
+
+            authSession.setAuthenticatedUser(userSessionModel.getUser());
+            authSession.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+            authSession.setClientNote(OIDCLoginProtocol.ISSUER, Urls.realmIssuer(keycloakSession.getContext().getUri().getBaseUri(), realm.getName()));
+
+            AuthenticationManager.setClientScopesInSession(authSession);
+            clientSessionCtx = TokenManager.attachAuthenticationSession(keycloakSession, userSessionModel, authSession);
+        } else {
+            clientSessionCtx = DefaultClientSessionContext.fromClientSessionScopeParameter(clientSession);
+        }
+
         TokenManager tokenManager = request.getTokenManager();
         EventBuilder event = request.getEvent();
-        AccessTokenResponseBuilder responseBuilder = tokenManager.responseBuilder(realm, clientSession.getClient(), event, keycloakSession, userSessionModel, clientSessionCtx)
+        AccessTokenResponseBuilder responseBuilder = tokenManager.responseBuilder(realm, client, event, keycloakSession, userSessionModel, clientSessionCtx)
                 .generateAccessToken()
                 .generateRefreshToken();
         AccessToken rpt = responseBuilder.getAccessToken();
-
-        rpt.issuedFor(client.getClientId());
-
         Authorization authorization = new Authorization();
 
         authorization.setPermissions(entitlements);
@@ -309,8 +331,8 @@ public class AuthorizationTokenService {
         // This is a Keycloak extension to UMA flow where clients are capable of obtaining a RPT without a ticket
         PermissionTicketToken permissions = request.getPermissions();
 
-        // an audience must be set by the client when doing this method of obtaining RPT, that is how we know the target resource server
-        permissions.audience(request.getAudience());
+        // an issuedFor must be set by the client when doing this method of obtaining RPT, that is how we know the target resource server
+        permissions.issuedFor(request.getAudience());
 
         return permissions;
     }
@@ -319,13 +341,13 @@ public class AuthorizationTokenService {
         AuthorizationProvider authorization = request.getAuthorization();
         StoreFactory storeFactory = authorization.getStoreFactory();
         ResourceServerStore resourceServerStore = storeFactory.getResourceServerStore();
-        String[] audience = ticket.getAudience();
+        String issuedFor = ticket.getIssuedFor();
 
-        if (audience == null || audience.length == 0) {
-            throw new CorsErrorResponseException(request.getCors(), OAuthErrorException.INVALID_REQUEST, "You must provide the audience", Status.BAD_REQUEST);
+        if (issuedFor == null) {
+            throw new CorsErrorResponseException(request.getCors(), OAuthErrorException.INVALID_REQUEST, "You must provide the issuedFor", Status.BAD_REQUEST);
         }
 
-        ClientModel clientModel = request.getRealm().getClientByClientId(audience[0]);
+        ClientModel clientModel = request.getRealm().getClientByClientId(issuedFor);
 
         if (clientModel == null) {
             throw new CorsErrorResponseException(request.getCors(), OAuthErrorException.INVALID_REQUEST, "Unknown resource server id.", Status.BAD_REQUEST);
@@ -492,7 +514,7 @@ public class AuthorizationTokenService {
                             break;
                         }
 
-                        Resource resource = resourceStore.findById(grantedPermission.getResourceId(), ticket.getAudience()[0]);
+                        Resource resource = resourceStore.findById(grantedPermission.getResourceId(), ticket.getIssuedFor());
 
                         if (resource != null) {
                             ResourcePermission permission = permissionsToEvaluate.get(resource.getId());

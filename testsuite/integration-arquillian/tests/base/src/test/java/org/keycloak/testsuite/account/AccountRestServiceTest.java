@@ -45,6 +45,7 @@ import static org.junit.Assert.*;
 import org.keycloak.services.messages.Messages;
 
 import static org.keycloak.common.Profile.Feature.ACCOUNT_API;
+import org.keycloak.services.resources.account.AccountCredentialResource.PasswordUpdate;
 import static org.keycloak.testsuite.ProfileAssume.assumeFeatureEnabled;
 
 /**
@@ -219,6 +220,38 @@ public class AccountRestServiceTest extends AbstractTestRealmKeycloakTest {
 
         // Update with read only
         assertEquals(403, SimpleHttp.doPost(getAccountUrl(null), client).auth(viewToken.getToken()).json(new UserRepresentation()).asStatus());
+    }
+    
+    @Test
+    public void testProfilePreviewPermissions() throws IOException {
+        assumeFeatureEnabled(ACCOUNT_API);
+        
+        TokenUtil noaccessToken = new TokenUtil("no-account-access", "password");
+        TokenUtil viewToken = new TokenUtil("view-account-access", "password");
+        
+        // Read sessions with no access
+        assertEquals(403, SimpleHttp.doGet(getAccountUrl("sessions"), client).header("Accept", "application/json").auth(noaccessToken.getToken()).asStatus());
+        
+        // Delete all sessions with no access
+        assertEquals(403, SimpleHttp.doDelete(getAccountUrl("sessions"), client).header("Accept", "application/json").auth(noaccessToken.getToken()).asStatus());
+        
+        // Delete all sessions with read only
+        assertEquals(403, SimpleHttp.doDelete(getAccountUrl("sessions"), client).header("Accept", "application/json").auth(viewToken.getToken()).asStatus());
+        
+        // Delete single session with no access
+        assertEquals(403, SimpleHttp.doDelete(getAccountUrl("session?id=bogusId"), client).header("Accept", "application/json").auth(noaccessToken.getToken()).asStatus());
+        
+        // Delete single session with read only
+        assertEquals(403, SimpleHttp.doDelete(getAccountUrl("session?id=bogusId"), client).header("Accept", "application/json").auth(viewToken.getToken()).asStatus());
+        
+        // Read password details with no access
+        assertEquals(403, SimpleHttp.doGet(getAccountUrl("credentials/password"), client).header("Accept", "application/json").auth(noaccessToken.getToken()).asStatus());
+        
+        // Update password with no access
+        assertEquals(403, SimpleHttp.doPost(getAccountUrl("credentials/password"), client).auth(noaccessToken.getToken()).json(new PasswordUpdate()).asStatus());
+        
+        // Update password with read only
+        assertEquals(403, SimpleHttp.doPost(getAccountUrl("credentials/password"), client).auth(viewToken.getToken()).json(new PasswordUpdate()).asStatus());
     }
 
     @Test

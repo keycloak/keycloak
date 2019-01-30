@@ -72,7 +72,8 @@ public class SessionsBean {
         }
 
         public Date getExpires() {
-            int max = session.getStarted() + realm.getSsoSessionMaxLifespan();
+            int maxLifespan = session.isRememberMe() && realm.getSsoSessionMaxLifespanRememberMe() > 0 ? realm.getSsoSessionMaxLifespanRememberMe() : realm.getSsoSessionMaxLifespan();
+            int max = session.getStarted() + maxLifespan;
             return Time.toDate(max);
         }
 
