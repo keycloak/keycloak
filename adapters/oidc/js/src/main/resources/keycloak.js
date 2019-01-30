@@ -180,7 +180,7 @@
                 var callback = parseCallback(window.location.href);
 
                 if (callback) {
-                    window.history.replaceState(window.history.state, null, callback.newUrl);
+                    window.history.replaceState({}, null, callback.newUrl);
                 }
 
                 if (callback && callback.valid) {

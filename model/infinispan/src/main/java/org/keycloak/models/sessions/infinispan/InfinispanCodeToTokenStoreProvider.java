@@ -17,7 +17,6 @@
 
 package org.keycloak.models.sessions.infinispan;
 
-import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
@@ -45,42 +44,27 @@ public class InfinispanCodeToTokenStoreProvider implements CodeToTokenStoreProvi
         this.codeCache = actionKeyCache;
     }
 
-
     @Override
-    public void put(UUID codeId, int lifespanSeconds, Map<String, String> codeData) {
-        ActionTokenValueEntity tokenValue = new ActionTokenValueEntity(codeData);
+    public boolean putIfAbsent(UUID codeId) {
+        ActionTokenValueEntity tokenValue = new ActionTokenValueEntity(null);
+
+        int lifespanInSeconds = session.getContext().getRealm().getAccessCodeLifespan();
 
         try {
             BasicCache<UUID, ActionTokenValueEntity> cache = codeCache.get();
-            cache.put(codeId, tokenValue, lifespanSeconds, TimeUnit.SECONDS);
+            ActionTokenValueEntity existing = cache.putIfAbsent(codeId, tokenValue, lifespanInSeconds, TimeUnit.SECONDS);
+            return existing == null;
         } catch (HotRodClientException re) {
             // No need to retry. The hotrod (remoteCache) has some retries in itself in case of some random network error happened.
+            // In case of lock conflict, we don't want to retry anyway as there was likely an attempt to use the code from different place.
             if (logger.isDebugEnabled()) {
                 logger.debugf(re, "Failed when adding code %s", codeId);
             }
 
-            throw re;
+            return false;
         }
+
     }
-
-
-    @Override
-    public Map<String, String> remove(UUID codeId) {
-        try {
-            BasicCache<UUID, ActionTokenValueEntity> cache = codeCache.get();
-            ActionTokenValueEntity existing = cache.remove(codeId);
-            return existing == null ? null : existing.getNotes();
-        } catch (HotRodClientException re) {
-            // No need to retry. The hotrod (remoteCache) has some retries in itself in case of some random network error happened.
-            // In case of lock conflict, we don't want to retry anyway as there was likely an attempt to remove the code from different place.
-            if (logger.isDebugEnabled()) {
-                logger.debugf(re, "Failed when removing code %s", codeId);
-            }
-
-            return null;
-        }
-    }
-
 
     @Override
     public void close() {

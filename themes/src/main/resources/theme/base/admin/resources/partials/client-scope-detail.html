@@ -2,7 +2,8 @@
 
     <ol class="breadcrumb">
         <li><a href="#/realms/{{realm.realm}}/client-scopes">{{:: 'client-scopes' | translate}}</a></li>
-        <li data-ng-show="create">{{:: 'add-client-scope' | translate}}</li>
+        <li data-ng-show="create"><a href="#/create/client-scope/step-1/{{realm.realm}}">{{:: 'add-client-scope-step-1' | translate}}</a></li>
+        <li data-ng-show="create">{{:: 'add-client-scope-step-2' | translate}}</li>
         <li data-ng-hide="create">{{clientScope.name}}</li>
     </ol>
 

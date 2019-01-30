@@ -21,10 +21,6 @@ import org.jboss.logging.Logger;
 import org.keycloak.broker.oidc.OIDCIdentityProviderConfig;
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.common.util.PemUtils;
-import org.keycloak.crypto.Algorithm;
-import org.keycloak.crypto.KeyType;
-import org.keycloak.crypto.KeyUse;
-import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.keys.PublicKeyLoader;
@@ -52,18 +48,23 @@ public class OIDCIdentityProviderPublicKeyLoader implements PublicKeyLoader {
     }
 
     @Override
-    public Map<String, KeyWrapper> loadKeys() throws Exception {
+    public Map<String, PublicKey> loadKeys() throws Exception {
         if (config.isUseJwksUrl()) {
             String jwksUrl = config.getJwksUrl();
             JSONWebKeySet jwks = JWKSHttpUtils.sendJwksRequest(session, jwksUrl);
-            return JWKSUtils.getKeyWrappersForUse(jwks, JWK.Use.SIG);
+            return JWKSUtils.getKeysForUse(jwks, JWK.Use.SIG);
         } else {
             try {
-            	KeyWrapper publicKey = getSavedPublicKey();
+                PublicKey publicKey = getSavedPublicKey();
                 if (publicKey == null) {
                     return Collections.emptyMap();
                 }
-                return Collections.singletonMap(publicKey.getKid(), publicKey);
+
+                String presetKeyId = config.getPublicKeySignatureVerifierKeyId();
+                String kid = (presetKeyId == null || presetKeyId.trim().isEmpty())
+                  ? KeyUtils.createKeyId(publicKey)
+                  : presetKeyId;
+                return Collections.singletonMap(kid, publicKey);
             } catch (Exception e) {
                 logger.warnf(e, "Unable to retrieve publicKey for verify signature of identityProvider '%s' . Error details: %s", config.getAlias(), e.getMessage());
                 return Collections.emptyMap();
@@ -71,23 +72,12 @@ public class OIDCIdentityProviderPublicKeyLoader implements PublicKeyLoader {
         }
     }
 
-    protected KeyWrapper getSavedPublicKey() throws Exception {
-        KeyWrapper keyWrapper = null;
+    protected PublicKey getSavedPublicKey() throws Exception {
         if (config.getPublicKeySignatureVerifier() != null && !config.getPublicKeySignatureVerifier().trim().equals("")) {
-            PublicKey publicKey = PemUtils.decodePublicKey(config.getPublicKeySignatureVerifier());
-            keyWrapper = new KeyWrapper();
-            String presetKeyId = config.getPublicKeySignatureVerifierKeyId();
-            String kid = (presetKeyId == null || presetKeyId.trim().isEmpty())
-              ? KeyUtils.createKeyId(publicKey)
-              : presetKeyId;
-            keyWrapper.setKid(kid);
-            keyWrapper.setType(KeyType.RSA);
-            keyWrapper.setAlgorithm(Algorithm.RS256);
-            keyWrapper.setUse(KeyUse.SIG);
-            keyWrapper.setVerifyKey(publicKey);
+            return PemUtils.decodePublicKey(config.getPublicKeySignatureVerifier());
         } else {
             logger.warnf("No public key saved on identityProvider %s", config.getAlias());
+            return null;
         }
-        return keyWrapper;
     }
 }

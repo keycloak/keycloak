@@ -17,7 +17,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static org.keycloak.testsuite.util.UIUtils.clickLink;
 import static org.keycloak.testsuite.util.UIUtils.getTextFromElement;
 import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
 
@@ -91,7 +90,7 @@ public class RoleCompositeRoles extends Form {
                 select.selectByVisibleText(role);
             }
         }
-        clickLink(button);
+        button.click();
     }
 
     public void addRealmRole(String role) {
@@ -111,7 +110,7 @@ public class RoleCompositeRoles extends Form {
                 }
             }
             waitUntilElement(button).is().enabled();
-            clickLink(button);
+            button.click();
         }
     }
 
@@ -145,14 +144,14 @@ public class RoleCompositeRoles extends Form {
         waitUntilElement(By.id("available")).is().present();
         for (String role : roles) {
             availableRealmRolesSelect.selectByVisibleText(role);
-            clickLink(addSelectedRealmRolesButton);
+            addSelectedRealmRolesButton.click();
         }
     }
 
     public void removeAssignedRole(String role) {
         waitUntilElement(By.id("assigned")).is().present();
         assignedRealmRolesSelect.selectByVisibleText(role);
-        clickLink(removeSelectedRealmRolesButton);
+        removeSelectedRealmRolesButton.click();
     }
 
     public boolean isAssignedRole(String role) {
@@ -174,14 +173,14 @@ public class RoleCompositeRoles extends Form {
         waitUntilElement(By.id("available-client")).is().present();
         for (String role : roles) {
             availableClientRolesSelect.selectByVisibleText(role);
-            clickLink(addSelectedClientRolesButton);
+            addSelectedClientRolesButton.click();
         }
     }
 
     public void removeAssignedClientRole(String client) {
         waitUntilElement(By.id("assigned-client")).is().present();
         assignedClientRolesSelect.selectByVisibleText(client);
-        clickLink(removeSelectedClientRolesButton);
+        removeSelectedClientRolesButton.click();
     }
 
 }

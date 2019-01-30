@@ -74,7 +74,7 @@ public abstract class AbstractCrossDCTest extends AbstractTestRealmKeycloakTest 
     }
 
     private void enableOnlyFirstNodeInFirstDc() {
-        log.debug("--DC: Enable only first node in first datacenter @ load balancer");
+        log.debug("--DC: Enable only first node in first datacenter");
         this.loadBalancerCtrl.disableAllBackendNodes();
         if (!CrossDCTestEnricher.getBackendNode(DC.FIRST, 0).isStarted()) {
             throw new IllegalStateException("--DC: Trying to enable not started node on load-balancer");

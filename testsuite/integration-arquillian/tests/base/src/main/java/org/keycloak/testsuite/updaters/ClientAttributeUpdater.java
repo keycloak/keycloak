@@ -3,14 +3,10 @@ package org.keycloak.testsuite.updaters;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientsResource;
-import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.representations.idm.ClientScopeRepresentation;
+import java.io.Closeable;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 import static org.hamcrest.Matchers.hasSize;
 import static org.junit.Assert.assertThat;
 
@@ -18,40 +14,29 @@ import static org.junit.Assert.assertThat;
  *
  * @author hmlnarik
  */
-public class ClientAttributeUpdater extends ServerResourceUpdater<ClientAttributeUpdater, ClientResource, ClientRepresentation> {
+public class ClientAttributeUpdater {
 
-    private final RealmResource realmResource;
+    private final ClientResource clientResource;
+
+    private final ClientRepresentation rep;
+    private final ClientRepresentation origRep;
 
     public static ClientAttributeUpdater forClient(Keycloak adminClient, String realm, String clientId) {
-        RealmResource realmRes = adminClient.realm(realm);
-        ClientsResource clients = realmRes.clients();
+        ClientsResource clients = adminClient.realm(realm).clients();
         List<ClientRepresentation> foundClients = clients.findByClientId(clientId);
         assertThat(foundClients, hasSize(1));
         ClientResource clientRes = clients.get(foundClients.get(0).getId());
         
-        return new ClientAttributeUpdater(clientRes, realmRes);
+        return new ClientAttributeUpdater(clientRes);
     }
 
-    private ClientAttributeUpdater(ClientResource resource, RealmResource realmResource) {
-        super(resource, resource::toRepresentation, resource::update);
+    public ClientAttributeUpdater(ClientResource clientResource) {
+        this.clientResource = clientResource;
+        this.origRep = clientResource.toRepresentation();
+        this.rep = clientResource.toRepresentation();
         if (this.rep.getAttributes() == null) {
             this.rep.setAttributes(new HashMap<>());
         }
-        this.realmResource = realmResource;
-    }
-
-    @Override
-    protected void performUpdate(ClientRepresentation from, ClientRepresentation to) {
-        super.performUpdate(from, to);
-        updateViaAddRemove(from.getDefaultClientScopes(), to.getDefaultClientScopes(), this::getConversionForScopeNameToId, resource::addDefaultClientScope, resource::removeDefaultClientScope);
-        updateViaAddRemove(from.getOptionalClientScopes(), to.getOptionalClientScopes(), this::getConversionForScopeNameToId, resource::addOptionalClientScope, resource::removeOptionalClientScope);
-    }
-
-    private Function<String, String> getConversionForScopeNameToId() {
-        Map<String, String> scopeNameToIdMap = realmResource.clientScopes().findAll().stream()
-          .collect(Collectors.toMap(ClientScopeRepresentation::getName, ClientScopeRepresentation::getId));
-
-        return scopeNameToIdMap::get;
     }
 
     public ClientAttributeUpdater setClientId(String clientId) {
@@ -79,31 +64,9 @@ public class ClientAttributeUpdater extends ServerResourceUpdater<ClientAttribut
         return this;
     }
 
-    public ClientAttributeUpdater setFullScopeAllowed(Boolean fullScopeAllowed) {
-        rep.setFullScopeAllowed(fullScopeAllowed);
-        return this;
-    }
+    public Closeable update() {
+        clientResource.update(rep);
 
-    public ClientAttributeUpdater setDefaultClientScopes(List<String> defaultClientScopes) {
-        rep.setDefaultClientScopes(defaultClientScopes);
-        return this;
-    }
-
-    public ClientAttributeUpdater setOptionalClientScopes(List<String> optionalClientScopes) {
-        rep.setOptionalClientScopes(optionalClientScopes);
-        return this;
-    }
-
-    public RoleScopeUpdater realmRoleScope() {
-        return new RoleScopeUpdater(resource.getScopeMappings().realmLevel());
-    }
-
-    public RoleScopeUpdater clientRoleScope(String clientUUID) {
-        return new RoleScopeUpdater(resource.getScopeMappings().clientLevel(clientUUID));
-    }
-
-    public ClientAttributeUpdater setAdminUrl(String adminUrl) {
-        rep.setAdminUrl(adminUrl);
-        return this;
+        return () -> clientResource.update(origRep);
     }
 }

@@ -73,7 +73,7 @@
     
     <xsl:variable name="newDriverDefinition">
         <xsl:if test="$driver != 'h2'">
-            <driver name="{$driver}" module="test.jdbc.{$driver}"/>
+            <driver name="{$driver}" module="com.{$driver}"/>
         </xsl:if>
     </xsl:variable>
     

@@ -22,17 +22,22 @@ import org.hibernate.annotations.Nationalized;
 import javax.persistence.Access;
 import javax.persistence.AccessType;
 import javax.persistence.CascadeType;
+import javax.persistence.CollectionTable;
 import javax.persistence.Column;
+import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
+import javax.persistence.MapKeyColumn;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -61,8 +66,11 @@ public class ClientScopeEntity {
     private String protocol;
 
 
-    @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "clientScope")
-    protected Collection<ClientScopeAttributeEntity> attributes = new ArrayList<>();
+    @ElementCollection
+    @MapKeyColumn(name="NAME")
+    @Column(name="VALUE", length = 2048)
+    @CollectionTable(name="CLIENT_SCOPE_ATTRIBUTES", joinColumns={ @JoinColumn(name="SCOPE_ID") })
+    protected Map<String, String> attributes = new HashMap<String, String>();
 
     public RealmEntity getRealm() {
         return realm;
@@ -112,11 +120,11 @@ public class ClientScopeEntity {
         this.protocol = protocol;
     }
 
-    public Collection<ClientScopeAttributeEntity> getAttributes() {
+    public Map<String, String> getAttributes() {
         return attributes;
     }
 
-    public void setAttributes(Collection<ClientScopeAttributeEntity> attributes) {
+    public void setAttributes(Map<String, String> attributes) {
         this.attributes = attributes;
     }
 

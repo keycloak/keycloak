@@ -17,19 +17,12 @@
 package org.keycloak.authentication.authenticators.challenge;
 
 import org.keycloak.authentication.AuthenticationFlowContext;
-import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.Authenticator;
-import org.keycloak.authentication.authenticators.browser.AbstractUsernameFormAuthenticator;
-import org.keycloak.events.Details;
-import org.keycloak.events.Errors;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OTPPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.services.messages.Messages;
-
-import javax.ws.rs.core.Response;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -51,7 +44,7 @@ public class BasicAuthOTPAuthenticator extends BasicAuthAuthenticator implements
         password = password.substring(0, password.length() - otpLength);
 
         if (checkUsernameAndPassword(context, username, password)) {
-            String otp = challenge[1].substring(password.length(), challenge[1].length());
+            String otp = password.substring(password.length() - otpLength);
 
             if (checkOtp(context, otp)) {
                 return true;
@@ -62,17 +55,8 @@ public class BasicAuthOTPAuthenticator extends BasicAuthAuthenticator implements
     }
 
     private boolean checkOtp(AuthenticationFlowContext context, String otp) {
-        boolean valid = context.getSession().userCredentialManager().isValid(context.getRealm(), context.getUser(),
+        return context.getSession().userCredentialManager().isValid(context.getRealm(), context.getUser(),
                 UserCredentialModel.otp(context.getRealm().getOTPPolicy().getType(), otp));
-
-        if (!valid) {
-            context.getEvent().user(context.getUser()).error(Errors.INVALID_USER_CREDENTIALS);
-            Response challengeResponse = challenge(context, Messages.INVALID_TOTP);
-            context.failureChallenge(AuthenticationFlowError.INVALID_CREDENTIALS, challengeResponse);
-            return false;
-        }
-
-        return true;
     }
 
     @Override

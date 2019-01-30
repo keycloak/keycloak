@@ -35,7 +35,7 @@ public interface TestOIDCEndpointsApplicationResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/generate-keys")
-    Map<String, String> generateKeys(@QueryParam("jwaAlgorithm") String jwaAlgorithm);
+    Map<String, String> generateKeys();
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)

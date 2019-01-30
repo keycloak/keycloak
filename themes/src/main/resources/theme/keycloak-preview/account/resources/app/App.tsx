@@ -17,12 +17,9 @@
 import * as React from 'react';
 import {Route, Link} from 'react-router-dom';
 
-import * as moment from 'moment';
-
 import {KeycloakService} from './keycloak-service/keycloak.service';
 
 import {Logout} from './widgets/Logout';
-import {Msg} from './widgets/Msg';
 import {AccountPage} from './content/account-page/AccountPage';
 import {ApplicationsPage} from './content/applications-page/ApplicationsPage';
 import {PasswordPage} from './content/password-page/PasswordPage';
@@ -30,8 +27,6 @@ import {ExtensionPages} from './content/extensions/ExtensionPages';
 
 declare function toggleReact():void;
 declare function isWelcomePage(): boolean;
-
-declare const locale: string;
 
 export interface AppProps {};
 
@@ -52,15 +47,12 @@ export class App extends React.Component<AppProps> {
             this.kcSvc.login();
         }
         
-        // globally set up locale for date formatting
-        moment.locale(locale);
-        
         return (
             <span>
                 <nav>
-                    <Link to="/app/account" className="btn btn-primary btn-lg btn-sign" type="button"><Msg msgKey="account"/></Link>
-                    <Link to="/app/applications" className="btn btn-primary btn-lg btn-sign" type="button"><Msg msgKey="applications"/></Link>
-                    <Link to="/app/password" className="btn btn-primary btn-lg btn-sign" type="button"><Msg msgKey="password"/></Link>
+                    <Link to="/app/account" className="btn btn-primary btn-lg btn-sign" type="button">Account</Link>
+                    <Link to="/app/applications" className="btn btn-primary btn-lg btn-sign" type="button">Applications</Link>
+                    <Link to="/app/password" className="btn btn-primary btn-lg btn-sign" type="button">Password</Link>
                     {ExtensionPages.Links}
                     <Logout/>
                     <Route path='/app/account' component={AccountPage}/>

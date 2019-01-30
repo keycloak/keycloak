@@ -56,6 +56,8 @@ import org.keycloak.util.JsonSerialization;
  */
 public class PolicyResourceService {
 
+    @Context
+    private KeycloakSession session;
     private final Policy policy;
     protected final ResourceServer resourceServer;
     protected final AuthorizationProvider authorization;
@@ -258,7 +260,7 @@ public class PolicyResourceService {
 
     private void audit(AbstractPolicyRepresentation policy, OperationType operation) {
         if (authorization.getRealm().isAdminEventsEnabled()) {
-            adminEvent.operation(operation).resourcePath(authorization.getKeycloakSession().getContext().getUri()).representation(policy).success();
+            adminEvent.operation(operation).resourcePath(session.getContext().getUri()).representation(policy).success();
         }
     }
 }

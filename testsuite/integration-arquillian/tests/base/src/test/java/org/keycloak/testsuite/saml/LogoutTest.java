@@ -16,6 +16,7 @@
  */
 package org.keycloak.testsuite.saml;
 
+import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.broker.saml.SAMLIdentityProviderConfig;
 import org.keycloak.broker.saml.SAMLIdentityProviderFactory;
@@ -360,9 +361,10 @@ public class LogoutTest extends AbstractSamlTest {
     @Test
     public void testLogoutPropagatesToSamlIdentityProvider() throws IOException {
         final RealmResource realm = adminClient.realm(REALM_NAME);
+        final ClientsResource clients = realm.clients();
 
         try (
-          Closeable sales = ClientAttributeUpdater.forClient(adminClient, REALM_NAME, SAML_CLIENT_ID_SALES_POST)
+          Closeable sales = new ClientAttributeUpdater(clients.get(salesRep.getId()))
           .setFrontchannelLogout(true)
           .removeAttribute(SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_POST_ATTRIBUTE)
           .setAttribute(SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_REDIRECT_ATTRIBUTE, "http://url")

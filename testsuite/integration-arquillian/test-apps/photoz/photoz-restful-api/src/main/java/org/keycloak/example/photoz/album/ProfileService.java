@@ -17,8 +17,8 @@
  */
 package org.keycloak.example.photoz.album;
 
-import org.keycloak.example.photoz.CustomDatabase;
-
+import javax.inject.Inject;
+import javax.persistence.EntityManager;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -36,13 +36,14 @@ public class ProfileService {
 
     private static final String PROFILE_VIEW = "profile:view";
 
-    private CustomDatabase customDatabase = CustomDatabase.create();
+    @Inject
+    private EntityManager entityManager;
 
     @GET
     @Produces("application/json")
     public Response view(@Context HttpServletRequest request) {
         Principal userPrincipal = request.getUserPrincipal();
-        List albums = this.customDatabase.findByUserId(userPrincipal.getName());
+        List albums = this.entityManager.createQuery("from Album where userId = '" + userPrincipal.getName() + "'").getResultList();
         return Response.ok(new Profile(userPrincipal.getName(), albums.size())).build();
     }
 

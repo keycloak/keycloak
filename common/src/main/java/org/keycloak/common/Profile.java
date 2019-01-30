@@ -47,10 +47,9 @@ public class Profile {
         ADMIN_FINE_GRAINED_AUTHZ(Type.PREVIEW),
         DOCKER(Type.DISABLED_BY_DEFAULT),
         IMPERSONATION(Type.DEFAULT),
-        OPENSHIFT_INTEGRATION(Type.PREVIEW),
+        OPENSHIFT_INTEGRATION(Type.DEFAULT),
         SCRIPTS(Type.PREVIEW),
-        TOKEN_EXCHANGE(Type.PREVIEW),
-        AUTHZ_DROOLS_POLICY(Type.PREVIEW);
+        TOKEN_EXCHANGE(Type.PREVIEW);
 
         private Type type;
 
@@ -106,7 +105,7 @@ public class Profile {
                     break;
                 case PREVIEW:
                     previewFeatures.add(f);
-                    if ((enabled == null || !enabled) && !profile.equals(ProfileValue.PREVIEW)) {
+                    if (enabled == null || !enabled) {
                         disabledFeatures.add(f);
                     } else {
                         logger.info("Preview feature enabled: " + f.name().toLowerCase());

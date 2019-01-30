@@ -31,6 +31,7 @@ import org.jboss.arquillian.core.spi.Validate;
 import org.jboss.arquillian.core.api.annotation.Inject;
 import org.jboss.arquillian.core.api.annotation.Observes;
 import org.jboss.arquillian.test.spi.event.suite.After;
+import org.jboss.arquillian.test.spi.event.suite.AfterSuite;
 import org.jboss.arquillian.test.spi.event.suite.Before;
 import org.jboss.logging.Logger;
 import static org.junit.Assert.assertThat;
@@ -43,12 +44,7 @@ import org.keycloak.testsuite.crossdc.DC;
 import org.keycloak.testsuite.crossdc.ServerSetup;
 import java.util.Collection;
 import java.util.function.Consumer;
-import java.util.stream.Stream;
-import org.jboss.arquillian.container.spi.Container;
-import org.jboss.arquillian.container.spi.event.StopContainer;
 import org.jboss.arquillian.container.spi.event.StopSuiteContainers;
-import org.jboss.arquillian.core.api.Event;
-import org.jboss.arquillian.test.spi.event.suite.AfterSuite;
 
 /**
  *
@@ -61,9 +57,6 @@ public class CrossDCTestEnricher {
 
     @Inject
     private static Instance<ContainerController> containerController;
-
-    @Inject
-    private Event<StopContainer> stopContainer;
 
     private static final Map<ContainerInfo, Keycloak> backendAdminClients = new HashMap<>();
     private static final Map<ContainerInfo, KeycloakTestingClient> backendTestingClients = new HashMap<>();
@@ -83,7 +76,7 @@ public class CrossDCTestEnricher {
         if (annotation == null) {
             Class<?> annotatedClass = getNearestSuperclassWithAnnotation(event.getTestClass().getJavaClass(), InitialDcState.class);
 
-            annotation = annotatedClass == null ? null : annotatedClass.getAnnotation(InitialDcState.class);
+            annotation = annotatedClass.getAnnotation(InitialDcState.class);
         }
 
         if (annotation == null) {
@@ -93,28 +86,6 @@ public class CrossDCTestEnricher {
 
         ServerSetup cacheServers = annotation.cacheServers();
         ServerSetup authServers = annotation.authServers();
-
-        // Stop auth servers that otherwise could be hang connecting to a cache server stopped next
-        switch (authServers) {
-            case ALL_NODES_IN_EVERY_DC:
-                break;
-            case FIRST_NODE_IN_EVERY_DC:
-                DC.validDcsStream().forEach((DC dc) -> stopAuthServerBackendNode(dc, 1));
-                break;
-
-            case FIRST_NODE_IN_FIRST_DC:
-                stopAuthServerBackendNode(DC.FIRST, 1);
-                forAllBackendNodesInDc(DC.SECOND, CrossDCTestEnricher::stopAuthServerBackendNode);
-                break;
-
-            case ALL_NODES_IN_FIRST_DC_FIRST_NODE_IN_SECOND_DC:
-                stopAuthServerBackendNode(DC.SECOND, 1);
-                break;
-
-            case ALL_NODES_IN_FIRST_DC_NO_NODES_IN_SECOND_DC:
-                forAllBackendNodesInDc(DC.SECOND, CrossDCTestEnricher::stopAuthServerBackendNode);
-                break;
-        }
 
         switch (cacheServers) {
             case ALL_NODES_IN_EVERY_DC:
@@ -136,19 +107,24 @@ public class CrossDCTestEnricher {
                 break;
             case FIRST_NODE_IN_EVERY_DC:
                 DC.validDcsStream().forEach((DC dc) -> startAuthServerBackendNode(dc, 0));
+                DC.validDcsStream().forEach((DC dc) -> stopAuthServerBackendNode(dc, 1));
                 break;
 
             case FIRST_NODE_IN_FIRST_DC:
                 startAuthServerBackendNode(DC.FIRST, 0);
+                stopAuthServerBackendNode(DC.FIRST, 1);
+                forAllBackendNodesInDc(DC.SECOND, CrossDCTestEnricher::stopAuthServerBackendNode);
                 break;
 
             case ALL_NODES_IN_FIRST_DC_FIRST_NODE_IN_SECOND_DC:
                 forAllBackendNodesInDc(DC.FIRST, CrossDCTestEnricher::startAuthServerBackendNode);
                 startAuthServerBackendNode(DC.SECOND, 0);
+                stopAuthServerBackendNode(DC.SECOND, 1);
                 break;
 
             case ALL_NODES_IN_FIRST_DC_NO_NODES_IN_SECOND_DC:
                 forAllBackendNodesInDc(DC.FIRST, CrossDCTestEnricher::startAuthServerBackendNode);
+                forAllBackendNodesInDc(DC.SECOND, CrossDCTestEnricher::stopAuthServerBackendNode);
                 break;
         }
         
@@ -161,30 +137,11 @@ public class CrossDCTestEnricher {
         restorePeriodicTasks();
     }
 
-    public void afterSuite(@Observes(precedence = 4) AfterSuite event) {
-        if (!suiteContext.isAuthServerCrossDc()) return;
-
-        // Unfortunately, in AfterSuite, containerController context is already cleaned so stopAuthServerBackendNode()
-        // and stopCacheServer cannot be used. On the other hand, Arquillian by default does not guarantee that cache
-        // servers are terminated only after auth servers were, so the termination has to be done in this enricher.
-
-        forAllBackendNodesStream()
-          .map(ContainerInfo::getArquillianContainer)
-          .map(StopContainer::new)
-          .forEach(stopContainer::fire);
-
-        DC.validDcsStream()
-          .map(CrossDCTestEnricher::getCacheServer)
-          .map(ContainerInfo::getArquillianContainer)
-          .map(StopContainer::new)
-          .forEach(stopContainer::fire);
-    }
-
     public void stopSuiteContainers(@Observes(precedence = 4) StopSuiteContainers event) {
         if (!suiteContext.isAuthServerCrossDc()) return;
 
-        forAllBackendNodes(CrossDCTestEnricher::stopAuthServerBackendNode);
         DC.validDcsStream().forEach(CrossDCTestEnricher::stopCacheServer);
+        forAllBackendNodes(CrossDCTestEnricher::stopAuthServerBackendNode);
     }
 
     private static void createRESTClientsForNode(ContainerInfo node) {
@@ -300,13 +257,9 @@ public class CrossDCTestEnricher {
     }
 
     public static void forAllBackendNodes(Consumer<ContainerInfo> functionOnContainerInfo) {
-        forAllBackendNodesStream()
+        suiteContext.getDcAuthServerBackendsInfo().stream()
+          .flatMap(Collection::stream)
           .forEach(functionOnContainerInfo);
-    }
-
-    public static Stream<ContainerInfo> forAllBackendNodesStream() {
-        return suiteContext.getDcAuthServerBackendsInfo().stream()
-          .flatMap(Collection::stream);
     }
 
     public static void forAllBackendNodesInDc(DC dc, Consumer<ContainerInfo> functionOnContainerInfo) {

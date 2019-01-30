@@ -20,7 +20,6 @@ package org.keycloak.protocol.oidc;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.ClientAuthenticator;
 import org.keycloak.authentication.ClientAuthenticatorFactory;
-import org.keycloak.crypto.ClientSignatureVerifierProvider;
 import org.keycloak.crypto.SignatureProvider;
 import org.keycloak.jose.jws.Algorithm;
 import org.keycloak.models.ClientScopeModel;
@@ -46,6 +45,8 @@ import java.util.List;
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class OIDCWellKnownProvider implements WellKnownProvider {
+
+    public static final List<String> DEFAULT_REQUEST_OBJECT_SIGNING_ALG_VALUES_SUPPORTED  = list(Algorithm.none.toString(), Algorithm.RS256.toString());
 
     public static final List<String> DEFAULT_GRANT_TYPES_SUPPORTED = list(OAuth2Constants.AUTHORIZATION_CODE, OAuth2Constants.IMPLICIT, OAuth2Constants.REFRESH_TOKEN, OAuth2Constants.PASSWORD, OAuth2Constants.CLIENT_CREDENTIALS);
 
@@ -91,7 +92,7 @@ public class OIDCWellKnownProvider implements WellKnownProvider {
 
         config.setIdTokenSigningAlgValuesSupported(getSupportedSigningAlgorithms(false));
         config.setUserInfoSigningAlgValuesSupported(getSupportedSigningAlgorithms(true));
-        config.setRequestObjectSigningAlgValuesSupported(getSupportedClientSigningAlgorithms(true));
+        config.setRequestObjectSigningAlgValuesSupported(DEFAULT_REQUEST_OBJECT_SIGNING_ALG_VALUES_SUPPORTED);
         config.setResponseTypesSupported(DEFAULT_RESPONSE_TYPES_SUPPORTED);
         config.setSubjectTypesSupported(DEFAULT_SUBJECT_TYPES_SUPPORTED);
         config.setResponseModesSupported(DEFAULT_RESPONSE_MODES_SUPPORTED);
@@ -162,14 +163,4 @@ public class OIDCWellKnownProvider implements WellKnownProvider {
         return result;
     }
 
-    private List<String> getSupportedClientSigningAlgorithms(boolean includeNone) {
-        List<String> result = new LinkedList<>();
-        for (ProviderFactory s : session.getKeycloakSessionFactory().getProviderFactories(ClientSignatureVerifierProvider.class)) {
-            result.add(s.getId());
-        }
-        if (includeNone) {
-            result.add("none");
-        }
-        return result;
-    }
 }

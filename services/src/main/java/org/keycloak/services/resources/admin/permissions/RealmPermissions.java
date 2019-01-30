@@ -77,7 +77,7 @@ class RealmPermissions implements RealmPermissionEvaluator {
 
     @Override
     public boolean canListRealms() {
-        return canViewRealm() || root.hasOneAdminRole(AdminRoles.QUERY_REALMS);
+        return root.hasAnyAdminRole();
     }
 
     @Override

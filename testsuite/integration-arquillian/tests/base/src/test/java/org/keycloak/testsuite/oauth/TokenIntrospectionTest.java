@@ -19,7 +19,6 @@ package org.keycloak.testsuite.oauth;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.TextNode;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
@@ -122,10 +121,7 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
         assertEquals(jsonNode.get("sub").asText(), rep.getSubject());
 
         List<String> audiences = new ArrayList<>();
-
-        // We have single audience in the token - hence it is simple string
-        assertTrue(jsonNode.get("aud") instanceof TextNode);
-        audiences.add(jsonNode.get("aud").asText());
+        jsonNode.get("aud").forEach(childNode -> audiences.add(childNode.asText()));
         Assert.assertNames(audiences, rep.getAudience());
 
         assertEquals(jsonNode.get("iss").asText(), rep.getIssuer());

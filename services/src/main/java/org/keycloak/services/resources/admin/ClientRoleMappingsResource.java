@@ -31,6 +31,7 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.services.ErrorResponseException;
+import org.keycloak.services.ForbiddenException;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -97,7 +98,7 @@ public class ClientRoleMappingsResource {
         Set<RoleModel> mappings = user.getClientRoleMappings(client);
         List<RoleRepresentation> mapRep = new ArrayList<RoleRepresentation>();
         for (RoleModel roleModel : mappings) {
-            mapRep.add(ModelToRepresentation.toBriefRepresentation(roleModel));
+            mapRep.add(ModelToRepresentation.toRepresentation(roleModel));
         }
         return mapRep;
     }
@@ -120,7 +121,7 @@ public class ClientRoleMappingsResource {
         Set<RoleModel> roles = client.getRoles();
         List<RoleRepresentation> mapRep = new ArrayList<RoleRepresentation>();
         for (RoleModel roleModel : roles) {
-            if (user.hasRole(roleModel)) mapRep.add(ModelToRepresentation.toBriefRepresentation(roleModel));
+            if (user.hasRole(roleModel)) mapRep.add(ModelToRepresentation.toRepresentation(roleModel));
         }
         return mapRep;
     }
@@ -153,7 +154,7 @@ public class ClientRoleMappingsResource {
 
         List<RoleRepresentation> mappings = new ArrayList<RoleRepresentation>();
         for (RoleModel roleModel : roles) {
-            mappings.add(ModelToRepresentation.toBriefRepresentation(roleModel));
+            mappings.add(ModelToRepresentation.toRepresentation(roleModel));
         }
         return mappings;
     }
@@ -201,7 +202,7 @@ public class ClientRoleMappingsResource {
                 }
                 auth.roles().requireMapRole(roleModel);
                 user.deleteRoleMapping(roleModel);
-                roles.add(ModelToRepresentation.toBriefRepresentation(roleModel));
+                roles.add(ModelToRepresentation.toRepresentation(roleModel));
             }
 
         } else {

@@ -106,7 +106,6 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
 
         if (supportsAuthzService) {
             expectedClientIds.add("authz-servlet");
-            expectedClientIds.add("client-with-template");
         }
 
         assertNames(migrationRealm.clients().findAll(), expectedClientIds.toArray(new String[expectedClientIds.size()]));
@@ -212,7 +211,6 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
     protected void testMigrationTo4_0_0() {
         testRealmDefaultClientScopes(this.masterRealm);
         testRealmDefaultClientScopes(this.migrationRealm);
-        testClientDefaultClientScopes(this.migrationRealm);
         testOfflineScopeAddedToClient();
     }
 
@@ -479,25 +477,24 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
     }
 
     protected void testOfflineTokenLogin() throws Exception {
-        log.info("test login with old offline token");
-        String oldOfflineToken = suiteContext.getMigrationContext().loadOfflineToken();
-        Assert.assertNotNull(oldOfflineToken);
+        if (isImportMigrationMode()) {
+            log.info("Skip offline token login test in the 'import' migrationMode");
+        } else {
+            log.info("test login with old offline token");
+            String oldOfflineToken = suiteContext.getMigrationContext().loadOfflineToken();
+            Assert.assertNotNull(oldOfflineToken);
 
-        oauth.realm(MIGRATION);
-        oauth.clientId("migration-test-client");
-        OAuthClient.AccessTokenResponse response = oauth.doRefreshTokenRequest(oldOfflineToken, "b2c07929-69e3-44c6-8d7f-76939000b3e4");
-        AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
-        assertEquals("migration-test-user", accessToken.getPreferredUsername());
+            oauth.realm(MIGRATION);
+            oauth.clientId("migration-test-client");
+            OAuthClient.AccessTokenResponse response = oauth.doRefreshTokenRequest(oldOfflineToken, "b2c07929-69e3-44c6-8d7f-76939000b3e4");
+            AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
+            assertEquals("migration-test-user", accessToken.getPreferredUsername());
+        }
     }
 
     private void testRealmDefaultClientScopes(RealmResource realm) {
         log.info("Testing default client scopes created in realm: " + realm.toRepresentation().getRealm());
         ExportImportUtil.testRealmDefaultClientScopes(realm);
-    }
-
-    private void testClientDefaultClientScopes(RealmResource realm) {
-        log.info("Testing default client scopes transferred from client scope in realm: " + realm.toRepresentation().getRealm());
-        ExportImportUtil.testClientDefaultClientScopes(realm);
     }
 
     private void testOfflineScopeAddedToClient() {
@@ -555,6 +552,15 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
                 priority += 10;
             }
         }
+    }
+
+    protected String getMigrationMode() {
+        return System.getProperty("migration.mode");
+    }
+
+    protected boolean isImportMigrationMode() {
+        String mode = getMigrationMode();
+        return "import".equals(mode);
     }
 
     protected void testMigrationTo2_x() throws Exception {

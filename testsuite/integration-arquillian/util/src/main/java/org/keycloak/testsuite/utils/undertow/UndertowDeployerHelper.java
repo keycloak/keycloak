@@ -25,6 +25,8 @@ import io.undertow.server.handlers.resource.ResourceManager;
 import io.undertow.server.handlers.resource.URLResource;
 import io.undertow.servlet.api.DeploymentInfo;
 import io.undertow.servlet.api.ServletInfo;
+import org.apache.jasper.deploy.JspPropertyGroup;
+import org.apache.jasper.deploy.TagLibraryInfo;
 import org.arquillian.undertow.UndertowContainerConfiguration;
 import org.jboss.logging.Logger;
 import org.jboss.shrinkwrap.api.Archive;
@@ -56,10 +58,6 @@ public class UndertowDeployerHelper {
     private static final Logger log = Logger.getLogger(UndertowDeployerHelper.class);
 
     public DeploymentInfo getDeploymentInfo(UndertowContainerConfiguration config, WebArchive archive) {
-        return getDeploymentInfo(config, archive, null);
-    }
-
-    public DeploymentInfo getDeploymentInfo(UndertowContainerConfiguration config, WebArchive archive, DeploymentInfo di) {
         String archiveName = archive.getName();
 
         String appName = archive.getName().substring(0, archive.getName().lastIndexOf('.'));
@@ -71,11 +69,9 @@ public class UndertowDeployerHelper {
         String appContextUrl = "http://" + config.getBindAddress() + ":" + config.getBindHttpPort() + contextPath;
 
         try {
-            if (di == null) {
-                di = new DeploymentInfo();
-            }
+            DeploymentInfo di = new DeploymentInfo();
 
-            UndertowWarClassLoader classLoader = new UndertowWarClassLoader(Thread.currentThread().getContextClassLoader(), archive);
+            UndertowWarClassLoader classLoader = new UndertowWarClassLoader(UndertowDeployerHelper.class.getClassLoader(), archive);
             di.setClassLoader(classLoader);
 
             di.setDeploymentName(archiveName);
@@ -93,7 +89,7 @@ public class UndertowDeployerHelper {
 
             di.addWelcomePages("index.html", "index.jsp");
 
-            JspServletBuilder.setupDeployment(di, new HashMap<>(), new HashMap<>(), new HackInstanceManager());
+            JspServletBuilder.setupDeployment(di, new HashMap<String, JspPropertyGroup>(), new HashMap<String, TagLibraryInfo>(), new HackInstanceManager());
 
             addAnnotatedServlets(di, archive);
 

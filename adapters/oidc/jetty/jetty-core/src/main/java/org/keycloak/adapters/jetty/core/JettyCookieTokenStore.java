@@ -85,7 +85,7 @@ public class JettyCookieTokenStore implements AdapterTokenStore {
 
     @Override
     public void logout() {
-        CookieTokenStore.removeCookie(deployment, facade);
+        CookieTokenStore.removeCookie(facade);
 
     }
 
@@ -113,7 +113,7 @@ public class JettyCookieTokenStore implements AdapterTokenStore {
         if (success && session.isActive()) return principal;
 
         log.debugf("Cleanup and expire cookie for user %s after failed refresh", principal.getName());
-        CookieTokenStore.removeCookie(deployment, facade);
+        CookieTokenStore.removeCookie(facade);
         return null;
     }
 

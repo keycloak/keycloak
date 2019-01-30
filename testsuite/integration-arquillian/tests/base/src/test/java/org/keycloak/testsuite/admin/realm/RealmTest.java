@@ -364,8 +364,6 @@ public class RealmTest extends AbstractAdminTest {
         RealmRepresentation rep = realm.toRepresentation();
         rep.setSsoSessionIdleTimeout(123);
         rep.setSsoSessionMaxLifespan(12);
-        rep.setSsoSessionIdleTimeoutRememberMe(33);
-        rep.setSsoSessionMaxLifespanRememberMe(34);
         rep.setAccessCodeLifespanLogin(1234);
         rep.setActionTokenGeneratedByAdminLifespan(2345);
         rep.setActionTokenGeneratedByUserLifespan(3456);
@@ -381,8 +379,6 @@ public class RealmTest extends AbstractAdminTest {
 
         assertEquals(123, rep.getSsoSessionIdleTimeout().intValue());
         assertEquals(12, rep.getSsoSessionMaxLifespan().intValue());
-        assertEquals(33, rep.getSsoSessionIdleTimeoutRememberMe().intValue());
-        assertEquals(34, rep.getSsoSessionMaxLifespanRememberMe().intValue());
         assertEquals(1234, rep.getAccessCodeLifespanLogin().intValue());
         assertEquals(2345, rep.getActionTokenGeneratedByAdminLifespan().intValue());
         assertEquals(3456, rep.getActionTokenGeneratedByUserLifespan().intValue());
@@ -533,9 +529,8 @@ public class RealmTest extends AbstractAdminTest {
 
         ClientRepresentation converted = realm.convertClientDescription(description);
         assertEquals("loadbalancer-9.siroe.com", converted.getClientId());
-        assertEquals(2, converted.getRedirectUris().size());
+        assertEquals(1, converted.getRedirectUris().size());
         assertEquals("https://LoadBalancer-9.siroe.com:3443/federation/Consumer/metaAlias/sp", converted.getRedirectUris().get(0));
-        assertEquals("https://LoadBalancer-9.siroe.com:3443/federation/Consumer/metaAlias/sp", converted.getRedirectUris().get(1));
     }
 
     public static void assertRealm(RealmRepresentation realm, RealmRepresentation storedRealm) {
@@ -576,8 +571,6 @@ public class RealmTest extends AbstractAdminTest {
         if (realm.getAccessTokenLifespanForImplicitFlow() != null) assertEquals(realm.getAccessTokenLifespanForImplicitFlow(), storedRealm.getAccessTokenLifespanForImplicitFlow());
         if (realm.getSsoSessionIdleTimeout() != null) assertEquals(realm.getSsoSessionIdleTimeout(), storedRealm.getSsoSessionIdleTimeout());
         if (realm.getSsoSessionMaxLifespan() != null) assertEquals(realm.getSsoSessionMaxLifespan(), storedRealm.getSsoSessionMaxLifespan());
-        if (realm.getSsoSessionIdleTimeoutRememberMe() != null) Assert.assertEquals(realm.getSsoSessionIdleTimeoutRememberMe(), storedRealm.getSsoSessionIdleTimeoutRememberMe());
-        if (realm.getSsoSessionMaxLifespanRememberMe() != null) Assert.assertEquals(realm.getSsoSessionMaxLifespanRememberMe(), storedRealm.getSsoSessionMaxLifespanRememberMe());
         if (realm.getRequiredCredentials() != null) {
             assertNotNull(storedRealm.getRequiredCredentials());
             for (String cred : realm.getRequiredCredentials()) {

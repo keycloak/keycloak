@@ -89,19 +89,23 @@ public class DefaultEvaluation implements Evaluation {
     @Override
     public void grant() {
         if (policy != null && Logic.NEGATIVE.equals(policy.getLogic())) {
-            setEffect(Effect.DENY);
+            this.effect = Effect.DENY;
         } else {
-            setEffect(Effect.PERMIT);
+            this.effect = Effect.PERMIT;
         }
+
+        this.decision.onDecision(this);
     }
 
     @Override
     public void deny() {
         if (policy != null && Logic.NEGATIVE.equals(policy.getLogic())) {
-            setEffect(Effect.PERMIT);
+            this.effect = Effect.PERMIT;
         } else {
-            setEffect(Effect.DENY);
+            this.effect = Effect.DENY;
         }
+
+        this.decision.onDecision(this);
     }
 
     @Override
@@ -270,7 +274,10 @@ public class DefaultEvaluation implements Evaluation {
     }
 
     public void setEffect(Effect effect) {
-        this.effect = effect;
-        this.decision.onDecision(this);
+        if (Effect.PERMIT.equals(effect)) {
+            grant();
+        } else {
+            deny();
+        }
     }
 }

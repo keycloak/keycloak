@@ -244,8 +244,11 @@ public class LogoutTest extends AbstractTestRealmKeycloakTest {
     // KEYCLOAK-5982
     @Test
     public void testLogoutWhenAccountClientRenamed() throws IOException {
+        // Rename client "account"
+        ClientResource accountClient = ApiUtil.findClientByClientId(adminClient.realm("test"), Constants.ACCOUNT_MANAGEMENT_CLIENT_ID);
+
         // Temporarily rename client "account" . Revert it back after the test
-        try (Closeable accountClientUpdater = ClientAttributeUpdater.forClient(adminClient, "test", Constants.ACCOUNT_MANAGEMENT_CLIENT_ID)
+        try (Closeable accountClientUpdater = new ClientAttributeUpdater(accountClient)
                 .setClientId("account-changed")
                 .update()) {
 

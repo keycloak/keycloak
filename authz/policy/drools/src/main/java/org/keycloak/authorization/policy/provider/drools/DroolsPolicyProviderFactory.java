@@ -11,19 +11,18 @@ import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.policy.provider.PolicyProvider;
 import org.keycloak.authorization.policy.provider.PolicyProviderAdminService;
 import org.keycloak.authorization.policy.provider.PolicyProviderFactory;
-import org.keycloak.common.Profile;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.RulePolicyRepresentation;
 import org.kie.api.KieServices;
+import org.kie.api.KieServices.Factory;
 import org.kie.api.runtime.KieContainer;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-public class DroolsPolicyProviderFactory implements PolicyProviderFactory<RulePolicyRepresentation>, EnvironmentDependentProviderFactory {
+public class DroolsPolicyProviderFactory implements PolicyProviderFactory<RulePolicyRepresentation> {
 
     private KieServices ks;
     private final Map<String, DroolsPolicy> containers = Collections.synchronizedMap(new HashMap<>());
@@ -124,6 +123,7 @@ public class DroolsPolicyProviderFactory implements PolicyProviderFactory<RulePo
     }
 
     private void updateConfig(Policy policy, RulePolicyRepresentation representation) {
+
         policy.putConfig("mavenArtifactGroupId", representation.getArtifactGroupId());
         policy.putConfig("mavenArtifactId", representation.getArtifactId());
         policy.putConfig("mavenArtifactVersion", representation.getArtifactVersion());
@@ -131,6 +131,7 @@ public class DroolsPolicyProviderFactory implements PolicyProviderFactory<RulePo
         policy.putConfig("scannerPeriodUnit", representation.getScannerPeriodUnit());
         policy.putConfig("sessionName", representation.getSessionName());
         policy.putConfig("moduleName", representation.getModuleName());
+
     }
 
     void update(Policy policy) {
@@ -148,10 +149,5 @@ public class DroolsPolicyProviderFactory implements PolicyProviderFactory<RulePo
 
     KieContainer getKieContainer(String groupId, String artifactId, String version) {
         return this.ks.newKieContainer(this.ks.newReleaseId(groupId, artifactId, version));
-    }
-
-    @Override
-    public boolean isSupported() {
-        return Profile.isFeatureEnabled(Profile.Feature.AUTHZ_DROOLS_POLICY);
     }
 }

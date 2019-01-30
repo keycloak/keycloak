@@ -11,8 +11,6 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -27,12 +25,7 @@ public class ConcurrencyLockingTest {
     public void testLocking() throws Exception {
         final DefaultCacheManager cacheManager = getVersionedCacheManager();
         Cache<String, String> cache = cacheManager.getCache("COUNTER_CACHE");
-
-        Map<String, String> map = new HashMap<>();
-        map.put("key1", "val1");
-        map.put("key2", "val2");
-        cache.putAll(map);
-
+        cache.put("key", "init");
         ExecutorService executor = Executors.newSingleThreadExecutor();
         executor.execute(new Runnable() {
             @Override

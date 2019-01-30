@@ -24,7 +24,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian</artifactId>
-        <version>4.8.2.Final-SNAPSHOT</version>
+        <version>4.6.0.Final-SNAPSHOT</version>
     </parent>
 
     <packaging>pom</packaging>
@@ -69,7 +69,6 @@
         <auth.server.adapter.impl.class>org.jboss.as.arquillian.container.managed.ManagedDeployableContainer</auth.server.adapter.impl.class>
         <auth.server.truststore>&#36;{jboss.home.dir}/standalone/configuration/keycloak.truststore</auth.server.truststore>
         <auth.server.truststore.password>secret</auth.server.truststore.password>
-        <auth.server.jvm.args.extra/>
 
         <auth.server.jboss.artifactId>integration-arquillian-servers-auth-server-${auth.server}</auth.server.jboss.artifactId>
         <auth.server.jboss.skip.unpack>${auth.server.undertow}</auth.server.jboss.skip.unpack>
@@ -104,7 +103,6 @@
         <!-- Cluster tests are failing with -Xmx512 for insufficient physical memory -->
         <app.server.memory.settings>-Xms64m -Xmx384m -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=256m</app.server.memory.settings>
         <app.server.ssl.required>false</app.server.ssl.required>
-        <app.server.jvm.args.extra/>
 
         <cache.server>undefined</cache.server>
         <cache.server.container>cache-server-${cache.server}</cache.server.container>
@@ -143,6 +141,7 @@
             -Djava.security.krb5.conf=${project.build.directory}/dependency/kerberos/test-krb5.conf
         </adapter.test.props>
 
+        <migration.import.properties/>
         <examples.home>${project.build.directory}/examples</examples.home>
         <examples.basedir>${keycloak-parent.basedir}/examples</examples.basedir> <!--keycloak/examples directory-->
         <examples.version.suffix>${project.version}</examples.version.suffix>
@@ -434,7 +433,6 @@
                             <auth.server.jboss.jvm.debug.args>${auth.server.jboss.jvm.debug.args}</auth.server.jboss.jvm.debug.args>
                             <auth.server.truststore>${auth.server.truststore}</auth.server.truststore>
                             <auth.server.truststore.password>${auth.server.truststore.password}</auth.server.truststore.password>
-                            <auth.server.jvm.args.extra>${auth.server.jvm.args.extra}</auth.server.jvm.args.extra>
 
                             <auth.server.profile>${auth.server.profile}</auth.server.profile>
                             <auth.server.feature>${auth.server.feature}</auth.server.feature>
@@ -455,7 +453,6 @@
                             <app.server.2.port.offset>${app.server.2.port.offset}</app.server.2.port.offset>
                             <app.server.2.management.port>${app.server.2.management.port}</app.server.2.management.port>
                             <app.server.jboss.jvm.debug.args>${app.server.jboss.jvm.debug.args}</app.server.jboss.jvm.debug.args>
-                            <app.server.jvm.args.extra>${app.server.jvm.args.extra}</app.server.jvm.args.extra>
 
                             <frontend.console.output>${frontend.console.output}</frontend.console.output>
                             <backends.console.output>${backend.console.output}</backends.console.output>
@@ -466,6 +463,7 @@
                             <examples.home>${examples.home}</examples.home>
                             <examples.version.suffix>${examples.version.suffix}</examples.version.suffix>
 
+                            <migration.import.properties>${migration.import.properties}</migration.import.properties>
                             <kie.maven.settings>${kie.maven.settings}</kie.maven.settings>
 
                             <testsuite.constants>${testsuite.constants}</testsuite.constants>
@@ -499,6 +497,8 @@
                             <appium.fullReset>${appium.fullReset}</appium.fullReset>
 
                             <project.version>${project.version}</project.version>
+                            <migration.project.version>${migration.project.version}</migration.project.version>
+                            <migration.product.version>${migration.product.version}</migration.product.version>
 
                             <client.certificate.ca.path>${client.certificate.ca.path}</client.certificate.ca.path>
                             <client.certificate.keystore>${client.certificate.keystore}</client.certificate.keystore>
@@ -1345,7 +1345,7 @@
                                 <systemPropertyVariables>
                                     <migrated.auth.server.version>${migrated.auth.server.version}</migrated.auth.server.version>
                                     <auth.server.jboss.migration>true</auth.server.jboss.migration>
-                                    <keycloak.migration.home>${containers.home}/auth-server-migration</keycloak.migration.home>
+                                    <keycloak.migration.home>${containers.home}/keycloak-${migrated.auth.server.version}</keycloak.migration.home>
                                     <migration.import.props.previous>${migration.import.props.previous}</migration.import.props.previous>
                                 </systemPropertyVariables>
                             </configuration>
@@ -1356,14 +1356,84 @@
         </profile>
 
         <profile>
-            <id>migration-prod</id>
+            <id>migration-import</id>
             <activation>
                 <property>
-                    <name>migration.import.file.name</name>
+                    <name>migration.mode</name>
+                    <value>import</value>
                 </property>
             </activation>
             <properties>
-                <migration.import.file>target/test-classes/migration-test/${migration.import.file.name}</migration.import.file>
+                <migration.import.file>target/test-classes/migration-test/migration-realm-${migrated.auth.server.version}.json</migration.import.file>
+                <migration.import.properties>
+                    -Dkeycloak.migration.action=import
+                    -Dkeycloak.migration.provider=singleFile
+                    -Dkeycloak.migration.file=${migration.import.file}
+                    -Dkeycloak.migration.strategy=OVERWRITE_EXISTING
+                </migration.import.properties>
+                <skip.add.user.json>true</skip.add.user.json>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-enforcer-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <goals>
+                                    <goal>enforce</goal>
+                                </goals>
+                                <configuration>
+                                    <rules>
+                                        <requireProperty>
+                                            <property>migrated.auth.server.version</property>
+                                        </requireProperty>
+                                    </rules>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <systemPropertyVariables>
+                                <migrated.auth.server.version>${migrated.auth.server.version}</migrated.auth.server.version>
+                                <migration.import.properties>${migration.import.properties}</migration.import.properties>
+                            </systemPropertyVariables>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>    
+
+        <profile>
+            <id>migration-productized</id>
+            <activation>
+                <property>
+                    <name>migrated.version.import.file.suffix</name>
+                </property>
+            </activation>
+            <properties>
+                <migration.import.file>target/test-classes/migration-test/migration-realm-${migrated.version.import.file.suffix}.json</migration.import.file>
+            </properties>
+        </profile>
+
+        <profile>
+            <id>no-account</id>
+            <properties>
+                <exclude.account>**/account/**/*Test.java</exclude.account>
+            </properties>
+        </profile>
+        <profile>
+            <id>no-client</id>
+            <properties>
+                <exclude.client>**/client/**/*Test.java</exclude.client>
+            </properties>
+        </profile>
+        <profile>
+            <id>no-base</id>
+            <properties>
+                <exclude.account>**/account/**/*Test.java</exclude.account>
+                <exclude.client>**/client/**/*Test.java</exclude.client>
             </properties>
         </profile>
 
@@ -1483,7 +1553,7 @@
                 <dependency>
                     <groupId>org.apache.ant</groupId>
                     <artifactId>ant</artifactId>
-                    <version>1.8.4</version>
+                    <version>1.9.2</version>
                     <type>jar</type>
                 </dependency>
 
@@ -1550,10 +1620,6 @@
                 <dependency>
                     <groupId>org.keycloak</groupId>
                     <artifactId>keycloak-authz-client</artifactId>
-                </dependency>
-                <dependency>
-                    <groupId>org.keycloak</groupId>
-                    <artifactId>keycloak-wildfly-adduser</artifactId>
                 </dependency>
 
                 <!--UNDERTOW-->
@@ -1694,20 +1760,6 @@
                 <auth.server.https.port>8443</auth.server.https.port>
                 <auth.server.management.port>9990</auth.server.management.port>
                 <auth.server.management.port.jmx>9999</auth.server.management.port.jmx>
-            </properties>
-        </profile>
-
-        <profile>
-            <id>java11-auth-server</id> <!-- a temporary workaround; TODO remove this once Java 11 is officially supported by Arquillian -->
-            <properties>
-                <auth.server.jvm.args.extra>--add-exports=java.base/sun.nio.ch=ALL-UNNAMED --add-exports=jdk.unsupported/sun.misc=ALL-UNNAMED --add-exports=jdk.unsupported/sun.reflect=ALL-UNNAMED --add-modules=java.se</auth.server.jvm.args.extra>
-            </properties>
-        </profile>
-
-        <profile>
-            <id>java11-app-server</id> <!-- a temporary workaround; TODO remove this once Java 11 is officially supported by Arquillian -->
-            <properties>
-                <app.server.jvm.args.extra>--add-exports=java.base/sun.nio.ch=ALL-UNNAMED --add-exports=jdk.unsupported/sun.misc=ALL-UNNAMED --add-exports=jdk.unsupported/sun.reflect=ALL-UNNAMED --add-modules=java.se</app.server.jvm.args.extra>
             </properties>
         </profile>
 

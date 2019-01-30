@@ -78,7 +78,7 @@ public class Keycloak {
                 .connectionPoolSize(10);
 
         if (customJacksonProvider != null) {
-            clientBuilder.register(customJacksonProvider, 100);
+            clientBuilder.register(customJacksonProvider);
         }
 
         return new Keycloak(serverUrl, realm, username, password, clientId, clientSecret, PASSWORD, clientBuilder.build(), null);

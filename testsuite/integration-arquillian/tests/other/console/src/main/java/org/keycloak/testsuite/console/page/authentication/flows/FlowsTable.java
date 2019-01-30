@@ -29,10 +29,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.keycloak.testsuite.util.UIUtils.clickLink;
 import static org.keycloak.testsuite.util.UIUtils.getTextFromElement;
 import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
-import static org.openqa.selenium.By.xpath;
 
 /**
  *
@@ -86,25 +84,25 @@ public class FlowsTable {
     }
 
     public void clickLevelUpButton(String rowLabel) {
-        clickLink(getRowByLabelText(rowLabel).findElement(By.xpath(".//button[@data-ng-click='raisePriority(execution)']")));
+        getRowByLabelText(rowLabel).findElement(By.xpath(".//button[@data-ng-click='raisePriority(execution)']")).click();
     }
 
     public void clickLevelDownButton(String rowLabel) {
-        clickLink(getRowByLabelText(rowLabel).findElement(xpath(".//button[@data-ng-click='lowerPriority(execution)']")));
+        getRowByLabelText(rowLabel).findElement(By.xpath(".//button[@data-ng-click='lowerPriority(execution)']")).click();
     }
 
     public void changeRequirement(String rowLabel, RequirementOption option) {
-        clickLink(getRowByLabelText(rowLabel).findElement(xpath(".//input[@value = '" + option + "']")));
+        getRowByLabelText(rowLabel).findElement(By.xpath(".//input[@value = '" + option + "']")).click();
     }
 
     public void performAction(String rowLabel, Action action) {
 
-        clickLink(getRowByLabelText(rowLabel).findElement(
-                xpath(".//div[@class = 'dropdown']/a[@class='dropdown-toggle ng-binding']")));
+        getRowByLabelText(rowLabel).findElement(
+                By.xpath(".//div[@class = 'dropdown']/a[@class='dropdown-toggle ng-binding']")).click();
         WebElement currentAction = getRowByLabelText(rowLabel).findElement(
-                xpath("//div[@class = 'dropdown open']/ul[@class = 'dropdown-menu']/li/" +
-                        "a[@class='ng-binding' and text()='" + action.getName() + "']"));
-        clickLink(currentAction);
+                    By.xpath("//div[@class = 'dropdown open']/ul[@class = 'dropdown-menu']/li/" +
+                            "a[@class='ng-binding' and text()='" + action.getName() + "']"));
+        currentAction.click();
     }
 
     // Returns all aliases of flows (first "Auth Type" column in table) including the names of execution flows

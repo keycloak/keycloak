@@ -202,10 +202,6 @@ public class SendUsernameServlet extends HttpServlet {
         for (String attr : principal.getAttributes("hardcoded-attribute")) {
             output += attr + ",";
         }
-        output += "<br /> group-attribute: ";
-        for (String attr : principal.getAttributes("group-attribute")) {
-            output += attr + ",";
-        }
 
         return output;
     }

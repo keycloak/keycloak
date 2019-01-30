@@ -22,8 +22,6 @@ public interface SignatureSignerContext {
 
     String getAlgorithm();
 
-    String getHashAlgorithm();
-
     byte[] sign(byte[] data) throws SignatureException;
 
 }

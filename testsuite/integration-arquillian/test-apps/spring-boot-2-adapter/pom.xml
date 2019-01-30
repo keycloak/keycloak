@@ -132,28 +132,83 @@
 		</profile>
 
 		<profile>
-			<id>jetty-version-94</id>
+			<id>jetty-version-81</id>
 			<activation>
 				<property>
 					<name>jetty.adapter.version</name>
-					<value>94</value>
+					<value>81</value>
 				</property>
 			</activation>
 			<properties>
-				<jetty.version>9.4.14.v20181114</jetty.version>
+				<jetty.version>8.1.22.v20160922</jetty.version>
+			</properties>
+			<dependencies>
+                <dependency>
+                    <groupId>org.keycloak</groupId>
+                    <artifactId>keycloak-jetty81-adapter</artifactId>
+                    <version>${keycloak.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-starter-jetty</artifactId>
+                    <exclusions>
+                        <exclusion>
+                            <groupId>org.eclipse.jetty.websocket</groupId>
+                            <artifactId>*</artifactId>
+                        </exclusion>
+                    </exclusions>
+                </dependency>
+			</dependencies>
+		</profile>
+
+		<profile>
+			<id>jetty-version-92</id>
+			<activation>
+				<property>
+					<name>jetty.adapter.version</name>
+					<value>92</value>
+				</property>
+			</activation>
+			<properties>
+				<jetty.version>9.2.23.v20171218</jetty.version>
 			</properties>
 			<dependencies>
 				<dependency>
 					<groupId>org.keycloak</groupId>
-					<artifactId>keycloak-jetty94-adapter</artifactId>
+					<artifactId>keycloak-jetty92-adapter</artifactId>
 					<version>${keycloak.version}</version>
 				</dependency>
-				<dependency>
-					<groupId>org.springframework.boot</groupId>
-					<artifactId>spring-boot-starter-jetty</artifactId>
-				</dependency>
+                <dependency>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-starter-jetty</artifactId>
+                </dependency>
 			</dependencies>
 		</profile>
+
+		<profile>
+			<id>jetty-version-93</id>
+			<activation>
+				<property>
+					<name>jetty.adapter.version</name>
+					<value>93</value>
+				</property>
+			</activation>
+			<properties>
+				<jetty.version>9.3.22.v20171030</jetty.version>
+			</properties>
+            <dependencies>
+				<dependency>
+					<groupId>org.keycloak</groupId>
+					<artifactId>keycloak-jetty93-adapter</artifactId>
+					<version>${keycloak.version}</version>
+				</dependency>
+                <dependency>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-starter-jetty</artifactId>
+                </dependency>
+			</dependencies>
+		</profile>
+
 	</profiles>
 
 
@@ -162,41 +217,6 @@
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
-			</plugin>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-antrun-plugin</artifactId>
-				<version>1.8</version>
-				<executions>
-					<execution>
-						<id>copy-source-file</id>
-						<phase>process-sources</phase>
-						<configuration>
-							<tasks>
-								<copy file="../spring-boot-adapter/src/main/java/org/keycloak/AdminController.java"
-									  tofile="src/main/java/org/keycloak/AdminController.java"/>
-								<copy file="../spring-boot-adapter/src/main/java/org/keycloak/SpringBootAdapterApplication.java"
-									  tofile="src/main/java/org/keycloak/SpringBootAdapterApplication.java"/>
-							</tasks>
-						</configuration>
-						<goals>
-							<goal>run</goal>
-						</goals>
-					</execution>
-					<execution>
-						<id>remove-source-file</id>
-						<phase>process-classes</phase>
-						<configuration>
-							<tasks>
-								<delete file="src/main/java/org/keycloak/AdminController.java"/>
-								<delete file="src/main/java/org/keycloak/SpringBootAdapterApplication.java"/>
-							</tasks>
-						</configuration>
-						<goals>
-							<goal>run</goal>
-						</goals>
-					</execution>
-				</executions>
 			</plugin>
 		</plugins>
 	</build>

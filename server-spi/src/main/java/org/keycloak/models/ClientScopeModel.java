@@ -92,4 +92,6 @@ public interface ClientScopeModel extends ProtocolMapperContainerModel, ScopeCon
     default void setIncludeInTokenScope(boolean includeInTokenScope) {
         setAttribute(INCLUDE_IN_TOKEN_SCOPE, String.valueOf(includeInTokenScope));
     }
+
+
 }

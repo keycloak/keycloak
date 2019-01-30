@@ -18,8 +18,6 @@
 package org.keycloak.testsuite.rest;
 
 import org.keycloak.Config.Scope;
-import org.keycloak.crypto.Algorithm;
-import org.keycloak.crypto.KeyType;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.representations.adapters.action.LogoutAction;
@@ -72,8 +70,6 @@ public class TestApplicationResourceProviderFactory implements RealmResourceProv
         private KeyPair signingKeyPair;
         private String oidcRequest;
         private List<String> sectorIdentifierRedirectUris;
-        private String signingKeyType = KeyType.RSA;
-        private String signingKeyAlgorithm = Algorithm.RS256;
 
         public KeyPair getSigningKeyPair() {
             return signingKeyPair;
@@ -97,22 +93,6 @@ public class TestApplicationResourceProviderFactory implements RealmResourceProv
 
         public void setSectorIdentifierRedirectUris(List<String> sectorIdentifierRedirectUris) {
             this.sectorIdentifierRedirectUris = sectorIdentifierRedirectUris;
-        }
-
-        public String getSigningKeyType() {
-            return signingKeyType;
-        }
-
-        public void setSigningKeyType(String signingKeyType) {
-            this.signingKeyType = signingKeyType;
-        }
-
-        public String getSigningKeyAlgorithm() {
-            return signingKeyAlgorithm;
-        }
-
-        public void setSigningKeyAlgorithm(String signingKeyAlgorithm) {
-            this.signingKeyAlgorithm = signingKeyAlgorithm;
         }
     }
 }

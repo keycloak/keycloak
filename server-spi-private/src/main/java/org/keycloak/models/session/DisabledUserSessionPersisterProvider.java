@@ -26,7 +26,6 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
@@ -76,6 +75,11 @@ public class DisabledUserSessionPersisterProvider implements UserSessionPersiste
     }
 
     @Override
+    public void updateUserSession(UserSessionModel userSession, boolean offline) {
+
+    }
+
+    @Override
     public void removeUserSession(String userSessionId, boolean offline) {
 
     }
@@ -101,17 +105,17 @@ public class DisabledUserSessionPersisterProvider implements UserSessionPersiste
     }
 
     @Override
-    public void updateLastSessionRefreshes(RealmModel realm, int lastSessionRefresh, Collection<String> userSessionIds, boolean offline) {
+    public void clearDetachedUserSessions() {
 
     }
 
     @Override
-    public void removeExpired(RealmModel realm) {
+    public void updateAllTimestamps(int time) {
 
     }
 
     @Override
-    public List<UserSessionModel> loadUserSessions(int firstResult, int maxResults, boolean offline, int lastCreatedOn, String lastUserSessionId) {
+    public List<UserSessionModel> loadUserSessions(int firstResult, int maxResults, boolean offline) {
         return Collections.emptyList();
     }
 

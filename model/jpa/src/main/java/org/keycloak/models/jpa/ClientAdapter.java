@@ -21,17 +21,20 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
+import org.keycloak.models.ModelException;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
-import org.keycloak.models.jpa.entities.ClientAttributeEntity;
 import org.keycloak.models.jpa.entities.ClientEntity;
 import org.keycloak.models.jpa.entities.ClientScopeClientMappingEntity;
+import org.keycloak.models.jpa.entities.ClientScopeEntity;
+import org.keycloak.models.jpa.entities.ClientScopeRoleMappingEntity;
 import org.keycloak.models.jpa.entities.ProtocolMapperEntity;
 import org.keycloak.models.jpa.entities.RoleEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
 
 import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
@@ -41,7 +44,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -300,45 +302,25 @@ public class ClientAdapter implements ClientModel, JpaModel<ClientEntity> {
 
     @Override
     public void setAttribute(String name, String value) {
-        for (ClientAttributeEntity attr : entity.getAttributes()) {
-            if (attr.getName().equals(name)) {
-                attr.setValue(value);
-                return;
-            }
-        }
+        entity.getAttributes().put(name, value);
 
-        ClientAttributeEntity attr = new ClientAttributeEntity();
-        attr.setName(name);
-        attr.setValue(value);
-        attr.setClient(entity);
-        em.persist(attr);
-        entity.getAttributes().add(attr);
     }
 
     @Override
     public void removeAttribute(String name) {
-        Iterator<ClientAttributeEntity> it = entity.getAttributes().iterator();
-        while (it.hasNext()) {
-            ClientAttributeEntity attr = it.next();
-            if (attr.getName().equals(name)) {
-                it.remove();
-                em.remove(attr);
-            }
-        }
+        entity.getAttributes().remove(name);
     }
 
     @Override
     public String getAttribute(String name) {
-        return getAttributes().get(name);
+        return entity.getAttributes().get(name);
     }
 
     @Override
     public Map<String, String> getAttributes() {
-        Map<String, String> attrs = new HashMap<>();
-        for (ClientAttributeEntity attr : entity.getAttributes()) {
-            attrs.put(attr.getName(), attr.getValue());
-        }
-        return attrs;
+        Map<String, String> copy = new HashMap<>();
+        copy.putAll(entity.getAttributes());
+        return copy;
     }
 
     @Override

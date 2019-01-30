@@ -44,7 +44,6 @@ import org.keycloak.adapters.spi.AuthenticationError;
 import org.keycloak.adapters.spi.HttpFacade;
 import org.keycloak.adapters.spi.LogoutError;
 import org.keycloak.adapters.spi.SessionIdMapper;
-import org.keycloak.adapters.spi.SessionIdMapperUpdater;
 import org.wildfly.security.auth.callback.AnonymousAuthorizationCallback;
 import org.wildfly.security.auth.callback.AuthenticationCompleteCallback;
 import org.wildfly.security.auth.callback.SecurityIdentityCallback;
@@ -69,16 +68,16 @@ class ElytronHttpFacade implements HttpFacade {
     private boolean restored;
     private SamlSession samlSession;
 
-    public ElytronHttpFacade(HttpServerRequest request, SessionIdMapper idMapper, SessionIdMapperUpdater idMapperUpdater, SamlDeploymentContext deploymentContext, CallbackHandler handler) {
+    public ElytronHttpFacade(HttpServerRequest request, SessionIdMapper idMapper, SamlDeploymentContext deploymentContext, CallbackHandler handler) {
         this.request = request;
         this.deploymentContext = deploymentContext;
         this.callbackHandler = handler;
         this.responseConsumer = response -> {};
-        this.sessionStore = createTokenStore(idMapper, idMapperUpdater);
+        this.sessionStore = createTokenStore(idMapper);
     }
 
-    private SamlSessionStore createTokenStore(SessionIdMapper idMapper, SessionIdMapperUpdater idMapperUpdater) {
-        return new ElytronSamlSessionStore(this, idMapper, idMapperUpdater, getDeployment());
+    private SamlSessionStore createTokenStore(SessionIdMapper idMapper) {
+        return new ElytronSamlSessionStore(this, idMapper, getDeployment());
     }
 
     void authenticationComplete(SamlSession samlSession) {

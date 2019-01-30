@@ -171,15 +171,6 @@
             "secret": "password"
         },
         {
-            "clientId": "customer-cookie-portal-root",
-            "enabled": true,
-            "baseUrl": "/",
-            "redirectUris": [
-                "http://localhost:8280/*"
-            ],
-            "secret": "password"
-        },
-        {
             "clientId": "customer-portal-js",
             "enabled": true,
             "publicClient": true,
@@ -267,16 +258,6 @@
             "baseUrl": "/session-portal",
             "redirectUris": [
                 "/session-portal/*"
-            ],
-            "secret": "password"
-        },
-        {
-            "clientId": "session-portal-distributable",
-            "enabled": true,
-            "adminUrl": "http://localhost:8580/session-portal-distributable",
-            "baseUrl": "http://localhost:8580/session-portal-distributable",
-            "redirectUris": [
-                "http://localhost:8580/session-portal-distributable/*"
             ],
             "secret": "password"
         },

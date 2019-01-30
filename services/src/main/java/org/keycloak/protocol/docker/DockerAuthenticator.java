@@ -37,11 +37,13 @@ public class DockerAuthenticator extends HttpBasicAuthenticator {
     }
 
     @Override
-    protected void userDisabledAction(AuthenticationFlowContext context, RealmModel realm, UserModel user, String eventError) {
+    protected void userDisabledAction(AuthenticationFlowContext context, RealmModel realm, UserModel user) {
         context.getEvent().user(user);
-        context.getEvent().error(eventError);
+        context.getEvent().error(Errors.USER_DISABLED);
+
         final DockerError error = new DockerError("UNAUTHORIZED","Invalid username or password.",
                 Collections.singletonList(new DockerAccess(context.getAuthenticationSession().getClientNote(DockerAuthV2Protocol.SCOPE_PARAM))));
+
         context.failure(AuthenticationFlowError.USER_DISABLED, new ResponseBuilderImpl()
                 .status(Response.Status.UNAUTHORIZED)
                 .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON)

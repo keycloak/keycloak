@@ -74,7 +74,7 @@ public class UndertowCookieTokenStore implements AdapterTokenStore {
             return true;
         } else {
             log.debug("Account was not active, removing cookie and returning false");
-            CookieTokenStore.removeCookie(deployment, facade);
+            CookieTokenStore.removeCookie(facade);
             return false;
         }
     }
@@ -90,7 +90,7 @@ public class UndertowCookieTokenStore implements AdapterTokenStore {
         KeycloakPrincipal<RefreshableKeycloakSecurityContext> principal = CookieTokenStore.getPrincipalFromCookie(deployment, facade, this);
         if (principal == null) return;
 
-        CookieTokenStore.removeCookie(deployment, facade);
+        CookieTokenStore.removeCookie(facade);
     }
 
     @Override

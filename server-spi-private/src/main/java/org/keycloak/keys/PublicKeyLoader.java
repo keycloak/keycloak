@@ -17,15 +17,14 @@
 
 package org.keycloak.keys;
 
+import java.security.PublicKey;
 import java.util.Map;
-
-import org.keycloak.crypto.KeyWrapper;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public interface PublicKeyLoader {
 
-    Map<String, KeyWrapper> loadKeys() throws Exception;
+    Map<String, PublicKey> loadKeys() throws Exception;
 
 }

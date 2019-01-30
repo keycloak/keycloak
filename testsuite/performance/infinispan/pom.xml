@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>performance</artifactId>
-        <version>4.8.2.Final-SNAPSHOT</version>
+        <version>4.6.0.Final-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
@@ -52,21 +52,33 @@
         
         <plugins>
             <plugin>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>unpack-infinispan-servers</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>unpack</goal>
+                        </goals>
+                        <configuration>
+                            <overWriteIfNewer>true</overWriteIfNewer>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>${infinispan.groupId}</groupId>
+                                    <artifactId>${infinispan.artifactId}</artifactId>
+                                    <version>${infinispan.version}</version>
+                                    <type>zip</type>
+                                    <outputDirectory>${project.build.directory}</outputDirectory>
+                                </artifactItem>
+                            </artifactItems>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-antrun-plugin</artifactId>
                 <executions>
-                    <execution>
-                        <id>download-infinispan</id>
-                        <phase>generate-resources</phase>
-                        <goals>
-                            <goal>run</goal>
-                        </goals>
-                        <configuration>
-                            <target>
-                                <ant antfile="infinispan.xml" target="download-infinispan" />
-                            </target>
-                        </configuration>
-                    </execution>
                     <execution>
                         <id>configure-infinispan</id>
                         <phase>process-resources</phase>
@@ -75,7 +87,7 @@
                         </goals>
                         <configuration>
                             <target>
-                                <ant antfile="infinispan.xml" target="configure-infinispan" />
+                                <ant antfile="configure.xml" target="configure-infinispan" />
                             </target>
                         </configuration>
                     </execution>
@@ -88,7 +100,7 @@
                         <configuration>
                             <skip>${skip.add.management.user}</skip>
                             <target>
-                                <ant antfile="infinispan.xml" target="add-management-user" />
+                                <ant antfile="configure.xml" target="add-management-user" />
                             </target>
                         </configuration>
                     </execution>
@@ -101,7 +113,7 @@
                         <configuration>
                             <skip>${skip.docker.config}</skip>
                             <target>
-                                <ant antfile="infinispan.xml" target="prepare-docker-config" />
+                                <ant antfile="configure.xml" target="prepare-docker-config" />
                             </target>
                         </configuration>
                     </execution>

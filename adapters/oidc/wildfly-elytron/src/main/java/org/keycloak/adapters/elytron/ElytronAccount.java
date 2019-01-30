@@ -24,8 +24,9 @@ import org.keycloak.adapters.AdapterTokenStore;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.OidcKeycloakAccount;
 import org.keycloak.adapters.RefreshableKeycloakSecurityContext;
+import org.wildfly.security.auth.server.SecurityIdentity;
 
-import java.io.Serializable;
+import javax.security.auth.callback.CallbackHandler;
 import java.security.Principal;
 import java.util.HashSet;
 import java.util.Set;
@@ -33,9 +34,8 @@ import java.util.Set;
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-public class ElytronAccount implements Serializable, OidcKeycloakAccount {
+public class ElytronAccount implements OidcKeycloakAccount {
 
-    private static final long serialVersionUID = -6775274346765339292L;
     protected static Logger log = Logger.getLogger(ElytronAccount.class);
 
     private final KeycloakPrincipal<RefreshableKeycloakSecurityContext> principal;

@@ -224,11 +224,7 @@ class ClientPermissions implements ClientPermissionEvaluator,  ClientPermissionM
 
     @Override
     public boolean canList() {
-        return canView() || root.hasOneAdminRole(AdminRoles.QUERY_CLIENTS);
-    }
-
-    public boolean canList(ClientModel clientModel) {
-        return canView(clientModel) || root.hasOneAdminRole(AdminRoles.QUERY_CLIENTS);
+        return root.hasAnyAdminRole();
     }
 
     @Override
@@ -240,7 +236,7 @@ class ClientPermissions implements ClientPermissionEvaluator,  ClientPermissionM
 
     @Override
     public boolean canListClientScopes() {
-        return canView() || root.hasOneAdminRole(AdminRoles.QUERY_CLIENTS);
+        return root.hasAnyAdminRole();
     }
 
     @Override

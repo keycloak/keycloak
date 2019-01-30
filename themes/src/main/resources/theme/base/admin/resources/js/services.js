@@ -1210,6 +1210,13 @@ module.factory('Client', function($resource) {
     });
 });
 
+module.factory('ClientScopeGenerateAudienceClientScope', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/client-scopes/generate-audience-client-scope?clientId=:clientId', {
+        realm : '@realm',
+        clientId : "@clientId"
+    });
+});
+
 module.factory('ClientScope', function($resource) {
     return $resource(authUrl + '/admin/realms/:realm/client-scopes/:clientScope', {
         realm : '@realm',
@@ -1943,20 +1950,5 @@ module.factory('LDAPMapperSync', function($resource) {
 });
 
 
-module.factory('UserGroupMembershipCount', function($resource) {
-    return $resource(authUrl + '/admin/realms/:realm/users/:userId/groups/count', {
-            realm : '@realm',
-            userId : '@userId'
-        },
-        {
-            query: {
-                isArray: false,
-                method: 'GET',
-                params: {},
-                transformResponse: function (data) {
-                    return angular.fromJson(data)
-                }
-            }
-        });
-});
+
 

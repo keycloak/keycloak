@@ -104,8 +104,11 @@ public class ClientEntity {
     @CollectionTable(name = "REDIRECT_URIS", joinColumns={ @JoinColumn(name="CLIENT_ID") })
     protected Set<String> redirectUris = new HashSet<String>();
 
-    @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "client")
-    protected Collection<ClientAttributeEntity> attributes = new ArrayList<>();
+    @ElementCollection
+    @MapKeyColumn(name="NAME")
+    @Column(name="VALUE", length = 4000)
+    @CollectionTable(name="CLIENT_ATTRIBUTES", joinColumns={ @JoinColumn(name="CLIENT_ID") })
+    protected Map<String, String> attributes = new HashMap<String, String>();
 
     @ElementCollection
     @MapKeyColumn(name="BINDING_NAME")
@@ -275,11 +278,11 @@ public class ClientEntity {
         this.fullScopeAllowed = fullScopeAllowed;
     }
 
-    public Collection<ClientAttributeEntity> getAttributes() {
+    public Map<String, String> getAttributes() {
         return attributes;
     }
 
-    public void setAttributes(Collection<ClientAttributeEntity> attributes) {
+    public void setAttributes(Map<String, String> attributes) {
         this.attributes = attributes;
     }
 

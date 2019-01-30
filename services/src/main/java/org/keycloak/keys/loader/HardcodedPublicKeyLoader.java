@@ -17,12 +17,9 @@
 package org.keycloak.keys.loader;
 
 import org.keycloak.common.util.PemUtils;
-import org.keycloak.crypto.Algorithm;
-import org.keycloak.crypto.KeyType;
-import org.keycloak.crypto.KeyUse;
-import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.keys.PublicKeyLoader;
 
+import java.security.PublicKey;
 import java.util.Collections;
 import java.util.Map;
 
@@ -41,20 +38,15 @@ public class HardcodedPublicKeyLoader implements PublicKeyLoader {
     }
 
     @Override
-    public Map<String, KeyWrapper> loadKeys() throws Exception {
+    public Map<String, PublicKey> loadKeys() throws Exception {
         return Collections.unmodifiableMap(Collections.singletonMap(kid, getSavedPublicKey()));
     }
 
-    protected KeyWrapper getSavedPublicKey() {
-        KeyWrapper keyWrapper = null;
+    protected PublicKey getSavedPublicKey() {
         if (pem != null && ! pem.trim().equals("")) {
-            keyWrapper = new KeyWrapper();
-            keyWrapper.setKid(kid);
-            keyWrapper.setType(KeyType.RSA);
-            keyWrapper.setAlgorithm(Algorithm.RS256);
-            keyWrapper.setUse(KeyUse.SIG);
-            keyWrapper.setVerifyKey(PemUtils.decodePublicKey(pem));
+            return PemUtils.decodePublicKey(pem);
+        } else {
+            return null;
         }
-        return keyWrapper;
     }
 }

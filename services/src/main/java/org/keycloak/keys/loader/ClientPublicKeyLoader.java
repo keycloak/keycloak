@@ -20,10 +20,6 @@ package org.keycloak.keys.loader;
 import org.jboss.logging.Logger;
 import org.keycloak.authentication.authenticators.client.JWTClientAuthenticator;
 import org.keycloak.common.util.KeyUtils;
-import org.keycloak.crypto.Algorithm;
-import org.keycloak.crypto.KeyType;
-import org.keycloak.crypto.KeyUse;
-import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.keys.PublicKeyLoader;
@@ -60,18 +56,21 @@ public class ClientPublicKeyLoader implements PublicKeyLoader {
 
 
     @Override
-    public Map<String, KeyWrapper> loadKeys() throws Exception {
+    public Map<String, PublicKey> loadKeys() throws Exception {
         OIDCAdvancedConfigWrapper config = OIDCAdvancedConfigWrapper.fromClientModel(client);
         if (config.isUseJwksUrl()) {
             String jwksUrl = config.getJwksUrl();
             jwksUrl = ResolveRelative.resolveRelativeUri(session.getContext().getUri().getRequestUri(), client.getRootUrl(), jwksUrl);
             JSONWebKeySet jwks = JWKSHttpUtils.sendJwksRequest(session, jwksUrl);
-            return JWKSUtils.getKeyWrappersForUse(jwks, JWK.Use.SIG);
+            return JWKSUtils.getKeysForUse(jwks, JWK.Use.SIG);
         } else {
             try {
                 CertificateRepresentation certInfo = CertificateInfoHelper.getCertificateFromClient(client, JWTClientAuthenticator.ATTR_PREFIX);
-                KeyWrapper publicKey = getSignatureValidationKey(certInfo);
-                return Collections.singletonMap(publicKey.getKid(), publicKey);
+                PublicKey publicKey = getSignatureValidationKey(certInfo);
+
+                // Check if we have kid in DB, generate otherwise
+                String kid = certInfo.getKid() != null ? certInfo.getKid() : KeyUtils.createKeyId(publicKey);
+                return Collections.singletonMap(kid, publicKey);
             } catch (ModelException me) {
                 logger.warnf(me, "Unable to retrieve publicKey for verify signature of client '%s' . Error details: %s", client.getClientId(), me.getMessage());
                 return Collections.emptyMap();
@@ -80,8 +79,7 @@ public class ClientPublicKeyLoader implements PublicKeyLoader {
         }
     }
 
-    private static KeyWrapper getSignatureValidationKey(CertificateRepresentation certInfo) throws ModelException {
-        KeyWrapper keyWrapper = new KeyWrapper();
+    private static PublicKey getSignatureValidationKey(CertificateRepresentation certInfo) throws ModelException {
         String encodedCertificate = certInfo.getCertificate();
         String encodedPublicKey = certInfo.getPublicKey();
 
@@ -93,25 +91,12 @@ public class ClientPublicKeyLoader implements PublicKeyLoader {
             throw new ModelException("Client has both publicKey and certificate configured");
         }
 
-        keyWrapper.setAlgorithm(Algorithm.RS256);
-        keyWrapper.setType(KeyType.RSA);
-        keyWrapper.setUse(KeyUse.SIG);
-        String kid = null;
         if (encodedCertificate != null) {
             X509Certificate clientCert = KeycloakModelUtils.getCertificate(encodedCertificate);
-            // Check if we have kid in DB, generate otherwise
-            kid = certInfo.getKid() != null ? certInfo.getKid() : KeyUtils.createKeyId(clientCert.getPublicKey());
-            keyWrapper.setKid(kid);
-            keyWrapper.setVerifyKey(clientCert.getPublicKey());
-            keyWrapper.setCertificate(clientCert);
+            return clientCert.getPublicKey();
         } else {
-            PublicKey publicKey = KeycloakModelUtils.getPublicKey(encodedPublicKey);
-            // Check if we have kid in DB, generate otherwise
-            kid = certInfo.getKid() != null ? certInfo.getKid() : KeyUtils.createKeyId(publicKey);
-            keyWrapper.setKid(kid);
-            keyWrapper.setVerifyKey(publicKey);
+            return KeycloakModelUtils.getPublicKey(encodedPublicKey);
         }
-        return keyWrapper;
     }
 
 

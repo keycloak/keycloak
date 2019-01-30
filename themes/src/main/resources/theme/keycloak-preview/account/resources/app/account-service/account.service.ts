@@ -17,13 +17,13 @@
  
 //import {KeycloakNotificationService} from '../notification/keycloak-notification.service';
 import {KeycloakService} from '../keycloak-service/keycloak.service';
-import Axios, {AxiosRequestConfig, AxiosResponse} from 'axios';
+import Axios, {AxiosRequestConfig, AxiosResponse, AxiosPromise} from 'axios';
 
 //import {NotificationType} from 'patternfly-ng/notification';*/
  
-type AxiosResolve = (response: AxiosResponse) => void;
-type ConfigResolve = (config: AxiosRequestConfig) => void;
-type ErrorReject = (error: Error) => void;
+type AxiosResolve = (AxiosResponse) => void;
+type ConfigResolve = (AxiosRequestConfig) => void;
+type ErrorReject = (Error) => void;
 
  /**
  *
@@ -38,22 +38,12 @@ export class AccountServiceClient {
     private constructor() {}
     
     public static get Instance(): AccountServiceClient  {
-        return AccountServiceClient.instance;
+        return this.instance;
     }
     
     public doGet(endpoint: string, 
                 config?: AxiosRequestConfig): Promise<AxiosResponse> {
         return this.doRequest(endpoint, {...config, method: 'get'});
-    }
-    
-    public doPut(endpoint: string, 
-                config?: AxiosRequestConfig): Promise<AxiosResponse> {
-        return this.doRequest(endpoint, {...config, method: 'put'});
-    }
-    
-    public doPost(endpoint: string, 
-                config?: AxiosRequestConfig): Promise<AxiosResponse> {
-        return this.doRequest(endpoint, {...config, method: 'post'});
     }
     
     public doRequest(endpoint: string, 
@@ -88,7 +78,7 @@ export class AccountServiceClient {
         console.log(error);
     }
     
-    private makeConfig(endpoint: string, config: AxiosRequestConfig = {}): Promise<AxiosRequestConfig> {
+    private makeConfig(endpoint: string, config?: AxiosRequestConfig): Promise<AxiosRequestConfig> {
         return new Promise( (resolve: ConfigResolve, reject: ErrorReject) => {
             this.kcSvc.getToken()
                 .then( (token: string) => {

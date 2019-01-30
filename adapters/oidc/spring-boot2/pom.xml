@@ -21,7 +21,7 @@
   <parent>
     <artifactId>keycloak-parent</artifactId>
     <groupId>org.keycloak</groupId>
-    <version>4.8.2.Final-SNAPSHOT</version>
+    <version>4.6.0.Final-SNAPSHOT</version>
     <relativePath>../../../pom.xml</relativePath>
   </parent>
   <modelVersion>4.0.0</modelVersion>
@@ -31,7 +31,7 @@
   <description/>
 
   <properties>
-    <spring-boot.version>2.0.5.RELEASE</spring-boot.version>
+    <spring-boot.version>2.0.3.RELEASE</spring-boot.version>
     <spring.version>5.0.2.RELEASE</spring.version>
     <mockito.version>1.9.5</mockito.version>
   </properties>
@@ -134,12 +134,6 @@
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-configuration-processor</artifactId>
-      <optional>true</optional>
-      <version>${spring-boot.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-autoconfigure-processor</artifactId>
       <optional>true</optional>
       <version>${spring-boot.version}</version>
     </dependency>

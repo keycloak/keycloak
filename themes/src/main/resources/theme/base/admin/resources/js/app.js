@@ -657,6 +657,9 @@ module.config([ '$routeProvider', function($routeProvider) {
                 },
                 user : function(UserLoader) {
                     return UserLoader();
+                },
+                groups : function(GroupListLoader) {
+                    return GroupListLoader();
                 }
             },
             controller : 'UserGroupMembershipCtrl'
@@ -785,24 +788,6 @@ module.config([ '$routeProvider', function($routeProvider) {
             },
             controller : 'RoleDetailCtrl'
         })
-        .when('/realms/:realm/roles/:role/role-attributes', {
-            templateUrl : resourceUrl + '/partials/role-attributes.html',
-            resolve : {
-                realm : function(RealmLoader) {
-                    return RealmLoader();
-                },
-                role : function(RoleLoader) {
-                    return RoleLoader();
-                },
-                roles : function(RoleListLoader) {
-                    return RoleListLoader();
-                },
-                clients : function(ClientListLoader) {
-                    return ClientListLoader();
-                }
-            },
-            controller : 'RoleDetailCtrl'
-        })
         .when('/realms/:realm/roles/:role/users', {
         	templateUrl : resourceUrl + '/partials/realm-role-users.html',
         	resolve : {
@@ -907,6 +892,9 @@ module.config([ '$routeProvider', function($routeProvider) {
             resolve : {
                 realm : function(RealmLoader) {
                     return RealmLoader();
+                },
+                groups : function(GroupListLoader) {
+                    return GroupListLoader();
                 }
             },
             controller : 'DefaultGroupsCtrl'
@@ -936,27 +924,6 @@ module.config([ '$routeProvider', function($routeProvider) {
         })
         .when('/realms/:realm/clients/:client/roles/:role', {
             templateUrl : resourceUrl + '/partials/client-role-detail.html',
-            resolve : {
-                realm : function(RealmLoader) {
-                    return RealmLoader();
-                },
-                client : function(ClientLoader) {
-                    return ClientLoader();
-                },
-                role : function(ClientRoleLoader) {
-                    return ClientRoleLoader();
-                },
-                roles : function(RoleListLoader) {
-                    return RoleListLoader();
-                },
-                clients : function(ClientListLoader) {
-                    return ClientListLoader();
-                }
-            },
-            controller : 'ClientRoleDetailCtrl'
-        })
-        .when('/realms/:realm/clients/:client/roles/:role/role-attributes', {
-            templateUrl : resourceUrl + '/partials/client-role-attributes.html',
             resolve : {
                 realm : function(RealmLoader) {
                     return RealmLoader();
@@ -1452,7 +1419,19 @@ module.config([ '$routeProvider', function($routeProvider) {
             },
             controller : 'ClientDetailCtrl'
         })
-        .when('/create/client-scope/:realm', {
+        .when('/create/client-scope/step-1/:realm', {
+            templateUrl : resourceUrl + '/partials/client-scope-create-step-1.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                clients : function(ClientListLoader) {
+                    return ClientListLoader();
+                }
+            },
+            controller : 'ClientScopeCreateStep1Ctrl'
+        })
+        .when('/create/client-scope/step-2/:realm', {
             templateUrl : resourceUrl + '/partials/client-scope-detail.html',
             resolve : {
                 realm : function(RealmLoader) {

@@ -21,7 +21,6 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import org.jboss.logging.Logger;
 
 /**
  * Maps external principal and SSO id to internal local http session id
@@ -30,9 +29,6 @@ import org.jboss.logging.Logger;
  * @version $Revision: 1 $
  */
 public class InMemorySessionIdMapper implements SessionIdMapper {
-
-    private static final Logger LOG = Logger.getLogger(InMemorySessionIdMapper.class.getName());
-
     ConcurrentHashMap<String, String> ssoToSession = new ConcurrentHashMap<>();
     ConcurrentHashMap<String, String> sessionToSso = new ConcurrentHashMap<>();
     ConcurrentHashMap<String, Set<String>> principalToSession = new ConcurrentHashMap<>();
@@ -67,8 +63,6 @@ public class InMemorySessionIdMapper implements SessionIdMapper {
 
     @Override
     public void map(String sso, String principal, String session) {
-        LOG.debugf("Adding mapping (%s, %s, %s)", sso, principal, session);
-
         if (sso != null) {
             ssoToSession.put(sso, session);
             sessionToSso.put(session, sso);
@@ -92,8 +86,6 @@ public class InMemorySessionIdMapper implements SessionIdMapper {
 
     @Override
     public void removeSession(String session) {
-        LOG.debugf("Removing session %s", session);
-
         String sso = sessionToSso.remove(session);
         if (sso != null) {
             ssoToSession.remove(sso);

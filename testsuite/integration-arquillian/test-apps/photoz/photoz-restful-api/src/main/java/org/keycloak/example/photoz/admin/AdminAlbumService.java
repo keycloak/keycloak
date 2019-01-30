@@ -17,9 +17,10 @@
  */
 package org.keycloak.example.photoz.admin;
 
-import org.keycloak.example.photoz.CustomDatabase;
 import org.keycloak.example.photoz.entity.Album;
 
+import javax.inject.Inject;
+import javax.persistence.EntityManager;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -38,7 +39,8 @@ public class AdminAlbumService {
 
     public static final String SCOPE_ADMIN_ALBUM_MANAGE = "admin:manage";
 
-    private CustomDatabase entityManager = CustomDatabase.create();
+    @Inject
+    private EntityManager entityManager;
 
     @Context
     private HttpHeaders headers;
@@ -47,7 +49,7 @@ public class AdminAlbumService {
     @Produces("application/json")
     public Response findAll() {
         HashMap<String, List<Album>> albums = new HashMap<>();
-        List<Album> result = this.entityManager.getAll();
+        List<Album> result = this.entityManager.createQuery("from Album").getResultList();
 
         for (Album album : result) {
             //We need to compile this under JDK7 so we can't use lambdas

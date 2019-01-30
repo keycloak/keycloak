@@ -19,6 +19,7 @@ package org.keycloak.models.sessions.infinispan.initializer;
 
 import org.junit.Assert;
 import org.junit.Test;
+import org.keycloak.models.cache.infinispan.UserCacheSession;
 import org.keycloak.models.sessions.infinispan.remotestore.RemoteCacheSessionsLoaderContext;
 import org.keycloak.storage.CacheableStorageProviderModel;
 
@@ -34,16 +35,16 @@ public class InitializerStateTest {
 
     @Test
     public void testOfflineLoaderContext() {
-        OfflinePersistentLoaderContext ctx = new OfflinePersistentLoaderContext(28, 5);
+        OfflinePersistentUserSessionLoaderContext ctx = new OfflinePersistentUserSessionLoaderContext(28, 5);
         Assert.assertEquals(ctx.getSegmentsCount(), 6);
 
-        ctx = new OfflinePersistentLoaderContext(19, 5);
+        ctx = new OfflinePersistentUserSessionLoaderContext(19, 5);
         Assert.assertEquals(ctx.getSegmentsCount(), 4);
 
-        ctx = new OfflinePersistentLoaderContext(20, 5);
+        ctx = new OfflinePersistentUserSessionLoaderContext(20, 5);
         Assert.assertEquals(ctx.getSegmentsCount(), 4);
 
-        ctx = new OfflinePersistentLoaderContext(21, 5);
+        ctx = new OfflinePersistentUserSessionLoaderContext(21, 5);
         Assert.assertEquals(ctx.getSegmentsCount(), 5);
     }
 
@@ -77,7 +78,7 @@ public class InitializerStateTest {
 
     @Test
     public void testComputationState() {
-        OfflinePersistentLoaderContext ctx = new OfflinePersistentLoaderContext(28, 5);
+        OfflinePersistentUserSessionLoaderContext ctx = new OfflinePersistentUserSessionLoaderContext(28, 5);
         Assert.assertEquals(ctx.getSegmentsCount(), 6);
 
         InitializerState state = new InitializerState(ctx.getSegmentsCount());

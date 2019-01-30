@@ -79,8 +79,6 @@ public class CachedRealm extends AbstractExtendableRevisioned {
     protected int refreshTokenMaxReuse;
     protected int ssoSessionIdleTimeout;
     protected int ssoSessionMaxLifespan;
-    protected int ssoSessionIdleTimeoutRememberMe;
-    protected int ssoSessionMaxLifespanRememberMe;
     protected int offlineSessionIdleTimeout;
     // KEYCLOAK-7688 Offline Session Max for Offline Token
     protected boolean offlineSessionMaxLifespanEnabled;
@@ -187,8 +185,6 @@ public class CachedRealm extends AbstractExtendableRevisioned {
         refreshTokenMaxReuse = model.getRefreshTokenMaxReuse();
         ssoSessionIdleTimeout = model.getSsoSessionIdleTimeout();
         ssoSessionMaxLifespan = model.getSsoSessionMaxLifespan();
-        ssoSessionIdleTimeoutRememberMe = model.getSsoSessionIdleTimeoutRememberMe();
-        ssoSessionMaxLifespanRememberMe = model.getSsoSessionMaxLifespanRememberMe();
         offlineSessionIdleTimeout = model.getOfflineSessionIdleTimeout();
         // KEYCLOAK-7688 Offline Session Max for Offline Token
         offlineSessionMaxLifespanEnabled = model.isOfflineSessionMaxLifespanEnabled();
@@ -415,14 +411,6 @@ public class CachedRealm extends AbstractExtendableRevisioned {
 
     public int getSsoSessionMaxLifespan() {
         return ssoSessionMaxLifespan;
-    }
-
-    public int getSsoSessionIdleTimeoutRememberMe() {
-        return ssoSessionIdleTimeoutRememberMe;
-    }
-
-    public int getSsoSessionMaxLifespanRememberMe() {
-        return ssoSessionMaxLifespanRememberMe;
     }
 
     public int getOfflineSessionIdleTimeout() {

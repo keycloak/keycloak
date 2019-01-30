@@ -376,27 +376,12 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
     @Test
     public void testBrowserInvalidTotp() throws Exception {
         loginSuccess();
-        loginInvalidPassword();
         loginWithTotpFailure();
-        continueLoginWithCorrectTotpExpectFailure();
-        continueLoginWithInvalidTotp();
+        loginWithTotpFailure();
+        expectTemporarilyDisabled();
+        expectTemporarilyDisabled("test-user@localhost", null, "invalid");
         clearUserFailures();
-        continueLoginWithTotp();
-    }
-
-    @Test
-    public void testTotpGoingBack() throws Exception {
-        loginPage.open();
-        loginPage.login("test-user@localhost", "password");
-
-        continueLoginWithInvalidTotp();
-        loginTotpPage.cancel();
-        loginPage.assertCurrent();
-        loginPage.login("test-user@localhost", "password");
-        continueLoginWithInvalidTotp();
-        continueLoginWithCorrectTotpExpectFailure();
-        clearUserFailures();
-        continueLoginWithTotp();
+        loginSuccess();
     }
 
     @Test
@@ -404,14 +389,10 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
         loginSuccess();
         loginWithMissingTotp();
         loginWithMissingTotp();
-        continueLoginWithMissingTotp();
-        continueLoginWithCorrectTotpExpectFailure();
-        // wait to unlock
-        testingClient.testing().setTimeOffset(Collections.singletonMap("offset", String.valueOf(6)));
-
-        continueLoginWithTotp();
-
-        testingClient.testing().setTimeOffset(Collections.singletonMap("offset", String.valueOf(0)));
+        expectTemporarilyDisabled();
+        expectTemporarilyDisabled("test-user@localhost", null, "invalid");
+        clearUserFailures();
+        loginSuccess();
     }
 
     @Test
@@ -565,7 +546,7 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
 
     }
 
-    public void loginWithTotpFailure() {
+    public void loginWithTotpFailure() throws Exception {
         loginPage.open();
         loginPage.login("test-user@localhost", "password");
 
@@ -574,51 +555,6 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
         loginTotpPage.login("123456");
         loginTotpPage.assertCurrent();
         Assert.assertEquals("Invalid authenticator code.", loginPage.getError());
-        events.clear();
-    }
-
-    public void continueLoginWithTotp() {
-        loginTotpPage.assertCurrent();
-
-        String totpSecret = totp.generateTOTP("totpSecret");
-        loginTotpPage.login(totpSecret);
-
-        Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
-
-        events.expectLogin().assertEvent();
-        appPage.logout();
-        events.clear();
-    }
-
-    public void continueLoginWithCorrectTotpExpectFailure() {
-        loginTotpPage.assertCurrent();
-
-        String totpSecret = totp.generateTOTP("totpSecret");
-        loginTotpPage.login(totpSecret);
-
-        loginTotpPage.assertCurrent();
-        Assert.assertEquals("Invalid authenticator code.", loginTotpPage.getError());
-
-        events.clear();
-    }
-
-    public void continueLoginWithInvalidTotp() {
-        loginTotpPage.assertCurrent();
-
-        loginTotpPage.login("123456");
-
-        loginTotpPage.assertCurrent();
-        Assert.assertEquals("Invalid authenticator code.", loginTotpPage.getError());
-        events.clear();
-    }
-
-    public void continueLoginWithMissingTotp() {
-        loginTotpPage.assertCurrent();
-
-        loginTotpPage.login(null);
-
-        loginTotpPage.assertCurrent();
-        Assert.assertEquals("Invalid authenticator code.", loginTotpPage.getError());
         events.clear();
     }
 

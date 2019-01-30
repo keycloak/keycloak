@@ -109,10 +109,6 @@ public class RealmEntity {
     private int ssoSessionIdleTimeout;
     @Column(name="SSO_MAX_LIFESPAN")
     private int ssoSessionMaxLifespan;
-    @Column(name="SSO_IDLE_TIMEOUT_REMEMBER_ME")
-    private int ssoSessionIdleTimeoutRememberMe;
-    @Column(name="SSO_MAX_LIFESPAN_REMEMBER_ME")
-    private int ssoSessionMaxLifespanRememberMe;
     @Column(name="OFFLINE_SESSION_IDLE_TIMEOUT")
     private int offlineSessionIdleTimeout;
     @Column(name="ACCESS_TOKEN_LIFESPAN")
@@ -372,22 +368,6 @@ public class RealmEntity {
 
     public void setSsoSessionMaxLifespan(int ssoSessionMaxLifespan) {
         this.ssoSessionMaxLifespan = ssoSessionMaxLifespan;
-    }
-
-    public int getSsoSessionIdleTimeoutRememberMe() {
-        return ssoSessionIdleTimeoutRememberMe;
-    }
-
-    public void setSsoSessionIdleTimeoutRememberMe(int ssoSessionIdleTimeoutRememberMe) {
-        this.ssoSessionIdleTimeoutRememberMe = ssoSessionIdleTimeoutRememberMe;
-    }
-
-    public int getSsoSessionMaxLifespanRememberMe() {
-        return ssoSessionMaxLifespanRememberMe;
-    }
-
-    public void setSsoSessionMaxLifespanRememberMe(int ssoSessionMaxLifespanRememberMe) {
-        this.ssoSessionMaxLifespanRememberMe = ssoSessionMaxLifespanRememberMe;
     }
 
     public int getOfflineSessionIdleTimeout() {

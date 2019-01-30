@@ -25,7 +25,6 @@ import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientScopeResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
-import org.keycloak.authentication.AuthenticationFlow;
 import org.keycloak.common.constants.KerberosConstants;
 import org.keycloak.models.Constants;
 import org.keycloak.models.LDAPConstants;
@@ -60,20 +59,16 @@ import org.keycloak.testsuite.client.KeycloakTestingClient;
 import org.keycloak.testsuite.util.RealmRepUtil;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-import org.hamcrest.Matcher;
-import org.hamcrest.Matchers;
-import static org.junit.Assert.assertThat;
+import org.keycloak.common.Profile;
 
 /**
  *
@@ -87,10 +82,6 @@ public class ExportImportUtil {
         Assert.assertTrue(realm.isVerifyEmail());
         Assert.assertEquals((Integer)3600000, realm.getOfflineSessionIdleTimeout());
         Assert.assertEquals((Integer)1500, realm.getAccessTokenLifespanForImplicitFlow());
-        Assert.assertEquals((Integer)1800, realm.getSsoSessionIdleTimeout());
-        Assert.assertEquals((Integer)36000, realm.getSsoSessionMaxLifespan());
-        Assert.assertEquals((Integer)3600, realm.getSsoSessionIdleTimeoutRememberMe());
-        Assert.assertEquals((Integer)172800, realm.getSsoSessionMaxLifespanRememberMe());
 
         Set<String> creds = realm.getRequiredCredentials();
         Assert.assertEquals(1, creds.size());
@@ -137,16 +128,6 @@ public class ExportImportUtil {
         // test clientAuthenticatorType
         Assert.assertEquals("client-secret", application.getClientAuthenticatorType());
         Assert.assertEquals("client-jwt", otherApp.getClientAuthenticatorType());
-
-        // test authenticationFlowBindingOverrides
-        Map<String, String> flowMap = otherApp.getAuthenticationFlowBindingOverrides();
-        Assert.assertNotNull(flowMap);
-        Assert.assertEquals(1, flowMap.size());
-        Assert.assertTrue(flowMap.containsKey("browser"));
-        // if the authentication flows were correctly imported there must be a flow whose id matches the one in the authenticationFlowBindingOverrides
-        AuthenticationFlowRepresentation flowRep = realmRsc.flows().getFlow(flowMap.get("browser"));
-        Assert.assertNotNull(flowRep);
-        Assert.assertEquals("browser", flowRep.getAlias());
 
         // Test finding applications by ID
         Assert.assertNull(ApiUtil.findClientResourceById(realmRsc, "982734"));
@@ -383,7 +364,7 @@ public class ExportImportUtil {
 
         Map<String, Object> appAdminConsent = findConsentByClientId(consents, application.getClientId());
         Assert.assertNotNull(appAdminConsent);
-        Assert.assertTrue(isClientScopeGranted(appAdminConsent, OAuth2Constants.OFFLINE_ACCESS, "roles", "profile", "email", "account", "web-origins"));
+        Assert.assertTrue(isClientScopeGranted(appAdminConsent, OAuth2Constants.OFFLINE_ACCESS));
 
         Map<String, Object> otherAppAdminConsent = findConsentByClientId(consents, otherApp.getClientId());//admin.getConsentByClient(otherApp.getId());
         Assert.assertFalse(isClientScopeGranted(otherAppAdminConsent, OAuth2Constants.OFFLINE_ACCESS));
@@ -407,9 +388,9 @@ public class ExportImportUtil {
     }
 
 
-    private static boolean isClientScopeGranted(Map<String, Object> consent, String... clientScopeNames) {
+    private static boolean isClientScopeGranted(Map<String, Object> consent, String clientScopeName) {
         if (consent.get("grantedClientScopes") == null) return false;
-        return ((List)consent.get("grantedClientScopes")).containsAll(Arrays.asList(clientScopeNames));
+        return ((List)consent.get("grantedClientScopes")).contains(clientScopeName);
     }
 
 
@@ -649,39 +630,21 @@ public class ExportImportUtil {
         Assert.assertTrue(!source.stream().filter(object -> !predicate.stream().filter(predicate1 -> predicate1.test(object)).findFirst().isPresent()).findAny().isPresent());
     }
 
-    private static Matcher<Iterable<? super String>> getDefaultClientScopeNameMatcher(ClientRepresentation rep) {
-        switch (rep.getClientId()) {
-            case "client-with-template":
-                return Matchers.hasItem("Default_test_template");
-            default:
-                return Matchers.not(Matchers.hasItem("Default_test_template"));
-        }
-    }
-
-    public static void testClientDefaultClientScopes(RealmResource realm) {
-        for (ClientRepresentation rep : realm.clients().findAll(true)) {
-            Matcher<Iterable<? super String>> expectedDefaultClientScopeNames = getDefaultClientScopeNameMatcher(rep);
-
-            assertThat("Default client scopes for " + rep.getClientId(), rep.getDefaultClientScopes(), expectedDefaultClientScopeNames);
-        }
-    }
 
     public static void testRealmDefaultClientScopes(RealmResource realm) {
         // Assert built-in scopes were created in realm
         List<ClientScopeRepresentation> clientScopes = realm.clientScopes().findAll();
-        Map<String, ClientScopeRepresentation> clientScopesMap = clientScopes.stream()
-          .collect(Collectors.toMap(ClientScopeRepresentation::getName, Function.identity()));
+        Map<String, ClientScopeRepresentation> clientScopesMap = clientScopes
+                .stream().collect(Collectors.toMap(clientScope -> clientScope.getName(), clientScope -> clientScope));
 
-        assertThat(clientScopesMap.keySet(), Matchers.hasItems(
-          OAuth2Constants.SCOPE_PROFILE,
-          OAuth2Constants.SCOPE_EMAIL,
-          OAuth2Constants.SCOPE_ADDRESS,
-          OAuth2Constants.SCOPE_PHONE,
-          OAuth2Constants.OFFLINE_ACCESS,
-          OIDCLoginProtocolFactory.ROLES_SCOPE,
-          OIDCLoginProtocolFactory.WEB_ORIGINS_SCOPE,
-          SamlProtocolFactory.SCOPE_ROLE_LIST
-        ));
+        org.keycloak.testsuite.Assert.assertTrue(clientScopesMap.containsKey(OAuth2Constants.SCOPE_PROFILE));
+        org.keycloak.testsuite.Assert.assertTrue(clientScopesMap.containsKey(OAuth2Constants.SCOPE_EMAIL));
+        org.keycloak.testsuite.Assert.assertTrue(clientScopesMap.containsKey(OAuth2Constants.SCOPE_ADDRESS));
+        org.keycloak.testsuite.Assert.assertTrue(clientScopesMap.containsKey(OAuth2Constants.SCOPE_PHONE));
+        org.keycloak.testsuite.Assert.assertTrue(clientScopesMap.containsKey(OAuth2Constants.OFFLINE_ACCESS));
+        org.keycloak.testsuite.Assert.assertTrue(clientScopesMap.containsKey(OIDCLoginProtocolFactory.ROLES_SCOPE));
+        org.keycloak.testsuite.Assert.assertTrue(clientScopesMap.containsKey(OIDCLoginProtocolFactory.WEB_ORIGINS_SCOPE));
+        org.keycloak.testsuite.Assert.assertTrue(clientScopesMap.containsKey(SamlProtocolFactory.SCOPE_ROLE_LIST));
 
         // Check content of some client scopes
         Map<String, ProtocolMapperRepresentation> protocolMappers = clientScopesMap.get(OAuth2Constants.SCOPE_EMAIL).getProtocolMappers()
@@ -694,21 +657,17 @@ public class ExportImportUtil {
         org.keycloak.testsuite.Assert.assertNames(offlineRoleScopes, OAuth2Constants.OFFLINE_ACCESS);
 
         // Check default client scopes and optional client scopes expected
-        Set<String> defaultClientScopes = realm.getDefaultDefaultClientScopes()
-                .stream().map(ClientScopeRepresentation::getName).collect(Collectors.toSet());
-        assertThat(defaultClientScopes, Matchers.hasItems(
-          OAuth2Constants.SCOPE_PROFILE,
-          OAuth2Constants.SCOPE_EMAIL,
-          OIDCLoginProtocolFactory.ROLES_SCOPE,
-          OIDCLoginProtocolFactory.WEB_ORIGINS_SCOPE
-        ));
+        Map<String, ClientScopeRepresentation> defaultClientScopes = realm.getDefaultDefaultClientScopes()
+                .stream().collect(Collectors.toMap(clientScope -> clientScope.getName(), clientScope -> clientScope));
+        org.keycloak.testsuite.Assert.assertTrue(defaultClientScopes.containsKey(OAuth2Constants.SCOPE_PROFILE));
+        org.keycloak.testsuite.Assert.assertTrue(defaultClientScopes.containsKey(OAuth2Constants.SCOPE_EMAIL));
+        org.keycloak.testsuite.Assert.assertTrue(defaultClientScopes.containsKey(OIDCLoginProtocolFactory.ROLES_SCOPE));
+        org.keycloak.testsuite.Assert.assertTrue(defaultClientScopes.containsKey(OIDCLoginProtocolFactory.WEB_ORIGINS_SCOPE));
 
-        Set<String> optionalClientScopes = realm.getDefaultOptionalClientScopes()
-                .stream().map(ClientScopeRepresentation::getName).collect(Collectors.toSet());
-        assertThat(optionalClientScopes, Matchers.hasItems(
-          OAuth2Constants.SCOPE_ADDRESS,
-          OAuth2Constants.SCOPE_PHONE,
-          OAuth2Constants.OFFLINE_ACCESS
-        ));
+        Map<String, ClientScopeRepresentation> optionalClientScopes = realm.getDefaultOptionalClientScopes()
+                .stream().collect(Collectors.toMap(clientScope -> clientScope.getName(), clientScope -> clientScope));
+        org.keycloak.testsuite.Assert.assertTrue(optionalClientScopes.containsKey(OAuth2Constants.SCOPE_ADDRESS));
+        org.keycloak.testsuite.Assert.assertTrue(optionalClientScopes.containsKey(OAuth2Constants.SCOPE_PHONE));
+        org.keycloak.testsuite.Assert.assertTrue(optionalClientScopes.containsKey(OAuth2Constants.OFFLINE_ACCESS));
     }
 }

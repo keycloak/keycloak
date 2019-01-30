@@ -57,17 +57,6 @@ public interface UserResource {
     @GET
     List<GroupRepresentation> groups();
 
-    @Path("groups")
-    @GET
-    List<GroupRepresentation> groups(@QueryParam("first") Integer firstResult,
-                                     @QueryParam("max") Integer maxResults);
-
-    @Path("groups")
-    @GET
-    List<GroupRepresentation> groups(@QueryParam("search") String search,
-                                     @QueryParam("first") Integer firstResult,
-                                     @QueryParam("max") Integer maxResults);
-
     @Path("groups/{groupId}")
     @PUT
     void joinGroup(@PathParam("groupId") String groupId);

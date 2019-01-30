@@ -53,11 +53,7 @@ public class AdapterTestExecutionDecider implements TestExecutionDecider {
         if (testContext.isAdapterContainerEnabled() || testContext.isAdapterContainerEnabledCluster()) {
 
             if (method.isAnnotationPresent(AppServerContainer.class)) { // taking method level annotation first as it has higher priority
-                if (getCorrespondingAnnotation(method) == null) { //no corresponding annotation - taking class level annotation
-                    if (getCorrespondingAnnotation(testContext.getTestClass()).skip()) {
-                        return execute(method, Boolean.FALSE, "Skipped by @AppServerContainer class level annotation.");
-                    }
-                } else if (getCorrespondingAnnotation(method).skip()) { //corresponding annotation
+                if (getCorrespondingAnnotation(method).skip()) {
                     return execute(method, Boolean.FALSE, "Skipped by @AppServerContainer method level annotation.");
                 }
             } else { //taking class level annotation
@@ -92,7 +88,7 @@ public class AdapterTestExecutionDecider implements TestExecutionDecider {
         return appServerContainers.stream()
                 .filter(annotation -> annotation.value().equals(testContextInstance.get().getAppServerContainerName()))
                 .findFirst()
-                .orElse(null);
+                .orElseThrow(() -> new IllegalStateException("Not found the @AppServerContainer annotation with current app server."));
     }
 
     private AppServerContainer getCorrespondingAnnotation(Class testClass) {
@@ -111,7 +107,7 @@ public class AdapterTestExecutionDecider implements TestExecutionDecider {
         return appServerContainers.stream()
                 .filter(annotation -> annotation.value().equals(testContextInstance.get().getAppServerContainerName()))
                 .findFirst()
-                .orElse(null);
+                .orElseThrow(() -> new IllegalStateException("Not found the @AppServerContainer annotation with current app server."));
     }
 
     private ExecutionDecision execute(Method method, Boolean execute, String message) {
@@ -120,7 +116,7 @@ public class AdapterTestExecutionDecider implements TestExecutionDecider {
             return ExecutionDecision.execute();
         } else {
             cache.put(method, new CachedRecord(Boolean.FALSE, message));
-            log.debug(method.getName() + " " + message);
+            log.debug(message);
             return ExecutionDecision.dontExecute(message);
         }
     }

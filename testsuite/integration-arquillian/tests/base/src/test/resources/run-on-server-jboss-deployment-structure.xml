@@ -12,7 +12,6 @@
             <module name="org.keycloak.keycloak-model-jpa"/>
             <module name="org.keycloak.keycloak-kerberos-federation"/>
             <module name="org.keycloak.keycloak-ldap-federation"/>
-            <module name="org.infinispan"/>
         </dependencies>
     </deployment>
 </jboss-deployment-structure>

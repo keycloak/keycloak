@@ -9,8 +9,7 @@
     </xsl:template>
 
     <xsl:template match="//*[local-name()='system-properties']">
-        <!--namespaces can be hadcoded here as no other releases of eap6 are planned-->
-        <system-properties xmlns="urn:jboss:domain:1.8">
+        <system-properties>
             <property name="hawtio.authenticationEnabled" value="true" />
             <property name="hawtio.realm" value="hawtio" />
             <property name="hawtio.roles" value="admin,viewer" />
@@ -22,7 +21,7 @@
     </xsl:template>
 
     <xsl:template match="//*[local-name()='security-domain' and @name = 'hawtio-domain']">
-        <security-domain name="hawtio" cache-type="default" xmlns="urn:jboss:domain:security:1.2">
+        <security-domain name="hawtio" cache-type="default">
             <authentication>
                 <login-module code="org.keycloak.adapters.jaas.BearerTokenLoginModule" flag="required">
                     <module-option name="keycloak-config-file" value="${{hawtio.keycloakServerConfig}}"/>
@@ -33,7 +32,7 @@
 
     <xsl:template match="//*[local-name()='subsystem' and starts-with(namespace-uri(), $keycloakNamespace)]">
         <xsl:copy>
-            <secure-deployment name="hawtio.war" xmlns="urn:jboss:domain:keycloak:1.1"/>
+            <secure-deployment name="hawtio.war" />
         </xsl:copy>
     </xsl:template>
 

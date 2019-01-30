@@ -17,14 +17,10 @@
 
 package org.keycloak.models.jpa.entities;
 
-import org.hibernate.annotations.BatchSize;
-import org.hibernate.annotations.Fetch;
-import org.hibernate.annotations.FetchMode;
 import org.hibernate.annotations.Nationalized;
 
 import javax.persistence.Access;
 import javax.persistence.AccessType;
-import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
@@ -35,13 +31,9 @@ import javax.persistence.ManyToMany;
 import javax.persistence.ManyToOne;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
-import javax.persistence.OneToMany;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 /**
@@ -101,11 +93,6 @@ public class RoleEntity {
     @JoinTable(name = "COMPOSITE_ROLE", joinColumns = @JoinColumn(name = "COMPOSITE"), inverseJoinColumns = @JoinColumn(name = "CHILD_ROLE"))
     private Set<RoleEntity> compositeRoles = new HashSet<>();
 
-    @OneToMany(cascade = CascadeType.REMOVE, orphanRemoval = true, mappedBy="role")
-    @Fetch(FetchMode.SELECT)
-    @BatchSize(size = 20)
-    protected List<RoleAttributeEntity> attributes = new ArrayList<>();
-
     public String getId() {
         return id;
     }
@@ -122,13 +109,7 @@ public class RoleEntity {
         this.realmId = realmId;
     }
 
-    public Collection<RoleAttributeEntity> getAttributes() {
-        return attributes;
-    }
 
-    public void setAttributes(List<RoleAttributeEntity> attributes) {
-        this.attributes = attributes;
-    }
 
     public String getName() {
         return name;

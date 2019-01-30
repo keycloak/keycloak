@@ -88,9 +88,6 @@ public class KeycloakDeploymentBuilder {
         } else {
             deployment.setTokenStore(TokenStore.SESSION);
         }
-        if (adapterConfig.getTokenCookiePath() != null) {
-            deployment.setAdapterStateCookiePath(adapterConfig.getTokenCookiePath());
-        }
         if (adapterConfig.getPrincipalAttribute() != null) deployment.setPrincipalAttribute(adapterConfig.getPrincipalAttribute());
 
         deployment.setResourceCredentials(adapterConfig.getCredentials());

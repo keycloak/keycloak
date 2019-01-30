@@ -17,12 +17,13 @@
 package org.keycloak.example.photoz.unsecured;
 
 
+import javax.inject.Inject;
+import javax.persistence.EntityManager;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.GET;
 import org.jboss.logging.Logger;
-import org.keycloak.example.photoz.CustomDatabase;
 
 /**
  * Service used to ensure there is clean DB before test 
@@ -34,15 +35,17 @@ public class UnsecuredService {
 
     private final Logger log = Logger.getLogger(UnsecuredService.class);
 
-    private CustomDatabase customDatabase = CustomDatabase.create();
+    @Inject
+    private EntityManager entityManager;
 
     @GET
     @Produces("application/json")
     public Response cleanAll() {
-        int deleted = customDatabase.cleanAll();
+        int deletedAlbums = entityManager.createQuery("delete from Album").executeUpdate();
+        int deletedPhotos = entityManager.createQuery("delete from Photo").executeUpdate();
         
-        if (deleted != 0) {
-            log.warnf("Database was not empty. Deleted Albums + Photos {0}", deleted);
+        if (deletedAlbums != 0 || deletedPhotos != 0) {
+            log.warnf("Database was not empty. Deleted {0} Albums, {1} Photos", deletedAlbums, deletedPhotos);
         } else {
             log.debug("Database was clean before test");
         }

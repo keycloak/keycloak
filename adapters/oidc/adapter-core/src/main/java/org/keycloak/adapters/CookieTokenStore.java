@@ -47,7 +47,7 @@ public class CookieTokenStore {
                 .append(idToken).append(DELIM)
                 .append(refreshToken).toString();
 
-        String cookiePath = getCookiePath(deployment, facade);
+        String cookiePath = getContextPath(facade);
         facade.getResponse().setCookie(AdapterConstants.KEYCLOAK_ADAPTER_STATE_COOKIE, cookie, cookiePath, null, -1, deployment.getSslRequired().isRequired(facade.getRequest().getRemoteAddr()), true);
     }
 
@@ -98,30 +98,14 @@ public class CookieTokenStore {
         }
     }
 
-    public static void removeCookie(KeycloakDeployment deployment, HttpFacade facade) {
-        String cookiePath = getCookiePath(deployment, facade);
+    public static void removeCookie(HttpFacade facade) {
+        String cookiePath = getContextPath(facade);
         facade.getResponse().resetCookie(AdapterConstants.KEYCLOAK_ADAPTER_STATE_COOKIE, cookiePath);
     }
 
-    static String getCookiePath(KeycloakDeployment deployment, HttpFacade facade) {
-        String path = deployment.getAdapterStateCookiePath() == null ? "" : deployment.getAdapterStateCookiePath().trim();
-        if (path.startsWith("/")) {
-            return path;
-        }
-        String contextPath = getContextPath(facade);
-        StringBuilder cookiePath = new StringBuilder(contextPath);
-        if (!contextPath.endsWith("/") && !path.isEmpty()) {
-            cookiePath.append("/");
-        }
-        return cookiePath.append(path).toString();
-    }
-
-    static String getContextPath(HttpFacade facade) {
+    private static String getContextPath(HttpFacade facade) {
         String uri = facade.getRequest().getURI();
         String path = KeycloakUriBuilder.fromUri(uri).getPath();
-        if (path == null || path.isEmpty()) {
-            return "/";
-        }
         int index = path.indexOf("/", 1);
         return index == -1 ? path : path.substring(0, index);
     }

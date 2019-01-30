@@ -22,7 +22,6 @@ import org.junit.Test;
 import org.keycloak.admin.client.resource.ClientScopesResource;
 import org.keycloak.admin.client.resource.ProtocolMappersResource;
 import org.keycloak.admin.client.resource.RoleMappingResource;
-import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.AccountRoles;
@@ -136,19 +135,12 @@ public class ClientScopeTest extends AbstractClientTest {
         scopeRep.setName("scope1");
         scopeRep.setDescription("scope1-desc");
         scopeRep.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
-
-        Map<String, String> attrs = new HashMap<>();
-        attrs.put("someAttr", "someAttrValue");
-        attrs.put("emptyAttr", "");
-        scopeRep.setAttributes(attrs);
         String scope1Id = createClientScope(scopeRep);
 
         // Assert created attributes
         scopeRep = clientScopes().get(scope1Id).toRepresentation();
         Assert.assertEquals("scope1", scopeRep.getName());
         Assert.assertEquals("scope1-desc", scopeRep.getDescription());
-        Assert.assertEquals("someAttrValue", scopeRep.getAttributes().get("someAttr"));
-        Assert.assertTrue(ObjectUtil.isBlank(scopeRep.getAttributes().get("emptyAttr")));
         Assert.assertEquals(OIDCLoginProtocol.LOGIN_PROTOCOL, scopeRep.getProtocol());
 
 
@@ -156,9 +148,6 @@ public class ClientScopeTest extends AbstractClientTest {
         scopeRep.setName("scope1-updated");
         scopeRep.setDescription("scope1-desc-updated");
         scopeRep.setProtocol(SamlProtocol.LOGIN_PROTOCOL);
-
-        // Test update attribute to some non-blank value
-        scopeRep.getAttributes().put("emptyAttr", "someValue");
 
         clientScopes().get(scope1Id).update(scopeRep);
 
@@ -169,8 +158,6 @@ public class ClientScopeTest extends AbstractClientTest {
         Assert.assertEquals("scope1-updated", scopeRep.getName());
         Assert.assertEquals("scope1-desc-updated", scopeRep.getDescription());
         Assert.assertEquals(SamlProtocol.LOGIN_PROTOCOL, scopeRep.getProtocol());
-        Assert.assertEquals("someAttrValue", scopeRep.getAttributes().get("someAttr"));
-        Assert.assertEquals("someValue", scopeRep.getAttributes().get("emptyAttr"));
 
         // Remove scope1
         clientScopes().get(scope1Id).remove();

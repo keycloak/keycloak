@@ -148,9 +148,9 @@ Assumed you downloaded `jboss-fuse-karaf-6.3.0.redhat-229.zip`
       -Dtest=Fuse*AdapterTest
 
 
-### JBoss Fuse 7.X
+### JBoss Fuse 7.0
 
-1) Download JBoss Fuse 7 to your filesystem. It can be downloaded from http://origin-repository.jboss.org/nexus/content/groups/m2-proxy/org/jboss/fuse/fuse-karaf 
+1) Download JBoss Fuse 7.0 to your filesystem. It can be downloaded from http://origin-repository.jboss.org/nexus/content/groups/m2-proxy/org/jboss/fuse/fuse-karaf 
 Assumed you downloaded `fuse-karaf-7.0.0.fuse-000202.zip`
 
 2) Install to your local maven repository and change the properties according to your env (This step can be likely avoided if you somehow configure your local maven settings to point directly to Fuse repo):
@@ -170,8 +170,8 @@ Assumed you downloaded `fuse-karaf-7.0.0.fuse-000202.zip`
     # Prepare Fuse server
     mvn -f testsuite/integration-arquillian/servers/pom.xml \
       clean install \
-      -Papp-server-fuse7x \
-      -Dfuse7x.version=7.0.0.fuse-000202 \
+      -Papp-server-fuse70 \
+      -Dfuse70.version=7.0.0.fuse-000202 \
       -Dapp.server.karaf.update.config=true \
       -Dmaven.local.settings=$HOME/.m2/settings.xml \
       -Drepositories=,http://REPO-SERVER/brewroot/repos/sso-7.1-build/latest/maven/ \
@@ -180,7 +180,7 @@ Assumed you downloaded `fuse-karaf-7.0.0.fuse-000202.zip`
     # Run the Fuse adapter tests
     mvn -f testsuite/integration-arquillian/tests/base/pom.xml \
       clean test \
-      -Papp-server-fuse7x \
+      -Papp-server-fuse70 \
       -Dtest=Fuse*AdapterTest
 
 
@@ -306,8 +306,9 @@ This will start latest Keycloak and import the realm JSON file, which was previo
 
     mvn -f testsuite/integration-arquillian/pom.xml \
       clean install \
-      -Pauth-server-wildfly \
-      -Dtest=JsonFileImport*MigrationTest
+      -Pauth-server-wildfly,migration-import,test-70-migration \
+      -Dtest=MigrationTest \
+      -Dmigration.mode=import
 
 
 ## Server configuration migration test
@@ -800,7 +801,3 @@ Then, before running the test, setup Keycloak Server distribution for the tests:
 When running the test, add the following arguments to the command line:
 
     -Pauth-server-wildfly -Pauth-server-enable-disable-feature -Dfeature.name=docker -Dfeature.value=enabled
-
-## Java 11 support
-Java 11 requires some arguments to be passed to JVM. Those can be activated using `-Pjava11-auth-server` and
-`-Pjava11-app-server` profiles, respectively.

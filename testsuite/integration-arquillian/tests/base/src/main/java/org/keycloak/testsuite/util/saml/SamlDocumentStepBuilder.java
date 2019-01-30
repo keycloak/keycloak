@@ -36,7 +36,6 @@ import org.keycloak.testsuite.util.SamlClient.Step;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import javax.xml.stream.XMLStreamWriter;
-import org.jboss.logging.Logger;
 import org.junit.Assert;
 import org.w3c.dom.Document;
 
@@ -45,8 +44,6 @@ import org.w3c.dom.Document;
  * @author hmlnarik
  */
 public abstract class SamlDocumentStepBuilder<T extends SAML2Object, This extends SamlDocumentStepBuilder<T, This>> implements Step {
-
-    private static final Logger LOG = Logger.getLogger(SamlDocumentStepBuilder.class);
 
     @FunctionalInterface
     public interface Saml2ObjectTransformer<T extends SAML2Object> {
@@ -110,9 +107,7 @@ public abstract class SamlDocumentStepBuilder<T extends SAML2Object, This extend
                 Assert.assertNotNull("Unknown type: <null>", transformed);
                 Assert.fail("Unknown type: " + transformed.getClass().getName());
             }
-            String res = new String(bos.toByteArray(), GeneralConstants.SAML_CHARSET);
-            LOG.debugf("  ---> %s", res);
-            return res;
+            return new String(bos.toByteArray(), GeneralConstants.SAML_CHARSET);
         };
         return (This) this;
     }

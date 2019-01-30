@@ -25,7 +25,6 @@ import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.message.BasicNameValuePair;
 import org.jboss.logging.Logger;
-import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.connections.httpclient.HttpClientProvider;
 import org.keycloak.dom.saml.v2.assertion.AssertionType;
 import org.keycloak.dom.saml.v2.assertion.AttributeStatementType;
@@ -58,12 +57,11 @@ import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.common.exceptions.ConfigurationException;
 import org.keycloak.saml.common.exceptions.ParsingException;
 import org.keycloak.saml.common.exceptions.ProcessingException;
-import org.keycloak.saml.common.util.DocumentUtil;
 import org.keycloak.saml.common.util.XmlKeyInfoKeyNameTransformer;
 import org.keycloak.saml.processing.core.util.KeycloakKeySamlExtensionGenerator;
 import org.keycloak.services.ErrorPage;
-import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationSessionManager;
+import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.managers.ResourceAdminManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.RealmsResource;
@@ -72,7 +70,6 @@ import org.keycloak.sessions.AuthenticationSessionModel;
 import org.w3c.dom.Document;
 
 import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
@@ -80,16 +77,14 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.security.PublicKey;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
-import java.util.Map;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
-
-import static org.keycloak.common.util.HtmlUtils.escapeAttribute;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -102,10 +97,8 @@ public class SamlProtocol implements LoginProtocol {
     public static final String ATTRIBUTE_FALSE_VALUE = "false";
     public static final String SAML_ASSERTION_CONSUMER_URL_POST_ATTRIBUTE = "saml_assertion_consumer_url_post";
     public static final String SAML_ASSERTION_CONSUMER_URL_REDIRECT_ATTRIBUTE = "saml_assertion_consumer_url_redirect";
-    public static final String SAML_ASSERTION_CONSUMER_URL_ARTIFACT_ATTRIBUTE = "saml_artifact_binding_url";
     public static final String SAML_SINGLE_LOGOUT_SERVICE_URL_POST_ATTRIBUTE = "saml_single_logout_service_url_post";
     public static final String SAML_SINGLE_LOGOUT_SERVICE_URL_REDIRECT_ATTRIBUTE = "saml_single_logout_service_url_redirect";
-    public static final String SAML_ARTIFACT_RESOLUTION_SERVICE_URL_ATTRIBUTE = "saml_artifact_resolution_service_url";
     public static final String LOGIN_PROTOCOL = "saml";
     public static final String SAML_BINDING = "saml_binding";
     public static final String SAML_IDP_INITIATED_LOGIN = "saml_idp_initiated_login";
@@ -304,8 +297,8 @@ public class SamlProtocol implements LoginProtocol {
         return (logoutRedirectUrl == null || logoutRedirectUrl.trim().isEmpty());
     }
 
-    protected String getNameIdFormat(SamlClient samlClient, AuthenticationSessionModel authSession) {
-        String nameIdFormat = authSession.getClientNote(GeneralConstants.NAMEID_FORMAT);
+    protected String getNameIdFormat(SamlClient samlClient, AuthenticatedClientSessionModel clientSession) {
+        String nameIdFormat = clientSession.getNote(GeneralConstants.NAMEID_FORMAT);
 
         boolean forceFormat = samlClient.forceNameIDFormat();
         String configuredNameIdFormat = samlClient.getNameIDFormat();
@@ -375,20 +368,20 @@ public class SamlProtocol implements LoginProtocol {
     }
 
     @Override
-    public Response authenticated(AuthenticationSessionModel authSession, UserSessionModel userSession, ClientSessionContext clientSessionCtx) {
+    public Response authenticated(UserSessionModel userSession, ClientSessionContext clientSessionCtx) {
         AuthenticatedClientSessionModel clientSession = clientSessionCtx.getClientSession();
         ClientModel client = clientSession.getClient();
         SamlClient samlClient = new SamlClient(client);
-        String requestID = authSession.getClientNote(SAML_REQUEST_ID);
-        String relayState = authSession.getClientNote(GeneralConstants.RELAY_STATE);
-        String redirectUri = authSession.getRedirectUri();
+        String requestID = clientSession.getNote(SAML_REQUEST_ID);
+        String relayState = clientSession.getNote(GeneralConstants.RELAY_STATE);
+        String redirectUri = clientSession.getRedirectUri();
         String responseIssuer = getResponseIssuer(realm);
-        String nameIdFormat = getNameIdFormat(samlClient, authSession);
-        String nameId = getNameId(nameIdFormat, authSession, userSession);
+        String nameIdFormat = getNameIdFormat(samlClient, clientSession);
+        String nameId = getNameId(nameIdFormat, clientSession, userSession);
 
         if (nameId == null) {
             return samlErrorMessage(
-              null, samlClient, isPostBinding(authSession),
+              null, samlClient, isPostBinding(clientSession),
               redirectUri, JBossSAMLURIConstants.STATUS_INVALID_NAMEIDPOLICY, relayState
             );
         }
@@ -433,7 +426,7 @@ public class SamlProtocol implements LoginProtocol {
         Document samlDocument = null;
         KeyManager keyManager = session.keys();
         KeyManager.ActiveRsaKey keys = keyManager.getActiveRsaKey(realm);
-        boolean postBinding = isPostBinding(authSession);
+        boolean postBinding = isPostBinding(clientSession);
         String keyName = samlClient.getXmlSigKeyInfoKeyNameTransformer().getKeyName(keys.getKid(), keys.getCertificate());
 
         try {
@@ -494,10 +487,6 @@ public class SamlProtocol implements LoginProtocol {
     }
 
     protected Response buildAuthenticatedResponse(AuthenticatedClientSessionModel clientSession, String redirectUri, Document samlDocument, JaxrsSAML2BindingBuilder bindingBuilder) throws ConfigurationException, ProcessingException, IOException {
-        if ("true".equals(clientSession.getNote(JBossSAMLURIConstants.SAML_HTTP_ARTIFACT_BINDING.get()))){
-            return buildArtifactAuthenticatedResponse(clientSession, redirectUri, samlDocument, bindingBuilder);
-        }
-
         if (isPostBinding(clientSession)) {
             return bindingBuilder.postBinding(samlDocument).response(redirectUri);
         } else {
@@ -565,28 +554,22 @@ public class SamlProtocol implements LoginProtocol {
                 logger.warnf("Failed to logout client %s, skipping this client.  Please configure the logout service url in the admin console for your client applications.", client.getClientId());
                 return null;
             }
-            JaxrsSAML2BindingBuilder binding = createBindingBuilder(samlClient);
-            SAML2LogoutRequestBuilder logoutBuilder = createLogoutRequest(bindingUri, clientSession, client);
-            if (!postBinding) {
+
+            if (postBinding) {
+                SAML2LogoutRequestBuilder logoutBuilder = createLogoutRequest(bindingUri, clientSession, client);
+                // This is POST binding, hence KeyID is included in dsig:KeyInfo/dsig:KeyName, no need to add <samlp:Extensions> element
+                JaxrsSAML2BindingBuilder binding = createBindingBuilder(samlClient);
+                return binding.postBinding(logoutBuilder.buildDocument()).request(bindingUri);
+            } else {
+                logger.debug("frontchannel redirect binding");
+                SAML2LogoutRequestBuilder logoutBuilder = createLogoutRequest(bindingUri, clientSession, client);
                 if (samlClient.requiresRealmSignature() && samlClient.addExtensionsElementWithKeyInfo()) {
                     KeyManager.ActiveRsaKey keys = session.keys().getActiveRsaKey(realm);
                     String keyName = samlClient.getXmlSigKeyInfoKeyNameTransformer().getKeyName(keys.getKid(), keys.getCertificate());
                     logoutBuilder.addExtension(new KeycloakKeySamlExtensionGenerator(keyName));
                 }
-            }
-            Document samlDocument = logoutBuilder.buildDocument();
-
-            //If this session uses artifact binding, send an artifact instread of the LogoutRequest
-            if ("true".equals(clientSession.getNote(JBossSAMLURIConstants.SAML_HTTP_ARTIFACT_BINDING.get()))) {
-                return buildArtifactAuthenticatedResponse(clientSession, bindingUri, samlDocument, binding);
-            }
-
-            if (postBinding) {
-                // This is POST binding, hence KeyID is included in dsig:KeyInfo/dsig:KeyName, no need to add <samlp:Extensions> element
-                return binding.postBinding(samlDocument).request(bindingUri);
-            } else {
-                logger.debug("frontchannel redirect binding");
-                return binding.redirectBinding(samlDocument).request(bindingUri);
+                JaxrsSAML2BindingBuilder binding = createBindingBuilder(samlClient);
+                return binding.redirectBinding(logoutBuilder.buildDocument()).request(bindingUri);
             }
         } catch (ConfigurationException e) {
             throw new RuntimeException(e);
@@ -597,6 +580,7 @@ public class SamlProtocol implements LoginProtocol {
         } catch (ParsingException e) {
             throw new RuntimeException(e);
         }
+
     }
 
     @Override
@@ -656,18 +640,10 @@ public class SamlProtocol implements LoginProtocol {
     }
 
     protected Response buildLogoutResponse(UserSessionModel userSession, String logoutBindingUri, SAML2LogoutResponseBuilder builder, JaxrsSAML2BindingBuilder binding) throws ConfigurationException, ProcessingException, IOException {
-
-        Document samlDocument = builder.buildDocument();
-        //if artifact binding is used, send an artifact instead of the LogoutResponse and defer the cleanup of the userSession
-        if ("true".equals(userSession.getNote(JBossSAMLURIConstants.SAML_HTTP_ARTIFACT_BINDING.get()))){
-            userSession.setNote(AuthenticationManager.DEFER_CLEANUP, "true");
-            return buildLogoutArtifactResponse(userSession, logoutBindingUri, samlDocument, binding);
-        }
-
         if (isLogoutPostBindingForInitiator(userSession)) {
-            return binding.postBinding(samlDocument).response(logoutBindingUri);
+            return binding.postBinding(builder.buildDocument()).response(logoutBindingUri);
         } else {
-            return binding.redirectBinding(samlDocument).response(logoutBindingUri);
+            return binding.redirectBinding(builder.buildDocument()).response(logoutBindingUri);
         }
     }
 
@@ -762,123 +738,4 @@ public class SamlProtocol implements LoginProtocol {
     public void close() {
 
     }
-
-    /**
-     * This method, instead of sending the actual response with the token, stores it in cache, and sends
-     * the artifact message via post or redirect.
-     *
-     * @param clientSession the current authenticated client session
-     * @param redirectUri the redirect uri to the client
-     * @param samlDocument a Document containing the saml Response
-     * @param bindingBuilder the current JaxrsSAML2BindingBuilder configured with information for signing and encryption
-     * @return A response (POSTed form or redirect) with a newly generated artifact
-     * @throws ConfigurationException
-     * @throws ProcessingException
-     * @throws IOException
-     */
-    protected Response buildArtifactAuthenticatedResponse(AuthenticatedClientSessionModel clientSession,
-                                                  String redirectUri, Document samlDocument,
-                                                  JaxrsSAML2BindingBuilder bindingBuilder)
-            throws ConfigurationException, ProcessingException, IOException {
-        String artifact = SamlProtocolUtils.buildArtifact(RealmsResource.realmBaseUrl(uriInfo).build(realm.getName()).toString());
-
-        //save ArtifactResponse in localmap and in cache
-        Document artifactResponse = SamlProtocolUtils.buildArtifactResponse(samlDocument);
-        bindingBuilder.postBinding(artifactResponse); //this step performs necessary signatures and encryption
-
-        clientSession.setNote(artifact, DocumentUtil.getDocumentAsString(artifactResponse));
-
-        //return message with artifact
-        String relayState = clientSession.getNote(GeneralConstants.RELAY_STATE);
-
-        logger.debug("Sending artifact "+ artifact + " to client " + clientSession.getClient().getClientId());
-
-        if (isPostBinding(clientSession)) {
-            return artifactPost(redirectUri, artifact, relayState, bindingBuilder);
-        } else {
-            return artifactRedirect(redirectUri, artifact, relayState);
-        }
-    }
-
-    /**
-     * This method, instead of sending the actual response with the token, stores it in the user session cache, and sends
-     * the artifact message via post or redirect. This method is only to be used for the final LogoutResponse.
-     *
-     * @param userSession The current user session being logged out
-     * @param redirectUri the redirect uri to the client
-     * @param samlDocument a Document containing the saml Response
-     * @param bindingBuilder the current JaxrsSAML2BindingBuilder configured with information for signing and encryption
-     * @return A response (POSTed form or redirect) with a newly generated artifact
-     * @throws ConfigurationException
-     * @throws ProcessingException
-     * @throws IOException
-     */
-    protected Response buildLogoutArtifactResponse(UserSessionModel userSession,
-                                                   String redirectUri, Document samlDocument,
-                                                   JaxrsSAML2BindingBuilder bindingBuilder)
-            throws ConfigurationException, ProcessingException, IOException {
-        String artifact = SamlProtocolUtils.buildArtifact(RealmsResource.realmBaseUrl(uriInfo).build(realm.getName()).toString());
-
-        //save ArtifactResponse in localmap and in cache
-        Document artifactResponse = SamlProtocolUtils.buildArtifactResponse(samlDocument);
-        bindingBuilder.postBinding(artifactResponse); //this step performs necessary signatures and encryption
-
-        userSession.setNote(artifact, DocumentUtil.getDocumentAsString(artifactResponse));
-
-        //return message with artifact
-        String relayState = userSession.getNote(SAML_LOGOUT_RELAY_STATE);
-
-        logger.debug("Sending artifact for LogoutResponse " + artifact + " to user " + userSession.getLoginUsername());
-
-        if (isLogoutPostBindingForInitiator(userSession)) {
-            return artifactPost(redirectUri, artifact, relayState, bindingBuilder);
-        } else {
-            return artifactRedirect(redirectUri, artifact, relayState);
-        }
-    }
-
-    /**
-     * Return an artifact through a redirect message
-     * @param redirectUri the redirect uri to the client
-     * @param artifact the artifact to send
-     * @param relayState the current relayState
-     * @return a redirect Response with the artifact
-     */
-    private Response artifactRedirect(String redirectUri, String artifact, String relayState)  {
-        KeycloakUriBuilder builder = KeycloakUriBuilder.fromUri(redirectUri)
-                .replaceQuery(null)
-                .queryParam(GeneralConstants.SAML_ARTIFACT_KEY, artifact);
-
-        if (relayState != null) {
-            builder.queryParam("RelayState", relayState);
-        }
-
-        URI uri = builder.build();
-        return Response.status(302).location(uri)
-                .header("Pragma", "no-cache")
-                .header("Cache-Control", "no-cache, no-store").build();
-    }
-
-    /**
-     * Return an artifact through a POSTed form
-     * @param redirectUri the redirect uri to the client
-     * @param artifact the artifact to send
-     * @param relayState current relayState
-     * @param bindingBuilder the current JaxrsSAML2BindingBuilder configured with information for signing and encryption
-     * @return a POSTed form response, with the artifact
-     */
-    private Response artifactPost(String redirectUri, String artifact, String relayState, JaxrsSAML2BindingBuilder bindingBuilder){
-        Map<String, String> inputTypes = new HashMap<>();
-        inputTypes.put("SAMLart", artifact);
-        if (relayState != null) {
-            inputTypes.put("RelayState", escapeAttribute(relayState));
-        }
-
-        String str = bindingBuilder.buildHtmlForm(redirectUri, inputTypes);
-
-        return Response.ok(str, MediaType.TEXT_HTML_TYPE)
-                .header("Pragma", "no-cache")
-                .header("Cache-Control", "no-cache, no-store").build();
-    }
-
 }

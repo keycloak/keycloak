@@ -25,7 +25,6 @@ import org.keycloak.credential.CredentialInput;
 import org.keycloak.credential.hash.PasswordHashProvider;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
-import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.UserCredentialModel;
@@ -57,19 +56,25 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
 
     }
 
-    protected Response challenge(AuthenticationFlowContext context, String error) {
-        LoginFormsProvider form = context.form();
-        if (error != null) form.setError(error);
-
-        return createLoginForm(form);
+    protected Response invalidUser(AuthenticationFlowContext context) {
+        return context.form()
+                .setError(Messages.INVALID_USER)
+                .createLogin();
     }
 
-    protected Response createLoginForm(LoginFormsProvider form) {
-        return form.createLogin();
+    protected Response disabledUser(AuthenticationFlowContext context) {
+        return context.form()
+                .setError(Messages.ACCOUNT_DISABLED).createLogin();
     }
 
-    protected String tempDisabledError() {
-        return Messages.INVALID_USER;
+    protected Response temporarilyDisabledUser(AuthenticationFlowContext context) {
+        return context.form()
+                .setError(Messages.INVALID_USER).createLogin();
+    }
+
+    protected Response invalidCredentials(AuthenticationFlowContext context) {
+        return context.form()
+                .setError(Messages.INVALID_USER).createLogin();
     }
 
     protected Response setDuplicateUserChallenge(AuthenticationFlowContext context, String eventError, String loginFormError, AuthenticationFlowError authenticatorError) {
@@ -107,7 +112,7 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
         if (user == null) {
             dummyHash(context);
             context.getEvent().error(Errors.USER_NOT_FOUND);
-            Response challengeResponse = challenge(context, Messages.INVALID_USER);
+            Response challengeResponse = invalidUser(context);
             context.failureChallenge(AuthenticationFlowError.INVALID_USER, challengeResponse);
             return true;
         }
@@ -118,7 +123,7 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
         if (!user.isEnabled()) {
             context.getEvent().user(user);
             context.getEvent().error(Errors.USER_DISABLED);
-            Response challengeResponse = challenge(context, Messages.ACCOUNT_DISABLED);
+            Response challengeResponse = disabledUser(context);
             // this is not a failure so don't call failureChallenge.
             //context.failureChallenge(AuthenticationFlowError.USER_DISABLED, challengeResponse);
             context.forceChallenge(challengeResponse);
@@ -132,7 +137,7 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
         String username = inputData.getFirst(AuthenticationManager.FORM_USERNAME);
         if (username == null) {
             context.getEvent().error(Errors.USER_NOT_FOUND);
-            Response challengeResponse = challenge(context, Messages.INVALID_USER);
+            Response challengeResponse = invalidUser(context);
             context.failureChallenge(AuthenticationFlowError.INVALID_USER, challengeResponse);
             return false;
         }
@@ -195,19 +200,19 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
         } else {
             context.getEvent().user(user);
             context.getEvent().error(Errors.INVALID_USER_CREDENTIALS);
-            Response challengeResponse = challenge(context, Messages.INVALID_USER);
+            Response challengeResponse = invalidCredentials(context);
             context.failureChallenge(AuthenticationFlowError.INVALID_CREDENTIALS, challengeResponse);
             context.clearUser();
             return false;
         }
     }
 
-    protected boolean isTemporarilyDisabledByBruteForce(AuthenticationFlowContext context, UserModel user) {
+    private boolean isTemporarilyDisabledByBruteForce(AuthenticationFlowContext context, UserModel user) {
         if (context.getRealm().isBruteForceProtected()) {
             if (context.getProtector().isTemporarilyDisabled(context.getSession(), context.getRealm(), user)) {
                 context.getEvent().user(user);
                 context.getEvent().error(Errors.USER_TEMPORARILY_DISABLED);
-                Response challengeResponse = challenge(context, tempDisabledError());
+                Response challengeResponse = temporarilyDisabledUser(context);
                 // this is not a failure so don't call failureChallenge.
                 //context.failureChallenge(AuthenticationFlowError.USER_TEMPORARILY_DISABLED, challengeResponse);
                 context.forceChallenge(challengeResponse);
@@ -216,4 +221,5 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
         }
         return false;
     }
+
 }
