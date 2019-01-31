@@ -212,6 +212,27 @@ public class PolicyEnforcerTest extends AbstractKeycloakTest {
     }
 
     @Test
+    public void testPublicEndpointNoBearerAbortRequest() {
+        KeycloakDeployment deployment = KeycloakDeploymentBuilder.build(getAdapterConfiguration("enforcer-bearer-only.json"));
+        OIDCHttpFacade httpFacade = createHttpFacade("/api/public");
+        AuthenticatedActionsHandler handler = new AuthenticatedActionsHandler(deployment, httpFacade);
+
+        assertTrue(handler.handledRequest());
+
+        oauth.realm(REALM_NAME);
+        oauth.clientId("public-client-test");
+        oauth.doLogin("marta", "password");
+
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, null);
+        String token = response.getAccessToken();
+        httpFacade = createHttpFacade("/api/resourcea", token);
+        handler = new AuthenticatedActionsHandler(deployment, httpFacade);
+
+        assertFalse(handler.handledRequest());
+    }
+
+    @Test
     public void testMappedPathEnforcementModeDisabled() {
         KeycloakDeployment deployment = KeycloakDeploymentBuilder.build(getAdapterConfiguration("enforcer-disabled-enforce-mode-path.json"));
         PolicyEnforcer policyEnforcer = deployment.getPolicyEnforcer();
