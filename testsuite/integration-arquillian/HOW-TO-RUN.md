@@ -519,24 +519,10 @@ The setup includes:
 
 ### Cluster tests with Keycloak on Wildfly
 
-After build the sources, distribution and setup of clean shared database (replace command according your DB), you can use this command to setup servers:
+After you build the distribution, you run this command to setup servers and run cluster tests using shared Docker database:
 
-    export DB_HOST=localhost
-    mvn -f testsuite/integration-arquillian/servers/pom.xml \
-    -Pauth-server-wildfly,auth-server-cluster,jpa \
-    -Dsession.cache.owners=2 \
-    -Djdbc.mvn.groupId=mysql \
-    -Djdbc.mvn.version=5.1.29 \
-    -Djdbc.mvn.artifactId=mysql-connector-java \
-    -Dkeycloak.connectionsJpa.url=jdbc:mysql://$DB_HOST/keycloak \
-    -Dkeycloak.connectionsJpa.user=keycloak \
-    -Dkeycloak.connectionsJpa.password=keycloak \
-    clean install
-    
-And then this to run the cluster tests:
-   
-    mvn -f testsuite/integration-arquillian/tests/base/pom.xml \
-    -Pauth-server-wildfly,auth-server-cluster \
+    mvn -f testsuite/integration-arquillian/pom.xml \
+    -Pauth-server-wildfly,auth-server-cluster,db-mysql,jpa \
     -Dsession.cache.owners=2 \
     -Dbackends.console.output=true \
     -Dauth.server.log.check=false \
@@ -547,15 +533,12 @@ And then this to run the cluster tests:
 ### Cluster tests with Keycloak on embedded undertow
 
     mvn -f testsuite/integration-arquillian/tests/base/pom.xml \
-    -Pauth-server-cluster-undertow \
+    -Pauth-server-cluster-undertow,db-mysql \
     -Dsession.cache.owners=2 \
     -Dkeycloak.connectionsInfinispan.sessionsOwners=2 \
     -Dbackends.console.output=true \
     -Dauth.server.log.check=false \
     -Dfrontend.console.output=true \
-    -Dkeycloak.connectionsJpa.url=jdbc:mysql://$DB_HOST/keycloak \
-    -Dkeycloak.connectionsJpa.user=keycloak \
-    -Dkeycloak.connectionsJpa.password=keycloak \
     -Dtest=org.keycloak.testsuite.cluster.**.*Test clean install
 
 #### Run cluster tests from IDE on embedded undertow
@@ -619,9 +602,9 @@ a2) If you want to use **JBoss-based** Keycloak backend containers instead of co
 
 *note: 'auth-server-wildfly' can be replaced by 'auth-server-eap'*
 
-By default JBoss-based containers use TCP-based h2 database. It can be configured to use real DB, e.g. with following command:
+By default JBoss-based containers use TCP-based h2 database. It can be configured to use real DB spawn in Docker, e.g. with following command:
 
-  `mvn -Pcache-server-infinispan,auth-servers-crossdc-jboss,auth-server-wildfly,jpa -f testsuite/integration-arquillian -DskipTests clean install -Djdbc.mvn.groupId=org.mariadb.jdbc -Djdbc.mvn.artifactId=mariadb-java-client -Djdbc.mvn.version=2.0.3 -Dkeycloak.connectionsJpa.url=jdbc:mariadb://localhost:3306/keycloak -Dkeycloak.connectionsJpa.password=keycloak -Dkeycloak.connectionsJpa.user=keycloak`
+  `mvn -Pcache-server-infinispan,auth-servers-crossdc-jboss,auth-server-wildfly,jpa,db-mariadb -f testsuite/integration-arquillian -DskipTests clean install`
 
 b1) For **Undertow** Keycloak backend containers, you can run the tests using the following command (adjust the test specification according to your needs):
 
@@ -644,7 +627,7 @@ b2) For **JBoss-based** Keycloak backend containers, you can run the tests like 
 **note**:
 For **JBoss-based** Keycloak backend containers on real DB, the previous commands from (a2) and (b2) can be "squashed" into one. E.g.:
 
-  `mvn -f testsuite/integration-arquillian clean install -Dtest=*.crossdc.* -Djdbc.mvn.groupId=org.mariadb.jdbc -Djdbc.mvn.artifactId=mariadb-java-client -Djdbc.mvn.version=2.0.3 -Dkeycloak.connectionsJpa.url=jdbc:mariadb://localhost:3306/keycloak -Dkeycloak.connectionsJpa.password=keycloak -Dkeycloak.connectionsJpa.user=keycloak -Pcache-server-infinispan,auth-servers-crossdc-jboss,auth-server-wildfly,jpa clean install`
+  `mvn -f testsuite/integration-arquillian -Dtest=*.crossdc.* -Pcache-server-infinispan,auth-servers-crossdc-jboss,auth-server-wildfly,jpa,db-mariadb clean install`
     
 
 #### Run Cross-DC Tests from Intellij IDEA

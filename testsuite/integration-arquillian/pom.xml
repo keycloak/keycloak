@@ -75,6 +75,19 @@
 
         <!-- By default, skip docker-maven-plugin when running base tests-->
         <docker.database.skip>true</docker.database.skip>
+        <docker.database.postStart>/bin/true</docker.database.postStart>
+        <docker.database.wait-for-log-regex>NEVER-MATCHING-REGEX</docker.database.wait-for-log-regex>
+        <docker.database.shmsize>67108864</docker.database.shmsize>
+
+        <jdbc.mvn.groupId>com.h2database</jdbc.mvn.groupId>
+        <jdbc.mvn.artifactId>h2</jdbc.mvn.artifactId>
+        <jdbc.mvn.version>${h2.version}</jdbc.mvn.version>
+
+        <keycloak.connectionsJpa.driver>org.h2.Driver</keycloak.connectionsJpa.driver>
+        <keycloak.connectionsJpa.database>keycloak</keycloak.connectionsJpa.database>
+        <keycloak.connectionsJpa.user>sa</keycloak.connectionsJpa.user>
+        <keycloak.connectionsJpa.password></keycloak.connectionsJpa.password>
+        <keycloak.connectionsJpa.url>jdbc:h2:mem:test;MVCC=TRUE;DB_CLOSE_DELAY=-1</keycloak.connectionsJpa.url>
     </properties>
 
     <dependencyManagement>
@@ -337,6 +350,7 @@
                 <docker.database.image>mysql:5.7.25</docker.database.image>
                 <docker.database.port>3306</docker.database.port>
                 <docker.database.skip>false</docker.database.skip>
+                <docker.database.wait-for-log-regex>(?si)Ready for start up.*ready [^\n]{0,30}connections</docker.database.wait-for-log-regex>
             </properties>
         </profile>
         <profile>
@@ -353,6 +367,7 @@
                 <docker.database.image>postgres:9.6.11</docker.database.image>
                 <docker.database.port>5432</docker.database.port>
                 <docker.database.skip>false</docker.database.skip>
+                <docker.database.wait-for-log-regex>(?si)Ready for start up.*ready [^\n]{0,30}connections</docker.database.wait-for-log-regex>
             </properties>
         </profile>
         <profile>
@@ -369,6 +384,44 @@
                 <docker.database.image>mariadb:10.2.21</docker.database.image>
                 <docker.database.port>3306</docker.database.port>
                 <docker.database.skip>false</docker.database.skip>
+                <docker.database.wait-for-log-regex>(?si)Ready for start up.*ready [^\n]{0,30}connections</docker.database.wait-for-log-regex>
+            </properties>
+        </profile>
+        <profile>
+            <id>db-mssql2017</id>
+            <properties>
+                <docker.database.image>microsoft/mssql-server-linux:2017-GA</docker.database.image>
+                <docker.database.port>1433</docker.database.port>
+                <docker.database.skip>false</docker.database.skip>
+                <docker.database.postStart>/opt/mssql-tools/bin/sqlcmd -e -U sa -P vEry5tron9Pwd -d master -Q CREATE\ DATABASE\ ${keycloak.connectionsJpa.database}</docker.database.postStart>
+                <docker.database.wait-for-log-regex>(?si)SQL Server is now ready for client connections.*Service Broker manager has started</docker.database.wait-for-log-regex>
+                <keycloak.connectionsJpa.driver>com.microsoft.sqlserver.jdbc.SQLServerDriver</keycloak.connectionsJpa.driver>
+                <keycloak.connectionsJpa.database>keycloak</keycloak.connectionsJpa.database>
+                <keycloak.connectionsJpa.user>sa</keycloak.connectionsJpa.user>
+                <keycloak.connectionsJpa.password>vEry5tron9Pwd</keycloak.connectionsJpa.password>
+                <keycloak.connectionsJpa.url>jdbc:sqlserver://${auth.server.db.host}:${docker.database.port};databaseName=${keycloak.connectionsJpa.database}</keycloak.connectionsJpa.url>
+                <jdbc.mvn.groupId>com.microsoft.sqlserver</jdbc.mvn.groupId>
+                <jdbc.mvn.artifactId>mssql-jdbc</jdbc.mvn.artifactId>
+                <jdbc.mvn.version>${mssql.version}</jdbc.mvn.version>
+            </properties>
+        </profile>
+        <profile>
+            <id>db-oracle11g</id>
+            <properties>
+                <docker.database.image>oracle/database:11.2.0.2-xe</docker.database.image>
+                <docker.database.port>1521</docker.database.port>
+                <docker.database.shmsize>1073741824</docker.database.shmsize>
+                <docker.database.skip>false</docker.database.skip>
+                <docker.database.wait-for-log-regex>(?si)DATABASE IS READY TO USE</docker.database.wait-for-log-regex>
+                <keycloak.connectionsJpa.driver>oracle.jdbc.OracleDriver</keycloak.connectionsJpa.driver>
+                <keycloak.connectionsJpa.database>XE</keycloak.connectionsJpa.database>
+                <keycloak.connectionsJpa.user>keycloak</keycloak.connectionsJpa.user>
+                <keycloak.connectionsJpa.password>keycloak</keycloak.connectionsJpa.password>
+                <keycloak.connectionsJpa.url>jdbc:oracle:thin:@${auth.server.db.host}:${docker.database.port}:${keycloak.connectionsJpa.database}</keycloak.connectionsJpa.url>
+                <docker.database.postStart>bash -c while\ !\ sqlplus\ -L\ SYS/sa@localhost/XE\ AS\ SYSDBA\ &lt;&lt;&lt;\ $'CREATE\ USER\ ${keycloak.connectionsJpa.user}\ IDENTIFIED\ BY\ ${keycloak.connectionsJpa.password};\n\ GRANT\ CONNECT,\ RESOURCE,\ DBA,\ GRANT\ ANY\ PRIVILEGE,\ UNLIMITED\ TABLESPACE\ TO\ ${keycloak.connectionsJpa.user};\n';\ do\ sleep\ 5;\ done</docker.database.postStart>
+                <jdbc.mvn.groupId>com.oracle</jdbc.mvn.groupId>
+                <jdbc.mvn.artifactId>ojdbc7</jdbc.mvn.artifactId>
+                <jdbc.mvn.version>12.1.0</jdbc.mvn.version>
             </properties>
         </profile>
     </profiles>
