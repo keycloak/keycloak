@@ -97,10 +97,10 @@
 
     "connectionsJpa": {
         "default": {
-            "url": "${keycloak.connectionsJpa.url:jdbc:h2:mem:test;MVCC=TRUE;DB_CLOSE_DELAY=-1}",
-            "driver": "${keycloak.connectionsJpa.driver:org.h2.Driver}",
+            "url": "${keycloak.connectionsJpa.url:SET-THE-keycloak.connectionsJpa.URL-PROPERTY}",
+            "driver": "${keycloak.connectionsJpa.driver:SET-THE-keycloak.connectionsJpa.driver-PROPERTY}",
             "driverDialect": "${keycloak.connectionsJpa.driverDialect:}",
-            "user": "${keycloak.connectionsJpa.user:sa}",
+            "user": "${keycloak.connectionsJpa.user:}",
             "password": "${keycloak.connectionsJpa.password:}",
             "initializeEmpty": true,
             "migrationStrategy": "update",

@@ -350,6 +350,7 @@
                                     <alias>testdb</alias>
                                     <name>${docker.database.image}</name>
                                     <run>
+                                        <shmSize>${docker.database.shmsize}</shmSize>
                                         <ports>
                                             <port>${docker.database.port}</port>
                                         </ports>
@@ -364,14 +365,22 @@
                                             <POSTGRES_DB>${keycloak.connectionsJpa.database}</POSTGRES_DB>
                                             <POSTGRES_USER>${keycloak.connectionsJpa.user}</POSTGRES_USER>
                                             <POSTGRES_PASSWORD>${keycloak.connectionsJpa.password}</POSTGRES_PASSWORD>
+
+                                            <!-- MSSQL -->
+                                            <ACCEPT_EULA>Y</ACCEPT_EULA>
+                                            <SA_PASSWORD>${keycloak.connectionsJpa.password}</SA_PASSWORD>
+
+                                            <!-- Oracle -->
+                                            <ORACLE_SID>${keycloak.connectionsJpa.database}</ORACLE_SID>
+                                            <ORACLE_PWD>sa</ORACLE_PWD>
                                         </env>
                                         <wait>
-                                            <tcp>
-                                                <ports>
-                                                    <port>${docker.database.port}</port>
-                                                </ports>
-                                            </tcp>
-                                            <time>120000</time>
+                                            <!-- Do not use waiting for port since that is unreliable, sometimes port is listening before DB is ready to serve -->
+                                            <log>${docker.database.wait-for-log-regex}</log>
+                                            <time>300000</time>
+                                            <exec>
+                                              <postStart>${docker.database.postStart}</postStart>
+                                            </exec>
                                         </wait>
                                     </run>
                                 </image>

@@ -114,6 +114,7 @@
         <pax.web.version>7.1.0</pax.web.version>
         <postgresql.version>9.3-1100-jdbc41</postgresql.version>
         <mariadb.version>2.2.4</mariadb.version>
+        <mssql.version>7.0.0.jre8</mssql.version>
         <servlet.api.30.version>1.0.2.Final</servlet.api.30.version>
         <servlet.api.40.version>1.0.0.Final</servlet.api.40.version>
         <twitter4j.version>4.0.4</twitter4j.version>

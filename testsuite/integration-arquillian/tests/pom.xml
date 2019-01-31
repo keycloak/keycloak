@@ -1236,46 +1236,6 @@
             </build>
         </profile>
 
-        <profile>
-            <id>jdbc-driver-dependency</id>
-            <activation>
-                <property>
-                    <name>jdbc.mvn.artifactId</name>
-                </property>
-            </activation>
-            <dependencies>
-                <dependency>
-                    <groupId>${jdbc.mvn.groupId}</groupId>
-                    <artifactId>${jdbc.mvn.artifactId}</artifactId>
-                    <version>${jdbc.mvn.version}</version>
-                </dependency>
-            </dependencies>
-            <build>
-                <plugins>
-                    <plugin>
-                        <artifactId>maven-enforcer-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <goals>
-                                    <goal>enforce</goal>
-                                </goals>
-                                <configuration>
-                                    <rules>
-                                        <requireProperty>
-                                            <property>jdbc.mvn.groupId</property>
-                                        </requireProperty>
-                                        <requireProperty>
-                                            <property>jdbc.mvn.version</property>
-                                        </requireProperty>
-                                    </rules>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-
         <!-- Profiles for migration tests-->
 
         <profile>
@@ -1500,6 +1460,7 @@
                 <dependency>
                     <groupId>com.h2database</groupId>
                     <artifactId>h2</artifactId>
+                    <version>${h2.version}</version>
                     <scope>compile</scope>
                 </dependency>
 
@@ -1628,18 +1589,10 @@
                 </dependency>
 
                 <dependency>
-                    <groupId>mysql</groupId>
-                    <artifactId>mysql-connector-java</artifactId>
-                </dependency>
-                <dependency>
-                    <groupId>org.postgresql</groupId>
-                    <artifactId>postgresql</artifactId>
-                    <version>${postgresql.version}</version>
-                </dependency>
-                <dependency>
-                    <groupId>org.mariadb.jdbc</groupId>
-                    <artifactId>mariadb-java-client</artifactId>
-                    <version>${mariadb.version}</version>
+                    <groupId>${jdbc.mvn.groupId}</groupId>
+                    <artifactId>${jdbc.mvn.artifactId}</artifactId>
+                    <version>${jdbc.mvn.version}</version>
+                    <scope>compile</scope>
                 </dependency>
 
                 <!-- CLI -->
