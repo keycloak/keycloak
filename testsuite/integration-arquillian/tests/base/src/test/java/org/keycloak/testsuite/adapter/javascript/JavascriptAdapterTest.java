@@ -118,6 +118,17 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
                 .logout(this::assertOnTestAppUrl)
                 .init(defaultArguments(), this::assertInitNotAuth);
     }
+    
+    @Test
+    // KEYCLOAK-5434: Make sure you can refresh twice without errors
+    public void testDoubleRefresh() {
+        testExecutor.init(defaultArguments(), this::assertInitNotAuth)
+                .login(this::assertOnLoginPage)
+                .loginForm(testUser, this::assertOnTestAppUrl)
+                .init(defaultArguments(), this::assertSuccessfullyLoggedIn)
+                .refresh()
+                .refresh();
+    }
 
     @Test
     public void testLoginWithKCLocale() {
@@ -315,7 +326,7 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
         testExecutor.logInAndInit(defaultArguments(), testUser, this::assertSuccessfullyLoggedIn)
                 .sendXMLHttpRequest(request, assertResponseStatus(200));
     }
-
+    
     @Test
     public void loginRequiredAction() {
         try {
