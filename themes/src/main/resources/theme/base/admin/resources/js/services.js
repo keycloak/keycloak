@@ -196,6 +196,13 @@ module.factory('ComponentUtils', function() {
 
     var utils = {};
 
+    utils.findIndexById = function(array, id) {
+        for (var i = 0; i < array.length; i++) {
+            if (array[i].id === id) return i;
+        }
+        return -1;
+    }
+    
     utils.addLastEmptyValueToMultivaluedLists = function(properties, config) {
         if (!properties) {
             return;
@@ -761,7 +768,7 @@ module.factory('RoleClientComposites', function($resource) {
 
 function roleControl($scope, realm, role, roles, clients,
                      ClientRole, RoleById, RoleRealmComposites, RoleClientComposites,
-                     $http, $location, Notifications, Dialog) {
+                     $http, $location, Notifications, Dialog, ComponentUtils) {
 
     $scope.$watch(function () {
         return $location.path();
@@ -833,68 +840,76 @@ function roleControl($scope, realm, role, roles, clients,
 
     $scope.addRealmRole = function() {
         $scope.compositeSwitchDisabled=true;
+        $scope.selectedRealmRolesToAdd = JSON.parse('[' + $scope.selectedRealmRoles + ']');
         $http.post(authUrl + '/admin/realms/' + realm.realm + '/roles-by-id/' + role.id + '/composites',
-            $scope.selectedRealmRoles).then(function() {
-            for (var i = 0; i < $scope.selectedRealmRoles.length; i++) {
-                var role = $scope.selectedRealmRoles[i];
-                var idx = $scope.realmRoles.indexOf($scope.selectedRealmRoles[i]);
+            $scope.selectedRealmRolesToAdd).then(function() {
+            for (var i = 0; i < $scope.selectedRealmRolesToAdd.length; i++) {
+                var role = $scope.selectedRealmRolesToAdd[i];
+                var idx = ComponentUtils.findIndexById($scope.realmRoles, role.id);
                 if (idx != -1) {
                     $scope.realmRoles.splice(idx, 1);
                     $scope.realmMappings.push(role);
                 }
             }
             $scope.selectedRealmRoles = [];
+            $scope.selectedRealmRolesToAdd = [];
             Notifications.success("Role added to composite.");
         });
     };
-
+    
     $scope.deleteRealmRole = function() {
         $scope.compositeSwitchDisabled=true;
+        $scope.selectedRealmMappingsToRemove = JSON.parse('[' + $scope.selectedRealmMappings + ']');
         $http.delete(authUrl + '/admin/realms/' + realm.realm + '/roles-by-id/' + role.id + '/composites',
-            {data : $scope.selectedRealmMappings, headers : {"content-type" : "application/json"}}).then(function() {
-            for (var i = 0; i < $scope.selectedRealmMappings.length; i++) {
-                var role = $scope.selectedRealmMappings[i];
-                var idx = $scope.realmMappings.indexOf($scope.selectedRealmMappings[i]);
+            {data : $scope.selectedRealmMappingsToRemove, headers : {"content-type" : "application/json"}}).then(function() {
+            for (var i = 0; i < $scope.selectedRealmMappingsToRemove.length; i++) {
+                var role = $scope.selectedRealmMappingsToRemove[i];
+                var idx = ComponentUtils.findIndexById($scope.realmMappings, role.id);
                 if (idx != -1) {
                     $scope.realmMappings.splice(idx, 1);
                     $scope.realmRoles.push(role);
                 }
             }
             $scope.selectedRealmMappings = [];
+            $scope.selectedRealmMappingsToRemove = [];
             Notifications.success("Role removed from composite.");
         });
     };
 
     $scope.addClientRole = function() {
         $scope.compositeSwitchDisabled=true;
+        $scope.selectedClientRolesToAdd = JSON.parse('[' + $scope.selectedClientRoles + ']');
         $http.post(authUrl + '/admin/realms/' + realm.realm + '/roles-by-id/' + role.id + '/composites',
-            $scope.selectedClientRoles).then(function() {
-            for (var i = 0; i < $scope.selectedClientRoles.length; i++) {
-                var role = $scope.selectedClientRoles[i];
-                var idx = $scope.clientRoles.indexOf($scope.selectedClientRoles[i]);
+            $scope.selectedClientRolesToAdd).then(function() {
+            for (var i = 0; i < $scope.selectedClientRolesToAdd.length; i++) {
+                var role = $scope.selectedClientRolesToAdd[i];
+                var idx = ComponentUtils.findIndexById($scope.clientRoles, role.id);
                 if (idx != -1) {
                     $scope.clientRoles.splice(idx, 1);
                     $scope.clientMappings.push(role);
                 }
             }
             $scope.selectedClientRoles = [];
+            $scope.selectedClientRolesToAdd = [];
             Notifications.success("Client role added.");
         });
     };
 
     $scope.deleteClientRole = function() {
         $scope.compositeSwitchDisabled=true;
+        $scope.selectedClientMappingsToRemove = JSON.parse('[' + $scope.selectedClientMappings + ']');
         $http.delete(authUrl + '/admin/realms/' + realm.realm + '/roles-by-id/' + role.id + '/composites',
-            {data : $scope.selectedClientMappings, headers : {"content-type" : "application/json"}}).then(function() {
-            for (var i = 0; i < $scope.selectedClientMappings.length; i++) {
-                var role = $scope.selectedClientMappings[i];
-                var idx = $scope.clientMappings.indexOf($scope.selectedClientMappings[i]);
+            {data : $scope.selectedClientMappingsToRemove, headers : {"content-type" : "application/json"}}).then(function() {
+            for (var i = 0; i < $scope.selectedClientMappingsToRemove.length; i++) {
+                var role = $scope.selectedClientMappingsToRemove[i];
+                var idx = ComponentUtils.findIndexById($scope.clientMappings, role.id);
                 if (idx != -1) {
                     $scope.clientMappings.splice(idx, 1);
                     $scope.clientRoles.push(role);
                 }
             }
             $scope.selectedClientMappings = [];
+            $scope.selectedClientMappingsToRemove = [];
             Notifications.success("Client role removed.");
         });
     };

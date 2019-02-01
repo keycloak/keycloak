@@ -190,6 +190,11 @@ th.w-40 {
     height: 26px;
 }
 
+/*********** html select ********/
+.overflow-select {
+    overflow: auto;
+}
+
 
 /*********** New Menu ***********/
 

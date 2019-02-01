@@ -31,7 +31,7 @@ public final class UIUtils {
 
     public static boolean selectContainsOption(Select select, String optionText) {
         for (WebElement option : select.getOptions()) {
-            if (option.getText().equals(optionText)) {
+            if (option.getText().trim().equals(optionText)) {
                 return true;
             }
         }

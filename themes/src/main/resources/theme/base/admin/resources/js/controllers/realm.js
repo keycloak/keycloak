@@ -1461,7 +1461,7 @@ module.controller('RoleListCtrl', function($scope, $route, Dialog, Notifications
 
 module.controller('RoleDetailCtrl', function($scope, realm, role, roles, clients,
                                              Role, ClientRole, RoleById, RoleRealmComposites, RoleClientComposites,
-                                             $http, $location, Dialog, Notifications, RealmRoleRemover) {
+                                             $http, $location, Dialog, Notifications, RealmRoleRemover, ComponentUtils) {
     $scope.realm = realm;
     $scope.role = angular.copy(role);
     $scope.create = !role.name;
@@ -1530,7 +1530,7 @@ module.controller('RoleDetailCtrl', function($scope, realm, role, roles, clients
 
     roleControl($scope, realm, role, roles, clients,
         ClientRole, RoleById, RoleRealmComposites, RoleClientComposites,
-        $http, $location, Notifications, Dialog);
+        $http, $location, Notifications, Dialog, ComponentUtils);
 });
 
 module.controller('RealmSMTPSettingsCtrl', function($scope, Current, Realm, realm, $http, $location, Dialog, Notifications, RealmSMTPConnectionTester) {
