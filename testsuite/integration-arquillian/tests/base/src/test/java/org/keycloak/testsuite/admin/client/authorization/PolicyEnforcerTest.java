@@ -34,6 +34,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -68,6 +69,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.authorization.AuthorizationRequest;
 import org.keycloak.representations.idm.authorization.AuthorizationResponse;
 import org.keycloak.representations.idm.authorization.JSPolicyRepresentation;
+import org.keycloak.representations.idm.authorization.Permission;
 import org.keycloak.representations.idm.authorization.ResourcePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.RolePolicyRepresentation;
@@ -175,13 +177,40 @@ public class PolicyEnforcerTest extends AbstractKeycloakTest {
             @Override
             public String apply(String s) {
                 Assert.assertTrue(resolved.compareAndSet(false, true));
-                return "claim-value";
+                return "value-" + s;
             }
         });
 
         AuthorizationContext context = policyEnforcer.enforce(httpFacade);
+        Permission permission = context.getPermissions().get(0);
+        Map<String, Set<String>> claims = permission.getClaims();
 
         assertTrue(context.isGranted());
+        assertEquals("value-claim-a", claims.get("claim-a").iterator().next());
+        assertEquals("claim-b", claims.get("claim-b").iterator().next());
+    }
+
+    @Test
+    public void testCustomClaimProvider() {
+        KeycloakDeployment deployment = KeycloakDeploymentBuilder.build(getAdapterConfiguration("enforcer-bearer-only-with-cip.json"));
+        PolicyEnforcer policyEnforcer = deployment.getPolicyEnforcer();
+
+        oauth.realm(REALM_NAME);
+        oauth.clientId("public-client-test");
+        oauth.doLogin("marta", "password");
+
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, null);
+        String token = response.getAccessToken();
+
+        OIDCHttpFacade httpFacade = createHttpFacade("/api/resourcea", token);
+
+        AuthorizationContext context = policyEnforcer.enforce(httpFacade);
+        Permission permission = context.getPermissions().get(0);
+        Map<String, Set<String>> claims = permission.getClaims();
+
+        assertTrue(context.isGranted());
+        assertEquals("test", claims.get("resolved-claim").iterator().next());
     }
 
     @Test
