@@ -414,23 +414,33 @@ To run individual social provider test only you can use option like `-Dtest=Soci
 You can use many different real-world browsers to run the integration tests.
 Although technically they can be run with almost every test in the testsuite, they can fail with some of them as the tests often require specific optimizations for given browser. Therefore, only some of the test modules have support to be run with specific browsers.
 
+Unless property `webdriverDownloadBinaries` is set to `false` Arquillian Drone will automatically download the latest version of webdriver binary required for particular browser.
+
 #### Mozilla Firefox
 * **Supported test modules:** `console`, `base-ui`
 * **Supported version:** latest stable
-* **Driver download required:** [GeckoDriver](https://github.com/mozilla/geckodriver/releases)
-* **Run with:** `-Dbrowser=firefox -Dwebdriver.gecko.driver=path/to/geckodriver`; optionally you can specify `-Dfirefox_binary=path/to/firefox/binary`
+* **Run with:** `-Dbrowser=firefox`.
+* To specify a custom path to Firefox browser binary set: `-Dfirefox_binary=path/to/firefox/binary`.
+* If you need a specific version of Firefox webdriver to be downloaded set: `-DfirefoxDriverVersion=VERSION`.
+* To use Firefox webdriver binary from the local filesystem set: `-Dwebdriver.gecko.driver=path/to/driver/binary`. This will override automatic download.
+* **Manual driver download:** [GeckoDriver](https://github.com/mozilla/geckodriver/releases)
 
 #### Google Chrome
 * **Supported test modules:** `console`, `base-ui`
 * **Supported version:** latest stable
-* **Driver download required:** [ChromeDriver](https://sites.google.com/a/chromium.org/chromedriver/) that corresponds with your version of the browser
-* **Run with:** `-Dbrowser=chrome -Dwebdriver.chrome.driver=path/to/chromedriver`
+* **Run with:** `-Dbrowser=chrome`
+* To specify a custom path to Chrome browser binary set: `-DchromeBinary=path/to/chrome/binary`.
+* If you need a specific version of Chrome webdriver to be downloaded set: `-DchromeDriverVersion=VERSION`.
+* To use Chrome webdriver binary from the local filesystem set: `-Dwebdriver.chrome.driver=path/to/chromedriver/binary`. This will override automatic download.
+* **Manual driver download:** [ChromeDriver](https://sites.google.com/a/chromium.org/chromedriver/) 
 
 #### Internet Explorer
 * **Supported test modules:** `console`, `base-ui`
 * **Supported version:** 11
-* **Driver download required:** [Internet Explorer Driver Server](http://www.seleniumhq.org/download/); recommended version [3.5.1 32-bit](http://selenium-release.storage.googleapis.com/3.5/IEDriverServer_Win32_3.5.1.zip)
-* **Run with:** `-Dbrowser=internetExplorer -Dwebdriver.ie.driver=path/to/IEDriverServer.exe`
+* **Run with:** `-Dbrowser=internetExplorer`
+* If you need a specific version of IE webdriver to be downloaded set: `-DieDriverVersion=VERSION`.
+* To use IE webdriver binary from the local filesystem set: `-Dwebdriver.ie.driver=path/to/IEDriverServer.exe`. This will override automatic download.
+* **Manual driver download:** [Internet Explorer Driver Server](http://www.seleniumhq.org/download/); recommended version [3.5.1 32-bit](http://selenium-release.storage.googleapis.com/3.5/IEDriverServer_Win32_3.5.1.zip)
 
 #### Apple Safari
 * **Supported test modules:** `base-ui`
