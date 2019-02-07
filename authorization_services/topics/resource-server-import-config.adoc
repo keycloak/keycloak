@@ -22,7 +22,7 @@ The configuration file is exported in JSON format and displayed in a text area, 
 
 == Importing a Configuration File
 
-To export a configuration file, complete the following steps:
+To import a configuration file, complete the following steps:
 
 . Navigate to the *Resource Server Settings* page.
 +
