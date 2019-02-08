@@ -286,13 +286,19 @@ public class LDAPOperationManager {
         final List<SearchResult> result = new ArrayList<SearchResult>();
         final SearchControls cons = getSearchControls(identityQuery.getReturningLdapAttributes(), identityQuery.getSearchScope());
 
+        // Very 1st page. Pagination context is not yet present
+        if (identityQuery.getPaginationContext() == null) {
+            LdapContext ldapContext = createLdapContext();
+            identityQuery.initPagination(ldapContext);
+        }
+
         try {
             return execute(new LdapOperation<List<SearchResult>>() {
 
                 @Override
                 public List<SearchResult> execute(LdapContext context) throws NamingException {
                     try {
-                        byte[] cookie = identityQuery.getPaginationContext();
+                        byte[] cookie = identityQuery.getPaginationContext().getCookie();
                         PagedResultsControl pagedControls = new PagedResultsControl(identityQuery.getLimit(), cookie, Control.CRITICAL);
                         context.setRequestControls(new Control[] { pagedControls });
 
@@ -310,7 +316,7 @@ public class LDAPOperationManager {
                                 if (respControl instanceof PagedResultsResponseControl) {
                                     PagedResultsResponseControl prrc = (PagedResultsResponseControl)respControl;
                                     cookie = prrc.getCookie();
-                                    identityQuery.setPaginationContext(cookie);
+                                    identityQuery.getPaginationContext().setCookie(cookie);
                                 }
                             }
                         }
@@ -335,7 +341,7 @@ public class LDAPOperationManager {
                             .toString();
                 }
 
-            });
+            }, identityQuery.getPaginationContext().getLdapContext(), null);
         } catch (NamingException e) {
             logger.errorf(e, "Could not query server using DN [%s] and filter [%s]", baseDN, filter);
             throw e;
@@ -565,7 +571,7 @@ public class LDAPOperationManager {
                 }
 
 
-            }, decorator);
+            }, null, decorator);
         } catch (NamingException e) {
             throw new ModelException("Could not modify attribute for DN [" + dn + "]", e);
         }
@@ -726,11 +732,13 @@ public class LDAPOperationManager {
     }
 
     private <R> R execute(LdapOperation<R> operation) throws NamingException {
-        return execute(operation, null);
+        return execute(operation, null, null);
     }
 
-    private <R> R execute(LdapOperation<R> operation, LDAPOperationDecorator decorator) throws NamingException {
-        LdapContext context = null;
+    private <R> R execute(LdapOperation<R> operation, LdapContext context, LDAPOperationDecorator decorator) throws NamingException {
+        // We won't manage LDAP context (create and close) in case that existing context was passed as an argument to this method
+        boolean manageContext = context == null;
+
         Long start = null;
 
         try {
@@ -738,14 +746,17 @@ public class LDAPOperationManager {
                 start = Time.currentTimeMillis();
             }
 
-            context = createLdapContext();
+            if (manageContext) {
+                context = createLdapContext();
+            }
+
             if (decorator != null) {
                 decorator.beforeLDAPOperation(context, operation);
             }
 
             return operation.execute(context);
         } finally {
-            if (context != null) {
+            if (context != null && manageContext) {
                 try {
                     context.close();
                 } catch (NamingException ne) {

@@ -124,24 +124,25 @@ public class RoleLDAPStorageMapper extends AbstractLDAPStorageMapper implements 
         logger.debugf("Syncing roles from LDAP into Keycloak DB. Mapper is [%s], LDAP provider is [%s]", mapperModel.getName(), ldapProvider.getModel().getName());
 
         // Send LDAP query to load all roles
-        LDAPQuery ldapRoleQuery = createRoleQuery(false);
-        List<LDAPObject> ldapRoles = LDAPUtils.loadAllLDAPObjects(ldapRoleQuery, ldapProvider);
+        try (LDAPQuery ldapRoleQuery = createRoleQuery(false)) {
+            List<LDAPObject> ldapRoles = LDAPUtils.loadAllLDAPObjects(ldapRoleQuery, ldapProvider);
 
-        RoleContainerModel roleContainer = getTargetRoleContainer(realm);
-        String rolesRdnAttr = config.getRoleNameLdapAttribute();
-        for (LDAPObject ldapRole : ldapRoles) {
-            String roleName = ldapRole.getAttributeAsString(rolesRdnAttr);
+            RoleContainerModel roleContainer = getTargetRoleContainer(realm);
+            String rolesRdnAttr = config.getRoleNameLdapAttribute();
+            for (LDAPObject ldapRole : ldapRoles) {
+                String roleName = ldapRole.getAttributeAsString(rolesRdnAttr);
 
-            if (roleContainer.getRole(roleName) == null) {
-                logger.debugf("Syncing role [%s] from LDAP to keycloak DB", roleName);
-                roleContainer.addRole(roleName);
-                syncResult.increaseAdded();
-            } else {
-                syncResult.increaseUpdated();
+                if (roleContainer.getRole(roleName) == null) {
+                    logger.debugf("Syncing role [%s] from LDAP to keycloak DB", roleName);
+                    roleContainer.addRole(roleName);
+                    syncResult.increaseAdded();
+                } else {
+                    syncResult.increaseUpdated();
+                }
             }
-        }
 
-        return syncResult;
+            return syncResult;
+        }
     }
 
 
@@ -165,32 +166,33 @@ public class RoleLDAPStorageMapper extends AbstractLDAPStorageMapper implements 
         logger.debugf("Syncing roles from Keycloak into LDAP. Mapper is [%s], LDAP provider is [%s]", mapperModel.getName(), ldapProvider.getModel().getName());
 
         // Send LDAP query to see which roles exists there
-        LDAPQuery ldapQuery = createRoleQuery(false);
-        List<LDAPObject> ldapRoles = LDAPUtils.loadAllLDAPObjects(ldapQuery, ldapProvider);
+        try (LDAPQuery ldapQuery = createRoleQuery(false)) {
+            List<LDAPObject> ldapRoles = LDAPUtils.loadAllLDAPObjects(ldapQuery, ldapProvider);
 
-        Set<String> ldapRoleNames = new HashSet<>();
-        String rolesRdnAttr = config.getRoleNameLdapAttribute();
-        for (LDAPObject ldapRole : ldapRoles) {
-            String roleName = ldapRole.getAttributeAsString(rolesRdnAttr);
-            ldapRoleNames.add(roleName);
-        }
-
-
-        RoleContainerModel roleContainer = getTargetRoleContainer(realm);
-        Set<RoleModel> keycloakRoles = roleContainer.getRoles();
-
-        for (RoleModel keycloakRole : keycloakRoles) {
-            String roleName = keycloakRole.getName();
-            if (ldapRoleNames.contains(roleName)) {
-                syncResult.increaseUpdated();
-            } else {
-                logger.debugf("Syncing role [%s] from Keycloak to LDAP", roleName);
-                createLDAPRole(roleName);
-                syncResult.increaseAdded();
+            Set<String> ldapRoleNames = new HashSet<>();
+            String rolesRdnAttr = config.getRoleNameLdapAttribute();
+            for (LDAPObject ldapRole : ldapRoles) {
+                String roleName = ldapRole.getAttributeAsString(rolesRdnAttr);
+                ldapRoleNames.add(roleName);
             }
-        }
 
-        return syncResult;
+
+            RoleContainerModel roleContainer = getTargetRoleContainer(realm);
+            Set<RoleModel> keycloakRoles = roleContainer.getRoles();
+
+            for (RoleModel keycloakRole : keycloakRoles) {
+                String roleName = keycloakRole.getName();
+                if (ldapRoleNames.contains(roleName)) {
+                    syncResult.increaseUpdated();
+                } else {
+                    logger.debugf("Syncing role [%s] from Keycloak to LDAP", roleName);
+                    createLDAPRole(roleName);
+                    syncResult.increaseAdded();
+                }
+            }
+
+            return syncResult;
+        }
     }
 
     // TODO: Possible to merge with GroupMapper and move to common class
