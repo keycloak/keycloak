@@ -350,8 +350,9 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
 
     // Send LDAP query to retrieve all groups
     protected List<LDAPObject> getAllLDAPGroups(boolean includeMemberAttribute) {
-        LDAPQuery ldapGroupQuery = createGroupQuery(includeMemberAttribute);
-        return LDAPUtils.loadAllLDAPObjects(ldapGroupQuery, ldapProvider);
+        try (LDAPQuery ldapGroupQuery = createGroupQuery(includeMemberAttribute)) {
+            return LDAPUtils.loadAllLDAPObjects(ldapGroupQuery, ldapProvider);
+        }
     }
 
 
