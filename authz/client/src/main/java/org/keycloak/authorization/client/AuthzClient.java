@@ -211,6 +211,24 @@ public class AuthzClient {
     }
 
     /**
+     * Obtains an access token callable (transparently handling refreshes) using the client credentials.
+     *
+     * @return an {@link TokenCallable}
+     */
+    public TokenCallable obtainAccessTokenCallable() {
+        return createPatSupplier();
+    }
+
+    /**
+     * Obtains an access token callable (transparently handling refreshes) using the resource owner credentials.
+     *
+     * @return an {@link TokenCallable}
+     */
+    public TokenCallable obtainAccessTokenCallable(String userName, String password) {
+        return createPatSupplier(userName, password);
+    }
+
+    /**
      * Returns the configuration obtained from the server at the UMA Discovery Endpoint.
      *
      * @return the {@link ServerConfiguration}
@@ -267,7 +285,7 @@ public class AuthzClient {
         return createPatSupplier(null, null);
     }
 
-    public TokenCallable createRefreshableAccessTokenSupplier(final String userName, final String password) {
+    private TokenCallable createRefreshableAccessTokenSupplier(final String userName, final String password) {
         return new TokenCallable(userName, password, http, configuration, serverConfiguration);
     }
 }
