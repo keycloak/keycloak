@@ -111,18 +111,8 @@ public class OIDCKeyCloakServerBrokerBasicTest extends AbstractKeycloakIdentityP
     }
 
     @Test
-    public void testSuccessfulAuthentication() {
-        super.testSuccessfulAuthentication();
-    }
-
-    @Test
     public void testDisabledUser() throws Exception {
         super.testDisabledUser();
-    }
-
-    @Test
-    public void testTemporarilyDisabledUser() {
-        super.testTemporarilyDisabledUser();
     }
 
     @Test
