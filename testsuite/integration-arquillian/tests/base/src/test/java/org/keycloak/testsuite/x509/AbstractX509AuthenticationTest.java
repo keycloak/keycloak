@@ -18,8 +18,10 @@
 
 package org.keycloak.testsuite.x509;
 
+import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.logging.Logger;
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Rule;
@@ -42,14 +44,21 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.pages.AbstractPage;
 import org.keycloak.testsuite.util.AdminEventPaths;
 import org.keycloak.testsuite.util.AssertAdminEvents;
 import org.keycloak.testsuite.util.ClientBuilder;
+import org.keycloak.testsuite.util.DroneUtils;
+import org.keycloak.testsuite.util.PhantomJSBrowser;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
+import org.openqa.selenium.WebDriver;
 
 import javax.ws.rs.core.Response;
+import java.lang.reflect.Field;
 import java.net.URI;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -67,7 +76,6 @@ import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorC
  * @version $Revision: 1 $
  * @since 10/28/2016
  */
-
 public abstract class AbstractX509AuthenticationTest extends AbstractTestRealmKeycloakTest {
 
     public static final String EMPTY_CRL_PATH = "empty.crl";
@@ -103,9 +111,15 @@ public abstract class AbstractX509AuthenticationTest extends AbstractTestRealmKe
         return true;
     }
 
+    @Before
+    public void validateConfiguration() {
+        Assume.assumeTrue("Only JBoss AS has proper certificate configuration", isAuthServerJBoss());
+        Assume.assumeTrue(AUTH_SERVER_SSL_REQUIRED);
+    }
+
     @BeforeClass
     public static void onBeforeTestClass() {
-        if (Boolean.parseBoolean(System.getProperty("auth.server.jboss"))) {
+        if (isAuthServerJBoss()) {
             String authServerHome = System.getProperty("auth.server.home");
 
             if (authServerHome != null && System.getProperty("auth.server.ssl.required") != null) {
@@ -122,6 +136,10 @@ public abstract class AbstractX509AuthenticationTest extends AbstractTestRealmKe
                 System.setProperty("keycloak.phantomjs.cli.args", cliArgs.toString());
             }
         }
+    }
+
+    private static boolean isAuthServerJBoss() {
+        return Boolean.parseBoolean(System.getProperty("auth.server.jboss"));
     }
 
     @Before
@@ -372,5 +390,24 @@ public abstract class AbstractX509AuthenticationTest extends AbstractTestRealmKe
         user.setEnabled(enabled);
 
         updateUser(user);
+    }
+
+    public void replaceDefaultWebDriver(WebDriver driver) {
+        this.driver = driver;
+        DroneUtils.addWebDriver(driver);
+
+        List<Field> allFields = new ArrayList<>();
+        allFields.addAll(Arrays.asList(this.getClass().getDeclaredFields()));
+        allFields.addAll(Arrays.asList(this.getClass().getFields()));
+        for (Field f : allFields) {
+            if (f.getAnnotation(Page.class) != null) {
+                try {
+                    AbstractPage page = (AbstractPage) f.get(this);
+                    page.setDriver(driver);
+                } catch (IllegalAccessException e) {
+                    throw new IllegalStateException("Could not replace the driver in " + f, e);
+                }
+            }
+        }
     }
 }

@@ -18,7 +18,9 @@
 
 package org.keycloak.testsuite.x509;
 
+import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
@@ -30,6 +32,8 @@ import org.keycloak.representations.RefreshToken;
 import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.PhantomJSBrowser;
+import org.openqa.selenium.WebDriver;
 
 import javax.ws.rs.core.Response;
 
@@ -47,6 +51,15 @@ import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorC
  */
 
 public class X509DirectGrantTest extends AbstractX509AuthenticationTest {
+
+    @Drone
+    @PhantomJSBrowser
+    private WebDriver phantomJS;
+
+    @Before
+    public void replaceTheDefaultDriver() {
+        replaceDefaultWebDriver(phantomJS);
+    }
 
     @Test
     public void loginFailedOnDuplicateUsers() throws Exception {

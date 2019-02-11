@@ -87,6 +87,11 @@
         <property name="chromeArguments">${js.chromeArguments}</property>
     </extension>
 
+    <extension qualifier="webdriver-phantomjsbrowser">
+        <property name="browser">phantomjs</property>
+        <property name="downloadBinaries">${webdriverDownloadBinaries}</property>
+    </extension>
+
     <extension qualifier="graphene-secondbrowser">
         <property name="browser">${browser}</property>
         <property name="firefoxBinary">${firefox_binary}</property>

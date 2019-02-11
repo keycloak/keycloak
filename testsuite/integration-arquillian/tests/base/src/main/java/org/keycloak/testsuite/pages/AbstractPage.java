@@ -60,4 +60,9 @@ public abstract class AbstractPage {
 
     abstract public void open() throws Exception;
 
+    public void setDriver(WebDriver driver) {
+        this.driver = driver ;
+        oauth.setDriver(driver);
+    }
+
 }
