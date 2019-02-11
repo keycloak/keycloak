@@ -174,13 +174,6 @@ public class SAMLBrokerUserPropertyTest extends AbstractKeycloakIdentityProvider
     @Override
     @Test
     @Ignore
-    public void testProviderOnLoginPage() {
-        // ignore
-    }
-
-    @Override
-    @Test
-    @Ignore
     public void testAccountManagementLinkIdentity() {
         // ignore
     }
@@ -189,13 +182,6 @@ public class SAMLBrokerUserPropertyTest extends AbstractKeycloakIdentityProvider
     @Test
     @Ignore
     public void testAccountManagementLinkedIdentityAlreadyExists() {
-        // ignore
-    }
-
-    @Override
-    @Test
-    @Ignore
-    public void testIdentityProviderNotAllowed() {
         // ignore
     }
 
