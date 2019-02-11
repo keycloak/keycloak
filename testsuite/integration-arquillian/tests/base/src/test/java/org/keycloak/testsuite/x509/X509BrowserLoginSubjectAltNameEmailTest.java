@@ -17,8 +17,10 @@
 
 package org.keycloak.testsuite.x509;
 
+import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
@@ -28,6 +30,8 @@ import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.x509.X509IdentityConfirmationPage;
+import org.keycloak.testsuite.util.PhantomJSBrowser;
+import org.openqa.selenium.WebDriver;
 
 /**
  * @author <a href="mailto:brat000012001@gmail.com">Peter Nalyvayko</a>
@@ -38,13 +42,25 @@ import org.keycloak.testsuite.pages.x509.X509IdentityConfirmationPage;
 public class X509BrowserLoginSubjectAltNameEmailTest extends AbstractX509AuthenticationTest {
 
     @Page
+    @PhantomJSBrowser
     protected AppPage appPage;
 
     @Page
+    @PhantomJSBrowser
     protected X509IdentityConfirmationPage loginConfirmationPage;
 
     @Page
+    @PhantomJSBrowser
     protected LoginPage loginPage;
+
+    @Drone
+    @PhantomJSBrowser
+    private WebDriver phantomJS;
+
+    @Before
+    public void replaceTheDefaultDriver() {
+        replaceDefaultWebDriver(phantomJS);
+    }
 
     @BeforeClass
     public static void onBeforeTestClass() {

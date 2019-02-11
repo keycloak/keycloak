@@ -18,8 +18,11 @@
 
 package org.keycloak.testsuite.x509;
 
+import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
+import org.jboss.arquillian.junit.InSequence;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel;
@@ -43,6 +46,14 @@ import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorC
 import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel.MappingSourceType.SUBJECTDN_EMAIL;
 import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.util.DroneUtils;
+import org.keycloak.testsuite.util.JavascriptBrowser;
+import org.keycloak.testsuite.util.PhantomJSBrowser;
+import org.keycloak.testsuite.util.SecondBrowser;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.firefox.FirefoxDriver;
+import org.openqa.selenium.phantomjs.PhantomJSDriver;
+
+import java.util.List;
 
 /**
  * @author <a href="mailto:brat000012001@gmail.com">Peter Nalyvayko</a>
@@ -53,16 +64,27 @@ import org.keycloak.testsuite.util.DroneUtils;
 public class X509BrowserLoginTest extends AbstractX509AuthenticationTest {
 
     @Page
+    @PhantomJSBrowser
     protected AppPage appPage;
 
     @Page
+    @PhantomJSBrowser
     protected X509IdentityConfirmationPage loginConfirmationPage;
 
     @Page
+    @PhantomJSBrowser
     protected LoginPage loginPage;
 
-    private void login(X509AuthenticatorConfigModel config, String userId, String username, String attemptedUsername) {
+    @Drone
+    @PhantomJSBrowser
+    private WebDriver phantomJS;
 
+    @Before
+    public void replaceTheDefaultDriver() {
+        replaceDefaultWebDriver(phantomJS);
+    }
+
+    private void login(X509AuthenticatorConfigModel config, String userId, String username, String attemptedUsername) {
         AuthenticatorConfigRepresentation cfg = newConfig("x509-browser-config", config.getConfig());
         String cfgId = createConfig(browserExecution.getId(), cfg);
         Assert.assertNotNull(cfgId);
@@ -492,28 +514,28 @@ public class X509BrowserLoginTest extends AbstractX509AuthenticationTest {
     @Test
     public void changeLocaleOnX509InfoPage() {
         ProfileAssume.assumeCommunity();
-        
+
         AuthenticatorConfigRepresentation cfg = newConfig("x509-browser-config", createLoginSubjectEmail2UsernameOrEmailConfig().getConfig());
         String cfgId = createConfig(browserExecution.getId(), cfg);
         Assert.assertNotNull(cfgId);
 
         log.debug("Open confirm page");
         loginConfirmationPage.open();
-        
+
         log.debug("check if on confirm page");
         Assert.assertThat(loginConfirmationPage.getSubjectDistinguishedNameText(), startsWith("EMAILADDRESS=test-user@localhost"));
         log.debug("check if locale is EN");
         Assert.assertThat(loginConfirmationPage.getLanguageDropdownText(), is(equalTo("English")));
-        
+
         log.debug("change locale to DE");
         loginConfirmationPage.openLanguage("Deutsch");
         log.debug("check if locale is DE");
         Assert.assertThat(loginConfirmationPage.getLanguageDropdownText(), is(equalTo("Deutsch")));
         Assert.assertThat(DroneUtils.getCurrentDriver().getPageSource(), containsString("X509 Client Zertifikat:"));
-        
+
         log.debug("confirm cert");
         loginConfirmationPage.confirm();
-        
+
         log.debug("check if logged in");
         Assert.assertThat(appPage.getRequestType(), is(equalTo(AppPage.RequestType.AUTH_RESPONSE)));
     }
