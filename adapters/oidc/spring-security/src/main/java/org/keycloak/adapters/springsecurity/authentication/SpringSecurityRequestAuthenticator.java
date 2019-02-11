@@ -32,6 +32,7 @@ import org.keycloak.adapters.springsecurity.account.SimpleKeycloakAccount;
 import org.keycloak.adapters.springsecurity.token.KeycloakAuthenticationToken;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 import javax.servlet.http.HttpServletRequest;
@@ -94,7 +95,10 @@ public class SpringSecurityRequestAuthenticator extends RequestAuthenticator {
 
         logger.debug("Completing bearer authentication. Bearer roles: {} ",roles);
 
-        SecurityContextHolder.getContext().setAuthentication(new KeycloakAuthenticationToken(account, false));
+        SecurityContext context = SecurityContextHolder.createEmptyContext();
+        context.setAuthentication(new KeycloakAuthenticationToken(account, false));
+        SecurityContextHolder.setContext(context);
+
         request.setAttribute(KeycloakSecurityContext.class.getName(), securityContext);
     }
 
