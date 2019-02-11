@@ -544,6 +544,12 @@
 
                             <!-- used by PasswordPolicyTest.testBlacklistPasswordPolicyWithTestBlacklist, see KEYCLOAK-5244 -->
                             <keycloak.password.blacklists.path>${project.build.directory}/dependency/password-blacklists</keycloak.password.blacklists.path>
+
+                            <keycloak.connectionsJpa.driver>${keycloak.connectionsJpa.driver}</keycloak.connectionsJpa.driver>
+                            <keycloak.connectionsJpa.url>${keycloak.connectionsJpa.url}</keycloak.connectionsJpa.url>
+                            <keycloak.connectionsJpa.database>${keycloak.connectionsJpa.database}</keycloak.connectionsJpa.database>
+                            <keycloak.connectionsJpa.user>${keycloak.connectionsJpa.user}</keycloak.connectionsJpa.user>
+                            <keycloak.connectionsJpa.password>${keycloak.connectionsJpa.password}</keycloak.connectionsJpa.password>
                         </systemPropertyVariables>
                         <properties>
                             <property>

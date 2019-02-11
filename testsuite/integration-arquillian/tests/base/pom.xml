@@ -194,11 +194,6 @@
                     <systemPropertyVariables>
                         <com.mchange.v2.c3p0.VMID>testsuiteVmId</com.mchange.v2.c3p0.VMID>
                         <auth.server.db.host>${docker.container.testdb.ip}</auth.server.db.host>
-                        <keycloak.connectionsJpa.driver>${keycloak.connectionsJpa.driver}</keycloak.connectionsJpa.driver>
-                        <keycloak.connectionsJpa.url>${keycloak.connectionsJpa.url}</keycloak.connectionsJpa.url>
-                        <keycloak.connectionsJpa.database>${keycloak.connectionsJpa.database}</keycloak.connectionsJpa.database>
-                        <keycloak.connectionsJpa.user>${keycloak.connectionsJpa.user}</keycloak.connectionsJpa.user>
-                        <keycloak.connectionsJpa.password>${keycloak.connectionsJpa.password}</keycloak.connectionsJpa.password>
                     </systemPropertyVariables>
                 </configuration>
             </plugin>
