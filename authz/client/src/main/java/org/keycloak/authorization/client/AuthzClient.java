@@ -267,7 +267,7 @@ public class AuthzClient {
         return createPatSupplier(null, null);
     }
 
-    private TokenCallable createRefreshableAccessTokenSupplier(final String userName, final String password) {
+    public TokenCallable createRefreshableAccessTokenSupplier(final String userName, final String password) {
         return new TokenCallable(userName, password, http, configuration, serverConfiguration);
     }
 }
