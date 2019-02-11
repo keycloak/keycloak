@@ -98,46 +98,6 @@ public abstract class AbstractKeycloakIdentityProviderTest extends AbstractIdent
     }
 
     @Test
-    public void testTemporarilyDisabledUser() {
-        KeycloakSession session = brokerServerRule.startSession();
-        setUpdateProfileFirstLogin(session.realms().getRealmByName("realm-with-broker"), IdentityProviderRepresentation.UPFLM_OFF);
-        brokerServerRule.stopSession(session, true);
-
-        driver.navigate().to("http://localhost:8081/test-app");
-        loginPage.clickSocial(getProviderId());
-        loginPage.login("test-user", "password");
-        driver.navigate().to("http://localhost:8081/test-app/logout");
-
-        try {
-            session = brokerServerRule.startSession();
-            RealmModel brokerRealm = session.realms().getRealmByName("realm-with-broker");
-            brokerRealm.setBruteForceProtected(true);
-            brokerRealm.setFailureFactor(2);
-            brokerServerRule.stopSession(session, true);
-
-            driver.navigate().to("http://localhost:8081/test-app");
-            loginPage.login("test-user", "fail");
-            loginPage.login("test-user", "fail");
-
-            driver.navigate().to("http://localhost:8081/test-app");
-
-            assertTrue(driver.getCurrentUrl().startsWith("http://localhost:8081/auth/realms/realm-with-broker/protocol/openid-connect/auth"));
-
-            loginPage.clickSocial(getProviderId());
-            loginPage.login("test-user", "password");
-
-            assertTrue(errorPage.isCurrent());
-            assertEquals("Account is disabled, contact admin.", errorPage.getError());
-        } finally {
-            session = brokerServerRule.startSession();
-            RealmModel brokerRealm = session.realms().getRealmByName("realm-with-broker");
-            brokerRealm.setBruteForceProtected(false);
-            brokerRealm.setFailureFactor(0);
-            brokerServerRule.stopSession(session, true);
-        }
-    }
-
-    @Test
     public void testSuccessfulAuthenticationUpdateProfileOnMissing_nothingMissing() {
         IdentityProviderModel identityProviderModel = getIdentityProviderModel();
         setUpdateProfileFirstLogin(IdentityProviderRepresentation.UPFLM_MISSING);
@@ -393,14 +353,6 @@ public abstract class AbstractKeycloakIdentityProviderTest extends AbstractIdent
     }
 
     @Test
-    public void testProviderOnLoginPage() {
-        // Provider button is available on login page
-        this.driver.navigate().to("http://localhost:8081/test-app/");
-        assertTrue(this.driver.getCurrentUrl().startsWith("http://localhost:8081/auth/realms/realm-with-broker/protocol/openid-connect/auth"));
-        loginPage.findSocialButton(getProviderId());
-    }
-
-    @Test
     public void testAccountManagementLinkIdentity() {
         // Login as pedroigor to account management
         accountFederatedIdentityPage.realm("realm-with-broker");
@@ -482,16 +434,6 @@ public abstract class AbstractKeycloakIdentityProviderTest extends AbstractIdent
         // Error is displayed in account management because federated identity"test-user" already linked to local account "test-user"
         accountFederatedIdentityPage.assertCurrent();
         assertEquals("Federated identity returned by " + getProviderId() + " is already linked to another user.", accountFederatedIdentityPage.getError());
-    }
-
-
-    @Test(expected = NoSuchElementException.class)
-    public void testIdentityProviderNotAllowed() {
-        this.driver.navigate().to("http://localhost:8081/test-app/");
-
-        assertTrue(this.driver.getCurrentUrl().startsWith("http://localhost:8081/auth/realms/realm-with-broker/protocol/openid-connect/auth"));
-
-        driver.findElement(By.className("model-oidc-idp"));
     }
 
     protected void configureClientRetrieveToken(String clientId) {
