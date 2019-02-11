@@ -29,10 +29,7 @@ import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.hamcrest.Matchers;
 import org.jboss.arquillian.drone.api.annotation.Drone;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.*;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.admin.client.resource.ClientResource;
@@ -111,6 +108,11 @@ public class HoKTest extends AbstractTestRealmKeycloakTest {
 
         // for token introspection
         configTestRealmForTokenIntrospection(testRealm);
+    }
+
+    @BeforeClass
+    public static void checkIfTLSIsTurnedOn() {
+        Assume.assumeTrue(AUTH_SERVER_SSL_REQUIRED);
     }
 
     private void addRedirectUrlForTls(RealmRepresentation testRealm, String clientId) {

@@ -41,10 +41,6 @@
         <!--exclude cluster tests by default, enabled by 'auth-server-*-cluster' profiles in tests/pom.xml-->
         <exclude.cluster>**/cluster/**/*Test.java</exclude.cluster>
         <exclude.crossdc>**/crossdc/**/*Test.java</exclude.crossdc>
-        <!-- exclude x509 tests by default, enabled by 'ssl' profile -->
-        <exclude.x509>**/x509/*Test.java</exclude.x509>
-        <!-- KEYCLOAK-6771 exclude Mutual TLS Holder of Key Token x509 tests by default, enabled by 'ssl' profile -->
-        <exclude.HoK>**/hok/**/*Test.java</exclude.HoK>
     </properties>
     
     <dependencies>
@@ -185,8 +181,6 @@
                         <exclude>${exclude.client}</exclude>
                         <exclude>${exclude.cluster}</exclude>
                         <exclude>${exclude.crossdc}</exclude>
-                        <exclude>${exclude.x509}</exclude>
-                        <exclude>${exclude.HoK}</exclude>
                     </excludes>
                     <systemPropertyVariables>
                         <com.mchange.v2.c3p0.VMID>testsuiteVmId</com.mchange.v2.c3p0.VMID>

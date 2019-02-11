@@ -511,17 +511,6 @@ To use a mobile browser you need to create a virtual device. The most convenient
 * **Supported mobile OS version:** iOS 11.x
 * **Run with:** `mvn clean test -Pios -Dappium.deviceName=device_name` where the device name is your device identification (e.g. `iPhone X`)
 
-## Run X.509 tests
-
-To run the X.509 client certificate authentication tests:
-
-    mvn -f testsuite/integration-arquillian/pom.xml \
-          clean install \
-	  -Pauth-server-wildfly \
-	  -Dauth.server.ssl.required \
-	  -Dbrowser=phantomjs \
-	  "-Dtest=*.x509.*"
-
 ## Disabling TLS (SSL) in the tests
 
 All tests are executed with TLS by default. In order to disable it, you need to switch the `auth.server.ssl.required` property off.
