@@ -33,8 +33,10 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.StringWriter;
 import java.net.URI;
+import java.net.URL;
 import java.nio.charset.Charset;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.util.URLUtils.currentUrlDoesntStartWith;
 import static org.keycloak.testsuite.util.URLUtils.currentUrlEquals;
@@ -60,11 +62,14 @@ public class URLAssert {
         assertCurrentUrlEquals(page.toString());
     }
 
+    public static void assertCurrentUrlEquals(final URI url) {
+        assertCurrentUrlEquals(url.toASCIIString());
+    }
+
     public static void assertCurrentUrlEquals(final String url) {
         assertTrue("Expected URL: " + url + "; actual: " + DroneUtils.getCurrentDriver().getCurrentUrl(),
                 currentUrlEquals(url));
     }
-
 
     public static void assertCurrentUrlStartsWith(final AbstractPage page, WebDriver driver) {
         assertCurrentUrlStartsWith(page.toString(), driver);

@@ -43,7 +43,7 @@
         <fuse61.version>6.1.0.redhat-379</fuse61.version>
         <!--<fuse62.version>6.2.0.redhat-133</fuse62.version>-->
         <fuse62.version>6.2.1.redhat-084</fuse62.version>
-        
+
         <!-- cache server versions -->
         <!--<infinispan.version>8.2.8.Final</infinispan.version>--><!-- Use same infinspan-server version as our version -->
         <jdg.version>9.4.6.Final-redhat-00002</jdg.version><!-- JDG 7.3.0 -->

@@ -40,7 +40,7 @@ import io.undertow.util.Headers;
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.reflections.Reflections;
 import org.keycloak.services.managers.AuthenticationSessionManager;
-import org.keycloak.testsuite.arquillian.undertow.TLSUtils;
+import org.keycloak.testsuite.utils.tls.TLSUtils;
 
 import java.util.LinkedHashMap;
 import java.util.StringTokenizer;

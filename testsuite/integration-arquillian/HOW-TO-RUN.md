@@ -85,6 +85,21 @@ TODO: Add info about Wildfly logging
     mvn -f testsuite/integration-arquillian/tests/base/pom.xml \
         -Dtest=org.keycloak.testsuite.adapter.**.*Test
 
+### Jetty
+
+At the moment we can run the testsuite with Jetty `9.1`, `9.2` and `9.4`. 
+Each version has its corresponding profile:
+
+* Jetty `9.1`: `app-server-jetty91`
+* Jetty `9.2`: `app-server-jetty92`
+* Jetty `9.4`: `app-server-jetty94`
+
+Here's how to run the tests with Jetty `9.4`:
+
+    mvn -f testsuite/integration-arquillian/tests/base/pom.xml \
+        -Papp-server-jetty94 \
+        -Dtest=org.keycloak.testsuite.adapter.**.*Test
+
 ### Wildfly
     
     # Run tests

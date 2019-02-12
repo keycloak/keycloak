@@ -69,7 +69,6 @@
                 </plugins>
             </build>
             <modules>
-                <module>jetty</module>
                 <module>tomcat7</module>
             </modules>
         </profile>
