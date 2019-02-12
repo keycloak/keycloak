@@ -20,6 +20,7 @@ package org.keycloak.testsuite.x509;
 
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.logging.Logger;
+import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Before;
@@ -50,6 +51,7 @@ import org.keycloak.testsuite.pages.AbstractPage;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.x509.X509IdentityConfirmationPage;
+import org.keycloak.testsuite.updaters.SetSystemProperty;
 import org.keycloak.testsuite.util.AdminEventPaths;
 import org.keycloak.testsuite.util.AssertAdminEvents;
 import org.keycloak.testsuite.util.ClientBuilder;
@@ -74,6 +76,7 @@ import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorC
 import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel.MappingSourceType.ISSUERDN_CN;
 import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel.MappingSourceType.SUBJECTALTNAME_EMAIL;
 import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel.MappingSourceType.SUBJECTALTNAME_OTHERNAME;
+import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel.MappingSourceType.SUBJECTDN;
 import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel.MappingSourceType.SUBJECTDN_CN;
 import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel.MappingSourceType.SUBJECTDN_EMAIL;
 
@@ -105,6 +108,8 @@ public abstract class AbstractX509AuthenticationTest extends AbstractTestRealmKe
     protected AuthenticationExecutionInfoRepresentation browserExecution;
 
     protected AuthenticationExecutionInfoRepresentation directGrantExecution;
+
+    private static SetSystemProperty phantomjsCliArgs;
 
     @Rule
     public AssertEvents events = new AssertEvents(this);
@@ -141,6 +146,10 @@ public abstract class AbstractX509AuthenticationTest extends AbstractTestRealmKe
         configurePhantomJS("/ca.crt", "/client.crt", "/client.key", "password");
     }
 
+    @AfterClass
+    public static void onAfterTestClass() {
+        phantomjsCliArgs.revert();
+    }
 
     /**
      * Setup phantom JS to be used for mutual TLS testing. All file paths are relative to "authServerHome"
@@ -163,7 +172,7 @@ public abstract class AbstractX509AuthenticationTest extends AbstractTestRealmKe
             cliArgs.append("--ssl-client-key-file=").append(authServerHome).append(clientKeyFile).append(" ");
             cliArgs.append("--ssl-client-key-passphrase=" + clientKeyPassword).append(" ");
 
-            System.setProperty("keycloak.phantomjs.cli.args", cliArgs.toString());
+            phantomjsCliArgs = new SetSystemProperty("keycloak.phantomjs.cli.args", cliArgs.toString());
         }
     }
 
@@ -438,6 +447,26 @@ public abstract class AbstractX509AuthenticationTest extends AbstractTestRealmKe
                 .setConfirmationPageAllowed(true)
                 .setMappingSourceType(ISSUERDN)
                 .setRegularExpression("O=(.*?)(?:,|$)")
+                .setUserIdentityMapperType(USER_ATTRIBUTE)
+                .setCustomAttributeName("x509_certificate_identity");
+    }
+
+    protected static X509AuthenticatorConfigModel createLoginSubjectDNToCustomAttributeConfig(boolean canonicalDnEnabled) {
+        return new X509AuthenticatorConfigModel()
+                .setConfirmationPageAllowed(true)
+                .setCanonicalDnEnabled(canonicalDnEnabled)
+                .setMappingSourceType(SUBJECTDN)
+                .setRegularExpression("(.*?)(?:$)")
+                .setUserIdentityMapperType(USER_ATTRIBUTE)
+                .setCustomAttributeName("x509_certificate_identity");
+    }
+
+    protected static X509AuthenticatorConfigModel createLoginIssuerDNToCustomAttributeConfig(boolean canonicalDnEnabled) {
+        return new X509AuthenticatorConfigModel()
+                .setConfirmationPageAllowed(true)
+                .setCanonicalDnEnabled(canonicalDnEnabled)
+                .setMappingSourceType(ISSUERDN)
+                .setRegularExpression("(.*?)(?:$)")
                 .setUserIdentityMapperType(USER_ATTRIBUTE)
                 .setCustomAttributeName("x509_certificate_identity");
     }

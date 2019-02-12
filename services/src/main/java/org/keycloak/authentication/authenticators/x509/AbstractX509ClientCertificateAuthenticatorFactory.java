@@ -29,7 +29,7 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.services.ServicesLogger;
 
-import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.CERTIFICATE_EXTENDED_KEY_USAGE;
+import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.*;
 import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.CERTIFICATE_KEY_USAGE;
 import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.CONFIRMATION_PAGE_DISALLOWED;
 import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.CRL_RELATIVE_PATH;
@@ -100,6 +100,13 @@ public abstract class AbstractX509ClientCertificateAuthenticatorFactory implemen
         mappingMethodList.setHelpText("Choose how to extract user identity from X509 certificate or the certificate fields. For example, SubjectDN will match the custom regular expression specified below to the value of certificate's SubjectDN field.");
         mappingMethodList.setDefaultValue(mappingSources[0]);
         mappingMethodList.setOptions(mappingSourceTypes);
+
+        ProviderConfigProperty canonicalDn = new ProviderConfigProperty();
+        canonicalDn.setType(BOOLEAN_TYPE);
+        canonicalDn.setName(CANONICAL_DN);
+        canonicalDn.setLabel("Canonical DN representation enabled");
+        canonicalDn.setDefaultValue(false);
+        canonicalDn.setHelpText("Use the canonical format to determine the distinguished name. This option is relevant for authenticators using a distinguished name.");
 
         ProviderConfigProperty regExp = new ProviderConfigProperty();
         regExp.setType(STRING_TYPE);
@@ -189,6 +196,7 @@ public abstract class AbstractX509ClientCertificateAuthenticatorFactory implemen
         identityConfirmationPageDisallowed.setHelpText("By default, the users are prompted to confirm their identity extracted from X509 client certificate. The identity confirmation prompt is skipped if the option is switched on.");
 
         configProperties = asList(mappingMethodList,
+                canonicalDn,
                 regExp,
                 userMapperList,
                 attributeOrPropertyValue,
