@@ -295,12 +295,10 @@ public class PermissionsTest extends AbstractKeycloakTest {
         }, Resource.REALM, false, true);
         assertGettersEmpty(clients.get(AdminRoles.QUERY_REALMS).realm(REALM_NAME).toRepresentation());
 
-        // this should throw forbidden as "query-users" role isn't enough
-        invoke(new Invocation() {
-            public void invoke(RealmResource realm) {
-                clients.get(AdminRoles.QUERY_USERS).realm(REALM_NAME).toRepresentation();
-            }
-        }, clients.get(AdminRoles.QUERY_USERS), false);
+        // this should pass given that users granted with "query" roles are allowed to access the realm with limited access
+        for (String role : AdminRoles.ALL_QUERY_ROLES) {
+            invoke(realm -> clients.get(role).realms().realm(REALM_NAME).toRepresentation(), clients.get(role), true);
+        }
 
         invoke(new Invocation() {
             public void invoke(RealmResource realm) {
@@ -497,6 +495,28 @@ public class PermissionsTest extends AbstractKeycloakTest {
         invoke(new Invocation() {
             public void invoke(RealmResource realm) {
                 clients.get(AdminRoles.QUERY_USERS).realm(REALM_NAME).clients().findAll();
+            }
+        }, clients.get(AdminRoles.QUERY_USERS), false);
+        ClientRepresentation client = l.get(0);
+        invoke(new InvocationWithResponse() {
+            @Override
+            public void invoke(RealmResource realm, AtomicReference<Response> response) {
+                response.set(clients.get(AdminRoles.QUERY_USERS).realm(REALM_NAME).clients().create(client));
+            }
+        }, clients.get(AdminRoles.QUERY_USERS), false);
+        invoke(new Invocation() {
+            public void invoke(RealmResource realm) {
+                clients.get(AdminRoles.QUERY_USERS).realm(REALM_NAME).clients().get(client.getId()).toRepresentation();
+            }
+        }, clients.get(AdminRoles.QUERY_USERS), false);
+        invoke(new Invocation() {
+            public void invoke(RealmResource realm) {
+                clients.get(AdminRoles.QUERY_USERS).realm(REALM_NAME).clients().get(client.getId()).update(client);
+            }
+        }, clients.get(AdminRoles.QUERY_USERS), false);
+        invoke(new Invocation() {
+            public void invoke(RealmResource realm) {
+                clients.get(AdminRoles.QUERY_USERS).realm(REALM_NAME).clients().get(client.getId()).remove();
             }
         }, clients.get(AdminRoles.QUERY_USERS), false);
 
@@ -1551,6 +1571,38 @@ public class PermissionsTest extends AbstractKeycloakTest {
                 realm.users().search("foo", 0, 1);
             }
         }, Resource.USER, false);
+        // this should throw forbidden as "query-client" role isn't enough
+        invoke(new Invocation() {
+            public void invoke(RealmResource realm) {
+                clients.get(AdminRoles.QUERY_CLIENTS).realm(REALM_NAME).users().list();
+            }
+        }, clients.get(AdminRoles.QUERY_CLIENTS), false);
+        invoke(new InvocationWithResponse() {
+            @Override
+            public void invoke(RealmResource realm, AtomicReference<Response> response) {
+                response.set(clients.get(AdminRoles.QUERY_CLIENTS).realm(REALM_NAME).users().create(user));
+            }
+        }, clients.get(AdminRoles.QUERY_CLIENTS), false);
+        invoke(new Invocation() {
+            public void invoke(RealmResource realm) {
+                clients.get(AdminRoles.QUERY_CLIENTS).realm(REALM_NAME).users().search("test");
+            }
+        }, clients.get(AdminRoles.QUERY_CLIENTS), false);
+        invoke(new Invocation() {
+            public void invoke(RealmResource realm) {
+                realm.users().get(user.getId()).toRepresentation();
+            }
+        }, clients.get(AdminRoles.QUERY_CLIENTS), false);
+        invoke(new Invocation() {
+            public void invoke(RealmResource realm) {
+                realm.users().get(user.getId()).remove();
+            }
+        }, clients.get(AdminRoles.QUERY_CLIENTS), false);
+        invoke(new Invocation() {
+            public void invoke(RealmResource realm) {
+                realm.users().get(user.getId()).update(user);
+            }
+        }, clients.get(AdminRoles.QUERY_CLIENTS), false);
     }
 
     @Test
