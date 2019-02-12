@@ -41,6 +41,7 @@
         <module>karaf</module>
         <module>tomcat</module>
         <module>undertow</module>
+        <module>jetty</module>
     </modules>
 
 </project>

@@ -236,6 +236,10 @@ public class OIDCPublicKeyRotationAdapterTest extends AbstractServletsAdapterTes
     @Test
     public void testPublicKeyCacheInvalidatedWhenPushedNotBefore() {
         driver.manage().timeouts().pageLoadTimeout(1000, TimeUnit.SECONDS);
+        String customerDBUnsecuredUrl = customerDb.getUriBuilder().clone().path("unsecured").path("foo").build().toASCIIString();
+        String customerDBUrlNoTrailSlash = customerDb.getUriBuilder().build().toASCIIString();
+        customerDBUrlNoTrailSlash = customerDBUrlNoTrailSlash.substring(0, customerDBUrlNoTrailSlash.length() - 1);
+        String tokenMinTTLUnsecuredUrl = tokenMinTTLPage.getUriBuilder().clone().path("unsecured").path("foo").build().toASCIIString();
 
         // increase accessTokenLifespan to 1200
         RealmRepresentation demoRealm = adminClient.realm(DEMO).toRepresentation();
@@ -259,21 +263,21 @@ public class OIDCPublicKeyRotationAdapterTest extends AbstractServletsAdapterTes
         adminClient.realm(DEMO).components().component(oldActiveKeyProviderId).remove();
 
         // Set some offset to ensure pushing notBefore will pass
-        setAdapterAndServerTimeOffset(130, customerDb.toString() + "/unsecured/foo", tokenMinTTLPage.toString() + "/unsecured/foo");
+        setAdapterAndServerTimeOffset(130, customerDBUnsecuredUrl, tokenMinTTLUnsecuredUrl);
 
         // Send notBefore policy from the realm
         demoRealm.setNotBefore(Time.currentTime() - 1);
         adminClient.realm(DEMO).update(demoRealm);
         GlobalRequestResult result = adminClient.realm(DEMO).pushRevocation();
-        Assert.assertTrue(result.getSuccessRequests().contains(customerDb.toString()));
+        Assert.assertTrue(result.getSuccessRequests().contains(customerDBUrlNoTrailSlash));
 
         // Send REST request. New request to the publicKey cache should be sent, and key is no longer returned as token contains the old kid
         status = invokeRESTEndpoint(accessTokenString);
         Assert.assertEquals(401, status);
 
         // Revert public keys change and time offset
-        resetKeycloakDeploymentForAdapter(customerDb.toString() + "/unsecured/foo");
-        resetKeycloakDeploymentForAdapter(tokenMinTTLPage.toString() + "/unsecured/foo");
+        resetKeycloakDeploymentForAdapter(customerDBUnsecuredUrl);
+        resetKeycloakDeploymentForAdapter(tokenMinTTLUnsecuredUrl);
     }
 
 
