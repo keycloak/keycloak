@@ -244,4 +244,12 @@ public class X509AuthenticatorConfigModel extends AuthenticatorConfigModel {
         return this;
     }
 
+    public boolean isCanonicalDnEnabled() {
+        return Boolean.parseBoolean(getConfig().get(CANONICAL_DN));
+    }
+
+    public X509AuthenticatorConfigModel setCanonicalDnEnabled(boolean value) {
+        getConfig().put(CANONICAL_DN, Boolean.toString(value));
+        return this;
+    }
 }
