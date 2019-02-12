@@ -18,18 +18,9 @@
 package org.keycloak.testsuite.x509;
 
 import org.jboss.arquillian.drone.api.annotation.Drone;
-import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.keycloak.OAuth2Constants;
-import org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel;
-import org.keycloak.events.Details;
-import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
-import org.keycloak.testsuite.pages.AppPage;
-import org.keycloak.testsuite.pages.LoginPage;
-import org.keycloak.testsuite.pages.x509.X509IdentityConfirmationPage;
 import org.keycloak.testsuite.util.PhantomJSBrowser;
 import org.openqa.selenium.WebDriver;
 
@@ -55,7 +46,6 @@ public class X509BrowserLoginSubjectAltNameTest extends AbstractX509Authenticati
         configurePhantomJS("/ca.crt", "/certs/clients/test-user-san@localhost.cert.pem",
                 "/certs/clients/test-user@localhost.key.pem", "password");
     }
-
 
     @Test
     public void loginAsUserFromCertSANEmail() {
