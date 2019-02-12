@@ -17,13 +17,12 @@
 
 package org.keycloak.testsuite.admin.concurrency;
 
-import org.jboss.logging.Logger;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
-import org.keycloak.testsuite.arquillian.undertow.TLSUtils;
+import org.keycloak.testsuite.utils.tls.TLSUtils;
 
 import java.util.Collections;
 import java.util.HashSet;
