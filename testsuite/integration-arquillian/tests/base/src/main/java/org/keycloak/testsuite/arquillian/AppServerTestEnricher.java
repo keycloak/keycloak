@@ -267,7 +267,7 @@ public class AppServerTestEnricher {
     }
 
     public static boolean isTomcatAppServer() {
-        return CURRENT_APP_SERVER.equals("tomcat");
+        return CURRENT_APP_SERVER.startsWith("tomcat");
     }
 
     public static boolean isEAP6AppServer() {

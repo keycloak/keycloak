@@ -13,23 +13,23 @@ The artifacts are used by the Arquillian TestSuite.
 ### Auth Server
 
 - JBoss
- - Wildfly 10
- - EAP 7
+  - Wildfly 10
+  - EAP 7
 - Undertow
 
 
 ### App Server
 
 - JBoss
- - JBossAS 7
- - Wildfly 8, 9, 10
- - EAP 6, 7
- - Relative (Wildfly 10 / EAP 7)
+  - JBossAS 7
+  - Wildfly 8, 9, 10
+  - EAP 6, 7
+  - Relative (Wildfly 10 / EAP 7)
 - Karaf / Fuse
- - Karaf 3
- - Fuse 6.1, 6.2
+  - Karaf 3
+  - Fuse 6.1, 6.2
 - Tomcat
- - Tomcat 7, 8
+  - Tomcat 7, 8, 9
 
 
 ### Load Balancer

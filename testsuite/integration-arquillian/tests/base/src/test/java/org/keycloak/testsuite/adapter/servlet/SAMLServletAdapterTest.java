@@ -172,6 +172,9 @@ import org.xml.sax.SAXException;
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP)
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP6)
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP71)
+@AppServerContainer(ContainerConstants.APP_SERVER_TOMCAT7)
+@AppServerContainer(ContainerConstants.APP_SERVER_TOMCAT8)
+@AppServerContainer(ContainerConstants.APP_SERVER_TOMCAT9)
 public class SAMLServletAdapterTest extends AbstractServletsAdapterTest {
     @Page
     protected BadClientSalesPostSigServlet badClientSalesPostSigServletPage;
@@ -267,13 +270,13 @@ public class SAMLServletAdapterTest extends AbstractServletsAdapterTest {
 
     @Page
     protected MultiTenant1Saml multiTenant1SamlPage;
-    
+
     @Page
     protected MultiTenant2Saml multiTenant2SamlPage;
-    
+
     @Page
     protected SAMLPostLoginTenant1 tenant1RealmSAMLPostLoginPage;
-    
+
     @Page
     protected SAMLPostLoginTenant2 tenant2RealmSAMLPostLoginPage;
 
@@ -423,9 +426,9 @@ public class SAMLServletAdapterTest extends AbstractServletsAdapterTest {
 
     @Deployment(name = MultiTenant1Saml.DEPLOYMENT_NAME)
     protected static WebArchive multiTenant() {
-        return samlServletDeploymentMultiTenant(MultiTenant1Saml.DEPLOYMENT_NAME, "multi-tenant-saml/WEB-INF/web.xml", 
+        return samlServletDeploymentMultiTenant(MultiTenant1Saml.DEPLOYMENT_NAME, "multi-tenant-saml/WEB-INF/web.xml",
                 "tenant1-keycloak-saml.xml", "tenant2-keycloak-saml.xml",
-                "keystore-tenant1.jks", "keystore-tenant2.jks", 
+                "keystore-tenant1.jks", "keystore-tenant2.jks",
                 SendUsernameServlet.class, SamlMultiTenantResolver.class);
     }
 
@@ -468,7 +471,7 @@ public class SAMLServletAdapterTest extends AbstractServletsAdapterTest {
                 || driver.getPageSource().contains(FORBIDDEN_TEXT)
                 || driver.getPageSource().contains(WEBSPHERE_FORBIDDEN_TEXT)); // WebSphere
     }
-    
+
     private void assertFailedLogin(AbstractPage page, UserRepresentation user, Login loginPage) {
         page.navigateTo();
         assertCurrentUrlStartsWith(loginPage);

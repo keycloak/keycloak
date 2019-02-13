@@ -30,7 +30,7 @@
 	<name>Keycloak Tomcat 7 Integration</name>
     <properties>
         <!--<tomcat.version>8.0.14</tomcat.version>-->
-        <tomcat.version>7.0.52</tomcat.version>
+        <tomcat.version>${tomcat7.version}</tomcat.version>
     </properties>
 	<description />
 

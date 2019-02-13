@@ -818,6 +818,105 @@
             </build>
         </profile>
         <profile>
+            <id>app-server-tomcat7</id>
+            <activation>
+                <property>
+                    <name>app.server</name>
+                    <value>tomcat7</value>
+                </property>
+            </activation>
+            <properties>
+                <app.server>tomcat7</app.server> <!--in case the profile is called directly-->
+                <app.server.skip.unpack>false</app.server.skip.unpack>
+                <app.server.artifactId>integration-arquillian-servers-app-server-tomcat7</app.server.artifactId><!-- Need to override -->
+                <app.server.port.offset>0</app.server.port.offset>
+                <app.server.http.port>8080</app.server.http.port>
+                <app.server.management.port>9990</app.server.management.port>
+            </properties>
+            <dependencies>
+                <dependency>
+                    <groupId>org.keycloak.testsuite</groupId>
+                    <artifactId>integration-arquillian-servers-app-server-tomcat7</artifactId>
+                    <version>${project.version}</version>
+                    <scope>runtime</scope>
+                </dependency>
+            </dependencies>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.commonjava.maven.plugins</groupId>
+                        <artifactId>directory-maven-plugin</artifactId>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>app-server-tomcat8</id>
+            <activation>
+                <property>
+                    <name>app.server</name>
+                    <value>tomcat8</value>
+                </property>
+            </activation>
+            <properties>
+                <app.server>tomcat8</app.server> <!--in case the profile is called directly-->
+                <app.server.skip.unpack>false</app.server.skip.unpack>
+                <app.server.artifactId>integration-arquillian-servers-app-server-tomcat8</app.server.artifactId><!-- Need to override -->
+                <app.server.port.offset>0</app.server.port.offset>
+                <app.server.http.port>8080</app.server.http.port>
+                <app.server.management.port>9990</app.server.management.port>
+            </properties>
+            <dependencies>
+                <dependency>
+                    <groupId>org.keycloak.testsuite</groupId>
+                    <artifactId>integration-arquillian-servers-app-server-tomcat8</artifactId>
+                    <version>${project.version}</version>
+                    <scope>runtime</scope>
+                </dependency>
+            </dependencies>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.commonjava.maven.plugins</groupId>
+                        <artifactId>directory-maven-plugin</artifactId>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>app-server-tomcat9</id>
+            <activation>
+                <property>
+                    <name>app.server</name>
+                    <value>tomcat9</value>
+                </property>
+            </activation>
+            <properties>
+                <app.server>tomcat9</app.server> <!--in case the profile is called directly-->
+                <app.server.skip.unpack>false</app.server.skip.unpack>
+                <app.server.artifactId>integration-arquillian-servers-app-server-tomcat9</app.server.artifactId><!-- Need to override -->
+                <app.server.port.offset>0</app.server.port.offset>
+                <app.server.http.port>8080</app.server.http.port>
+                <app.server.management.port>9990</app.server.management.port>
+            </properties>
+            <dependencies>
+                <dependency>
+                    <groupId>org.keycloak.testsuite</groupId>
+                    <artifactId>integration-arquillian-servers-app-server-tomcat9</artifactId>
+                    <version>${project.version}</version>
+                    <scope>runtime</scope>
+                </dependency>
+            </dependencies>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.commonjava.maven.plugins</groupId>
+                        <artifactId>directory-maven-plugin</artifactId>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
             <id>auth-servers-crossdc-undertow</id>
             <properties>
                 <skip.clean.second.cache>false</skip.clean.second.cache>

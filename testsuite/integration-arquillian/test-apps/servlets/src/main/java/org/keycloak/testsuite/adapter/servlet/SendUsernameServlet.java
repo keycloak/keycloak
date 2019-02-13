@@ -25,7 +25,6 @@ import org.keycloak.adapters.spi.AuthenticationError;
 import org.keycloak.saml.processing.core.saml.v2.constants.X500SAMLProfileConstants;
 
 import javax.servlet.ServletException;
-import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -48,7 +47,7 @@ import java.util.List;
  * @version $Revision: 1 $
  */
 @Path("/")
-public class SendUsernameServlet extends HttpServlet {
+public class SendUsernameServlet {
 
     private static boolean checkRoles = false;
     private static SamlAuthenticationError authError;
@@ -60,7 +59,7 @@ public class SendUsernameServlet extends HttpServlet {
 
     @GET
     @NoCache
-    public Response doGet(@QueryParam("checkRoles") boolean checkRolesFlag) throws ServletException, IOException {
+    public Response doGet(@QueryParam("checkRoles") boolean checkRolesFlag) throws IOException {
         System.out.println("In SendUsername Servlet doGet() check roles is " + (checkRolesFlag || checkRoles));
         if (httpServletRequest.getUserPrincipal() != null && (checkRolesFlag || checkRoles) && !checkRoles()) {
             return Response.status(Response.Status.FORBIDDEN).entity("Forbidden").build();
@@ -71,7 +70,7 @@ public class SendUsernameServlet extends HttpServlet {
 
     @POST
     @NoCache
-    public Response doPost(@QueryParam("checkRoles") boolean checkRolesFlag) throws ServletException, IOException {
+    public Response doPost(@QueryParam("checkRoles") boolean checkRolesFlag) {
         System.out.println("In SendUsername Servlet doPost() check roles is " + (checkRolesFlag || checkRoles));
 
         if (httpServletRequest.getUserPrincipal() != null && (checkRolesFlag || checkRoles) && !checkRoles()) {
@@ -94,14 +93,14 @@ public class SendUsernameServlet extends HttpServlet {
 
     @GET
     @Path("{path}")
-    public Response doGetElseWhere(@PathParam("path") String path, @QueryParam("checkRoles") boolean checkRolesFlag) throws ServletException, IOException {
+    public Response doGetElseWhere(@PathParam("path") String path, @QueryParam("checkRoles") boolean checkRolesFlag) throws IOException {
         System.out.println("In SendUsername Servlet doGetElseWhere() - path: " + path);
         return doGet(checkRolesFlag);
     }
 
     @POST
     @Path("{path}")
-    public Response doPostElseWhere(@PathParam("path") String path, @QueryParam("checkRoles") boolean checkRolesFlag) throws ServletException, IOException {
+    public Response doPostElseWhere(@PathParam("path") String path, @QueryParam("checkRoles") boolean checkRolesFlag) throws IOException {
         System.out.println("In SendUsername Servlet doPostElseWhere() - path: " + path);
         return doPost(checkRolesFlag);
     }
