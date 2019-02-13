@@ -44,34 +44,11 @@
     </build>
     <modules>
         <module>integration-deprecated</module>
-        <module>tomcat8</module>
         <module>integration-arquillian</module>
         <module>utils</module>
     </modules>
 
     <profiles>
-        <profile>
-            <id>community</id>
-            <activation>
-                <property>
-                    <name>!product</name>
-                </property>
-            </activation>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-deploy-plugin</artifactId>
-                        <configuration>
-                            <skip>true</skip>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-            <modules>
-                <module>tomcat7</module>
-            </modules>
-        </profile>
         <profile>
             <id>performance</id>
             <modules>

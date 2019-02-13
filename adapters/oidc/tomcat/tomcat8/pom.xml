@@ -32,7 +32,7 @@
         <maven.compiler.target>1.7</maven.compiler.target>
         <maven.compiler.source>1.7</maven.compiler.source>
 
-        <tomcat.version>8.0.14</tomcat.version>
+        <tomcat.version>${tomcat8.version}</tomcat.version>
     </properties>
     <description />
 
