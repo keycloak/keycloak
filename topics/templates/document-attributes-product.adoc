@@ -111,7 +111,7 @@ endif::[]
 
 :jdgserver_name: JDG
 :jdgserver_version: 7.2.3
-:jdgserver_crossdcdocs_link: https://access.redhat.com/documentation/en-us/red_hat_jboss_data_grid/7.2/html/administration_and_configuration_guide/set_up_cross_datacenter_replication
+:jdgserver_crossdcdocs_link: https://access.redhat.com/documentation/en-us/red_hat_data_grid/7.2/html/administration_and_configuration_guide/set_up_cross_datacenter_replication
 
 :fuseVersion: JBoss Fuse 6.3.0 Rollup 10
 :fuseHawtioEAPVersion: JBoss EAP 6.4
