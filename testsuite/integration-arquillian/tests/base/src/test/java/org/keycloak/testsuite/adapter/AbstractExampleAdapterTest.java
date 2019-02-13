@@ -20,7 +20,7 @@ package org.keycloak.testsuite.adapter;
 import org.apache.commons.io.IOUtils;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.StringAsset;
-import org.jboss.shrinkwrap.api.spec.JavaArchive;
+import org.jboss.shrinkwrap.api.importer.ZipImporter;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Assert;
 import org.keycloak.testsuite.utils.arquillian.DeploymentArchiveProcessorUtils;
@@ -30,7 +30,6 @@ import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Paths;
 import java.util.function.Consumer;
-import java.util.function.Supplier;
 
 /**
  *
@@ -63,9 +62,10 @@ public abstract class AbstractExampleAdapterTest extends AbstractAdapterTest {
     }
 
     protected static WebArchive exampleDeployment(String name, Consumer<WebArchive> additionalResources) {
-        WebArchive webArchive = ShrinkWrap.createFromZipFile(WebArchive.class,
-              new File(EXAMPLES_HOME + "/" + name + "-" + EXAMPLES_VERSION_SUFFIX + ".war"))
-              .addAsWebInfResource(jbossDeploymentStructure, JBOSS_DEPLOYMENT_STRUCTURE_XML);
+        WebArchive webArchive = ShrinkWrap.create(ZipImporter.class, name + ".war")
+                .importFrom(new File(EXAMPLES_HOME + "/" + name + "-" + EXAMPLES_VERSION_SUFFIX + ".war"))
+                .as(WebArchive.class)
+                .addAsWebInfResource(jbossDeploymentStructure, JBOSS_DEPLOYMENT_STRUCTURE_XML);
 
         additionalResources.accept(webArchive);
 
@@ -92,8 +92,9 @@ public abstract class AbstractExampleAdapterTest extends AbstractAdapterTest {
         URL webXML = Paths.get(EXAMPLES_WEB_XML).toUri().toURL();
         String webXmlContent = IOUtils.toString(webXML.openStream(), "UTF-8")
                 .replace("%CONTEXT_PATH%", contextPath);
-        WebArchive webArchive = ShrinkWrap.createFromZipFile(WebArchive.class,
-                new File(EXAMPLES_HOME + "/" + name + "-" + EXAMPLES_VERSION_SUFFIX + ".war"))
+        WebArchive webArchive = ShrinkWrap.create(ZipImporter.class, name + ".war")
+                .importFrom(new File(EXAMPLES_HOME + "/" + name + "-" + EXAMPLES_VERSION_SUFFIX + ".war"))
+                .as(WebArchive.class)
                 .addAsWebInfResource(jbossDeploymentStructure, JBOSS_DEPLOYMENT_STRUCTURE_XML)
                 .add(new StringAsset(webXmlContent), "/WEB-INF/web.xml");
 

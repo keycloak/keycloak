@@ -150,6 +150,11 @@
 
         <!-- Surefire Settings -->
         <surefire.memory.settings>-Xms512m -Xmx2048m -XX:MetaspaceSize=96m -XX:MaxMetaspaceSize=256m</surefire.memory.settings>
+
+        <!-- Tomcat versions -->
+        <tomcat7.version>7.0.92</tomcat7.version>
+        <tomcat8.version>8.5.38</tomcat8.version>
+        <tomcat9.version>9.0.16</tomcat9.version>
     </properties>
 
     <url>http://keycloak.org</url>
