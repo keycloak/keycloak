@@ -217,7 +217,7 @@ public class ExportUtils {
                     }
                     scopeMappingRep.role(scope.getName());
                 } else {
-                    ClientModel app = (ClientModel)scope.getContainer();
+                    ClientModel app = (ClientModel) scope.getContainer();
                     String appName = app.getClientId();
                     List<ScopeMappingRepresentation> currentAppScopes = clientScopeReps.get(appName);
                     if (currentAppScopes == null) {
@@ -277,6 +277,19 @@ public class ExportUtils {
         return rep;
     }
 
+
+    public static List<UserRepresentation> exportUsers(KeycloakSession session, RealmModel realm, ExportOptions options, int first, int max) {
+        List<UserRepresentation> users = new LinkedList<>();
+        if (options.isUsersIncluded()) {
+            List<UserModel> userModels = session.users().getUsers(realm, first, max, true);
+            for (UserModel user : userModels) {
+                UserRepresentation userRep = exportUser(session, realm, user, options);
+                users.add(userRep);
+            }
+        }
+        return users;
+    }
+
     public static MultivaluedHashMap<String, ComponentExportRepresentation> exportComponents(RealmModel realm, String parentId) {
         List<ComponentModel> componentList = realm.getComponents(parentId);
         MultivaluedHashMap<String, ComponentExportRepresentation> components = new MultivaluedHashMap<>();
@@ -295,13 +308,14 @@ public class ExportUtils {
 
     /**
      * Full export of application including claims and secret
+     *
      * @param client
      * @return full ApplicationRepresentation
      */
     public static ClientRepresentation exportClient(KeycloakSession session, ClientModel client) {
         ClientRepresentation clientRep = ModelToRepresentation.toRepresentation(client, session);
         clientRep.setSecret(client.getSecret());
-        clientRep.setAuthorizationSettings(exportAuthorizationSettings(session,client));
+        clientRep.setAuthorizationSettings(exportAuthorizationSettings(session, client));
         return clientRep;
     }
 
@@ -420,6 +434,7 @@ public class ExportUtils {
 
     /**
      * Full export of role including composite roles
+     *
      * @param role
      * @return RoleRepresentation with all stuff filled (including composite roles)
      */
@@ -444,7 +459,7 @@ public class ExportUtils {
                         compositeClientRoles = new HashMap<>();
                     }
 
-                    ClientModel app = (ClientModel)crContainer;
+                    ClientModel app = (ClientModel) crContainer;
                     String appName = app.getClientId();
                     List<String> currentAppComposites = compositeClientRoles.get(appName);
                     if (currentAppComposites == null) {
@@ -497,7 +512,7 @@ public class ExportUtils {
             if (role.getContainer() instanceof RealmModel) {
                 realmRoleNames.add(role.getName());
             } else {
-                ClientModel client = (ClientModel)role.getContainer();
+                ClientModel client = (ClientModel) role.getContainer();
                 String clientId = client.getClientId();
                 List<String> currentClientRoles = clientRoleNames.get(clientId);
                 if (currentClientRoles == null) {

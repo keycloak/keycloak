@@ -62,16 +62,7 @@ import org.keycloak.partialimport.PartialImportManager;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.adapters.action.GlobalRequestResult;
-import org.keycloak.representations.idm.AdminEventRepresentation;
-import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.representations.idm.ClientScopeRepresentation;
-import org.keycloak.representations.idm.ComponentRepresentation;
-import org.keycloak.representations.idm.EventRepresentation;
-import org.keycloak.representations.idm.GroupRepresentation;
-import org.keycloak.representations.idm.ManagementPermissionReference;
-import org.keycloak.representations.idm.PartialImportRepresentation;
-import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
-import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.*;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.LDAPConnectionTestManager;
@@ -769,7 +760,7 @@ public class RealmAdminResource {
         List<EventRepresentation> reps = new ArrayList<>();
 
         for (Event event : events) {
-            if(event.getUserId()!=null){
+            if (event.getUserId() != null) {
                 event.setUser(session.users().getUserById(event.getUserId(), realm));
             }
             reps.add(ModelToRepresentation.toRepresentation(event));
@@ -1075,11 +1066,14 @@ public class RealmAdminResource {
     @POST
     @Produces(MediaType.APPLICATION_JSON)
     public RealmRepresentation partialExport(@QueryParam("exportGroupsAndRoles") Boolean exportGroupsAndRoles,
-                                             @QueryParam("exportClients") Boolean exportClients) {
+                                             @QueryParam("exportClients") Boolean exportClients,
+                                             @QueryParam("exportUsers") Boolean exportUsers,
+                                             @QueryParam("max") Boolean max) {
         auth.realm().requireViewRealm();
 
         boolean groupsAndRolesExported = exportGroupsAndRoles != null && exportGroupsAndRoles;
         boolean clientsExported = exportClients != null && exportClients;
+        boolean usersExported = exportUsers != null && exportUsers;
 
         if (groupsAndRolesExported) {
             auth.groups().requireList();
@@ -1087,10 +1081,32 @@ public class RealmAdminResource {
         if (clientsExported) {
             auth.clients().requireView();
         }
+        if (usersExported) {
+            auth.users().requireQuery();
+        }
 
-        ExportOptions options = new ExportOptions(false, clientsExported, groupsAndRolesExported);
+        ExportOptions options = new ExportOptions(usersExported, clientsExported, groupsAndRolesExported);
         RealmRepresentation rep = ExportUtils.exportRealm(session, realm, options, false);
         return stripForExport(session, rep);
+    }
+
+
+    /**
+     * User export of existing realm into a JSON file.
+     *
+     * @param max
+     * @return
+     */
+    @Path("user-export")
+    @POST
+    @Produces(MediaType.APPLICATION_JSON)
+    public List<UserRepresentation> userExport(@QueryParam("first") Integer first,
+                                               @QueryParam("max") Integer max) {
+        auth.realm().requireViewRealm();
+        auth.users().requireQuery();
+
+        ExportOptions options = new ExportOptions(true, false, true);
+        return ExportUtils.exportUsers(session, realm, options,first, max);
     }
 
     /**

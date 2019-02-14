@@ -525,7 +525,7 @@ module.controller('UserCredentialsCtrl', function($scope, realm, user, $route, R
 
     $scope.realm = realm;
     $scope.user = angular.copy(user);
-    $scope.temporaryPassword = true;
+    $scope.temporaryPassword = false;
 
     $scope.isTotp = false;
     if(!!user.totp){
