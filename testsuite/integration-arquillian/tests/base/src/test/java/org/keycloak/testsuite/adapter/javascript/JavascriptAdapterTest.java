@@ -94,6 +94,10 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
         jsDriver.manage().deleteAllCookies();
 
         setStandardFlowForClient();
+
+        //tests cleanup
+        oauth.setDriver(driver);
+        setTimeOffset(0);
     }
 
     protected JSObjectBuilder defaultArguments() {
@@ -175,44 +179,46 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
 
         ClientResource clientResource = ApiUtil.findClientResourceByClientId(adminClient.realm(REALM_NAME), CLIENT_ID);
         ClientRepresentation client = clientResource.toRepresentation();
-        client.setConsentRequired(true);
-        clientResource.update(client);
+        try {
+            client.setConsentRequired(true);
+            clientResource.update(client);
 
-        testExecutor.init(defaultArguments(), this::assertInitNotAuth)
-                .login(this::assertOnLoginPage)
-                .loginForm(testUser, (driver1, output, events) -> assertTrue(oAuthGrantPage.isCurrent(driver1))
+            testExecutor.init(defaultArguments(), this::assertInitNotAuth)
+                  .login(this::assertOnLoginPage)
+                  .loginForm(testUser, (driver1, output, events) -> assertTrue(oAuthGrantPage.isCurrent(driver1))
                         // I am not sure why is this driver1 argument to isCurrent necessary, but I got exception without it
-                );
+                  );
 
-        oAuthGrantPage.accept();
+            oAuthGrantPage.accept();
 
-        EventRepresentation loginEvent = events.expectLogin()
-                .client(CLIENT_ID)
-                .detail(Details.CONSENT, Details.CONSENT_VALUE_CONSENT_GRANTED)
-                .detail(Details.REDIRECT_URI, testAppUrl)
-                .detail(Details.USERNAME, testUser.getUsername())
-                .assertEvent();
-        String codeId = loginEvent.getDetails().get(Details.CODE_ID);
+            EventRepresentation loginEvent = events.expectLogin()
+                  .client(CLIENT_ID)
+                  .detail(Details.CONSENT, Details.CONSENT_VALUE_CONSENT_GRANTED)
+                  .detail(Details.REDIRECT_URI, testAppUrl)
+                  .detail(Details.USERNAME, testUser.getUsername())
+                  .assertEvent();
+            String codeId = loginEvent.getDetails().get(Details.CODE_ID);
 
-        testExecutor.init(defaultArguments(), this::assertSuccessfullyLoggedIn);
+            testExecutor.init(defaultArguments(), this::assertSuccessfullyLoggedIn);
 
-        applicationsPage.navigateTo();
-        events.expectCodeToToken(codeId, loginEvent.getSessionId()).client(CLIENT_ID).assertEvent();
+            applicationsPage.navigateTo();
+            events.expectCodeToToken(codeId, loginEvent.getSessionId()).client(CLIENT_ID).assertEvent();
 
-        applicationsPage.revokeGrantForApplication(CLIENT_ID);
-        events.expect(EventType.REVOKE_GRANT)
-                .client("account")
-                .detail(Details.REVOKED_CLIENT, CLIENT_ID)
-                .assertEvent();
+            applicationsPage.revokeGrantForApplication(CLIENT_ID);
+            events.expect(EventType.REVOKE_GRANT)
+                  .client("account")
+                  .detail(Details.REVOKED_CLIENT, CLIENT_ID)
+                  .assertEvent();
 
-        jsDriver.navigate().to(testAppUrl);
-        testExecutor.configure() // need to configure because we refreshed page
-                .init(defaultArguments(), this::assertInitNotAuth)
-                .login((driver1, output, events) -> assertTrue(oAuthGrantPage.isCurrent(driver1)));
-
-        // Clean
-        client.setConsentRequired(false);
-        clientResource.update(client);
+            jsDriver.navigate().to(testAppUrl);
+            testExecutor.configure() // need to configure because we refreshed page
+                  .init(defaultArguments(), this::assertInitNotAuth)
+                  .login((driver1, output, events) -> assertTrue(oAuthGrantPage.isCurrent(driver1)));
+        } finally {
+            // Clean
+            client.setConsentRequired(false);
+            clientResource.update(client);
+        }
     }
 
     @Test
@@ -268,18 +274,20 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
     public void implicitFlowOnTokenExpireTest() {
         RealmRepresentation realm = adminClient.realms().realm(REALM_NAME).toRepresentation();
         Integer storeAccesTokenLifespan = realm.getAccessTokenLifespanForImplicitFlow();
-        realm.setAccessTokenLifespanForImplicitFlow(5);
-        adminClient.realms().realm(REALM_NAME).update(realm);
+        try {
+            realm.setAccessTokenLifespanForImplicitFlow(5);
+            adminClient.realms().realm(REALM_NAME).update(realm);
 
-        setImplicitFlowForClient();
-        testExecutor.logInAndInit(defaultArguments().implicitFlow(), testUser, this::assertSuccessfullyLoggedIn)
-                .addTimeSkew(-5); // Move in time instead of wait
+            setImplicitFlowForClient();
+            testExecutor.logInAndInit(defaultArguments().implicitFlow(), testUser, this::assertSuccessfullyLoggedIn)
+                  .addTimeSkew(-5); // Move in time instead of wait
 
-        waitUntilElement(eventsArea).text().contains("Access token expired");
-
-        // Get to origin state
-        realm.setAccessTokenLifespanForImplicitFlow(storeAccesTokenLifespan);
-        adminClient.realms().realm(REALM_NAME).update(realm);
+            waitUntilElement(eventsArea).text().contains("Access token expired");
+        } finally {
+            // Get to origin state
+            realm.setAccessTokenLifespanForImplicitFlow(storeAccesTokenLifespan);
+            adminClient.realms().realm(REALM_NAME).update(realm);
+        }
     }
 
     @Test
@@ -350,8 +358,6 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
                 .sendXMLHttpRequest(request, assertResponseStatus(401))
                 .refreshToken(5, assertEventsContains("Auth Refresh Success"))
                 .sendXMLHttpRequest(request, assertResponseStatus(200));
-
-        setTimeOffset(0);
     }
 
     @Test
@@ -418,27 +424,28 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
         // it looks like phantomjs double encode %20 => %25%20
         Assume.assumeTrue("This test doesn't work with phantomjs", !"phantomjs".equals(System.getProperty("js.browser")));
 
-        adminClient.realm(REALM_NAME).update(RealmBuilder.edit(adminClient.realm(REALM_NAME).toRepresentation()).name(SPACE_REALM_NAME).build());
+        try {
+            adminClient.realm(REALM_NAME).update(RealmBuilder.edit(adminClient.realm(REALM_NAME).toRepresentation()).name(SPACE_REALM_NAME).build());
 
-        JSObjectBuilder configuration = JSObjectBuilder.create()
-                .add("url", authServerContextRootPage + "/auth")
-                .add("realm", SPACE_REALM_NAME)
-                .add("clientId", CLIENT_ID);
+            JSObjectBuilder configuration = JSObjectBuilder.create()
+                  .add("url", authServerContextRootPage + "/auth")
+                  .add("realm", SPACE_REALM_NAME)
+                  .add("clientId", CLIENT_ID);
 
-        testAppUrl = authServerContextRootPage + JAVASCRIPT_ENCODED_SPACE_URL + "/index.html";
-        jsDriver.navigate().to(testAppUrl);
-        jsDriverTestRealmLoginPage.setAuthRealm(SPACE_REALM_NAME);
+            testAppUrl = authServerContextRootPage + JAVASCRIPT_ENCODED_SPACE_URL + "/index.html";
+            jsDriver.navigate().to(testAppUrl);
+            jsDriverTestRealmLoginPage.setAuthRealm(SPACE_REALM_NAME);
 
-        testExecutor.configure(configuration)
-                .init(defaultArguments(), this::assertInitNotAuth)
-                .login(this::assertOnLoginPage)
-                .loginForm(testUser, this::assertOnTestAppUrl)
-                .configure(configuration)
-                .init(defaultArguments(), this::assertSuccessfullyLoggedIn);
-
-        // Clean
-        adminClient.realm(SPACE_REALM_NAME).update(RealmBuilder.edit(adminClient.realm(SPACE_REALM_NAME).toRepresentation()).name(REALM_NAME).build());
-        jsDriverTestRealmLoginPage.setAuthRealm(REALM_NAME);
+            testExecutor.configure(configuration)
+                  .init(defaultArguments(), this::assertInitNotAuth)
+                  .login(this::assertOnLoginPage)
+                  .loginForm(testUser, this::assertOnTestAppUrl)
+                  .configure(configuration)
+                  .init(defaultArguments(), this::assertSuccessfullyLoggedIn);
+        } finally {
+            adminClient.realm(SPACE_REALM_NAME).update(RealmBuilder.edit(adminClient.realm(SPACE_REALM_NAME).toRepresentation()).name(REALM_NAME).build());
+            jsDriverTestRealmLoginPage.setAuthRealm(REALM_NAME);
+        }
     }
 
     @Test
@@ -460,9 +467,6 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
                     .add("refreshToken", refreshToken)
                 , this::assertSuccessfullyLoggedIn)
                 .refreshToken(9999, assertEventsContains("Auth Refresh Success"));
-
-
-        oauth.setDriver(driver);
     }
 
     @Test
@@ -496,15 +500,12 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
                                 both(greaterThan(-600L - TIME_SKEW_TOLERANCE))
                                 .and(lessThan(-600L + TIME_SKEW_TOLERANCE))
                 )));
-
-        setTimeOffset(0);
-
-        oauth.setDriver(driver); // Clean
     }
 
     @Test
     // KEYCLOAK-4503
     public void initializeWithRefreshToken() {
+
         oauth.setDriver(jsDriver); // Oauth need to login with jsDriver
 
         oauth.realm(REALM_NAME);
@@ -523,8 +524,6 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
             assertInitNotAuth(driver1, output, events);
             waitUntilElement(events).text().not().contains("Auth Success");
         });
-
-        oauth.setDriver(driver); // Clean
     }
 
     @Test

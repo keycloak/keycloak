@@ -9,6 +9,7 @@ import org.keycloak.models.Constants;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.arquillian.ContainerInfo;
+import org.keycloak.testsuite.arquillian.undertow.TLSUtils;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
 import org.keycloak.testsuite.util.ContainerAssume;
 
@@ -118,7 +119,7 @@ public abstract class AbstractClusterTest extends AbstractKeycloakTest {
     protected Keycloak createAdminClientFor(ContainerInfo node) {
         log.info("Initializing admin client for " + node.getContextRoot() + "/auth");
         return Keycloak.getInstance(node.getContextRoot() + "/auth",
-                MASTER, ADMIN, ADMIN, Constants.ADMIN_CLI_CLIENT_ID);
+                MASTER, ADMIN, ADMIN, Constants.ADMIN_CLI_CLIENT_ID, TLSUtils.initializeTLS());
     }
 
     protected KeycloakTestingClient createTestingClientFor(ContainerInfo node) {

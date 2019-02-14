@@ -163,7 +163,7 @@ public class InfinispanPublicKeyStorageProvider implements PublicKeyStorageProvi
                 }
 
             } catch (ExecutionException ee) {
-                throw new RuntimeException("Error when loading public keys", ee);
+                throw new RuntimeException("Error when loading public keys: " + ee.getMessage(), ee);
             } catch (InterruptedException ie) {
                 throw new RuntimeException("Error. Interrupted when loading public keys", ie);
             } finally {

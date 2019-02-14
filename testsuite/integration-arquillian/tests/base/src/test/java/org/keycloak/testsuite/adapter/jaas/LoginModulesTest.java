@@ -17,10 +17,19 @@
 
 package org.keycloak.testsuite.adapter.jaas;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.PrintWriter;
+import java.lang.invoke.MethodHandles;
+import java.net.URI;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Scanner;
 import java.util.Set;
 
 import javax.security.auth.Subject;
@@ -36,7 +45,10 @@ import javax.security.auth.login.LoginException;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
+import org.junit.Assume;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.keycloak.KeycloakPrincipal;
 import org.keycloak.adapters.jaas.AbstractKeycloakLoginModule;
@@ -55,9 +67,48 @@ import org.keycloak.testsuite.utils.io.IOUtil;
  */
 public class LoginModulesTest extends AbstractKeycloakTest {
 
+    public static final URI DIRECT_GRANT_CONFIG;
+    public static final URI BEARER_CONFIG;
+
+    private static final File DIRECT_GRANT_CONFIG_FILE;
+    private static final File BEARER_CONFIG_FILE;
+
+    static {
+        try {
+            DIRECT_GRANT_CONFIG = MethodHandles.lookup().lookupClass().getResource("/adapter-test/customer-portal/WEB-INF/keycloak.json").toURI();
+            BEARER_CONFIG = MethodHandles.lookup().lookupClass().getResource("/adapter-test/customer-db-audience-required/WEB-INF/keycloak.json").toURI();
+
+            DIRECT_GRANT_CONFIG_FILE = File.createTempFile("LoginModulesTest", "testDirectAccessGrantLoginModuleLoginFailed");
+            BEARER_CONFIG_FILE = File.createTempFile("LoginModulesTest", "testBearerLoginFailedLogin");
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
         testRealms.add(IOUtil.loadRealm("/adapter-test/demorealm.json"));
+    }
+
+    @BeforeClass
+    public static void createTemporaryFiles() throws Exception {
+        copyContentAndReplaceAuthServerAddress(new File(DIRECT_GRANT_CONFIG), DIRECT_GRANT_CONFIG_FILE);
+        copyContentAndReplaceAuthServerAddress(new File(BEARER_CONFIG), BEARER_CONFIG_FILE);
+    }
+
+    public void removeTemporaryFiles() {
+        DIRECT_GRANT_CONFIG_FILE.deleteOnExit();
+        BEARER_CONFIG_FILE.deleteOnExit();
+    }
+
+    private static void copyContentAndReplaceAuthServerAddress(File input, File output) throws IOException {
+        try (InputStream inputStream = httpsAwareConfigurationStream(new FileInputStream(input))) {
+            try (FileOutputStream outputStream = new FileOutputStream(output)) {
+                byte[] buffer = new byte[inputStream.available()];
+                inputStream.read(buffer);
+                outputStream.write(buffer);
+            }
+        }
     }
 
     @Before
@@ -76,6 +127,10 @@ public class LoginModulesTest extends AbstractKeycloakTest {
 
     @Test
     public void testDirectAccessGrantLoginModuleLoginFailed() throws Exception {
+        Assume.assumeTrue(AUTH_SERVER_SSL_REQUIRED);
+
+
+
         LoginContext loginContext = new LoginContext("does-not-matter", null,
                 createJaasCallbackHandler("bburke@redhat.com", "bad-password"),
                 createJaasConfigurationForDirectGrant(null));
@@ -91,6 +146,7 @@ public class LoginModulesTest extends AbstractKeycloakTest {
 
     @Test
     public void testDirectAccessGrantLoginModuleLoginSuccess() throws Exception {
+        Assume.assumeTrue(AUTH_SERVER_SSL_REQUIRED);
         oauth.realm("demo");
 
         LoginContext loginContext = directGrantLogin(null);
@@ -113,6 +169,7 @@ public class LoginModulesTest extends AbstractKeycloakTest {
 
     @Test
     public void testBearerLoginFailedLogin() throws Exception {
+        Assume.assumeTrue(AUTH_SERVER_SSL_REQUIRED);
         oauth.realm("demo");
 
         LoginContext directGrantCtx = directGrantLogin(null);
@@ -137,6 +194,7 @@ public class LoginModulesTest extends AbstractKeycloakTest {
 
     @Test
     public void testBearerLoginSuccess() throws Exception {
+        Assume.assumeTrue(AUTH_SERVER_SSL_REQUIRED);
         oauth.realm("demo");
 
         LoginContext directGrantCtx = directGrantLogin("customer-db-audience-required");
@@ -213,7 +271,7 @@ public class LoginModulesTest extends AbstractKeycloakTest {
             @Override
             public AppConfigurationEntry[] getAppConfigurationEntry(String name) {
                 Map<String, Object> options = new HashMap<>();
-                options.put(AbstractKeycloakLoginModule.KEYCLOAK_CONFIG_FILE_OPTION, "classpath:adapter-test/customer-portal/WEB-INF/keycloak.json");
+                options.put(AbstractKeycloakLoginModule.KEYCLOAK_CONFIG_FILE_OPTION, DIRECT_GRANT_CONFIG_FILE.getAbsolutePath());
                 if (scope != null) {
                     options.put(DirectAccessGrantsLoginModule.SCOPE_OPTION, scope);
                 }
@@ -231,7 +289,7 @@ public class LoginModulesTest extends AbstractKeycloakTest {
             @Override
             public AppConfigurationEntry[] getAppConfigurationEntry(String name) {
                 Map<String, Object> options = new HashMap<>();
-                options.put(AbstractKeycloakLoginModule.KEYCLOAK_CONFIG_FILE_OPTION, "classpath:adapter-test/customer-db-audience-required/WEB-INF/keycloak.json");
+                options.put(AbstractKeycloakLoginModule.KEYCLOAK_CONFIG_FILE_OPTION, BEARER_CONFIG_FILE.getAbsolutePath());
 
                 AppConfigurationEntry LMConfiguration = new AppConfigurationEntry(BearerTokenLoginModule.class.getName(), AppConfigurationEntry.LoginModuleControlFlag.REQUIRED, options);
                 return new AppConfigurationEntry[] { LMConfiguration };

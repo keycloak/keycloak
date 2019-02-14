@@ -250,7 +250,7 @@ public class LDAPUtils {
      * Load all LDAP objects corresponding to given query. We will load them paginated, so we allow to bypass the limitation of 1000
      * maximum loaded objects in single query in MSAD
      *
-     * @param ldapQuery
+     * @param ldapQuery LDAP query to be used. The caller should close it after calling this method
      * @param ldapProvider
      * @return
      */
@@ -268,7 +268,7 @@ public class LDAPUtils {
                 ldapQuery.setLimit(pageSize);
                 final List<LDAPObject> currentPageGroups = ldapQuery.getResultList();
                 result.addAll(currentPageGroups);
-                nextPage = ldapQuery.getPaginationContext() != null;
+                nextPage = ldapQuery.getPaginationContext().hasNextPage();
             }
 
             return result;

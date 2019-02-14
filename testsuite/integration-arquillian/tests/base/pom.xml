@@ -193,10 +193,11 @@
                     </excludes>
                     <systemPropertyVariables>
                         <com.mchange.v2.c3p0.VMID>testsuiteVmId</com.mchange.v2.c3p0.VMID>
+                        <auth.server.db.host>${docker.container.testdb.ip}</auth.server.db.host>
                     </systemPropertyVariables>
                 </configuration>
             </plugin>
-        
+
             <plugin>
                 <artifactId>maven-resources-plugin</artifactId>
                 <executions>
@@ -265,6 +266,25 @@
                              </artifactItems>
                         </configuration>
                     </execution>
+                    <execution>
+                        <id>unpack-undertow-server</id>
+                        <phase>generate-test-resources</phase>
+                        <goals>
+                            <goal>unpack</goal>
+                        </goals>
+                        <configuration>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>org.keycloak.testsuite</groupId>
+                                    <artifactId>integration-arquillian-servers-auth-server-undertow</artifactId>
+                                    <version>${project.version}</version>
+                                    <type>jar</type>
+                                    <outputDirectory>${containers.home}/auth-server-undertow</outputDirectory>
+                                </artifactItem>
+                            </artifactItems>
+                            <includes>*.jks,*.crt,*.truststore</includes>
+                        </configuration>
+                    </execution>
                 </executions>
             </plugin>
             <plugin>
@@ -301,6 +321,73 @@
                             <goPath>${project.build.directory}/gopath</goPath>
                             <tag>0.5</tag>
                         </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>io.fabric8</groupId>
+                <artifactId>docker-maven-plugin</artifactId>
+                <version>${docker.maven.plugin.version}</version>
+                <configuration>
+                    <skip>${docker.database.skip}</skip>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>start-db-container</id>
+                        <phase>process-test-classes</phase>
+                        <goals>
+                            <goal>start</goal>
+                        </goals>
+                        <configuration>
+                            <showLogs>true</showLogs>
+                            <images>
+                                <image>
+                                    <alias>testdb</alias>
+                                    <name>${docker.database.image}</name>
+                                    <run>
+                                        <shmSize>${docker.database.shmsize}</shmSize>
+                                        <ports>
+                                            <port>${docker.database.port}</port>
+                                        </ports>
+                                        <env>
+                                            <!-- MYSQL and MariaDB -->
+                                            <MYSQL_DATABASE>${keycloak.connectionsJpa.database}</MYSQL_DATABASE>
+                                            <MYSQL_USER>${keycloak.connectionsJpa.user}</MYSQL_USER>
+                                            <MYSQL_PASSWORD>${keycloak.connectionsJpa.password}</MYSQL_PASSWORD>
+                                            <MYSQL_RANDOM_ROOT_PASSWORD>true</MYSQL_RANDOM_ROOT_PASSWORD>
+
+                                            <!-- PostgreSQL -->
+                                            <POSTGRES_DB>${keycloak.connectionsJpa.database}</POSTGRES_DB>
+                                            <POSTGRES_USER>${keycloak.connectionsJpa.user}</POSTGRES_USER>
+                                            <POSTGRES_PASSWORD>${keycloak.connectionsJpa.password}</POSTGRES_PASSWORD>
+
+                                            <!-- MSSQL -->
+                                            <ACCEPT_EULA>Y</ACCEPT_EULA>
+                                            <SA_PASSWORD>${keycloak.connectionsJpa.password}</SA_PASSWORD>
+
+                                            <!-- Oracle -->
+                                            <ORACLE_SID>${keycloak.connectionsJpa.database}</ORACLE_SID>
+                                            <ORACLE_PWD>sa</ORACLE_PWD>
+                                        </env>
+                                        <wait>
+                                            <!-- Do not use waiting for port since that is unreliable, sometimes port is listening before DB is ready to serve -->
+                                            <log>${docker.database.wait-for-log-regex}</log>
+                                            <time>300000</time>
+                                            <exec>
+                                              <postStart>${docker.database.postStart}</postStart>
+                                            </exec>
+                                        </wait>
+                                    </run>
+                                </image>
+                            </images>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>stop-db-container</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>stop</goal>
+                        </goals>
                     </execution>
                 </executions>
             </plugin>

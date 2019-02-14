@@ -55,7 +55,14 @@ import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
 
 /**
- * Created by fkiss.
+ * Tests CORS fuctionality in adapters.
+ *
+ * <p>
+ *    Note, for SSL this test disables TLS certificate verification. Since CORS uses different hostnames
+ *    (localhost-auth for example), the Subject Name won't match.
+ * </p>
+ *
+ * @author fkiss
  */
 @AppServerContainer(ContainerConstants.APP_SERVER_WILDFLY)
 @AppServerContainer(ContainerConstants.APP_SERVER_WILDFLY_DEPRECATED)
@@ -88,7 +95,7 @@ public class CorsExampleAdapterTest extends AbstractExampleAdapterTest {
     @JavascriptBrowser
     private Account jsDriverTestRealmAccount;
 
-    @Deployment(name = AngularCorsProductTestApp.DEPLOYMENT_NAME)
+    @Deployment(name = AngularCorsProductTestApp.DEPLOYMENT_NAME, managed = false)
     protected static WebArchive angularCorsProductExample() throws IOException {
         return exampleDeployment(AngularCorsProductTestApp.CLIENT_ID);
     }
@@ -108,11 +115,13 @@ public class CorsExampleAdapterTest extends AbstractExampleAdapterTest {
     public void onBefore() {
         Assume.assumeFalse(System.getProperty("os.name").startsWith("Windows"));
         deployer.deploy(CorsDatabaseServiceTestApp.DEPLOYMENT_NAME);
+        deployer.deploy(AngularCorsProductTestApp.DEPLOYMENT_NAME);
     }
 
     @After
     public void onAfter() {
         deployer.undeploy(CorsDatabaseServiceTestApp.DEPLOYMENT_NAME);
+        deployer.undeploy(AngularCorsProductTestApp.DEPLOYMENT_NAME);
     }
 
     static{

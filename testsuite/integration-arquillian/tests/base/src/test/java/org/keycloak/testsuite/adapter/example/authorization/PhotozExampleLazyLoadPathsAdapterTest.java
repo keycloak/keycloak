@@ -44,7 +44,7 @@ public class PhotozExampleLazyLoadPathsAdapterTest extends AbstractPhotozExample
 
     @Deployment(name = RESOURCE_SERVER_ID, managed = false, testable = false)
     public static WebArchive deploymentResourceServer() throws IOException {
-        return exampleDeployment(RESOURCE_SERVER_ID)
-                .addAsWebInfResource(new File(TEST_APPS_HOME_DIR + "/photoz/keycloak-lazy-load-path-authz-service.json"), "keycloak.json");
+        return exampleDeployment(RESOURCE_SERVER_ID,
+              webArchive -> webArchive.addAsWebInfResource(new File(TEST_APPS_HOME_DIR + "/photoz/keycloak-lazy-load-path-authz-service.json"), "keycloak.json"));
     }
 }

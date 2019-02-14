@@ -23,6 +23,7 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Arrays;
@@ -102,7 +103,7 @@ public class PolicyEnforcerClaimsTest extends AbstractKeycloakTest {
                         .directAccessGrants())
                 .client(ClientBuilder.create().clientId("public-client-test")
                         .publicClient()
-                        .redirectUris("http://localhost:8180/auth/realms/master/app/auth/*")
+                        .redirectUris("http://localhost:8180/auth/realms/master/app/auth/*", "https://localhost:8543/auth/realms/master/app/auth/*")
                         .directAccessGrants())
                 .build());
     }
@@ -347,7 +348,11 @@ public class PolicyEnforcerClaimsTest extends AbstractKeycloakTest {
     }
 
     private InputStream getAdapterConfiguration(String fileName) {
-        return getClass().getResourceAsStream("/authorization-test/" + fileName);
+        try {
+            return httpsAwareConfigurationStream(getClass().getResourceAsStream("/authorization-test/" + fileName));
+        } catch (IOException e) {
+            throw new AssertionError("Could not load keycloak configuration", e);
+        }
     }
 
     private ResourceRepresentation createResource(ClientResource clientResource, String name, String uri, String... scopes) {

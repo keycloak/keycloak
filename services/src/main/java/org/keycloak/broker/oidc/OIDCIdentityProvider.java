@@ -481,9 +481,14 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
     protected boolean verify(JWSInput jws) {
         if (!getConfig().isValidateSignature()) return true;
 
-        PublicKey publicKey = PublicKeyStorageManager.getIdentityProviderPublicKey(session, session.getContext().getRealm(), getConfig(), jws);
+        try {
+            PublicKey publicKey = PublicKeyStorageManager.getIdentityProviderPublicKey(session, session.getContext().getRealm(), getConfig(), jws);
 
-        return publicKey != null && RSAProvider.verify(jws, publicKey);
+            return publicKey != null && RSAProvider.verify(jws, publicKey);
+        } catch (Exception e) {
+            logger.debug("Failed to verify token", e);
+            return false;
+        }
     }
 
     protected JsonWebToken validateToken(String encodedToken) {

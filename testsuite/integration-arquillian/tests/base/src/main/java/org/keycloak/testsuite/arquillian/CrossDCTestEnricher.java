@@ -32,11 +32,13 @@ import org.jboss.arquillian.core.api.annotation.Inject;
 import org.jboss.arquillian.core.api.annotation.Observes;
 import org.jboss.arquillian.test.spi.event.suite.After;
 import org.jboss.arquillian.test.spi.event.suite.Before;
+import org.jboss.arquillian.test.spi.event.suite.BeforeClass;
 import org.jboss.logging.Logger;
 import static org.junit.Assert.assertThat;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.models.Constants;
 import org.keycloak.testsuite.arquillian.annotation.InitialDcState;
+import org.keycloak.testsuite.arquillian.undertow.TLSUtils;
 import org.keycloak.testsuite.auth.page.AuthRealm;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
 import org.keycloak.testsuite.crossdc.DC;
@@ -49,6 +51,9 @@ import org.jboss.arquillian.container.spi.event.StopContainer;
 import org.jboss.arquillian.container.spi.event.StopSuiteContainers;
 import org.jboss.arquillian.core.api.Event;
 import org.jboss.arquillian.test.spi.event.suite.AfterSuite;
+import org.wildfly.extras.creaper.core.ManagementClient;
+import org.wildfly.extras.creaper.core.online.OnlineManagementClient;
+import org.wildfly.extras.creaper.core.online.OnlineOptions;
 
 /**
  *
@@ -154,7 +159,34 @@ public class CrossDCTestEnricher {
         
         suspendPeriodicTasks();
     }
-    
+
+    private static void initializeTLS(ContainerInfo containerInfo) {
+        if (AuthServerTestEnricher.AUTH_SERVER_SSL_REQUIRED) {
+            log.infof("\n\n### Setting up TLS for %s ##\n\n", containerInfo);
+            try {
+                OnlineManagementClient client = getManagementClient(containerInfo);
+                AuthServerTestEnricher.enableTLS(client);
+                client.close();
+            } catch (Exception e) {
+                log.warn("Failed to set up TLS. This may lead to unexpected behavior unless the test" +
+                      " sets it up manually", e);
+            }
+
+        }
+    }
+
+    private static OnlineManagementClient getManagementClient(ContainerInfo containerInfo) {
+        try {
+            return ManagementClient.online(OnlineOptions
+                  .standalone()
+                  .hostAndPort("localhost", Integer.valueOf(containerInfo.getProperties().get("managementPort")))
+                  .build()
+            );
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public void afterTest(@Observes After event) {
         if (!suiteContext.isAuthServerCrossDc()) return;
 
@@ -196,7 +228,7 @@ public class CrossDCTestEnricher {
             backendTestingClients.put(node, createTestingClientFor(node));
         }
     }
-    
+
     private static void removeRESTClientsForNode(ContainerInfo node) {
         if (backendAdminClients.containsKey(node)) {
             backendAdminClients.get(node).close();
@@ -219,15 +251,15 @@ public class CrossDCTestEnricher {
 
     private static Keycloak createAdminClientFor(ContainerInfo node) {
         log.info("--DC: Initializing admin client for " + node.getContextRoot() + "/auth");
-        return Keycloak.getInstance(node.getContextRoot() + "/auth", AuthRealm.MASTER, AuthRealm.ADMIN, AuthRealm.ADMIN, Constants.ADMIN_CLI_CLIENT_ID);
+        return Keycloak.getInstance(node.getContextRoot() + "/auth", AuthRealm.MASTER, AuthRealm.ADMIN, AuthRealm.ADMIN, Constants.ADMIN_CLI_CLIENT_ID, TLSUtils.initializeTLS());
     }
-    
+
     private static KeycloakTestingClient createTestingClientFor(ContainerInfo node) {
         log.info("--DC: Initializing testing client for " + node.getContextRoot() + "/auth");
         return KeycloakTestingClient.getInstance(node.getContextRoot() + "/auth");
     }
-
     // Disable periodic tasks in cross-dc tests. It's needed to have some scenarios more stable.
+
     private static void suspendPeriodicTasks() {
         log.debug("--DC: suspendPeriodicTasks");
         backendTestingClients.values().stream().forEach((KeycloakTestingClient testingClient) -> {
@@ -275,7 +307,7 @@ public class CrossDCTestEnricher {
 
             containerController.get().stop(qualifier);
 
-            // Workaround for possible arquillian bug. Needs to cleanup dir manually 
+            // Workaround for possible arquillian bug. Needs to cleanup dir manually
             String setupCleanServerBaseDir = getContainerProperty(getCacheServer(dc), "setupCleanServerBaseDir");
             String cleanServerBaseDir = getContainerProperty(getCacheServer(dc), "cleanServerBaseDir");
 
@@ -327,6 +359,7 @@ public class CrossDCTestEnricher {
         if (! containerInfo.isStarted()) {
             log.infof("--DC: Starting backend auth-server node: %s", containerInfo.getQualifier());
             containerController.get().start(containerInfo.getQualifier());
+            initializeTLS(containerInfo);
             createRESTClientsForNode(containerInfo);
         }
     }

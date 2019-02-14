@@ -26,10 +26,14 @@ import org.jboss.logging.Logger;
  */
 public class SimpleUndertowLoadBalancerConfiguration extends UndertowContainerConfiguration {
 
+    public static final int DEFAULT_HTTPS_PORT = Integer.valueOf(System.getProperty("auth.server.https.port", "8543"));
+
     protected static final Logger log = Logger.getLogger(SimpleUndertowLoadBalancerConfiguration.class);
 
-    private String nodes = SimpleUndertowLoadBalancer.DEFAULT_NODES;
+    private String nodes = SimpleUndertowLoadBalancer.DEFAULT_NODES_HTTP;
     private int bindHttpPortOffset = 0;
+    private int bindHttpsPortOffset = 0;
+    private int bindHttpsPort = DEFAULT_HTTPS_PORT;
 
     public String getNodes() {
         return nodes;
@@ -47,6 +51,22 @@ public class SimpleUndertowLoadBalancerConfiguration extends UndertowContainerCo
         this.bindHttpPortOffset = bindHttpPortOffset;
     }
 
+    public int getBindHttpsPortOffset() {
+        return bindHttpsPortOffset;
+    }
+
+    public void setBindHttpsPortOffset(int bindHttpsPortOffset) {
+        this.bindHttpsPortOffset = bindHttpsPortOffset;
+    }
+
+    public int getBindHttpsPort() {
+        return this.bindHttpsPort;
+    }
+
+    public void setBindHttpsPort(int bindHttpsPort) {
+        this.bindHttpsPort = bindHttpsPort;
+    }
+
     @Override
     public void validate() throws ConfigurationException {
         super.validate();
@@ -57,10 +77,9 @@ public class SimpleUndertowLoadBalancerConfiguration extends UndertowContainerCo
             throw new ConfigurationException(e);
         }
 
-        int basePort = getBindHttpPort();
-        int newPort = basePort + bindHttpPortOffset;
-        setBindHttpPort(newPort);
-        log.info("SimpleUndertowLoadBalancer will listen on port: " + newPort);
+        setBindHttpPort(getBindHttpPort() + bindHttpPortOffset);
+        setBindHttpsPort(getBindHttpsPort() + bindHttpsPortOffset);
+        log.info("SimpleUndertowLoadBalancer will listen on ports: " + getBindHttpPort() + " " + getBindHttpsPort());
 
     }
 }

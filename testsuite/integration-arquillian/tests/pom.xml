@@ -63,8 +63,8 @@
         <auth.server.https.port>8543</auth.server.https.port>
         <auth.server.management.port>10090</auth.server.management.port>
         <auth.server.management.port.jmx>10099</auth.server.management.port.jmx>
-        <auth.server.ssl.required>false</auth.server.ssl.required>
-        <auth.server.memory.settings>-Xms64m -Xmx512m -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=256m</auth.server.memory.settings>
+        <auth.server.ssl.required>true</auth.server.ssl.required>
+        <auth.server.memory.settings>-Xms64m -Xmx512m</auth.server.memory.settings>
         <auth.server.config.property.name>serverConfig</auth.server.config.property.name>
         <auth.server.adapter.impl.class>org.jboss.as.arquillian.container.managed.ManagedDeployableContainer</auth.server.adapter.impl.class>
         <auth.server.truststore>&#36;{jboss.home.dir}/standalone/configuration/keycloak.truststore</auth.server.truststore>
@@ -544,6 +544,12 @@
 
                             <!-- used by PasswordPolicyTest.testBlacklistPasswordPolicyWithTestBlacklist, see KEYCLOAK-5244 -->
                             <keycloak.password.blacklists.path>${project.build.directory}/dependency/password-blacklists</keycloak.password.blacklists.path>
+
+                            <keycloak.connectionsJpa.driver>${keycloak.connectionsJpa.driver}</keycloak.connectionsJpa.driver>
+                            <keycloak.connectionsJpa.url>${keycloak.connectionsJpa.url}</keycloak.connectionsJpa.url>
+                            <keycloak.connectionsJpa.database>${keycloak.connectionsJpa.database}</keycloak.connectionsJpa.database>
+                            <keycloak.connectionsJpa.user>${keycloak.connectionsJpa.user}</keycloak.connectionsJpa.user>
+                            <keycloak.connectionsJpa.password>${keycloak.connectionsJpa.password}</keycloak.connectionsJpa.password>
                         </systemPropertyVariables>
                         <properties>
                             <property>
@@ -1236,46 +1242,6 @@
             </build>
         </profile>
 
-        <profile>
-            <id>jdbc-driver-dependency</id>
-            <activation>
-                <property>
-                    <name>jdbc.mvn.artifactId</name>
-                </property>
-            </activation>
-            <dependencies>
-                <dependency>
-                    <groupId>${jdbc.mvn.groupId}</groupId>
-                    <artifactId>${jdbc.mvn.artifactId}</artifactId>
-                    <version>${jdbc.mvn.version}</version>
-                </dependency>
-            </dependencies>
-            <build>
-                <plugins>
-                    <plugin>
-                        <artifactId>maven-enforcer-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <goals>
-                                    <goal>enforce</goal>
-                                </goals>
-                                <configuration>
-                                    <rules>
-                                        <requireProperty>
-                                            <property>jdbc.mvn.groupId</property>
-                                        </requireProperty>
-                                        <requireProperty>
-                                            <property>jdbc.mvn.version</property>
-                                        </requireProperty>
-                                    </rules>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-
         <!-- Profiles for migration tests-->
 
         <profile>
@@ -1500,6 +1466,7 @@
                 <dependency>
                     <groupId>com.h2database</groupId>
                     <artifactId>h2</artifactId>
+                    <version>${h2.version}</version>
                     <scope>compile</scope>
                 </dependency>
 
@@ -1628,18 +1595,10 @@
                 </dependency>
 
                 <dependency>
-                    <groupId>mysql</groupId>
-                    <artifactId>mysql-connector-java</artifactId>
-                </dependency>
-                <dependency>
-                    <groupId>org.postgresql</groupId>
-                    <artifactId>postgresql</artifactId>
-                    <version>${postgresql.version}</version>
-                </dependency>
-                <dependency>
-                    <groupId>org.mariadb.jdbc</groupId>
-                    <artifactId>mariadb-java-client</artifactId>
-                    <version>${mariadb.version}</version>
+                    <groupId>${jdbc.mvn.groupId}</groupId>
+                    <artifactId>${jdbc.mvn.artifactId}</artifactId>
+                    <version>${jdbc.mvn.version}</version>
+                    <scope>compile</scope>
                 </dependency>
 
                 <!-- CLI -->

@@ -41,6 +41,10 @@ and adapter are all in the same JVM and you can debug them easily. If it is not 
  
    
     -Dmaven.surefire.debug=true
+    
+Or slightly longer version (that allows you to specify debugging port as well as wait till you attach the debugger):
+    
+    -Dmaven.surefire.debug="-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=5006 -Xnoagent -Djava.compiler=NONE"
    
    
 and you will be able to attach remote debugger to the test. Unfortunately server and adapter are running in different JVMs, so this won't help to debug those. 
@@ -430,7 +434,8 @@ Although technically they can be run with almost every test in the testsuite, th
 * **Supported test modules:** `console`, `base-ui`
 * **Supported version:** 11
 * **Driver download required:** [Internet Explorer Driver Server](http://www.seleniumhq.org/download/); recommended version [3.5.1 32-bit](http://selenium-release.storage.googleapis.com/3.5/IEDriverServer_Win32_3.5.1.zip)
-* **Run with:** `-Dbrowser=internetExplorer -Dwebdriver.ie.driver=path/to/IEDriverServer.exe`
+* **Run with:** `-Dbrowser=internetExplorer -Dwebdriver.ie.driver=path/to/IEDriverServer.exe -Dauth.server.ssl.required=false`   
+Note: We currently do not support SSL in IE.
 
 #### Apple Safari
 * **Supported test modules:** `base-ui`
@@ -486,27 +491,17 @@ To run the X.509 client certificate authentication tests:
 	  -Dbrowser=phantomjs \
 	  "-Dtest=*.x509.*"
 
-## Run Mutual TLS Client Certificate Bound Access Tokens tests
+## Disabling TLS (SSL) in the tests
 
-To run the Mutual TLS Client Certificate Bound Access Tokens tests:
-
-    mvn -f testsuite/integration-arquillian/pom.xml \
-          clean install \
-      -Pauth-server-wildfly \
-      -Dauth.server.ssl.required \
-      -Dbrowser=phantomjs \
-      -Dtest=org.keycloak.testsuite.hok.HoKTest
-
-## Run Mutual TLS for the Client tests
-
-To run the Mutual TLS test for the client:
+All tests are executed with TLS by default. In order to disable it, you need to switch the `auth.server.ssl.required` property off.
+Here's an example:
 
     mvn -f testsuite/integration-arquillian/pom.xml \
           clean install \
-      -Pauth-server-wildfly \
-      -Dauth.server.ssl.required \
-      -Dbrowser=phantomjs \
-      -Dtest=org.keycloak.testsuite.client.MutualTLSClientTest
+      -Dauth.server.ssl.required=false
+
+NOTE: You can also do it ad-hoc from your IDE, however some tests (like AuthZ or JS Adapter tests) require rebuilt test applications.
+so please make sure you rebuild all `testsuite/integration-arquillian` child modules.
 
 ## Cluster tests
 
@@ -524,24 +519,10 @@ The setup includes:
 
 ### Cluster tests with Keycloak on Wildfly
 
-After build the sources, distribution and setup of clean shared database (replace command according your DB), you can use this command to setup servers:
+After you build the distribution, you run this command to setup servers and run cluster tests using shared Docker database:
 
-    export DB_HOST=localhost
-    mvn -f testsuite/integration-arquillian/servers/pom.xml \
-    -Pauth-server-wildfly,auth-server-cluster,jpa \
-    -Dsession.cache.owners=2 \
-    -Djdbc.mvn.groupId=mysql \
-    -Djdbc.mvn.version=5.1.29 \
-    -Djdbc.mvn.artifactId=mysql-connector-java \
-    -Dkeycloak.connectionsJpa.url=jdbc:mysql://$DB_HOST/keycloak \
-    -Dkeycloak.connectionsJpa.user=keycloak \
-    -Dkeycloak.connectionsJpa.password=keycloak \
-    clean install
-    
-And then this to run the cluster tests:
-   
-    mvn -f testsuite/integration-arquillian/tests/base/pom.xml \
-    -Pauth-server-wildfly,auth-server-cluster \
+    mvn -f testsuite/integration-arquillian/pom.xml \
+    -Pauth-server-wildfly,auth-server-cluster,db-mysql,jpa \
     -Dsession.cache.owners=2 \
     -Dbackends.console.output=true \
     -Dauth.server.log.check=false \
@@ -552,15 +533,12 @@ And then this to run the cluster tests:
 ### Cluster tests with Keycloak on embedded undertow
 
     mvn -f testsuite/integration-arquillian/tests/base/pom.xml \
-    -Pauth-server-cluster-undertow \
+    -Pauth-server-cluster-undertow,db-mysql \
     -Dsession.cache.owners=2 \
     -Dkeycloak.connectionsInfinispan.sessionsOwners=2 \
     -Dbackends.console.output=true \
     -Dauth.server.log.check=false \
     -Dfrontend.console.output=true \
-    -Dkeycloak.connectionsJpa.url=jdbc:mysql://$DB_HOST/keycloak \
-    -Dkeycloak.connectionsJpa.user=keycloak \
-    -Dkeycloak.connectionsJpa.password=keycloak \
     -Dtest=org.keycloak.testsuite.cluster.**.*Test clean install
 
 #### Run cluster tests from IDE on embedded undertow
@@ -624,9 +602,9 @@ a2) If you want to use **JBoss-based** Keycloak backend containers instead of co
 
 *note: 'auth-server-wildfly' can be replaced by 'auth-server-eap'*
 
-By default JBoss-based containers use TCP-based h2 database. It can be configured to use real DB, e.g. with following command:
+By default JBoss-based containers use TCP-based h2 database. It can be configured to use real DB spawn in Docker, e.g. with following command:
 
-  `mvn -Pcache-server-infinispan,auth-servers-crossdc-jboss,auth-server-wildfly,jpa -f testsuite/integration-arquillian -DskipTests clean install -Djdbc.mvn.groupId=org.mariadb.jdbc -Djdbc.mvn.artifactId=mariadb-java-client -Djdbc.mvn.version=2.0.3 -Dkeycloak.connectionsJpa.url=jdbc:mariadb://localhost:3306/keycloak -Dkeycloak.connectionsJpa.password=keycloak -Dkeycloak.connectionsJpa.user=keycloak`
+  `mvn -Pcache-server-infinispan,auth-servers-crossdc-jboss,auth-server-wildfly,jpa,db-mariadb -f testsuite/integration-arquillian -DskipTests clean install`
 
 b1) For **Undertow** Keycloak backend containers, you can run the tests using the following command (adjust the test specification according to your needs):
 
@@ -649,7 +627,7 @@ b2) For **JBoss-based** Keycloak backend containers, you can run the tests like 
 **note**:
 For **JBoss-based** Keycloak backend containers on real DB, the previous commands from (a2) and (b2) can be "squashed" into one. E.g.:
 
-  `mvn -f testsuite/integration-arquillian clean install -Dtest=*.crossdc.* -Djdbc.mvn.groupId=org.mariadb.jdbc -Djdbc.mvn.artifactId=mariadb-java-client -Djdbc.mvn.version=2.0.3 -Dkeycloak.connectionsJpa.url=jdbc:mariadb://localhost:3306/keycloak -Dkeycloak.connectionsJpa.password=keycloak -Dkeycloak.connectionsJpa.user=keycloak -Pcache-server-infinispan,auth-servers-crossdc-jboss,auth-server-wildfly,jpa clean install`
+  `mvn -f testsuite/integration-arquillian -Dtest=*.crossdc.* -Pcache-server-infinispan,auth-servers-crossdc-jboss,auth-server-wildfly,jpa,db-mariadb clean install`
     
 
 #### Run Cross-DC Tests from Intellij IDEA
