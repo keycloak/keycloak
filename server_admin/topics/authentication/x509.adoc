@@ -142,7 +142,7 @@ If set to `REQUESTED`, the server will optionally ask for a client certificate. 
 * Select a realm, click on Authentication link, select the "Browser" flow 
 * Make a copy of the built-in "Browser" flow. You may want to give the new flow a distinctive name, i.e. "X.509 Browser"
 * Using the drop down, select the copied flow, and click on "Add execution"
-* Select "X509/Validate User Form" using the drop down and click on "Save"  
+* Select "X509/Validate Username Form" using the drop down and click on "Save"
 
 image:images/x509-execution.png[]
 
@@ -160,6 +160,12 @@ image:images/x509-configuration.png[]
 
 `User Identity Source`::
 Defines how to extract the user identity from a client certificate.
+
+`Canonical DN representation enabled` (optional)::
+Defines whether to use the canonical format to determine a distinguished name.
+The format is described in detail in the official link:https://docs.oracle.com/javase/8/docs/api/javax/security/auth/x500/X500Principal.html#getName-java.lang.String-[Java API documentation] .
+This option only affects the two User Identity Sources _Match SubjectDN using regular expression_ and _Match IssuerDN using regular expression_.
+If you setup a new keycloak instance it is recommended to enable this option. Leave this option disabled to remain beckward compatible with existing Keycloak instances.
 
 `A regular expression` (optional)::
 Defines a regular expression to use as a filter to extract the certificate identity. The regular expression must contain a single group.
