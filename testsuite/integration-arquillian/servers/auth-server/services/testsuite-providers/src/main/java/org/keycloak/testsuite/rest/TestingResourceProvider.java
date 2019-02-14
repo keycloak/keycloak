@@ -533,7 +533,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
         event.setError(rep.getError());
         event.setOperationType(OperationType.valueOf(rep.getOperationType()));
         if (rep.getResourceType() != null) {
-            event.setResourceType(ResourceType.valueOf(rep.getResourceType()));
+            event.setResourceTypeAsString(rep.getResourceType());
         }
         event.setRealmId(rep.getRealmId());
         event.setRepresentation(rep.getRepresentation());
