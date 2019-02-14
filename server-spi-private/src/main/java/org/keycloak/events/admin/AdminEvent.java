@@ -31,7 +31,7 @@ public class AdminEvent {
     /**
      * The resource type an AdminEvent was triggered for.
      */
-    private ResourceType resourceType;
+    private String resourceType;
 
     private OperationType operationType;
 
@@ -143,11 +143,11 @@ public class AdminEvent {
      *
      * @return
      */
-    public ResourceType getResourceType() {
+    public String getResourceType() {
         return resourceType;
     }
 
-    public void setResourceType(ResourceType resourceType) {
+    public void setResourceType(String resourceType) {
         this.resourceType = resourceType;
     }
 }

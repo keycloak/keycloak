@@ -226,7 +226,7 @@ public class ModelToRepresentation {
         }
         rep.setOperationType(adminEvent.getOperationType().toString());
         if (adminEvent.getResourceType() != null) {
-            rep.setResourceType(adminEvent.getResourceType().toString());
+            rep.setResourceType(adminEvent.getResourceType());
         }
         rep.setResourcePath(adminEvent.getResourcePath());
         rep.setRepresentation(adminEvent.getRepresentation());

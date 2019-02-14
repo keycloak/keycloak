@@ -116,6 +116,11 @@ public class AdminEventBuilder {
     }
 
     public AdminEventBuilder resource(ResourceType resourceType){
+        adminEvent.setResourceType(resourceType.toString());
+        return this;
+    }
+
+    public AdminEventBuilder resource(String resourceType){
         adminEvent.setResourceType(resourceType);
         return this;
     }
