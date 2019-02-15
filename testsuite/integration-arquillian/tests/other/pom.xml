@@ -42,10 +42,6 @@
         <module>springboot-tests</module>
     </modules>
 
-    <properties>
-        <skip.unpack.test.resources>false</skip.unpack.test.resources>
-    </properties>
-
     <build>
         <pluginManagement>
             <plugins>
@@ -59,7 +55,6 @@
                                 <goal>unpack</goal>
                             </goals>
                             <configuration>
-                                <skip>${skip.unpack.test.resources}</skip>
                                 <artifactItems>
                                     <artifactItem>
                                         <groupId>org.keycloak.testsuite</groupId>

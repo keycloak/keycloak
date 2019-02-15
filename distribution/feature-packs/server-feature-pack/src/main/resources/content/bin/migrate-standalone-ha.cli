@@ -567,4 +567,11 @@ if (outcome == success) of /subsystem=jgroups/stack=tcp/transport=TCP/property=p
     end-try
 end-if
 
+# Migrate from 4.8.3 to 5.0.0
+if (outcome == failed) of /subsystem=logging/logger=io.jaegertracing.Configuration/:read-resource
+    echo Adding io.jaegertracing.Configuration logger
+    /subsystem=logging/logger=io.jaegertracing.Configuration/:add(category=io.jaegertracing.Configuration,level=WARN)
+    echo
+end-if
+
 echo *** End Migration ***
