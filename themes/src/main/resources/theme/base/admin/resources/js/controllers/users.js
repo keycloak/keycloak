@@ -483,7 +483,13 @@ module.controller('UserDetailCtrl', function($scope, realm, user, BruteForceUser
         for (var attribute in attrs) {
             if (typeof attrs[attribute] === "object") {
                 var attrVals = attrs[attribute].join("##");
-                attrs[attribute] = attrVals;
+                if(attrVals === "true"){
+                    attrs[attribute] = true;
+                }else if(attrVals==="false"){
+                    attrs[attribute] = false;
+                }else{
+                    attrs[attribute] = attrVals;
+                }
             }
         }
     }
@@ -509,14 +515,14 @@ module.controller('UserDetailCtrl', function($scope, realm, user, BruteForceUser
     }
 
     $scope.addDefaltAttribute = function(){
-            var keys = ['phone', 'policeNo',  'sex','avatarUrl', 'mac', 'workNature', 'isFirst', 'verifyIp', 'ip', 'password'];
-            var attrs = $scope.user.attributes;
-            for(var i=0; i< keys.length; i++){
-                 if (!attrs[keys[i]]) {
-                     $scope.user.attributes[keys[i]]=[];
-                 }
+        var keys = ['phone', 'policeNo',  'sex','avatarUrl', 'mac', 'workNature', 'isFirst', 'verifyIp', 'ip', 'login_not_password'];
+        var attrs = $scope.user.attributes;
+        for(var i=0; i< keys.length; i++){
+            if (!attrs[keys[i]]) {
+                $scope.user.attributes[keys[i]]=[];
             }
-            $scope.addDefaltKeys = false;
+        }
+        $scope.addDefaltKeys = false;
     }
 });
 
