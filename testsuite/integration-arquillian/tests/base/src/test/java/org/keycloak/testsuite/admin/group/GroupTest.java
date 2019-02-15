@@ -569,11 +569,12 @@ public class GroupTest extends AbstractGroupTest {
         RoleMappingResource mappings = realm.users().get(userId).roles();
         mappings.realmLevel().add(Collections.singletonList(adminRole));
 
-        Keycloak userClient = Keycloak.getInstance(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth",
-          realmName, userName, "pwd", Constants.ADMIN_CLI_CLIENT_ID, TLSUtils.initializeTLS());
+        try (Keycloak userClient = Keycloak.getInstance(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth",
+          realmName, userName, "pwd", Constants.ADMIN_CLI_CLIENT_ID, TLSUtils.initializeTLS())) {
 
-        assertThat(userClient.realms().findAll(),  // Any admin operation will do
-          not(empty()));
+            assertThat(userClient.realms().findAll(),  // Any admin operation will do
+                    not(empty()));
+        }
     }
 
     /**

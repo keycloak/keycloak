@@ -113,21 +113,22 @@ public class BrokenUserStorageTest {
 
         // make sure we can list components and delete provider as this is an admin console operation
 
-        Keycloak keycloakAdmin = Keycloak.getInstance(AUTH_SERVER_URL, "master", "admin", "admin", Constants.ADMIN_CLI_CLIENT_ID);
-        RealmResource master = keycloakAdmin.realms().realm("master");
-        List<ComponentRepresentation> components = master.components().query(masterId, UserStorageProvider.class.getName());
-        boolean found = false;
-        for (ComponentRepresentation rep : components) {
-            if (rep.getName().equals("bad-provider-id")) {
-                found = true;
+        try (Keycloak keycloakAdmin = Keycloak.getInstance(AUTH_SERVER_URL, "master", "admin", "admin", Constants.ADMIN_CLI_CLIENT_ID)) {
+            RealmResource master = keycloakAdmin.realms().realm("master");
+            List<ComponentRepresentation> components = master.components().query(masterId, UserStorageProvider.class.getName());
+            boolean found = false;
+            for (ComponentRepresentation rep : components) {
+                if (rep.getName().equals("bad-provider-id")) {
+                    found = true;
+                }
             }
+            Assert.assertTrue(found);
+
+            master.components().component(component.getId()).remove();
+
+            List<ComponentRepresentation> components2 = master.components().query(masterId, UserStorageProvider.class.getName());
+            Assert.assertEquals(components.size() - 1, components2.size());
         }
-        Assert.assertTrue(found);
-
-        master.components().component(component.getId()).remove();
-
-        List<ComponentRepresentation> components2 = master.components().query(masterId, UserStorageProvider.class.getName());
-        Assert.assertEquals(components.size() - 1, components2.size());
     }
 
     @After
