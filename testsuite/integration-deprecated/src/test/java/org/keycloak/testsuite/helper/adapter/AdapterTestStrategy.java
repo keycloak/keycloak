@@ -202,18 +202,20 @@ public class AdapterTestStrategy extends ExternalResource {
         Assert.assertTrue(pageSource.contains("iPhone") && pageSource.contains("iPad"));
 
         // View stats
-        List<Map<String, String>> stats = Keycloak.getInstance("http://localhost:8081/auth", "master", "admin", "admin", Constants.ADMIN_CLI_CLIENT_ID).realm("demo").getClientSessionStats();
-        Map<String, String> customerPortalStats = null;
-        Map<String, String> productPortalStats = null;
-        for (Map<String, String> s : stats) {
-            if (s.get("clientId").equals("customer-portal")) {
-                customerPortalStats = s;
-            } else if (s.get("clientId").equals("product-portal")) {
-                productPortalStats = s;
+        try (Keycloak adminClient = Keycloak.getInstance("http://localhost:8081/auth", "master", "admin", "admin", Constants.ADMIN_CLI_CLIENT_ID)) {
+            List<Map<String, String>> stats = adminClient.realm("demo").getClientSessionStats();
+            Map<String, String> customerPortalStats = null;
+            Map<String, String> productPortalStats = null;
+            for (Map<String, String> s : stats) {
+                if (s.get("clientId").equals("customer-portal")) {
+                    customerPortalStats = s;
+                } else if (s.get("clientId").equals("product-portal")) {
+                    productPortalStats = s;
+                }
             }
+            Assert.assertEquals(1, Integer.parseInt(customerPortalStats.get("active")));
+            Assert.assertEquals(1, Integer.parseInt(productPortalStats.get("active")));
         }
-        Assert.assertEquals(1, Integer.parseInt(customerPortalStats.get("active")));
-        Assert.assertEquals(1, Integer.parseInt(productPortalStats.get("active")));
 
         // test logout
         String logoutUri = OIDCLoginProtocolService.logoutUrl(UriBuilder.fromUri(AUTH_SERVER_URL))
@@ -603,15 +605,16 @@ public class AdapterTestStrategy extends ExternalResource {
         loginAndCheckSession(driver, loginPage);
 
         // logout mposolda with admin client
-        Keycloak keycloakAdmin = Keycloak.getInstance(AUTH_SERVER_URL, "master", "admin", "admin", Constants.ADMIN_CLI_CLIENT_ID);
-        UserRepresentation mposolda = keycloakAdmin.realm("demo").users().search("mposolda", null, null, null, null, null).get(0);
-        keycloakAdmin.realm("demo").users().get(mposolda.getId()).logout();
+        try (Keycloak keycloakAdmin = Keycloak.getInstance(AUTH_SERVER_URL, "master", "admin", "admin", Constants.ADMIN_CLI_CLIENT_ID)) {
+            UserRepresentation mposolda = keycloakAdmin.realm("demo").users().search("mposolda", null, null, null, null, null).get(0);
+            keycloakAdmin.realm("demo").users().get(mposolda.getId()).logout();
 
-        // bburke should be still logged with original httpSession in our browser window
-        driver.navigate().to(APP_SERVER_BASE_URL + "/session-portal");
-        Assert.assertEquals(driver.getCurrentUrl(), APP_SERVER_BASE_URL + "/session-portal" + slash);
-        String pageSource = driver.getPageSource();
-        Assert.assertTrue(pageSource.contains("Counter=3"));
+            // bburke should be still logged with original httpSession in our browser window
+            driver.navigate().to(APP_SERVER_BASE_URL + "/session-portal");
+            Assert.assertEquals(driver.getCurrentUrl(), APP_SERVER_BASE_URL + "/session-portal" + slash);
+            String pageSource = driver.getPageSource();
+            Assert.assertTrue(pageSource.contains("Counter=3"));
+        }
     }
 
     /**
