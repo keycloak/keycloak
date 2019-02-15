@@ -69,6 +69,8 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import org.xnio.Options;
+import org.xnio.SslClientAuthMode;
 
 public class KeycloakOnUndertow implements DeployableContainer<KeycloakOnUndertowConfiguration> {
 
@@ -195,6 +197,7 @@ public class KeycloakOnUndertow implements DeployableContainer<KeycloakOnUnderto
         undertow.start(Undertow.builder()
                         .addHttpListener(configuration.getBindHttpPort(), configuration.getBindAddress())
                         .addHttpsListener(configuration.getBindHttpsPort(), configuration.getBindAddress(), TLSUtils.initializeTLS())
+                        .setSocketOption(Options.SSL_CLIENT_AUTH_MODE, SslClientAuthMode.REQUESTED)
                         .setWorkerThreads(configuration.getWorkerThreads())
                         .setIoThreads(configuration.getWorkerThreads() / 8)
         );

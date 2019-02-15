@@ -528,8 +528,7 @@ After you build the distribution, you run this command to setup servers and run 
     -Dauth.server.log.check=false \
     -Dfrontend.console.output=true \
     -Dtest=org.keycloak.testsuite.cluster.**.*Test clean install
-   
-	  
+
 ### Cluster tests with Keycloak on embedded undertow
 
     mvn -f testsuite/integration-arquillian/tests/base/pom.xml \
@@ -540,6 +539,9 @@ After you build the distribution, you run this command to setup servers and run 
     -Dauth.server.log.check=false \
     -Dfrontend.console.output=true \
     -Dtest=org.keycloak.testsuite.cluster.**.*Test clean install
+
+Note that after update, you might encounter `org.infinispan.commons.CacheException: Initial state transfer timed out for cache org.infinispan.CONFIG`
+error in some environments. This can be fixed by adding `-Djava.net.preferIPv4Stack=true` parameter to the command above.
 
 #### Run cluster tests from IDE on embedded undertow
 
@@ -581,6 +583,13 @@ For an example of a test, see [org.keycloak.testsuite.crossdc.ActionTokenCrossDC
 
 The cross DC requires setting a profile specifying used cache server by specifying
 `cache-server-infinispan` or `cache-server-jdg` profile in maven.
+
+Since JDG does not distribute `infinispan-server` zip artifact anymore, for `cache-server-jdg` profile it is
+necessary to download the artifact and install it to local Maven repository. For JDG 7.3.0, the command is the following:
+
+    mvn install:install-file \
+    -DgroupId=org.infinispan.server -DartifactId=infinispan-server -Dpackaging=zip -Dclassifier=bin -DgeneratePom=true \
+    -Dversion=9.4.6.Final-redhat-00002 -Dfile=jboss-datagrid-7.3.0-server.zip
 
 #### Run Cross-DC Tests from Maven
 
