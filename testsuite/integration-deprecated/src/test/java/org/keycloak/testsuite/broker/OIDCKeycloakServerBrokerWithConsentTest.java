@@ -17,6 +17,7 @@
 
 package org.keycloak.testsuite.broker;
 
+import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
@@ -33,7 +34,6 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.KeycloakServer;
 import org.keycloak.testsuite.rule.AbstractKeycloakRule;
-import org.openqa.selenium.NoSuchElementException;
 
 import java.util.List;
 
@@ -95,6 +95,12 @@ public class OIDCKeycloakServerBrokerWithConsentTest extends AbstractIdentityPro
         realmRep.setAccessCodeLifespan(30);
         realmRep.setAccessCodeLifespanUserAction(30);
         realmWithBroker.update(realmRep);
+    }
+
+    @AfterClass
+    public static void after() {
+        keycloak1.close();
+        keycloak2.close();
     }
 
 

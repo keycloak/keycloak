@@ -23,6 +23,8 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
+import javax.ws.rs.core.Response;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.AuthorizationResource;
@@ -177,7 +179,8 @@ public class RolePolicyTest extends AbstractAuthzTest {
             policy.addRole(role);
         }
 
-        getClient().authorization().policies().role().create(policy);
+        Response response = getClient().authorization().policies().role().create(policy);
+        response.close();
     }
 
     private void createResourcePermission(String name, String resource, String... policies) {
@@ -187,19 +190,21 @@ public class RolePolicyTest extends AbstractAuthzTest {
         permission.addResource(resource);
         permission.addPolicy(policies);
 
-        getClient().authorization().permissions().resource().create(permission);
+        Response response = getClient().authorization().permissions().resource().create(permission);
+        response.close();
     }
 
     private void createResource(String name) {
         AuthorizationResource authorization = getClient().authorization();
         ResourceRepresentation resource = new ResourceRepresentation(name);
 
-        authorization.resources().create(resource);
+        Response response = authorization.resources().create(resource);
+        response.close();
     }
 
     private RealmResource getRealm() {
         try {
-            return AdminClientUtil.createAdminClient().realm("authz-test");
+            return getAdminClient().realm("authz-test");
         } catch (Exception e) {
             throw new RuntimeException("Failed to create admin client");
         }
