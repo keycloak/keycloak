@@ -35,7 +35,7 @@
 
     <properties>
         <skip.add.user.json>true</skip.add.user.json>
-        <skip.unpack.test.resources>true</skip.unpack.test.resources>
+        <skip.copy.example.wars>true</skip.copy.example.wars>
         <skip.rename.configs>false</skip.rename.configs>
         
         <jbossHome>${project.build.directory}/keycloak-${project.version}</jbossHome>
