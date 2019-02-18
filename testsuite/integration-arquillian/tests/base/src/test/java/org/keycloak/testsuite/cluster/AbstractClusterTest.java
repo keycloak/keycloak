@@ -8,6 +8,7 @@ import org.keycloak.admin.client.Keycloak;
 import org.keycloak.models.Constants;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
+import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
 import org.keycloak.testsuite.arquillian.ContainerInfo;
 import org.keycloak.testsuite.arquillian.undertow.TLSUtils;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
@@ -108,6 +109,9 @@ public abstract class AbstractClusterTest extends AbstractKeycloakTest {
             assertTrue(controller.isStarted(node.getQualifier()));
         }
         log.info("Backend node " + node + " is started");
+
+        AuthServerTestEnricher.initializeTLS(node);
+
         if (!backendAdminClients.containsKey(node)) {
             backendAdminClients.put(node, createAdminClientFor(node));
         }

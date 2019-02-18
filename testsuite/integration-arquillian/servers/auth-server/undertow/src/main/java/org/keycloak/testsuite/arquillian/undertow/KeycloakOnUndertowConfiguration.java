@@ -118,7 +118,12 @@ public class KeycloakOnUndertowConfiguration extends UndertowContainerConfigurat
         int basePort = getBindHttpPort();
         int newPort = basePort + bindHttpPortOffset;
         setBindHttpPort(newPort);
-        log.info("KeycloakOnUndertow will listen on port: " + newPort);
+
+        int baseHttpsPort = getBindHttpsPort();
+        int newHttpsPort = baseHttpsPort + bindHttpsPortOffset;
+        setBindHttpsPort(newHttpsPort);
+
+        log.info("KeycloakOnUndertow will listen for http on port: " + newPort + " and for https on port: " + newHttpsPort);
         
         if (this.keycloakConfigPropertyOverrides != null) {
             try {
