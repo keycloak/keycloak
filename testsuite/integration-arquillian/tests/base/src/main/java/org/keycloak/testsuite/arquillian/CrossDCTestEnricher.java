@@ -76,6 +76,10 @@ public class CrossDCTestEnricher {
     static void initializeSuiteContext(SuiteContext suiteContext) {
         Validate.notNull(suiteContext, "Suite context cannot be null.");
         CrossDCTestEnricher.suiteContext = suiteContext;
+
+        if (AuthServerTestEnricher.AUTH_SERVER_CROSS_DC && suiteContext.getCacheServersInfo().isEmpty() && !AuthServerTestEnricher.CACHE_SERVER_LIFECYCLE_SKIP) {
+            throw new IllegalStateException("Cache containers misconfiguration");
+        }
     }
 
     public void beforeTest(@Observes(precedence = -2) Before event) {
@@ -160,33 +164,6 @@ public class CrossDCTestEnricher {
         suspendPeriodicTasks();
     }
 
-    private static void initializeTLS(ContainerInfo containerInfo) {
-        if (AuthServerTestEnricher.AUTH_SERVER_SSL_REQUIRED) {
-            log.infof("\n\n### Setting up TLS for %s ##\n\n", containerInfo);
-            try {
-                OnlineManagementClient client = getManagementClient(containerInfo);
-                AuthServerTestEnricher.enableTLS(client);
-                client.close();
-            } catch (Exception e) {
-                log.warn("Failed to set up TLS. This may lead to unexpected behavior unless the test" +
-                      " sets it up manually", e);
-            }
-
-        }
-    }
-
-    private static OnlineManagementClient getManagementClient(ContainerInfo containerInfo) {
-        try {
-            return ManagementClient.online(OnlineOptions
-                  .standalone()
-                  .hostAndPort("localhost", Integer.valueOf(containerInfo.getProperties().get("managementPort")))
-                  .build()
-            );
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
     public void afterTest(@Observes After event) {
         if (!suiteContext.isAuthServerCrossDc()) return;
 
@@ -205,11 +182,13 @@ public class CrossDCTestEnricher {
           .map(StopContainer::new)
           .forEach(stopContainer::fire);
 
-        DC.validDcsStream()
-          .map(CrossDCTestEnricher::getCacheServer)
-          .map(ContainerInfo::getArquillianContainer)
-          .map(StopContainer::new)
-          .forEach(stopContainer::fire);
+        if (!AuthServerTestEnricher.CACHE_SERVER_LIFECYCLE_SKIP) {
+            DC.validDcsStream()
+                    .map(CrossDCTestEnricher::getCacheServer)
+                    .map(ContainerInfo::getArquillianContainer)
+                    .map(StopContainer::new)
+                    .forEach(stopContainer::fire);
+        }
     }
 
     public void stopSuiteContainers(@Observes(precedence = 4) StopSuiteContainers event) {
@@ -292,6 +271,8 @@ public class CrossDCTestEnricher {
     }
 
     public static void startCacheServer(DC dc) {
+        if (AuthServerTestEnricher.CACHE_SERVER_LIFECYCLE_SKIP) return;
+
         if (!containerController.get().isStarted(getCacheServer(dc).getQualifier())) {
             log.infof("--DC: Starting %s", getCacheServer(dc).getQualifier());
             containerController.get().start(getCacheServer(dc).getQualifier());
@@ -300,6 +281,8 @@ public class CrossDCTestEnricher {
     }
 
     public static void stopCacheServer(DC dc) {
+        if (AuthServerTestEnricher.CACHE_SERVER_LIFECYCLE_SKIP) return;
+
         String qualifier = getCacheServer(dc).getQualifier();
 
         if (containerController.get().isStarted(qualifier)) {
@@ -359,7 +342,7 @@ public class CrossDCTestEnricher {
         if (! containerInfo.isStarted()) {
             log.infof("--DC: Starting backend auth-server node: %s", containerInfo.getQualifier());
             containerController.get().start(containerInfo.getQualifier());
-            initializeTLS(containerInfo);
+            AuthServerTestEnricher.initializeTLS(containerInfo);
             createRESTClientsForNode(containerInfo);
         }
     }

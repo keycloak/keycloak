@@ -112,6 +112,10 @@ public class AuthServerTestEnricher {
     public static final String AUTH_SERVER_CROSS_DC_PROPERTY = "auth.server.crossdc";
     public static final boolean AUTH_SERVER_CROSS_DC = Boolean.parseBoolean(System.getProperty(AUTH_SERVER_CROSS_DC_PROPERTY, "false"));
 
+    public static final String CACHE_SERVER_LIFECYCLE_SKIP_PROPERTY = "cache.server.lifecycle.skip";
+    public static final boolean CACHE_SERVER_LIFECYCLE_SKIP = Boolean.parseBoolean(System.getProperty(CACHE_SERVER_LIFECYCLE_SKIP_PROPERTY, "false"));
+
+
     public static final Boolean START_MIGRATION_CONTAINER = "auto".equals(System.getProperty("migration.mode")) ||
             "manual".equals(System.getProperty("migration.mode"));
 
@@ -226,8 +230,7 @@ public class AuthServerTestEnricher {
             if (suiteContext.getDcAuthServerBackendsInfo().stream().anyMatch(List::isEmpty)) {
                 throw new RuntimeException(String.format("Some data center has no auth server container matching '%s' defined in arquillian.xml.", AUTH_SERVER_BACKEND));
             }
-            boolean cacheServerLifecycleSkip = Boolean.parseBoolean(System.getProperty("cache.server.lifecycle.skip"));
-            if (suiteContext.getCacheServersInfo().isEmpty() && !cacheServerLifecycleSkip) {
+            if (suiteContext.getCacheServersInfo().isEmpty() && !CACHE_SERVER_LIFECYCLE_SKIP) {
                 throw new IllegalStateException("Cache containers misconfiguration");
             }
 
@@ -369,21 +372,39 @@ public class AuthServerTestEnricher {
     public void initializeTLS(@Observes(precedence = 3) BeforeClass event) throws Exception {
         // TLS for Undertow is configured in KeycloakOnUndertow since it requires
         // SSLContext while initializing HTTPS handlers
-        if (AUTH_SERVER_SSL_REQUIRED && isAuthServerJBossBased() && !suiteContext.isAuthServerCrossDc()) {
-            log.info("\n\n### Setting up TLS ##\n\n");
-
-            try {
-                OnlineManagementClient client = getManagementClient();
-                enableTLS(client);
-                client.close();
-            } catch (Exception e) {
-                log.warn("Failed to set up TLS. This may lead to unexpected behavior unless the test" +
-                      " sets it up manually", e);
-            }
+        if (!suiteContext.isAuthServerCrossDc() && !suiteContext.isAuthServerCluster()) {
+            initializeTLS(suiteContext.getAuthServerInfo());
         }
     }
 
-    protected static void enableTLS(OnlineManagementClient client) throws Exception {
+    public static void initializeTLS(ContainerInfo containerInfo) {
+        if (AUTH_SERVER_SSL_REQUIRED && containerInfo.isJBossBased()) {
+            log.infof("\n\n### Setting up TLS for %s ##\n\n", containerInfo);
+            try {
+                OnlineManagementClient client = getManagementClient(containerInfo);
+                AuthServerTestEnricher.enableTLS(client);
+                client.close();
+            } catch (Exception e) {
+                log.warn("Failed to set up TLS for container '" + containerInfo.getQualifier() + "'. This may lead to unexpected behavior unless the test" +
+                        " sets it up manually", e);
+            }
+
+        }
+    }
+
+    private static OnlineManagementClient getManagementClient(ContainerInfo containerInfo) {
+        try {
+            return ManagementClient.online(OnlineOptions
+                    .standalone()
+                    .hostAndPort("localhost", Integer.valueOf(containerInfo.getProperties().get("managementPort")))
+                    .build()
+            );
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static void enableTLS(OnlineManagementClient client) throws Exception {
         Administration administration = new Administration(client);
         Operations operations = new Operations(client);
 

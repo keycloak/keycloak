@@ -18,7 +18,9 @@
 package org.keycloak.testsuite.arquillian.undertow;
 
 import io.undertow.Undertow;
+import io.undertow.server.HttpHandler;
 import io.undertow.server.handlers.PathHandler;
+import io.undertow.server.handlers.ProxyPeerAddressHandler;
 import io.undertow.servlet.Servlets;
 import io.undertow.servlet.api.DefaultServletConfig;
 import io.undertow.servlet.api.DeploymentInfo;
@@ -72,7 +74,7 @@ public class KeycloakOnUndertow implements DeployableContainer<KeycloakOnUnderto
 
     protected final Logger log = Logger.getLogger(this.getClass());
     
-    private UndertowJaxrsServer undertow;
+    private KeycloakUndertowJaxrsServer undertow;
     private KeycloakOnUndertowConfiguration configuration;
     private KeycloakSessionFactory sessionFactory;
 
@@ -187,7 +189,7 @@ public class KeycloakOnUndertow implements DeployableContainer<KeycloakOnUnderto
         long start = System.currentTimeMillis();
 
         if (undertow == null) {
-            undertow = new UndertowJaxrsServer();
+            undertow = new KeycloakUndertowJaxrsServer();
         }
 
         undertow.start(Undertow.builder()
@@ -279,6 +281,31 @@ public class KeycloakOnUndertow implements DeployableContainer<KeycloakOnUnderto
     @Override
     public void undeploy(Descriptor descriptor) throws DeploymentException {
         throw new UnsupportedOperationException("Not implemented");
+    }
+
+
+    private static class KeycloakUndertowJaxrsServer extends UndertowJaxrsServer {
+
+        @Override
+        public KeycloakUndertowJaxrsServer start(Undertow.Builder builder) {
+            try {
+                // Need to wrap the original handler with ProxyPeerAddressHandler. Thanks to that, if undertow is behind proxy and the proxy
+                // forwards "https" request to undertow as "http" request, undertow will be able to establish protocol correctly on the request
+                // based on the X-Proto headers
+                Field f = UndertowJaxrsServer.class.getDeclaredField("root");
+                f.setAccessible(true);
+                HttpHandler origRootHandler = (HttpHandler) f.get(this);
+
+                HttpHandler wrappedHandler = new ProxyPeerAddressHandler(origRootHandler);
+
+                server = builder.setHandler(wrappedHandler).build();
+                server.start();
+                return this;
+            } catch (NoSuchFieldException | IllegalAccessException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
     }
 
 }
