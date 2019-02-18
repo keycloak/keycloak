@@ -635,8 +635,9 @@ For **JBoss-based** Keycloak backend containers on real DB, the previous command
 First we will manually download, configure and run infinispan servers. Then we can run the tests from IDE against the servers. 
 It's more effective during development as there is no need to restart infinispan server(s) among test runs.
 
-1) Download infinispan server 8.2.X from http://infinispan.org/download/ and go through the steps 
-from the [Keycloak Cross-DC documentation](http://www.keycloak.org/docs/latest/server_installation/index.html#jdgsetup) for setup infinispan servers.
+1) Download infinispan server of corresponding version (See "infinispan.version" property in [root pom.xml](../../pom.xml)) 
+from http://infinispan.org/download/ and go through the steps from the 
+[Keycloak Cross-DC documentation](http://www.keycloak.org/docs/latest/server_installation/index.html#jdgsetup) for setup infinispan servers.
 
 The difference to original docs is, that you need to have JDG servers available on localhost with port offsets. So:
 
