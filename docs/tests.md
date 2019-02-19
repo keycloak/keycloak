@@ -1,5 +1,5 @@
-Executing testsuite
-===================
+Executing tests
+===============
 
 Browser
 -------
@@ -11,7 +11,7 @@ To run the tests with Firefox add `-Dbrowser=firefox` or for Chrome add `-Dbrows
 Database
 --------
 
-By default the testsuite uses an embedded H2 database to test with other databases see (Database Testing)[DatabaseTesting.md].
+By default the testsuite uses an embedded H2 database to test with other databases see (Database Testing)[tests-db.md].
 
 Test utils
 ==========
