@@ -1,5 +1,5 @@
 
-=== Client-initiated Account Linking
+=== Client Initiated Account Linking
 
 Some applications want to integrate with social providers like Facebook, but do not want to provide an option to login via
 these social providers.  {project_name} offers a browser-based API that applications can use to link an existing
