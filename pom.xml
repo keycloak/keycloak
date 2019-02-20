@@ -1083,11 +1083,6 @@
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-proxy-server</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-saml-core</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -1266,12 +1261,6 @@
             <dependency>
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-api-docs-dist</artifactId>
-                <version>${project.version}</version>
-                <type>zip</type>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-proxy-dist</artifactId>
                 <version>${project.version}</version>
                 <type>zip</type>
             </dependency>
@@ -1666,9 +1655,6 @@
                 <product.version>${project.version}</product.version>
                 <product.default-profile>community</product.default-profile>
             </properties>
-            <modules>
-                <module>proxy</module>
-            </modules>
         </profile>
 
         <profile>
