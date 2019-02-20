@@ -1,7 +1,6 @@
 ./
     keycloak-server-dist:keycloak
     keycloak-server-overlay:keycloak-overlay
-    keycloak-proxy-dist:keycloak-proxy
     keycloak-api-docs-dist:keycloak-api-docs
     keycloak-examples-dist:keycloak-examples
 
