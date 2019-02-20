@@ -51,7 +51,6 @@
             <modules>
                 <module>api-docs-dist</module>
                 <module>examples-dist</module>
-                <module>proxy-dist</module>
                 <module>downloads</module>
             </modules>
         </profile>
