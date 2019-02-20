@@ -80,7 +80,7 @@ with the same provider ID (i.e., "ldap", "kerberos") as the earlier User Federat
 
 So, knowing this there are different approaches you can take.
 
-. You can remove the earlier provider in your earlier {project_name} deployment. This will remove thedd local linked copies
+. You can remove the earlier provider in your earlier {project_name} deployment. This will remove the local linked copies
   of all users you imported.  Then, when you upgrade {project_name}, just deploy and configure your new provider for your realm.
 . The second option is to write your new provider making sure it has the same provider ID: `UserStorageProviderFactory.getId()`.
   Make sure this provider is in the `deploy/` directory of the new {project_name} installation.  Boot the server, and have
