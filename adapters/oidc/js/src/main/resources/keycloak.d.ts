@@ -317,6 +317,11 @@ declare namespace Keycloak {
 		timeSkew?: number;
 
 		/**
+		 * Set the additional GET parameters.
+		 */
+		urlParams?: { [index: string]: string }
+
+		/**
 		 * @private Undocumented.
 		 */
 		loginRequired?: boolean;

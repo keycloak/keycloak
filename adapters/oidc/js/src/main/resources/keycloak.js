@@ -41,6 +41,7 @@
         }
 
         var useNonce = true;
+        var urlParams = '';
         
         kc.init = function (initOptions) {
             kc.authenticated = false;
@@ -71,6 +72,10 @@
 
                 if (initOptions.checkLoginIframeInterval) {
                     loginIframe.interval = initOptions.checkLoginIframeInterval;
+                }
+
+                if (typeof initOptions.urlParams !== 'undefined') {
+                    urlParams = generateParams(initOptions.urlParams);
                 }
 
                 if (initOptions.promiseType === 'native') {
@@ -313,6 +318,8 @@
                 url += '&kc_locale=' + encodeURIComponent(options.kcLocale);
             }
 
+            url += urlParams;
+
             return url;
         }
 
@@ -346,7 +353,8 @@
                 url = realm
                 + '/account'
                 + '?referrer=' + encodeURIComponent(kc.clientId)
-                + '&referrer_uri=' + encodeURIComponent(adapter.redirectUri(options));
+                + '&referrer_uri=' + encodeURIComponent(adapter.redirectUri(options))
+                + urlParams;
             }
             return url;
         }
@@ -535,6 +543,16 @@
                     kc.login();
                 }
             }
+        }
+
+        function generateParams(params) {
+            var str = '';
+            for (var param in params) {
+                if (params.hasOwnProperty(param)) {
+                    str += '&' + param + '=' + encodeURIComponent(params[param]);
+                }
+            }
+            return str;
         }
 
         function getRealmUrl() {
