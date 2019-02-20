@@ -33,6 +33,7 @@ import org.keycloak.models.KeycloakSessionTask;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.GroupModel;
 import org.keycloak.models.dblock.DBLockManager;
 import org.keycloak.models.dblock.DBLockProvider;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -443,6 +444,17 @@ public class KeycloakApplication extends Application {
                                 user.setEnabled(userRep.isEnabled());
                                 RepresentationToModel.createCredentials(userRep, session, realm, user, false);
                                 RepresentationToModel.createRoleMappings(userRep, user, realm);
+                                if (userRep.getGroups() != null) {
+                                    for (String path : userRep.getGroups()) {
+                                        GroupModel group = KeycloakModelUtils.findGroupByPath(realm, path);
+                                        if (group == null) {
+                                            ServicesLogger.LOGGER.addUserFailedGroupNotFound(user.getUsername(), path);
+                                        }
+                                        else {
+                                            user.joinGroup(group);
+                                        }
+                                    }
+                                }
                             }
 
                             session.getTransactionManager().commit();

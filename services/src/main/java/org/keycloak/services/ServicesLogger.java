@@ -81,6 +81,10 @@ public interface ServicesLogger extends BasicLogger {
     @Message(id=8, value="Failed to add user %s to realm %s: realm not found")
     void addUserFailedRealmNotFound(String user, String realm);
 
+    @LogMessage(level = WARN)
+    @Message(id=104, value="Failed to add user %s to group with path %s: group not found")
+    void addUserFailedGroupNotFound(String user, String group);
+
     @LogMessage(level = INFO)
     @Message(id=9, value="Added user '%s' to realm '%s'")
     void addUserSuccess(String user, String realm);
