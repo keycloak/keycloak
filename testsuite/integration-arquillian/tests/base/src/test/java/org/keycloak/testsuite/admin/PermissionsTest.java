@@ -491,12 +491,6 @@ public class PermissionsTest extends AbstractKeycloakTest {
         l = clients.get(AdminRoles.VIEW_CLIENTS).realm(REALM_NAME).clients().findAll();
         Assert.assertThat(l, Matchers.not(Matchers.empty()));
 
-        // this should throw forbidden as "query-users" role isn't enough
-        invoke(new Invocation() {
-            public void invoke(RealmResource realm) {
-                clients.get(AdminRoles.QUERY_USERS).realm(REALM_NAME).clients().findAll();
-            }
-        }, clients.get(AdminRoles.QUERY_USERS), false);
         ClientRepresentation client = l.get(0);
         invoke(new InvocationWithResponse() {
             @Override
@@ -764,6 +758,12 @@ public class PermissionsTest extends AbstractKeycloakTest {
                 realm.clients().get(foo.getId()).roles().get("nosuch").getClientRoleComposites("nosuch");
             }
         }, Resource.CLIENT, false);
+        // users with query-client role should be able to query flows so the client detail page can be rendered successfully when fine-grained permissions are enabled.
+        invoke(new Invocation() {
+            public void invoke(RealmResource realm) {
+                realm.flows().getFlows();
+            }
+        }, clients.get(AdminRoles.QUERY_CLIENTS), true);
     }
 
     @Test
@@ -1603,6 +1603,19 @@ public class PermissionsTest extends AbstractKeycloakTest {
                 realm.users().get(user.getId()).update(user);
             }
         }, clients.get(AdminRoles.QUERY_CLIENTS), false);
+        // users with query-user role should be able to query required actions so the user detail page can be rendered successfully when fine-grained permissions are enabled.
+        invoke(new Invocation() {
+            public void invoke(RealmResource realm) {
+                realm.flows().getRequiredActions();
+            }
+        }, clients.get(AdminRoles.QUERY_USERS), true);
+        // users with query-user role should be able to query clients so the user detail page can be rendered successfully when fine-grained permissions are enabled.
+        // if the admin wants to restrict the clients that an user can see he can define permissions for these clients
+        invoke(new Invocation() {
+            public void invoke(RealmResource realm) {
+                clients.get(AdminRoles.QUERY_USERS).realm(REALM_NAME).clients().findAll();
+            }
+        }, clients.get(AdminRoles.QUERY_USERS), true);
     }
 
     @Test
