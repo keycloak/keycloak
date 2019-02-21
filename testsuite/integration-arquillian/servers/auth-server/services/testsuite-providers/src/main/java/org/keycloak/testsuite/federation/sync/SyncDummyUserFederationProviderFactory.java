@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2017 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -41,10 +41,10 @@ import java.util.concurrent.TimeUnit;
 public class SyncDummyUserFederationProviderFactory extends DummyUserFederationProviderFactory {
 
     // Used during SyncFederationTest
-    static volatile CountDownLatch latch1 = new CountDownLatch(1);
-    static volatile CountDownLatch latch2 = new CountDownLatch(1);
+    public static volatile CountDownLatch latch1 = new CountDownLatch(1);
+    public static volatile CountDownLatch latch2 = new CountDownLatch(1);
 
-    static void restartLatches() {
+    public static void restartLatches() {
         latch1 = new CountDownLatch(1);
         latch2 = new CountDownLatch(1);
     }
