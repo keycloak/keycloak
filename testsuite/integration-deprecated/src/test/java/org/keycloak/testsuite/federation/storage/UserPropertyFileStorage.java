@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2017 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,6 +16,12 @@
  */
 package org.keycloak.testsuite.federation.storage;
 
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+
 import org.keycloak.component.ComponentModel;
 import org.keycloak.credential.CredentialInput;
 import org.keycloak.credential.CredentialInputValidator;
@@ -31,12 +37,6 @@ import org.keycloak.storage.adapter.AbstractUserAdapter;
 import org.keycloak.storage.adapter.AbstractUserAdapterFederatedStorage;
 import org.keycloak.storage.user.UserLookupProvider;
 import org.keycloak.storage.user.UserQueryProvider;
-
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -137,7 +137,6 @@ public class UserPropertyFileStorage implements UserLookupProvider, UserStorageP
         }
     }
 
-
     @Override
     public int getUsersCount(RealmModel realm) {
         return userPasswords.size();
@@ -191,7 +190,6 @@ public class UserPropertyFileStorage implements UserLookupProvider, UserStorageP
 
     @Override
     public List<UserModel> searchForUser(Map<String, String> attributes, RealmModel realm, int firstResult, int maxResults) {
-        if (attributes.size() != 1) return Collections.EMPTY_LIST;
         String username = attributes.get(UserModel.USERNAME);
         if (username == null) return Collections.EMPTY_LIST;
         return searchForUser(username, realm, firstResult, maxResults);

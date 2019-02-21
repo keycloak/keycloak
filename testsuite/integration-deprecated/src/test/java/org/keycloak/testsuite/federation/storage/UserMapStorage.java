@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2017 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,6 +16,12 @@
  */
 package org.keycloak.testsuite.federation.storage;
 
+import java.util.Collections;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import org.jboss.logging.Logger;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.credential.CredentialInput;
 import org.keycloak.credential.CredentialInputUpdater;
@@ -33,23 +39,23 @@ import org.keycloak.storage.adapter.AbstractUserAdapterFederatedStorage;
 import org.keycloak.storage.user.UserLookupProvider;
 import org.keycloak.storage.user.UserRegistrationProvider;
 
-import java.util.Collections;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
-
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
 public class UserMapStorage implements UserLookupProvider, UserStorageProvider, UserRegistrationProvider, CredentialInputUpdater, CredentialInputValidator {
 
+    private static final Logger log = Logger.getLogger(UserMapStorage.class);
+    
     protected Map<String, String> userPasswords;
     protected ComponentModel model;
     protected KeycloakSession session;
 
     public static final AtomicInteger allocations = new AtomicInteger(0);
     public static final AtomicInteger closings = new AtomicInteger(0);
+    public static final AtomicInteger realmRemovals = new AtomicInteger(0);
+    public static final AtomicInteger groupRemovals = new AtomicInteger(0);
+    public static final AtomicInteger roleRemovals = new AtomicInteger(0);
 
     public UserMapStorage(KeycloakSession session, ComponentModel model, Map<String, String> userPasswords) {
         this.session = session;
@@ -58,18 +64,19 @@ public class UserMapStorage implements UserLookupProvider, UserStorageProvider, 
         allocations.incrementAndGet();
     }
 
-
     @Override
     public UserModel getUserById(String id, RealmModel realm) {
         StorageId storageId = new StorageId(id);
         final String username = storageId.getExternalId();
-        if (!userPasswords.containsKey(username)) return null;
+        if (!userPasswords.containsKey(username)) {
+            return null;
+        }
 
         return createUser(realm, username);
     }
 
     private UserModel createUser(RealmModel realm, String username) {
-        return new AbstractUserAdapterFederatedStorage(session, realm,  model) {
+        return new AbstractUserAdapterFederatedStorage(session, realm, model) {
             @Override
             public String getUsername() {
                 return username;
@@ -90,9 +97,11 @@ public class UserMapStorage implements UserLookupProvider, UserStorageProvider, 
 
     @Override
     public boolean updateCredential(RealmModel realm, UserModel user, CredentialInput input) {
-        if (!(input instanceof UserCredentialModel)) return false;
+        if (!(input instanceof UserCredentialModel)) {
+            return false;
+        }
         if (input.getType().equals(UserCredentialModel.PASSWORD)) {
-            userPasswords.put(user.getUsername(), ((UserCredentialModel)input).getValue());
+            userPasswords.put(user.getUsername(), ((UserCredentialModel) input).getValue());
             return true;
 
         } else {
@@ -117,10 +126,12 @@ public class UserMapStorage implements UserLookupProvider, UserStorageProvider, 
 
     @Override
     public boolean isValid(RealmModel realm, UserModel user, CredentialInput input) {
-        if (!(input instanceof UserCredentialModel)) return false;
+        if (!(input instanceof UserCredentialModel)) {
+            return false;
+        }
         if (input.getType().equals(UserCredentialModel.PASSWORD)) {
             String pw = userPasswords.get(user.getUsername());
-            return pw != null && pw.equals( ((UserCredentialModel)input).getValue());
+            return pw != null && pw.equals(((UserCredentialModel) input).getValue());
         } else {
             return false;
         }
@@ -128,7 +139,9 @@ public class UserMapStorage implements UserLookupProvider, UserStorageProvider, 
 
     @Override
     public UserModel getUserByUsername(String username, RealmModel realm) {
-        if (!userPasswords.containsKey(username)) return null;
+        if (!userPasswords.containsKey(username)) {
+            return null;
+        }
 
         return createUser(realm, username);
     }
@@ -151,22 +164,25 @@ public class UserMapStorage implements UserLookupProvider, UserStorageProvider, 
 
     @Override
     public void preRemove(RealmModel realm) {
-
+        log.infof("preRemove: realm=%s", realm.getName());
+        realmRemovals.incrementAndGet();
     }
 
     @Override
     public void preRemove(RealmModel realm, GroupModel group) {
-
+        log.infof("preRemove: realm=%s, group=%s", realm.getName(), group.getName());
+        groupRemovals.incrementAndGet();
     }
 
     @Override
     public void preRemove(RealmModel realm, RoleModel role) {
-
+        log.infof("preRemove: realm=%s, role=%s", realm.getName(), role.getName());
+        roleRemovals.incrementAndGet();
     }
 
     @Override
     public void close() {
         closings.incrementAndGet();
-
     }
+
 }
