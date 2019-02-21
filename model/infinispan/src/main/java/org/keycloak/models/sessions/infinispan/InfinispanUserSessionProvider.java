@@ -529,7 +529,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
         localClientSessionCacheStoreIgnore
                 .entrySet()
                 .stream()
-                .filter(AuthenticatedClientSessionPredicate.create(realm.getId()).expired(expired))
+                .filter(AuthenticatedClientSessionPredicate.create(realm.getId()).expired(Math.min(expired, expiredRememberMe)))
                 .map(Mappers.clientSessionEntity())
                 .forEach(new Consumer<AuthenticatedClientSessionEntity>() {
 
