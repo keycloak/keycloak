@@ -171,7 +171,7 @@ public final class TestContext {
     public TestCleanup getOrCreateCleanup(String realmName) {
         TestCleanup cleanup = cleanups.get(realmName);
         if (cleanup == null) {
-            cleanup = new TestCleanup(adminClient, realmName);
+            cleanup = new TestCleanup(this, realmName);
             TestCleanup existing = cleanups.putIfAbsent(realmName, cleanup);
 
             if (existing != null) {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2017 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,14 +16,17 @@
  */
 package org.keycloak.testsuite.federation.storage;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import org.keycloak.Config;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.storage.UserStorageProviderFactory;
-
-import java.util.Hashtable;
-import java.util.Map;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -32,9 +35,23 @@ import java.util.Map;
 public class UserMapStorageFactory implements UserStorageProviderFactory<UserMapStorage> {
 
 
-    public static final String PROVIDER_ID = "user-password-map";
+    public static final String PROVIDER_ID = "user-password-map-arq";
 
-    protected Map<String, String> userPasswords = new Hashtable<>();
+    protected static final List<ProviderConfigProperty> configProperties = new ArrayList<ProviderConfigProperty>();
+
+    static {
+        ProviderConfigProperty attr = new ProviderConfigProperty("attr", "attr",
+                "This is some attribute",
+                ProviderConfigProperty.STRING_TYPE, null);
+        configProperties.add(attr);
+    }
+
+    protected Map<String, String> userPasswords = new HashMap<>();
+
+    @Override
+    public List<ProviderConfigProperty> getConfigProperties() {
+        return configProperties;
+    }
 
     @Override
     public UserMapStorage create(KeycloakSession session, ComponentModel model) {

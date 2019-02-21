@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2017 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,21 +16,27 @@
  */
 package org.keycloak.testsuite.federation.storage;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Date;
+import java.util.List;
+import java.util.Properties;
+
 import org.keycloak.Config;
+import org.keycloak.common.util.EnvUtil;
 import org.keycloak.component.ComponentModel;
+import org.keycloak.component.ComponentValidationException;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.RealmModel;
 import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.storage.UserStorageProviderFactory;
 import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.storage.user.ImportSynchronization;
 import org.keycloak.storage.user.SynchronizationResult;
-
-import java.io.IOException;
-import java.util.Date;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Properties;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -38,17 +44,57 @@ import java.util.Properties;
  */
 public class UserPropertyFileStorageFactory implements UserStorageProviderFactory<UserPropertyFileStorage>, ImportSynchronization {
 
+    public static final String PROVIDER_ID = "user-password-props-arq";
+    public static final String PROPERTY_FILE = "propertyFile";
 
-    public static final String PROVIDER_ID = "user-password-props";
+    public static final String VALIDATION_PROP_FILE_NOT_CONFIGURED = "user property file is not configured";
+    public static final String VALIDATION_PROP_FILE_DOESNT_EXIST = "user property file does not exist";
+
+    protected static final List<ProviderConfigProperty> CONFIG_PROPERTIES;
+
+    static {
+        CONFIG_PROPERTIES = ProviderConfigurationBuilder.create()
+                .property().name(PROPERTY_FILE)
+                .type(ProviderConfigProperty.STRING_TYPE)
+                .label("Property File")
+                .helpText("File that contains name value pairs")
+                .defaultValue(null)
+                .add()
+                .property().name("federatedStorage")
+                .type(ProviderConfigProperty.BOOLEAN_TYPE)
+                .label("User Federated Storage")
+                .helpText("User Federated Storage")
+                .defaultValue(null)
+                .add()
+                .build();
+    }
+
+    @Override
+    public void validateConfiguration(KeycloakSession session, RealmModel realm, ComponentModel config) throws ComponentValidationException {
+        String fp = config.getConfig().getFirst(PROPERTY_FILE);
+        if (fp == null) {
+            throw new ComponentValidationException(VALIDATION_PROP_FILE_NOT_CONFIGURED);
+        }
+        fp = EnvUtil.replace(fp);
+        File file = new File(fp);
+        if (!file.exists()) {
+            throw new ComponentValidationException(VALIDATION_PROP_FILE_DOESNT_EXIST);
+        }
+    }
 
     @Override
     public UserPropertyFileStorage create(KeycloakSession session, ComponentModel model) {
+        String path = model.getConfig().getFirst(PROPERTY_FILE);
+        path = EnvUtil.replace(path);
+
         Properties props = new Properties();
-        try {
-            props.load(getClass().getResourceAsStream(model.getConfig().getFirst("propertyFile")));
+        try (InputStream is = new FileInputStream(path)) {
+            props.load(is);
+            is.close();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+
         return new UserPropertyFileStorage(session, model, props);
     }
 
@@ -57,17 +103,9 @@ public class UserPropertyFileStorageFactory implements UserStorageProviderFactor
         return PROVIDER_ID;
     }
 
-    static List<ProviderConfigProperty> OPTIONS = new LinkedList<>();
-    static {
-        ProviderConfigProperty prop = new ProviderConfigProperty("propertyFile", "Property File", "file that contains name value pairs", ProviderConfigProperty.STRING_TYPE, null);
-        OPTIONS.add(prop);
-        prop = new ProviderConfigProperty("federatedStorage", "User Federated Storage", "use federated storage?", ProviderConfigProperty.BOOLEAN_TYPE, null);
-        OPTIONS.add(prop);
-
-    }
     @Override
     public List<ProviderConfigProperty> getConfigProperties() {
-         return OPTIONS;
+        return CONFIG_PROPERTIES;
     }
 
     @Override
@@ -94,4 +132,5 @@ public class UserPropertyFileStorageFactory implements UserStorageProviderFactor
     public SynchronizationResult syncSince(Date lastSync, KeycloakSessionFactory sessionFactory, String realmId, UserStorageProviderModel model) {
         return SynchronizationResult.ignored();
     }
+
 }
