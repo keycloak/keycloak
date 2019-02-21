@@ -63,18 +63,18 @@ Do not format or refactor code that is not directly related to your contribution
 increase our effort in reviewing your PR. If you have a strong need to refactor code then submit a separate PR for the
 refactoring.
 
-### Documentation
-
-We require contributions to include relevant documentation. Alongside your PR for code changes, prepare a PR to the [Keycloak Documentation](https://github.com/keycloak/keycloak-documentation).
-
-In the description of your PR include a link to the PR to [Keycloak Documentation](https://github.com/keycloak/keycloak-documentation).
-
 ### Testing
 
 Details for implementing tests are provided in the [writing tests](docs/tests-development.md) guide.
 
 Do not add mock frameworks or other testing frameworks that are not already part of the testsuite. Please write tests
 in the same way as we have written our tests.
+
+### Documentation
+
+We require contributions to include relevant documentation. Alongside your PR for code changes, prepare a PR to the [Keycloak Documentation](https://github.com/keycloak/keycloak-documentation).
+
+In the description of your PR include a link to the PR to [Keycloak Documentation](https://github.com/keycloak/keycloak-documentation).
 
 ### Submitting your PR
 
