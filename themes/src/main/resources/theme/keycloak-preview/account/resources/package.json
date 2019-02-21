@@ -10,10 +10,9 @@
   "author": "Stan Silvert",
   "license": "Apache 2.0",
   "dependencies": {
+    "@patternfly/patternfly": "^1.0.196",
     "axios": "^0.18.0",
-    "bootstrap": "^4.1.0",
     "moment": "^2.22.2",
-    "patternfly": "^3.23.2",
     "react": "^16.5.2",
     "react-dom": "^16.5.2",
     "react-router-dom": "^4.3.1",

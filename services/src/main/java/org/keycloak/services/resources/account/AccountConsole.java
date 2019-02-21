@@ -94,7 +94,8 @@ public class AccountConsole {
             String[] referrer = getReferrer();
             if (referrer != null) {
                 map.put("referrer", referrer[0]);
-                map.put("referrer_uri", referrer[1]);
+                map.put("referrerName", referrer[1]);
+                map.put("referrer_uri", referrer[2]);
             }
             
             UserModel user = null;
@@ -204,7 +205,7 @@ public class AccountConsole {
                 if (Validation.isBlank(referrerName)) {
                     referrerName = referrer;
                 }
-                return new String[]{referrerName, referrerUri};
+                return new String[]{referrer, referrerName, referrerUri};
             }
         } else if (referrerUri != null) {
             referrerClient = realm.getClientByClientId(referrer);
@@ -212,7 +213,7 @@ public class AccountConsole {
                 referrerUri = RedirectUtils.verifyRedirectUri(session.getContext().getUri(), referrerUri, realm, referrerClient);
 
                 if (referrerUri != null) {
-                    return new String[]{referrer, referrerUri};
+                    return new String[]{referrer, referrer, referrerUri};
                 }
             }
         }
