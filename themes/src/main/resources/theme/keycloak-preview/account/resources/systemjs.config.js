@@ -18,6 +18,10 @@
       'react-dom': 'npm:react-dom/umd/react-dom.development.js',
       'react-router-dom': 'npm:react-router-dom/umd/react-router-dom.js',
       
+      '@patternfly': 'npm:@patternfly',
+      'react-styles': "react-styles/loader.js",
+      //'patternfly-react-core-button': 'patternflyreactcore:js/components/Button/index.js',
+      
       'moment': 'npm:moment/min/moment-with-locales.min.js',
       
       'axios': 'npm:axios/dist/axios.min.js',
