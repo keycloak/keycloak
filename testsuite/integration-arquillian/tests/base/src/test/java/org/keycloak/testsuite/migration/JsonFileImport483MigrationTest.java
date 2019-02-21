@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2019 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -33,11 +33,8 @@ import java.util.Map;
 
 /**
  * Tests that we can import json file from previous version.  MigrationTest only tests DB.
- *
- * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
- * @version $Revision: 1 $
  */
-public class JsonFileImport255MigrationTest extends AbstractJsonFileImportMigrationTest {
+public class JsonFileImport483MigrationTest extends AbstractJsonFileImportMigrationTest {
 
     @Deployment
     @TargetsContainer(DeploymentTargetModifier.AUTH_SERVER_CURRENT)
@@ -49,7 +46,7 @@ public class JsonFileImport255MigrationTest extends AbstractJsonFileImportMigrat
     public void addTestRealms(List<RealmRepresentation> testRealms) {
         Map<String, RealmRepresentation> reps = null;
         try {
-            reps = ImportUtils.getRealmsFromStream(JsonSerialization.mapper, IOUtil.class.getResourceAsStream("/migration-test/migration-realm-2.5.5.Final.json"));
+            reps = ImportUtils.getRealmsFromStream(JsonSerialization.mapper, IOUtil.class.getResourceAsStream("/migration-test/migration-realm-4.8.3.Final.json"));
             masterRep = reps.remove("master");
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -57,15 +54,11 @@ public class JsonFileImport255MigrationTest extends AbstractJsonFileImportMigrat
         for (RealmRepresentation rep : reps.values()) {
             testRealms.add(rep);
         }
-
-
     }
 
     @Test
-    public void migration2_5_5Test() throws Exception {
+    public void migration4_8_3Test() throws Exception {
         checkRealmsImported();
-        testMigrationTo3_x();
-        testMigrationTo4_x(true, false);
         testMigrationTo5_x();
     }
 
