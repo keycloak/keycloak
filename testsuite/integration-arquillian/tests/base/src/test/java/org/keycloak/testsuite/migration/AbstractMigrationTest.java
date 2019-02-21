@@ -85,7 +85,6 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
     public static final String MIGRATION2 = "Migration2";
     protected RealmResource migrationRealm;
     protected RealmResource migrationRealm2;
-    protected RealmResource migrationRealm3;
     protected RealmResource masterRealm;
 
     protected void testMigratedData() {
@@ -361,21 +360,6 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         }
     }
 
-    protected void testDroolsToRulesPolicyTypeMigration() {
-        log.info("testing drools to rules in authorization services");
-        List<ClientRepresentation> client = migrationRealm3.clients().findByClientId("photoz-restful-api");
-
-        assertEquals(1, client.size());
-
-        ClientRepresentation representation = client.get(0);
-
-        List<PolicyRepresentation> policies = migrationRealm3.clients().get(representation.getId()).authorization().policies().policies();
-
-        List<PolicyRepresentation> migratedRulesPolicies = policies.stream().filter(policyRepresentation -> "rules".equals(policyRepresentation.getType())).collect(Collectors.toList());
-
-        assertEquals(1, migratedRulesPolicies.size());
-    }
-
     private void testResourceWithMultipleUris() {
         ClientsResource clients = migrationRealm.clients();
         ClientRepresentation clientRepresentation = clients.findByClientId("authz-servlet").get(0);
@@ -583,5 +567,9 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
 
     protected void testMigrationTo4_x() {
         testMigrationTo4_x(true, true);
+    }
+
+    protected void testMigrationTo5_x() {
+        // so far nothing
     }
 }

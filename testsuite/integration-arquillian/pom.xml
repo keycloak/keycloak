@@ -72,6 +72,7 @@
         <migration.70.version>1.9.8.Final</migration.70.version>
         <migration.71.version>2.5.5.Final</migration.71.version>
         <migration.72.version>3.4.3.Final</migration.72.version>
+        <migration.73.version>4.8.3.Final</migration.73.version>
 
         <!-- By default, skip docker-maven-plugin when running base tests-->
         <docker.database.skip>true</docker.database.skip>
@@ -320,6 +321,26 @@
             <id>test-72-migration</id>
             <properties>
                 <migrated.auth.server.version>${migration.72.version}</migrated.auth.server.version>
+            </properties>
+            <build>
+                <pluginManagement>
+                    <plugins>
+                        <plugin>
+                            <artifactId>maven-surefire-plugin</artifactId>
+                            <configuration>
+                                <systemPropertyVariables>
+                                    <migrated.auth.server.version>${migrated.auth.server.version}</migrated.auth.server.version>
+                                </systemPropertyVariables>
+                            </configuration>
+                        </plugin>
+                    </plugins>
+                </pluginManagement>
+            </build>
+        </profile>
+        <profile>
+            <id>test-73-migration</id>
+            <properties>
+                <migrated.auth.server.version>${migration.73.version}</migrated.auth.server.version>
             </properties>
             <build>
                 <pluginManagement>
