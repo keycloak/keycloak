@@ -97,7 +97,7 @@ export class AccountPage extends React.Component<AccountPageProps, AccountPageSt
         const fields: FormFields = this.state.formFields;
         return (
 <span>
-<div className="page-header">
+<div className="pf-c-content">
     <h1 id="pageTitle"><Msg msgKey="personalInfoHtmlTitle"/></h1>
 </div>
 

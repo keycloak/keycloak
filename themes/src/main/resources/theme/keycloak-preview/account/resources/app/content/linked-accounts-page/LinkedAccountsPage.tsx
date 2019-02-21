@@ -15,29 +15,21 @@
  */
 
 import * as React from 'react';
-import {Link} from 'react-router-dom';
-
-import {Msg} from './Msg';
-import {KeycloakService} from '../keycloak-service/keycloak.service';
  
-declare const baseUrl: string;
-
-export interface LogoutProps {
+export interface LinkedAccountsPageProps {
 }
  
-export class Logout extends React.Component<LogoutProps> {
-
-    constructor(props: LogoutProps) {
+export class LinkedAccountsPage extends React.Component<LinkedAccountsPageProps> {
+    
+    constructor(props: LinkedAccountsPageProps) {
         super(props);
     }
-    
-    private handleLogout() {
-        KeycloakService.Instance.logout(baseUrl);
-    }
-    
+
     render() {
         return (
-            <Link to="/" className="pf-c-button pf-m-primary" type="button" onClick={this.handleLogout}><Msg msgKey="doSignOut"/></Link>
+            <div>
+              <h2>Hello Linked Accounts Page</h2>
+            </div>
         );
     }
-}
+};

@@ -18,7 +18,7 @@ import * as React from 'react';
 
 import {Msg} from '../widgets/Msg';
  
-declare const referrer: string;
+declare const referrerName: string;
 declare const referrer_uri: string;
 
 export interface ReferrerProps {
@@ -34,12 +34,12 @@ export class Referrer extends React.Component<ReferrerProps> {
     }
 
     render() {
-        if (typeof referrer === "undefined") return null;
+        if (typeof referrerName === "undefined") return null;
         
         return (
             <a className="nav-item-iconic" href={referrer_uri}>
                <span className="pficon-arrow"></span>
-               <Msg msgKey="backTo" params={[referrer]}/>
+               <Msg msgKey="backTo" params={[referrerName]}/>
             </a>
         );
     }
