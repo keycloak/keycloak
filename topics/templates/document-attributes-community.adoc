@@ -67,9 +67,9 @@
 
 :appserver_name: WildFly
 :appserver_dirref: WILDFLY_HOME
-:appserver_version: 13
+:appserver_version: 15
 
-:appserver_doc_base_url: http://docs.wildfly.org/13
+:appserver_doc_base_url: http://docs.wildfly.org/15
 :appserver_socket_link: {appserver_doc_base_url}/Admin_Guide.html#Interfaces_and_ports
 :appserver_socket_name: {appserver_name} {appserver_version} Documentation
 :appserver_jgroups_link: {appserver_doc_base_url}/High_Availability_Guide.html#JGroups_Subsystem
@@ -88,8 +88,8 @@
 :appserver_loadbalancer_name: {appserver_name} {appserver_version} Documentation
 
 :jdgserver_name: Infinispan
-:jdgserver_version: 9.3.1
-:jdgserver_crossdcdocs_link: https://access.redhat.com/documentation/en-us/red_hat_data_grid/7.2/html/administration_and_configuration_guide/set_up_cross_datacenter_replication
+:jdgserver_version: 9.4.3
+:jdgserver_crossdcdocs_link: https://access.redhat.com/documentation/en-us/red_hat_data_grid/7.3/html/red_hat_data_grid_user_guide/x_site_replication
 
 :fuseVersion: JBoss Fuse 6.3.0 Rollup 5
 :fuseHawtioEAPVersion: JBoss EAP 6.4

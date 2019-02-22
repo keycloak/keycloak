@@ -140,7 +140,7 @@ See details https://github.com/mposolda/keycloak-freeipa-docker/blob/master/READ
 
 For quick testing and unit tests, we use a very simple http://directory.apache.org/apacheds/[ApacheDS] Kerberos server.
 You need to build {project_name} from sources and then run the Kerberos server with maven-exec-plugin from our testsuite.
-See details https://github.com/keycloak/keycloak/blob/master/misc/Testsuite.md#user-content-kerberos-server[here] .
+See details https://github.com/keycloak/keycloak/blob/master/docs/tests.md#kerberos-server[here] .
 endif::[]
 
 ==== Credential Delegation

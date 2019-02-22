@@ -24,8 +24,8 @@ As this is an advanced topic, we recommend you first read the following, which p
 When setting up for Cross-Datacenter Replication, you will use more independent {project_name} clusters, so you must understand how a cluster works and the basic concepts and requirements such as load balancing, shared databases, and multicasting.
 
 * link:{jdgserver_crossdcdocs_link}[JBoss Data Grid Cross-Datacenter Replication]
-{project_name} uses JBoss Data Grid (JDG) for the replication of Infinispan data between the data centers. We use the `Remote Client-Server Mode`
-described in the JDG documentation in  link:{jdgserver_crossdcdocs_link}#configure_cross_datacenter_replication_remote_client_server_mode[Configure Cross-Datacenter Replication].
+{project_name} uses JBoss Data Grid (JDG) for the replication of Infinispan data between the data centers.
+
 
 
 [[technicaldetails]]
@@ -151,7 +151,7 @@ For this example, we describe using two data centers, `site1` and `site2`. Each 
 * `Site2` consists of {jdgserver_name} server, `jdg2`, and 2 {project_name} servers, `node21` and `node22` .
  
 * {jdgserver_name} servers `jdg1` and `jdg2` are connected to each other through the RELAY2 protocol and `backup` based {jdgserver_name}
-caches in a similar way as described in the link:{jdgserver_crossdcdocs_link}#configure_cross_datacenter_replication_remote_client_server_mode[JDG documentation].
+caches in a similar way as described in the link:{jdgserver_crossdcdocs_link}[JDG documentation].
 
 * {project_name} servers `node11` and `node12` form a cluster with each other, but they do not communicate directly with any server in `site2`.
 They communicate with the Infinispan server `jdg1` using the HotRod protocol (Remote cache). See <<communication>> for the details.
