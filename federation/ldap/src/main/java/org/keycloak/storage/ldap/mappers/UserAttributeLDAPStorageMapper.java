@@ -213,6 +213,24 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
                 }
 
                 @Override
+                public boolean isEnabled() {
+                    // TODO: if the LDAP attribute is not boolean, what should this do?
+                    if (!isBinaryAttribute) return false;
+
+                    Boolean enabled = ldapUser.getAttributeAsBoolean(ldapAttrName);
+                    // TODO: if the boolean attribute is missing, should this default to false?
+                    return enabled == null ? false : enabled;
+                }
+
+                @Override
+                public void setEnabled(boolean enabled) {
+                    // TODO: This will autobox - is that OK?
+                    if (setLDAPAttribute(ldapAttrName, enabled)) {
+                        super.setEnabled(enabled);
+                    }
+                }
+
+                @Override
                 public void setEmail(String email) {
                     checkDuplicateEmail(userModelAttrName, email, realm, ldapProvider.getSession(), this);
 
@@ -248,6 +266,8 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
                             }
                         } else if (value instanceof String) {
                             ldapUser.setSingleAttribute(ldapAttrName, (String) value);
+                        } else if (value instanceof Boolean) {
+                            ldapUser.setSingleAttribute(ldapAttrName, (Boolean) value);
                         } else {
                             List<String> asList = (List<String>) value;
                             if (asList.isEmpty() && isMandatoryInLdap) {
@@ -273,6 +293,16 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
         } else if (isBinaryAttribute) {
 
             delegate = new UserModelDelegate(delegate) {
+
+                @Override
+                public boolean isEnabled() {
+                    // TODO: if the LDAP attribute is not boolean, what should this do?
+                    if (!isBinaryAttribute) return false;
+
+                    Boolean enabled = ldapUser.getAttributeAsBoolean(ldapAttrName);
+                    // TODO: if the boolean attribute is missing, should this default to false?
+                    return enabled == null ? false : enabled;
+                }
 
                 @Override
                 public void setSingleAttribute(String name, String value) {

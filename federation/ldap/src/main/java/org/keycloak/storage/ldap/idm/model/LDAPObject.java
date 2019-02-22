@@ -34,6 +34,10 @@ public class LDAPObject {
 
     private static final Logger logger = Logger.getLogger(LDAPObject.class);
 
+    // Boolean LDAP attributes are Base64 Strings of TRUE / FALSE
+    private static final String booleanValueTrue = "VFJVRQ==";
+    private static final String booleanValueFalse = "RkFMU0U=";
+
     private String uuid;
     private LDAPDn dn;
     private String rdnAttributeName;
@@ -100,6 +104,16 @@ public class LDAPObject {
         setAttribute(attributeName, asSet);
     }
 
+    public void setSingleAttribute(String attributeName, Boolean attributeValue) {
+        if (Boolean.TRUE.equals(attributeValue)) {
+            setSingleAttribute(attributeName, booleanValueTrue);
+        } else if (Boolean.FALSE.equals(attributeValue)) {
+            setSingleAttribute(attributeName, booleanValueFalse);
+        } else {
+            setSingleAttribute(attributeName, (String) null);
+        }
+    }
+
     public void setAttribute(String attributeName, Set<String> attributeValue) {
         attributes.put(attributeName, attributeValue);
         lowerCasedAttributes.put(attributeName.toLowerCase(), attributeValue);
@@ -115,6 +129,20 @@ public class LDAPObject {
         }
 
         return attrValue.iterator().next();
+    }
+
+    public Boolean getAttributeAsBoolean(String name) {
+        String attrValue = getAttributeAsString(name);
+        if (attrValue == null) {
+            return null;
+        } else if (booleanValueTrue.equals(attrValue)) {
+            return true;
+        } else if (booleanValueFalse.equals(attrValue)) {
+            return false;
+        } else {
+            logger.warnf("Expected attribute '%s' on object '%s' to have value of '%s' for true or '%s' for false, but the value was '%s'", name, dn, booleanValueTrue, booleanValueFalse, attrValue);
+            return null;
+        }
     }
 
     // Case-insensitive. Return null if there is not value of attribute with given name or set with all values otherwise
