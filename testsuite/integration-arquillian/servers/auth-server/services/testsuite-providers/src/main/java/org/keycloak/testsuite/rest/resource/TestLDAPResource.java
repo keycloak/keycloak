@@ -142,17 +142,17 @@ public class TestLDAPResource {
         LDAPObject defaultGroup15 = LDAPTestUtils.createLDAPGroup(session, realm, ldapModel, "defaultGroup15", descriptionAttrName, "Default Group15 - description");
         LDAPObject teamSubChild20262027 = LDAPTestUtils.createLDAPGroup(session, realm, ldapModel, "Team SubChild 2026/2027", descriptionAttrName, "A sub child group with slashes in the name");
 
-        LDAPUtils.addMember(ldapFedProvider, MembershipType.DN, LDAPConstants.MEMBER, "not-used", group1, group11, false);
-        LDAPUtils.addMember(ldapFedProvider, MembershipType.DN, LDAPConstants.MEMBER, "not-used", group1, group12, true);
+        LDAPUtils.addMember(ldapFedProvider, MembershipType.DN, LDAPConstants.MEMBER, "not-used", group1, group11);
+        LDAPUtils.addMember(ldapFedProvider, MembershipType.DN, LDAPConstants.MEMBER, "not-used", group1, group12);
 
-        LDAPUtils.addMember(ldapFedProvider, MembershipType.DN, LDAPConstants.MEMBER, "not-used", defaultGroup1, defaultGroup11, false);
-        LDAPUtils.addMember(ldapFedProvider, MembershipType.DN, LDAPConstants.MEMBER, "not-used", defaultGroup1, defaultGroup12, true);
-        LDAPUtils.addMember(ldapFedProvider, MembershipType.DN, LDAPConstants.MEMBER, "not-used", defaultGroup1, teamChild20182019, true);
-        LDAPUtils.addMember(ldapFedProvider, MembershipType.DN, LDAPConstants.MEMBER, "not-used", teamChild20182019, teamSubChild20202021, true);
-        LDAPUtils.addMember(ldapFedProvider, MembershipType.DN, LDAPConstants.MEMBER, "not-used", defaultGroup13, teamSubChild20222023, true);
-        LDAPUtils.addMember(ldapFedProvider, MembershipType.DN, LDAPConstants.MEMBER, "not-used", teamSubChild20222023, defaultGroup14, true);
-        LDAPUtils.addMember(ldapFedProvider, MembershipType.DN, LDAPConstants.MEMBER, "not-used", teamRoot20242025, defaultGroup15, true);
-        LDAPUtils.addMember(ldapFedProvider, MembershipType.DN, LDAPConstants.MEMBER, "not-used", defaultGroup15, teamSubChild20262027, true);
+        LDAPUtils.addMember(ldapFedProvider, MembershipType.DN, LDAPConstants.MEMBER, "not-used", defaultGroup1, defaultGroup11);
+        LDAPUtils.addMember(ldapFedProvider, MembershipType.DN, LDAPConstants.MEMBER, "not-used", defaultGroup1, defaultGroup12);
+        LDAPUtils.addMember(ldapFedProvider, MembershipType.DN, LDAPConstants.MEMBER, "not-used", defaultGroup1, teamChild20182019);
+        LDAPUtils.addMember(ldapFedProvider, MembershipType.DN, LDAPConstants.MEMBER, "not-used", teamChild20182019, teamSubChild20202021);
+        LDAPUtils.addMember(ldapFedProvider, MembershipType.DN, LDAPConstants.MEMBER, "not-used", defaultGroup13, teamSubChild20222023);
+        LDAPUtils.addMember(ldapFedProvider, MembershipType.DN, LDAPConstants.MEMBER, "not-used", teamSubChild20222023, defaultGroup14);
+        LDAPUtils.addMember(ldapFedProvider, MembershipType.DN, LDAPConstants.MEMBER, "not-used", teamRoot20242025, defaultGroup15);
+        LDAPUtils.addMember(ldapFedProvider, MembershipType.DN, LDAPConstants.MEMBER, "not-used", defaultGroup15, teamSubChild20262027);
 
         // Sync LDAP groups to Keycloak DB
         ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(realm, ldapModel, "groupsMapper");

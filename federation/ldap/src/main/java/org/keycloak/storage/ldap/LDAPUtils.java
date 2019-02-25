@@ -38,6 +38,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import javax.naming.directory.SearchControls;
 
 /**
  * Allow to directly call some operations against LDAPIdentityStore.
@@ -167,30 +168,10 @@ public class LDAPUtils {
      * @param memberChildAttrName used just if membershipType is UID. Usually 'uid'
      * @param ldapParent role or group
      * @param ldapChild usually user (or child group or child role)
-     * @param sendLDAPUpdateRequest if true, the method will send LDAP update request too. Otherwise it will skip it
      */
-    public static void addMember(LDAPStorageProvider ldapProvider, MembershipType membershipType, String memberAttrName, String memberChildAttrName, LDAPObject ldapParent, LDAPObject ldapChild, boolean sendLDAPUpdateRequest) {
-
-        Set<String> memberships = getExistingMemberships(memberAttrName, ldapParent);
-
-        // Remove membership placeholder if present
-        if (membershipType == MembershipType.DN) {
-            for (String membership : memberships) {
-                if (LDAPConstants.EMPTY_MEMBER_ATTRIBUTE_VALUE.equals(membership)) {
-                    memberships.remove(membership);
-                    break;
-                }
-            }
-        }
-
+    public static void addMember(LDAPStorageProvider ldapProvider, MembershipType membershipType, String memberAttrName, String memberChildAttrName, LDAPObject ldapParent, LDAPObject ldapChild) {
         String membership = getMemberValueOfChildObject(ldapChild, membershipType, memberChildAttrName);
-
-        memberships.add(membership);
-        ldapParent.setAttribute(memberAttrName, memberships);
-
-        if (sendLDAPUpdateRequest) {
-            ldapProvider.getLdapIdentityStore().update(ldapParent);
-        }
+        ldapProvider.getLdapIdentityStore().addMemberToGroup(ldapParent.getDn().toString(), memberAttrName, membership);
     }
 
     /**
@@ -204,29 +185,20 @@ public class LDAPUtils {
      * @param ldapChild usually user (or child group or child role)
      */
     public static void deleteMember(LDAPStorageProvider ldapProvider, MembershipType membershipType, String memberAttrName, String memberChildAttrName, LDAPObject ldapParent, LDAPObject ldapChild) {
-        Set<String> memberships = getExistingMemberships(memberAttrName, ldapParent);
-
         String userMembership = getMemberValueOfChildObject(ldapChild, membershipType, memberChildAttrName);
-
-        memberships.remove(userMembership);
-
-        // Some membership placeholder needs to be always here as "member" is mandatory attribute on some LDAP servers. But not on active directory! (Placeholder, which not matches any real object is not allowed here)
-        if (memberships.size() == 0 && membershipType== MembershipType.DN && !ldapProvider.getLdapIdentityStore().getConfig().isActiveDirectory()) {
-            memberships.add(LDAPConstants.EMPTY_MEMBER_ATTRIBUTE_VALUE);
-        }
-
-        ldapParent.setAttribute(memberAttrName, memberships);
-        ldapProvider.getLdapIdentityStore().update(ldapParent);
+        ldapProvider.getLdapIdentityStore().removeMemberFromGroup(ldapParent.getDn().toString(), memberAttrName, userMembership);
     }
 
     /**
      * Return all existing memberships (values of attribute 'member' ) from the given ldapRole or ldapGroup
      *
+     * @param ldapProvider The ldap provider
      * @param memberAttrName usually 'member'
      * @param ldapRole
      * @return
      */
-    public static Set<String> getExistingMemberships(String memberAttrName, LDAPObject ldapRole) {
+    public static Set<String> getExistingMemberships(LDAPStorageProvider ldapProvider, String memberAttrName, LDAPObject ldapRole) {
+        LDAPUtils.fillRangedAttribute(ldapProvider, ldapRole, memberAttrName);
         Set<String> memberships = ldapRole.getAttributeAsSet(memberAttrName);
         if (memberships == null) {
             memberships = new HashSet<>();
@@ -296,6 +268,29 @@ public class LDAPUtils {
             if (!customFilter.startsWith("(") || !customFilter.endsWith(")")) {
                 throw new ComponentValidationException("ldapErrorInvalidCustomFilter");
             }
+        }
+    }
+
+    private static LDAPQuery createLdapQueryForRangeAttribute(LDAPStorageProvider ldapProvider, LDAPObject ldapObject, String name) {
+        LDAPQuery q = new LDAPQuery(ldapProvider);
+        q.setSearchDn(ldapObject.getDn().toString());
+        q.setSearchScope(SearchControls.OBJECT_SCOPE);
+        q.addReturningLdapAttribute(name + ";range=" + (ldapObject.getCurrentRange(name) + 1) + "-*");
+        return q;
+    }
+
+    /**
+     * Performs iterative searches over an LDAPObject to return an attribute that is ranged.
+     * @param ldapProvider The provider to use
+     * @param ldapObject The current object with the ranged attribute not complete
+     * @param name The attribute name
+     */
+    public static void fillRangedAttribute(LDAPStorageProvider ldapProvider, LDAPObject ldapObject, String name) {
+        LDAPObject newObject = ldapObject;
+        while (!newObject.isRangeComplete(name)) {
+            LDAPQuery q = createLdapQueryForRangeAttribute(ldapProvider, ldapObject, name);
+            newObject = q.getFirstResult();
+            ldapObject.populateRangedAttribute(newObject, name);
         }
     }
 }

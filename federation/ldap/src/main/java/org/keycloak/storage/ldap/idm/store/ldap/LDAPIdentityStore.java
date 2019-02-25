@@ -54,6 +54,11 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import javax.naming.directory.AttributeInUseException;
+import javax.naming.directory.NoSuchAttributeException;
+import javax.naming.directory.SchemaViolationException;
 
 /**
  * An IdentityStore implementation backed by an LDAP directory
@@ -65,6 +70,7 @@ import java.util.TreeSet;
 public class LDAPIdentityStore implements IdentityStore {
 
     private static final Logger logger = Logger.getLogger(LDAPIdentityStore.class);
+    private static final Pattern rangePattern = Pattern.compile("([^;]+);range=([0-9]+)-([0-9]+|\\*)");
 
     private final LDAPConfig config;
     private final LDAPOperationManager operationManager;
@@ -98,6 +104,44 @@ public class LDAPIdentityStore implements IdentityStore {
 
         if (logger.isDebugEnabled()) {
             logger.debugf("Type with identifier [%s] and dn [%s] successfully added to LDAP store.", ldapObject.getUuid(), entryDN);
+        }
+    }
+
+    @Override
+    public void addMemberToGroup(String groupDn, String memberAttrName, String value) {
+        // do not check EMPTY_MEMBER_ATTRIBUTE_VALUE, we save one useless query
+        // the value will be there forever for objectclasses that enforces the attribute as MUST
+        BasicAttribute attr = new BasicAttribute(memberAttrName, value);
+        ModificationItem item = new ModificationItem(DirContext.ADD_ATTRIBUTE, attr);
+        try {
+            this.operationManager.modifyAttributesNaming(groupDn, new ModificationItem[]{item}, null);
+        } catch (AttributeInUseException e) {
+            logger.debugf("Group %s already contains the member %s", groupDn, value);
+        } catch (NamingException e) {
+            throw new ModelException("Could not modify attribute for DN [" + groupDn + "]", e);
+        }
+    }
+
+    @Override
+    public void removeMemberFromGroup(String groupDn, String memberAttrName, String value) {
+        BasicAttribute attr = new BasicAttribute(memberAttrName, value);
+        ModificationItem item = new ModificationItem(DirContext.REMOVE_ATTRIBUTE, attr);
+        try {
+            this.operationManager.modifyAttributesNaming(groupDn, new ModificationItem[]{item}, null);
+        } catch (NoSuchAttributeException e) {
+            logger.debugf("Group %s does not contain the member %s", groupDn, value);
+        } catch (SchemaViolationException e) {
+            // schema violation removing one member => add the empty attribute, it cannot be other thing
+            logger.infof("Schema violation in group %s removing member %s. Trying adding empty member attribute.", groupDn, value);
+            try {
+                this.operationManager.modifyAttributesNaming(groupDn,
+                        new ModificationItem[]{item, new ModificationItem(DirContext.ADD_ATTRIBUTE, new BasicAttribute(memberAttrName, LDAPConstants.EMPTY_MEMBER_ATTRIBUTE_VALUE))},
+                        null);
+            } catch (NamingException ex) {
+                throw new ModelException("Could not modify attribute for DN [" + groupDn + "]", ex);
+            }
+        } catch (NamingException e) {
+            throw new ModelException("Could not modify attribute for DN [" + groupDn + "]", e);
         }
     }
 
@@ -199,7 +243,8 @@ public class LDAPIdentityStore implements IdentityStore {
             }
 
             for (SearchResult result : search) {
-                if (!result.getNameInNamespace().equalsIgnoreCase(baseDN)) {
+                // don't add the branch in subtree search
+                if (identityQuery.getSearchScope() != SearchControls.SUBTREE_SCOPE || !result.getNameInNamespace().equalsIgnoreCase(baseDN)) {
                     results.add(populateAttributedType(result, identityQuery));
                 }
             }
@@ -350,6 +395,21 @@ public class LDAPIdentityStore implements IdentityStore {
                 }
 
                 String ldapAttributeName = ldapAttribute.getID();
+
+                // check for ranged attribute
+                Matcher m = rangePattern.matcher(ldapAttributeName);
+                if (m.matches()) {
+                    ldapAttributeName = m.group(1);
+                    // range=X-* means all the attributes returned
+                    if (!m.group(3).equals("*")) {
+                        try {
+                            int max = Integer.parseInt(m.group(3));
+                            ldapObject.addRangedAttribute(ldapAttributeName, max);
+                        } catch (NumberFormatException e) {
+                            logger.warnf("Invalid ranged expresion for attribute: %s", m.group(0));
+                        }
+                    }
+                }
 
                 if (ldapAttributeName.equalsIgnoreCase(getConfig().getUuidLDAPAttributeName())) {
                     Object uuidValue = ldapAttribute.get();
