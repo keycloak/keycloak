@@ -65,6 +65,22 @@ public interface IdentityStore {
      */
     void remove(LDAPObject ldapObject);
 
+    /**
+     * Adds a member to a group.
+     * @param groupDn The DN of the group object
+     * @param memberAttrName The member attribute name
+     * @param value The value (it can be uid or dn depending the group type)
+     */
+    public void addMemberToGroup(String groupDn, String memberAttrName, String value);
+
+    /**
+     * Removes a member from a group.
+     * @param groupDn The DN of the group object
+     * @param memberAttrName The member attribute name
+     * @param value The value (it can be uid or dn depending the group type)
+     */
+    public void removeMemberFromGroup(String groupDn, String memberAttrName, String value);
+
     // Identity query
 
     List<LDAPObject> fetchQueryResults(LDAPQuery LDAPQuery);

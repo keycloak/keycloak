@@ -48,6 +48,8 @@ public class LDAPObject {
     // Copy of "attributes" containing lower-cased keys
     private final Map<String, Set<String>> lowerCasedAttributes = new HashMap<>();
 
+    // range attributes are always read from 0 to max so just saving the top value
+    private final Map<String, Integer> rangedAttributes = new HashMap<>();
 
     public String getUuid() {
         return uuid;
@@ -123,6 +125,36 @@ public class LDAPObject {
         return (values == null) ? null : new LinkedHashSet<>(values);
     }
 
+    public boolean isRangeComplete(String name) {
+        return !rangedAttributes.containsKey(name);
+    }
+
+    public int getCurrentRange(String name) {
+        return rangedAttributes.get(name);
+    }
+
+    public boolean isRangeCompleteForAllAttributes() {
+        return rangedAttributes.isEmpty();
+    }
+
+    public void addRangedAttribute(String name, int max) {
+        Integer current = rangedAttributes.get(name);
+        if (current == null || max > current) {
+            rangedAttributes.put(name, max);
+        }
+    }
+
+    public void populateRangedAttribute(LDAPObject obj, String name) {
+        Set<String> newValues = obj.getAttributes().get(name);
+        if (newValues != null && attributes.containsKey(name)) {
+            attributes.get(name).addAll(newValues);
+            if (!obj.isRangeComplete(name)) {
+                addRangedAttribute(name, obj.getCurrentRange(name));
+            } else {
+                rangedAttributes.remove(name);
+            }
+        }
+    }
 
     public Map<String, Set<String>> getAttributes() {
         return attributes;
@@ -152,6 +184,7 @@ public class LDAPObject {
 
     @Override
     public String toString() {
-        return "LDAP Object [ dn: " + dn + " , uuid: " + uuid + ", attributes: " + attributes + ", readOnly attribute names: " + readOnlyAttributeNames + " ]";
+        return "LDAP Object [ dn: " + dn + " , uuid: " + uuid + ", attributes: " + attributes +
+                ", readOnly attribute names: " + readOnlyAttributeNames + ", ranges: " + rangedAttributes + " ]";
     }
 }

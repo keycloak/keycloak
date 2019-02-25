@@ -528,50 +528,52 @@ public class LDAPOperationManager {
         }
     }
 
-    public void modifyAttributes(final String dn, final ModificationItem[] mods, LDAPOperationDecorator decorator) {
-        try {
-            if (logger.isTraceEnabled()) {
-                logger.tracef("Modifying attributes for entry [%s]: [", dn);
+    public void modifyAttributesNaming(final String dn, final ModificationItem[] mods, LDAPOperationDecorator decorator) throws NamingException {
+        if (logger.isTraceEnabled()) {
+            logger.tracef("Modifying attributes for entry [%s]: [", dn);
 
-                for (ModificationItem item : mods) {
-                    Object values;
+            for (ModificationItem item : mods) {
+                Object values;
 
-                    if (item.getAttribute().size() > 0) {
-                        values = item.getAttribute().get();
-                    } else {
-                        values = "No values";
-                    }
-
-                    String attrName = item.getAttribute().getID().toUpperCase();
-                    if (attrName.contains("PASSWORD") || attrName.contains("UNICODEPWD")) {
-                        values = "********************";
-                    }
-
-                    logger.tracef("  Op [%s]: %s = %s", item.getModificationOp(), item.getAttribute().getID(), values);
+                if (item.getAttribute().size() > 0) {
+                    values = item.getAttribute().get();
+                } else {
+                    values = "No values";
                 }
 
-                logger.tracef("]");
+                String attrName = item.getAttribute().getID().toUpperCase();
+                if (attrName.contains("PASSWORD") || attrName.contains("UNICODEPWD")) {
+                    values = "********************";
+                }
+
+                logger.tracef("  Op [%s]: %s = %s", item.getModificationOp(), item.getAttribute().getID(), values);
             }
 
-            execute(new LdapOperation<Void>() {
+            logger.tracef("]");
+        }
 
-                @Override
-                public Void execute(LdapContext context) throws NamingException {
-                    context.modifyAttributes(new LdapName(dn), mods);
-                    return null;
-                }
+        execute(new LdapOperation<Void>() {
 
+            @Override
+            public Void execute(LdapContext context) throws NamingException {
+                context.modifyAttributes(new LdapName(dn), mods);
+                return null;
+            }
 
-                @Override
-                public String toString() {
-                    return new StringBuilder("LdapOperation: modify\n")
-                            .append(" dn: ").append(dn).append("\n")
-                            .append(" modificationsSize: ").append(mods.length)
-                            .toString();
-                }
+            @Override
+            public String toString() {
+                return new StringBuilder("LdapOperation: modify\n")
+                        .append(" dn: ").append(dn).append("\n")
+                        .append(" modificationsSize: ").append(mods.length)
+                        .toString();
+            }
 
+        }, null, decorator);
+    }
 
-            }, null, decorator);
+    public void modifyAttributes(final String dn, final ModificationItem[] mods, LDAPOperationDecorator decorator) {
+        try {
+            modifyAttributesNaming(dn, mods, decorator);
         } catch (NamingException e) {
             throw new ModelException("Could not modify attribute for DN [" + dn + "]", e);
         }
