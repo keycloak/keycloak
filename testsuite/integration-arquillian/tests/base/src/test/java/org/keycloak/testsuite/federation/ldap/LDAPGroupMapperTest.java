@@ -19,6 +19,8 @@ package org.keycloak.testsuite.federation.ldap;
 
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
+import javax.naming.directory.SearchControls;
 
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.container.test.api.TargetsContainer;
@@ -45,6 +47,7 @@ import org.keycloak.storage.ldap.mappers.membership.group.GroupLDAPStorageMapper
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.storage.ldap.idm.query.internal.LDAPQuery;
 import org.keycloak.storage.ldap.mappers.membership.group.GroupMapperConfig;
 import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
 import org.keycloak.testsuite.util.LDAPRule;
@@ -476,14 +479,14 @@ public class LDAPGroupMapperTest extends AbstractLDAPTest {
 
             // 2 - Add one existing user rob to LDAP group
             LDAPObject jamesLdap = ldapProvider.loadLDAPUserByUsername(appRealm, "jameskeycloak");
-            LDAPUtils.addMember(ldapProvider, MembershipType.DN, LDAPConstants.MEMBER, "not-used", group2, jamesLdap, false);
+            LDAPUtils.addMember(ldapProvider, MembershipType.DN, LDAPConstants.MEMBER, "not-used", group2, jamesLdap);
 
             // 3 - Add non-existing user to LDAP group
             LDAPDn nonExistentDn = LDAPDn.fromString(ldapProvider.getLdapIdentityStore().getConfig().getUsersDn());
             nonExistentDn.addFirst(jamesLdap.getRdnAttributeName(), "nonexistent");
             LDAPObject nonExistentLdapUser = new LDAPObject();
             nonExistentLdapUser.setDn(nonExistentDn);
-            LDAPUtils.addMember(ldapProvider, MembershipType.DN, LDAPConstants.MEMBER, "not-used", group2, nonExistentLdapUser, true);
+            LDAPUtils.addMember(ldapProvider, MembershipType.DN, LDAPConstants.MEMBER, "not-used", group2, nonExistentLdapUser);
 
             // 4 - Check group members. Just existing user rob should be present
             groupMapper.syncDataFromFederationProviderToKeycloak(appRealm);
@@ -678,4 +681,111 @@ public class LDAPGroupMapperTest extends AbstractLDAPTest {
         });
     }
 
+    private static LDAPObject searchObjectInBase(LDAPStorageProvider ldapProvider, String dn, String... attrs) {
+        LDAPQuery q = new LDAPQuery(ldapProvider)
+                            .setSearchDn(dn)
+                            .setSearchScope(SearchControls.OBJECT_SCOPE);
+        if (attrs != null) {
+            for (String attr: attrs) {
+                q.addReturningLdapAttribute(attr);
+            }
+        }
+        return q.getFirstResult();
+    }
+
+    @Test
+    public void test08_ldapOnlyGroupMappingsRanged() {
+        testingClient.server().run(session -> {
+            int membersToTest = 61; // try to do 3 pages (30+30+1)
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel appRealm = ctx.getRealm();
+
+            ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(appRealm, ctx.getLdapModel(), "groupsMapper");
+            LDAPTestUtils.updateGroupMapperConfigOptions(mapperModel, GroupMapperConfig.MODE, LDAPGroupMapperMode.LDAP_ONLY.toString());
+            appRealm.updateComponent(mapperModel);
+
+            // create big grups that use ranged search
+            String descriptionAttrName = getGroupDescriptionLDAPAttrName(ctx.getLdapProvider());
+            LDAPObject bigGroup = LDAPTestUtils.createLDAPGroup(session, appRealm, ctx.getLdapModel(), "biggroup", descriptionAttrName, "biggroup - description");
+            // create the users to use range search and add them to the group
+            for (int i = 0; i < membersToTest; i++) {
+                String username = String.format("user%02d", i);
+                LDAPObject user = LDAPTestUtils.addLDAPUser(ctx.getLdapProvider(), appRealm, username, username, username, username + "@email.org", null, "1234");
+                LDAPUtils.addMember(ctx.getLdapProvider(), MembershipType.DN, LDAPConstants.MEMBER, "not-used", bigGroup, user);
+            }
+
+            // check if ranged intercetor is in place and working
+            GroupMapperConfig config = new GroupMapperConfig(mapperModel);
+            bigGroup = LDAPGroupMapperTest.searchObjectInBase(ctx.getLdapProvider(), bigGroup.getDn().toString(), config.getMembershipLdapAttribute());
+            Assert.assertNotNull(bigGroup.getAttributes().get(config.getMembershipLdapAttribute()));
+            Assert.assertFalse(bigGroup.isRangeComplete(config.getMembershipLdapAttribute()));
+            Assert.assertTrue(membersToTest > bigGroup.getAttributeAsSet(config.getMembershipLdapAttribute()).size());
+            Assert.assertEquals(bigGroup.getCurrentRange(config.getMembershipLdapAttribute()), bigGroup.getAttributeAsSet(config.getMembershipLdapAttribute()).size() - 1);
+
+            // now check the population of ranged attributes is OK
+            LDAPStorageProvider ldapProvider = LDAPTestUtils.getLdapProvider(session, ctx.getLdapModel());
+            GroupLDAPStorageMapper groupMapper = LDAPTestUtils.getGroupMapper(mapperModel, ldapProvider, appRealm);
+            groupMapper.syncDataFromFederationProviderToKeycloak(appRealm);
+
+            GroupModel kcBigGroup = KeycloakModelUtils.findGroupByPath(appRealm, "/biggroup");
+            // check all the users have the group assigned
+            for (int i = 0; i < membersToTest; i++) {
+                UserModel kcUser = session.users().getUserByUsername(String.format("user%02d", i), appRealm);
+                Assert.assertTrue("User contains biggroup " + i, kcUser.getGroups().contains(kcBigGroup));
+            }
+            // check the group contains all the users as member
+            List<UserModel> groupMembers = session.users().getGroupMembers(appRealm, kcBigGroup, 0, membersToTest);
+            Assert.assertEquals(membersToTest, groupMembers.size());
+            Set<String> usernames = groupMembers.stream().map(u -> u.getUsername()).collect(Collectors.toSet());
+            for (int i = 0; i < membersToTest; i++) {
+                Assert.assertTrue("Group contains user " + i, usernames.contains(String.format("user%02d", i)));
+            }
+        });
+    }
+
+    @Test
+    public void test09_emptyMemberOnDeletionWorks() {
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel appRealm = ctx.getRealm();
+            ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(appRealm, ctx.getLdapModel(), "groupsMapper");
+
+            // create a group with an existing user alone
+            String descriptionAttrName = getGroupDescriptionLDAPAttrName(ctx.getLdapProvider());
+            LDAPObject deleteGroup = LDAPTestUtils.createLDAPGroup(session, appRealm, ctx.getLdapModel(), "deletegroup", descriptionAttrName, "deletegroup - description");
+            LDAPObject maryLdap = ctx.getLdapProvider().loadLDAPUserByUsername(appRealm, "marykeycloak");
+            LDAPUtils.addMember(ctx.getLdapProvider(), MembershipType.DN, LDAPConstants.MEMBER, "not-used", deleteGroup, maryLdap);
+            LDAPObject empty = new LDAPObject();
+            empty.setDn(LDAPDn.fromString(LDAPConstants.EMPTY_MEMBER_ATTRIBUTE_VALUE));
+            LDAPUtils.deleteMember(ctx.getLdapProvider(), MembershipType.DN, LDAPConstants.MEMBER, descriptionAttrName, deleteGroup, empty);
+            deleteGroup = LDAPGroupMapperTest.searchObjectInBase(ctx.getLdapProvider(), deleteGroup.getDn().toString(), LDAPConstants.MEMBER);
+            Assert.assertNotNull(deleteGroup);
+            Assert.assertEquals(1, deleteGroup.getAttributeAsSet(LDAPConstants.MEMBER).size());
+            Assert.assertEquals(maryLdap.getDn(), LDAPDn.fromString(deleteGroup.getAttributeAsString(LDAPConstants.MEMBER)));
+
+            // import into keycloak
+            LDAPStorageProvider ldapProvider = LDAPTestUtils.getLdapProvider(session, ctx.getLdapModel());
+            GroupLDAPStorageMapper groupMapper = LDAPTestUtils.getGroupMapper(mapperModel, ldapProvider, appRealm);
+            groupMapper.syncDataFromFederationProviderToKeycloak(appRealm);
+
+            // check everything is OK
+            GroupModel kcDeleteGroup = KeycloakModelUtils.findGroupByPath(appRealm, "/deletegroup");
+            UserModel mary = session.users().getUserByUsername("marykeycloak", appRealm);
+            List<UserModel> groupMembers = session.users().getGroupMembers(appRealm, kcDeleteGroup, 0, 5);
+            Assert.assertEquals(1, groupMembers.size());
+            Assert.assertEquals("marykeycloak", groupMembers.iterator().next().getUsername());
+            Set<GroupModel> maryGroups = mary.getGroups();
+            Assert.assertEquals(1, maryGroups.size());
+            Assert.assertEquals("deletegroup", maryGroups.iterator().next().getName());
+
+            // delete the group from mary to force schema violation and assingment of the empty value
+            mary.leaveGroup(kcDeleteGroup);
+
+            // check now the group has the empty member instead of mary
+            deleteGroup = LDAPGroupMapperTest.searchObjectInBase(ctx.getLdapProvider(), deleteGroup.getDn().toString(), LDAPConstants.MEMBER);
+            Assert.assertNotNull(deleteGroup);
+            Assert.assertEquals(1, deleteGroup.getAttributeAsSet(LDAPConstants.MEMBER).size());
+            Assert.assertEquals(LDAPDn.fromString(LDAPConstants.EMPTY_MEMBER_ATTRIBUTE_VALUE), LDAPDn.fromString(deleteGroup.getAttributeAsString(LDAPConstants.MEMBER)));
+        });
+    }
 }

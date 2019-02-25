@@ -46,6 +46,8 @@ import org.jboss.logging.Logger;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
+import org.apache.directory.server.core.api.interceptor.Interceptor;
+import org.apache.directory.server.core.normalization.NormalizationInterceptor;
 
 /**
  * Factory for a fast (mostly in-memory-only) ApacheDS DirectoryService. Use only for tests!!
@@ -55,6 +57,7 @@ import java.util.List;
 class InMemoryDirectoryServiceFactory implements DirectoryServiceFactory {
 
     private static final Logger log = Logger.getLogger(InMemoryDirectoryServiceFactory.class);
+    private static final int PAGE_SIZE = 30;
 
     private final DirectoryService directoryService;
     private final PartitionFactory partitionFactory;
@@ -87,6 +90,7 @@ class InMemoryDirectoryServiceFactory implements DirectoryServiceFactory {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void init(String name) throws Exception {
         if ((directoryService != null) && directoryService.isStarted()) {
             return;
@@ -144,12 +148,26 @@ class InMemoryDirectoryServiceFactory implements DirectoryServiceFactory {
         systemPartition.setSchemaManager(directoryService.getSchemaManager());
         partitionFactory.addIndex(systemPartition, SchemaConstants.OBJECT_CLASS_AT, 100);
         directoryService.setSystemPartition(systemPartition);
+
+        // Find Normalization interceptor in chain and add our range emulated interceptor
+        List<Interceptor> interceptors = directoryService.getInterceptors();
+        int insertionPosition = -1;
+        for (int pos = 0; pos < interceptors.size(); ++pos) {
+            Interceptor interceptor = interceptors.get(pos);
+            if (interceptor instanceof NormalizationInterceptor) {
+                insertionPosition = pos;
+            }
+        }
+        interceptors.add(insertionPosition + 1, new RangedAttributeInterceptor("member", PAGE_SIZE));
+        directoryService.setInterceptors(interceptors);
+
         directoryService.startup();
     }
 
     /**
      * {@inheritDoc}
      */
+    @Override
     public DirectoryService getDirectoryService() throws Exception {
         return directoryService;
     }
@@ -157,6 +175,7 @@ class InMemoryDirectoryServiceFactory implements DirectoryServiceFactory {
     /**
      * {@inheritDoc}
      */
+    @Override
     public PartitionFactory getPartitionFactory() throws Exception {
         return partitionFactory;
     }
