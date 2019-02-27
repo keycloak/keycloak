@@ -28,8 +28,6 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-import javax.ws.rs.core.Response;
-
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.AuthorizationResource;
@@ -181,8 +179,7 @@ public class GroupPathPolicyTest extends AbstractAuthzTest {
         policy.setGroupsClaim("groups");
         policy.addGroupPath(groupPath, extendChildren);
 
-        Response response = getClient().authorization().policies().group().create(policy);
-        response.close();
+        getClient().authorization().policies().group().create(policy).close();
     }
 
     private void createResourcePermission(String name, String resource, String... policies) {
@@ -192,16 +189,14 @@ public class GroupPathPolicyTest extends AbstractAuthzTest {
         permission.addResource(resource);
         permission.addPolicy(policies);
 
-        Response response = getClient().authorization().permissions().resource().create(permission);
-        response.close();
+        getClient().authorization().permissions().resource().create(permission).close();
     }
 
     private void createResource(String name) {
         AuthorizationResource authorization = getClient().authorization();
         ResourceRepresentation resource = new ResourceRepresentation(name);
 
-        Response response = authorization.resources().create(resource);
-        response.close();
+        authorization.resources().create(resource).close();
     }
 
     private RealmResource getRealm() {

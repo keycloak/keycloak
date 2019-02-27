@@ -23,8 +23,6 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
-import javax.ws.rs.core.Response;
-
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.AuthorizationResource;
@@ -33,7 +31,6 @@ import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.authorization.client.AuthorizationDeniedException;
 import org.keycloak.authorization.client.AuthzClient;
-import org.keycloak.authorization.client.Configuration;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
@@ -51,7 +48,6 @@ import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.RoleBuilder;
 import org.keycloak.testsuite.util.RolesBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
-import org.keycloak.util.JsonSerialization;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -179,8 +175,7 @@ public class RolePolicyTest extends AbstractAuthzTest {
             policy.addRole(role);
         }
 
-        Response response = getClient().authorization().policies().role().create(policy);
-        response.close();
+        getClient().authorization().policies().role().create(policy).close();
     }
 
     private void createResourcePermission(String name, String resource, String... policies) {
@@ -190,16 +185,14 @@ public class RolePolicyTest extends AbstractAuthzTest {
         permission.addResource(resource);
         permission.addPolicy(policies);
 
-        Response response = getClient().authorization().permissions().resource().create(permission);
-        response.close();
+        getClient().authorization().permissions().resource().create(permission).close();
     }
 
     private void createResource(String name) {
         AuthorizationResource authorization = getClient().authorization();
         ResourceRepresentation resource = new ResourceRepresentation(name);
 
-        Response response = authorization.resources().create(resource);
-        response.close();
+        authorization.resources().create(resource).close();
     }
 
     private RealmResource getRealm() {

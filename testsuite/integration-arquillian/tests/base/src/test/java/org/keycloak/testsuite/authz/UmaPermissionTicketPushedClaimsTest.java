@@ -64,7 +64,7 @@ public class UmaPermissionTicketPushedClaimsTest extends AbstractResourceServerT
 
         AuthorizationResource authorization = getClient(getRealm()).authorization();
 
-        authorization.policies().js().create(policy);
+        authorization.policies().js().create(policy).close();
 
         ScopePermissionRepresentation representation = new ScopePermissionRepresentation();
 
@@ -72,7 +72,7 @@ public class UmaPermissionTicketPushedClaimsTest extends AbstractResourceServerT
         representation.addScope("withdraw");
         representation.addPolicy(policy.getName());
 
-        authorization.permissions().scope().create(representation);
+        authorization.permissions().scope().create(representation).close();
 
         AuthzClient authzClient = getAuthzClient();
         PermissionRequest permissionRequest = new PermissionRequest(resource.getId());
