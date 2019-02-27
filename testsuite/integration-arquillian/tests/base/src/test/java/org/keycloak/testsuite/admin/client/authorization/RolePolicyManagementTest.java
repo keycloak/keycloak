@@ -147,18 +147,20 @@ public class RolePolicyManagementTest extends AbstractPolicyManagementTest {
         representation.addRole("Role A", false);
 
         RolePoliciesResource policies = authorization.policies().role();
-        Response response = policies.create(representation);
-        RolePolicyRepresentation created = response.readEntity(RolePolicyRepresentation.class);
 
-        policies.findById(created.getId()).remove();
+        try (Response response = policies.create(representation)) {
+            RolePolicyRepresentation created = response.readEntity(RolePolicyRepresentation.class);
 
-        RolePolicyResource removed = policies.findById(created.getId());
+            policies.findById(created.getId()).remove();
 
-        try {
-            removed.toRepresentation();
-            fail("Permission not removed");
-        } catch (NotFoundException ignore) {
+            RolePolicyResource removed = policies.findById(created.getId());
 
+            try {
+                removed.toRepresentation();
+                fail("Permission not removed");
+            } catch (NotFoundException ignore) {
+
+            }
         }
     }
 
@@ -171,26 +173,30 @@ public class RolePolicyManagementTest extends AbstractPolicyManagementTest {
         representation.addRole("Role A", false);
 
         RolePoliciesResource policies = authorization.policies().role();
-        Response response = policies.create(representation);
-        RolePolicyRepresentation created = response.readEntity(RolePolicyRepresentation.class);
 
-        PolicyResource policy = authorization.policies().policy(created.getId());
-        PolicyRepresentation genericConfig = policy.toRepresentation();
+        try (Response response = policies.create(representation)) {
+            RolePolicyRepresentation created = response.readEntity(RolePolicyRepresentation.class);
 
-        assertNotNull(genericConfig.getConfig());
-        assertNotNull(genericConfig.getConfig().get("roles"));
+            PolicyResource policy = authorization.policies().policy(created.getId());
+            PolicyRepresentation genericConfig = policy.toRepresentation();
 
-        RoleRepresentation role = getRealm().roles().get("Role A").toRepresentation();
+            assertNotNull(genericConfig.getConfig());
+            assertNotNull(genericConfig.getConfig().get("roles"));
 
-        assertTrue(genericConfig.getConfig().get("roles").contains(role.getId()));
+            RoleRepresentation role = getRealm().roles().get("Role A").toRepresentation();
+
+            assertTrue(genericConfig.getConfig().get("roles").contains(role.getId()));
+        }
     }
 
     private void assertCreated(AuthorizationResource authorization, RolePolicyRepresentation representation) {
         RolePoliciesResource permissions = authorization.policies().role();
-        Response response = permissions.create(representation);
-        RolePolicyRepresentation created = response.readEntity(RolePolicyRepresentation.class);
-        RolePolicyResource permission = permissions.findById(created.getId());
-        assertRepresentation(representation, permission);
+
+        try (Response response = permissions.create(representation)) {
+            RolePolicyRepresentation created = response.readEntity(RolePolicyRepresentation.class);
+            RolePolicyResource permission = permissions.findById(created.getId());
+            assertRepresentation(representation, permission);
+        }
     }
 
     private void assertRepresentation(RolePolicyRepresentation representation, RolePolicyResource permission) {

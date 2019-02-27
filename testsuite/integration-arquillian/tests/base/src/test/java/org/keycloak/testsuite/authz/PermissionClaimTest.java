@@ -22,6 +22,7 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -247,7 +248,9 @@ public class PermissionClaimTest extends AbstractAuthzTest {
         updatePermission.addScope("update");
         updatePermission.addPolicy(claimCPolicy.getName());
 
-        updatePermission = authorization.permissions().scope().create(updatePermission).readEntity(ScopePermissionRepresentation.class);
+        try (Response response = authorization.permissions().scope().create(updatePermission)) {
+            updatePermission = response.readEntity(ScopePermissionRepresentation.class);
+        }
 
         AuthzClient authzClient = getAuthzClient();
         AuthorizationRequest request = new AuthorizationRequest();
@@ -320,7 +323,9 @@ public class PermissionClaimTest extends AbstractAuthzTest {
         updatePermission.addResource(resourceA.getName());
         updatePermission.addPolicy(claimCPolicy.getName());
 
-        updatePermission = authorization.permissions().resource().create(updatePermission).readEntity(ResourcePermissionRepresentation.class);
+        try (Response response = authorization.permissions().resource().create(updatePermission)) {
+            updatePermission = response.readEntity(ResourcePermissionRepresentation.class);
+        }
 
         AuthzClient authzClient = getAuthzClient();
         AuthorizationResponse response = authzClient.authorization("marta", "password").authorize();
@@ -357,7 +362,9 @@ public class PermissionClaimTest extends AbstractAuthzTest {
         resourceInstance.setType(resourceA.getType());
         resourceInstance.setOwner("marta");
 
-        resourceInstance = authorization.resources().create(resourceInstance).readEntity(ResourceRepresentation.class);
+        try (Response response1 = authorization.resources().create(resourceInstance)) {
+            resourceInstance = response1.readEntity(ResourceRepresentation.class);
+        }
 
         AuthorizationRequest request = new AuthorizationRequest();
 
@@ -377,7 +384,9 @@ public class PermissionClaimTest extends AbstractAuthzTest {
         resourceInstancePermission.addResource(resourceInstance.getId());
         resourceInstancePermission.addPolicy(claimCPolicy.getName());
 
-        resourceInstancePermission = authorization.permissions().resource().create(resourceInstancePermission).readEntity(ResourcePermissionRepresentation.class);
+        try (Response response1 = authorization.permissions().resource().create(resourceInstancePermission)) {
+            resourceInstancePermission = response1.readEntity(ResourcePermissionRepresentation.class);
+        }
 
         response = authzClient.authorization("marta", "password").authorize(request);
         assertNotNull(response.getToken());
