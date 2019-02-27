@@ -107,13 +107,13 @@ public abstract class AbstractAuthorizationTest extends AbstractClientTest {
 
         ResourceScopesResource resources = getClientResource().authorization().scopes();
 
-        Response response = resources.create(newScope);
+        try (Response response = resources.create(newScope)) {
+            assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
 
-        assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
+            ScopeRepresentation stored = response.readEntity(ScopeRepresentation.class);
 
-        ScopeRepresentation stored = response.readEntity(ScopeRepresentation.class);
-
-        return resources.scope(stored.getId());
+            return resources.scope(stored.getId());
+        }
     }
 
     private RealmBuilder createTestRealm() {

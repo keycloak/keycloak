@@ -183,9 +183,9 @@ public class AuthorizationTest extends AbstractAuthzTest {
         permission.addResource(resource.getId());
         permission.addPolicy(policies);
 
-        Response response = getClient().authorization().permissions().resource().create(permission);
-
-        assertEquals(201, response.getStatus());
+        try (Response response = getClient().authorization().permissions().resource().create(permission)) {
+            assertEquals(201, response.getStatus());
+        }
     }
 
     @NotNull

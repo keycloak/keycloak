@@ -118,18 +118,20 @@ public class UserPolicyManagementTest extends AbstractPolicyManagementTest {
         representation.addUser("User A");
 
         UserPoliciesResource policies = authorization.policies().user();
-        Response response = policies.create(representation);
-        UserPolicyRepresentation created = response.readEntity(UserPolicyRepresentation.class);
 
-        policies.findById(created.getId()).remove();
+        try (Response response = policies.create(representation)) {
+            UserPolicyRepresentation created = response.readEntity(UserPolicyRepresentation.class);
 
-        UserPolicyResource removed = policies.findById(created.getId());
+            policies.findById(created.getId()).remove();
 
-        try {
-            removed.toRepresentation();
-            fail("Permission not removed");
-        } catch (NotFoundException ignore) {
+            UserPolicyResource removed = policies.findById(created.getId());
 
+            try {
+                removed.toRepresentation();
+                fail("Permission not removed");
+            } catch (NotFoundException ignore) {
+
+            }
         }
     }
 
@@ -186,18 +188,20 @@ public class UserPolicyManagementTest extends AbstractPolicyManagementTest {
         representation.addUser("User A");
 
         UserPoliciesResource policies = authorization.policies().user();
-        Response response = policies.create(representation);
-        UserPolicyRepresentation created = response.readEntity(UserPolicyRepresentation.class);
 
-        PolicyResource policy = authorization.policies().policy(created.getId());
-        PolicyRepresentation genericConfig = policy.toRepresentation();
+        try (Response response = policies.create(representation)) {
+            UserPolicyRepresentation created = response.readEntity(UserPolicyRepresentation.class);
 
-        assertNotNull(genericConfig.getConfig());
-        assertNotNull(genericConfig.getConfig().get("users"));
+            PolicyResource policy = authorization.policies().policy(created.getId());
+            PolicyRepresentation genericConfig = policy.toRepresentation();
 
-        UserRepresentation user = getRealm().users().search("User A").get(0);
+            assertNotNull(genericConfig.getConfig());
+            assertNotNull(genericConfig.getConfig().get("users"));
 
-        assertTrue(genericConfig.getConfig().get("users").contains(user.getId()));
+            UserRepresentation user = getRealm().users().search("User A").get(0);
+
+            assertTrue(genericConfig.getConfig().get("users").contains(user.getId()));
+        }
     }
 
     @Test
@@ -219,33 +223,35 @@ public class UserPolicyManagementTest extends AbstractPolicyManagementTest {
 
         policy.setConfig(config);
 
-        Response response = authorization.policies().create(policy);
-        assertEquals(Response.Status.INTERNAL_SERVER_ERROR, response.getStatusInfo());
-        response.close();
+        try (Response response = authorization.policies().create(policy)) {
+            assertEquals(Response.Status.INTERNAL_SERVER_ERROR, response.getStatusInfo());
+        }
 
         config.put("users", "");
 
         policy.setConfig(config);
 
-        response = authorization.policies().create(policy);
-        assertEquals(Response.Status.INTERNAL_SERVER_ERROR, response.getStatusInfo());
-        response.close();
+        try (Response response = authorization.policies().create(policy)) {
+            assertEquals(Response.Status.INTERNAL_SERVER_ERROR, response.getStatusInfo());
+        }
 
         config.clear();
 
         policy.setConfig(config);
 
-        response = authorization.policies().create(policy);
-        assertEquals(Response.Status.INTERNAL_SERVER_ERROR, response.getStatusInfo());
-        response.close();
+        try (Response response = authorization.policies().create(policy)) {
+            assertEquals(Response.Status.INTERNAL_SERVER_ERROR, response.getStatusInfo());
+        }
     }
 
     private void assertCreated(AuthorizationResource authorization, UserPolicyRepresentation representation) {
         UserPoliciesResource permissions = authorization.policies().user();
-        Response response = permissions.create(representation);
-        UserPolicyRepresentation created = response.readEntity(UserPolicyRepresentation.class);
-        UserPolicyResource permission = permissions.findById(created.getId());
-        assertRepresentation(representation, permission);
+
+        try (Response response = permissions.create(representation)) {
+            UserPolicyRepresentation created = response.readEntity(UserPolicyRepresentation.class);
+            UserPolicyResource permission = permissions.findById(created.getId());
+            assertRepresentation(representation, permission);
+        }
     }
 
     private void assertRepresentation(UserPolicyRepresentation representation, UserPolicyResource permission) {

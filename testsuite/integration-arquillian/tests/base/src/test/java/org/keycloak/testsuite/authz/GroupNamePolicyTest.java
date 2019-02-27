@@ -28,8 +28,6 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-import javax.ws.rs.core.Response;
-
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.AuthorizationResource;
@@ -38,7 +36,6 @@ import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.authorization.client.AuthorizationDeniedException;
 import org.keycloak.authorization.client.AuthzClient;
-import org.keycloak.authorization.client.Configuration;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.mappers.GroupMembershipMapper;
 import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
@@ -52,14 +49,12 @@ import org.keycloak.representations.idm.authorization.GroupPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.PermissionRequest;
 import org.keycloak.representations.idm.authorization.ResourcePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
-import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.GroupBuilder;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.RoleBuilder;
 import org.keycloak.testsuite.util.RolesBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
-import org.keycloak.util.JsonSerialization;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -197,8 +192,7 @@ public class GroupNamePolicyTest extends AbstractAuthzTest {
         policy.setGroupsClaim("groups");
         policy.addGroupPath(groupPath, extendChildren);
 
-        Response response = getClient().authorization().policies().group().create(policy);
-        response.close();
+        getClient().authorization().policies().group().create(policy).close();
     }
 
     private void createResourcePermission(String name, String resource, String... policies) {
@@ -208,16 +202,14 @@ public class GroupNamePolicyTest extends AbstractAuthzTest {
         permission.addResource(resource);
         permission.addPolicy(policies);
 
-        Response response = getClient().authorization().permissions().resource().create(permission);
-        response.close();
+        getClient().authorization().permissions().resource().create(permission).close();
     }
 
     private void createResource(String name) {
         AuthorizationResource authorization = getClient().authorization();
         ResourceRepresentation resource = new ResourceRepresentation(name);
 
-        Response response = authorization.resources().create(resource);
-        response.close();
+        authorization.resources().create(resource).close();
     }
 
     private RealmResource getRealm() {

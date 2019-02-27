@@ -333,7 +333,7 @@ public class PolicyEnforcerClaimsTest extends AbstractKeycloakTest {
 
             policy.setCode(code.toString());
 
-            clientResource.authorization().policies().js().create(policy);
+            clientResource.authorization().policies().js().create(policy).close();
 
             createResource(clientResource, "Bank Account", "/api/bank/account/{id}/withdrawal", "withdrawal");
 
@@ -343,7 +343,7 @@ public class PolicyEnforcerClaimsTest extends AbstractKeycloakTest {
             permission.addScope("withdrawal");
             permission.addPolicy(policy.getName());
 
-            clientResource.authorization().permissions().scope().create(permission);
+            clientResource.authorization().permissions().scope().create(permission).close();
         }
     }
 
@@ -362,11 +362,12 @@ public class PolicyEnforcerClaimsTest extends AbstractKeycloakTest {
         representation.setUri(uri);
         representation.setScopes(Arrays.asList(scopes).stream().map(ScopeRepresentation::new).collect(Collectors.toSet()));
 
-        javax.ws.rs.core.Response response = clientResource.authorization().resources().create(representation);
+        try (javax.ws.rs.core.Response response = clientResource.authorization().resources().create(representation)) {
 
-        representation.setId(response.readEntity(ResourceRepresentation.class).getId());
+            representation.setId(response.readEntity(ResourceRepresentation.class).getId());
 
-        return representation;
+            return representation;
+        }
     }
 
     private ClientResource getClientResource(String name) {
