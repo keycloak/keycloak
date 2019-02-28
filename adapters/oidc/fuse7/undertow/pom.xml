@@ -42,7 +42,7 @@
             org.keycloak.*;version="${project.version}",
             org.keycloak.adapters.osgi.*;version="${project.version}",
             org.ops4j.pax.web.*;version="[7.1,9)",
-            javax.servlet.*;version="[2.5,4)";resolution:=optional,
+            javax.servlet.*;version="[3.1,5)";resolution:=optional,
             org.apache.cxf.transport.http;resolution:=optional;version="[3,4)",
             org.apache.cxf.transport.http_undertow;resolution:=optional;version="[3,4)",
             org.apache.cxf.transport.servlet;resolution:=optional;version="[3,4)",

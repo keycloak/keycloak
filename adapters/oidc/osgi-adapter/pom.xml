@@ -40,7 +40,7 @@
         </keycloak.osgi.export>
         <keycloak.osgi.import>
             org.ops4j.pax.web.*;version="[3.0,8)",
-            javax.servlet.*;version="[2.5,4)";resolution:=optional,
+            javax.servlet.*;version="[3.1,5)";resolution:=optional,
             org.eclipse.jetty.*;version="[8.1,10)";resolution:=optional,
             org.keycloak.*;version="${project.version}",
             org.apache.cxf.transport.http;resolution:=optional;version="[3,4)",
