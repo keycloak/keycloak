@@ -57,7 +57,7 @@
                                     <property>jdbc.mvn.artifactId</property>
                                 </requireProperty>
                                 <requireProperty>
-                                    <property>jdbc.mvn.version</property>
+                                    <property>jdbc.mvn.version.legacy</property>
                                 </requireProperty>
                                 <requireProperty>
                                     <property>keycloak.connectionsJpa.user</property>
@@ -106,7 +106,7 @@
                                 <artifactItem>
                                     <groupId>${jdbc.mvn.groupId}</groupId>
                                     <artifactId>${jdbc.mvn.artifactId}</artifactId>
-                                    <version>${jdbc.mvn.version}</version>
+                                    <version>${jdbc.mvn.version.legacy}</version>
                                     <type>jar</type>
                                 </artifactItem>
                             </artifactItems>
@@ -143,7 +143,7 @@
                                         </parameter>
                                         <parameter>
                                             <name>version</name>
-                                            <value>${jdbc.mvn.version}</value>
+                                            <value>${jdbc.mvn.version.legacy}</value>
                                         </parameter>
                                     </parameters>
                                 </transformationSet>
