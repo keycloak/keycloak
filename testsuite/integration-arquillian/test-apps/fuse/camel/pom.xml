@@ -36,8 +36,8 @@
         <keycloak.osgi.export>
         </keycloak.osgi.export>
         <keycloak.osgi.import>
-            javax.servlet;version="[3,4)",
-            javax.servlet.http;version="[3,4)",
+            javax.servlet;version="[3.1,5)",
+            javax.servlet.http;version="[3.1,5)",
             org.apache.camel.*,
             org.apache.camel;version="[2.13,3)",
             org.eclipse.jetty.security;version="[8,10)",
