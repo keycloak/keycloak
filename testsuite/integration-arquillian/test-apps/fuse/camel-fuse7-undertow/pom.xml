@@ -35,8 +35,8 @@
         <keycloak.osgi.export>
         </keycloak.osgi.export>
         <keycloak.osgi.import>
-            javax.servlet;version="[3,4)",
-            javax.servlet.http;version="[3,4)",
+            javax.servlet;version="[3.1,5)",
+            javax.servlet.http;version="[3.1,5)",
             javax.net.ssl,
             org.apache.camel.*,
             io.undertow.*;version="[1.4,3)",

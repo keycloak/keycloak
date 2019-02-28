@@ -43,6 +43,7 @@
             org.apache.cxf.*;version="[2.7,3.3)",
             org.keycloak.*;version="${project.version}",
             org.keycloak.adapters.authentication;version="${project.version}";resolution:=optional,
+            javax.servlet.*;version="[3.1,5)",
             *;resolution:=optional
         </keycloak.osgi.import>
         <keycloak.osgi.private>

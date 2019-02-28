@@ -38,7 +38,7 @@
             org.keycloak.adapters.servlet.*
         </keycloak.osgi.export>
         <keycloak.osgi.import>
-            javax.servlet.*;version="[2.5,4)";resolution:=optional,
+            javax.servlet.*;version="[3.1,5)";resolution:=optional,
             org.keycloak.*;version="${project.version}",
             *;resolution:=optional
         </keycloak.osgi.import>
