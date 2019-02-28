@@ -46,7 +46,7 @@
             org.apache.http.impl.cookie.*;version=${apache.httpcomponents.version},
             org.apache.http.impl.execchain.*;version=${apache.httpcomponents.version},
             org.apache.http.*;version=${apache.httpcomponents.httpcore.version},
-            javax.servlet.*;version="[2.5,4)",
+            javax.servlet.*;version="[3.1,5)",
             org.keycloak.adapters.jetty;version="${project.version}";resolution:=optional,
             org.keycloak.adapters;version="${project.version}",
             org.keycloak.constants;version="${project.version}",

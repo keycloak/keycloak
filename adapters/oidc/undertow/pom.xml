@@ -39,6 +39,7 @@
         </keycloak.osgi.export>
         <keycloak.osgi.import>
             io.undertow.*;version="[1.4,3)",
+            javax.servlet.*;version="[3.1,5)";resolution:=optional,
             *;resolution:=optional
         </keycloak.osgi.import>
     </properties>
