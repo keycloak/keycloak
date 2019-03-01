@@ -35,6 +35,9 @@ public interface UserModel extends RoleMapperModel {
     String FIRST_NAME = "firstName";
     String EMAIL = "email";
     String LOCALE = "locale";
+    String ENABLED = "enabled";
+    String EMAIL_VERIFIED = "emailVerified";
+    String REQUIRED_ACTIONS = "requiredActions";
     String INCLUDE_SERVICE_ACCOUNT = "keycloak.session.realm.users.query.include_service_account";
     String GROUPS = "keycloak.session.realm.users.query.groups";
 

@@ -139,7 +139,11 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
                     ldapUser.setAttribute(ldapAttrName, new LinkedHashSet<String>());
                 }
             } else {
-                ldapUser.setSingleAttribute(ldapAttrName, attrValue.toString());
+                if (attrValue instanceof Boolean) {
+                    ldapUser.setSingleAttribute(ldapAttrName, (Boolean) attrValue);
+                } else {
+                    ldapUser.setSingleAttribute(ldapAttrName, attrValue.toString());
+                }
             }
         } else {
 
@@ -214,20 +218,107 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
 
                 @Override
                 public boolean isEnabled() {
-                    // TODO: if the LDAP attribute is not boolean, what should this do?
-                    if (!isBinaryAttribute) return false;
+                    if (UserModel.ENABLED.equalsIgnoreCase(userModelAttrName)) {
+                        // TODO: if the LDAP attribute is not boolean, what should this do?
+                        if (!isBinaryAttribute) return false;
 
-                    Boolean enabled = ldapUser.getAttributeAsBoolean(ldapAttrName);
-                    // TODO: if the boolean attribute is missing, should this default to false?
-                    return enabled == null ? false : enabled;
+                        Boolean enabled = ldapUser.getAttributeAsBoolean(ldapAttrName);
+                        // TODO: if the boolean attribute is missing, should this default to false?
+                        return enabled == null ? false : enabled;
+                    } else {
+                        return super.isEnabled();
+                    }
                 }
 
                 @Override
                 public void setEnabled(boolean enabled) {
                     // TODO: This will autobox - is that OK?
-                    if (setLDAPAttribute(ldapAttrName, enabled)) {
+                    if (setLDAPAttribute(UserModel.ENABLED, enabled)) {
                         super.setEnabled(enabled);
                     }
+                }
+
+                @Override
+                public boolean isEmailVerified() {
+                    if (UserModel.EMAIL_VERIFIED.equalsIgnoreCase(userModelAttrName)) {
+                        // TODO: if the LDAP attribute is not boolean, what should this do?
+                        if (!isBinaryAttribute) return false;
+
+                        Boolean verified = ldapUser.getAttributeAsBoolean(ldapAttrName);
+                        // TODO: if the boolean attribute is missing, should this default to false?
+                        return verified == null ? false : verified;
+                    } else {
+                        return super.isEmailVerified();
+                    }
+                }
+
+                @Override
+                public void setEmailVerified(boolean verified) {
+                    // TODO: This will autobox - is that OK?
+                    if (setLDAPAttribute(UserModel.EMAIL_VERIFIED, verified)) {
+                        super.setEmailVerified(verified);
+                    }
+                }
+
+                @Override
+                public Set<String> getRequiredActions() {
+                    if (UserModel.REQUIRED_ACTIONS.equalsIgnoreCase(userModelAttrName)) {
+                        // TODO: Should this be a serialised from a String > Set<String>?
+                        Set<String> requiredActions = ldapUser.getAttributeAsSet(ldapAttrName);
+                        return requiredActions == null ? Collections.EMPTY_SET : requiredActions;
+                    } else {
+                        return super.getRequiredActions();
+                    }
+                }
+
+                void _setRequiredActions(Set<String> requiredActions) {
+                    ensureTransactionStarted();
+                    // TODO: Should this be a serialised from a Set<String> > String?
+                    // TODO: This would create a single attribute and avoid this error:
+                    // 19:11:08,264 WARN  [org.keycloak.storage.ldap.idm.model.LDAPObject] (default task-14) Expected String but attribute 'keycloakRequiredActions' has more values '[[], UPDATE_PASSWORD, UPDATE_PROFILE]' on object 'uid=tuser,ou=People,dc=adaptavist,dc=com' . Returning just first value
+                    // This might be more Keycloak compatible rather than getting it to store multiple attributes
+                    // TODO: Find out where the [] element is coming from (during create user)
+                    ldapUser.setAttribute(ldapAttrName, requiredActions);
+                }
+
+                @Override
+                public void addRequiredAction(String action) {
+                    if (UserModel.REQUIRED_ACTIONS.equalsIgnoreCase(userModelAttrName)) {
+                        Set<String> requiredActions = getRequiredActions();
+                        requiredActions.add(action);
+                        _setRequiredActions(requiredActions);
+                    } else {
+                        super.addRequiredAction(action);
+                    }
+                }
+
+                @Override
+                public void removeRequiredAction(String action) {
+                    if (UserModel.REQUIRED_ACTIONS.equalsIgnoreCase(userModelAttrName)) {
+                        Set<String> requiredActions = getRequiredActions();
+                        requiredActions.remove(action);
+                        _setRequiredActions(requiredActions);
+                    } else {
+                        super.removeRequiredAction(action);
+                    }
+                }
+
+                @Override
+                public void addRequiredAction(RequiredAction action) {
+                    // TODO: Do I need to null guard?
+                    if (action == null) return;
+                    addRequiredAction(action.name());
+                    // No need to go up the super chain to other mappers, as the method call above will do that
+                    // super.addRequiredAction(action.name());
+                }
+
+                @Override
+                public void removeRequiredAction(RequiredAction action) {
+                    // TODO: Do I need to null guard?
+                    if (action == null) return;
+                    removeRequiredAction(action.name());
+                    // No need to go up the super chain to other mappers, as the method call above will do that
+                    // super.removeRequiredAction(action);
                 }
 
                 @Override
@@ -302,6 +393,25 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
                     Boolean enabled = ldapUser.getAttributeAsBoolean(ldapAttrName);
                     // TODO: if the boolean attribute is missing, should this default to false?
                     return enabled == null ? false : enabled;
+                }
+
+                @Override
+                public boolean isEmailVerified() {
+                    // TODO: if the LDAP attribute is not boolean, what should this do?
+                    if (!isBinaryAttribute) return false;
+
+                    Boolean verified = ldapUser.getAttributeAsBoolean(ldapAttrName);
+                    // TODO: if the boolean attribute is missing, should this default to false?
+                    return verified == null ? false : verified;
+                }
+
+                @Override
+                public Set<String> getRequiredActions() {
+                    if (UserModel.REQUIRED_ACTIONS.equalsIgnoreCase(userModelAttrName)) {
+                        return ldapUser.getAttributeAsSet(ldapAttrName);
+                    } else {
+                        return Collections.EMPTY_SET;
+                    }
                 }
 
                 @Override
