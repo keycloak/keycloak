@@ -49,13 +49,14 @@ import java.util.regex.Pattern;
 
 import static junit.framework.TestCase.assertNotNull;
 import org.junit.Assume;
+import org.keycloak.testsuite.util.DroneUtils;
 import static org.keycloak.testsuite.utils.io.IOUtil.loadRealm;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
 import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
 
 /**
- * Tests CORS fuctionality in adapters.
+ * Tests CORS functionality in adapters.
  *
  * <p>
  *    Note, for SSL this test disables TLS certificate verification. Since CORS uses different hostnames
@@ -72,7 +73,7 @@ import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
 public class CorsExampleAdapterTest extends AbstractExampleAdapterTest {
 
     public static final String CORS = "cors";
-    public static final String AUTH_SERVER_HOST = "localhost-auth";
+    public static final String AUTH_SERVER_HOST = "localhost-auth-127.0.0.1.nip.io";
     private static final String hostBackup;
 
     @ArquillianResource
@@ -113,6 +114,7 @@ public class CorsExampleAdapterTest extends AbstractExampleAdapterTest {
 
     @Before
     public void onBefore() {
+        DroneUtils.addWebDriver(jsDriver);
         Assume.assumeFalse(System.getProperty("os.name").startsWith("Windows"));
         deployer.deploy(CorsDatabaseServiceTestApp.DEPLOYMENT_NAME);
         deployer.deploy(AngularCorsProductTestApp.DEPLOYMENT_NAME);
@@ -182,14 +184,14 @@ public class CorsExampleAdapterTest extends AbstractExampleAdapterTest {
 
     @Nullable
     private String getAuthServerVersion() {
-        jsDriver.navigate().to(suiteContext.getAuthServerInfo().getContextRoot().toString() +
+        DroneUtils.getCurrentDriver().navigate().to(suiteContext.getAuthServerInfo().getContextRoot().toString() +
                 "/auth/admin/master/console/#/server-info");
         jsDriverTestRealmLoginPage.form().login("admin", "admin");
 
         WaitUtils.waitUntilElement(By.tagName("body")).is().visible();
         Pattern pattern = Pattern.compile("<td [^>]+>Server Version</td>" +
                 "\\s+<td [^>]+>([^<]+)</td>");
-        Matcher matcher = pattern.matcher(jsDriver.getPageSource());
+        Matcher matcher = pattern.matcher(DroneUtils.getCurrentDriver().getPageSource());
 
         if (matcher.find()) {
             return matcher.group(1);
