@@ -29,10 +29,11 @@ public class MigrationVersionTest {
 
     @Test
     public void testVersion() {
-        ModelVersion version_100Beta1 = new ModelVersion("1.0.0.Beta1");
+        ModelVersion version_100Beta1 = new ModelVersion("1.0.0.Beta1-SNAPSHOT");
         Assert.assertEquals(version_100Beta1.getMajor(), 1);
         Assert.assertEquals(version_100Beta1.getMinor(), 0);
         Assert.assertEquals(version_100Beta1.getMicro(), 0);
+        Assert.assertTrue(version_100Beta1.isSnapshot());
         ModelVersion version_100CR1 = new ModelVersion("1.0.0.CR1");
         ModelVersion version_100 = new ModelVersion("1.0.0");
         ModelVersion version_110Beta1 = new ModelVersion("1.1.0.Beta1");
@@ -49,7 +50,15 @@ public class MigrationVersionTest {
         Assert.assertEquals(version_211CR1.getMinor(), 1);
         Assert.assertEquals(version_211CR1.getMicro(), 1);
         Assert.assertEquals(version_211CR1.getQualifier(), "CR1");
+        Assert.assertFalse(version_211CR1.isSnapshot());
         ModelVersion version_211 = new ModelVersion("2.1.1");
+
+        ModelVersion version50Snapshot = new ModelVersion("5.0.0-SNAPSHOT");
+        Assert.assertEquals(version50Snapshot.getMajor(), 5);
+        Assert.assertEquals(version50Snapshot.getMinor(), 0);
+        Assert.assertEquals(version50Snapshot.getMicro(), 0);
+        Assert.assertNull(version50Snapshot.getQualifier());
+        Assert.assertTrue(version50Snapshot.isSnapshot());
 
         Assert.assertFalse(version_100Beta1.lessThan(version_100Beta1));
         Assert.assertTrue(version_100Beta1.lessThan(version_100CR1));
@@ -65,6 +74,8 @@ public class MigrationVersionTest {
         Assert.assertTrue(version_140.lessThan(version_211CR1));
 
         Assert.assertFalse(version_211.lessThan(version_110CR1));
+
+        Assert.assertTrue(version_211CR1.lessThan(version50Snapshot));
 
     }
 }
