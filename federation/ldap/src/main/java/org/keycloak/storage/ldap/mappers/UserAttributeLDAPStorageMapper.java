@@ -44,6 +44,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.HashSet;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -100,6 +101,10 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
         Property<Object> userModelProperty = userModelProperties.get(userModelAttrName.toLowerCase());
 
         if (userModelProperty != null) {
+            // Skip the UserModel.requiredActions field, as this isn't set - it has add/removeRequiredAction methods
+            if (UserModel.REQUIRED_ACTIONS.equalsIgnoreCase(userModelAttrName)) {
+                return;
+            }
 
             // we have java property on UserModel
             String ldapAttrValue = ldapUser.getAttributeAsString(ldapAttrName);
@@ -141,6 +146,8 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
             } else {
                 if (attrValue instanceof Boolean) {
                     ldapUser.setSingleAttribute(ldapAttrName, (Boolean) attrValue);
+                } else if (attrValue instanceof Set) {
+                    ldapUser.setAttribute(ldapAttrName, (Set<String>) attrValue);
                 } else {
                     ldapUser.setSingleAttribute(ldapAttrName, attrValue.toString());
                 }
@@ -549,6 +556,11 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
 
 
     protected void setPropertyOnUserModel(Property<Object> userModelProperty, UserModel user, String ldapAttrValue) {
+        // Skip the UserModel.requiredActions field, as this isn't set - it has add/removeRequiredAction methods
+        if (UserModel.REQUIRED_ACTIONS.equalsIgnoreCase(userModelProperty.getName())) {
+            return;
+        }
+
         if (ldapAttrValue == null) {
             userModelProperty.setValue(user, null);
         } else {
