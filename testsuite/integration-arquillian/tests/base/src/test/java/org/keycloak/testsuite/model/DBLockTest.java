@@ -17,10 +17,14 @@
 
 package org.keycloak.testsuite.model;
 
+import org.jboss.arquillian.container.test.api.Deployment;
+import org.jboss.arquillian.container.test.api.TargetsContainer;
 import org.jboss.logging.Logger;
+import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.KeycloakSessionTask;
@@ -28,15 +32,30 @@ import org.keycloak.models.dblock.DBLockManager;
 import org.keycloak.models.dblock.DBLockProvider;
 import org.keycloak.models.dblock.DBLockProviderFactory;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
+import org.keycloak.testsuite.arquillian.annotation.ModelTest;
+import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
 
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static org.keycloak.testsuite.arquillian.DeploymentTargetModifier.AUTH_SERVER_CURRENT;
+
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class DBLockTest extends AbstractModelTest {
+public class DBLockTest extends AbstractTestRealmKeycloakTest {
+
+    @Deployment
+    @TargetsContainer(AUTH_SERVER_CURRENT)
+    public static WebArchive deploy() {
+        return RunOnServerDeployment.create(UserResource.class, DBLockTest.class)
+                .addPackages(true,
+                        "org.keycloak.testsuite",
+                        "org.keycloak.testsuite.model");
+    }
 
     private static final Logger log = Logger.getLogger(DBLockTest.class);
 
@@ -48,66 +67,65 @@ public class DBLockTest extends AbstractModelTest {
     private static final int LOCK_RECHECK_MILLIS = 10;
 
     @Before
-    @Override
     public void before() throws Exception {
-        super.before();
 
-        // Set timeouts for testing
-        DBLockManager lockManager = new DBLockManager(session);
-        DBLockProviderFactory lockFactory = lockManager.getDBLockFactory();
-        lockFactory.setTimeouts(LOCK_RECHECK_MILLIS, LOCK_TIMEOUT_MILLIS);
+        testingClient.server().run(session -> {
+            // Set timeouts for testing
+            DBLockManager lockManager = new DBLockManager(session);
+            DBLockProviderFactory lockFactory = lockManager.getDBLockFactory();
+            lockFactory.setTimeouts(LOCK_RECHECK_MILLIS, LOCK_TIMEOUT_MILLIS);
 
-        // Drop lock table, just to simulate racing threads for create lock table and insert lock record into it.
-        lockManager.getDBLock().destroyLockInfo();
+            // Drop lock table, just to simulate racing threads for create lock table and insert lock record into it.
+            lockManager.getDBLock().destroyLockInfo();
+        });
 
-        commit();
     }
 
     @Test
-    public void testLockConcurrently() throws Exception {
-        long startupTime = System.currentTimeMillis();
+    @ModelTest
+    public void testLockConcurrently(KeycloakSession session) throws Exception {
 
-        final Semaphore semaphore = new Semaphore();
-        final KeycloakSessionFactory sessionFactory = realmManager.getSession().getKeycloakSessionFactory();
+        KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession sessionLC) -> {
+            long startupTime = System.currentTimeMillis();
 
-        List<Thread> threads = new LinkedList<>();
-        for (int i=0 ; i<THREADS_COUNT ; i++) {
-            Thread thread = new Thread() {
+            final Semaphore semaphore = new Semaphore();
+            final KeycloakSessionFactory sessionFactory = sessionLC.getKeycloakSessionFactory();
 
-                @Override
-                public void run() {
-                    for (int i=0 ; i<ITERATIONS_PER_THREAD ; i++) {
+            List<Thread> threads = new LinkedList<>();
+
+            for (int i = 0; i < THREADS_COUNT; i++) {
+                Thread thread = new Thread(() -> {
+                    for (int j = 0; j < ITERATIONS_PER_THREAD; j++) {
                         try {
-                            KeycloakModelUtils.runJobInTransaction(sessionFactory, new KeycloakSessionTask() {
-
-                                @Override
-                                public void run(KeycloakSession session) {
-                                    lock(session, semaphore);
-                                }
-
-                            });
+                            KeycloakModelUtils.runJobInTransaction(sessionFactory, session1 ->
+                                    lock(session1, semaphore));
                         } catch (RuntimeException e) {
                             semaphore.setException(e);
                             throw e;
                         }
                     }
+                });
+
+                threads.add(thread);
+            }
+
+            for (Thread thread : threads) {
+                thread.start();
+            }
+            for (Thread thread : threads) {
+                try {
+                    thread.join();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
                 }
+            }
 
-            };
-            threads.add(thread);
-        }
+            long took = (System.currentTimeMillis() - startupTime);
+            log.infof("DBLockTest executed in %d ms with total counter %d. THREADS_COUNT=%d, ITERATIONS_PER_THREAD=%d", took, semaphore.getTotal(), THREADS_COUNT, ITERATIONS_PER_THREAD);
 
-        for (Thread thread : threads) {
-            thread.start();
-        }
-        for (Thread thread : threads) {
-            thread.join();
-        }
-
-        long took = (System.currentTimeMillis() - startupTime);
-        log.infof("DBLockTest executed in %d ms with total counter %d. THREADS_COUNT=%d, ITERATIONS_PER_THREAD=%d", took, semaphore.getTotal(), THREADS_COUNT, ITERATIONS_PER_THREAD);
-        Assert.assertEquals(semaphore.getTotal(), THREADS_COUNT * ITERATIONS_PER_THREAD);
-        Assert.assertNull(semaphore.getException());
+            Assert.assertEquals(semaphore.getTotal(), THREADS_COUNT * ITERATIONS_PER_THREAD);
+            Assert.assertNull(semaphore.getException());
+        });
     }
 
     private void lock(KeycloakSession session, Semaphore semaphore) {
@@ -124,6 +142,9 @@ public class DBLockTest extends AbstractModelTest {
         }
     }
 
+    @Override
+    public void configureTestRealm(RealmRepresentation testRealm) {
+    }
 
     // Ensure just one thread is allowed to run at the same time
     private class Semaphore {
@@ -167,7 +188,7 @@ public class DBLockTest extends AbstractModelTest {
         }
     }
 
-
-
-
 }
+
+
+
