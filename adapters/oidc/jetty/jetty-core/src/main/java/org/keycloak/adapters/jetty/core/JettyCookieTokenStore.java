@@ -28,6 +28,7 @@ import org.keycloak.adapters.OidcKeycloakAccount;
 import org.keycloak.adapters.RefreshableKeycloakSecurityContext;
 import org.keycloak.adapters.RequestAuthenticator;
 import org.keycloak.adapters.spi.HttpFacade;
+import org.keycloak.adapters.AdapterUtils;
 
 /**
  * Handle storage of token info in cookie. Per-request object.
@@ -53,7 +54,7 @@ public class JettyCookieTokenStore implements AdapterTokenStore {
 
     @Override
     public void checkCurrentToken() {
-       this.authenticatedPrincipal = checkPrincipalFromCookie();
+        this.authenticatedPrincipal = checkPrincipalFromCookie();
     }
 
     @Override
@@ -71,6 +72,9 @@ public class JettyCookieTokenStore implements AdapterTokenStore {
             securityContext.setCurrentRequestInfo(deployment, this);
 
             request.setAttribute(KeycloakSecurityContext.class.getName(), securityContext);
+            JettyRequestAuthenticator jettyAuthenticator = (JettyRequestAuthenticator) authenticator;
+            KeycloakPrincipal<RefreshableKeycloakSecurityContext> principal = AdapterUtils.createPrincipal(deployment, securityContext);
+            jettyAuthenticator.principal = principal;
             return true;
         } else {
             return false;
@@ -79,7 +83,7 @@ public class JettyCookieTokenStore implements AdapterTokenStore {
 
     @Override
     public void saveAccountInfo(OidcKeycloakAccount account) {
-        RefreshableKeycloakSecurityContext securityContext = (RefreshableKeycloakSecurityContext)account.getKeycloakSecurityContext();
+        RefreshableKeycloakSecurityContext securityContext = (RefreshableKeycloakSecurityContext) account.getKeycloakSecurityContext();
         CookieTokenStore.setTokenCookie(deployment, facade, securityContext);
     }
 
