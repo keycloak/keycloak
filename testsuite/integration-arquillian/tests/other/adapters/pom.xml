@@ -95,7 +95,6 @@
         <adapter.config.bundled>true</adapter.config.bundled>
         <examples.basedir>${keycloak-parent.basedir}/examples</examples.basedir>
         <exclude.test>-</exclude.test>
-        <exclude.cors.tests>**/cors/*Test.java</exclude.cors.tests>
     </properties>
 
     <modules>
@@ -398,25 +397,6 @@
                     </plugins>
                 </pluginManagement>
             </build>
-        </profile>
-        <profile>
-            <id>Include CORS tests</id>
-            <!--
-            If you want to run CORS tests it is necessary to put
-
-            127.0.0.1 localhost-auth
-            127.0.0.1 localhost-db
-
-            to your /etc/hosts file
-            -->
-            <activation>
-                <property>
-                    <name>includeCorsTests</name>
-                </property>
-            </activation>
-            <properties>
-                <exclude.cors.tests>-</exclude.cors.tests>
-            </properties>
         </profile>
     </profiles>
 
