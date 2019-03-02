@@ -16,7 +16,6 @@
  */
 package org.keycloak.adapters.installed;
 
-import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.KeycloakDeploymentBuilder;
@@ -33,7 +32,11 @@ import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
 import javax.ws.rs.client.Client;
+import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Form;
@@ -41,10 +44,14 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.io.*;
 import java.nio.file.Paths;
+import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.security.cert.X509Certificate;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.KeySpec;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 /**
  * All kcinit commands that take input ask for
@@ -622,7 +629,29 @@ public class KcinitDriver {
     }
 
     public Client getHttpClient() {
-        return new ResteasyClientBuilder().disableTrustManager().build();
+        TrustManager[] trustAllCerts = new TrustManager[]{
+                new X509TrustManager() {
+                    @Override
+                    public X509Certificate[] getAcceptedIssuers() {
+                        return new X509Certificate[0];
+                    }
+                    @Override
+                    public void checkServerTrusted(X509Certificate[] chain, String authType) {}
+                    @Override
+                    public void checkClientTrusted(X509Certificate[] chain, String authType) {}
+                }
+        };
+        try {
+            SSLContext ctx = SSLContext.getInstance("TLS");
+            ctx.init(null, trustAllCerts, new SecureRandom());
+
+            return ClientBuilder.newBuilder()
+                    .hostnameVerifier((hostname, session) -> true)
+                    .sslContext(ctx)
+                    .build();
+        } catch (NoSuchAlgorithmException | KeyManagementException ex) {
+            throw new RuntimeException(ex);
+        }
     }
 
     public void login() throws Exception {
