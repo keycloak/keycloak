@@ -27,8 +27,14 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>keycloak-installed-adapter</artifactId>
+    <packaging>bundle</packaging>
     <name>Keycloak Installed Application</name>
     <description/>
+
+    <properties>
+        <!-- compile issues with v2.3.7 -->
+        <osgi.bundle.plugin.version>4.1.0</osgi.bundle.plugin.version>
+    </properties>
 
     <dependencies>
         <dependency>
@@ -44,12 +50,22 @@
             <artifactId>keycloak-adapter-core</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-authz-client</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
             <groupId>org.bouncycastle</groupId>
             <artifactId>bcprov-jdk15on</artifactId>
         </dependency>
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
-            <artifactId>httpclient</artifactId>
+            <artifactId>httpclient-osgi</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpcore-osgi</artifactId>
+            <scope>runtime</scope>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
@@ -64,20 +80,19 @@
             <artifactId>jboss-logging</artifactId>
         </dependency>
         <dependency>
-            <!-- KEYCLOAK-8991 : Favor Jersey over Resteasy to support OSGi clients -->
+            <!-- KEYCLOAK-8991 : Favor Jersey over Resteasy to support OSGi-based Keycloak clients -->
             <groupId>org.glassfish.jersey.core</groupId>
             <artifactId>jersey-client</artifactId>
         </dependency>
-        <dependency>
-            <groupId>org.glassfish.jersey.media</groupId>
-            <artifactId>jersey-media-json-jackson</artifactId>
-            <scope>runtime</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.glassfish.jersey.media</groupId>
-            <artifactId>jersey-media-multipart</artifactId>
-            <scope>runtime</scope>
-        </dependency>
     </dependencies>
 
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.felix</groupId>
+                <artifactId>maven-bundle-plugin</artifactId>
+                <extensions>true</extensions>
+            </plugin>
+        </plugins>
+    </build>
 </project>
