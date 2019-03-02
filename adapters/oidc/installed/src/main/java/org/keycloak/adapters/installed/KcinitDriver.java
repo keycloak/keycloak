@@ -629,6 +629,7 @@ public class KcinitDriver {
     }
 
     public Client getHttpClient() {
+        // KEYCLOAK-8991 : no Resteasy dependency (does not provide OSGi meta data) to support OSGi-based Keycloak clients
         TrustManager[] trustAllCerts = new TrustManager[]{
                 new X509TrustManager() {
                     @Override
