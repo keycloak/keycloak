@@ -17,8 +17,6 @@
 
 package org.keycloak.adapters.installed;
 
-import org.jboss.resteasy.client.jaxrs.ResteasyClient;
-import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.adapters.KeycloakDeployment;
@@ -31,6 +29,9 @@ import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.IDToken;
 
+import javax.net.ssl.*;
+import javax.ws.rs.client.Client;
+import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.Form;
 import javax.ws.rs.core.HttpHeaders;
@@ -41,6 +42,10 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.security.cert.X509Certificate;
 import java.util.Locale;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -76,7 +81,7 @@ public class KeycloakInstalled {
     private Locale locale;
     private HttpResponseWriter loginResponseWriter;
     private HttpResponseWriter logoutResponseWriter;
-    private ResteasyClient resteasyClient;
+    private Client restClient;
     Pattern callbackPattern = Pattern.compile("callback\\s*=\\s*\"([^\"]+)\"");
     Pattern paramPattern = Pattern.compile("param=\"([^\"]+)\"\\s+label=\"([^\"]+)\"\\s+mask=(\\S+)");
     Pattern codePattern = Pattern.compile("code=([^&]+)");
@@ -111,8 +116,8 @@ public class KeycloakInstalled {
         this.logoutResponseWriter = logoutResponseWriter;
     }
 
-    public void setResteasyClient(ResteasyClient resteasyClient) {
-        this.resteasyClient = resteasyClient;
+    public void setRestClient(Client restClient) {
+        this.restClient = restClient;
     }
 
     public Locale getLocale() {
@@ -396,7 +401,7 @@ public class KeycloakInstalled {
                 .queryParam("display", "console")
                 .queryParam(OAuth2Constants.SCOPE, OAuth2Constants.SCOPE_OPENID)
                 .build().toString();
-        ResteasyClient client = createResteasyClient();
+        Client client = createRestClient();
         try {
             //System.err.println("initial request");
             Response response = client.target(authUrl).request().get();
@@ -451,7 +456,7 @@ public class KeycloakInstalled {
                     }
                     response.close();
                     client.close();
-                    client = createResteasyClient();
+                    client = createRestClient();
                     response = client.target(callback).request().post(Entity.form(form));
                 } else if (response.getStatus() == 302) {
                     int redirectCount = 0;
@@ -461,7 +466,7 @@ public class KeycloakInstalled {
                         if (!m.find()) {
                             response.close();
                             client.close();
-                            client = createResteasyClient();
+                            client = createRestClient();
                             response = client.target(location).request().get();
                         } else {
                             response.close();
@@ -488,21 +493,39 @@ public class KeycloakInstalled {
         }
     }
 
-    protected ResteasyClient getResteasyClient() {
-        if (this.resteasyClient == null) {
-            this.resteasyClient = createResteasyClient();
+    protected Client getRestClient() {
+        if (this.restClient == null) {
+            this.restClient = createRestClient();
         }
-        return this.resteasyClient;
+        return this.restClient;
     }
 
-    protected ResteasyClient createResteasyClient() {
-        return new ResteasyClientBuilder()
-                .connectionCheckoutTimeout(1, TimeUnit.HOURS)
-                .connectionTTL(1, TimeUnit.HOURS)
-                .socketTimeout(1, TimeUnit.HOURS)
-                .disableTrustManager().build();
-    }
+    protected Client createRestClient() {
+        TrustManager[] trustAllCerts = new TrustManager[]{
+                new X509TrustManager() {
+                    @Override
+                    public X509Certificate[] getAcceptedIssuers() {
+                        return new X509Certificate[0];
+                    }
+                    @Override
+                    public void checkServerTrusted(X509Certificate[] chain, String authType) {}
+                    @Override
+                    public void checkClientTrusted(X509Certificate[] chain, String authType) {}
+                }
+        };
+        try {
+            SSLContext ctx = SSLContext.getInstance("TLS");
+            ctx.init(null, trustAllCerts, new SecureRandom());
 
+            return ClientBuilder.newBuilder()
+                    .readTimeout(1, TimeUnit.HOURS)
+                    .hostnameVerifier((hostname, session) -> true)
+                    .sslContext(ctx)
+                    .build();
+        } catch (NoSuchAlgorithmException | KeyManagementException ex) {
+            throw new RuntimeException(ex);
+        }
+    }
 
     public String getTokenString() throws VerificationException, IOException, ServerRequest.HttpFailure {
         return tokenString;
