@@ -80,9 +80,8 @@
             <artifactId>jboss-logging</artifactId>
         </dependency>
         <dependency>
-            <!-- KEYCLOAK-8991 : Favor Jersey over Resteasy to support OSGi-based Keycloak clients -->
-            <groupId>org.glassfish.jersey.core</groupId>
-            <artifactId>jersey-client</artifactId>
+            <groupId>org.jboss.spec.javax.ws.rs</groupId>
+            <artifactId>jboss-jaxrs-api_2.1_spec</artifactId>
         </dependency>
     </dependencies>
 
