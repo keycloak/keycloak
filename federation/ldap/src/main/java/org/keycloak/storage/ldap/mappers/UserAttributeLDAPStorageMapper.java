@@ -278,7 +278,7 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
                     if (UserModel.REQUIRED_ACTIONS.equalsIgnoreCase(userModelAttrName)) {
                         // TODO: Should this be a serialised from a String > Set<String>?
                         Set<String> requiredActions = ldapUser.getAttributeAsSet(ldapAttrName);
-                        return requiredActions == null ? Collections.EMPTY_SET : requiredActions;
+                        return requiredActions == null ? new HashSet<>() : requiredActions;
                     } else {
                         return super.getRequiredActions();
                     }
