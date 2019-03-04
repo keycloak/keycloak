@@ -78,6 +78,7 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
 
     public static final String USER_MODEL_ATTRIBUTE = "user.model.attribute";
     public static final String LDAP_ATTRIBUTE = "ldap.attribute";
+    public static final String LDAP_DEFAULT_VALUE = "ldap.default.value";
     public static final String READ_ONLY = "read.only";
     public static final String ALWAYS_READ_VALUE_FROM_LDAP = "always.read.value.from.ldap";
     public static final String IS_MANDATORY_IN_LDAP = "is.mandatory.in.ldap";
@@ -130,6 +131,11 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
         String ldapAttrName = mapperModel.getConfig().getFirst(LDAP_ATTRIBUTE);
         boolean isMandatoryInLdap = parseBooleanParameter(mapperModel, IS_MANDATORY_IN_LDAP);
 
+        String ldapAttrDefaultValue = mapperModel.getConfig().getFirst(LDAP_DEFAULT_VALUE);
+        if (ldapAttrDefaultValue == null || ldapAttrDefaultValue.length() == 0) {
+            ldapAttrDefaultValue = LDAPConstants.EMPTY_ATTRIBUTE_VALUE;
+        }
+
         Property<Object> userModelProperty = userModelProperties.get(userModelAttrName.toLowerCase());
 
         if (userModelProperty != null) {
@@ -139,7 +145,7 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
 
             if (attrValue == null) {
                 if (isMandatoryInLdap) {
-                    ldapUser.setSingleAttribute(ldapAttrName, LDAPConstants.EMPTY_ATTRIBUTE_VALUE);
+                    ldapUser.setSingleAttribute(ldapAttrName, ldapAttrDefaultValue);
                 } else {
                     ldapUser.setAttribute(ldapAttrName, new LinkedHashSet<String>());
                 }
@@ -159,7 +165,7 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
 
             if (attrValues.size() == 0) {
                 if (isMandatoryInLdap) {
-                    ldapUser.setSingleAttribute(ldapAttrName, LDAPConstants.EMPTY_ATTRIBUTE_VALUE);
+                    ldapUser.setSingleAttribute(ldapAttrName, ldapAttrDefaultValue);
                 } else {
                     ldapUser.setAttribute(ldapAttrName, new LinkedHashSet<String>());
                 }
