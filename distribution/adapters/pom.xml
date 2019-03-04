@@ -57,6 +57,7 @@
                 <module>jetty93-adapter-zip</module>
                 <module>jetty94-adapter-zip</module>
                 <module>wf8-adapter</module>
+                <module>js-adapter-npm-zip</module>
             </modules>
         </profile>
     </profiles>
