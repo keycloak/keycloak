@@ -15,9 +15,9 @@ echo "--------------------------------------------------------------------------
 echo "Deploying:"
 echo ""
 
-mvn -Pjboss-release -DretryFailedDeploymentCount=10 -DskipTests -DstagingDescription="Keycloak $VERSION release" deploy
+mvn -Pjboss-release,nexus-staging -DretryFailedDeploymentCount=10 -DskipTests deploy
 
-mvn nexus-staging:release -DstagingDescription="Keycloak $VERSION release"
+mvn nexus-staging:release
 
 
 echo "------------------------------------------------------------------------------------------------------------"
