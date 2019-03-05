@@ -15,9 +15,7 @@ echo "--------------------------------------------------------------------------
 echo "Deploying:"
 echo ""
 
-mvn -Pjboss-release,nexus-staging -DretryFailedDeploymentCount=10 -DskipTests deploy
-
-mvn nexus-staging:release
+mvn -Pjboss-release,nexus-staging -DretryFailedDeploymentCount=10 -DskipTests -DautoReleaseAfterClose=true deploy
 
 
 echo "------------------------------------------------------------------------------------------------------------"
