@@ -752,6 +752,8 @@ public class UserStorageTest extends AbstractAuthTest {
 
             Assert.assertEquals(1, UserMapStorage.allocations.get());
             Assert.assertEquals(0, UserMapStorage.closings.get());
+
+            session.users().removeUser(realm,session.users().getUserByUsername("memuser",realm));
         });
 
         testingClient.server().run(session -> {
