@@ -106,4 +106,8 @@ public class MailServer {
         }
         return null;
     }
+
+    public static MimeMessage[] getReceivedMessages() {
+        return greenMail.getReceivedMessages();
+    }
 }
