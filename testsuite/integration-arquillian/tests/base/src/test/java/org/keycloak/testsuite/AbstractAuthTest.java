@@ -108,27 +108,6 @@ public abstract class AbstractAuthTest extends AbstractKeycloakTest {
         }
     }
 
-    public static UserRepresentation createUserRepresentation(String username, String email, String firstName, String lastName, boolean enabled) {
-        UserRepresentation user = new UserRepresentation();
-        user.setUsername(username);
-        user.setEmail(email);
-        user.setFirstName(firstName);
-        user.setLastName(lastName);
-        user.setEnabled(enabled);
-        return user;
-    }
-
-    public static UserRepresentation createUserRepresentation(String username, String email, String firstName, String lastName, boolean enabled, String password) {
-        UserRepresentation user = createUserRepresentation(username, email, firstName, lastName, enabled);
-        setPasswordFor(user, password);
-        return user;
-    }
-
-    public static UserRepresentation createUserRepresentation(String username, String password) {
-        UserRepresentation user = createUserRepresentation(username, null, null, null, true, password);
-        return user;
-    }
-
     protected void deleteAllCookiesForTestRealm() {
         deleteAllCookiesForRealm(testRealmAccountPage);
     }

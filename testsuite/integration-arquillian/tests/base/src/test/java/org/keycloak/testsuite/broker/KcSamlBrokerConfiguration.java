@@ -175,6 +175,7 @@ public class KcSamlBrokerConfiguration implements BrokerConfiguration {
             .name("broker-app")
             .secret("broker-app-secret")
             .enabled(true)
+            .directAccessGrants()
             .addRedirectUri(getAuthRoot(suiteContext) + "/auth/*")
             .baseUrl(getAuthRoot(suiteContext) + "/auth/realms/" + REALM_CONS_NAME + "/app")
             .build()
