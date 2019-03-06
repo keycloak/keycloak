@@ -210,7 +210,6 @@
         <module>integration</module>
         <module>adapters</module>
         <module>authz</module>
-        <module>examples</module>
         <module>misc</module>
     </modules>
 
@@ -1710,6 +1709,15 @@
             <modules>
                 <module>testsuite</module>
             </modules>
+        </profile>
+
+        <profile>
+            <id>examples</id>
+            <activation>
+                <property>
+                    <name>!skipExamples</name>
+                </property>
+            </activation>
         </profile>
 
         <profile>

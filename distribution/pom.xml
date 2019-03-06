@@ -47,7 +47,7 @@
 
     <profiles>
         <profile>
-            <id>jboss-release</id>
+            <id>distribution-downloads</id>
             <modules>
                 <module>api-docs-dist</module>
                 <module>examples-dist</module>
