@@ -8,14 +8,14 @@ echo "--------------------------------------------------------------------------
 echo "Building:"
 echo ""
 
-mvn -Pjboss-release -DskipTests clean install
+mvn -Pjboss-release -DskipTests -DskipTestsuite clean install
 
 
 echo "------------------------------------------------------------------------------------------------------------"
 echo "Deploying:"
 echo ""
 
-mvn -Pjboss-release,nexus-staging -DretryFailedDeploymentCount=10 -DskipTests -DautoReleaseAfterClose=true deploy
+mvn -Pjboss-release,nexus-staging -DretryFailedDeploymentCount=10 -DskipTests -DskipTestsuite -DautoReleaseAfterClose=true deploy
 
 
 echo "------------------------------------------------------------------------------------------------------------"

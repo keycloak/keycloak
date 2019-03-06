@@ -30,17 +30,6 @@
     <artifactId>keycloak-examples-saml-parent</artifactId>
     <packaging>pom</packaging>
 
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-deploy-plugin</artifactId>
-                <configuration>
-                    <skip>true</skip>
-                </configuration>
-            </plugin>
-        </plugins>
-    </build>
     <modules>
         <module>post-with-signature</module>
         <module>post-with-encryption</module>
