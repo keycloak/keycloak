@@ -1,7 +1,8 @@
 #!/bin/bash -e
 
 DIR="$PWD"
-VERSION=`./get-version.sh`
+source release-details
+
 echo "Version: $VERSION"
 
 echo "------------------------------------------------------------------------------------------------------------"
@@ -15,7 +16,8 @@ echo "--------------------------------------------------------------------------
 echo "Deploying:"
 echo ""
 
-mvn -Pjboss-release,nexus-staging -DretryFailedDeploymentCount=10 -DskipTests -DskipTestsuite -DskipExamples -DautoReleaseAfterClose=true deploy
+mvn -Pjboss-release,nexus-staging -DretryFailedDeploymentCount=10 -DskipTests -DskipTestsuite -DskipExamples deploy
+#mvn -Pjboss-release,nexus-staging -DretryFailedDeploymentCount=10 -DskipTests -DskipTestsuite -DskipExamples -DautoReleaseAfterClose=true deploy
 
 
 echo "------------------------------------------------------------------------------------------------------------"
@@ -31,7 +33,7 @@ echo ""
 
 TMP=`mktemp -d`
 cd $TMP
-unzip $DIR/keycloak/distribution/adapters/js-adapter-npm-zip/target/keycloak-js-adapter-npm-dist-$VERSION.zip
+unzip $DIR/distribution/adapters/js-adapter-npm-zip/target/keycloak-js-adapter-npm-dist-$VERSION.zip
 cd keycloak-js-adapter-npm-dist-$VERSION
 
 npm publish
