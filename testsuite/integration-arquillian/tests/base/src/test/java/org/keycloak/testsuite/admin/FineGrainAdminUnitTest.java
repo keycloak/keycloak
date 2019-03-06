@@ -48,10 +48,10 @@ import org.keycloak.services.resources.admin.permissions.GroupPermissionManageme
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
-import org.keycloak.testsuite.arquillian.undertow.TLSUtils;
 import org.keycloak.testsuite.auth.page.AuthRealm;
 import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
 import org.keycloak.testsuite.util.AdminClientUtil;
+import org.keycloak.testsuite.utils.tls.TLSUtils;
 
 import javax.ws.rs.ClientErrorException;
 import javax.ws.rs.core.Response;
@@ -893,10 +893,10 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
         String exchanged = oauth.doTokenExchange("master", token, "admin-cli", "kcinit", "password").getAccessToken();
         Assert.assertNotNull(exchanged);
 
-        Keycloak client = Keycloak.getInstance(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth",
-                AuthRealm.MASTER, Constants.ADMIN_CLI_CLIENT_ID, exchanged, TLSUtils.initializeTLS());
-
-        Assert.assertNotNull(client.realm("master").roles().get("offline_access"));
+        try (Keycloak client = Keycloak.getInstance(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth",
+                AuthRealm.MASTER, Constants.ADMIN_CLI_CLIENT_ID, exchanged, TLSUtils.initializeTLS())) {
+            Assert.assertNotNull(client.realm("master").roles().get("offline_access"));
+        }
     }
 
     @Test
@@ -949,42 +949,45 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
             }
         });
 
-        Keycloak client = Keycloak.getInstance(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth",
-                "test", "customer-a-manager", "password", Constants.ADMIN_CLI_CLIENT_ID, TLSUtils.initializeTLS());
+        try (Keycloak client = Keycloak.getInstance(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth",
+                "test", "customer-a-manager", "password", Constants.ADMIN_CLI_CLIENT_ID, TLSUtils.initializeTLS())) {
 
-        List<UserRepresentation> result = client.realm("test").users().search(null, "test", null, null, -1, 20);
+            List<UserRepresentation> result = client.realm("test").users().search(null, "test", null, null, -1, 20);
 
-        Assert.assertEquals(20, result.size());
-        Assert.assertThat(result, Matchers.everyItem(Matchers.hasProperty("username", Matchers.startsWith("b"))));
+            Assert.assertEquals(20, result.size());
+            Assert.assertThat(result, Matchers.everyItem(Matchers.hasProperty("username", Matchers.startsWith("b"))));
 
-        result = client.realm("test").users().search(null, "test", null, null, 20, 40);
+            result = client.realm("test").users().search(null, "test", null, null, 20, 40);
 
-        Assert.assertEquals(0, result.size());
+            Assert.assertEquals(0, result.size());
+        }
 
-        client = Keycloak.getInstance(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth",
-                "test", "regular-admin-user", "password", Constants.ADMIN_CLI_CLIENT_ID, TLSUtils.initializeTLS());
+        try (Keycloak client = Keycloak.getInstance(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth",
+                "test", "regular-admin-user", "password", Constants.ADMIN_CLI_CLIENT_ID, TLSUtils.initializeTLS())) {
 
-        result = client.realm("test").users().search(null, "test", null, null, -1, 20);
+            List<UserRepresentation> result = client.realm("test").users().search(null, "test", null, null, -1, 20);
 
-        Assert.assertEquals(20, result.size());
-        Assert.assertThat(result, Matchers.everyItem(Matchers.hasProperty("username", Matchers.startsWith("a"))));
+            Assert.assertEquals(20, result.size());
+            Assert.assertThat(result, Matchers.everyItem(Matchers.hasProperty("username", Matchers.startsWith("a"))));
 
-        client.realm("test").users().search(null, null, null, null, -1, -1);
+            client.realm("test").users().search(null, null, null, null, -1, -1);
 
-        Assert.assertEquals(20, result.size());
-        Assert.assertThat(result, Matchers.everyItem(Matchers.hasProperty("username", Matchers.startsWith("a"))));
+            Assert.assertEquals(20, result.size());
+            Assert.assertThat(result, Matchers.everyItem(Matchers.hasProperty("username", Matchers.startsWith("a"))));
+        }
 
-        client = Keycloak.getInstance(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth",
-                "test", "customer-a-manager", "password", Constants.ADMIN_CLI_CLIENT_ID, TLSUtils.initializeTLS());
+        try (Keycloak client = Keycloak.getInstance(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth",
+                "test", "customer-a-manager", "password", Constants.ADMIN_CLI_CLIENT_ID, TLSUtils.initializeTLS())) {
 
-        result = client.realm("test").users().search(null, null, null, null, -1, 20);
+            List<UserRepresentation> result = client.realm("test").users().search(null, null, null, null, -1, 20);
 
-        Assert.assertEquals(20, result.size());
-        Assert.assertThat(result, Matchers.everyItem(Matchers.hasProperty("username", Matchers.startsWith("b"))));
+            Assert.assertEquals(20, result.size());
+            Assert.assertThat(result, Matchers.everyItem(Matchers.hasProperty("username", Matchers.startsWith("b"))));
 
-        result = client.realm("test").users().search("a", -1, 20, false);
+            result = client.realm("test").users().search("a", -1, 20, false);
 
-        Assert.assertEquals(0, result.size());
+            Assert.assertEquals(0, result.size());
+        }
     }
 
 }

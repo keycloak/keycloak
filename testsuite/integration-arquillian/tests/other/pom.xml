@@ -24,7 +24,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian-tests</artifactId>
-        <version>4.8.3.Final-SNAPSHOT</version>
+        <version>5.0.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>integration-arquillian-tests-other</artifactId>
@@ -42,10 +42,6 @@
         <module>springboot-tests</module>
     </modules>
 
-    <properties>
-        <skip.unpack.test.resources>false</skip.unpack.test.resources>
-    </properties>
-
     <build>
         <pluginManagement>
             <plugins>
@@ -59,7 +55,6 @@
                                 <goal>unpack</goal>
                             </goals>
                             <configuration>
-                                <skip>${skip.unpack.test.resources}</skip>
                                 <artifactItems>
                                     <artifactItem>
                                         <groupId>org.keycloak.testsuite</groupId>

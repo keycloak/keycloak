@@ -56,22 +56,24 @@ public class UmaDiscoveryDocumentTest extends AbstractKeycloakTest {
         URI oidcDiscoveryUri = RealmsResource.wellKnownProviderUrl(builder).build("test", UmaWellKnownProviderFactory.PROVIDER_ID);
         WebTarget oidcDiscoveryTarget = client.target(oidcDiscoveryUri);
 
-        Response response = oidcDiscoveryTarget.request().get();
+        try (Response response = oidcDiscoveryTarget.request().get()) {
+            assertEquals("no-cache, must-revalidate, no-transform, no-store", response.getHeaders().getFirst("Cache-Control"));
 
-        assertEquals("no-cache, must-revalidate, no-transform, no-store", response.getHeaders().getFirst("Cache-Control"));
 
-        UmaConfiguration configuration = response.readEntity(UmaConfiguration.class);
+            UmaConfiguration configuration = response.readEntity(UmaConfiguration.class);
 
-        assertEquals(configuration.getAuthorizationEndpoint(), OIDCLoginProtocolService.authUrl(UriBuilder.fromUri(OAuthClient.AUTH_SERVER_ROOT)).build("test").toString());
-        assertEquals(configuration.getTokenEndpoint(), oauth.getAccessTokenUrl());
-        assertEquals(configuration.getJwksUri(), oauth.getCertsUrl("test"));
-        assertEquals(configuration.getTokenIntrospectionEndpoint(), oauth.getTokenIntrospectionUrl());
 
-        String registrationUri = UriBuilder
-                .fromUri(OAuthClient.AUTH_SERVER_ROOT)
-                .path(RealmsResource.class).path(RealmsResource.class, "getRealmResource").build(realmsResouce().realm("test").toRepresentation().getRealm()).toString();
+            assertEquals(configuration.getAuthorizationEndpoint(), OIDCLoginProtocolService.authUrl(UriBuilder.fromUri(OAuthClient.AUTH_SERVER_ROOT)).build("test").toString());
+            assertEquals(configuration.getTokenEndpoint(), oauth.getAccessTokenUrl());
+            assertEquals(configuration.getJwksUri(), oauth.getCertsUrl("test"));
+            assertEquals(configuration.getTokenIntrospectionEndpoint(), oauth.getTokenIntrospectionUrl());
 
-        assertEquals(registrationUri + "/authz/protection/permission", configuration.getPermissionEndpoint().toString());
-        assertEquals(registrationUri + "/authz/protection/resource_set", configuration.getResourceRegistrationEndpoint().toString());
+            String registrationUri = UriBuilder
+                    .fromUri(OAuthClient.AUTH_SERVER_ROOT)
+                    .path(RealmsResource.class).path(RealmsResource.class, "getRealmResource").build(realmsResouce().realm("test").toRepresentation().getRealm()).toString();
+
+            assertEquals(registrationUri + "/authz/protection/permission", configuration.getPermissionEndpoint().toString());
+            assertEquals(registrationUri + "/authz/protection/resource_set", configuration.getResourceRegistrationEndpoint().toString());
+        }
     }
 }

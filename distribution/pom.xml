@@ -20,7 +20,7 @@
     <parent>
         <artifactId>keycloak-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>4.8.3.Final-SNAPSHOT</version>
+        <version>5.0.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -51,7 +51,6 @@
             <modules>
                 <module>api-docs-dist</module>
                 <module>examples-dist</module>
-                <module>proxy-dist</module>
                 <module>downloads</module>
             </modules>
         </profile>

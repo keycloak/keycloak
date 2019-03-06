@@ -274,7 +274,7 @@ public class ConflictingScopePermissionTest extends AbstractAuthzTest {
 
         representation.setConfig(config);
 
-        client.authorization().policies().create(representation);
+        client.authorization().policies().create(representation).close();
     }
 
     private void createResourcePermission(String name, String resourceName, List<String> policies, ClientResource client) throws IOException {
@@ -284,7 +284,7 @@ public class ConflictingScopePermissionTest extends AbstractAuthzTest {
         representation.addResource(resourceName);
         representation.addPolicy(policies.toArray(new String[policies.size()]));
 
-        client.authorization().permissions().resource().create(representation);
+        client.authorization().permissions().resource().create(representation).close();
     }
 
     private void createScopePermission(String name, String resourceName, List<String> scopes, List<String> policies, ClientResource client) throws IOException {
@@ -300,7 +300,7 @@ public class ConflictingScopePermissionTest extends AbstractAuthzTest {
         representation.addScope(scopes.toArray(new String[scopes.size()]));
         representation.addPolicy(policies.toArray(new String[policies.size()]));
 
-        authorization.permissions().scope().create(representation);
+        authorization.permissions().scope().create(representation).close();
     }
 
     private AuthzClient getAuthzClient() {

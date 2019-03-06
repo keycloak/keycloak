@@ -24,7 +24,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian</artifactId>
-        <version>4.8.3.Final-SNAPSHOT</version>
+        <version>5.0.0-SNAPSHOT</version>
     </parent>
 
     <packaging>pom</packaging>
@@ -146,6 +146,7 @@
         <examples.home>${project.build.directory}/examples</examples.home>
         <examples.basedir>${keycloak-parent.basedir}/examples</examples.basedir> <!--keycloak/examples directory-->
         <examples.version.suffix>${project.version}</examples.version.suffix>
+        <skip.copy.example.wars>false</skip.copy.example.wars>
 
         <browser>htmlUnit</browser>
         <webdriverDownloadBinaries>true</webdriverDownloadBinaries>
@@ -247,6 +248,7 @@
                                 <goal>copy</goal>
                             </goals>
                             <configuration>
+                                <skip>${skip.copy.example.wars}</skip>
                                 <artifactItems>
                                     <artifactItem>
                                         <groupId>org.keycloak.testsuite</groupId>

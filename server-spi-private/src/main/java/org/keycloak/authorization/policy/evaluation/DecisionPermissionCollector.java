@@ -78,7 +78,7 @@ public class DecisionPermissionCollector extends AbstractDecisionCollector {
                                 grantedScopes.add(scope);
                                 // we need to grant any scope granted by a permission in case it is not explicitly
                                 // associated with the resource. For instance, resources inheriting scopes from parent resources.
-                                if (!resource.getScopes().contains(scope)) {
+                                if (resource != null && !resource.getScopes().contains(scope)) {
                                     deniedScopes.remove(scope);
                                 }
                             }
@@ -114,7 +114,13 @@ public class DecisionPermissionCollector extends AbstractDecisionCollector {
                 }
             } else {
                 for (Result.PolicyResult userManagedPermission : userManagedPermissions) {
-                    grantedScopes.addAll(userManagedPermission.getPolicy().getScopes());
+                    Set<Scope> scopes = new HashSet<>(userManagedPermission.getPolicy().getScopes());
+
+                    if (!requestedScopes.isEmpty()) {
+                        scopes.retainAll(requestedScopes);
+                    }
+
+                    grantedScopes.addAll(scopes);
                 }
 
                 if (grantedScopes.isEmpty() && !resource.getScopes().isEmpty()) {

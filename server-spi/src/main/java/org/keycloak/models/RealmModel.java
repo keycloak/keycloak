@@ -34,6 +34,7 @@ import java.util.*;
 public interface RealmModel extends RoleContainerModel {
     interface RealmCreationEvent extends ProviderEvent {
         RealmModel getCreatedRealm();
+        KeycloakSession getKeycloakSession();
     }
 
     interface RealmPostCreateEvent extends ProviderEvent {

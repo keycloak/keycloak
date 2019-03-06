@@ -58,4 +58,8 @@ public interface RealmPermissionEvaluator {
     boolean canViewEvents();
 
     void requireViewEvents();
+
+    void requireViewRequiredActions();
+
+    void requireViewAuthenticationFlows();
 }

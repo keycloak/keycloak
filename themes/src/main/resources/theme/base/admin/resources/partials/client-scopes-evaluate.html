@@ -55,10 +55,13 @@
                     <div class="col-md-4">
                         <label class="control-label" for="available">{{:: 'client-scopes.evaluate.scopes.available' | translate}}</label>
                         <kc-tooltip>{{:: 'client-scopes.evaluate.scopes.available.tooltip' | translate}}</kc-tooltip>
-                        <select id="available" class="form-control" multiple size="5"
+                        <select id="available" class="form-control overflow-select" multiple size="5"
                                 ng-multiple="true"
-                                ng-model="selectedClientScopes"
-                                ng-options="r.name for r in availableClientScopes | orderBy:'toString()'">
+                                ng-model="selectedClientScopes">
+                            <option ng-repeat="r in availableClientScopes | orderBy:'name'"
+                                    value="{{r}}" title="{{r.name}}">
+                                {{r.name}}
+                            </option>
                         </select>
                         <button ng-disabled="selectedClientScopes.length == 0" class="btn btn-default" type="submit" ng-click="addAppliedClientScope()">
                             {{:: 'add-selected' | translate}} <i class="fa fa-angle-double-right"></i>
@@ -67,10 +70,13 @@
                     <div class="col-md-4">
                         <label class="control-label" for="assigned">{{:: 'client-scopes.evaluate.scopes.assigned' | translate}}</label>
                         <kc-tooltip>{{:: 'client-scopes.evaluate.scopes.assigned.tooltip' | translate}}</kc-tooltip>
-                        <select id="assigned" class="form-control" multiple size=5
+                        <select id="assigned" class="form-control overflow-select" multiple size=5
                                 ng-multiple="true"
-                                ng-model="selectedDefClientScopes"
-                                ng-options="r.name for r in assignedClientScopes | orderBy:'toString()'">
+                                ng-model="selectedDefClientScopes">
+                            <option ng-repeat="r in assignedClientScopes | orderBy:'name'"
+                                    value="{{r}}" title="{{r.name}}">
+                                {{r.name}}
+                            </option>
                         </select>
                         <button ng-disabled="selectedDefClientScopes.length == 0" class="btn btn-default" type="submit" ng-click="deleteAppliedClientScope()">
                             <i class="fa fa-angle-double-left"></i> {{:: 'remove-selected' | translate}}
@@ -79,10 +85,13 @@
                     <div class="col-md-4">
                         <label class="control-label" for="assigned">{{:: 'client-scopes.evaluate.scopes.effective' | translate}}</label>
                         <kc-tooltip>{{:: 'client-scopes.evaluate.scopes.effective.tooltip' | translate}}</kc-tooltip>
-                        <select id="effective" class="form-control" multiple size=5
+                        <select id="effective" class="form-control overflow-select" multiple size=5
                                 disabled="true"
-                                ng-model="dummymodel"
-                                ng-options="r.name for r in effectiveClientScopes | orderBy:'toString()'">
+                                ng-model="dummymodel">
+                            <option ng-repeat="r in effectiveClientScopes | orderBy:'name'"
+                                    value="{{r}}" title="{{r.name}}">
+                                {{r.name}}
+                            </option>
                         </select>
                     </div>
                 </div>
@@ -169,23 +178,29 @@
             <label class="col-md-2 control-label" class="control-label">{{:: 'realm-roles' | translate}}</label>
             <div class="col-md-10">
                 <div class="row">
-                    <div class="col-md-3">
+                    <div class="col-md-4">
                         <label class="control-label" for="available-realm-roles">{{:: 'client-scopes.evaluate.not-granted-roles' | translate}}</label>
                         <kc-tooltip>{{:: 'client-scopes.evaluate.not-granted-roles.tooltip' | translate}}</kc-tooltip>
 
-                        <select id="available-realm-roles" class="form-control" multiple size="5"
+                        <select id="available-realm-roles" class="form-control overflow-select" multiple size="5"
                                 disabled="true"
-                                ng-model="dummymodel1"
-                                ng-options="r.name for r in notGrantedRealmRoles | orderBy:'name'">
+                                ng-model="dummymodel1">
+                            <option ng-repeat="r in notGrantedRealmRoles | orderBy:'name'"
+                                    value="{{r}}" title="{{r.name}}">
+                                {{r.name}}
+                            </option>
                         </select>
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-4">
                         <label class="control-label" for="realm-composite">{{:: 'client-scopes.evaluate.granted-realm-effective-roles' | translate}}  </label>
                         <kc-tooltip>{{:: 'client-scopes.evaluate.granted-realm-effective-roles.tooltip' | translate}}</kc-tooltip>
-                        <select id="realm-composite" class="form-control" multiple size=5
+                        <select id="realm-composite" class="form-control overflow-select" multiple size=5
                                 disabled="true"
-                                ng-model="dummymodel2"
-                                ng-options="r.name for r in grantedRealmRoles | orderBy:'name'">
+                                ng-model="dummymodel2">
+                            <option ng-repeat="r in grantedRealmRoles | orderBy:'name'"
+                                    value="{{r}}" title="{{r.name}}">
+                                {{r.name}}
+                            </option>
                         </select>
                     </div>
                 </div>
@@ -203,22 +218,28 @@
                     <div class="col-md-4"><span class="text-muted">{{:: 'select-client-roles.tooltip' | translate}}</span></div>
                 </div>
                 <div class="row" data-ng-show="targetClient">
-                    <div class="col-md-3">
+                    <div class="col-md-4">
                         <label class="control-label" for="available-client">{{:: 'client-scopes.evaluate.not-granted-roles' | translate}}</label>
                         <kc-tooltip>{{:: 'client-scopes.evaluate.not-granted-roles.tooltip' | translate}}</kc-tooltip>
-                        <select id="available-client" class="form-control" multiple size="5"
+                        <select id="available-client" class="form-control overflow-select" multiple size="5"
                                 disabled="true"
-                                ng-model="dummymodel"
-                                ng-options="r.name for r in notGrantedClientRoles | orderBy:'name'">
+                                ng-model="dummymodel">
+                            <option ng-repeat="r in notGrantedClientRoles | orderBy:'name'"
+                                    value="{{r}}" title="{{r.name}}">
+                                {{r.name}}
+                            </option>
                         </select>
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-4">
                         <label class="control-label" for="client-composite">{{:: 'client-scopes.evaluate.granted-client-effective-roles' | translate}}</label>
                         <kc-tooltip>{{:: 'client-scopes.evaluate.granted-realm-effective-roles.tooltip' | translate}}</kc-tooltip>
-                        <select id="client-composite" class="form-control" multiple size=5
+                        <select id="client-composite" class="form-control overflow-select" multiple size=5
                                 disabled="true"
-                                ng-model="dummymodel"
-                                ng-options="r.name for r in grantedClientRoles | orderBy:'name'">
+                                ng-model="dummymodel">
+                            <option ng-repeat="r in grantedClientRoles | orderBy:'name'"
+                                    value="{{r}}" title="{{r.name}}">
+                                {{r.name}}
+                            </option>
                         </select>
                     </div>
                 </div>

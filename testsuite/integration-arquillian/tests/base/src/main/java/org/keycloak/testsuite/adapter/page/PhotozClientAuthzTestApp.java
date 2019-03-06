@@ -294,7 +294,7 @@ public class PhotozClientAuthzTestApp extends AbstractPageWithInjectedUrl {
 
     @Override
     public void navigateTo() {
-        driver.navigate().to(toString() + "/");
+        driver.navigate().to(toString());
         waitForPageToLoad();
     }
 

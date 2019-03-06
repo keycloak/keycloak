@@ -302,6 +302,13 @@ To compress the binary output with bzip add `-Dbzip=true` to the commandline.
 
 Results will be stored in folder: `tests/target/sar`.
 
+### JStat - JVM memory statistics
+
+To enable jstat monitoring use `-Pjstat` option.
+This will start a `jstat` process in each container with Wildfly-based service (Keycloak, Infinispan, Load balancer)
+and record the statistics in the `standalone/log/jstat-gc.log` file. These can be then collected by running the `mvn verify -Pcollect` operation.
+
+To enable creation of PNG charts based on the jstat output use `-Pgnuplot`.
 
 ## Developing tests in IntelliJ IDEA
 

@@ -327,7 +327,9 @@
                 <property name="adapterImplClass">org.keycloak.testsuite.arquillian.undertow.KeycloakOnUndertow</property>
                 <property name="bindAddress">localhost</property>
                 <property name="bindHttpPort">${auth.server.http.port}</property>
+                <property name="bindHttpsPort">${auth.server.https.port}</property>
                 <property name="bindHttpPortOffset">-79</property>
+                <property name="bindHttpsPortOffset">-79</property>
                 <property name="remoteMode">${undertow.remote}</property>
                 <property name="dataCenter">0</property>
                 <property name="keycloakConfigPropertyOverrides">{

@@ -85,6 +85,21 @@ TODO: Add info about Wildfly logging
     mvn -f testsuite/integration-arquillian/tests/base/pom.xml \
         -Dtest=org.keycloak.testsuite.adapter.**.*Test
 
+### Jetty
+
+At the moment we can run the testsuite with Jetty `9.1`, `9.2` and `9.4`. 
+Each version has its corresponding profile:
+
+* Jetty `9.1`: `app-server-jetty91`
+* Jetty `9.2`: `app-server-jetty92`
+* Jetty `9.4`: `app-server-jetty94`
+
+Here's how to run the tests with Jetty `9.4`:
+
+    mvn -f testsuite/integration-arquillian/tests/base/pom.xml \
+        -Papp-server-jetty94 \
+        -Dtest=org.keycloak.testsuite.adapter.**.*Test
+
 ### Wildfly
     
     # Run tests
@@ -260,8 +275,9 @@ This test will:
       -Dtest=MigrationTest \
       -Dmigration.mode=auto \
       -Djdbc.mvn.groupId=mysql \
-      -Djdbc.mvn.version=5.1.29 \
       -Djdbc.mvn.artifactId=mysql-connector-java \
+      -Djdbc.mvn.version=8.0.12 \
+      -Djdbc.mvn.version.legacy=5.1.38 \
       -Dkeycloak.connectionsJpa.url=jdbc:mysql://$DB_HOST/keycloak \
       -Dkeycloak.connectionsJpa.user=keycloak \
       -Dkeycloak.connectionsJpa.password=keycloak
@@ -269,7 +285,8 @@ This test will:
 The profile "test-7X-migration" indicates from which version you want to test migration. The valid values are:
 * test-70-migration - indicates migration from RHSSO 7.0 (Equivalent to Keycloak 1.9.8.Final)
 * test-71-migration - indicates migration from RHSSO 7.1 (Equivalent to Keycloak 2.5.5.Final)
-* test-72-migration - indicates migration from RHSSO 7.2 (Equivalent to Keycloak 3.4.3.Final)      
+* test-72-migration - indicates migration from RHSSO 7.2 (Equivalent to Keycloak 3.4.3.Final)
+* test-73-migration - indicates migration from RHSSO 7.3 (Equivalent to Keycloak 4.8.3.Final)
       
 ### DB migration test with manual mode
       
@@ -286,8 +303,9 @@ just exports the needed SQL into the script. This SQL script then needs to be ma
       -Dtest=MigrationTest \
       -Dmigration.mode=manual \
       -Djdbc.mvn.groupId=mysql \
-      -Djdbc.mvn.version=5.1.29 \
       -Djdbc.mvn.artifactId=mysql-connector-java \
+      -Djdbc.mvn.version=8.0.12 \
+      -Djdbc.mvn.version.legacy=5.1.38 \
       -Dkeycloak.connectionsJpa.url=jdbc:mysql://$DB_HOST/keycloak \
       -Dkeycloak.connectionsJpa.user=keycloak \
       -Dkeycloak.connectionsJpa.password=keycloak
@@ -528,8 +546,7 @@ After you build the distribution, you run this command to setup servers and run 
     -Dauth.server.log.check=false \
     -Dfrontend.console.output=true \
     -Dtest=org.keycloak.testsuite.cluster.**.*Test clean install
-   
-	  
+
 ### Cluster tests with Keycloak on embedded undertow
 
     mvn -f testsuite/integration-arquillian/tests/base/pom.xml \
@@ -540,6 +557,9 @@ After you build the distribution, you run this command to setup servers and run 
     -Dauth.server.log.check=false \
     -Dfrontend.console.output=true \
     -Dtest=org.keycloak.testsuite.cluster.**.*Test clean install
+
+Note that after update, you might encounter `org.infinispan.commons.CacheException: Initial state transfer timed out for cache org.infinispan.CONFIG`
+error in some environments. This can be fixed by adding `-Djava.net.preferIPv4Stack=true` parameter to the command above.
 
 #### Run cluster tests from IDE on embedded undertow
 
@@ -581,6 +601,13 @@ For an example of a test, see [org.keycloak.testsuite.crossdc.ActionTokenCrossDC
 
 The cross DC requires setting a profile specifying used cache server by specifying
 `cache-server-infinispan` or `cache-server-jdg` profile in maven.
+
+Since JDG does not distribute `infinispan-server` zip artifact anymore, for `cache-server-jdg` profile it is
+necessary to download the artifact and install it to local Maven repository. For JDG 7.3.0, the command is the following:
+
+    mvn install:install-file \
+    -DgroupId=org.infinispan.server -DartifactId=infinispan-server -Dpackaging=zip -Dclassifier=bin -DgeneratePom=true \
+    -Dversion=9.4.6.Final-redhat-00002 -Dfile=jboss-datagrid-7.3.0-server.zip
 
 #### Run Cross-DC Tests from Maven
 
@@ -635,8 +662,9 @@ For **JBoss-based** Keycloak backend containers on real DB, the previous command
 First we will manually download, configure and run infinispan servers. Then we can run the tests from IDE against the servers. 
 It's more effective during development as there is no need to restart infinispan server(s) among test runs.
 
-1) Download infinispan server 8.2.X from http://infinispan.org/download/ and go through the steps 
-from the [Keycloak Cross-DC documentation](http://www.keycloak.org/docs/latest/server_installation/index.html#jdgsetup) for setup infinispan servers.
+1) Download infinispan server of corresponding version (See "infinispan.version" property in [root pom.xml](../../pom.xml)) 
+from http://infinispan.org/download/ and go through the steps from the 
+[Keycloak Cross-DC documentation](http://www.keycloak.org/docs/latest/server_installation/index.html#jdgsetup) for setup infinispan servers.
 
 The difference to original docs is, that you need to have JDG servers available on localhost with port offsets. So:
 

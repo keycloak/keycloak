@@ -24,7 +24,7 @@
     <parent>
         <groupId>org.keycloak</groupId>
         <artifactId>keycloak-testsuite-pom</artifactId>
-        <version>4.8.3.Final-SNAPSHOT</version>
+        <version>5.0.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     
@@ -42,8 +42,8 @@
         <app.server>undertow</app.server>
 
         <!-- Wildfly deprecated versions -->
-        <wildfly.deprecated.version>13.0.0.Final</wildfly.deprecated.version>
-        <wildfly.deprecated.wildfly.core.version>5.0.0.Final</wildfly.deprecated.wildfly.core.version>
+        <wildfly.deprecated.version>14.0.1.Final</wildfly.deprecated.version>
+        <wildfly.deprecated.wildfly.core.version>6.0.2.Final</wildfly.deprecated.wildfly.core.version>
         <wildfly.deprecated.arquillian.wildfly.container>2.1.0.Final</wildfly.deprecated.arquillian.wildfly.container>
 
         <!--component versions-->
@@ -59,8 +59,9 @@
         <selenium.version>3.14.0</selenium.version>
         <arquillian-drone.version>2.5.1</arquillian-drone.version>
         <arquillian-graphene.version>2.3.2</arquillian-graphene.version>
-        <arquillian-wildfly-container.version>2.1.0.Final</arquillian-wildfly-container.version>
+        <arquillian-wildfly-container.version>2.1.1.Final</arquillian-wildfly-container.version>
         <arquillian-wls-container.version>1.0.1.Final</arquillian-wls-container.version>
+        <arquillian-jetty9-container.version>1.0.0.CR3</arquillian-jetty9-container.version>
         <arquillian-container-karaf.version>2.2.0.Final</arquillian-container-karaf.version>
         <arquillian-infinispan-container.version>1.2.0.Beta2</arquillian-infinispan-container.version>
         <undertow-embedded.version>1.0.0.Alpha2</undertow-embedded.version>
@@ -72,6 +73,7 @@
         <migration.70.version>1.9.8.Final</migration.70.version>
         <migration.71.version>2.5.5.Final</migration.71.version>
         <migration.72.version>3.4.3.Final</migration.72.version>
+        <migration.73.version>4.8.3.Final</migration.73.version>
 
         <!-- By default, skip docker-maven-plugin when running base tests-->
         <docker.database.skip>true</docker.database.skip>
@@ -320,6 +322,26 @@
             <id>test-72-migration</id>
             <properties>
                 <migrated.auth.server.version>${migration.72.version}</migrated.auth.server.version>
+            </properties>
+            <build>
+                <pluginManagement>
+                    <plugins>
+                        <plugin>
+                            <artifactId>maven-surefire-plugin</artifactId>
+                            <configuration>
+                                <systemPropertyVariables>
+                                    <migrated.auth.server.version>${migrated.auth.server.version}</migrated.auth.server.version>
+                                </systemPropertyVariables>
+                            </configuration>
+                        </plugin>
+                    </plugins>
+                </pluginManagement>
+            </build>
+        </profile>
+        <profile>
+            <id>test-73-migration</id>
+            <properties>
+                <migrated.auth.server.version>${migration.73.version}</migrated.auth.server.version>
             </properties>
             <build>
                 <pluginManagement>

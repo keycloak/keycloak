@@ -134,7 +134,7 @@ public class UndertowAppServer implements DeployableContainer<UndertowAppServerC
 
             if (isJaxrsApp(webArchive)) {
                 di = new UndertowDeployerHelper().getDeploymentInfo(configuration, webArchive,
-                        undertow.undertowDeployment(getCustomResteasyDeployment(webArchive)));
+                        undertow.undertowDeployment(discoverPathAnnotatedClasses(webArchive)));
             } else if (applicationClassNode.isPresent()) {
                 String applicationPath = applicationClassNode.get().getPath().get();
 
@@ -237,7 +237,7 @@ public class UndertowAppServer implements DeployableContainer<UndertowAppServerC
         }
     }
 
-    private ResteasyDeployment getCustomResteasyDeployment(WebArchive webArchive) {
+    private ResteasyDeployment discoverPathAnnotatedClasses(WebArchive webArchive) {
         //take all classes from war and add those with @Path annotation to RestSamlApplicationConfig
         Set<Class<?>> classes = webArchive.getContent(archivePath ->
                 archivePath.get().startsWith("/WEB-INF/classes/") &&

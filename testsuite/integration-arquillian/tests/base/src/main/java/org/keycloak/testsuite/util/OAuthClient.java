@@ -1192,8 +1192,8 @@ public class OAuthClient {
 
     private JSONWebKeySet getRealmKeys(String realm) {
         String certUrl = baseUrl + "/realms/" + realm + "/protocol/openid-connect/certs";
-        try {
-            return SimpleHttp.doGet(certUrl, httpClient.get()).asJson(JSONWebKeySet.class);
+        try (CloseableHttpClient client = httpClient.get()){
+            return SimpleHttp.doGet(certUrl, client).asJson(JSONWebKeySet.class);
         } catch (IOException e) {
             throw new RuntimeException("Failed to retrieve keys", e);
         }

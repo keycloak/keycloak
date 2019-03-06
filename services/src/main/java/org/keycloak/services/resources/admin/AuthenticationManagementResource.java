@@ -182,7 +182,7 @@ public class AuthenticationManagementResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     public List<AuthenticationFlowRepresentation> getFlows() {
-        auth.realm().requireViewRealm();
+        auth.realm().requireViewAuthenticationFlows();
 
         List<AuthenticationFlowRepresentation> flows = new LinkedList<>();
         for (AuthenticationFlowModel flow : realm.getAuthenticationFlows()) {
@@ -900,7 +900,7 @@ public class AuthenticationManagementResource {
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
     public List<RequiredActionProviderRepresentation> getRequiredActions() {
-        auth.realm().requireViewRealm();
+        auth.realm().requireViewRequiredActions();
 
         List<RequiredActionProviderRepresentation> list = new LinkedList<>();
         for (RequiredActionProviderModel model : realm.getRequiredActionProviders()) {

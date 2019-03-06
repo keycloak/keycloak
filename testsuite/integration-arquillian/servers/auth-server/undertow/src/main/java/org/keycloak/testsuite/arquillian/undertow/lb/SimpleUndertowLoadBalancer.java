@@ -40,7 +40,7 @@ import io.undertow.util.Headers;
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.reflections.Reflections;
 import org.keycloak.services.managers.AuthenticationSessionManager;
-import org.keycloak.testsuite.arquillian.undertow.TLSUtils;
+import org.keycloak.testsuite.utils.tls.TLSUtils;
 
 import java.util.LinkedHashMap;
 import java.util.StringTokenizer;
@@ -104,7 +104,7 @@ public class SimpleUndertowLoadBalancer {
                     .build();
             undertow.start();
 
-            log.infof("#### Loadbalancer started and ready to serve requests on http://%s:%d, http://%s:%d ####", host, httpPort, host, httpsPort);
+            log.infof("#### Loadbalancer started and ready to serve requests on http://%s:%d, https://%s:%d ####", host, httpPort, host, httpsPort);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

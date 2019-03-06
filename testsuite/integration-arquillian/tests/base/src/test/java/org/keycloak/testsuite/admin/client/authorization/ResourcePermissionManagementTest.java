@@ -114,18 +114,20 @@ public class ResourcePermissionManagementTest extends AbstractPolicyManagementTe
         representation.addPolicy("Only Marta Policy");
 
         ResourcePermissionsResource permissions = authorization.permissions().resource();
-        Response response = permissions.create(representation);
-        ResourcePermissionRepresentation created = response.readEntity(ResourcePermissionRepresentation.class);
 
-        permissions.findById(created.getId()).remove();
+        try (Response response = permissions.create(representation)) {
+            ResourcePermissionRepresentation created = response.readEntity(ResourcePermissionRepresentation.class);
 
-        ResourcePermissionResource removed = permissions.findById(created.getId());
+            permissions.findById(created.getId()).remove();
 
-        try {
-            removed.toRepresentation();
-            fail("Permission not removed");
-        } catch (NotFoundException ignore) {
+            ResourcePermissionResource removed = permissions.findById(created.getId());
 
+            try {
+                removed.toRepresentation();
+                fail("Permission not removed");
+            } catch (NotFoundException ignore) {
+
+            }
         }
     }
 
@@ -140,23 +142,24 @@ public class ResourcePermissionManagementTest extends AbstractPolicyManagementTe
 
         ResourcePermissionsResource permissions = authorization.permissions().resource();
 
-        permissions.create(permission1);
+        permissions.create(permission1).close();
 
         ResourcePermissionRepresentation permission2 = new ResourcePermissionRepresentation();
 
         permission2.setName(permission1.getName());
 
-        Response response = permissions.create(permission2);
-
-        assertEquals(Response.Status.CONFLICT.getStatusCode(), response.getStatus());
+        try (Response response = permissions.create(permission2)) {
+            assertEquals(Response.Status.CONFLICT.getStatusCode(), response.getStatus());
+        }
     }
 
     private void assertCreated(AuthorizationResource authorization, ResourcePermissionRepresentation representation) {
         ResourcePermissionsResource permissions = authorization.permissions().resource();
-        Response response = permissions.create(representation);
-        ResourcePermissionRepresentation created = response.readEntity(ResourcePermissionRepresentation.class);
-        ResourcePermissionResource permission = permissions.findById(created.getId());
-        assertRepresentation(representation, permission);
+        try (Response response = permissions.create(representation)) {
+            ResourcePermissionRepresentation created = response.readEntity(ResourcePermissionRepresentation.class);
+            ResourcePermissionResource permission = permissions.findById(created.getId());
+            assertRepresentation(representation, permission);
+        }
     }
 
     private void assertRepresentation(ResourcePermissionRepresentation representation, ResourcePermissionResource permission) {

@@ -18,6 +18,7 @@
             MARIADB_PASSWORD: keycloak
             KEYCLOAK_ADMIN_USER: ${KEYCLOAK_ADMIN_USER:-admin}
             KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin}
+            JSTAT: "${KEYCLOAK_JSTAT:-false}"
 
             JAVA_OPTS: ${KEYCLOAK_JVM_MEMORY:--Xms64m -Xmx2g -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=256m} -Djava.net.preferIPv4Stack=true -Djboss.modules.system.pkgs=org.jboss.byteman -Djava.awt.headless=true
             HTTP_MAX_CONNECTIONS: ${KEYCLOAK_HTTP_MAX_CONNECTIONS:-50000}

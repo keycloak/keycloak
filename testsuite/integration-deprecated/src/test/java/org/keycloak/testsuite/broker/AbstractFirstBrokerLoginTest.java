@@ -276,37 +276,6 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractIdentityProvi
      * Tests that duplication is detected and user wants to link federatedIdentity with existing account. He will confirm link by email
      */
     @Test
-    public void testLinkAccountByEmailVerification() throws Exception {
-        setUpdateProfileFirstLogin(IdentityProviderRepresentation.UPFLM_OFF);
-
-        loginIDP("pedroigor");
-
-        this.idpConfirmLinkPage.assertCurrent();
-        Assert.assertEquals("User with email psilva@redhat.com already exists. How do you want to continue?", this.idpConfirmLinkPage.getMessage());
-        this.idpConfirmLinkPage.clickLinkAccount();
-
-        // Confirm linking account by email
-        this.idpLinkEmailPage.assertCurrent();
-        Assert.assertEquals("An email with instructions to link " + ObjectUtil.capitalize(getProviderId()) + " account pedroigor with your " + APP_REALM_ID + " account has been sent to you.", this.idpLinkEmailPage.getMessage());
-
-        Assert.assertEquals(1, greenMail.getReceivedMessages().length);
-        MimeMessage message = greenMail.getReceivedMessages()[0];
-        String linkFromMail = getVerificationEmailLink(message);
-
-        driver.navigate().to(linkFromMail.trim());
-
-        // authenticated and redirected to app. User is linked with identity provider
-        assertFederatedUser("pedroigor", "psilva@redhat.com", "pedroigor");
-
-        // Assert user's email is verified now
-        UserModel user = getFederatedUser();
-        Assert.assertTrue(user.isEmailVerified());
-    }
-
-    /**
-     * Tests that duplication is detected and user wants to link federatedIdentity with existing account. He will confirm link by email
-     */
-    @Test
     public void testLinkAccountByEmailVerificationTwice() throws Exception {
         setUpdateProfileFirstLogin(IdentityProviderRepresentation.UPFLM_OFF);
 
@@ -353,61 +322,6 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractIdentityProvi
         proceedPage.clickProceedLink();
         infoPage.assertCurrent();
         Assert.assertThat(infoPage.getInfo(), startsWith("You successfully verified your email. Please go back to your original browser and continue there with the login."));
-    }
-
-    /**
-     * Tests that duplication is detected and user wants to link federatedIdentity with existing account. He will confirm link by email
-     */
-    @Test
-    public void testLinkAccountByEmailVerificationDifferentBrowser() throws Exception, Throwable {
-        setUpdateProfileFirstLogin(IdentityProviderRepresentation.UPFLM_OFF);
-
-        loginIDP("pedroigor");
-
-        this.idpConfirmLinkPage.assertCurrent();
-        Assert.assertEquals("User with email psilva@redhat.com already exists. How do you want to continue?", this.idpConfirmLinkPage.getMessage());
-        this.idpConfirmLinkPage.clickLinkAccount();
-
-        // Confirm linking account by email
-        this.idpLinkEmailPage.assertCurrent();
-        Assert.assertThat(
-          this.idpLinkEmailPage.getMessage(),
-          is("An email with instructions to link " + ObjectUtil.capitalize(getProviderId()) + " account pedroigor with your " + APP_REALM_ID + " account has been sent to you.")
-        );
-
-        Assert.assertEquals(1, greenMail.getReceivedMessages().length);
-        MimeMessage message = greenMail.getReceivedMessages()[0];
-        String linkFromMail = getVerificationEmailLink(message);
-
-        WebRule webRule2 = new WebRule(this);
-        try {
-            webRule2.initProperties();
-
-            WebDriver driver2 = webRule2.getDriver();
-            InfoPage infoPage2 = webRule2.getPage(InfoPage.class);
-            ProceedPage proceedPage2 = webRule2.getPage(ProceedPage.class);
-
-            driver2.navigate().to(linkFromMail.trim());
-
-            // authenticated, but not redirected to app. Just seeing info page.
-            proceedPage2.assertCurrent();
-            Assert.assertThat(proceedPage2.getInfo(), Matchers.containsString("Confirm linking the account"));
-            proceedPage2.clickProceedLink();
-            infoPage2.assertCurrent();
-            Assert.assertThat(infoPage2.getInfo(), startsWith("You successfully verified your email. Please go back to your original browser and continue there with the login."));
-        } finally {
-            // Revert everything
-            webRule2.after();
-        }
-
-        this.idpLinkEmailPage.clickContinueFlowLink();
-
-        // authenticated and redirected to app. User is linked with identity provider
-        assertFederatedUser("pedroigor", "psilva@redhat.com", "pedroigor");
-
-        // Assert user's email is verified now
-        UserModel user = getFederatedUser();
-        Assert.assertTrue(user.isEmailVerified());
     }
 
     @Test

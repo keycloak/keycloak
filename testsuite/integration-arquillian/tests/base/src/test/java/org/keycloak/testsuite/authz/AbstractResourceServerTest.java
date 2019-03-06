@@ -178,7 +178,7 @@ public abstract class AbstractResourceServerTest extends AbstractAuthzTest {
         while (iterator.hasNext()) {
             Permission permission = iterator.next();
 
-            if (permission.getResourceName().equalsIgnoreCase(expectedResource)) {
+            if (permission.getResourceName().equalsIgnoreCase(expectedResource) || permission.getResourceId().equals(expectedResource)) {
                 Set<String> scopes = permission.getScopes();
 
                 assertEquals(expectedScopes.length, scopes.size());

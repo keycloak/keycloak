@@ -67,6 +67,10 @@ public class JpaRealmProvider implements RealmProvider {
             public RealmModel getCreatedRealm() {
                 return adapter;
             }
+            @Override
+            public KeycloakSession getKeycloakSession() {
+            	return session;
+            }
         });
         return adapter;
     }
