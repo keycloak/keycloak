@@ -18,12 +18,7 @@ import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.ExpectedCondition;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
-import static org.keycloak.testsuite.broker.BrokerTestConstants.CLIENT_ID;
-import static org.keycloak.testsuite.broker.BrokerTestConstants.CLIENT_SECRET;
-import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_ALIAS;
 import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_PROVIDER_ID;
-import static org.keycloak.testsuite.broker.BrokerTestConstants.REALM_CONS_NAME;
-import static org.keycloak.testsuite.broker.BrokerTestConstants.REALM_PROV_NAME;
 
 /**
  *
@@ -48,11 +43,7 @@ public class BrokerTestTools {
 
     public static void waitForPage(WebDriver driver, final String title, final boolean isHtmlTitle) {
         WebDriverWait wait = new WebDriverWait(driver, 5);
-
         ExpectedCondition<Boolean> condition = (WebDriver input) -> isHtmlTitle ? input.getTitle().toLowerCase().contains(title) : PageUtils.getPageTitle(input).toLowerCase().contains(title);
-
-        System.out.println("WAIT FOR " + title);
-        System.out.println(driver.getPageSource());
 
         wait.until(condition);
     }

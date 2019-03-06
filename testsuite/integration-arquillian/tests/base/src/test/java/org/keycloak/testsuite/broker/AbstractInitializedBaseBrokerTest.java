@@ -18,13 +18,24 @@ package org.keycloak.testsuite.broker;
 
 import org.junit.Before;
 
+import org.keycloak.admin.client.resource.AuthenticationManagementResource;
 import org.keycloak.admin.client.resource.IdentityProviderResource;
 import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.authentication.authenticators.broker.IdpCreateUserIfUniqueAuthenticatorFactory;
+import org.keycloak.models.AuthenticationExecutionModel;
+import org.keycloak.models.utils.DefaultAuthenticationFlows;
+import org.keycloak.representations.idm.AuthenticationExecutionInfoRepresentation;
+import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import java.util.List;
+import java.util.function.BiConsumer;
+
+import static org.keycloak.models.utils.DefaultAuthenticationFlows.IDP_REVIEW_PROFILE_CONFIG_ALIAS;
 import static org.keycloak.testsuite.admin.ApiUtil.createUserWithAdminClient;
 import static org.keycloak.testsuite.admin.ApiUtil.resetUserPassword;
+import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
 
 /**
  * @author Stan Silvert ssilvert@redhat.com (C) 2019 Red Hat Inc.
@@ -33,8 +44,10 @@ public abstract class AbstractInitializedBaseBrokerTest extends AbstractBaseBrok
 
     protected IdentityProviderResource identityProviderResource;
 
+    @Override
     @Before
     public void beforeBrokerTest() {
+        super.beforeBrokerTest();
         log.debug("creating user for realm " + bc.providerRealmName());
 
         UserRepresentation user = new UserRepresentation();
@@ -48,18 +61,10 @@ public abstract class AbstractInitializedBaseBrokerTest extends AbstractBaseBrok
 
         resetUserPassword(realmResource.users().get(userId), bc.getUserPassword(), false);
 
-        if (testContext.isInitialized()) {
-            if (identityProviderResource == null) {
-                identityProviderResource = (IdentityProviderResource) testContext.getCustomValue("identityProviderResource");
-            }
-            return;
-        }
-
         log.debug("adding identity provider to realm " + bc.consumerRealmName());
         RealmResource realm = adminClient.realm(bc.consumerRealmName());
         realm.identityProviders().create(bc.setUpIdentityProvider(suiteContext)).close();
         identityProviderResource = realm.identityProviders().get(bc.getIDPAlias());
-        testContext.setCustomValue("identityProviderResource", identityProviderResource);
 
         // addClients
         List<ClientRepresentation> clients = bc.createProviderClients(suiteContext);
@@ -83,6 +88,22 @@ public abstract class AbstractInitializedBaseBrokerTest extends AbstractBaseBrok
         }
 
         testContext.setInitialized(true);
+    }
+
+    protected void logInWithBroker(BrokerConfiguration bc) {
+        log.debug("Clicking social " + bc.getIDPAlias());
+        accountLoginPage.clickSocial(bc.getIDPAlias());
+        waitForPage(driver, "log in to", true);
+        log.debug("Logging in");
+        accountLoginPage.login(bc.getUserLogin(), bc.getUserPassword());
+    }
+
+    protected void updateExecutions(BiConsumer<AuthenticationExecutionInfoRepresentation, AuthenticationManagementResource> action) {
+        AuthenticationManagementResource flows = adminClient.realm(bc.consumerRealmName()).flows();
+
+        for (AuthenticationExecutionInfoRepresentation execution : flows.getExecutions(DefaultAuthenticationFlows.FIRST_BROKER_LOGIN_FLOW)) {
+            action.accept(execution, flows);
+        }
     }
 
 }

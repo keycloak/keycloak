@@ -65,7 +65,7 @@ if [ $1 == "server-group1" ]; then
 fi
 
 if [ $1 == "server-group2" ]; then
-    run-server-tests org.keycloak.testsuite.ac*.**.*Test,org.keycloak.testsuite.b*.**.*Test,org.keycloak.testsuite.cli*.**.*Test,org.keycloak.testsuite.co*.**.*Test
+    run-server-tests org.keycloak.testsuite.ac*.**.*Test,org.keycloak.testsuite.cli*.**.*Test,org.keycloak.testsuite.co*.**.*Test
 fi
 
 if [ $1 == "server-group3" ]; then
@@ -98,4 +98,8 @@ if [ $1 == "crossdc-adapter" ]; then
     mvn clean test -B -nsu -Pcache-server-infinispan,auth-servers-crossdc-jboss,auth-server-wildfly,app-server-wildfly -Dtest=org.keycloak.testsuite.adapter.**.crossdc.**.* 2>&1 |
         java -cp ../../../utils/target/classes org.keycloak.testsuite.LogTrimmer
     exit ${PIPESTATUS[0]}
+fi
+
+if [ $1 == "broker" ]; then
+    run-server-tests org.keycloak.testsuite.broker.**.*Test
 fi

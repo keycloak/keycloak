@@ -127,6 +127,7 @@ public class KcOidcBrokerConfiguration implements BrokerConfiguration {
         client.setName("broker-app");
         client.setSecret("broker-app-secret");
         client.setEnabled(true);
+        client.setDirectAccessGrantsEnabled(true);
 
         client.setRedirectUris(Collections.singletonList(getAuthRoot(suiteContext) +
                 "/auth/*"));
