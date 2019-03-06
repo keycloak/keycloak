@@ -19,14 +19,9 @@ package org.keycloak.wildfly.adduser;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.aesh.command.CommandDefinition;
-import org.aesh.command.impl.activator.AeshCommandActivatorProvider;
-import org.aesh.command.impl.activator.AeshOptionActivatorProvider;
-import org.aesh.command.impl.completer.AeshCompleterInvocationProvider;
 import org.aesh.command.impl.container.AeshCommandContainerBuilder;
-import org.aesh.command.impl.converter.AeshConverterInvocationProvider;
 import org.aesh.command.impl.invocation.AeshInvocationProviders;
 import org.aesh.command.impl.parser.CommandLineParser;
-import org.aesh.command.impl.validator.AeshValidatorInvocationProvider;
 import org.aesh.command.invocation.InvocationProviders;
 import org.aesh.command.option.Option;
 import org.aesh.command.Command;
@@ -35,8 +30,8 @@ import org.aesh.command.CommandResult;
 import org.aesh.command.container.CommandContainer;
 import org.aesh.command.invocation.CommandInvocation;
 import org.aesh.command.impl.registry.AeshCommandRegistryBuilder;
-import org.aesh.command.parser.CommandLineParserException;
 import org.aesh.command.registry.CommandRegistry;
+import org.aesh.command.registry.CommandRegistryException;
 import org.aesh.command.settings.Settings;
 import org.aesh.command.settings.SettingsBuilder;
 import org.aesh.readline.AeshContext;
@@ -274,7 +269,7 @@ public class AddUser {
         return new String(passwordArray);
     }
 
-    private static void printHelp(Command command) throws CommandNotFoundException, CommandLineParserException {
+    private static void printHelp(Command command) throws CommandNotFoundException, CommandRegistryException {
         CommandRegistry registry = new AeshCommandRegistryBuilder().command(command).create();
         CommandContainer commandContainer = registry.getCommand(command.getClass().getAnnotation(CommandDefinition.class).name(), null);
         String help = commandContainer.printHelp(null);
