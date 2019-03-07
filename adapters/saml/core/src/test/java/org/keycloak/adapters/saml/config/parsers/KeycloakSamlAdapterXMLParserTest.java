@@ -39,7 +39,7 @@ import org.hamcrest.Matchers;
  */
 public class KeycloakSamlAdapterXMLParserTest {
 
-    private static final String CURRENT_XSD_LOCATION = "/schema/keycloak_saml_adapter_1_9.xsd";
+    private static final String CURRENT_XSD_LOCATION = "/schema/keycloak_saml_adapter_1_10.xsd";
 
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
@@ -65,6 +65,11 @@ public class KeycloakSamlAdapterXMLParserTest {
     @Test
     public void testValidationWithHttpClient() throws Exception {
         testValidationValid("keycloak-saml-wth-http-client-settings.xml");
+    }
+
+    @Test
+    public void testValidationWithMetadataUrl() throws Exception {
+        testValidationValid("keycloak-saml-with-metadata-url.xml");
     }
 
     @Test
@@ -242,5 +247,15 @@ public class KeycloakSamlAdapterXMLParserTest {
             System.clearProperty("keycloak-saml-properties.sslPolicy");
             System.clearProperty("keycloak-saml-properties.signaturesRequired");
         }
+    }
+
+    @Test
+    public void testMetadataUrl() throws Exception {
+        KeycloakSamlAdapter config = parseKeycloakSamlAdapterConfig("keycloak-saml-with-metadata-url.xml", KeycloakSamlAdapter.class);
+        assertNotNull(config);
+        assertThat(config.getSps(), Matchers.contains(instanceOf(SP.class)));
+        SP sp = config.getSps().get(0);
+        IDP idp = sp.getIdp();
+        assertThat(idp.getMetadataUrl(), is("https:///example.com/metadata.xml"));
     }
 }

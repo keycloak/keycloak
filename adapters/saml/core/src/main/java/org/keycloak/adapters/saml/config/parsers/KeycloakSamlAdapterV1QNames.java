@@ -59,6 +59,7 @@ public enum KeycloakSamlAdapterV1QNames implements HasQName {
     ATTR_FORCE_AUTHENTICATION(null, "forceAuthentication"),
     ATTR_IS_PASSIVE(null, "isPassive"),
     ATTR_LOGOUT_PAGE(null, "logoutPage"),
+    ATTR_METADATA_URL(null, "metadataUrl"),
     ATTR_NAME(null, "name"),
     ATTR_NAME_ID_POLICY_FORMAT(null, "nameIDPolicyFormat"),
     ATTR_PASSWORD(null, "password"),
