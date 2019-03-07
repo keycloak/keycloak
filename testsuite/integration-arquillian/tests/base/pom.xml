@@ -273,7 +273,7 @@
                                     <outputDirectory>${containers.home}/auth-server-undertow</outputDirectory>
                                 </artifactItem>
                             </artifactItems>
-                            <includes>*.jks,*.crt,*.truststore</includes>
+                            <includes>*.jks,*.crt,*.truststore,*.crl,*.key,certs/clients/*</includes>
                         </configuration>
                     </execution>
                 </executions>

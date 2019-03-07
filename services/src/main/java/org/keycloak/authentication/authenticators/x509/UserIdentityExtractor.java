@@ -19,12 +19,18 @@
 package org.keycloak.authentication.authenticators.x509;
 
 import freemarker.template.utility.NullArgumentException;
+import org.bouncycastle.asn1.ASN1Encodable;
+import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.ASN1TaggedObject;
+import org.bouncycastle.asn1.DERUTF8String;
 import org.bouncycastle.asn1.x500.RDN;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x500.style.IETFUtils;
 import org.keycloak.services.ServicesLogger;
 
+import java.io.ByteArrayInputStream;
 import java.security.cert.CertificateParsingException;
 import java.security.cert.X509Certificate;
 import java.util.Collection;
@@ -101,6 +107,9 @@ public abstract class UserIdentityExtractor {
      */
     static class SubjectAltNameExtractor extends UserIdentityExtractor {
 
+        // User Principal Name. Used typically by Microsoft in certificates for Smart Card Login
+        private static final String UPN_OID = "1.3.6.1.4.1.311.20.2.3";
+
         private final int generalName;
 
         /**
@@ -127,18 +136,78 @@ public abstract class UserIdentityExtractor {
 
                 Iterator<List<?>> iterator = subjectAlternativeNames.iterator();
 
-                while (iterator.hasNext()) {
+                boolean foundUpn = false;
+                String tempOtherName = null;
+                String tempOid = null;
+
+                while (iterator.hasNext() && !foundUpn) {
                     List<?> next = iterator.next();
 
                     if (Integer.class.cast(next.get(0)) == generalName) {
-                        return next.get(1);
+
+                        // We will try to find UPN_OID among the subjectAltNames of type 'otherName' . Just if not found, we will fallback to the other type
+                        for (int i = 1 ; i<next.size() ; i++) {
+                            Object obj = next.get(i);
+
+                            // We have Subject Alternative Name of other type than 'otherName' . Just return it directly
+                            if (generalName != 0) {
+                                logger.tracef("Extracted identity '%s' from Subject Alternative Name of type '%d'", obj, generalName);
+                                return obj;
+                            }
+
+                            byte[] otherNameBytes = (byte[]) obj;
+
+                            try {
+                                ASN1InputStream asn1Stream = new ASN1InputStream(new ByteArrayInputStream(otherNameBytes));
+                                ASN1Encodable asn1otherName = asn1Stream.readObject();
+                                asn1otherName = unwrap(asn1otherName);
+
+                                ASN1Sequence asn1Sequence = ASN1Sequence.getInstance(asn1otherName);
+
+                                if (asn1Sequence != null) {
+                                    ASN1Encodable encodedOid = asn1Sequence.getObjectAt(0);
+                                    ASN1ObjectIdentifier oid = ASN1ObjectIdentifier.getInstance(unwrap(encodedOid));
+                                    tempOid = oid.getId();
+
+                                    ASN1Encodable principalNameEncoded = asn1Sequence.getObjectAt(1);
+                                    DERUTF8String principalName = DERUTF8String.getInstance(unwrap(principalNameEncoded));
+
+                                    tempOtherName = principalName.getString();
+
+                                    // We found UPN among the 'otherName' principal. We don't need to look other
+                                    if (UPN_OID.equals(tempOid)) {
+                                        foundUpn = true;
+                                        break;
+                                    }
+                                }
+
+                            } catch (Exception e) {
+                                logger.error("Failed to parse subjectAltName", e);
+                            }
+                        }
+
                     }
                 }
+
+                logger.tracef("Parsed otherName from subjectAltName. OID: '%s', Principal: '%s'", tempOid, tempOtherName);
+
+                return tempOtherName;
+
             } catch (CertificateParsingException cause) {
                 logger.errorf(cause, "Failed to obtain identity from subjectAltName extension");
             }
 
             return null;
+        }
+
+
+        private ASN1Encodable unwrap(ASN1Encodable encodable) {
+            while (encodable instanceof ASN1TaggedObject) {
+                ASN1TaggedObject taggedObj = (ASN1TaggedObject) encodable;
+                encodable = taggedObj.getObject();
+            }
+
+            return encodable;
         }
     }
 
