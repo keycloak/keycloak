@@ -44,7 +44,6 @@ import org.keycloak.representations.idm.authorization.AuthorizationRequest.Metad
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
 public final class Permissions {
-
     public static ResourcePermission permission(ResourceServer server, Resource resource, Scope scope) {
        return new ResourcePermission(resource, new ArrayList<>(Arrays.asList(scope)), server);
     }
@@ -80,12 +79,15 @@ public final class Permissions {
             }
         });
 
-        // obtain all resources where owner is the current user
-        resourceStore.findByOwner(identity.getId(), resourceServer.getId(), resource -> {
-            if (limit.decrementAndGet() >= 0) {
-                permissions.add(createResourcePermissions(resource, authorization, request));
-            }
-        });
+        // resource server isn't current user
+        if (resourceServer.getId() != identity.getId()) {
+            // obtain all resources where owner is the current user
+            resourceStore.findByOwner(identity.getId(), resourceServer.getId(), resource -> {
+                if (limit.decrementAndGet() >= 0) {
+                    permissions.add(createResourcePermissions(resource, authorization, request));
+                }
+            });
+        }
 
         // obtain all resources granted to the user via permission tickets (uma)
         List<PermissionTicket> tickets = storeFactory.getPermissionTicketStore().findGranted(identity.getId(), resourceServer.getId());
