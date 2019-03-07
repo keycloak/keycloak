@@ -88,6 +88,12 @@
             <resource>
                 <directory>${common.resources}/keystore</directory>
             </resource>
+            <resource>
+                <directory>${common.resources}/pki/root/ca</directory>
+                <includes>
+                    <include>certs/clients/*</include>
+                </includes>
+            </resource>
         </resources>
     </build>
 
