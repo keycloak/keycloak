@@ -1522,7 +1522,7 @@ $ kcadm.sh create identity-provider/instances -r demorealm -s alias=microsoft -s
 ----
 
 [discrete]
-==== Configuring a StackOverflow identity provider
+==== Configuring a Stack Overflow identity provider
 
 . Use `stackoverflow` command as the [command]`providerId`.
 . Provide the [command]`config` attributes [command]`clientId`, [command]`clientSecret`, and [command]`key`. You can find these attributes in the Stack Apps OAuth page for your application.

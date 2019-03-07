@@ -1,16 +1,16 @@
 
-==== StackOverflow
+==== Stack Overflow
 
-There are a number of steps you have to complete to be able to enable login with StackOverflow.  First, go to the `Identity Providers` left menu item
-and select `StackOverflow` from the `Add provider` drop down list.  This will bring you to the `Add identity provider` page.
+There are a number of steps you have to complete to be able to enable login with Stack Overflow.  First, go to the `Identity Providers` left menu item
+and select `Stack Overflow` from the `Add provider` drop down list.  This will bring you to the `Add identity provider` page.
 
 .Add Identity Provider
 image:{project_images}/stack-overflow-add-identity-provider.png[]
 
-To enable login with StackOverflow you first have to register an OAuth application on https://stackapps.com/[StackApps].
+To enable login with Stack Overflow you first have to register an OAuth application on https://stackapps.com/[StackApps].
 Go to https://stackapps.com/apps/oauth/register[registering your application on Stack Apps] URL and login.
 
-NOTE: StackOverflow often changes the look and feel of application registration, so these directions might not always be up to date and the
+NOTE: Stack Overflow often changes the look and feel of application registration, so these directions might not always be up to date and the
       configuration steps might be slightly different.
 
 .Register Application
