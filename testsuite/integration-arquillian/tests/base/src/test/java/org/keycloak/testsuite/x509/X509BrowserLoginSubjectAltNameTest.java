@@ -39,7 +39,7 @@ import org.openqa.selenium.WebDriver;
  * @date 8/12/2016
  */
 
-public class X509BrowserLoginSubjectAltNameEmailTest extends AbstractX509AuthenticationTest {
+public class X509BrowserLoginSubjectAltNameTest extends AbstractX509AuthenticationTest {
 
     @Page
     @PhantomJSBrowser
@@ -64,23 +64,8 @@ public class X509BrowserLoginSubjectAltNameEmailTest extends AbstractX509Authent
 
     @BeforeClass
     public static void onBeforeTestClass() {
-        if (Boolean.parseBoolean(System.getProperty("auth.server.jboss"))) {
-            String authServerHome = System.getProperty("auth.server.home");
-
-            if (authServerHome != null && System.getProperty("auth.server.ssl.required") != null) {
-                authServerHome = authServerHome + "/standalone/configuration";
-                StringBuilder cliArgs = new StringBuilder();
-
-                cliArgs.append("--ignore-ssl-errors=true ");
-                cliArgs.append("--web-security=false ");
-                cliArgs.append("--ssl-certificates-path=" + authServerHome + "/ca.crt ");
-                cliArgs.append("--ssl-client-certificate-file=" + authServerHome + "/certs/clients/test-user-san-email@localhost.cert.pem ");
-                cliArgs.append("--ssl-client-key-file=" + authServerHome + "/certs/clients/test-user@localhost.key.pem ");
-                cliArgs.append("--ssl-client-key-passphrase=password");
-
-                System.setProperty("keycloak.phantomjs.cli.args", cliArgs.toString());
-            }
-        }
+        configurePhantomJS("/ca.crt", "/certs/clients/test-user-san@localhost.cert.pem",
+                "/certs/clients/test-user@localhost.key.pem", "password");
     }
 
     private void login(X509AuthenticatorConfigModel config, String userId, String username, String attemptedUsername) {
@@ -91,7 +76,7 @@ public class X509BrowserLoginSubjectAltNameEmailTest extends AbstractX509Authent
 
         loginConfirmationPage.open();
 
-        Assert.assertTrue(loginConfirmationPage.getSubjectDistinguishedNameText().equals("CN=test-user, OU=Keycloak, O=Red Hat, L=Boston, ST=MA, C=US"));
+        Assert.assertEquals("EMAILADDRESS=test-user@localhost, CN=test-user, OU=Keycloak, O=Red Hat, L=Boston, ST=MA, C=US", loginConfirmationPage.getSubjectDistinguishedNameText());
         Assert.assertEquals(username, loginConfirmationPage.getUsernameText());
 
         loginConfirmationPage.confirm();
@@ -107,7 +92,12 @@ public class X509BrowserLoginSubjectAltNameEmailTest extends AbstractX509Authent
     }
 
     @Test
-    public void loginAsUserFromCertSubjectEmail() {
-        login(createLoginSubjectAltNameEmail2UsernameOrEmailConfig(), userId, "test-user@localhost", "test-user@localhost");
+    public void loginAsUserFromCertSANEmail() {
+        login(createLoginSubjectAltNameEmail2UserAttributeConfig(), userId, "test-user@localhost", "test-user-altmail@localhost");
+    }
+
+    @Test
+    public void loginAsUserFromCertSANUpn() {
+        login(createLoginSubjectAltNameOtherName2UserAttributeConfig(), userId, "test-user@localhost", "test_upn_name@localhost");
     }
 }
