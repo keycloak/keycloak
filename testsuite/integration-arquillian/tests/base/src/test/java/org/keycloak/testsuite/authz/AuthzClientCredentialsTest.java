@@ -165,7 +165,6 @@ public class AuthzClientCredentialsTest extends AbstractAuthzTest {
 
         protection.resource().findByName("Default Resource");
         userSessions = clients.get(clientRepresentation.getId()).getUserSessions(null, null);
-
         assertEquals(1, userSessions.size());
 
         Thread.sleep(2000);
@@ -175,6 +174,23 @@ public class AuthzClientCredentialsTest extends AbstractAuthzTest {
         userSessions = clients.get(clientRepresentation.getId()).getUserSessions(null, null);
 
         assertEquals(1, userSessions.size());
+    }
+
+    @Test
+    public void testPermissionWhenResourceServerIsCurrentUser() throws Exception {
+        ClientsResource clients = getAdminClient().realm("authz-test-session").clients();
+        ClientRepresentation clientRepresentation = clients.findByClientId("resource-server-test").get(0);
+        List<UserSessionRepresentation> userSessions = clients.get(clientRepresentation.getId()).getUserSessions(-1, -1);
+
+        assertEquals(0, userSessions.size());
+
+        AuthzClient authzClient = getAuthzClient("default-session-keycloak.json");
+        org.keycloak.authorization.client.resource.AuthorizationResource authorization = authzClient.authorization(authzClient.obtainAccessToken().getToken());
+        AuthorizationResponse response = authorization.authorize();
+        AccessToken accessToken = toAccessToken(response.getToken());
+
+        assertEquals(1, accessToken.getAuthorization().getPermissions().size());
+        assertEquals("Default Resource", accessToken.getAuthorization().getPermissions().iterator().next().getResourceName());
     }
 
     @Test
