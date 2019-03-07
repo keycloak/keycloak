@@ -36,6 +36,7 @@ import org.jboss.arquillian.container.spi.client.protocol.metadata.HTTPContext;
 import org.jboss.arquillian.container.spi.client.protocol.metadata.ProtocolMetaData;
 import org.jboss.arquillian.container.spi.client.protocol.metadata.Servlet;
 import org.jboss.logging.Logger;
+import org.jboss.resteasy.plugins.server.servlet.ResteasyContextParameters;
 import org.jboss.resteasy.plugins.server.undertow.UndertowJaxrsServer;
 import org.jboss.resteasy.spi.ResteasyDeployment;
 import org.jboss.shrinkwrap.api.Archive;
@@ -77,6 +78,9 @@ public class KeycloakOnUndertow implements DeployableContainer<KeycloakOnUnderto
     private DeploymentInfo createAuthServerDeploymentInfo() {
         ResteasyDeployment deployment = new ResteasyDeployment();
         deployment.setApplicationClass(KeycloakApplication.class.getName());
+
+        // RESTEASY-2034
+        deployment.setProperty(ResteasyContextParameters.RESTEASY_DISABLE_HTML_SANITIZER, true);
 
         DeploymentInfo di = undertow.undertowDeployment(deployment);
         di.setClassLoader(getClass().getClassLoader());
