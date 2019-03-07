@@ -617,4 +617,44 @@ if (result == false) of /subsystem=webservices/:read-attribute(name=statistics-e
     echo
 end-if
 
+if (outcome == failed) of /extension=org.wildfly.extension.microprofile.config-smallrye/:read-resource
+    echo Adding microprofile.config-smallrye extension...
+    /extension=org.wildfly.extension.microprofile.config-smallrye/:add(module=org.wildfly.extension.microprofile.config-smallrye)
+    echo
+end-if
+
+if (outcome == failed) of /subsystem=microprofile-config-smallrye/:read-resource
+    echo Adding microprofile-config-smallrye subsystem
+    /subsystem=microprofile-config-smallrye/:add
+    echo
+end-if
+
+if (outcome == failed) of /extension=org.wildfly.extension.microprofile.health-smallrye/:read-resource
+    echo Adding microprofile.health-smallrye extension...
+    /extension=org.wildfly.extension.microprofile.health-smallrye/:add(module=org.wildfly.extension.microprofile.health-smallrye)
+    echo
+end-if
+
+if (outcome == failed) of /subsystem=microprofile-health-smallrye/:read-resource
+    echo Adding microprofile-health-smallrye subsystem
+    /subsystem=microprofile-health-smallrye/:add
+    /subsystem=microprofile-health-smallrye/:write-attribute(name=security-enabled,value=false)
+    echo
+end-if
+
+if (outcome == failed) of /extension=org.wildfly.extension.microprofile.metrics-smallrye/:read-resource
+    echo Adding microprofile.metrics-smallrye extension...
+    /extension=org.wildfly.extension.microprofile.metrics-smallrye/:add(module=org.wildfly.extension.microprofile.metrics-smallrye)
+    echo
+end-if
+
+if (outcome == failed) of /subsystem=microprofile-metrics-smallrye/:read-resource
+    echo Adding microprofile-metrics-smallrye subsystem
+    /subsystem=microprofile-metrics-smallrye/:add
+    /subsystem=microprofile-metrics-smallrye/:write-attribute(name=security-enabled,value=false)
+    /subsystem=microprofile-metrics-smallrye/:write-attribute(name=exposed-subsystems,value=[*])
+    /subsystem=microprofile-metrics-smallrye/:write-attribute(name=prefix,value=${wildfly.metrics.prefix:wildfly})
+    echo
+end-if
+
 echo *** End Migration ***
