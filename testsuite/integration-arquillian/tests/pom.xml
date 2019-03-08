@@ -1180,7 +1180,8 @@
                             <configuration>
                                 <systemPropertyVariables>
                                     <run.h2>true</run.h2>
-
+                                    <docker.database.skip>${docker.database.skip}</docker.database.skip>
+                                    
                                     <auth.server.jboss>false</auth.server.jboss>
 
                                     <auth.server.backend1.home>${auth.server.backend1.home}</auth.server.backend1.home>

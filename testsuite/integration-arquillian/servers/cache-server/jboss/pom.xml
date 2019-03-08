@@ -35,7 +35,6 @@
         <cache.server.jboss.home>${containers.home}/${cache.server.jboss.unpacked.folder.name}</cache.server.jboss.home>
         <cache.server.jboss.cache-authorization-disabled>true</cache.server.jboss.cache-authorization-disabled>
         <cache.server.jboss.jdg-transactions-enabled>true</cache.server.jboss.jdg-transactions-enabled>
-        <security.xslt>security.xsl</security.xslt>
     </properties>
 
     <profiles>
