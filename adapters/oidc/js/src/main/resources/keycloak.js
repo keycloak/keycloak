@@ -115,6 +115,10 @@
                 if(initOptions.redirectUri) {
                     kc.redirectUri = initOptions.redirectUri;
                 }
+
+                if (initOptions.silentRefreshRedirectUri) {
+                    kc.silentRefreshRedirectUri = initOptions.silentRefreshRedirectUri;
+                }
             }
 
             if (!kc.responseMode) {
@@ -439,7 +443,8 @@
         kc.updateToken = function(minValidity) {
             var promise = createPromise(false);
 
-            if (!kc.refreshToken) {
+            if ((!kc.refreshToken && kc.flow !== 'implicit') ||
+                (kc.flow === 'implicit' && !kc.silentRefreshRedirectUri)) {
                 promise.setError();
                 return promise.promise;
             }
@@ -513,15 +518,88 @@
                 }
             }
 
+            var execSilent = function()  {
+                var refreshToken = false;
+                if (minValidity === -1) {
+                    refreshToken = true;
+                    console.info('[KEYCLOAK] Refreshing token: forced refresh');
+                } else if (!kc.tokenParsed || kc.isTokenExpired(minValidity)) {
+                    refreshToken = true;
+                    console.info('[KEYCLOAK] Refreshing token: token expired');
+                }
+
+                if (!refreshToken) {
+                    promise.setSuccess(false);
+                } else {
+                    refreshQueue.push(promise);
+
+                    if (refreshQueue.length === 1) {
+                        var ifrm = document.createElement("iframe");
+                        var src = kc.createLoginUrl({prompt: 'none', redirectUri: kc.silentRefreshRedirectUri});
+                        ifrm.setAttribute("src", src);
+                        ifrm.setAttribute("title", "keycloak-silent-refresh");
+                        ifrm.style.display = "none";
+                        document.body.appendChild(ifrm);
+
+                        var messageCallback = function (event) {
+                            if (event.origin !== window.location.origin || ifrm.contentWindow !== event.source) {
+                                return;
+                            }
+
+                            var oauth = parseCallback(event.data);
+
+                            var error = oauth.error;
+
+                            if (error) {
+                                console.warn('[KEYCLOAK] Failed to refresh token');
+
+                                if (error === 'login_required') {
+                                    kc.clearToken();
+                                }
+
+                                kc.onAuthRefreshError && kc.onAuthRefreshError();
+                                for (var p = refreshQueue.pop(); p != null; p = refreshQueue.pop()) {
+                                    p.setError(error);
+                                }
+                            } else {
+                                var timeLocal = new Date().getTime();
+                                setToken(oauth.access_token, null, oauth.id_token, timeLocal);
+
+                                if (useNonce && ((kc.tokenParsed && kc.tokenParsed.nonce !== oauth.storedNonce) ||
+                                    (kc.idTokenParsed && kc.idTokenParsed.nonce !== oauth.storedNonce))) {
+                                    console.info('[KEYCLOAK] Invalid nonce, clearing token');
+                                    kc.clearToken();
+                                    kc.onAuthRefreshError && kc.onAuthRefreshError();
+                                    for (var p = refreshQueue.pop(); p != null; p = refreshQueue.pop()) {
+                                        p.setError('invalid nonce');
+                                    }
+                                }
+
+                                console.info('[KEYCLOAK] Token refreshed');
+                                kc.onAuthRefreshSuccess && kc.onAuthRefreshSuccess();
+                                for (var p = refreshQueue.pop(); p != null; p = refreshQueue.pop()) {
+                                    p.setSuccess(true);
+                                }
+                            }
+
+                            document.body.removeChild(ifrm);
+                            window.removeEventListener("message", messageCallback);
+                        };
+
+                        window.addEventListener("message", messageCallback);
+                    }
+                }
+            };
+
             if (loginIframe.enable) {
                 var iframePromise = checkLoginIframe();
                 iframePromise.success(function() {
-                    exec();
+                    kc.flow === 'implicit' ? execSilent() : exec();
                 }).error(function() {
                     promise.setError();
                 });
             } else {
-                exec();
+                kc.flow === 'implicit' ? execSilent() : exec();
             }
 
             return promise.promise;
@@ -1542,6 +1620,10 @@
 
             return new CookieStorage();
         }
+    }
+
+    Keycloak.silentlyRefreshPage = function() {
+        parent.postMessage(location.href, location.origin);
     }
 
     if ( typeof module === "object" && module && typeof module.exports === "object" ) {

@@ -271,6 +271,15 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
     }
 
     @Test
+    public void implicitFlowUpdateTokenTest() {
+        setImplicitFlowForClient();
+        testExecutor.logInAndInit(defaultArguments().implicitFlow()
+                        .add("silentRefreshRedirectUri", authServerContextRootPage + JAVASCRIPT_URL + "/silent-refresh.html"),
+                testUser, this::assertSuccessfullyLoggedIn)
+            .refreshToken(-1, assertEventsContains("Auth Refresh Success"));
+    }
+
+    @Test
     public void implicitFlowOnTokenExpireTest() {
         RealmRepresentation realm = adminClient.realms().realm(REALM_NAME).toRepresentation();
         Integer storeAccesTokenLifespan = realm.getAccessTokenLifespanForImplicitFlow();

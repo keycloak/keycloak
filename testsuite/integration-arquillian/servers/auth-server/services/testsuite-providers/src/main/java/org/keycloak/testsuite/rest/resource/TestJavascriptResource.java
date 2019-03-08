@@ -31,6 +31,13 @@ public class TestJavascriptResource {
     }
 
     @GET
+    @Path("/silent-refresh.html")
+    @Produces(MediaType.TEXT_HTML)
+    public String getJavascriptTestingEnvironmentSilentRefresh() throws IOException {
+        return resourceToString("/javascript/silent-refresh.html");
+    }
+
+    @GET
     @Path("/keycloak.json")
     @Produces(MediaType.APPLICATION_JSON)
     public String getKeycloakJSON() throws IOException {
