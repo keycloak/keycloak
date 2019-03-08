@@ -1,0 +1,21 @@
+
+echo *** Creating module.xml in modules ***
+module add --name=test.jdbc.@DATABASE@ \
+           --resources=@DRIVER_TMP_DIR@/@DATABASE@-@DRIVER_VERSION@.jar \
+           --dependencies=javax.api,javax.transaction.api,javax.xml.bind.api
+
+echo *** Updating datasource subsystem ***
+echo ** Adding driver definition **
+/subsystem=datasources/jdbc-driver=@DATABASE@:add(driver-name=@DATABASE@,driver-module-name=test.jdbc.@DATABASE@)
+
+echo ** Updating connection properties **
+/subsystem=datasources/data-source=KeycloakDS/:write-attribute(name=connection-url,value="@JDBC_URL@")
+/subsystem=datasources/data-source=KeycloakDS/:write-attribute(name=driver-name,value="@DATABASE@")
+/subsystem=datasources/data-source=KeycloakDS/:write-attribute(name=user-name,value="@USER@")
+/subsystem=datasources/data-source=KeycloakDS/:write-attribute(name=password,value="@PASSWORD@")
+/subsystem=datasources/data-source=KeycloakDS/:write-attribute(name=min-pool-size,value="10")
+/subsystem=datasources/data-source=KeycloakDS/:write-attribute(name=max-pool-size,value="50")
+/subsystem=datasources/data-source=KeycloakDS/:write-attribute(name=pool-prefill,value="true")
+
+echo *** Adding dialect logger ***
+/subsystem=logging/logger=org.hibernate.dialect:add(level=${org.hibernate.dialect.Dialect:ALL})

@@ -30,8 +30,10 @@
     <name>Migration Server</name>
 
     <properties>
-        <keycloak.server.home>${project.build.directory}/unpacked/keycloak-${migrated.auth.server.version}</keycloak.server.home>
-        <jdbc.mvn.driver.deployment.dir>${keycloak.server.home}/modules/system/layers/base/test/jdbc/${jdbc.mvn.artifactId}/main</jdbc.mvn.driver.deployment.dir>
+        <common.resources>${basedir}/../auth-server/jboss/common</common.resources>
+        <ant.scenario>scenario-standalone</ant.scenario>
+        <auth.server.home>${project.build.directory}/unpacked/keycloak-${migrated.auth.server.version}</auth.server.home>
+        <jdbc.driver.tmp.dir>${project.build.directory}/jdbc-driver</jdbc.driver.tmp.dir>
     </properties>
 
     <build>
@@ -49,24 +51,24 @@
                             <rules>
                                 <requireProperty>
                                     <property>migrated.auth.server.version</property>
+                                    <property>jdbc.mvn.version.legacy</property>
+                                    <property>keycloak.connectionsJpa.user</property>
+                                    <property>keycloak.connectionsJpa.url</property>
                                 </requireProperty>
                                 <requireProperty>
                                     <property>jdbc.mvn.groupId</property>
+                                    <regex>((?!com.h2database).)*</regex>
+                                    <regexMessage>jdbc.mvn.groupId property is not set correctly: ${jdbc.mvn.groupId}. Profile jpa is not supported for default h2 values!</regexMessage>
                                 </requireProperty>
                                 <requireProperty>
                                     <property>jdbc.mvn.artifactId</property>
-                                </requireProperty>
-                                <requireProperty>
-                                    <property>jdbc.mvn.version.legacy</property>
-                                </requireProperty>
-                                <requireProperty>
-                                    <property>keycloak.connectionsJpa.user</property>
+                                    <regex>((?!h2).)*</regex>
+                                    <regexMessage>jdbc.mvn.artifactId property is not set correctly: ${jdbc.mvn.artifactId}. Profile jpa is not supported for default h2 values!</regexMessage>
                                 </requireProperty>
                                 <requireProperty>
                                     <property>keycloak.connectionsJpa.password</property>
-                                </requireProperty>
-                                <requireProperty>
-                                    <property>keycloak.connectionsJpa.url</property>
+                                    <regex>^(?!\s*$).+</regex>
+                                    <regexMessage>keycloak.connectionsJpa.password property cannot be empty string!</regexMessage>
                                 </requireProperty>
                             </rules>
                         </configuration>
@@ -110,80 +112,63 @@
                                     <type>jar</type>
                                 </artifactItem>
                             </artifactItems>
-                            <outputDirectory>${jdbc.mvn.driver.deployment.dir}</outputDirectory>
+                            <outputDirectory>${jdbc.driver.tmp.dir}</outputDirectory>
                             <overWriteIfNewer>true</overWriteIfNewer>
                         </configuration>
                     </execution>
                 </executions>
             </plugin>
             <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>xml-maven-plugin</artifactId>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-antrun-plugin</artifactId>
                 <executions>
                     <execution>
-                        <id>configure-wildfly-datasource</id>
-                        <phase>process-resources</phase>
+                        <id>configure-server-jpa</id>
+                        <phase>generate-resources</phase>
                         <goals>
-                            <goal>transform</goal>
+                            <goal>run</goal>
                         </goals>
                         <configuration>
-                            <transformationSets>
-                                <!-- create module.xml in modules -->
-                                <transformationSet>
-                                    <dir>${keycloak.server.home}/modules/system/layers/base/com/h2database/h2/main</dir>
-                                    <stylesheet>src/main/xslt/module.xsl</stylesheet>
-                                    <includes>
-                                        <include>module.xml</include>
-                                    </includes>
-                                    <outputDir>${jdbc.mvn.driver.deployment.dir}</outputDir>
-                                    <parameters>
-                                        <parameter>
-                                            <name>database</name>
-                                            <value>${jdbc.mvn.artifactId}</value>
-                                        </parameter>
-                                        <parameter>
-                                            <name>version</name>
-                                            <value>${jdbc.mvn.version.legacy}</value>
-                                        </parameter>
-                                    </parameters>
-                                </transformationSet>
-                                <!-- add datasource to standalone.xml -->
-                                <transformationSet>
-                                    <dir>${keycloak.server.home}/standalone/configuration</dir>
-                                    <stylesheet>src/main/xslt/datasource.xsl</stylesheet>
-                                    <includes>
-                                        <include>standalone.xml</include>
-                                    </includes>
-                                    <outputDir>${keycloak.server.home}/standalone/configuration</outputDir>
-                                    <parameters>
-                                        <parameter>
-                                            <name>db.jdbc_url</name>
-                                            <value>${keycloak.connectionsJpa.url}</value>
-                                        </parameter>
-                                        <parameter>
-                                            <name>driver</name>
-                                            <value>${jdbc.mvn.artifactId}</value>
-                                        </parameter>
-                                        <parameter>
-                                            <name>username</name>
-                                            <value>${keycloak.connectionsJpa.user}</value>
-                                        </parameter>
-                                        <parameter>
-                                            <name>password</name>
-                                            <value>${keycloak.connectionsJpa.password}</value>
-                                        </parameter>
-                                    </parameters>
-                                </transformationSet>
-                                <!-- add logger for org.hibernate.dialect.Dialect to standalone.xml-->
-                                <transformationSet>
-                                    <dir>${keycloak.server.home}/standalone/configuration</dir>
-                                    <stylesheet>src/main/xslt/add-dialect-logger.xsl</stylesheet>
-                                    <includes>
-                                        <include>standalone.xml</include>
-                                    </includes>
-                                    <outputDir>${keycloak.server.home}/standalone/configuration</outputDir>
-                                </transformationSet>
-                            </transformationSets>
+                            <target>
+                                <ant antfile="${common.resources}/ant/configure.xml" target="configure-server-jpa-legacy">
+                                    <!-- These properties become equivalent to properties defined on the command line. -->
+                                    <!-- Without specifying those the default values would be used regardless what is -->
+                                    <!-- defined via -Dproperty=value when executing maven command -->
+                                    <property name="jdbc.driver.tmp.dir">${jdbc.driver.tmp.dir}</property>
+                                    <property name="jdbc.mvn.artifactId">${jdbc.mvn.artifactId}</property>
+                                    <property name="jdbc.mvn.version.legacy">${jdbc.mvn.version.legacy}</property>
+                                    <property name="keycloak.connectionsJpa.url">${keycloak.connectionsJpa.url}</property>
+                                    <property name="keycloak.connectionsJpa.user">${keycloak.connectionsJpa.user}</property>
+                                    <property name="keycloak.connectionsJpa.password">${keycloak.connectionsJpa.password}</property>
+                                    <property name="keycloak.connectionsJpa.schema">${keycloak.connectionsJpa.schema}</property>
+                                </ant>
+                            </target>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>ant-apply-prepared-clis</id>
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <target>
+                                <ant antfile="${common.resources}/ant/configure.xml" target="apply-cli-scripts" />
+                            </target>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <!-- to workaround the fact that in older wildlfy/eap versions was missing the option -->
+                        <!-- 'module-root-dir' when adding module we need to move it manually afterwards -->
+                        <id>move-driver-module</id>
+                        <phase>process-test-resources</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <target>
+                                <move file="${auth.server.home}/modules/test" todir="${auth.server.home}/modules/system/layers/base/" verbose="true" />
+                            </target>
                         </configuration>
                     </execution>
                 </executions>
@@ -238,7 +223,7 @@
                 </property>
             </activation>
             <properties>
-                <keycloak.server.home>${project.build.directory}/unpacked/${previous.product.unpacked.folder.name}</keycloak.server.home>
+                <auth.server.home>${project.build.directory}/unpacked/${previous.product.unpacked.folder.name}</auth.server.home>
             </properties>
         </profile>
     </profiles>
