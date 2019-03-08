@@ -34,7 +34,6 @@
         <common.resources>${project.parent.basedir}/common</common.resources>
         <assembly.xml>${project.parent.basedir}/assembly.xml</assembly.xml>
         <app.server.jboss.home>${containers.home}/${app.server.jboss.unpacked.folder.name}</app.server.jboss.home>
-        <security.xslt>security.xsl</security.xslt>
         <oidc-adapter.version>${project.version}</oidc-adapter.version>
         <saml-adapter.version>${project.version}</saml-adapter.version>
         <skip.elytron.adapter.installation>true</skip.elytron.adapter.installation>
@@ -740,9 +739,6 @@
                     <value>eap6</value>
                 </property>
             </activation>
-            <properties>
-                <security.xslt>security-eap6.xsl</security.xslt>
-            </properties>
             <modules>
                 <module>eap6</module>
             </modules>
