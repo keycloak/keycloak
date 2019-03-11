@@ -83,9 +83,13 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
     public static final String CLIENT_ROLES = "client roles";
     public static final String AUDIENCE_RESOLVE = "audience resolve";
     public static final String ALLOWED_WEB_ORIGINS = "allowed web origins";
+    // microprofile-jwt claims
+    public static final String UPN = "upn";
+    public static final String GROUPS = "groups";
 
     public static final String ROLES_SCOPE = "roles";
     public static final String WEB_ORIGINS_SCOPE = "web-origins";
+    public static final String MICROPROFILE_JWT_SCOPE = "microprofile-jwt";
 
     public static final String PROFILE_SCOPE_CONSENT_TEXT = "${profileScopeConsentText}";
     public static final String EMAIL_SCOPE_CONSENT_TEXT = "${emailScopeConsentText}";
@@ -179,6 +183,14 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
 
         builtins.put(IMPERSONATOR_ID.getDisplayName(), UserSessionNoteMapper.createUserSessionNoteMapper(IMPERSONATOR_ID));
         builtins.put(IMPERSONATOR_USERNAME.getDisplayName(), UserSessionNoteMapper.createUserSessionNoteMapper(IMPERSONATOR_USERNAME));
+
+        model = UserPropertyMapper.createClaimMapper(UPN, "username",
+                "upn", "String",
+                true, true);
+        builtins.put(UPN, model);
+
+        model = UserRealmRoleMappingMapper.create(null, GROUPS, GROUPS, true, true, true);
+        builtins.put(GROUPS, model);
     }
 
     private static void createUserAttributeMapper(String name, String attrName, String claimName, String type) {
@@ -255,6 +267,15 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
 
         addRolesClientScope(newRealm);
         addWebOriginsClientScope(newRealm);
+
+        ClientScopeModel microprofileScope = newRealm.addClientScope(MICROPROFILE_JWT_SCOPE);
+        microprofileScope.setDescription("Microprofile - JWT built-in scope");
+        microprofileScope.setDisplayOnConsentScreen(false);
+        microprofileScope.setIncludeInTokenScope(true);
+        microprofileScope.setProtocol(getId());
+        microprofileScope.addProtocolMapper(builtins.get(UPN));
+        microprofileScope.addProtocolMapper(builtins.get(GROUPS));
+        newRealm.addDefaultClientScope(microprofileScope, false);
     }
 
 
@@ -300,7 +321,6 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
 
         return originsScope;
     }
-
 
     @Override
     protected void addDefaults(ClientModel client) {
