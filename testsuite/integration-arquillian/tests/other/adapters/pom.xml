@@ -24,7 +24,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian-tests-other</artifactId>
-        <version>5.0.0-SNAPSHOT</version>
+        <version>6.0.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>integration-arquillian-tests-adapters</artifactId>
@@ -95,13 +95,11 @@
         <adapter.config.bundled>true</adapter.config.bundled>
         <examples.basedir>${keycloak-parent.basedir}/examples</examples.basedir>
         <exclude.test>-</exclude.test>
-        <exclude.cors.tests>**/cors/*Test.java</exclude.cors.tests>
     </properties>
 
     <modules>
         <module>jboss</module>
         <module>karaf</module>
-        <module>tomcat</module>
         <module>was</module>
         <module>wls</module>
     </modules>
@@ -398,25 +396,6 @@
                     </plugins>
                 </pluginManagement>
             </build>
-        </profile>
-        <profile>
-            <id>Include CORS tests</id>
-            <!--
-            If you want to run CORS tests it is necessary to put
-
-            127.0.0.1 localhost-auth
-            127.0.0.1 localhost-db
-
-            to your /etc/hosts file
-            -->
-            <activation>
-                <property>
-                    <name>includeCorsTests</name>
-                </property>
-            </activation>
-            <properties>
-                <exclude.cors.tests>-</exclude.cors.tests>
-            </properties>
         </profile>
     </profiles>
 

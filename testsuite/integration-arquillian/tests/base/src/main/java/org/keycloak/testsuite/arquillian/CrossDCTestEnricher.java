@@ -16,44 +16,40 @@
  */
 package org.keycloak.testsuite.arquillian;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import org.apache.commons.io.FileUtils;
-import static org.hamcrest.Matchers.lessThan;
+import org.jboss.arquillian.container.spi.event.StopContainer;
+import org.jboss.arquillian.container.spi.event.StopSuiteContainers;
 import org.jboss.arquillian.container.test.api.ContainerController;
+import org.jboss.arquillian.core.api.Event;
 import org.jboss.arquillian.core.api.Instance;
-import org.jboss.arquillian.core.spi.Validate;
 import org.jboss.arquillian.core.api.annotation.Inject;
 import org.jboss.arquillian.core.api.annotation.Observes;
+import org.jboss.arquillian.core.spi.Validate;
 import org.jboss.arquillian.test.spi.event.suite.After;
+import org.jboss.arquillian.test.spi.event.suite.AfterSuite;
 import org.jboss.arquillian.test.spi.event.suite.Before;
-import org.jboss.arquillian.test.spi.event.suite.BeforeClass;
 import org.jboss.logging.Logger;
-import static org.junit.Assert.assertThat;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.models.Constants;
 import org.keycloak.testsuite.arquillian.annotation.InitialDcState;
-import org.keycloak.testsuite.arquillian.undertow.TLSUtils;
 import org.keycloak.testsuite.auth.page.AuthRealm;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
 import org.keycloak.testsuite.crossdc.DC;
 import org.keycloak.testsuite.crossdc.ServerSetup;
+import org.keycloak.testsuite.utils.tls.TLSUtils;
+
+import java.io.File;
+import java.io.IOException;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
-import org.jboss.arquillian.container.spi.Container;
-import org.jboss.arquillian.container.spi.event.StopContainer;
-import org.jboss.arquillian.container.spi.event.StopSuiteContainers;
-import org.jboss.arquillian.core.api.Event;
-import org.jboss.arquillian.test.spi.event.suite.AfterSuite;
-import org.wildfly.extras.creaper.core.ManagementClient;
-import org.wildfly.extras.creaper.core.online.OnlineManagementClient;
-import org.wildfly.extras.creaper.core.online.OnlineOptions;
+
+import static org.hamcrest.Matchers.lessThan;
+import static org.junit.Assert.assertThat;
 
 /**
  *

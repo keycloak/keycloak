@@ -35,11 +35,7 @@ public class CustomerCookiePortalRoot extends AbstractPageWithInjectedUrl {
 
     @Override
     public URL getInjectedUrl() {
-        try {
-            return new URL(url.toString() + "/");
-        } catch (MalformedURLException e) {
-            throw new RuntimeException(e);
-        }
+        return url;
     }
     
     public String logoutURL() {

@@ -21,7 +21,7 @@
     <parent>
         <artifactId>keycloak-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>5.0.0-SNAPSHOT</version>
+        <version>6.0.0-SNAPSHOT</version>
         <relativePath>../../../../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
@@ -31,8 +31,6 @@
     <properties>
         <maven.compiler.target>1.7</maven.compiler.target>
         <maven.compiler.source>1.7</maven.compiler.source>
-
-        <jetty9.version>9.2.4.v20141103</jetty9.version>
         <keycloak.osgi.export>
             org.keycloak.adapters.jetty.*
         </keycloak.osgi.export>
@@ -85,21 +83,21 @@
         <dependency>
             <groupId>org.eclipse.jetty</groupId>
             <artifactId>jetty-server</artifactId>
-            <version>${jetty9.version}</version>
+            <version>${jetty92.version}</version>
             <scope>provided</scope>
         </dependency>
 
         <dependency>
             <groupId>org.eclipse.jetty</groupId>
             <artifactId>jetty-util</artifactId>
-            <version>${jetty9.version}</version>
+            <version>${jetty92.version}</version>
             <scope>provided</scope>
         </dependency>
 
         <dependency>
             <groupId>org.eclipse.jetty</groupId>
             <artifactId>jetty-security</artifactId>
-            <version>${jetty9.version}</version>
+            <version>${jetty92.version}</version>
             <scope>provided</scope>
         </dependency>
 

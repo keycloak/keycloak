@@ -1,0 +1,17 @@
+{
+  "name": "keycloak",
+  "version": "${project.version}",
+  "main": "dist/keycloak.js",
+  "ignore": [
+    "**/.*"
+  ],
+  "description": "Keycloak adapter",
+  "keywords": [
+    "keycloak",
+    "sso",
+    "oauth",
+    "oauth2",
+    "authentication"
+  ],
+  "license": "Apache-2.0"
+}

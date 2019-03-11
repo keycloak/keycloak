@@ -48,10 +48,8 @@ import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.account.AccountFormServiceTest;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
-import org.keycloak.testsuite.arquillian.undertow.TLSUtils;
 import org.keycloak.testsuite.auth.page.AuthRealm;
 import org.keycloak.testsuite.pages.AccountApplicationsPage;
 import org.keycloak.testsuite.pages.LoginPage;
@@ -63,6 +61,7 @@ import org.keycloak.testsuite.util.RealmManager;
 import org.keycloak.testsuite.util.RoleBuilder;
 import org.keycloak.testsuite.util.TokenSignatureUtil;
 import org.keycloak.testsuite.util.UserBuilder;
+import org.keycloak.testsuite.utils.tls.TLSUtils;
 import org.keycloak.util.TokenUtil;
 
 import javax.ws.rs.NotFoundException;

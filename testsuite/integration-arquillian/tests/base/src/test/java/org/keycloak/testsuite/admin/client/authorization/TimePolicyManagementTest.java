@@ -101,18 +101,20 @@ public class TimePolicyManagementTest extends AbstractPolicyManagementTest {
         AuthorizationResource authorization = getClient().authorization();
         TimePolicyRepresentation representation = createRepresentation("Test Delete Policy");
         TimePoliciesResource policies = authorization.policies().time();
-        Response response = policies.create(representation);
-        TimePolicyRepresentation created = response.readEntity(TimePolicyRepresentation.class);
 
-        policies.findById(created.getId()).remove();
+        try (Response response = policies.create(representation)) {
+            TimePolicyRepresentation created = response.readEntity(TimePolicyRepresentation.class);
 
-        TimePolicyResource removed = policies.findById(created.getId());
+            policies.findById(created.getId()).remove();
 
-        try {
-            removed.toRepresentation();
-            fail("Permission not removed");
-        } catch (NotFoundException ignore) {
+            TimePolicyResource removed = policies.findById(created.getId());
 
+            try {
+                removed.toRepresentation();
+                fail("Permission not removed");
+            } catch (NotFoundException ignore) {
+
+            }
         }
     }
 
@@ -140,10 +142,12 @@ public class TimePolicyManagementTest extends AbstractPolicyManagementTest {
 
     private void assertCreated(AuthorizationResource authorization, TimePolicyRepresentation representation) {
         TimePoliciesResource permissions = authorization.policies().time();
-        Response response = permissions.create(representation);
-        TimePolicyRepresentation created = response.readEntity(TimePolicyRepresentation.class);
-        TimePolicyResource permission = permissions.findById(created.getId());
-        assertRepresentation(representation, permission);
+
+        try (Response response = permissions.create(representation)) {
+            TimePolicyRepresentation created = response.readEntity(TimePolicyRepresentation.class);
+            TimePolicyResource permission = permissions.findById(created.getId());
+            assertRepresentation(representation, permission);
+        }
     }
 
     private void assertRepresentation(TimePolicyRepresentation representation, TimePolicyResource permission) {

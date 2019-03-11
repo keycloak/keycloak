@@ -37,7 +37,7 @@ public class MultiTenant1Saml extends SAMLServlet {
     @Override
     public URL getInjectedUrl() {
         try {
-            return new URL(url + "/?realm=tenant1");
+            return new URL(url + "?realm=tenant1");
         } catch (MalformedURLException e) {
             throw new IllegalStateException(e);
         }

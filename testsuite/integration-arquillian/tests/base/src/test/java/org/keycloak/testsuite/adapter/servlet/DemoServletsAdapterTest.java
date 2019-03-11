@@ -16,44 +16,20 @@
  */
 package org.keycloak.testsuite.adapter.servlet;
 
-import java.io.File;
-import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
-import javax.ws.rs.client.Entity;
-import javax.ws.rs.client.WebTarget;
-import javax.ws.rs.core.Form;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
-import javax.ws.rs.core.UriBuilder;
-
 import org.apache.commons.io.FileUtils;
 import org.apache.http.client.utils.URLEncodedUtils;
-import org.apache.http.conn.params.ConnManagerParams;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
-import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
-
 import org.keycloak.OAuth2Constants;
-import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.adapters.OIDCAuthenticationError;
+import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.common.util.Time;
 import org.keycloak.constants.AdapterConstants;
 import org.keycloak.events.Details;
@@ -85,6 +61,7 @@ import org.keycloak.testsuite.adapter.page.InputPortalNoAccessToken;
 import org.keycloak.testsuite.adapter.page.ProductPortal;
 import org.keycloak.testsuite.adapter.page.ProductPortalAutodetectBearerOnly;
 import org.keycloak.testsuite.adapter.page.SecurePortal;
+import org.keycloak.testsuite.adapter.page.SecurePortalRewriteRedirectUri;
 import org.keycloak.testsuite.adapter.page.SecurePortalWithCustomSessionConfig;
 import org.keycloak.testsuite.adapter.page.TokenMinTTLPage;
 import org.keycloak.testsuite.admin.ApiUtil;
@@ -95,6 +72,7 @@ import org.keycloak.testsuite.auth.page.login.OAuthGrant;
 import org.keycloak.testsuite.auth.page.login.OIDCLogin;
 import org.keycloak.testsuite.console.page.events.Config;
 import org.keycloak.testsuite.console.page.events.LoginEvents;
+import org.keycloak.testsuite.util.FollowRedirectsEngine;
 import org.keycloak.testsuite.util.JavascriptBrowser;
 import org.keycloak.testsuite.util.Matchers;
 import org.keycloak.testsuite.util.URLUtils;
@@ -103,6 +81,27 @@ import org.keycloak.util.BasicAuthHelper;
 import org.openqa.selenium.By;
 import org.openqa.selenium.Cookie;
 import org.openqa.selenium.WebDriver;
+
+import javax.ws.rs.client.Client;
+import javax.ws.rs.client.ClientBuilder;
+import javax.ws.rs.client.Entity;
+import javax.ws.rs.client.WebTarget;
+import javax.ws.rs.core.Form;
+import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
+import javax.ws.rs.core.UriBuilder;
+import java.io.File;
+import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.anyOf;
@@ -133,6 +132,9 @@ import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP)
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP6)
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP71)
+@AppServerContainer(ContainerConstants.APP_SERVER_TOMCAT7)
+@AppServerContainer(ContainerConstants.APP_SERVER_TOMCAT8)
+@AppServerContainer(ContainerConstants.APP_SERVER_TOMCAT9)
 public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
 
     // Javascript browser needed KEYCLOAK-4703
@@ -152,6 +154,8 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
     private SecurePortal securePortal;
     @Page
     private SecurePortalWithCustomSessionConfig securePortalWithCustomSessionConfig;
+    @Page
+    private SecurePortalRewriteRedirectUri securePortalRewriteRedirectUri;
     @Page
     private CustomerDb customerDb;
     @Page
@@ -195,7 +199,7 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
     protected static WebArchive customerCookiePortal() {
         return servletDeployment(CustomerCookiePortal.DEPLOYMENT_NAME, AdapterActionsFilter.class, CustomerServlet.class, ErrorServlet.class, ServletTestUtils.class);
     }
-    
+
     @Deployment(name = CustomerPortalNoConf.DEPLOYMENT_NAME)
     protected static WebArchive customerPortalNoConf() {
         return servletDeployment(CustomerPortalNoConf.DEPLOYMENT_NAME, CustomerServletNoConf.class, ErrorServlet.class);
@@ -205,6 +209,11 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
     protected static WebArchive securePortal() {
         return servletDeployment(SecurePortal.DEPLOYMENT_NAME, CallAuthenticatedServlet.class);
     }
+    @Deployment(name = SecurePortalRewriteRedirectUri.DEPLOYMENT_NAME)
+    protected static WebArchive securePortalRewriteRedirectUri() {
+        return servletDeployment(SecurePortalRewriteRedirectUri.DEPLOYMENT_NAME, CallAuthenticatedServlet.class);
+    }
+
 
     @Deployment(name = SecurePortalWithCustomSessionConfig.DEPLOYMENT_NAME)
     protected static WebArchive securePortalWithCustomSessionConfig() {
@@ -230,7 +239,7 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
     protected static WebArchive productPortal() {
         return servletDeployment(ProductPortal.DEPLOYMENT_NAME, ProductServlet.class);
     }
-    
+
     @Deployment(name = ProductPortalAutodetectBearerOnly.DEPLOYMENT_NAME)
     protected static WebArchive productPortalAutodetectBearerOnly() {
         return servletDeployment(ProductPortalAutodetectBearerOnly.DEPLOYMENT_NAME, ProductServlet.class);
@@ -240,7 +249,7 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
     protected static WebArchive inputPortal() {
         return servletDeployment(InputPortal.DEPLOYMENT_NAME, "keycloak.json", InputServlet.class, ServletTestUtils.class);
     }
-    
+
     @Deployment(name = InputPortalNoAccessToken.DEPLOYMENT_NAME)
     protected static WebArchive inputPortalNoAccessToken() {
         return servletDeployment(InputPortalNoAccessToken.DEPLOYMENT_NAME, "keycloak.json", InputServlet.class, ServletTestUtils.class);
@@ -335,7 +344,7 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
             assertCurrentUrlEquals(customerPortal);
             assertLogged();
             
-            driver.navigate().to(customerPortal.logout());
+            driver.navigate().to(customerPortal.logout().toASCIIString());
             WaitUtils.waitUntilElement(By.id("customer_portal_logout")).is().present();
             customerPortal.navigateTo();
             assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
@@ -419,7 +428,7 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
 
         assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
         testRealmLoginPage.form().login("bburke@redhat.com", "password");
-        assertCurrentUrlEquals(inputPortal + "/secured/post");
+        assertCurrentUrlEquals(inputPortal.getUriBuilder().clone().path("secured").path("post").build());
         waitForPageToLoad();
         assertPageContains("parameter=hello");
 
@@ -577,7 +586,7 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
     @Test
     public void testLoginSSOMax() throws InterruptedException {
         // Delete cookies
-        driver.navigate().to(customerPortal + "/error.html");
+        driver.navigate().to(customerPortal.getUriBuilder().clone().path("error.html").build().toASCIIString());
         driver.manage().deleteAllCookies();
 
         // test login to customer-portal which does a bearer request to customer-db
@@ -605,7 +614,7 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
     //KEYCLOAK-518
     @Test
     public void testNullBearerToken() {
-        Client client = ClientBuilder.newClient();
+        Client client = new ResteasyClientBuilder().httpEngine(new FollowRedirectsEngine()).build();
         WebTarget target = client.target(customerDb.toString());
         Response response = target.request().get();
         assertEquals(401, response.getStatus());
@@ -619,7 +628,7 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
     //KEYCLOAK-1368
     @Test
     public void testNullBearerTokenCustomErrorPage() {
-        Client client = ClientBuilder.newClient();
+        Client client = new ResteasyClientBuilder().httpEngine(new FollowRedirectsEngine()).build();
         WebTarget target = client.target(customerDbErrorPage.toString());
 
         Response response = target.request().get();
@@ -715,6 +724,15 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
         assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
         securePortalWithCustomSessionConfig.navigateTo();
         assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
+    }
+
+    @Test
+    public void testRewriteRedirectUri() {
+        // test login to application where the redirect_uri is rewritten based on rules defined in keycloak.json
+        securePortalRewriteRedirectUri.navigateTo();
+        assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
+        testRealmLoginPage.form().login("bburke@redhat.com", "password");
+        assertTrue(driver.getCurrentUrl().contains("/rewritten"));
     }
 
     // Tests "token-minimum-time-to-live" adapter configuration option
@@ -838,7 +856,7 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
 
 
     @Test
-    public void testVerifyTokenAudience() {
+    public void testVerifyTokenAudience() throws Exception {
         // Generate audience client scope
         String clientScopeId = testingClient.testing().generateAudienceClientScope("demo", "customer-db-audience-required");
 
@@ -846,7 +864,7 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
         client.addOptionalClientScope(clientScopeId);
 
         // Login without audience scope. Invoke service should end with failure
-        driver.navigate().to(customerPortal.callCustomerDbAudienceRequiredUrl(false));
+        driver.navigate().to(customerPortal.callCustomerDbAudienceRequiredUrl(false).toURL());
         assertTrue(testRealmLoginPage.form().isUsernamePresent());
         assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
         testRealmLoginPage.form().login("bburke@redhat.com", "password");
@@ -857,11 +875,11 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
         Assert.assertFalse(pageSource.contains("Stian Thorgersen"));
 
         // Logout TODO: will be good to not request logout to force adapter to use additional scope (and other request parameters)
-        driver.navigate().to(customerPortal.logout());
+        driver.navigate().to(customerPortal.logout().toURL());
         waitForPageToLoad();
 
         // Login with requested audience
-        driver.navigate().to(customerPortal.callCustomerDbAudienceRequiredUrl(true));
+        driver.navigate().to(customerPortal.callCustomerDbAudienceRequiredUrl(true).toURL());
         assertTrue(testRealmLoginPage.form().isUsernamePresent());
         assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
         testRealmLoginPage.form().login("bburke@redhat.com", "password");
@@ -938,7 +956,9 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
                 .user(userId)
                 .detail(Details.USERNAME, "bburke@redhat.com")
                 .detail(Details.CONSENT, Details.CONSENT_VALUE_CONSENT_GRANTED)
-                .detail(Details.REDIRECT_URI, customerPortal.getInjectedUrl().toString())
+                .detail(Details.REDIRECT_URI,
+                        org.hamcrest.Matchers.anyOf(org.hamcrest.Matchers.equalTo(customerPortal.getInjectedUrl().toString()),
+                                org.hamcrest.Matchers.equalTo(customerPortal.getInjectedUrl().toString() + "/")))
                 .removeDetail(Details.CODE_ID)
                 .assertEvent();
 
@@ -995,7 +1015,9 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
                 .user(userId)
                 .detail(Details.USERNAME, "bburke@redhat.com")
                 .detail(Details.CONSENT, Details.CONSENT_VALUE_NO_CONSENT_REQUIRED)
-                .detail(Details.REDIRECT_URI, customerPortal.getInjectedUrl().toString())
+                .detail(Details.REDIRECT_URI,
+                        org.hamcrest.Matchers.anyOf(org.hamcrest.Matchers.equalTo(customerPortal.getInjectedUrl().toString()),
+                                org.hamcrest.Matchers.equalTo(customerPortal.getInjectedUrl().toString() + "/")))
                 .removeDetail(Details.CODE_ID)
                 .assertEvent();
 
@@ -1015,7 +1037,9 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
                 .realm(realm.getId())
                 .user(userId)
                 .session(AssertEvents.isUUID())
-                .detail(Details.REDIRECT_URI, customerPortal.getInjectedUrl().toString())
+                .detail(Details.REDIRECT_URI,
+                        org.hamcrest.Matchers.anyOf(org.hamcrest.Matchers.equalTo(customerPortal.getInjectedUrl().toString()),
+                                org.hamcrest.Matchers.equalTo(customerPortal.getInjectedUrl().toString() + "/")))
                 .assertEvent();
 
         assertEvents.assertEmpty();
@@ -1092,7 +1116,7 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
         
         // Do not redirect client to login page if it's an XHR
         System.out.println(productPortalAutodetectBearerOnly.getInjectedUrl().toString());
-        WebTarget target = client.target(productPortalAutodetectBearerOnly.getInjectedUrl().toString());
+        WebTarget target = client.target(productPortalAutodetectBearerOnly.getInjectedUrl().toString() + "/");
         Response response = target.request().header("X-Requested-With", "XMLHttpRequest").get();
         Assert.assertEquals(401, response.getStatus());
         response.close();
@@ -1141,7 +1165,7 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
     @Test
     public void testBasicAuthErrorHandling() {
         int numberOfConnections = 10;
-        Client client = new ResteasyClientBuilder().connectionPoolSize(numberOfConnections).build();
+        Client client = new ResteasyClientBuilder().connectionPoolSize(numberOfConnections).httpEngine(new FollowRedirectsEngine()).build();
         WebTarget target = client.target(customerDb.getInjectedUrl().toString());
         Response response = target.request().get();
         Assert.assertEquals(401, response.getStatus());
@@ -1161,7 +1185,7 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
     // KEYCLOAK-1733
     @Test
     public void testNullQueryParameterAccessToken() {
-        Client client = ClientBuilder.newClient();
+        Client client = new ResteasyClientBuilder().httpEngine(new FollowRedirectsEngine()).build();
         
         WebTarget target = client.target(customerDb.getInjectedUrl().toString());
         Response response = target.request().get();
@@ -1180,7 +1204,7 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
     @Test
     public void testRestCallWithAccessTokenAsQueryParameter() {
 
-        Client client = ClientBuilder.newClient();
+        Client client = new ResteasyClientBuilder().httpEngine(new FollowRedirectsEngine()).build();
         try {
             WebTarget webTarget = client.target(testRealmPage.toString() + "/protocol/openid-connect/token");
 
@@ -1212,14 +1236,15 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
     
     //KEYCLOAK-4765
     @Test
-    public void testCallURLWithAccessToken() {
+    public void testCallURLWithAccessToken() throws Exception {
         // test login to customer-portal which does a bearer request to customer-db
-        String applicationURL = inputPortalNoAccessToken.getInjectedUrl().toString() + "?access_token=invalid_token";
-        driver.navigate().to(applicationURL);
-        System.out.println("Current url: " + driver.getCurrentUrl());
+        URI applicationURL = inputPortalNoAccessToken.getUriBuilder().clone()
+                .queryParam("access_token", "invalid_token")
+                .build();
 
-        Assert.assertEquals(applicationURL, driver.getCurrentUrl());
-        System.out.println(driver.getPageSource());
+        driver.navigate().to(applicationURL.toURL());
+
+        assertEquals(applicationURL.toASCIIString(), driver.getCurrentUrl());
         inputPortalNoAccessToken.execute("hello");
         assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
     }
@@ -1336,7 +1361,9 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
         .user(userId)
         .detail(Details.USERNAME, "bburke@redhat.com")
         .detail(Details.CONSENT, Details.CONSENT_VALUE_NO_CONSENT_REQUIRED)
-        .detail(Details.REDIRECT_URI, clientSecretJwtSecurePortal.getInjectedUrl().toString())
+        .detail(Details.REDIRECT_URI,
+                org.hamcrest.Matchers.anyOf(org.hamcrest.Matchers.equalTo(clientSecretJwtSecurePortal.getInjectedUrl().toString()),
+                        org.hamcrest.Matchers.equalTo(clientSecretJwtSecurePortal.getInjectedUrl().toString() + "/")))
         .removeDetail(Details.CODE_ID)
         .assertEvent();
         
@@ -1368,7 +1395,9 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
                 .user(userId)
                 .detail(Details.USERNAME, "bburke@redhat.com")
                 .detail(Details.CONSENT, Details.CONSENT_VALUE_NO_CONSENT_REQUIRED)
-                .detail(Details.REDIRECT_URI, clientSecretJwtSecurePortal.getInjectedUrl().toString())
+                .detail(Details.REDIRECT_URI,
+                        org.hamcrest.Matchers.anyOf(org.hamcrest.Matchers.equalTo(clientSecretJwtSecurePortal.getInjectedUrl().toString()),
+                                org.hamcrest.Matchers.equalTo(clientSecretJwtSecurePortal.getInjectedUrl().toString() + "/")))
                 .removeDetail(Details.CODE_ID)
                 .assertEvent();
 

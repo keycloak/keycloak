@@ -54,6 +54,7 @@ public abstract class AbstractX509ClientCertificateAuthenticator implements Auth
     public static final String ENABLE_CRLDP = "x509-cert-auth.crldp-checking-enabled";
     public static final String CRL_RELATIVE_PATH = "x509-cert-auth.crl-relative-path";
     public static final String OCSPRESPONDER_URI = "x509-cert-auth.ocsp-responder-uri";
+    public static final String OCSPRESPONDER_CERTIFICATE = "x509-cert-auth.ocsp-responder-certificate";
     public static final String MAPPING_SOURCE_SELECTION = "x509-cert-auth.mapping-source-selection";
     public static final String MAPPING_SOURCE_CERT_SUBJECTDN = "Match SubjectDN using regular expression";
     public static final String MAPPING_SOURCE_CERT_SUBJECTDN_EMAIL = "Subject's e-mail";
@@ -93,6 +94,7 @@ public abstract class AbstractX509ClientCertificateAuthenticator implements Auth
                         .cRLDPEnabled(config.getCRLDistributionPointEnabled())
                         .cRLrelativePath(config.getCRLRelativePath())
                         .oCSPEnabled(config.getOCSPEnabled())
+                        .oCSPResponseCertificate(config.getOCSPResponderCertificate())
                         .oCSPResponderURI(config.getOCSPResponder());
         }
     }

@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian-tests</artifactId>
-        <version>5.0.0-SNAPSHOT</version>
+        <version>6.0.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -45,8 +45,6 @@
         <exclude.x509>**/x509/*Test.java</exclude.x509>
         <!-- KEYCLOAK-6771 exclude Mutual TLS Holder of Key Token x509 tests by default, enabled by 'ssl' profile -->
         <exclude.HoK>**/hok/**/*Test.java</exclude.HoK>
-        <!-- see include-CORS-tests profile -->
-        <exclude.cors.tests>**/cors/*Test.java</exclude.cors.tests>
     </properties>
     
     <dependencies>
@@ -188,7 +186,6 @@
                         <exclude>${exclude.cluster}</exclude>
                         <exclude>${exclude.crossdc}</exclude>
                         <exclude>${exclude.x509}</exclude>
-                        <exclude>${exclude.cors.tests}</exclude>
                         <exclude>${exclude.HoK}</exclude>
                     </excludes>
                     <systemPropertyVariables>
@@ -412,6 +409,94 @@
                         <configuration>
                             <skip>true</skip>
                         </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <profile>
+            <id>app-server-jetty94</id>
+            <activation>
+                <property>
+                    <name>app.server</name>
+                    <value>jetty94</value>
+                </property>
+            </activation>
+            <properties>
+                <app.server>jetty94</app.server> <!--in case the profile is called directly-->
+                <app.server.skip.unpack>true</app.server.skip.unpack>
+            </properties>
+            <dependencies>
+                <dependency>
+                    <groupId>org.keycloak.testsuite</groupId>
+                    <artifactId>integration-arquillian-servers-app-server-jetty-94</artifactId>
+                    <version>${project.version}</version>
+                    <scope>runtime</scope>
+                </dependency>
+            </dependencies>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.commonjava.maven.plugins</groupId>
+                        <artifactId>directory-maven-plugin</artifactId>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>app-server-jetty93</id>
+            <activation>
+                <property>
+                    <name>app.server</name>
+                    <value>jetty93</value>
+                </property>
+            </activation>
+            <properties>
+                <app.server>jetty93</app.server> <!--in case the profile is called directly-->
+                <app.server.skip.unpack>true</app.server.skip.unpack>
+            </properties>
+            <dependencies>
+                <dependency>
+                    <groupId>org.keycloak.testsuite</groupId>
+                    <artifactId>integration-arquillian-servers-app-server-jetty-93</artifactId>
+                    <version>${project.version}</version>
+                    <scope>runtime</scope>
+                </dependency>
+            </dependencies>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.commonjava.maven.plugins</groupId>
+                        <artifactId>directory-maven-plugin</artifactId>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>app-server-jetty92</id>
+            <activation>
+                <property>
+                    <name>app.server</name>
+                    <value>jetty92</value>
+                </property>
+            </activation>
+            <properties>
+                <app.server>jetty92</app.server> <!--in case the profile is called directly-->
+                <app.server.skip.unpack>true</app.server.skip.unpack>
+            </properties>
+            <dependencies>
+                <dependency>
+                    <groupId>org.keycloak.testsuite</groupId>
+                    <artifactId>integration-arquillian-servers-app-server-jetty-92</artifactId>
+                    <version>${project.version}</version>
+                    <scope>runtime</scope>
+                </dependency>
+            </dependencies>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.commonjava.maven.plugins</groupId>
+                        <artifactId>directory-maven-plugin</artifactId>
                     </plugin>
                 </plugins>
             </build>
@@ -733,6 +818,105 @@
             </build>
         </profile>
         <profile>
+            <id>app-server-tomcat7</id>
+            <activation>
+                <property>
+                    <name>app.server</name>
+                    <value>tomcat7</value>
+                </property>
+            </activation>
+            <properties>
+                <app.server>tomcat7</app.server> <!--in case the profile is called directly-->
+                <app.server.skip.unpack>false</app.server.skip.unpack>
+                <app.server.artifactId>integration-arquillian-servers-app-server-tomcat7</app.server.artifactId><!-- Need to override -->
+                <app.server.port.offset>0</app.server.port.offset>
+                <app.server.http.port>8080</app.server.http.port>
+                <app.server.management.port>9990</app.server.management.port>
+            </properties>
+            <dependencies>
+                <dependency>
+                    <groupId>org.keycloak.testsuite</groupId>
+                    <artifactId>integration-arquillian-servers-app-server-tomcat7</artifactId>
+                    <version>${project.version}</version>
+                    <scope>runtime</scope>
+                </dependency>
+            </dependencies>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.commonjava.maven.plugins</groupId>
+                        <artifactId>directory-maven-plugin</artifactId>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>app-server-tomcat8</id>
+            <activation>
+                <property>
+                    <name>app.server</name>
+                    <value>tomcat8</value>
+                </property>
+            </activation>
+            <properties>
+                <app.server>tomcat8</app.server> <!--in case the profile is called directly-->
+                <app.server.skip.unpack>false</app.server.skip.unpack>
+                <app.server.artifactId>integration-arquillian-servers-app-server-tomcat8</app.server.artifactId><!-- Need to override -->
+                <app.server.port.offset>0</app.server.port.offset>
+                <app.server.http.port>8080</app.server.http.port>
+                <app.server.management.port>9990</app.server.management.port>
+            </properties>
+            <dependencies>
+                <dependency>
+                    <groupId>org.keycloak.testsuite</groupId>
+                    <artifactId>integration-arquillian-servers-app-server-tomcat8</artifactId>
+                    <version>${project.version}</version>
+                    <scope>runtime</scope>
+                </dependency>
+            </dependencies>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.commonjava.maven.plugins</groupId>
+                        <artifactId>directory-maven-plugin</artifactId>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>app-server-tomcat9</id>
+            <activation>
+                <property>
+                    <name>app.server</name>
+                    <value>tomcat9</value>
+                </property>
+            </activation>
+            <properties>
+                <app.server>tomcat9</app.server> <!--in case the profile is called directly-->
+                <app.server.skip.unpack>false</app.server.skip.unpack>
+                <app.server.artifactId>integration-arquillian-servers-app-server-tomcat9</app.server.artifactId><!-- Need to override -->
+                <app.server.port.offset>0</app.server.port.offset>
+                <app.server.http.port>8080</app.server.http.port>
+                <app.server.management.port>9990</app.server.management.port>
+            </properties>
+            <dependencies>
+                <dependency>
+                    <groupId>org.keycloak.testsuite</groupId>
+                    <artifactId>integration-arquillian-servers-app-server-tomcat9</artifactId>
+                    <version>${project.version}</version>
+                    <scope>runtime</scope>
+                </dependency>
+            </dependencies>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.commonjava.maven.plugins</groupId>
+                        <artifactId>directory-maven-plugin</artifactId>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
             <id>auth-servers-crossdc-undertow</id>
             <properties>
                 <skip.clean.second.cache>false</skip.clean.second.cache>
@@ -747,25 +931,6 @@
                 <skip.copy.auth.crossdc.nodes>false</skip.copy.auth.crossdc.nodes>
                 <exclude.crossdc>-</exclude.crossdc>
                 <surefire.memory.settings>-Xms512m -Xmx1024m -XX:MetaspaceSize=96m -XX:MaxMetaspaceSize=256m</surefire.memory.settings>
-            </properties>
-        </profile>
-        <profile>
-            <id>include-CORS-tests</id>
-            <!--
-            If you want to run CORS tests it is necessary to put
-
-            127.0.0.1 localhost-auth
-            127.0.0.1 localhost-db
-
-            to your /etc/hosts file
-            -->
-            <activation>
-                <property>
-                    <name>includeCorsTests</name>
-                </property>
-            </activation>
-            <properties>
-                <exclude.cors.tests>-</exclude.cors.tests>
             </properties>
         </profile>
     </profiles>

@@ -179,7 +179,7 @@ public class GroupPathPolicyTest extends AbstractAuthzTest {
         policy.setGroupsClaim("groups");
         policy.addGroupPath(groupPath, extendChildren);
 
-        getClient().authorization().policies().group().create(policy);
+        getClient().authorization().policies().group().create(policy).close();
     }
 
     private void createResourcePermission(String name, String resource, String... policies) {
@@ -189,19 +189,19 @@ public class GroupPathPolicyTest extends AbstractAuthzTest {
         permission.addResource(resource);
         permission.addPolicy(policies);
 
-        getClient().authorization().permissions().resource().create(permission);
+        getClient().authorization().permissions().resource().create(permission).close();
     }
 
     private void createResource(String name) {
         AuthorizationResource authorization = getClient().authorization();
         ResourceRepresentation resource = new ResourceRepresentation(name);
 
-        authorization.resources().create(resource);
+        authorization.resources().create(resource).close();
     }
 
     private RealmResource getRealm() {
         try {
-            return AdminClientUtil.createAdminClient().realm("authz-test");
+            return getAdminClient().realm("authz-test");
         } catch (Exception e) {
             throw new RuntimeException("Failed to create admin client");
         }

@@ -2,6 +2,7 @@ package org.keycloak.testsuite.cluster;
 
 import org.jboss.arquillian.container.test.api.ContainerController;
 import org.jboss.arquillian.test.api.ArquillianResource;
+import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.keycloak.admin.client.Keycloak;
@@ -10,9 +11,9 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
 import org.keycloak.testsuite.arquillian.ContainerInfo;
-import org.keycloak.testsuite.arquillian.undertow.TLSUtils;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
 import org.keycloak.testsuite.util.ContainerAssume;
+import org.keycloak.testsuite.utils.tls.TLSUtils;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -38,9 +39,9 @@ public abstract class AbstractClusterTest extends AbstractKeycloakTest {
     @ArquillianResource
     protected ContainerController controller;
 
-    protected Map<ContainerInfo, Keycloak> backendAdminClients = new HashMap<>();
+    protected static Map<ContainerInfo, Keycloak> backendAdminClients = new HashMap<>();
 
-    protected Map<ContainerInfo, KeycloakTestingClient> backendTestingClients = new HashMap<>();
+    protected static Map<ContainerInfo, KeycloakTestingClient> backendTestingClients = new HashMap<>();
 
     private int currentFailNodeIndex = 0;
 
@@ -163,6 +164,16 @@ public abstract class AbstractClusterTest extends AbstractKeycloakTest {
     @BeforeClass
     public static void enabled() {
         ContainerAssume.assumeClusteredContainer();
+    }
+
+    @AfterClass
+    public static void closeClients() {
+        backendAdminClients.values().forEach(Keycloak::close);
+        backendAdminClients.clear();
+
+        backendTestingClients.values().forEach(KeycloakTestingClient::close);
+        backendTestingClients.clear();
+
     }
 
     @Before

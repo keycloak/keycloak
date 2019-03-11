@@ -21,13 +21,12 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian-servers-app-server-tomcat</artifactId>
-        <version>5.0.0-SNAPSHOT</version>
+        <version>6.0.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>integration-arquillian-servers-app-server-tomcat8</artifactId>
-    <packaging>pom</packaging>
-    <name>App Server - Tomcat - Tomcat 8</name>
+    <name>App Server - Tomcat 8</name>
 
     <properties>
         <app.server.tomcat>tomcat8</app.server.tomcat>
@@ -39,6 +38,20 @@
         
         <app.server.oidc.adapter.artifactId>keycloak-tomcat8-adapter-dist</app.server.oidc.adapter.artifactId>
         <app.server.saml.adapter.artifactId>keycloak-saml-tomcat8-adapter-dist</app.server.saml.adapter.artifactId>
+        <skip.dependencies.for.tomcat8>false</skip.dependencies.for.tomcat8>
     </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.keycloak.testsuite</groupId>
+            <artifactId>integration-arquillian-servers-app-server-tomcat-common</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.arquillian.container</groupId>
+            <artifactId>arquillian-tomcat-managed-8</artifactId>
+            <version>${arquillian-tomcat8-container-version}</version>
+        </dependency>
+    </dependencies>
 
 </project>

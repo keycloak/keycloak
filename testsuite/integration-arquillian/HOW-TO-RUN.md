@@ -85,6 +85,21 @@ TODO: Add info about Wildfly logging
     mvn -f testsuite/integration-arquillian/tests/base/pom.xml \
         -Dtest=org.keycloak.testsuite.adapter.**.*Test
 
+### Jetty
+
+At the moment we can run the testsuite with Jetty `9.1`, `9.2` and `9.4`. 
+Each version has its corresponding profile:
+
+* Jetty `9.1`: `app-server-jetty91`
+* Jetty `9.2`: `app-server-jetty92`
+* Jetty `9.4`: `app-server-jetty94`
+
+Here's how to run the tests with Jetty `9.4`:
+
+    mvn -f testsuite/integration-arquillian/pom.xml \
+        -Papp-server-jetty94 \
+        -Dtest=org.keycloak.testsuite.adapter.**.*Test
+
 ### Wildfly
     
     # Run tests
@@ -92,6 +107,19 @@ TODO: Add info about Wildfly logging
        clean install \
        -Papp-server-wildfly \
        -Dtest=org.keycloak.testsuite.adapter.**
+       
+### Tomcat
+
+We run testsuite with Tomcat 7, 8 and 9. For specific versions see properties `${tomcat[7,8,9].version}` in parent [pom.xml](../../pom.xml). 
+
+To run tests on Tomcat:
+
+````
+mvn -f testsuite/integration-arquillian/pom.xml \
+       clean install \
+       -Papp-server-tomcat[7,8,9] \
+       -Dtest=org.keycloak.testsuite.adapter.**
+````
        
 ### Wildfly with legacy non-elytron adapter
     
@@ -260,8 +288,9 @@ This test will:
       -Dtest=MigrationTest \
       -Dmigration.mode=auto \
       -Djdbc.mvn.groupId=mysql \
-      -Djdbc.mvn.version=5.1.29 \
       -Djdbc.mvn.artifactId=mysql-connector-java \
+      -Djdbc.mvn.version=8.0.12 \
+      -Djdbc.mvn.version.legacy=5.1.38 \
       -Dkeycloak.connectionsJpa.url=jdbc:mysql://$DB_HOST/keycloak \
       -Dkeycloak.connectionsJpa.user=keycloak \
       -Dkeycloak.connectionsJpa.password=keycloak
@@ -269,7 +298,8 @@ This test will:
 The profile "test-7X-migration" indicates from which version you want to test migration. The valid values are:
 * test-70-migration - indicates migration from RHSSO 7.0 (Equivalent to Keycloak 1.9.8.Final)
 * test-71-migration - indicates migration from RHSSO 7.1 (Equivalent to Keycloak 2.5.5.Final)
-* test-72-migration - indicates migration from RHSSO 7.2 (Equivalent to Keycloak 3.4.3.Final)      
+* test-72-migration - indicates migration from RHSSO 7.2 (Equivalent to Keycloak 3.4.3.Final)
+* test-73-migration - indicates migration from RHSSO 7.3 (Equivalent to Keycloak 4.8.3.Final)
       
 ### DB migration test with manual mode
       
@@ -286,8 +316,9 @@ just exports the needed SQL into the script. This SQL script then needs to be ma
       -Dtest=MigrationTest \
       -Dmigration.mode=manual \
       -Djdbc.mvn.groupId=mysql \
-      -Djdbc.mvn.version=5.1.29 \
       -Djdbc.mvn.artifactId=mysql-connector-java \
+      -Djdbc.mvn.version=8.0.12 \
+      -Djdbc.mvn.version.legacy=5.1.38 \
       -Dkeycloak.connectionsJpa.url=jdbc:mysql://$DB_HOST/keycloak \
       -Dkeycloak.connectionsJpa.user=keycloak \
       -Dkeycloak.connectionsJpa.password=keycloak

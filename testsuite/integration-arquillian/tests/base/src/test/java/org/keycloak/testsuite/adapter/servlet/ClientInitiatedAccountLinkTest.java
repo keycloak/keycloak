@@ -126,9 +126,6 @@ public class ClientInitiatedAccountLinkTest extends AbstractServletsAdapterTest 
         servlet.setClientId("client-linking");
         servlet.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
         String uri = "/client-linking";
-        if (!isRelative()) {
-            uri = appServerContextRootPage.toString() + uri;
-        }
         servlet.setAdminUrl(uri);
         servlet.setDirectAccessGrantsEnabled(true);
         servlet.setBaseUrl(uri);
@@ -206,6 +203,7 @@ public class ClientInitiatedAccountLinkTest extends AbstractServletsAdapterTest 
 
     @Test
     public void testErrorConditions() throws Exception {
+        String helloUrl = appPage.getUriBuilder().clone().path("hello").build().toASCIIString();
 
         RealmResource realm = adminClient.realms().realm(CHILD_IDP);
         List<FederatedIdentityRepresentation> links = realm.users().get(childUserId).getFederatedIdentity();
@@ -239,10 +237,11 @@ public class ClientInitiatedAccountLinkTest extends AbstractServletsAdapterTest 
 
         // now log in
 
-        navigateTo( appPage.getInjectedUrl() + "/hello");
+
+        navigateTo(helloUrl);
         Assert.assertTrue(loginPage.isCurrent(CHILD_IDP));
         loginPage.login("child", "password");
-        Assert.assertTrue(driver.getCurrentUrl().startsWith(appPage.getInjectedUrl() + "/hello"));
+        Assert.assertTrue(driver.getCurrentUrl().startsWith(helloUrl));
         Assert.assertTrue(driver.getPageSource().contains("Unknown request:"));
 
         // now test CSRF with bad hash.
@@ -268,10 +267,10 @@ public class ClientInitiatedAccountLinkTest extends AbstractServletsAdapterTest 
         roles.add(userRole);
         clientResource.getScopeMappings().realmLevel().add(roles);
 
-        navigateTo( appPage.getInjectedUrl() + "/hello");
+        navigateTo(helloUrl);
         Assert.assertTrue(loginPage.isCurrent(CHILD_IDP));
         loginPage.login("child", "password");
-        Assert.assertTrue(driver.getCurrentUrl().startsWith(appPage.getInjectedUrl() + "/hello"));
+        Assert.assertTrue(driver.getCurrentUrl().startsWith(helloUrl));
         Assert.assertTrue(driver.getPageSource().contains("Unknown request:"));
 
 
@@ -375,12 +374,6 @@ public class ClientInitiatedAccountLinkTest extends AbstractServletsAdapterTest 
         Assert.assertTrue(links.isEmpty());
 
         logoutAll();
-
-
-
-
-
-
     }
 
     @Test

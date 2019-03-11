@@ -49,6 +49,7 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.event.InteractiveAuthenticationSuccessEvent;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.AbstractAuthenticationProcessingFilter;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
@@ -197,14 +198,15 @@ public class KeycloakAuthenticationProcessingFilter extends AbstractAuthenticati
             log.debug("Authentication success using bearer token/basic authentication. Updating SecurityContextHolder to contain: {}", authResult);
         }
 
-        SecurityContextHolder.getContext().setAuthentication(authResult);
-
-        // Fire event
-        if (this.eventPublisher != null) {
-            eventPublisher.publishEvent(new InteractiveAuthenticationSuccessEvent(authResult, this.getClass()));
-        }
+        SecurityContext context = SecurityContextHolder.createEmptyContext();
+        context.setAuthentication(authResult);
+        SecurityContextHolder.setContext(context);
 
         try {
+            // Fire event
+            if (this.eventPublisher != null) {
+                eventPublisher.publishEvent(new InteractiveAuthenticationSuccessEvent(authResult, this.getClass()));
+            }
             chain.doFilter(request, response);
         } finally {
             SecurityContextHolder.clearContext();

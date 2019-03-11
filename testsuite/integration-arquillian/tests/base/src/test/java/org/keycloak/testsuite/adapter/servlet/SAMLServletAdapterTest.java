@@ -172,6 +172,9 @@ import org.xml.sax.SAXException;
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP)
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP6)
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP71)
+@AppServerContainer(ContainerConstants.APP_SERVER_TOMCAT7)
+@AppServerContainer(ContainerConstants.APP_SERVER_TOMCAT8)
+@AppServerContainer(ContainerConstants.APP_SERVER_TOMCAT9)
 public class SAMLServletAdapterTest extends AbstractServletsAdapterTest {
     @Page
     protected BadClientSalesPostSigServlet badClientSalesPostSigServletPage;
@@ -267,13 +270,13 @@ public class SAMLServletAdapterTest extends AbstractServletsAdapterTest {
 
     @Page
     protected MultiTenant1Saml multiTenant1SamlPage;
-    
+
     @Page
     protected MultiTenant2Saml multiTenant2SamlPage;
-    
+
     @Page
     protected SAMLPostLoginTenant1 tenant1RealmSAMLPostLoginPage;
-    
+
     @Page
     protected SAMLPostLoginTenant2 tenant2RealmSAMLPostLoginPage;
 
@@ -423,9 +426,9 @@ public class SAMLServletAdapterTest extends AbstractServletsAdapterTest {
 
     @Deployment(name = MultiTenant1Saml.DEPLOYMENT_NAME)
     protected static WebArchive multiTenant() {
-        return samlServletDeploymentMultiTenant(MultiTenant1Saml.DEPLOYMENT_NAME, "multi-tenant-saml/WEB-INF/web.xml", 
+        return samlServletDeploymentMultiTenant(MultiTenant1Saml.DEPLOYMENT_NAME, "multi-tenant-saml/WEB-INF/web.xml",
                 "tenant1-keycloak-saml.xml", "tenant2-keycloak-saml.xml",
-                "keystore-tenant1.jks", "keystore-tenant2.jks", 
+                "keystore-tenant1.jks", "keystore-tenant2.jks",
                 SendUsernameServlet.class, SamlMultiTenantResolver.class);
     }
 
@@ -468,7 +471,7 @@ public class SAMLServletAdapterTest extends AbstractServletsAdapterTest {
                 || driver.getPageSource().contains(FORBIDDEN_TEXT)
                 || driver.getPageSource().contains(WEBSPHERE_FORBIDDEN_TEXT)); // WebSphere
     }
-    
+
     private void assertFailedLogin(AbstractPage page, UserRepresentation user, Login loginPage) {
         page.navigateTo();
         assertCurrentUrlStartsWith(loginPage);
@@ -1070,7 +1073,7 @@ public class SAMLServletAdapterTest extends AbstractServletsAdapterTest {
 
         assertCurrentUrlStartsWith(testRealmSAMLPostLoginPage);
         testRealmLoginPage.form().login("bburke@redhat.com", "password");
-        Assert.assertEquals(driver.getCurrentUrl(), inputPortalPage + "/secured/post");
+        Assert.assertThat(URI.create(driver.getCurrentUrl()).getPath(), endsWith("secured/post"));
         waitUntilElement(By.xpath("//body")).text().contains("parameter=hello");
 
         // test that user principal and KeycloakSecurityContext available
@@ -1101,7 +1104,7 @@ public class SAMLServletAdapterTest extends AbstractServletsAdapterTest {
 
         samlidpInitiatedLoginPage.form().login(bburkeUser);
         assertCurrentUrlStartsWith(salesPost2ServletPage);
-        Assert.assertThat(driver.getCurrentUrl(), endsWith("/foo"));
+        Assert.assertThat(URI.create(driver.getCurrentUrl()).getPath(), endsWith("foo"));
         waitUntilElement(By.xpath("//body")).text().contains("principal=bburke");
         salesPost2ServletPage.logout();
         checkLoggedOut(salesPost2ServletPage, testRealmSAMLPostLoginPage);
@@ -1119,7 +1122,7 @@ public class SAMLServletAdapterTest extends AbstractServletsAdapterTest {
         testRealmSAMLPostLoginPage.form().login("bburke", "password");
 
         waitUntilElement(By.xpath("//body")).text().contains("Error info: SamlAuthenticationError [reason=INVALID_SIGNATURE");
-        Assert.assertEquals(driver.getCurrentUrl(), badAssertionSalesPostSigPage + "/saml");
+        Assert.assertEquals(driver.getCurrentUrl(), badAssertionSalesPostSigPage.getUriBuilder().clone().path("saml").build().toASCIIString());
     }
 
     @Test
@@ -1129,7 +1132,7 @@ public class SAMLServletAdapterTest extends AbstractServletsAdapterTest {
         testRealmSAMLPostLoginPage.form().login("bburke", "password");
 
         waitUntilElement(By.xpath("//body")).text().contains("Error info: SamlAuthenticationError [reason=INVALID_SIGNATURE");
-        Assert.assertEquals(driver.getCurrentUrl(), missingAssertionSigPage + "/saml");
+        Assert.assertEquals(driver.getCurrentUrl(), missingAssertionSigPage.getUriBuilder().clone().path("saml").build().toASCIIString());
     }
 
     @Test
@@ -1218,7 +1221,7 @@ public class SAMLServletAdapterTest extends AbstractServletsAdapterTest {
             assertCurrentUrlStartsWith(testRealmSAMLPostLoginPage);
             testRealmSAMLPostLoginPage.form().login("bburke", "password");
 
-            driver.navigate().to(employee2ServletPage.toString() + "/getAttributes");
+            driver.navigate().to(employee2ServletPage.getUriBuilder().clone().path("getAttributes").build().toURL());
             waitForPageToLoad();
 
             String body = driver.findElement(By.xpath("//body")).getText();
@@ -1270,7 +1273,7 @@ public class SAMLServletAdapterTest extends AbstractServletsAdapterTest {
             assertCurrentUrlStartsWith(testRealmSAMLPostLoginPage);
             testRealmSAMLPostLoginPage.form().login("bburke", "password");
 
-            driver.navigate().to(employee2ServletPage.toString() + "/getAttributes");
+            driver.navigate().to(employee2ServletPage.getUriBuilder().clone().path("getAttributes").build().toURL());
             waitForPageToLoad();
 
             String body = driver.findElement(By.xpath("//body")).getText();
@@ -1324,7 +1327,7 @@ public class SAMLServletAdapterTest extends AbstractServletsAdapterTest {
             assertCurrentUrlStartsWith(testRealmSAMLPostLoginPage);
             testRealmSAMLPostLoginPage.form().login("bburke", "password");
 
-            driver.navigate().to(employee2ServletPage.toString() + "/getAttributes");
+            driver.navigate().to(employee2ServletPage.getUriBuilder().clone().path("getAttributes").build().toURL());
             waitForPageToLoad();
 
             String body = driver.findElement(By.xpath("//body")).getText();
@@ -1379,7 +1382,7 @@ public class SAMLServletAdapterTest extends AbstractServletsAdapterTest {
             assertCurrentUrlStartsWith(testRealmSAMLPostLoginPage);
             testRealmSAMLPostLoginPage.form().login("bburke", "password");
 
-            driver.navigate().to(employee2ServletPage.toString() + "/getAttributes");
+            driver.navigate().to(employee2ServletPage.getUriBuilder().clone().path("getAttributes").build().toURL());
             waitForPageToLoad();
 
             String body = driver.findElement(By.xpath("//body")).getText();
@@ -1430,7 +1433,7 @@ public class SAMLServletAdapterTest extends AbstractServletsAdapterTest {
         assertCurrentUrlStartsWith(testRealmSAMLPostLoginPage);
         testRealmSAMLPostLoginPage.form().login("level2GroupUser", "password");
 
-        driver.navigate().to(employee2ServletPage.toString() + "/getAttributes");
+        driver.navigate().to(employee2ServletPage.getUriBuilder().clone().path("getAttributes").build().toURL());
         waitUntilElement(By.xpath("//body")).text().contains("topAttribute: true");
         waitUntilElement(By.xpath("//body")).text().contains("level2Attribute: true");
         waitUntilElement(By.xpath("//body")).text().contains("attribute email: level2@redhat.com");
@@ -1447,7 +1450,7 @@ public class SAMLServletAdapterTest extends AbstractServletsAdapterTest {
         assertCurrentUrlStartsWith(testRealmSAMLPostLoginPage);
         testRealmSAMLPostLoginPage.form().login(bburkeUser);
 
-        driver.navigate().to(employee2ServletPage.toString() + "/getAttributes");
+        driver.navigate().to(employee2ServletPage.getUriBuilder().clone().path("getAttributes").build().toURL());
         waitUntilElement(By.xpath("//body")).text().contains("attribute email: bburke@redhat.com");
         waitUntilElement(By.xpath("//body")).text().contains("friendlyAttribute email: bburke@redhat.com");
         waitUntilElement(By.xpath("//body")).text().contains("phone: 617");
@@ -1493,7 +1496,7 @@ public class SAMLServletAdapterTest extends AbstractServletsAdapterTest {
         assertCurrentUrlStartsWith(testRealmSAMLPostLoginPage);
         testRealmSAMLPostLoginPage.form().login(bburkeUser);
 
-        driver.navigate().to(employee2ServletPage.toString() + "/getAttributes");
+        driver.navigate().to(employee2ServletPage.getUriBuilder().clone().path("getAttributes").build().toURL());
         waitUntilElement(By.xpath("//body")).text().contains("hardcoded-attribute: hard");
         employee2ServletPage.checkRolesEndPoint(false);
         employee2ServletPage.logout();
@@ -1543,7 +1546,7 @@ public class SAMLServletAdapterTest extends AbstractServletsAdapterTest {
             })
             .build()
 
-          .navigateTo(employee2ServletPage.toString() + "/getAttributes")
+          .navigateTo(employee2ServletPage.getUriBuilder().clone().path("getAttributes").build())
 
           .execute(r -> {
               Assert.assertThat(r, statusCodeIsHC(Response.Status.OK));
@@ -1743,7 +1746,7 @@ public class SAMLServletAdapterTest extends AbstractServletsAdapterTest {
         StatusCodeType statusCode = responseType.getStatus().getStatusCode();
 
         Assert.assertThat(statusCode.getValue().toString(), is(JBossSAMLURIConstants.STATUS_SUCCESS.get()));
-        Assert.assertThat(responseType.getDestination(), is(ecpSPPage.toString() + "/"));
+        Assert.assertThat(responseType.getDestination(), is(ecpSPPage.toString()));
         Assert.assertThat(responseType.getSignature(), notNullValue());
         Assert.assertThat(responseType.getAssertions().size(), is(1));
 
