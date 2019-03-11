@@ -26,6 +26,7 @@ Supported Certificate Identity Sources::
 - Match SubjectDN using regular expression
 - X500 Subject's e-mail attribute
 - X500 Subject's e-mail from Subject Alternative Name Extension (RFC822Name General Name)
+- X500 Subject's other name from Subject Alternative Name Extension. This is typically UPN (User Principal Name)
 - X500 Subject's Common Name attribute
 - Match IssuerDN using regular expression
 - X500 Issuer's e-mail attribute
