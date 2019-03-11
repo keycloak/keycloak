@@ -89,7 +89,7 @@ public abstract class AbstractAdapterTest extends AbstractAuthTest {
             log.info("Setting redirect-uris in test realm '" + tr.getRealm() + "' as " + (isRelative() ? "" : "non-") + "relative");
 
             modifyClientRedirectUris(tr, "http://localhost:8080", "");
-            modifyClientRedirectUris(tr, "^(.*/\\*)",
+            modifyClientRedirectUris(tr, "^((?:/.*|)/\\*)",
                   "http://localhost:" + System.getProperty("app.server.http.port", "8280") + "$1",
                   "http://localhost:" + System.getProperty("auth.server.http.port", "8180") + "$1",
                   "https://localhost:" + System.getProperty("app.server.https.port", "8643") + "$1",
