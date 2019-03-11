@@ -26,11 +26,11 @@ public class Hawtio2Page extends AbstractPage {
         return UriBuilder.fromUri(getUrl());
     }
 
-    @FindBy(xpath = "//a[@id ='userDropdownMenu']")
+    @FindBy(xpath = "//button[@id ='userDropdownMenu']")
     @JavascriptBrowser
     private WebElement dropDownMenu;
 
-    @FindBy(xpath = "//a[@ng-click='userDetails.logout()']")
+    @FindBy(xpath = "//a[@ng-focus='authService.logout()']")
     @JavascriptBrowser
     private WebElement logoutButton;
 
