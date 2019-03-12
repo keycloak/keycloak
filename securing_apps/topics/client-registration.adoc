@@ -112,7 +112,7 @@ This means that for the JavaScript adapter you can load the client configuration
 
 The endpoint to use these specifications to register clients in {project_name} is `/auth/realms/<realm>/clients-registrations/openid-connect[/<client id>]`.
 
-This endpoints can also be found in the OpenID Connect Discovery endpoint for the realm, `/auth/realms/<realm>/.well-known/openid-configuration`.
+This endpoint can also be found in the OpenID Connect Discovery endpoint for the realm, `/auth/realms/<realm>/.well-known/openid-configuration`.
 
 === SAML Entity Descriptors
 
