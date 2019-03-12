@@ -8,7 +8,7 @@ The {project_name} server was upgraded to use Wildfly 15 as the underlying conta
 specific {project_name} server functionality, but there are few changes related to the migration, which worth mentioning.
 
 Dependency updates::
-  The dependencies were updated to the versions used by Wildfly 14 server. For example, Infinispan is now 9.4.3.Final.
+  The dependencies were updated to the versions used by Wildfly 15 server. For example, Infinispan is now 9.4.3.Final.
 
 Configuration changes::
   There are few configuration changes in the `standalone(-ha).xml` and `domain.xml` files. You should follow the <<_install_new_version>>
