@@ -10,7 +10,7 @@ image:{project_images}/gitlab-add-identity-provider.png[]
 
 Before you can click `Save`, you must obtain a `Client ID` and `Client Secret` from GitLab.
 
-NOTE: You will the use `Redirect URI` from this page in a later step, which you will provide to GitLab when you register {project_name} as a client there.
+NOTE: You will use the `Redirect URI` from this page in a later step, which you will provide to GitLab when you register {project_name} as a client there.
 
 To enable login with GitLab you first have to register an application in
 https://docs.gitlab.com/ee/integration/oauth_provider.html[GitLab as OAuth2 authentication service provider].
