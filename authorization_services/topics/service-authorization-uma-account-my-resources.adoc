@@ -19,7 +19,7 @@ a particular resource. Users are allowed to approve or deny these requests.
 This section contains a list of all resources owned by the user. Users can click on a resource for more details
 and share the resource with others.
 +
-* Managed *Resources shared with me*
+* Manage *Resources shared with me*
 +
 This section contains a list of all resources shared with the user.
 +
