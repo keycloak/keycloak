@@ -159,7 +159,7 @@ remove <<_default_roles, Default Roles>>.
 
 ==== Scopes explained
 
-The term `scope` is used in {project_name} on few places. Various occurences of scopes are related to each other, but may have
+The term `scope` is used in {project_name} on few places. Various occurrences of scopes are related to each other, but may have
 a different context and meaning. To clarify, here we explain the various `scopes` used in {project_name}.
 
 Client scope::
