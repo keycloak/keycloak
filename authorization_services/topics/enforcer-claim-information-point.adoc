@@ -5,7 +5,7 @@ A Claim Information Point (CIP) is responsible for resolving claims and pushing 
 in order to provide more information about the access context to policies. They can be defined as a configuration option
 to the policy-enforcer in order to resolve claims from different sources, such as:
 
-* HTTP Request (parameters, headers, body, headers, etc)
+* HTTP Request (parameters, headers, body, etc)
 * External HTTP Service
 * Static values defined in configuration
 * Any other source by implementing the Claim Information Provider SPI
