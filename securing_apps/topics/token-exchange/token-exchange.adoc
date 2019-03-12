@@ -130,7 +130,7 @@ You'll need to define a `token-exchange` fine grain permission in the target cli
 .Target Client Permission
 image:{project_images}/exchange-target-client-permission-unset.png[]
 
-Toggle the `Permissions Enabled` switch to true.
+Toggle the `Permissions Enabled` switch to ON.
 
 .Target Client Permission
 image:{project_images}/exchange-target-client-permission-set.png[]
