@@ -1,6 +1,6 @@
 :project_community: false
 :project_product: true
-:project_product_cd: false
+:project_product_cd: true
 :project_name: Red Hat Single Sign-On
 :project_versionMvn: 4.8.3.Final-redhat-00001
 :project_versionNpm: 4.8.3.Final-redhat-00001
@@ -18,8 +18,8 @@ endif::[]
 
 ifeval::[{project_product_cd}==true]
 :project_name_full: Red Hat Single Sign-On Continuous Delivery
-:project_version: 7.3.0.CD05
-:project_versionDoc: 7.3.0.cd05
+:project_version: 7.4.0.CD05
+:project_versionDoc: 5
 :project_templates_version: sso-cd
 :project_latest_image_tag: 1.0
 :project_doc_base_url: https://access.redhat.com/documentation/en-us/red_hat_single_sign-on_continuous_delivery/{project_versionDoc}/html-single
