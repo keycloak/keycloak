@@ -41,7 +41,7 @@ allowAnyHostname::
   The default value is `false`.
 
 truststore::
-  The value is the file path to a keystore file.
+  The value is the file path to a truststore file.
   If you prefix the path with `classpath:`, then the truststore will be obtained from the deployment's classpath instead.
   Used for outgoing HTTPS communications to the {project_name} server.
   Client making HTTPS requests need a way to verify the host of the server they are talking to.
@@ -51,7 +51,7 @@ truststore::
   This is _REQUIRED_ unless `disableTrustManager` is `true`.
 
 truststorePassword::
-  Password for the truststore keystore.
+  Password for the truststore.
   This is _REQUIRED_ if `truststore` is set and the truststore requires a password.
 
 clientKeystore::
