@@ -181,7 +181,7 @@ It opens the login page using the system's browser.
 After the user has authenticated, the browser redirects back into the app using a special URL.
 From there, the {project_name} adapter can finish the login by reading the code or token from the URL.
 
-You can activate the native mode by passing the adater type `cordova-native` to the `init` method:
+You can activate the native mode by passing the adapter type `cordova-native` to the `init` method:
 
 [source,javascript]
 ----
