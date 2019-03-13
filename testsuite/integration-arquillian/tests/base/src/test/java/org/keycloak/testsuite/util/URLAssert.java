@@ -27,6 +27,8 @@ import org.junit.Assert;
 import org.keycloak.testsuite.auth.page.login.PageWithLoginUrl;
 import org.keycloak.testsuite.page.AbstractPage;
 import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.WebDriverWait;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -90,6 +92,9 @@ public class URLAssert {
         currentUrlStartsWith(url));
     }
 
+    public static void waitUntilUrlStartsWith(String url, int timeOutInSeconds) {
+        new WebDriverWait(DroneUtils.getCurrentDriver(), timeOutInSeconds).until(ExpectedConditions.urlMatches("^" + url));
+    }
 
     public static void assertCurrentUrlDoesntStartWith(final AbstractPage page, WebDriver driver) {
         assertCurrentUrlDoesntStartWith(page.toString(), driver);
