@@ -248,8 +248,14 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
                 if (newResponse.getExpiresIn() > 0) {
                     int accessTokenExpiration = Time.currentTime() + (int) newResponse.getExpiresIn();
                     newResponse.getOtherClaims().put(ACCESS_TOKEN_EXPIRATION, accessTokenExpiration);
-                    response = JsonSerialization.writeValueAsString(newResponse);
                 }
+
+                if (newResponse.getRefreshToken() == null && tokenResponse.getRefreshToken() != null) {
+                    newResponse.setRefreshToken(tokenResponse.getRefreshToken());
+                    newResponse.setRefreshExpiresIn(tokenResponse.getRefreshExpiresIn());
+                }
+                response = JsonSerialization.writeValueAsString(newResponse);
+                
                 String oldToken = tokenUserSession.getNote(FEDERATED_ACCESS_TOKEN);
                 if (oldToken != null && oldToken.equals(tokenResponse.getToken())) {
                     int accessTokenExpiration = newResponse.getExpiresIn() > 0 ? Time.currentTime() + (int) newResponse.getExpiresIn() : 0;
