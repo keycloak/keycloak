@@ -202,6 +202,58 @@ module.factory('ComponentUtils', function() {
         }
         return -1;
     }
+
+    utils.convertAllMultivaluedStringValuesToList = function(properties, config) {
+        if (!properties) {
+            return;
+        }
+
+        for (var i=0 ; i<properties.length ; i++) {
+            var prop = properties[i];
+            if (prop.type === 'MultivaluedString') {
+                var configProperty = config[prop.name];
+
+                if (configProperty == null) {
+                    configProperty = [];
+                    config[prop.name] = configProperty;
+                }
+
+                if (typeof configProperty === "string") {
+                    configProperty = configProperty.split("##");
+                    config[prop.name] = configProperty;
+                }
+            }
+        }
+    }
+
+    utils.convertAllListValuesToMultivaluedString = function(properties, config) {
+        if (!properties) {
+            return;
+        }
+
+        for (var i=0 ; i<properties.length ; i++) {
+            var prop = properties[i];
+            if (prop.type === 'MultivaluedString') {
+                var configVal = config[prop.name];
+
+                if (configVal != null) {
+                    if (configVal.length > 0) {
+                        var lastVal = configVal[configVal.length - 1];
+                        if (lastVal === '') {
+                            console.log('Remove empty value from config property: ' + prop.name);
+                            configVal.splice(configVal.length - 1, 1);
+                        }
+                    }
+
+                    var attrVals = configVal.join("##");
+                    config[prop.name] = attrVals;
+
+                }
+            }
+        }
+    }
+
+
     
     utils.addLastEmptyValueToMultivaluedLists = function(properties, config) {
         if (!properties) {
