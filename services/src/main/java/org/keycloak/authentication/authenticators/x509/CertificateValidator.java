@@ -20,6 +20,7 @@ package org.keycloak.authentication.authenticators.x509;
 
 import org.keycloak.common.util.CRLUtils;
 import org.keycloak.common.util.OCSPUtils;
+import org.keycloak.models.Constants;
 import org.keycloak.services.ServicesLogger;
 
 import javax.naming.Context;
@@ -44,6 +45,7 @@ import java.security.cert.X509CRL;
 import java.security.cert.X509Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CRLException;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Hashtable;
@@ -51,6 +53,9 @@ import java.util.List;
 import java.util.Set;
 import java.util.LinkedList;
 import java.util.ArrayList;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import org.keycloak.saml.common.exceptions.ProcessingException;
 import org.keycloak.saml.processing.core.util.XMLSignatureUtil;
 
@@ -201,6 +206,29 @@ public class CertificateValidator {
         }
         public Collection<X509CRL> getX509CRLs() throws GeneralSecurityException {
             return Collections.singleton(_crl);
+        }
+    }
+
+    // Delegate to list of other CRLLoaders
+    public static class CRLListLoader extends CRLLoaderImpl {
+
+        private final List<CRLLoaderImpl> delegates;
+
+        public CRLListLoader(String cRLConfigValue) {
+            String[] delegatePaths = Constants.CFG_DELIMITER_PATTERN.split(cRLConfigValue);
+            this.delegates = Arrays.stream(delegatePaths)
+                    .map(CRLFileLoader::new)
+                    .collect(Collectors.toList());
+        }
+
+
+        @Override
+        public Collection<X509CRL> getX509CRLs() throws GeneralSecurityException {
+            Collection<X509CRL> result = new LinkedList<>();
+            for (CRLLoaderImpl delegate : delegates) {
+                result.addAll(delegate.getX509CRLs());
+            }
+            return result;
         }
     }
 
@@ -670,7 +698,7 @@ public class CertificateValidator {
             public class GotCRLDP {
                 public GotCRLRelativePath cRLrelativePath(String value) {
                     if (value != null)
-                        _crlLoader = new CRLFileLoader(value);
+                        _crlLoader = new CRLListLoader(value);
                     return new GotCRLRelativePath();
                 }
 
