@@ -41,18 +41,6 @@ import org.openqa.selenium.WebDriver;
 
 public class X509BrowserLoginSubjectAltNameTest extends AbstractX509AuthenticationTest {
 
-    @Page
-    @PhantomJSBrowser
-    protected AppPage appPage;
-
-    @Page
-    @PhantomJSBrowser
-    protected X509IdentityConfirmationPage loginConfirmationPage;
-
-    @Page
-    @PhantomJSBrowser
-    protected LoginPage loginPage;
-
     @Drone
     @PhantomJSBrowser
     private WebDriver phantomJS;
@@ -68,36 +56,14 @@ public class X509BrowserLoginSubjectAltNameTest extends AbstractX509Authenticati
                 "/certs/clients/test-user@localhost.key.pem", "password");
     }
 
-    private void login(X509AuthenticatorConfigModel config, String userId, String username, String attemptedUsername) {
-
-        AuthenticatorConfigRepresentation cfg = newConfig("x509-browser-config", config.getConfig());
-        String cfgId = createConfig(browserExecution.getId(), cfg);
-        Assert.assertNotNull(cfgId);
-
-        loginConfirmationPage.open();
-
-        Assert.assertEquals("EMAILADDRESS=test-user@localhost, CN=test-user, OU=Keycloak, O=Red Hat, L=Boston, ST=MA, C=US", loginConfirmationPage.getSubjectDistinguishedNameText());
-        Assert.assertEquals(username, loginConfirmationPage.getUsernameText());
-
-        loginConfirmationPage.confirm();
-
-        Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
-
-        events.expectLogin()
-                .user(userId)
-                .detail(Details.USERNAME, attemptedUsername)
-                .removeDetail(Details.REDIRECT_URI)
-                .assertEvent();
-    }
 
     @Test
     public void loginAsUserFromCertSANEmail() {
-        login(createLoginSubjectAltNameEmail2UserAttributeConfig(), userId, "test-user@localhost", "test-user-altmail@localhost");
+        x509BrowserLogin(createLoginSubjectAltNameEmail2UserAttributeConfig(), userId, "test-user@localhost", "test-user-altmail@localhost");
     }
 
     @Test
     public void loginAsUserFromCertSANUpn() {
-        login(createLoginSubjectAltNameOtherName2UserAttributeConfig(), userId, "test-user@localhost", "test_upn_name@localhost");
+        x509BrowserLogin(createLoginSubjectAltNameOtherName2UserAttributeConfig(), userId, "test-user@localhost", "test_upn_name@localhost");
     }
 }

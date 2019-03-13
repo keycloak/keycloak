@@ -2722,6 +2722,8 @@ module.controller('ProviderConfigCtrl', function ($modal, $scope, ComponentUtils
         })
     }
 
+    ComponentUtils.convertAllMultivaluedStringValuesToList($scope.properties, $scope.config);
+
     ComponentUtils.addLastEmptyValueToMultivaluedLists($scope.properties, $scope.config);
 
     $scope.addValueToMultivalued = function(optionName) {

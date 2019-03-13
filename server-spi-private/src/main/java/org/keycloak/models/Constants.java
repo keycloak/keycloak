@@ -21,57 +21,65 @@ import org.keycloak.OAuth2Constants;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.regex.Pattern;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public interface Constants {
-    String ADMIN_CONSOLE_CLIENT_ID = "security-admin-console";
-    String ADMIN_CLI_CLIENT_ID = "admin-cli";
+public final class Constants {
+    public static final String ADMIN_CONSOLE_CLIENT_ID = "security-admin-console";
+    public static final String ADMIN_CLI_CLIENT_ID = "admin-cli";
 
-    String ACCOUNT_MANAGEMENT_CLIENT_ID = "account";
-    String BROKER_SERVICE_CLIENT_ID = "broker";
-    String REALM_MANAGEMENT_CLIENT_ID = "realm-management";
+    public static final String ACCOUNT_MANAGEMENT_CLIENT_ID = "account";
+    public static final String BROKER_SERVICE_CLIENT_ID = "broker";
+    public static final String REALM_MANAGEMENT_CLIENT_ID = "realm-management";
 
-    Collection<String> defaultClients = Arrays.asList(ACCOUNT_MANAGEMENT_CLIENT_ID, ADMIN_CLI_CLIENT_ID, BROKER_SERVICE_CLIENT_ID, REALM_MANAGEMENT_CLIENT_ID, ADMIN_CONSOLE_CLIENT_ID);
+    public static final Collection<String> defaultClients = Arrays.asList(ACCOUNT_MANAGEMENT_CLIENT_ID, ADMIN_CLI_CLIENT_ID, BROKER_SERVICE_CLIENT_ID, REALM_MANAGEMENT_CLIENT_ID, ADMIN_CONSOLE_CLIENT_ID);
 
-    String INSTALLED_APP_URN = "urn:ietf:wg:oauth:2.0:oob";
-    String INSTALLED_APP_URL = "http://localhost";
-    String READ_TOKEN_ROLE = "read-token";
-    String[] BROKER_SERVICE_ROLES = {READ_TOKEN_ROLE};
-    String OFFLINE_ACCESS_ROLE = OAuth2Constants.OFFLINE_ACCESS;
+    public static final String INSTALLED_APP_URN = "urn:ietf:wg:oauth:2.0:oob";
+    public static final String INSTALLED_APP_URL = "http://localhost";
+    public static final String READ_TOKEN_ROLE = "read-token";
+    public static final String[] BROKER_SERVICE_ROLES = {READ_TOKEN_ROLE};
+    public static final String OFFLINE_ACCESS_ROLE = OAuth2Constants.OFFLINE_ACCESS;
 
-    String AUTHZ_UMA_PROTECTION = "uma_protection";
-    String AUTHZ_UMA_AUTHORIZATION = "uma_authorization";
-    String[] AUTHZ_DEFAULT_AUTHORIZATION_ROLES = {AUTHZ_UMA_AUTHORIZATION};
+    public static final String AUTHZ_UMA_PROTECTION = "uma_protection";
+    public static final String AUTHZ_UMA_AUTHORIZATION = "uma_authorization";
+    public static final String[] AUTHZ_DEFAULT_AUTHORIZATION_ROLES = {AUTHZ_UMA_AUTHORIZATION};
 
     // 15 minutes
-    int DEFAULT_ACCESS_TOKEN_LIFESPAN_FOR_IMPLICIT_FLOW_TIMEOUT = 900;
+    public static final int DEFAULT_ACCESS_TOKEN_LIFESPAN_FOR_IMPLICIT_FLOW_TIMEOUT = 900;
     // 30 days
-    int DEFAULT_OFFLINE_SESSION_IDLE_TIMEOUT = 2592000;
+    public static final int DEFAULT_OFFLINE_SESSION_IDLE_TIMEOUT = 2592000;
     // KEYCLOAK-7688 Offline Session Max for Offline Token
     // 60 days
-    int DEFAULT_OFFLINE_SESSION_MAX_LIFESPAN = 5184000;
+    public static final int DEFAULT_OFFLINE_SESSION_MAX_LIFESPAN = 5184000;
 
-    String VERIFY_EMAIL_KEY = "VERIFY_EMAIL_KEY";
-    String VERIFY_EMAIL_CODE = "VERIFY_EMAIL_CODE";
-    String EXECUTION = "execution";
-    String CLIENT_ID = "client_id";
-    String TAB_ID = "tab_id";
-    String KEY = "key";
+    public static final String VERIFY_EMAIL_KEY = "VERIFY_EMAIL_KEY";
+    public static final String VERIFY_EMAIL_CODE = "VERIFY_EMAIL_CODE";
+    public static final String EXECUTION = "execution";
+    public static final String CLIENT_ID = "client_id";
+    public static final String TAB_ID = "tab_id";
+    public static final String KEY = "key";
 
-    String SKIP_LINK = "skipLink";
-    String TEMPLATE_ATTR_ACTION_URI = "actionUri";
-    String TEMPLATE_ATTR_REQUIRED_ACTIONS = "requiredActions";
+    public static final String SKIP_LINK = "skipLink";
+    public static final String TEMPLATE_ATTR_ACTION_URI = "actionUri";
+    public static final String TEMPLATE_ATTR_REQUIRED_ACTIONS = "requiredActions";
 
     // Prefix for user attributes used in various "context"data maps
-    String USER_ATTRIBUTES_PREFIX = "user.attributes.";
+    public static final String USER_ATTRIBUTES_PREFIX = "user.attributes.";
 
     // Indication to admin-rest-endpoint that realm keys should be re-generated
-    String GENERATE = "GENERATE";
+    public static final String GENERATE = "GENERATE";
 
-    int DEFAULT_MAX_RESULTS = 100;
+    public static final int DEFAULT_MAX_RESULTS = 100;
 
-    String OFFLINE_ACCESS_SCOPE_CONSENT_TEXT = "${offlineAccessScopeConsentText}";
+    // Delimiter to be used in the configuration of authenticators (and some other components) in case that we need to save
+    // multiple values into single string
+    public static final String CFG_DELIMITER = "##";
+
+    // Better performance to use this instead of String.split
+    public static final Pattern CFG_DELIMITER_PATTERN = Pattern.compile("\\s*" + CFG_DELIMITER + "\\s*");
+
+    public static final String OFFLINE_ACCESS_SCOPE_CONSENT_TEXT = "${offlineAccessScopeConsentText}";
 }
