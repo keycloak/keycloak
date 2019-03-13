@@ -50,6 +50,9 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import static org.keycloak.models.ImpersonationSessionNote.IMPERSONATOR_ID;
+import static org.keycloak.models.ImpersonationSessionNote.IMPERSONATOR_USERNAME;
+
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
@@ -173,6 +176,9 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
 
         model = AllowedWebOriginsProtocolMapper.createClaimMapper(ALLOWED_WEB_ORIGINS);
         builtins.put(ALLOWED_WEB_ORIGINS, model);
+
+        builtins.put(IMPERSONATOR_ID.getDisplayName(), UserSessionNoteMapper.createUserSessionNoteMapper(IMPERSONATOR_ID));
+        builtins.put(IMPERSONATOR_USERNAME.getDisplayName(), UserSessionNoteMapper.createUserSessionNoteMapper(IMPERSONATOR_USERNAME));
     }
 
     private static void createUserAttributeMapper(String name, String attrName, String claimName, String type) {

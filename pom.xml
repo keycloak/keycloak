@@ -33,7 +33,7 @@
     </description>
     <groupId>org.keycloak</groupId>
     <artifactId>keycloak-parent</artifactId>
-    <version>5.0.0-SNAPSHOT</version>
+    <version>6.0.0-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <properties>
@@ -150,6 +150,11 @@
 
         <!-- Surefire Settings -->
         <surefire.memory.settings>-Xms512m -Xmx2048m -XX:MetaspaceSize=96m -XX:MaxMetaspaceSize=256m</surefire.memory.settings>
+
+        <!-- Tomcat versions -->
+        <tomcat7.version>7.0.92</tomcat7.version>
+        <tomcat8.version>8.5.38</tomcat8.version>
+        <tomcat9.version>9.0.16</tomcat9.version>
     </properties>
 
     <url>http://keycloak.org</url>
@@ -215,7 +220,6 @@
         <module>integration</module>
         <module>adapters</module>
         <module>authz</module>
-        <module>examples</module>
         <module>misc</module>
     </modules>
 
@@ -1718,6 +1722,15 @@
             <modules>
                 <module>testsuite</module>
             </modules>
+        </profile>
+
+        <profile>
+            <id>examples</id>
+            <activation>
+                <property>
+                    <name>!skipExamples</name>
+                </property>
+            </activation>
         </profile>
 
         <profile>

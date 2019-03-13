@@ -126,9 +126,6 @@ public class ClientInitiatedAccountLinkTest extends AbstractServletsAdapterTest 
         servlet.setClientId("client-linking");
         servlet.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
         String uri = "/client-linking";
-        if (!isRelative()) {
-            uri = appServerContextRootPage.toString() + uri;
-        }
         servlet.setAdminUrl(uri);
         servlet.setDirectAccessGrantsEnabled(true);
         servlet.setBaseUrl(uri);

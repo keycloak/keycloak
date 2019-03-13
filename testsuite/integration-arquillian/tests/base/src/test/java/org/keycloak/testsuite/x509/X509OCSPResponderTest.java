@@ -76,7 +76,9 @@ public class X509OCSPResponderTest extends AbstractX509AuthenticationTest {
     @Before
     public void startOCSPResponder() throws Exception {
         ocspResponder = Undertow.builder().addHttpListener(OCSP_RESPONDER_PORT, OCSP_RESPONDER_HOST)
-                .setHandler(new BlockingHandler(new OcspHandler())).build();
+                .setHandler(new BlockingHandler(
+                        new OcspHandler(OcspHandler.OCSP_RESPONDER_CERT_PATH, OcspHandler.OCSP_RESPONDER_KEYPAIR_PATH))
+                ).build();
 
         ocspResponder.start();
     }

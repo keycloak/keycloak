@@ -89,7 +89,7 @@ public abstract class AbstractAdapterTest extends AbstractAuthTest {
             log.info("Setting redirect-uris in test realm '" + tr.getRealm() + "' as " + (isRelative() ? "" : "non-") + "relative");
 
             modifyClientRedirectUris(tr, "http://localhost:8080", "");
-            modifyClientRedirectUris(tr, "^(/.*/\\*)",
+            modifyClientRedirectUris(tr, "^(.*/\\*)",
                   "http://localhost:" + System.getProperty("app.server.http.port", "8280") + "$1",
                   "http://localhost:" + System.getProperty("auth.server.http.port", "8180") + "$1",
                   "https://localhost:" + System.getProperty("app.server.https.port", "8643") + "$1",
@@ -102,6 +102,8 @@ public abstract class AbstractAdapterTest extends AbstractAuthTest {
                   "https://localhost:" + System.getProperty("auth.server.http.port", "8543"));
 
             modifyClientUrls(tr, "http://localhost:8080", "");
+            modifySamlMasterURLs(tr, "http://localhost:8080", "");
+            modifySAMLClientsAttributes(tr, "http://localhost:8080", "");
 
             if (isRelative()) {
                 modifyClientUrls(tr, appServerContextRootPage.toString(), "");
@@ -109,8 +111,8 @@ public abstract class AbstractAdapterTest extends AbstractAuthTest {
                 modifySAMLClientsAttributes(tr, "8080", System.getProperty("auth.server.http.port", "8180"));
             } else {
                 modifyClientUrls(tr, "^(/.*)", appServerContextRootPage.toString() + "$1");
-                modifySamlMasterURLs(tr, "8080", AUTH_SERVER_PORT);
-                modifySAMLClientsAttributes(tr, "http://localhost:8080",  appServerContextRootPage.toString());
+                modifySamlMasterURLs(tr, "^(/.*)", appServerContextRootPage.toString() + "$1");
+                modifySAMLClientsAttributes(tr, "^(/.*)",  appServerContextRootPage.toString() + "$1");
                 modifyClientJWKSUrl(tr, "^(/.*)", appServerContextRootPage.toString() + "$1");
             }
             if (AUTH_SERVER_SSL_REQUIRED) {

@@ -3,34 +3,34 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
-	<groupId>org.keycloak</groupId>
 	<artifactId>spring-boot-adapter</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
-	<packaging>jar</packaging>
 
 	<name>spring-boot-adapter</name>
 	<description>Spring boot adapter test application</description>
 
 	<parent>
-		<groupId>org.springframework.boot</groupId>
-		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>1.5.9.RELEASE</version>
-		<relativePath/> <!-- lookup parent from repository -->
+		<artifactId>integration-arquillian-test-apps</artifactId>
+		<groupId>org.keycloak.testsuite</groupId>
+		<version>6.0.0-SNAPSHOT</version>
 	</parent>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 		<java.version>1.8</java.version>
-
-        <keycloak.version>4.0.0.Beta2-SNAPSHOT</keycloak.version>
-
-	    <repo.url />
-
-		<jetty.version />
-		<jetty.adapter.version />
+		<springboot-version>1.5.19.RELEASE</springboot-version>
 	</properties>
-
+	<dependencyManagement>
+		<dependencies>
+			<dependency>
+				<groupId>org.springframework.boot</groupId>
+				<artifactId>spring-boot-starter-parent</artifactId>
+				<version>${springboot-version}</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
 	<dependencies>
 	
 		<dependency>
@@ -52,7 +52,6 @@
 		<dependency>
 			<groupId>org.keycloak</groupId>
 			<artifactId>keycloak-spring-boot-adapter</artifactId>
-			<version>${keycloak.version}</version>
 		</dependency>
 
 	</dependencies>
@@ -68,7 +67,6 @@
 				<dependency>
 					<groupId>org.keycloak</groupId>
 					<artifactId>keycloak-tomcat8-adapter</artifactId>
-					<version>${keycloak.version}</version>
 				</dependency>
 			</dependencies>
 		</profile>
@@ -110,7 +108,6 @@
 				<dependency>
 					<groupId>org.keycloak</groupId>
 					<artifactId>keycloak-undertow-adapter</artifactId>
-					<version>${keycloak.version}</version>
 				</dependency>
 			</dependencies>
 		</profile>
@@ -146,7 +143,6 @@
                 <dependency>
                     <groupId>org.keycloak</groupId>
                     <artifactId>keycloak-jetty81-adapter</artifactId>
-                    <version>${keycloak.version}</version>
                 </dependency>
                 <dependency>
                     <groupId>org.springframework.boot</groupId>
@@ -200,7 +196,6 @@
 				<dependency>
 					<groupId>org.keycloak</groupId>
 					<artifactId>keycloak-jetty93-adapter</artifactId>
-					<version>${keycloak.version}</version>
 				</dependency>
                 <dependency>
                     <groupId>org.springframework.boot</groupId>

@@ -96,7 +96,7 @@ Each version has its corresponding profile:
 
 Here's how to run the tests with Jetty `9.4`:
 
-    mvn -f testsuite/integration-arquillian/tests/base/pom.xml \
+    mvn -f testsuite/integration-arquillian/pom.xml \
         -Papp-server-jetty94 \
         -Dtest=org.keycloak.testsuite.adapter.**.*Test
 
@@ -107,6 +107,19 @@ Here's how to run the tests with Jetty `9.4`:
        clean install \
        -Papp-server-wildfly \
        -Dtest=org.keycloak.testsuite.adapter.**
+       
+### Tomcat
+
+We run testsuite with Tomcat 7, 8 and 9. For specific versions see properties `${tomcat[7,8,9].version}` in parent [pom.xml](../../pom.xml). 
+
+To run tests on Tomcat:
+
+````
+mvn -f testsuite/integration-arquillian/pom.xml \
+       clean install \
+       -Papp-server-tomcat[7,8,9] \
+       -Dtest=org.keycloak.testsuite.adapter.**
+````
        
 ### Wildfly with legacy non-elytron adapter
     
@@ -169,8 +182,8 @@ Assumed you downloaded `jboss-fuse-karaf-6.3.0.redhat-229.zip`
 
 ### JBoss Fuse 7.X
 
-1) Download JBoss Fuse 7 to your filesystem. It can be downloaded from http://origin-repository.jboss.org/nexus/content/groups/m2-proxy/org/jboss/fuse/fuse-karaf 
-Assumed you downloaded `fuse-karaf-7.0.0.fuse-000202.zip`
+1) Download JBoss Fuse 7 to your filesystem. It can be downloaded from http://origin-repository.jboss.org/nexus/content/groups/m2-proxy/org/jboss/fuse/fuse-karaf  (Fuse 7.1 or higher is required)
+Assumed you downloaded `fuse-karaf-7.1.0.fuse-710029.zip`
 
 2) Install to your local maven repository and change the properties according to your env (This step can be likely avoided if you somehow configure your local maven settings to point directly to Fuse repo):
 
@@ -178,9 +191,9 @@ Assumed you downloaded `fuse-karaf-7.0.0.fuse-000202.zip`
     mvn install:install-file \
       -DgroupId=org.jboss.fuse \
       -DartifactId=fuse-karaf \
-      -Dversion=7.0.0.fuse-000202 \
+      -Dversion=7.1.0.fuse-710029 \
       -Dpackaging=zip \
-      -Dfile=/mydownloads/fuse-karaf-7.0.0.fuse-000202.zip
+      -Dfile=/mydownloads/fuse-karaf-7.1.0.fuse-710029.zip
 
 
 3) Prepare Fuse and run the tests (change props according to your environment, versions etc):
@@ -190,7 +203,7 @@ Assumed you downloaded `fuse-karaf-7.0.0.fuse-000202.zip`
     mvn -f testsuite/integration-arquillian/servers/pom.xml \
       clean install \
       -Papp-server-fuse7x \
-      -Dfuse7x.version=7.0.0.fuse-000202 \
+      -Dfuse7x.version=7.1.0.fuse-710029 \
       -Dapp.server.karaf.update.config=true \
       -Dmaven.local.settings=$HOME/.m2/settings.xml \
       -Drepositories=,http://REPO-SERVER/brewroot/repos/sso-7.1-build/latest/maven/ \
