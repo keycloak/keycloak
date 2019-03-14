@@ -1612,13 +1612,12 @@ public class RepresentationToModel {
                 throw new RuntimeException("Unable to find client specified for service account link. Client: " + clientId);
             }
             user.setServiceAccountClientLink(client.getId());
-            ;
         }
         if (userRep.getGroups() != null) {
-            for (String path : userRep.getGroups()) {
-                GroupModel group = KeycloakModelUtils.findGroupByPath(newRealm, path);
+            for (GroupRepresentation groupRepresentation : userRep.getGroups()) {
+                GroupModel group = KeycloakModelUtils.findGroupByPath(newRealm, groupRepresentation.getName());
                 if (group == null) {
-                    throw new RuntimeException("Unable to find group specified by path: " + path);
+                    throw new RuntimeException("Unable to find group specified by path: " + groupRepresentation.getName());
 
                 }
                 user.joinGroup(group);
@@ -2663,10 +2662,10 @@ public class RepresentationToModel {
         createFederatedRoleMappings(federatedStorage, userRep, newRealm);
 
         if (userRep.getGroups() != null) {
-            for (String path : userRep.getGroups()) {
-                GroupModel group = KeycloakModelUtils.findGroupByPath(newRealm, path);
+            for (GroupRepresentation groupRepresentation : userRep.getGroups()) {
+                GroupModel group = KeycloakModelUtils.findGroupByPath(newRealm, groupRepresentation.getName());
                 if (group == null) {
-                    throw new RuntimeException("Unable to find group specified by path: " + path);
+                    throw new RuntimeException("Unable to find group specified by path: " + groupRepresentation.getName());
 
                 }
                 federatedStorage.joinGroup(newRealm, userRep.getId(), group);

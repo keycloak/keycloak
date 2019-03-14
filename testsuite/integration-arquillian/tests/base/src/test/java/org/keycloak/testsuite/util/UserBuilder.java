@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 
 import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 
 /**
@@ -168,11 +169,15 @@ public class UserBuilder {
         return this;
     }
 
-    public UserBuilder addGroups(String... group) {
+    public UserBuilder addGroups(String... groups) {
         if (rep.getGroups() == null) {
             rep.setGroups(new ArrayList<>());
         }
-        rep.getGroups().addAll(Arrays.asList(group));
+        for (String group : groups) {
+            GroupRepresentation representation = new GroupRepresentation();
+            representation.setName(group);
+            rep.getGroups().add(representation);
+        }
         return this;
     }
 

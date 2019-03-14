@@ -13,7 +13,7 @@ First clone the Keycloak repository:
     
 To build Keycloak run:
 
-    mvn install
+    mvn clean install -DskipTests
     
 This will build all modules and run the testsuite. 
 

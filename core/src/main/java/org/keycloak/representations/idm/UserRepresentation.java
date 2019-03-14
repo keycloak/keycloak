@@ -64,7 +64,7 @@ public class UserRepresentation {
     @Deprecated
     protected List<SocialLinkRepresentation> socialLinks;
 
-    protected List<String> groups;
+    protected List<GroupRepresentation> groups;
     private Map<String, Boolean> access;
 
     public String getSelf() {
@@ -248,11 +248,11 @@ public class UserRepresentation {
         this.serviceAccountClientId = serviceAccountClientId;
     }
 
-    public List<String> getGroups() {
+    public List<GroupRepresentation> getGroups() {
         return groups;
     }
 
-    public void setGroups(List<String> groups) {
+    public void setGroups(List<GroupRepresentation> groups) {
         this.groups = groups;
     }
 

@@ -189,9 +189,9 @@ public class ModelToRepresentation {
             rep.setAttributes(attrs);
         }
 
-        List<String> groups = new LinkedList<>();
+        List<GroupRepresentation> groups = new LinkedList<>();
         for (GroupModel group : user.getGroups()) {
-            groups.add(group.getName());
+            groups.add(toRepresentation(group,false));
         }
         rep.setGroups(groups);
 
@@ -210,14 +210,14 @@ public class ModelToRepresentation {
         rep.setEmailVerified(user.isEmailVerified());
         rep.setFederationLink(user.getFederationLink());
         rep.setIdcard(user.getIdcard());
-        List<String> groups = new LinkedList<>();
+        List<GroupRepresentation> groups = new LinkedList<>();
         if (user.getAttributes() != null && !user.getAttributes().isEmpty()) {
             Map<String, List<String>> attrs = new HashMap<>();
             attrs.putAll(user.getAttributes());
             rep.setAttributes(attrs);
         }
         for (GroupModel group : user.getGroups()) {
-            groups.add(group.getName());
+            groups.add(toRepresentation(group,false));
         }
         rep.setGroups(groups);
         return rep;
