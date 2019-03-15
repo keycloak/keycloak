@@ -331,7 +331,7 @@ public class ClientResource {
 
         ClientScopeModel clientScope = realm.getClientScopeById(clientScopeId);
         if (clientScope == null) {
-            throw new org.jboss.resteasy.spi.NotFoundException("Client scope not found");
+            throw new javax.ws.rs.NotFoundException("Client scope not found");
         }
         client.addClientScope(clientScope, defaultScope);
 
@@ -347,7 +347,7 @@ public class ClientResource {
 
         ClientScopeModel clientScope = realm.getClientScopeById(clientScopeId);
         if (clientScope == null) {
-            throw new org.jboss.resteasy.spi.NotFoundException("Client scope not found");
+            throw new javax.ws.rs.NotFoundException("Client scope not found");
         }
         client.removeClientScope(clientScope);
 

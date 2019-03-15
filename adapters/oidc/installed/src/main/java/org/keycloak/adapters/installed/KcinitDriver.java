@@ -17,6 +17,7 @@
 package org.keycloak.adapters.installed;
 
 import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
+import org.jboss.resteasy.client.jaxrs.internal.ResteasyClientBuilderImpl;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.KeycloakDeploymentBuilder;
@@ -622,7 +623,7 @@ public class KcinitDriver {
     }
 
     public Client getHttpClient() {
-        return new ResteasyClientBuilder().disableTrustManager().build();
+        return new ResteasyClientBuilderImpl().disableTrustManager().build();
     }
 
     public void login() throws Exception {

@@ -16,7 +16,7 @@
  */
 package org.keycloak.models;
 
-import org.jboss.resteasy.specimpl.ResteasyUriBuilder;
+import org.jboss.resteasy.specimpl.ResteasyUriBuilderImpl;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.urls.HostnameProvider;
 
@@ -104,7 +104,7 @@ public class KeycloakUriInfo implements UriInfo {
             to = this.getBaseUriBuilder().replaceQuery(null).path(uri.getPath()).replaceQuery(uri.getQuery()).fragment(uri.getFragment()).build(new Object[0]);
         }
 
-        return ResteasyUriBuilder.relativize(from, to);
+        return ResteasyUriBuilderImpl.relativize(from, to);
     }
 
     @Override
