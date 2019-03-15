@@ -63,7 +63,7 @@
         <cxf.undertow.version>3.3.2</cxf.undertow.version>
         <dom4j.version>2.1.1</dom4j.version>
         <github.relaxng.version>2.3.1</github.relaxng.version>
-        <h2.version>1.4.193</h2.version>
+        <h2.version>1.4.197</h2.version>
         <javax.persistence.version>2.2</javax.persistence.version>
         <hibernate.core.version>5.3.10.Final</hibernate.core.version>
         <hibernate.c3p0.version>5.3.10.Final</hibernate.c3p0.version>
@@ -77,15 +77,15 @@
         <jboss.spec.javax.xml.bind.jboss-jaxb-api_2.3_spec.version>1.0.1.Final</jboss.spec.javax.xml.bind.jboss-jaxb-api_2.3_spec.version>
         <jboss.spec.javax.servlet.jsp.jboss-jsp-api_2.3_spec.version>1.0.3.Final</jboss.spec.javax.servlet.jsp.jboss-jsp-api_2.3_spec.version>
         <log4j.version>1.2.17</log4j.version>
-        <resteasy.version>3.7.0.Final</resteasy.version>
-        <resteasy.undertow.version>3.7.0.Final</resteasy.undertow.version>
+        <resteasy.version>4.2.0.Final</resteasy.version>
+        <resteasy.undertow.version>4.2.0.Final</resteasy.undertow.version>
         <owasp.html.sanitizer.version>20180219.1</owasp.html.sanitizer.version>
-        <slf4j-api.version>1.7.22</slf4j-api.version>
-        <slf4j.version>1.7.22</slf4j.version>
+        <slf4j-api.version>1.7.25</slf4j-api.version>
+        <slf4j.version>1.7.25</slf4j.version>
         <sun.istack.version>3.0.7</sun.istack.version>
         <sun.jaxb.version>2.3.1</sun.jaxb.version>
         <org.glassfish.jaxb.xsom.version>2.3.1</org.glassfish.jaxb.xsom.version>
-        <undertow.version>2.0.21.Final</undertow.version>
+        <undertow.version>2.0.23.Final</undertow.version>
         <elytron.version>1.9.1.Final</elytron.version>
         <elytron.undertow-server.version>1.5.0.Final</elytron.undertow-server.version>
         <jetty92.version>9.2.4.v20141103</jetty92.version>
@@ -94,7 +94,8 @@
         <woodstox.version>5.0.3</woodstox.version>
         <xmlsec.version>2.1.3</xmlsec.version>
         <glassfish.json.version>1.1.2</glassfish.json.version>
-        <wildfly.common.version>1.5.1.Final</wildfly.common.version>
+        <wildfly.common.version>1.5.0.Final-format-001</wildfly.common.version>
+        <ua-parser.version>1.4.3</ua-parser.version>
         <picketbox.version>5.0.3.Final</picketbox.version>
         <google.guava.version>25.0-jre</google.guava.version>
 
@@ -227,6 +228,7 @@
         <module>adapters</module>
         <module>authz</module>
         <module>misc</module>
+        <module>server-quarkus</module>
     </modules>
 
     <dependencyManagement>
@@ -288,7 +290,7 @@
             </dependency>
             <dependency>
                 <groupId>org.jboss.resteasy</groupId>
-                <artifactId>resteasy-jaxrs</artifactId>
+                <artifactId>resteasy-core</artifactId>
                 <version>${resteasy.version}</version>
                 <exclusions>
                     <exclusion>

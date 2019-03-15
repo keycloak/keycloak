@@ -44,7 +44,8 @@ import org.ietf.jgss.GSSCredential;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.resteasy.client.jaxrs.ResteasyClient;
 import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
-import org.jboss.resteasy.client.jaxrs.engines.ApacheHttpClient4Engine;
+import org.jboss.resteasy.client.jaxrs.engines.ApacheHttpClient43Engine;
+import org.jboss.resteasy.client.jaxrs.internal.ResteasyClientBuilderImpl;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -276,8 +277,8 @@ public abstract class AbstractKerberosTest extends AbstractAuthTest {
                     new AuthScope(null, -1, null),
                     fake);
         }
-        ApacheHttpClient4Engine engine = new ApacheHttpClient4Engine(httpClient);
-        client = new ResteasyClientBuilder().httpEngine(engine).build();
+        ApacheHttpClient43Engine engine = new ApacheHttpClient43Engine(httpClient);
+        client = new ResteasyClientBuilderImpl().httpEngine(engine).build();
     }
 
 
