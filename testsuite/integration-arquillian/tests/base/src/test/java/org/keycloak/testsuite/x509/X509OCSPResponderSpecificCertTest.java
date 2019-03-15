@@ -18,6 +18,7 @@
 
 package org.keycloak.testsuite.x509;
 
+import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -35,6 +36,8 @@ import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorC
 
 import io.undertow.Undertow;
 import io.undertow.server.handlers.BlockingHandler;
+import org.keycloak.testsuite.util.PhantomJSBrowser;
+import org.openqa.selenium.WebDriver;
 
 /**
  * Verifies Certificate revocation using OCSP responder but specifying specific
@@ -52,6 +55,15 @@ public class X509OCSPResponderSpecificCertTest extends AbstractX509Authenticatio
     private static final int OCSP_RESPONDER_PORT = 8888;
 
     private Undertow ocspResponder;
+
+    @Drone
+    @PhantomJSBrowser
+    private WebDriver phantomJS;
+
+    @Before
+    public void replaceTheDefaultDriver() {
+        replaceDefaultWebDriver(phantomJS);
+    }
 
     @Test
     public void loginFailedInvalidResponderOnOCSPResponderRevocationCheck() throws Exception {

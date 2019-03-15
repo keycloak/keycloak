@@ -17,6 +17,7 @@ env:
     - TESTS=old
     - TESTS=crossdc-server
     - TESTS=crossdc-adapter
+    - TESTS=broker
 
 jdk:
   - oraclejdk8

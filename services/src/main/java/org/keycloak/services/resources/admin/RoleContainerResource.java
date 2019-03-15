@@ -21,7 +21,15 @@ import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.NotFoundException;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
-import org.keycloak.models.*;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.Constants;
+import org.keycloak.models.GroupModel;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelDuplicateException;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleContainerModel;
+import org.keycloak.models.RoleModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.ManagementPermissionReference;
@@ -35,6 +43,7 @@ import org.keycloak.services.resources.admin.permissions.AdminPermissions;
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
@@ -48,11 +57,12 @@ import javax.ws.rs.core.UriInfo;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
+ * @resource Roles
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
- * @resource Roles
  */
 public class RoleContainerResource extends RoleResource {
     private final RealmModel realm;
@@ -276,7 +286,7 @@ public class RoleContainerResource extends RoleResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     public Set<RoleRepresentation> getClientRoleComposites(final @PathParam("role-name") String roleName,
-                                                           final @PathParam("client") String client) {
+                                                                final @PathParam("client") String client) {
         auth.roles().requireView(roleContainer);
         RoleModel role = roleContainer.getRole(roleName);
         if (role == null) {
@@ -295,14 +305,14 @@ public class RoleContainerResource extends RoleResource {
      * Remove roles from the role's composite
      *
      * @param roleName role's name (not id!)
-     * @param roles    roles to remove
+     * @param roles roles to remove
      */
     @Path("{role-name}/composites")
     @DELETE
     @Consumes(MediaType.APPLICATION_JSON)
     public void deleteComposites(
-            final @PathParam("role-name") String roleName,
-            List<RoleRepresentation> roles) {
+                                   final @PathParam("role-name") String roleName,
+                                   List<RoleRepresentation> roles) {
 
         auth.roles().requireManage(roleContainer);
         RoleModel role = roleContainer.getRole(roleName);
@@ -314,6 +324,7 @@ public class RoleContainerResource extends RoleResource {
 
     /**
      * Return object stating whether role Authoirzation permissions have been initialized or not and a reference
+     *
      *
      * @param roleName
      * @return
@@ -338,6 +349,7 @@ public class RoleContainerResource extends RoleResource {
 
     /**
      * Return object stating whether role Authoirzation permissions have been initialized or not and a reference
+     *
      *
      * @param roleName
      * @return initialized manage permissions reference
@@ -364,7 +376,8 @@ public class RoleContainerResource extends RoleResource {
     }
 
     /**
-     * Return List of Users that have the specified role name
+     * Return List of Users that have the specified role name 
+     *
      *
      * @param roleName
      * @param firstResult
@@ -375,14 +388,14 @@ public class RoleContainerResource extends RoleResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
-    public List<UserRepresentation> getUsersInRole(final @PathParam("role-name") String roleName,
-                                                   @QueryParam("first") Integer firstResult,
-                                                   @QueryParam("max") Integer maxResults) {
-
+    public  List<UserRepresentation> getUsersInRole(final @PathParam("role-name") String roleName, 
+                                                    @QueryParam("first") Integer firstResult,
+                                                    @QueryParam("max") Integer maxResults) {
+        
         auth.roles().requireView(roleContainer);
         firstResult = firstResult != null ? firstResult : 0;
         maxResults = maxResults != null ? maxResults : Constants.DEFAULT_MAX_RESULTS;
-
+        
         RoleModel role = roleContainer.getRole(roleName);
         List<UserRepresentation> results = new ArrayList<UserRepresentation>();
         List<UserModel> userModels = session.users().getRoleMembers(realm, role, firstResult, maxResults);
@@ -390,53 +403,38 @@ public class RoleContainerResource extends RoleResource {
         for (UserModel user : userModels) {
             results.add(ModelToRepresentation.toRepresentation(session, realm, user));
         }
-        return results;
-
+        return results; 
+        
     }
 
-
+    /**
+     * Return List of Groups that have the specified role name
+     *
+     *
+     * @param roleName
+     * @param firstResult
+     * @param maxResults
+     * @param fullRepresentation if true, return a full representation of the GroupRepresentation objects
+     * @return
+     */
     @Path("{role-name}/groups")
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
-    public List<GroupRepresentation> getGroupsInRole(final @PathParam("role-name") String roleName,
-                                                     @QueryParam("first") Integer firstResult,
-                                                     @QueryParam("max") Integer maxResults) {
+    public  List<GroupRepresentation> getGroupsInRole(final @PathParam("role-name") String roleName,
+                                                    @QueryParam("first") Integer firstResult,
+                                                    @QueryParam("max") Integer maxResults,
+                                                    @QueryParam("full") @DefaultValue("false") boolean fullRepresentation) {
 
         auth.roles().requireView(roleContainer);
         firstResult = firstResult != null ? firstResult : 0;
         maxResults = maxResults != null ? maxResults : Constants.DEFAULT_MAX_RESULTS;
 
         RoleModel role = roleContainer.getRole(roleName);
-        List<GroupRepresentation> results = new ArrayList<GroupRepresentation>();
-        List<GroupModel> groupModels = session.realms().getRoleGroups(realm, role);
+        List<GroupModel> groupsModel = session.realms().getGroupsByRole(realm, role, firstResult, maxResults);
 
-        for (GroupModel group : groupModels) {
-            results.add(ModelToRepresentation.toRepresentation(group, false));
-        }
-        return results;
-
-    }
-
-    @Path("users/search")
-    @GET
-    @Produces(MediaType.APPLICATION_JSON)
-    @NoCache
-    public List<UserRepresentation> searchForUserInRole(@QueryParam("roleName") String roleName,
-                                                        @QueryParam("search") String search,
-                                                        @QueryParam("first") Integer firstResult,
-                                                        @QueryParam("max") Integer maxResults) {
-        auth.roles().requireView(roleContainer);
-
-        firstResult = firstResult != null ? firstResult : -1;
-        maxResults = maxResults != null ? maxResults : Constants.DEFAULT_MAX_RESULTS;
-
-        RoleModel role = roleContainer.getRole(roleName);
-        List<UserRepresentation> results = new ArrayList<>();
-        List<UserModel> models = session.realms().searchForUserInRole(realm, role, search, firstResult, maxResults);
-        for (UserModel model : models) {
-            results.add(ModelToRepresentation.toBriefRepresentation(model));
-        }
-        return results;
+        return groupsModel.stream()
+        		.map(g -> ModelToRepresentation.toRepresentation(g, fullRepresentation))
+        		.collect(Collectors.toList());
     }
 }

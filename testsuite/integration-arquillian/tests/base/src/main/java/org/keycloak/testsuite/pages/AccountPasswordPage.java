@@ -39,6 +39,9 @@ public class AccountPasswordPage extends AbstractAccountPage {
     @FindBy(className = "btn-primary")
     private WebElement submitButton;
 
+    @FindBy(className = "alert-error")
+    private WebElement errorMessage;
+
     private String realmName = "test";
 
     public void changePassword(String password, String newPassword, String passwordConfirm) {
@@ -70,5 +73,9 @@ public class AccountPasswordPage extends AbstractAccountPage {
 
     public String getPath() {
         return AccountFormService.passwordUrl(UriBuilder.fromUri(getAuthServerRoot())).build(this.realmName).toString();
+    }
+
+    public String getError() {
+        return errorMessage.getText();
     }
 }

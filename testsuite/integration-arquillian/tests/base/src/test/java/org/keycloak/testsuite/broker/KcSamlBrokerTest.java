@@ -165,4 +165,9 @@ public class KcSamlBrokerTest extends AbstractBrokerTest {
         Assert.assertThat(samlResponse.getSamlObject(), isSamlResponse(JBossSAMLURIConstants.STATUS_SUCCESS));
     }
 
+    @Test
+    @Override
+    public void testUpdateProfileIfNotMissingInformation() {
+        // skip this test as this provider do not return name and surname so something is missing always
+    }
 }

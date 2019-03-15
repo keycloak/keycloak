@@ -36,6 +36,9 @@ public class RSAPublicJWK extends JWK {
     @JsonProperty("e")
     private String publicExponent;
 
+    @JsonProperty("x5c")
+    private String[] x509CertificateChain;
+    
     public String getModulus() {
         return modulus;
     }
@@ -50,6 +53,14 @@ public class RSAPublicJWK extends JWK {
 
     public void setPublicExponent(String publicExponent) {
         this.publicExponent = publicExponent;
+    }
+    
+    public String[] getX509CertificateChain() {
+        return x509CertificateChain;
+    }
+
+    public void setX509CertificateChain(String[] x509CertificateChain) {
+        this.x509CertificateChain = x509CertificateChain;
     }
 
 }
