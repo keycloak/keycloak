@@ -43,7 +43,6 @@
         </plugins>
     </build>
     <modules>
-        <module>integration-deprecated</module>
         <module>integration-arquillian</module>
         <module>utils</module>
     </modules>

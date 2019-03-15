@@ -49,11 +49,6 @@ fi
 
 mvn install -B -nsu -Pdistribution -DskipTests -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
 
-if [ $1 == "old" ]; then
-    cd testsuite
-    mvn test -B -nsu -f integration-deprecated
-fi
-
 if [ $1 == "unit" ]; then
     mvn -B test -DskipTestsuite
     # Generate documentation to catch potential issues earlier than during the release
