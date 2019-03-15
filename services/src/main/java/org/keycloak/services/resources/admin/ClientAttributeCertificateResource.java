@@ -21,7 +21,7 @@ import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.plugins.providers.multipart.InputPart;
 import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
 import org.jboss.resteasy.spi.NotAcceptableException;
-import org.jboss.resteasy.spi.NotFoundException;
+import javax.ws.rs.NotFoundException;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.common.util.StreamUtil;
 import org.keycloak.events.admin.OperationType;
