@@ -231,6 +231,7 @@
         <module>adapters</module>
         <module>authz</module>
         <module>misc</module>
+        <module>server-quarkus</module>
     </modules>
 
     <dependencyManagement>
