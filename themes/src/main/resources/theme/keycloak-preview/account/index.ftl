@@ -31,15 +31,15 @@
             <#if referrer??>
                 var referrer = '${referrer}';
                 var referrerName = '${referrerName}';
-                var referrer_uri = '${referrer_uri}';
+                var referrerUri = '${referrer_uri}';
             </#if>
 
             <#if msg??>
                 var locale = '${locale}';
-                var l18n_msg = JSON.parse('${msgJSON?no_esc}');
+                var l18nMsg = JSON.parse('${msgJSON?no_esc}');
             <#else>
                 var locale = 'en';
-                var l18n_msg = {};
+                var l18Msg = {};
             </#if>
         </script>
         

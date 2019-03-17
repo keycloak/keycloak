@@ -36,7 +36,7 @@ interface FormFields {
 
 interface AccountPageState {
     readonly canSubmit: boolean;
-    readonly formFields: FormFields
+    readonly formFields: FormFields;
 }
 
 /**
@@ -46,7 +46,7 @@ export class AccountPage extends React.Component<AccountPageProps, AccountPageSt
     private isRegistrationEmailAsUsername: boolean = features.isRegistrationEmailAsUsername;
     private isEditUserNameAllowed: boolean = features.isEditUserNameAllowed;
     
-    state: AccountPageState = {
+    public state: AccountPageState = {
         canSubmit: false,
         formFields: {username: '',
                      firstName: '',
@@ -54,7 +54,7 @@ export class AccountPage extends React.Component<AccountPageProps, AccountPageSt
                      email: ''}
     };
     
-    constructor(props: AccountPageProps) {
+    public constructor(props: AccountPageProps) {
         super(props);
         AccountServiceClient.Instance.doGet("/")
             .then((response: AxiosResponse<FormFields>) => {
@@ -79,7 +79,7 @@ export class AccountPage extends React.Component<AccountPageProps, AccountPageSt
         AccountServiceClient.Instance.doPost("/", {data: reqData})
             .then((response: AxiosResponse<FormFields>) => {
                 this.setState({canSubmit: false});
-                alert('Data posted');
+                alert('Data posted:' + response.statusText);
             });
     }
     
@@ -93,7 +93,7 @@ export class AccountPage extends React.Component<AccountPageProps, AccountPageSt
         return true;
     }
     
-    render() {
+    public render(): React.ReactNode {
         const fields: FormFields = this.state.formFields;
         return (
 <span>
@@ -156,11 +156,11 @@ export class AccountPage extends React.Component<AccountPageProps, AccountPageSt
         );
     }
     
-    UsernameInput = () => (
+    private UsernameInput = () => (
         <input type="text" className="form-control" required id="username" name="username" onChange={this.handleChange} value={this.state.formFields.username} />
     );
     
-    RestrictedUsernameInput = () => (
+    private RestrictedUsernameInput = () => (
         <div className="non-edit" id="username">{this.state.formFields.username}</div>
     );
     

@@ -21,11 +21,11 @@ export interface ApplicationsPageProps {
  
 export class ApplicationsPage extends React.Component<ApplicationsPageProps> {
     
-    constructor(props: ApplicationsPageProps) {
+    public constructor(props: ApplicationsPageProps) {
         super(props);
     }
 
-    render() {
+    public render(): React.ReactNode {
         return (
             <div>
               <h2>Hello Applications Page</h2>

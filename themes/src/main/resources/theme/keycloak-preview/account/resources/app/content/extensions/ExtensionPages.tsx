@@ -18,16 +18,16 @@ import * as React from 'react';
 import {Route, Link} from 'react-router-dom';
 
 export interface PageDef {
-    path: string,
-    label: string,
-    component: React.ComponentType<any>,
+    path: string;
+    label: string;
+    component: React.ComponentType;
 }
 
 declare const extensionPages: PageDef[];
 
 export class ExtensionPages { // extends React.Component<ExtensionPagesProps> {
     
-    public static get Links(): React.ReactElement<any> {
+    public static get Links(): React.ReactNode {
         if (typeof extensionPages === 'undefined') return (<span/>);
         
         const links: React.ReactElement<Link>[] = extensionPages.map((page: PageDef) => 
@@ -36,7 +36,7 @@ export class ExtensionPages { // extends React.Component<ExtensionPagesProps> {
         return (<span>{links}</span>);
     }
     
-    public static get Routes(): React.ReactElement<any> {
+    public static get Routes(): React.ReactNode {
         if (typeof extensionPages === 'undefined') return (<span/>);
         
         const routes: React.ReactElement<Route>[] = extensionPages.map((page) => 
