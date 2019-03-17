@@ -21,11 +21,11 @@ export interface DeviceActivityPageProps {
  
 export class DeviceActivityPage extends React.Component<DeviceActivityPageProps> {
     
-    constructor(props: DeviceActivityPageProps) {
+    public constructor(props: DeviceActivityPageProps) {
         super(props);
     }
 
-    render() {
+    public render(): React.ReactNode {
         return (
             <div>
               <h2>Hello Device Activity Page</h2>

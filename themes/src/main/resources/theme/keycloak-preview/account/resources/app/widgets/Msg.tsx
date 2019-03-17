@@ -16,21 +16,21 @@
 
 import * as React from 'react';
  
-declare const l18n_msg: {[key:string]: string};
+declare const l18nMsg: {[key: string]: string};
 
 export interface MsgProps {
-    readonly msgKey:string;
-    readonly params?:Array<string>;
+    readonly msgKey: string;
+    readonly params?: string[];
 }
  
 export class Msg extends React.Component<MsgProps> {
 
-    constructor(props: MsgProps) {
+    public constructor(props: MsgProps) {
         super(props);
     }
     
-    render() {
-        let message:string = l18n_msg[this.props.msgKey];
+    public render(): React.ReactNode {
+        let message: string = l18nMsg[this.props.msgKey];
         if (message === undefined) message = this.props.msgKey;
         
         if (this.props.params !== undefined) {
@@ -46,13 +46,13 @@ export class Msg extends React.Component<MsgProps> {
     }
     
     // if the param has Freemarker syntax, try to look up its value
-    private processParam(param:string): string {
+    private processParam(param: string): string {
         if (!(param.startsWith('${') && param.endsWith('}'))) return param;
 
         // remove Freemarker syntax
-        const key:string = param.substring(2, param.length - 1);
+        const key: string = param.substring(2, param.length - 1);
         
-        let value:string = l18n_msg[key];
+        let value: string = l18nMsg[key];
         if (value === undefined) return param;
         
         return value;

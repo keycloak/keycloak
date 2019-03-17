@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import {KeycloakLoginOptions} from './keycloak.d';
+import {KeycloakLoginOptions, KeycloakError} from './keycloak.d';
 
 // If using a local keycloak.js, uncomment this import.  With keycloak.js fetched
 // from the server, you get a compile-time warning on use of the Keycloak()
@@ -49,7 +49,7 @@ export class KeycloakService {
      *                       for details.
      * @returns {Promise<T>}
      */
-    static init(configOptions?: string|{}, initOptions: InitOptions = {}): Promise<any> {
+    public static init(configOptions?: string|{}, initOptions: InitOptions = {}): Promise<void> {
         KeycloakService.keycloakAuth = Keycloak(configOptions);
 
         return new Promise((resolve, reject) => {
@@ -57,43 +57,43 @@ export class KeycloakService {
                 .success(() => {
                     resolve();
                 })
-                .error((errorData: any) => {
+                .error((errorData: KeycloakError) => {
                     reject(errorData);
                 });
         });
     }
     
-    authenticated(): boolean {
+    public authenticated(): boolean {
         return KeycloakService.keycloakAuth.authenticated ? KeycloakService.keycloakAuth.authenticated : false;
     }
 
-    login(options?: KeycloakLoginOptions) {
+    public login(options?: KeycloakLoginOptions): void {
         KeycloakService.keycloakAuth.login(options);
     }
 
-    logout(redirectUri?: string) {
+    public logout(redirectUri?: string): void {
         KeycloakService.keycloakAuth.logout({redirectUri: redirectUri});
     }
 
-    account() {
+    public account(): void {
         KeycloakService.keycloakAuth.accountManagement();
     }
     
-    authServerUrl(): string | undefined {
+    public authServerUrl(): string | undefined {
         return KeycloakService.keycloakAuth.authServerUrl;
     }
     
-    realm(): string | undefined {
+    public realm(): string | undefined {
         return KeycloakService.keycloakAuth.realm;
     }
 
-    getToken(): Promise<string> {
+    public getToken(): Promise<string> {
         return new Promise<string>((resolve, reject) => {
             if (KeycloakService.keycloakAuth.token) {
                 KeycloakService.keycloakAuth
                     .updateToken(5)
                     .success(() => {
-                        resolve(<string>KeycloakService.keycloakAuth.token);
+                        resolve(KeycloakService.keycloakAuth.token as string);
                     })
                     .error(() => {
                         reject('Failed to refresh token');

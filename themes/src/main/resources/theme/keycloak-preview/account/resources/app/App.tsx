@@ -34,7 +34,7 @@ import {ApplicationsPage} from './content/applications-page/ApplicationsPage';
 import {MyResourcesPage} from './content/my-resources-page/MyResourcesPage';
 import {ExtensionPages} from './content/extensions/ExtensionPages';
 
-declare function toggleReact():void;
+declare function toggleReact(): void;
 declare function isWelcomePage(): boolean;
 
 declare const locale: string;
@@ -44,13 +44,13 @@ export interface AppProps {};
 export class App extends React.Component<AppProps> {
     private kcSvc: KeycloakService = KeycloakService.Instance;
     
-    constructor(props:AppProps) {
+    public constructor(props: AppProps) {
         super(props);
         console.log('Called into App constructor');
         toggleReact();
     }
         
-    render() {
+    public render(): React.ReactNode {
         toggleReact();
         
         // check login
