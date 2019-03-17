@@ -32,11 +32,11 @@ export interface MainProps {
 
 export class Main extends React.Component<MainProps> {
     
-    constructor(props: MainProps) {
+    public constructor(props: MainProps) {
         super(props);
     }
 
-    render() {
+    public render(): React.ReactNode {
         return (
             <HashRouter>
                 <App/>

@@ -3,14 +3,15 @@
   "version": "1.0.0",
   "description": "keycloak-preview account management written in React",
   "scripts": {
-    "build": "tsc --noImplicitAny --strictNullChecks --jsx react -p ./",
-    "build:watch": "tsc --noImplicitAny --strictNullChecks --jsx react -p ./ -w"
+    "build": "tsc --noImplicitAny --strictNullChecks --jsx react -p ./ && npm run lint",
+    "build:watch": "tsc --noImplicitAny --strictNullChecks --jsx react -p ./ -w",
+    "lint": "eslint --ignore-pattern *.d.ts ./**/*.ts*"
   },
   "keywords": [],
   "author": "Stan Silvert",
-  "license": "Apache 2.0",
+  "license": "Apache-2.0",
   "dependencies": {
-    "@patternfly/patternfly": "^1.0.196",
+    "@patternfly/patternfly": "^1.0.227",
     "axios": "^0.18.0",
     "moment": "^2.22.2",
     "react": "^16.5.2",
@@ -23,7 +24,16 @@
     "@types/react": "^16.4.14",
     "@types/react-dom": "^16.0.8",
     "@types/react-router-dom": "^4.3.1",
-    "typescript": "^3.1.1"
+    "@typescript-eslint/eslint-plugin": "^1.4.2",
+    "@typescript-eslint/parser": "^1.4.2",
+    "babel-eslint": "^9.0.0",
+    "eslint": "^5.15.1",
+    "eslint-config-react-app": "^3.0.8",
+    "eslint-plugin-flowtype": "^2.50.3",
+    "eslint-plugin-import": "^2.16.0",
+    "eslint-plugin-jsx-a11y": "^6.2.1",
+    "eslint-plugin-react": "^7.12.4",
+    "typescript": "^3.3.3333"
   },
   "repository": {}
 }

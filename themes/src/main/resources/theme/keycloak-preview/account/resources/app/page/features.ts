@@ -16,12 +16,12 @@
  */
  
  export interface Features {
-    isRegistrationEmailAsUsername : boolean;
-    isEditUserNameAllowed : boolean;
-    isInternationalizationEnabled : boolean;
-    isLinkedAccountsEnabled : boolean;
-    isEventsEnabled : boolean;
-    isMyResourcesEnabled : boolean;
+    isRegistrationEmailAsUsername: boolean;
+    isEditUserNameAllowed: boolean;
+    isInternationalizationEnabled: boolean;
+    isLinkedAccountsEnabled: boolean;
+    isEventsEnabled: boolean;
+    isMyResourcesEnabled: boolean;
  }
 
 

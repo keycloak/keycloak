@@ -84,7 +84,7 @@ export class AccountServiceClient {
             });
     }
     
-    private handleError(error: Error) {
+    private handleError(error: Error): void {
         console.log(error);
     }
     
