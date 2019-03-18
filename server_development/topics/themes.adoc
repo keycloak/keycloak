@@ -211,7 +211,7 @@ of the realm.
 {project_name} supports internationalization. To enable internationalization for a realm see {adminguide_link}[{adminguide_name}]. This
 section describes how you can add your own language.
 
-To add a new language create the file `<THEME TYPE>/messages/messages_<LOCALE>` in the directory of your theme. Then add it to the `locales` property in
+To add a new language create the file `<THEME TYPE>/messages/messages_<LOCALE>.properties` in the directory of your theme. Then add it to the `locales` property in
 `<THEME TYPE>/theme.properties`. For a language to be available to users the realms `login`, `account` and `email` theme has to support the language, so you
 need to add your language for those theme types.
 
