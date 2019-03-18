@@ -4,5 +4,5 @@
 Writing a Event Listener Provider starts by implementing the `EventListenerProvider` and `EventListenerProviderFactory` interfaces. Please see the Javadoc
 and examples for complete details on how to do this.
 
-For details on how to package and deploy a custom provider refer to the <<providers.adoc#providers,Service Provider Interfaces>> chapter.
+For details on how to package and deploy a custom provider refer to the <<_providers,Service Provider Interfaces>> chapter.
 
