@@ -643,6 +643,7 @@
                 <auth.server.config.property.value>standalone.xml</auth.server.config.property.value>
                 <auth.server.config.dir>${auth.server.home}/standalone/configuration</auth.server.config.dir>
                 <h2.version>1.3.173</h2.version>
+                <surefire.memory.settings>-Xms512m -Xmx1024m -XX:MetaspaceSize=96m -XX:MaxMetaspaceSize=256m</surefire.memory.settings>
             </properties>
             <dependencies>
                 <dependency>
@@ -667,6 +668,7 @@
                 <auth.server.config.property.value>standalone.xml</auth.server.config.property.value>
                 <auth.server.config.dir>${auth.server.home}/standalone/configuration</auth.server.config.dir>
                 <h2.version>1.3.173</h2.version>
+                <surefire.memory.settings>-Xms512m -Xmx1024m -XX:MetaspaceSize=96m -XX:MaxMetaspaceSize=256m</surefire.memory.settings>
             </properties>
             <dependencies>
                 <dependency>
@@ -1180,7 +1182,8 @@
                             <configuration>
                                 <systemPropertyVariables>
                                     <run.h2>true</run.h2>
-
+                                    <docker.database.skip>${docker.database.skip}</docker.database.skip>
+                                    
                                     <auth.server.jboss>false</auth.server.jboss>
 
                                     <auth.server.backend1.home>${auth.server.backend1.home}</auth.server.backend1.home>

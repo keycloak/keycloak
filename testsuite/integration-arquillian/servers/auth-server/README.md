@@ -11,7 +11,7 @@ Common configurations of Keycloak server on JBoss-based container (Wildfly/EAP).
 
 ### Submodules
 
-#### `wildfly` Wildfly 10
+#### `wildfly` Wildfly latest
  - Builds keycloak server on top of latest Wildfly.
  - Activated by __`-Pauth-server-wildfly`__
 
@@ -32,14 +32,10 @@ By setting `-Dserver-overlay=true` you can switch to server overlay instead. See
 
 Configures Keycloak JDBC datasource in `standalone.xml`. See profile `jpa`.
 
-### SSL
-
-Configures SSL in `standalone.xml`. See profile `ssl`.
-
 ### Cluster
 
 Configures in `standalone-ha.xml`:
-- h2 datasource over TCP
+- h2 datasource over TCP (if not executed together with jpa)
 - parameters of Keycloak Infinispan caches
 
 See profile `auth-server-cluster`.

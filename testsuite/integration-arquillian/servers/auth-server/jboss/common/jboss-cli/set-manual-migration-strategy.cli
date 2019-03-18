@@ -1,0 +1,5 @@
+
+echo *** Updating keycloak-server subsystem ***
+echo ** Changing migration strategy to manual **
+/subsystem=keycloak-server/spi=connectionsJpa/provider=default/:write-attribute(name=properties.migrationStrategy,value=manual)
+/subsystem=keycloak-server/spi=connectionsJpa/provider=default/:write-attribute(name=properties.initializeEmpty,value=false)

@@ -46,7 +46,7 @@
         <dependency>
             <groupId>org.jboss.spec.javax.faces</groupId>
             <artifactId>jboss-jsf-api_2.3_spec</artifactId>
-            <version>2.3.5.SP1</version>
+            <version>2.3.9.SP01</version>
             <scope>provided</scope>
         </dependency>
         <dependency>

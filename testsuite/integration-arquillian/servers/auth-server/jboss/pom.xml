@@ -61,7 +61,8 @@
         <!--used in profile auth-server-cluster. profile jpa sets this to true-->
         <skip.h2.tcp>false</skip.h2.tcp>
 
-        <security.xsl>security.xsl</security.xsl>
+        <!-- default ant scenario -->
+        <ant.scenario>scenario-standalone</ant.scenario>
     </properties>
 
     <profiles>
@@ -146,62 +147,6 @@
                         <artifactId>maven-enforcer-plugin</artifactId>
                     </plugin>
                     <plugin>
-                        <groupId>org.codehaus.mojo</groupId>
-                        <artifactId>xml-maven-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <id>io-worker-threads</id>
-                                <phase>process-resources</phase>
-                                <goals>
-                                    <goal>transform</goal>
-                                </goals>
-                                <configuration>
-                                    <transformationSets>
-                                        <transformationSet>
-                                            <dir>${auth.server.home}/standalone/configuration</dir>
-                                            <includes>
-                                                <include>standalone.xml</include>
-                                                <include>standalone-ha.xml</include>
-                                            </includes>
-                                            <stylesheet>${common.resources}/io.xsl</stylesheet>
-                                            <outputDir>${auth.server.home}/standalone/configuration</outputDir>
-                                            <parameters>
-                                                <parameter>
-                                                    <name>worker.io-threads</name>
-                                                    <value>${auth.server.worker.io-threads}</value>
-                                                </parameter>
-                                                <parameter>
-                                                    <name>worker.task-max-threads</name>
-                                                    <value>${auth.server.worker.task-max-threads}</value>
-                                                </parameter>
-                                            </parameters>
-                                        </transformationSet>
-                                    </transformationSets>
-                                </configuration>
-                            </execution>
-                            <execution>
-                                <id>inject-provider-and-truststore</id>
-                                <phase>process-resources</phase>
-                                <goals>
-                                    <goal>transform</goal>
-                                </goals>
-                                <configuration>
-                                    <transformationSets>
-                                        <transformationSet>
-                                            <dir>${auth.server.home}/standalone/configuration</dir>
-                                            <includes>
-                                                <include>standalone.xml</include>
-                                                <include>standalone-ha.xml</include>
-                                            </includes>
-                                            <stylesheet>${common.resources}/keycloak-server-subsystem.xsl</stylesheet>
-                                            <outputDir>${auth.server.home}/standalone/configuration</outputDir>
-                                        </transformationSet>
-                                    </transformationSets>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                    <plugin>
                         <artifactId>maven-resources-plugin</artifactId>
                         <executions>
                             <execution>
@@ -250,7 +195,7 @@
                                         <resource>
                                             <directory>${common.resources}/pki/root/ca</directory>
                                             <includes>
-                                                <include>certs/clients/test-user-san-email@localhost.cert.pem</include>
+                                                <include>certs/clients/test-user-san@localhost.cert.pem</include>
                                                 <include>certs/clients/test-user@localhost.key.pem</include>
                                             </includes>
                                         </resource>
@@ -260,12 +205,44 @@
                         </executions>
                     </plugin>
                     <plugin>
-                        <groupId>org.codehaus.mojo</groupId>
-                        <artifactId>exec-maven-plugin</artifactId>
-                    </plugin>
-                    <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-antrun-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>ant-generate-default</id>
+                                <phase>generate-resources</phase>
+                                <goals>
+                                    <goal>run</goal>
+                                </goals>
+                                <configuration>
+                                    <target>
+                                        <ant antfile="${common.resources}/ant/configure.xml" target="${ant.scenario}-generate">
+                                            <!-- These properties become equivalent to properties defined on the command line. -->
+                                            <!-- Without specifying those the default values would be used regardless what is -->
+                                            <!-- defined via -Dproperty=value when executing maven command -->
+                                            <property name="auth.server.worker.io-threads">${auth.server.worker.io-threads}</property>
+                                            <property name="auth.server.worker.task-max-threads">${auth.server.worker.task-max-threads}</property>
+                                            <!-- Following properties are cluster specific -->
+                                            <property name="session.cache.owners">${session.cache.owners}</property>
+                                            <property name="offline.session.cache.owners">${offline.session.cache.owners}</property>
+                                            <property name="login.failure.cache.owners">${login.failure.cache.owners}</property>
+                                        </ant>
+                                    </target>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>ant-apply-prepared-clis</id>
+                                <phase>process-resources</phase>
+                                <goals>
+                                    <goal>run</goal>
+                                </goals>
+                                <configuration>
+                                    <target>
+                                        <ant antfile="${common.resources}/ant/configure.xml" target="apply-cli-scripts" />
+                                    </target>
+                                </configuration>
+                            </execution>
+                        </executions>
                     </plugin>
                     <plugin>
                         <artifactId>maven-assembly-plugin</artifactId>
@@ -356,12 +333,12 @@
                 </pluginManagement>
             </build>
         </profile>
+
         <profile>
             <id>jpa</id>
             <properties>
-                <jdbc.mvn.driver.deployment.dir>${auth.server.home}/modules/system/layers/base/test/jdbc/${jdbc.mvn.artifactId}/main</jdbc.mvn.driver.deployment.dir>
+                <jdbc.driver.tmp.dir>${project.build.directory}/jdbc-driver</jdbc.driver.tmp.dir>
                 <skip.h2.tcp>true</skip.h2.tcp>
-                <keycloak.connectionsJpa.schema>DEFAULT</keycloak.connectionsJpa.schema>
             </properties>
             <build>
                 <pluginManagement>
@@ -378,23 +355,26 @@
                                         <rules>
                                             <requireProperty>
                                                 <property>jdbc.mvn.groupId</property>
+                                                <regex>((?!com.h2database).)*</regex>
+                                                <regexMessage>jdbc.mvn.groupId property is not set correctly: ${jdbc.mvn.groupId}. Profile jpa is not supported for default h2 values!</regexMessage>
                                             </requireProperty>
                                             <requireProperty>
                                                 <property>jdbc.mvn.artifactId</property>
+                                                <regex>((?!h2).)*</regex>
+                                                <regexMessage>jdbc.mvn.artifactId property is not set correctly: ${jdbc.mvn.artifactId}. Profile jpa is not supported for default h2 values!</regexMessage>
                                             </requireProperty>
                                             <requireProperty>
                                                 <property>jdbc.mvn.version</property>
-                                            </requireProperty>
-                                            <requireProperty>
-                                                <property>keycloak.connectionsJpa.user</property>
+                                                <regex>((?!${h2.version}).)*</regex>
+                                                <regexMessage>jdbc.mvn.version property is not set correctly: ${jdbc.mvn.version}. Profile jpa is not supported for default h2 values!</regexMessage>
                                             </requireProperty>
                                             <requireProperty>
                                                 <property>keycloak.connectionsJpa.password</property>
-                                            </requireProperty>
-                                            <requireProperty>
-                                                <property>keycloak.connectionsJpa.url</property>
+                                                <regex>^(?!\s*$).+</regex>
+                                                <regexMessage>keycloak.connectionsJpa.password property cannot be empty string!</regexMessage>
                                             </requireProperty>
                                         </rules>
+                                        <fail>true</fail>
                                     </configuration>
                                 </execution>
                             </executions>
@@ -404,7 +384,7 @@
                             <executions>
                                 <execution>
                                     <id>jdbc-driver</id>
-                                    <phase>process-resources</phase>
+                                    <phase>generate-resources</phase>
                                     <goals>
                                         <goal>copy</goal>
                                     </goals>
@@ -417,85 +397,37 @@
                                                 <type>jar</type>
                                             </artifactItem>
                                         </artifactItems>
-                                        <outputDirectory>${jdbc.mvn.driver.deployment.dir}</outputDirectory>
+                                        <outputDirectory>${jdbc.driver.tmp.dir}</outputDirectory>
                                         <overWriteIfNewer>true</overWriteIfNewer>
                                     </configuration>
                                 </execution>
                             </executions>
                         </plugin>
                         <plugin>
-                            <groupId>org.codehaus.mojo</groupId>
-                            <artifactId>xml-maven-plugin</artifactId>
+                            <groupId>org.apache.maven.plugins</groupId>
+                            <artifactId>maven-antrun-plugin</artifactId>
                             <executions>
                                 <execution>
-                                    <id>configure-wildfly-datasource</id>
-                                    <phase>process-resources</phase>
+                                    <id>configure-server-jpa</id>
+                                    <phase>generate-resources</phase>
                                     <goals>
-                                        <goal>transform</goal>
+                                        <goal>run</goal>
                                     </goals>
                                     <configuration>
-                                        <transformationSets>
-                                            <!-- create module.xml in modules -->
-                                            <transformationSet>
-                                                <dir>${auth.server.home}/modules/system/layers/base/com/h2database/h2/main</dir>
-                                                <stylesheet>src/main/resources/xslt/module.xsl</stylesheet>
-                                                <includes>
-                                                    <include>module.xml</include>
-                                                </includes>
-                                                <outputDir>${jdbc.mvn.driver.deployment.dir}</outputDir>
-                                                <parameters>
-                                                    <parameter>
-                                                        <name>database</name>
-                                                        <value>${jdbc.mvn.artifactId}</value>
-                                                    </parameter>
-                                                    <parameter>
-                                                        <name>version</name>
-                                                        <value>${jdbc.mvn.version}</value>
-                                                    </parameter>
-                                                </parameters>
-                                            </transformationSet>
-                                            <!-- add datasource to standalone.xml -->
-                                            <transformationSet>
-                                                <dir>${auth.server.home}/standalone/configuration</dir>
-                                                <stylesheet>${common.resources}/datasource.xsl</stylesheet>
-                                                <includes>
-                                                    <include>standalone.xml</include>
-                                                    <include>standalone-ha.xml</include>
-                                                </includes>
-                                                <outputDir>${auth.server.home}/standalone/configuration</outputDir>
-                                                <parameters>
-                                                    <parameter>
-                                                        <name>db.jdbc_url</name>
-                                                        <value>${keycloak.connectionsJpa.url}</value>
-                                                    </parameter>
-                                                    <parameter>
-                                                        <name>driver</name>
-                                                        <value>${jdbc.mvn.artifactId}</value>
-                                                    </parameter>
-                                                    <parameter>
-                                                        <name>username</name>
-                                                        <value>${keycloak.connectionsJpa.user}</value>
-                                                    </parameter>
-                                                    <parameter>
-                                                        <name>password</name>
-                                                        <value>${keycloak.connectionsJpa.password}</value>
-                                                    </parameter>
-                                                    <parameter>
-                                                        <name>schema</name>
-                                                        <value>${keycloak.connectionsJpa.schema}</value>
-                                                    </parameter>
-                                                </parameters>
-                                            </transformationSet>
-                                            <!-- add logger for org.hibernate.dialect.Dialect -->
-                                            <transformationSet>
-                                                <dir>${auth.server.home}/standalone/configuration</dir>
-                                                <stylesheet>${common.resources}/add-dialect-logger.xsl</stylesheet>
-                                                <includes>
-                                                    <include>standalone.xml</include>
-                                                </includes>
-                                                <outputDir>${auth.server.home}/standalone/configuration</outputDir>
-                                            </transformationSet>
-                                        </transformationSets>
+                                        <target>
+                                            <ant antfile="${common.resources}/ant/configure.xml" target="configure-server-jpa">
+                                                <!-- These properties become equivalent to properties defined on the command line. -->
+                                                <!-- Without specifying those the default values would be used regardless what is -->
+                                                <!-- defined via -Dproperty=value when executing maven command -->
+                                                <property name="jdbc.driver.tmp.dir">${jdbc.driver.tmp.dir}</property>
+                                                <property name="jdbc.mvn.artifactId">${jdbc.mvn.artifactId}</property>
+                                                <property name="jdbc.mvn.version">${jdbc.mvn.version}</property>
+                                                <property name="keycloak.connectionsJpa.url">${keycloak.connectionsJpa.url}</property>
+                                                <property name="keycloak.connectionsJpa.user">${keycloak.connectionsJpa.user}</property>
+                                                <property name="keycloak.connectionsJpa.password">${keycloak.connectionsJpa.password}</property>
+                                                <property name="keycloak.connectionsJpa.schema">${keycloak.connectionsJpa.schema}</property>
+                                            </ant>
+                                        </target>
                                     </configuration>
                                 </execution>
                             </executions>
@@ -504,7 +436,7 @@
                 </pluginManagement>
             </build>
         </profile>
-        
+
         <profile>
             <id>migration-manual</id>
             <activation>
@@ -517,47 +449,28 @@
                 <pluginManagement>
                     <plugins>
                         <plugin>
-                            <groupId>org.codehaus.mojo</groupId>
-                            <artifactId>xml-maven-plugin</artifactId>
+                            <groupId>org.apache.maven.plugins</groupId>
+                            <artifactId>maven-antrun-plugin</artifactId>
                             <executions>
                                 <execution>
                                     <id>set-manual-migration-strategy</id>
-                                    <phase>process-resources</phase>
+                                    <phase>generate-resources</phase>
                                     <goals>
-                                        <goal>transform</goal>
+                                        <goal>run</goal>
                                     </goals>
                                     <configuration>
-                                        <skip></skip>
-                                        <transformationSets>
-                                            <transformationSet>
-                                                <dir>${auth.server.home}/standalone/configuration</dir>
-                                                <includes>
-                                                    <include>standalone.xml</include>
-                                                </includes>
-                                                <stylesheet>${common.resources}/migration-strategy.xsl</stylesheet>
-                                                <outputDir>${auth.server.home}/standalone/configuration</outputDir>
-                                                <parameters>
-                                                    <parameter>
-                                                        <name>migration.strategy</name>
-                                                        <value>manual</value>
-                                                    </parameter>
-                                                    <parameter>
-                                                        <name>initialize.empty</name>
-                                                        <value>false</value>
-                                                    </parameter>
-                                                </parameters>
-                                            </transformationSet>
-                                        </transformationSets>
+                                        <target>
+                                            <ant antfile="${common.resources}/ant/configure.xml" target="set-manual-migration-strategy" />
+                                        </target>
                                     </configuration>
                                 </execution>
                             </executions>
                         </plugin>
-                
                     </plugins>
                 </pluginManagement>
             </build>
         </profile>
-        
+
         <profile>
             <id>auth-server-apply-patch</id>
             <activation>
@@ -598,7 +511,9 @@
         <profile>
             <id>auth-servers-crossdc-jboss</id>
             <properties>
-                <crossdc.jboss.jdbc.url>jdbc:h2:tcp://localhost:9092/mem:keycloak-dc-shared;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE</crossdc.jboss.jdbc.url>
+                <ant.scenario>scenario-crossdc</ant.scenario>
+
+                <h2.jdbc.url>jdbc:h2:tcp://localhost:9092/mem:keycloak-dc-shared;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE</h2.jdbc.url>
             </properties>
             <build>
                 <plugins>
@@ -632,54 +547,19 @@
                             </executions>
                         </plugin>
                         <plugin>
-                            <groupId>org.codehaus.mojo</groupId>
-                            <artifactId>xml-maven-plugin</artifactId>
-                            <executions>
-                                <execution>
-                                    <id>jpa-h2-tcp</id>
-                                    <phase>process-resources</phase>
-                                    <goals>
-                                        <goal>transform</goal>
-                                    </goals>
-                                    <configuration>
-                                        <skip>${skip.h2.tcp}</skip>
-                                        <transformationSets>
-                                            <transformationSet>
-                                                <dir>${auth.server.home}/standalone/configuration</dir>
-                                                <includes>
-                                                    <include>standalone-ha.xml</include>
-                                                </includes>
-                                                <stylesheet>${common.resources}/datasource-jdbc-url.xsl</stylesheet>
-                                                <outputDir>${auth.server.home}/standalone/configuration</outputDir>
-                                                <parameters>
-                                                    <parameter>
-                                                        <name>pool.name</name>
-                                                        <value>KeycloakDS</value>
-                                                    </parameter>
-                                                    <parameter>
-                                                        <name>jdbc.url</name>
-                                                        <value>${crossdc.jboss.jdbc.url}</value>
-                                                    </parameter>
-                                                </parameters>
-                                            </transformationSet>
-                                        </transformationSets>
-                                    </configuration>
-                                </execution>
-                            </executions>
-                        </plugin>
-                        <plugin>
                             <groupId>org.apache.maven.plugins</groupId>
                             <artifactId>maven-antrun-plugin</artifactId>
                             <executions>
                                 <execution>
-                                    <id>configure-crossdc</id>
-                                    <phase>process-resources</phase>
+                                    <id>jpa-h2-tcp</id>
+                                    <phase>generate-resources</phase>
                                     <goals>
                                         <goal>run</goal>
                                     </goals>
                                     <configuration>
+                                        <skip>${skip.h2.tcp}</skip>
                                         <target>
-                                            <ant antfile="${common.resources}/ant/configure.xml" target="crossdc" />
+                                            <ant antfile="${common.resources}/ant/configure.xml" target="replace-jdbc-url" />
                                         </target>
                                     </configuration>
                                 </execution>
@@ -689,10 +569,12 @@
                 </pluginManagement>
             </build>
         </profile>
-        
+
         <profile>
             <id>auth-server-cluster</id>
             <properties>
+                <ant.scenario>scenario-cluster</ant.scenario>
+
                 <session.cache.owners>1</session.cache.owners>
                 <offline.session.cache.owners>1</offline.session.cache.owners>
                 <login.failure.cache.owners>1</login.failure.cache.owners>
@@ -702,92 +584,25 @@
                 Any other value configures it with dynamic-load-provider using the particular `load.metric`.
                 Supported metrics: https://docs.jboss.org/mod_cluster/1.2.0/html/java.AS7config.html#LoadMetric -->
 
+                <h2.jdbc.url>jdbc:h2:tcp://${jboss.bind.address:localhost}:9092/mem:keycloak;DB_CLOSE_DELAY=-1</h2.jdbc.url>
             </properties>
             <build>
                 <pluginManagement>
                     <plugins>
                         <plugin>
-                            <groupId>org.codehaus.mojo</groupId>
-                            <artifactId>xml-maven-plugin</artifactId>
-                            <executions>
-                                <execution>
-                                    <id>jpa-h2-tcp</id>
-                                    <phase>process-resources</phase>
-                                    <goals>
-                                        <goal>transform</goal>
-                                    </goals>
-                                    <configuration>
-                                        <transformationSets>
-                                            <transformationSet>
-                                                <dir>${auth.server.home}/standalone/configuration</dir>
-                                                <includes>
-                                                    <include>standalone-ha.xml</include>
-                                                </includes>
-                                                <stylesheet>${common.resources}/datasource-jdbc-url.xsl</stylesheet>
-                                                <outputDir>${auth.server.home}/standalone/configuration</outputDir>
-                                                <parameters>
-                                                    <parameter>
-                                                        <name>pool.name</name>
-                                                        <value>KeycloakDS</value>
-                                                    </parameter>
-                                                    <parameter>
-                                                        <name>jdbc.url</name>
-                                                        <value>jdbc:h2:tcp://${jboss.bind.address:localhost}:9092/mem:keycloak;DB_CLOSE_DELAY=-1</value>
-                                                    </parameter>
-                                                </parameters>
-                                            </transformationSet>
-                                        </transformationSets>
-                                        <skip>${skip.h2.tcp}</skip>
-                                    </configuration>
-                                </execution>
-                                <execution>
-                                    <id>keycloak-ispn-caches</id>
-                                    <phase>process-resources</phase>
-                                    <goals>
-                                        <goal>transform</goal>
-                                    </goals>
-                                    <configuration>
-                                        <transformationSets>
-                                            <transformationSet>
-                                                <dir>${auth.server.home}/standalone/configuration</dir>
-                                                <includes>
-                                                    <include>standalone-ha.xml</include>
-                                                </includes>
-                                                <stylesheet>${common.resources}/ispn-cache-owners.xsl</stylesheet>
-                                                <outputDir>${auth.server.home}/standalone/configuration</outputDir>
-                                                <parameters>
-                                                    <parameter>
-                                                        <name>sessionCacheOwners</name>
-                                                        <value>${session.cache.owners}</value>
-                                                    </parameter>
-                                                    <parameter>
-                                                        <name>offlineSessionCacheOwners</name>
-                                                        <value>${offline.session.cache.owners}</value>
-                                                    </parameter>
-                                                    <parameter>
-                                                        <name>loginFailureCacheOwners</name>
-                                                        <value>${login.failure.cache.owners}</value>
-                                                    </parameter>
-                                                </parameters>
-                                            </transformationSet>
-                                        </transformationSets>
-                                    </configuration>
-                                </execution>
-                            </executions>
-                        </plugin>
-                        <plugin>
                             <groupId>org.apache.maven.plugins</groupId>
                             <artifactId>maven-antrun-plugin</artifactId>
                             <executions>
                                 <execution>
-                                    <id>configure-undertow-subsystem</id>
-                                    <phase>process-resources</phase>
+                                    <id>jpa-h2-tcp</id>
+                                    <phase>generate-resources</phase>
                                     <goals>
                                         <goal>run</goal>
                                     </goals>
                                     <configuration>
+                                        <skip>${skip.h2.tcp}</skip>
                                         <target>
-                                            <ant antfile="${common.resources}/ant/configure.xml" target="undertow-subsystem-cluster" />
+                                            <ant antfile="${common.resources}/ant/configure.xml" target="replace-jdbc-url" />
                                         </target>
                                     </configuration>
                                 </execution>
@@ -834,9 +649,6 @@
 
         <profile>
             <id>auth-server-wildfly</id>
-            <properties>
-                <security.xsl>security-wildfly.xsl</security.xsl>
-            </properties>
             <modules>
                 <module>wildfly</module>
             </modules>
@@ -847,7 +659,6 @@
                 <module>eap</module>
             </modules>
         </profile>
-
 
         <profile>
             <id>db-failover-mariadb</id>

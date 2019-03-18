@@ -27,14 +27,14 @@
 
     <fileSets>
         <fileSet>
-            <directory>${keycloak.server.home}</directory>
+            <directory>${auth.server.home}</directory>
             <outputDirectory>auth-server-migration</outputDirectory>
             <excludes>
                 <exclude>**/*.sh</exclude>
             </excludes>
         </fileSet>
         <fileSet>
-            <directory>${keycloak.server.home}</directory>
+            <directory>${auth.server.home}</directory>
             <outputDirectory>auth-server-migration</outputDirectory>
             <includes>
                 <include>**/*.sh</include>

@@ -42,9 +42,9 @@
         <app.server>undertow</app.server>
 
         <!-- Wildfly deprecated versions -->
-        <wildfly.deprecated.version>14.0.1.Final</wildfly.deprecated.version>
-        <wildfly.deprecated.wildfly.core.version>6.0.2.Final</wildfly.deprecated.wildfly.core.version>
-        <wildfly.deprecated.arquillian.wildfly.container>2.1.0.Final</wildfly.deprecated.arquillian.wildfly.container>
+        <wildfly.deprecated.version>15.0.1.Final</wildfly.deprecated.version>
+        <wildfly.deprecated.wildfly.core.version>7.0.0.Final</wildfly.deprecated.wildfly.core.version>
+        <wildfly.deprecated.arquillian.wildfly.container>2.1.1.Final</wildfly.deprecated.arquillian.wildfly.container>
 
         <!--component versions-->
         <!--
@@ -93,6 +93,7 @@
         <keycloak.connectionsJpa.user>sa</keycloak.connectionsJpa.user>
         <keycloak.connectionsJpa.password></keycloak.connectionsJpa.password>
         <keycloak.connectionsJpa.url>jdbc:h2:mem:test;MVCC=TRUE;DB_CLOSE_DELAY=-1</keycloak.connectionsJpa.url>
+        <keycloak.connectionsJpa.schema>DEFAULT</keycloak.connectionsJpa.schema>
     </properties>
 
     <dependencyManagement>

@@ -49,7 +49,6 @@ import org.keycloak.testsuite.util.AdminEventPaths;
 import org.keycloak.testsuite.util.AssertAdminEvents;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.DroneUtils;
-import org.keycloak.testsuite.util.PhantomJSBrowser;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
 import org.openqa.selenium.WebDriver;
@@ -68,6 +67,7 @@ import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorC
 import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel.MappingSourceType.ISSUERDN;
 import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel.MappingSourceType.ISSUERDN_CN;
 import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel.MappingSourceType.SUBJECTALTNAME_EMAIL;
+import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel.MappingSourceType.SUBJECTALTNAME_OTHERNAME;
 import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel.MappingSourceType.SUBJECTDN_CN;
 import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel.MappingSourceType.SUBJECTDN_EMAIL;
 
@@ -117,24 +117,39 @@ public abstract class AbstractX509AuthenticationTest extends AbstractTestRealmKe
         Assume.assumeTrue(AUTH_SERVER_SSL_REQUIRED);
     }
 
+
     @BeforeClass
     public static void onBeforeTestClass() {
-        if (isAuthServerJBoss()) {
-            String authServerHome = System.getProperty("auth.server.home");
+        configurePhantomJS("/ca.crt", "/client.crt", "/client.key", "secret");
+    }
 
-            if (authServerHome != null && System.getProperty("auth.server.ssl.required") != null) {
+
+    /**
+     * Setup phantom JS to be used for mutual TLS testing. All file paths are relative to "authServerHome"
+     *
+     * @param certificatesPath
+     * @param clientCertificateFile
+     * @param clientKeyFile
+     * @param clientKeyPassword
+     */
+    protected static void configurePhantomJS(String certificatesPath, String clientCertificateFile, String clientKeyFile, String clientKeyPassword) {
+        String authServerHome = System.getProperty("auth.server.home");
+
+        if (authServerHome != null && System.getProperty("auth.server.ssl.required") != null) {
+            if (isAuthServerJBoss()) {
                 authServerHome = authServerHome + "/standalone/configuration";
-                StringBuilder cliArgs = new StringBuilder();
-
-                cliArgs.append("--ignore-ssl-errors=true ");
-                cliArgs.append("--web-security=false ");
-                cliArgs.append("--ssl-certificates-path=").append(authServerHome).append("/ca.crt ");
-                cliArgs.append("--ssl-client-certificate-file=").append(authServerHome).append("/client.crt ");
-                cliArgs.append("--ssl-client-key-file=").append(authServerHome).append("/client.key ");
-                cliArgs.append("--ssl-client-key-passphrase=secret ");
-
-                System.setProperty("keycloak.phantomjs.cli.args", cliArgs.toString());
             }
+
+            StringBuilder cliArgs = new StringBuilder();
+
+            cliArgs.append("--ignore-ssl-errors=true ");
+            cliArgs.append("--web-security=false ");
+            cliArgs.append("--ssl-certificates-path=").append(authServerHome).append(certificatesPath).append(" ");
+            cliArgs.append("--ssl-client-certificate-file=").append(authServerHome).append(clientCertificateFile).append(" ");
+            cliArgs.append("--ssl-client-key-file=").append(authServerHome).append(clientKeyFile).append(" ");
+            cliArgs.append("--ssl-client-key-passphrase=" + clientKeyPassword).append(" ");
+
+            System.setProperty("keycloak.phantomjs.cli.args", cliArgs.toString());
         }
     }
 
@@ -183,6 +198,8 @@ public abstract class AbstractX509AuthenticationTest extends AbstractTestRealmKe
         userId = user.getId();
 
         user.singleAttribute("x509_certificate_identity","-");
+        user.singleAttribute("alternative_email", "test-user-altmail@localhost");
+        user.singleAttribute("upn", "test_upn_name@localhost");
         updateUser(user);
     }
 
@@ -343,11 +360,20 @@ public abstract class AbstractX509AuthenticationTest extends AbstractTestRealmKe
                 .setUserIdentityMapperType(USERNAME_EMAIL);
     }
 
-    protected static X509AuthenticatorConfigModel createLoginSubjectAltNameEmail2UsernameOrEmailConfig() {
+    protected static X509AuthenticatorConfigModel createLoginSubjectAltNameEmail2UserAttributeConfig() {
         return new X509AuthenticatorConfigModel()
                 .setConfirmationPageAllowed(true)
                 .setMappingSourceType(SUBJECTALTNAME_EMAIL)
-                .setUserIdentityMapperType(USERNAME_EMAIL);
+                .setUserIdentityMapperType(USER_ATTRIBUTE)
+                .setCustomAttributeName("alternative_email");
+    }
+
+    protected static X509AuthenticatorConfigModel createLoginSubjectAltNameOtherName2UserAttributeConfig() {
+        return new X509AuthenticatorConfigModel()
+                .setConfirmationPageAllowed(true)
+                .setMappingSourceType(SUBJECTALTNAME_OTHERNAME)
+                .setUserIdentityMapperType(USER_ATTRIBUTE)
+                .setCustomAttributeName("upn");
     }
 
     protected static X509AuthenticatorConfigModel createLoginSubjectEmailWithKeyUsage(String keyUsage) {

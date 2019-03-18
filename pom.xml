@@ -24,7 +24,7 @@
     <parent>
         <groupId>org.jboss</groupId>
         <artifactId>jboss-parent</artifactId>
-        <version>28</version>
+        <version>29</version>
     </parent>
 
     <name>Keycloak</name>
@@ -41,32 +41,32 @@
 
         <product.build-time>${timestamp}</product.build-time>
 
-        <wildfly.version>15.0.1.Final</wildfly.version>
+        <wildfly.version>16.0.0.Final</wildfly.version>
         <wildfly.build-tools.version>1.2.10.Final</wildfly.build-tools.version>
         <eap.version>7.2.0.GA-redhat-00005</eap.version>
         <eap.build-tools.version>1.2.10.Final</eap.build-tools.version>
-        <wildfly.core.version>7.0.0.Final</wildfly.core.version>
+        <wildfly.core.version>8.0.0.Final</wildfly.core.version>
 
         <jboss.as.version>7.2.0.Final</jboss.as.version>
 
         <!-- Versions used mostly for Undertow server, aligned with WildFly -->
         <jboss.aesh.version>0.66.19</jboss.aesh.version>
-        <aesh.version>1.8</aesh.version>
-        <aesh.readline.version>1.11</aesh.readline.version>
+        <aesh.version>1.11</aesh.version>
+        <aesh.readline.version>1.14</aesh.readline.version>
         <apache.httpcomponents.version>4.5.4</apache.httpcomponents.version>
         <apache.httpcomponents.httpcore.version>4.4.5</apache.httpcomponents.httpcore.version>
         <apache.mime4j.version>0.6</apache.mime4j.version>
         <jboss.dmr.version>1.5.0.Final</jboss.dmr.version>
         <bouncycastle.version>1.60</bouncycastle.version>
-        <cxf.version>3.2.5-jbossorg-1</cxf.version>
+        <cxf.version>3.2.7</cxf.version>
         <dom4j.version>2.1.1</dom4j.version>
         <github.relaxng.version>2.3.1</github.relaxng.version>
         <h2.version>1.4.193</h2.version>
         <javax.persistence.version>2.2</javax.persistence.version>
-        <hibernate.core.version>5.3.7.Final</hibernate.core.version>
-        <hibernate.c3p0.version>5.3.7.Final</hibernate.c3p0.version>
-        <infinispan.version>9.4.3.Final</infinispan.version>
-        <jackson.version>2.9.5</jackson.version>
+        <hibernate.core.version>5.3.9.Final</hibernate.core.version>
+        <hibernate.c3p0.version>5.3.9.Final</hibernate.c3p0.version>
+        <infinispan.version>9.4.8.Final</infinispan.version>
+        <jackson.version>2.9.8</jackson.version>
         <javax.mail.version>1.6.2</javax.mail.version>
         <jboss.logging.version>3.3.2.Final</jboss.logging.version>
         <jboss.logging.tools.version>2.1.0.Final</jboss.logging.tools.version>
@@ -76,17 +76,17 @@
         <jboss.spec.javax.xml.bind.jboss-jaxb-api_2.3_spec.version>1.0.1.Final</jboss.spec.javax.xml.bind.jboss-jaxb-api_2.3_spec.version>
         <jboss.spec.javax.servlet.jsp.jboss-jsp-api_2.3_spec.version>1.0.3.Final</jboss.spec.javax.servlet.jsp.jboss-jsp-api_2.3_spec.version>
         <log4j.version>1.2.17</log4j.version>
-        <resteasy.version>3.6.2.Final</resteasy.version>
-        <resteasy.undertow.version>3.6.2.Final</resteasy.undertow.version>
+        <resteasy.version>3.6.3.Final</resteasy.version>
+        <resteasy.undertow.version>3.6.3.Final</resteasy.undertow.version>
         <owasp.html.sanitizer.version>20180219.1</owasp.html.sanitizer.version>
         <slf4j-api.version>1.7.22</slf4j-api.version>
         <slf4j.version>1.7.22</slf4j.version>
         <sun.istack.version>3.0.7</sun.istack.version>
         <sun.jaxb.version>2.3.1</sun.jaxb.version>
         <org.glassfish.jaxb.xsom.version>2.3.1</org.glassfish.jaxb.xsom.version>
-        <undertow.version>2.0.15.Final</undertow.version>
-        <elytron.version>1.7.0.Final</elytron.version>
-        <elytron.undertow-server.version>1.3.0.Final</elytron.undertow-server.version>
+        <undertow.version>2.0.19.Final</undertow.version>
+        <elytron.version>1.8.0.Final</elytron.version>
+        <elytron.undertow-server.version>1.4.0.Final</elytron.undertow-server.version>
         <jetty81.version>8.1.17.v20150415</jetty81.version>
         <jetty91.version>9.1.5.v20140505</jetty91.version>
         <jetty92.version>9.2.4.v20141103</jetty92.version>
