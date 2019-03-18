@@ -67,8 +67,8 @@ public class AttributeStatementHelper {
         AttributeType attribute = new AttributeType(attributeName);
         String attributeType = mappingModel.getConfig().get(SAML_ATTRIBUTE_NAMEFORMAT);
         String attributeNameFormat = JBossSAMLURIConstants.ATTRIBUTE_FORMAT_BASIC.get();
-        if ("URI Reference".equals(attributeType)) attributeNameFormat = JBossSAMLURIConstants.ATTRIBUTE_FORMAT_URI.get();
-        else if ("Unspecified".equals(attributeType)) attributeNameFormat = "urn:oasis:names:tc:SAML2.0:attrname-format:unspecified";
+        if (URI_REFERENCE.equals(attributeType)) attributeNameFormat = JBossSAMLURIConstants.ATTRIBUTE_FORMAT_URI.get();
+        else if (UNSPECIFIED.equals(attributeType)) attributeNameFormat = JBossSAMLURIConstants.ATTRIBUTE_FORMAT_UNSPECIFIED.get();
         attribute.setNameFormat(attributeNameFormat);
         String friendlyName = mappingModel.getConfig().get(FRIENDLY_NAME);
         if (friendlyName != null && !friendlyName.trim().equals("")) attribute.setFriendlyName(friendlyName);
