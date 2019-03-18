@@ -26,8 +26,8 @@
         <tbody>
         <tr data-ng-repeat="session in sessions">
             <td>{{session.ipAddress}}</td>
-            <td>{{session.start | date:'medium'}}</td>
-            <td>{{session.lastAccess | date:'medium'}}</td>
+            <td>{{session.start|date:'yyyy-MM-dd HH:mm:ss'}}</td>
+            <td>{{session.lastAccess|date:'yyyy-MM-dd HH:mm:ss'}}</td>
             <td>
                 <div data-ng-repeat="(id, clientId) in session.clients">
                     <a href="#/realms/{{realm.realm}}/clients/{{id}}">{{clientId}}</a>

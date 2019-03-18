@@ -29,7 +29,7 @@
                     <password>sa</password>
                 </security>
             </datasource>
-            <datasource jndi-name="java:jboss/datasources/KeycloakDS" pool-name="KeycloakDS" enabled="true" use-java-context="true">
+            <datasource jndi-name="java:jboss/datasources/KeycloakDS" pool-name="KeycloakDS" enabled="true" use-java-context="true" statistics-enabled="${wildfly.datasources.statistics-enabled:${wildfly.statistics-enabled:false}}">
                 <connection-url>jdbc:mysql://127.0.0.1:3306/keycloak?useUnicode=true&amp;characterEncoding=utf8&amp;useSSL=false</connection-url>
                 <driver>mysql</driver>
                 <pool>
