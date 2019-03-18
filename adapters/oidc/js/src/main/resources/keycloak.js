@@ -1160,17 +1160,17 @@
                 return {
                     login: function(options) {
                         window.location.replace(kc.createLoginUrl(options));
-                        return createPromise().promise;
+                        return createPromise(true).promise;
                     },
 
                     logout: function(options) {
                         window.location.replace(kc.createLogoutUrl(options));
-                        return createPromise().promise;
+                        return createPromise(false).promise;
                     },
 
                     register: function(options) {
                         window.location.replace(kc.createRegisterUrl(options));
-                        return createPromise().promise;
+                        return createPromise(false).promise;
                     },
 
                     accountManagement : function() {
