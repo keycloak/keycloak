@@ -67,9 +67,9 @@
 
 :appserver_name: WildFly
 :appserver_dirref: WILDFLY_HOME
-:appserver_version: 15
+:appserver_version: 16
 
-:appserver_doc_base_url: http://docs.wildfly.org/15
+:appserver_doc_base_url: http://docs.wildfly.org/{appserver_version}
 :appserver_socket_link: {appserver_doc_base_url}/Admin_Guide.html#Interfaces_and_ports
 :appserver_socket_name: {appserver_name} {appserver_version} Documentation
 :appserver_jgroups_link: {appserver_doc_base_url}/High_Availability_Guide.html#JGroups_Subsystem
@@ -88,7 +88,7 @@
 :appserver_loadbalancer_name: {appserver_name} {appserver_version} Documentation
 
 :jdgserver_name: Infinispan
-:jdgserver_version: 9.4.3
+:jdgserver_version: 9.4.8
 :jdgserver_crossdcdocs_link: https://access.redhat.com/documentation/en-us/red_hat_data_grid/7.3/html/red_hat_data_grid_user_guide/x_site_replication
 
 :fuseVersion: JBoss Fuse 6.3.0 Rollup 5
@@ -97,8 +97,8 @@
 
 :fuse7Version: JBoss Fuse 7.0.1
 
-:subsystem_undertow_xml_urn: urn:jboss:domain:undertow:6.0
-:subsystem_infinispan_xml_urn: urn:jboss:domain:infinispan:6.0
+:subsystem_undertow_xml_urn: urn:jboss:domain:undertow:8.0
+:subsystem_infinispan_xml_urn: urn:jboss:domain:infinispan:8.0
 :subsystem_datasources_xml_urn: urn:jboss:domain:datasources:5.0
 :saml_adapter_xsd_urn: https://www.keycloak.org/schema/keycloak_saml_adapter_1_9.xsd
 :generic_adapter_name: keycloak-gatekeeper
