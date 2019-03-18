@@ -19,6 +19,7 @@ package org.keycloak.adapters;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.http.client.HttpClient;
 import org.jboss.logging.Logger;
 import org.keycloak.adapters.authentication.ClientCredentialsProviderUtils;
 import org.keycloak.adapters.authorization.PolicyEnforcer;
@@ -34,6 +35,7 @@ import org.keycloak.util.SystemPropertiesJsonParserFactory;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.PublicKey;
+import java.util.concurrent.Callable;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -131,7 +133,7 @@ public class KeycloakDeploymentBuilder {
             throw new IllegalArgumentException("For bearer auth, you must set the realm-public-key or auth-server-url");
         }
         if (realmKeyPem == null || !deployment.isBearerOnly() || deployment.isSSLEnabled() || deployment.isEnableBasicAuth() || deployment.isRegisterNodeAtStartup() || deployment.getRegisterNodePeriod() != -1) {
-            deployment.setClient(new HttpClientBuilder().build(adapterConfig));
+            deployment.setClient(createHttpClientProducer(adapterConfig));
         }
         if (adapterConfig.getAuthServerUrl() == null && (!deployment.isBearerOnly() || realmKeyPem == null)) {
             throw new RuntimeException("You must specify auth-server-url");
@@ -149,6 +151,23 @@ public class KeycloakDeploymentBuilder {
 
         log.debug("Use authServerUrl: " + deployment.getAuthServerBaseUrl() + ", tokenUrl: " + deployment.getTokenUrl() + ", relativeUrls: " + deployment.getRelativeUrls());
         return deployment;
+    }
+
+    private Callable<HttpClient> createHttpClientProducer(final AdapterConfig adapterConfig) {
+        return new Callable<HttpClient>() {
+            private HttpClient client;
+            @Override
+            public HttpClient call() {
+                if (client == null) {
+                    synchronized (deployment) {
+                        if (client == null) {
+                            client = new HttpClientBuilder().build(adapterConfig);
+                        }
+                    }
+                }
+                return client;
+            }
+        };
     }
 
     public static KeycloakDeployment build(InputStream is) {
