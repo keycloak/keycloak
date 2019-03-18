@@ -55,14 +55,20 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
- * @version $Revision: 1 $
+ * @author <a href="mailto:abraham.k@coda.global">Abraham K</a>
+ * @version $Revision: 2 $
+ *
+ * reCAPTCHAv3 is a invisible captcha & it returns a score based on the interactions with your website and provides you more flexibility to take appropriate actions.
+ * Ref: https://developers.google.com/recaptcha/docs/v3
+ *
  */
 public class RegistrationRecaptcha implements FormAction, FormActionFactory, ConfiguredProvider {
     public static final String G_RECAPTCHA_RESPONSE = "g-recaptcha-response";
     public static final String RECAPTCHA_REFERENCE_CATEGORY = "recaptcha";
     public static final String SITE_KEY = "site.key";
     public static final String SITE_SECRET = "secret";
+    public static final String SITE_SCORE = "site.score";
+    public static final String SITE_ACTION = "recaptcha.action";
     private static final Logger logger = Logger.getLogger(RegistrationRecaptcha.class);
 
     public static final String PROVIDER_ID = "registration-recaptcha-action";
@@ -97,14 +103,18 @@ public class RegistrationRecaptcha implements FormAction, FormActionFactory, Con
         if (captchaConfig == null || captchaConfig.getConfig() == null
                 || captchaConfig.getConfig().get(SITE_KEY) == null
                 || captchaConfig.getConfig().get(SITE_SECRET) == null
+                || captchaConfig.getConfig().get(SITE_SCORE) == null
+                || captchaConfig.getConfig().get(SITE_ACTION) == null
                 ) {
             form.addError(new FormMessage(null, Messages.RECAPTCHA_NOT_CONFIGURED));
             return;
         }
         String siteKey = captchaConfig.getConfig().get(SITE_KEY);
+        String siteActionName = captchaConfig.getConfig().get(SITE_ACTION);
         form.setAttribute("recaptchaRequired", true);
         form.setAttribute("recaptchaSiteKey", siteKey);
-        form.addScript("https://www.google.com/recaptcha/api.js?hl=" + userLanguageTag);
+        form.setAttribute("recaptchaActionName", siteActionName);
+        form.addScript("https://www.google.com/recaptcha/api.js?hl=" + userLanguageTag + "&render=" + siteKey + "&onload=onRecaptchaLoaded");
     }
 
     @Override
@@ -150,7 +160,15 @@ public class RegistrationRecaptcha implements FormAction, FormActionFactory, Con
             try {
                 Map json = JsonSerialization.readValue(content, Map.class);
                 Object val = json.get("success");
-                success = Boolean.TRUE.equals(val);
+                Double userScore = Double.parseDouble(json.get("score").toString());
+                AuthenticatorConfigModel captchaConfig = context.getAuthenticatorConfig();
+                Double configScore = Double.parseDouble(captchaConfig.getConfig().get(SITE_SCORE));
+                if(userScore > configScore){
+                    success = true;
+                } else {
+                    success = false;
+                }
+
             } finally {
                 content.close();
             }
@@ -222,15 +240,29 @@ public class RegistrationRecaptcha implements FormAction, FormActionFactory, Con
         ProviderConfigProperty property;
         property = new ProviderConfigProperty();
         property.setName(SITE_KEY);
-        property.setLabel("Recaptcha Site Key");
+        property.setLabel("reCAPTCHAv3 Site Key");
         property.setType(ProviderConfigProperty.STRING_TYPE);
-        property.setHelpText("Google Recaptcha Site Key");
+        property.setHelpText("Google reCAPTCHAv3 Site Key");
         CONFIG_PROPERTIES.add(property);
         property = new ProviderConfigProperty();
         property.setName(SITE_SECRET);
-        property.setLabel("Recaptcha Secret");
+        property.setLabel("reCAPTCHAv3 Secret");
         property.setType(ProviderConfigProperty.STRING_TYPE);
-        property.setHelpText("Google Recaptcha Secret");
+        property.setHelpText("Google reCAPTCHAv3 Site Secret Key");
+        CONFIG_PROPERTIES.add(property);
+        property = new ProviderConfigProperty();
+        property.setName(SITE_SCORE);
+        property.setLabel("reCAPTCHAv3 Score");
+        property.setDefaultValue(0.5);
+        property.setType(ProviderConfigProperty.STRING_TYPE);
+        property.setHelpText("Google reCAPTCHAv3 Score (0.1 - 1.0)");
+        CONFIG_PROPERTIES.add(property);
+        property = new ProviderConfigProperty();
+        property.setName(SITE_ACTION);
+        property.setLabel("reCAPTCHAv3 Action");
+        property.setDefaultValue("kc_registration_page");
+        property.setType(ProviderConfigProperty.STRING_TYPE);
+        property.setHelpText("Google reCAPTCHAv3 Action Name");
         CONFIG_PROPERTIES.add(property);
 
     }

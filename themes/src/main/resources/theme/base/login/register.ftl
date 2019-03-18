@@ -63,11 +63,7 @@
             </#if>
 
             <#if recaptchaRequired??>
-            <div class="form-group">
-                <div class="${properties.kcInputWrapperClass!}">
-                    <div class="g-recaptcha" data-size="compact" data-sitekey="${recaptchaSiteKey}"></div>
-                </div>
-            </div>
+                <input type="hidden" id="g-recaptcha-response" name="g-recaptcha-response">
             </#if>
 
             <div class="${properties.kcFormGroupClass!}">
@@ -83,4 +79,16 @@
             </div>
         </form>
     </#if>
+
+   <#if recaptchaRequired??>
+        <script>
+            var onRecaptchaLoaded = function() {
+                 grecaptcha.execute('${recaptchaSiteKey}', { action:'${recaptchaActionName}' }).then(function(token) {
+                     document.getElementById('g-recaptcha-response').value = token;
+                 });
+            };
+         </script>
+    </#if>
+
+
 </@layout.registrationLayout>
