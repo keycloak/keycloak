@@ -32,6 +32,7 @@ import org.keycloak.representations.adapters.config.AdapterConfig;
 import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.Callable;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -64,7 +65,7 @@ public class KeycloakDeployment {
     protected boolean publicClient;
     protected Map<String, Object> resourceCredentials = new HashMap<>();
     protected ClientCredentialsProvider clientAuthenticator;
-    protected HttpClient client;
+    protected Callable<HttpClient> client;
 
     protected String scope;
     protected SslRequired sslRequired = SslRequired.ALL;
@@ -259,11 +260,20 @@ public class KeycloakDeployment {
     }
 
     public HttpClient getClient() {
-        return client;
+        try {
+            return client.call();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
-    public void setClient(HttpClient client) {
-        this.client = client;
+    public void setClient(final HttpClient client) {
+        this.client = new Callable<HttpClient>() {
+            @Override
+            public HttpClient call() {
+                return client;
+            }
+        };
     }
 
     public String getScope() {
@@ -501,5 +511,9 @@ public class KeycloakDeployment {
 
     public void setVerifyTokenAudience(boolean verifyTokenAudience) {
         this.verifyTokenAudience = verifyTokenAudience;
+    }
+
+    public void setClient(Callable<HttpClient> callable) {
+        client = callable;
     }
 }
