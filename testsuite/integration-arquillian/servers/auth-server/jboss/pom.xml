@@ -63,6 +63,10 @@
 
         <!-- default ant scenario -->
         <ant.scenario>scenario-standalone</ant.scenario>
+
+        <session.cache.owners>1</session.cache.owners>
+        <offline.session.cache.owners>1</offline.session.cache.owners>
+        <login.failure.cache.owners>1</login.failure.cache.owners>
     </properties>
 
     <profiles>
@@ -216,16 +220,16 @@
                                 </goals>
                                 <configuration>
                                     <target>
-                                        <ant antfile="${common.resources}/ant/configure.xml" target="${ant.scenario}-generate">
-                                            <!-- These properties become equivalent to properties defined on the command line. -->
-                                            <!-- Without specifying those the default values would be used regardless what is -->
-                                            <!-- defined via -Dproperty=value when executing maven command -->
-                                            <property name="auth.server.worker.io-threads">${auth.server.worker.io-threads}</property>
-                                            <property name="auth.server.worker.task-max-threads">${auth.server.worker.task-max-threads}</property>
-                                            <!-- Following properties are cluster specific -->
-                                            <property name="session.cache.owners">${session.cache.owners}</property>
-                                            <property name="offline.session.cache.owners">${offline.session.cache.owners}</property>
-                                            <property name="login.failure.cache.owners">${login.failure.cache.owners}</property>
+                                        <ant antfile="${common.resources}/ant/configure.xml" target="${ant.scenario}-generate" >
+                                            <!-- In most of the cases, Ant Plugin picks up properties automatically.
+                                                 However, in some rare cases, it will not detect if a property has been overriden
+                                                 in the command line using "-D" switch (see why here: https://technotes.khitrenovich.com/properties-resolution-maven-implications-antrun-plugin/
+                                                 There's also another case, when we have a dynamic property (like "keycloak.connectionsJpa.url")
+                                                 that can change in the runtime. In such cases, we CAN NOT put is as a property (or
+                                                 Ant will see outdated values, not the dynamic ones). -->
+                                            <property name="session.cache.owners" value="${session.cache.owners}" />
+                                            <property name="offline.session.cache.owners" value="${offline.session.cache.owners}" />
+                                            <property name="login.failure.cache.owners" value="${login.failure.cache.owners}" />
                                         </ant>
                                     </target>
                                 </configuration>
@@ -415,18 +419,7 @@
                                     </goals>
                                     <configuration>
                                         <target>
-                                            <ant antfile="${common.resources}/ant/configure.xml" target="configure-server-jpa">
-                                                <!-- These properties become equivalent to properties defined on the command line. -->
-                                                <!-- Without specifying those the default values would be used regardless what is -->
-                                                <!-- defined via -Dproperty=value when executing maven command -->
-                                                <property name="jdbc.driver.tmp.dir">${jdbc.driver.tmp.dir}</property>
-                                                <property name="jdbc.mvn.artifactId">${jdbc.mvn.artifactId}</property>
-                                                <property name="jdbc.mvn.version">${jdbc.mvn.version}</property>
-                                                <property name="keycloak.connectionsJpa.url">${keycloak.connectionsJpa.url}</property>
-                                                <property name="keycloak.connectionsJpa.user">${keycloak.connectionsJpa.user}</property>
-                                                <property name="keycloak.connectionsJpa.password">${keycloak.connectionsJpa.password}</property>
-                                                <property name="keycloak.connectionsJpa.schema">${keycloak.connectionsJpa.schema}</property>
-                                            </ant>
+                                            <ant antfile="${common.resources}/ant/configure.xml" target="configure-server-jpa" />
                                         </target>
                                     </configuration>
                                 </execution>
@@ -574,11 +567,6 @@
             <id>auth-server-cluster</id>
             <properties>
                 <ant.scenario>scenario-cluster</ant.scenario>
-
-                <session.cache.owners>1</session.cache.owners>
-                <offline.session.cache.owners>1</offline.session.cache.owners>
-                <login.failure.cache.owners>1</login.failure.cache.owners>
-
                 <load.metric>simple</load.metric>
                 <!-- The default value 'simple' configures mod-cluster with simple-load-provider.
                 Any other value configures it with dynamic-load-provider using the particular `load.metric`.
