@@ -28,8 +28,8 @@ Once you have created new realm, you can see that there is a list of pre-defined
 
 * For the SAML protocol, there is one builtin client scope, `roles_list`, which contains one protocol mapper for showing the roles
 list in the SAML assertion.
-* For the OpenID Connect protocol, there are client scopes `profile`, `email`, `address`, `phone`, `offline_access`, `roles` and
-`web-origins`.
+* For the OpenID Connect protocol, there are client scopes `profile`, `email`, `address`, `phone`, `offline_access`, `roles`,
+`web-origins` and `microprofile-jwt`.
 
 The client scope, `offline_access`, is useful when client wants to obtain offline tokens. Learn about offline tokens in the
 <<_offline-access, Offline Access section>> or in the https://openid.net/specs/openid-connect-core-1_0.html#OfflineAccess[OpenID Connect specification],
@@ -58,6 +58,10 @@ possibly add some audiences for the clients with at least one client role as des
 
 The client scope `web-origins` is also not defined in the OpenID Connect specification and not added to the `scope` claim. This is used
 to add allowed web origins to the access token `allowed-origins` claim.
+
+The client scope `microprofile-jwt` was created to handle the claims defined in the https://wiki.eclipse.org/MicroProfile/JWT_Auth[MicroProfile/JWT Auth Specification].
+This client scope defines a user property mapper for the `upn` claim and also a realm role mapper for the `groups` claim. These mappers
+can be changed as needed so that different properties can be used to create the MicroProfile/JWT specific claims.
 
 ==== Consent related settings
 

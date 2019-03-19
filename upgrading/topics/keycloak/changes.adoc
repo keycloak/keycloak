@@ -18,6 +18,12 @@ Cross-Datacenter Replication changes::
   * You will need to upgrade {jdgserver_name} server to version {jdgserver_version}. The older version may still work, but it is
   not guaranteed as we don't test it anymore.
 
+==== New optional client scope
+We have added a new `microprofile-jwt` optional client scope to handle the claims defined in the https://wiki.eclipse.org/MicroProfile/JWT_Auth[MicroProfile/JWT Auth Specification].
+This new client scope defines protocol mappers to set the username of the authenticated user to the `upn` claim and to
+set the realm roles to the `groups` claim.
+
+
 === Migrating to 5.0.0
 
 ==== Upgrade to Wildfly 15
