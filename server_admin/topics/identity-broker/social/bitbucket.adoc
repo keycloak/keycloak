@@ -31,6 +31,4 @@ On the same page, mark the `Email` and `Read` boxes under `Account` to allow you
 .Bitbucket App Page
 image:images/bitbucket-app-page.png[]
 
-When you are done registering, click `Save`. This will open the application management page in Bitbucket. Find the client ID and secret from this page so you can enter them into the {project_name} `Add identity provider` page.
-+
-+Find the values of `client ID` and `secret` on this page and enter them into the {project_name} Add Identity Provider page. Click `Save`.
+When you are done registering, click `Save`. This will open the application management page in Bitbucket. Find the client ID and secret from this page so you can enter them into the {project_name} `Add identity provider` page. Click `Save`.
