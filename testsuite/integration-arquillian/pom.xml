@@ -94,6 +94,8 @@
         <keycloak.connectionsJpa.password></keycloak.connectionsJpa.password>
         <keycloak.connectionsJpa.url>jdbc:h2:mem:test;MVCC=TRUE;DB_CLOSE_DELAY=-1</keycloak.connectionsJpa.url>
         <keycloak.connectionsJpa.schema>DEFAULT</keycloak.connectionsJpa.schema>
+
+        <dballocator.skip>true</dballocator.skip>
     </properties>
 
     <dependencyManagement>
@@ -245,6 +247,18 @@
         <pluginManagement>
             <plugins>
                 <plugin>
+                    <groupId>org.keycloak</groupId>
+                    <artifactId>db-allocator-plugin</artifactId>
+                    <version>${project.version}</version>
+                    <configuration>
+                        <propertyDatabase>keycloak.connectionsJpa.database</propertyDatabase>
+                        <propertyDriver>keycloak.connectionsJpa.driver</propertyDriver>
+                        <propertyURL>keycloak.connectionsJpa.url</propertyURL>
+                        <propertyUser>keycloak.connectionsJpa.user</propertyUser>
+                        <propertyPassword>keycloak.connectionsJpa.password</propertyPassword>
+                    </configuration>
+                </plugin>
+                <plugin>
                     <artifactId>maven-surefire-plugin</artifactId>
                     <version>2.19.1</version>
                     <configuration>
@@ -272,6 +286,27 @@
                 </plugin>
             </plugins>
         </pluginManagement>
+        <plugins>
+            <plugin>
+                <groupId>org.keycloak</groupId>
+                <artifactId>db-allocator-plugin</artifactId>
+                <inherited>false</inherited>
+                <executions>
+                    <execution>
+                        <id>allocate-db</id>
+                        <goals>
+                            <goal>allocate</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>release-db</id>
+                        <goals>
+                            <goal>release</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
     </build>
     
     <modules>
@@ -380,6 +415,16 @@
             </properties>
         </profile>
         <profile>
+            <id>db-allocator-db-mysql</id>
+            <properties>
+                <jdbc.mvn.groupId>mysql</jdbc.mvn.groupId>
+                <jdbc.mvn.artifactId>mysql-connector-java</jdbc.mvn.artifactId>
+                <jdbc.mvn.version>${mysql.version}</jdbc.mvn.version>
+                <dballocator.type>mysql57</dballocator.type>
+                <dballocator.skip>false</dballocator.skip>
+            </properties>
+        </profile>
+        <profile>
             <id>db-postgres</id>
             <properties>
                 <keycloak.connectionsJpa.driver>org.postgresql.Driver</keycloak.connectionsJpa.driver>
@@ -397,6 +442,16 @@
             </properties>
         </profile>
         <profile>
+            <id>db-allocator-db-postgres</id>
+            <properties>
+                <jdbc.mvn.groupId>org.postgresql</jdbc.mvn.groupId>
+                <jdbc.mvn.artifactId>postgresql</jdbc.mvn.artifactId>
+                <jdbc.mvn.version>${postgresql.version}</jdbc.mvn.version>
+                <dballocator.type>postgresql96</dballocator.type>
+                <dballocator.skip>false</dballocator.skip>
+            </properties>
+        </profile>
+        <profile>
             <id>db-mariadb</id>
             <properties>
                 <keycloak.connectionsJpa.driver>org.mariadb.jdbc.Driver</keycloak.connectionsJpa.driver>
@@ -411,6 +466,16 @@
                 <docker.database.port>3306</docker.database.port>
                 <docker.database.skip>false</docker.database.skip>
                 <docker.database.wait-for-log-regex>(?si)Ready for start up.*ready [^\n]{0,30}connections</docker.database.wait-for-log-regex>
+            </properties>
+        </profile>
+        <profile>
+            <id>db-allocator-db-mariadb</id>
+            <properties>
+                <jdbc.mvn.groupId>org.mariadb.jdbc</jdbc.mvn.groupId>
+                <jdbc.mvn.artifactId>mariadb-java-client</jdbc.mvn.artifactId>
+                <jdbc.mvn.version>${mariadb.version}</jdbc.mvn.version>
+                <dballocator.type>mariadb_galera_101</dballocator.type>
+                <dballocator.skip>false</dballocator.skip>
             </properties>
         </profile>
         <profile>
@@ -432,6 +497,16 @@
             </properties>
         </profile>
         <profile>
+            <id>db-allocator-db-mssql2016</id>
+            <properties>
+                <jdbc.mvn.groupId>com.microsoft.sqlserver</jdbc.mvn.groupId>
+                <jdbc.mvn.artifactId>mssql-jdbc</jdbc.mvn.artifactId>
+                <jdbc.mvn.version>${mssql.version}</jdbc.mvn.version>
+                <dballocator.type>mssql2016</dballocator.type>
+                <dballocator.skip>false</dballocator.skip>
+            </properties>
+        </profile>
+        <profile>
             <id>db-oracle11g</id>
             <properties>
                 <docker.database.image>oracle/database:11.2.0.2-xe</docker.database.image>
@@ -448,6 +523,16 @@
                 <jdbc.mvn.groupId>com.oracle</jdbc.mvn.groupId>
                 <jdbc.mvn.artifactId>ojdbc7</jdbc.mvn.artifactId>
                 <jdbc.mvn.version>12.1.0</jdbc.mvn.version>
+            </properties>
+        </profile>
+        <profile>
+            <id>db-allocator-db-oracle11g</id>
+            <properties>
+                <jdbc.mvn.groupId>com.oracle</jdbc.mvn.groupId>
+                <jdbc.mvn.artifactId>ojdbc7</jdbc.mvn.artifactId>
+                <jdbc.mvn.version>12.1.0</jdbc.mvn.version>
+                <dballocator.type>oracle11gR1</dballocator.type>
+                <dballocator.skip>false</dballocator.skip>
             </properties>
         </profile>
     </profiles>
