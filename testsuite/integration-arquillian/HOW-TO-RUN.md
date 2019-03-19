@@ -717,6 +717,7 @@ The exact steps to configure Docker depend on the operating system.
 By default, the test will run against Undertow based embedded Keycloak Server, thus no distribution build is required beforehand.
 The exact command line arguments depend on the operating system.
 
+
 ### General guidelines
 
 If docker daemon doesn't run locally, or if you're not running on Linux, you may need
