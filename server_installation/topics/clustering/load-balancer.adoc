@@ -27,7 +27,7 @@ so that the actual client IP address is forwarded to and processed by the {proje
 
 Configuring your proxy to generate the `X-Forwarded-For` and `X-Forwarded-Proto` HTTP headers and preserving the
  original `Host` HTTP header is beyond the scope of this guide.  Take extra precautions to ensure that the
-`X-Forwared-For` header is set by your proxy.  If your proxy isn't configured correctly, then _rogue_ clients can set this header themselves and trick {project_name}
+`X-Forwarded-For` header is set by your proxy.  If your proxy isn't configured correctly, then _rogue_ clients can set this header themselves and trick {project_name}
 into thinking the client is connecting from a different IP address than it actually is.  This becomes really important if you are doing
 any black or white listing of IP addresses.
 
@@ -169,7 +169,7 @@ file and go to the undertow configuration in the `load-balancer` profile.  Add a
 ----
 
 The `output-socket-binding` is a logical name pointing to a `socket-binding` configured later in the _domain.xml_ file.
-the `instance-id` attribute must also be unique to the new host as this value is used by a cookie to enable sticky
+The `instance-id` attribute must also be unique to the new host as this value is used by a cookie to enable sticky
 sessions when load balancing.
 
 Next go down to the `load-balancer-sockets` `socket-binding-group` and add the `outbound-socket-binding` for `remote-host3`.  This new
