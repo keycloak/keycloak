@@ -1,12 +1,9 @@
 package org.keycloak.testsuite.updaters;
 
 import org.keycloak.admin.client.Keycloak;
-import org.keycloak.admin.client.resource.ClientResource;
-import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.models.UserModel;
-import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -16,11 +13,18 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.junit.Assert.assertThat;
 
 /**
- *
+ * Updater for user attributes. See {@link ServerResourceUpdater} for further details.
  * @author hmlnarik
  */
 public class UserAttributeUpdater extends ServerResourceUpdater<UserAttributeUpdater, UserResource, UserRepresentation> {
 
+    /**
+     * Creates a {@UserAttributeUpdater} for the given user. The user must exist.
+     * @param adminClient
+     * @param realm
+     * @param clientId
+     * @return
+     */
     public static UserAttributeUpdater forUserByUsername(Keycloak adminClient, String realm, String userName) {
         UsersResource users = adminClient.realm(realm).users();
         List<UserRepresentation> foundUsers = users.search(userName);

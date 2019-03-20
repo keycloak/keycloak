@@ -15,13 +15,20 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.junit.Assert.assertThat;
 
 /**
- *
+ * Updater for client attributes. See {@link ServerResourceUpdater} for further details.
  * @author hmlnarik
  */
 public class ClientAttributeUpdater extends ServerResourceUpdater<ClientAttributeUpdater, ClientResource, ClientRepresentation> {
 
     private final RealmResource realmResource;
 
+    /**
+     * Creates a {@ClientAttributeUpdater} for the given client. The client must exist.
+     * @param adminClient
+     * @param realm
+     * @param clientId
+     * @return
+     */
     public static ClientAttributeUpdater forClient(Keycloak adminClient, String realm, String clientId) {
         RealmResource realmRes = adminClient.realm(realm);
         ClientsResource clients = realmRes.clients();
