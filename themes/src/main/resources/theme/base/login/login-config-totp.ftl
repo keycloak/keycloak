@@ -55,6 +55,7 @@
                 <input type="text" id="totp" name="totp" autocomplete="off" class="${properties.kcInputClass!}" />
             </div>
             <input type="hidden" id="totpSecret" name="totpSecret" value="${totp.totpSecret}" />
+            <#if mode??><input type="hidden" id="mode" name="mode" value="${mode}"/></#if>
         </div>
 
         <input class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonBlockClass!} ${properties.kcButtonLargeClass!}" type="submit" value="${msg("doSubmit")}"/>

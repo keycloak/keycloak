@@ -20,12 +20,10 @@ package org.keycloak.testsuite.crossdc;
 import java.util.ArrayList;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.RealmResource;
-import java.util.List;
 
 import org.jboss.arquillian.container.test.api.ContainerController;
 import org.jboss.arquillian.test.api.ArquillianResource;
 import org.keycloak.testsuite.admin.concurrency.ConcurrentLoginTest;
-import org.keycloak.testsuite.arquillian.ContainerInfo;
 import org.keycloak.testsuite.arquillian.LoadBalancerController;
 import org.keycloak.testsuite.arquillian.annotation.LoadBalancer;
 import java.util.Arrays;
@@ -34,8 +32,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.impl.client.LaxRedirectStrategy;
 import org.junit.Test;
 import org.keycloak.testsuite.arquillian.annotation.InitialDcState;
 
@@ -77,7 +73,7 @@ public class ConcurrentLoginCrossDCTest extends ConcurrentLoginTest {
         AtomicReference<String> userSessionId = new AtomicReference<>();
         LoginTask loginTask = null;
 
-        try (CloseableHttpClient httpClient = HttpClientBuilder.create().setRedirectStrategy(new LaxRedirectStrategy()).build()) {
+        try (CloseableHttpClient httpClient = getHttpsAwareClient()) {
             loginTask = new LoginTask(httpClient, userSessionId, LOGIN_TASK_DELAY_MS, LOGIN_TASK_RETRIES, false, Arrays.asList(
               createHttpClientContextForUser(httpClient, "test-user@localhost", "password")
             ));

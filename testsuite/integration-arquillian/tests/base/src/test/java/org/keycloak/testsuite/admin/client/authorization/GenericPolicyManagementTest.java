@@ -26,6 +26,7 @@ import org.keycloak.admin.client.resource.ResourceResource;
 import org.keycloak.admin.client.resource.ResourceScopeResource;
 import org.keycloak.admin.client.resource.ResourceScopesResource;
 import org.keycloak.admin.client.resource.ResourcesResource;
+import org.keycloak.common.Profile;
 import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.representations.idm.authorization.Logic;
 import org.keycloak.representations.idm.authorization.PolicyProviderRepresentation;
@@ -34,6 +35,7 @@ import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 
 import javax.ws.rs.core.Response;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -142,7 +144,13 @@ public class GenericPolicyManagementTest extends AbstractAuthorizationTest {
                 .policyProviders().stream().map(PolicyProviderRepresentation::getType).collect(Collectors.toList());
 
         assertFalse(providers.isEmpty());
-        assertTrue(providers.containsAll(Arrays.asList(EXPECTED_BUILTIN_POLICY_PROVIDERS)));
+        List expected = new ArrayList(Arrays.asList(EXPECTED_BUILTIN_POLICY_PROVIDERS));
+
+        if (!Profile.isFeatureEnabled(Profile.Feature.AUTHZ_DROOLS_POLICY)) {
+            expected.remove("rules");
+        }
+
+        assertTrue(providers.containsAll(expected));
     }
 
     private PolicyResource createTestingPolicy() {
@@ -181,13 +189,14 @@ public class GenericPolicyManagementTest extends AbstractAuthorizationTest {
         newPolicy.setConfig(config);
 
         PoliciesResource policies = getClientResource().authorization().policies();
-        Response response = policies.create(newPolicy);
 
-        assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
+        try (Response response = policies.create(newPolicy)) {
+            assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
 
-        PolicyRepresentation stored = response.readEntity(PolicyRepresentation.class);
+            PolicyRepresentation stored = response.readEntity(PolicyRepresentation.class);
 
-        return policies.policy(stored.getId());
+            return policies.policy(stored.getId());
+        }
     }
 
     private ResourceResource createResource(String name) {
@@ -197,13 +206,13 @@ public class GenericPolicyManagementTest extends AbstractAuthorizationTest {
 
         ResourcesResource resources = getClientResource().authorization().resources();
 
-        Response response = resources.create(newResource);
+        try (Response response = resources.create(newResource)) {
+            assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
 
-        assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
+            ResourceRepresentation stored = response.readEntity(ResourceRepresentation.class);
 
-        ResourceRepresentation stored = response.readEntity(ResourceRepresentation.class);
-
-        return resources.resource(stored.getId());
+            return resources.resource(stored.getId());
+        }
     }
 
     private ResourceScopeResource createScope(String name) {
@@ -213,13 +222,14 @@ public class GenericPolicyManagementTest extends AbstractAuthorizationTest {
 
         ResourceScopesResource scopes = getClientResource().authorization().scopes();
 
-        Response response = scopes.create(newScope);
+        try (Response response = scopes.create(newScope)) {
 
-        assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
+            assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
 
-        ScopeRepresentation stored = response.readEntity(ScopeRepresentation.class);
+            ScopeRepresentation stored = response.readEntity(ScopeRepresentation.class);
 
-        return scopes.scope(stored.getId());
+            return scopes.scope(stored.getId());
+        }
     }
 
     private String buildConfigOption(String... values) {

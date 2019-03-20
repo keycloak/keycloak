@@ -25,8 +25,13 @@ import org.keycloak.models.cache.infinispan.entities.CachedRealmRole;
 import org.keycloak.models.cache.infinispan.entities.CachedRole;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.function.Supplier;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -39,22 +44,25 @@ public class RoleAdapter implements RoleModel {
     protected RealmCacheSession cacheSession;
     protected RealmModel realm;
     protected Set<RoleModel> composites;
+    private final Supplier<RoleModel> modelSupplier;
 
     public RoleAdapter(CachedRole cached, RealmCacheSession session, RealmModel realm) {
         this.cached = cached;
         this.cacheSession = session;
         this.realm = realm;
+        this.modelSupplier = this::getRoleModel;
     }
 
     protected void getDelegateForUpdate() {
         if (updated == null) {
             cacheSession.registerRoleInvalidation(cached.getId(), cached.getName(), getContainerId());
-            updated = cacheSession.getRealmDelegate().getRoleById(cached.getId(), realm);
+            updated = modelSupplier.get();
             if (updated == null) throw new IllegalStateException("Not found in database");
         }
     }
 
     protected boolean invalidated;
+
     public void invalidate() {
         invalidated = true;
     }
@@ -66,8 +74,6 @@ public class RoleAdapter implements RoleModel {
         if (updated == null) throw new IllegalStateException("Not found in database");
         return true;
     }
-
-
 
 
     @Override
@@ -144,7 +150,7 @@ public class RoleAdapter implements RoleModel {
     @Override
     public String getContainerId() {
         if (isClientRole()) {
-            CachedClientRole appRole = (CachedClientRole)cached;
+            CachedClientRole appRole = (CachedClientRole) cached;
             return appRole.getClientId();
         } else {
             return realm.getId();
@@ -157,7 +163,7 @@ public class RoleAdapter implements RoleModel {
         if (cached instanceof CachedRealmRole) {
             return realm;
         } else {
-            CachedClientRole appRole = (CachedClientRole)cached;
+            CachedClientRole appRole = (CachedClientRole) cached;
             return realm.getClientById(appRole.getClientId());
         }
     }
@@ -165,6 +171,59 @@ public class RoleAdapter implements RoleModel {
     @Override
     public boolean hasRole(RoleModel role) {
         return this.equals(role) || KeycloakModelUtils.searchFor(role, this, new HashSet<>());
+    }
+
+    @Override
+    public void setSingleAttribute(String name, String value) {
+        getDelegateForUpdate();
+        updated.setSingleAttribute(name, value);
+    }
+
+    @Override
+    public void setAttribute(String name, Collection<String> values) {
+        getDelegateForUpdate();
+        updated.setAttribute(name, values);
+    }
+
+    @Override
+    public void removeAttribute(String name) {
+        getDelegateForUpdate();
+        updated.removeAttribute(name);
+    }
+
+    @Override
+    public String getFirstAttribute(String name) {
+        if (updated != null) {
+            return updated.getFirstAttribute(name);
+        }
+
+        return cached.getAttributes(modelSupplier).getFirst(name);
+    }
+
+    @Override
+    public List<String> getAttribute(String name) {
+        if (updated != null) {
+            return updated.getAttribute(name);
+        }
+
+        List<String> result = cached.getAttributes(modelSupplier).get(name);
+        if (result == null) {
+            result = Collections.emptyList();
+        }
+        return result;
+    }
+
+    @Override
+    public Map<String, List<String>> getAttributes() {
+        if (updated != null) {
+            return updated.getAttributes();
+        }
+
+        return cached.getAttributes(modelSupplier);
+    }
+
+    private RoleModel getRoleModel() {
+        return cacheSession.getRealmDelegate().getRoleById(cached.getId(), realm);
     }
 
     @Override

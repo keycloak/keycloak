@@ -54,10 +54,12 @@ public abstract class AbstractX509ClientCertificateAuthenticator implements Auth
     public static final String ENABLE_CRLDP = "x509-cert-auth.crldp-checking-enabled";
     public static final String CRL_RELATIVE_PATH = "x509-cert-auth.crl-relative-path";
     public static final String OCSPRESPONDER_URI = "x509-cert-auth.ocsp-responder-uri";
+    public static final String OCSPRESPONDER_CERTIFICATE = "x509-cert-auth.ocsp-responder-certificate";
     public static final String MAPPING_SOURCE_SELECTION = "x509-cert-auth.mapping-source-selection";
     public static final String MAPPING_SOURCE_CERT_SUBJECTDN = "Match SubjectDN using regular expression";
     public static final String MAPPING_SOURCE_CERT_SUBJECTDN_EMAIL = "Subject's e-mail";
     public static final String MAPPING_SOURCE_CERT_SUBJECTALTNAME_EMAIL = "Subject's Alternative Name E-mail";
+    public static final String MAPPING_SOURCE_CERT_SUBJECTALTNAME_OTHERNAME = "Subject's Alternative Name otherName (UPN)";
     public static final String MAPPING_SOURCE_CERT_SUBJECTDN_CN = "Subject's Common Name";
     public static final String MAPPING_SOURCE_CERT_ISSUERDN = "Match IssuerDN using regular expression";
     public static final String MAPPING_SOURCE_CERT_ISSUERDN_EMAIL = "Issuer's e-mail";
@@ -93,6 +95,7 @@ public abstract class AbstractX509ClientCertificateAuthenticator implements Auth
                         .cRLDPEnabled(config.getCRLDistributionPointEnabled())
                         .cRLrelativePath(config.getCRLRelativePath())
                         .oCSPEnabled(config.getOCSPEnabled())
+                        .oCSPResponseCertificate(config.getOCSPResponderCertificate())
                         .oCSPResponderURI(config.getOCSPResponder());
         }
     }
@@ -149,6 +152,9 @@ public abstract class AbstractX509ClientCertificateAuthenticator implements Auth
                     break;
                 case SUBJECTALTNAME_EMAIL:
                     extractor = UserIdentityExtractor.getSubjectAltNameExtractor(1);
+                    break;
+                case SUBJECTALTNAME_OTHERNAME:
+                    extractor = UserIdentityExtractor.getSubjectAltNameExtractor(0);
                     break;
                 case ISSUERDN_CN:
                     extractor = UserIdentityExtractor.getX500NameExtractor(BCStyle.CN, issuer);

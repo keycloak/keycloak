@@ -16,6 +16,7 @@
  */
 package org.keycloak.testsuite.adapter.example.authorization;
 
+import org.junit.Ignore;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.ClientPoliciesResource;
 import org.keycloak.admin.client.resource.RealmResource;
@@ -197,6 +198,7 @@ public abstract class AbstractServletAuthzAdapterTest extends AbstractBaseServle
     
     //KEYCLOAK-3830
     @Test
+    @Ignore // Ignored because: KEYCLOAK-7941
     public void testAccessPublicResource() throws Exception {
         performTests(() -> {
             driver.navigate().to(getResourceServerUrl() + "/public-html.html");

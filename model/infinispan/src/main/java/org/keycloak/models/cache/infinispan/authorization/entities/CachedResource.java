@@ -21,11 +21,16 @@ package org.keycloak.models.cache.infinispan.authorization.entities;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.Scope;
 import org.keycloak.common.util.MultivaluedHashMap;
+import org.keycloak.models.cache.infinispan.DefaultLazyLoader;
+import org.keycloak.models.cache.infinispan.LazyLoader;
 import org.keycloak.models.cache.infinispan.entities.AbstractRevisioned;
 
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
@@ -33,29 +38,47 @@ import java.util.stream.Collectors;
  */
 public class CachedResource extends AbstractRevisioned implements InResourceServer {
 
-    private String resourceServerId;
-    private String iconUri;
-    private String owner;
-    private String type;
-    private String name;
-    private String displayName;
-    private Set<String> uris;
-    private Set<String> scopesIds;
-    private boolean ownerManagedAccess;
-    private MultivaluedHashMap<String, String> attributes = new MultivaluedHashMap<>();
+    private final String resourceServerId;
+    private final String iconUri;
+    private final String owner;
+    private final String type;
+    private final String name;
+    private final String displayName;
+    private final boolean ownerManagedAccess;
+    private LazyLoader<Resource, Set<String>> scopesIds;
+    private LazyLoader<Resource, Set<String>> uris;
+    private LazyLoader<Resource, MultivaluedHashMap<String, String>> attributes;
 
     public CachedResource(Long revision, Resource resource) {
         super(revision, resource.getId());
         this.name = resource.getName();
         this.displayName = resource.getDisplayName();
-        this.uris = resource.getUris();
         this.type = resource.getType();
         this.owner = resource.getOwner();
         this.iconUri = resource.getIconUri();
         this.resourceServerId = resource.getResourceServer().getId();
-        this.scopesIds = resource.getScopes().stream().map(Scope::getId).collect(Collectors.toSet());
         ownerManagedAccess = resource.isOwnerManagedAccess();
-        this.attributes.putAll(resource.getAttributes());
+
+        if (resource.isFetched("uris")) {
+            Set<String> data = new HashSet<>(resource.getUris());
+            this.uris = source -> data;
+        } else {
+            this.uris = new DefaultLazyLoader<>(source -> new HashSet<>(source.getUris()), Collections::emptySet);
+        }
+
+        if (resource.isFetched("scopes")) {
+            Set<String> data = resource.getScopes().stream().map(Scope::getId).collect(Collectors.toSet());
+            this.scopesIds = source -> data;
+        } else {
+            this.scopesIds = new DefaultLazyLoader<>(source -> source.getScopes().stream().map(Scope::getId).collect(Collectors.toSet()), Collections::emptySet);
+        }
+
+        if (resource.isFetched("attributes")) {
+            MultivaluedHashMap<String, String> data = new MultivaluedHashMap<>(resource.getAttributes());
+            this.attributes = source -> data;
+        } else {
+            this.attributes = new DefaultLazyLoader<>(source -> new MultivaluedHashMap<>(source.getAttributes()), MultivaluedHashMap::new);
+        }
     }
 
 
@@ -67,8 +90,8 @@ public class CachedResource extends AbstractRevisioned implements InResourceServ
         return this.displayName;
     }
 
-    public Set<String> getUris() {
-        return this.uris;
+    public Set<String> getUris(Supplier<Resource> source) {
+        return this.uris.get(source);
     }
 
     public String getType() {
@@ -91,11 +114,11 @@ public class CachedResource extends AbstractRevisioned implements InResourceServ
         return this.resourceServerId;
     }
 
-    public Set<String> getScopesIds() {
-        return this.scopesIds;
+    public Set<String> getScopesIds(Supplier<Resource> source) {
+        return this.scopesIds.get(source);
     }
 
-    public Map<String, List<String>> getAttributes() {
-        return attributes;
+    public Map<String, List<String>> getAttributes(Supplier<Resource> source) {
+        return attributes.get(source);
     }
 }

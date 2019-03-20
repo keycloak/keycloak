@@ -19,11 +19,7 @@ package org.keycloak.services.clientregistration;
 
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
-import org.keycloak.models.ClientInitialAccessModel;
-import org.keycloak.models.ClientModel;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.ModelDuplicateException;
-import org.keycloak.models.RealmModel;
+import org.keycloak.models.*;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -71,9 +67,17 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
             RealmModel realm = session.getContext().getRealm();
             ClientModel clientModel = new ClientManager(new RealmManager(session)).createClient(session, realm, client, true);
 
+            if (clientModel.isServiceAccountsEnabled()) {
+                new ClientManager(new RealmManager(session)).enableServiceAccount(clientModel);
+            }
+
+            if (Boolean.TRUE.equals(client.getAuthorizationServicesEnabled())) {
+                RepresentationToModel.createResourceServer(clientModel, session, true);
+            }
+
             ClientRegistrationPolicyManager.triggerAfterRegister(context, registrationAuth, clientModel);
 
-            client = ModelToRepresentation.toRepresentation(clientModel);
+            client = ModelToRepresentation.toRepresentation(clientModel, session);
 
             client.setSecret(clientModel.getSecret());
 
@@ -92,13 +96,12 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
         }
     }
 
-    public ClientRepresentation get(String clientId) {
+    public ClientRepresentation get(ClientModel client) {
         event.event(EventType.CLIENT_INFO);
 
-        ClientModel client = session.getContext().getRealm().getClientByClientId(clientId);
         auth.requireView(client);
 
-        ClientRepresentation rep = ModelToRepresentation.toRepresentation(client);
+        ClientRepresentation rep = ModelToRepresentation.toRepresentation(client, session);
         if (client.getSecret() != null) {
             rep.setSecret(client.getSecret());
         }
@@ -135,7 +138,9 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
         }
 
         RepresentationToModel.updateClient(rep, client);
-        rep = ModelToRepresentation.toRepresentation(client);
+        RepresentationToModel.updateClientProtocolMappers(rep, client);
+
+        rep = ModelToRepresentation.toRepresentation(client, session);
 
         if (auth.isRegistrationAccessToken()) {
             String registrationAccessToken = ClientRegistrationTokenUtils.updateRegistrationAccessToken(session, client, auth.getRegistrationAuth());

@@ -28,6 +28,8 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
+import org.apache.http.conn.ssl.TrustSelfSignedStrategy;
+import org.apache.http.ssl.SSLContextBuilder;
 import org.apache.http.ssl.SSLContexts;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.HttpClientBuilder;
@@ -46,6 +48,7 @@ import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
@@ -59,6 +62,7 @@ public class HttpUtil {
 
     private static HttpClient httpClient;
     private static SSLConnectionSocketFactory sslsf;
+    private static final AtomicBoolean tlsWarningEmitted = new AtomicBoolean();
 
     public static InputStream doGet(String url, String acceptType, String authorization) {
         try {
@@ -181,8 +185,26 @@ public class HttpUtil {
         }
         SSLContext theContext = SSLContexts.custom()
                 .useProtocol("TLS")
-                .loadTrustMaterial(file, password == null ? null : password.toCharArray())
+                .loadTrustMaterial(file, password == null ? null : password.toCharArray(), TrustSelfSignedStrategy.INSTANCE)
                 .build();
         sslsf = new SSLConnectionSocketFactory(theContext);
+    }
+
+    public static void setSkipCertificateValidation() {
+        if (!tlsWarningEmitted.getAndSet(true)) {
+            // Since this is a static util, it may happen that TLS is setup many times in one command
+            // invocation (e.g. when a command requires logging in). However, we would like to
+            // prevent this warning from appearing multiple times. That's why we need to guard it with a boolean.
+            System.err.println("The server is configured to use TLS but there is no truststore specified.");
+            System.err.println("The tool will skip certificate validation. This is highly discouraged for production use cases");
+        }
+
+        SSLContextBuilder builder = new SSLContextBuilder();
+        try {
+            builder.loadTrustMaterial(null, new TrustSelfSignedStrategy());
+            sslsf = new SSLConnectionSocketFactory(builder.build());
+        } catch (Exception e) {
+            throw new RuntimeException("Failed setting up TLS", e);
+        }
     }
 }

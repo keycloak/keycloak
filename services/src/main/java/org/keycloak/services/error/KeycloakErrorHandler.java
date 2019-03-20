@@ -11,7 +11,6 @@ import org.keycloak.models.KeycloakTransaction;
 import org.keycloak.models.RealmModel;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.messages.Messages;
-import org.keycloak.services.util.LocaleHelper;
 import org.keycloak.theme.FreeMarkerUtil;
 import org.keycloak.theme.Theme;
 import org.keycloak.theme.beans.LocaleBean;
@@ -42,6 +41,8 @@ public class KeycloakErrorHandler implements ExceptionMapper<Throwable> {
 
     private static final Pattern realmNamePattern = Pattern.compile(".*/realms/([^/]+).*");
 
+    public static final String UNCAUGHT_SERVER_ERROR_TEXT = "Uncaught server error";
+
     @Context
     private KeycloakSession session;
 
@@ -59,7 +60,7 @@ public class KeycloakErrorHandler implements ExceptionMapper<Throwable> {
         int statusCode = getStatusCode(throwable);
 
         if (statusCode >= 500 && statusCode <= 599) {
-            logger.error("Uncaught server error", throwable);
+            logger.error(UNCAUGHT_SERVER_ERROR_TEXT, throwable);
         }
 
         if (!MediaTypeMatcher.isHtmlRequest(headers)) {
@@ -71,7 +72,7 @@ public class KeycloakErrorHandler implements ExceptionMapper<Throwable> {
 
             Theme theme = session.theme().getTheme(Theme.Type.LOGIN);
 
-            Locale locale = LocaleHelper.getLocale(session, realm, null);
+            Locale locale = session.getContext().resolveLocale(null);
 
             FreeMarkerUtil freeMarker = new FreeMarkerUtil();
             Map<String, Object> attributes = initAttributes(realm, theme, locale, statusCode);

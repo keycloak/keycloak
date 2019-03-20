@@ -18,7 +18,7 @@
 package org.keycloak.adapters;
 
 import org.jboss.logging.Logger;
-import org.keycloak.adapters.rotation.AdapterRSATokenVerifier;
+import org.keycloak.adapters.rotation.AdapterTokenVerifier;
 import org.keycloak.adapters.spi.AuthChallenge;
 import org.keycloak.adapters.spi.AuthOutcome;
 import org.keycloak.adapters.spi.HttpFacade;
@@ -27,8 +27,8 @@ import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.representations.AccessToken;
 
-import javax.security.cert.X509Certificate;
 import java.util.List;
+import javax.security.cert.X509Certificate;
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
@@ -72,8 +72,12 @@ public class BearerTokenRequestAuthenticator {
         for (String authHeader : authHeaders) {
             String[] split = authHeader.trim().split("\\s+");
             if (split == null || split.length != 2) continue;
-            if (!split[0].equalsIgnoreCase("Bearer")) continue;
-            tokenString = split[1];
+            if (split[0].equalsIgnoreCase("Bearer")) {
+                tokenString = split[1];
+
+                log.debugf("Found [%d] values in authorization header, selecting the first value for Bearer.", (Integer) authHeaders.size());
+                break;
+            };
         }
 
         if (tokenString == null) {
@@ -96,14 +100,14 @@ public class BearerTokenRequestAuthenticator {
             }
         }
         try {
-            token = AdapterRSATokenVerifier.verifyToken(tokenString, deployment);
+            token = AdapterTokenVerifier.verifyToken(tokenString, deployment);
         } catch (VerificationException e) {
-            log.error("Failed to verify token", e);
+            log.debug("Failed to verify token");
             challenge = challengeResponse(exchange, OIDCAuthenticationError.Reason.INVALID_TOKEN, "invalid_token", e.getMessage());
             return AuthOutcome.FAILED;
         }
         if (token.getIssuedAt() < deployment.getNotBefore()) {
-            log.error("Stale token");
+            log.debug("Stale token");
             challenge = challengeResponse(exchange,  OIDCAuthenticationError.Reason.STALE_TOKEN, "invalid_token", "Stale token");
             return AuthOutcome.FAILED;
         }

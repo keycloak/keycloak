@@ -15,7 +15,7 @@
   ~ See the License for the specific language governing permissions and
   ~ limitations under the License.
   -->
-<module xmlns="urn:jboss:module:1.3" name="org.keycloak.keycloak-wildfly-adduser">
+<module xmlns="urn:jboss:module:1.6" name="org.keycloak.keycloak-wildfly-adduser">
     <main-class name="org.keycloak.wildfly.adduser.AddUser"/>
 
     <properties>
@@ -32,7 +32,7 @@
         <module name="org.keycloak.keycloak-server-spi" services="import"/>
         <module name="org.keycloak.keycloak-server-spi-private" services="import"/>
         <module name="org.keycloak.keycloak-services" services="import"/>
-        <module name="org.jboss.aesh"/>
+        <module name="org.aesh"/>
         <module name="org.jboss.as.domain-management"/>
         <module name="com.fasterxml.jackson.core.jackson-core"/>
         <module name="com.fasterxml.jackson.core.jackson-annotations"/>

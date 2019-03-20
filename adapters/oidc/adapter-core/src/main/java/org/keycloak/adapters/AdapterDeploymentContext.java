@@ -308,6 +308,16 @@ public class AdapterDeploymentContext {
         }
 
         @Override
+        public String getAdapterStateCookiePath() {
+            return delegate.getAdapterStateCookiePath();
+        }
+
+        @Override
+        public void setAdapterStateCookiePath(String adapterStateCookiePath) {
+            delegate.setAdapterStateCookiePath(adapterStateCookiePath);
+        }
+
+        @Override
         public String getStateCookieName() {
             return delegate.getStateCookieName();
         }
@@ -481,6 +491,16 @@ public class AdapterDeploymentContext {
         @Override
         public void setPublicKeyCacheTtl(int publicKeyCacheTtl) {
             delegate.setPublicKeyCacheTtl(publicKeyCacheTtl);
+        }
+
+        @Override
+        public boolean isVerifyTokenAudience() {
+            return delegate.isVerifyTokenAudience();
+        }
+
+        @Override
+        public void setVerifyTokenAudience(boolean verifyTokenAudience) {
+            delegate.setVerifyTokenAudience(verifyTokenAudience);
         }
     }
 

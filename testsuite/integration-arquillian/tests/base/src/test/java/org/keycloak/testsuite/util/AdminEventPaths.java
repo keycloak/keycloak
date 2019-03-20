@@ -170,6 +170,11 @@ public class AdminEventPaths {
         return uri.toString();
     }
 
+    public static String clientScopeGenerateAudienceClientScopePath() {
+        URI uri = UriBuilder.fromUri("").path(RealmResource.class, "clientScopes").path(ClientScopesResource.class, "generateAudienceClientScope").build();
+        return uri.toString();
+    }
+
     public static String clientScopeRoleMappingsRealmLevelPath(String clientScopeDbId) {
         URI uri = UriBuilder.fromUri(clientScopeResourcePath(clientScopeDbId)).path(ClientScopeResource.class, "getScopeMappings")
                 .path(RoleMappingResource.class, "realmLevel")

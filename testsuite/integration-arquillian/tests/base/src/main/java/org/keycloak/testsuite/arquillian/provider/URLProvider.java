@@ -38,6 +38,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import org.keycloak.testsuite.arquillian.ContainerInfo;
+import org.keycloak.testsuite.util.URLUtils;
 
 public class URLProvider extends URLResourceProvider {
 
@@ -82,7 +83,6 @@ public class URLProvider extends URLResourceProvider {
             try {
                 url = fixLocalhost(url);
                 url = fixBoundToAll(url);
-                url = removeTrailingSlash(url);
                 if (appServerSslRequired) {
                     url = fixSsl(url);
                 }
@@ -102,19 +102,29 @@ public class URLProvider extends URLResourceProvider {
                 return suiteContext.get().getAuthServerInfo().getContextRoot();
             }
             if (AppServerContext.class.isAssignableFrom(a.annotationType())) {
+                //standalone
                 ContainerInfo appServerInfo = testContext.get().getAppServerInfo();
                 if (appServerInfo != null) return appServerInfo.getContextRoot();
-                
+
+                //cluster
                 List<ContainerInfo> appServerBackendsInfo = testContext.get().getAppServerBackendsInfo();
                 if (appServerBackendsInfo.isEmpty()) throw new IllegalStateException("Both testContext's appServerInfo and appServerBackendsInfo not set.");
-                
+
                 return appServerBackendsInfo.get(0).getContextRoot();
             }
             if (AuthServerBrowserContext.class.isAssignableFrom(a.annotationType())) {
                 return suiteContext.get().getAuthServerInfo().getBrowserContextRoot();
             }
             if (AppServerBrowserContext.class.isAssignableFrom(a.annotationType())) {
-                return testContext.get().getAppServerInfo().getBrowserContextRoot();
+                //standalone
+                ContainerInfo appServerInfo = testContext.get().getAppServerInfo();
+                if (appServerInfo != null) return appServerInfo.getBrowserContextRoot();
+
+                //cluster
+                List<ContainerInfo> appServerBackendsInfo = testContext.get().getAppServerBackendsInfo();
+                if (appServerBackendsInfo.isEmpty()) throw new IllegalStateException("Both testContext's appServerInfo and appServerBackendsInfo not set.");
+
+                return appServerBackendsInfo.get(0).getBrowserContextRoot();
             }
         }
 
@@ -141,15 +151,6 @@ public class URLProvider extends URLResourceProvider {
         URL fixedUrl = url;
         String urlString = fixedUrl.toExternalForm().replace("http", "https").replace(System.getProperty("app.server.http.port", "8280"), System.getProperty("app.server.https.port", "8643"));
         return new URL(urlString);
-    }
-
-    public URL removeTrailingSlash(URL url) throws MalformedURLException {
-        URL urlWithoutSlash = url;
-        String urlS = url.toExternalForm();
-        if (urlS.endsWith("/")) {
-            urlWithoutSlash = new URL(urlS.substring(0, urlS.length() - 1));
-        }
-        return urlWithoutSlash;
     }
 
 }

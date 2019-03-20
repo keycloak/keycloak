@@ -18,8 +18,10 @@
 
 package org.keycloak.testsuite.x509;
 
+import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.logging.Logger;
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Rule;
@@ -42,14 +44,20 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.pages.AbstractPage;
 import org.keycloak.testsuite.util.AdminEventPaths;
 import org.keycloak.testsuite.util.AssertAdminEvents;
 import org.keycloak.testsuite.util.ClientBuilder;
+import org.keycloak.testsuite.util.DroneUtils;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
+import org.openqa.selenium.WebDriver;
 
 import javax.ws.rs.core.Response;
+import java.lang.reflect.Field;
 import java.net.URI;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -59,6 +67,7 @@ import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorC
 import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel.MappingSourceType.ISSUERDN;
 import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel.MappingSourceType.ISSUERDN_CN;
 import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel.MappingSourceType.SUBJECTALTNAME_EMAIL;
+import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel.MappingSourceType.SUBJECTALTNAME_OTHERNAME;
 import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel.MappingSourceType.SUBJECTDN_CN;
 import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel.MappingSourceType.SUBJECTDN_EMAIL;
 
@@ -67,7 +76,6 @@ import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorC
  * @version $Revision: 1 $
  * @since 10/28/2016
  */
-
 public abstract class AbstractX509AuthenticationTest extends AbstractTestRealmKeycloakTest {
 
     public static final String EMPTY_CRL_PATH = "empty.crl";
@@ -103,25 +111,50 @@ public abstract class AbstractX509AuthenticationTest extends AbstractTestRealmKe
         return true;
     }
 
+    @Before
+    public void validateConfiguration() {
+        Assume.assumeTrue("Only JBoss AS has proper certificate configuration", isAuthServerJBoss());
+        Assume.assumeTrue(AUTH_SERVER_SSL_REQUIRED);
+    }
+
+
     @BeforeClass
     public static void onBeforeTestClass() {
-        if (Boolean.parseBoolean(System.getProperty("auth.server.jboss"))) {
-            String authServerHome = System.getProperty("auth.server.home");
+        configurePhantomJS("/ca.crt", "/client.crt", "/client.key", "secret");
+    }
 
-            if (authServerHome != null && System.getProperty("auth.server.ssl.required") != null) {
+
+    /**
+     * Setup phantom JS to be used for mutual TLS testing. All file paths are relative to "authServerHome"
+     *
+     * @param certificatesPath
+     * @param clientCertificateFile
+     * @param clientKeyFile
+     * @param clientKeyPassword
+     */
+    protected static void configurePhantomJS(String certificatesPath, String clientCertificateFile, String clientKeyFile, String clientKeyPassword) {
+        String authServerHome = System.getProperty("auth.server.home");
+
+        if (authServerHome != null && System.getProperty("auth.server.ssl.required") != null) {
+            if (isAuthServerJBoss()) {
                 authServerHome = authServerHome + "/standalone/configuration";
-                StringBuilder cliArgs = new StringBuilder();
-
-                cliArgs.append("--ignore-ssl-errors=true ");
-                cliArgs.append("--web-security=false ");
-                cliArgs.append("--ssl-certificates-path=").append(authServerHome).append("/ca.crt ");
-                cliArgs.append("--ssl-client-certificate-file=").append(authServerHome).append("/client.crt ");
-                cliArgs.append("--ssl-client-key-file=").append(authServerHome).append("/client.key ");
-                cliArgs.append("--ssl-client-key-passphrase=secret ");
-
-                System.setProperty("keycloak.phantomjs.cli.args", cliArgs.toString());
             }
+
+            StringBuilder cliArgs = new StringBuilder();
+
+            cliArgs.append("--ignore-ssl-errors=true ");
+            cliArgs.append("--web-security=false ");
+            cliArgs.append("--ssl-certificates-path=").append(authServerHome).append(certificatesPath).append(" ");
+            cliArgs.append("--ssl-client-certificate-file=").append(authServerHome).append(clientCertificateFile).append(" ");
+            cliArgs.append("--ssl-client-key-file=").append(authServerHome).append(clientKeyFile).append(" ");
+            cliArgs.append("--ssl-client-key-passphrase=" + clientKeyPassword).append(" ");
+
+            System.setProperty("keycloak.phantomjs.cli.args", cliArgs.toString());
         }
+    }
+
+    private static boolean isAuthServerJBoss() {
+        return Boolean.parseBoolean(System.getProperty("auth.server.jboss"));
     }
 
     @Before
@@ -165,6 +198,8 @@ public abstract class AbstractX509AuthenticationTest extends AbstractTestRealmKe
         userId = user.getId();
 
         user.singleAttribute("x509_certificate_identity","-");
+        user.singleAttribute("alternative_email", "test-user-altmail@localhost");
+        user.singleAttribute("upn", "test_upn_name@localhost");
         updateUser(user);
     }
 
@@ -325,11 +360,20 @@ public abstract class AbstractX509AuthenticationTest extends AbstractTestRealmKe
                 .setUserIdentityMapperType(USERNAME_EMAIL);
     }
 
-    protected static X509AuthenticatorConfigModel createLoginSubjectAltNameEmail2UsernameOrEmailConfig() {
+    protected static X509AuthenticatorConfigModel createLoginSubjectAltNameEmail2UserAttributeConfig() {
         return new X509AuthenticatorConfigModel()
                 .setConfirmationPageAllowed(true)
                 .setMappingSourceType(SUBJECTALTNAME_EMAIL)
-                .setUserIdentityMapperType(USERNAME_EMAIL);
+                .setUserIdentityMapperType(USER_ATTRIBUTE)
+                .setCustomAttributeName("alternative_email");
+    }
+
+    protected static X509AuthenticatorConfigModel createLoginSubjectAltNameOtherName2UserAttributeConfig() {
+        return new X509AuthenticatorConfigModel()
+                .setConfirmationPageAllowed(true)
+                .setMappingSourceType(SUBJECTALTNAME_OTHERNAME)
+                .setUserIdentityMapperType(USER_ATTRIBUTE)
+                .setCustomAttributeName("upn");
     }
 
     protected static X509AuthenticatorConfigModel createLoginSubjectEmailWithKeyUsage(String keyUsage) {
@@ -372,5 +416,24 @@ public abstract class AbstractX509AuthenticationTest extends AbstractTestRealmKe
         user.setEnabled(enabled);
 
         updateUser(user);
+    }
+
+    public void replaceDefaultWebDriver(WebDriver driver) {
+        this.driver = driver;
+        DroneUtils.addWebDriver(driver);
+
+        List<Field> allFields = new ArrayList<>();
+        allFields.addAll(Arrays.asList(this.getClass().getDeclaredFields()));
+        allFields.addAll(Arrays.asList(this.getClass().getFields()));
+        for (Field f : allFields) {
+            if (f.getAnnotation(Page.class) != null) {
+                try {
+                    AbstractPage page = (AbstractPage) f.get(this);
+                    page.setDriver(driver);
+                } catch (IllegalAccessException e) {
+                    throw new IllegalStateException("Could not replace the driver in " + f, e);
+                }
+            }
+        }
     }
 }

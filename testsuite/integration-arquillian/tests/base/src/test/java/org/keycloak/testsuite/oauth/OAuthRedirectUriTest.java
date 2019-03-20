@@ -144,7 +144,7 @@ public class OAuthRedirectUriTest extends AbstractKeycloakTest {
         realm.client(installedApp7);
 
         ClientBuilder installedApp8 = ClientBuilder.create().id("test-fragment").name("test-fragment")
-                .redirectUris("http://localhost/*")
+                .redirectUris("http://localhost/*", "https://localhost:8543/*")
                 .secret("password");
         realm.client(installedApp8);
 
@@ -159,6 +159,14 @@ public class OAuthRedirectUriTest extends AbstractKeycloakTest {
     @Test
     public void testNoParam() throws IOException {
         oauth.redirectUri(null);
+        oauth.openLoginForm();
+        Assert.assertTrue(errorPage.isCurrent());
+        Assert.assertEquals("Invalid parameter: redirect_uri", errorPage.getError());
+    }
+
+    @Test
+    public void testRelativeUri() throws IOException {
+        oauth.redirectUri("/foo/../bar");
         oauth.openLoginForm();
         Assert.assertTrue(errorPage.isCurrent());
         Assert.assertEquals("Invalid parameter: redirect_uri", errorPage.getError());

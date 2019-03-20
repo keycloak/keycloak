@@ -16,20 +16,9 @@
  */
 package org.keycloak.testsuite.utils.undertow;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URL;
-import java.net.URLConnection;
-import java.net.URLStreamHandler;
-import java.util.Map;
-
-import javax.servlet.Servlet;
-import javax.servlet.annotation.WebServlet;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-
 import io.undertow.UndertowMessages;
+import io.undertow.jsp.HackInstanceManager;
+import io.undertow.jsp.JspServletBuilder;
 import io.undertow.server.handlers.resource.Resource;
 import io.undertow.server.handlers.resource.ResourceChangeListener;
 import io.undertow.server.handlers.resource.ResourceManager;
@@ -46,6 +35,19 @@ import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
+import javax.servlet.Servlet;
+import javax.servlet.annotation.WebServlet;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
+import java.net.URLConnection;
+import java.net.URLStreamHandler;
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
@@ -54,14 +56,26 @@ public class UndertowDeployerHelper {
     private static final Logger log = Logger.getLogger(UndertowDeployerHelper.class);
 
     public DeploymentInfo getDeploymentInfo(UndertowContainerConfiguration config, WebArchive archive) {
+        return getDeploymentInfo(config, archive, null);
+    }
+
+    public DeploymentInfo getDeploymentInfo(UndertowContainerConfiguration config, WebArchive archive, DeploymentInfo di) {
         String archiveName = archive.getName();
-        String contextPath = "/" + archive.getName().substring(0, archive.getName().lastIndexOf('.'));
+
+        String appName = archive.getName().substring(0, archive.getName().lastIndexOf('.'));
+        if (appName.contains(System.getProperty("project.version"))) {
+            appName = archive.getName().substring(0, archive.getName().lastIndexOf("-" + System.getProperty("project.version")));
+        }
+
+        String contextPath = "/" + appName;
         String appContextUrl = "http://" + config.getBindAddress() + ":" + config.getBindHttpPort() + contextPath;
 
         try {
-            DeploymentInfo di = new DeploymentInfo();
+            if (di == null) {
+                di = new DeploymentInfo();
+            }
 
-            UndertowWarClassLoader classLoader = new UndertowWarClassLoader(UndertowDeployerHelper.class.getClassLoader(), archive);
+            UndertowWarClassLoader classLoader = new UndertowWarClassLoader(Thread.currentThread().getContextClassLoader(), archive);
             di.setClassLoader(classLoader);
 
             di.setDeploymentName(archiveName);
@@ -74,6 +88,12 @@ public class UndertowDeployerHelper {
                 Document webXml = loadXML(archive.get("/WEB-INF/web.xml").getAsset().openStream());
                 new SimpleWebXmlParser().parseWebXml(webXml, di);
             }
+
+            di.addServlet(JspServletBuilder.createServlet("Default Jsp Servlet", "*.jsp"));
+
+            di.addWelcomePages("index.html", "index.jsp");
+
+            JspServletBuilder.setupDeployment(di, new HashMap<>(), new HashMap<>(), new HackInstanceManager());
 
             addAnnotatedServlets(di, archive);
 

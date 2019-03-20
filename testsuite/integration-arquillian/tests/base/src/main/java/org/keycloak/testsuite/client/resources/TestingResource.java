@@ -275,6 +275,11 @@ public interface TestingResource {
     @Produces(MediaType.APPLICATION_JSON)
     Response restorePeriodicTasks();
 
+    @Path("generate-audience-client-scope")
+    @POST
+    @NoCache
+    String generateAudienceClientScope(@QueryParam("realm") final String realmName, final @QueryParam("clientId") String clientId);
+
     @GET
     @Path("/uncaught-error")
     @Produces(MediaType.TEXT_HTML_UTF_8)
@@ -289,6 +294,13 @@ public interface TestingResource {
     @Consumes(MediaType.TEXT_PLAIN_UTF_8)
     @Produces(MediaType.TEXT_PLAIN_UTF_8)
     String runOnServer(String runOnServer);
+
+    @POST
+    @Path("/run-model-test-on-server")
+    @Consumes(MediaType.TEXT_PLAIN_UTF_8)
+    @Produces(MediaType.TEXT_PLAIN_UTF_8)
+    String runModelTestOnServer(@QueryParam("testClassName") String testClassName,
+                                @QueryParam("testMethodName") String testMethodName);
 
     @GET
     @Path("js/keycloak.js")

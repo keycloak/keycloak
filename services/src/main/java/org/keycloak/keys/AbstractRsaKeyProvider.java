@@ -19,7 +19,11 @@ package org.keycloak.keys;
 
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.component.ComponentModel;
-import org.keycloak.crypto.*;
+import org.keycloak.crypto.Algorithm;
+import org.keycloak.crypto.KeyStatus;
+import org.keycloak.crypto.KeyType;
+import org.keycloak.crypto.KeyUse;
+import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.models.RealmModel;
 
 import java.security.KeyPair;
@@ -38,9 +42,12 @@ public abstract class AbstractRsaKeyProvider implements KeyProvider {
 
     private final KeyWrapper key;
 
+    private final String algorithm;
+
     public AbstractRsaKeyProvider(RealmModel realm, ComponentModel model) {
         this.model = model;
         this.status = KeyStatus.from(model.get(Attributes.ACTIVE_KEY, true), model.get(Attributes.ENABLED_KEY, true));
+        this.algorithm = model.get(Attributes.ALGORITHM_KEY, Algorithm.RS256);
 
         if (model.hasNote(KeyWrapper.class.getName())) {
             key = model.getNote(KeyWrapper.class.getName());
@@ -66,7 +73,7 @@ public abstract class AbstractRsaKeyProvider implements KeyProvider {
         key.setKid(KeyUtils.createKeyId(keyPair.getPublic()));
         key.setUse(KeyUse.SIG);
         key.setType(KeyType.RSA);
-        key.setAlgorithms(Algorithm.RS256, Algorithm.RS384, Algorithm.RS512);
+        key.setAlgorithm(algorithm);
         key.setStatus(status);
         key.setSignKey(keyPair.getPrivate());
         key.setVerifyKey(keyPair.getPublic());

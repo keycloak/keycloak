@@ -75,8 +75,7 @@ import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 
 @AppServerContainer(ContainerConstants.APP_SERVER_FUSE63)
-@AppServerContainer(ContainerConstants.APP_SERVER_FUSE70)
-@AppServerContainer(ContainerConstants.APP_SERVER_FUSE71)
+@AppServerContainer(ContainerConstants.APP_SERVER_FUSE7X)
 public class FuseAdminAdapterTest extends AbstractExampleAdapterTest {
 
     @Drone
@@ -162,7 +161,8 @@ public class FuseAdminAdapterTest extends AbstractExampleAdapterTest {
         testRealmLoginPageFuse.form().login("root", "password");
         assertCurrentUrlStartsWith(hawtio2Page.toString());
         WaitUtils.waitForPageToLoad();
-        WaitUtils.waitUntilElement(By.xpath("//img[@alt='Red Hat Fuse Management Console']")).is().present();
+        WaitUtils.waitUntilElement(By.xpath("//img[@alt='Red Hat Fuse Management Console'] | //img[@ng-src='img/fuse-logo.svg']")).is().present();
+        assertThat(DroneUtils.getCurrentDriver().getPageSource(), containsString("OSGi"));
         hawtio2Page.logout();
         WaitUtils.waitForPageToLoad();
 
@@ -176,7 +176,8 @@ public class FuseAdminAdapterTest extends AbstractExampleAdapterTest {
         log.debug("Current URL: " + DroneUtils.getCurrentDriver().getCurrentUrl());
         assertCurrentUrlStartsWith(hawtio2Page.toString());
         WaitUtils.waitForPageToLoad();
-        WaitUtils.waitUntilElement(By.xpath("//img[@alt='Red Hat Fuse Management Console']")).is().present();
+        WaitUtils.waitUntilElement(By.xpath("//img[@alt='Red Hat Fuse Management Console'] | //img[@ng-src='img/fuse-logo.svg']")).is().present();
+        assertThat(DroneUtils.getCurrentDriver().getPageSource(), containsString("OSGi"));
         assertThat(DroneUtils.getCurrentDriver().getPageSource(), not(containsString("Camel")));
     }    
 

@@ -62,7 +62,7 @@ class RealmPermissions implements RealmPermissionEvaluator {
     }
 
     public boolean canManageAuthorizationDefault() {
-        return root.hasOneAdminRole(AdminRoles.MANAGE_AUTHORIZATION);
+        return root.hasOneAdminRole(AdminRoles.MANAGE_AUTHORIZATION, AdminRoles.MANAGE_CLIENTS);
 
     }
     public boolean canViewAuthorizationDefault() {
@@ -77,7 +77,7 @@ class RealmPermissions implements RealmPermissionEvaluator {
 
     @Override
     public boolean canListRealms() {
-        return root.hasAnyAdminRole();
+        return canViewRealm() || root.hasOneAdminRole(AdminRoles.ALL_QUERY_ROLES);
     }
 
     @Override
@@ -183,7 +183,19 @@ class RealmPermissions implements RealmPermissionEvaluator {
         }
     }
 
+    @Override
+    public void requireViewRequiredActions() {
+        if (!(canViewRealm() || root.hasOneAdminRole(AdminRoles.QUERY_USERS))) {
+            throw new ForbiddenException();
+        }
+    }
 
+    @Override
+    public void requireViewAuthenticationFlows() {
+        if (!(canViewRealm() || root.hasOneAdminRole(AdminRoles.QUERY_CLIENTS))) {
+            throw new ForbiddenException();
+        }
+    }
 
 
 }

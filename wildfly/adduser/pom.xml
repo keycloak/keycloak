@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.keycloak</groupId>
         <artifactId>keycloak-wildfly-parent</artifactId>
-        <version>4.3.0.Final-SNAPSHOT</version>
+        <version>6.0.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>keycloak-wildfly-adduser</artifactId>
@@ -52,8 +52,12 @@
             <version>${wildfly.core.version}</version>
         </dependency>
         <dependency>
-            <groupId>org.jboss.aesh</groupId>
+            <groupId>org.aesh</groupId>
             <artifactId>aesh</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.aesh</groupId>
+            <artifactId>aesh-readline</artifactId>
         </dependency>
     </dependencies>
 </project>

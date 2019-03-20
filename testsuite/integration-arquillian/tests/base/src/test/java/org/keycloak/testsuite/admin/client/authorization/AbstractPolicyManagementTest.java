@@ -52,11 +52,6 @@ import org.keycloak.testsuite.util.UserBuilder;
  */
 public abstract class AbstractPolicyManagementTest extends AbstractKeycloakTest {
 
-    @BeforeClass
-    public static void enabled() {
-        ProfileAssume.assumePreview();
-    }
-
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
         testRealms.add(createTestRealm().build());

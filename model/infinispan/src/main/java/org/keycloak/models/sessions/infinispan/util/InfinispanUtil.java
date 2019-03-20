@@ -27,6 +27,7 @@ import org.infinispan.persistence.manager.PersistenceManager;
 import org.infinispan.persistence.remote.RemoteStore;
 import org.infinispan.remoting.transport.Transport;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
+import org.keycloak.connections.infinispan.TopologyInfo;
 import org.keycloak.models.KeycloakSession;
 
 /**
@@ -52,34 +53,8 @@ public class InfinispanUtil {
     }
 
 
-    public static boolean isDistributedCache(Cache ispnCache) {
-        CacheMode cacheMode = ispnCache.getCacheConfiguration().clustering().cacheMode();
-        return cacheMode.isDistributed();
-    }
-
-
-    public static String getMyAddress(KeycloakSession session) {
-        return session.getProvider(InfinispanConnectionProvider.class).getNodeName();
-    }
-
-    public static String getMySite(KeycloakSession session) {
-        return session.getProvider(InfinispanConnectionProvider.class).getSiteName();
-    }
-
-
-    /**
-     *
-     * @param ispnCache
-     * @param key
-     * @return address of the node, who is owner of the specified key in current cluster
-     */
-    public static String getKeyPrimaryOwnerAddress(Cache ispnCache, Object key) {
-        DistributionManager distManager = ispnCache.getAdvancedCache().getDistributionManager();
-        if (distManager == null) {
-            throw new IllegalArgumentException("Cache '" + ispnCache.getName() + "' is not distributed cache");
-        }
-
-        return distManager.getPrimaryLocation(key).toString();
+    public static TopologyInfo getTopologyInfo(KeycloakSession session) {
+        return session.getProvider(InfinispanConnectionProvider.class).getTopologyInfo();
     }
 
 

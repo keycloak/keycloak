@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.regex.Pattern;
 
 import javax.security.auth.callback.CallbackHandler;
+import javax.servlet.http.HttpServletResponse;
 
 import org.jboss.logging.Logger;
 import org.keycloak.adapters.saml.SamlAuthenticator;
@@ -30,7 +31,9 @@ import org.keycloak.adapters.saml.SamlDeploymentContext;
 import org.keycloak.adapters.spi.AuthChallenge;
 import org.keycloak.adapters.spi.AuthOutcome;
 import org.keycloak.adapters.spi.SessionIdMapper;
+import org.keycloak.adapters.spi.SessionIdMapperUpdater;
 import org.wildfly.security.http.HttpAuthenticationException;
+import org.wildfly.security.http.HttpScope;
 import org.wildfly.security.http.HttpServerAuthenticationMechanism;
 import org.wildfly.security.http.HttpServerRequest;
 import org.wildfly.security.http.Scope;
@@ -47,12 +50,14 @@ class KeycloakHttpServerAuthenticationMechanism implements HttpServerAuthenticat
     private final CallbackHandler callbackHandler;
     private final SamlDeploymentContext deploymentContext;
     private final SessionIdMapper idMapper;
+    private final SessionIdMapperUpdater idMapperUpdater;
 
-    public KeycloakHttpServerAuthenticationMechanism(Map<String, ?> properties, CallbackHandler callbackHandler, SamlDeploymentContext deploymentContext, SessionIdMapper idMapper) {
+    public KeycloakHttpServerAuthenticationMechanism(Map<String, ?> properties, CallbackHandler callbackHandler, SamlDeploymentContext deploymentContext, SessionIdMapper idMapper, SessionIdMapperUpdater idMapperUpdater) {
         this.properties = properties;
         this.callbackHandler = callbackHandler;
         this.deploymentContext = deploymentContext;
         this.idMapper = idMapper;
+        this.idMapperUpdater = idMapperUpdater;
     }
 
     @Override
@@ -71,7 +76,7 @@ class KeycloakHttpServerAuthenticationMechanism implements HttpServerAuthenticat
             return;
         }
 
-        ElytronHttpFacade httpFacade = new ElytronHttpFacade(request, idMapper, deploymentContext, callbackHandler);
+        ElytronHttpFacade httpFacade = new ElytronHttpFacade(request, getSessionIdMapper(request), getSessionIdMapperUpdater(request), deploymentContext, callbackHandler);
         SamlDeployment deployment = httpFacade.getDeployment();
 
         if (!deployment.isConfigured()) {
@@ -79,7 +84,7 @@ class KeycloakHttpServerAuthenticationMechanism implements HttpServerAuthenticat
             return;
         }
 
-        if (httpFacade.getRequest().getRelativePath().contains(deployment.getLogoutPage())) {
+        if (deployment.getLogoutPage() != null && httpFacade.getRequest().getRelativePath().contains(deployment.getLogoutPage())) {
             LOGGER.debugf("Ignoring request for [%s] and logout page [%s].", request.getRequestURI(), deployment.getLogoutPage());
             httpFacade.authenticationCompleteAnonymous();
             return;
@@ -137,10 +142,20 @@ class KeycloakHttpServerAuthenticationMechanism implements HttpServerAuthenticat
         return this.deploymentContext;
     }
 
+    private SessionIdMapper getSessionIdMapper(HttpServerRequest request) {
+        HttpScope scope = request.getScope(Scope.APPLICATION);
+        SessionIdMapper res = scope == null ? null : (SessionIdMapper) scope.getAttachment(KeycloakConfigurationServletListener.ADAPTER_SESSION_ID_MAPPER_ATTRIBUTE_ELYTRON);
+        return res == null ? this.idMapper : res;
+    }
+
+    private SessionIdMapperUpdater getSessionIdMapperUpdater(HttpServerRequest request) {
+        HttpScope scope = request.getScope(Scope.APPLICATION);
+        SessionIdMapperUpdater res = scope == null ? null : (SessionIdMapperUpdater) scope.getAttachment(KeycloakConfigurationServletListener.ADAPTER_SESSION_ID_MAPPER_UPDATER_ATTRIBUTE_ELYTRON);
+        return res == null ? this.idMapperUpdater : res;
+    }
+
     protected void redirectLogout(SamlDeployment deployment, ElytronHttpFacade exchange) {
-        String page = deployment.getLogoutPage();
-        sendRedirect(exchange, page);
-        exchange.getResponse().setStatus(302);
+        sendRedirect(exchange, deployment.getLogoutPage());
     }
 
     private static final Pattern PROTOCOL_PATTERN = Pattern.compile("^[a-zA-Z][a-zA-Z0-9+.-]*:");
@@ -148,7 +163,7 @@ class KeycloakHttpServerAuthenticationMechanism implements HttpServerAuthenticat
     static void sendRedirect(final ElytronHttpFacade exchange, final String location) {
         if (location == null) {
             LOGGER.warn("Logout page not set.");
-            exchange.getResponse().setStatus(302);
+            exchange.getResponse().setStatus(HttpServletResponse.SC_NOT_FOUND);
             return;
         }
         if (PROTOCOL_PATTERN.matcher(location).find()) {
@@ -161,5 +176,6 @@ class KeycloakHttpServerAuthenticationMechanism implements HttpServerAuthenticat
             String loc = exchange.getURI().getScheme() + "://" + exchange.getURI().getHost() + ":" + exchange.getURI().getPort() + contextPath + location;
             exchange.getResponse().setHeader("Location", loc);
         }
+        exchange.getResponse().setStatus(HttpServletResponse.SC_FOUND);
     }
 }

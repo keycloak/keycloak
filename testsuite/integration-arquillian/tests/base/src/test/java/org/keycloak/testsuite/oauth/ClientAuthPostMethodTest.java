@@ -85,7 +85,7 @@ public class ClientAuthPostMethodTest extends AbstractKeycloakTest {
 
         EventRepresentation event = events.expectCodeToToken(codeId, sessionId).assertEvent();
         assertEquals(token.getId(), event.getDetails().get(Details.TOKEN_ID));
-        assertEquals(oauth.verifyRefreshToken(response.getRefreshToken()).getId(), event.getDetails().get(Details.REFRESH_TOKEN_ID));
+        assertEquals(oauth.parseRefreshToken(response.getRefreshToken()).getId(), event.getDetails().get(Details.REFRESH_TOKEN_ID));
         assertEquals(sessionId, token.getSessionState());
     }
 

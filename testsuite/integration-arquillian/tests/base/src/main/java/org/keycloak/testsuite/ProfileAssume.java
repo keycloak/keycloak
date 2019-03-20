@@ -39,15 +39,14 @@ public class ProfileAssume {
     static {
         String host = System.getProperty("auth.server.host", "localhost");
         String port = System.getProperty("auth.server.http.port", "8180");
+        boolean adapterCompatTesting = Boolean.parseBoolean(System.getProperty("testsuite.adapter.compat.testing"));
 
         String authServerContextRoot = "http://" + host + ":" + port;
-        try {
-            Keycloak adminClient = AdminClientUtil.createAdminClient(false, authServerContextRoot);
+        try (Keycloak adminClient = AdminClientUtil.createAdminClient(adapterCompatTesting, authServerContextRoot)) {
             ProfileInfoRepresentation profileInfo = adminClient.serverInfo().getInfo().getProfileInfo();
             profile = profileInfo.getName();
             List<String> disabled = profileInfo.getDisabledFeatures();
             disabledFeatures = Collections.unmodifiableSet(new HashSet<>(disabled));
-            adminClient.close();
         } catch (Exception e) {
             throw new RuntimeException("Failed to obtain profile / features info from serverinfo endpoint of " + authServerContextRoot, e);
         }

@@ -27,10 +27,12 @@ import java.util.stream.Collectors;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response;
 
+import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.AuthorizationResource;
 import org.keycloak.admin.client.resource.ClientPoliciesResource;
 import org.keycloak.admin.client.resource.ClientPolicyResource;
+import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.admin.client.resource.PolicyResource;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.authorization.ClientPolicyRepresentation;
@@ -50,7 +52,10 @@ public class ClientPolicyManagementTest extends AbstractPolicyManagementTest {
         return super.createTestRealm()
                 .client(ClientBuilder.create().clientId("Client A"))
                 .client(ClientBuilder.create().clientId("Client B"))
-                .client(ClientBuilder.create().clientId("Client C"));
+                .client(ClientBuilder.create().clientId("Client C"))
+                .client(ClientBuilder.create().clientId("Client D"))
+                .client(ClientBuilder.create().clientId("Client E"))
+                .client(ClientBuilder.create().clientId("Client F"));
     }
 
     @Test
@@ -110,19 +115,65 @@ public class ClientPolicyManagementTest extends AbstractPolicyManagementTest {
         representation.addClient("Client A");
 
         ClientPoliciesResource policies = authorization.policies().client();
-        Response response = policies.create(representation);
-        ClientPolicyRepresentation created = response.readEntity(ClientPolicyRepresentation.class);
-        response.close();
 
-        policies.findById(created.getId()).remove();
+        try (Response response = policies.create(representation)) {
+            ClientPolicyRepresentation created = response.readEntity(ClientPolicyRepresentation.class);
 
-        ClientPolicyResource removed = policies.findById(created.getId());
+            policies.findById(created.getId()).remove();
+
+            ClientPolicyResource removed = policies.findById(created.getId());
+
+            try {
+                removed.toRepresentation();
+                fail("Permission not removed");
+            } catch (NotFoundException ignore) {
+
+            }
+        }
+    }
+
+
+    @Test
+    public void testDeleteClient() {
+        AuthorizationResource authorization = getClient().authorization();
+        ClientPolicyRepresentation representation = new ClientPolicyRepresentation();
+
+        representation.setName("Update Test Client Policy");
+        representation.setDescription("description");
+        representation.setDecisionStrategy(DecisionStrategy.CONSENSUS);
+        representation.setLogic(Logic.NEGATIVE);
+        representation.addClient("Client D");
+        representation.addClient("Client E");
+        representation.addClient("Client F");
+
+        assertCreated(authorization, representation);
+
+        ClientsResource clients = getRealm().clients();
+        ClientRepresentation client = clients.findByClientId("Client D").get(0);
+
+        clients.get(client.getId()).remove();
+
+        representation = authorization.policies().client().findById(representation.getId()).toRepresentation();
+
+        Assert.assertEquals(2, representation.getClients().size());
+        Assert.assertFalse(representation.getClients().contains(client.getId()));
+
+        client = clients.findByClientId("Client E").get(0);
+        clients.get(client.getId()).remove();
+
+        representation = authorization.policies().client().findById(representation.getId()).toRepresentation();
+
+        Assert.assertEquals(1, representation.getClients().size());
+        Assert.assertFalse(representation.getClients().contains(client.getId()));
+
+        client = clients.findByClientId("Client F").get(0);
+        clients.get(client.getId()).remove();
 
         try {
-            removed.toRepresentation();
-            fail("Permission not removed");
-        } catch (NotFoundException ignore) {
-
+            authorization.policies().client().findById(representation.getId()).toRepresentation();
+            fail("Client policy should be removed");
+        } catch (NotFoundException nfe) {
+            // ignore
         }
     }
 
@@ -135,28 +186,30 @@ public class ClientPolicyManagementTest extends AbstractPolicyManagementTest {
         representation.addClient("Client A");
 
         ClientPoliciesResource policies = authorization.policies().client();
-        Response response = policies.create(representation);
-        ClientPolicyRepresentation created = response.readEntity(ClientPolicyRepresentation.class);
-        response.close();
 
-        PolicyResource policy = authorization.policies().policy(created.getId());
-        PolicyRepresentation genericConfig = policy.toRepresentation();
+        try (Response response = policies.create(representation)) {
+            ClientPolicyRepresentation created = response.readEntity(ClientPolicyRepresentation.class);
 
-        assertNotNull(genericConfig.getConfig());
-        assertNotNull(genericConfig.getConfig().get("clients"));
+            PolicyResource policy = authorization.policies().policy(created.getId());
+            PolicyRepresentation genericConfig = policy.toRepresentation();
 
-        ClientRepresentation user = getRealm().clients().findByClientId("Client A").get(0);
+            assertNotNull(genericConfig.getConfig());
+            assertNotNull(genericConfig.getConfig().get("clients"));
 
-        assertTrue(genericConfig.getConfig().get("clients").contains(user.getId()));
+            ClientRepresentation user = getRealm().clients().findByClientId("Client A").get(0);
+
+            assertTrue(genericConfig.getConfig().get("clients").contains(user.getId()));
+        }
     }
 
     private void assertCreated(AuthorizationResource authorization, ClientPolicyRepresentation representation) {
         ClientPoliciesResource permissions = authorization.policies().client();
-        Response response = permissions.create(representation);
-        ClientPolicyRepresentation created = response.readEntity(ClientPolicyRepresentation.class);
-        response.close();
-        ClientPolicyResource permission = permissions.findById(created.getId());
-        assertRepresentation(representation, permission);
+
+        try (Response response = permissions.create(representation)) {
+            ClientPolicyRepresentation created = response.readEntity(ClientPolicyRepresentation.class);
+            ClientPolicyResource permission = permissions.findById(created.getId());
+            assertRepresentation(representation, permission);
+        }
     }
 
     private void assertRepresentation(ClientPolicyRepresentation representation, ClientPolicyResource permission) {

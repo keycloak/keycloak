@@ -18,18 +18,17 @@
 package org.keycloak.testsuite.oidc;
 
 import java.util.Arrays;
-import java.util.Collection;
+import java.util.Collections;
 
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response;
 
 import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
+import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientScopeResource;
 import org.keycloak.common.util.MultivaluedHashMap;
@@ -38,6 +37,7 @@ import org.keycloak.events.EventType;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AddressClaimSet;
 import org.keycloak.representations.IDToken;
@@ -45,22 +45,18 @@ import org.keycloak.representations.RefreshToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
+import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.Assert;
-import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.pages.AccountApplicationsPage;
-import org.keycloak.testsuite.pages.AccountUpdateProfilePage;
-import org.keycloak.testsuite.pages.AppPage;
-import org.keycloak.testsuite.pages.ErrorPage;
-import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.OAuthGrantPage;
 import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
 import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.RoleBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
 
 import static org.junit.Assert.assertEquals;
@@ -70,28 +66,7 @@ import static org.junit.Assert.assertEquals;
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class OIDCScopeTest extends AbstractTestRealmKeycloakTest {
-
-    @Rule
-    public AssertEvents events = new AssertEvents(this);
-
-    @Page
-    protected AppPage appPage;
-
-    @Page
-    protected LoginPage loginPage;
-
-    @Page
-    protected AccountUpdateProfilePage profilePage;
-
-    @Page
-    protected OAuthGrantPage grantPage;
-
-    @Page
-    protected AccountApplicationsPage accountAppsPage;
-
-    @Page
-    protected ErrorPage errorPage;
+public class OIDCScopeTest extends AbstractOIDCScopeTest {
 
     @Deployment
     public static WebArchive deploy() {
@@ -132,6 +107,51 @@ public class OIDCScopeTest extends AbstractTestRealmKeycloakTest {
         RoleRepresentation role2 = new RoleRepresentation();
         role2.setName("role-2");
         testRealm.getRoles().getRealm().add(role2);
+
+        RoleRepresentation roleParent = RoleBuilder.create()
+                .name("role-parent")
+                .realmComposite("role-1")
+                .build();
+        testRealm.getRoles().getRealm().add(roleParent);
+
+        // Add sample group
+        GroupRepresentation group = new GroupRepresentation();
+        group.setName("group-role-1");
+        group.setRealmRoles(Collections.singletonList("role-1"));
+        testRealm.getGroups().add(group);
+
+        // Add more sample users
+        user = UserBuilder.create()
+                .username("role-1-user")
+                .enabled(true)
+                .password("password")
+                .addRoles("role-1")
+                .build();
+        testRealm.getUsers().add(user);
+
+        user = UserBuilder.create()
+                .username("role-2-user")
+                .enabled(true)
+                .password("password")
+                .addRoles("role-2")
+                .build();
+        testRealm.getUsers().add(user);
+
+        user = UserBuilder.create()
+                .username("role-parent-user")
+                .enabled(true)
+                .password("password")
+                .addRoles("role-parent")
+                .build();
+        testRealm.getUsers().add(user);
+
+        user = UserBuilder.create()
+                .username("group-role-1-user")
+                .enabled(true)
+                .password("password")
+                .addGroups("group-role-1")
+                .build();
+        testRealm.getUsers().add(user);
     }
 
     @Before
@@ -160,7 +180,7 @@ public class OIDCScopeTest extends AbstractTestRealmKeycloakTest {
                 .user(userId)
                 .assertEvent();
 
-        Tokens tokens = sendTokenRequest(loginEvent, "openid email profile", "test-app");
+        Tokens tokens = sendTokenRequest(loginEvent, userId, "openid email profile", "test-app");
         IDToken idToken = tokens.idToken;
 
         assertProfile(idToken, true);
@@ -181,7 +201,7 @@ public class OIDCScopeTest extends AbstractTestRealmKeycloakTest {
         loginEvent = events.expectLogin()
                 .user(userId)
                 .assertEvent();
-        tokens = sendTokenRequest(loginEvent, "openid email profile address phone", "test-app");
+        tokens = sendTokenRequest(loginEvent, userId,"openid email profile address phone", "test-app");
         idToken = tokens.idToken;
 
         assertProfile(idToken, true);
@@ -256,7 +276,7 @@ public class OIDCScopeTest extends AbstractTestRealmKeycloakTest {
                 .user(userId)
                 .assertEvent();
 
-        Tokens tokens = sendTokenRequest(loginEvent, "openid", "test-app");
+        Tokens tokens = sendTokenRequest(loginEvent, userId,"openid", "test-app");
         IDToken idToken = tokens.idToken;
 
         assertProfile(idToken, false);
@@ -277,7 +297,7 @@ public class OIDCScopeTest extends AbstractTestRealmKeycloakTest {
         loginEvent = events.expectLogin()
                 .user(userId)
                 .assertEvent();
-        tokens = sendTokenRequest(loginEvent, "openid profile", "test-app");
+        tokens = sendTokenRequest(loginEvent, userId,"openid profile", "test-app");
         idToken = tokens.idToken;
 
         assertProfile(idToken, true);
@@ -304,7 +324,7 @@ public class OIDCScopeTest extends AbstractTestRealmKeycloakTest {
         oauth.doLoginGrant("john", "password");
 
         grantPage.assertCurrent();
-        grantPage.assertGrants(OAuthGrantPage.PROFILE_CONSENT_TEXT, OAuthGrantPage.EMAIL_CONSENT_TEXT);
+        grantPage.assertGrants(OAuthGrantPage.PROFILE_CONSENT_TEXT, OAuthGrantPage.EMAIL_CONSENT_TEXT, OAuthGrantPage.ROLES_CONSENT_TEXT);
         grantPage.accept();
 
         EventRepresentation loginEvent = events.expectLogin()
@@ -313,7 +333,7 @@ public class OIDCScopeTest extends AbstractTestRealmKeycloakTest {
                 .detail(Details.CONSENT, Details.CONSENT_VALUE_CONSENT_GRANTED)
                 .assertEvent();
 
-        Tokens tokens = sendTokenRequest(loginEvent, "openid email profile", "third-party");
+        Tokens tokens = sendTokenRequest(loginEvent, userId,"openid email profile", "third-party");
         IDToken idToken = tokens.idToken;
 
         assertProfile(idToken, true);
@@ -341,7 +361,7 @@ public class OIDCScopeTest extends AbstractTestRealmKeycloakTest {
                 .detail(Details.CONSENT, Details.CONSENT_VALUE_CONSENT_GRANTED)
                 .user(userId)
                 .assertEvent();
-        tokens = sendTokenRequest(loginEvent, "openid email profile address phone", "third-party");
+        tokens = sendTokenRequest(loginEvent, userId,"openid email profile address phone", "third-party");
         idToken = tokens.idToken;
 
         assertProfile(idToken, true);
@@ -369,7 +389,7 @@ public class OIDCScopeTest extends AbstractTestRealmKeycloakTest {
         oauth.doLoginGrant("john", "password");
 
         grantPage.assertCurrent();
-        grantPage.assertGrants(OAuthGrantPage.PROFILE_CONSENT_TEXT, OAuthGrantPage.EMAIL_CONSENT_TEXT, "ThirdParty permissions");
+        grantPage.assertGrants(OAuthGrantPage.PROFILE_CONSENT_TEXT, OAuthGrantPage.EMAIL_CONSENT_TEXT, OAuthGrantPage.ROLES_CONSENT_TEXT, "ThirdParty permissions");
         grantPage.accept();
 
         EventRepresentation loginEvent = events.expectLogin()
@@ -378,7 +398,7 @@ public class OIDCScopeTest extends AbstractTestRealmKeycloakTest {
                 .detail(Details.CONSENT, Details.CONSENT_VALUE_CONSENT_GRANTED)
                 .assertEvent();
 
-        Tokens tokens = sendTokenRequest(loginEvent, "openid email profile", "third-party");
+        Tokens tokens = sendTokenRequest(loginEvent, userId,"openid email profile", "third-party");
         IDToken idToken = tokens.idToken;
 
         assertProfile(idToken, true);
@@ -387,7 +407,40 @@ public class OIDCScopeTest extends AbstractTestRealmKeycloakTest {
         assertPhone(idToken, false);
 
         // Revert
+        thirdPartyRep.getAttributes().put(ClientScopeModel.DISPLAY_ON_CONSENT_SCREEN, "false");
+        thirdParty.update(thirdPartyRep);
+    }
+
+
+    // KEYCLOAK-7855
+    @Test
+    public void testClientDisplayedOnConsentScreenWithEmptyConsentText() throws Exception {
+        // Add "displayOnConsentScreen" to client
+        ClientResource thirdParty = ApiUtil.findClientByClientId(testRealm(), "third-party");
+        ClientRepresentation thirdPartyRep = thirdParty.toRepresentation();
         thirdPartyRep.getAttributes().put(ClientScopeModel.DISPLAY_ON_CONSENT_SCREEN, "true");
+        thirdPartyRep.getAttributes().put(ClientScopeModel.CONSENT_SCREEN_TEXT, "");
+        thirdParty.update(thirdPartyRep);
+
+        // Change consent text on profile scope
+        ClientScopeResource profileScope = ApiUtil.findClientScopeByName(testRealm(), OAuth2Constants.SCOPE_PROFILE);
+        ClientScopeRepresentation profileScopeRep = profileScope.toRepresentation();
+        profileScopeRep.getAttributes().put(ClientScopeModel.CONSENT_SCREEN_TEXT, " ");
+        profileScope.update(profileScopeRep);
+
+        // Login. ConsentTexts are empty for the client and for the "profile" scope, so it should fallback to name/clientId
+        oauth.clientId("third-party");
+        oauth.doLoginGrant("john", "password");
+
+        grantPage.assertCurrent();
+        grantPage.assertGrants("profile", OAuthGrantPage.EMAIL_CONSENT_TEXT, OAuthGrantPage.ROLES_CONSENT_TEXT, "third-party");
+        grantPage.accept();
+
+        // Revert
+        profileScopeRep.getAttributes().put(ClientScopeModel.CONSENT_SCREEN_TEXT, OIDCLoginProtocolFactory.PROFILE_SCOPE_CONSENT_TEXT);
+        profileScope.update(profileScopeRep);
+
+        thirdPartyRep.getAttributes().put(ClientScopeModel.DISPLAY_ON_CONSENT_SCREEN, "false");
         thirdParty.update(thirdPartyRep);
     }
 
@@ -399,7 +452,7 @@ public class OIDCScopeTest extends AbstractTestRealmKeycloakTest {
         oauth.doLoginGrant("john", "password");
 
         grantPage.assertCurrent();
-        grantPage.assertGrants(OAuthGrantPage.PROFILE_CONSENT_TEXT, OAuthGrantPage.EMAIL_CONSENT_TEXT);
+        grantPage.assertGrants(OAuthGrantPage.PROFILE_CONSENT_TEXT, OAuthGrantPage.EMAIL_CONSENT_TEXT, OAuthGrantPage.ROLES_CONSENT_TEXT);
         grantPage.accept();
 
         EventRepresentation loginEvent = events.expectLogin()
@@ -408,9 +461,9 @@ public class OIDCScopeTest extends AbstractTestRealmKeycloakTest {
                 .detail(Details.CONSENT, Details.CONSENT_VALUE_CONSENT_GRANTED)
                 .assertEvent();
 
-        Tokens tokens = sendTokenRequest(loginEvent, "openid email profile", "third-party");
+        Tokens tokens = sendTokenRequest(loginEvent, userId,"openid email profile", "third-party");
         IDToken idToken = tokens.idToken;
-        RefreshToken refreshToken1 = oauth.verifyRefreshToken(tokens.refreshToken);
+        RefreshToken refreshToken1 = oauth.parseRefreshToken(tokens.refreshToken);
 
         assertProfile(idToken, true);
         assertEmail(idToken, true);
@@ -496,7 +549,7 @@ public class OIDCScopeTest extends AbstractTestRealmKeycloakTest {
                 .user(userId)
                 .assertEvent();
 
-        Tokens tokens1 = sendTokenRequest(loginEvent, "openid email profile scope-role-1", "test-app");
+        Tokens tokens1 = sendTokenRequest(loginEvent, userId,"openid email profile scope-role-1", "test-app");
         Assert.assertTrue(tokens1.accessToken.getRealmAccess().isUserInRole("role-1"));
         Assert.assertFalse(tokens1.accessToken.getRealmAccess().isUserInRole("role-2"));
 
@@ -504,7 +557,7 @@ public class OIDCScopeTest extends AbstractTestRealmKeycloakTest {
         oauth.scope("scope-role-2");
         oauth.openLoginForm();
         loginEvent = events.expectLogin().user(userId).removeDetail(Details.USERNAME).client("test-app").assertEvent();
-        Tokens tokens2 = sendTokenRequest(loginEvent, "openid email profile scope-role-2", "test-app");
+        Tokens tokens2 = sendTokenRequest(loginEvent, userId,"openid email profile scope-role-2", "test-app");
         Assert.assertFalse(tokens2.accessToken.getRealmAccess().isUserInRole("role-1"));
         Assert.assertTrue(tokens2.accessToken.getRealmAccess().isUserInRole("role-2"));
 
@@ -530,54 +583,77 @@ public class OIDCScopeTest extends AbstractTestRealmKeycloakTest {
     }
 
 
-    protected Tokens sendTokenRequest(EventRepresentation loginEvent, String expectedScope, String clientId) {
-        String sessionId = loginEvent.getSessionId();
-        String codeId = loginEvent.getDetails().get(Details.CODE_ID);
+    // Test that clientScope is NOT applied in case that user is not member of any role scoped to the clientScope (including composite roles)
+    @Test
+    public void testClientScopesPermissions() {
+        // Add 2 client scopes. Each with scope to 1 realm role
+        ClientScopeRepresentation clientScope1 = new ClientScopeRepresentation();
+        clientScope1.setName("scope-role-1");
+        clientScope1.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+        Response response = testRealm().clientScopes().create(clientScope1);
+        String scope1Id = ApiUtil.getCreatedId(response);
+        getCleanup().addClientScopeId(scope1Id);
+        response.close();
 
-        String code = new OAuthClient.AuthorizationEndpointResponse(oauth).getCode();
-        OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
-        Assert.assertEquals(200, response.getStatusCode());
+        ClientScopeRepresentation clientScopeParent = new ClientScopeRepresentation();
+        clientScopeParent.setName("scope-role-parent");
+        clientScopeParent.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+        response = testRealm().clientScopes().create(clientScopeParent);
+        String scopeParentId = ApiUtil.getCreatedId(response);
+        getCleanup().addClientScopeId(scopeParentId);
+        response.close();
 
-        // Test scopes
-        log.info("expectedScopes = " + expectedScope);
-        log.info("responseScopes = " + response.getScope());
-        assertScopes(expectedScope, response.getScope());
+        RoleRepresentation role1 = testRealm().roles().get("role-1").toRepresentation();
+        testRealm().clientScopes().get(scope1Id).getScopeMappings().realmLevel().add(Arrays.asList(role1));
 
-        IDToken idToken = oauth.verifyIDToken(response.getIdToken());
-        AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
+        RoleRepresentation roleParent = testRealm().roles().get("role-parent").toRepresentation();
+        testRealm().clientScopes().get(scopeParentId).getScopeMappings().realmLevel().add(Arrays.asList(roleParent));
 
-        // Test scope in the access token
-        assertScopes(expectedScope, accessToken.getScope());
+        // Add client scopes to our client
+        ClientResource testApp = ApiUtil.findClientByClientId(testRealm(), "test-app");
+        ClientRepresentation testAppRep = testApp.toRepresentation();
+        testApp.update(testAppRep);
+        testApp.addDefaultClientScope(scope1Id);
+        testApp.addDefaultClientScope(scopeParentId);
 
-        EventRepresentation codeToTokenEvent = events.expectCodeToToken(codeId, sessionId)
+        // role-1-user will have clientScope "scope-role-1" and also "scope-role-parent" due the composite role
+        testLoginAndClientScopesPermissions("role-1-user", "scope-role-1 scope-role-parent", "role-1");
+
+        // role-2-user won't have any of the "scope-role-1" or "scope-role-parent" applied as he is not member of "role-1" nor "role-parent"
+        testLoginAndClientScopesPermissions("role-2-user", "", "role-2");
+
+        // role-parent-user will have clientScope "scope-role-1" (due the composite role) and also "scope-role-parent"
+        testLoginAndClientScopesPermissions("role-parent-user", "scope-role-1 scope-role-parent", "role-1", "role-parent");
+
+        // group-role-1-user will have clientScope "scope-role-1" and also "scope-role-parent" due the composite role and due the fact that he is member of group
+        testLoginAndClientScopesPermissions("group-role-1-user", "scope-role-1 scope-role-parent", "role-1");
+
+
+        // Revert
+        testApp.removeOptionalClientScope(scope1Id);
+        testApp.removeOptionalClientScope(scopeParentId);
+    }
+
+
+    private void testLoginAndClientScopesPermissions(String username, String expectedRoleScopes, String... expectedRoles) {
+        String userId = ApiUtil.findUserByUsername(testRealm(), username).getId();
+
+        oauth.openLoginForm();
+        oauth.doLogin(username, "password");
+        EventRepresentation loginEvent = events.expectLogin()
                 .user(userId)
-                .client(clientId)
                 .assertEvent();
 
-        // Test scope in the event
-        assertScopes(expectedScope, codeToTokenEvent.getDetails().get(Details.SCOPE));
+        Tokens tokens = sendTokenRequest(loginEvent, userId,"openid email profile " + expectedRoleScopes, "test-app");
+        Assert.assertNames(tokens.accessToken.getRealmAccess().getRoles(), expectedRoles);
 
-        return new Tokens(idToken, accessToken, response.getRefreshToken());
-    }
-
-    public static void assertScopes(String expectedScope, String receivedScope) {
-        Collection<String> expectedScopes = Arrays.asList(expectedScope.split(" "));
-        Collection<String> receivedScopes = Arrays.asList(receivedScope.split(" "));
-        Assert.assertTrue("Not matched. expectedScope: " + expectedScope + ", receivedScope: " + receivedScope,
-                expectedScopes.containsAll(receivedScopes) && receivedScopes.containsAll(expectedScopes));
+        oauth.doLogout(tokens.refreshToken, "password");
+        events.expectLogout(tokens.idToken.getSessionState())
+                .client("test-app")
+                .user(userId)
+                .removeDetail(Details.REDIRECT_URI).assertEvent();
     }
 
 
-    private static class Tokens {
-        private final IDToken idToken;
-        private final AccessToken accessToken;
-        private final String refreshToken;
-
-        private Tokens(IDToken idToken, AccessToken accessToken, String refreshToken) {
-            this.idToken = idToken;
-            this.accessToken = accessToken;
-            this.refreshToken = refreshToken;
-        }
-    }
 
 }

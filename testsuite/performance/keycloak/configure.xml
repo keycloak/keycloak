@@ -38,10 +38,6 @@
             <env key="JBOSS_HOME" value="${server.unpacked.home}"/>
         </exec>
         <exec executable="./${jboss.cli.script}" dir="${server.unpacked.home}/bin" failonerror="true">
-            <arg value="--file=modcluster-simple-load-provider.cli"/>
-            <env key="JBOSS_HOME" value="${server.unpacked.home}"/>
-        </exec>
-        <exec executable="./${jboss.cli.script}" dir="${server.unpacked.home}/bin" failonerror="true">
             <arg value="--file=io-worker-threads.cli"/>
             <env key="JBOSS_HOME" value="${server.unpacked.home}"/>
         </exec>
@@ -49,6 +45,17 @@
         <delete dir="${server.unpacked.home}/standalone/log"/>
         <delete dir="${server.unpacked.home}/standalone/data"/>
         <delete dir="${server.unpacked.home}/standalone/tmp"/>
+        <replace file="${server.unpacked.home}/bin/standalone.sh">
+            <replacetoken><![CDATA[JBOSS_PID=$!]]></replacetoken>
+            <replacevalue><![CDATA[JBOSS_PID=$!
+
+      if [ "$JSTAT" = "true" ] ; then 
+        echo "Starting jstat"
+        mkdir -p $JBOSS_LOG_DIR
+        jstat -gc -t $JBOSS_PID 1000 > $JBOSS_LOG_DIR/jstat-gc.log &
+      fi
+]]></replacevalue>
+        </replace>
         <touch file="${project.build.directory}/performance-configured"/>
     </target>
 
@@ -76,7 +83,6 @@
         <delete dir="${server.unpacked.home}/standalone/tmp"/>
         <touch file="${project.build.directory}/crossdc-configured"/>
     </target>
-
 
     <target name="keycloak-docker">
         <copy todir="${project.build.directory}/docker" overwrite="false">

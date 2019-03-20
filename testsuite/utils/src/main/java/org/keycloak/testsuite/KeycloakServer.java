@@ -39,14 +39,22 @@ import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.KeycloakApplication;
 import org.keycloak.testsuite.util.cli.TestsuiteCLI;
 import org.keycloak.util.JsonSerialization;
+import org.xnio.Options;
+import org.xnio.SslClientAuthMode;
 
+import javax.net.ssl.KeyManager;
+import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.TrustManagerFactory;
 import javax.servlet.DispatcherType;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.security.KeyStore;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
@@ -356,6 +364,7 @@ public class KeycloakServer {
                 session.getTransactionManager().begin();
                 if (new ApplianceBootstrap(session).isNoMasterUser()) {
                     new ApplianceBootstrap(session).createMasterRealmUser("admin", "admin");
+                    log.info("Created master user with credentials admin:admin");
                 }
                 session.getTransactionManager().commit();
             } finally {
@@ -376,7 +385,9 @@ public class KeycloakServer {
                 .setIoThreads(config.getWorkerThreads() / 8);
 
         if (config.getPortHttps() != -1) {
-            builder = builder.addHttpsListener(config.getPortHttps(), config.getHost(), SSLContext.getDefault());
+            builder = builder
+                    .addHttpsListener(config.getPortHttps(), config.getHost(), createSSLContext())
+                    .setSocketOption(Options.SSL_CLIENT_AUTH_MODE, SslClientAuthMode.REQUESTED);
         }
 
         server = new UndertowJaxrsServer();
@@ -471,4 +482,73 @@ public class KeycloakServer {
         }
     }
 
+    private SSLContext createSSLContext() throws Exception {
+        KeyManager[] keyManagers = getKeyManagers();
+
+        if (keyManagers == null) {
+            return SSLContext.getDefault();
+        }
+
+        TrustManager[] trustManagers = getTrustManagers();
+
+        SSLContext sslContext = SSLContext.getInstance("TLS");
+        sslContext.init(keyManagers, trustManagers, null);
+        return sslContext;
+    }
+
+
+    private KeyManager[] getKeyManagers() throws Exception {
+        String keyStorePath = System.getProperty("keycloak.tls.keystore.path");
+
+        if (keyStorePath == null) {
+            return null;
+        }
+
+        log.infof("Loading keystore from file: %s", keyStorePath);
+
+        InputStream stream = Files.newInputStream(Paths.get(keyStorePath));
+
+        if (stream == null) {
+            throw new RuntimeException("Could not load keystore");
+        }
+
+        try (InputStream is = stream) {
+            KeyStore keyStore = KeyStore.getInstance("JKS");
+            char[] keyStorePassword = System.getProperty("keycloak.tls.keystore.password", "password").toCharArray();
+            keyStore.load(is, keyStorePassword);
+
+            KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+            keyManagerFactory.init(keyStore, keyStorePassword);
+
+            return keyManagerFactory.getKeyManagers();
+        }
+    }
+
+
+    private TrustManager[] getTrustManagers() throws Exception {
+        String trustStorePath = System.getProperty("keycloak.tls.truststore.path");
+
+        if (trustStorePath == null) {
+            return null;
+        }
+
+        log.infof("Loading truststore from file: %s", trustStorePath);
+
+        InputStream stream = Files.newInputStream(Paths.get(trustStorePath));
+
+        if (stream == null) {
+            throw new RuntimeException("Could not load truststore");
+        }
+
+        try (InputStream is = stream) {
+            KeyStore keyStore = KeyStore.getInstance("JKS");
+            char[] keyStorePassword = System.getProperty("keycloak.tls.truststore.password", "password").toCharArray();
+            keyStore.load(is, keyStorePassword);
+
+            TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+            trustManagerFactory.init(keyStore);
+
+            return trustManagerFactory.getTrustManagers();
+        }
+    }
 }

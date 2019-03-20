@@ -20,7 +20,6 @@ package org.keycloak.testsuite.federation.kerberos;
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 
 import java.net.URI;
-import java.nio.charset.Charset;
 import java.security.Principal;
 import java.util.Hashtable;
 import java.util.List;
@@ -178,13 +177,18 @@ public abstract class AbstractKerberosTest extends AbstractAuthTest {
 
 
     protected AccessToken assertSuccessfulSpnegoLogin(String loginUsername, String expectedUsername, String password) throws Exception {
+        return assertSuccessfulSpnegoLogin("kerberos-app", loginUsername, expectedUsername, password);
+    }
+
+    protected AccessToken assertSuccessfulSpnegoLogin(String clientId, String loginUsername, String expectedUsername, String password) throws Exception {
+        oauth.clientId(clientId);
         Response spnegoResponse = spnegoLogin(loginUsername, password);
         Assert.assertEquals(302, spnegoResponse.getStatus());
 
         List<UserRepresentation> users = testRealmResource().users().search(expectedUsername, 0, 1);
         String userId = users.get(0).getId();
         events.expectLogin()
-                .client("kerberos-app")
+                .client(clientId)
                 .user(userId)
                 .detail(Details.USERNAME, expectedUsername)
                 .assertEvent();
@@ -233,7 +237,7 @@ public abstract class AbstractKerberosTest extends AbstractAuthTest {
             if (response.getLocation() == null)
                 return response;
             String uri = response.getLocation().toString();
-            if (uri.contains("login-actions/required-action")) {
+            if (uri.contains("login-actions/required-action") || uri.contains("auth_session_id")) {
                 response = client.target(uri).request().get();
             }
         }
@@ -310,7 +314,7 @@ public abstract class AbstractKerberosTest extends AbstractAuthTest {
 
 
     protected OAuthClient.AccessTokenResponse assertAuthenticationSuccess(String codeUrl) throws Exception {
-        List<NameValuePair> pairs = URLEncodedUtils.parse(new URI(codeUrl), Charset.forName("UTF-8"));
+        List<NameValuePair> pairs = URLEncodedUtils.parse(new URI(codeUrl), "UTF-8");
         String code = null;
         String state = null;
         for (NameValuePair pair : pairs) {

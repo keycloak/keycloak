@@ -38,6 +38,7 @@ import org.keycloak.dom.saml.v2.assertion.URIType;
 import org.keycloak.saml.common.constants.JBossSAMLConstants;
 import org.keycloak.saml.common.exceptions.ProcessingException;
 import org.keycloak.saml.common.util.StaxUtil;
+import org.keycloak.saml.processing.core.parsers.saml.assertion.SAMLAssertionQNames;
 import org.w3c.dom.Element;
 
 import javax.xml.datatype.XMLGregorianCalendar;
@@ -219,6 +220,11 @@ public class SAMLAssertionWriter extends BaseWriter {
 
         if (sessionIndex != null) {
             StaxUtil.writeAttribute(writer, JBossSAMLConstants.SESSION_INDEX.get(), sessionIndex);
+        }
+
+        XMLGregorianCalendar sessionNotOnOrAfter = authnStatement.getSessionNotOnOrAfter();
+        if (sessionNotOnOrAfter != null) {
+            StaxUtil.writeAttribute(writer, SAMLAssertionQNames.ATTR_SESSION_NOT_ON_OR_AFTER.getQName(), sessionNotOnOrAfter.toString());
         }
 
         AuthnContextType authnContext = authnStatement.getAuthnContext();

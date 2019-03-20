@@ -126,8 +126,6 @@ public abstract class AuthorizationEndpointBase {
                     return response;
                 }
 
-                // Attach session once no requiredActions or other things are required
-                processor.attachSession();
             } catch (Exception e) {
                 return processor.handleBrowserException(e);
             }

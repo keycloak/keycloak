@@ -42,6 +42,7 @@ import javax.naming.directory.SearchResult;
 import javax.naming.ldap.Control;
 import javax.naming.ldap.InitialLdapContext;
 import javax.naming.ldap.LdapContext;
+import javax.naming.ldap.LdapName;
 import javax.naming.ldap.PagedResultsControl;
 import javax.naming.ldap.PagedResultsResponseControl;
 import java.io.IOException;
@@ -195,7 +196,7 @@ public class LDAPOperationManager {
                     int max = 5;
                     for (int i=0 ; i<max ; i++) {
                         try {
-                            context.rename(oldDn, dn);
+                            context.rename(new LdapName(oldDn), new LdapName(dn));
                             return dn;
                         } catch (NameAlreadyBoundException ex) {
                             if (!fallback) {
@@ -250,7 +251,7 @@ public class LDAPOperationManager {
             return execute(new LdapOperation<List<SearchResult>>() {
                 @Override
                 public List<SearchResult> execute(LdapContext context) throws NamingException {
-                    NamingEnumeration<SearchResult> search = context.search(baseDN, filter, cons);
+                    NamingEnumeration<SearchResult> search = context.search(new LdapName(baseDN), filter, cons);
 
                     while (search.hasMoreElements()) {
                         result.add(search.nextElement());
@@ -285,17 +286,23 @@ public class LDAPOperationManager {
         final List<SearchResult> result = new ArrayList<SearchResult>();
         final SearchControls cons = getSearchControls(identityQuery.getReturningLdapAttributes(), identityQuery.getSearchScope());
 
+        // Very 1st page. Pagination context is not yet present
+        if (identityQuery.getPaginationContext() == null) {
+            LdapContext ldapContext = createLdapContext();
+            identityQuery.initPagination(ldapContext);
+        }
+
         try {
             return execute(new LdapOperation<List<SearchResult>>() {
 
                 @Override
                 public List<SearchResult> execute(LdapContext context) throws NamingException {
                     try {
-                        byte[] cookie = identityQuery.getPaginationContext();
+                        byte[] cookie = identityQuery.getPaginationContext().getCookie();
                         PagedResultsControl pagedControls = new PagedResultsControl(identityQuery.getLimit(), cookie, Control.CRITICAL);
                         context.setRequestControls(new Control[] { pagedControls });
 
-                        NamingEnumeration<SearchResult> search = context.search(baseDN, filter, cons);
+                        NamingEnumeration<SearchResult> search = context.search(new LdapName(baseDN), filter, cons);
 
                         while (search.hasMoreElements()) {
                             result.add(search.nextElement());
@@ -309,7 +316,7 @@ public class LDAPOperationManager {
                                 if (respControl instanceof PagedResultsResponseControl) {
                                     PagedResultsResponseControl prrc = (PagedResultsResponseControl)respControl;
                                     cookie = prrc.getCookie();
-                                    identityQuery.setPaginationContext(cookie);
+                                    identityQuery.getPaginationContext().setCookie(cookie);
                                 }
                             }
                         }
@@ -334,7 +341,7 @@ public class LDAPOperationManager {
                             .toString();
                 }
 
-            });
+            }, identityQuery.getPaginationContext().getLdapContext(), null);
         } catch (NamingException e) {
             logger.errorf(e, "Could not query server using DN [%s] and filter [%s]", baseDN, filter);
             throw e;
@@ -407,7 +414,7 @@ public class LDAPOperationManager {
 
                 @Override
                 public SearchResult execute(LdapContext context) throws NamingException {
-                    NamingEnumeration<SearchResult> search = context.search(baseDN, filter, cons);
+                    NamingEnumeration<SearchResult> search = context.search(new LdapName(baseDN), filter, cons);
 
                     try {
                         if (search.hasMoreElements()) {
@@ -451,7 +458,7 @@ public class LDAPOperationManager {
             NamingEnumeration<Binding> enumeration = null;
 
             try {
-                enumeration = context.listBindings(dn);
+                enumeration = context.listBindings(new LdapName(dn));
 
                 while (enumeration.hasMore()) {
                     Binding binding = enumeration.next();
@@ -460,7 +467,7 @@ public class LDAPOperationManager {
                     destroySubcontext(context, name);
                 }
 
-                context.unbind(dn);
+                context.unbind(new LdapName(dn));
             } finally {
                 try {
                     enumeration.close();
@@ -521,50 +528,52 @@ public class LDAPOperationManager {
         }
     }
 
-    public void modifyAttributes(final String dn, final ModificationItem[] mods, LDAPOperationDecorator decorator) {
-        try {
-            if (logger.isTraceEnabled()) {
-                logger.tracef("Modifying attributes for entry [%s]: [", dn);
+    public void modifyAttributesNaming(final String dn, final ModificationItem[] mods, LDAPOperationDecorator decorator) throws NamingException {
+        if (logger.isTraceEnabled()) {
+            logger.tracef("Modifying attributes for entry [%s]: [", dn);
 
-                for (ModificationItem item : mods) {
-                    Object values;
+            for (ModificationItem item : mods) {
+                Object values;
 
-                    if (item.getAttribute().size() > 0) {
-                        values = item.getAttribute().get();
-                    } else {
-                        values = "No values";
-                    }
-
-                    String attrName = item.getAttribute().getID().toUpperCase();
-                    if (attrName.contains("PASSWORD") || attrName.contains("UNICODEPWD")) {
-                        values = "********************";
-                    }
-
-                    logger.tracef("  Op [%s]: %s = %s", item.getModificationOp(), item.getAttribute().getID(), values);
+                if (item.getAttribute().size() > 0) {
+                    values = item.getAttribute().get();
+                } else {
+                    values = "No values";
                 }
 
-                logger.tracef("]");
+                String attrName = item.getAttribute().getID().toUpperCase();
+                if (attrName.contains("PASSWORD") || attrName.contains("UNICODEPWD")) {
+                    values = "********************";
+                }
+
+                logger.tracef("  Op [%s]: %s = %s", item.getModificationOp(), item.getAttribute().getID(), values);
             }
 
-            execute(new LdapOperation<Void>() {
+            logger.tracef("]");
+        }
 
-                @Override
-                public Void execute(LdapContext context) throws NamingException {
-                    context.modifyAttributes(dn, mods);
-                    return null;
-                }
+        execute(new LdapOperation<Void>() {
 
+            @Override
+            public Void execute(LdapContext context) throws NamingException {
+                context.modifyAttributes(new LdapName(dn), mods);
+                return null;
+            }
 
-                @Override
-                public String toString() {
-                    return new StringBuilder("LdapOperation: modify\n")
-                            .append(" dn: ").append(dn).append("\n")
-                            .append(" modificationsSize: ").append(mods.length)
-                            .toString();
-                }
+            @Override
+            public String toString() {
+                return new StringBuilder("LdapOperation: modify\n")
+                        .append(" dn: ").append(dn).append("\n")
+                        .append(" modificationsSize: ").append(mods.length)
+                        .toString();
+            }
 
+        }, null, decorator);
+    }
 
-            }, decorator);
+    public void modifyAttributes(final String dn, final ModificationItem[] mods, LDAPOperationDecorator decorator) {
+        try {
+            modifyAttributesNaming(dn, mods, decorator);
         } catch (NamingException e) {
             throw new ModelException("Could not modify attribute for DN [" + dn + "]", e);
         }
@@ -595,7 +604,7 @@ public class LDAPOperationManager {
             execute(new LdapOperation<Void>() {
                 @Override
                 public Void execute(LdapContext context) throws NamingException {
-                    DirContext subcontext = context.createSubcontext(name, attributes);
+                    DirContext subcontext = context.createSubcontext(new LdapName(name), attributes);
 
                     subcontext.close();
 
@@ -725,11 +734,13 @@ public class LDAPOperationManager {
     }
 
     private <R> R execute(LdapOperation<R> operation) throws NamingException {
-        return execute(operation, null);
+        return execute(operation, null, null);
     }
 
-    private <R> R execute(LdapOperation<R> operation, LDAPOperationDecorator decorator) throws NamingException {
-        LdapContext context = null;
+    private <R> R execute(LdapOperation<R> operation, LdapContext context, LDAPOperationDecorator decorator) throws NamingException {
+        // We won't manage LDAP context (create and close) in case that existing context was passed as an argument to this method
+        boolean manageContext = context == null;
+
         Long start = null;
 
         try {
@@ -737,14 +748,17 @@ public class LDAPOperationManager {
                 start = Time.currentTimeMillis();
             }
 
-            context = createLdapContext();
+            if (manageContext) {
+                context = createLdapContext();
+            }
+
             if (decorator != null) {
                 decorator.beforeLDAPOperation(context, operation);
             }
 
             return operation.execute(context);
         } finally {
-            if (context != null) {
+            if (context != null && manageContext) {
                 try {
                     context.close();
                 } catch (NamingException ne) {

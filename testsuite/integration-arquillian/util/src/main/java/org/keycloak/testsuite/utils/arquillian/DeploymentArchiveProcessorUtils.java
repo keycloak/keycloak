@@ -18,6 +18,8 @@ package org.keycloak.testsuite.utils.arquillian;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collection;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpression;
@@ -58,6 +60,9 @@ public class DeploymentArchiveProcessorUtils {
     public static final String JBOSS_DEPLOYMENT_XML_PATH = "/WEB-INF/jboss-deployment-structure.xml";
     public static final String SAML_ADAPTER_CONFIG_PATH_TENANT1 = "/WEB-INF/classes/tenant1-keycloak-saml.xml";
     public static final String SAML_ADAPTER_CONFIG_PATH_TENANT2 = "/WEB-INF/classes/tenant2-keycloak-saml.xml";
+    public static final String TRUSTSTORE_PASSWORD = "secret";
+    public static final Collection<String> SAML_CONFIGS = Arrays.asList(SAML_ADAPTER_CONFIG_PATH,
+            SAML_ADAPTER_CONFIG_PATH_TENANT1, SAML_ADAPTER_CONFIG_PATH_TENANT2);
 
     /**
      * @return true iff archive's name equals run-on-server-classes.war
@@ -195,6 +200,19 @@ public class DeploymentArchiveProcessorUtils {
                 adapterConfig.setSslRequired("all");
             }
 
+            if (AUTH_SERVER_SSL_REQUIRED) {
+                String trustStorePathInDeployment = "keycloak.truststore";
+                if (adapterConfigPath.contains("WEB-INF")) {
+                    // This is a Java adapter, we can use classpath
+                    trustStorePathInDeployment = "classpath:keycloak.truststore";
+                }
+                adapterConfig.setTruststore(trustStorePathInDeployment);
+                adapterConfig.setTruststorePassword(TRUSTSTORE_PASSWORD);
+                File truststorePath = new File(DeploymentArchiveProcessorUtils.class.getResource("/keystore/keycloak.truststore").getFile());
+                ((WebArchive) archive).addAsResource(truststorePath);
+                log.debugf("Adding Truststore to the deployment, path %s, password %s, adapter path %s", truststorePath.getAbsolutePath(), TRUSTSTORE_PASSWORD, trustStorePathInDeployment);
+            }
+
             archive.add(new StringAsset(JsonSerialization.writeValueAsPrettyString(adapterConfig)),
                             adapterConfigPath);
         } catch (IOException ex) {
@@ -208,20 +226,24 @@ public class DeploymentArchiveProcessorUtils {
         if (AUTH_SERVER_SSL_REQUIRED) {
             IOUtil.modifyDocElementAttribute(doc, "SingleSignOnService", "bindingUrl", "8080", System.getProperty("auth.server.https.port"));
             IOUtil.modifyDocElementAttribute(doc, "SingleSignOnService", "bindingUrl", "http", "https");
-            IOUtil.modifyDocElementAttribute(doc, "SingleSignOnService", "assertionConsumerServiceUrl", "8081", System.getProperty("app.server.https.port"));
-            IOUtil.modifyDocElementAttribute(doc, "SingleSignOnService", "assertionConsumerServiceUrl", "http", "https");
             IOUtil.modifyDocElementAttribute(doc, "SingleLogoutService", "postBindingUrl", "8080", System.getProperty("auth.server.https.port"));
             IOUtil.modifyDocElementAttribute(doc, "SingleLogoutService", "postBindingUrl", "http", "https");
             IOUtil.modifyDocElementAttribute(doc, "SingleLogoutService", "redirectBindingUrl", "8080", System.getProperty("auth.server.https.port"));
             IOUtil.modifyDocElementAttribute(doc, "SingleLogoutService", "redirectBindingUrl", "http", "https");
-            IOUtil.modifyDocElementAttribute(doc, "SP", "logoutPage", "8081", System.getProperty("app.server.https.port"));
-            IOUtil.modifyDocElementAttribute(doc, "SP", "logoutPage", "http", "https");
         } else {
             IOUtil.modifyDocElementAttribute(doc, "SingleSignOnService", "bindingUrl", "8080", System.getProperty("auth.server.http.port"));
-            IOUtil.modifyDocElementAttribute(doc, "SingleSignOnService", "assertionConsumerServiceUrl", "8081", System.getProperty("app.server.http.port"));
             IOUtil.modifyDocElementAttribute(doc, "SingleLogoutService", "postBindingUrl", "8080", System.getProperty("auth.server.http.port"));
             IOUtil.modifyDocElementAttribute(doc, "SingleLogoutService", "redirectBindingUrl", "8080", System.getProperty("auth.server.http.port"));
-            IOUtil.modifyDocElementAttribute(doc, "SP", "logoutPage", "8081", System.getProperty("app.server.http.port"));
+        }
+
+        if (APP_SERVER_SSL_REQUIRED) {
+            IOUtil.modifyDocElementAttribute(doc, "SP", "logoutPage", "8080", System.getProperty("app.server.https.port"));
+            IOUtil.modifyDocElementAttribute(doc, "SP", "logoutPage", "http", "https");
+            IOUtil.modifyDocElementAttribute(doc, "SingleSignOnService", "assertionConsumerServiceUrl", "8080", System.getProperty("app.server.https.port"));
+            IOUtil.modifyDocElementAttribute(doc, "SingleSignOnService", "assertionConsumerServiceUrl", "http", "https");
+        } else {
+            IOUtil.modifyDocElementAttribute(doc, "SP", "logoutPage", "8080", System.getProperty("app.server.http.port"));
+            IOUtil.modifyDocElementAttribute(doc, "SingleSignOnService", "assertionConsumerServiceUrl", "8080", System.getProperty("app.server.http.port"));
         }
 
         archive.add(new StringAsset(IOUtil.documentToString(doc)), adapterConfigPath);
@@ -231,7 +253,7 @@ public class DeploymentArchiveProcessorUtils {
 
     private static String getAuthServerUrl() {
         String scheme = AUTH_SERVER_SSL_REQUIRED ? "https" : "http";
-        String host = System.getProperty("app.server.host", "localhost");
+        String host = System.getProperty("auth.server.host", "localhost");
         String port = AUTH_SERVER_SSL_REQUIRED ? System.getProperty("auth.server.https.port", "8443") :
                 System.getProperty("auth.server.http.port", "8180");
 

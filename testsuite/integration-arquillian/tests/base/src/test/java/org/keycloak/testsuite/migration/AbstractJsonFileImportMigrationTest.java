@@ -16,13 +16,11 @@
  */
 package org.keycloak.testsuite.migration;
 
-import org.junit.After;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
+import org.junit.Assert;
 import org.junit.Before;
-import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.representations.idm.RoleRepresentation;
-import org.keycloak.representations.idm.UserRepresentation;
 
 import static org.keycloak.testsuite.auth.page.AuthRealm.MASTER;
 
@@ -38,46 +36,14 @@ public abstract class AbstractJsonFileImportMigrationTest extends AbstractMigrat
     public void beforeMigrationTest() {
         migrationRealm = adminClient.realms().realm(MIGRATION);
         migrationRealm2 = adminClient.realms().realm(MIGRATION2);
-        migrationRealm3 = adminClient.realms().realm("authorization");
         masterRealm = adminClient.realms().realm(MASTER);
     }
 
-    /*
-
-
-        // hack to reuse AbstractMigrationTest  need to create a bunch of stuff in master realm for tests to work
-
-        RoleRepresentation newRole = new RoleRepresentation();
-        newRole.setName("master-test-realm-role");
-
-        masterRealm.roles().create(newRole);
-        ClientRepresentation newClient = new ClientRepresentation();
-        newClient.setClientId("master-test-client");
-        masterRealm.clients().create(newClient);
-        newClient = masterRealm.clients().findByClientId("master-test-client").get(0);
-        newRole.setName("master-test-client-role");
-        masterTestClientId = newClient.getId();
-        masterRealm.clients().get(masterTestClientId).roles().create(newRole);
-
-        for (GroupRepresentation group : masterRep.getGroups()) {
-            group.setId(null);
-            masterRealm.groups().add(group);
-        }
-        for (UserRepresentation user : masterRep.getUsers()) {
-            user.setId(null);
-            if (!user.getUsername().equals("admin")) masterRealm.users().create(user);
-        }
+    /**
+     * The method will throw javax.ws.rs.NotFoundException in case the realm is not successfully imported
+     */
+    protected void checkRealmsImported() {
+        Assert.assertThat(migrationRealm.toRepresentation().getRealm(), is(equalTo("Migration")));
+        Assert.assertThat(migrationRealm2.toRepresentation().getRealm(), is(equalTo("Migration2")));
     }
-
-    @After
-    public void afterMigrationTest() {
-        masterRealm.clients().get(masterTestClientId).remove();
-        masterRealm.roles().get("master-test-realm-role").remove();
-        GroupRepresentation group = masterRealm.getGroupByPath("/master-test-group");
-        masterRealm.groups().group(group.getId()).remove();
-        UserRepresentation user = masterRealm.users().search("master-test-user").get(0);
-        masterRealm.users().get(user.getId()).remove();
-
-    }
-    */
 }

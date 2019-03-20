@@ -38,6 +38,7 @@ import static org.junit.Assert.*;
 import static org.keycloak.testsuite.auth.page.login.Login.OIDC;
 
 /**
+ * Test for the "Scope" tab of client (Client role mappings)
  *
  * @author <a href="mailto:vramik@redhat.com">Vlastislav Ramik</a>
  */

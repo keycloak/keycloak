@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>performance</artifactId>
-        <version>4.3.0.Final-SNAPSHOT</version>
+        <version>6.0.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
@@ -47,9 +47,6 @@
                         
         <db.dump.download.site>https://downloads.jboss.org/keycloak-qe/${server.version}</db.dump.download.site>
         <numOfWorkers>1</numOfWorkers>
-
-        <maven.compiler.target>1.8</maven.compiler.target>
-        <maven.compiler.source>1.8</maven.compiler.source>
 
         <scala.version>2.11.7</scala.version>
         <gatling.version>2.1.7</gatling.version>
@@ -129,7 +126,7 @@
         </dependency>
         <dependency>
             <groupId>org.jboss.spec.javax.ws.rs</groupId>
-            <artifactId>jboss-jaxrs-api_2.0_spec</artifactId>
+            <artifactId>jboss-jaxrs-api_2.1_spec</artifactId>
         </dependency>
         <dependency>
             <groupId>org.jboss.logging</groupId>
@@ -434,6 +431,7 @@
                                         
                                         <MANAGEMENT_USER>${management.user}</MANAGEMENT_USER>
                                         <MANAGEMENT_USER_PASS>${management.user.password}</MANAGEMENT_USER_PASS>
+                                        <KEYCLOAK_JSTAT>${keycloak.jstat}</KEYCLOAK_JSTAT>
                                         
                                         <KEYCLOAK_SCALE>${keycloak.scale}</KEYCLOAK_SCALE>
                                         <KEYCLOAK_DC1_SCALE>${keycloak.dc1.scale}</KEYCLOAK_DC1_SCALE>
@@ -469,11 +467,13 @@
                                         <LB_HTTP_MAX_CONNECTIONS>${lb.http.max-connections}</LB_HTTP_MAX_CONNECTIONS>
                                         <LB_WORKER_IO_THREADS>${lb.worker.io-threads}</LB_WORKER_IO_THREADS>
                                         <LB_WORKER_TASK_MAX_THREADS>${lb.worker.task-max-threads}</LB_WORKER_TASK_MAX_THREADS>
+                                        <LB_JSTAT>${lb.jstat}</LB_JSTAT>
                                         
                                         <INFINISPAN_DC1_CPUSETS>${infinispan.dc1.docker.cpusets}</INFINISPAN_DC1_CPUSETS>
                                         <INFINISPAN_DC2_CPUSETS>${infinispan.dc2.docker.cpusets}</INFINISPAN_DC2_CPUSETS>
                                         <INFINISPAN_MEMLIMIT>${infinispan.docker.memlimit}</INFINISPAN_MEMLIMIT>
                                         <INFINISPAN_JVM_MEMORY>${infinispan.jvm.memory}</INFINISPAN_JVM_MEMORY>
+                                        <INFINISPAN_JSTAT>${infinispan.jstat}</INFINISPAN_JSTAT>
                                     </environmentVariables>
                                 </configuration>
                             </execution>
@@ -643,6 +643,9 @@
         
         <profile>
             <id>collect</id>
+            <properties>
+                <gnuplot>false</gnuplot>
+            </properties>
             <build>
                 <plugins>
                     <plugin>
@@ -661,6 +664,8 @@
                                         <PROVISIONER>${provisioner}</PROVISIONER>
                                         <DEPLOYMENT>${deployment}</DEPLOYMENT>
                                         <OPERATION>collect</OPERATION>
+                                        <JSTAT>${jstat}</JSTAT>
+                                        <GNUPLOT>${gnuplot}</GNUPLOT>
                                     </environmentVariables>
                                 </configuration>
                             </execution>
@@ -827,6 +832,12 @@
             <id>gnuplot</id>
             <properties>
                 <gnuplot>true</gnuplot>
+            </properties>
+        </profile>
+        <profile>
+            <id>jstat</id>
+            <properties>
+                <jstat>true</jstat>
             </properties>
         </profile>
 

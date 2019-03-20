@@ -24,7 +24,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian-tests-other</artifactId>
-        <version>4.3.0.Final-SNAPSHOT</version>
+        <version>6.0.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>integration-arquillian-tests-nodejs-adapter</artifactId>
@@ -38,6 +38,7 @@
         <auth.server.https.port>8443</auth.server.https.port>
         <auth.server.management.port>9990</auth.server.management.port>
         <auth.server.management.port.jmx>9999</auth.server.management.port.jmx>
+        <auth.server.ssl.required>false</auth.server.ssl.required>
     </properties>
 
     <build>

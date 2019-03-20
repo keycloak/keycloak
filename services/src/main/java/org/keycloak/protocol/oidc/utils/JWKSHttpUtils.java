@@ -36,8 +36,9 @@ import java.security.PublicKey;
 public class JWKSHttpUtils {
 
     public static JSONWebKeySet sendJwksRequest(KeycloakSession session, String jwksURI) throws IOException {
-        InputStream is = session.getProvider(HttpClientProvider.class).get(jwksURI);
-        String keySetString = StreamUtil.readString(is);
-        return JsonSerialization.readValue(keySetString, JSONWebKeySet.class);
+        try (InputStream is = session.getProvider(HttpClientProvider.class).get(jwksURI)){
+            String keySetString = StreamUtil.readString(is);
+            return JsonSerialization.readValue(keySetString, JSONWebKeySet.class);
+        }
     }
 }

@@ -22,11 +22,15 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.crypto.Algorithm;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
+import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.models.BrowserSecurityHeaders;
 import org.keycloak.models.Constants;
+import org.keycloak.models.utils.SessionTimeoutHelper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
@@ -44,7 +48,9 @@ import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.Matchers;
 import org.keycloak.testsuite.util.RealmBuilder;
+import org.keycloak.testsuite.util.TokenSignatureUtil;
 import org.keycloak.testsuite.util.UserBuilder;
+import org.openqa.selenium.Cookie;
 import org.openqa.selenium.NoSuchElementException;
 
 import javax.ws.rs.client.Client;
@@ -120,11 +126,39 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
         for (Map.Entry<String, String> entry : BrowserSecurityHeaders.defaultHeaders.entrySet()) {
             String headerName = BrowserSecurityHeaders.headerAttributeMap.get(entry.getKey());
             String headerValue = response.getHeaderString(headerName);
-            Assert.assertNotNull(headerValue);
-            Assert.assertThat(headerValue, is(equalTo(entry.getValue())));
+            if (entry.getValue().isEmpty()) {
+                Assert.assertNull(headerValue);
+            } else {
+                Assert.assertNotNull(headerValue);
+                Assert.assertThat(headerValue, is(equalTo(entry.getValue())));
+            }
         }
         response.close();
         client.close();
+    }
+
+    @Test
+    public void testContentSecurityPolicyReportOnlyBrowserSecurityHeader() {
+        final String expectedCspReportOnlyValue = "default-src 'none'";
+        final String cspReportOnlyAttr = "contentSecurityPolicyReportOnly";
+        final String cspReportOnlyHeader = "Content-Security-Policy-Report-Only";
+
+        RealmRepresentation realmRep = adminClient.realm("test").toRepresentation();
+        final String defaultContentSecurityPolicyReportOnly = realmRep.getBrowserSecurityHeaders().get(cspReportOnlyAttr);
+        realmRep.getBrowserSecurityHeaders().put(cspReportOnlyAttr, expectedCspReportOnlyValue);
+        adminClient.realm("test").update(realmRep);
+
+        try {
+            Client client = ClientBuilder.newClient();
+            Response response = client.target(oauth.getLoginFormUrl()).request().get();
+            String headerValue = response.getHeaderString(cspReportOnlyHeader);
+            Assert.assertThat(headerValue, is(equalTo(expectedCspReportOnlyValue)));
+            response.close();
+            client.close();
+        } finally {
+            realmRep.getBrowserSecurityHeaders().put(cspReportOnlyAttr, defaultContentSecurityPolicyReportOnly);
+            adminClient.realm("test").update(realmRep);
+        }
     }
 
     //KEYCLOAK-5556
@@ -328,6 +362,45 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
+    public void loginSuccessRealmSigningAlgorithms() throws JWSInputException {
+        loginPage.open();
+        loginPage.login("login-test", "password");
+
+        Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
+
+        events.expectLogin().user(userId).detail(Details.USERNAME, "login-test").assertEvent();
+
+        driver.navigate().to(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth/realms/test/");
+        String keycloakIdentity = driver.manage().getCookieNamed("KEYCLOAK_IDENTITY").getValue();
+
+        // Check identity cookie is signed with HS256
+        String algorithm = new JWSInput(keycloakIdentity).getHeader().getAlgorithm().name();
+        assertEquals("HS256", algorithm);
+
+        try {
+            TokenSignatureUtil.registerKeyProvider("P-256", adminClient, testContext);
+            TokenSignatureUtil.changeRealmTokenSignatureProvider(adminClient, Algorithm.ES256);
+
+            oauth.openLoginForm();
+            Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+
+            driver.navigate().to(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth/realms/test/");
+            keycloakIdentity = driver.manage().getCookieNamed("KEYCLOAK_IDENTITY").getValue();
+
+            // Check identity cookie is still signed with HS256
+            algorithm = new JWSInput(keycloakIdentity).getHeader().getAlgorithm().name();
+            assertEquals("HS256", algorithm);
+
+            // Check identity cookie still works
+            oauth.openLoginForm();
+            Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        } finally {
+            TokenSignatureUtil.changeRealmTokenSignatureProvider(adminClient, Algorithm.RS256);
+        }
+    }
+
+    @Test
     public void loginWithWhitespaceSuccess() {
         loginPage.open();
         loginPage.login(" login-test \t ", "password");
@@ -454,8 +527,14 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
     }
 
     private void setRememberMe(boolean enabled) {
+        this.setRememberMe(enabled, null, null);
+    }
+
+    private void setRememberMe(boolean enabled, Integer idleTimeout, Integer maxLifespan) {
         RealmRepresentation rep = adminClient.realm("test").toRepresentation();
         rep.setRememberMe(enabled);
+        rep.setSsoSessionIdleTimeoutRememberMe(idleTimeout);
+        rep.setSsoSessionMaxLifespanRememberMe(maxLifespan);
         adminClient.realm("test").update(rep);
     }
 
@@ -675,6 +754,64 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
         appPage.assertCurrent();
 
         events.expectLogin().detail(Details.USERNAME, "test-user@localhost").assertEvent();
+    }
+
+    @Test
+    public void loginRememberMeExpiredIdle() throws Exception {
+        setRememberMe(true, 1, null);
+
+        try {
+            // login form shown after redirect from app
+            oauth.clientId("test-app");
+            oauth.redirectUri(OAuthClient.APP_ROOT + "/auth");
+            oauth.openLoginForm();
+
+            assertTrue(loginPage.isCurrent());
+            loginPage.setRememberMe(true);
+            loginPage.login("test-user@localhost", "password");
+
+            // sucessful login - app page should be on display.
+            events.expectLogin().detail(Details.USERNAME, "test-user@localhost").assertEvent();
+            appPage.assertCurrent();
+
+            // expire idle timeout using the timeout window.
+            setTimeOffset(2 + SessionTimeoutHelper.IDLE_TIMEOUT_WINDOW_SECONDS);
+
+            // trying to open the account page with an expired idle timeout should redirect back to the login page.
+            appPage.openAccount();
+            loginPage.assertCurrent();
+        } finally {
+            setRememberMe(false);
+        }
+    }
+
+    @Test
+    public void loginRememberMeExpiredMaxLifespan() throws Exception {
+        setRememberMe(true, null, 1);
+
+        try {
+            // login form shown after redirect from app
+            oauth.clientId("test-app");
+            oauth.redirectUri(OAuthClient.APP_ROOT + "/auth");
+            oauth.openLoginForm();
+
+            assertTrue(loginPage.isCurrent());
+            loginPage.setRememberMe(true);
+            loginPage.login("test-user@localhost", "password");
+
+            // sucessful login - app page should be on display.
+            events.expectLogin().detail(Details.USERNAME, "test-user@localhost").assertEvent();
+            appPage.assertCurrent();
+
+            // expire the max lifespan.
+            setTimeOffset(2);
+
+            // trying to open the account page with an expired lifespan should redirect back to the login page.
+            appPage.openAccount();
+            loginPage.assertCurrent();
+        } finally {
+            setRememberMe(false);
+        }
     }
 
 }

@@ -30,7 +30,7 @@ import org.infinispan.manager.DefaultCacheManager;
 import org.infinispan.manager.EmbeddedCacheManager;
 import org.infinispan.remoting.transport.jgroups.JGroupsTransport;
 import org.infinispan.transaction.LockingMode;
-import org.infinispan.transaction.lookup.DummyTransactionManagerLookup;
+import org.infinispan.transaction.lookup.EmbeddedTransactionManagerLookup;
 import org.infinispan.util.concurrent.IsolationLevel;
 import org.jgroups.JChannel;
 import org.keycloak.common.util.Time;
@@ -202,7 +202,7 @@ public class DistributedCacheWriteSkewTest {
 
            // distConfigBuilder.invocationBatching().enable();
             //distConfigBuilder.transaction().transactionMode(TransactionMode.TRANSACTIONAL);
-            distConfigBuilder.transaction().transactionManagerLookup(new DummyTransactionManagerLookup());
+            distConfigBuilder.transaction().transactionManagerLookup(new EmbeddedTransactionManagerLookup());
             distConfigBuilder.transaction().lockingMode(LockingMode.OPTIMISTIC);
         }
         Configuration distConfig = distConfigBuilder.build();

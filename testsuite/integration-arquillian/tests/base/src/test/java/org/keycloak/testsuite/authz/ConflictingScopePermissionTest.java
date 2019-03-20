@@ -40,7 +40,6 @@ import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.authorization.client.AuthzClient;
-import org.keycloak.authorization.client.Configuration;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.representations.AccessToken;
@@ -275,7 +274,7 @@ public class ConflictingScopePermissionTest extends AbstractAuthzTest {
 
         representation.setConfig(config);
 
-        client.authorization().policies().create(representation);
+        client.authorization().policies().create(representation).close();
     }
 
     private void createResourcePermission(String name, String resourceName, List<String> policies, ClientResource client) throws IOException {
@@ -285,7 +284,7 @@ public class ConflictingScopePermissionTest extends AbstractAuthzTest {
         representation.addResource(resourceName);
         representation.addPolicy(policies.toArray(new String[policies.size()]));
 
-        client.authorization().permissions().resource().create(representation);
+        client.authorization().permissions().resource().create(representation).close();
     }
 
     private void createScopePermission(String name, String resourceName, List<String> scopes, List<String> policies, ClientResource client) throws IOException {
@@ -301,14 +300,10 @@ public class ConflictingScopePermissionTest extends AbstractAuthzTest {
         representation.addScope(scopes.toArray(new String[scopes.size()]));
         representation.addPolicy(policies.toArray(new String[policies.size()]));
 
-        authorization.permissions().scope().create(representation);
+        authorization.permissions().scope().create(representation).close();
     }
 
     private AuthzClient getAuthzClient() {
-        try {
-            return AuthzClient.create(JsonSerialization.readValue(getClass().getResourceAsStream("/authorization-test/default-keycloak.json"), Configuration.class));
-        } catch (IOException cause) {
-            throw new RuntimeException("Failed to create authz client", cause);
-        }
+        return AuthzClient.create(getClass().getResourceAsStream("/authorization-test/default-keycloak.json"));
     }
 }

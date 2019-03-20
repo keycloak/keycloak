@@ -15,9 +15,6 @@
   ~ limitations under the License.
   -->
 <server-provisioning xmlns="urn:wildfly:server-provisioning:1.2" extract-schemas="true">
-    <copy-artifacts>
-        <copy-artifact artifact="org.keycloak:keycloak-client-cli-dist:zip" to-location="" from-location="keycloak-client-tools"/>
-    </copy-artifacts>
     <feature-packs>
         <feature-pack groupId="org.keycloak" artifactId="keycloak-server-feature-pack" version="${project.version}"/>
     </feature-packs>

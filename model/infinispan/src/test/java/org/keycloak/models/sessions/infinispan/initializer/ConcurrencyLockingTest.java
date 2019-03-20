@@ -6,11 +6,13 @@ import org.infinispan.configuration.cache.ConfigurationBuilder;
 import org.infinispan.configuration.global.GlobalConfigurationBuilder;
 import org.infinispan.manager.DefaultCacheManager;
 import org.infinispan.transaction.LockingMode;
-import org.infinispan.transaction.lookup.DummyTransactionManagerLookup;
+import org.infinispan.transaction.lookup.EmbeddedTransactionManagerLookup;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -25,7 +27,12 @@ public class ConcurrencyLockingTest {
     public void testLocking() throws Exception {
         final DefaultCacheManager cacheManager = getVersionedCacheManager();
         Cache<String, String> cache = cacheManager.getCache("COUNTER_CACHE");
-        cache.put("key", "init");
+
+        Map<String, String> map = new HashMap<>();
+        map.put("key1", "val1");
+        map.put("key2", "val2");
+        cache.putAll(map);
+
         ExecutorService executor = Executors.newSingleThreadExecutor();
         executor.execute(new Runnable() {
             @Override
@@ -71,7 +78,7 @@ public class ConcurrencyLockingTest {
 
         ConfigurationBuilder counterConfigBuilder = new ConfigurationBuilder();
         counterConfigBuilder.invocationBatching().enable();
-        counterConfigBuilder.transaction().transactionManagerLookup(new DummyTransactionManagerLookup());
+        counterConfigBuilder.transaction().transactionManagerLookup(new EmbeddedTransactionManagerLookup());
         counterConfigBuilder.transaction().lockingMode(LockingMode.PESSIMISTIC);
         Configuration counterCacheConfiguration = counterConfigBuilder.build();
 

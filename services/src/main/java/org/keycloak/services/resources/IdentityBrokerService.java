@@ -24,6 +24,7 @@ import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.authentication.authenticators.broker.AbstractIdpAuthenticator;
 import org.keycloak.authentication.authenticators.broker.util.PostBrokerLoginConstants;
 import org.keycloak.authentication.authenticators.broker.util.SerializedBrokeredIdentityContext;
+import org.keycloak.broker.oidc.KeycloakOIDCIdentityProviderFactory;
 import org.keycloak.broker.provider.AuthenticationRequest;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.IdentityBrokerException;
@@ -32,6 +33,7 @@ import org.keycloak.broker.provider.IdentityProviderFactory;
 import org.keycloak.broker.provider.IdentityProviderMapper;
 import org.keycloak.broker.provider.util.IdentityBrokerState;
 import org.keycloak.broker.saml.SAMLEndpoint;
+import org.keycloak.broker.saml.SAMLIdentityProviderFactory;
 import org.keycloak.broker.social.SocialIdentityProvider;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.util.Base64Url;
@@ -70,6 +72,7 @@ import org.keycloak.representations.AccessToken;
 import org.keycloak.services.ErrorPage;
 import org.keycloak.services.ErrorPageException;
 import org.keycloak.services.ErrorResponse;
+import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.Urls;
 import org.keycloak.services.managers.AppAuthManager;
@@ -436,11 +439,14 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
 
             if (authResult != null) {
                 AccessToken token = authResult.getToken();
-                String[] audience = token.getAudience();
-                ClientModel clientModel = this.realmModel.getClientByClientId(audience[0]);
+                String issuedFor = token.getIssuedFor();
+                ClientModel clientModel = this.realmModel.getClientByClientId(issuedFor);
 
                 if (clientModel == null) {
                     return badRequest("Invalid client.");
+                }
+                if (!clientModel.isEnabled()) {
+                    return badRequest("Client is disabled");
                 }
 
                 session.getContext().setClient(clientModel);
@@ -1046,6 +1052,10 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
         SamlService samlService = (SamlService) factory.createProtocolEndpoint(realmModel, event);
         ResteasyProviderFactory.getInstance().injectProperties(samlService);
         AuthenticationSessionModel authSession = samlService.getOrCreateLoginSessionForIdpInitiatedSso(session, realmModel, oClient.get(), null);
+        if (authSession == null) {
+            event.error(Errors.INVALID_REDIRECT_URI);
+            return ParsedCodeContext.response(redirectToErrorPage(Response.Status.BAD_REQUEST, Messages.INVALID_REDIRECT_URI));
+        }
 
         return ParsedCodeContext.clientSessionCode(new ClientSessionCode<>(session, this.realmModel, authSession));
     }
@@ -1239,7 +1249,6 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
             this.session.getTransactionManager().rollback();
         }
     }
-
 
     private static class ParsedCodeContext {
         private ClientSessionCode<AuthenticationSessionModel> clientSessionCode;

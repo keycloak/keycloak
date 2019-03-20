@@ -216,6 +216,24 @@ declare namespace Keycloak {
 		createdTimestamp?: number;
 	}
 
+	interface KeycloakTokenParsed {
+		exp?: number;
+		iat?: number;
+		nonce?: string;
+		sub?: string;
+		session_state?: string;
+		realm_access?: { roles: string[] };
+		resource_access?: string[];
+	}
+
+	interface KeycloakResourceAccess {
+		[key: string]: KeycloakRoles
+	}
+
+	interface KeycloakRoles {
+		roles: string[];
+	}
+
 	// export interface KeycloakUserInfo {}
 
 	/**
@@ -253,12 +271,12 @@ declare namespace Keycloak {
 		/**
 		 * The realm roles associated with the token.
 		 */
-		realmAccess?: { roles: string[] };
+		realmAccess?: KeycloakRoles;
 
 		/**
 		 * The resource roles associated with the token.
 		 */
-		resourceAccess?: string[];
+		resourceAccess?: KeycloakResourceAccess;
 
 		/**
 		 * The base64 encoded token that can be sent in the Authorization header in
@@ -269,15 +287,7 @@ declare namespace Keycloak {
 		/**
 		 * The parsed token as a JavaScript object.
 		 */
-		tokenParsed?: {
-			exp?: number;
-			iat?: number;
-			nonce?: string;
-			sub?: string;
-			session_state?: string;
-			realm_access?: { roles: string[] };
-			resource_access?: string[];
-		};
+		tokenParsed?: KeycloakTokenParsed;
 
 		/**
 		 * The base64 encoded refresh token that can be used to retrieve a new token.
@@ -287,7 +297,7 @@ declare namespace Keycloak {
 		/**
 		 * The parsed refresh token as a JavaScript object.
 		 */
-		refreshTokenParsed?: { nonce?: string };
+		refreshTokenParsed?: KeycloakTokenParsed;
 
 		/**
 		 * The base64 encoded ID token.
@@ -297,7 +307,7 @@ declare namespace Keycloak {
 		/**
 		 * The parsed id token as a JavaScript object.
 		 */
-		idTokenParsed?: { nonce?: string };
+		idTokenParsed?: KeycloakTokenParsed;
 
 		/**
 		 * The estimated time difference between the browser time and the Keycloak

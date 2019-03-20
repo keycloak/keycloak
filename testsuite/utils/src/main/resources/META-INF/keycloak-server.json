@@ -105,12 +105,7 @@
             "remoteStoreEnabled": "${keycloak.connectionsInfinispan.remoteStoreEnabled:false}",
             "remoteStoreHost": "${keycloak.connectionsInfinispan.remoteStoreServer:localhost}",
             "remoteStorePort": "${keycloak.connectionsInfinispan.remoteStorePort:11222}",
-            "remoteStoreSecurityEnabled": "${keycloak.connectionsInfinispan.remoteStoreSecurityEnabled:false}",
-            "remoteStoreSecurityServerName": "${keycloak.connectionsInfinispan.remoteStoreSecurityServerName:keycloak-server}",
-            "remoteStoreSecurityRealm": "${keycloak.connectionsInfinispan.remoteStoreSecurityRealm:ApplicationRealm}",
-            "remoteStoreSecurityHotRodEndpoint": "${keycloak.connectionsInfinispan.remoteStoreSecurityHotRodEndpoint}",
-            "remoteStoreSecurityUsername": "${keycloak.connectionsInfinispan.remoteStoreSecurityUsername}",
-            "remoteStoreSecurityPassword": "${keycloak.connectionsInfinispan.remoteStoreSecurityPassword}"
+            "hotrodProtocolVersion": "${keycloak.connectionsInfinispan.hotrodProtocolVersion}"
         }
     },
 
@@ -123,5 +118,39 @@
             "enabled": true
         }
 
+    },
+
+    "login-protocol": {
+        "saml": {
+            "knownProtocols": [
+                "http=${auth.server.http.port}",
+                "https=${auth.server.https.port}"
+            ]
+        }
+    },
+
+    "x509cert-lookup": {
+        "provider": "${keycloak.x509cert.lookup.provider:default}",
+        "default": {
+            "enabled": true
+        },
+        "haproxy": {
+            "enabled": true,
+            "sslClientCert": "x-ssl-client-cert",
+            "sslCertChainPrefix": "x-ssl-client-cert-chain",
+            "certificateChainLength": 1
+        },
+        "apache": {
+            "enabled": true,
+            "sslClientCert": "x-ssl-client-cert",
+            "sslCertChainPrefix": "x-ssl-client-cert-chain",
+            "certificateChainLength": 1
+        },
+        "nginx": {
+            "enabled": true,
+            "sslClientCert": "x-ssl-client-cert",
+            "sslCertChainPrefix": "x-ssl-client-cert-chain",
+            "certificateChainLength": 1
+        }
     }
 }

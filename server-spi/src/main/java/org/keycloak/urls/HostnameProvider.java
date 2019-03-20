@@ -23,6 +23,8 @@ import javax.ws.rs.core.UriInfo;
 
 public interface HostnameProvider extends Provider {
 
+    String getScheme(UriInfo originalUriInfo);
+
     /**
      * Return the hostname. Http headers, realm details, etc. can be retrieved from the KeycloakSession. Do NOT use
      * {@link KeycloakContext#getUri()} as it will in turn call the HostnameProvider resulting in an infinite loop!

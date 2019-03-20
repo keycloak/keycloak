@@ -49,6 +49,7 @@ import org.jboss.arquillian.test.impl.context.TestContextImpl;
 import org.jboss.arquillian.test.impl.enricher.resource.ArquillianResourceTestEnricher;
 import org.jboss.arquillian.test.spi.TestEnricher;
 import org.jboss.arquillian.test.spi.enricher.resource.ResourceProvider;
+import org.keycloak.testsuite.arquillian.ModelTestExecutor;
 
 /**
  * KeycloakContainerTestExtension
@@ -104,7 +105,8 @@ public class KeycloakContainerTestExtension implements LoadableExtension {
             .observer(ClientDeployerCreator.class)
             .observer(ClientBeforeAfterLifecycleEventExecuter.class)
             .observer(ClientTestExecuter.class)
-            .observer(LocalTestExecuter.class)
+//            .observer(LocalTestExecuter.class)
+            .observer(ModelTestExecutor.class)
             .observer(RemoteTestExecuter.class)
             .observer(DeploymentCommandObserver.class)
             .observer(ContainerCommandObserver.class)

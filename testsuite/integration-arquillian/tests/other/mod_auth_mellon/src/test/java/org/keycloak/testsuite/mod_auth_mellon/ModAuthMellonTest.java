@@ -10,7 +10,7 @@ import org.keycloak.models.utils.SessionTimeoutHelper;
 import java.util.List;
 
 import static org.junit.Assert.assertTrue;
-import static org.keycloak.testsuite.util.IOUtil.loadRealm;
+import static org.keycloak.testsuite.utils.io.IOUtil.loadRealm;
 import static org.keycloak.testsuite.util.WaitUtils.pause;
 
 /**

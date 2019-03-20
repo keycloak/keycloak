@@ -57,24 +57,7 @@
     </style>
     <script>
         function removeScopeElm(elm) {
-            var td = elm.parentNode;
-            var tr = td.parentNode;
-            var tbody = tr.parentNode;
-
-            td.removeChild(elm);
-
-            var childCount = td.childNodes.length - 1;
-
-            for (i = 0; i < td.childNodes.length; i++) {
-                if (!td.childNodes[i].tagName || td.childNodes[i].tagName.toUpperCase() != 'DIV') {
-                    td.removeChild(td.childNodes[i]);
-                    childCount--;
-                }
-            }
-
-            if (childCount <= 0) {
-                tbody.removeChild(tr);
-            }
+            elm.parentNode.removeChild(elm);
         }
 
         function removeAllScopes(id) {
@@ -145,7 +128,7 @@
                                         <td>
                                             <#if permission.scopes?size != 0>
                                                 <#list permission.scopes as scope>
-                                                    <#if scope.granted>
+                                                    <#if scope.granted && scope.scope??>
                                                         <div class="search-box">
                                                             <#if scope.scope.displayName??>
                                                                 ${scope.scope.displayName}
@@ -155,6 +138,8 @@
                                                             <button class="close-icon" type="button" name="removeScope-${authorization.resource.id}-${permission.requester.username}" onclick="removeScopeElm(this.parentNode);document.forms['revokeForm-${authorization.resource.id}-${permission.requester.username}'].submit();"><i class="fa fa-times" aria-hidden="true"></i></button>
                                                             <input type="hidden" name="permission_id" value="${scope.id}"/>
                                                         </div>
+                                                    <#else>
+                                                        ${msg("anyPermission")}
                                                     </#if>
                                                 </#list>
                                             <#else>

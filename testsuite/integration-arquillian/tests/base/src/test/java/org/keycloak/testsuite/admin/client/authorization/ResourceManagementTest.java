@@ -250,17 +250,18 @@ public class ResourceManagementTest extends AbstractAuthorizationTest {
     protected ResourceRepresentation doCreateResource(ResourceRepresentation newResource) {
         ResourcesResource resources = getClientResource().authorization().resources();
 
-        Response response = resources.create(newResource);
+        try (Response response = resources.create(newResource)) {
 
-        int status = response.getStatus();
+            int status = response.getStatus();
 
-        if (status != Response.Status.CREATED.getStatusCode()) {
-            throw new RuntimeException(new HttpResponseException("Error", status, "", null));
+            if (status != Response.Status.CREATED.getStatusCode()) {
+                throw new RuntimeException(new HttpResponseException("Error", status, "", null));
+            }
+
+            ResourceRepresentation stored = response.readEntity(ResourceRepresentation.class);
+
+            return resources.resource(stored.getId()).toRepresentation();
         }
-
-        ResourceRepresentation stored = response.readEntity(ResourceRepresentation.class);
-
-        return resources.resource(stored.getId()).toRepresentation();
     }
 
     protected ResourceRepresentation doUpdateResource(ResourceRepresentation resource) {

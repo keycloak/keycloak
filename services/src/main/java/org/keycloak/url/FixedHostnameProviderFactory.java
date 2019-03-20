@@ -10,10 +10,11 @@ public class FixedHostnameProviderFactory implements HostnameProviderFactory {
     private String hostname;
     private int httpPort;
     private int httpsPort;
+    private boolean alwaysHttps;
 
     @Override
     public HostnameProvider create(KeycloakSession session) {
-        return new FixedHostnameProvider(session, hostname, httpPort, httpsPort);
+        return new FixedHostnameProvider(session, alwaysHttps, hostname, httpPort, httpsPort);
     }
 
     @Override
@@ -25,6 +26,7 @@ public class FixedHostnameProviderFactory implements HostnameProviderFactory {
 
         this.httpPort = config.getInt("httpPort", -1);
         this.httpsPort = config.getInt("httpsPort", -1);
+        this.alwaysHttps = config.getBoolean("alwaysHttps", false);
     }
 
     @Override

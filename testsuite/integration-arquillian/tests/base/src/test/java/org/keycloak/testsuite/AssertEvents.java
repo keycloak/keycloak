@@ -36,7 +36,6 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
 import org.keycloak.util.TokenUtil;
 
-import javax.ws.rs.core.Response;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -54,7 +53,8 @@ public class AssertEvents implements TestRule {
     public static final String DEFAULT_REALM = "test";
     public static final String DEFAULT_USERNAME = "test-user@localhost";
 
-    String defaultRedirectUri = "http://localhost:8180/auth/realms/master/app/auth";
+    public static final String DEFAULT_HTTP_REDIRECT_URI = "http://localhost:8180/auth/realms/master/app/auth";
+    public static final String DEFAULT_HTTPS_REDIRECT_URI = "https://localhost:8543/auth/realms/master/app/auth";
 
     private AbstractKeycloakTest context;
 
@@ -101,7 +101,7 @@ public class AssertEvents implements TestRule {
                 //.detail(Details.USERNAME, DEFAULT_USERNAME)
                 //.detail(Details.AUTH_METHOD, OIDCLoginProtocol.LOGIN_PROTOCOL)
                 //.detail(Details.AUTH_TYPE, AuthorizationEndpoint.CODE_AUTH_TYPE)
-                .detail(Details.REDIRECT_URI, defaultRedirectUri)
+                .detail(Details.REDIRECT_URI, Matchers.anyOf(Matchers.equalTo(DEFAULT_HTTP_REDIRECT_URI), Matchers.equalTo(DEFAULT_HTTPS_REDIRECT_URI)))
                 .detail(Details.CONSENT, Details.CONSENT_VALUE_NO_CONSENT_REQUIRED)
                 .session(isUUID());
     }
@@ -120,7 +120,7 @@ public class AssertEvents implements TestRule {
                 .detail(Details.CODE_ID, isCodeId())
                 .detail(Details.USERNAME, DEFAULT_USERNAME)
                 .detail(Details.AUTH_METHOD, "form")
-                .detail(Details.REDIRECT_URI, defaultRedirectUri)
+                .detail(Details.REDIRECT_URI, Matchers.anyOf(Matchers.equalTo(DEFAULT_HTTP_REDIRECT_URI), Matchers.equalTo(DEFAULT_HTTPS_REDIRECT_URI)))
                 .session(isUUID());
     }
 
@@ -146,8 +146,15 @@ public class AssertEvents implements TestRule {
 
     public ExpectedEvent expectLogout(String sessionId) {
         return expect(EventType.LOGOUT).client((String) null)
-                .detail(Details.REDIRECT_URI, defaultRedirectUri)
+                .detail(Details.REDIRECT_URI, Matchers.anyOf(Matchers.equalTo(DEFAULT_HTTP_REDIRECT_URI), Matchers.equalTo(DEFAULT_HTTPS_REDIRECT_URI)))
                 .session(sessionId);
+    }
+
+    public ExpectedEvent expectLogoutError(String error) {
+        return expect(EventType.LOGOUT_ERROR)
+                .error(error)
+                .client((String) null)
+                .user((String) null);
     }
 
     public ExpectedEvent expectRegister(String username, String email) {
@@ -157,7 +164,7 @@ public class AssertEvents implements TestRule {
                 .detail(Details.USERNAME, username)
                 .detail(Details.EMAIL, email)
                 .detail(Details.REGISTER_METHOD, "form")
-                .detail(Details.REDIRECT_URI, defaultRedirectUri);
+                .detail(Details.REDIRECT_URI, Matchers.anyOf(Matchers.equalTo(DEFAULT_HTTP_REDIRECT_URI), Matchers.equalTo(DEFAULT_HTTPS_REDIRECT_URI)));
     }
 
     public ExpectedEvent expectAccount(EventType event) {

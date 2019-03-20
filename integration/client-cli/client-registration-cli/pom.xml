@@ -21,7 +21,7 @@
     <parent>
         <artifactId>keycloak-client-cli-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>4.3.0.Final-SNAPSHOT</version>
+        <version>6.0.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -76,6 +76,8 @@
                                         <include>org/keycloak/representations/oidc/OIDCClientRepresentation.class</include>
                                         <include>org/keycloak/representations/idm/authorization/**</include>
                                         <include>org/keycloak/representations/JsonWebToken.class</include>
+                                        <include>org/keycloak/Token.class</include>
+                                        <include>org/keycloak/TokenCategory.class</include>
                                     </includes>
                                 </filter>
                                 <filter>
@@ -127,14 +129,6 @@
                         </configuration>
                     </execution>
                 </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <configuration>
-                    <source>1.8</source>
-                    <target>1.8</target>
-                </configuration>
             </plugin>
         </plugins>
     </build>

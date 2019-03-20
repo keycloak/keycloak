@@ -37,12 +37,15 @@ public class RealmRepresentation {
     protected String displayName;
     protected String displayNameHtml;
     protected Integer notBefore;
+    protected String defaultSignatureAlgorithm;
     protected Boolean revokeRefreshToken;
     protected Integer refreshTokenMaxReuse;
     protected Integer accessTokenLifespan;
     protected Integer accessTokenLifespanForImplicitFlow;
     protected Integer ssoSessionIdleTimeout;
     protected Integer ssoSessionMaxLifespan;
+    protected Integer ssoSessionIdleTimeoutRememberMe;
+    protected Integer ssoSessionMaxLifespanRememberMe;
     protected Integer offlineSessionIdleTimeout;
     // KEYCLOAK-7688 Offline Session Max for Offline Token
     protected Boolean offlineSessionMaxLifespanEnabled;
@@ -243,6 +246,14 @@ public class RealmRepresentation {
         this.sslRequired = sslRequired;
     }
 
+    public String getDefaultSignatureAlgorithm() {
+        return defaultSignatureAlgorithm;
+    }
+
+    public void setDefaultSignatureAlgorithm(String defaultSignatureAlgorithm) {
+        this.defaultSignatureAlgorithm = defaultSignatureAlgorithm;
+    }
+
     public Boolean getRevokeRefreshToken() {
         return revokeRefreshToken;
     }
@@ -289,6 +300,22 @@ public class RealmRepresentation {
 
     public void setSsoSessionMaxLifespan(Integer ssoSessionMaxLifespan) {
         this.ssoSessionMaxLifespan = ssoSessionMaxLifespan;
+    }
+
+    public Integer getSsoSessionMaxLifespanRememberMe() {
+        return ssoSessionMaxLifespanRememberMe;
+    }
+
+    public void setSsoSessionMaxLifespanRememberMe(Integer ssoSessionMaxLifespanRememberMe) {
+        this.ssoSessionMaxLifespanRememberMe = ssoSessionMaxLifespanRememberMe;
+    }
+
+    public Integer getSsoSessionIdleTimeoutRememberMe() {
+        return ssoSessionIdleTimeoutRememberMe;
+    }
+
+    public void setSsoSessionIdleTimeoutRememberMe(Integer ssoSessionIdleTimeoutRememberMe) {
+        this.ssoSessionIdleTimeoutRememberMe = ssoSessionIdleTimeoutRememberMe;
     }
 
     public Integer getOfflineSessionIdleTimeout() {

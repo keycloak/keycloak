@@ -25,7 +25,7 @@
 
     <xsl:param name="worker.io-threads" select="'16'"/>
     <xsl:param name="worker.task-max-threads" select="'128'"/>
-    
+
     <!--set worker threads-->
     <xsl:template match="//*[local-name()='worker' and @name='default']">
         <worker name="default" io-threads="{$worker.io-threads}" task-max-threads="{$worker.task-max-threads}" />

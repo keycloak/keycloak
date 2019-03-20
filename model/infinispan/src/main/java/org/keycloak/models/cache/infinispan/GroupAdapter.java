@@ -29,29 +29,33 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Supplier;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
 public class GroupAdapter implements GroupModel {
+
+    protected final CachedGroup cached;
+    protected final RealmCacheSession cacheSession;
+    protected final KeycloakSession keycloakSession;
+    protected final RealmModel realm;
+    private final Supplier<GroupModel> modelSupplier;
     protected volatile GroupModel updated;
-    protected CachedGroup cached;
-    protected RealmCacheSession cacheSession;
-    protected KeycloakSession keycloakSession;
-    protected RealmModel realm;
 
     public GroupAdapter(CachedGroup cached, RealmCacheSession cacheSession, KeycloakSession keycloakSession, RealmModel realm) {
         this.cached = cached;
         this.cacheSession = cacheSession;
         this.keycloakSession = keycloakSession;
         this.realm = realm;
+        modelSupplier = this::getGroupModel;
     }
 
     protected void getDelegateForUpdate() {
         if (updated == null) {
             cacheSession.registerGroupInvalidation(cached.getId());
-            updated = cacheSession.getRealmDelegate().getGroupById(cached.getId(), realm);
+            updated = modelSupplier.get();
             if (updated == null) throw new IllegalStateException("Not found in database");
         }
     }
@@ -128,19 +132,19 @@ public class GroupAdapter implements GroupModel {
     @Override
     public String getFirstAttribute(String name) {
         if (isUpdated()) return updated.getFirstAttribute(name);
-        return cached.getAttributes().getFirst(name);
+        return cached.getAttributes(modelSupplier).getFirst(name);
     }
 
     @Override
     public List<String> getAttribute(String name) {
-        List<String> values = cached.getAttributes().get(name);
+        List<String> values = cached.getAttributes(modelSupplier).get(name);
         if (values == null) return null;
         return values;
     }
 
     @Override
     public Map<String, List<String>> getAttributes() {
-        return cached.getAttributes();
+        return cached.getAttributes(modelSupplier);
     }
 
     @Override
@@ -178,7 +182,7 @@ public class GroupAdapter implements GroupModel {
     @Override
     public boolean hasRole(RoleModel role) {
         if (isUpdated()) return updated.hasRole(role);
-        if (cached.getRoleMappings().contains(role.getId())) return true;
+        if (cached.getRoleMappings(modelSupplier).contains(role.getId())) return true;
 
         Set<RoleModel> mappings = getRoleMappings();
         for (RoleModel mapping: mappings) {
@@ -197,7 +201,7 @@ public class GroupAdapter implements GroupModel {
     public Set<RoleModel> getRoleMappings() {
         if (isUpdated()) return updated.getRoleMappings();
         Set<RoleModel> roles = new HashSet<RoleModel>();
-        for (String id : cached.getRoleMappings()) {
+        for (String id : cached.getRoleMappings(modelSupplier)) {
             RoleModel roleById = keycloakSession.realms().getRoleById(id, realm);
             if (roleById == null) {
                 // chance that role was removed, so just delegate to persistence and get user invalidated
@@ -233,7 +237,7 @@ public class GroupAdapter implements GroupModel {
     public Set<GroupModel> getSubGroups() {
         if (isUpdated()) return updated.getSubGroups();
         Set<GroupModel> subGroups = new HashSet<>();
-        for (String id : cached.getSubGroups()) {
+        for (String id : cached.getSubGroups(modelSupplier)) {
             GroupModel subGroup = keycloakSession.realms().getGroupById(id, realm);
             if (subGroup == null) {
                 // chance that role was removed, so just delegate to persistence and get user invalidated
@@ -266,5 +270,9 @@ public class GroupAdapter implements GroupModel {
     public void removeChild(GroupModel subGroup) {
         getDelegateForUpdate();
         updated.removeChild(subGroup);
+    }
+
+    private GroupModel getGroupModel() {
+        return cacheSession.getRealmDelegate().getGroupById(cached.getId(), realm);
     }
 }

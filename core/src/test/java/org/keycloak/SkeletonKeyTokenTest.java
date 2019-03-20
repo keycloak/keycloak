@@ -118,6 +118,27 @@ public class SkeletonKeyTokenTest {
         ois.close();
     }
 
+
+    @Test
+    public void testTokenWithoutResourceAccess() throws Exception {
+        AccessToken token = new AccessToken();
+        token.id("111");
+        token.issuer("http://localhost:8080/auth/acme");
+
+        String json = JsonSerialization.writeValueAsString(token);
+
+        // Assert JSON doesn't contain "realm_access" or "resource_access" fields as it doesn't have any roles specified
+        Assert.assertFalse(json.contains("realm_access"));
+        Assert.assertFalse(json.contains("resource_access"));
+
+        token = JsonSerialization.readValue(json, AccessToken.class);
+
+        Assert.assertNull(token.getRealmAccess());
+        Assert.assertTrue(token.getResourceAccess() != null && token.getResourceAccess().isEmpty());
+        Assert.assertNull(token.getResourceAccess("foo"));
+    }
+
+
     private AccessToken createSimpleToken() {
         AccessToken token = new AccessToken();
         token.id("111");

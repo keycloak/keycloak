@@ -137,7 +137,7 @@ if (outcome == success) of /subsystem=infinispan/cache-container=keycloak/invali
   echo
 end-if
 if (result == undefined) of /subsystem=infinispan/cache-container=keycloak/local-cache=users/component=eviction/:read-attribute(name=strategy,include-defaults=false)
-  echo Updating eviction in local-cache=users...
+  echo Updating eviction in local-cache=users
   /subsystem=infinispan/cache-container=keycloak/local-cache=users/component=eviction/:write-attribute(name=strategy,value=LRU)
   /subsystem=infinispan/cache-container=keycloak/local-cache=users/component=eviction/:write-attribute(name=max-entries,value=10000)
   echo
@@ -429,6 +429,232 @@ if (outcome == failed) of /subsystem=keycloak-server/spi=hostname/:read-resource
   /subsystem=keycloak-server/spi=hostname/:add(default-provider=request)
   /subsystem=keycloak-server/spi=hostname/provider=fixed/:add(properties={hostname => "localhost",httpPort => "-1",httpsPort => "-1"},enabled=true)
   echo
+end-if
+
+# Migrate from 4.3.0 to 4.4.0
+if (outcome == failed) of /subsystem=elytron/permission-set=login-permission/:read-resource
+  echo Adding permission-set=login-permission to elytron
+  /subsystem=elytron/permission-set=login-permission:add(permissions=[{class-name=org.wildfly.security.auth.permission.LoginPermission}])
+  /subsystem=elytron/permission-set=default-permissions/:add(permissions=[{class-name=org.wildfly.extension.batch.jberet.deployment.BatchPermission,module=org.wildfly.extension.batch.jberet,target-name=*},{class-name=org.wildfly.transaction.client.RemoteTransactionPermission,module=org.wildfly.transaction.client},{class-name=org.jboss.ejb.client.RemoteEJBPermission,module=org.jboss.ejb-client}])
+  /subsystem=elytron/simple-permission-mapper=default-permission-mapper/:undefine-attribute(name=permission-mappings)
+  /subsystem=elytron/simple-permission-mapper=default-permission-mapper:write-attribute(name=permission-mappings,value=[{permission-sets=[{permission-set=login-permission},{permission-set=default-permissions}],match-all=true},{permission-sets=[{permission-set=default-permissions}],principals=[anonymous]}])
+  echo
+end-if
+
+
+if (result == org.hibernate.infinispan) of /subsystem=infinispan/cache-container=hibernate:read-attribute(name=module)
+  echo Update hibernate cache module
+  /subsystem=infinispan/cache-container=hibernate:write-attribute(name=module, value=org.infinispan.hibernate-cache)
+  echo
+end-if
+if (outcome == success) of /subsystem=infinispan/cache-container=hibernate:read-attribute(name=default-cache)
+  echo Remove default cache from hibernate cache
+  /subsystem=infinispan/cache-container=hibernate:undefine-attribute(name=default-cache)
+  echo
+end-if
+if (result == ASYNC) of /subsystem=infinispan/cache-container=hibernate/replicated-cache=timestamps:read-attribute(name=mode)
+  echo Switching mode for timestamps cache from ASYNC to SYNC
+  /subsystem=infinispan/cache-container=hibernate/replicated-cache=timestamps:write-attribute(name=mode, value=SYNC)
+  echo
+end-if
+
+if (outcome == success) of /subsystem=infinispan/cache-container=hibernate/local-cache=entity/eviction=EVICTION:read-resource
+  echo Removing eviction from hibernate entity cache and replacing with object-memory
+  /subsystem=infinispan/cache-container=hibernate/local-cache=entity/eviction=EVICTION:remove
+  /subsystem=infinispan/cache-container=hibernate/local-cache=entity/memory=object:add(size=10000)
+  echo
+end-if
+if (outcome == success) of /subsystem=infinispan/cache-container=hibernate/distributed-cache=local-query/eviction=EVICTION:read-resource
+  echo Removing eviction from hibernate local-query cache and replacing with object-memory
+  /subsystem=infinispan/cache-container=hibernate/local-cache=local-query/eviction=EVICTION:remove
+  /subsystem=infinispan/cache-container=hibernate/local-cache=local-query/memory=object:add(size=10000)
+  echo
+end-if
+
+if (outcome == success) of /subsystem=infinispan/cache-container=keycloak/local-cache=realms/eviction=EVICTION:read-resource
+  echo Removing eviction from keycloak realms cache and replacing with object-memory
+  /subsystem=infinispan/cache-container=keycloak/local-cache=realms/eviction=EVICTION:remove
+  /subsystem=infinispan/cache-container=keycloak/local-cache=realms/memory=object:add(size=10000)
+  echo
+end-if
+if (outcome == success) of /subsystem=infinispan/cache-container=keycloak/local-cache=users/eviction=EVICTION:read-resource
+  echo Removing eviction from keycloak users cache and replacing with object-memory
+  /subsystem=infinispan/cache-container=keycloak/local-cache=users/eviction=EVICTION:remove
+  /subsystem=infinispan/cache-container=keycloak/local-cache=users/memory=object:add(size=10000)
+  echo
+end-if
+if (outcome == success) of /subsystem=infinispan/cache-container=keycloak/local-cache=authorization/eviction=EVICTION:read-resource
+  echo Removing eviction from keycloak authorization cache and replacing with object-memory
+  /subsystem=infinispan/cache-container=keycloak/local-cache=authorization/eviction=EVICTION:remove
+  /subsystem=infinispan/cache-container=keycloak/local-cache=authorization/memory=object:add(size=10000)
+  echo
+end-if
+if (outcome == success) of /subsystem=infinispan/cache-container=keycloak/local-cache=keys/eviction=EVICTION:read-resource
+  echo Removing eviction from keycloak keys cache and replacing with object-memory
+  /subsystem=infinispan/cache-container=keycloak/local-cache=keys/eviction=EVICTION:remove
+  /subsystem=infinispan/cache-container=keycloak/local-cache=keys/memory=object:add(size=1000)
+  echo
+end-if
+
+if (outcome == success) of /subsystem=jgroups/stack=tcp/protocol=FRAG2:read-resource
+  echo Upgrade jgroups protocol from FRAG2 to FRAG3 for tcp stack
+  /subsystem=jgroups/stack=tcp/protocol=FRAG2:remove
+  /subsystem=jgroups/stack=tcp/protocol=FRAG3:add()
+  echo
+end-if
+if (outcome == success) of /subsystem=jgroups/stack=udp/protocol=FRAG2:read-resource
+  echo Upgrade jgroups protocol from FRAG2 to FRAG3 for udp stack
+  /subsystem=jgroups/stack=udp/protocol=FRAG2:remove
+  /subsystem=jgroups/stack=udp/protocol=FRAG3:add()
+  echo
+end-if
+if (outcome == success) of /subsystem=remoting/configuration=endpoint:read-resource
+  echo Remove endpoint from remoting configuration
+  /subsystem=remoting/configuration=endpoint:remove
+  echo
+end-if
+if (outcome == success) of /socket-binding-group=standard-sockets/socket-binding=jgroups-mping:read-attribute(name=port)
+  /socket-binding-group=standard-sockets/socket-binding=jgroups-mping:undefine-attribute(name=port)
+end-if
+if (outcome == success) of /socket-binding-group=standard-sockets/socket-binding=modcluster:read-attribute(name=port)
+  /socket-binding-group=standard-sockets/socket-binding=modcluster:undefine-attribute(name=port)
+end-if
+
+if (outcome == success) of /subsystem=keycloak-server/spi=connectionsInfinispan/provider=default:read-resource
+  echo Changing JNDI reference in connectionsInfinispan SPI
+  /subsystem=keycloak-server/spi=connectionsInfinispan/provider=default:undefine-attribute(name=properties)
+  /subsystem=keycloak-server/spi=connectionsInfinispan/provider=default:write-attribute(name=properties,value={cacheContainer=java:jboss/infinispan/container/keycloak})
+  echo
+end-if
+
+# Migrate from 4.4.0 to 4.5.0
+if (outcome == failed) of /subsystem=core-management/:read-resource
+    echo Adding core-management extension
+    /extension=org.wildfly.extension.core-management/:add
+    echo Adding subsystem core-management
+    /subsystem=core-management/:add
+    echo
+end-if
+
+# Migrate from 4.5.0 to 4.6.0
+if (outcome == success) of /subsystem=elytron/http-authentication-factory=application-http-authentication/:read-resource
+    echo Removing application-http-authentication from elytron subsystem
+    /subsystem=elytron/http-authentication-factory=application-http-authentication:remove
+    echo
+end-if
+
+if (result == undefined) of /subsystem=transactions/:read-attribute(name=node-identifier,include-defaults=false)
+    echo Setting node-identifier attribute of core-environment element in transactions subsystem
+    /subsystem=transactions/:write-attribute(name=node-identifier,value=expression "${jboss.tx.node.id:1}")
+    echo
+end-if
+
+if (outcome == success) of /subsystem=jgroups/stack=udp/transport=UDP/property=port_range:read-attribute(name=value)
+    try
+        /subsystem=jgroups/stack=udp/transport=UDP/property=port_range:remove
+        echo Remove port_range property from UDP transport type of udp stack
+    catch
+        echo
+    end-try
+end-if
+
+if (outcome == success) of /subsystem=jgroups/stack=tcp/transport=TCP/property=port_range:read-attribute(name=value)
+    try
+        /subsystem=jgroups/stack=tcp/transport=TCP/property=port_range:remove
+        echo Remove port_range property from TCP transport type of tcp stack
+    catch
+        echo
+    end-try
+end-if
+
+# Migrate from 4.8.3 to 5.0.0
+if (outcome == failed) of /subsystem=logging/logger=io.jaegertracing.Configuration/:read-resource
+    echo Adding io.jaegertracing.Configuration logger
+    /subsystem=logging/logger=io.jaegertracing.Configuration/:add(category=io.jaegertracing.Configuration,level=WARN)
+    echo
+end-if
+
+# Migrate from 5.0.0 to 6.0.0
+if (result == NON_XA) of /subsystem=infinispan/cache-container=hibernate/local-cache=entity/component=transaction/:read-attribute(name=mode)
+    echo Removing NON_XA transaction mode from infinispan/hibernate/entity
+    /subsystem=infinispan/cache-container=hibernate/local-cache=entity/component=transaction/:undefine-attribute(name=mode)
+    echo
+end-if
+
+if (result == false) of /subsystem=datasources/data-source=ExampleDS/:read-attribute(name=statistics-enabled)
+    echo Adding statistics-enabled expression to ExampleDS datasource 
+    /subsystem=datasources/data-source=ExampleDS/:write-attribute(name=statistics-enabled,value=${wildfly.datasources.statistics-enabled:${wildfly.statistics-enabled:false}})
+    echo
+end-if
+
+if (result == false) of /subsystem=datasources/data-source=KeycloakDS/:read-attribute(name=statistics-enabled)
+    echo Adding statistics-enabled expression to KeycloakDS datasource 
+    /subsystem=datasources/data-source=KeycloakDS/:write-attribute(name=statistics-enabled,value=${wildfly.datasources.statistics-enabled:${wildfly.statistics-enabled:false}})
+    echo
+end-if
+
+if (result == false) of /subsystem=ejb3/:read-attribute(name=statistics-enabled)
+    echo Adding statistics-enabled expression to ejb3 subsystem
+    /subsystem=ejb3/:write-attribute(name=statistics-enabled,value=${wildfly.ejb3.statistics-enabled:${wildfly.statistics-enabled:false}})
+    echo
+end-if
+
+if (result == false) of /subsystem=transactions/:read-attribute(name=statistics-enabled)
+    echo Adding statistics-enabled expression to transactions subsystem
+    /subsystem=transactions/:write-attribute(name=statistics-enabled,value=${wildfly.transactions.statistics-enabled:${wildfly.statistics-enabled:false}})
+    echo
+end-if
+
+if (result == false) of /subsystem=undertow/:read-attribute(name=statistics-enabled)
+    echo Adding statistics-enabled expression to undertow subsystem
+    /subsystem=undertow/:write-attribute(name=statistics-enabled,value=${wildfly.undertow.statistics-enabled:${wildfly.statistics-enabled:false}})
+    echo
+end-if
+
+if (result == false) of /subsystem=webservices/:read-attribute(name=statistics-enabled)
+    echo Adding statistics-enabled expression to webservices subsystem
+    /subsystem=webservices/:write-attribute(name=statistics-enabled,value=${wildfly.webservices.statistics-enabled:${wildfly.statistics-enabled:false}})
+    echo
+end-if
+
+if (outcome == failed) of /extension=org.wildfly.extension.microprofile.config-smallrye/:read-resource
+    echo Adding microprofile.config-smallrye extension...
+    /extension=org.wildfly.extension.microprofile.config-smallrye/:add(module=org.wildfly.extension.microprofile.config-smallrye)
+    echo
+end-if
+
+if (outcome == failed) of /subsystem=microprofile-config-smallrye/:read-resource
+    echo Adding microprofile-config-smallrye subsystem
+    /subsystem=microprofile-config-smallrye/:add
+    echo
+end-if
+
+if (outcome == failed) of /extension=org.wildfly.extension.microprofile.health-smallrye/:read-resource
+    echo Adding microprofile.health-smallrye extension...
+    /extension=org.wildfly.extension.microprofile.health-smallrye/:add(module=org.wildfly.extension.microprofile.health-smallrye)
+    echo
+end-if
+
+if (outcome == failed) of /subsystem=microprofile-health-smallrye/:read-resource
+    echo Adding microprofile-health-smallrye subsystem
+    /subsystem=microprofile-health-smallrye/:add
+    /subsystem=microprofile-health-smallrye/:write-attribute(name=security-enabled,value=false)
+    echo
+end-if
+
+if (outcome == failed) of /extension=org.wildfly.extension.microprofile.metrics-smallrye/:read-resource
+    echo Adding microprofile.metrics-smallrye extension...
+    /extension=org.wildfly.extension.microprofile.metrics-smallrye/:add(module=org.wildfly.extension.microprofile.metrics-smallrye)
+    echo
+end-if
+
+if (outcome == failed) of /subsystem=microprofile-metrics-smallrye/:read-resource
+    echo Adding microprofile-metrics-smallrye subsystem
+    /subsystem=microprofile-metrics-smallrye/:add
+    /subsystem=microprofile-metrics-smallrye/:write-attribute(name=security-enabled,value=false)
+    /subsystem=microprofile-metrics-smallrye/:write-attribute(name=exposed-subsystems,value=[*])
+    /subsystem=microprofile-metrics-smallrye/:write-attribute(name=prefix,value=${wildfly.metrics.prefix:wildfly})
+    echo
 end-if
 
 echo *** End Migration ***

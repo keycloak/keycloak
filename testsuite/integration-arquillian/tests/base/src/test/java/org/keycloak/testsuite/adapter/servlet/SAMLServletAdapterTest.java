@@ -43,6 +43,9 @@ import java.net.URI;
 import java.net.URL;
 import java.security.KeyPair;
 import java.security.PublicKey;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -100,6 +103,7 @@ import org.junit.Test;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ProtocolMappersResource;
 import org.keycloak.admin.client.resource.RoleScopeResource;
+import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.common.util.Base64;
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.common.util.PemUtils;
@@ -116,6 +120,7 @@ import org.keycloak.protocol.saml.mappers.AttributeStatementHelper;
 import org.keycloak.protocol.saml.mappers.RoleListMapper;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ComponentRepresentation;
+import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
@@ -138,7 +143,9 @@ import org.keycloak.testsuite.auth.page.login.SAMLIDPInitiatedLogin;
 import org.keycloak.testsuite.auth.page.login.SAMLPostLoginTenant1;
 import org.keycloak.testsuite.auth.page.login.SAMLPostLoginTenant2;
 import org.keycloak.testsuite.page.AbstractPage;
+import org.keycloak.testsuite.saml.AbstractSamlTest;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
+import org.keycloak.testsuite.util.ProtocolMapperUtil;
 import org.keycloak.testsuite.util.SamlClient;
 import org.keycloak.testsuite.util.SamlClient.Binding;
 import org.keycloak.testsuite.util.SamlClientBuilder;
@@ -159,11 +166,15 @@ import org.xml.sax.SAXException;
 /**
  * @author mhajas
  */
+@AppServerContainer(ContainerConstants.APP_SERVER_UNDERTOW)
 @AppServerContainer(ContainerConstants.APP_SERVER_WILDFLY)
-@AppServerContainer(ContainerConstants.APP_SERVER_WILDFLY10)
-@AppServerContainer(ContainerConstants.APP_SERVER_WILDFLY9)
+@AppServerContainer(ContainerConstants.APP_SERVER_WILDFLY_DEPRECATED)
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP)
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP6)
+@AppServerContainer(ContainerConstants.APP_SERVER_EAP71)
+@AppServerContainer(ContainerConstants.APP_SERVER_TOMCAT7)
+@AppServerContainer(ContainerConstants.APP_SERVER_TOMCAT8)
+@AppServerContainer(ContainerConstants.APP_SERVER_TOMCAT9)
 public class SAMLServletAdapterTest extends AbstractServletsAdapterTest {
     @Page
     protected BadClientSalesPostSigServlet badClientSalesPostSigServletPage;
@@ -258,14 +269,14 @@ public class SAMLServletAdapterTest extends AbstractServletsAdapterTest {
     protected EcpSP ecpSPPage;
 
     @Page
-    protected MultiTenant1Saml mutiTenant1SamlPage;
-    
+    protected MultiTenant1Saml multiTenant1SamlPage;
+
     @Page
-    protected MultiTenant2Saml mutiTenant2SamlPage;
-    
+    protected MultiTenant2Saml multiTenant2SamlPage;
+
     @Page
     protected SAMLPostLoginTenant1 tenant1RealmSAMLPostLoginPage;
-    
+
     @Page
     protected SAMLPostLoginTenant2 tenant2RealmSAMLPostLoginPage;
 
@@ -415,9 +426,9 @@ public class SAMLServletAdapterTest extends AbstractServletsAdapterTest {
 
     @Deployment(name = MultiTenant1Saml.DEPLOYMENT_NAME)
     protected static WebArchive multiTenant() {
-        return samlServletDeploymentMultiTenant(MultiTenant1Saml.DEPLOYMENT_NAME, "multi-tenant-saml/WEB-INF/web.xml", 
+        return samlServletDeploymentMultiTenant(MultiTenant1Saml.DEPLOYMENT_NAME, "multi-tenant-saml/WEB-INF/web.xml",
                 "tenant1-keycloak-saml.xml", "tenant2-keycloak-saml.xml",
-                "keystore-tenant1.jks", "keystore-tenant2.jks", 
+                "keystore-tenant1.jks", "keystore-tenant2.jks",
                 SendUsernameServlet.class, SamlMultiTenantResolver.class);
     }
 
@@ -460,7 +471,7 @@ public class SAMLServletAdapterTest extends AbstractServletsAdapterTest {
                 || driver.getPageSource().contains(FORBIDDEN_TEXT)
                 || driver.getPageSource().contains(WEBSPHERE_FORBIDDEN_TEXT)); // WebSphere
     }
-    
+
     private void assertFailedLogin(AbstractPage page, UserRepresentation user, Login loginPage) {
         page.navigateTo();
         assertCurrentUrlStartsWith(loginPage);
@@ -501,7 +512,7 @@ public class SAMLServletAdapterTest extends AbstractServletsAdapterTest {
 
     @Test
     public void disabledClientTest() {
-        ClientResource clientResource = ApiUtil.findClientResourceByClientId(testRealmResource(), "http://localhost:8081/sales-post-sig/");
+        ClientResource clientResource = ApiUtil.findClientResourceByClientId(testRealmResource(), AbstractSamlTest.SAML_CLIENT_ID_SALES_POST_SIG);
         ClientRepresentation client = clientResource.toRepresentation();
         client.setEnabled(false);
         clientResource.update(client);
@@ -588,38 +599,50 @@ public class SAMLServletAdapterTest extends AbstractServletsAdapterTest {
 
     @Test
     public void multiTenant1SamlTest() throws Exception {
-        UserRepresentation user1 = createUserRepresentation("user-tenant1", "user-tenant1@redhat.com", "Bill", "Burke", true);
-        setPasswordFor(user1, "user-tenant1");
-        // check the user in the tenant logs in ok
-        assertSuccessfulLogin(mutiTenant1SamlPage, user1, tenant1RealmSAMLPostLoginPage, "principal=user-tenant1");
-        // check the issuer is the correct tenant
-        driver.navigate().to(mutiTenant1SamlPage.getUriBuilder().path("getAssertionIssuer").build().toASCIIString());
-        waitUntilElement(By.xpath("//body")).text().contains("/auth/realms/tenant1");
-        // check logout
-        mutiTenant1SamlPage.logout();
-        checkLoggedOut(mutiTenant1SamlPage, tenant1RealmSAMLPostLoginPage);
-        // check a user in the other tenant doesn't login
-        UserRepresentation user2 = createUserRepresentation("user-tenant2", "user-tenant2@redhat.com", "Bill", "Burke", true);
-        setPasswordFor(user2, "user-tenant2");
-        assertFailedLogin(mutiTenant1SamlPage, user2, tenant1RealmSAMLPostLoginPage);
+        multiTenant1SamlPage.setRolesToCheck("user");
+
+        try {
+            UserRepresentation user1 = createUserRepresentation("user-tenant1", "user-tenant1@redhat.com", "Bill", "Burke", true);
+            setPasswordFor(user1, "user-tenant1");
+            // check the user in the tenant logs in ok
+            assertSuccessfulLogin(multiTenant1SamlPage, user1, tenant1RealmSAMLPostLoginPage, "principal=user-tenant1");
+            // check the issuer is the correct tenant
+            driver.navigate().to(multiTenant1SamlPage.getUriBuilder().clone().path("getAssertionIssuer").build().toASCIIString());
+            waitUntilElement(By.xpath("//body")).text().contains("/auth/realms/tenant1");
+            // check logout
+            multiTenant1SamlPage.logout();
+            checkLoggedOut(multiTenant1SamlPage, tenant1RealmSAMLPostLoginPage);
+            // check a user in the other tenant doesn't login
+            UserRepresentation user2 = createUserRepresentation("user-tenant2", "user-tenant2@redhat.com", "Bill", "Burke", true);
+            setPasswordFor(user2, "user-tenant2");
+            assertFailedLogin(multiTenant1SamlPage, user2, tenant1RealmSAMLPostLoginPage);
+        } finally {
+            multiTenant1SamlPage.checkRolesEndPoint(false);
+        }
     }
-    
+
     @Test
     public void multiTenant2SamlTest() throws Exception {
-        UserRepresentation user2 = createUserRepresentation("user-tenant2", "user-tenant2@redhat.com", "Bill", "Burke", true);
-        setPasswordFor(user2, "user-tenant2");
-        // check the user in the tenant logs in ok
-        assertSuccessfulLogin(mutiTenant2SamlPage, user2, tenant2RealmSAMLPostLoginPage, "principal=user-tenant2");
-        // check the issuer is the correct tenant
-        driver.navigate().to(mutiTenant2SamlPage.getUriBuilder().path("getAssertionIssuer").build().toASCIIString());
-        waitUntilElement(By.xpath("//body")).text().contains("/auth/realms/tenant2");
-        // check logout
-        mutiTenant2SamlPage.logout();
-        checkLoggedOut(mutiTenant2SamlPage, tenant2RealmSAMLPostLoginPage);
-        // check a user in the other tenant doesn't login
-        UserRepresentation user1 = createUserRepresentation("user-tenant1", "user-tenant1@redhat.com", "Bill", "Burke", true);
-        setPasswordFor(user1, "user-tenant1");
-        assertFailedLogin(mutiTenant2SamlPage, user1, tenant2RealmSAMLPostLoginPage);
+        multiTenant2SamlPage.setRolesToCheck("user");
+
+        try {
+            UserRepresentation user2 = createUserRepresentation("user-tenant2", "user-tenant2@redhat.com", "Bill", "Burke", true);
+            setPasswordFor(user2, "user-tenant2");
+            // check the user in the tenant logs in ok
+            assertSuccessfulLogin(multiTenant2SamlPage, user2, tenant2RealmSAMLPostLoginPage, "principal=user-tenant2");
+            // check the issuer is the correct tenant
+            driver.navigate().to(multiTenant2SamlPage.getUriBuilder().clone().path("getAssertionIssuer").build().toASCIIString());
+            waitUntilElement(By.xpath("//body")).text().contains("/auth/realms/tenant2");
+            // check logout
+            multiTenant2SamlPage.logout();
+            checkLoggedOut(multiTenant2SamlPage, tenant2RealmSAMLPostLoginPage);
+            // check a user in the other tenant doesn't login
+            UserRepresentation user1 = createUserRepresentation("user-tenant1", "user-tenant1@redhat.com", "Bill", "Burke", true);
+            setPasswordFor(user1, "user-tenant1");
+            assertFailedLogin(multiTenant2SamlPage, user1, tenant2RealmSAMLPostLoginPage);
+        } finally {
+            multiTenant2SamlPage.checkRolesEndPoint(false);
+        }
     }
 
     private static final KeyPair NEW_KEY_PAIR = KeyUtils.generateRsaKeyPair(1024);
@@ -763,9 +786,9 @@ public class SAMLServletAdapterTest extends AbstractServletsAdapterTest {
 
         clientRep.setAdminUrl(appServerUrl + "sales-metadata/saml");
 
-        Response response = testRealmResource().clients().create(clientRep);
-        Assert.assertEquals(201, response.getStatus());
-        response.close();
+        try (Response response = testRealmResource().clients().create(clientRep)) {
+            Assert.assertEquals(201, response.getStatus());
+        }
 
         testSuccessfulAndUnauthorizedLogin(salesMetadataServletPage, testRealmSAMLPostLoginPage);
     }
@@ -798,8 +821,7 @@ public class SAMLServletAdapterTest extends AbstractServletsAdapterTest {
 
     @Test
     public void salesPostEncSignedAssertionsAndDocumentTest() throws Exception {
-        ClientRepresentation salesPostEncClient = testRealmResource().clients().findByClientId(SalesPostEncServlet.CLIENT_NAME).get(0);
-        try (Closeable client = new ClientAttributeUpdater(testRealmResource().clients().get(salesPostEncClient.getId()))
+        try (Closeable client = ClientAttributeUpdater.forClient(adminClient, testRealmPage.getAuthRealm(), SalesPostEncServlet.CLIENT_NAME)
           .setAttribute(SamlConfigAttributes.SAML_ASSERTION_SIGNATURE, "true")
           .setAttribute(SamlConfigAttributes.SAML_SERVER_SIGNATURE, "true")
           .update()) {
@@ -811,8 +833,7 @@ public class SAMLServletAdapterTest extends AbstractServletsAdapterTest {
 
     @Test
     public void salesPostEncRejectConsent() throws Exception {
-        ClientRepresentation salesPostEncClient = testRealmResource().clients().findByClientId(SalesPostEncServlet.CLIENT_NAME).get(0);
-        try (Closeable client = new ClientAttributeUpdater(testRealmResource().clients().get(salesPostEncClient.getId()))
+        try (Closeable client = ClientAttributeUpdater.forClient(adminClient, testRealmPage.getAuthRealm(), SalesPostEncServlet.CLIENT_NAME)
           .setConsentRequired(true)
           .update()) {
             new SamlClientBuilder()
@@ -833,8 +854,7 @@ public class SAMLServletAdapterTest extends AbstractServletsAdapterTest {
 
     @Test
     public void salesPostRejectConsent() throws Exception {
-        ClientRepresentation salesPostClient = testRealmResource().clients().findByClientId(SalesPostServlet.CLIENT_NAME).get(0);
-        try (Closeable client = new ClientAttributeUpdater(testRealmResource().clients().get(salesPostClient.getId()))
+        try (Closeable client = ClientAttributeUpdater.forClient(adminClient, testRealmPage.getAuthRealm(), SalesPostServlet.CLIENT_NAME)
           .setConsentRequired(true)
           .update()) {
             new SamlClientBuilder()
@@ -1053,7 +1073,7 @@ public class SAMLServletAdapterTest extends AbstractServletsAdapterTest {
 
         assertCurrentUrlStartsWith(testRealmSAMLPostLoginPage);
         testRealmLoginPage.form().login("bburke@redhat.com", "password");
-        Assert.assertEquals(driver.getCurrentUrl(), inputPortalPage + "/secured/post");
+        Assert.assertThat(URI.create(driver.getCurrentUrl()).getPath(), endsWith("secured/post"));
         waitUntilElement(By.xpath("//body")).text().contains("parameter=hello");
 
         // test that user principal and KeycloakSecurityContext available
@@ -1084,7 +1104,7 @@ public class SAMLServletAdapterTest extends AbstractServletsAdapterTest {
 
         samlidpInitiatedLoginPage.form().login(bburkeUser);
         assertCurrentUrlStartsWith(salesPost2ServletPage);
-        Assert.assertThat(driver.getCurrentUrl(), endsWith("/foo"));
+        Assert.assertThat(URI.create(driver.getCurrentUrl()).getPath(), endsWith("foo"));
         waitUntilElement(By.xpath("//body")).text().contains("principal=bburke");
         salesPost2ServletPage.logout();
         checkLoggedOut(salesPost2ServletPage, testRealmSAMLPostLoginPage);
@@ -1102,7 +1122,7 @@ public class SAMLServletAdapterTest extends AbstractServletsAdapterTest {
         testRealmSAMLPostLoginPage.form().login("bburke", "password");
 
         waitUntilElement(By.xpath("//body")).text().contains("Error info: SamlAuthenticationError [reason=INVALID_SIGNATURE");
-        Assert.assertEquals(driver.getCurrentUrl(), badAssertionSalesPostSigPage + "/saml");
+        Assert.assertEquals(driver.getCurrentUrl(), badAssertionSalesPostSigPage.getUriBuilder().clone().path("saml").build().toASCIIString());
     }
 
     @Test
@@ -1112,7 +1132,7 @@ public class SAMLServletAdapterTest extends AbstractServletsAdapterTest {
         testRealmSAMLPostLoginPage.form().login("bburke", "password");
 
         waitUntilElement(By.xpath("//body")).text().contains("Error info: SamlAuthenticationError [reason=INVALID_SIGNATURE");
-        Assert.assertEquals(driver.getCurrentUrl(), missingAssertionSigPage + "/saml");
+        Assert.assertEquals(driver.getCurrentUrl(), missingAssertionSigPage.getUriBuilder().clone().path("saml").build().toASCIIString());
     }
 
     @Test
@@ -1157,9 +1177,236 @@ public class SAMLServletAdapterTest extends AbstractServletsAdapterTest {
         Assert.assertThat(pageSource, not(containsString("SAML response: null")));
     }
 
+    private static List<String> parseCommaSeparatedAttributes(String body, String attribute) {
+        int start = body.indexOf(attribute) + attribute.length();
+        if (start == -1) {
+            return Collections.emptyList();
+        }
+        int end = body.indexOf(System.getProperty("line.separator"), start);
+        if (end == -1) {
+            end = body.length();
+        }
+        String values = body.substring(start, end);
+        String[] parts = values.split(",");
+        return Arrays.asList(parts);
+    }
+
+    @Test
+    public void testUserAttributeStatementMapperUserGroupsAggregate() throws Exception {
+        UserResource userResource = ApiUtil.findUserByUsernameId(testRealmResource(), "bburke");
+        UserRepresentation user = userResource.toRepresentation();
+        user.setAttributes(new HashMap<>());
+        user.getAttributes().put("group-value", Arrays.asList("user-value1"));
+        userResource.update(user);
+        GroupRepresentation group1 = new GroupRepresentation();
+        group1.setName("group1");
+        group1.setAttributes(new HashMap<>());
+        group1.getAttributes().put("group-value", Arrays.asList("value1", "value2"));
+        testRealmResource().groups().add(group1);
+        group1 = testRealmResource().getGroupByPath("/group1");
+        userResource.joinGroup(group1.getId());
+
+        ClientResource clientResource = ApiUtil.findClientResourceByClientId(testRealmResource(), AbstractSamlTest.SAML_CLIENT_ID_EMPLOYEE_2);
+        ProtocolMappersResource protocolMappersResource = clientResource.getProtocolMappers();
+
+        Map<String, String> config = new LinkedHashMap<>();
+        config.put("attribute.nameformat", "Basic");
+        config.put("user.attribute", "group-value");
+        config.put("attribute.name", "group-attribute");
+        config.put("aggregate.attrs", "true");
+        createProtocolMapper(protocolMappersResource, "group-value", "saml", "saml-user-attribute-mapper", config);
+
+        try {
+            employee2ServletPage.navigateTo();
+            assertCurrentUrlStartsWith(testRealmSAMLPostLoginPage);
+            testRealmSAMLPostLoginPage.form().login("bburke", "password");
+
+            driver.navigate().to(employee2ServletPage.getUriBuilder().clone().path("getAttributes").build().toURL());
+            waitForPageToLoad();
+
+            String body = driver.findElement(By.xpath("//body")).getText();
+            List<String> values = parseCommaSeparatedAttributes(body, " group-attribute: ");
+            Assert.assertEquals(3, values.size());
+            Assert.assertTrue(values.contains("user-value1"));
+            Assert.assertTrue(values.contains("value1"));
+            Assert.assertTrue(values.contains("value2"));
+
+            employee2ServletPage.logout();
+            checkLoggedOut(employee2ServletPage, testRealmSAMLPostLoginPage);
+        } finally {
+            // revert
+            user.getAttributes().remove("group-value");
+            userResource.update(user);
+            userResource.leaveGroup(group1.getId());
+            testRealmResource().groups().group(group1.getId()).remove();
+            ProtocolMapperRepresentation mapper = ProtocolMapperUtil.getMapperByNameAndProtocol(protocolMappersResource, "saml", "group-value");
+            protocolMappersResource.delete(mapper.getId());
+        }
+    }
+
+    @Test
+    public void testUserAttributeStatementMapperUserGroupsNoAggregate() throws Exception {
+        UserResource userResource = ApiUtil.findUserByUsernameId(testRealmResource(), "bburke");
+        UserRepresentation user = userResource.toRepresentation();
+        user.setAttributes(new HashMap<>());
+        user.getAttributes().put("group-value", Arrays.asList("user-value1"));
+        userResource.update(user);
+        GroupRepresentation group1 = new GroupRepresentation();
+        group1.setName("group1");
+        group1.setAttributes(new HashMap<>());
+        group1.getAttributes().put("group-value", Arrays.asList("value1", "value2"));
+        testRealmResource().groups().add(group1);
+        group1 = testRealmResource().getGroupByPath("/group1");
+        userResource.joinGroup(group1.getId());
+
+        ClientResource clientResource = ApiUtil.findClientResourceByClientId(testRealmResource(), AbstractSamlTest.SAML_CLIENT_ID_EMPLOYEE_2);
+        ProtocolMappersResource protocolMappersResource = clientResource.getProtocolMappers();
+
+        Map<String, String> config = new LinkedHashMap<>();
+        config.put("attribute.nameformat", "Basic");
+        config.put("user.attribute", "group-value");
+        config.put("attribute.name", "group-attribute");
+        createProtocolMapper(protocolMappersResource, "group-value", "saml", "saml-user-attribute-mapper", config);
+
+        try {
+            employee2ServletPage.navigateTo();
+            assertCurrentUrlStartsWith(testRealmSAMLPostLoginPage);
+            testRealmSAMLPostLoginPage.form().login("bburke", "password");
+
+            driver.navigate().to(employee2ServletPage.getUriBuilder().clone().path("getAttributes").build().toURL());
+            waitForPageToLoad();
+
+            String body = driver.findElement(By.xpath("//body")).getText();
+            List<String> values = parseCommaSeparatedAttributes(body, " group-attribute: ");
+            Assert.assertEquals(1, values.size());
+            Assert.assertTrue(values.contains("user-value1"));
+
+            employee2ServletPage.logout();
+            checkLoggedOut(employee2ServletPage, testRealmSAMLPostLoginPage);
+        } finally {
+            // revert
+            user.getAttributes().remove("group-value");
+            userResource.update(user);
+            userResource.leaveGroup(group1.getId());
+            testRealmResource().groups().group(group1.getId()).remove();
+            ProtocolMapperRepresentation mapper = ProtocolMapperUtil.getMapperByNameAndProtocol(protocolMappersResource, "saml", "group-value");
+            protocolMappersResource.delete(mapper.getId());
+        }
+    }
+
+    @Test
+    public void testUserAttributeStatementMapperGroupsAggregate() throws Exception {
+        UserResource userResource = ApiUtil.findUserByUsernameId(testRealmResource(), "bburke");
+        GroupRepresentation group1 = new GroupRepresentation();
+        group1.setName("group1");
+        group1.setAttributes(new HashMap<>());
+        group1.getAttributes().put("group-value", Arrays.asList("value1", "value2"));
+        testRealmResource().groups().add(group1);
+        group1 = testRealmResource().getGroupByPath("/group1");
+        userResource.joinGroup(group1.getId());
+        GroupRepresentation group2 = new GroupRepresentation();
+        group2.setName("group2");
+        group2.setAttributes(new HashMap<>());
+        group2.getAttributes().put("group-value", Arrays.asList("value2", "value3"));
+        testRealmResource().groups().add(group2);
+        group2 = testRealmResource().getGroupByPath("/group2");
+        userResource.joinGroup(group2.getId());
+
+        ClientResource clientResource = ApiUtil.findClientResourceByClientId(testRealmResource(), AbstractSamlTest.SAML_CLIENT_ID_EMPLOYEE_2);
+        ProtocolMappersResource protocolMappersResource = clientResource.getProtocolMappers();
+
+        Map<String, String> config = new LinkedHashMap<>();
+        config.put("attribute.nameformat", "Basic");
+        config.put("user.attribute", "group-value");
+        config.put("attribute.name", "group-attribute");
+        config.put("aggregate.attrs", "true");
+        createProtocolMapper(protocolMappersResource, "group-value", "saml", "saml-user-attribute-mapper", config);
+
+        try {
+            employee2ServletPage.navigateTo();
+            assertCurrentUrlStartsWith(testRealmSAMLPostLoginPage);
+            testRealmSAMLPostLoginPage.form().login("bburke", "password");
+
+            driver.navigate().to(employee2ServletPage.getUriBuilder().clone().path("getAttributes").build().toURL());
+            waitForPageToLoad();
+
+            String body = driver.findElement(By.xpath("//body")).getText();
+            List<String> values = parseCommaSeparatedAttributes(body, " group-attribute: ");
+            Assert.assertEquals(3, values.size());
+            Assert.assertTrue(values.contains("value1"));
+            Assert.assertTrue(values.contains("value2"));
+            Assert.assertTrue(values.contains("value3"));
+
+            employee2ServletPage.logout();
+            checkLoggedOut(employee2ServletPage, testRealmSAMLPostLoginPage);
+        } finally {
+            // revert
+            userResource.leaveGroup(group1.getId());
+            testRealmResource().groups().group(group1.getId()).remove();
+            userResource.leaveGroup(group2.getId());
+            testRealmResource().groups().group(group2.getId()).remove();
+            ProtocolMapperRepresentation mapper = ProtocolMapperUtil.getMapperByNameAndProtocol(protocolMappersResource, "saml", "group-value");
+            protocolMappersResource.delete(mapper.getId());
+        }
+    }
+
+    @Test
+    public void testUserAttributeStatementMapperGroupsNoAggregate() throws Exception {
+        UserResource userResource = ApiUtil.findUserByUsernameId(testRealmResource(), "bburke");
+        GroupRepresentation group1 = new GroupRepresentation();
+        group1.setName("group1");
+        group1.setAttributes(new HashMap<>());
+        group1.getAttributes().put("group-value", Arrays.asList("value1", "value2"));
+        testRealmResource().groups().add(group1);
+        group1 = testRealmResource().getGroupByPath("/group1");
+        userResource.joinGroup(group1.getId());
+        GroupRepresentation group2 = new GroupRepresentation();
+        group2.setName("group2");
+        group2.setAttributes(new HashMap<>());
+        group2.getAttributes().put("group-value", Arrays.asList("value2", "value3"));
+        testRealmResource().groups().add(group2);
+        group2 = testRealmResource().getGroupByPath("/group2");
+        userResource.joinGroup(group2.getId());
+
+        ClientResource clientResource = ApiUtil.findClientResourceByClientId(testRealmResource(), AbstractSamlTest.SAML_CLIENT_ID_EMPLOYEE_2);
+        ProtocolMappersResource protocolMappersResource = clientResource.getProtocolMappers();
+
+        Map<String, String> config = new LinkedHashMap<>();
+        config.put("attribute.nameformat", "Basic");
+        config.put("user.attribute", "group-value");
+        config.put("attribute.name", "group-attribute");
+        createProtocolMapper(protocolMappersResource, "group-value", "saml", "saml-user-attribute-mapper", config);
+
+        try {
+            employee2ServletPage.navigateTo();
+            assertCurrentUrlStartsWith(testRealmSAMLPostLoginPage);
+            testRealmSAMLPostLoginPage.form().login("bburke", "password");
+
+            driver.navigate().to(employee2ServletPage.getUriBuilder().clone().path("getAttributes").build().toURL());
+            waitForPageToLoad();
+
+            String body = driver.findElement(By.xpath("//body")).getText();
+            List<String> values = parseCommaSeparatedAttributes(body, " group-attribute: ");
+            Assert.assertEquals(2, values.size());
+            Assert.assertTrue((values.contains("value1") && values.contains("value2"))
+                    || (values.contains("value2") && values.contains("value3")));
+
+            employee2ServletPage.logout();
+            checkLoggedOut(employee2ServletPage, testRealmSAMLPostLoginPage);
+        } finally {
+            // revert
+            userResource.leaveGroup(group1.getId());
+            testRealmResource().groups().group(group1.getId()).remove();
+            userResource.leaveGroup(group2.getId());
+            testRealmResource().groups().group(group2.getId()).remove();
+            ProtocolMapperRepresentation mapper = ProtocolMapperUtil.getMapperByNameAndProtocol(protocolMappersResource, "saml", "group-value");
+            protocolMappersResource.delete(mapper.getId());
+        }
+    }
+
     @Test
     public void testAttributes() throws Exception {
-        ClientResource clientResource = ApiUtil.findClientResourceByClientId(testRealmResource(), "http://localhost:8081/employee2/");
+        ClientResource clientResource = ApiUtil.findClientResourceByClientId(testRealmResource(), AbstractSamlTest.SAML_CLIENT_ID_EMPLOYEE_2);
         ProtocolMappersResource protocolMappersResource = clientResource.getProtocolMappers();
 
         Map<String, String> config = new LinkedHashMap<>();
@@ -1186,7 +1433,7 @@ public class SAMLServletAdapterTest extends AbstractServletsAdapterTest {
         assertCurrentUrlStartsWith(testRealmSAMLPostLoginPage);
         testRealmSAMLPostLoginPage.form().login("level2GroupUser", "password");
 
-        driver.navigate().to(employee2ServletPage.toString() + "/getAttributes");
+        driver.navigate().to(employee2ServletPage.getUriBuilder().clone().path("getAttributes").build().toURL());
         waitUntilElement(By.xpath("//body")).text().contains("topAttribute: true");
         waitUntilElement(By.xpath("//body")).text().contains("level2Attribute: true");
         waitUntilElement(By.xpath("//body")).text().contains("attribute email: level2@redhat.com");
@@ -1203,7 +1450,7 @@ public class SAMLServletAdapterTest extends AbstractServletsAdapterTest {
         assertCurrentUrlStartsWith(testRealmSAMLPostLoginPage);
         testRealmSAMLPostLoginPage.form().login(bburkeUser);
 
-        driver.navigate().to(employee2ServletPage.toString() + "/getAttributes");
+        driver.navigate().to(employee2ServletPage.getUriBuilder().clone().path("getAttributes").build().toURL());
         waitUntilElement(By.xpath("//body")).text().contains("attribute email: bburke@redhat.com");
         waitUntilElement(By.xpath("//body")).text().contains("friendlyAttribute email: bburke@redhat.com");
         waitUntilElement(By.xpath("//body")).text().contains("phone: 617");
@@ -1224,7 +1471,7 @@ public class SAMLServletAdapterTest extends AbstractServletsAdapterTest {
 
         config = new LinkedHashMap<>();
         config.put("new.role.name", "pee-on");
-        config.put("role", "http://localhost:8081/employee/.employee");
+        config.put("role", "http://localhost:8280/employee/.employee");
         createProtocolMapper(protocolMappersResource, "renamed-employee-role", "saml", "saml-role-name-mapper", config);
 
         for (ProtocolMapperRepresentation mapper : clientResource.toRepresentation().getProtocolMappers()) {
@@ -1249,7 +1496,7 @@ public class SAMLServletAdapterTest extends AbstractServletsAdapterTest {
         assertCurrentUrlStartsWith(testRealmSAMLPostLoginPage);
         testRealmSAMLPostLoginPage.form().login(bburkeUser);
 
-        driver.navigate().to(employee2ServletPage.toString() + "/getAttributes");
+        driver.navigate().to(employee2ServletPage.getUriBuilder().clone().path("getAttributes").build().toURL());
         waitUntilElement(By.xpath("//body")).text().contains("hardcoded-attribute: hard");
         employee2ServletPage.checkRolesEndPoint(false);
         employee2ServletPage.logout();
@@ -1265,7 +1512,7 @@ public class SAMLServletAdapterTest extends AbstractServletsAdapterTest {
 
     @Test
     public void spMetadataValidation() throws Exception {
-        ClientResource clientResource = ApiUtil.findClientResourceByClientId(testRealmResource(), "http://localhost:8081/sales-post-sig/");
+        ClientResource clientResource = ApiUtil.findClientResourceByClientId(testRealmResource(), AbstractSamlTest.SAML_CLIENT_ID_SALES_POST_SIG);
         ClientRepresentation representation = clientResource.toRepresentation();
         Client client = ClientBuilder.newClient();
         WebTarget target = client.target(authServerPage.toString() + "/admin/realms/" + SAMLSERVLETDEMO + "/clients/" + representation.getId() + "/installation/providers/saml-sp-descriptor");
@@ -1278,7 +1525,7 @@ public class SAMLServletAdapterTest extends AbstractServletsAdapterTest {
     //KEYCLOAK-4020
     public void testBooleanAttribute() throws Exception {
         new SamlClientBuilder()
-          .authnRequest(getAuthServerSamlEndpoint(SAMLSERVLETDEMO), "http://localhost:8081/employee2/", getAppServerSamlEndpoint(employee2ServletPage).toString(), Binding.POST).build()
+          .authnRequest(getAuthServerSamlEndpoint(SAMLSERVLETDEMO), AbstractSamlTest.SAML_CLIENT_ID_EMPLOYEE_2, getAppServerSamlEndpoint(employee2ServletPage).toString(), Binding.POST).build()
           .login().user(bburkeUser).build()
           .processSamlResponse(Binding.POST)
             .transformDocument(responseDoc -> {
@@ -1299,7 +1546,7 @@ public class SAMLServletAdapterTest extends AbstractServletsAdapterTest {
             })
             .build()
 
-          .navigateTo(employee2ServletPage.toString() + "/getAttributes")
+          .navigateTo(employee2ServletPage.getUriBuilder().clone().path("getAttributes").build())
 
           .execute(r -> {
               Assert.assertThat(r, statusCodeIsHC(Response.Status.OK));
@@ -1499,7 +1746,7 @@ public class SAMLServletAdapterTest extends AbstractServletsAdapterTest {
         StatusCodeType statusCode = responseType.getStatus().getStatusCode();
 
         Assert.assertThat(statusCode.getValue().toString(), is(JBossSAMLURIConstants.STATUS_SUCCESS.get()));
-        Assert.assertThat(responseType.getDestination(), is(ecpSPPage.toString() + "/"));
+        Assert.assertThat(responseType.getDestination(), is(ecpSPPage.toString()));
         Assert.assertThat(responseType.getSignature(), notNullValue());
         Assert.assertThat(responseType.getAssertions().size(), is(1));
 

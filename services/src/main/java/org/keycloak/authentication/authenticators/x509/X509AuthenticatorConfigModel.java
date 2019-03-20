@@ -61,6 +61,7 @@ public class X509AuthenticatorConfigModel extends AuthenticatorConfigModel {
         SUBJECTDN_CN(MAPPING_SOURCE_CERT_SUBJECTDN_CN),
         SUBJECTDN_EMAIL(MAPPING_SOURCE_CERT_SUBJECTDN_EMAIL),
         SUBJECTALTNAME_EMAIL(MAPPING_SOURCE_CERT_SUBJECTALTNAME_EMAIL),
+        SUBJECTALTNAME_OTHERNAME(MAPPING_SOURCE_CERT_SUBJECTALTNAME_OTHERNAME),
         SUBJECTDN(MAPPING_SOURCE_CERT_SUBJECTDN);
 
         private String name;
@@ -138,6 +139,19 @@ public class X509AuthenticatorConfigModel extends AuthenticatorConfigModel {
             getConfig().put(OCSPRESPONDER_URI, responderUri);
         } else {
             getConfig().remove(OCSPRESPONDER_URI);
+        }
+        return this;
+    }
+
+    public String getOCSPResponderCertificate() {
+        return getConfig().getOrDefault(OCSPRESPONDER_CERTIFICATE, null);
+    }
+
+    public X509AuthenticatorConfigModel setOCSPResponderCertificate(String responderCert) {
+        if (responderCert != null) {
+            getConfig().put(OCSPRESPONDER_CERTIFICATE, responderCert);
+        } else {
+            getConfig().remove(OCSPRESPONDER_CERTIFICATE);
         }
         return this;
     }

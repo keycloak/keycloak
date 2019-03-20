@@ -122,7 +122,7 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
 
     public LDAPObject createLDAPGroup(String groupName, Map<String, Set<String>> additionalAttributes) {
         LDAPObject ldapGroup = LDAPUtils.createLDAPGroup(ldapProvider, groupName, config.getGroupNameLdapAttribute(), config.getGroupObjectClasses(ldapProvider),
-                config.getGroupsDn(), additionalAttributes);
+                config.getGroupsDn(), additionalAttributes, config.getMembershipLdapAttribute());
 
         logger.debugf("Creating group [%s] to LDAP with DN [%s]", groupName, ldapGroup.getDn().toString());
         return ldapGroup;
@@ -350,8 +350,9 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
 
     // Send LDAP query to retrieve all groups
     protected List<LDAPObject> getAllLDAPGroups(boolean includeMemberAttribute) {
-        LDAPQuery ldapGroupQuery = createGroupQuery(includeMemberAttribute);
-        return LDAPUtils.loadAllLDAPObjects(ldapGroupQuery, ldapProvider);
+        try (LDAPQuery ldapGroupQuery = createGroupQuery(includeMemberAttribute)) {
+            return LDAPUtils.loadAllLDAPObjects(ldapGroupQuery, ldapProvider);
+        }
     }
 
 
@@ -464,8 +465,10 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
         Set<GroupModel> kcSubgroups = kcGroup.getSubGroups();
         for (GroupModel kcSubgroup : kcSubgroups) {
             LDAPObject ldapSubgroup = ldapGroupsMap.get(kcSubgroup.getName());
-            LDAPUtils.addMember(ldapProvider, MembershipType.DN, config.getMembershipLdapAttribute(), membershipUserLdapAttrName, ldapGroup, ldapSubgroup, false);
-            toRemoveSubgroupsDNs.remove(ldapSubgroup.getDn());
+            if (!toRemoveSubgroupsDNs.remove(ldapSubgroup.getDn())) {
+                // if the group is not in the ldap group => add it
+                LDAPUtils.addMember(ldapProvider, MembershipType.DN, config.getMembershipLdapAttribute(), membershipUserLdapAttrName, ldapGroup, ldapSubgroup);
+            }
         }
 
         // Remove LDAP subgroups, which are not members in KC anymore
@@ -473,11 +476,6 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
             LDAPObject fakeGroup = new LDAPObject();
             fakeGroup.setDn(toRemoveDN);
             LDAPUtils.deleteMember(ldapProvider, MembershipType.DN, config.getMembershipLdapAttribute(), membershipUserLdapAttrName, ldapGroup, fakeGroup);
-        }
-
-        // Update group to LDAP
-        if (!kcGroup.getSubGroups().isEmpty() || !toRemoveSubgroupsDNs.isEmpty()) {
-            ldapProvider.getLdapIdentityStore().update(ldapGroup);
         }
 
         for (GroupModel kcSubgroup : kcGroup.getSubGroups()) {
@@ -509,6 +507,7 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
 
     @Override
     public List<UserModel> getGroupMembers(RealmModel realm, GroupModel kcGroup, int firstResult, int maxResults) {
+        // TODO: with ranged search in AD we can improve the search using the specific range (not done for the moment)
         LDAPObject ldapGroup = loadLDAPGroupByName(kcGroup.getName());
         if (ldapGroup == null) {
             return Collections.emptyList();
@@ -538,7 +537,7 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
                 // Finally update LDAP membership in the parent group
                 if (highestGroupToSync.getParent() != null) {
                     LDAPObject ldapParentGroup = loadLDAPGroupByName(highestGroupToSync.getParent().getName());
-                    LDAPUtils.addMember(ldapProvider, MembershipType.DN, config.getMembershipLdapAttribute(), getMembershipUserLdapAttribute(), ldapParentGroup, ldapGroup, true);
+                    LDAPUtils.addMember(ldapProvider, MembershipType.DN, config.getMembershipLdapAttribute(), getMembershipUserLdapAttribute(), ldapParentGroup, ldapGroup);
                 }
             } else {
                 // No care about group inheritance. Let's just sync current group
@@ -550,7 +549,7 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
 
         String membershipUserLdapAttrName = getMembershipUserLdapAttribute();
 
-        LDAPUtils.addMember(ldapProvider, config.getMembershipTypeLdapAttribute(), config.getMembershipLdapAttribute(), membershipUserLdapAttrName, ldapGroup, ldapUser, true);
+        LDAPUtils.addMember(ldapProvider, config.getMembershipTypeLdapAttribute(), config.getMembershipLdapAttribute(), membershipUserLdapAttrName, ldapGroup, ldapUser);
     }
 
     public void deleteGroupMappingInLDAP(LDAPObject ldapUser, LDAPObject ldapGroup) {

@@ -17,11 +17,17 @@
 package org.keycloak.testsuite.arquillian;
 
 import java.lang.reflect.Method;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import org.jboss.arquillian.test.spi.execution.ExecutionDecision;
 import org.jboss.arquillian.test.spi.execution.TestExecutionDecider;
 import org.jboss.arquillian.core.api.Instance;
 import org.jboss.arquillian.core.api.annotation.Inject;
 import org.jboss.logging.Logger;
+import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
+import org.keycloak.testsuite.arquillian.annotation.AppServerContainers;
 
 /**
  * @author <a href="mailto:vramik@redhat.com">Vlastislav Ramik</a>
@@ -35,13 +41,28 @@ public class AdapterTestExecutionDecider implements TestExecutionDecider {
     @Override
     public ExecutionDecision decide(Method method) {
         TestContext testContext = testContextInstance.get();
-        if (!testContext.isAdapterTest()) return ExecutionDecision.execute();
-        if (testContext.isAdapterContainerEnabled() || testContext.isAdapterContainerEnabledCluster()) {
+        if (!testContext.isAdapterTest()) {
             return ExecutionDecision.execute();
-        } else {
-            log.debug("Skipping test: Not enabled by @AppServerContainer annotations.");
-            return ExecutionDecision.dontExecute("Not enabled by @AppServerContainer annotations.");
         }
+        if (testContext.isAdapterContainerEnabled() || testContext.isAdapterContainerEnabledCluster()) {
+
+            if (method.isAnnotationPresent(AppServerContainer.class)) { // taking method level annotation first as it has higher priority
+                if (getCorrespondingAnnotation(method) == null) { //no corresponding annotation - taking class level annotation
+                    if (getCorrespondingAnnotation(testContext.getTestClass()).skip()) {
+                        return ExecutionDecision.dontExecute("Skipped by @AppServerContainer class level annotation.");
+                    }
+                } else if (getCorrespondingAnnotation(method).skip()) { //corresponding annotation
+                    return ExecutionDecision.dontExecute("Skipped by @AppServerContainer method level annotation.");
+                }
+            } else { //taking class level annotation
+                if (getCorrespondingAnnotation(testContext.getTestClass()).skip()) {
+                    return ExecutionDecision.dontExecute("Skipped by @AppServerContainer class level annotation.");
+                }
+            }
+            // execute otherwise
+            return ExecutionDecision.execute();
+        }
+        return ExecutionDecision.dontExecute("Not enabled by @AppServerContainer annotations.");
     }
 
     @Override
@@ -49,4 +70,39 @@ public class AdapterTestExecutionDecider implements TestExecutionDecider {
         return 1;
     }
 
+    private AppServerContainer getCorrespondingAnnotation(Method method) {
+
+        AppServerContainers multipleAnnotations = method.getAnnotation(AppServerContainers.class);
+
+        List<AppServerContainer> appServerContainers;
+        if (multipleAnnotations != null) { // more than one @AppServerContainer annotation
+            appServerContainers = Arrays.asList(multipleAnnotations.value());
+        } else { // single @AppServerContainer annotation
+            appServerContainers = Arrays.asList(method.getAnnotation(AppServerContainer.class));
+        }
+
+        return appServerContainers.stream()
+                .filter(annotation -> annotation.value().equals(testContextInstance.get().getAppServerContainerName()))
+                .findFirst()
+                .orElse(null);
+    }
+
+    private AppServerContainer getCorrespondingAnnotation(Class testClass) {
+
+        Class<?> annotatedClass = AppServerTestEnricher.getNearestSuperclassWithAppServerAnnotation(testClass);
+
+        AppServerContainers multipleAnnotations = annotatedClass.getAnnotation(AppServerContainers.class);
+
+        List<AppServerContainer> appServerContainers;
+        if (multipleAnnotations != null) { // more than one @AppServerContainer annotation
+            appServerContainers = Arrays.asList(multipleAnnotations.value());
+        } else {// single @AppServerContainer annotation
+            appServerContainers = Arrays.asList(annotatedClass.getAnnotation(AppServerContainer.class));
+        }
+
+        return appServerContainers.stream()
+                .filter(annotation -> annotation.value().equals(testContextInstance.get().getAppServerContainerName()))
+                .findFirst()
+                .orElse(null);
+    }
 }

@@ -27,16 +27,15 @@ import javax.servlet.http.HttpServletResponse;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.adapters.AdapterDeploymentContext;
 import org.keycloak.adapters.AdapterTokenStore;
-import org.keycloak.adapters.AuthenticatedActionsHandler;
 import org.keycloak.adapters.KeycloakDeployment;
-import org.keycloak.adapters.OIDCHttpFacade;
 import org.keycloak.adapters.RequestAuthenticator;
 import org.keycloak.adapters.spi.AuthChallenge;
 import org.keycloak.adapters.spi.AuthOutcome;
 import org.keycloak.adapters.spi.HttpFacade;
 import org.keycloak.adapters.springsecurity.KeycloakAuthenticationException;
 import org.keycloak.adapters.springsecurity.authentication.KeycloakAuthenticationFailureHandler;
-import org.keycloak.adapters.springsecurity.authentication.SpringSecurityRequestAuthenticator;
+import org.keycloak.adapters.springsecurity.authentication.RequestAuthenticatorFactory;
+import org.keycloak.adapters.springsecurity.authentication.SpringSecurityRequestAuthenticatorFactory;
 import org.keycloak.adapters.springsecurity.facade.SimpleHttpFacade;
 import org.keycloak.adapters.springsecurity.token.AdapterTokenStoreFactory;
 import org.keycloak.adapters.springsecurity.token.KeycloakAuthenticationToken;
@@ -50,6 +49,7 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.event.InteractiveAuthenticationSuccessEvent;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.AbstractAuthenticationProcessingFilter;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
@@ -85,6 +85,7 @@ public class KeycloakAuthenticationProcessingFilter extends AbstractAuthenticati
     private AdapterDeploymentContext adapterDeploymentContext;
     private AdapterTokenStoreFactory adapterTokenStoreFactory = new SpringSecurityAdapterTokenStoreFactory();
     private AuthenticationManager authenticationManager;
+    private RequestAuthenticatorFactory requestAuthenticatorFactory = new SpringSecurityRequestAuthenticatorFactory();
 
     /**
      * Creates a new Keycloak authentication processing filter with given {@link AuthenticationManager} and the
@@ -144,7 +145,7 @@ public class KeycloakAuthenticationProcessingFilter extends AbstractAuthenticati
 
         AdapterTokenStore tokenStore = adapterTokenStoreFactory.createAdapterTokenStore(deployment, request);
         RequestAuthenticator authenticator
-                = new SpringSecurityRequestAuthenticator(facade, request, deployment, tokenStore, -1);
+                = requestAuthenticatorFactory.createRequestAuthenticator(facade, request, deployment, tokenStore, -1);
 
         AuthOutcome result = authenticator.authenticate();
         log.debug("Auth outcome: {}", result);
@@ -197,14 +198,15 @@ public class KeycloakAuthenticationProcessingFilter extends AbstractAuthenticati
             log.debug("Authentication success using bearer token/basic authentication. Updating SecurityContextHolder to contain: {}", authResult);
         }
 
-        SecurityContextHolder.getContext().setAuthentication(authResult);
-
-        // Fire event
-        if (this.eventPublisher != null) {
-            eventPublisher.publishEvent(new InteractiveAuthenticationSuccessEvent(authResult, this.getClass()));
-        }
+        SecurityContext context = SecurityContextHolder.createEmptyContext();
+        context.setAuthentication(authResult);
+        SecurityContextHolder.setContext(context);
 
         try {
+            // Fire event
+            if (this.eventPublisher != null) {
+                eventPublisher.publishEvent(new InteractiveAuthenticationSuccessEvent(authResult, this.getClass()));
+            }
             chain.doFilter(request, response);
         } finally {
             SecurityContextHolder.clearContext();
@@ -250,5 +252,15 @@ public class KeycloakAuthenticationProcessingFilter extends AbstractAuthenticati
     @Override
     public final void setContinueChainBeforeSuccessfulAuthentication(boolean continueChainBeforeSuccessfulAuthentication) {
         throw new UnsupportedOperationException("This filter does not support explicitly setting a continue chain before success policy");
+    }
+
+    /**
+     * Sets the request authenticator factory to use when creating per-request authenticators.
+     *
+     * @param requestAuthenticatorFactory the <code>RequestAuthenticatorFactory</code> to use
+     */
+    public void setRequestAuthenticatorFactory(RequestAuthenticatorFactory requestAuthenticatorFactory) {
+        Assert.notNull(requestAuthenticatorFactory, "RequestAuthenticatorFactory cannot be null");
+        this.requestAuthenticatorFactory = requestAuthenticatorFactory;
     }
 }

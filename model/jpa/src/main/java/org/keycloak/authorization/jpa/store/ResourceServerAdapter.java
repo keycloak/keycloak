@@ -17,6 +17,7 @@
 package org.keycloak.authorization.jpa.store;
 
 import org.keycloak.authorization.jpa.entities.ResourceServerEntity;
+import org.keycloak.authorization.model.AbstractAuthorizationModel;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.models.jpa.JpaModel;
@@ -28,12 +29,13 @@ import javax.persistence.EntityManager;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class ResourceServerAdapter implements ResourceServer, JpaModel<ResourceServerEntity> {
+public class ResourceServerAdapter extends AbstractAuthorizationModel implements ResourceServer, JpaModel<ResourceServerEntity> {
     private ResourceServerEntity entity;
     private EntityManager em;
     private StoreFactory storeFactory;
 
     public ResourceServerAdapter(ResourceServerEntity entity, EntityManager em, StoreFactory storeFactory) {
+        super(storeFactory);
         this.entity = entity;
         this.em = em;
         this.storeFactory = storeFactory;
@@ -56,6 +58,7 @@ public class ResourceServerAdapter implements ResourceServer, JpaModel<ResourceS
 
     @Override
     public void setAllowRemoteResourceManagement(boolean allowRemoteResourceManagement) {
+        throwExceptionIfReadonly();
         entity.setAllowRemoteResourceManagement(allowRemoteResourceManagement);
 
     }
@@ -67,6 +70,7 @@ public class ResourceServerAdapter implements ResourceServer, JpaModel<ResourceS
 
     @Override
     public void setPolicyEnforcementMode(PolicyEnforcementMode enforcementMode) {
+        throwExceptionIfReadonly();
         entity.setPolicyEnforcementMode(enforcementMode);
 
     }

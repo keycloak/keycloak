@@ -31,8 +31,9 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  */
 @Documented
 @Retention(RUNTIME)
-@Target({ElementType.TYPE})
+@Target({ElementType.TYPE, ElementType.METHOD})
 @Repeatable(AppServerContainers.class)
 public @interface AppServerContainer {
     String value();
+    boolean skip() default false;
 }

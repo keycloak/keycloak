@@ -39,12 +39,10 @@ public interface ClientScopesResource {
 
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response create(ClientScopeRepresentation clientScopeRepresentation);
+    Response create(ClientScopeRepresentation clientScopeRepresentation);
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    public List<ClientScopeRepresentation> findAll();
-
-
+    List<ClientScopeRepresentation> findAll();
 
 }

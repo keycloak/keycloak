@@ -114,7 +114,7 @@ public class TimePolicyForm extends Form {
 
         representation.setName(UIUtils.getTextInputValue(name));
         representation.setDescription(UIUtils.getTextInputValue(description));
-        representation.setLogic(Logic.valueOf(logic.getFirstSelectedOption().getText().toUpperCase()));
+        representation.setLogic(Logic.valueOf(UIUtils.getTextFromElement(logic.getFirstSelectedOption()).toUpperCase()));
         representation.setDayMonth(UIUtils.getTextInputValue(dayMonth));
         representation.setDayMonthEnd(UIUtils.getTextInputValue(dayMonthEnd));
         representation.setMonth(UIUtils.getTextInputValue(month));

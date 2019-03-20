@@ -38,7 +38,6 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.representations.CodeJWT;
 import org.keycloak.sessions.CommonClientSessionModel;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.util.TokenUtil;
@@ -59,10 +58,6 @@ class CodeGenerateUtil {
     static {
         PARSERS.put(AuthenticationSessionModel.class, () -> {
             return new AuthenticationSessionModelParser();
-        });
-
-        PARSERS.put(AuthenticatedClientSessionModel.class, () -> {
-            return new AuthenticatedClientSessionModelParser();
         });
     }
 
@@ -162,121 +157,6 @@ class CodeGenerateUtil {
         @Override
         public String getClientNote(AuthenticationSessionModel clientSession, String noteKey) {
             return clientSession.getClientNote(noteKey);
-        }
-    }
-
-
-    private static class AuthenticatedClientSessionModelParser implements ClientSessionParser<AuthenticatedClientSessionModel> {
-
-        private CodeJWT codeJWT;
-
-        @Override
-        public AuthenticatedClientSessionModel parseSession(String code, String tabId, KeycloakSession session, RealmModel realm, ClientModel client, EventBuilder event) {
-            SecretKey aesKey = session.keys().getActiveAesKey(realm).getSecretKey();
-            SecretKey hmacKey = session.keys().getActiveHmacKey(realm).getSecretKey();
-
-            try {
-                codeJWT = TokenUtil.jweDirectVerifyAndDecode(aesKey, hmacKey, code, CodeJWT.class);
-            } catch (JWEException jweException) {
-                logger.error("Exception during JWE Verification or decode", jweException);
-                return null;
-            }
-
-            event.detail(Details.CODE_ID, codeJWT.getUserSessionId());
-            event.session(codeJWT.getUserSessionId());
-
-            UserSessionModel userSession = new UserSessionCrossDCManager(session).getUserSessionWithClient(realm, codeJWT.getUserSessionId(), codeJWT.getIssuedFor());
-            if (userSession == null) {
-                // TODO:mposolda Temporary workaround needed to track if code is invalid or was already used. Will be good to remove once used OAuth codes are tracked through one-time cache
-                userSession = session.sessions().getUserSession(realm, codeJWT.getUserSessionId());
-                if (userSession == null) {
-                    return null;
-                }
-            }
-
-            return userSession.getAuthenticatedClientSessionByClient(codeJWT.getIssuedFor());
-
-        }
-
-
-        @Override
-        public String retrieveCode(KeycloakSession session, AuthenticatedClientSessionModel clientSession) {
-            String actionId = KeycloakModelUtils.generateId();
-
-            CodeJWT codeJWT = new CodeJWT();
-            codeJWT.id(actionId);
-            codeJWT.issuedFor(clientSession.getClient().getId());
-            codeJWT.userSessionId(clientSession.getUserSession().getId());
-
-            RealmModel realm = clientSession.getRealm();
-
-            int issuedAt = Time.currentTime();
-            codeJWT.issuedAt(issuedAt);
-            codeJWT.expiration(issuedAt + realm.getAccessCodeLifespan());
-
-            SecretKey aesKey = session.keys().getActiveAesKey(realm).getSecretKey();
-            SecretKey hmacKey = session.keys().getActiveHmacKey(realm).getSecretKey();
-
-            if (logger.isTraceEnabled()) {
-                logger.tracef("Using AES key of length '%d' bytes and HMAC key of length '%d' bytes . Client: '%s', User Session: '%s'", aesKey.getEncoded().length,
-                        hmacKey.getEncoded().length, clientSession.getClient().getClientId(), clientSession.getUserSession().getId());
-            }
-
-            try {
-                return TokenUtil.jweDirectEncode(aesKey, hmacKey, codeJWT);
-            } catch (JWEException jweEx) {
-                throw new RuntimeException(jweEx);
-            }
-        }
-
-
-        @Override
-        public boolean verifyCode(KeycloakSession session, String code, AuthenticatedClientSessionModel clientSession) {
-            if (codeJWT == null) {
-                throw new IllegalStateException("Illegal use. codeJWT not yet set");
-            }
-
-            UUID codeId = UUID.fromString(codeJWT.getId());
-            CodeToTokenStoreProvider singleUseCache = session.getProvider(CodeToTokenStoreProvider.class);
-
-            if (singleUseCache.putIfAbsent(codeId)) {
-
-                if (logger.isTraceEnabled()) {
-                    logger.tracef("Added code '%s' to single-use cache. User session: %s, client: %s", codeJWT.getId(), codeJWT.getUserSessionId(), codeJWT.getIssuedFor());
-                }
-
-                return true;
-            } else {
-                logger.warnf("Code '%s' already used for userSession '%s' and client '%s'.", codeJWT.getId(), codeJWT.getUserSessionId(), codeJWT.getIssuedFor());
-                return false;
-            }
-        }
-
-
-        @Override
-        public void removeExpiredSession(KeycloakSession session, AuthenticatedClientSessionModel clientSession) {
-            throw new IllegalStateException("Not yet implemented");
-        }
-
-
-        @Override
-        public boolean isExpired(KeycloakSession session, String code, AuthenticatedClientSessionModel clientSession) {
-            return !codeJWT.isActive();
-        }
-
-        @Override
-        public int getTimestamp(AuthenticatedClientSessionModel clientSession) {
-            return clientSession.getTimestamp();
-        }
-
-        @Override
-        public void setTimestamp(AuthenticatedClientSessionModel clientSession, int timestamp) {
-            clientSession.setTimestamp(timestamp);
-        }
-
-        @Override
-        public String getClientNote(AuthenticatedClientSessionModel clientSession, String noteKey) {
-            return clientSession.getNote(noteKey);
         }
     }
 

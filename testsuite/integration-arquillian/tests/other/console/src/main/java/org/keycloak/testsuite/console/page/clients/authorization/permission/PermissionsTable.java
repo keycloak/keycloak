@@ -16,6 +16,7 @@
  */
 package org.keycloak.testsuite.console.page.clients.authorization.permission;
 
+import static org.keycloak.testsuite.util.UIUtils.getTextFromElement;
 import static org.openqa.selenium.By.tagName;
 
 import java.util.ArrayList;
@@ -65,11 +66,11 @@ public class PermissionsTable extends DataTable {
     public PolicyRepresentation toRepresentation(WebElement row) {
         PolicyRepresentation representation = null;
         List<WebElement> tds = row.findElements(tagName("td"));
-        if (!(tds.isEmpty() || tds.get(1).getText().isEmpty())) {
+        if (!(tds.isEmpty() || getTextFromElement(tds.get(1)).isEmpty())) {
             representation = new PolicyRepresentation();
-            representation.setName(tds.get(1).getText());
-            representation.setDescription(tds.get(2).getText());
-            representation.setType(tds.get(3).getText());
+            representation.setName(getTextFromElement(tds.get(1)));
+            representation.setDescription(getTextFromElement(tds.get(2)));
+            representation.setType(getTextFromElement(tds.get(3)));
         }
         return representation;
     }

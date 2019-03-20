@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian-servers-cache-server-jboss</artifactId>
-        <version>4.3.0.Final-SNAPSHOT</version>
+        <version>6.0.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -34,7 +34,8 @@
         <cache.server.container>cache-server-${cache.server}</cache.server.container>
         <cache.server.home>${containers.home}/${cache.server.container}</cache.server.home>
         
-        <cache.server.jboss.cache-authorization-disabled>false</cache.server.jboss.cache-authorization-disabled>
+        <cache.server.jboss.cache-authorization-disabled>true</cache.server.jboss.cache-authorization-disabled>
+        <cache.server.jboss.jdg-transactions-enabled>true</cache.server.jboss.jdg-transactions-enabled>
         <cache.server.jboss.groupId>org.infinispan.server</cache.server.jboss.groupId>
         <cache.server.jboss.artifactId>infinispan-server</cache.server.jboss.artifactId>
         <cache.server.jboss.version>${jdg.version}</cache.server.jboss.version>
@@ -44,4 +45,32 @@
         <cache.server.worker.task-max-threads>${cache.default.worker.task-max-threads}</cache.server.worker.task-max-threads>
     </properties>
 
+    <build>
+        <plugins>
+            <plugin>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>unpack-cache-server</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>unpack</goal>
+                        </goals>
+                        <configuration>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>${cache.server.jboss.groupId}</groupId>
+                                    <artifactId>${cache.server.jboss.artifactId}</artifactId>
+                                    <version>${cache.server.jboss.version}</version>
+                                    <type>zip</type>
+                                    <classifier>bin</classifier>
+                                    <outputDirectory>${containers.home}</outputDirectory>
+                                </artifactItem>
+                            </artifactItems>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 </project>

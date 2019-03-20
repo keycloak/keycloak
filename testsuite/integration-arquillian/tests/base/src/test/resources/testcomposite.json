@@ -93,7 +93,8 @@
             "baseUrl": "http://localhost:8180/auth/realms/master/app/auth",
             "adminUrl": "http://localhost:8180/auth/realms/master/app/logout",
             "redirectUris": [
-                "http://localhost:8180/auth/realms/master/app/*"
+                "http://localhost:8180/auth/realms/master/app/*",
+                "https://localhost:8543/auth/realms/master/app/*"
             ],
             "secret": "password"
          },
@@ -104,7 +105,8 @@
             "baseUrl": "http://localhost:8180/auth/realms/master/app/auth",
             "adminUrl": "http://localhost:8180/auth/realms/master/app/logout",
             "redirectUris": [
-                "http://localhost:8180/auth/realms/master/app/*"
+                "http://localhost:8180/auth/realms/master/app/*",
+                "https://localhost:8543/auth/realms/master/app/*"
             ],
             "secret": "password"
         },
@@ -115,7 +117,8 @@
             "baseUrl": "http://localhost:8180/auth/realms/master/app/auth",
             "adminUrl": "http://localhost:8180/auth/realms/master/app/logout",
             "redirectUris": [
-                "http://localhost:8180/auth/realms/master/app/*"
+                "http://localhost:8180/auth/realms/master/app/*",
+                "https://localhost:8543/auth/realms/master/app/*"
             ],
             "secret": "password"
         },
@@ -126,7 +129,8 @@
             "baseUrl": "http://localhost:8180/auth/realms/master/app/auth",
             "adminUrl": "http://localhost:8180/auth/realms/master/app/logout",
             "redirectUris": [
-                "http://localhost:8180/auth/realms/master/app/*"
+                "http://localhost:8180/auth/realms/master/app/*",
+                "https://localhost:8543/auth/realms/master/app/*"
             ],
             "secret": "password"
         }

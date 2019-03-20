@@ -17,8 +17,10 @@
 
 package org.keycloak.testsuite.ui.login;
 
-import org.junit.Before;
+import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.ui.AbstractUiTest;
+
+import java.util.List;
 
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertTrue;
@@ -29,9 +31,11 @@ import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
 public abstract class AbstractLoginTest extends AbstractUiTest {
-    @Before
-    public void addTestUser() {
-        createTestUserWithAdminClient(false);
+    @Override
+    public void addTestRealms(List<RealmRepresentation> testRealms) {
+        super.addTestRealms(testRealms);
+        RealmRepresentation testRealmRep = testRealms.get(0);
+        configureInternationalizationForRealm(testRealmRep);
     }
 
     protected void assertLoginFailed(String message) {

@@ -507,6 +507,23 @@ public class RealmManager {
         }
 
         RepresentationToModel.importRealm(session, rep, realm, skipUserDependent);
+        List<ClientRepresentation> clients = rep.getClients();
+
+        if (clients != null) {
+            ClientManager clientManager = new ClientManager(new RealmManager(session));
+
+            for (ClientRepresentation client : clients) {
+                ClientModel clientModel = realm.getClientById(client.getId());
+
+                if (clientModel.isServiceAccountsEnabled()) {
+                    clientManager.enableServiceAccount(clientModel);
+                }
+
+                if (Boolean.TRUE.equals(client.getAuthorizationServicesEnabled())) {
+                    RepresentationToModel.createResourceServer(clientModel, session, true);
+                }
+            }
+        }
 
         setupAdminConsoleLocaleMapper(realm);
 
@@ -514,9 +531,11 @@ public class RealmManager {
             setupMasterAdminManagement(realm);
         }
 
-        // Assert all admin roles are available once import took place. This is needed due to import from previous version where JSON file may not contain all admin roles
-        checkMasterAdminManagementRoles(realm);
-        checkRealmAdminManagementRoles(realm);
+        if (rep.getRoles() != null || hasRealmAdminManagementClient(rep)) {
+        	// Assert all admin roles are available once import took place. This is needed due to import from previous version where JSON file may not contain all admin roles
+        	checkMasterAdminManagementRoles(realm);
+        	checkRealmAdminManagementRoles(realm);
+        }
 
         // Could happen when migrating from older version and I have exported JSON file, which contains "realm-management" client but not "impersonation" client
         // I need to postpone impersonation because it needs "realm-management" client and its roles set

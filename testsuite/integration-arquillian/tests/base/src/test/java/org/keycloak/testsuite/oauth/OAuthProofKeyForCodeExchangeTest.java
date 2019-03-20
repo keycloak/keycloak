@@ -425,9 +425,8 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
         assertNull(header.getContentType());
 
         header = new JWSInput(response.getRefreshToken()).getHeader();
-        assertEquals("RS256", header.getAlgorithm().name());
+        assertEquals("HS256", header.getAlgorithm().name());
         assertEquals("JWT", header.getType());
-        assertEquals(expectedKid, header.getKeyId());
         assertNull(header.getContentType());
 
         AccessToken token = oauth.verifyToken(response.getAccessToken());
@@ -443,13 +442,13 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
         EventRepresentation event = events.expectCodeToToken(codeId, sessionId).assertEvent();
         
         assertEquals(token.getId(), event.getDetails().get(Details.TOKEN_ID));
-        assertEquals(oauth.verifyRefreshToken(response.getRefreshToken()).getId(), event.getDetails().get(Details.REFRESH_TOKEN_ID));
+        assertEquals(oauth.parseRefreshToken(response.getRefreshToken()).getId(), event.getDetails().get(Details.REFRESH_TOKEN_ID));
         assertEquals(sessionId, token.getSessionState());
         
         // make sure PKCE does not affect token refresh on Token Endpoint
         
         String refreshTokenString = response.getRefreshToken();
-        RefreshToken refreshToken = oauth.verifyRefreshToken(refreshTokenString);
+        RefreshToken refreshToken = oauth.parseRefreshToken(refreshTokenString);
 
         Assert.assertNotNull(refreshTokenString);
         Assert.assertThat(token.getExpiration() - getCurrentTime(), allOf(greaterThanOrEqualTo(200), lessThanOrEqualTo(350)));
@@ -462,7 +461,7 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
         OAuthClient.AccessTokenResponse refreshResponse = oauth.doRefreshTokenRequest(refreshTokenString, "password");
         
         AccessToken refreshedToken = oauth.verifyToken(refreshResponse.getAccessToken());
-        RefreshToken refreshedRefreshToken = oauth.verifyRefreshToken(refreshResponse.getRefreshToken());
+        RefreshToken refreshedRefreshToken = oauth.parseRefreshToken(refreshResponse.getRefreshToken());
 
         assertEquals(200, refreshResponse.getStatusCode());
         assertEquals(sessionId, refreshedToken.getSessionState());

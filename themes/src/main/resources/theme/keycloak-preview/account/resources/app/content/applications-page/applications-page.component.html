@@ -1,5 +1,5 @@
 <div class="page-header">
-    <h1>{{'applicationsHtmlTitle' | translate}}</h1>
+    <h1 id="pageTitle">{{'applicationsHtmlTitle' | translate}}</h1>
 </div>
 
 <!--The new application HTML code-->
@@ -10,7 +10,7 @@
         <div id="toolbar-application-mobile">
           <h2>
             <span class="fa fa-angle-right"></span>
-            <a href="javascript:void(0)">Filter</a>
+            <a href="javascript:void(0)" id="showFilterBtn">Filter</a>
           </h2>
         </div>
         <div id="toolbar-application">
@@ -19,8 +19,8 @@
               <label class="sr-only" for="filter">{{'applicaitonName' | translate}}</label>
               <div class="input-group">
                 <div class="input-group-btn">
-                  <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Name <span class="caret"></span></button>
-                  <ul class="dropdown-menu">
+                  <button type="button" id="filterDropdownBtn" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Name <span class="caret"></span></button>
+                  <ul class="dropdown-menu" id="filterDropdownMenu">
                     <li class="selected"><a href="#">{{'applicaitonName' | translate}}</a></li>
                     <li><a href="#">{{'applicaitonType' | translate}}</a></li>
                   </ul>
@@ -30,8 +30,8 @@
             </div>
             <div class="form-group">
               <div class="dropdown btn-group">
-                <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">{{'applicaitonType' | translate}} <span class="caret"></span></button>
-                <ul class="dropdown-menu">
+                <button type="button" id="appTypeDropdownBtn" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">{{'applicaitonType' | translate}} <span class="caret"></span></button>
+                <ul class="dropdown-menu" id="appTypeDropdownMenu">
                   <li class="selected"><a href="#">{{'allApps' | translate}}</a></li>
                   <li><a href="#">{{'internalApps' | translate}}</a></li>
                   <li><a href="#">{{'thirdpartyApps' | translate}}</a></li>
@@ -44,9 +44,9 @@
           </form>
           <div class="row toolbar-pf-results">
             <div class="col-sm-12">
-              <h5>40 {{'appResults' | translate}}</h5>
+              <h5><span id="appResults">40</span> {{'appResults' | translate}}</h5>
               <p>{{'activeFilters' | translate}}</p>
-              <ul class="list-inline">
+              <ul class="list-inline" id="activeFiltersList">
                 <li>
                   <span class="label label-info">
                     {{'applicaitonName' | translate}}: nameofthething
@@ -66,7 +66,7 @@
                   </span>
                 </li>
               </ul>
-              <p><a href="#">{{'clearAllFilter' | translate}}</a></p>
+              <p><a href="#" id="clearAllFilters">{{'clearAllFilter' | translate}}</a></p>
             </div>
           </div>
         </div>
@@ -74,7 +74,7 @@
     </div>
 
 
-    <div class="list-group list-view-pf list-view-pf-view">
+    <div class="list-group list-view-pf list-view-pf-view" id="appResultList">
       <div class="list-group-item">
         <div class="list-group-item-header">
           <div class="list-view-pf-expand">

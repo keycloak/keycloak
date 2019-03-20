@@ -4,6 +4,7 @@ import org.keycloak.testsuite.console.page.AdminConsoleRealm;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
+import static org.keycloak.testsuite.util.UIUtils.getTextFromElement;
 import static org.keycloak.testsuite.util.WaitUtils.*;
 
 /**
@@ -26,12 +27,12 @@ public class Authentication extends AdminConsoleRealm {
     
     public String getSuccessMessage() {
         waitUntilElement(success).is().present();
-        return success.getText();
+        return getTextFromElement(success);
     }
     
     public String getErrorMessage() {
         waitUntilElement(error).is().present();
-        return error.getText();
+        return getTextFromElement(error);
     }
     
     public void closeNotification() {

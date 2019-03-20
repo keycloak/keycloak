@@ -34,6 +34,7 @@
     "min-time-between-jwks-requests": 20,
     "public-key-cache-ttl": 120,
     "ignore-oauth-query-parameter": true,
+    "verify-token-audience": true,
     "redirect-rewrite-rules" : {
   	"^/wsmaster/api/(.*)$" : "/api/$1"
      }

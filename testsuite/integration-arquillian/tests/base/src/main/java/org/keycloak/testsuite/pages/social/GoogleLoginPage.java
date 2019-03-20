@@ -18,9 +18,10 @@
 package org.keycloak.testsuite.pages.social;
 
 import org.openqa.selenium.Keys;
-import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
+
+import java.util.List;
 
 import static org.keycloak.testsuite.util.UIUtils.clickLink;
 import static org.keycloak.testsuite.util.UIUtils.performOperationWithPageReload;
@@ -36,16 +37,13 @@ public class GoogleLoginPage extends AbstractSocialLoginPage {
     @FindBy(xpath = ".//input[@type='password']")
     private WebElement passwordInput;
 
-    @FindBy(id = "identifierLink")
-    private WebElement useAnotherAccountLink;
+    @FindBy(xpath = "//form//ul/li/div[@role='link']")
+    private List<WebElement> selectAccountLinks;
 
     @Override
     public void login(String user, String password) {
-        try {
-            clickLink(useAnotherAccountLink);
-        }
-        catch (NoSuchElementException e) {
-            // nothing to do
+        if (selectAccountLinks.size() > 1) {
+            clickLink(selectAccountLinks.get(selectAccountLinks.size() - 1));
         }
 
         emailInput.clear();

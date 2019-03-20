@@ -16,6 +16,7 @@
  */
 package org.keycloak.testsuite.console.page.clients.authorization.policy;
 
+import static org.keycloak.testsuite.util.UIUtils.getTextFromElement;
 import static org.openqa.selenium.By.tagName;
 
 import java.util.List;
@@ -41,8 +42,8 @@ public class PolicySelect extends MultipleStringSelect2 {
         return (webElement, name) -> {
             List<WebElement> tds = webElement.findElements(tagName("td"));
 
-            if (!tds.get(0).getText().isEmpty()) {
-                if (tds.get(0).getText().equals(name)) {
+            if (!getTextFromElement(tds.get(0)).isEmpty()) {
+                if (getTextFromElement(tds.get(0)).equals(name)) {
                     tds.get(3).click();
                     return true;
                 }
@@ -54,6 +55,6 @@ public class PolicySelect extends MultipleStringSelect2 {
 
     @Override
     protected Function<WebElement, String> representation() {
-        return webElement -> webElement.findElements(tagName("td")).get(0).getText();
+        return webElement -> getTextFromElement(webElement.findElements(tagName("td")).get(0));
     }
 }

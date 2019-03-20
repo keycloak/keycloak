@@ -14,8 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import {Injectable} from '@angular/core';
-import {KeycloakLoginOptions} from './keycloak.d';
+import {KeycloakLoginOptions, KeycloakError} from './keycloak.d';
 
 // If using a local keycloak.js, uncomment this import.  With keycloak.js fetched
 // from the server, you get a compile-time warning on use of the Keycloak()
@@ -27,10 +26,20 @@ import * as Keycloak from './keycloak';
 export type KeycloakClient = Keycloak.KeycloakInstance;
 type InitOptions = Keycloak.KeycloakInitOptions;
 
-@Injectable()
-export class KeycloakService {
-    static keycloakAuth: KeycloakClient;
+declare const keycloak: KeycloakClient;
 
+export class KeycloakService {
+    private static keycloakAuth: KeycloakClient = keycloak;
+    private static instance: KeycloakService = new KeycloakService();
+
+    private constructor() {
+        
+    }
+    
+    public static get Instance(): KeycloakService  {
+        return this.instance;
+    }
+    
     /**
      * Configure and initialize the Keycloak adapter.
      *
@@ -40,7 +49,7 @@ export class KeycloakService {
      *                       for details.
      * @returns {Promise<T>}
      */
-    static init(configOptions?: string|{}, initOptions?: InitOptions): Promise<any> {
+    public static init(configOptions?: string|{}, initOptions: InitOptions = {}): Promise<void> {
         KeycloakService.keycloakAuth = Keycloak(configOptions);
 
         return new Promise((resolve, reject) => {
@@ -48,47 +57,43 @@ export class KeycloakService {
                 .success(() => {
                     resolve();
                 })
-                .error((errorData: any) => {
+                .error((errorData: KeycloakError) => {
                     reject(errorData);
                 });
         });
     }
     
-    static setKeycloakAuth(kc:KeycloakClient) {
-        this.keycloakAuth = kc;
+    public authenticated(): boolean {
+        return KeycloakService.keycloakAuth.authenticated ? KeycloakService.keycloakAuth.authenticated : false;
     }
 
-    authenticated(): boolean {
-        return KeycloakService.keycloakAuth.authenticated;
-    }
-
-    login(options?: KeycloakLoginOptions) {
+    public login(options?: KeycloakLoginOptions): void {
         KeycloakService.keycloakAuth.login(options);
     }
 
-    logout(redirectUri?: string) {
+    public logout(redirectUri?: string): void {
         KeycloakService.keycloakAuth.logout({redirectUri: redirectUri});
     }
 
-    account() {
+    public account(): void {
         KeycloakService.keycloakAuth.accountManagement();
     }
     
-    authServerUrl(): string {
+    public authServerUrl(): string | undefined {
         return KeycloakService.keycloakAuth.authServerUrl;
     }
     
-    realm(): string {
+    public realm(): string | undefined {
         return KeycloakService.keycloakAuth.realm;
     }
 
-    getToken(): Promise<string> {
+    public getToken(): Promise<string> {
         return new Promise<string>((resolve, reject) => {
             if (KeycloakService.keycloakAuth.token) {
                 KeycloakService.keycloakAuth
                     .updateToken(5)
                     .success(() => {
-                        resolve(<string>KeycloakService.keycloakAuth.token);
+                        resolve(KeycloakService.keycloakAuth.token as string);
                     })
                     .error(() => {
                         reject('Failed to refresh token');

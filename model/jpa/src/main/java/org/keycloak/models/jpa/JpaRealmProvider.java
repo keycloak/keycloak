@@ -81,6 +81,10 @@ public class JpaRealmProvider implements RealmProvider {
             public RealmModel getCreatedRealm() {
                 return adapter;
             }
+            @Override
+            public KeycloakSession getKeycloakSession() {
+            	return session;
+            }
         });
         return adapter;
     }
@@ -92,10 +96,21 @@ public class JpaRealmProvider implements RealmProvider {
         RealmAdapter adapter = new RealmAdapter(session, em, realm);
         return adapter;
     }
+    
+    @Override
+    public List<RealmModel> getRealmsWithProviderType(Class<?> providerType) {
+        TypedQuery<String> query = em.createNamedQuery("getRealmIdsWithProviderType", String.class);
+        query.setParameter("providerType", providerType.getName());
+        return getRealms(query);
+    }
 
     @Override
     public List<RealmModel> getRealms() {
         TypedQuery<String> query = em.createNamedQuery("getAllRealmIds", String.class);
+        return getRealms(query);
+    }
+
+    private List<RealmModel> getRealms(TypedQuery<String> query) {
         List<String> entities = query.getResultList();
         List<RealmModel> realms = new ArrayList<RealmModel>();
         for (String id : entities) {
@@ -369,6 +384,25 @@ public class JpaRealmProvider implements RealmProvider {
     @Override
     public Long getGroupsCountByNameContaining(RealmModel realm, String search) {
         return (long) searchForGroupByName(realm, search, null, null).size();
+    }
+    
+    @Override
+    public List<GroupModel> getGroupsByRole(RealmModel realm, RoleModel role, int firstResult, int maxResults) {
+        TypedQuery<GroupEntity> query = em.createNamedQuery("groupsInRole", GroupEntity.class);
+        query.setParameter("roleId", role.getId());
+        if (firstResult != -1) {
+            query.setFirstResult(firstResult);
+        }
+        if (maxResults != -1) {
+            query.setMaxResults(maxResults);
+        }
+        List<GroupEntity> results = query.getResultList();
+
+        return results.stream()
+        		.map(g -> new GroupAdapter(realm, em, g))
+                .sorted(Comparator.comparing(GroupModel::getName))
+                .collect(Collectors.collectingAndThen(
+                        Collectors.toList(), Collections::unmodifiableList));
     }
 
     @Override

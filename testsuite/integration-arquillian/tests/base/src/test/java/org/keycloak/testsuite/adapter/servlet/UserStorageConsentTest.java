@@ -55,7 +55,6 @@ import org.keycloak.testsuite.auth.page.login.PageWithLoginUrl;
 import org.keycloak.testsuite.federation.UserMapStorageFactory;
 import org.keycloak.testsuite.pages.ConsentPage;
 import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
-import org.keycloak.testsuite.util.ContainerAssume;
 
 import static org.keycloak.testsuite.arquillian.DeploymentTargetModifier.AUTH_SERVER_CURRENT;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlEquals;
@@ -67,9 +66,10 @@ import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWithLo
  */
 @AppServerContainer(ContainerConstants.APP_SERVER_UNDERTOW)
 @AppServerContainer(ContainerConstants.APP_SERVER_WILDFLY)
-@AppServerContainer(ContainerConstants.APP_SERVER_WILDFLY10)
+@AppServerContainer(ContainerConstants.APP_SERVER_WILDFLY_DEPRECATED)
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP)
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP6)
+@AppServerContainer(ContainerConstants.APP_SERVER_EAP71)
 public class UserStorageConsentTest extends AbstractServletsAdapterTest {
 
     @Page
@@ -149,8 +149,6 @@ public class UserStorageConsentTest extends AbstractServletsAdapterTest {
      */
     @Test
     public void testLogin() throws Exception {
-        ContainerAssume.assumeNotAppServerUndertow();
-
         testingClient.server().run(UserStorageConsentTest::setupConsent);
         UserRepresentation memuser = new UserRepresentation();
         memuser.setUsername("memuser");

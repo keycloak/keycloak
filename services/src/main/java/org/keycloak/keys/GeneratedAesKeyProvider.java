@@ -25,7 +25,7 @@ import org.keycloak.crypto.KeyUse;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class GeneratedAesKeyProvider extends GeneratedSecretKeyProvider implements KeyProvider {
+public class GeneratedAesKeyProvider extends AbstractGeneratedSecretKeyProvider implements KeyProvider {
 
     public GeneratedAesKeyProvider(ComponentModel model) {
         super(model, KeyUse.ENC, KeyType.OCT, Algorithm.AES);

@@ -17,6 +17,9 @@
 
 package org.keycloak.admin.client.resource;
 
+import org.keycloak.representations.idm.GroupRepresentation;
+import org.keycloak.representations.idm.ManagementPermissionReference;
+import org.keycloak.representations.idm.ManagementPermissionRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 
@@ -37,6 +40,30 @@ import java.util.Set;
  * @author rodrigo.sasaki@icarros.com.br
  */
 public interface RoleResource {
+
+    /**
+     * Enables or disables the fine grain permissions feature.
+     * Returns the updated status of the server in the
+     * {@link ManagementPermissionReference}.
+     *
+     * @param status status request to apply
+     * @return permission reference indicating the updated status
+     */
+    @PUT
+    @Path("/management/permissions")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    ManagementPermissionReference setPermissions(ManagementPermissionRepresentation status);
+
+    /**
+     * Returns indicator if the fine grain permissions are enabled or not.
+     *
+     * @return current representation of the permissions feature
+     */
+    @GET
+    @Path("/management/permissions")
+    @Produces(MediaType.APPLICATION_JSON)
+    ManagementPermissionReference getPermissions();
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
@@ -100,5 +127,31 @@ public interface RoleResource {
     @Produces(MediaType.APPLICATION_JSON)
     Set<UserRepresentation> getRoleUserMembers(@QueryParam("first") Integer firstResult,
                                                @QueryParam("max") Integer maxResults);
+    
+    /**
+     * Get role groups
+     * <p/>
+     * Returns groups that have the given role
+     *
+     * @return a list of groups with the given role
+     */
+    @GET
+    @Path("groups")
+    @Produces(MediaType.APPLICATION_JSON)
+    Set<GroupRepresentation> getRoleGroupMembers();
 
+    /**
+     * Get role groups
+     * <p/>
+     * Returns groups that have the given role, paginated according to the query parameters
+     *
+     * @param firstResult Pagination offset
+     * @param maxResults  Pagination size
+     * @return a list of groups with the given role
+     */
+    @GET
+    @Path("groups")
+    @Produces(MediaType.APPLICATION_JSON)
+    Set<GroupRepresentation> getRoleGroupMembers(@QueryParam("first") Integer firstResult,
+                                               @QueryParam("max") Integer maxResults);
 }

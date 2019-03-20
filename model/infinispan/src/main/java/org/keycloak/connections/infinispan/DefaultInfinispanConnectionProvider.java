@@ -28,14 +28,12 @@ public class DefaultInfinispanConnectionProvider implements InfinispanConnection
 
     private final EmbeddedCacheManager cacheManager;
     private final RemoteCacheProvider remoteCacheProvider;
-    private final String siteName;
-    private final String nodeName;
+    private final TopologyInfo topologyInfo;
 
-    public DefaultInfinispanConnectionProvider(EmbeddedCacheManager cacheManager, RemoteCacheProvider remoteCacheProvider, String nodeName, String siteName) {
+    public DefaultInfinispanConnectionProvider(EmbeddedCacheManager cacheManager, RemoteCacheProvider remoteCacheProvider, TopologyInfo topologyInfo) {
         this.cacheManager = cacheManager;
         this.remoteCacheProvider = remoteCacheProvider;
-        this.nodeName = nodeName;
-        this.siteName = siteName;
+        this.topologyInfo = topologyInfo;
     }
 
     @Override
@@ -49,13 +47,8 @@ public class DefaultInfinispanConnectionProvider implements InfinispanConnection
     }
 
     @Override
-    public String getNodeName() {
-        return nodeName;
-    }
-
-    @Override
-    public String getSiteName() {
-        return siteName;
+    public TopologyInfo getTopologyInfo() {
+        return topologyInfo;
     }
 
     @Override

@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian-servers-cache-server</artifactId>
-        <version>4.3.0.Final-SNAPSHOT</version>
+        <version>6.0.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -34,11 +34,11 @@
         <assembly.xml>${project.parent.basedir}/assembly.xml</assembly.xml>
         <cache.server.jboss.home>${containers.home}/${cache.server.jboss.unpacked.folder.name}</cache.server.jboss.home>
         <cache.server.jboss.cache-authorization-disabled>true</cache.server.jboss.cache-authorization-disabled>
-        <security.xslt>security.xsl</security.xslt>
+        <cache.server.jboss.jdg-transactions-enabled>true</cache.server.jboss.jdg-transactions-enabled>
     </properties>
 
     <profiles>
-        
+
         <profile>
             <id>cache-server-jboss-submodules</id>
             <activation>
@@ -48,7 +48,7 @@
             </activation>
             <build>
                 <plugins>
-                    
+
                     <plugin>
                         <artifactId>maven-enforcer-plugin</artifactId>
                         <executions>
@@ -71,32 +71,7 @@
                             </execution>
                         </executions>
                     </plugin>
-                    
-                    <plugin>
-                        <artifactId>maven-dependency-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <id>unpack-cache-server</id>
-                                <phase>generate-resources</phase>
-                                <goals>
-                                    <goal>unpack</goal>
-                                </goals>
-                                <configuration>
-                                    <artifactItems>
-                                        <artifactItem>
-                                            <groupId>${cache.server.jboss.groupId}</groupId>
-                                            <artifactId>${cache.server.jboss.artifactId}</artifactId>
-                                            <version>${cache.server.jboss.version}</version>
-                                            <type>zip</type>
-                                            <classifier>bin</classifier>
-                                            <outputDirectory>${containers.home}</outputDirectory>
-                                        </artifactItem>
-                                    </artifactItems>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-            
+
                     <plugin>
                         <groupId>org.codehaus.mojo</groupId>
                         <artifactId>xml-maven-plugin</artifactId>
@@ -126,6 +101,10 @@
                                                     <name>remote.site</name>
                                                     <value>dc-1</value>
                                                 </parameter>
+                                                <parameter>
+                                                    <name>transactions.enabled</name>
+                                                    <value>${cache.server.jboss.jdg-transactions-enabled}</value>
+                                                </parameter>
                                             </parameters>
                                             <outputDir>${cache.server.jboss.home}/standalone/configuration</outputDir>
                                             <fileMappers>
@@ -151,6 +130,10 @@
                                                 <parameter>
                                                     <name>remote.site</name>
                                                     <value>dc-0</value>
+                                                </parameter>
+                                                <parameter>
+                                                    <name>transactions.enabled</name>
+                                                    <value>${cache.server.jboss.jdg-transactions-enabled}</value>
                                                 </parameter>
                                             </parameters>
                                             <outputDir>${cache.server.jboss.home}/standalone/configuration</outputDir>

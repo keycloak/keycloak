@@ -43,6 +43,8 @@ public interface RealmProvider extends Provider, ClientProvider {
     Long getGroupsCount(RealmModel realm, Boolean onlyTopGroups);
 
     Long getGroupsCountByNameContaining(RealmModel realm, String search);
+    
+    List<GroupModel> getGroupsByRole(RealmModel realm, RoleModel role, int firstResult, int maxResults);
 
     List<GroupModel> getTopLevelGroups(RealmModel realm);
 
@@ -77,6 +79,7 @@ public interface RealmProvider extends Provider, ClientProvider {
 
 
     List<RealmModel> getRealms();
+    List<RealmModel> getRealmsWithProviderType(Class<?> type);
     boolean removeRealm(String id);
     void close();
 

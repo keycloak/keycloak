@@ -27,7 +27,7 @@
             <kc-tooltip>{{:: 'scope.tooltip' | translate}}</kc-tooltip>
         </li>
         <li ng-class="{active: path[4] == 'authz'}"
-            data-ng-show="serverInfo.featureEnabled('AUTHORIZATION') && !disableAuthorizationTab && client.authorizationServicesEnabled && !client.origin">
+            data-ng-show="!disableAuthorizationTab && client.authorizationServicesEnabled && !client.origin">
             <a href="#/realms/{{realm.realm}}/clients/{{client.id}}/authz/resource-server">{{:: 'authz-authorization' |
                 translate}}</a></li>
         <li ng-class="{active: path[4] == 'revocation'}" data-ng-show="client.protocol != 'docker-v2' && client.protocol != 'saml' && !client.origin"><a
@@ -55,7 +55,7 @@
             <a href="#/realms/{{realm.realm}}/clients/{{client.id}}/service-account-roles">{{:: 'service-account-roles' | translate}}</a>
             <kc-tooltip>{{:: 'service-account-roles.tooltip' | translate}}</kc-tooltip>
         </li>
-        <li ng-class="{active: path[4] == 'permissions'}" data-ng-show="serverInfo.featureEnabled('AUTHORIZATION') && client.access.manage && access.manageAuthorization">
+        <li ng-class="{active: path[4] == 'permissions'}" data-ng-show="serverInfo.featureEnabled('ADMIN_FINE_GRAINED_AUTHZ') && client.access.manage && access.manageAuthorization">
             <a href="#/realms/{{realm.realm}}/clients/{{client.id}}/permissions">{{:: 'authz-permissions' | translate}}</a>
             <kc-tooltip>{{:: 'manage-permissions-client.tooltip' | translate}}</kc-tooltip>
         </li>

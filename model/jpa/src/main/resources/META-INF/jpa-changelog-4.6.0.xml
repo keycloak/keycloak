@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!--
+  ~ * Copyright 2018 Red Hat, Inc. and/or its affiliates
+  ~ * and other contributors as indicated by the @author tags.
+  ~ *
+  ~ * Licensed under the Apache License, Version 2.0 (the "License");
+  ~ * you may not use this file except in compliance with the License.
+  ~ * You may obtain a copy of the License at
+  ~ *
+  ~ * http://www.apache.org/licenses/LICENSE-2.0
+  ~ *
+  ~ * Unless required by applicable law or agreed to in writing, software
+  ~ * distributed under the License is distributed on an "AS IS" BASIS,
+  ~ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ * See the License for the specific language governing permissions and
+  ~ * limitations under the License.
+  -->
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
+
+    <changeSet author="psilva@redhat.com" id="4.6.0-KEYCLOAK-7950">
+        <update tableName="RESOURCE_SERVER_RESOURCE">
+            <column name="TYPE" value="Group"/>
+            <where>NAME LIKE 'group.resource.%'</where>
+        </update>
+    </changeSet>
+
+    <changeSet author="keycloak" id="4.6.0-KEYCLOAK-8377">
+        <createTable tableName="ROLE_ATTRIBUTE">
+            <column name="ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ROLE_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="NAME" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="VALUE" type="NVARCHAR(255)"/>
+        </createTable>
+        <addPrimaryKey columnNames="ID" constraintName="CONSTRAINT_ROLE_ATTRIBUTE_PK" tableName="ROLE_ATTRIBUTE"/>
+        <addForeignKeyConstraint baseColumnNames="ROLE_ID" baseTableName="ROLE_ATTRIBUTE" constraintName="FK_ROLE_ATTRIBUTE_ID" referencedColumnNames="ID" referencedTableName="KEYCLOAK_ROLE"/>
+        <createIndex indexName="IDX_ROLE_ATTRIBUTE" tableName="ROLE_ATTRIBUTE">
+            <column name="ROLE_ID" type="VARCHAR(36)"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet author="gideonray@gmail.com" id="4.6.0-KEYCLOAK-8555">
+        <createIndex tableName="COMPONENT" indexName="IDX_COMPONENT_PROVIDER_TYPE">
+            <column name="PROVIDER_TYPE" type="VARCHAR(255)"/>
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>

@@ -43,7 +43,6 @@ import javax.ws.rs.Path;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
-import java.security.PublicKey;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -64,7 +63,8 @@ public class KeycloakOIDCIdentityProvider extends OIDCIdentityProvider {
 
     @Override
     protected void processAccessTokenResponse(BrokeredIdentityContext context, AccessTokenResponse response) {
-        JsonWebToken access = validateToken(response.getToken());
+        // Don't verify audience on accessToken as it may not be there. It was verified on IDToken already
+        JsonWebToken access = validateToken(response.getToken(), true);
         context.getContextData().put(VALIDATED_ACCESS_TOKEN, access);
     }
 

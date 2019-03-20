@@ -307,7 +307,7 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
 
         Resource roleResource = resource(role);
         Scope mapRoleScope = mapRoleScope(resourceServer);
-        if (root.evaluatePermission(roleResource, mapRoleScope, resourceServer)) {
+        if (root.evaluatePermission(roleResource, resourceServer, mapRoleScope)) {
             return checkAdminRoles(role);
         } else {
             return false;
@@ -324,7 +324,13 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
 
     @Override
     public boolean canList(RoleContainerModel container) {
-        return root.hasAnyAdminRole();
+        if (canView(container)) {
+            return true;
+        } else if (container instanceof RealmModel) {
+            return root.realm().canListRealms();
+        } else {
+            return root.clients().canList((ClientModel)container);
+        }
     }
 
     @Override
@@ -391,7 +397,7 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
 
         Resource roleResource = resource(role);
         Scope scope = mapCompositeScope(resourceServer);
-        if (root.evaluatePermission(roleResource, scope, resourceServer)) {
+        if (root.evaluatePermission(roleResource, resourceServer, scope)) {
             return checkAdminRoles(role);
         } else {
             return false;
@@ -430,7 +436,7 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
 
         Resource roleResource = resource(role);
         Scope scope = mapClientScope(resourceServer);
-        return root.evaluatePermission(roleResource, scope, resourceServer);
+        return root.evaluatePermission(roleResource, resourceServer, scope);
     }
 
     @Override
@@ -447,7 +453,7 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
             return root.realm().canManageRealm();
         } else if (role.getContainer() instanceof ClientModel) {
             ClientModel client = (ClientModel)role.getContainer();
-            return root.clients().canManage(client);
+            return root.clients().canConfigure(client);
         }
         return false;
     }

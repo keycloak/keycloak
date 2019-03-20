@@ -24,7 +24,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian-tests</artifactId>
-        <version>4.3.0.Final-SNAPSHOT</version>
+        <version>6.0.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>integration-arquillian-tests-other</artifactId>
@@ -40,12 +40,7 @@
         <module>adapters</module>
         <module>sssd</module>
         <module>springboot-tests</module>
-        <module>base-ui</module>
     </modules>
-
-    <properties>
-        <skip.unpack.test.resources>false</skip.unpack.test.resources>
-    </properties>
 
     <build>
         <pluginManagement>
@@ -60,13 +55,12 @@
                                 <goal>unpack</goal>
                             </goals>
                             <configuration>
-                                <skip>${skip.unpack.test.resources}</skip>
                                 <artifactItems>
                                     <artifactItem>
                                         <groupId>org.keycloak.testsuite</groupId>
                                         <artifactId>integration-arquillian-tests-base</artifactId>
                                         <version>${project.version}</version>
-                                        <type>test-jar</type>
+                                        <classifier>tests</classifier>
                                         <includes>arquillian.xml,keycloak-add-user.json,test-constants.properties,kerberos/*,keystore/keycloak.truststore,password-blacklists/*,log4j.properties</includes>
                                     </artifactItem>
                                 </artifactItems>
@@ -166,6 +160,12 @@
             <id>welcome-page</id>
             <modules>
                 <module>welcome-page</module>
+            </modules>
+        </profile>
+        <profile>
+            <id>base-ui</id>
+            <modules>
+                <module>base-ui</module>
             </modules>
         </profile>
     </profiles>

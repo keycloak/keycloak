@@ -8,11 +8,11 @@ module.controller('GroupListCtrl', function($scope, $route, $q, realm, Groups, G
         }
     ];
 
-
-    $scope.searchTerms = '';
+    $scope.searchCriteria = '';
     $scope.currentPage = 1;
     $scope.currentPageInput = $scope.currentPage;
     $scope.pageSize = 20;
+    $scope.numberOfPages = 1;
     $scope.tree = [];
 
     var refreshGroups = function (search) {
@@ -41,9 +41,7 @@ module.controller('GroupListCtrl', function($scope, $route, $q, realm, Groups, G
         }, function() {
             promiseGetGroups.reject('Unable to fetch ' + queryParams);
         });
-        var promiseGetGroupsChain   = promiseGetGroups.promise.then(function(groups) {
-            console.log('*** group call groups size: ' + groups.length);
-            console.log('*** group call groups size: ' + groups.length);
+        promiseGetGroups.promise.then(function(groups) {
             $scope.groupList = [
                 {
                     "id" : "realm",
@@ -51,6 +49,8 @@ module.controller('GroupListCtrl', function($scope, $route, $q, realm, Groups, G
                     "subGroups" : groups
                 }
             ];
+        }, function (failed) {
+            Notifications.error(failed);
         });
 
         var promiseCount = $q.defer();
@@ -60,27 +60,33 @@ module.controller('GroupListCtrl', function($scope, $route, $q, realm, Groups, G
         }, function() {
             promiseCount.reject('Unable to fetch ' + countParams);
         });
-        var promiseCountChain   = promiseCount.promise.then(function(groupsCount) {
-            $scope.numberOfPages = Math.ceil(groupsCount.count/$scope.pageSize);
-         });
+        promiseCount.promise.then(function(entry) {
+            if(angular.isDefined(entry.count) && entry.count > $scope.pageSize) {
+                $scope.numberOfPages = Math.ceil(entry.count/$scope.pageSize);
+            } else {
+                $scope.numberOfPages = 1;
+            }
+        }, function (failed) {
+            Notifications.error(failed);
+        });
     };
     refreshGroups();
 
     $scope.$watch('currentPage', function(newValue, oldValue) {
         if(newValue !== oldValue) {
-            refreshGroups($scope.searchTerms);
+            refreshGroups($scope.searchCriteria);
         }
     });
 
     $scope.clearSearch = function() {
-        $scope.searchTerms = '';
+        $scope.searchCriteria = '';
         $scope.currentPage = 1;
         refreshGroups();
     };
 
     $scope.searchGroup = function() {
         $scope.currentPage = 1;
-        refreshGroups($scope.searchTerms);
+        refreshGroups($scope.searchCriteria);
     };
 
     $scope.edit = function(selected) {
@@ -307,10 +313,10 @@ module.controller('GroupRoleMappingCtrl', function($scope, $http, realm, group, 
     $scope.realmComposite = GroupCompositeRealmRoleMapping.query({realm : realm.realm, groupId : group.id});
 
     $scope.addRealmRole = function() {
-        var roles = $scope.selectedRealmRoles;
+        $scope.selectedRealmRolesToAdd = JSON.parse('[' + $scope.selectedRealmRoles + ']');
         $scope.selectedRealmRoles = [];
         $http.post(authUrl + '/admin/realms/' + realm.realm + '/groups/' + group.id + '/role-mappings/realm',
-            roles).then(function() {
+            $scope.selectedRealmRolesToAdd).then(function() {
             $scope.realmMappings = GroupRealmRoleMapping.query({realm : realm.realm, groupId : group.id});
             $scope.realmRoles = GroupAvailableRealmRoleMapping.query({realm : realm.realm, groupId : group.id});
             $scope.realmComposite = GroupCompositeRealmRoleMapping.query({realm : realm.realm, groupId : group.id});
@@ -324,14 +330,16 @@ module.controller('GroupRoleMappingCtrl', function($scope, $http, realm, group, 
                 $scope.selectedClientRoles = [];
                 $scope.selectedClientMappings = [];
             }
+            $scope.selectedRealmRolesToAdd = [];
             Notifications.success("Role mappings updated.");
 
         });
     };
 
     $scope.deleteRealmRole = function() {
+        $scope.selectedRealmMappingsToRemove = JSON.parse('[' + $scope.selectedRealmMappings + ']');
         $http.delete(authUrl + '/admin/realms/' + realm.realm + '/groups/' + group.id + '/role-mappings/realm',
-            {data : $scope.selectedRealmMappings, headers : {"content-type" : "application/json"}}).then(function() {
+            {data : $scope.selectedRealmMappingsToRemove, headers : {"content-type" : "application/json"}}).then(function() {
             $scope.realmMappings = GroupRealmRoleMapping.query({realm : realm.realm, groupId : group.id});
             $scope.realmRoles = GroupAvailableRealmRoleMapping.query({realm : realm.realm, groupId : group.id});
             $scope.realmComposite = GroupCompositeRealmRoleMapping.query({realm : realm.realm, groupId : group.id});
@@ -345,13 +353,15 @@ module.controller('GroupRoleMappingCtrl', function($scope, $http, realm, group, 
                 $scope.selectedClientRoles = [];
                 $scope.selectedClientMappings = [];
             }
+            $scope.selectedRealmMappingsToRemove = [];
             Notifications.success("Role mappings updated.");
         });
     };
 
     $scope.addClientRole = function() {
+        $scope.selectedClientRolesToAdd = JSON.parse('[' + $scope.selectedClientRoles + ']');
         $http.post(authUrl + '/admin/realms/' + realm.realm + '/groups/' + group.id + '/role-mappings/clients/' + $scope.targetClient.id,
-            $scope.selectedClientRoles).then(function() {
+            $scope.selectedClientRolesToAdd).then(function() {
             $scope.clientMappings = GroupClientRoleMapping.query({realm : realm.realm, groupId : group.id, client : $scope.targetClient.id});
             $scope.clientRoles = GroupAvailableClientRoleMapping.query({realm : realm.realm, groupId : group.id, client : $scope.targetClient.id});
             $scope.clientComposite = GroupCompositeClientRoleMapping.query({realm : realm.realm, groupId : group.id, client : $scope.targetClient.id});
@@ -359,13 +369,15 @@ module.controller('GroupRoleMappingCtrl', function($scope, $http, realm, group, 
             $scope.selectedClientMappings = [];
             $scope.realmComposite = GroupCompositeRealmRoleMapping.query({realm : realm.realm, groupId : group.id});
             $scope.realmRoles = GroupAvailableRealmRoleMapping.query({realm : realm.realm, groupId : group.id});
+            $scope.selectedClientRolesToAdd = [];
             Notifications.success("Role mappings updated.");
         });
     };
 
     $scope.deleteClientRole = function() {
+        $scope.selectedClientMappingsToRemove = JSON.parse('[' + $scope.selectedClientMappings + ']');
         $http.delete(authUrl + '/admin/realms/' + realm.realm + '/groups/' + group.id + '/role-mappings/clients/' + $scope.targetClient.id,
-            {data : $scope.selectedClientMappings, headers : {"content-type" : "application/json"}}).then(function() {
+            {data : $scope.selectedClientMappingsToRemove, headers : {"content-type" : "application/json"}}).then(function() {
             $scope.clientMappings = GroupClientRoleMapping.query({realm : realm.realm, groupId : group.id, client : $scope.targetClient.id});
             $scope.clientRoles = GroupAvailableClientRoleMapping.query({realm : realm.realm, groupId : group.id, client : $scope.targetClient.id});
             $scope.clientComposite = GroupCompositeClientRoleMapping.query({realm : realm.realm, groupId : group.id, client : $scope.targetClient.id});
@@ -373,6 +385,7 @@ module.controller('GroupRoleMappingCtrl', function($scope, $http, realm, group, 
             $scope.selectedClientMappings = [];
             $scope.realmComposite = GroupCompositeRealmRoleMapping.query({realm : realm.realm, groupId : group.id});
             $scope.realmRoles = GroupAvailableRealmRoleMapping.query({realm : realm.realm, groupId : group.id});
+            $scope.selectedClientMappingsToRemove = [];
             Notifications.success("Role mappings updated.");
         });
     };
@@ -442,16 +455,88 @@ module.controller('GroupMembersCtrl', function($scope, realm, group, GroupMember
 
 });
 
-module.controller('DefaultGroupsCtrl', function($scope, $route, realm, groups, DefaultGroups, Notifications) {
+module.controller('DefaultGroupsCtrl', function($scope, $q, realm, Groups, GroupsCount, DefaultGroups, Notifications) {
     $scope.realm = realm;
-    $scope.groupList = groups;
+    $scope.groupList = [];
     $scope.selectedGroup = null;
     $scope.tree = [];
 
-    DefaultGroups.query({realm: realm.realm}, function(data) {
-        $scope.defaultGroups = data;
+    $scope.searchCriteria = '';
+    $scope.currentPage = 1;
+    $scope.currentPageInput = $scope.currentPage;
+    $scope.pageSize = 20;
+    $scope.numberOfPages = 1;
 
+    var refreshDefaultGroups = function () {
+        DefaultGroups.query({realm: realm.realm}, function(data) {
+            $scope.defaultGroups = data;
+        });
+    }
+
+    var refreshAvailableGroups = function (search) {
+        var first = ($scope.currentPage * $scope.pageSize) - $scope.pageSize;
+        var queryParams = {
+            realm : realm.realm,
+            first : first,
+            max : $scope.pageSize
+        };
+        var countParams = {
+            realm : realm.realm,
+            top : 'true'
+        };
+
+        if(angular.isDefined(search) && search !== '') {
+            queryParams.search = search;
+            countParams.search = search;
+        }
+
+        var promiseGetGroups = $q.defer();
+        Groups.query(queryParams, function(entry) {
+            promiseGetGroups.resolve(entry);
+        }, function() {
+            promiseGetGroups.reject('Unable to fetch ' + queryParams);
+        });
+        promiseGetGroups.promise.then(function(groups) {
+            $scope.groupList = groups;
+        }, function (failed) {
+            Notifications.success(failed);
+        });
+
+        var promiseCount = $q.defer();
+        GroupsCount.query(countParams, function(entry) {
+            promiseCount.resolve(entry);
+        }, function() {
+            promiseCount.reject('Unable to fetch ' + countParams);
+        });
+        promiseCount.promise.then(function(entry) {
+            if(angular.isDefined(entry.count) && entry.count > $scope.pageSize) {
+                $scope.numberOfPages = Math.ceil(entry.count/$scope.pageSize);
+            }
+        }, function (failed) {
+            Notifications.success(failed);
+        });
+    };
+
+    refreshAvailableGroups();
+
+    $scope.$watch('currentPage', function(newValue, oldValue) {
+        if(newValue !== oldValue) {
+            refreshAvailableGroups($scope.searchCriteria);
+        }
     });
+
+    $scope.clearSearch = function() {
+        $scope.searchCriteria = '';
+        $scope.currentPage = 1;
+        refreshAvailableGroups();
+    };
+
+    $scope.searchGroup = function() {
+        $scope.currentPage = 1;
+        refreshAvailableGroups($scope.searchCriteria);
+    };
+
+    refreshDefaultGroups();
 
     $scope.addDefaultGroup = function() {
         if (!$scope.tree.currentNode) {
@@ -460,16 +545,16 @@ module.controller('DefaultGroupsCtrl', function($scope, $route, realm, groups, D
         }
 
         DefaultGroups.update({realm: realm.realm, groupId: $scope.tree.currentNode.id}, function() {
+            refreshDefaultGroups();
             Notifications.success('Added default group');
-            $route.reload();
         });
 
     };
 
     $scope.removeDefaultGroup = function() {
         DefaultGroups.remove({realm: realm.realm, groupId: $scope.selectedGroup.id}, function() {
+            refreshDefaultGroups();
             Notifications.success('Removed default group');
-            $route.reload();
         });
 
     };

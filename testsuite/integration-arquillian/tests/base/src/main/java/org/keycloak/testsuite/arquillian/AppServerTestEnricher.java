@@ -236,7 +236,7 @@ public class AppServerTestEnricher {
      * @return testClass or the nearest superclass of testClass annotated with
      * annotationClass
      */
-    private static Class getNearestSuperclassWithAppServerAnnotation(Class<?> testClass) {
+    public static Class getNearestSuperclassWithAppServerAnnotation(Class<?> testClass) {
         return (testClass.isAnnotationPresent(AppServerContainer.class) || testClass.isAnnotationPresent(AppServerContainers.class)) ? testClass
                 : (testClass.getSuperclass().equals(Object.class) ? null // stop recursion
                 : getNearestSuperclassWithAppServerAnnotation(testClass.getSuperclass())); // continue recursion
@@ -267,7 +267,7 @@ public class AppServerTestEnricher {
     }
 
     public static boolean isTomcatAppServer() {
-        return CURRENT_APP_SERVER.equals("tomcat");
+        return CURRENT_APP_SERVER.startsWith("tomcat");
     }
 
     public static boolean isEAP6AppServer() {

@@ -83,9 +83,19 @@ public class ClientIdAndSecretAuthenticator extends AbstractClientAuthenticator 
             }
         }
 
-        if (formData != null && client_id == null) {
-            client_id = formData.getFirst(OAuth2Constants.CLIENT_ID);
-            clientSecret = formData.getFirst(OAuth2Constants.CLIENT_SECRET);
+        if (formData != null) {
+            // even if basic challenge response exist, we check if client id was explicitly set in the request as a form param,
+            // so we can also support clients overriding flows and using challenges (e.g: basic) to authenticate their users
+            if (formData.containsKey(OAuth2Constants.CLIENT_ID)) {
+                client_id = formData.getFirst(OAuth2Constants.CLIENT_ID);
+            }
+            if (formData.containsKey(OAuth2Constants.CLIENT_SECRET)) {
+                clientSecret = formData.getFirst(OAuth2Constants.CLIENT_SECRET);
+            }
+        }
+
+        if (client_id == null) {
+            client_id = context.getSession().getAttribute("client_id", String.class);
         }
 
         if (client_id == null) {

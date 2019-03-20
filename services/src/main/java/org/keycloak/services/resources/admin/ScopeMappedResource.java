@@ -98,7 +98,7 @@ public class ScopeMappedResource {
         if (realmMappings.size() > 0) {
             List<RoleRepresentation> realmRep = new ArrayList<RoleRepresentation>();
             for (RoleModel roleModel : realmMappings) {
-                realmRep.add(ModelToRepresentation.toRepresentation(roleModel));
+                realmRep.add(ModelToRepresentation.toBriefRepresentation(roleModel));
             }
             all.setRealmMappings(realmRep);
         }
@@ -115,7 +115,7 @@ public class ScopeMappedResource {
                     List<RoleRepresentation> roles = new ArrayList<RoleRepresentation>();
                     mappings.setMappings(roles);
                     for (RoleModel role : roleMappings) {
-                        roles.add(ModelToRepresentation.toRepresentation(role));
+                        roles.add(ModelToRepresentation.toBriefRepresentation(role));
                     }
                     clientMappings.put(client.getClientId(), mappings);
                     all.setClientMappings(clientMappings);
@@ -144,7 +144,7 @@ public class ScopeMappedResource {
         Set<RoleModel> realmMappings = scopeContainer.getRealmScopeMappings();
         List<RoleRepresentation> realmMappingsRep = new ArrayList<RoleRepresentation>();
         for (RoleModel roleModel : realmMappings) {
-            realmMappingsRep.add(ModelToRepresentation.toRepresentation(roleModel));
+            realmMappingsRep.add(ModelToRepresentation.toBriefRepresentation(roleModel));
         }
         return realmMappingsRep;
     }
@@ -174,7 +174,7 @@ public class ScopeMappedResource {
         for (RoleModel roleModel : roles) {
             if (client.hasScope(roleModel)) continue;
             if (!auth.roles().canMapClientScope(roleModel)) continue;
-            available.add(ModelToRepresentation.toRepresentation(roleModel));
+            available.add(ModelToRepresentation.toBriefRepresentation(roleModel));
         }
         return available;
     }
@@ -206,7 +206,7 @@ public class ScopeMappedResource {
     public static List<RoleRepresentation> getComposite(ScopeContainerModel client, Set<RoleModel> roles) {
         List<RoleRepresentation> composite = new ArrayList<RoleRepresentation>();
         for (RoleModel roleModel : roles) {
-            if (client.hasScope(roleModel)) composite.add(ModelToRepresentation.toRepresentation(roleModel));
+            if (client.hasScope(roleModel)) composite.add(ModelToRepresentation.toBriefRepresentation(roleModel));
         }
         return composite;
     }
@@ -258,7 +258,7 @@ public class ScopeMappedResource {
 
             for (RoleModel roleModel : roleModels) {
                 scopeContainer.deleteScopeMapping(roleModel);
-                roles.add(ModelToRepresentation.toRepresentation(roleModel));
+                roles.add(ModelToRepresentation.toBriefRepresentation(roleModel));
             }
 
        } else {

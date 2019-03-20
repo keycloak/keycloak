@@ -18,7 +18,10 @@
 package org.keycloak.cluster.infinispan;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.infinispan.Cache;
@@ -30,6 +33,7 @@ import org.infinispan.client.hotrod.annotation.ClientListener;
 import org.infinispan.client.hotrod.event.ClientCacheEntryCreatedEvent;
 import org.infinispan.client.hotrod.event.ClientCacheEntryModifiedEvent;
 import org.infinispan.client.hotrod.event.ClientCacheEntryRemovedEvent;
+import org.infinispan.client.hotrod.exceptions.HotRodClientException;
 import org.infinispan.context.Flag;
 import org.infinispan.manager.EmbeddedCacheManager;
 import org.infinispan.persistence.remote.configuration.RemoteStoreConfigurationBuilder;
@@ -61,13 +65,13 @@ public class ConcurrencyJDGRemoveSessionTest {
     private static RemoteCache remoteCache1;
     private static RemoteCache remoteCache2;
 
-    private static final AtomicInteger failedReplaceCounter = new AtomicInteger(0);
-    private static final AtomicInteger failedReplaceCounter2 = new AtomicInteger(0);
+    private static final AtomicInteger errorsCounter = new AtomicInteger(0);
 
     private static final AtomicInteger successfulListenerWrites = new AtomicInteger(0);
     private static final AtomicInteger successfulListenerWrites2 = new AtomicInteger(0);
 
-    //private static Map<String, EntryInfo> state = new HashMap<>();
+    private static Map<String, AtomicInteger> removalCounts = new ConcurrentHashMap<>();
+
 
     private static final UUID CLIENT_1_UUID = UUID.randomUUID();
 
@@ -78,12 +82,16 @@ public class ConcurrencyJDGRemoveSessionTest {
         // Create caches, listeners and finally worker threads
         Thread worker1 = createWorker(cache1, 1);
         Thread worker2 = createWorker(cache2, 2);
+        Thread worker3 = createWorker(cache1, 1);
+        Thread worker4 = createWorker(cache2, 2);
 
         // Create 100 initial sessions
         for (int i=0 ; i<ITERATIONS ; i++) {
             String sessionId = String.valueOf(i);
             SessionEntityWrapper<UserSessionEntity> wrappedSession = createSessionEntity(sessionId);
             cache1.put(sessionId, wrappedSession);
+
+            removalCounts.put(sessionId, new AtomicInteger(0));
         }
 
         logger.info("SESSIONS CREATED");
@@ -101,25 +109,44 @@ public class ConcurrencyJDGRemoveSessionTest {
         long start = System.currentTimeMillis();
 
         try {
-            // Just running in current thread
-            worker1.run();
+            worker1.start();
+            worker2.start();
+            worker3.start();
+            worker4.start();
+
+            worker1.join();
+            worker2.join();
+            worker3.join();
+            worker4.join();
 
             logger.info("SESSIONS REMOVED");
+
+            Map<Integer, Integer> histogram = new HashMap<>();
+            for (Map.Entry<String, AtomicInteger> entry : removalCounts.entrySet()) {
+                int count = entry.getValue().get();
+
+                int current = histogram.get(count) == null ? 0 : histogram.get(count);
+                current++;
+                histogram.put(count, current);
+            }
+
+            logger.infof("Histogram: %s", histogram.toString());
+            logger.infof("Errors: %d", errorsCounter.get());
 
             //Thread.sleep(5000);
 
             // Doing it in opposite direction to ensure that newer are checked first.
             // This us currently FAILING (expected) as listeners are executed asynchronously.
-            for (int i=ITERATIONS-1 ; i>=0 ; i--) {
-                String sessionId = String.valueOf(i);
-
-                logger.infof("Before call cache2.get: %s", sessionId);
-
-                SessionEntityWrapper loadedWrapper = cache2.get(sessionId);
-                Assert.assertNull("Loaded wrapper not null for key " + sessionId, loadedWrapper);
-            }
-
-            logger.info("SESSIONS NOT AVAILABLE ON DC2");
+//            for (int i=ITERATIONS-1 ; i>=0 ; i--) {
+//                String sessionId = String.valueOf(i);
+//
+//                logger.infof("Before call cache2.get: %s", sessionId);
+//
+//                SessionEntityWrapper loadedWrapper = cache2.get(sessionId);
+//                Assert.assertNull("Loaded wrapper not null for key " + sessionId, loadedWrapper);
+//            }
+//
+//            logger.info("SESSIONS NOT AVAILABLE ON DC2");
 
             long took = System.currentTimeMillis() - start;
             logger.infof("took %d ms", took);
@@ -271,19 +298,30 @@ public class ConcurrencyJDGRemoveSessionTest {
 
             for (int i=0 ; i<ITERATIONS ; i++) {
                 String sessionId = String.valueOf(i);
-                remoteCache.remove(sessionId);
 
+                try {
+                    Object o = remoteCache
+                            .withFlags(org.infinispan.client.hotrod.Flag.FORCE_RETURN_VALUE)
+                            .remove(sessionId);
 
-                logger.infof("Session %s removed on DC1", sessionId);
-
-                // Check if it's immediately seen that session is removed on 2nd DC
-                RemoteCache secondDCRemoteCache = myThreadId == 1 ? remoteCache2 : remoteCache1;
-                SessionEntityWrapper thatSession = (SessionEntityWrapper) secondDCRemoteCache.get(sessionId);
-                Assert.assertNull("Session with ID " + sessionId + " not removed on the other DC. ThreadID: " + myThreadId, thatSession);
-
-                // Also check that it's immediatelly removed on my DC
-                SessionEntityWrapper mySession = (SessionEntityWrapper) remoteCache.get(sessionId);
-                Assert.assertNull("Session with ID " + sessionId + " not removed on the other DC. ThreadID: " + myThreadId, mySession);
+                    if (o != null) {
+                        removalCounts.get(sessionId).incrementAndGet();
+                    }
+                } catch (HotRodClientException hrce) {
+                    errorsCounter.incrementAndGet();
+                }
+//
+//
+//                logger.infof("Session %s removed on DC1", sessionId);
+//
+//                // Check if it's immediately seen that session is removed on 2nd DC
+//                RemoteCache secondDCRemoteCache = myThreadId == 1 ? remoteCache2 : remoteCache1;
+//                SessionEntityWrapper thatSession = (SessionEntityWrapper) secondDCRemoteCache.get(sessionId);
+//                Assert.assertNull("Session with ID " + sessionId + " not removed on the other DC. ThreadID: " + myThreadId, thatSession);
+//
+//                // Also check that it's immediatelly removed on my DC
+//                SessionEntityWrapper mySession = (SessionEntityWrapper) remoteCache.get(sessionId);
+//                Assert.assertNull("Session with ID " + sessionId + " not removed on the other DC. ThreadID: " + myThreadId, mySession);
             }
 
         }

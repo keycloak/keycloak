@@ -19,9 +19,11 @@ package org.keycloak.models;
 
 import org.keycloak.provider.ProviderEvent;
 
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -33,6 +35,8 @@ public interface UserModel extends RoleMapperModel {
     String FIRST_NAME = "firstName";
     String EMAIL = "email";
     String LOCALE = "locale";
+    String INCLUDE_SERVICE_ACCOUNT = "keycloak.session.realm.users.query.include_service_account";
+    String GROUPS = "keycloak.session.realm.users.query.groups";
 
     interface UserRemovedEvent extends ProviderEvent {
         RealmModel getRealm();
@@ -110,6 +114,32 @@ public interface UserModel extends RoleMapperModel {
     void setEmailVerified(boolean verified);
 
     Set<GroupModel> getGroups();
+
+    default Set<GroupModel> getGroups(int first, int max) {
+        return getGroups(null, first, max);
+    }
+
+    default Set<GroupModel> getGroups(String search, int first, int max) {
+        return getGroups().stream()
+                .filter(group -> search == null || group.getName().toLowerCase().contains(search.toLowerCase()))
+                .skip(first)
+                .limit(max)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+    }
+
+    default long getGroupsCount() {
+        return getGroupsCountByNameContaining(null);
+    }
+    
+    default long getGroupsCountByNameContaining(String search) {
+        if (search == null) {
+            return getGroups().size();
+        }
+
+        String s = search.toLowerCase();
+        return getGroups().stream().filter(group -> group.getName().toLowerCase().contains(s)).count();
+    }
+
     void joinGroup(GroupModel group);
     void leaveGroup(GroupModel group);
     boolean isMemberOf(GroupModel group);

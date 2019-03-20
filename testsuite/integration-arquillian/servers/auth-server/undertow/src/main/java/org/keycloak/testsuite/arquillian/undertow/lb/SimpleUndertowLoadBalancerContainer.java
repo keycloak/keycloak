@@ -51,7 +51,7 @@ public class SimpleUndertowLoadBalancerContainer implements DeployableContainer<
 
     @Override
     public void start() throws LifecycleException {
-        this.container = new SimpleUndertowLoadBalancer(configuration.getBindAddress(), configuration.getBindHttpPort(), configuration.getNodes());
+        this.container = new SimpleUndertowLoadBalancer(configuration.getBindAddress(), configuration.getBindHttpPort(), configuration.getBindHttpsPort(), configuration.getNodes());
         this.container.start();
     }
 

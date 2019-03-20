@@ -17,6 +17,13 @@
 
 package org.keycloak.testsuite.adapter.servlet;
 
+import org.keycloak.dom.saml.v2.protocol.AuthnRequestType;
+import org.keycloak.saml.BaseSAML2BindingBuilder;
+import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
+import org.keycloak.saml.common.exceptions.ConfigurationException;
+import org.keycloak.saml.common.exceptions.ParsingException;
+import org.keycloak.saml.common.exceptions.ProcessingException;
+import org.keycloak.saml.processing.api.saml.v2.request.SAML2Request;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -24,6 +31,8 @@ import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.UriBuilder;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.net.URI;
+import java.util.UUID;
 
 /**
 * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -50,7 +59,7 @@ public class SamlSPFacade extends HttpServlet {
             System.out.println("ParameterMap is empty, redirecting to keycloak server ");
             resp.setStatus(302);
             // Redirect
-            UriBuilder builder = UriBuilder.fromUri(ServletTestUtils.getAuthServerUrlBase() + "/auth/realms/demo/protocol/saml?SAMLRequest=" + getSamlRequest());
+            UriBuilder builder = UriBuilder.fromUri(getSamlAuthnRequest(req));
             builder.queryParam("RelayState", RELAY_STATE);
             resp.setHeader("Location", builder.build().toString());
             return;
@@ -66,11 +75,39 @@ public class SamlSPFacade extends HttpServlet {
         pw.flush();
     }
 
-    private String getSamlRequest() {
-        if (System.getProperty("auth.server.ssl.required", "false").equals("true")) {
-            return "jZJJT8MwEIXvSPyHyPfUTrokWE2lQoWoxBLRwoELMs6UWnLs4HFY%2Fj1OoALEIiQfLPt55r1vPEVR64bPW781l%2FDQAvroudYGeX9RkNYZbgUq5EbUgNxLvpqfnfJ0wHjjrLfSavL25G%2BxQATnlTUkmu%2B2R9ZgW4NbgXtUEq4uTwuy9b5BTqm2UuitRc%2FzyWhIoW60fQGgJFoEk8qIrsCP8nGQixCIOhC6RlpBbenOK%2B1ykejYOgl96oJshEYg0XJRkOXidlTlMJaQxlnKJvEoS%2B9ikR9kcVrlw4wdMMnYOIixDIHUI3w8R2xhadAL4wuSsmQcs2HMJus05WEl2SAYuyFR%2BW7kUJlKmfu%2Fod29iZCfrNdlXF6s1iS6Bod99CAgs%2F29aZeI9%2B3dp9n9dxqzjuBXgCxPPnhP6af6u3YNPw8ll4vSaiVfornW9uko4PaBh3ct9IBr4X83kQyS%2FkRV8aaX8tZgA1JtFFSEdo3o9785ewU%3D";
-        }
+   /*
+    * https://idp.ssocircle.com/sso/toolbox/samlEncode.jsp
+    *
+    * returns (https instead of http in case ssl is required)
+    * 
+    * <samlp:AuthnRequest 
+    *     xmlns:samlp="urn:oasis:names:tc:SAML:2.0:protocol" 
+    *     xmlns="urn:oasis:names:tc:SAML:2.0:assertion" 
+    *     AssertionConsumerServiceURL="http://localhost:8280/employee/" 
+    *     Destination="http://localhost:8180/auth/realms/demo/protocol/saml" 
+    *     ForceAuthn="false" 
+    *     ID="ID_4d8e5ce2-7206-472b-a897-2d837090c005" 
+    *     IsPassive="false" 
+    *     IssueInstant="2015-03-06T22:22:17.854Z" 
+    *     ProtocolBinding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST" 
+    *     Version="2.0"> 
+    *         <saml:Issuer xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion">saml-employee</saml:Issuer> 
+    *         <samlp:NameIDPolicy AllowCreate="true" Format="urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified"/> 
+    * </samlp:AuthnRequest> 
+    */
+    private URI getSamlAuthnRequest(HttpServletRequest req) {
+        try {
+            BaseSAML2BindingBuilder binding = new BaseSAML2BindingBuilder();
+            SAML2Request samlReq = new SAML2Request();
+            String appServerUrl = ServletTestUtils.getUrlBase(req) + "/employee/";
+            String authServerUrl = ServletTestUtils.getAuthServerUrlBase() + "/auth/realms/demo/protocol/saml";
+            AuthnRequestType loginReq;
+            loginReq = samlReq.createAuthnRequestType(UUID.randomUUID().toString(), appServerUrl, authServerUrl, "http://localhost:8280/employee/");
+            loginReq.getNameIDPolicy().setFormat(JBossSAMLURIConstants.NAMEID_FORMAT_UNSPECIFIED.getUri());
 
-        return "jZJdS8MwFIbvBf9DyX2XNG62hnUwHeLAj7JNL7yRmJ65QJrUnNSPf29WHQp%2BIOQiJM%2FJed%2F3ZIyyMa2YdmFjF%2FDYAYbkpTEWRX9Rks5b4SRqFFY2gCIosZxenAs%2BYKL1LjjlDHkv%2BRuWiOCDdpYk0932xFnsGvBL8E9awfXivCSbEFpBqXFKmo3DIApeMApNa9wrACXJLGrUVm7rf6KzSMtoh3qQpkFaQ%2BPoTinduiLJqfMKes8lWUuDQJL5rCTz2d2wLmCkgKc5Z4fpMOf3qSyO8pTXxUHOjphibBRhrKId%2FQSf5YgdzC0GaUNJOMtGKTtI2eGKcxFXlg%2BK0fCWJNWHkGNta20f%2Fo7s%2Fh1CcbZaVWl1tVyR5AY89s4jQCb7e%2BOtI9G3918m999ZTL4HyIrsM%2B4x%2FfL%2Brl0rLuOT81nljFavydQY93wS4w4xj%2BA76ANuZPhdRDbI%2BhNdp%2BseFZ3FFpRea6gJ3Tai33%2Fm5A0%3D";
+            return binding.redirectBinding(SAML2Request.convert(loginReq)).requestURI(authServerUrl);
+        } catch (IOException | ConfigurationException | ParsingException | ProcessingException ex) {
+            throw new RuntimeException(ex);
+        }
     }
 }

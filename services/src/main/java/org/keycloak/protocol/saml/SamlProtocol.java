@@ -43,6 +43,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.ProtocolMapper;
+import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.protocol.saml.mappers.SAMLAttributeStatementMapper;
 import org.keycloak.protocol.saml.mappers.SAMLLoginResponseMapper;
 import org.keycloak.protocol.saml.mappers.SAMLRoleListMapper;
@@ -296,8 +297,8 @@ public class SamlProtocol implements LoginProtocol {
         return (logoutRedirectUrl == null || logoutRedirectUrl.trim().isEmpty());
     }
 
-    protected String getNameIdFormat(SamlClient samlClient, AuthenticatedClientSessionModel clientSession) {
-        String nameIdFormat = clientSession.getNote(GeneralConstants.NAMEID_FORMAT);
+    protected String getNameIdFormat(SamlClient samlClient, AuthenticationSessionModel authSession) {
+        String nameIdFormat = authSession.getClientNote(GeneralConstants.NAMEID_FORMAT);
 
         boolean forceFormat = samlClient.forceNameIDFormat();
         String configuredNameIdFormat = samlClient.getNameIDFormat();
@@ -367,20 +368,20 @@ public class SamlProtocol implements LoginProtocol {
     }
 
     @Override
-    public Response authenticated(UserSessionModel userSession, ClientSessionContext clientSessionCtx) {
+    public Response authenticated(AuthenticationSessionModel authSession, UserSessionModel userSession, ClientSessionContext clientSessionCtx) {
         AuthenticatedClientSessionModel clientSession = clientSessionCtx.getClientSession();
         ClientModel client = clientSession.getClient();
         SamlClient samlClient = new SamlClient(client);
-        String requestID = clientSession.getNote(SAML_REQUEST_ID);
-        String relayState = clientSession.getNote(GeneralConstants.RELAY_STATE);
-        String redirectUri = clientSession.getRedirectUri();
+        String requestID = authSession.getClientNote(SAML_REQUEST_ID);
+        String relayState = authSession.getClientNote(GeneralConstants.RELAY_STATE);
+        String redirectUri = authSession.getRedirectUri();
         String responseIssuer = getResponseIssuer(realm);
-        String nameIdFormat = getNameIdFormat(samlClient, clientSession);
-        String nameId = getNameId(nameIdFormat, clientSession, userSession);
+        String nameIdFormat = getNameIdFormat(samlClient, authSession);
+        String nameId = getNameId(nameIdFormat, authSession, userSession);
 
         if (nameId == null) {
             return samlErrorMessage(
-              null, samlClient, isPostBinding(clientSession),
+              null, samlClient, isPostBinding(authSession),
               redirectUri, JBossSAMLURIConstants.STATUS_INVALID_NAMEIDPOLICY, relayState
             );
         }
@@ -407,12 +408,10 @@ public class SamlProtocol implements LoginProtocol {
         List<ProtocolMapperProcessor<SAMLLoginResponseMapper>> loginResponseMappers = new LinkedList<>();
         ProtocolMapperProcessor<SAMLRoleListMapper> roleListMapper = null;
 
-        Set<ProtocolMapperModel> mappings = clientSessionCtx.getProtocolMappers();
-        for (ProtocolMapperModel mapping : mappings) {
+        for (Map.Entry<ProtocolMapperModel, ProtocolMapper> entry : ProtocolMapperUtils.getSortedProtocolMappers(session, clientSessionCtx)) {
+            ProtocolMapperModel mapping = entry.getKey();
+            ProtocolMapper mapper = entry.getValue();
 
-            ProtocolMapper mapper = (ProtocolMapper) session.getKeycloakSessionFactory().getProviderFactory(ProtocolMapper.class, mapping.getProtocolMapper());
-            if (mapper == null)
-                continue;
             if (mapper instanceof SAMLAttributeStatementMapper) {
                 attributeStatementMappers.add(new ProtocolMapperProcessor<SAMLAttributeStatementMapper>((SAMLAttributeStatementMapper) mapper, mapping));
             }
@@ -427,7 +426,7 @@ public class SamlProtocol implements LoginProtocol {
         Document samlDocument = null;
         KeyManager keyManager = session.keys();
         KeyManager.ActiveRsaKey keys = keyManager.getActiveRsaKey(realm);
-        boolean postBinding = isPostBinding(clientSession);
+        boolean postBinding = isPostBinding(authSession);
         String keyName = samlClient.getXmlSigKeyInfoKeyNameTransformer().getKeyName(keys.getKid(), keys.getCertificate());
 
         try {

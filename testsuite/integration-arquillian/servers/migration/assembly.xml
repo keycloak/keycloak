@@ -17,7 +17,7 @@
 
 <assembly>
     
-    <id>auth-server-jboss-${migrated.auth.server.version}</id>
+    <id>auth-server-migration-${migrated.auth.server.version}</id>
 
     <formats>
         <format>zip</format>
@@ -27,15 +27,15 @@
 
     <fileSets>
         <fileSet>
-            <directory>${keycloak.server.home}</directory>
-            <outputDirectory>keycloak-${migrated.auth.server.version}</outputDirectory>
+            <directory>${auth.server.home}</directory>
+            <outputDirectory>auth-server-migration</outputDirectory>
             <excludes>
                 <exclude>**/*.sh</exclude>
             </excludes>
         </fileSet>
         <fileSet>
-            <directory>${keycloak.server.home}</directory>
-            <outputDirectory>keycloak-${migrated.auth.server.version}</outputDirectory>
+            <directory>${auth.server.home}</directory>
+            <outputDirectory>auth-server-migration</outputDirectory>
             <includes>
                 <include>**/*.sh</include>
             </includes>

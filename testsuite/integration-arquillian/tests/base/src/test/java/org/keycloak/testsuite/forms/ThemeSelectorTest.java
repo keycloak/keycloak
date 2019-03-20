@@ -39,7 +39,8 @@ public class ThemeSelectorTest extends AbstractTestRealmKeycloakTest {
     }
 
     private String detectTheme() {
-        if(driver.getPageSource().contains("/login/keycloak/css/login.css")) {
+        // for the purpose of the test does not matter which profile is used (product or community)
+        if(driver.getPageSource().contains("/login/keycloak/css/login.css") || driver.getPageSource().contains("/login/rh-sso/css/login.css")) {
             return "keycloak";
         } else {
             return "base";

@@ -26,11 +26,13 @@ public class Hawtio2Page extends AbstractPage {
         return UriBuilder.fromUri(getUrl());
     }
 
-    @FindBy(xpath = "//a[@id ='userDropdownMenu']")
+    // First variant for Fuse 7.1, 7.2, the second variant for Fuse 7.3
+    @FindBy(xpath = "//a[@id ='userDropdownMenu'] | //button[@id ='userDropdownMenu']")
     @JavascriptBrowser
     private WebElement dropDownMenu;
 
-    @FindBy(xpath = "//a[@ng-click='userDetails.logout()']")
+    // First variant for Fuse 7.1, 7.2, the second variant for Fuse 7.3
+    @FindBy(xpath = "//a[@ng-click='userDetails.logout()'] | //a[@ng-focus='authService.logout()']")
     @JavascriptBrowser
     private WebElement logoutButton;
 

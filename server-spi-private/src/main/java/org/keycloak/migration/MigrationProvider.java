@@ -17,6 +17,7 @@
 
 package org.keycloak.migration;
 
+import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.provider.Provider;
@@ -41,5 +42,23 @@ public interface MigrationProvider extends Provider {
     Map<String, ProtocolMapperModel> getBuiltinMappers(String protocol);
 
     void setupAdminCli(RealmModel realm);
+
+
+    /**
+     * Add 'roles' client scope or return it if already exists
+     *
+     * @param realm
+     * @return created or already existing client scope 'roles'
+     */
+    ClientScopeModel addOIDCRolesClientScope(RealmModel realm);
+
+
+    /**
+     * Add 'web-origins' client scope or return it if already exists
+     *
+     * @param realm
+     * @return created or already existing client scope 'web-origins'
+     */
+    ClientScopeModel addOIDCWebOriginsClientScope(RealmModel realm);
 
 }

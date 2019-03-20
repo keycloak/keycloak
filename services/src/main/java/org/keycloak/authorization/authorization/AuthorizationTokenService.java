@@ -42,12 +42,13 @@ import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.authorization.AuthorizationProvider;
-import org.keycloak.authorization.common.KeycloakEvaluationContext;
+import org.keycloak.authorization.common.DefaultEvaluationContext;
 import org.keycloak.authorization.common.KeycloakIdentity;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.permission.ResourcePermission;
+import org.keycloak.authorization.policy.evaluation.EvaluationContext;
 import org.keycloak.authorization.policy.evaluation.PermissionTicketAwareDecisionResultCollector;
 import org.keycloak.authorization.store.ResourceServerStore;
 import org.keycloak.authorization.store.ResourceStore;
@@ -57,14 +58,14 @@ import org.keycloak.authorization.util.Permissions;
 import org.keycloak.authorization.util.Tokens;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.events.EventBuilder;
-import org.keycloak.jose.jws.JWSInput;
-import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.UserSessionProvider;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.oidc.TokenManager.AccessTokenResponseBuilder;
 import org.keycloak.representations.AccessToken;
@@ -78,7 +79,11 @@ import org.keycloak.representations.idm.authorization.Permission;
 import org.keycloak.representations.idm.authorization.PermissionTicketToken;
 import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.ErrorResponseException;
+import org.keycloak.services.Urls;
+import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.resources.Cors;
+import org.keycloak.sessions.AuthenticationSessionModel;
+import org.keycloak.sessions.RootAuthenticationSessionModel;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.services.util.DefaultClientSessionContext;
 
@@ -93,7 +98,7 @@ public class AuthorizationTokenService {
     private static final String RESPONSE_MODE_DECISION = "decision";
     private static final String RESPONSE_MODE_PERMISSIONS = "permissions";
     private static final String RESPONSE_MODE_DECISION_RESULT = "result";
-    private static Map<String, BiFunction<AuthorizationRequest, AuthorizationProvider, KeycloakEvaluationContext>> SUPPORTED_CLAIM_TOKEN_FORMATS;
+    private static Map<String, BiFunction<AuthorizationRequest, AuthorizationProvider, EvaluationContext>> SUPPORTED_CLAIM_TOKEN_FORMATS;
 
     static {
         SUPPORTED_CLAIM_TOKEN_FORMATS = new HashMap<>();
@@ -104,7 +109,7 @@ public class AuthorizationTokenService {
                 try {
                     Map claims = JsonSerialization.readValue(Base64Url.decode(authorizationRequest.getClaimToken()), Map.class);
                     authorizationRequest.setClaims(claims);
-                    return new KeycloakEvaluationContext(new KeycloakIdentity(authorization.getKeycloakSession(), Tokens.getAccessToken(authorizationRequest.getSubjectToken(), authorization.getKeycloakSession())), claims, authorization.getKeycloakSession());
+                    return new DefaultEvaluationContext(new KeycloakIdentity(authorization.getKeycloakSession(), Tokens.getAccessToken(authorizationRequest.getSubjectToken(), authorization.getKeycloakSession())), claims, authorization.getKeycloakSession());
                 } catch (IOException cause) {
                     throw new RuntimeException("Failed to map claims from claim token [" + claimToken + "]", cause);
                 }
@@ -115,15 +120,14 @@ public class AuthorizationTokenService {
         SUPPORTED_CLAIM_TOKEN_FORMATS.put(CLAIM_TOKEN_FORMAT_ID_TOKEN, (authorizationRequest, authorization) -> {
             try {
                 KeycloakSession keycloakSession = authorization.getKeycloakSession();
-                RealmModel realm = authorization.getRealm();
                 String accessToken = authorizationRequest.getSubjectToken();
 
                 if (accessToken == null) {
                     throw new RuntimeException("Claim token can not be null and must be a valid IDToken");
                 }
 
-                IDToken idToken = new TokenManager().verifyIDTokenSignature(keycloakSession, realm, accessToken);
-                return new KeycloakEvaluationContext(new KeycloakIdentity(keycloakSession, idToken), authorizationRequest.getClaims(), keycloakSession);
+                IDToken idToken = new TokenManager().verifyIDTokenSignature(keycloakSession, accessToken);
+                return new DefaultEvaluationContext(new KeycloakIdentity(keycloakSession, idToken), authorizationRequest.getClaims(), keycloakSession);
             } catch (OAuthErrorException cause) {
                 throw new RuntimeException("Failed to verify ID token", cause);
             }
@@ -152,7 +156,7 @@ public class AuthorizationTokenService {
             request.setClaims(ticket.getClaims());
 
             ResourceServer resourceServer = getResourceServer(ticket, request);
-            KeycloakEvaluationContext evaluationContext = createEvaluationContext(request);
+            EvaluationContext evaluationContext = createEvaluationContext(request);
             KeycloakIdentity identity = KeycloakIdentity.class.cast(evaluationContext.getIdentity());
             Collection<Permission> permissions;
 
@@ -176,14 +180,14 @@ public class AuthorizationTokenService {
 
                         responseClaims.put(RESPONSE_MODE_DECISION_RESULT, true);
 
-                        return createSuccessfulResponse(responseClaims, targetClient, request);
+                        return createSuccessfulResponse(responseClaims, request);
                     } else if (RESPONSE_MODE_PERMISSIONS.equals(metadata.getResponseMode())) {
-                        return createSuccessfulResponse(permissions, targetClient, request);
+                        return createSuccessfulResponse(permissions, request);
                     } else {
                         throw new CorsErrorResponseException(request.getCors(), OAuthErrorException.INVALID_REQUEST, "Invalid response_mode", Status.BAD_REQUEST);
                     }
                 } else {
-                    return createSuccessfulResponse(createAuthorizationResponse(identity, permissions, request, targetClient), targetClient, request);
+                    return createSuccessfulResponse(createAuthorizationResponse(identity, permissions, request, targetClient), request);
                 }
             }
 
@@ -203,9 +207,9 @@ public class AuthorizationTokenService {
         }
     }
 
-    private Response createSuccessfulResponse(Object response, ClientModel targetClient, KeycloakAuthorizationRequest request) {
+    private Response createSuccessfulResponse(Object response, KeycloakAuthorizationRequest request) {
         return Cors.add(request.getHttpRequest(), Response.status(Status.OK).type(MediaType.APPLICATION_JSON_TYPE).entity(response))
-                .allowedOrigins(request.getKeycloakSession().getContext().getUri(), targetClient)
+                .allowedOrigins(request.getKeycloakSession().getContext().getUri(), request.getKeycloakSession().getContext().getClient())
                 .allowedMethods(HttpMethod.POST)
                 .exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS).build();
     }
@@ -214,21 +218,21 @@ public class AuthorizationTokenService {
         return request.getClaimToken() != null && request.getKeycloakSession().getContext().getClient().isPublicClient() && request.getTicket() == null;
     }
 
-    private Collection<Permission> evaluatePermissions(KeycloakAuthorizationRequest request, PermissionTicketToken ticket, ResourceServer resourceServer, KeycloakEvaluationContext evaluationContext, KeycloakIdentity identity) {
+    private Collection<Permission> evaluatePermissions(KeycloakAuthorizationRequest request, PermissionTicketToken ticket, ResourceServer resourceServer, EvaluationContext evaluationContext, KeycloakIdentity identity) {
         AuthorizationProvider authorization = request.getAuthorization();
         return authorization.evaluators()
                 .from(createPermissions(ticket, request, resourceServer, identity, authorization), evaluationContext)
                 .evaluate(resourceServer, request);
     }
 
-    private Collection<Permission> evaluateUserManagedPermissions(KeycloakAuthorizationRequest request, PermissionTicketToken ticket, ResourceServer resourceServer, KeycloakEvaluationContext evaluationContext, KeycloakIdentity identity) {
+    private Collection<Permission> evaluateUserManagedPermissions(KeycloakAuthorizationRequest request, PermissionTicketToken ticket, ResourceServer resourceServer, EvaluationContext evaluationContext, KeycloakIdentity identity) {
         AuthorizationProvider authorization = request.getAuthorization();
         return authorization.evaluators()
                 .from(createPermissions(ticket, request, resourceServer, identity, authorization), evaluationContext)
                 .evaluate(new PermissionTicketAwareDecisionResultCollector(request, ticket, identity, resourceServer, authorization)).results();
     }
 
-    private Collection<Permission> evaluateAllPermissions(KeycloakAuthorizationRequest request, ResourceServer resourceServer, KeycloakEvaluationContext evaluationContext, KeycloakIdentity identity) {
+    private Collection<Permission> evaluateAllPermissions(KeycloakAuthorizationRequest request, ResourceServer resourceServer, EvaluationContext evaluationContext, KeycloakIdentity identity) {
         AuthorizationProvider authorization = request.getAuthorization();
         return authorization.evaluators()
                 .from(Permissions.all(resourceServer, identity, authorization, request), evaluationContext)
@@ -239,19 +243,42 @@ public class AuthorizationTokenService {
         KeycloakSession keycloakSession = request.getKeycloakSession();
         AccessToken accessToken = identity.getAccessToken();
         RealmModel realm = request.getRealm();
-        UserSessionModel userSessionModel = keycloakSession.sessions().getUserSession(realm, accessToken.getSessionState());
+        UserSessionProvider sessions = keycloakSession.sessions();
+        UserSessionModel userSessionModel = sessions.getUserSession(realm, accessToken.getSessionState());
+
+        if (userSessionModel == null) {
+            userSessionModel = sessions.getOfflineUserSession(realm, accessToken.getSessionState());
+        }
+
         ClientModel client = realm.getClientByClientId(accessToken.getIssuedFor());
-        AuthenticatedClientSessionModel clientSession = userSessionModel.getAuthenticatedClientSessionByClient(client.getId());
-        ClientSessionContext clientSessionCtx = DefaultClientSessionContext.fromClientSessionScopeParameter(clientSession);
+        AuthenticatedClientSessionModel clientSession = userSessionModel.getAuthenticatedClientSessionByClient(targetClient.getId());
+        ClientSessionContext clientSessionCtx;
+
+        if (clientSession == null) {
+            RootAuthenticationSessionModel rootAuthSession = keycloakSession.authenticationSessions().getRootAuthenticationSession(realm, userSessionModel.getId());
+
+            if (rootAuthSession == null) {
+                rootAuthSession = keycloakSession.authenticationSessions().createRootAuthenticationSession(userSessionModel.getId(), realm);
+            }
+
+            AuthenticationSessionModel authSession = rootAuthSession.createAuthenticationSession(targetClient);
+
+            authSession.setAuthenticatedUser(userSessionModel.getUser());
+            authSession.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+            authSession.setClientNote(OIDCLoginProtocol.ISSUER, Urls.realmIssuer(keycloakSession.getContext().getUri().getBaseUri(), realm.getName()));
+
+            AuthenticationManager.setClientScopesInSession(authSession);
+            clientSessionCtx = TokenManager.attachAuthenticationSession(keycloakSession, userSessionModel, authSession);
+        } else {
+            clientSessionCtx = DefaultClientSessionContext.fromClientSessionScopeParameter(clientSession);
+        }
+
         TokenManager tokenManager = request.getTokenManager();
         EventBuilder event = request.getEvent();
-        AccessTokenResponseBuilder responseBuilder = tokenManager.responseBuilder(realm, clientSession.getClient(), event, keycloakSession, userSessionModel, clientSessionCtx)
+        AccessTokenResponseBuilder responseBuilder = tokenManager.responseBuilder(realm, client, event, keycloakSession, userSessionModel, clientSessionCtx)
                 .generateAccessToken()
                 .generateRefreshToken();
         AccessToken rpt = responseBuilder.getAccessToken();
-
-        rpt.issuedFor(client.getClientId());
-
         Authorization authorization = new Authorization();
 
         authorization.setPermissions(entitlements);
@@ -304,8 +331,8 @@ public class AuthorizationTokenService {
         // This is a Keycloak extension to UMA flow where clients are capable of obtaining a RPT without a ticket
         PermissionTicketToken permissions = request.getPermissions();
 
-        // an audience must be set by the client when doing this method of obtaining RPT, that is how we know the target resource server
-        permissions.audience(request.getAudience());
+        // an issuedFor must be set by the client when doing this method of obtaining RPT, that is how we know the target resource server
+        permissions.issuedFor(request.getAudience());
 
         return permissions;
     }
@@ -314,13 +341,13 @@ public class AuthorizationTokenService {
         AuthorizationProvider authorization = request.getAuthorization();
         StoreFactory storeFactory = authorization.getStoreFactory();
         ResourceServerStore resourceServerStore = storeFactory.getResourceServerStore();
-        String[] audience = ticket.getAudience();
+        String issuedFor = ticket.getIssuedFor();
 
-        if (audience == null || audience.length == 0) {
-            throw new CorsErrorResponseException(request.getCors(), OAuthErrorException.INVALID_REQUEST, "You must provide the audience", Status.BAD_REQUEST);
+        if (issuedFor == null) {
+            throw new CorsErrorResponseException(request.getCors(), OAuthErrorException.INVALID_REQUEST, "You must provide the issuedFor", Status.BAD_REQUEST);
         }
 
-        ClientModel clientModel = request.getRealm().getClientByClientId(audience[0]);
+        ClientModel clientModel = request.getRealm().getClientByClientId(issuedFor);
 
         if (clientModel == null) {
             throw new CorsErrorResponseException(request.getCors(), OAuthErrorException.INVALID_REQUEST, "Unknown resource server id.", Status.BAD_REQUEST);
@@ -335,14 +362,14 @@ public class AuthorizationTokenService {
         return resourceServer;
     }
 
-    private KeycloakEvaluationContext createEvaluationContext(KeycloakAuthorizationRequest request) {
+    private EvaluationContext createEvaluationContext(KeycloakAuthorizationRequest request) {
         String claimTokenFormat = request.getClaimTokenFormat();
 
         if (claimTokenFormat == null) {
             claimTokenFormat = CLAIM_TOKEN_FORMAT_ID_TOKEN;
         }
 
-        BiFunction<AuthorizationRequest, AuthorizationProvider, KeycloakEvaluationContext> evaluationContextProvider = SUPPORTED_CLAIM_TOKEN_FORMATS.get(claimTokenFormat);
+        BiFunction<AuthorizationRequest, AuthorizationProvider, EvaluationContext> evaluationContextProvider = SUPPORTED_CLAIM_TOKEN_FORMATS.get(claimTokenFormat);
 
         if (evaluationContextProvider == null) {
             throw new CorsErrorResponseException(request.getCors(), OAuthErrorException.INVALID_REQUEST, "Claim token format [" + claimTokenFormat + "] not supported", Status.BAD_REQUEST);
@@ -487,7 +514,7 @@ public class AuthorizationTokenService {
                             break;
                         }
 
-                        Resource resource = resourceStore.findById(grantedPermission.getResourceId(), ticket.getAudience()[0]);
+                        Resource resource = resourceStore.findById(grantedPermission.getResourceId(), ticket.getIssuedFor());
 
                         if (resource != null) {
                             ResourcePermission permission = permissionsToEvaluate.get(resource.getId());
@@ -531,21 +558,16 @@ public class AuthorizationTokenService {
     private PermissionTicketToken verifyPermissionTicket(KeycloakAuthorizationRequest request) {
         String ticketString = request.getTicket();
 
-        if (ticketString == null || !Tokens.verifySignature(request.getKeycloakSession(), request.getRealm(), ticketString)) {
+        PermissionTicketToken ticket = request.getKeycloakSession().tokens().decode(ticketString, PermissionTicketToken.class);
+        if (ticket == null) {
             throw new CorsErrorResponseException(request.getCors(), "invalid_ticket", "Ticket verification failed", Status.FORBIDDEN);
         }
 
-        try {
-            PermissionTicketToken ticket = new JWSInput(ticketString).readJsonContent(PermissionTicketToken.class);
-
-            if (!ticket.isActive()) {
-                throw new CorsErrorResponseException(request.getCors(), "invalid_ticket", "Invalid permission ticket.", Status.FORBIDDEN);
-            }
-
-            return ticket;
-        } catch (JWSInputException e) {
-            throw new CorsErrorResponseException(request.getCors(), "invalid_ticket", "Could not parse permission ticket.", Status.FORBIDDEN);
+        if (!ticket.isActive()) {
+            throw new CorsErrorResponseException(request.getCors(), "invalid_ticket", "Invalid permission ticket.", Status.FORBIDDEN);
         }
+
+        return ticket;
     }
 
     private boolean isGranted(PermissionTicketToken ticket, AuthorizationRequest request, Collection<Permission> permissions) {

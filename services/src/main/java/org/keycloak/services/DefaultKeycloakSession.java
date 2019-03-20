@@ -19,8 +19,10 @@ package org.keycloak.services;
 import org.keycloak.component.ComponentFactory;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.credential.UserCredentialStoreManager;
+import org.keycloak.jose.jws.DefaultTokenManager;
 import org.keycloak.keys.DefaultKeyManager;
 import org.keycloak.models.ClientProvider;
+import org.keycloak.models.TokenManager;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -68,6 +70,7 @@ public class DefaultKeycloakSession implements KeycloakSession {
     private KeycloakContext context;
     private KeyManager keyManager;
     private ThemeManager themeManager;
+    private TokenManager tokenManager;
 
     public DefaultKeycloakSession(DefaultKeycloakSessionFactory factory) {
         this.factory = factory;
@@ -103,6 +106,12 @@ public class DefaultKeycloakSession implements KeycloakSession {
     @Override
     public Object getAttribute(String attribute) {
         return attributes.get(attribute);
+    }
+
+    @Override
+    public <T> T getAttribute(String attribute, Class<T> clazz) {
+        Object value = getAttribute(attribute);
+        return value != null && clazz.isInstance(value) ? (T) value : null;
     }
 
     @Override
@@ -283,6 +292,14 @@ public class DefaultKeycloakSession implements KeycloakSession {
             themeManager = new DefaultThemeManager(this);
         }
         return themeManager;
+    }
+
+    @Override
+    public TokenManager tokens() {
+        if (tokenManager == null) {
+            tokenManager = new DefaultTokenManager(this);
+        }
+        return tokenManager;
     }
 
     public void close() {

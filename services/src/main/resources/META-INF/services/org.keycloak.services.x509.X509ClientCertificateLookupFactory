@@ -19,3 +19,4 @@
 org.keycloak.services.x509.DefaultClientCertificateLookupFactory
 org.keycloak.services.x509.HaProxySslClientCertificateLookupFactory
 org.keycloak.services.x509.ApacheProxySslClientCertificateLookupFactory
+org.keycloak.services.x509.NginxProxySslClientCertificateLookupFactory

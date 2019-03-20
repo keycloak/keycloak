@@ -131,13 +131,7 @@ public class UserSessionManager {
         }
 
         // Check if offline_access is allowed here. Even through composite roles
-        for (RoleModel role : clientSessionCtx.getRoles()) {
-            if (role.hasRole(offlineAccessRole)) {
-                return true;
-            }
-        }
-
-        return false;
+        return clientSessionCtx.getRoles().contains(offlineAccessRole);
     }
 
     private UserSessionModel createOfflineUserSession(UserModel user, UserSessionModel userSession) {

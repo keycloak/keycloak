@@ -39,14 +39,7 @@ import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.Cors;
 import org.keycloak.storage.ReadOnlyException;
 
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.OPTIONS;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
+import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
@@ -54,6 +47,7 @@ import javax.ws.rs.core.Response;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import org.keycloak.common.Profile;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -161,7 +155,7 @@ public class AccountRestService {
                 }
             }
 
-            if (realm.isRegistrationEmailAsUsername() && !realm.isDuplicateEmailsAllowed()) {
+            if (emailChanged && realm.isRegistrationEmailAsUsername() && !realm.isDuplicateEmailsAllowed()) {
                 UserModel existing = session.users().getUserByUsername(userRep.getEmail(), realm);
                 if (existing != null) {
                     return ErrorResponse.exists(Messages.USERNAME_EXISTS);
@@ -212,6 +206,9 @@ public class AccountRestService {
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
     public Response sessions() {
+        checkAccountApiEnabled();
+        auth.requireOneOf(AccountRoles.MANAGE_ACCOUNT, AccountRoles.VIEW_PROFILE);
+        
         List<SessionRepresentation> reps = new LinkedList<>();
 
         List<UserSessionModel> sessions = session.sessions().getUserSessions(realm, user);
@@ -249,6 +246,9 @@ public class AccountRestService {
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
     public Response sessionsLogout(@QueryParam("current") boolean removeCurrent) {
+        checkAccountApiEnabled();
+        auth.require(AccountRoles.MANAGE_ACCOUNT);
+        
         UserSessionModel userSession = auth.getSession();
 
         List<UserSessionModel> userSessions = session.sessions().getUserSessions(realm, user);
@@ -261,13 +261,40 @@ public class AccountRestService {
         return Cors.add(request, Response.ok()).auth().allowedOrigins(auth.getToken()).build();
     }
 
-    @Path("/credentials")
-    public AccountCredentialResource credentials() {
-        return new AccountCredentialResource(session, event, user);
+    /**
+     * Remove a specific session
+     *
+     * @param id a specific session to remove
+     * @return
+     */
+    @Path("/session")
+    @DELETE
+    @Produces(MediaType.APPLICATION_JSON)
+    @NoCache
+    public Response sessionLogout(@QueryParam("id") String id) {
+        checkAccountApiEnabled();
+        auth.require(AccountRoles.MANAGE_ACCOUNT);
+        
+        UserSessionModel userSession = session.sessions().getUserSession(realm, id);
+        if (userSession != null && userSession.getUser().equals(user)) {
+            AuthenticationManager.backchannelLogout(session, userSession, true);
+        }
+        return Cors.add(request, Response.ok()).auth().allowedOrigins(auth.getToken()).build();
     }
 
-    // TODO Federated identities
+    @Path("/credentials")
+    public AccountCredentialResource credentials() {
+        checkAccountApiEnabled();
+        return new AccountCredentialResource(session, event, user, auth);
+    }
+
+   // TODO Federated identities
     // TODO Applications
     // TODO Logs
-
+    
+    private static void checkAccountApiEnabled() {
+        if (!Profile.isFeatureEnabled(Profile.Feature.ACCOUNT_API)) {
+            throw new NotFoundException();
+        }
+    }
 }

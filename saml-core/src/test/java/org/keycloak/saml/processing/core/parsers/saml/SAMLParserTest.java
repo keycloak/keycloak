@@ -942,87 +942,85 @@ public class SAMLParserTest {
 
     @Test
     public void testSaml20AssertionsAnyTypeAttributeValue() throws Exception {
+        AssertionType assertion = assertParsed("saml20-assertion-anytype-attribute-value.xml", AssertionType.class);
 
-        String[] xmlSamples = {
-                "saml20-assertion-anytype-attribute-value.xml",
-                "saml20-assertion-example.xml"
-        };
+        AttributeStatementType attributeStatementType = assertion.getAttributeStatements().iterator().next();
+        assertThat(attributeStatementType.getAttributes(), hasSize(5));
 
-        for (String fileName: xmlSamples) {
-            try (InputStream st = SAMLParserTest.class.getResourceAsStream(fileName)) {
-                Object parsedObject = parser.parse(st);
-                assertThat("Problem detected in " + fileName + " sample.", parsedObject, instanceOf(AssertionType.class));
-                checkCheckParsedResult(fileName, (AssertionType)parsedObject);
-            } catch (Exception e) {
-                throw new Exception("Problem detected in " + fileName + " sample.", e);
+        for (AttributeStatementType.ASTChoiceType choiceType: attributeStatementType.getAttributes()) {
+            AttributeType attr = choiceType.getAttribute();
+            String attrName = attr.getName();
+            Object value = attr.getAttributeValue().get(0);
+            // test selected attributes
+            switch (attrName) {
+                case "attr:type:string":
+                    assertThat(value, is((Object) "CITIZEN"));
+                    break;
+                case "attr:notype:string":
+                    assertThat(value, instanceOf(String.class));
+                    assertThat(value, is((Object) "CITIZEN"));
+                    break;
+                case "attr:notype:element":
+                    assertThat(value, instanceOf(String.class));
+                    assertThat((String) value, containsString("hospitaal x"));
+                    value = attr.getAttributeValue().get(1);
+                    assertThat(value, instanceOf(String.class));
+                    assertThat((String) value, containsString("hopital x"));
+                    break;
+                case "founded":
+                    assertThat(value, is((Object) XMLTimeUtil.parse("2002-05-30T09:30:10-06:00")));
+                    break;
+                case "expanded":
+                    assertThat(value, is((Object) XMLTimeUtil.parse("2002-06-30")));
+                    break;
+                default:
+                    break;
             }
         }
     }
 
-    private void checkCheckParsedResult(String fileName, AssertionType assertion) throws Exception {
+    @Test
+    public void testSaml20AssertionExample() throws Exception {
+        AssertionType assertion = assertParsed("saml20-assertion-example.xml", AssertionType.class);
+
         AttributeStatementType attributeStatementType = assertion.getAttributeStatements().iterator().next();
-        if ("saml20-assertion-anytype-attribute-value.xml".equals(fileName)) {
-            assertTrue("There has to be 3 attributes", attributeStatementType.getAttributes().size() == 3);
-            for (AttributeStatementType.ASTChoiceType choiceType: attributeStatementType.getAttributes()) {
-                AttributeType attr = choiceType.getAttribute();
-                String attrName = attr.getName();
-                String attrValueStatement = "unexpected value of attribute " + attrName + " of " + fileName;
-                String attrTypeStatement = "unexpected type of attribute " + attrName + " of " + fileName;
-                // test selected attributes
-                if (attrName.equals("attr:type:string")) {
-                    assertEquals(attrValueStatement, attr.getAttributeValue().get(0), "CITIZEN");
-                } else if (attrName.equals("attr:notype:string")) {
-                    assertThat(attrTypeStatement, attr.getAttributeValue().get(0), instanceOf(String.class));
-                    String value = (String)attr.getAttributeValue().get(0);
-                    assertEquals(attrValueStatement, value, "CITIZEN");
-                } else if (attrName.equals("attr:notype:element")) {
-                    assertThat(attrTypeStatement, attr.getAttributeValue().get(0), instanceOf(String.class));
-                    String value = (String)attr.getAttributeValue().get(0);
-                    assertThat(attrValueStatement, value, containsString("hospitaal x"));
-                    value = (String)attr.getAttributeValue().get(1);
-                    assertThat(attrValueStatement, value, containsString("hopital x"));
-                }
+        assertThat(attributeStatementType.getAttributes(), hasSize(9));
+
+        for (AttributeStatementType.ASTChoiceType choiceType: attributeStatementType.getAttributes()) {
+            AttributeType attr = choiceType.getAttribute();
+            String attrName = attr.getName();
+            Object value = attr.getAttributeValue().get(0);
+            // test selected attributes
+            switch (attrName) {
+                case "portal_id":
+                    assertEquals(value, "060D00000000SHZ");
+                    break;
+                case "organization_id":
+                    assertThat(value, instanceOf(String.class));
+                    assertThat((String) value, containsString("<n3:stuff xmlns:n3=\"ftp://example.org\">00DD0000000F7L5</n3:stuff>"));
+                    break;
+                case "has_sub_organization":
+                    assertThat(value, is((Object) "true"));
+                    break;
+                case "anytype_test":
+                    assertThat(value, instanceOf(String.class));
+                    assertThat((String) value, containsString("<elem2>val2</elem2>"));
+                    break;
+                case "anytype_no_xml_test":
+                    assertThat(value, is((Object) "value_no_xml"));
+                    break;
+                case "logouturl":
+                    assertThat(value, is((Object) "http://www.salesforce.com/security/del_auth/SsoLogoutPage.html"));
+                    break;
+                case "nil_value_attribute":
+                    assertNull(value);
+                    break;
+                case "status":
+                    assertThat(value, is((Object) "<status><code><status>XYZ</status></code></status>"));
+                    break;
+                default:
+                    break;
             }
-        } else if ("saml20-assertion-example.xml".equals(fileName)) {
-            assertThat("There has to be 9 attributes", attributeStatementType.getAttributes().size(), is(9));
-            for (AttributeStatementType.ASTChoiceType choiceType: attributeStatementType.getAttributes()) {
-                AttributeType attr = choiceType.getAttribute();
-                String attrName = attr.getName();
-                String attrValueStatement = "unexpected value of attribute " + attrName + " of " + fileName;
-                String attrTypeStatement = "unexpected type of attribute " + attrName + " of " + fileName;
-                // test selected attributes
-                if (attrName.equals("portal_id")) {
-                    assertEquals(attrValueStatement, attr.getAttributeValue().get(0), "060D00000000SHZ");
-                } else if (attrName.equals("organization_id")) {
-                    assertThat(attrTypeStatement, attr.getAttributeValue().get(0), instanceOf(String.class));
-                    String value = (String)attr.getAttributeValue().get(0);
-                    assertThat(attrValueStatement, value, containsString("<n3:stuff xmlns:n3=\"ftp://example.org\">00DD0000000F7L5</n3:stuff>"));
-                } else if (attrName.equals("has_sub_organization")) {
-                    assertThat(attrTypeStatement, attr.getAttributeValue().get(0), instanceOf(String.class));
-                    String value = (String)attr.getAttributeValue().get(0);
-                    assertThat(attrValueStatement, value, containsString("true"));
-                } else if (attrName.equals("anytype_test")) {
-                    assertThat(attrTypeStatement, attr.getAttributeValue().get(0), instanceOf(String.class));
-                    String value = (String)attr.getAttributeValue().get(0);
-                    assertThat(attrValueStatement, value, containsString("<elem2>val2</elem2>"));
-                } else if (attrName.equals("anytype_no_xml_test")) {
-                    assertThat(attrTypeStatement, attr.getAttributeValue().get(0), instanceOf(String.class));
-                    String value = (String)attr.getAttributeValue().get(0);
-                    assertEquals(attrValueStatement, value, "value_no_xml");
-                } else if (attrName.equals("logouturl")) {
-                    assertThat(attrTypeStatement, attr.getAttributeValue().get(0), instanceOf(String.class));
-                    String value = (String)attr.getAttributeValue().get(0);
-                    assertEquals(attrValueStatement, value, "http://www.salesforce.com/security/del_auth/SsoLogoutPage.html");
-                } else if (attrName.equals("nil_value_attribute")) {
-                    assertNull(attrValueStatement, attr.getAttributeValue().get(0));
-                } else if (attrName.equals("status")) {
-                    assertThat(attrTypeStatement, attr.getAttributeValue().get(0), instanceOf(String.class));
-                    String value = (String)attr.getAttributeValue().get(0);
-                    assertThat(attrValueStatement, value, containsString("<status><code><status>XYZ</status></code></status>"));
-                }
-            }
-        } else {
-            throw new RuntimeException("test error: wrong file name to check");
         }
     }
 

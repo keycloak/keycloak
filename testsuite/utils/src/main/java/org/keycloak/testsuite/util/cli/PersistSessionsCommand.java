@@ -19,6 +19,7 @@ package org.keycloak.testsuite.util.cli;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
@@ -35,6 +36,8 @@ import org.keycloak.models.utils.KeycloakModelUtils;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class PersistSessionsCommand extends AbstractCommand {
+
+    private AtomicInteger userCounter = new AtomicInteger();
 
     @Override
     public String getName() {
@@ -75,12 +78,18 @@ public class PersistSessionsCommand extends AbstractCommand {
             @Override
             public void run(KeycloakSession session) {
                 RealmModel realm = session.realms().getRealmByName("master");
-                UserModel john = session.users().getUserByUsername("admin", realm);
+
                 ClientModel testApp = realm.getClientByClientId("security-admin-console");
                 UserSessionPersisterProvider persister = session.getProvider(UserSessionPersisterProvider.class);
 
                 for (int i = 0; i < countInThisBatch; i++) {
-                    UserSessionModel userSession = session.sessions().createUserSession(realm, john, "john-doh@localhost", "127.0.0.2", "form", true, null, null);
+                    String username = "john-" + userCounter.incrementAndGet();
+                    UserModel john = session.users().getUserByUsername(username, realm);
+                    if (john == null) {
+                        john = session.users().addUser(realm, username);
+                    }
+
+                    UserSessionModel userSession = session.sessions().createUserSession(realm, john, username, "127.0.0.2", "form", true, null, null);
                     AuthenticatedClientSessionModel clientSession = session.sessions().createClientSession(realm, testApp, userSession);
                     clientSession.setRedirectUri("http://redirect");
                     clientSession.setNote("foo", "bar-" + i);

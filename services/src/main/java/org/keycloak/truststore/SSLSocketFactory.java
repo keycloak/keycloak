@@ -101,4 +101,10 @@ public class SSLSocketFactory extends javax.net.ssl.SSLSocketFactory {
     public Socket createSocket(InetAddress address, int port, InetAddress localAddress, int localPort) throws IOException {
         return sslsf.createSocket(address, port, localAddress, localPort);
     }
+
+    @Override
+    public Socket createSocket() throws IOException {
+        return sslsf.createSocket();
+    }
+
 }

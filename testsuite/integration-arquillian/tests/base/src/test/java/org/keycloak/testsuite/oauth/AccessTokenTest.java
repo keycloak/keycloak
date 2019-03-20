@@ -34,6 +34,7 @@ import org.keycloak.admin.client.resource.ClientScopeResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.common.enums.SslRequired;
+import org.keycloak.crypto.Algorithm;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.jose.jws.JWSHeader;
@@ -44,6 +45,7 @@ import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
+import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.protocol.oidc.mappers.HardcodedClaim;
 import org.keycloak.representations.AccessToken;
@@ -65,6 +67,7 @@ import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RealmManager;
 import org.keycloak.testsuite.util.RoleBuilder;
+import org.keycloak.testsuite.util.TokenSignatureUtil;
 import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.util.UserInfoClientUtil;
 import org.keycloak.testsuite.util.UserManager;
@@ -88,6 +91,7 @@ import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.lessThanOrEqualTo;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -139,6 +143,16 @@ public class AccessTokenTest extends AbstractKeycloakTest {
                 .password("password");
         realm.getUsers().add(user.build());
 
+        realm.getClients().stream().filter(clientRepresentation -> {
+
+            return "test-app".equals(clientRepresentation.getClientId());
+
+        }).forEach(clientRepresentation -> {
+
+            clientRepresentation.setFullScopeAllowed(false);
+
+        });
+
         testRealms.add(realm);
 
     }
@@ -184,15 +198,14 @@ public class AccessTokenTest extends AbstractKeycloakTest {
         assertNull(header.getContentType());
 
         header = new JWSInput(response.getRefreshToken()).getHeader();
-        assertEquals("RS256", header.getAlgorithm().name());
+        assertEquals("HS256", header.getAlgorithm().name());
         assertEquals("JWT", header.getType());
-        assertEquals(expectedKid, header.getKeyId());
         assertNull(header.getContentType());
 
         AccessToken token = oauth.verifyToken(response.getAccessToken());
 
         assertEquals(findUserByUsername(adminClient.realm("test"), "test-user@localhost").getId(), token.getSubject());
-        Assert.assertNotEquals("test-user@localhost", token.getSubject());
+        assertNotEquals("test-user@localhost", token.getSubject());
 
         assertEquals(sessionId, token.getSessionState());
 
@@ -204,7 +217,7 @@ public class AccessTokenTest extends AbstractKeycloakTest {
 
         EventRepresentation event = events.expectCodeToToken(codeId, sessionId).assertEvent();
         assertEquals(token.getId(), event.getDetails().get(Details.TOKEN_ID));
-        assertEquals(oauth.verifyRefreshToken(response.getRefreshToken()).getId(), event.getDetails().get(Details.REFRESH_TOKEN_ID));
+        assertEquals(oauth.parseRefreshToken(response.getRefreshToken()).getId(), event.getDetails().get(Details.REFRESH_TOKEN_ID));
         assertEquals(sessionId, token.getSessionState());
 
     }
@@ -475,7 +488,7 @@ public class AccessTokenTest extends AbstractKeycloakTest {
             }
 
             Response response = executeGrantAccessTokenRequest(grantTarget);
-            assertEquals(403, response.getStatus());
+            assertEquals(AUTH_SERVER_SSL_REQUIRED ? 200 : 403, response.getStatus());
             response.close();
 
             {
@@ -612,10 +625,23 @@ public class AccessTokenTest extends AbstractKeycloakTest {
                 userResource.update(userRepresentation);
             }
 
+            // good password is 400 => Account is not fully set up
+            try (Response response = executeGrantAccessTokenRequest(grantTarget)) {
+                assertEquals(400, response.getStatus());
+                ObjectMapper objectMapper = new ObjectMapper();
+                JsonNode jsonNode = objectMapper.readTree(response.readEntity(String.class));
+                assertEquals("invalid_grant", jsonNode.get("error").asText());
+                assertEquals("Account is not fully set up", jsonNode.get("error_description").asText());
+            }
 
-            Response response = executeGrantAccessTokenRequest(grantTarget);
-            assertEquals(401, response.getStatus());
-            response.close();
+            // wrong password is 401 => Invalid user credentials
+            try (Response response = executeGrantAccessTokenRequestWrongPassword(grantTarget)) {
+                assertEquals(401, response.getStatus());
+                ObjectMapper objectMapper = new ObjectMapper();
+                JsonNode jsonNode = objectMapper.readTree(response.readEntity(String.class));
+                assertEquals("invalid_grant", jsonNode.get("error").asText());
+                assertEquals("Invalid user credentials", jsonNode.get("error_description").asText());
+            }
 
             {
                 UserResource userResource = findUserByUsernameId(adminClient.realm("test"), "test-user@localhost");
@@ -906,7 +932,7 @@ public class AccessTokenTest extends AbstractKeycloakTest {
         adminClient.realm("test").clients().create(ClientBuilder.create()
                 .clientId("sample-public-client")
                 .authenticatorType("client-secret")
-                .redirectUris("http://localhost:8180/auth/realms/master/app/*")
+                .redirectUris(oauth.getRedirectUri() + "/*")
                 .publicClient()
                 .build());
 
@@ -1015,6 +1041,10 @@ public class AccessTokenTest extends AbstractKeycloakTest {
         return executeGrantRequest(grantTarget, username, password);
     }
 
+    protected Response executeGrantAccessTokenRequestWrongPassword(WebTarget grantTarget) {
+        return executeGrantRequest(grantTarget, "test-user@localhost", "bad-password");
+    }
+
     protected Response executeGrantRequest(WebTarget grantTarget, String username, String password) {
         String header = BasicAuthHelper.createHeader("test-app", "password");
         Form form = new Form();
@@ -1026,4 +1056,181 @@ public class AccessTokenTest extends AbstractKeycloakTest {
                 .header(HttpHeaders.AUTHORIZATION, header)
                 .post(Entity.form(form));
     }
+
+    @Test
+    public void accessTokenRequest_RealmRS256_ClientRS384_EffectiveRS384() throws Exception {
+        try {
+            TokenSignatureUtil.changeRealmTokenSignatureProvider(adminClient, Algorithm.RS256);
+            TokenSignatureUtil.changeClientAccessTokenSignatureProvider(ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), Algorithm.RS384);
+            tokenRequest(Algorithm.HS256, Algorithm.RS384, Algorithm.RS256);
+        } finally {
+            TokenSignatureUtil.changeClientAccessTokenSignatureProvider(ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), Algorithm.RS256);
+        }
+    }
+
+    @Test
+    public void accessTokenRequest_RealmRS512_ClientRS512_EffectiveRS512() throws Exception {
+        try {
+            TokenSignatureUtil.changeRealmTokenSignatureProvider(adminClient, Algorithm.RS512);
+            TokenSignatureUtil.changeClientAccessTokenSignatureProvider(ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), Algorithm.RS512);
+            tokenRequest(Algorithm.HS256, Algorithm.RS512, Algorithm.RS512);
+        } finally {
+            TokenSignatureUtil.changeRealmTokenSignatureProvider(adminClient, Algorithm.RS256);
+            TokenSignatureUtil.changeClientAccessTokenSignatureProvider(ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), Algorithm.RS256);
+        }
+    }
+
+    @Test
+    public void accessTokenRequest_RealmRS256_ClientES256_EffectiveES256() throws Exception {
+        try {
+            TokenSignatureUtil.changeRealmTokenSignatureProvider(adminClient, Algorithm.RS256);
+            TokenSignatureUtil.changeClientAccessTokenSignatureProvider(ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), Algorithm.ES256);
+            TokenSignatureUtil.registerKeyProvider("P-256", adminClient, testContext);
+            tokenRequestSignatureVerifyOnly(Algorithm.HS256, Algorithm.ES256, Algorithm.RS256);
+        } finally {
+            TokenSignatureUtil.changeClientAccessTokenSignatureProvider(ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), Algorithm.RS256);
+        }
+    }
+
+    @Test
+    public void accessTokenRequest_RealmES384_ClientES384_EffectiveES384() throws Exception {
+        try {
+            TokenSignatureUtil.changeRealmTokenSignatureProvider(adminClient, Algorithm.ES384);
+            TokenSignatureUtil.changeClientAccessTokenSignatureProvider(ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), Algorithm.ES384);
+            TokenSignatureUtil.registerKeyProvider("P-384", adminClient, testContext);
+            tokenRequestSignatureVerifyOnly(Algorithm.HS256, Algorithm.ES384, Algorithm.ES384);
+        } finally {
+            TokenSignatureUtil.changeRealmTokenSignatureProvider(adminClient, Algorithm.RS256);
+            TokenSignatureUtil.changeClientAccessTokenSignatureProvider(ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), Algorithm.RS256);
+        }
+    }
+
+    @Test
+    public void accessTokenRequest_RealmRS256_ClientES512_EffectiveES512() throws Exception {
+        try {
+            TokenSignatureUtil.changeRealmTokenSignatureProvider(adminClient, Algorithm.RS256);
+            TokenSignatureUtil.changeClientAccessTokenSignatureProvider(ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), Algorithm.ES512);
+            TokenSignatureUtil.registerKeyProvider("P-521", adminClient, testContext);
+            tokenRequestSignatureVerifyOnly(Algorithm.HS256, Algorithm.ES512, Algorithm.RS256);
+        } finally {
+            TokenSignatureUtil.changeClientAccessTokenSignatureProvider(ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), Algorithm.RS256);
+        }
+    }
+
+    @Test
+    public void clientAccessTokenLifespanOverride() {
+        ClientResource client = ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app");
+        ClientRepresentation clientRep = client.toRepresentation();
+
+        RealmResource realm = adminClient.realm("test");
+        RealmRepresentation rep = realm.toRepresentation();
+
+        int sessionMax = rep.getSsoSessionMaxLifespan();
+        int accessTokenLifespan = rep.getAccessTokenLifespan();
+
+        // Make sure realm lifespan is not same as client override
+        assertNotEquals(accessTokenLifespan, 500);
+
+        try {
+            clientRep.getAttributes().put(OIDCConfigAttributes.ACCESS_TOKEN_LIFESPAN, "500");
+            client.update(clientRep);
+
+            oauth.doLogin("test-user@localhost", "password");
+
+            // Check access token expires in 500 seconds as specified on client
+
+            String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+            OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
+            assertEquals(200, response.getStatusCode());
+
+            assertExpiration(response.getExpiresIn(), 500);
+
+            // Check access token expires when session expires
+
+            clientRep.getAttributes().put(OIDCConfigAttributes.ACCESS_TOKEN_LIFESPAN, "-1");
+            client.update(clientRep);
+
+            String refreshToken = response.getRefreshToken();
+            response = oauth.doRefreshTokenRequest(refreshToken, "password");
+            assertEquals(200, response.getStatusCode());
+
+            assertExpiration(response.getExpiresIn(), sessionMax);
+        } finally {
+            clientRep.getAttributes().put(OIDCConfigAttributes.ACCESS_TOKEN_LIFESPAN, null);
+            client.update(clientRep);
+        }
+    }
+
+    private void tokenRequest(String expectedRefreshAlg, String expectedAccessAlg, String expectedIdTokenAlg) throws Exception {
+        oauth.doLogin("test-user@localhost", "password");
+
+        EventRepresentation loginEvent = events.expectLogin().assertEvent();
+
+        String sessionId = loginEvent.getSessionId();
+        String codeId = loginEvent.getDetails().get(Details.CODE_ID);
+
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
+
+        assertEquals(200, response.getStatusCode());
+
+        assertEquals("bearer", response.getTokenType());
+
+        JWSHeader header = new JWSInput(response.getAccessToken()).getHeader();
+        assertEquals(expectedAccessAlg, header.getAlgorithm().name());
+        assertEquals("JWT", header.getType());
+        assertNull(header.getContentType());
+
+        header = new JWSInput(response.getIdToken()).getHeader();
+        assertEquals(expectedIdTokenAlg, header.getAlgorithm().name());
+        assertEquals("JWT", header.getType());
+        assertNull(header.getContentType());
+
+        header = new JWSInput(response.getRefreshToken()).getHeader();
+        assertEquals(expectedRefreshAlg, header.getAlgorithm().name());
+        assertEquals("JWT", header.getType());
+        assertNull(header.getContentType());
+
+        AccessToken token = oauth.verifyToken(response.getAccessToken());
+
+        assertEquals(findUserByUsername(adminClient.realm("test"), "test-user@localhost").getId(), token.getSubject());
+        assertNotEquals("test-user@localhost", token.getSubject());
+
+        assertEquals(sessionId, token.getSessionState());
+
+        EventRepresentation event = events.expectCodeToToken(codeId, sessionId).assertEvent();
+        assertEquals(token.getId(), event.getDetails().get(Details.TOKEN_ID));
+        assertEquals(oauth.parseRefreshToken(response.getRefreshToken()).getId(), event.getDetails().get(Details.REFRESH_TOKEN_ID));
+        assertEquals(sessionId, token.getSessionState());
+    }
+ 
+    private void tokenRequestSignatureVerifyOnly(String expectedRefreshAlg, String expectedAccessAlg, String expectedIdTokenAlg) throws Exception {
+        oauth.doLogin("test-user@localhost", "password");
+
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
+
+        assertEquals(200, response.getStatusCode());
+
+        assertEquals("bearer", response.getTokenType());
+
+        JWSHeader header = new JWSInput(response.getAccessToken()).getHeader();
+        assertEquals(expectedAccessAlg, header.getAlgorithm().name());
+        assertEquals("JWT", header.getType());
+        assertNull(header.getContentType());
+
+        header = new JWSInput(response.getIdToken()).getHeader();
+        assertEquals(expectedIdTokenAlg, header.getAlgorithm().name());
+        assertEquals("JWT", header.getType());
+        assertNull(header.getContentType());
+
+        header = new JWSInput(response.getRefreshToken()).getHeader();
+        assertEquals(expectedRefreshAlg, header.getAlgorithm().name());
+        assertEquals("JWT", header.getType());
+        assertNull(header.getContentType());
+
+        assertEquals(TokenSignatureUtil.verifySignature(expectedAccessAlg, response.getAccessToken(), adminClient), true);
+        assertEquals(TokenSignatureUtil.verifySignature(expectedIdTokenAlg, response.getIdToken(), adminClient), true);
+    }
+
 }

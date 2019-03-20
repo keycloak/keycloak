@@ -22,6 +22,7 @@ import org.keycloak.authorization.attribute.Attributes;
 import org.keycloak.authorization.identity.Identity;
 import org.keycloak.authorization.policy.evaluation.EvaluationContext;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.representations.AccessToken;
 
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
@@ -40,6 +41,7 @@ public class DefaultEvaluationContext implements EvaluationContext {
     protected final KeycloakSession keycloakSession;
     protected final Identity identity;
     private final Map<String, List<String>> claims;
+    private Attributes attributes;
 
     public DefaultEvaluationContext(Identity identity, KeycloakSession keycloakSession) {
         this(identity, null, keycloakSession);
@@ -56,7 +58,7 @@ public class DefaultEvaluationContext implements EvaluationContext {
         return identity;
     }
 
-    public Map<String, Collection<String>> getBaseAttributes() {
+    protected Map<String, Collection<String>> getBaseAttributes() {
         Map<String, Collection<String>> attributes = new HashMap<>();
 
         attributes.put("kc.time.date_time", Arrays.asList(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date())));
@@ -77,11 +79,22 @@ public class DefaultEvaluationContext implements EvaluationContext {
             }
         }
 
+        if (KeycloakIdentity.class.isInstance(identity)) {
+            AccessToken accessToken = KeycloakIdentity.class.cast(this.identity).getAccessToken();
+
+            if (accessToken != null) {
+                attributes.put("kc.client.id", Arrays.asList(accessToken.getIssuedFor()));
+            }
+        }
+
         return attributes;
     }
 
     @Override
     public Attributes getAttributes() {
-        return Attributes.from(getBaseAttributes());
+        if (attributes == null) {
+            attributes = Attributes.from(getBaseAttributes());
+        }
+        return attributes;
     }
 }

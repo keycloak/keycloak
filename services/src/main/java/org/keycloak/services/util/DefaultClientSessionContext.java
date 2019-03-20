@@ -17,7 +17,9 @@
 
 package org.keycloak.services.util;
 
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 import org.jboss.logging.Logger;
@@ -30,7 +32,7 @@ import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.models.utils.RepresentationToModel;
+import org.keycloak.models.utils.RoleUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.util.TokenUtil;
@@ -48,8 +50,15 @@ public class DefaultClientSessionContext implements ClientSessionContext {
     private final Set<String> clientScopeIds;
 
     private Set<ClientScopeModel> clientScopes;
+
+    //
     private Set<RoleModel> roles;
     private Set<ProtocolMapperModel> protocolMappers;
+
+    // All roles of user expanded. It doesn't yet take into account permitted clientScopes
+    private Set<RoleModel> userRoles;
+
+    private Map<String, Object> attributes = new HashMap<>();
 
     private DefaultClientSessionContext(AuthenticatedClientSessionModel clientSession, Set<String> clientScopeIds) {
         this.clientSession = clientSession;
@@ -82,9 +91,7 @@ public class DefaultClientSessionContext implements ClientSessionContext {
             clientScopeIds.add(clientScope.getId());
         }
 
-        DefaultClientSessionContext ctx = new DefaultClientSessionContext(clientSession, clientScopeIds);
-        ctx.clientScopes = new HashSet<>(clientScopes);
-        return ctx;
+        return new DefaultClientSessionContext(clientSession, clientScopeIds);
     }
 
 
@@ -122,11 +129,20 @@ public class DefaultClientSessionContext implements ClientSessionContext {
 
     @Override
     public Set<ProtocolMapperModel> getProtocolMappers() {
-        // Load roles if not yet present
+        // Load protocolMappers if not yet present
         if (protocolMappers == null) {
             protocolMappers = loadProtocolMappers();
         }
         return protocolMappers;
+    }
+
+
+    private Set<RoleModel> getUserRoles() {
+        // Load userRoles if not yet present
+        if (userRoles == null) {
+            userRoles = loadUserRoles();
+        }
+        return userRoles;
     }
 
 
@@ -138,6 +154,10 @@ public class DefaultClientSessionContext implements ClientSessionContext {
         boolean first = true;
         for (ClientScopeModel clientScope : getClientScopes()) {
             if (clientScope instanceof ClientModel) {
+                continue;
+            }
+
+            if (!clientScope.isIncludeInTokenScope()) {
                 continue;
             }
 
@@ -161,17 +181,59 @@ public class DefaultClientSessionContext implements ClientSessionContext {
     }
 
 
+    @Override
+    public void setAttribute(String name, Object value) {
+        attributes.put(name, value);
+    }
+
+
+    @Override
+    public <T> T getAttribute(String name, Class<T> clazz) {
+        Object value = attributes.get(name);
+        return clazz.cast(value);
+    }
+
+
     // Loading data
 
     private Set<ClientScopeModel> loadClientScopes() {
         Set<ClientScopeModel> clientScopes = new HashSet<>();
         for (String scopeId : clientScopeIds) {
-            ClientScopeModel clientScope = KeycloakModelUtils.findClientScopeById(clientSession.getClient().getRealm(), scopeId);
+            ClientScopeModel clientScope = KeycloakModelUtils.findClientScopeById(clientSession.getClient().getRealm(), getClientSession().getClient(), scopeId);
             if (clientScope != null) {
-                clientScopes.add(clientScope);
+                if (isClientScopePermittedForUser(clientScope)) {
+                    clientScopes.add(clientScope);
+                } else {
+                    if (logger.isTraceEnabled()) {
+                        logger.tracef("User '%s' not permitted to have client scope '%s'",
+                                clientSession.getUserSession().getUser().getUsername(), clientScope.getName());
+                    }
+                }
             }
         }
         return clientScopes;
+    }
+
+
+    // Return true if clientScope can be used by the user.
+    private boolean isClientScopePermittedForUser(ClientScopeModel clientScope) {
+        if (clientScope instanceof ClientModel) {
+            return true;
+        }
+
+        Set<RoleModel> clientScopeRoles = clientScope.getScopeMappings();
+
+        // Client scope is automatically permitted if it doesn't have any role scope mappings
+        if (clientScopeRoles.isEmpty()) {
+            return true;
+        }
+
+        // Expand (resolve composite roles)
+        clientScopeRoles = RoleUtils.expandCompositeRoles(clientScopeRoles);
+
+        // Check if expanded roles of clientScope has any intersection with expanded roles of user. If not, it is not permitted
+        clientScopeRoles.retainAll(getUserRoles());
+        return !clientScopeRoles.isEmpty();
     }
 
 
@@ -206,6 +268,12 @@ public class DefaultClientSessionContext implements ClientSessionContext {
         }
 
         return protocolMappers;
+    }
+
+
+    private Set<RoleModel> loadUserRoles() {
+        UserModel user = clientSession.getUserSession().getUser();
+        return RoleUtils.getDeepUserRoleMappings(user);
     }
 
 }

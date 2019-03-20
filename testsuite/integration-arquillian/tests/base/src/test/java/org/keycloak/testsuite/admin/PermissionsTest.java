@@ -17,6 +17,7 @@
 
 package org.keycloak.testsuite.admin;
 
+import org.hamcrest.Matchers;
 import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataOutput;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -36,6 +37,7 @@ import org.keycloak.representations.idm.ClientInitialAccessCreatePresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.ComponentRepresentation;
+import org.keycloak.representations.idm.ConfigPropertyRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
@@ -80,6 +82,7 @@ import static org.junit.Assert.fail;
 import static org.keycloak.services.resources.admin.AdminAuth.Resource.AUTHORIZATION;
 import static org.keycloak.services.resources.admin.AdminAuth.Resource.CLIENT;
 import org.keycloak.testsuite.ProfileAssume;
+import org.keycloak.testsuite.utils.tls.TLSUtils;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -92,6 +95,18 @@ public class PermissionsTest extends AbstractKeycloakTest {
 
     @Rule public GreenMailRule greenMailRule = new GreenMailRule();
 
+
+    // Remove all realms before first run
+    @Override
+    public void beforeAbstractKeycloakTestRealmImport() {
+        if (testContext.isInitialized()) {
+            return;
+        }
+
+        removeAllRealmsDespiteMaster();
+    }
+
+
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
         RealmBuilder builder = RealmBuilder.create().name(REALM_NAME).testMail();
@@ -100,6 +115,13 @@ public class PermissionsTest extends AbstractKeycloakTest {
         builder.user(UserBuilder.create()
                 .username(AdminRoles.REALM_ADMIN)
                 .role(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.REALM_ADMIN)
+                .addPassword("password"));
+
+        builder.user(UserBuilder.create()
+                .username("multi")
+                .role(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.QUERY_GROUPS)
+                .role(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.VIEW_REALM)
+                .role(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.VIEW_CLIENTS)
                 .addPassword("password"));
 
         builder.user(UserBuilder.create().username("none").addPassword("password"));
@@ -149,13 +171,10 @@ public class PermissionsTest extends AbstractKeycloakTest {
 
     @AfterClass
     public static void removeTestUsers() throws Exception {
-        Keycloak adminClient = AdminClientUtil.createAdminClient();
-        try {
+        try (Keycloak adminClient = AdminClientUtil.createAdminClient()) {
             for (UserRepresentation u : adminClient.realm("master").users().search("permissions-test-master-", 0, 100)) {
                 adminClient.realm("master").users().get(u.getId()).remove();
             }
-        } finally {
-            adminClient.close();
         }
     }
 
@@ -176,28 +195,31 @@ public class PermissionsTest extends AbstractKeycloakTest {
 
         clients.put(AdminRoles.REALM_ADMIN,
                 Keycloak.getInstance(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth", REALM_NAME, AdminRoles.REALM_ADMIN, "password", "test-client",
-                        "secret"));
+                        "secret", TLSUtils.initializeTLS()));
 
         clients.put("none",
-                Keycloak.getInstance(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth", REALM_NAME, "none", "password", "test-client", "secret"));
+                Keycloak.getInstance(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth", REALM_NAME, "none", "password", "test-client", "secret", TLSUtils.initializeTLS()));
+
+        clients.put("multi",
+                Keycloak.getInstance(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth", REALM_NAME, "multi", "password", "test-client", "secret", TLSUtils.initializeTLS()));
 
         for (String role : AdminRoles.ALL_REALM_ROLES) {
-            clients.put(role, Keycloak.getInstance(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth", REALM_NAME, role, "password", "test-client"));
+            clients.put(role, Keycloak.getInstance(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth", REALM_NAME, role, "password", "test-client", TLSUtils.initializeTLS()));
         }
 
-        clients.put("REALM2", Keycloak.getInstance(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth", "realm2", "admin", "password", "test-client"));
+        clients.put("REALM2", Keycloak.getInstance(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth", "realm2", "admin", "password", "test-client", TLSUtils.initializeTLS()));
 
         clients.put("master-admin", adminClient);
 
         clients.put("master-none",
                 Keycloak.getInstance(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth", "master", "permissions-test-master-none", "password",
-                        Constants.ADMIN_CLI_CLIENT_ID));
+                        Constants.ADMIN_CLI_CLIENT_ID, TLSUtils.initializeTLS()));
 
 
         for (String role : AdminRoles.ALL_REALM_ROLES) {
             clients.put("master-" + role,
                     Keycloak.getInstance(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth", "master", "permissions-test-master-" + role, "password",
-                            Constants.ADMIN_CLI_CLIENT_ID));
+                            Constants.ADMIN_CLI_CLIENT_ID, TLSUtils.initializeTLS()));
         }
     }
 
@@ -271,7 +293,12 @@ public class PermissionsTest extends AbstractKeycloakTest {
                 realm.toRepresentation();
             }
         }, Resource.REALM, false, true);
-        assertGettersEmpty(clients.get(AdminRoles.VIEW_USERS).realm(REALM_NAME).toRepresentation());
+        assertGettersEmpty(clients.get(AdminRoles.QUERY_REALMS).realm(REALM_NAME).toRepresentation());
+
+        // this should pass given that users granted with "query" roles are allowed to access the realm with limited access
+        for (String role : AdminRoles.ALL_QUERY_ROLES) {
+            invoke(realm -> clients.get(role).realms().realm(REALM_NAME).toRepresentation(), clients.get(role), true);
+        }
 
         invoke(new Invocation() {
             public void invoke(RealmResource realm) {
@@ -458,8 +485,34 @@ public class PermissionsTest extends AbstractKeycloakTest {
                 realm.clients().findAll();
             }
         }, Resource.CLIENT, false, true);
-        List<ClientRepresentation> l = clients.get(AdminRoles.VIEW_USERS).realm(REALM_NAME).clients().findAll();
-        assertGettersEmpty(l.get(0));
+        List<ClientRepresentation> l = clients.get(AdminRoles.QUERY_CLIENTS).realm(REALM_NAME).clients().findAll();
+        Assert.assertThat(l, Matchers.empty());
+
+        l = clients.get(AdminRoles.VIEW_CLIENTS).realm(REALM_NAME).clients().findAll();
+        Assert.assertThat(l, Matchers.not(Matchers.empty()));
+
+        ClientRepresentation client = l.get(0);
+        invoke(new InvocationWithResponse() {
+            @Override
+            public void invoke(RealmResource realm, AtomicReference<Response> response) {
+                response.set(clients.get(AdminRoles.QUERY_USERS).realm(REALM_NAME).clients().create(client));
+            }
+        }, clients.get(AdminRoles.QUERY_USERS), false);
+        invoke(new Invocation() {
+            public void invoke(RealmResource realm) {
+                clients.get(AdminRoles.QUERY_USERS).realm(REALM_NAME).clients().get(client.getId()).toRepresentation();
+            }
+        }, clients.get(AdminRoles.QUERY_USERS), false);
+        invoke(new Invocation() {
+            public void invoke(RealmResource realm) {
+                clients.get(AdminRoles.QUERY_USERS).realm(REALM_NAME).clients().get(client.getId()).update(client);
+            }
+        }, clients.get(AdminRoles.QUERY_USERS), false);
+        invoke(new Invocation() {
+            public void invoke(RealmResource realm) {
+                clients.get(AdminRoles.QUERY_USERS).realm(REALM_NAME).clients().get(client.getId()).remove();
+            }
+        }, clients.get(AdminRoles.QUERY_USERS), false);
 
         invoke(new Invocation() {
             public void invoke(RealmResource realm) {
@@ -705,6 +758,12 @@ public class PermissionsTest extends AbstractKeycloakTest {
                 realm.clients().get(foo.getId()).roles().get("nosuch").getClientRoleComposites("nosuch");
             }
         }, Resource.CLIENT, false);
+        // users with query-client role should be able to query flows so the client detail page can be rendered successfully when fine-grained permissions are enabled.
+        invoke(new Invocation() {
+            public void invoke(RealmResource realm) {
+                realm.flows().getFlows();
+            }
+        }, clients.get(AdminRoles.QUERY_CLIENTS), true);
     }
 
     @Test
@@ -786,6 +845,13 @@ public class PermissionsTest extends AbstractKeycloakTest {
         invoke((RealmResource realm) -> {
             realm.clientScopes().get(scope.getId()).getScopeMappings().clientLevel(realmAccessClient.getId()).remove(Collections.<RoleRepresentation>emptyList());
         }, Resource.CLIENT, true);
+
+        // this should throw forbidden as "query-users" role isn't enough
+        invoke(new Invocation() {
+            public void invoke(RealmResource realm) {
+                clients.get(AdminRoles.QUERY_USERS).realm(REALM_NAME).clientScopes().findAll();
+            }
+        }, clients.get(AdminRoles.QUERY_USERS), false);
     }
 
     @Test
@@ -809,8 +875,6 @@ public class PermissionsTest extends AbstractKeycloakTest {
 
     @Test
     public void clientAuthorization() {
-        ProfileAssume.assumePreview();
-
         ClientRepresentation newClient = new ClientRepresentation();
         newClient.setClientId("foo-authz");
         adminClient.realms().realm(REALM_NAME).clients().create(newClient);
@@ -925,6 +989,13 @@ public class PermissionsTest extends AbstractKeycloakTest {
                 realm.roles().list();
             }
         }, Resource.REALM, false, true);
+
+        // this should throw forbidden as "create-client" role isn't enough
+        invoke(new Invocation() {
+            public void invoke(RealmResource realm) {
+                clients.get(AdminRoles.CREATE_CLIENT).realm(REALM_NAME).roles().list();
+            }
+        }, clients.get(AdminRoles.CREATE_CLIENT), false);
         invoke(new Invocation() {
             public void invoke(RealmResource realm) {
                 realm.roles().get("sample-role").toRepresentation();
@@ -1135,6 +1206,13 @@ public class PermissionsTest extends AbstractKeycloakTest {
                 realm.flows().updateAuthenticatorConfig("nosuch", new AuthenticatorConfigRepresentation());
             }
         }, Resource.REALM, true);
+        invoke(new Invocation() {
+            public void invoke(RealmResource realm) {
+                clients.get(AdminRoles.VIEW_REALM).realm(REALM_NAME).flows().getPerClientConfigDescription();
+                clients.get(AdminRoles.VIEW_REALM).realm(REALM_NAME).flows().getClientAuthenticatorProviders();
+                clients.get(AdminRoles.VIEW_REALM).realm(REALM_NAME).flows().getRequiredActions();
+            }
+        }, adminClient, true);
 
         // Re-create realm
         adminClient.realm(REALM_NAME).remove();
@@ -1219,6 +1297,12 @@ public class PermissionsTest extends AbstractKeycloakTest {
         GroupRepresentation group = adminClient.realms().realm(REALM_NAME).getGroupByPath("mygroup");
         ClientRepresentation realmAccessClient = adminClient.realms().realm(REALM_NAME).clients().findByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID).get(0);
 
+        // this should throw forbidden as "create-client" role isn't enough
+        invoke(new Invocation() {
+            public void invoke(RealmResource realm) {
+                clients.get(AdminRoles.CREATE_CLIENT).realm(REALM_NAME).groups().groups();
+            }
+        }, clients.get(AdminRoles.CREATE_CLIENT), false);
 
         invoke(new Invocation() {
             public void invoke(RealmResource realm) {
@@ -1487,6 +1571,51 @@ public class PermissionsTest extends AbstractKeycloakTest {
                 realm.users().search("foo", 0, 1);
             }
         }, Resource.USER, false);
+        // this should throw forbidden as "query-client" role isn't enough
+        invoke(new Invocation() {
+            public void invoke(RealmResource realm) {
+                clients.get(AdminRoles.QUERY_CLIENTS).realm(REALM_NAME).users().list();
+            }
+        }, clients.get(AdminRoles.QUERY_CLIENTS), false);
+        invoke(new InvocationWithResponse() {
+            @Override
+            public void invoke(RealmResource realm, AtomicReference<Response> response) {
+                response.set(clients.get(AdminRoles.QUERY_CLIENTS).realm(REALM_NAME).users().create(user));
+            }
+        }, clients.get(AdminRoles.QUERY_CLIENTS), false);
+        invoke(new Invocation() {
+            public void invoke(RealmResource realm) {
+                clients.get(AdminRoles.QUERY_CLIENTS).realm(REALM_NAME).users().search("test");
+            }
+        }, clients.get(AdminRoles.QUERY_CLIENTS), false);
+        invoke(new Invocation() {
+            public void invoke(RealmResource realm) {
+                realm.users().get(user.getId()).toRepresentation();
+            }
+        }, clients.get(AdminRoles.QUERY_CLIENTS), false);
+        invoke(new Invocation() {
+            public void invoke(RealmResource realm) {
+                realm.users().get(user.getId()).remove();
+            }
+        }, clients.get(AdminRoles.QUERY_CLIENTS), false);
+        invoke(new Invocation() {
+            public void invoke(RealmResource realm) {
+                realm.users().get(user.getId()).update(user);
+            }
+        }, clients.get(AdminRoles.QUERY_CLIENTS), false);
+        // users with query-user role should be able to query required actions so the user detail page can be rendered successfully when fine-grained permissions are enabled.
+        invoke(new Invocation() {
+            public void invoke(RealmResource realm) {
+                realm.flows().getRequiredActions();
+            }
+        }, clients.get(AdminRoles.QUERY_USERS), true);
+        // users with query-user role should be able to query clients so the user detail page can be rendered successfully when fine-grained permissions are enabled.
+        // if the admin wants to restrict the clients that an user can see he can define permissions for these clients
+        invoke(new Invocation() {
+            public void invoke(RealmResource realm) {
+                clients.get(AdminRoles.QUERY_USERS).realm(REALM_NAME).clients().findAll();
+            }
+        }, clients.get(AdminRoles.QUERY_USERS), true);
     }
 
     @Test
@@ -1594,6 +1723,35 @@ public class PermissionsTest extends AbstractKeycloakTest {
                 realm.components().component("nosuch").remove();
             }
         }, Resource.REALM, true);
+    }
+
+    @Test
+    public void partialExport() {
+        invoke(new Invocation() {
+            public void invoke(RealmResource realm) {
+                realm.partialExport(false, false);
+            }
+        }, clients.get("view-realm"), true);
+        invoke(new Invocation() {
+            public void invoke(RealmResource realm) {
+                realm.partialExport(true, true);
+            }
+        }, clients.get("multi"), true);
+        invoke(new Invocation() {
+            public void invoke(RealmResource realm) {
+                realm.partialExport(true, false);
+            }
+        }, clients.get("view-realm"), false);
+        invoke(new Invocation() {
+            public void invoke(RealmResource realm) {
+                realm.partialExport(false, true);
+            }
+        }, clients.get("view-realm"), false);
+        invoke(new Invocation() {
+            public void invoke(RealmResource realm) {
+                realm.partialExport(false, false);
+            }
+        }, clients.get("none"), false);
     }
 
     private void invoke(final Invocation invocation, Resource resource, boolean manage) {

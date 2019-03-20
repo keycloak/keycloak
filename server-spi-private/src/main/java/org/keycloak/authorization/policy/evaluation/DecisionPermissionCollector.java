@@ -76,6 +76,11 @@ public class DecisionPermissionCollector extends AbstractDecisionCollector {
                         for (Scope scope : requestedScopes) {
                             if (policyScopes.contains(scope)) {
                                 grantedScopes.add(scope);
+                                // we need to grant any scope granted by a permission in case it is not explicitly
+                                // associated with the resource. For instance, resources inheriting scopes from parent resources.
+                                if (resource != null && !resource.getScopes().contains(scope)) {
+                                    deniedScopes.remove(scope);
+                                }
                             }
                         }
                     } else if (isResourcePermission(policy)) {
@@ -109,7 +114,13 @@ public class DecisionPermissionCollector extends AbstractDecisionCollector {
                 }
             } else {
                 for (Result.PolicyResult userManagedPermission : userManagedPermissions) {
-                    grantedScopes.addAll(userManagedPermission.getPolicy().getScopes());
+                    Set<Scope> scopes = new HashSet<>(userManagedPermission.getPolicy().getScopes());
+
+                    if (!requestedScopes.isEmpty()) {
+                        scopes.retainAll(requestedScopes);
+                    }
+
+                    grantedScopes.addAll(scopes);
                 }
 
                 if (grantedScopes.isEmpty() && !resource.getScopes().isEmpty()) {
@@ -160,12 +171,22 @@ public class DecisionPermissionCollector extends AbstractDecisionCollector {
             metadata = request.getMetadata();
         }
 
+        Permission permission;
+
         if (resource != null) {
             String resourceName = metadata == null || metadata.getIncludeResourceName() ? resource.getName() : null;
-            return new Permission(resource.getId(), resourceName, scopes, claims);
+            permission = new Permission(resource.getId(), resourceName, scopes, claims);
+        } else {
+            permission = new Permission(null, null, scopes, claims);
         }
 
-        return new Permission(null, null, scopes, claims);
+        onGrant(permission);
+
+        return permission;
+    }
+
+    protected void onGrant(Permission permission) {
+
     }
 
     private static boolean isResourcePermission(Policy policy) {

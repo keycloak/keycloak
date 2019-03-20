@@ -23,10 +23,13 @@ import org.keycloak.common.util.Time;
 
 import java.io.IOException;
 import java.util.Collection;
+import java.util.LinkedList;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -36,7 +39,7 @@ public class NodesRegistrationManagement {
     private static final Logger log = Logger.getLogger(NodesRegistrationManagement.class);
 
     private final Map<String, NodeRegistrationContext> nodeRegistrations = new ConcurrentHashMap<String, NodeRegistrationContext>();
-    private final Executor executor = Executors.newSingleThreadExecutor();
+    private final ExecutorService executor = Executors.newSingleThreadExecutor();
 
     // Sending registration event during first request to application or if re-registration is needed
     public void tryRegister(final KeycloakDeployment resolvedDeployment) {
@@ -72,6 +75,8 @@ public class NodesRegistrationManagement {
      * Called during undeployment or server stop. De-register from all previously registered deployments
      */
     public void stop() {
+        executor.shutdownNow();
+
         Collection<NodeRegistrationContext> allRegistrations = nodeRegistrations.values();
         for (NodeRegistrationContext registration : allRegistrations) {
             sendUnregistrationEvent(registration.resolvedDeployment);
@@ -79,6 +84,17 @@ public class NodesRegistrationManagement {
     }
 
     protected void sendRegistrationEvent(KeycloakDeployment deployment) {
+        // This method is invoked from single-thread executor, so no synchronization is needed
+        // However, it could happen that the same deployment was submitted more than once to that executor
+        // Hence we need to recheck that the registration is really needed
+        final String registrationUri = deployment.getRegisterNodeUrl();
+        if (! needRefreshRegistration(registrationUri, deployment)) {
+            return;
+        }
+        if (Thread.currentThread().isInterrupted()) {
+            return;
+        }
+
         log.debug("Sending registration event right now");
 
         String host = HostUtils.getHostName();

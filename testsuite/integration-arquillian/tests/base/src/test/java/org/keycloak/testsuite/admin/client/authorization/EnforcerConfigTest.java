@@ -40,9 +40,6 @@ import static org.keycloak.testsuite.utils.io.IOUtil.loadRealm;
  */
 public class EnforcerConfigTest extends AbstractKeycloakTest {
 
-    @BeforeClass
-    public static void enabled() { ProfileAssume.assumePreview(); }
-
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
         RealmRepresentation realm = loadRealm(getClass().getResourceAsStream("/authorization-test/test-authz-realm.json"));

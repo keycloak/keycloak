@@ -93,9 +93,10 @@ import static org.keycloak.testsuite.arquillian.DeploymentTargetModifier.AUTH_SE
  */
 @AppServerContainer(ContainerConstants.APP_SERVER_UNDERTOW)
 @AppServerContainer(ContainerConstants.APP_SERVER_WILDFLY)
-@AppServerContainer(ContainerConstants.APP_SERVER_WILDFLY10)
+@AppServerContainer(ContainerConstants.APP_SERVER_WILDFLY_DEPRECATED)
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP)
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP6)
+@AppServerContainer(ContainerConstants.APP_SERVER_EAP71)
 public class BrokerLinkAndTokenExchangeTest extends AbstractServletsAdapterTest {
     public static final String CHILD_IDP = "child";
     public static final String PARENT_IDP = "parent-idp";
@@ -491,7 +492,6 @@ public class BrokerLinkAndTokenExchangeTest extends AbstractServletsAdapterTest 
         testExternalExchange();
         testingClient.testing().exportImport().setProvider(SingleFileExportProviderFactory.PROVIDER_ID);
         String targetFilePath = testingClient.testing().exportImport().getExportImportTestDirectory() + File.separator + "singleFile-full.json";
-        //System.out.println("TARGET PATH: " + targetFilePath);
         testingClient.testing().exportImport().setFile(targetFilePath);
         testingClient.testing().exportImport().setAction(ExportImportConfig.ACTION_EXPORT);
         testingClient.testing().exportImport().setRealmName(CHILD_IDP);
@@ -501,12 +501,10 @@ public class BrokerLinkAndTokenExchangeTest extends AbstractServletsAdapterTest 
         testingClient.testing().exportImport().setAction(ExportImportConfig.ACTION_IMPORT);
 
         testingClient.testing().exportImport().runImport();
-        //System.out.println("************* AFTER IMPORT");
+
+        testingClient.testing().exportImport().clear();
+
         testExternalExchange();
-        //Thread.sleep(1000000000l);
-
-
-
     }
 
 

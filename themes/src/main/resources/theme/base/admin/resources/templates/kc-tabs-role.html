@@ -5,7 +5,8 @@
 
     <ul class="nav nav-tabs" data-ng-show="!create">
         <li ng-class="{active: !path[4]}"><a href="#/realms/{{realm.realm}}/roles/{{role.id}}">{{:: 'details' | translate}}</a></li>
-        <li ng-class="{active: path[4] == 'permissions'}" data-ng-show="serverInfo.featureEnabled('AUTHORIZATION') && access.manageRealm && access.manageAuthorization">
+        <li ng-class="{active: path[4] == 'role-attributes'}"><a href="#/realms/{{realm.realm}}/roles/{{role.id}}/role-attributes">{{:: 'attributes' | translate}}</a></li>
+        <li ng-class="{active: path[4] == 'permissions'}" data-ng-show="serverInfo.featureEnabled('ADMIN_FINE_GRAINED_AUTHZ') && access.manageRealm && access.manageAuthorization">
             <a href="#/realms/{{realm.realm}}/roles/{{role.id}}/permissions">{{:: 'authz-permissions' | translate}}</a>
             <kc-tooltip>{{:: 'manage-permissions-role.tooltip' | translate}}</kc-tooltip>
         </li>

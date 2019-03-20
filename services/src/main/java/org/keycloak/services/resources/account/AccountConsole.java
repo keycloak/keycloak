@@ -17,7 +17,6 @@ import org.keycloak.services.managers.Auth;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.ClientManager;
 import org.keycloak.services.managers.RealmManager;
-import org.keycloak.services.util.LocaleHelper;
 import org.keycloak.services.util.ResolveRelative;
 import org.keycloak.services.validation.Validation;
 import org.keycloak.theme.BrowserSecurityHeaderSetup;
@@ -95,12 +94,13 @@ public class AccountConsole {
             String[] referrer = getReferrer();
             if (referrer != null) {
                 map.put("referrer", referrer[0]);
-                map.put("referrer_uri", referrer[1]);
+                map.put("referrerName", referrer[1]);
+                map.put("referrer_uri", referrer[2]);
             }
             
             UserModel user = null;
             if (auth != null) user = auth.getUser();
-            Locale locale = LocaleHelper.getLocale(session, realm, user);
+            Locale locale = session.getContext().resolveLocale(user);
             map.put("locale", locale.toLanguageTag());
             Properties messages = theme.getMessages(locale);
             map.put("msg", new MessageFormatterMethod(locale, messages));
@@ -110,7 +110,7 @@ public class AccountConsole {
             
             EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
             map.put("isEventsEnabled", eventStore != null && realm.isEventsEnabled());
-            map.put("isAuthorizationEnabled", Profile.isFeatureEnabled(Profile.Feature.AUTHORIZATION));
+            map.put("isAuthorizationEnabled", true);
 
             FreeMarkerUtil freeMarkerUtil = new FreeMarkerUtil();
             String result = freeMarkerUtil.processTemplate(map, "index.ftl", theme);
@@ -205,7 +205,7 @@ public class AccountConsole {
                 if (Validation.isBlank(referrerName)) {
                     referrerName = referrer;
                 }
-                return new String[]{referrerName, referrerUri};
+                return new String[]{referrer, referrerName, referrerUri};
             }
         } else if (referrerUri != null) {
             referrerClient = realm.getClientByClientId(referrer);
@@ -213,7 +213,7 @@ public class AccountConsole {
                 referrerUri = RedirectUtils.verifyRedirectUri(session.getContext().getUri(), referrerUri, realm, referrerClient);
 
                 if (referrerUri != null) {
-                    return new String[]{referrer, referrerUri};
+                    return new String[]{referrer, referrer, referrerUri};
                 }
             }
         }

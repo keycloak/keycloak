@@ -17,17 +17,22 @@
  */
 package org.keycloak.authorization.protection.introspect;
 
-import java.io.IOException;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.jboss.logging.Logger;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oidc.AccessTokenIntrospectionProvider;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessToken.Authorization;
+import org.keycloak.representations.idm.authorization.Permission;
 import org.keycloak.util.JsonSerialization;
 
 /**
@@ -65,7 +70,19 @@ public class RPTIntrospectionProvider extends AccessTokenIntrospectionProvider {
                 metadata.setResourceAccess(null);
 
                 tokenMetadata = JsonSerialization.createObjectNode(metadata);
-                tokenMetadata.putPOJO("permissions", accessToken.getAuthorization().getPermissions());
+                Authorization authorization = accessToken.getAuthorization();
+
+                if (authorization != null) {
+                    Collection permissions;
+
+                    if (authorization.getPermissions() != null) {
+                        permissions = authorization.getPermissions().stream().map(UmaPermissionRepresentation::new).collect(Collectors.toSet());
+                    } else {
+                        permissions = Collections.emptyList();
+                    }
+
+                    tokenMetadata.putPOJO("permissions", permissions);
+                }
             } else {
                 tokenMetadata = JsonSerialization.createObjectNode();
             }
@@ -81,5 +98,27 @@ public class RPTIntrospectionProvider extends AccessTokenIntrospectionProvider {
     @Override
     public void close() {
 
+    }
+
+    //todo: we need to avoid creating this class when processing responses. The only reason for that is that
+    // UMA defines "resource_id" and "resource_scopes" claims but we use "rsid" and "scopes".
+    // To avoid breaking backward compatiblity we are just responding with all these claims.
+    public class UmaPermissionRepresentation extends Permission {
+
+        public UmaPermissionRepresentation(Permission permission) {
+            setResourceId(permission.getResourceId());
+            setResourceName(permission.getResourceName());
+            setScopes(permission.getScopes());
+        }
+
+        @JsonProperty("resource_id")
+        public String getUmaResourceId() {
+            return getResourceId();
+        }
+
+        @JsonProperty("resource_scopes")
+        public Set<String> getUmaResourceScopes() {
+            return getScopes();
+        }
     }
 }

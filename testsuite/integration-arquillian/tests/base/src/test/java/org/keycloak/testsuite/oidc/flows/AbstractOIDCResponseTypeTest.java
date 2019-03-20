@@ -23,7 +23,8 @@ import org.junit.Test;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
-import org.keycloak.jose.jws.Algorithm;
+import org.keycloak.jose.jws.JWSHeader;
+import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -31,10 +32,12 @@ import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.admin.AbstractAdminTest;
+import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.TokenSignatureUtil;
 
 import javax.ws.rs.core.UriBuilder;
 import java.io.IOException;
@@ -42,6 +45,8 @@ import java.util.List;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 /**
  * Abstract test for various values of response_type
@@ -49,9 +54,6 @@ import static org.junit.Assert.assertTrue;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public abstract class AbstractOIDCResponseTypeTest extends AbstractTestRealmKeycloakTest {
-
-    // Harcoded for now
-    Algorithm jwsAlgorithm = Algorithm.RS256;
 
     @Rule
     public AssertEvents events = new AssertEvents(this);
@@ -213,5 +215,69 @@ public abstract class AbstractOIDCResponseTypeTest extends AbstractTestRealmKeyc
 
     protected ClientManager.ClientManagerBuilder clientManagerBuilder() {
         return ClientManager.realm(adminClient.realm("test")).clientId("test-app");
+    }
+
+    private void oidcFlow(String expectedAccessAlg, String expectedIdTokenAlg) throws Exception {
+        EventRepresentation loginEvent = loginUser("abcdef123456");
+
+        OAuthClient.AuthorizationEndpointResponse authzResponse = new OAuthClient.AuthorizationEndpointResponse(oauth, isFragment());
+        Assert.assertNotNull(authzResponse.getSessionState());
+
+        JWSHeader header = null;
+        String idToken = authzResponse.getIdToken();
+        String accessToken = authzResponse.getAccessToken();
+        if (idToken != null) {
+            header = new JWSInput(idToken).getHeader();
+            assertEquals(expectedIdTokenAlg, header.getAlgorithm().name());
+            assertEquals("JWT", header.getType());
+            assertNull(header.getContentType());
+        }
+        if (accessToken != null) {
+            header = new JWSInput(accessToken).getHeader();
+            assertEquals(expectedAccessAlg, header.getAlgorithm().name());
+            assertEquals("JWT", header.getType());
+            assertNull(header.getContentType());
+        }
+
+        List<IDToken> idTokens = testAuthzResponseAndRetrieveIDTokens(authzResponse, loginEvent);
+
+        for (IDToken idt : idTokens) {
+            Assert.assertEquals("abcdef123456", idt.getNonce());
+            Assert.assertEquals(authzResponse.getSessionState(), idt.getSessionState());
+        }
+    }
+
+    @Test
+    public void oidcFlow_RealmRS256_ClientRS384_EffectiveRS384() throws Exception {
+        try {
+            setSignatureAlgorithm("RS384");
+            TokenSignatureUtil.changeRealmTokenSignatureProvider(adminClient, "RS256");
+            TokenSignatureUtil.changeClientIdTokenSignatureProvider(ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), "RS384");
+            oidcFlow("RS256", "RS384");
+        } finally {
+            setSignatureAlgorithm("RS256");
+            TokenSignatureUtil.changeClientIdTokenSignatureProvider(ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), "RS256");
+        }
+    }
+
+    @Test
+    public void oidcFlow_RealmES256_ClientES384_EffectiveES384() throws Exception {
+        try {
+            setSignatureAlgorithm("ES384");
+            TokenSignatureUtil.changeRealmTokenSignatureProvider(adminClient, "ES256");
+            TokenSignatureUtil.changeClientIdTokenSignatureProvider(ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), "ES384");
+            oidcFlow("ES256", "ES384");
+        } finally {
+            setSignatureAlgorithm("RS256");
+            TokenSignatureUtil.changeClientIdTokenSignatureProvider(ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), "RS256");
+        }
+    }
+
+    private String sigAlgName = "RS256";
+    private void setSignatureAlgorithm(String sigAlgName) {
+        this.sigAlgName = sigAlgName;
+    }
+    protected String getSignatureAlgorithm() {
+        return this.sigAlgName;
     }
 }

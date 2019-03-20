@@ -19,7 +19,7 @@ package org.keycloak.adapters;
 
 import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
-import org.keycloak.adapters.rotation.AdapterRSATokenVerifier;
+import org.keycloak.adapters.rotation.AdapterTokenVerifier;
 import org.keycloak.adapters.spi.AdapterSessionStore;
 import org.keycloak.adapters.spi.AuthChallenge;
 import org.keycloak.adapters.spi.AuthOutcome;
@@ -40,7 +40,6 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Map;
-import java.util.logging.Level;
 
 
 /**
@@ -328,12 +327,12 @@ public class OAuthRequestAuthenticator {
         if (challenge != null) return challenge;
 
         AccessTokenResponse tokenResponse = null;
-        strippedOauthParametersRequestUri = stripOauthParametersFromRedirect();
+        strippedOauthParametersRequestUri = rewrittenRedirectUri(stripOauthParametersFromRedirect());
     
         try {
             // For COOKIE store we don't have httpSessionId and single sign-out won't be available
             String httpSessionId = deployment.getTokenStore() == TokenStore.SESSION ? reqAuthenticator.changeHttpSessionId(true) : null;
-            tokenResponse = ServerRequest.invokeAccessCodeToToken(deployment, code, rewrittenRedirectUri(strippedOauthParametersRequestUri), httpSessionId);
+            tokenResponse = ServerRequest.invokeAccessCodeToToken(deployment, code, strippedOauthParametersRequestUri, httpSessionId);
         } catch (ServerRequest.HttpFailure failure) {
             log.error("failed to turn code into token");
             log.error("status from server: " + failure.getStatus());
@@ -359,15 +358,9 @@ public class OAuthRequestAuthenticator {
         }
 
         try {
-            token = AdapterRSATokenVerifier.verifyToken(tokenString, deployment);
-            if (idTokenString != null) {
-                try {
-                    JWSInput input = new JWSInput(idTokenString);
-                    idToken = input.readJsonContent(IDToken.class);
-                } catch (JWSInputException e) {
-                    throw new VerificationException();
-                }
-            }
+            AdapterTokenVerifier.VerifiedTokens tokens = AdapterTokenVerifier.verifyTokens(tokenString, idTokenString, deployment);
+            token = tokens.getAccessToken();
+            idToken = tokens.getIdToken();
             log.debug("Token Verification succeeded!");
         } catch (VerificationException e) {
             log.error("failed verification of token: " + e.getMessage());

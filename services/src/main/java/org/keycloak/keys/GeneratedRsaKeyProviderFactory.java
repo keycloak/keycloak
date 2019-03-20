@@ -18,14 +18,15 @@
 package org.keycloak.keys;
 
 import org.jboss.logging.Logger;
-import org.keycloak.Config;
 import org.keycloak.common.util.CertificateUtils;
 import org.keycloak.common.util.KeyUtils;
+import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.component.ComponentValidationException;
+import org.keycloak.crypto.Algorithm;
+import org.keycloak.crypto.KeyUse;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.provider.ConfigurationValidationHelper;
 import org.keycloak.provider.ProviderConfigProperty;
@@ -54,6 +55,30 @@ public class GeneratedRsaKeyProviderFactory extends AbstractRsaKeyProviderFactor
     @Override
     public KeyProvider create(KeycloakSession session, ComponentModel model) {
         return new ImportedRsaKeyProvider(session.getContext().getRealm(), model);
+    }
+
+    @Override
+    public boolean createFallbackKeys(KeycloakSession session, KeyUse keyUse, String algorithm) {
+        if (keyUse.equals(KeyUse.SIG) && (algorithm.equals(Algorithm.RS256) || algorithm.equals(Algorithm.RS384) || algorithm.equals(Algorithm.RS512))) {
+            RealmModel realm = session.getContext().getRealm();
+
+            ComponentModel generated = new ComponentModel();
+            generated.setName("fallback-" + algorithm);
+            generated.setParentId(realm.getId());
+            generated.setProviderId(ID);
+            generated.setProviderType(KeyProvider.class.getName());
+
+            MultivaluedHashMap<String, String> config = new MultivaluedHashMap<>();
+            config.putSingle(Attributes.PRIORITY_KEY, "-100");
+            config.putSingle(Attributes.ALGORITHM_KEY, algorithm);
+            generated.setConfig(config);
+
+            realm.addComponentModel(generated);
+
+            return true;
+        } else {
+            return false;
+        }
     }
 
     @Override

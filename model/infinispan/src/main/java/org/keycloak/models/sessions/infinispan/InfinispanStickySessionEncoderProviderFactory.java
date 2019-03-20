@@ -38,15 +38,7 @@ public class InfinispanStickySessionEncoderProviderFactory implements StickySess
 
     @Override
     public StickySessionEncoderProvider create(KeycloakSession session) {
-        String myNodeName = InfinispanUtil.getMyAddress(session);
-
-        if (myNodeName != null && myNodeName.startsWith(InfinispanConnectionProvider.NODE_PREFIX)) {
-
-            // Node name was randomly generated. We won't use anything for sticky sessions in this case
-            myNodeName = null;
-        }
-
-        return new InfinispanStickySessionEncoderProvider(session, myNodeName, shouldAttachRoute);
+        return new InfinispanStickySessionEncoderProvider(session, shouldAttachRoute);
     }
 
     @Override

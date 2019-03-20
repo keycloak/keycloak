@@ -34,10 +34,13 @@ import java.io.Serializable;
 @NamedQueries({
         @NamedQuery(name="deleteUserSessionsByRealm", query="delete from PersistentUserSessionEntity sess where sess.realmId = :realmId"),
         @NamedQuery(name="deleteUserSessionsByUser", query="delete from PersistentUserSessionEntity sess where sess.userId = :userId"),
-        @NamedQuery(name="deleteDetachedUserSessions", query="delete from PersistentUserSessionEntity sess where NOT EXISTS (select c.userSessionId from PersistentClientSessionEntity c where c.userSessionId = sess.userSessionId)"),
+        @NamedQuery(name="deleteExpiredUserSessions", query="delete from PersistentUserSessionEntity sess where sess.realmId = :realmId AND sess.offline = :offline AND sess.lastSessionRefresh < :lastSessionRefresh"),
+        @NamedQuery(name="updateUserSessionLastSessionRefresh", query="update PersistentUserSessionEntity sess set lastSessionRefresh = :lastSessionRefresh where sess.realmId = :realmId" +
+                " AND sess.offline = :offline AND sess.userSessionId IN (:userSessionIds)"),
         @NamedQuery(name="findUserSessionsCount", query="select count(sess) from PersistentUserSessionEntity sess where sess.offline = :offline"),
-        @NamedQuery(name="findUserSessions", query="select sess from PersistentUserSessionEntity sess where sess.offline = :offline order by sess.userSessionId"),
-        @NamedQuery(name="updateUserSessionsTimestamps", query="update PersistentUserSessionEntity c set lastSessionRefresh = :lastSessionRefresh"),
+        @NamedQuery(name="findUserSessions", query="select sess from PersistentUserSessionEntity sess where sess.offline = :offline" +
+                " AND (sess.createdOn > :lastCreatedOn OR (sess.createdOn = :lastCreatedOn AND sess.userSessionId > :lastSessionId))" +
+                " order by sess.createdOn,sess.userSessionId")
 
 })
 @Table(name="OFFLINE_USER_SESSION")
@@ -54,6 +57,9 @@ public class PersistentUserSessionEntity {
 
     @Column(name="USER_ID", length = 255)
     protected String userId;
+
+    @Column(name = "CREATED_ON")
+    protected int createdOn;
 
     @Column(name = "LAST_SESSION_REFRESH")
     protected int lastSessionRefresh;
@@ -88,6 +94,14 @@ public class PersistentUserSessionEntity {
     public void setUserId(String userId) {
         KeyUtils.assertValidKey(userId);
         this.userId = userId;
+    }
+
+    public int getCreatedOn() {
+        return createdOn;
+    }
+
+    public void setCreatedOn(int createdOn) {
+        this.createdOn = createdOn;
     }
 
     public int getLastSessionRefresh() {

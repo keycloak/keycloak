@@ -76,7 +76,7 @@ public class ClientScopeEvaluateScopeMappingsResource {
     public List<RoleRepresentation> getGrantedScopeMappings() {
         return getGrantedRoles().stream().map((RoleModel role) -> {
 
-            return ModelToRepresentation.toRepresentation(role);
+            return ModelToRepresentation.toBriefRepresentation(role);
 
         }).collect(Collectors.toList());
     }
@@ -101,7 +101,7 @@ public class ClientScopeEvaluateScopeMappingsResource {
 
         }).map((RoleModel role) -> {
 
-            return ModelToRepresentation.toRepresentation(role);
+            return ModelToRepresentation.toBriefRepresentation(role);
 
         }).collect(Collectors.toList());
     }

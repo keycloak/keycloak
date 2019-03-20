@@ -79,7 +79,7 @@ public class ContainerInfo implements Comparable<ContainerInfo> {
     }
 
     public boolean isJBossBased() {
-        return isAS7() || isWildfly() || isEAP();
+        return isAS7() || isWildfly() || isEAP() || getQualifier().toLowerCase().contains("jboss");
     }
 
     @Override

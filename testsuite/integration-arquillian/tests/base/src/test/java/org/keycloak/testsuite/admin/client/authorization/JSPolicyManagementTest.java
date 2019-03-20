@@ -86,27 +86,30 @@ public class JSPolicyManagementTest extends AbstractPolicyManagementTest {
         representation.setCode("$evaluation.grant()");
 
         JSPoliciesResource policies = authorization.policies().js();
-        Response response = policies.create(representation);
-        JSPolicyRepresentation created = response.readEntity(JSPolicyRepresentation.class);
+        try (Response response = policies.create(representation)) {
+            JSPolicyRepresentation created = response.readEntity(JSPolicyRepresentation.class);
 
-        policies.findById(created.getId()).remove();
+            policies.findById(created.getId()).remove();
 
-        JSPolicyResource removed = policies.findById(created.getId());
+            JSPolicyResource removed = policies.findById(created.getId());
 
-        try {
-            removed.toRepresentation();
-            fail("Permission not removed");
-        } catch (NotFoundException ignore) {
+            try {
+                removed.toRepresentation();
+                fail("Permission not removed");
+            } catch (NotFoundException ignore) {
 
+            }
         }
     }
 
     private void assertCreated(AuthorizationResource authorization, JSPolicyRepresentation representation) {
         JSPoliciesResource permissions = authorization.policies().js();
-        Response response = permissions.create(representation);
-        JSPolicyRepresentation created = response.readEntity(JSPolicyRepresentation.class);
-        JSPolicyResource permission = permissions.findById(created.getId());
-        assertRepresentation(representation, permission);
+
+        try (Response response = permissions.create(representation)) {
+            JSPolicyRepresentation created = response.readEntity(JSPolicyRepresentation.class);
+            JSPolicyResource permission = permissions.findById(created.getId());
+            assertRepresentation(representation, permission);
+        }
     }
 
     private void assertRepresentation(JSPolicyRepresentation representation, JSPolicyResource permission) {

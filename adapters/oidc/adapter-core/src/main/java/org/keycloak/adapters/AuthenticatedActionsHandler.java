@@ -106,7 +106,10 @@ public class AuthenticatedActionsHandler {
         if (deployment.getPolicyEnforcer() != null) {
             if (exposeHeaders != null) {
                 exposeHeaders += ",";
+            } else {
+                exposeHeaders = "";
             }
+
             exposeHeaders += "WWW-Authenticate";
         }
 
@@ -156,11 +159,9 @@ public class AuthenticatedActionsHandler {
 
             if (session != null) {
                 session.setAuthorizationContext(authorizationContext);
-
-                return authorizationContext.isGranted();
             }
 
-            return true;
+            return authorizationContext.isGranted();
         } catch (Exception e) {
             throw new RuntimeException("Failed to enforce policy decisions.", e);
         }

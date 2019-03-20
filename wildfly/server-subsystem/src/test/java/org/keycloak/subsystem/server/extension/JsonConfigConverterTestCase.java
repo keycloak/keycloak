@@ -166,7 +166,7 @@ public class JsonConfigConverterTestCase {
             + "    \"connectionsInfinispan\": {\n"
             + "        \"provider\": \"default\",\n"
             + "        \"default\": {\n"
-            + "            \"cacheContainer\" : \"java:comp/env/infinispan/Keycloak\"\n"
+            + "            \"cacheContainer\" : \"java:jboss/infinispan/container/keycloak\"\n"
             + "        }\n"
             + "    }\n"
             + "}";
@@ -429,7 +429,7 @@ public class JsonConfigConverterTestCase {
             "        (\"spi\" => \"connectionsInfinispan\"),\n" +
             "        (\"provider\" => \"default\")\n" +
             "    ],\n" +
-            "    \"properties\" => {\"cacheContainer\" => \"java:comp/env/infinispan/Keycloak\"},\n" +
+            "    \"properties\" => {\"cacheContainer\" => \"java:jboss/infinispan/container/keycloak\"},\n" +
             "    \"enabled\" => true\n" +
             "}"
         ));

@@ -38,6 +38,7 @@ import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.representations.idm.authorization.AuthorizationRequest;
 import org.keycloak.representations.idm.authorization.Permission;
 import org.keycloak.representations.idm.authorization.PermissionTicketToken;
+import org.keycloak.representations.idm.authorization.PolicyEnforcementMode;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -60,44 +61,26 @@ public class PermissionTicketAwareDecisionResultCollector extends DecisionPermis
     }
 
     @Override
-    public void onDecision(DefaultEvaluation evaluation) {
-        super.onDecision(evaluation);
-        removePermissionsIfGranted(evaluation);
-    }
+    protected void onGrant(Permission grantedPermission) {
+        // Removes permissions (represented by {@code ticket}) granted by any user-managed policy so we don't create unnecessary permission tickets.
+        List<Permission> permissions = ticket.getPermissions();
+        Iterator<Permission> itPermissions = permissions.iterator();
 
-    /**
-     * Removes permissions (represented by {@code ticket}) granted by any user-managed policy so we don't create unnecessary permission tickets.
-     *
-     * @param evaluation the evaluation
-     */
-    private void removePermissionsIfGranted(DefaultEvaluation evaluation) {
-        if (Effect.PERMIT.equals(evaluation.getEffect())) {
-            Policy policy = evaluation.getParentPolicy();
+        while (itPermissions.hasNext()) {
+            Permission permission = itPermissions.next();
 
-            if ("uma".equals(policy.getType())) {
-                ResourcePermission grantedPermission = evaluation.getPermission();
-                List<Permission> permissions = ticket.getPermissions();
+            if (permission.getResourceId() == null || permission.getResourceId().equals(grantedPermission.getResourceId())) {
+                Set<String> scopes = permission.getScopes();
+                Iterator<String> itScopes = scopes.iterator();
 
-                Iterator<Permission> itPermissions = permissions.iterator();
-
-                while (itPermissions.hasNext()) {
-                    Permission permission = itPermissions.next();
-
-                    if (permission.getResourceId().equals(grantedPermission.getResource().getId())) {
-                        Set<String> scopes = permission.getScopes();
-                        Iterator<String> itScopes = scopes.iterator();
-
-                        while (itScopes.hasNext()) {
-                            Scope scope = authorization.getStoreFactory().getScopeStore().findByName(itScopes.next(), resourceServer.getId());
-                            if (policy.getScopes().contains(scope)) {
-                                itScopes.remove();
-                            }
-                        }
-
-                        if (scopes.isEmpty()) {
-                            itPermissions.remove();
-                        }
+                while (itScopes.hasNext()) {
+                    if (grantedPermission.getScopes().contains(itScopes.next())) {
+                        itScopes.remove();
                     }
+                }
+
+                if (scopes.isEmpty()) {
+                    itPermissions.remove();
                 }
             }
         }

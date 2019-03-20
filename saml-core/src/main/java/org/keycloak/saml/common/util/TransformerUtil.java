@@ -209,8 +209,6 @@ public class TransformerUtil {
             if (!(outputTarget instanceof DOMResult))
                 throw logger.wrongTypeError("outputTarget should be a dom result");
 
-            String rootTag = null;
-
             StAXSource staxSource = (StAXSource) xmlSource;
             XMLEventReader xmlEventReader = staxSource.getXMLEventReader();
             if (xmlEventReader == null)
@@ -227,7 +225,6 @@ public class TransformerUtil {
                     throw new TransformerException(ErrorCodes.WRITER_SHOULD_START_ELEMENT);
 
                 StartElement rootElement = (StartElement) xmlEvent;
-                rootTag = StaxParserUtil.getElementName(rootElement);
                 CustomHolder holder = new CustomHolder(doc, false);
                 Element docRoot = handleStartElement(xmlEventReader, rootElement, holder);
                 Node parent = doc.importNode(docRoot, true);
@@ -243,6 +240,8 @@ public class TransformerUtil {
                 while (xmlEventReader.hasNext()) {
                     xmlEvent = StaxParserUtil.getNextEvent(xmlEventReader);
                     int type = xmlEvent.getEventType();
+                    Node top = null;
+
                     switch (type) {
                         case XMLEvent.START_ELEMENT:
                             StartElement startElement = (StartElement) xmlEvent;
@@ -250,13 +249,11 @@ public class TransformerUtil {
                             Element docStartElement = handleStartElement(xmlEventReader, startElement, holder);
                             Node el = doc.importNode(docStartElement, true);
 
-                            Node top = null;
-
-                            if (!stack.isEmpty()) {
+                            if (! stack.isEmpty()) {
                                 top = stack.peek();
                             }
 
-                            if (!holder.encounteredTextNode) {
+                            if (! holder.encounteredTextNode) {
                                 stack.push(el);
                             }
 
@@ -265,15 +262,15 @@ public class TransformerUtil {
                             else
                                 top.appendChild(el);
                             break;
+
                         case XMLEvent.END_ELEMENT:
-                            EndElement endElement = (EndElement) xmlEvent;
-                            String endTag = StaxParserUtil.getElementName(endElement);
-                            if (rootTag.equals(endTag))
-                                return; // We are done with the dom parsing
-                            else {
-                                if (!stack.isEmpty())
-                                    stack.pop();
+                            top = stack.pop();
+
+                            if (! (top instanceof Element)) {
+                                throw new TransformerException(ErrorCodes.UNKNOWN_END_ELEMENT);
                             }
+                            if (stack.isEmpty())
+                                return; // We are done with the dom parsing
                             break;
                     }
                 }

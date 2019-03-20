@@ -28,8 +28,13 @@ import static org.junit.Assert.fail;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.common.util.MultivaluedHashMap;
+import org.keycloak.component.ComponentModel;
+import org.keycloak.credential.CredentialAuthentication;
+import org.keycloak.credential.UserCredentialStoreManager;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import static org.keycloak.models.UserModel.RequiredAction.UPDATE_PROFILE;
@@ -48,10 +53,23 @@ import static org.keycloak.storage.UserStorageProviderModel.EVICTION_MINUTE;
 import static org.keycloak.storage.UserStorageProviderModel.MAX_LIFESPAN;
 import org.keycloak.testsuite.AbstractAuthTest;
 import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.arquillian.annotation.ModelTest;
 import org.keycloak.testsuite.federation.UserMapStorage;
 import org.keycloak.testsuite.federation.UserMapStorageFactory;
 import org.keycloak.testsuite.federation.UserPropertyFileStorageFactory;
+import org.keycloak.testsuite.pages.LoginPage;
+import org.keycloak.testsuite.pages.RegisterPage;
+import org.keycloak.testsuite.pages.VerifyEmailPage;
 import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
+import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
+import org.keycloak.testsuite.util.GreenMailRule;
+import java.util.Map;
+import javax.mail.internet.MimeMessage;
+import org.jboss.arquillian.graphene.page.Page;
+import org.junit.Rule;
+import org.keycloak.testsuite.util.TestCleanup;
+
+import static org.keycloak.testsuite.actions.RequiredActionEmailVerificationTest.getPasswordResetEmailLink;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlDoesntStartWith;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
 
@@ -64,6 +82,18 @@ public class UserStorageTest extends AbstractAuthTest {
     private String memProviderId;
     private String propProviderROId;
     private String propProviderRWId;
+
+    @Rule
+    public GreenMailRule greenMail = new GreenMailRule();
+
+    @Page
+    protected LoginPage loginPage;
+
+    @Page
+    protected RegisterPage registerPage;
+
+    @Page
+    protected VerifyEmailPage verifyEmailPage;
 
     private static final File CONFIG_DIR = new File(System.getProperty("auth.server.config.dir", ""));
 
@@ -132,11 +162,15 @@ public class UserStorageTest extends AbstractAuthTest {
         return propProviderRW;
     }
 
-    protected String addComponent(ComponentRepresentation component) {
-        Response resp = testRealmResource().components().add(component);
+    private String addComponent(ComponentRepresentation component) {
+        return addComponent(testRealmResource(), getCleanup(), component);
+    }
+
+    static String addComponent(RealmResource realmResource, TestCleanup testCleanup, ComponentRepresentation component) {
+        Response resp = realmResource.components().add(component);
         resp.close();
         String id = ApiUtil.getCreatedId(resp);
-        getCleanup().addComponentId(id);
+        testCleanup.addComponentId(id);
         return id;
     }
 
@@ -159,6 +193,17 @@ public class UserStorageTest extends AbstractAuthTest {
         testRealmResource().components().query().forEach((c) -> {
             log.infof("%s - %s - %s", c.getId(), c.getProviderType(), c.getName());
         });
+    }
+
+    /**
+     * KEYCLOAK-4013
+     *
+     * @throws Exception
+     */
+    @Test
+    @ModelTest
+    public void testCast(KeycloakSession session) throws Exception {
+        List<CredentialAuthentication> list = UserCredentialStoreManager.getCredentialProviders(session, null, CredentialAuthentication.class);
     }
 
     @Test
@@ -267,6 +312,38 @@ public class UserStorageTest extends AbstractAuthTest {
         assertFalse(foundRole);
     }
 
+    @Test
+    public void testRegisterWithRequiredEmail() throws Exception {
+        try (AutoCloseable c = new RealmAttributeUpdater(testRealmResource())
+          .updateWith(r -> {
+            Map<String, String> config = new HashMap<>();
+            config.put("from", "auto@keycloak.org");
+            config.put("host", "localhost");
+            config.put("port", "3025");
+            r.setSmtpServer(config);
+            r.setRegistrationAllowed(true);
+            r.setVerifyEmail(true);
+          })
+          .update()) {
+
+            testRealmAccountPage.navigateTo();
+            loginPage.clickRegister();
+            registerPage.register("firstName", "lastName", "email@mail.com", "verifyEmail", "password", "password");
+
+            verifyEmailPage.assertCurrent();
+
+            Assert.assertEquals(1, greenMail.getReceivedMessages().length);
+
+            MimeMessage message = greenMail.getReceivedMessages()[0];
+
+            String verificationUrl = getPasswordResetEmailLink(message);
+
+            driver.navigate().to(verificationUrl.trim());
+
+            testRealmAccountPage.assertCurrent();
+        }
+    }
+
     public UserResource user(String userId) {
         return testRealmResource().users().get(userId);
     }
@@ -362,13 +439,28 @@ public class UserStorageTest extends AbstractAuthTest {
         Assert.assertTrue(usernames.contains("thor"));
 
         // search by single attribute
-        // FIXME - no equivalent for model in REST
+        testingClient.server().run(session -> {
+            System.out.println("search by single attribute");
+
+            RealmModel realm = session.realms().getRealmByName("test");
+            UserModel userModel = session.users().getUserByUsername("thor", realm);
+            userModel.setSingleAttribute("weapon", "hammer");
+
+            List<UserModel> userModels = session.users().searchForUserByUserAttribute("weapon", "hammer", realm);
+            for (UserModel u : userModels) {
+                System.out.println(u.getUsername());
+
+            }
+            Assert.assertEquals(1, userModels.size());
+            Assert.assertEquals("thor", userModels.get(0).getUsername());
+        });
     }
 
     @Deployment
     public static WebArchive deploy() {
         return RunOnServerDeployment.create(UserResource.class)
-                .addPackages(true, "org.keycloak.testsuite");
+                .addPackages(true, "org.keycloak.testsuite")
+                .addPackages(true, "org.keycloak.admin.client.resource");
     }
 
     private void setDailyEvictionTime(int hour, int minutes) {
@@ -623,6 +715,26 @@ public class UserStorageTest extends AbstractAuthTest {
             System.out.println("User class: " + user.getClass());
             Assert.assertFalse(user instanceof CachedUserModel); // should be evicted
         });
+
+
+        testingClient.server().run(session -> {
+            RealmModel realm = session.realms().getRealmByName("test");
+            UserModel thor2 = session.users().getUserByUsername("thor", realm);
+            Assert.assertFalse(thor2 instanceof CachedUserModel);
+        });
+
+        propProviderRW = testRealmResource().components().component(propProviderRWId).toRepresentation();
+        propProviderRW.getConfig().putSingle(CACHE_POLICY, CachePolicy.DEFAULT.name());
+        propProviderRW.getConfig().remove("evictionHour");
+        propProviderRW.getConfig().remove("evictionMinute");
+        propProviderRW.getConfig().remove("evictionDay");
+        testRealmResource().components().component(propProviderRWId).update(propProviderRW);
+
+        testingClient.server().run(session -> {
+            RealmModel realm = session.realms().getRealmByName("test");
+            UserModel thor = session.users().getUserByUsername("thor", realm);
+            System.out.println("Foo");
+        });
     }
 
     @Test
@@ -640,6 +752,8 @@ public class UserStorageTest extends AbstractAuthTest {
 
             Assert.assertEquals(1, UserMapStorage.allocations.get());
             Assert.assertEquals(0, UserMapStorage.closings.get());
+
+            session.users().removeUser(realm,session.users().getUserByUsername("memuser",realm));
         });
 
         testingClient.server().run(session -> {

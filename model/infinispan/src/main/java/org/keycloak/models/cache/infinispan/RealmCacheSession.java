@@ -452,12 +452,22 @@ public class RealmCacheSession implements CacheRealmProvider {
     static String getRealmByNameCacheKey(String name) {
         return "realm.query.by.name." + name;
     }
+    
+    @Override
+    public List<RealmModel> getRealmsWithProviderType(Class<?> type) {
+        // Retrieve realms from backend
+        List<RealmModel> backendRealms = getRealmDelegate().getRealmsWithProviderType(type);
+        return getRealms(backendRealms);
+    }
 
     @Override
     public List<RealmModel> getRealms() {
         // Retrieve realms from backend
         List<RealmModel> backendRealms = getRealmDelegate().getRealms();
+        return getRealms(backendRealms);
+    }
 
+    private List<RealmModel> getRealms(List<RealmModel> backendRealms) {
         // Return cache delegates to ensure cache invalidated during write operations
         List<RealmModel> cachedRealms = new LinkedList<RealmModel>();
         for (RealmModel realm : backendRealms) {
@@ -867,6 +877,11 @@ public class RealmCacheSession implements CacheRealmProvider {
     @Override
     public Long getGroupsCountByNameContaining(RealmModel realm, String search) {
         return getRealmDelegate().getGroupsCountByNameContaining(realm, search);
+    }
+    
+    @Override
+    public List<GroupModel> getGroupsByRole(RealmModel realm, RoleModel role, int firstResult, int maxResults) {
+    	return getRealmDelegate().getGroupsByRole(realm, role, firstResult, maxResults);
     }
 
     @Override

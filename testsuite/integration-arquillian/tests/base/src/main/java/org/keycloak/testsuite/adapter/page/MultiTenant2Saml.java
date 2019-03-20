@@ -37,7 +37,7 @@ public class MultiTenant2Saml extends SAMLServlet {
     @Override
     public URL getInjectedUrl() {
         try {
-            return new URL(url + "/?realm=tenant2");
+            return new URL(url + "?realm=tenant2");
         } catch (MalformedURLException e) {
             throw new IllegalStateException(e);
         }
@@ -45,7 +45,7 @@ public class MultiTenant2Saml extends SAMLServlet {
     
     @Override
     public void logout() {
-        driver.navigate().to(getUriBuilder().queryParam("GLO", "true").queryParam("realm", "tenant2").build().toASCIIString());
+        driver.navigate().to(getUriBuilder().clone().queryParam("GLO", "true").queryParam("realm", "tenant2").build().toASCIIString());
         getUriBuilder().replaceQueryParam("GLO");
         pause(300);
     }

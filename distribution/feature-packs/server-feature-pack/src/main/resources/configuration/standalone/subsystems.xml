@@ -21,6 +21,7 @@
    <subsystems>
        <subsystem>logging.xml</subsystem>
        <subsystem>bean-validation.xml</subsystem>
+       <subsystem>core-management.xml</subsystem>
        <subsystem supplement="default">keycloak-datasources.xml</subsystem>
        <subsystem>deployment-scanner.xml</subsystem>
        <subsystem>ee.xml</subsystem>
@@ -39,6 +40,9 @@
        <subsystem supplement="standalone-wildfly">elytron.xml</subsystem>
        <subsystem>security.xml</subsystem>
        <subsystem>transactions.xml</subsystem>
+       <subsystem>microprofile-config-smallrye.xml</subsystem>
+       <subsystem>microprofile-health-smallrye.xml</subsystem>
+       <subsystem>microprofile-metrics-smallrye.xml</subsystem>
        <subsystem>keycloak-undertow.xml</subsystem>
        <subsystem>keycloak-server.xml</subsystem>
    </subsystems>

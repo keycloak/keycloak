@@ -45,8 +45,6 @@ public final class TestContext {
 
     private boolean adminLoggedIn;
     
-    private final Map<Object, Object> customContext = new HashMap<>();
-
     private Keycloak adminClient;
     private KeycloakTestingClient testingClient;
     private List<RealmRepresentation> testRealmReps = new ArrayList<>();
@@ -171,7 +169,7 @@ public final class TestContext {
     public TestCleanup getOrCreateCleanup(String realmName) {
         TestCleanup cleanup = cleanups.get(realmName);
         if (cleanup == null) {
-            cleanup = new TestCleanup(adminClient, realmName);
+            cleanup = new TestCleanup(this, realmName);
             TestCleanup existing = cleanups.putIfAbsent(realmName, cleanup);
 
             if (existing != null) {
@@ -186,12 +184,16 @@ public final class TestContext {
     }
 
 
-    public Object getCustomValue(Object key) {
-        return customContext.get(key);
-    }
-    
-    public void setCustomValue(Object key, Object value) {
-        customContext.put(key, value);
-    }
+    public String getAppServerContainerName() {
+        if (isAdapterContainerEnabled()) { //standalone app server
+            return getAppServerInfo().getArquillianContainer().getName();
 
+        } else if (isAdapterContainerEnabledCluster()) { //clustered app server
+
+            return getAppServerBackendsInfo().stream()
+                .map(ContainerInfo::getQualifier)
+                .collect(Collectors.joining(";"));
+        }
+        return null;
+    }
 }

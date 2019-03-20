@@ -52,10 +52,6 @@ mvn install -B -nsu -Pdistribution -DskipTests -Dorg.slf4j.simpleLogger.log.org.
 if [ $1 == "old" ]; then
     cd testsuite
     mvn test -B -nsu -f integration-deprecated
-    mvn test -B -nsu -f jetty
-    mvn test -B -nsu -f proxy
-    mvn test -B -nsu -f tomcat7
-    mvn test -B -nsu -f tomcat8
 fi
 
 if [ $1 == "unit" ]; then
@@ -65,11 +61,11 @@ if [ $1 == "unit" ]; then
 fi
 
 if [ $1 == "server-group1" ]; then
-    run-server-tests org.keycloak.testsuite.ad*.**.*Test
+    run-server-tests org.keycloak.testsuite.adm*.**.*Test,org.keycloak.testsuite.add*.**.*Test
 fi
 
 if [ $1 == "server-group2" ]; then
-    run-server-tests org.keycloak.testsuite.ac*.**.*Test,org.keycloak.testsuite.b*.**.*Test,org.keycloak.testsuite.cli*.**.*Test,org.keycloak.testsuite.co*.**.*Test
+    run-server-tests org.keycloak.testsuite.ac*.**.*Test,org.keycloak.testsuite.cli*.**.*Test,org.keycloak.testsuite.co*.**.*Test
 fi
 
 if [ $1 == "server-group3" ]; then
@@ -78,6 +74,10 @@ fi
 
 if [ $1 == "server-group4" ]; then
     run-server-tests org.keycloak.testsuite.k*.**.*Test,org.keycloak.testsuite.m*.**.*Test,org.keycloak.testsuite.o*.**.*Test,org.keycloak.testsuite.s*.**.*Test,org.keycloak.testsuite.u*.**.*Test
+fi
+
+if [ $1 == "adapter-tests" ]; then
+    run-server-tests org.keycloak.testsuite.adapter.**.*Test
 fi
 
 if [ $1 == "crossdc-server" ]; then
@@ -100,6 +100,6 @@ if [ $1 == "crossdc-adapter" ]; then
     exit ${PIPESTATUS[0]}
 fi
 
-if [ $1 == "ssl" ]; then
-    run-server-tests org.keycloak.testsuite.client.MutualTLSClientTest,org.keycloak.testsuite.hok.HoKTest "-Dauth.server.ssl.required -Dbrowser=phantomjs"
+if [ $1 == "broker" ]; then
+    run-server-tests org.keycloak.testsuite.broker.**.*Test
 fi

@@ -313,6 +313,16 @@
     "notBefore" : 0,
     "groups" : [ ]
   } ],
+  "clientScopeMappings" : {
+    "migration-test-client": [
+      {
+        "clientTemplate": "Default test template",
+        "roles": [
+          "migration-test-client-role"
+        ]
+      }
+    ]
+  },
   "clients" : [ {
     "id" : "6b9ba4ca-fb7c-4e17-a3e6-88f3a17397cc",
     "clientId" : "account",
@@ -766,7 +776,7 @@
     "standardFlowEnabled" : true,
     "implicitFlowEnabled" : false,
     "directAccessGrantsEnabled" : false,
-    "serviceAccountsEnabled" : false,
+    "serviceAccountsEnabled" : true,
     "publicClient" : false,
     "frontchannelLogout" : false,
     "protocol" : "openid-connect",
@@ -858,7 +868,32 @@
     } ],
     "useTemplateConfig" : false,
     "useTemplateScope" : false,
-    "useTemplateMappers" : false
+    "useTemplateMappers" : false,
+    "authorizationServicesEnabled": true,
+    "authorizationSettings": {
+      "resources": [
+        {
+          "name": "group.resource.a",
+          "scopes": ["view-members"]
+        },
+        {
+          "name": "group.resource.b",
+          "scopes": ["view-members"]
+        },
+        {
+          "name": "group.resource.c",
+          "scopes": ["view-members"]
+        },
+        {
+          "name": "group.resource.d",
+          "scopes": ["view-members"]
+        },
+        {
+          "name": "group.resource.e",
+          "scopes": ["view-members"]
+        }
+      ]
+    }
   }, {
     "id" : "35d39054-e7e5-4dbb-8948-1738094679e8",
     "clientId" : "security-admin-console",
@@ -986,6 +1021,33 @@
     "useTemplateMappers" : false
   },
   {
+    "id": "26519045-3cd4-4f2a-974b-e1447907834a",
+    "clientId": "client-with-template",
+    "surrogateAuthRequired": false,
+    "enabled": true,
+    "clientAuthenticatorType": "client-secret",
+    "secret": "**********",
+    "redirectUris": [],
+    "webOrigins": [],
+    "notBefore": 0,
+    "bearerOnly": false,
+    "consentRequired": false,
+    "standardFlowEnabled": true,
+    "implicitFlowEnabled": false,
+    "directAccessGrantsEnabled": true,
+    "serviceAccountsEnabled": false,
+    "publicClient": true,
+    "frontchannelLogout": false,
+    "protocol": "openid-connect",
+    "attributes": {},
+    "fullScopeAllowed": false,
+    "nodeReRegistrationTimeout": -1,
+    "clientTemplate": "Default test template",
+    "useTemplateConfig": false,
+    "useTemplateScope": true,
+    "useTemplateMappers": true
+  },
+  {
       "id": "70e8e897-82d4-49ab-82c9-c37e1a48b6bb",
       "clientId": "authz-servlet",
       "adminUrl": "http://localhost:8080/authz-servlet",
@@ -1041,7 +1103,15 @@
         ]
       }
     }],
-  "clientTemplates" : [ ],
+  "clientTemplates": [
+    {
+      "id": "d43ae38d-80a1-471a-9a80-5f9a0d34d7a4",
+      "name": "Default test template",
+      "description": "Test client template",
+      "protocol": "openid-connect",
+      "fullScopeAllowed": false
+    }
+  ],
   "browserSecurityHeaders" : {
     "xContentTypeOptions" : "nosniff",
     "xRobotsTag" : "none",

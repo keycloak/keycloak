@@ -17,7 +17,6 @@
 
 package org.keycloak.models.sessions.infinispan.stream;
 
-import org.infinispan.stream.SerializableSupplier;
 import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
 import org.keycloak.models.sessions.infinispan.entities.AuthenticatedClientSessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.LoginFailureEntity;

@@ -40,7 +40,7 @@ public abstract class AbstractClientCertificateFromHttpHeadersLookup implements 
 
     protected final String sslClientCertHttpHeader;
     protected final String sslCertChainHttpHeaderPrefix;
-    private final int certificateChainLength;
+    protected final int certificateChainLength;
 
     public AbstractClientCertificateFromHttpHeadersLookup(String sslCientCertHttpHeader,
                                                           String sslCertChainHttpHeaderPrefix,

@@ -20,6 +20,7 @@ package org.keycloak.testsuite.rest;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
+import org.keycloak.common.util.HtmlUtils;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.models.KeycloakSession;
@@ -135,11 +136,14 @@ public class TestApplicationResourceProvider implements RealmResourceProvider {
         HttpRequest request = ResteasyProviderFactory.getContextData(HttpRequest.class);
         MultivaluedMap<String, String> formParams = request.getDecodedFormParameters();
         for (String paramName : formParams.keySet()) {
-            sb.append(paramName).append(": ").append("<span id=\"").append(paramName).append("\">").append(formParams.getFirst(paramName)).append("</span><br>");
+            sb.append(paramName).append(": ").append("<span id=\"")
+                    .append(paramName).append("\">")
+                    .append(HtmlUtils.escapeAttribute(formParams.getFirst(paramName)))
+                    .append("</span><br>");
         }
         sb.append("<br>");
 
-        UriBuilder base = UriBuilder.fromUri("http://localhost:8180/auth");
+        UriBuilder base = UriBuilder.fromUri("/auth");
         sb.append("<a href=\"" + RealmsResource.accountUrl(base).build("test").toString() + "\" id=\"account\">account</a>");
 
         sb.append("</body></html>");
@@ -161,7 +165,7 @@ public class TestApplicationResourceProvider implements RealmResourceProvider {
 
         StringBuilder sb = new StringBuilder();
         sb.append("<html><head><title>" + title + "</title></head><body>");
-        UriBuilder base = UriBuilder.fromUri("http://localhost:8180/auth");
+        UriBuilder base = UriBuilder.fromUri("/auth");
         sb.append("<a href=\"" + RealmsResource.accountUrl(base).build("test").toString() + "\" id=\"account\">account</a>");
 
         sb.append("</body></html>");

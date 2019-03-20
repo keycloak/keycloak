@@ -17,6 +17,8 @@ import org.keycloak.testsuite.util.JavascriptBrowser;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.RolesBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
+import org.keycloak.testsuite.util.javascript.JavascriptStateValidator;
+import org.keycloak.testsuite.util.javascript.ResponseValidator;
 import org.openqa.selenium.By;
 import org.openqa.selenium.Cookie;
 import org.openqa.selenium.JavascriptExecutor;
@@ -110,7 +112,7 @@ public abstract class AbstractJavascriptTest extends AbstractAuthTest {
                 .client(
                         ClientBuilder.create()
                                 .clientId(CLIENT_ID)
-                                .redirectUris(JAVASCRIPT_URL + "/*", JAVASCRIPT_ENCODED_SPACE_URL + "/*")
+                                .redirectUris(oauth.SERVER_ROOT + JAVASCRIPT_URL + "/*", oauth.SERVER_ROOT + JAVASCRIPT_ENCODED_SPACE_URL + "/*")
                                 .publicClient()
                 )
                 .accessTokenLifespan(30 + TOKEN_LIFESPAN_LEEWAY)

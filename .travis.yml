@@ -1,5 +1,4 @@
 language: java
-dist: precise
 
 cache:
   cache: false
@@ -14,10 +13,11 @@ env:
     - TESTS=server-group2
     - TESTS=server-group3
     - TESTS=server-group4
+    - TESTS=adapter-tests
     - TESTS=old
     - TESTS=crossdc-server
     - TESTS=crossdc-adapter
-    - TESTS=ssl
+    - TESTS=broker
 
 jdk:
   - oraclejdk8
