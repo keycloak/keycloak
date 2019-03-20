@@ -23,7 +23,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- *
+ * Updater for role scope attributes. See {@link ServerResourceUpdater} for further details.
  * @author hmlnarik
  */
 public class RoleScopeUpdater extends ServerResourceUpdater<RoleScopeUpdater, RoleScopeResource, List<RoleRepresentation>> {
