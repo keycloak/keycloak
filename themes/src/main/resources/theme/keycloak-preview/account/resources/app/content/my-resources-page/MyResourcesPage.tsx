@@ -21,11 +21,11 @@ export interface MyResourcesPageProps {
  
 export class MyResourcesPage extends React.Component<MyResourcesPageProps> {
     
-    constructor(props: MyResourcesPageProps) {
+    public constructor(props: MyResourcesPageProps) {
         super(props);
     }
 
-    render() {
+    public render(): React.ReactNode {
         return (
             <div>
               <h2>Hello My Resources Page</h2>

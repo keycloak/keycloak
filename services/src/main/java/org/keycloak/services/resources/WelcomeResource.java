@@ -119,6 +119,10 @@ public class WelcomeResource {
             String password = formData.getFirst("password");
             String passwordConfirmation = formData.getFirst("passwordConfirmation");
 
+            if (username != null) {
+                username = username.trim();
+            }
+
             if (username == null || username.length() == 0) {
                 return createWelcomePage(null, "Username is missing");
             }

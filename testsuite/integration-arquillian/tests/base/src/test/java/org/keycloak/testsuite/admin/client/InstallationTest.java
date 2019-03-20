@@ -27,6 +27,7 @@ import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
 import org.keycloak.testsuite.util.AdminEventPaths;
 
+import javax.ws.rs.NotFoundException;
 import static org.junit.Assert.assertThat;
 import static org.hamcrest.Matchers.*;
 
@@ -139,13 +140,9 @@ public class InstallationTest extends AbstractClientTest {
         assertThat(config, containsString(authServerUrl()));
     }
 
-    @Test
+    @Test(expected = NotFoundException.class)
     public void testSamlMetadataIdpDescriptor() {
-        String xml = samlClient.getInstallationProvider("saml-idp-descriptor");
-        assertThat(xml, containsString("<EntityDescriptor"));
-        assertThat(xml, containsString("<IDPSSODescriptor"));
-        assertThat(xml, containsString(ApiUtil.findActiveKey(testRealmResource()).getCertificate()));
-        assertThat(xml, containsString(samlUrl()));
+        samlClient.getInstallationProvider("saml-idp-descriptor");
     }
 
     @Test

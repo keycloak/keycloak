@@ -21,11 +21,11 @@ export interface LinkedAccountsPageProps {
  
 export class LinkedAccountsPage extends React.Component<LinkedAccountsPageProps> {
     
-    constructor(props: LinkedAccountsPageProps) {
+    public constructor(props: LinkedAccountsPageProps) {
         super(props);
     }
 
-    render() {
+    public render(): React.ReactNode {
         return (
             <div>
               <h2>Hello Linked Accounts Page</h2>

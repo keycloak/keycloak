@@ -21,11 +21,11 @@ export interface AuthenticatorPageProps {
  
 export class AuthenticatorPage extends React.Component<AuthenticatorPageProps> {
     
-    constructor(props: AuthenticatorPageProps) {
+    public constructor(props: AuthenticatorPageProps) {
         super(props);
     }
 
-    render() {
+    public render(): React.ReactNode {
         return (
             <div>
               <h2>Hello Authenticator Page</h2>
