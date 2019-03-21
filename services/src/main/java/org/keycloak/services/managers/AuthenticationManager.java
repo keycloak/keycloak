@@ -132,13 +132,13 @@ public class AuthenticationManager {
         int currentTime = Time.currentTime();
 
         // Additional time window is added for the case when session was updated in different DC and the update to current DC was postponed
-        int maxIdle = (userSession.isRememberMe() && realm.getSsoSessionIdleTimeoutRememberMe() > 0 ?
-                realm.getSsoSessionIdleTimeoutRememberMe() : realm.getSsoSessionIdleTimeout()) + SessionTimeoutHelper.IDLE_TIMEOUT_WINDOW_SECONDS;
+        int maxIdle = userSession.isRememberMe() && realm.getSsoSessionIdleTimeoutRememberMe() > 0 ?
+            realm.getSsoSessionIdleTimeoutRememberMe() : realm.getSsoSessionIdleTimeout();
         int maxLifespan = userSession.isRememberMe() && realm.getSsoSessionMaxLifespanRememberMe() > 0 ?
                 realm.getSsoSessionMaxLifespanRememberMe() : realm.getSsoSessionMaxLifespan();
 
-        boolean sessionMaxOk = userSession.getStarted() + maxLifespan > currentTime;
-        boolean sessionIdleOk = userSession.getLastSessionRefresh() + maxIdle > currentTime;
+        boolean sessionIdleOk = maxIdle > currentTime - userSession.getLastSessionRefresh() - SessionTimeoutHelper.IDLE_TIMEOUT_WINDOW_SECONDS;
+        boolean sessionMaxOk = maxLifespan > currentTime - userSession.getStarted();
         return sessionIdleOk && sessionMaxOk;
     }
 
