@@ -21,6 +21,9 @@
       "dependencyOverride.org.apache.httpcomponents:httpclient@org.keycloak.testsuite:integration-arquillian-tests": "",
       "dependencyOverride.org.apache.httpcomponents:httpcore@*": "4.4.5.redhat-1",
       "dependencyOverride.org.apache.httpcomponents:httpclient@*": "4.5.4.redhat-00001",
+      "dependencyOverride.org.apache.cxf:*@*": "3.2.7.redhat-00001",
+      "dependencyOverride.org.aesh:aesh@*": "1.11.0.redhat-00001",
+      "dependencyOverride.org.aesh:aesh-readline@*": "1.14.0.redhat-00001",
       "dependencyOverride.org.jboss.logging:jboss-logging-processor@*": ""
     }
   }
