@@ -18,6 +18,10 @@
 package org.keycloak.truststore;
 
 import java.security.KeyStore;
+import java.security.cert.X509Certificate;
+import java.util.Map;
+
+import javax.security.auth.x500.X500Principal;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
@@ -26,10 +30,14 @@ public class FileTruststoreProvider implements TruststoreProvider {
 
     private final HostnameVerificationPolicy policy;
     private final KeyStore truststore;
+    private final Map<X500Principal, X509Certificate> rootCertificates;
+    private final Map<X500Principal, X509Certificate> intermediateCertificates;
 
-    FileTruststoreProvider(KeyStore truststore, HostnameVerificationPolicy policy) {
+    FileTruststoreProvider(KeyStore truststore, HostnameVerificationPolicy policy, Map<X500Principal, X509Certificate> rootCertificates, Map<X500Principal, X509Certificate> intermediateCertificates) {
         this.policy = policy;
         this.truststore = truststore;
+        this.rootCertificates = rootCertificates;
+        this.intermediateCertificates = intermediateCertificates;
     }
 
     @Override
@@ -40,6 +48,16 @@ public class FileTruststoreProvider implements TruststoreProvider {
     @Override
     public KeyStore getTruststore() {
         return truststore;
+    }
+
+    @Override
+    public Map<X500Principal, X509Certificate> getRootCertificates() {
+        return rootCertificates;
+    }
+
+    @Override
+    public Map<X500Principal, X509Certificate> getIntermediateCertificates() {
+        return intermediateCertificates;
     }
 
     @Override
