@@ -18,9 +18,9 @@
 package org.keycloak.jose.jwk;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import org.keycloak.common.util.Base64Url;
+import org.keycloak.common.util.PemUtils;
 
-import java.security.MessageDigest;
+import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 
 /**
@@ -71,10 +71,10 @@ public class RSAPublicJWK extends JWK {
         this.x509CertificateChain = x509CertificateChain;
         if (x509CertificateChain != null && x509CertificateChain.length > 0) {
             try {
-                sha1x509Thumbprint = encode(x509CertificateChain, "SHA-1");
-                sha256x509Thumbprint = encode(x509CertificateChain, "SHA-256");
-            } catch (NoSuchAlgorithmException e) {
-                e.printStackTrace();
+                sha1x509Thumbprint = PemUtils.generateThumbprint(x509CertificateChain, "SHA-1");
+                sha256x509Thumbprint = PemUtils.generateThumbprint(x509CertificateChain, "SHA-256");
+            } catch (NoSuchAlgorithmException | IOException e) {
+                throw new RuntimeException(e);
             }
         }
     }
@@ -89,16 +89,4 @@ public class RSAPublicJWK extends JWK {
         return sha256x509Thumbprint;
     }
 
-    private String encode(String[] certChain, String encoding) throws NoSuchAlgorithmException {
-        MessageDigest md = MessageDigest.getInstance(encoding);
-        return Base64Url.encode(md.digest(toConcatenatedString(x509CertificateChain).getBytes()));
-    }
-
-    private String toConcatenatedString(String[] arr) {
-        StringBuilder sb = new StringBuilder();
-        for (String str : arr) {
-            sb.append(str);
-        }
-        return sb.toString();
-    }
 }
