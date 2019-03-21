@@ -24,6 +24,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.security.Key;
+import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.cert.Certificate;
@@ -157,4 +158,7 @@ public final class PemUtils {
         return pem.trim();
     }
 
+    public static String generateThumbprint(String[] certChain, String encoding) throws NoSuchAlgorithmException, IOException {
+        return Base64Url.encode(pemToDer(certChain[0]));
+    }
 }
