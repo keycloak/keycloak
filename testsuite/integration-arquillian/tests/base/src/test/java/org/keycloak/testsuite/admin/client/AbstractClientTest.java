@@ -126,7 +126,6 @@ public abstract class AbstractClientTest extends AbstractAuthTest {
         clientRep.setClientId(name);
         clientRep.setName(name);
         clientRep.setProtocol("saml");
-        clientRep.setAdminUrl("samlEndpoint");
         return createClient(clientRep);
     }
 

@@ -69,10 +69,9 @@ public abstract class ServerResourceUpdater<T extends ServerResourceUpdater, Res
 
     @Override
     public void close() throws IOException {
-        if (! this.updated) {
-            throw new IOException("Attempt to revert changes that were never applied - have you called " + this.getClass().getName() + ".update()?");
+        if (this.updated) {
+            performUpdate(rep, origRep);
         }
-        performUpdate(rep, origRep);
     }
 
     /**
