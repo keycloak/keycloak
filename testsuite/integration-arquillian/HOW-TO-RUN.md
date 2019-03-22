@@ -384,21 +384,6 @@ mvn -f testsuite/integration-arquillian/tests/other/base-ui/pom.xml \
     -Dappium.avd=Nexus_5X_API_27
 ```
 
-## Welcome Page tests
-The Welcome Page tests need to be run on WildFly/EAP. So that they are disabled by default and are meant to be run separately.
-
-
-    # Prepare servers
-    mvn -f testsuite/integration-arquillian/servers/pom.xml \
-        clean install \
-        -Pauth-server-wildfly
-
-    # Run tests
-    mvn -f testsuite/integration-arquillian/tests/other/welcome-page/pom.xml \
-        clean test \
-        -Pauth-server-wildfly
-
-
 ## Social Login
 The social login tests require setup of all social networks including an example social user. These details can't be 
 shared as it would result in the clients and users eventually being blocked. By default these tests are skipped.
