@@ -37,7 +37,7 @@ connection-ttl-millis::
 
 max-connection-idle-time-millis::
   Maximum time the connection might stay idle in the connection pool (900 seconds by default). Will start background cleaner thread of Apache HTTP client.
-  Set to -`1` to disable this checking and the background thread.
+  Set to `-1` to disable this checking and the background thread.
 
 disable-cookies::
   `true` by default.
@@ -56,7 +56,7 @@ client-key-password::
   This is _REQUIRED_ if `client-keystore` is set.
 
 proxy-mappings::
-  Dennotes proxy configurations for outgoing HTTP requests. 
+  Denotes proxy configurations for outgoing HTTP requests. 
   See the section on <<_proxymappings, Proxy Mappings for Outgoing HTTP Requests>> for more details.
 
 [[_proxymappings]]
@@ -107,7 +107,7 @@ echo SETUP: Configure proxy routes for HttpClient SPI
 ----
 
 The `jboss-cli` command results in the following subsystem configuration.
-Note that one needs to encode `"` characters with `&quot;`. 
+Note that one needs to encode `"` characters with `\&quot;`. 
 [source,xml]
 ----
 <spi name="connectionsHttpClient">
