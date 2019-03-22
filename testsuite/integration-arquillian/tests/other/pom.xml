@@ -157,12 +157,6 @@
             </modules>
         </profile>
         <profile>
-            <id>welcome-page</id>
-            <modules>
-                <module>welcome-page</module>
-            </modules>
-        </profile>
-        <profile>
             <id>base-ui</id>
             <modules>
                 <module>base-ui</module>
