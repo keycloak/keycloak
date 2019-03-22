@@ -31,6 +31,7 @@ import org.bouncycastle.asn1.x500.style.BCStyle;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateHolder;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.Authenticator;
+import org.keycloak.events.Details;
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -233,6 +234,29 @@ public abstract class AbstractX509ClientCertificateAuthenticator implements Auth
         }
         return null;
     }
+
+
+    // Saving some notes for audit to authSession as the event may not be necessarily triggered in this HTTP request where the certificate was parsed
+    // For example if there is confirmation page enabled, it will be in the additional request
+    protected void saveX509CertificateAuditDataToAuthSession(AuthenticationFlowContext context,
+                                                             X509Certificate cert) {
+        context.getAuthenticationSession().setAuthNote(Details.X509_CERTIFICATE_SERIAL_NUMBER, cert.getSerialNumber().toString());
+        context.getAuthenticationSession().setAuthNote(Details.X509_CERTIFICATE_SUBJECT_DISTINGUISHED_NAME, cert.getSubjectDN().toString());
+        context.getAuthenticationSession().setAuthNote(Details.X509_CERTIFICATE_ISSUER_DISTINGUISHED_NAME, cert.getIssuerDN().toString());
+    }
+
+    protected void recordX509CertificateAuditDataViaContextEvent(AuthenticationFlowContext context) {
+        recordX509DetailFromAuthSessionToEvent(context, Details.X509_CERTIFICATE_SERIAL_NUMBER);
+        recordX509DetailFromAuthSessionToEvent(context, Details.X509_CERTIFICATE_SUBJECT_DISTINGUISHED_NAME);
+        recordX509DetailFromAuthSessionToEvent(context, Details.X509_CERTIFICATE_ISSUER_DISTINGUISHED_NAME);
+    }
+
+    private void recordX509DetailFromAuthSessionToEvent(AuthenticationFlowContext context, String detailName) {
+        String detailValue = context.getAuthenticationSession().getAuthNote(detailName);
+        context.getEvent().detail(detailName, detailValue);
+    }
+
+
     // Purely for unit testing
     public UserIdentityExtractor getUserIdentityExtractor(X509AuthenticatorConfigModel config) {
         return UserIdentityExtractorBuilder.fromConfig(config);
