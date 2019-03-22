@@ -19,6 +19,7 @@
 package org.keycloak.testsuite.x509;
 
 import org.jboss.arquillian.drone.api.annotation.Drone;
+import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.util.PhantomJSBrowser;
 import org.junit.Assert;
 import org.junit.Before;
@@ -65,28 +66,6 @@ public class X509BrowserLoginTest extends AbstractX509AuthenticationTest {
     @Before
     public void replaceTheDefaultDriver() {
         replaceDefaultWebDriver(phantomJS);
-    }
-
-    private void login(X509AuthenticatorConfigModel config, String userId, String username, String attemptedUsername) {
-        AuthenticatorConfigRepresentation cfg = newConfig("x509-browser-config", config.getConfig());
-        String cfgId = createConfig(browserExecution.getId(), cfg);
-        Assert.assertNotNull(cfgId);
-
-        loginConfirmationPage.open();
-
-        Assert.assertTrue(loginConfirmationPage.getSubjectDistinguishedNameText().startsWith("EMAILADDRESS=test-user@localhost"));
-        Assert.assertEquals(username, loginConfirmationPage.getUsernameText());
-
-        loginConfirmationPage.confirm();
-
-        Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
-
-         events.expectLogin()
-                 .user(userId)
-                 .detail(Details.USERNAME, attemptedUsername)
-                 .removeDetail(Details.REDIRECT_URI)
-                 .assertEvent();
     }
 
 
@@ -376,13 +355,15 @@ public class X509BrowserLoginTest extends AbstractX509AuthenticationTest {
 
         Assert.assertThat(loginPage.getError(), containsString("X509 certificate authentication's failed."));
 
-        events.expectLogin()
+        AssertEvents.ExpectedEvent expectedEvent = events.expectLogin()
                 .user((String) null)
                 .session((String) null)
                 .error("user_not_found")
                 .detail(Details.USERNAME, "test-user@localhost")
                 .removeDetail(Details.CONSENT)
-                .removeDetail(Details.REDIRECT_URI)
+                .removeDetail(Details.REDIRECT_URI);
+
+        addX509CertificateDetails(expectedEvent)
                 .assertEvent();
 
         // Continue with form based login
@@ -461,10 +442,13 @@ public class X509BrowserLoginTest extends AbstractX509AuthenticationTest {
         // the identity.
         Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
-        events.expectLogin()
+
+        AssertEvents.ExpectedEvent expectedEvent = events.expectLogin()
                 .user(userId)
                 .detail(Details.USERNAME, "test-user@localhost")
-                .removeDetail(Details.REDIRECT_URI)
+                .removeDetail(Details.REDIRECT_URI);
+
+        addX509CertificateDetails(expectedEvent)
                 .assertEvent();
     }
 
