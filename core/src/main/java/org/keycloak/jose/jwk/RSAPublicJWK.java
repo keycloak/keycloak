@@ -18,6 +18,10 @@
 package org.keycloak.jose.jwk;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.keycloak.common.util.PemUtils;
+
+import java.io.IOException;
+import java.security.NoSuchAlgorithmException;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -38,7 +42,11 @@ public class RSAPublicJWK extends JWK {
 
     @JsonProperty("x5c")
     private String[] x509CertificateChain;
-    
+
+    private String sha1x509Thumbprint;
+
+    private String sha256x509Thumbprint;
+
     public String getModulus() {
         return modulus;
     }
@@ -61,6 +69,24 @@ public class RSAPublicJWK extends JWK {
 
     public void setX509CertificateChain(String[] x509CertificateChain) {
         this.x509CertificateChain = x509CertificateChain;
+        if (x509CertificateChain != null && x509CertificateChain.length > 0) {
+            try {
+                sha1x509Thumbprint = PemUtils.generateThumbprint(x509CertificateChain, "SHA-1");
+                sha256x509Thumbprint = PemUtils.generateThumbprint(x509CertificateChain, "SHA-256");
+            } catch (NoSuchAlgorithmException | IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+    @JsonProperty("x5t")
+    public String getSha1x509Thumbprint() {
+        return sha1x509Thumbprint;
+    }
+
+    @JsonProperty("x5t#S256")
+    public String getSha256x509Thumbprint() {
+        return sha256x509Thumbprint;
     }
 
 }

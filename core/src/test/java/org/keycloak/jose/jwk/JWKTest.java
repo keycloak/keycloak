@@ -60,6 +60,10 @@ public class JWKTest {
         assertNotNull(((RSAPublicJWK) jwk).getPublicExponent());
         assertNotNull(((RSAPublicJWK) jwk).getX509CertificateChain());
         assertEquals(PemUtils.encodeCertificate(certificate), ((RSAPublicJWK) jwk).getX509CertificateChain()[0]);
+        assertNotNull(((RSAPublicJWK) jwk).getSha1x509Thumbprint());
+        assertEquals(PemUtils.generateThumbprint(((RSAPublicJWK) jwk).getX509CertificateChain(), "SHA-1"), ((RSAPublicJWK) jwk).getSha1x509Thumbprint());
+        assertNotNull(((RSAPublicJWK) jwk).getSha256x509Thumbprint());
+        assertEquals(PemUtils.generateThumbprint(((RSAPublicJWK) jwk).getX509CertificateChain(), "SHA-256"), ((RSAPublicJWK) jwk).getSha256x509Thumbprint());
 
         String jwkJson = JsonSerialization.writeValueAsString(jwk);
 
