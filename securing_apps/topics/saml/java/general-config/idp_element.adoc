@@ -31,4 +31,5 @@ signatureAlgorithm::
 signatureCanonicalizationMethod::
   This is the signature canonicalization method that the IDP expects signed documents to use.  This setting is  _OPTIONAL_.
   The default value is `\http://www.w3.org/2001/10/xml-exc-c14n#` and should be good for most IDPs.
-
+metadataUrl::
+  The URL used to retrieve the IDP metadata, currently this is only used to pick up signing and encryption keys periodically which allow cycling of these keys on the IDP without manual changes on the SP side.
