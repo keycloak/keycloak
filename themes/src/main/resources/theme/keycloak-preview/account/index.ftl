@@ -86,12 +86,6 @@
 
         <script>
             var keycloak = Keycloak('${authUrl}/realms/${realm.name}/account/keycloak.json');
-            var loadjs = function (url,loadListener) {
-                    const script = document.createElement("script");
-                    script.src = resourceUrl + url;
-                    if (loadListener) script.addEventListener("load", loadListener);
-                    document.head.appendChild(script);
-                };
             keycloak.init({onLoad: 'check-sso'}).success(function(authenticated) {
                 loadjs("/node_modules/react/umd/react.development.js", function() {
                    loadjs("/node_modules/react-dom/umd/react-dom.development.js", function() {
@@ -100,7 +94,13 @@
                                 System.import('${resourceUrl}/Main.js').catch(function (err) {
                                     console.error(err);
                                 });
-                                if (!keycloak.authenticated) document.getElementById("signInButton").style.visibility='visible';
+                                if (!keycloak.authenticated) {
+                                    document.getElementById("signInButton").style.display='inline';
+                                    document.getElementById("signInLink").style.display='inline';
+                                } else {
+                                    document.getElementById("signOutButton").style.display='inline';
+                                    document.getElementById("signOutLink").style.display='inline';
+                                }
                             });
                         });
                     });
@@ -137,57 +137,77 @@
           </a>
         </div>
         <div class="pf-c-page__header-tools">
-          <#if referrer?has_content && referrer_uri?has_content>
-          <div class="pf-c-page__header-tools-group pf-m-icons pf-screen-reader">
-            <a class="nav-item-iconic" href="${referrer_uri}" id="referrer"><span class="pf-icon pf-icon-arrow"></span>${msg("backTo",referrerName)}</a>
-          </div>
-          </#if>
-          <div class="pf-c-page__header-tools-group">
-            <button id="signInButton" style="visibility:hidden" onclick="keycloak.login();" class="pf-c-button pf-m-primary" type="button">${msg("doLogIn")}</button>
-          </div>
-          <div class="pf-c-page__header-tools-group">
-            <button class="pf-c-button pf-m-plain pf-m-mobile" aria-label="Overflow actions">
-              <i class="fas fa-ellipsis-v" aria-hidden="true"></i>
-            </button>
-
+            <#if referrer?has_content && referrer_uri?has_content>
+            <div class="pf-c-page__header-tools-group pf-m-icons pf-screen-reader">
+              <a href="${referrer_uri}" id="referrer" tabindex="0"><span class="pf-icon pf-icon-arrow"></span>${msg("backTo",referrerName)}</a>
+            </div>
+            </#if>
+            
             <#if realm.internationalizationEnabled  && supportedLocales?size gt 1>
-            <div class="pf-m-user pf-screen-reader">
-              <script>
-                  var toggleLocaleDropdown = function() {
-                      var localeDropdownList = document.getElementById("landing-locale-dropdown-list");
-                      if (localeDropdownList.hasAttribute("hidden")) {
-                          localeDropdownList.removeAttribute("hidden");
-                          document.getElementById("landing-locale-dropdown-button").setAttribute("aria-expanded", true);
-                          //document.getElementById("landing-locale-dropdown").classList.add("pf-m-expanded"));
-                      } else {
-                          localeDropdownList.setAttribute("hidden", true);
-                          document.getElementById("landing-locale-dropdown-button").setAttribute("aria-expanded", false);
-                          //document.getElementById("landing-locale-dropdown").classList.remove("pf-m-expanded"));
-                      }
-                  }
-              </script>
+            <div class="pf-c-page__header-tools-group pf-screen-reader pf-m-icons">
               <div id="landing-locale-dropdown" class="pf-c-dropdown">
                 <button onclick="toggleLocaleDropdown();" class="pf-c-dropdown__toggle pf-m-plain" id="landing-locale-dropdown-button" aria-expanded="false" aria-haspopup="true">
-                  <span class="pf-c-dropdown__toggle-text">
-                        ${msg("locale_" + locale)}
-                  </span>
-                  <i class="fas fa-caret-down pf-c-dropdown__toggle-icon" aria-hidden="true"></i>
+                    <span class="pf-c-dropdown__toggle-text">
+                          ${msg("locale_" + locale)}
+                    </span>
+                    <i class="fas fa-caret-down pf-c-dropdown__toggle-icon" aria-hidden="true"></i>
                 </button>
                 <ul id="landing-locale-dropdown-list" class="pf-c-dropdown__menu" aria-labeledby="pf-toggle-id-20" role="menu" hidden>
                     <#list supportedLocales as locale, label>
                         <#if referrer?has_content && referrer_uri?has_content>
-                        <li role="none"><a href="${baseUrl}/?kc_locale=${locale}&referrer=${referrer}&referrer_uri=${referrer_uri}" role="menuitem" tabindex="-1" aria-disabled="false" class="pf-c-dropdown__menu-item">${label}</a></li>
+                        <li role="none"><a href="${baseUrl}/?kc_locale=${locale}&referrer=${referrer}&referrer_uri=${referrer_uri}" role="menuitem" tabindex="0" aria-disabled="false" class="pf-c-dropdown__menu-item">${label}</a></li>
                         <#else>
-                        <li role="none"><a href="${baseUrl}/?kc_locale=${locale}" role="menuitem" tabindex="-1" aria-disabled="false" class="pf-c-dropdown__menu-item">${label}</a></li>
+                        <li role="none"><a href="${baseUrl}/?kc_locale=${locale}" role="menuitem" tabindex="0" aria-disabled="false" class="pf-c-dropdown__menu-item">${label}</a></li>
                         </#if>
                     </#list>
                 </ul>
               </div>
             </div>
             </#if>
+            
+            <div class="pf-c-page__header-tools-group pf-m-icons pf-screen-reader">
+              <button id="signInButton" tabindex="0" style="display:none" onclick="keycloak.login();" class="pf-c-button pf-m-primary" type="button">${msg("doLogIn")}</button>
+              <button id="signOutButton" tabindex="0" style="display:none" onclick="keycloak.logout();" class="pf-c-button pf-m-primary" type="button">${msg("doSignOut")}</button>
+            </div>
+            
+            <!-- Kebab for mobile -->
+            <div class="pf-c-page__header-tools-group">
+                <div id="mobileKebab" class="pf-c-dropdown pf-m-mobile" onclick="toggleMobileDropdown();"> <!-- pf-m-expanded -->
+                    <button aria-label="Actions" tabindex="0" id="mobileKebabButton" class="pf-c-dropdown__toggle pf-m-plain" type="button" aria-expanded="true" aria-haspopup="true">
+                        <i class="fas fa-ellipsis-v" aria-hidden="false"></i>
+                    </button>
+                    <ul id="mobileDropdown" aria-labelledby="pf-toggle-id-2" class="pf-c-dropdown__menu pf-m-align-right" role="menu" style="display:none">
+                        <#if referrer?has_content && referrer_uri?has_content>
+                        <li role="none">
+                            <a href="${referrer_uri}" role="menuitem" tabindex="0" aria-disabled="false" class="pf-c-dropdown__menu-item">${msg("backTo",referrerName)}</a>
+                        </li>
+                        </#if>
+                        
+                        <!-- locale selector for mobile -->
+                        <#if realm.internationalizationEnabled  && supportedLocales?size gt 1>
+                            <li role="none" aria-expanded="false" onclick="toggleMobileChooseLocale();"><a href="#" class="pf-c-dropdown__menu-item">${msg("locale_" + locale)} <i id="mobileLocaleSelectedIcon" class="fas fa-angle-right pf-c-options-menu__menu-item-icon" aria-hidden="true"></i></a></li>
+                            <#list supportedLocales as locale, label>
+                                <#if referrer?has_content && referrer_uri?has_content>
+                                <li role="none" id="mobile-locale-${locale}" style="display:none"><a href="${baseUrl}/?kc_locale=${locale}&referrer=${referrer}&referrer_uri=${referrer_uri}" role="menuitem" tabindex="0" aria-disabled="false" class="pf-c-dropdown__menu-item">${label}</a></li>
+                                <#else>
+                                <li role="none" id="mobile-locale-${locale}" style="display:none"><a href="${baseUrl}/?kc_locale=${locale}" role="menuitem" tabindex="0" aria-disabled="false" class="pf-c-dropdown__menu-item">${label}</a></li>
+                                </#if>
+                            </#list>
+                            <li id="mobileLocaleSeperator" class="pf-c-dropdown__separator" role="separator" style="display:none"></li>
+                        </#if>
+                        <!-- end locale selector for mobile -->
 
-          </div>
-        </div>
+                        <li id="signInLink" role="none" style="display:none">
+                            <a href="#" onclick="keycloak.login();" role="menuitem" tabindex="0" aria-disabled="false" class="pf-c-dropdown__menu-item">${msg("doLogIn")}</a>
+                        </li>
+                        <li id="signOutLink" role="none" style="display:none">
+                            <a href="#" onclick="keycloak.logout();" role="menuitem" tabindex="0" aria-disabled="false" class="pf-c-dropdown__menu-item">${msg("doSignOut")}</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            
+        </div> <!-- end header tools -->
       </header>
 
       <main role="main" class="pf-c-page__main">
@@ -251,23 +271,6 @@
     </div>
 </div>
 
-        <script>
-            var isWelcomePage = function() {
-                var winHash = window.location.hash;
-                return winHash.indexOf('#/app') !== 0;
-            }
-                
-            var toggleReact = function() {
-                if (!isWelcomePage()) {
-                    document.getElementById("welcomeScreen").style.display='none';
-                    document.getElementById("main_react_container").style.display='block';
-                } else {
-                    document.getElementById("welcomeScreen").style.display='block';
-                    document.getElementById("main_react_container").style.display='none';
-                }
-            };
-        </script>
-                
         <script>
             if (features.isLinkedAccountsEnabled) {
                 document.getElementById("linkedAccountsLink").style.display='block';

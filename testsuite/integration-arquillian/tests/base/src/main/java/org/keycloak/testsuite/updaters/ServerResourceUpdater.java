@@ -28,7 +28,30 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
+ * Class for updating a server resource. This class supports reverting changes via try-with-resources block.
  *
+ * It works as follows:
+ * <ol>
+ *   <li>In the constructor, current representation of the resource is obtained and stored internally into two object:
+ *       one that is used to capture modifications local, and another one which is immutable and used for restoration at the end</li>
+ *   <li>The first object can be modified locally via instance methods.</li>
+ *   <li>Once modifications are finalized, {@link #update()} method updates the object on the server.
+ *       Note that this method can be called more than once inside the {@code try} block.</li>
+ *   <li>After finishing the try-with-resources block, the changes are reverted back by updating the resource on the server
+ *       to the state in the first step</li>
+ * </ol>
+ *
+ * It is generally used according to the following pattern:
+ * <pre>
+ * try (ServerResourceUpdater sru = new ServerResourceUpdater().setProperty(x).update()) {
+ *     // ... do the job
+ *     // Potentially use sru to modify the object again and run sru.update()
+ * }
+ * </pre>
+ *
+ * @param <T> Type of the subclass (to support Builder pattern)
+ * @param <Rep> Object representation type
+ * @param <Res> Server resource
  * @author hmlnarik
  */
 public abstract class ServerResourceUpdater<T extends ServerResourceUpdater, Res, Rep> implements Closeable {
@@ -48,10 +71,18 @@ public abstract class ServerResourceUpdater<T extends ServerResourceUpdater, Res
         this.rep = representationGenerator.get();
     }
 
+    /**
+     * Returns server resource accessing the object.
+     * @return
+     */
     public Res getResource() {
         return resource;
     }
 
+    /**
+     * Updates the object on the server according to the current internal representation.
+     * @return
+     */
     public T update() {
         performUpdate(origRep, rep);
         this.updated = true;
@@ -62,17 +93,25 @@ public abstract class ServerResourceUpdater<T extends ServerResourceUpdater, Res
         updater.accept(to);
     }
 
+    /**
+     * Updates the internal representation by a custom function.
+     * @param representationUpdater
+     * @return
+     */
     public T updateWith(Consumer<Rep> representationUpdater) {
         representationUpdater.accept(this.rep);
         return (T) this;
     }
 
+    /**
+     * Reverts the object state on the server to the state that was there upon creation of this updater.
+     * @throws IOException
+     */
     @Override
     public void close() throws IOException {
-        if (! this.updated) {
-            throw new IOException("Attempt to revert changes that were never applied - have you called " + this.getClass().getName() + ".update()?");
+        if (this.updated) {
+            performUpdate(rep, origRep);
         }
-        performUpdate(rep, origRep);
     }
 
     /**

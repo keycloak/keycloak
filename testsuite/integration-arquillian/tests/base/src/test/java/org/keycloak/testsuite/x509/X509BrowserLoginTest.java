@@ -19,8 +19,7 @@
 package org.keycloak.testsuite.x509;
 
 import org.jboss.arquillian.drone.api.annotation.Drone;
-import org.jboss.arquillian.graphene.page.Page;
-import org.jboss.arquillian.junit.InSequence;
+import org.keycloak.testsuite.util.PhantomJSBrowser;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -30,8 +29,6 @@ import org.keycloak.events.Details;
 import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.pages.AppPage;
-import org.keycloak.testsuite.pages.LoginPage;
-import org.keycloak.testsuite.pages.x509.X509IdentityConfirmationPage;
 
 import javax.ws.rs.core.Response;
 
@@ -46,14 +43,7 @@ import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorC
 import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel.MappingSourceType.SUBJECTDN_EMAIL;
 import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.util.DroneUtils;
-import org.keycloak.testsuite.util.JavascriptBrowser;
-import org.keycloak.testsuite.util.PhantomJSBrowser;
-import org.keycloak.testsuite.util.SecondBrowser;
 import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.firefox.FirefoxDriver;
-import org.openqa.selenium.phantomjs.PhantomJSDriver;
-
-import java.util.List;
 
 /**
  * @author <a href="mailto:brat000012001@gmail.com">Peter Nalyvayko</a>
@@ -63,21 +53,11 @@ import java.util.List;
 
 public class X509BrowserLoginTest extends AbstractX509AuthenticationTest {
 
-    @Page
-    @PhantomJSBrowser
-    protected AppPage appPage;
-
-    @Page
-    @PhantomJSBrowser
-    protected X509IdentityConfirmationPage loginConfirmationPage;
-
-    @Page
-    @PhantomJSBrowser
-    protected LoginPage loginPage;
 
     @Drone
     @PhantomJSBrowser
     private WebDriver phantomJS;
+
 
     @Before
     public void replaceTheDefaultDriver() {
@@ -106,10 +86,11 @@ public class X509BrowserLoginTest extends AbstractX509AuthenticationTest {
                  .assertEvent();
     }
 
+
     @Test
     public void loginAsUserFromCertSubjectEmail() throws Exception {
         // Login using an e-mail extracted from certificate's subject DN
-        login(createLoginSubjectEmail2UsernameOrEmailConfig(), userId, "test-user@localhost", "test-user@localhost");
+        x509BrowserLogin(createLoginSubjectEmail2UsernameOrEmailConfig(), userId, "test-user@localhost", "test-user@localhost");
     }
 
     @Test
@@ -148,7 +129,7 @@ public class X509BrowserLoginTest extends AbstractX509AuthenticationTest {
 
     @Test
     public void loginWithNonSupportedCertExtendedKeyUsage() throws Exception {
-        login(createLoginSubjectEmailWithExtendedKeyUsage("serverAuth"), userId, "test-user@localhost", "test-user@localhost");
+        x509BrowserLogin(createLoginSubjectEmailWithExtendedKeyUsage("serverAuth"), userId, "test-user@localhost", "test-user@localhost");
     }
 
     @Test
@@ -179,16 +160,16 @@ public class X509BrowserLoginTest extends AbstractX509AuthenticationTest {
     @Test
     public void loginAsUserFromCertSubjectCN() {
         // Login using a CN extracted from certificate's subject DN
-        login(createLoginSubjectCN2UsernameOrEmailConfig(), userId, "test-user@localhost", "test-user@localhost");
-    }
-
-    @Test
-    public void loginAsUserFromCertIssuerCN() {
-        login(createLoginIssuerCNToUsernameOrEmailConfig(), userId2, "keycloak", "Keycloak");
+        x509BrowserLogin(createLoginSubjectCN2UsernameOrEmailConfig(), userId, "test-user@localhost", "test-user@localhost");
     }
 
     @Test
     public void loginAsUserFromCertIssuerCNMappedToUserAttribute() {
+        x509BrowserLogin(createLoginIssuerCNToCustomAttributeConfig(), userId2, "keycloak", "Keycloak Intermediate CA");
+    }
+
+    @Test
+    public void loginAsUserFromCertIssuerDNMappedToUserAttribute() {
 
         UserRepresentation user = testRealm().users().get(userId2).toRepresentation();
         Assert.assertNotNull(user);
@@ -198,7 +179,7 @@ public class X509BrowserLoginTest extends AbstractX509AuthenticationTest {
 
         events.clear();
 
-        login(createLoginIssuerDN_OU2CustomAttributeConfig(), userId2, "keycloak", "Red Hat");
+        x509BrowserLogin(createLoginIssuerDN_OU2CustomAttributeConfig(), userId2, "keycloak", "Red Hat");
     }
 
     @Test
@@ -425,51 +406,6 @@ public class X509BrowserLoginTest extends AbstractX509AuthenticationTest {
         }
     }
 
-    @Test
-    public void loginWithX509WithEmptyRevocationList() {
-        X509AuthenticatorConfigModel config =
-                new X509AuthenticatorConfigModel()
-                        .setCRLEnabled(true)
-                        .setCRLRelativePath(EMPTY_CRL_PATH)
-                        .setConfirmationPageAllowed(true)
-                        .setMappingSourceType(SUBJECTDN_EMAIL)
-                        .setUserIdentityMapperType(USERNAME_EMAIL);
-        login(config, userId, "test-user@localhost", "test-user@localhost");
-    }
-
-    @Test
-    public void loginCertificateRevoked() {
-        X509AuthenticatorConfigModel config =
-                new X509AuthenticatorConfigModel()
-                        .setCRLEnabled(true)
-                        .setCRLRelativePath(CLIENT_CRL_PATH)
-                        .setConfirmationPageAllowed(true)
-                        .setMappingSourceType(SUBJECTDN_EMAIL)
-                        .setUserIdentityMapperType(USERNAME_EMAIL);
-        AuthenticatorConfigRepresentation cfg = newConfig("x509-browser-config", config.getConfig());
-        String cfgId = createConfig(browserExecution.getId(), cfg);
-        Assert.assertNotNull(cfgId);
-
-        loginConfirmationPage.open();
-        loginPage.assertCurrent();
-
-        // Verify there is an error message
-        Assert.assertNotNull(loginPage.getError());
-
-        Assert.assertThat(loginPage.getError(), containsString("Certificate validation's failed.\nCertificate has been revoked, certificate's subject:"));
-
-        // Continue with form based login
-        loginPage.login("test-user@localhost", "password");
-
-        Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
-
-        events.expectLogin()
-                .user(userId)
-                .detail(Details.USERNAME, "test-user@localhost")
-                .removeDetail(Details.REDIRECT_URI)
-                .assertEvent();
-    }
 
     @Test
     public void loginNoIdentityConfirmationPage() {

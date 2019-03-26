@@ -90,6 +90,14 @@
                     <artifactId>keycloak-dependencies-server-all</artifactId>
                     <type>pom</type>
                 </dependency>
+                <dependency>
+                    <groupId>org.keycloak</groupId>
+                    <artifactId>keycloak-admin-client</artifactId>
+                </dependency>
+                <dependency>
+                    <groupId>org.keycloak</groupId>
+                    <artifactId>keycloak-authz-client</artifactId>
+                </dependency>
             </dependencies>
             <build>
                 <plugins>
@@ -156,6 +164,14 @@
                     <groupId>org.keycloak</groupId>
                     <artifactId>keycloak-saml-adapter-api-public</artifactId>
                 </dependency>
+                <dependency>
+                    <groupId>org.keycloak</groupId>
+                    <artifactId>keycloak-admin-client</artifactId>
+                </dependency>
+                <dependency>
+                    <groupId>org.keycloak</groupId>
+                    <artifactId>keycloak-authz-client</artifactId>
+                </dependency>
             </dependencies>
             <build>
                 <plugins>
@@ -180,6 +196,8 @@
                                         <include>org.keycloak:keycloak-adapter-spi</include>
                                         <include>org.keycloak:keycloak-adapter-core</include>
                                         <include>org.keycloak:keycloak-saml-adapter-api-public</include>
+                                        <include>org.keycloak:keycloak-admin-client</include>
+                                        <include>org.keycloak:keycloak-authz-client</include>
                                     </dependencySourceIncludes>
                                 </configuration>
                             </execution>

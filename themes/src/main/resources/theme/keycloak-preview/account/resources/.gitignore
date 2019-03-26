@@ -17,3 +17,4 @@ node
 !systemjs.config.extras.js
 !systemjs.config.js
 !.eslintrc.js
+!WelcomePageScripts.js

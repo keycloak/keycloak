@@ -2385,7 +2385,8 @@ module.controller('RequiredActionsCtrl', function($scope, realm, unregisteredReq
 
 });
 
-module.controller('AuthenticationConfigCtrl', function($scope, realm, flow, configType, config, AuthenticationConfig, Notifications, Dialog, $location) {
+module.controller('AuthenticationConfigCtrl', function($scope, realm, flow, configType, config, AuthenticationConfig, Notifications,
+                                              Dialog, $location, ComponentUtils) {
     $scope.realm = realm;
     $scope.flow = flow;
     $scope.configType = configType;
@@ -2406,10 +2407,13 @@ module.controller('AuthenticationConfigCtrl', function($scope, realm, flow, conf
     }, true);
 
     $scope.save = function() {
+        var configCopy = angular.copy($scope.config);
+        ComponentUtils.convertAllListValuesToMultivaluedString(configType.properties, configCopy.config);
+
         AuthenticationConfig.update({
             realm : realm.realm,
             config : config.id
-        }, $scope.config, function() {
+        }, configCopy, function() {
             $scope.changed = false;
             config = angular.copy($scope.config);
             $location.url("/realms/" + realm.realm + '/authentication/flows/' + flow.id + '/config/' + configType.providerId + "/" + config.id);
@@ -2438,7 +2442,8 @@ module.controller('AuthenticationConfigCtrl', function($scope, realm, flow, conf
 
 });
 
-module.controller('AuthenticationConfigCreateCtrl', function($scope, realm, flow, configType, execution, AuthenticationExecutionConfig, Notifications, Dialog, $location) {
+module.controller('AuthenticationConfigCreateCtrl', function($scope, realm, flow, configType, execution, AuthenticationExecutionConfig,
+                                                    Notifications, Dialog, $location, ComponentUtils) {
     $scope.realm = realm;
     $scope.flow = flow;
     $scope.create = true;
@@ -2463,10 +2468,13 @@ module.controller('AuthenticationConfigCreateCtrl', function($scope, realm, flow
     });
 
     $scope.save = function() {
+        var configCopy = angular.copy($scope.config);
+        ComponentUtils.convertAllListValuesToMultivaluedString(configType.properties, configCopy.config);
+
         AuthenticationExecutionConfig.save({
             realm : realm.realm,
             execution: execution
-        }, $scope.config, function(data, headers) {
+        }, configCopy, function(data, headers) {
             var l = headers().location;
             var id = l.substring(l.lastIndexOf("/") + 1);
             var url = "/realms/" + realm.realm + '/authentication/flows/' + flow.id + '/config/' + configType.providerId + "/" + id;
