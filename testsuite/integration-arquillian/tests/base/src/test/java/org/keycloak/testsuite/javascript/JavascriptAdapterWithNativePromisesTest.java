@@ -1,4 +1,4 @@
-package org.keycloak.testsuite.adapter.javascript;
+package org.keycloak.testsuite.javascript;
 
 import org.junit.Assume;
 import org.junit.Before;

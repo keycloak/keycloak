@@ -15,21 +15,18 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.adapter.jaas;
+package org.keycloak.testsuite.jaas;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.PrintWriter;
 import java.lang.invoke.MethodHandles;
 import java.net.URI;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Scanner;
 import java.util.Set;
 
 import javax.security.auth.Subject;
@@ -46,6 +43,7 @@ import javax.security.auth.login.LoginException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import org.junit.AfterClass;
 import org.junit.Assume;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -90,13 +88,20 @@ public class LoginModulesTest extends AbstractKeycloakTest {
         testRealms.add(IOUtil.loadRealm("/adapter-test/demorealm.json"));
     }
 
+    private static void enabled() {
+        Assume.assumeTrue(AUTH_SERVER_SSL_REQUIRED);
+    }
+
     @BeforeClass
     public static void createTemporaryFiles() throws Exception {
+        enabled();
+
         copyContentAndReplaceAuthServerAddress(new File(DIRECT_GRANT_CONFIG), DIRECT_GRANT_CONFIG_FILE);
         copyContentAndReplaceAuthServerAddress(new File(BEARER_CONFIG), BEARER_CONFIG_FILE);
     }
 
-    public void removeTemporaryFiles() {
+    @AfterClass
+    public static void removeTemporaryFiles() {
         DIRECT_GRANT_CONFIG_FILE.deleteOnExit();
         BEARER_CONFIG_FILE.deleteOnExit();
     }
@@ -127,10 +132,6 @@ public class LoginModulesTest extends AbstractKeycloakTest {
 
     @Test
     public void testDirectAccessGrantLoginModuleLoginFailed() throws Exception {
-        Assume.assumeTrue(AUTH_SERVER_SSL_REQUIRED);
-
-
-
         LoginContext loginContext = new LoginContext("does-not-matter", null,
                 createJaasCallbackHandler("bburke@redhat.com", "bad-password"),
                 createJaasConfigurationForDirectGrant(null));
@@ -146,7 +147,6 @@ public class LoginModulesTest extends AbstractKeycloakTest {
 
     @Test
     public void testDirectAccessGrantLoginModuleLoginSuccess() throws Exception {
-        Assume.assumeTrue(AUTH_SERVER_SSL_REQUIRED);
         oauth.realm("demo");
 
         LoginContext loginContext = directGrantLogin(null);
@@ -169,7 +169,6 @@ public class LoginModulesTest extends AbstractKeycloakTest {
 
     @Test
     public void testBearerLoginFailedLogin() throws Exception {
-        Assume.assumeTrue(AUTH_SERVER_SSL_REQUIRED);
         oauth.realm("demo");
 
         LoginContext directGrantCtx = directGrantLogin(null);
@@ -194,7 +193,6 @@ public class LoginModulesTest extends AbstractKeycloakTest {
 
     @Test
     public void testBearerLoginSuccess() throws Exception {
-        Assume.assumeTrue(AUTH_SERVER_SSL_REQUIRED);
         oauth.realm("demo");
 
         LoginContext directGrantCtx = directGrantLogin("customer-db-audience-required");
