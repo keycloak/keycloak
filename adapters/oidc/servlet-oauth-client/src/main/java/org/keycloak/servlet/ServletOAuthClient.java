@@ -51,7 +51,11 @@ import java.security.SecureRandom;
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
+ * @deprecated Class is deprecated and may be removed in the future. If you want to maintain this class for Keycloak community, please
+ * contact Keycloak team on keycloak-dev mailing list. You can fork it into your github repository and
+ * Keycloak team will reference it from "Keycloak Extensions" page.
  */
+@Deprecated
 public class ServletOAuthClient extends KeycloakDeploymentDelegateOAuthClient {
 
 	// https://tools.ietf.org/html/rfc7636#section-4
