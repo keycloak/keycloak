@@ -33,5 +33,6 @@
     <modules>
         <module>adapter-feature-pack</module>
         <module>server-feature-pack</module>
+        <module>saml-adapter-feature-pack</module>
     </modules>
 </project>
