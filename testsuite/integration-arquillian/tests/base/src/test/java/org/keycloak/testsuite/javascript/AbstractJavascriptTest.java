@@ -1,4 +1,4 @@
-package org.keycloak.testsuite.adapter.javascript;
+package org.keycloak.testsuite.javascript;
 
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
