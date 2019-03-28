@@ -18,7 +18,6 @@ package org.keycloak.testsuite.arquillian;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -156,6 +155,10 @@ public final class TestContext {
 
     public void addTestRealmToTestRealmReps(RealmRepresentation testRealmRep) {
         this.testRealmReps.add(testRealmRep);
+    }
+
+    public void addTestRealmsToTestRealmReps(List<RealmRepresentation> testRealmReps) {
+        this.testRealmReps.addAll(testRealmReps);
     }
 
     public boolean isInitialized() {
