@@ -164,19 +164,20 @@ keycloak.init({ flow: 'hybrid' })
 [#hybrid-apps-with-cordova]
 ==== Hybrid Apps with Cordova
 
-Keycloak support hybrid mobile apps developed with https://cordova.apache.org/[Apache Cordova]. The Javascript adapter has two modes for this: `cordova` and `cordova-native`:
+Keycloak support hybrid mobile apps developed with https://cordova.apache.org/[Apache Cordova]. The JavaScript adapter has two modes for this: `cordova` and `cordova-native`:
 
 The default is cordova, which the adapter will automatically select if no adapter type has been configured and window.cordova is present.
 When logging in, it will open an https://cordova.apache.org/docs/en/latest/reference/cordova-plugin-inappbrowser/[InApp Browser] that lets the user interact with {project_name} and afterwards returns to the app by redirecting to `http://localhost`. Because of this, you must whitelist this URL as a valid redirect-uri in the client configuration section of the Administration Console.
 
 While this mode is easy to setup, it also has some disadvantages:
+
 * The InApp-Browser is a browser embedded in the app and is not the phone's default browser. Therefore it will have different settings and stored credentials will not be available.
 * The InApp-Browser might also be slower, especially when rendering more complex themes.
 * There are security concerns to consider, before using this mode, such as that it is possible for the app to gain access to the credentials of the user, as it has full control of the browser rendering the login page, so do not allow its use in apps you do not trust.
 
 Use this example app to help you get started: https://github.com/keycloak/keycloak/tree/master/examples/cordova
 
-The alternative mode `cordova-nativei` takes a different approach. 
+The alternative mode `cordova-native` takes a different approach. 
 It opens the login page using the system's browser. 
 After the user has authenticated, the browser redirects back into the app using a special URL.
 From there, the {project_name} adapter can finish the login by reading the code or token from the URL.
@@ -193,7 +194,7 @@ This adapter required two additional plugins:
 * https://github.com/google/cordova-plugin-browsertab[cordova-plugin-browsertab]: allows the app to open webpages in the system's browser
 * https://github.com/e-imaxina/cordova-plugin-deeplinks[cordova-plugin-deeplinks]: allow the browser to redirect back to your app by special URLs
 
-The technical details for linking to an app differ on each plattform and special setup is needed.
+The technical details for linking to an app differ on each platform and special setup is needed.
 Please refer to the Android and iOS sections of the https://github.com/e-imaxina/cordova-plugin-deeplinks/blob/master/README.md[deeplinks plugin documentation] for further instructions.
 
 There are different kinds of links for opening apps: custom schemes (i.e. `myapp://login` or `android-app://com.example.myapp/https/example.com/login`) and https://developer.apple.com/ios/universal-links/[Universal Links (iOS)]) / https://developer.android.com/training/app-links/deep-linking[Deep Links (Android)].
@@ -205,6 +206,7 @@ Furthermore, we recommend the following steps to improve compatibility with the 
 
 * Universal Links on iOS seem to work more reliably with `response-mode` set to `query`
 * To prevent Android from opening a new instance of your app on redirect add the following snippet to `config.xml`:
+
 [source,xml]
 ----
 <preference name="AndroidLaunchMode" value="singleTask" /> 
@@ -302,7 +304,7 @@ Options is an Object, where:
 * timeSkew - Set an initial value for skew between local time and {project_name} server in seconds (only together with token or refreshToken).
 * checkLoginIframe - Set to enable/disable monitoring login state (default is true).
 * checkLoginIframeInterval - Set the interval to check login state (default is 5 seconds).
-* responseMode - Set the OpenID Connect response mode send to {project_name} server at login request. Valid values are query or fragment . Default value is fragment, which means that after successful authentication will {project_name} redirect to javascript application with OpenID Connect parameters added in URL fragment. This is generally safer and recommended over query.
+* responseMode - Set the OpenID Connect response mode send to {project_name} server at login request. Valid values are query or fragment. Default value is fragment, which means that after successful authentication will {project_name} redirect to JavaScript application with OpenID Connect parameters added in URL fragment. This is generally safer and recommended over query.
 * flow - Set the OpenID Connect flow. Valid values are standard, implicit or hybrid.
 * promiseType - If set to `native` all methods returning a promise will return a native JavaScript promise. If not set will return Keycloak specific promise objects.
 
@@ -327,7 +329,7 @@ to {project_name} will contain the scope parameter `scope=openid address phone`.
 * idpHint - Used to tell {project_name} to skip showing the login page and automatically redirect to the specified identity
 provider instead. More info in the link:{adminguide_link}#_client_suggested_idp[Identity Provider documentation].
 * action - If value is 'register' then user is redirected to registration page, otherwise to login page.
-* locale - Sets the 'ui_locales' query param in compliance with section 3.1.2.1 of the OIDC 1.0 specification.
+* locale - Sets the 'ui_locales' query param in compliance with https://openid.net/specs/openid-connect-core-1_0.html#AuthRequest[section 3.1.2.1 of the OIDC 1.0 specification].
 * kcLocale - Specifies the desired Keycloak locale for the UI.  This differs from the locale param in that it tells the Keycloak server to set a cookie and update the user's profile to a new preferred locale.
 * cordovaOptions - Specifies the arguments that are passed to the Cordova in-app-browser (if applicable). Options `hidden` and `location` are not affected by these arguments. All available options are defined at https://cordova.apache.org/docs/en/latest/reference/cordova-plugin-inappbrowser/. Example of use: `{ zoom: "no", hardwareback: "yes" }`;
 
