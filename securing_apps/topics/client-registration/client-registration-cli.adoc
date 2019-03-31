@@ -37,6 +37,7 @@ By default, the server recognizes the Client Registration CLI as the [filename]`
 . Create a new client (for example, [filename]`reg-cli`) if you want to use a separate client configuration for the Client Registration CLI.
 . Toggle the *Standard Flow Enabled* setting it to *Off*.
 . Strengthen the security by configuring the client [filename]`Access Type` as [filename]`Confidential` and selecting *Credentials > ClientId and Secret*.
++
 [NOTE]
 ====
 You can configure either [filename]`Client Id and Secret` or [filename]`Signed JWT` under the *Credentials* tab .
@@ -357,6 +358,6 @@ Run the [command]`kcreg update-token --help` command for more information about 
 [[_troubleshooting_2]]
 === Troubleshooting
 
-* Q: When logging in, I get an error: *Parameter client_assertion_type is missing [invalid_client].
+* Q: When logging in, I get an error: *Parameter client_assertion_type is missing [invalid_client]*.
 +
 A: This error means your client is configured with [filename]`Signed JWT` token credentials, which means you have to use the [command]`--keystore` parameter when logging in.
