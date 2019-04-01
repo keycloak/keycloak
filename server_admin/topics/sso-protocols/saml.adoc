@@ -51,6 +51,11 @@ the {project_name} server or application when exchanging documents.  Basically H
 that contains an HTML form with embedded JavaScript.  When the page is loaded, the JavaScript automatically invokes the form.
 You really don't need to know about this stuff, but it is a pretty clever trick.
 
+_POST_ binding is usually recommended because of security and size restrictions. When using _REDIRECT_ the SAML response
+is part of the URL (it is a query parameter as it was explained before), so it can be captured in logs and it is considered
+less secure. Regarding size, if the assertion contains a lot or large attributes sending the document inside the HTTP payload
+is always better than in the more limited URL.
+
 ===== ECP
 
 ECP stands for "Enhanced Client or Proxy", a SAML v.2.0 profile which allows for the exchange of SAML attributes outside the context of a web browser.
