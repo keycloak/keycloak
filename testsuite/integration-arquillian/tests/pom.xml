@@ -1475,12 +1475,6 @@
                     <scope>compile</scope>
                 </dependency>
 
-                <dependency>
-                    <groupId>org.apache.sshd</groupId>
-                    <artifactId>sshd-core</artifactId>
-                    <version>1.2.0</version>
-                </dependency>
-
                 <!-- Email Test Server -->
                 <dependency>
                     <groupId>com.icegreen</groupId>

@@ -709,7 +709,7 @@
                 <app.server.http.port>8181</app.server.http.port>
 
                 <app.server.management.user>admin</app.server.management.user>
-                <app.server.management.password>admin</app.server.management.password>
+                <app.server.management.password>password</app.server.management.password>
                 <app.server.karaf.jvm.debug.args>-agentlib:jdwp=transport=dt_socket,server=y,suspend=${app.server.debug.suspend},address=localhost:${app.server.debug.port}</app.server.karaf.jvm.debug.args>
             </properties>
             <dependencies>
@@ -733,6 +733,20 @@
             </dependencies>
             <build>
                 <plugins>
+                    <plugin>
+                        <artifactId>maven-enforcer-plugin</artifactId>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <requireProperty>	
+                                    <message>When running fuse tests 'additional.fuse.repos' is expected to be set.</message>	
+                                    <property>additional.fuse.repos</property>	
+                                </requireProperty>
+                            </rules>
+                        </configuration>
+                    </plugin>
                     <plugin>
                         <groupId>org.commonjava.maven.plugins</groupId>
                         <artifactId>directory-maven-plugin</artifactId>
@@ -770,7 +784,7 @@
                 <app.server.http.port>8181</app.server.http.port>
 
                 <app.server.management.user>admin</app.server.management.user>
-                <app.server.management.password>admin</app.server.management.password>
+                <app.server.management.password>password</app.server.management.password>
                 <app.server.karaf.jvm.debug.args>-agentlib:jdwp=transport=dt_socket,server=y,suspend=${app.server.debug.suspend},address=localhost:${app.server.debug.port}</app.server.karaf.jvm.debug.args>
             </properties>
             <dependencies>
@@ -794,6 +808,20 @@
             </dependencies>
             <build>
                 <plugins>
+                    <plugin>
+                        <artifactId>maven-enforcer-plugin</artifactId>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <requireProperty>	
+                                    <message>When running fuse tests 'additional.fuse.repos' is expected to be set.</message>	
+                                    <property>additional.fuse.repos</property>	
+                                </requireProperty>
+                            </rules>
+                        </configuration>
+                    </plugin>
                     <plugin>
                         <groupId>org.commonjava.maven.plugins</groupId>
                         <artifactId>directory-maven-plugin</artifactId>

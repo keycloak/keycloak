@@ -468,7 +468,7 @@ public class AuthServerTestEnricher {
         }
     }
 
-    public void afterClass(@Observes(precedence = 2) AfterClass event) {
+    public void afterClass(@Observes(precedence = 1) AfterClass event) {
         //check if a test accidentally left the auth-server not running
         ContainerController controller = containerConroller.get();
         if (!controller.isStarted(suiteContext.getAuthServerInfo().getQualifier())) {
