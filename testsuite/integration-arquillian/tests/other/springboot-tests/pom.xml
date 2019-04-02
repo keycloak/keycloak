@@ -28,6 +28,11 @@
             <artifactId>keycloak-test-helper</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.assertj</groupId>
+            <artifactId>assertj-core</artifactId>
+            <version>3.11.1</version>
+        </dependency>
     </dependencies>
 
     <build>
@@ -75,6 +80,7 @@
                                         <argument>-B</argument>
                                         <argument>-Dkeycloak.version=${project.version}</argument>
                                         <argument>-Pspring-boot-adapter-${adapter.container}</argument>
+                                        <!-- When $repo.argument is in separate <argument> it causes NPE when repo.argument is not set-->
                                         <argument>-Dmaven.repo.local=${settings.localRepository}</argument>
                                         <argument>-Djetty.adapter.version=${jetty.adapter.version}</argument>
                                         <argument>${repo.argument}</argument>
