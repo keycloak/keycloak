@@ -29,6 +29,7 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.SuiteContext;
+import org.keycloak.testsuite.auth.page.login.OIDCLogin;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.util.TokenUtil;
@@ -68,6 +69,9 @@ public abstract class AbstractSpringBootTest extends AbstractKeycloakTest {
 
     @Page
     LoginPage loginPage;
+
+    @Page
+    protected OIDCLogin testRealmLoginPage;
 
     @Page
     SpringApplicationPage applicationPage;
