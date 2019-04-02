@@ -50,10 +50,12 @@ do
         fi
 
         ./stop
-        rm -rf ../data/log
-        rm -rf ../data/tmp
 
         sleep 5
+
+        echo "Removing temp files";
+        rm -rf ../data/log
+        rm -rf ../data/tmp
 
         exit $RESULT
     else

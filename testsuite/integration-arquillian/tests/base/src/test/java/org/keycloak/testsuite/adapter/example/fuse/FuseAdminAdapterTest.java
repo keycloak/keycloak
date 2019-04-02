@@ -67,7 +67,6 @@ import org.keycloak.testsuite.adapter.page.HawtioPage;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 import org.keycloak.testsuite.arquillian.containers.ContainerConstants;
 import org.keycloak.testsuite.auth.page.login.OIDCLogin;
-import org.keycloak.testsuite.util.ContainerAssume;
 import org.keycloak.testsuite.util.DroneUtils;
 import org.keycloak.testsuite.util.JavascriptBrowser;
 import org.keycloak.testsuite.util.WaitUtils;
@@ -116,10 +115,8 @@ public class FuseAdminAdapterTest extends AbstractExampleAdapterTest {
     }
 
     @Test
+    @AppServerContainer(value = ContainerConstants.APP_SERVER_FUSE7X, skip = true)
     public void hawtio1LoginTest() throws Exception {
-        // Note that this does work only in Fuse 6 with Hawtio 1, Fuse 7 contains Hawtio 2
-        ContainerAssume.assumeNotAppServerFuse7();
-
         hawtioPage.navigateTo();
         testRealmLoginPageFuse.form().login("user", "invalid-password");
         assertCurrentUrlDoesntStartWith(hawtioPage);
@@ -145,10 +142,8 @@ public class FuseAdminAdapterTest extends AbstractExampleAdapterTest {
     }
 
     @Test
+    @AppServerContainer(value = ContainerConstants.APP_SERVER_FUSE63, skip = true)
     public void hawtio2LoginTest() throws Exception {
-        // Note that this does work only in Fuse 7 with Hawtio 2, Fuse 6 contains Hawtio 1
-        ContainerAssume.assumeNotAppServerFuse6();
-
         hawtio2Page.navigateTo();
         WaitUtils.waitForPageToLoad();
 
@@ -182,10 +177,8 @@ public class FuseAdminAdapterTest extends AbstractExampleAdapterTest {
     }    
 
     @Test
+    @AppServerContainer(value = ContainerConstants.APP_SERVER_FUSE7X, skip = true)
     public void sshLoginTestFuse6() throws Exception {
-        // Note that this does not work for Fuse 7 since the error codes have changed
-        ContainerAssume.assumeNotAppServerFuse7();
-
         assertCommand("mary", "password", "shell:date", Result.NO_CREDENTIALS);
         assertCommand("john", "password", "shell:info", Result.NO_CREDENTIALS);
         assertCommand("john", "password", "shell:date", Result.OK);
@@ -193,10 +186,8 @@ public class FuseAdminAdapterTest extends AbstractExampleAdapterTest {
     }
 
     @Test
+    @AppServerContainer(value = ContainerConstants.APP_SERVER_FUSE63, skip = true)
     public void sshLoginTestFuse7() throws Exception {
-        // Note that this works for Fuse 7 and newer
-        ContainerAssume.assumeNotAppServerFuse6();
-
         assertCommand("mary", "password", "shell:date", Result.NOT_FOUND);
         assertCommand("john", "password", "shell:info", Result.NOT_FOUND);
         assertCommand("john", "password", "shell:date", Result.OK);
@@ -223,29 +214,41 @@ public class FuseAdminAdapterTest extends AbstractExampleAdapterTest {
 
     @Test
     public void jmxLoginTest() throws Exception {
-        setJMXAuthentication("keycloak", "password");
-        ObjectName mbean = new ObjectName("org.apache.karaf:type=config,name=root");
-        //invalid credentials
         try {
-            getJMXConnector("mary", "password1").getMBeanServerConnection();
-            Assert.fail();
-        } catch (SecurityException se) {}
-        //no role
-        MBeanServerConnection connection = getJMXConnector("mary", "password").getMBeanServerConnection();
-        assertJmxInvoke(false, connection, mbean, "listProperties", new Object [] {""}, new String [] {String.class.getName()});
-        assertJmxInvoke(false, connection, mbean, "setProperty", new Object [] {"", "x", "y"}, new String [] {String.class.getName(), String.class.getName(), String.class.getName()});
-        //read only role  
-        connection = getJMXConnector("john", "password").getMBeanServerConnection();
-        assertJmxInvoke(true, connection, mbean, "listProperties", new Object [] {""}, new String [] {String.class.getName()});
-        assertJmxInvoke(false, connection, mbean, "setProperty", new Object [] {"", "x", "y"}, new String [] {String.class.getName(), String.class.getName(), String.class.getName()});
-        //read write role
-        connection = getJMXConnector("root", "password").getMBeanServerConnection();
-        assertJmxInvoke(true, connection, mbean, "listProperties", new Object [] {""}, new String [] {String.class.getName()});
-        assertJmxInvoke(true, connection, mbean, "setProperty", new Object [] {"", "x", "y"}, new String [] {String.class.getName(), String.class.getName(), String.class.getName()});
-        setJMXAuthentication("karaf", "admin");
+            log.debug("Going to set JMX authentication to keycloak");
+            setJMXAuthentication("keycloak", "password");
+            ObjectName mbean = new ObjectName("org.apache.karaf:type=config,name=root");
+            //invalid credentials
+            try (JMXConnector jmxConnector = getJMXConnector("mary", "password1")) {
+                jmxConnector.getMBeanServerConnection();
+                Assert.fail();
+            } catch (SecurityException expected) {
+            }
+            //no role
+            try (JMXConnector jmxConnector = getJMXConnector("mary", "password")) {
+                MBeanServerConnection connection = jmxConnector.getMBeanServerConnection();
+                assertJmxInvoke(false, connection, mbean, "listProperties", new Object [] {""}, new String [] {String.class.getName()});
+                assertJmxInvoke(false, connection, mbean, "setProperty", new Object [] {"", "x", "y"}, new String [] {String.class.getName(), String.class.getName(), String.class.getName()});
+            }
+            //read only role
+            try (JMXConnector jmxConnector = getJMXConnector("john", "password")) {
+                MBeanServerConnection connection = jmxConnector.getMBeanServerConnection();
+                assertJmxInvoke(true, connection, mbean, "listProperties", new Object [] {""}, new String [] {String.class.getName()});
+                assertJmxInvoke(false, connection, mbean, "setProperty", new Object [] {"", "x", "y"}, new String [] {String.class.getName(), String.class.getName(), String.class.getName()});
+            }
+            //read write role
+            try (JMXConnector jmxConnector = getJMXConnector("root", "password")) {
+                MBeanServerConnection connection = jmxConnector.getMBeanServerConnection();
+                assertJmxInvoke(true, connection, mbean, "listProperties", new Object [] {""}, new String [] {String.class.getName()});
+                assertJmxInvoke(true, connection, mbean, "setProperty", new Object [] {"", "x", "y"}, new String [] {String.class.getName(), String.class.getName(), String.class.getName()});
+            }
+        } finally {
+            log.debug("Going to set JMX authentication back to karaf");
+            setJMXAuthentication("karaf", "admin");
+        }
     }
 
-    protected String assertCommand(String user, String password,  String command, Result result) throws Exception, IOException {
+    protected String assertCommand(String user, String password, String command, Result result) throws Exception, IOException {
         if (!command.endsWith("\n"))
             command += "\n";
 
@@ -254,7 +257,11 @@ public class FuseAdminAdapterTest extends AbstractExampleAdapterTest {
         switch(result) {
         case OK:
             Assert.assertThat(output,
-                    not(anyOf(containsString("Insufficient credentials"), Matchers.containsString("Command not found"))));
+                    not(anyOf(
+                            containsString("Insufficient credentials"), 
+                            containsString("Command not found"),
+                            containsString("Authentication failed"))
+                    ));
             break;
         case NOT_FOUND:
             Assert.assertThat(output,
@@ -312,10 +319,13 @@ public class FuseAdminAdapterTest extends AbstractExampleAdapterTest {
     }
 
     protected void setJMXAuthentication(String realm, String password) throws Exception {
-       assertCommand("admin", "password", "config:edit org.apache.karaf.management; config:propset jmxRealm " + realm + "; config:update", Result.OK);
-       getMBeanServerConnection(10000, TimeUnit.MILLISECONDS, "admin", password);
+        assertCommand("admin", "password", "config:edit org.apache.karaf.management; config:propset jmxRealm " + realm + "; config:update", Result.OK);
+        try (JMXConnector jmxConnector = getJMXConnector("admin", password)) {
+            getMBeanServerConnection(2, TimeUnit.MINUTES, jmxConnector);
+        }
+        log.debug("Succesfully set JMX Authentication to " + realm);
     }
-    
+
     private Object assertJmxInvoke(boolean expectSuccess, MBeanServerConnection connection, ObjectName mbean, String method,
             Object[] params, String[] signature) throws InstanceNotFoundException, MBeanException, ReflectionException, IOException {
         try {
@@ -327,30 +337,28 @@ public class FuseAdminAdapterTest extends AbstractExampleAdapterTest {
             return null;
         }
     }
-    
-    private MBeanServerConnection getMBeanServerConnection(long timeout, final TimeUnit unit, String username, String password) throws Exception {
+
+    private MBeanServerConnection getMBeanServerConnection(long timeout, final TimeUnit unit, JMXConnector connector) throws Exception {
         Exception lastException = null;
         long timeoutMillis = System.currentTimeMillis() + unit.toMillis(timeout);
         while (System.currentTimeMillis() < timeoutMillis) {
             try {
-                return getJMXConnector(username, password).getMBeanServerConnection();
+                return connector.getMBeanServerConnection();
             } catch (Exception ex) {
                 lastException = ex;
                 Thread.sleep(500);
-                ex.printStackTrace();
+                log.debug("Loop: Getting MBean Server Connection: last caught exception: " + lastException.getClass().getName());
             }
         }
+        log.error("Failed to get MBean Server Connection within " + timeout + " " + unit.toString());
         TimeoutException timeoutException = new TimeoutException();
         timeoutException.initCause(lastException);
         throw timeoutException;
     }
-    
+
     private JMXConnector getJMXConnector(String userName, String password) throws Exception {
-        JMXServiceURL url = new JMXServiceURL(getJmxServiceUrl());
-        String[] credentials = new String[] { userName, password };
-        Map<String, ?> env = Collections.singletonMap(JMXConnector.CREDENTIALS, credentials);
-        JMXConnector connector = JMXConnectorFactory.connect(url, env);
-        return connector;
+        Map<String, ?> env = Collections.singletonMap(JMXConnector.CREDENTIALS, new String[] { userName, password });
+        return JMXConnectorFactory.connect(new JMXServiceURL(getJmxServiceUrl()), env);
     }
 
     private String getJmxServiceUrl() throws Exception {
