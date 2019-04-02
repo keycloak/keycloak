@@ -1,6 +1,6 @@
 === Other OpenID Connect Libraries
 
-{project_name} can be secured by supplied adapters that are usually easier to use and provide better integration with {project_name}. However, if an adapter is not available for your programming language, framework, or platform you might opt to use a generic OpenID Connect Resource Provider (RP) library instead. This chapter describes details specific to {project_name} and does not contain specific protocol details. For more information see the https://openid.net/connect/[OpenID Connect specifications] and https://tools.ietf.org/html/rfc6749[OAuth2 specification].
+{project_name} can be secured by supplied adapters that are usually easier to use and provide better integration with {project_name}. However, if an adapter is not available for your programming language, framework, or platform you might opt to use a generic OpenID Connect Relying Party (RP) library instead. This chapter describes details specific to {project_name} and does not contain specific protocol details. For more information see the https://openid.net/connect/[OpenID Connect specifications] and https://tools.ietf.org/html/rfc6749[OAuth2 specification].
 
 ==== Endpoints
 
