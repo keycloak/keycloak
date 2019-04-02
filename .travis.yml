@@ -13,4 +13,4 @@ install:
   - echo "travis_fold:end:install folding ends"
 
 script:
-  - mvn test -f tests/pom.xml -D$PROFILE -B
+  - mvn test -f tests/pom.xml -D$PROFILE -B -fae

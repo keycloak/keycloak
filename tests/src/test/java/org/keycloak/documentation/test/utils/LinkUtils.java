@@ -150,6 +150,8 @@ public class LinkUtils {
         for (String ignored : ignoredLinks) {
             if (ignored.endsWith("*") && link.startsWith(ignored.substring(0, ignored.length() - 1))) {
                 return false;
+            } else if (ignored.startsWith("REGEX:") && link.matches(ignored.substring(6))) {
+                return true;
             } else if (ignored.equals(link)) {
                 return false;
             }
@@ -171,6 +173,8 @@ public class LinkUtils {
     private boolean validRedirect(String location, List<String> ignoredLinkRedirects) {
         for (String valid : ignoredLinkRedirects) {
             if (valid.endsWith("*") && location.startsWith(valid.substring(0, valid.length() - 1))) {
+                return true;
+            } else if (valid.startsWith("REGEX:") && location.matches(valid.substring(6))) {
                 return true;
             } else if (valid.equals(location)) {
                 return true;
