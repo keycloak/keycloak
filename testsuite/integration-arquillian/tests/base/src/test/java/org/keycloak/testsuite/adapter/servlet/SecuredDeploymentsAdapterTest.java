@@ -42,7 +42,7 @@ import org.keycloak.testsuite.adapter.page.CustomerPortalSubsystem;
 import org.keycloak.testsuite.adapter.page.ProductPortalSubsystem;
 import org.keycloak.testsuite.arquillian.AppServerTestEnricher;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
-import org.keycloak.testsuite.arquillian.containers.ContainerConstants;
+import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
 import org.keycloak.testsuite.arquillian.containers.SelfManagedAppContainerLifecycle;
 
 @AppServerContainer(ContainerConstants.APP_SERVER_WILDFLY)

@@ -35,7 +35,6 @@
         <app.server.karaf.artifactId>fuse-karaf</app.server.karaf.artifactId>
         <app.server.karaf.version>${fuse7x.version}</app.server.karaf.version>
         <app.server.karaf.unpacked.folder.name>fuse-karaf-${fuse7x.version}</app.server.karaf.unpacked.folder.name>
-        <app.server.karaf.client.auth>-u admin -p admin</app.server.karaf.client.auth>
     </properties>
 
     <dependencies>

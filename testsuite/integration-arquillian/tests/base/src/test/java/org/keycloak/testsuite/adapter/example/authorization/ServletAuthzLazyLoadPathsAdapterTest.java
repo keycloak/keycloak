@@ -23,7 +23,7 @@ import org.junit.Test;
 import java.io.File;
 import java.io.IOException;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
-import org.keycloak.testsuite.arquillian.containers.ContainerConstants;
+import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>

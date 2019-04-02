@@ -30,6 +30,8 @@ import org.jboss.logging.Logger;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainers;
 import org.keycloak.testsuite.arquillian.containers.SelfManagedAppContainerLifecycle;
+import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
+import org.keycloak.testsuite.utils.fuse.FuseUtils;
 import org.wildfly.extras.creaper.core.ManagementClient;
 import org.wildfly.extras.creaper.core.online.ManagementProtocol;
 import org.wildfly.extras.creaper.core.online.OnlineManagementClient;
@@ -194,10 +196,17 @@ public class AppServerTestEnricher {
                 log.info("Starting app server: " + testContext.getAppServerInfo().getQualifier());
                 controller.start(testContext.getAppServerInfo().getQualifier());
             }
+            if (isFuseAppServer()) {
+                FuseUtils.setUpFuse(ContainerConstants.APP_SERVER_PREFIX + CURRENT_APP_SERVER);
+            }
         }
     }
 
-    public void stopAppServer(@Observes(precedence = 1) AfterClass event) {
+    /*
+     * For Fuse: precedence = 2 - app server has to be stopped 
+     * before AuthServerTestEnricher.afterClass is executed
+     */
+    public void stopAppServer(@Observes(precedence = 2) AfterClass event) {
         if (testContext.getAppServerInfo() == null) {
             return; // no adapter test
         }
@@ -286,8 +295,8 @@ public class AppServerTestEnricher {
         return CURRENT_APP_SERVER.equals("wls");
     }
 
-    public static boolean isOSGiAppServer() {
-        return CURRENT_APP_SERVER.contains("karaf") || CURRENT_APP_SERVER.contains("fuse");
+    public static boolean isFuseAppServer() {
+        return CURRENT_APP_SERVER.contains("fuse");
     }
 
     private boolean isJBossBased() {
