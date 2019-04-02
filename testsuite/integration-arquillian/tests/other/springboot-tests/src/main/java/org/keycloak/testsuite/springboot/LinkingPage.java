@@ -4,19 +4,17 @@ import org.keycloak.testsuite.pages.AbstractPage;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
-public class LinkingPage extends AbstractPage {
+public class LinkingPage extends AbstractSpringbootPage {
+
+    public static final String PAGE_TITLE = "linking page result";
+
+    public LinkingPage() {
+        super(PAGE_TITLE);
+    }
 
     @FindBy(id = "error")
     private WebElement errorMessage;
 
-    @Override
-    public boolean isCurrent() {
-        return driver.getTitle().equalsIgnoreCase("linking page result");
-    }
-
-    @Override
-    public void open() throws Exception {
-    }
 
     public String getErrorMessage() {
         return errorMessage.getText();

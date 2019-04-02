@@ -26,6 +26,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.keycloak.testsuite.util.UIUtils.clickLink;
+
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
@@ -46,7 +48,7 @@ public class AccountApplicationsPage extends AbstractAccountPage {
     }
 
     public void revokeGrant(String clientId) {
-        driver.findElement(By.id("revoke-" + clientId)).click();
+        clickLink(driver.findElement(By.id("revoke-" + clientId)));
     }
 
     public Map<String, AppEntry> getApplications() {
