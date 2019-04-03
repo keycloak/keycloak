@@ -442,10 +442,12 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
         }
 
         public SimpleHttp generateTokenRequest(String authorizationCode) {
+            String auth = getConfig().getClientId()+ ":"+getConfig().getClientSecret();
+            String authHeader = "Basic " + new String(Base64.encodeBytes(auth.getBytes()));
+            
             return SimpleHttp.doPost(getConfig().getTokenUrl(), session)
+                    .header("Authorization", authHeader)
                     .param(OAUTH2_PARAMETER_CODE, authorizationCode)
-                    .param(OAUTH2_PARAMETER_CLIENT_ID, getConfig().getClientId())
-                    .param(OAUTH2_PARAMETER_CLIENT_SECRET, getConfig().getClientSecret())
                     .param(OAUTH2_PARAMETER_REDIRECT_URI, session.getContext().getUri().getAbsolutePath().toString())
                     .param(OAUTH2_PARAMETER_GRANT_TYPE, OAUTH2_GRANT_TYPE_AUTHORIZATION_CODE);
         }
