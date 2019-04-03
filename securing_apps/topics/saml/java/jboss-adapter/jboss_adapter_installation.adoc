@@ -136,44 +136,7 @@ Otherwise this configuration is optional.
     </security-domains>
 ----
 
-For example, if you have a JAX-RS service that is an EJB within your WEB-INF/classes directory,
-you'll want to annotate it with the `@SecurityDomain` annotation as follows:
-
-[source,java]
-----
-
-import org.jboss.ejb3.annotation.SecurityDomain;
-import org.jboss.resteasy.annotations.cache.NoCache;
-
-import javax.annotation.security.RolesAllowed;
-import javax.ejb.EJB;
-import javax.ejb.Stateless;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import java.util.ArrayList;
-import java.util.List;
-
-@Path("customers")
-@Stateless
-@SecurityDomain("keycloak")
-public class CustomerService {
-
-    @EJB
-    CustomerDB db;
-
-    @GET
-    @Produces("application/json")
-    @NoCache
-    @RolesAllowed("db_user")
-    public List<String> getCustomers() {
-        return db.getCustomers();
-    }
-}
-----
-
-We hope to improve our integration in the future so that you don't have to specify the
-`@SecurityDomain` annotation when you want to propagate a keycloak security context to the EJB tier.
+The security context is propagated to the EJB tier automatically.
 
 ===== JBoss SSO
 
