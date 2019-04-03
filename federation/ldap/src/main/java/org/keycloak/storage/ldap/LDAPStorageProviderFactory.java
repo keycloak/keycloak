@@ -359,9 +359,26 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
                 }
             }
         } else {
+            
+            String ldapAttribute;
+            
+            String vendor = ldapConfig.getVendor(); // This should be an enum
+            
+            if(vendor == null) { // Don't know if null is possible, but let's be safe
+                vendor = "Unknown";
+            }
+            
+            switch(vendor) {
+                case LDAPConstants.VENDOR_RHDS: 
+                    ldapAttribute = LDAPConstants.GIVENNAME;
+                    break;
+                default:
+                    ldapAttribute = LDAPConstants.CN;
+            }
+            
             mapperModel = KeycloakModelUtils.createComponentModel("first name", model.getId(), UserAttributeLDAPStorageMapperFactory.PROVIDER_ID,LDAPStorageMapper.class.getName(),
                     UserAttributeLDAPStorageMapper.USER_MODEL_ATTRIBUTE, UserModel.FIRST_NAME,
-                    UserAttributeLDAPStorageMapper.LDAP_ATTRIBUTE, LDAPConstants.CN,
+                    UserAttributeLDAPStorageMapper.LDAP_ATTRIBUTE, ldapAttribute,
                     UserAttributeLDAPStorageMapper.READ_ONLY, readOnly,
                     UserAttributeLDAPStorageMapper.ALWAYS_READ_VALUE_FROM_LDAP, alwaysReadValueFromLDAP,
                     UserAttributeLDAPStorageMapper.IS_MANDATORY_IN_LDAP, "true");
