@@ -89,7 +89,7 @@ public class KeycloakDeployment {
     protected int tokenMinimumTimeToLive;
     protected int minTimeBetweenJwksRequests;
     protected int publicKeyCacheTtl;
-    private PolicyEnforcer policyEnforcer;
+    protected Callable<PolicyEnforcer> policyEnforcer;
 
     // https://tools.ietf.org/html/rfc7636
     protected boolean pkce = false;
@@ -464,12 +464,19 @@ public class KeycloakDeployment {
         this.publicKeyCacheTtl = publicKeyCacheTtl;
     }
 
-    public void setPolicyEnforcer(PolicyEnforcer policyEnforcer) {
+    public void setPolicyEnforcer(Callable<PolicyEnforcer> policyEnforcer) {
         this.policyEnforcer = policyEnforcer;
     }
 
     public PolicyEnforcer getPolicyEnforcer() {
-        return policyEnforcer;
+        if (policyEnforcer == null) {
+            return null;
+        }
+        try {
+            return policyEnforcer.call();
+        } catch (Exception cause) {
+            throw new RuntimeException("Failed to obtain policy enforcer", cause);
+        }
     }
 
     // https://tools.ietf.org/html/rfc7636
