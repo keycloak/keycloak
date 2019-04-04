@@ -110,7 +110,7 @@ public class KeycloakAdapterPolicyEnforcer extends AbstractPolicyEnforcer {
                 response.setHeader("WWW-Authenticate", new StringBuilder("UMA realm=\"").append(authzClient.getConfiguration().getRealm()).append("\"").append(",as_uri=\"")
                         .append(authzClient.getServerConfiguration().getIssuer()).append("\"").append(",ticket=\"").append(ticket).append("\"").toString());
             } else {
-                response.setStatus(SC_MOVED_TEMPORARILY);
+                response.setStatus(SC_FORBIDDEN);
             }
 
             LOGGER.debug("Sending challenge");

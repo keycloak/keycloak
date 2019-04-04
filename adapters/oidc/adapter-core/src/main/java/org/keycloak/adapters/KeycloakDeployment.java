@@ -19,6 +19,14 @@ package org.keycloak.adapters;
 
 import static org.keycloak.common.enums.RelativeUrlsUsed.ALWAYS;
 import static org.keycloak.common.enums.RelativeUrlsUsed.NEVER;
+import static org.keycloak.constants.ServiceUrlConstants.ACCOUNT_SERVICE_PATH;
+import static org.keycloak.constants.ServiceUrlConstants.AUTH_PATH;
+import static org.keycloak.constants.ServiceUrlConstants.CLIENTS_MANAGEMENT_REGISTER_NODE_PATH;
+import static org.keycloak.constants.ServiceUrlConstants.CLIENTS_MANAGEMENT_UNREGISTER_NODE_PATH;
+import static org.keycloak.constants.ServiceUrlConstants.JWKS_URL;
+import static org.keycloak.constants.ServiceUrlConstants.REALM_INFO_PATH;
+import static org.keycloak.constants.ServiceUrlConstants.TOKEN_PATH;
+import static org.keycloak.constants.ServiceUrlConstants.TOKEN_SERVICE_LOGOUT_PATH;
 
 import org.apache.http.client.HttpClient;
 import org.jboss.logging.Logger;
@@ -156,47 +164,47 @@ public class KeycloakDeployment {
     }
 
     /**
-     * @param authUrlBuilder absolute URI
+     * @param baseAuthUrlBuilder absolute URI
      * @param authBackchannelUrlBuilder absolute URI
      */
-    protected void resolveUrls(KeycloakUriBuilder authUrlBuilder, KeycloakUriBuilder authBackchannelUrlBuilder) {
+    protected void resolveUrls(KeycloakUriBuilder baseAuthUrlBuilder, KeycloakUriBuilder authBackchannelUrlBuilder) {
         if (log.isDebugEnabled()) {
             log.debug("resolveUrls");
         }
 
-        // Determine the internal communication authorisation Uri
-        KeycloakUriBuilder authUriBuilder = authBackchannelUrlBuilder == null ? authUrlBuilder : authBackchannelUrlBuilder;
+        // Determine the internal communication authorisation Url
+        KeycloakUriBuilder authServerUrlBuilder = authBackchannelUrlBuilder == null ? baseAuthUrlBuilder : authBackchannelUrlBuilder;
 
         // Base Authorisation Url: realm and redirects
-        authServerBaseUrl = authUrlBuilder.build().toString();
+        authServerBaseUrl = baseAuthUrlBuilder.build().toString();
         log.debug("AuthServerBaseUrl: "+authServerBaseUrl);
 
-        realmInfoUrl = authUrlBuilder.clone().path(ServiceUrlConstants.REALM_INFO_PATH).build(getRealm()).toString();
+        realmInfoUrl = baseAuthUrlBuilder.clone().path(REALM_INFO_PATH).build(getRealm()).toString();
         log.debug("RealmInfoUrl: "+realmInfoUrl);
 
-        String login = authUriBuilder.clone().path(ServiceUrlConstants.AUTH_PATH).build(getRealm()).toString();
+        String login = baseAuthUrlBuilder.clone().path(AUTH_PATH).build(getRealm()).toString();
         log.debug("Login: "+login);
 
         authUrl = KeycloakUriBuilder.fromUri(login);
 
         // The clients will use the /token endpoint to retrieve and validate a token.
         // Internal clients could consume the internal Keycloak endpoint
-        tokenUrl = authUriBuilder.clone().path(ServiceUrlConstants.TOKEN_PATH).build(getRealm()).toString();
+        tokenUrl = authServerUrlBuilder.clone().path(TOKEN_PATH).build(getRealm()).toString();
         log.debug("TokenURL: "+tokenUrl);
 
-        logoutUrl = KeycloakUriBuilder.fromUri(authUriBuilder.clone().path(ServiceUrlConstants.TOKEN_SERVICE_LOGOUT_PATH).build(getRealm()).toString());
+        logoutUrl = KeycloakUriBuilder.fromUri(baseAuthUrlBuilder.clone().path(TOKEN_SERVICE_LOGOUT_PATH).build(getRealm()).toString());
         log.debug("LogOutUrl: "+logoutUrl);
 
-        accountUrl = authUriBuilder.clone().path(ServiceUrlConstants.ACCOUNT_SERVICE_PATH).build(getRealm()).toString();
+        accountUrl = baseAuthUrlBuilder.clone().path(ACCOUNT_SERVICE_PATH).build(getRealm()).toString();
         log.debug("AccountUrl: "+accountUrl);
 
-        registerNodeUrl = authUriBuilder.clone().path(ServiceUrlConstants.CLIENTS_MANAGEMENT_REGISTER_NODE_PATH).build(getRealm()).toString();
+        registerNodeUrl = authServerUrlBuilder.clone().path(CLIENTS_MANAGEMENT_REGISTER_NODE_PATH).build(getRealm()).toString();
         log.debug("RegisterNodeUrl: "+registerNodeUrl);
 
-        unregisterNodeUrl = authUriBuilder.clone().path(ServiceUrlConstants.CLIENTS_MANAGEMENT_UNREGISTER_NODE_PATH).build(getRealm()).toString();
+        unregisterNodeUrl = authServerUrlBuilder.clone().path(CLIENTS_MANAGEMENT_UNREGISTER_NODE_PATH).build(getRealm()).toString();
         log.debug("UnregisterNodeUrl: "+unregisterNodeUrl);
 
-        jwksUrl = authUriBuilder.clone().path(ServiceUrlConstants.JWKS_URL).build(getRealm()).toString();
+        jwksUrl = authServerUrlBuilder.clone().path(JWKS_URL).build(getRealm()).toString();
         log.debug("JwksUrl: "+jwksUrl);
     }
 
