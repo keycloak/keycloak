@@ -17,12 +17,17 @@
  */
 package org.keycloak.adapters.authorization;
 
+import static org.apache.http.HttpStatus.SC_FORBIDDEN;
+import static org.apache.http.HttpStatus.SC_MOVED_TEMPORARILY;
+import static org.apache.http.HttpStatus.SC_UNAUTHORIZED;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.http.HttpStatus;
 import org.jboss.logging.Logger;
 import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.adapters.KeycloakDeployment;
@@ -101,16 +106,14 @@ public class KeycloakAdapterPolicyEnforcer extends AbstractPolicyEnforcer {
             String ticket = getPermissionTicket(pathConfig, methodConfig, authzClient, httpFacade);
 
             if (ticket != null) {
-                response.setStatus(401);
+                response.setStatus(SC_UNAUTHORIZED);
                 response.setHeader("WWW-Authenticate", new StringBuilder("UMA realm=\"").append(authzClient.getConfiguration().getRealm()).append("\"").append(",as_uri=\"")
                         .append(authzClient.getServerConfiguration().getIssuer()).append("\"").append(",ticket=\"").append(ticket).append("\"").toString());
             } else {
-                response.setStatus(403);
+                response.setStatus(SC_MOVED_TEMPORARILY);
             }
 
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("Sending challenge");
-            }
+            LOGGER.debug("Sending challenge");
 
             return true;
         }
@@ -126,10 +129,10 @@ public class KeycloakAdapterPolicyEnforcer extends AbstractPolicyEnforcer {
         HttpFacade.Response response = facade.getResponse();
 
         if (accessDeniedPath != null) {
-            response.setStatus(302);
+            response.setStatus(SC_MOVED_TEMPORARILY);
             response.setHeader("Location", accessDeniedPath);
         } else {
-            response.sendError(403);
+            response.sendError(SC_FORBIDDEN);
         }
     }
 
@@ -172,8 +175,9 @@ public class KeycloakAdapterPolicyEnforcer extends AbstractPolicyEnforcer {
                 return AdapterTokenVerifier.verifyToken(authzResponse.getToken(), deployment);
             }
         } catch (AuthorizationDeniedException ignore) {
-            LOGGER.debug("Authorization denied", ignore);
+            LOGGER.debugf("Authorization denied: [%s]", ignore.getMessage());
         } catch (Exception e) {
+            LOGGER.error(e);
             throw new RuntimeException("Unexpected error during authorization request.", e);
         }
 
