@@ -53,7 +53,7 @@ public class ProtectedResource {
      * Creates a new resource.
      *
      * @param resource the resource data
-     * @return a {@link RegistrationResponse}
+     * @return a {@link ResourceRepresentation}
      */
     public ResourceRepresentation create(final ResourceRepresentation resource) {
         Callable<ResourceRepresentation> callable = new Callable<ResourceRepresentation>() {
@@ -76,7 +76,6 @@ public class ProtectedResource {
      * Updates a resource.
      *
      * @param resource the resource data
-     * @return a {@link RegistrationResponse}
      */
     public void update(final ResourceRepresentation resource) {
         if (resource.getId() == null) {

@@ -17,10 +17,13 @@
  */
 package org.keycloak.authorization.client;
 
+import static org.keycloak.util.JsonSerialization.writeValueAsPrettyString;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Objects;
 
+import org.jboss.logging.Logger;
 import org.keycloak.authorization.client.representation.ServerConfiguration;
 import org.keycloak.authorization.client.resource.AuthorizationResource;
 import org.keycloak.authorization.client.resource.ProtectionResource;
@@ -40,6 +43,7 @@ import org.keycloak.util.JsonSerialization;
  */
 public class AuthzClient {
 
+    private static Logger LOGGER = Logger.getLogger(AuthzClient.class);
     private final Http http;
     private TokenCallable patSupplier;
 
@@ -108,7 +112,7 @@ public class AuthzClient {
      * @return a {@link ProtectionResource}
      */
     public ProtectionResource protection() {
-        return new ProtectionResource(this.http, this.serverConfiguration, configuration, createPatSupplier());
+        return new ProtectionResource(http, serverConfiguration, configuration, createPatSupplier());
     }
 
     /**
@@ -118,7 +122,7 @@ public class AuthzClient {
      * @return a {@link ProtectionResource}
      */
     public ProtectionResource protection(final String accessToken) {
-        return new ProtectionResource(this.http, this.serverConfiguration, configuration, new TokenCallable(http, configuration, serverConfiguration) {
+        return new ProtectionResource(http, serverConfiguration, configuration, new TokenCallable(http, configuration, serverConfiguration) {
             @Override
             public String call() {
                 return accessToken;
@@ -139,7 +143,7 @@ public class AuthzClient {
      * @return a {@link ProtectionResource}
      */
     public ProtectionResource protection(String userName, String password) {
-        return new ProtectionResource(this.http, this.serverConfiguration, configuration, createPatSupplier(userName, password));
+        return new ProtectionResource(http, serverConfiguration, configuration, createPatSupplier(userName, password));
     }
 
     /**
@@ -148,7 +152,7 @@ public class AuthzClient {
      * @return a {@link AuthorizationResource}
      */
     public AuthorizationResource authorization() {
-        return new AuthorizationResource(configuration, serverConfiguration, this.http, null);
+        return new AuthorizationResource(configuration, serverConfiguration, http, null);
     }
 
     /**
@@ -158,7 +162,7 @@ public class AuthzClient {
      * @return a {@link AuthorizationResource}
      */
     public AuthorizationResource authorization(final String accessToken) {
-        return new AuthorizationResource(configuration, serverConfiguration, this.http, new TokenCallable(http, configuration, serverConfiguration) {
+        return new AuthorizationResource(configuration, serverConfiguration, http, new TokenCallable(http, configuration, serverConfiguration) {
             @Override
             public String call() {
                 return accessToken;
@@ -179,7 +183,7 @@ public class AuthzClient {
      * @return a {@link AuthorizationResource}
      */
     public AuthorizationResource authorization(final String userName, final String password) {
-        return new AuthorizationResource(configuration, serverConfiguration, this.http, createRefreshableAccessTokenSupplier(userName, password));
+        return new AuthorizationResource(configuration, serverConfiguration, http, createRefreshableAccessTokenSupplier(userName, password));
     }
 
     /**
@@ -188,7 +192,7 @@ public class AuthzClient {
      * @return an {@link AccessTokenResponse}
      */
     public AccessTokenResponse obtainAccessToken() {
-        return this.http.<AccessTokenResponse>post(this.serverConfiguration.getTokenEndpoint())
+        return this.http.<AccessTokenResponse>post(serverConfiguration.getTokenEndpoint())
                 .authentication()
                     .client()
                 .response()
@@ -202,7 +206,7 @@ public class AuthzClient {
      * @return an {@link AccessTokenResponse}
      */
     public AccessTokenResponse obtainAccessToken(String userName, String password) {
-        return this.http.<AccessTokenResponse>post(this.serverConfiguration.getTokenEndpoint())
+        return this.http.<AccessTokenResponse>post(serverConfiguration.getTokenEndpoint())
                 .authentication()
                     .oauth2ResourceOwnerPassword(userName, password)
                 .response()
@@ -221,6 +225,8 @@ public class AuthzClient {
 
     /**
      * Obtains the client configuration
+     * If AuthServerBackchannelUrl is not empty, then use it instead of AuthServerUrl.
+     * This would support the authentication via alternate hostname (ie. internal server name)
      *
      * @return the {@link Configuration}
      */
@@ -228,32 +234,35 @@ public class AuthzClient {
         return this.configuration;
     }
 
-    private AuthzClient(Configuration configuration, ClientAuthenticator authenticator) {
-        if (configuration == null) {
+    private AuthzClient(Configuration authConfiguration, ClientAuthenticator authenticator) {
+        if (authConfiguration == null) {
             throw new IllegalArgumentException("Client configuration can not be null.");
         }
 
-        String configurationUrl = configuration.getAuthServerUrl();
+        String configurationUrl = authConfiguration.getAuthServerBackchannelUrl() != null ? authConfiguration.getAuthServerBackchannelUrl() : authConfiguration.getAuthServerUrl();
 
         if (configurationUrl == null) {
             throw new IllegalArgumentException("Configuration URL can not be null.");
         }
 
-        configurationUrl += "/realms/" + configuration.getRealm() + "/.well-known/uma2-configuration";
+        configurationUrl += "/realms/" + authConfiguration.getRealm() + "/.well-known/uma2-configuration";
 
-        this.configuration = configuration;
+        configuration = authConfiguration;
 
-        this.http = new Http(configuration, authenticator != null ? authenticator : configuration.getClientAuthenticator());
+        http = new Http(authConfiguration, authenticator != null ? authenticator : authConfiguration.getClientAuthenticator());
 
         try {
-            this.serverConfiguration = this.http.<ServerConfiguration>get(configurationUrl)
+            serverConfiguration = http.<ServerConfiguration>get(configurationUrl)
                     .response().json(ServerConfiguration.class)
                     .execute();
+
+            LOGGER.debug("ServerConfiguration: "+ writeValueAsPrettyString(serverConfiguration));
+
         } catch (Exception e) {
             throw new RuntimeException("Could not obtain configuration from server [" + configurationUrl + "].", e);
         }
 
-        this.http.setServerConfiguration(this.serverConfiguration);
+        http.setServerConfiguration(serverConfiguration);
     }
 
     private TokenCallable createPatSupplier(String userName, String password) {

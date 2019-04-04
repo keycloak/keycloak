@@ -17,6 +17,9 @@
  */
 package org.keycloak.adapters.authorization;
 
+import static java.util.Collections.singletonList;
+import static org.keycloak.representations.adapters.config.PolicyEnforcerConfig.EnforcementMode.DISABLED;
+
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -62,19 +65,21 @@ public class PolicyEnforcer {
     public PolicyEnforcer(KeycloakDeployment deployment, AdapterConfig adapterConfig) {
         this.deployment = deployment;
         this.enforcerConfig = adapterConfig.getPolicyEnforcerConfig();
-        Configuration configuration = new Configuration(adapterConfig.getAuthServerUrl(), adapterConfig.getRealm(), adapterConfig.getResource(), adapterConfig.getCredentials(), deployment.getClient());
-        this.authzClient = AuthzClient.create(configuration, new ClientAuthenticator() {
+        Configuration configuration = new Configuration(adapterConfig.getAuthServerUrl(), adapterConfig.getAuthServerBackchannelUrl(),
+            adapterConfig.getResource(), adapterConfig.getCredentials(), deployment.getClient(),
+            adapterConfig.getRealm());
+            authzClient = AuthzClient.create(configuration, new ClientAuthenticator() {
             @Override
             public void configureClientCredentials(Map<String, List<String>> requestParams, Map<String, String> requestHeaders) {
                 Map<String, String> formparams = new HashMap<>();
                 ClientCredentialsProviderUtils.setClientCredentials(PolicyEnforcer.this.deployment, requestHeaders, formparams);
                 for (Entry<String, String> param : formparams.entrySet()) {
-                    requestParams.put(param.getKey(), Arrays.asList(param.getValue()));
+                    requestParams.put(param.getKey(), singletonList(param.getValue()));
                 }
             }
         });
 
-        paths = configurePaths(this.authzClient.protection().resource(), this.enforcerConfig);
+        paths = configurePaths(authzClient.protection().resource(), enforcerConfig);
         pathMatcher = new PathConfigMatcher(paths, enforcerConfig, authzClient);
 
         if (LOGGER.isDebugEnabled()) {
@@ -146,18 +151,18 @@ public class PolicyEnforcer {
         boolean loadPathsFromServer = true;
 
         for (PathConfig pathConfig : enforcerConfig.getPaths()) {
-            if (!PolicyEnforcerConfig.EnforcementMode.DISABLED.equals(pathConfig.getEnforcementMode())) {
+            if (pathConfig.getEnforcementMode() != DISABLED) {
                 loadPathsFromServer = false;
                 break;
             }
         }
 
+        LOGGER.debug("LoadPathFromServer : "+loadPathsFromServer);
+
         if (loadPathsFromServer) {
             LOGGER.info("No path provided in configuration.");
             Map<String, PathConfig> paths = configureAllPathsForResourceServer(protectedResource);
-
             paths.putAll(configureDefinedPaths(protectedResource, enforcerConfig));
-
             return paths;
         } else {
             LOGGER.info("Paths provided in configuration.");

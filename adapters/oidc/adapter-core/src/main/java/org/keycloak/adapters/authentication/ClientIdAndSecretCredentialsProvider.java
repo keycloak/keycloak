@@ -17,6 +17,8 @@
 
 package org.keycloak.adapters.authentication;
 
+import static org.keycloak.OAuth2Constants.CLIENT_ID;
+
 import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.adapters.KeycloakDeployment;
@@ -60,7 +62,7 @@ public class ClientIdAndSecretCredentialsProvider implements ClientCredentialsPr
                 logger.warnf("Client '%s' doesn't have secret available", clientId);
             }
         } else {
-            formParams.put(OAuth2Constants.CLIENT_ID, clientId);
+            formParams.put(CLIENT_ID, clientId);
         }
     }
 }
