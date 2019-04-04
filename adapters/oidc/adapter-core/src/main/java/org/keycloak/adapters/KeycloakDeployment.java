@@ -155,8 +155,6 @@ public class KeycloakDeployment {
         }
     }
 
-
-
     /**
      * @param authUrlBuilder absolute URI
      * @param authBackchannelUrlBuilder absolute URI
