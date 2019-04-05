@@ -214,15 +214,16 @@ public class FuseAdminAdapterTest extends AbstractExampleAdapterTest {
 
     @Test
     public void jmxLoginTest() throws Exception {
-        try {
+//        try {
             log.debug("Going to set JMX authentication to keycloak");
             setJMXAuthentication("keycloak", "password");
             ObjectName mbean = new ObjectName("org.apache.karaf:type=config,name=root");
             //invalid credentials
-            try (JMXConnector jmxConnector = getJMXConnector("mary", "password1")) {
+            try (JMXConnector jmxConnector = getJMXConnector(10, TimeUnit.SECONDS, "mary", "password1")) {
                 jmxConnector.getMBeanServerConnection();
                 Assert.fail();
-            } catch (SecurityException expected) {
+            } catch (TimeoutException expected) {
+                assertThat(expected.getCause().toString(), containsString("java.lang.SecurityException: Authentication failed"));
             }
             //no role
             try (JMXConnector jmxConnector = getJMXConnector("mary", "password")) {
@@ -242,10 +243,10 @@ public class FuseAdminAdapterTest extends AbstractExampleAdapterTest {
                 assertJmxInvoke(true, connection, mbean, "listProperties", new Object [] {""}, new String [] {String.class.getName()});
                 assertJmxInvoke(true, connection, mbean, "setProperty", new Object [] {"", "x", "y"}, new String [] {String.class.getName(), String.class.getName(), String.class.getName()});
             }
-        } finally {
+//        } finally {
             log.debug("Going to set JMX authentication back to karaf");
             setJMXAuthentication("karaf", "admin");
-        }
+//        }
     }
 
     protected String assertCommand(String user, String password, String command, Result result) throws Exception, IOException {
@@ -321,7 +322,7 @@ public class FuseAdminAdapterTest extends AbstractExampleAdapterTest {
     protected void setJMXAuthentication(String realm, String password) throws Exception {
         assertCommand("admin", "password", "config:edit org.apache.karaf.management; config:propset jmxRealm " + realm + "; config:update", Result.OK);
         try (JMXConnector jmxConnector = getJMXConnector("admin", password)) {
-            getMBeanServerConnection(2, TimeUnit.MINUTES, jmxConnector);
+            jmxConnector.getMBeanServerConnection();
         }
         log.debug("Succesfully set JMX Authentication to " + realm);
     }
@@ -338,12 +339,17 @@ public class FuseAdminAdapterTest extends AbstractExampleAdapterTest {
         }
     }
 
-    private MBeanServerConnection getMBeanServerConnection(long timeout, final TimeUnit unit, JMXConnector connector) throws Exception {
+    private JMXConnector getJMXConnector(String username, String password) throws Exception {
+        return getJMXConnector(2, TimeUnit.MINUTES, username, password);
+    }
+
+    private JMXConnector getJMXConnector(long timeout, TimeUnit unit, String username, String password) throws Exception {
         Exception lastException = null;
         long timeoutMillis = System.currentTimeMillis() + unit.toMillis(timeout);
         while (System.currentTimeMillis() < timeoutMillis) {
             try {
-                return connector.getMBeanServerConnection();
+                Map<String, ?> env = Collections.singletonMap(JMXConnector.CREDENTIALS, new String[] { username, password });
+                return JMXConnectorFactory.connect(new JMXServiceURL(getJmxServiceUrl()), env);
             } catch (Exception ex) {
                 lastException = ex;
                 Thread.sleep(500);
@@ -354,11 +360,6 @@ public class FuseAdminAdapterTest extends AbstractExampleAdapterTest {
         TimeoutException timeoutException = new TimeoutException();
         timeoutException.initCause(lastException);
         throw timeoutException;
-    }
-
-    private JMXConnector getJMXConnector(String userName, String password) throws Exception {
-        Map<String, ?> env = Collections.singletonMap(JMXConnector.CREDENTIALS, new String[] { userName, password });
-        return JMXConnectorFactory.connect(new JMXServiceURL(getJmxServiceUrl()), env);
     }
 
     private String getJmxServiceUrl() throws Exception {
