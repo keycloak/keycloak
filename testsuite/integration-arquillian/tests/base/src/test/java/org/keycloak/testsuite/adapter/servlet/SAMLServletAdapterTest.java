@@ -971,14 +971,14 @@ public class SAMLServletAdapterTest extends AbstractServletsAdapterTest {
           .login().user(user).build()
           .processSamlResponse(Binding.POST)
             .transformString(s -> {
-                Assert.assertThat(s, org.hamcrest.Matchers.containsString(">bburke@redhat.com.additional.domain<"));
+                Assert.assertThat(s, containsString(">bburke@redhat.com.additional.domain<"));
                 s = s.replaceAll("bburke@redhat.com.additional.domain", "bburke@redhat.com<!-- comment -->.additional.domain");
                 return s;
             })
             .build()
           .executeAndTransform(resp -> EntityUtils.toString(resp.getEntity()));
 
-        Assert.assertThat(resultPage, org.hamcrest.Matchers.containsString("principal=bburke@redhat.com.additional.domain"));
+        Assert.assertThat(resultPage, containsString("principal=bburke@redhat.com.additional.domain"));
     }
 
     @Test
@@ -992,14 +992,17 @@ public class SAMLServletAdapterTest extends AbstractServletsAdapterTest {
           .login().user(user).build()
           .processSamlResponse(Binding.POST)
             .transformString(s -> {
-                Assert.assertThat(s, org.hamcrest.Matchers.containsString(">bburke@redhat.com.additional.domain<"));
+                Assert.assertThat(s, containsString(">bburke@redhat.com.additional.domain<"));
                 s = s.replaceAll("bburke@redhat.com.additional.domain", "bburke@redhat.com");
                 return s;
             })
             .build()
           .executeAndTransform(resp -> EntityUtils.toString(resp.getEntity()));
 
-        Assert.assertThat(resultPage, org.hamcrest.Matchers.containsString("INVALID_SIGNATURE"));
+        Assert.assertThat(resultPage, anyOf(
+                containsString("INVALID_SIGNATURE"),
+                containsString("Error 403: SRVE0295E: Error reported: 403") //WAS
+        ));
     }
 
     @Test
