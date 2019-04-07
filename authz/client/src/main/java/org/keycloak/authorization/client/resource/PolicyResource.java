@@ -128,7 +128,6 @@ public class PolicyResource {
     /**
      * Queries the server for permission matching the given parameters.
      *
-     * @param id the permission id
      * @param name the name of the permission
      * @param scope the scope associated with the permission
      * @param firstResult the position of the first resource to retrieve

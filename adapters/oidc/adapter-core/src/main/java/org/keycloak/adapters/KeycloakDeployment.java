@@ -17,6 +17,17 @@
 
 package org.keycloak.adapters;
 
+import static org.keycloak.common.enums.RelativeUrlsUsed.ALWAYS;
+import static org.keycloak.common.enums.RelativeUrlsUsed.NEVER;
+import static org.keycloak.constants.ServiceUrlConstants.ACCOUNT_SERVICE_PATH;
+import static org.keycloak.constants.ServiceUrlConstants.AUTH_PATH;
+import static org.keycloak.constants.ServiceUrlConstants.CLIENTS_MANAGEMENT_REGISTER_NODE_PATH;
+import static org.keycloak.constants.ServiceUrlConstants.CLIENTS_MANAGEMENT_UNREGISTER_NODE_PATH;
+import static org.keycloak.constants.ServiceUrlConstants.JWKS_URL;
+import static org.keycloak.constants.ServiceUrlConstants.REALM_INFO_PATH;
+import static org.keycloak.constants.ServiceUrlConstants.TOKEN_PATH;
+import static org.keycloak.constants.ServiceUrlConstants.TOKEN_SERVICE_LOGOUT_PATH;
+
 import org.apache.http.client.HttpClient;
 import org.jboss.logging.Logger;
 import org.keycloak.adapters.authentication.ClientCredentialsProvider;
@@ -48,6 +59,7 @@ public class KeycloakDeployment {
     protected String realm;
     protected PublicKeyLocator publicKeyLocator;
     protected String authServerBaseUrl;
+    protected String authServerBackchannelUrl;
     protected String realmInfoUrl;
     protected KeycloakUriBuilder authUrl;
     protected String tokenUrl;
@@ -89,7 +101,7 @@ public class KeycloakDeployment {
     protected int tokenMinimumTimeToLive;
     protected int minTimeBetweenJwksRequests;
     protected int publicKeyCacheTtl;
-    private PolicyEnforcer policyEnforcer;
+    protected Callable<PolicyEnforcer> policyEnforcer;
 
     // https://tools.ietf.org/html/rfc7636
     protected boolean pkce = false;
@@ -138,37 +150,70 @@ public class KeycloakDeployment {
         URI authServerUri = URI.create(authServerBaseUrl);
 
         if (authServerUri.getHost() == null) {
-            relativeUrls = RelativeUrlsUsed.ALWAYS;
+            relativeUrls = ALWAYS;
         } else {
             // We have absolute URI in config
-            relativeUrls = RelativeUrlsUsed.NEVER;
+            relativeUrls = NEVER;
             KeycloakUriBuilder serverBuilder = KeycloakUriBuilder.fromUri(authServerBaseUrl);
-            resolveUrls(serverBuilder);
+            if (config.getAuthServerBackchannelUrl() != null) {
+                KeycloakUriBuilder authBackchannelUrlBuilder = KeycloakUriBuilder.fromUri(config.getAuthServerBackchannelUrl());
+                resolveUrls(serverBuilder, authBackchannelUrlBuilder);
+            } else
+                resolveUrls(serverBuilder);
         }
     }
 
+    /**
+     * @param baseAuthUrlBuilder absolute URI
+     * @param authBackchannelUrlBuilder absolute URI
+     */
+    protected void resolveUrls(KeycloakUriBuilder baseAuthUrlBuilder, KeycloakUriBuilder authBackchannelUrlBuilder) {
+        if (log.isDebugEnabled()) {
+            log.debug("resolveUrls");
+        }
+
+        // Determine the internal communication authorisation Url
+        KeycloakUriBuilder authServerUrlBuilder = authBackchannelUrlBuilder == null ? baseAuthUrlBuilder : authBackchannelUrlBuilder;
+
+        // Base Authorisation Url: realm and redirects
+        authServerBaseUrl = baseAuthUrlBuilder.build().toString();
+        log.debug("AuthServerBaseUrl: "+authServerBaseUrl);
+
+        realmInfoUrl = baseAuthUrlBuilder.clone().path(REALM_INFO_PATH).build(getRealm()).toString();
+        log.debug("RealmInfoUrl: "+realmInfoUrl);
+
+        String login = baseAuthUrlBuilder.clone().path(AUTH_PATH).build(getRealm()).toString();
+        log.debug("Login: "+login);
+
+        authUrl = KeycloakUriBuilder.fromUri(login);
+
+        // The clients will use the /token endpoint to retrieve and validate a token.
+        // Internal clients could consume the internal Keycloak endpoint
+        tokenUrl = authServerUrlBuilder.clone().path(TOKEN_PATH).build(getRealm()).toString();
+        log.debug("TokenURL: "+tokenUrl);
+
+        logoutUrl = KeycloakUriBuilder.fromUri(baseAuthUrlBuilder.clone().path(TOKEN_SERVICE_LOGOUT_PATH).build(getRealm()).toString());
+        log.debug("LogOutUrl: "+logoutUrl);
+
+        accountUrl = baseAuthUrlBuilder.clone().path(ACCOUNT_SERVICE_PATH).build(getRealm()).toString();
+        log.debug("AccountUrl: "+accountUrl);
+
+        registerNodeUrl = authServerUrlBuilder.clone().path(CLIENTS_MANAGEMENT_REGISTER_NODE_PATH).build(getRealm()).toString();
+        log.debug("RegisterNodeUrl: "+registerNodeUrl);
+
+        unregisterNodeUrl = authServerUrlBuilder.clone().path(CLIENTS_MANAGEMENT_UNREGISTER_NODE_PATH).build(getRealm()).toString();
+        log.debug("UnregisterNodeUrl: "+unregisterNodeUrl);
+
+        jwksUrl = authServerUrlBuilder.clone().path(JWKS_URL).build(getRealm()).toString();
+        log.debug("JwksUrl: "+jwksUrl);
+    }
 
 
     /**
      * @param authUrlBuilder absolute URI
      */
     protected void resolveUrls(KeycloakUriBuilder authUrlBuilder) {
-        if (log.isDebugEnabled()) {
-            log.debug("resolveUrls");
-        }
-
-        authServerBaseUrl = authUrlBuilder.build().toString();
-
-        String login = authUrlBuilder.clone().path(ServiceUrlConstants.AUTH_PATH).build(getRealm()).toString();
-        authUrl = KeycloakUriBuilder.fromUri(login);
-        realmInfoUrl = authUrlBuilder.clone().path(ServiceUrlConstants.REALM_INFO_PATH).build(getRealm()).toString();
-
-        tokenUrl = authUrlBuilder.clone().path(ServiceUrlConstants.TOKEN_PATH).build(getRealm()).toString();
-        logoutUrl = KeycloakUriBuilder.fromUri(authUrlBuilder.clone().path(ServiceUrlConstants.TOKEN_SERVICE_LOGOUT_PATH).build(getRealm()).toString());
-        accountUrl = authUrlBuilder.clone().path(ServiceUrlConstants.ACCOUNT_SERVICE_PATH).build(getRealm()).toString();
-        registerNodeUrl = authUrlBuilder.clone().path(ServiceUrlConstants.CLIENTS_MANAGEMENT_REGISTER_NODE_PATH).build(getRealm()).toString();
-        unregisterNodeUrl = authUrlBuilder.clone().path(ServiceUrlConstants.CLIENTS_MANAGEMENT_UNREGISTER_NODE_PATH).build(getRealm()).toString();
-        jwksUrl = authUrlBuilder.clone().path(ServiceUrlConstants.JWKS_URL).build(getRealm()).toString();
+       resolveUrls(authUrlBuilder, null);
     }
 
     public RelativeUrlsUsed getRelativeUrls() {
@@ -464,12 +509,19 @@ public class KeycloakDeployment {
         this.publicKeyCacheTtl = publicKeyCacheTtl;
     }
 
-    public void setPolicyEnforcer(PolicyEnforcer policyEnforcer) {
+    public void setPolicyEnforcer(Callable<PolicyEnforcer> policyEnforcer) {
         this.policyEnforcer = policyEnforcer;
     }
 
     public PolicyEnforcer getPolicyEnforcer() {
-        return policyEnforcer;
+        if (policyEnforcer == null) {
+            return null;
+        }
+        try {
+            return policyEnforcer.call();
+        } catch (Exception cause) {
+            throw new RuntimeException("Failed to obtain policy enforcer", cause);
+        }
     }
 
     // https://tools.ietf.org/html/rfc7636
@@ -515,5 +567,13 @@ public class KeycloakDeployment {
 
     public void setClient(Callable<HttpClient> callable) {
         client = callable;
+    }
+
+    public String getAuthServerBackchannelUrl() {
+        return authServerBackchannelUrl;
+    }
+
+    public void setAuthServerBackchannelUrl(String authServerBackchannelUrl) {
+        this.authServerBackchannelUrl = authServerBackchannelUrl;
     }
 }

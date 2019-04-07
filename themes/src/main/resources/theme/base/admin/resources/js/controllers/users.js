@@ -1690,6 +1690,10 @@ module.controller('LDAPMapperCreateCtrl', function($scope, realm, provider, mapp
         $scope.mapper.providerType = 'org.keycloak.storage.ldap.mappers.LDAPStorageMapper';
         $scope.mapper.parentId = provider.id;
 
+        if ($scope.mapper.config && $scope.mapper.config["role"] && !Array.isArray($scope.mapper.config["role"])) {
+            $scope.mapper.config["role"] = [$scope.mapper.config["role"]];
+        }
+
         Components.save({realm: realm.realm}, $scope.mapper,  function (data, headers) {
             var l = headers().location;
             var id = l.substring(l.lastIndexOf("/") + 1);

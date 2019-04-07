@@ -17,10 +17,14 @@
  */
 package org.keycloak.authorization.client.resource;
 
+import static org.keycloak.util.JsonSerialization.writeValueAsPrettyString;
+
+import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.Callable;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import org.jboss.logging.Logger;
 import org.keycloak.authorization.client.Configuration;
 import org.keycloak.authorization.client.representation.ServerConfiguration;
 import org.keycloak.authorization.client.util.Http;
@@ -37,6 +41,7 @@ import org.keycloak.util.JsonSerialization;
  */
 public class ProtectedResource {
 
+    private static final Logger LOGGER = Logger.getLogger(ProtectedResource.class);
     private final Http http;
     private ServerConfiguration serverConfiguration;
     private final Configuration configuration;
@@ -53,7 +58,7 @@ public class ProtectedResource {
      * Creates a new resource.
      *
      * @param resource the resource data
-     * @return a {@link RegistrationResponse}
+     * @return a {@link ResourceRepresentation}
      */
     public ResourceRepresentation create(final ResourceRepresentation resource) {
         Callable<ResourceRepresentation> callable = new Callable<ResourceRepresentation>() {
@@ -76,7 +81,6 @@ public class ProtectedResource {
      * Updates a resource.
      *
      * @param resource the resource data
-     * @return a {@link RegistrationResponse}
      */
     public void update(final ResourceRepresentation resource) {
         if (resource.getId() == null) {
@@ -128,13 +132,7 @@ public class ProtectedResource {
      * @return a {@link ResourceRepresentation}
      */
     public ResourceRepresentation findByName(String name) {
-        List<ResourceRepresentation> representations = find(null, name, null, configuration.getResource(), null, null, false, true, null, null);
-
-        if (representations.isEmpty()) {
-            return null;
-        }
-
-        return representations.get(0);
+        return findByName(name, configuration.getResource());
     }
 
     /**
@@ -149,6 +147,17 @@ public class ProtectedResource {
 
         if (representations.isEmpty()) {
             return null;
+        }
+
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("Resources: " + representations.size());
+            for (ResourceRepresentation r : representations) {
+                try {
+                    LOGGER.debug("Resource: " + writeValueAsPrettyString(r));
+                } catch (IOException e) {
+                    LOGGER.error("Issue writing Json to String", e);
+                }
+            }
         }
 
         return representations.get(0);
@@ -257,18 +266,37 @@ public class ProtectedResource {
      * @param uri the resource uri
      */
     public List<ResourceRepresentation> findByUri(String uri) {
-        return find(null, null, uri, null, null, null, false, true, null, null);
+        return findByUri(uri, false);
     }
+
+    private List<ResourceRepresentation> findByUri(String uri, boolean matchingUri) {
+        List<ResourceRepresentation> resourceRepresentations = find(null, null, uri, null, null,
+            null, matchingUri, true, null, null);
+
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("Resources: "+resourceRepresentations.size());
+            for(ResourceRepresentation resourceRepresentation : resourceRepresentations) {
+                try {
+                    LOGGER.debug(JsonSerialization.writeValueAsPrettyString(resourceRepresentation));
+                } catch (IOException e) {
+                    LOGGER.error("Issue writing Json to String", e);
+                }
+            }
+        }
+
+        return resourceRepresentations;
+    }
+
 
     /**
      * Returns a list of resources that best matches the given {@code uri}. This method queries the server for resources whose
-     * {@link ResourceRepresentation#uri} best matches the given {@code uri}.
+     * {@link ResourceRepresentation#uris} best matches the given {@code uri}.
      *
      * @param uri the resource uri to match
      * @return a list of resources
      */
     public List<ResourceRepresentation> findByMatchingUri(String uri) {
-        return find(null, null, uri, null, null, null, true, true,null, null);
+        return findByUri(uri, true);
     }
 
     private HttpMethod createFindRequest(String id, String name, String uri, String owner, String type, String scope, boolean matchingUri, boolean deep, Integer firstResult, Integer maxResult) {

@@ -43,16 +43,18 @@ public class Configuration extends AdapterConfig {
 
     /**
      * Creates a new instance.
-     *
      * @param authServerUrl the server's URL. E.g.: http://{server}:{port}/auth.(not {@code null})
-     * @param realm the realm name (not {@code null})
+     * @param authServerBackchannelUrl the backchannel server's URL. E.g.: http://{internal-server}:{port}/auth.(not {@code null})
      * @param clientId the client id (not {@code null})
      * @param clientCredentials a map with the client credentials (not {@code null})
      * @param httpClient the {@link HttpClient} instance that should be used when sending requests to the server, or {@code null} if a default instance should be created
+     * @param realm the realm name (not {@code null})
      */
-    public Configuration(String authServerUrl, String realm, String clientId, Map<String, Object> clientCredentials, HttpClient httpClient) {
+    public Configuration(String authServerUrl, String authServerBackchannelUrl,
+        String clientId, Map<String, Object> clientCredentials, HttpClient httpClient, String realm) {
         this.authServerUrl = authServerUrl;
         setAuthServerUrl(authServerUrl);
+        setAuthServerBackchannelUrl(authServerBackchannelUrl);
         setRealm(realm);
         setResource(clientId);
         setCredentials(clientCredentials);
@@ -60,8 +62,8 @@ public class Configuration extends AdapterConfig {
     }
 
     public HttpClient getHttpClient() {
-        if (this.httpClient == null) {
-            this.httpClient = HttpClients.createDefault();
+        if (httpClient == null) {
+            httpClient = HttpClients.createDefault();
         }
         return httpClient;
     }

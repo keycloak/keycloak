@@ -41,8 +41,6 @@
         <module>admin-access-app</module>
         <module>angular-product-app</module>
         <module>database-service</module>
-        <module>third-party</module>
-        <module>third-party-cdi</module>
         <module>service-account</module>
         <module>offline-access-app</module>
     </modules>

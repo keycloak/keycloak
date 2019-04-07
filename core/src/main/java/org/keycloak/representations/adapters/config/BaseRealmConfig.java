@@ -26,7 +26,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-@JsonPropertyOrder({"realm", "realm-public-key", "auth-server-url", "ssl-required"})
+@JsonPropertyOrder({"realm", "realm-public-key", "auth-server-url", "auth-server-backchannel-url", "ssl-required"})
 public class BaseRealmConfig {
     @JsonProperty("realm")
     protected String realm;
@@ -34,6 +34,8 @@ public class BaseRealmConfig {
     protected String realmKey;
     @JsonProperty("auth-server-url")
     protected String authServerUrl;
+    @JsonProperty("auth-server-backchannel-url")
+    protected String authServerBackchannelUrl;
     @JsonProperty("ssl-required")
     protected String sslRequired;
     @JsonProperty("confidential-port")
@@ -69,6 +71,14 @@ public class BaseRealmConfig {
 
     public void setAuthServerUrl(String authServerUrl) {
         this.authServerUrl = authServerUrl;
+    }
+
+    public String getAuthServerBackchannelUrl() {
+        return authServerBackchannelUrl;
+    }
+
+    public void setAuthServerBackchannelUrl(String authServerBackchannelUrl) {
+        this.authServerBackchannelUrl = authServerBackchannelUrl;
     }
 
     public int getConfidentialPort() {

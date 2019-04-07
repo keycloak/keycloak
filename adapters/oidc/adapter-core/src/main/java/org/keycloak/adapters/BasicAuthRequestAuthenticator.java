@@ -17,6 +17,13 @@
 
 package org.keycloak.adapters;
 
+import static org.keycloak.OAuth2Constants.GRANT_TYPE;
+import static org.keycloak.OAuth2Constants.PASSWORD;
+import static org.keycloak.adapters.spi.AuthOutcome.FAILED;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
@@ -68,7 +75,7 @@ public class BasicAuthRequestAuthenticator extends BearerTokenRequestAuthenticat
             return AuthOutcome.NOT_ATTEMPTED;
         }
 
-        AccessTokenResponse atr=null;        
+        AccessTokenResponse atr;
         try {
             String userpw=new String(Base64.decode(tokenString));
             int seperatorIndex = userpw.indexOf(":");
@@ -79,26 +86,23 @@ public class BasicAuthRequestAuthenticator extends BearerTokenRequestAuthenticat
         } catch (Exception e) {
             log.debug("Failed to obtain token", e);
             challenge = challengeResponse(exchange, OIDCAuthenticationError.Reason.INVALID_TOKEN, "no_token", e.getMessage());
-            return AuthOutcome.FAILED;
+            return FAILED;
         }
 
         return authenticateToken(exchange, atr.getToken());
     } 
  
     protected AccessTokenResponse getToken(String username, String password) throws Exception {
-    	AccessTokenResponse tokenResponse=null;
-    	HttpClient client = deployment.getClient();
+        log.debug("Getting Token for Username ["+username+"]");
+    	  HttpClient client = deployment.getClient();
+        HttpPost post = new HttpPost(deployment.getTokenUrl());
 
-        HttpPost post = new HttpPost(
-                KeycloakUriBuilder.fromUri(deployment.getAuthServerBaseUrl())
-                .path(ServiceUrlConstants.TOKEN_PATH).build(deployment.getRealm()));
-        java.util.List <NameValuePair> formparams = new java.util.ArrayList <NameValuePair>();
-        formparams.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.PASSWORD));
+        List <NameValuePair> formparams = new ArrayList<>();
+        formparams.add(new BasicNameValuePair(GRANT_TYPE, PASSWORD));
         formparams.add(new BasicNameValuePair("username", username));
         formparams.add(new BasicNameValuePair("password", password));
 
         ClientCredentialsProviderUtils.setClientCredentials(deployment, post, formparams);
-
         UrlEncodedFormEntity form = new UrlEncodedFormEntity(formparams, "UTF-8");
         post.setEntity(form);
 
@@ -107,21 +111,15 @@ public class BasicAuthRequestAuthenticator extends BearerTokenRequestAuthenticat
         HttpEntity entity = response.getEntity();
         if (status != 200) {
             EntityUtils.consumeQuietly(entity);
-            throw new java.io.IOException("Bad status: " + status);
+            throw new IOException("Bad status: " + status);
         }
         if (entity == null) {
-            throw new java.io.IOException("No Entity");
+            throw new IOException("No Entity");
         }
-        java.io.InputStream is = entity.getContent();
-        try {
-            tokenResponse = JsonSerialization.readValue(is, AccessTokenResponse.class);
-        } finally {
-            try {
-                is.close();
-            } catch (java.io.IOException ignored) { }
+
+        try(InputStream is = entity.getContent()) {
+            return JsonSerialization.readValue(is, AccessTokenResponse.class);
         }
-    	
-    	return (tokenResponse);
     }
 
 }
