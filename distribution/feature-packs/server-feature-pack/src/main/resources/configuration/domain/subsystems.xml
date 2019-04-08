@@ -37,9 +37,6 @@
         <subsystem>security.xml</subsystem>
         <subsystem>security-manager.xml</subsystem>
         <subsystem>transactions.xml</subsystem>
-        <subsystem>microprofile-config-smallrye.xml</subsystem>
-        <subsystem>microprofile-health-smallrye.xml</subsystem>
-        <subsystem>microprofile-metrics-smallrye.xml</subsystem>
         <subsystem>keycloak-undertow.xml</subsystem>
         <subsystem>keycloak-server.xml</subsystem>
     </subsystems>
@@ -67,9 +64,6 @@
         <subsystem>security.xml</subsystem>
         <subsystem>security-manager.xml</subsystem>
         <subsystem>transactions.xml</subsystem>
-        <subsystem>microprofile-config-smallrye.xml</subsystem>
-        <subsystem>microprofile-health-smallrye.xml</subsystem>
-        <subsystem>microprofile-metrics-smallrye.xml</subsystem>
         <subsystem supplement="ha">keycloak-undertow.xml</subsystem>
         <subsystem>keycloak-server.xml</subsystem>
     </subsystems>
