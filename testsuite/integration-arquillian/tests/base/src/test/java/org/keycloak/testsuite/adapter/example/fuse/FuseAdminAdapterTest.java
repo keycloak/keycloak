@@ -255,29 +255,32 @@ public class FuseAdminAdapterTest extends AbstractExampleAdapterTest {
 
         String output = getCommandOutput(user, password, command);
 
+        log.debug("Command: " + command + ", user: " + user + ", password: " + password + ", output: " + output);
+
         switch(result) {
-        case OK:
-            Assert.assertThat(output,
+            case OK:
+                Assert.assertThat(output,
                     not(anyOf(
-                            containsString("Insufficient credentials"), 
-                            containsString("Command not found"),
-                            containsString("Authentication failed"))
+                        containsString("Insufficient credentials"), 
+                        containsString("Command not found"),
+                        containsString("Error executing command"),
+                        containsString("Authentication failed"))
                     ));
-            break;
-        case NOT_FOUND:
-            Assert.assertThat(output,
-                    containsString("Command not found"));
-            break;
-        case NO_CREDENTIALS:
-            Assert.assertThat(output,
-                    containsString("Insufficient credentials"));
-            break;
-        case NO_ROLES:
-            Assert.assertThat(output,
-                    containsString("Current user has no associated roles"));
-            break;
-        default:
-            Assert.fail("Unexpected enum value: " + result);
+                break;
+            case NOT_FOUND:
+                Assert.assertThat(output,
+                        containsString("Command not found"));
+                break;
+            case NO_CREDENTIALS:
+                Assert.assertThat(output,
+                        containsString("Insufficient credentials"));
+                break;
+            case NO_ROLES:
+                Assert.assertThat(output,
+                        containsString("Current user has no associated roles"));
+                break;
+            default:
+                Assert.fail("Unexpected enum value: " + result);
         }
 
         return output;
@@ -320,7 +323,13 @@ public class FuseAdminAdapterTest extends AbstractExampleAdapterTest {
     }
 
     protected void setJMXAuthentication(String realm, String password) throws Exception {
-        assertCommand("admin", "password", "config:edit org.apache.karaf.management; config:propset jmxRealm " + realm + "; config:update", Result.OK);
+        String command;
+        if (testContext.getAppServerInfo().getArquillianContainer().getName().contains("fuse7")) {
+            command = "property-set";
+        } else { //fuse 6
+            command = "propset";
+        }
+        assertCommand("admin", "password", "config:edit org.apache.karaf.management; config:" + command + " jmxRealm " + realm + "; config:update", Result.OK);
         try (JMXConnector jmxConnector = getJMXConnector("admin", password)) {
             jmxConnector.getMBeanServerConnection();
         }
