@@ -94,7 +94,18 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
             }
             if (model.isAuthenticatorFlow()) {
                 AuthenticationFlow authenticationFlow = processor.createFlowExecution(model.getFlowId(), model);
-                Response flowChallenge = authenticationFlow.processAction(actionExecution);
+                Response flowChallenge = null;
+                try {
+                    flowChallenge = authenticationFlow.processAction(actionExecution);
+                } catch (AuthenticationFlowException afe) {
+                    if (model.isAlternative()) {
+                        logger.debug("Thrown exception in alternative Subflow. Ignoring Subflow");
+                        processor.getAuthenticationSession().setExecutionStatus(model.getId(), AuthenticationSessionModel.ExecutionStatus.ATTEMPTED);
+                        return processFlow();
+                    } else {
+                        throw afe;
+                    }
+                }
                 if (flowChallenge == null) {
                     processor.getAuthenticationSession().setExecutionStatus(model.getId(), AuthenticationSessionModel.ExecutionStatus.SUCCESS);
                     if (model.isAlternative()) alternativeSuccessful = true;
