@@ -23,6 +23,7 @@ public interface PermissionTicket {
 
     String ID = "id";
     String RESOURCE = "resource.id";
+    String RESOURCE_NAME = "resource.name";
     String SCOPE = "scope.id";
     String SCOPE_IS_NULL = "scope_is_null";
     String OWNER = "owner";

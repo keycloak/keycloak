@@ -47,6 +47,7 @@ import org.keycloak.authorization.common.KeycloakIdentity;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
+import org.keycloak.authorization.model.PermissionTicket;
 import org.keycloak.authorization.permission.ResourcePermission;
 import org.keycloak.authorization.policy.evaluation.EvaluationContext;
 import org.keycloak.authorization.policy.evaluation.PermissionTicketAwareDecisionResultCollector;
@@ -419,6 +420,11 @@ public class AuthorizationTokenService {
                     }
 
                     if (!identity.isResourceServer()) {
+                        List<PermissionTicket> tickets = storeFactory.getPermissionTicketStore().findGranted(resourceName, identity.getId(), resourceServer.getId());
+                        for (PermissionTicket permissionTicket : tickets) {
+                            requestedResources.add(permissionTicket.getResource());
+                        }
+
                         Resource serverResource = resourceStore.findByName(resourceName, resourceServer.getId());
 
                         if (serverResource != null) {
