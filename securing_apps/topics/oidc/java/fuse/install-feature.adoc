@@ -43,7 +43,6 @@ features:install keycloak
 features:install keycloak-jetty9-adapter
 ----
 +
-NOTE: If you are using JBoss Fuse 6.2 or later, use `keycloak-jetty8-adapter`. However, upgrading to {fuseVersion} is recommended.
 
 . Ensure that the features were installed:
 

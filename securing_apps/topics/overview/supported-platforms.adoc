@@ -10,7 +10,7 @@ endif::[]
 * <<_fuse_adapter,Fuse>>
 ifeval::[{project_community}==true]
   * <<_tomcat_adapter,Tomcat>>
-  * <<_jetty8_adapter,Jetty 8>>
+  * <<_jetty9_adapter,Jetty 9>>
 endif::[]
 
 * <<_servlet_filter_adapter,Servlet Filter>>
