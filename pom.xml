@@ -87,8 +87,6 @@
         <undertow.version>2.0.19.Final</undertow.version>
         <elytron.version>1.8.0.Final</elytron.version>
         <elytron.undertow-server.version>1.4.0.Final</elytron.undertow-server.version>
-        <jetty81.version>8.1.17.v20150415</jetty81.version>
-        <jetty91.version>9.1.5.v20140505</jetty91.version>
         <jetty92.version>9.2.4.v20141103</jetty92.version>
         <jetty93.version>9.3.9.v20160517</jetty93.version>
         <jetty94.version>9.4.2.v20170220</jetty94.version>
@@ -111,7 +109,7 @@
         <google.zxing.version>3.2.1</google.zxing.version>
         <freemarker.version>2.3.26-incubating</freemarker.version>
 
-        <jetty9.version>9.1.0.v20131115</jetty9.version>
+        <jetty9.version>${jetty92.version}</jetty9.version>
         <liquibase.version>3.5.5</liquibase.version>
         <mysql.version>5.1.29</mysql.version>
         <osgi.version>4.2.0</osgi.version>
@@ -897,16 +895,6 @@
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-jetty81-adapter</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-jetty91-adapter</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-jetty92-adapter</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -1127,16 +1115,6 @@
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-saml-jetty81-adapter</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-saml-jetty91-adapter</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-saml-wildfly-adapter</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -1310,18 +1288,6 @@
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-jetty81-adapter-dist</artifactId>
-                <version>${project.version}</version>
-                <type>zip</type>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-jetty91-adapter-dist</artifactId>
-                <version>${project.version}</version>
-                <type>zip</type>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-jetty92-adapter-dist</artifactId>
                 <version>${project.version}</version>
                 <type>zip</type>
@@ -1383,12 +1349,6 @@
             <dependency>
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-saml-tomcat8-adapter-dist</artifactId>
-                <version>${project.version}</version>
-                <type>zip</type>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-saml-jetty81-adapter-dist</artifactId>
                 <version>${project.version}</version>
                 <type>zip</type>
             </dependency>

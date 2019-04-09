@@ -7,8 +7,6 @@
 ./adapters/keycloak-oidc
     keycloak-as7-adapter-dist
     keycloak-eap6-adapter-dist
-    keycloak-jetty81-adapter-dist
-    keycloak-jetty91-adapter-dist
     keycloak-jetty92-adapter-dist
     keycloak-jetty93-adapter-dist
     keycloak-jetty94-adapter-dist
@@ -23,7 +21,6 @@
 ./adapters/saml
     keycloak-saml-as7-adapter-dist
     keycloak-saml-eap6-adapter-dist
-    keycloak-saml-jetty81-adapter-dist
     keycloak-saml-jetty92-adapter-dist
     keycloak-saml-jetty93-adapter-dist
     keycloak-saml-jetty94-adapter-dist

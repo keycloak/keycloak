@@ -87,10 +87,9 @@ TODO: Add info about Wildfly logging
 
 ### Jetty
 
-At the moment we can run the testsuite with Jetty `9.1`, `9.2` and `9.4`. 
+At the moment we can run the testsuite with Jetty `9.2` and `9.4`.
 Each version has its corresponding profile:
 
-* Jetty `9.1`: `app-server-jetty91`
 * Jetty `9.2`: `app-server-jetty92`
 * Jetty `9.4`: `app-server-jetty94`
 
