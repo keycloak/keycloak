@@ -192,6 +192,8 @@ public class JPAPermissionTicketStore implements PermissionTicketStore {
                 }
             } else if (PermissionTicket.RESOURCE.equals(name)) {
                 predicates.add(root.join("resource").get("id").in(value));
+            } else if (PermissionTicket.RESOURCE_NAME.equals(name)) {
+                predicates.add(root.join("resource").get("name").in(value));
             } else if (PermissionTicket.OWNER.equals(name)) {
                 predicates.add(builder.equal(root.get("owner"), value));
             } else if (PermissionTicket.REQUESTER.equals(name)) {
@@ -243,6 +245,17 @@ public class JPAPermissionTicketStore implements PermissionTicketStore {
     public List<PermissionTicket> findGranted(String userId, String resourceServerId) {
         HashMap<String, String> filters = new HashMap<>();
 
+        filters.put(PermissionTicket.GRANTED, Boolean.TRUE.toString());
+        filters.put(PermissionTicket.REQUESTER, userId);
+
+        return find(filters, resourceServerId, -1, -1);
+    }
+
+    @Override
+    public List<PermissionTicket> findGranted(String resourceName, String userId, String resourceServerId) {
+        HashMap<String, String> filters = new HashMap<>();
+
+        filters.put(PermissionTicket.RESOURCE_NAME, resourceName);
         filters.put(PermissionTicket.GRANTED, Boolean.TRUE.toString());
         filters.put(PermissionTicket.REQUESTER, userId);
 

@@ -99,4 +99,14 @@ public interface PermissionTicketStore {
      * @return a list of permissions granted for a particular user
      */
     List<PermissionTicket> findGranted(String userId, String resourceServerId);
+
+    /**
+     * Returns a list of {@link PermissionTicket} with name equal to {@code resourceName} granted to the given {@code userId}.
+     *
+     * @param resourceName the name of a resource
+     * @param userId the user id
+     * @param resourceServerId the resource server id
+     * @return a list of permissions granted for a particular user
+     */
+    List<PermissionTicket> findGranted(String resourceName, String userId, String resourceServerId);
 }
