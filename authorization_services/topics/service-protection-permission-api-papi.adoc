@@ -71,3 +71,63 @@ curl -X POST \
 
 Where these claims will be available to your policies when evaluating permissions for the resource and scope(s) associated
 with the permission ticket.
+
+== Other non UMA-compliant endpoints
+
+=== Creating permission ticket
+
+To grant permissions for a specific resource with id {resource_id} to a user with id {user_id}, as an owner of the resource send an HTTP POST request as follows:
+
+```bash
+curl -X POST \
+     http://${host}:${port}/auth/realms/${realm_name}/authz/protection/permission/ticket \
+     -H 'Authorization: Bearer '$access_token \
+     -H 'Content-Type: application/json' \
+     -d '{
+       "resource": "{resource_id}",
+       "requester": "{user_id}",
+       "granted": true,
+       "scopeName": "view"
+     }'
+```
+
+=== Getting permission tickets
+
+```bash
+curl http://${host}:${port}/auth/realms/${realm_name}/authz/protection/permission/ticket \
+     -H 'Authorization: Bearer '$access_token
+```
+
+You can use any of these query parameters:
+
+* `scopeId`
+* `resourceId`
+* `owner`
+* `requester`
+* `granted`
+* `returnNames`
+* `first`
+* `max`
+
+=== Updating permission ticket
+
+```bash
+curl -X PUT \
+     http://${host}:${port}/auth/realms/${realm_name}/authz/protection/permission/ticket \
+     -H 'Authorization: Bearer '$access_token \
+     -H 'Content-Type: application/json' \
+     -d '{
+       "id": "{ticket_id}"
+       "resource": "{resource_id}",
+       "requester": "{user_id}",
+       "granted": false,
+       "scopeName": "view"
+     }'
+```
+
+=== Deleting permission ticket
+
+```bash
+curl -X DELETE http://${host}:${port}/auth/realms/${realm_name}/authz/protection/permission/ticket/{ticket_id} \
+     -H 'Authorization: Bearer '$access_token
+```
