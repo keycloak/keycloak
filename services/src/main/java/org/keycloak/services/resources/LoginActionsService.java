@@ -763,6 +763,24 @@ public class LoginActionsService {
         AuthenticationProcessor processor = new AuthenticationProcessor() {
 
             @Override
+            public Response authenticateOnly() throws AuthenticationFlowException {
+                Response challenge = super.authenticateOnly();
+                if (challenge != null) {
+                    if ("true".equals(authenticationSession.getAuthNote(FORWARDED_PASSIVE_LOGIN))) {
+                        // forwarded passive login is incompatible with challenges created by the broker flows.
+                        logger.errorf("Challenge encountered when executing %s flow. Auth requests with prompt=none are incompatible with challenges", flowPath);
+                        LoginProtocol protocol = session.getProvider(LoginProtocol.class, authSession.getProtocol());
+                        protocol.setRealm(realm)
+                                .setHttpHeaders(headers)
+                                .setUriInfo(session.getContext().getUri())
+                                .setEventBuilder(event);
+                        return protocol.sendError(authSession, Error.PASSIVE_INTERACTION_REQUIRED);
+                    }
+                }
+                return challenge;
+            }
+
+            @Override
             protected Response authenticationComplete() {
                 if (firstBrokerLogin) {
                     authSession.setAuthNote(AbstractIdpAuthenticator.FIRST_BROKER_LOGIN_SUCCESS, identityProviderAlias);
