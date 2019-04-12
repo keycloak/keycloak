@@ -17,29 +17,28 @@
 import * as React from 'react';
 
 import {Msg} from '../widgets/Msg';
+
+import {ArrowIcon} from '@patternfly/react-icons';
  
 declare const referrerName: string;
 declare const referrerUri: string;
 
-export interface ReferrerProps {
+export interface ReferrerLinkProps {
 }
 
 /**
  * @author Stan Silvert ssilvert@redhat.com (C) 2018 Red Hat Inc.
  */
-export class Referrer extends React.Component<ReferrerProps> {
+export class ReferrerLink extends React.Component<ReferrerLinkProps> {
     
-    public constructor(props: ReferrerProps) {
+    public constructor(props: ReferrerLinkProps) {
         super(props);
     }
 
     public render(): React.ReactNode {
-        if (typeof referrerName === "undefined") return null;
-        
         return (
-            <a className="nav-item-iconic" href={referrerUri}>
-               <span className="pficon-arrow"></span>
-               <Msg msgKey="backTo" params={[referrerName]}/>
+            <a href={referrerUri}>
+               <ArrowIcon/> <Msg msgKey="backTo" params={[referrerName]}/>
             </a>
         );
     }
