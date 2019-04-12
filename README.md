@@ -32,13 +32,13 @@ Or to build a specific guide run:
 
     mvn clean install -f GUIDE_DIR
 
-You can then view the documentation by opening GUIDE_DIR/target/frames.html or GUIDE_DIR/target/index.html.
+You can then view the documentation by opening GUIDE_DIR/target/generated-docs/index.html.
 
 
 Building RH-SSO Documentation
 -----------------------------
 
-Keycloak is the basis of [Red Hat Single Sign-On](https://access.redhat.com/products/red-hat-single-sign-on). The same documentation sources are used, but they are built slighty differently.
+Keycloak is the basis of [Red Hat Single Sign-On](https://access.redhat.com/products/red-hat-single-sign-on). The same documentation sources are used, but they are built slightly differently.
 
 To build the documentation for RH-SSO run:
 
@@ -48,7 +48,7 @@ Or to build a specific guide run:
 
     mvn clean install -Dproduct -f GUIDE_DIR
 
-You can then view the documentation by opening GUIDE_DIR/target/frames.html or GUIDE_DIR/target/index.html.
+You can then view the documentation by opening GUIDE_DIR/target/generated-docs/master.html.
 
 If you have ccutil installed you can build the guides with:
 
