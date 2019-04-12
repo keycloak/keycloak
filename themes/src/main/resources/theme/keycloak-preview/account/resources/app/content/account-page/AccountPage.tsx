@@ -18,7 +18,7 @@ import * as React from 'react';
 import {AxiosResponse} from 'axios';
 
 import {AccountServiceClient} from '../../account-service/account.service';
-import {Features} from '../../page/features';
+import {Features} from '../../widgets/features';
 import {Msg} from '../../widgets/Msg';
 
 declare const features: Features;

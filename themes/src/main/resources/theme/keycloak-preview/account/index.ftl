@@ -7,7 +7,7 @@
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
         <meta name="robots" content="noindex, nofollow">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-
+          
         <script>
             var authUrl = '${authUrl}';
             var baseUrl = '${baseUrl}';
@@ -68,13 +68,6 @@
    <!-- TODO: We should save these css and js into variables and then load in
         main.ts for better performance.  These might be loaded twice.
         -->
-        <#if properties.styles?has_content>
-            <#list properties.styles?split(' ') as style>
-            <link href="${resourceUrl}/${style}" rel="stylesheet"/>
-            </#list>
-            <a href="../../../../../../../../keycloak-quickstarts/app-profile-jee-html5/src/main/webapp/index.html"></a>
-        </#if>
-
         <#if properties.scripts?has_content>
             <#list properties.scripts?split(' ') as script>
         <script type="text/javascript" src="${resourceUrl}/${script}"></script>
@@ -113,22 +106,38 @@
 <div id="main_react_container"></div>
 
 <div id="welcomeScreen" style="display:none">
-    <div class="pf-c-background-image">
-      <svg xmlns="http://www.w3.org/2000/svg" class="pf-c-background-image__filter" width="0" height="0">
-        <filter id="image_overlay" width="">
-          <feColorMatrix type="matrix" values="1 0 0 0 0
-                  1 0 0 0 0
-                  1 0 0 0 0
-                  0 0 0 1 0" />
-          <feComponentTransfer color-interpolation-filters="sRGB" result="duotone">
-            <feFuncR type="table" tableValues="0.086274509803922 0.43921568627451"></feFuncR>
-            <feFuncG type="table" tableValues="0.086274509803922 0.43921568627451"></feFuncG>
-            <feFuncB type="table" tableValues="0.086274509803922 0.43921568627451"></feFuncB>
-            <feFuncA type="table" tableValues="0 1"></feFuncA>
-          </feComponentTransfer>
-        </filter>
-      </svg>
-    </div>
+    <#if properties.styles?has_content>
+        <#list properties.styles?split(' ') as style>
+        <link href="${resourceUrl}/${style}" rel="stylesheet"/>
+        </#list>
+    </#if>
+    <style>
+        .pf-c-background-image {
+            --pf-c-background-image--BackgroundImage: url('${resourceUrl}/node_modules/@patternfly/patternfly/assets/images/pfbg_576.jpg');
+            --pf-c-background-image--BackgroundImage-2x: url('${resourceUrl}/node_modules/@patternfly/patternfly/assets/images/pfbg_576@2x.jpg');
+            --pf-c-background-image--BackgroundImage--sm: url('${resourceUrl}/node_modules/@patternfly/patternfly/assets/images/pfbg_768.jpg');
+            --pf-c-background-image--BackgroundImage--sm-2x: url('${resourceUrl}/node_modules/@patternfly/patternfly/assets/images/pfbg_768@2x.jpg');
+            --pf-c-background-image--BackgroundImage--lg: url('${resourceUrl}/node_modules/@patternfly/patternfly/assets/images/pfbg_1200.jpg');
+            --pf-c-background-image--Filter: url('${resourceUrl}/node_modules/@patternfly/patternfly/assets/images/background-filter.svg#image_overlay');
+        }
+    </style>
+        
+<div class="pf-c-background-image">
+  <svg xmlns="http://www.w3.org/2000/svg" class="pf-c-background-image__filter" width="0" height="0">
+    <filter id="image_overlay" width="">
+      <feColorMatrix type="matrix" values="1 0 0 0 0
+              1 0 0 0 0
+              1 0 0 0 0
+              0 0 0 1 0" />
+      <feComponentTransfer color-interpolation-filters="sRGB" result="duotone">
+        <feFuncR type="table" tableValues="0.086274509803922 0.43921568627451"></feFuncR>
+        <feFuncG type="table" tableValues="0.086274509803922 0.43921568627451"></feFuncG>
+        <feFuncB type="table" tableValues="0.086274509803922 0.43921568627451"></feFuncB>
+        <feFuncA type="table" tableValues="0 1"></feFuncA>
+      </feComponentTransfer>
+    </filter>
+  </svg>
+</div>
     <div class="pf-c-page" id="page-layout-default-nav">
       <header role="banner" class="pf-c-page__header">
         <div class="pf-c-page__header-brand">

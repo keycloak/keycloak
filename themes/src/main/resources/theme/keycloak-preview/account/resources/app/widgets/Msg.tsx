@@ -30,23 +30,27 @@ export class Msg extends React.Component<MsgProps> {
     }
     
     public render(): React.ReactNode {
-        let message: string = l18nMsg[this.props.msgKey];
-        if (message === undefined) message = this.props.msgKey;
+        return (
+            <React.Fragment>{Msg.localize(this.props.msgKey, this.props.params)}</React.Fragment>
+        );
+    }
+    
+    public static localize(msgKey: string, params?: string[]): string {
+        let message: string = l18nMsg[msgKey];
+        if (message === undefined) message = msgKey;
         
-        if (this.props.params !== undefined) {
-            this.props.params.forEach((value: string, index: number) => {
+        if (params !== undefined) {
+            params.forEach((value: string, index: number) => {
                 value = this.processParam(value);
                 message = message.replace('{{param_'+ index + '}}', value);
             })
         }
         
-        return (
-            <span>{message}</span>
-        );
+        return message;
     }
     
     // if the param has Freemarker syntax, try to look up its value
-    private processParam(param: string): string {
+    private static processParam(param: string): string {
         if (!(param.startsWith('${') && param.endsWith('}'))) return param;
 
         // remove Freemarker syntax

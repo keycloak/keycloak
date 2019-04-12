@@ -16,33 +16,32 @@
 
 import * as React from 'react';
 
-import {Msg} from './Msg';
-import {KeycloakService} from '../keycloak-service/keycloak.service';
+import {Msg} from '../widgets/Msg';
 
-import {Button, DropdownItem} from '@patternfly/react-core';
+import {DropdownItem} from '@patternfly/react-core';
+import {ArrowIcon} from '@patternfly/react-icons';
  
-declare const baseUrl: string;
+declare const referrerName: string;
+declare const referrerUri: string;
 
-function handleLogout(): void {
-    KeycloakService.Instance.logout(baseUrl);
+export interface ReferrerDropdownItemProps {
 }
+
+/**
+ * @author Stan Silvert ssilvert@redhat.com (C) 2018 Red Hat Inc.
+ */
+export class ReferrerDropdownItem extends React.Component<ReferrerDropdownItemProps> {
     
-interface LogoutProps {}
-export class LogoutButton extends React.Component<LogoutProps> {
-    public render(): React.ReactNode {
-        return (
-            <Button onClick={handleLogout}><Msg msgKey="doSignOut"/></Button>
-        );
+    public constructor(props: ReferrerDropdownItemProps) {
+        super(props);
     }
-}
 
-interface LogoutDropdownItemProps {}
-export class LogoutDropdownItem extends React.Component<LogoutDropdownItemProps> {
     public render(): React.ReactNode {
+        
         return (
-            <DropdownItem key="logout" onClick={handleLogout}>
-                {Msg.localize('doSignOut')}
+            <DropdownItem href={referrerUri}>
+                <ArrowIcon /> {Msg.localize('backTo', [referrerName])}
             </DropdownItem>
         );
     }
-}
+};
