@@ -23,6 +23,20 @@ We have added a new `microprofile-jwt` optional client scope to handle the claim
 This new client scope defines protocol mappers to set the username of the authenticated user to the `upn` claim and to
 set the realm roles to the `groups` claim.
 
+==== Ability to propagate prompt=none to default IDP
+
+We have added a new switch in the OIDC identity provider configuration named `Accepts prompt=none forward from client` to identify IDPs that
+are able to handle forwarded requests that include the `prompt=none` query parameter.
+
+Until now, when receiving an auth request with `prompt=none` a realm would return a `login_required` error if the user is
+not authenticated in the realm without checking if the user has been authenticated by an IDP. From now on, if a default
+IDP can be determined for the auth request (either by the use of the `kc_idp_hint` query param or by setting up a default IDP
+for the realm) and if the `Accepts prompt=none forward from client` switch has been enabled for the IDP, the auth request is forwarded to the IDP
+to check if the user has been authenticated there.
+
+It is important to note that this switch is only taken into account if a default IDP is specified, in which case we know
+where to forward the auth request without having to prompt the user to select an IDP. If a default IDP cannot be determined
+we cannot assume which one will be used to fulfill the auth request so the request forwarding is not performed.
 
 === Migrating to 5.0.0
 

@@ -50,6 +50,17 @@ You must define the OpenID Connect configuration options as well.  They basicall
 |Another optional switch.  This is the prompt parameter defined by the OIDC specification. Through it you can force re-authentication and other options.  See the specification for
  more details.
 
+|Accepts prompt=none forward from client
+|Specifies whether the IDP accepts forwarded authentication requests that contain the prompt=none query parameter or not. When a realm receives an auth request with `prompt=none` it checks
+ if the user is currently authenticated and normally returns a `login_required` error if the user is not logged in. However, when a default IDP can be determined
+ for the auth request (either via `kc_idp_hint` query param or by setting up a default IDP for the realm) we should be able to forward the auth request with
+ `prompt=none` to the default IDP so that it checks if the user is currently authenticated there. Because not all IDPs support requests with `prompt=none` this switch
+ is used to indicate if the default IDP supports the param before redirecting the auth request.
+
+ It is important to note that if the user is not authenticated in the IDP, the client will still get a `login_required` error. Even if the user is currently authenticated in the IDP,
+ the client might still get an `interaction_required` error if authentication or consent pages requiring user interaction would be otherwise displayed. This includes required actions
+ (e.g. change password), consent screens and any screens set to be displayed by the `first broker login` flow or `post broker login` flow.
+
 |Validate Signatures
 |Another optional switch. This is to specify if {project_name} will verify the signatures on the external ID Token signed by this identity provider. If this is on,
 the {project_name} will need to know the public key of the external OIDC identity provider. See below for how to set it up.
