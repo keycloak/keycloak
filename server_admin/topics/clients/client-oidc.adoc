@@ -75,7 +75,7 @@ If {project_name} uses any configured relative URLs, this value is prepended to 
 
 This is a required field.  Enter in a URL pattern and click the + sign to add.  Click the - sign next to URLs you want to remove.
 Remember that you still have to click the `Save` button!
-Wildcards (\*) are only allowed at the end of a URI, i.e. $$http://host.com/*$$
+Wildcards (*) are only allowed at the end of a URI, i.e. $$http://host.com/*$$
 
 You should take extra precautions when registering valid redirect URI patterns. If you make
 them too general you are vulnerable to attacks.  See <<_unspecific-redirect-uris, Threat Model Mitigation>> chapter
@@ -93,9 +93,9 @@ If this is on, clients are allowed to use the OIDC <<_oidc-auth-flows,Authorizat
 
 If this is on, clients are allowed to use the OIDC <<_oidc-auth-flows,Implicit Flow>>.
 
-*Direct Grants Enabled*
+*Direct Access Grants Enabled*
 
-If this is on, clients are allowed to use the OIDC <<_oidc-auth-flows,Direct Grants>>.
+If this is on, clients are allowed to use the OIDC <<_oidc-auth-flows,Direct Access Grants>>.
 
 *Admin URL*
 
@@ -124,7 +124,7 @@ Remember that you still have to click the `Save` button!
 ==== Advanced Settings
 
 [[_mtls-client-certificate-bound-tokens]]
-*OAuth 2.0 Mutual TLS Client Certificate Bound Access Token*
+*OAuth 2.0 Mutual TLS Certificate Bound Access Tokens Enabled*
 
 Mutual TLS binds an access token and a refresh token with a client certificate exchanged during TLS handshake. This prevents an attacker who finds a way to steal these tokens from exercising the tokens. This type of token is called a holder-of-key token. Unlike bearer tokens, the recipient of a holder-of-key token can verify whether the sender of the token is legitimate.
 
