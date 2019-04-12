@@ -117,7 +117,7 @@ Root URL::
 Valid Redirect URIs::
   This is an optional field.  Enter in a URL pattern and click the + sign to add.  Click the - sign next to URLs you want to remove.
   Remember that you still have to click the `Save` button!
-  Wildcards (\*) are only allowed at the end of of a URI, i.e. $$http://host.com/*$$.  This field is used when the exact SAML
+  Wildcards (*) are only allowed at the end of a URI, i.e. $$http://host.com/*$$.  This field is used when the exact SAML
   endpoints are not registered and {project_name} is pulling the Assertion Consumer URL from the request.
 
 Base URL::
@@ -126,7 +126,7 @@ Base URL::
 Master SAML Processing URL::
   This URL will be used for all SAML requests and the response will be directed to the SP.
   It will be used as the Assertion Consumer Service URL and the Single Logout Service URL.
-  If a login request contains the Assertion Consumer Service URL, that will take precedence, but this URL must be valided by a registered Valid Redirect URI pattern 
+  If a login request contains the Assertion Consumer Service URL, that will take precedence, but this URL must be validated by a registered Valid Redirect URI pattern 
 
 Assertion Consumer Service POST Binding URL::
   POST Binding URL for the Assertion Consumer Service. 
