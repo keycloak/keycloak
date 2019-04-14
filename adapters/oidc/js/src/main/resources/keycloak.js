@@ -431,6 +431,9 @@
 
             var expiresIn = kc.tokenParsed['exp'] - Math.ceil(new Date().getTime() / 1000) + kc.timeSkew;
             if (minValidity) {
+                if (isNaN(minValidity)) {
+                    throw 'Invalid minValidity';
+                }
                 expiresIn -= minValidity;
             }
             return expiresIn < 0;
