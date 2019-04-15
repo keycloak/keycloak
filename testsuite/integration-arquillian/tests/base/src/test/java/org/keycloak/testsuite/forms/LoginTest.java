@@ -16,12 +16,14 @@
  */
 package org.keycloak.testsuite.forms;
 
+import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.common.util.Retry;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
@@ -40,24 +42,32 @@ import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
+import org.keycloak.testsuite.console.page.AdminConsole;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
+import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
+import org.keycloak.testsuite.util.DroneUtils;
+import org.keycloak.testsuite.util.JavascriptBrowser;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.Matchers;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.TokenSignatureUtil;
 import org.keycloak.testsuite.util.UserBuilder;
-import org.openqa.selenium.Cookie;
 import org.openqa.selenium.NoSuchElementException;
+import org.openqa.selenium.WebDriver;
 
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
@@ -68,6 +78,7 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.admin.ApiUtil.findClientByClientId;
 import static org.keycloak.testsuite.util.OAuthClient.AUTH_SERVER_ROOT;
+import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWithLoginUrlOf;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -94,9 +105,19 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
                                               .build();
         user2Id = user2.getId();
 
+        UserRepresentation admin = UserBuilder.create()
+                .username("admin")
+                .password("admin")
+                .enabled(true)
+                .build();
+        HashMap<String, List<String>> clientRoles = new HashMap<>();
+        clientRoles.put("realm-management", Arrays.asList("realm-admin"));
+        admin.setClientRoles(clientRoles);
+
         RealmBuilder.edit(testRealm)
                     .user(user)
-                    .user(user2);
+                    .user(user2)
+                    .user(admin);
     }
 
     @Rule
@@ -106,7 +127,19 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
     protected AppPage appPage;
 
     @Page
+    @JavascriptBrowser
+    protected AdminConsole jsAdminConsole;
+
+    @Drone
+    @JavascriptBrowser
+    protected WebDriver jsDriver;
+
+    @Page
     protected LoginPage loginPage;
+
+    @Page
+    @JavascriptBrowser
+    protected LoginPage jsLoginPage;
 
     @Page
     protected ErrorPage errorPage;
@@ -694,6 +727,35 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
                 .detail(Details.RESTART_AFTER_TIMEOUT, "true")
                 .client((String) null)
                 .assertEvent();
+    }
+
+    @Test
+    public void loginAfterExpiredTimeout() throws Exception {
+        try (AutoCloseable c = new RealmAttributeUpdater(adminClient.realm("test"))
+                .updateWith(r -> {
+                    r.setSsoSessionMaxLifespan(5);
+                })
+                .update()) {
+
+            DroneUtils.addWebDriver(jsDriver);
+
+            jsAdminConsole.setAdminRealm(testRealm().toRepresentation().getRealm());
+
+            jsAdminConsole.navigateTo();
+            assertCurrentUrlStartsWithLoginUrlOf(jsAdminConsole);
+
+            // login for the first time
+            jsLoginPage.login("admin", "admin");
+
+            // wait for a timeout
+            TimeUnit.SECONDS.sleep(5);
+            Retry.execute(() -> jsLoginPage.assertCurrent(), 20, 500);
+
+            // try to re-login immediately, it should be successful i.e without "You took too long to login. Login process starting from beginning." message
+            jsLoginPage.login("admin", "admin");
+
+            assertFalse(jsLoginPage.isCurrent());
+        }
     }
 
 
