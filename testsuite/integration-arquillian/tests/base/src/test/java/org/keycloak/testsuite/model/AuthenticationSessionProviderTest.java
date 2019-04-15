@@ -27,6 +27,7 @@ import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.*;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.models.utils.ResetTimeOffsetEvent;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.ClientManager;
 import org.keycloak.services.managers.RealmManager;
@@ -239,6 +240,7 @@ public class AuthenticationSessionProviderTest extends AbstractTestRealmKeycloak
 
             } finally {
                 Time.setOffset(0);
+                session.getKeycloakSessionFactory().publish(new ResetTimeOffsetEvent());
                 setAccessCodeLifespan(mainSession, 60, 300, 1800);
             }
         });

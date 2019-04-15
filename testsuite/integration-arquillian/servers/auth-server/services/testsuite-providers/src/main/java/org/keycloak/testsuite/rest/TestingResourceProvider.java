@@ -47,6 +47,7 @@ import org.keycloak.models.UserProvider;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.sessions.infinispan.changes.sessions.CrossDCLastSessionRefreshStoreFactory;
 import org.keycloak.models.utils.ModelToRepresentation;
+import org.keycloak.models.utils.ResetTimeOffsetEvent;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.mappers.AudienceProtocolMapper;
 import org.keycloak.provider.ProviderFactory;
@@ -207,6 +208,12 @@ public class TestingResourceProvider implements RealmResourceProvider {
     public Map<String, String> setTimeOffset(Map<String, String> time) {
         int offset = Integer.parseInt(time.get("offset"));
         Time.setOffset(offset);
+
+        // Time offset was restarted
+        if (offset == 0) {
+            session.getKeycloakSessionFactory().publish(new ResetTimeOffsetEvent());
+        }
+
         return getTimeOffset();
     }
 
