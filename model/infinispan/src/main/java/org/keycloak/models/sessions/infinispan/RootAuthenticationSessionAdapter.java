@@ -122,6 +122,19 @@ public class RootAuthenticationSessionAdapter implements RootAuthenticationSessi
     }
 
     @Override
+    public void removeAuthenticationSessionByTabId(String tabId) {
+        if (entity.getAuthenticationSessions().remove(tabId) != null) {
+            if (entity.getAuthenticationSessions().isEmpty()) {
+                provider.tx.remove(cache, entity.getId());
+            } else {
+                entity.setTimestamp(Time.currentTime());
+
+                update();
+            }
+        }
+    }
+
+    @Override
     public void restartSession(RealmModel realm) {
         entity.getAuthenticationSessions().clear();
         entity.setTimestamp(Time.currentTime());
