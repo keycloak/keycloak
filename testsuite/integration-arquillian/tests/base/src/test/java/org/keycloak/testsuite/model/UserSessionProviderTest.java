@@ -29,6 +29,7 @@ import org.keycloak.common.util.Time;
 import org.keycloak.models.*;
 import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.models.utils.ResetTimeOffsetEvent;
 import org.keycloak.models.utils.SessionTimeoutHelper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -380,6 +381,7 @@ public class UserSessionProviderTest extends AbstractTestRealmKeycloakTest {
             }
         } finally {
             Time.setOffset(0);
+            session.getKeycloakSessionFactory().publish(new ResetTimeOffsetEvent());
         }
     }
 
@@ -457,6 +459,7 @@ public class UserSessionProviderTest extends AbstractTestRealmKeycloakTest {
 
         } finally {
             Time.setOffset(0);
+            session.getKeycloakSessionFactory().publish(new ResetTimeOffsetEvent());
             // restore the original remember-me timeout values in the realm.
             KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession kcSession) -> {
                 RealmModel r = kcSession.realms().getRealmByName("test");
@@ -481,6 +484,7 @@ public class UserSessionProviderTest extends AbstractTestRealmKeycloakTest {
             session.sessions().removeUserSession(realm, userSession);
         } finally {
             Time.setOffset(0);
+            session.getKeycloakSessionFactory().publish(new ResetTimeOffsetEvent());
         }
     }
 

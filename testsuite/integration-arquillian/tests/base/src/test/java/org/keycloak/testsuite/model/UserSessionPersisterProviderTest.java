@@ -26,6 +26,7 @@ import org.keycloak.common.util.Time;
 import org.keycloak.models.*;
 import org.keycloak.models.session.UserSessionPersisterProvider;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.models.utils.ResetTimeOffsetEvent;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.ClientManager;
@@ -521,6 +522,7 @@ public class UserSessionPersisterProviderTest extends AbstractTestRealmKeycloakT
             } finally {
                 // Cleanup
                 Time.setOffset(0);
+                session.getKeycloakSessionFactory().publish(new ResetTimeOffsetEvent());
             }
         });
     }
