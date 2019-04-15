@@ -58,6 +58,7 @@ import org.keycloak.models.sessions.infinispan.util.InfinispanKeyGenerator;
 import org.keycloak.models.sessions.infinispan.util.InfinispanUtil;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.PostMigrationEvent;
+import org.keycloak.models.utils.ResetTimeOffsetEvent;
 import org.keycloak.provider.ProviderEvent;
 import org.keycloak.provider.ProviderEventListener;
 
@@ -133,6 +134,16 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
 
                     InfinispanUserSessionProvider provider = (InfinispanUserSessionProvider) userRemovedEvent.getKeycloakSession().getProvider(UserSessionProvider.class, getId());
                     provider.onUserRemoved(userRemovedEvent.getRealm(), userRemovedEvent.getUser());
+                } else if (event instanceof ResetTimeOffsetEvent) {
+                    if (persisterLastSessionRefreshStore != null) {
+                        persisterLastSessionRefreshStore.reset();
+                    }
+                    if (lastSessionRefreshStore != null) {
+                        lastSessionRefreshStore.reset();
+                    }
+                    if (offlineLastSessionRefreshStore != null) {
+                        offlineLastSessionRefreshStore.reset();
+                    }
                 }
             }
         });
