@@ -28,12 +28,15 @@ import org.keycloak.representations.account.SessionRepresentation;
 import org.keycloak.representations.account.UserRepresentation;
 import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.account.AccountCredentialResource;
+import org.keycloak.services.resources.account.AccountCredentialResource.PasswordUpdate;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.util.TokenUtil;
 import org.keycloak.testsuite.util.UserBuilder;
 
+import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
@@ -42,10 +45,7 @@ import java.util.Map;
 
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.junit.Assert.*;
-import org.keycloak.services.messages.Messages;
-
 import static org.keycloak.common.Profile.Feature.ACCOUNT_API;
-import org.keycloak.services.resources.account.AccountCredentialResource.PasswordUpdate;
 import static org.keycloak.testsuite.ProfileAssume.assumeFeatureEnabled;
 
 /**
@@ -64,15 +64,33 @@ public class AccountRestServiceTest extends AbstractTestRealmKeycloakTest {
     @Before
     public void before() {
         client = HttpClientBuilder.create().build();
+        try {
+            checkIfFeatureWorks(false);
+            Response response = testingClient.testing().enableFeature(ACCOUNT_API.toString());
+            assertEquals(200, response.getStatus());
+
+            assumeFeatureEnabled(ACCOUNT_API);
+            checkIfFeatureWorks(true);
+        } catch (Exception e) {
+            disableFeature();
+            throw e;
+        }
     }
 
     @After
     public void after() {
         try {
+            disableFeature();
             client.close();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private void disableFeature() {
+        Response response = testingClient.testing().disableFeature(ACCOUNT_API.toString());
+        assertEquals(200, response.getStatus());
+        checkIfFeatureWorks(false);
     }
 
     @Override
@@ -357,9 +375,17 @@ public class AccountRestServiceTest extends AbstractTestRealmKeycloakTest {
         String sessionId = oauth.doLogin("view-account-access", "password").getSessionState();
         List<SessionRepresentation> sessions = SimpleHttp.doGet(getAccountUrl("sessions"), client).auth(viewToken.getToken()).asJson(new TypeReference<List<SessionRepresentation>>() {});
         assertEquals(2, sessions.size());
+
+        // With `ViewToken` you can only read
         int status = SimpleHttp.doDelete(getAccountUrl("session?id=" + sessionId), client).acceptJson().auth(viewToken.getToken()).asStatus();
-        assertEquals(200, status);
+        assertEquals(403, status);
         sessions = SimpleHttp.doGet(getAccountUrl("sessions"), client).auth(viewToken.getToken()).asJson(new TypeReference<List<SessionRepresentation>>() {});
+        assertEquals(2, sessions.size());
+
+        // Here you can delete the session
+        status = SimpleHttp.doDelete(getAccountUrl("session?id=" + sessionId), client).acceptJson().auth(tokenUtil.getToken()).asStatus();
+        assertEquals(200, status);
+        sessions = SimpleHttp.doGet(getAccountUrl("sessions"), client).auth(tokenUtil.getToken()).asJson(new TypeReference<List<SessionRepresentation>>() {});
         assertEquals(1, sessions.size());
     }
 
@@ -367,4 +393,21 @@ public class AccountRestServiceTest extends AbstractTestRealmKeycloakTest {
         return suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth/realms/test/account" + (resource != null ? "/" + resource : "");
     }
 
+    // Check if the feature really works
+    private void checkIfFeatureWorks(boolean shouldWorks) {
+        try {
+            List<SessionRepresentation> sessions = SimpleHttp.doGet(getAccountUrl("sessions"), client).auth(tokenUtil.getToken())
+                    .asJson(new TypeReference<List<SessionRepresentation>>() {
+                    });
+            assertEquals(1, sessions.size());
+            if (!shouldWorks)
+                fail("Feature is available, but this moment should be disabled");
+
+        } catch (Exception e) {
+            if (shouldWorks) {
+                e.printStackTrace();
+                fail("Feature is not available");
+            }
+        }
+    }
 }
