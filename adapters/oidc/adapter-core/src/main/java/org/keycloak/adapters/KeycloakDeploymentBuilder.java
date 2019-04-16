@@ -53,7 +53,7 @@ public class KeycloakDeploymentBuilder {
     }
 
 
-    protected KeycloakDeployment internalBuild(AdapterConfig adapterConfig) {
+    protected KeycloakDeployment internalBuild(final AdapterConfig adapterConfig) {
         if (adapterConfig.getRealm() == null) throw new RuntimeException("Must set 'realm' in config");
         deployment.setRealm(adapterConfig.getRealm());
         String resource = adapterConfig.getResource();
@@ -143,10 +143,23 @@ public class KeycloakDeploymentBuilder {
             deployment.setTurnOffChangeSessionIdOnLogin(adapterConfig.getTurnOffChangeSessionIdOnLogin());
         }
 
-        PolicyEnforcerConfig policyEnforcerConfig = adapterConfig.getPolicyEnforcerConfig();
+        final PolicyEnforcerConfig policyEnforcerConfig = adapterConfig.getPolicyEnforcerConfig();
 
         if (policyEnforcerConfig != null) {
-            deployment.setPolicyEnforcer(new PolicyEnforcer(deployment, adapterConfig));
+            deployment.setPolicyEnforcer(new Callable<PolicyEnforcer>() {
+                PolicyEnforcer policyEnforcer;
+                @Override
+                public PolicyEnforcer call() {
+                    if (policyEnforcer == null) {
+                        synchronized (deployment) {
+                            if (policyEnforcer == null) {
+                                policyEnforcer = new PolicyEnforcer(deployment, adapterConfig);
+                            }
+                        }
+                    }
+                    return policyEnforcer;
+                }
+            });
         }
 
         log.debug("Use authServerUrl: " + deployment.getAuthServerBaseUrl() + ", tokenUrl: " + deployment.getTokenUrl() + ", relativeUrls: " + deployment.getRelativeUrls());

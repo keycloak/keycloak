@@ -250,6 +250,7 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
     }
 
 
+
     public long getStartupRevision() {
         return startupRevision;
     }
@@ -294,7 +295,7 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
         invalidationEvents.add(PolicyUpdatedEvent.create(id, name, resources, resourceTypes, scopes, serverId));
     }
 
-    public void registerPermissionTicketInvalidation(String id, String owner, String requester, String resource, String scope, String serverId) {
+    public void registerPermissionTicketInvalidation(String id, String owner, String requester, String resource,  String scope,  String serverId) {
         cache.permissionTicketUpdated(id, owner, requester, resource, scope, serverId, invalidations);
         PermissionTicketAdapter adapter = managedPermissionTickets.get(id);
         if (adapter != null) adapter.invalidateFlag();
@@ -367,10 +368,6 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
         return "resource.scope." + scopeId + "." + serverId;
     }
 
-    public static String getResourceByParentCacheKey(String parent, String serverId) {
-        return "resource.parent." + parent + "." + serverId;
-    }
-
     public static String getPolicyByNameCacheKey(String name, String serverId) {
         return "policy.name." + name + "." + serverId;
     }
@@ -407,7 +404,6 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
         return "permission.ticket.owner." + owner + "." + serverId;
     }
 
-
     public StoreFactory getDelegate() {
         if (delegate != null) return delegate;
         delegate = session.getProvider(StoreFactory.class);
@@ -415,7 +411,7 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
     }
 
     private void setModelDoesNotExists(String id, Long loaded) {
-        if (!invalidations.contains(id)) {
+        if (! invalidations.contains(id)) {
             cache.addRevisioned(new NonExistentItem(id, loaded), startupRevision);
         }
     }
@@ -458,7 +454,7 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
 
             if (cached == null) {
                 Long loaded = cache.getCurrentRevision(id);
-                if (!modelMightExist(id)) return null;
+                if (! modelMightExist(id)) return null;
                 ResourceServer model = getResourceServerStoreDelegate().findById(id);
                 if (model == null) {
                     setModelDoesNotExists(id, loaded);
@@ -473,7 +469,7 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
                 return managedResourceServers.get(id);
             }
             ResourceServerAdapter adapter = new ResourceServerAdapter(cached, StoreFactoryCacheSession.this);
-            managedResourceServers.put(id, adapter);
+             managedResourceServers.put(id, adapter);
             return adapter;
         }
     }
@@ -512,7 +508,7 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
             }
             if (cached == null) {
                 Long loaded = cache.getCurrentRevision(id);
-                if (!modelMightExist(id)) return null;
+                if (! modelMightExist(id)) return null;
                 Scope model = getScopeStoreDelegate().findById(id, resourceServerId);
                 if (model == null) {
                     setModelDoesNotExists(id, loaded);
@@ -587,17 +583,6 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
         }
 
         @Override
-        public Resource create(String id, String name, Resource parent, ResourceServer resourceServer, String owner) {
-            Resource resource = getResourceStoreDelegate().create(id, name, parent, resourceServer, owner);
-            Resource cached = findById(resource.getId(), resourceServer.getId());
-            registerResourceInvalidation(resource.getId(), resource.getName(), resource.getType(), resource.getUris(), resource.getScopes().stream().map(scope -> scope.getId()).collect(Collectors.toSet()), resourceServer.getId(), resource.getOwner());
-            if (cached == null) {
-                cached = findById(resource.getId(), resourceServer.getId());
-            }
-            return cached;
-        }
-
-        @Override
         public void delete(String id) {
             if (id == null) return;
             Resource resource = findById(id, null);
@@ -619,7 +604,7 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
             }
             if (cached == null) {
                 Long loaded = cache.getCurrentRevision(id);
-                if (!modelMightExist(id)) return null;
+                if (! modelMightExist(id)) return null;
                 Resource model = getResourceStoreDelegate().findById(id, resourceServerId);
                 if (model == null) {
                     setModelDoesNotExists(id, loaded);
@@ -722,10 +707,10 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
 
         @Override
         public List<Resource> findByType(String type, String resourceServerId) {
-            if (type == null) return Collections.emptyList();
-            String cacheKey = getResourceByTypeCacheKey(type, resourceServerId);
-            return cacheQuery(cacheKey, ResourceListQuery.class, () -> getResourceStoreDelegate().findByType(type, resourceServerId),
-                    (revision, resources) -> new ResourceListQuery(revision, cacheKey, resources.stream().map(resource -> resource.getId()).collect(Collectors.toSet()), resourceServerId), resourceServerId);
+             if (type == null) return Collections.emptyList();
+             String cacheKey = getResourceByTypeCacheKey(type, resourceServerId);
+             return cacheQuery(cacheKey, ResourceListQuery.class, () -> getResourceStoreDelegate().findByType(type, resourceServerId),
+                     (revision, resources) -> new ResourceListQuery(revision, cacheKey, resources.stream().map(resource -> resource.getId()).collect(Collectors.toSet()), resourceServerId), resourceServerId);
         }
 
         @Override
@@ -751,13 +736,12 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
                 if (model == null) return null;
                 if (invalidations.contains(cacheKey)) {
                     if (consumer != null) {
-                        for (R policy : model) {
+                        for (R policy: model) {
                             consumer.accept(policy);
                         }
                     }
                     return model;
-                }
-                ;
+                };
                 query = querySupplier.apply(loaded, model);
                 cache.addRevisioned(query, startupRevision);
                 if (consumer != null) {
@@ -787,28 +771,6 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
                 return resources.stream().map(resourceId -> (R) findById(resourceId, resourceServerId)).collect(Collectors.toList());
             }
         }
-
-        @Override
-        public List<Resource> findByParent(String resourceServerId, String parent) {
-            if (parent == null) return Collections.emptyList();
-            String cacheKey = getResourceByParentCacheKey(parent, resourceServerId);
-            return cacheQuery(cacheKey, ResourceListQuery.class, () -> getResourceStoreDelegate().findByParent(resourceServerId, parent),
-                    (revision, resources) -> new ResourceListQuery(revision, cacheKey, resources.stream().map(resource -> resource.getId()).collect(Collectors.toSet()), resourceServerId), resourceServerId);
-        }
-
-        @Override
-        public void findByParent(String resourceServerId, String parent, Consumer<Resource> consumer) {
-            if (parent == null) return;
-            String cacheKey = getResourceByParentCacheKey(parent, resourceServerId);
-            cacheQuery(cacheKey, ResourceListQuery.class, () -> getResourceStoreDelegate().findByParent(resourceServerId, parent),
-                    (revision, resources) -> new ResourceListQuery(revision, cacheKey, resources.stream().map(resource -> resource.getId()).collect(Collectors.toSet()), resourceServerId), resourceServerId, consumer);
-        }
-
-        @Override
-        public List<Resource> findTopLevel(String resourceServerId, int firstResult, int maxResult) {
-            return getResourceStoreDelegate().findTopLevel(resourceServerId, firstResult, maxResult);
-        }
-
     }
 
     protected class PolicyCache implements PolicyStore {
@@ -853,7 +815,7 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
                 logger.tracev("by id cache hit: {0}", cached.getId());
             }
             if (cached == null) {
-                if (!modelMightExist(id)) return null;
+                if (! modelMightExist(id)) return null;
                 Policy model = getPolicyStoreDelegate().findById(id, resourceServerId);
                 Long loaded = cache.getCurrentRevision(id);
                 if (model == null) {
@@ -987,17 +949,16 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
                 if (model == null) return null;
                 if (invalidations.contains(cacheKey)) {
                     if (consumer != null) {
-                        for (R policy : model) {
+                        for (R policy: model) {
                             consumer.accept(policy);
                         }
                     }
                     return model;
-                }
-                ;
+                };
                 query = querySupplier.apply(loaded, model);
                 cache.addRevisioned(query, startupRevision);
                 if (consumer != null) {
-                    for (R policy : model) {
+                    for (R policy: model) {
                         consumer.andThen(r -> cachePolicy(policy)).accept(policy);
                     }
                 }
@@ -1064,7 +1025,7 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
             }
             if (cached == null) {
                 Long loaded = cache.getCurrentRevision(id);
-                if (!modelMightExist(id)) return null;
+                if (! modelMightExist(id)) return null;
                 PermissionTicket model = getPermissionTicketStoreDelegate().findById(id, resourceServerId);
                 if (model == null) {
                     setModelDoesNotExists(id, loaded);

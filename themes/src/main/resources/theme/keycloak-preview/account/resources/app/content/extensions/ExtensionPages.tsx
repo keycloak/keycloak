@@ -15,7 +15,8 @@
  */
 
 import * as React from 'react';
-import {Route, Link} from 'react-router-dom';
+import {Route} from 'react-router-dom';
+import {NavItem} from '@patternfly/react-core';
 
 export interface PageDef {
     path: string;
@@ -30,10 +31,10 @@ export class ExtensionPages { // extends React.Component<ExtensionPagesProps> {
     public static get Links(): React.ReactNode {
         if (typeof extensionPages === 'undefined') return (<span/>);
         
-        const links: React.ReactElement<Link>[] = extensionPages.map((page: PageDef) => 
-            <Link key={page.path} to={'/app/' + page.path} className="btn btn-primary btn-lg btn-sign" type="button">{page.label}</Link>
+        const links: React.ReactElement[] = extensionPages.map((page: PageDef, index: number) => 
+            <NavItem key={page.path} to={'#/app/' + page.path} itemId={'ext-' + index} type="button">{page.label}</NavItem>
         );
-        return (<span>{links}</span>);
+        return (<React.Fragment>{links}</React.Fragment>);
     }
     
     public static get Routes(): React.ReactNode {
@@ -42,7 +43,7 @@ export class ExtensionPages { // extends React.Component<ExtensionPagesProps> {
         const routes: React.ReactElement<Route>[] = extensionPages.map((page) => 
             <Route key={page.path} path={'/app/' + page.path} component={page.component}/>
         );
-        return (<span>{routes}</span>);
+        return (<React.Fragment>{routes}</React.Fragment>);
     }
 
 };

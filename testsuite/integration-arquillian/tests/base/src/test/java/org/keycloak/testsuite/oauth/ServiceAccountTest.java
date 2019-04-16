@@ -23,8 +23,11 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
 import org.keycloak.common.constants.ServiceAccountConstants;
+import org.keycloak.crypto.Algorithm;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
+import org.keycloak.jose.jws.JWSHeader;
+import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.RefreshToken;
@@ -33,15 +36,18 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RealmBuilder;
+import org.keycloak.testsuite.util.TokenSignatureUtil;
 import org.keycloak.testsuite.util.UserBuilder;
 
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -268,5 +274,69 @@ public class ServiceAccountTest extends AbstractKeycloakTest {
             userId = user.getId();
             userName = user.getUsername();
         }
+    }
+
+    @Test
+    public void clientCredentialsAuthRequest_ClientES256_RealmPS256() throws Exception {
+    	conductClientCredentialsAuthRequest(Algorithm.HS256, Algorithm.ES256, Algorithm.PS256);
+    }
+
+    private void conductClientCredentialsAuthRequest(String expectedRefreshAlg, String expectedAccessAlg, String realmTokenAlg) throws Exception {
+        try {
+            /// Realm Setting is used for ID Token Signature Algorithm
+            TokenSignatureUtil.changeRealmTokenSignatureProvider(adminClient, realmTokenAlg);
+            TokenSignatureUtil.changeClientAccessTokenSignatureProvider(ApiUtil.findClientByClientId(adminClient.realm("test"), "service-account-cl"), expectedAccessAlg);
+            clientCredentialsAuthSuccess(expectedRefreshAlg, expectedAccessAlg);
+        } finally {
+            TokenSignatureUtil.changeRealmTokenSignatureProvider(adminClient, Algorithm.RS256);
+            TokenSignatureUtil.changeClientAccessTokenSignatureProvider(ApiUtil.findClientByClientId(adminClient.realm("test"), "service-account-cl"), Algorithm.RS256);
+        }
+        return;
+    }
+
+    private void clientCredentialsAuthSuccess(String expectedRefreshAlg, String expectedAccessAlg) throws Exception {
+        oauth.clientId("service-account-cl");
+
+        OAuthClient.AccessTokenResponse response = oauth.doClientCredentialsGrantAccessTokenRequest("secret1");
+
+        assertEquals(200, response.getStatusCode());
+
+        AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
+        RefreshToken refreshToken = oauth.parseRefreshToken(response.getRefreshToken());
+
+        JWSHeader header = new JWSInput(response.getAccessToken()).getHeader();
+        assertEquals(expectedAccessAlg, header.getAlgorithm().name());
+        assertEquals("JWT", header.getType());
+        assertNull(header.getContentType());
+
+        header = new JWSInput(response.getRefreshToken()).getHeader();
+        assertEquals(expectedRefreshAlg, header.getAlgorithm().name());
+        assertEquals("JWT", header.getType());
+        assertNull(header.getContentType());
+
+        events.expectClientLogin()
+                .client("service-account-cl")
+                .user(userId)
+                .session(accessToken.getSessionState())
+                .detail(Details.TOKEN_ID, accessToken.getId())
+                .detail(Details.REFRESH_TOKEN_ID, refreshToken.getId())
+                .detail(Details.USERNAME, userName)
+                .assertEvent();
+
+        assertEquals(accessToken.getSessionState(), refreshToken.getSessionState());
+        System.out.println("Access token other claims: " + accessToken.getOtherClaims());
+        Assert.assertEquals("service-account-cl", accessToken.getOtherClaims().get(ServiceAccountConstants.CLIENT_ID));
+        Assert.assertTrue(accessToken.getOtherClaims().containsKey(ServiceAccountConstants.CLIENT_ADDRESS));
+        Assert.assertTrue(accessToken.getOtherClaims().containsKey(ServiceAccountConstants.CLIENT_HOST));
+
+        OAuthClient.AccessTokenResponse refreshedResponse = oauth.doRefreshTokenRequest(response.getRefreshToken(), "secret1");
+
+        AccessToken refreshedAccessToken = oauth.verifyToken(refreshedResponse.getAccessToken());
+        RefreshToken refreshedRefreshToken = oauth.parseRefreshToken(refreshedResponse.getRefreshToken());
+
+        assertEquals(accessToken.getSessionState(), refreshedAccessToken.getSessionState());
+        assertEquals(accessToken.getSessionState(), refreshedRefreshToken.getSessionState());
+
+        events.expectRefresh(refreshToken.getId(), refreshToken.getSessionState()).user(userId).client("service-account-cl").assertEvent();
     }
 }

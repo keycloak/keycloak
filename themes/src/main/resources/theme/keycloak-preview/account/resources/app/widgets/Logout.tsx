@@ -15,29 +15,34 @@
  */
 
 import * as React from 'react';
-import {Link} from 'react-router-dom';
 
 import {Msg} from './Msg';
 import {KeycloakService} from '../keycloak-service/keycloak.service';
+
+import {Button, DropdownItem} from '@patternfly/react-core';
  
 declare const baseUrl: string;
 
-export interface LogoutProps {
+function handleLogout(): void {
+    KeycloakService.Instance.logout(baseUrl);
 }
- 
-export class Logout extends React.Component<LogoutProps> {
-
-    public constructor(props: LogoutProps) {
-        super(props);
-    }
     
-    private handleLogout(): void {
-        KeycloakService.Instance.logout(baseUrl);
-    }
-    
+interface LogoutProps {}
+export class LogoutButton extends React.Component<LogoutProps> {
     public render(): React.ReactNode {
         return (
-            <Link to="/" className="pf-c-button pf-m-primary" type="button" onClick={this.handleLogout}><Msg msgKey="doSignOut"/></Link>
+            <Button onClick={handleLogout}><Msg msgKey="doSignOut"/></Button>
+        );
+    }
+}
+
+interface LogoutDropdownItemProps {}
+export class LogoutDropdownItem extends React.Component<LogoutDropdownItemProps> {
+    public render(): React.ReactNode {
+        return (
+            <DropdownItem key="logout" onClick={handleLogout}>
+                {Msg.localize('doSignOut')}
+            </DropdownItem>
         );
     }
 }

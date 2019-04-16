@@ -47,6 +47,10 @@ public abstract class AbstractPage {
         return driver;
     }
 
+    public void setDriver(WebDriver driver) {
+        this.driver = driver;
+    }
+
     public abstract UriBuilder createUriBuilder();
 
     public String getUriFragment() {

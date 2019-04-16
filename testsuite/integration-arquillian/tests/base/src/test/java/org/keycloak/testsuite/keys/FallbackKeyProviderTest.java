@@ -96,6 +96,9 @@ public class FallbackKeyProviderTest extends AbstractKeycloakTest {
         String[] algorithmsToTest = new String[] {
                 Algorithm.RS384,
                 Algorithm.RS512,
+                Algorithm.PS256,
+                Algorithm.PS384,
+                Algorithm.PS512,
                 Algorithm.ES256,
                 Algorithm.ES384,
                 Algorithm.ES512

@@ -21,6 +21,7 @@ import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuthErrorException;
+import org.keycloak.crypto.Algorithm;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.jose.jws.JWSHeader;
@@ -248,36 +249,44 @@ public abstract class AbstractOIDCResponseTypeTest extends AbstractTestRealmKeyc
     }
 
     @Test
-    public void oidcFlow_RealmRS256_ClientRS384_EffectiveRS384() throws Exception {
-        try {
-            setSignatureAlgorithm("RS384");
-            TokenSignatureUtil.changeRealmTokenSignatureProvider(adminClient, "RS256");
-            TokenSignatureUtil.changeClientIdTokenSignatureProvider(ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), "RS384");
-            oidcFlow("RS256", "RS384");
-        } finally {
-            setSignatureAlgorithm("RS256");
-            TokenSignatureUtil.changeClientIdTokenSignatureProvider(ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), "RS256");
-        }
+    public void oidcFlow_RealmRS256_ClientRS384() throws Exception {
+        oidcFlowRequest(Algorithm.RS256, Algorithm.RS384);
     }
 
     @Test
-    public void oidcFlow_RealmES256_ClientES384_EffectiveES384() throws Exception {
+    public void oidcFlow_RealmES256_ClientES384() throws Exception {
+        oidcFlowRequest(Algorithm.ES256, Algorithm.ES384);
+    }
+
+    @Test
+    public void oidcFlow_RealmRS256_ClientPS256() throws Exception {
+        oidcFlowRequest(Algorithm.RS256, Algorithm.PS256);
+    }
+
+    @Test
+    public void oidcFlow_RealmPS256_ClientES256() throws Exception {
+        oidcFlowRequest(Algorithm.PS256, Algorithm.ES256);
+    }
+
+    private void oidcFlowRequest(String expectedAccessAlg, String expectedIdTokenAlg) throws Exception {
         try {
-            setSignatureAlgorithm("ES384");
-            TokenSignatureUtil.changeRealmTokenSignatureProvider(adminClient, "ES256");
-            TokenSignatureUtil.changeClientIdTokenSignatureProvider(ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), "ES384");
-            oidcFlow("ES256", "ES384");
+            setIdTokenSignatureAlgorithm(expectedIdTokenAlg);
+            // Realm setting is used for access token signature algorithm
+            TokenSignatureUtil.changeRealmTokenSignatureProvider(adminClient, expectedAccessAlg);
+            TokenSignatureUtil.changeClientIdTokenSignatureProvider(ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), expectedIdTokenAlg);
+            oidcFlow(expectedAccessAlg, expectedIdTokenAlg);
         } finally {
-            setSignatureAlgorithm("RS256");
-            TokenSignatureUtil.changeClientIdTokenSignatureProvider(ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), "RS256");
+            setIdTokenSignatureAlgorithm(Algorithm.RS256);
+            TokenSignatureUtil.changeRealmTokenSignatureProvider(adminClient, Algorithm.RS256);
+            TokenSignatureUtil.changeClientIdTokenSignatureProvider(ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), Algorithm.RS256);
         }
     }
 
-    private String sigAlgName = "RS256";
-    private void setSignatureAlgorithm(String sigAlgName) {
-        this.sigAlgName = sigAlgName;
+    private String idTokenSigAlgName = Algorithm.RS256;
+    private void setIdTokenSignatureAlgorithm(String idTokenSigAlgName) {
+        this.idTokenSigAlgName = idTokenSigAlgName;
     }
-    protected String getSignatureAlgorithm() {
-        return this.sigAlgName;
+    protected String getIdTokenSignatureAlgorithm() {
+        return this.idTokenSigAlgName;
     }
 }

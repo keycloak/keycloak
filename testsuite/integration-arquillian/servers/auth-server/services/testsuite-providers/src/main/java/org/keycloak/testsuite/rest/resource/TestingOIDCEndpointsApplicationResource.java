@@ -22,6 +22,7 @@ import org.jboss.resteasy.spi.BadRequestException;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.common.util.PemUtils;
+import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.AsymmetricSignatureSignerContext;
 import org.keycloak.crypto.KeyType;
 import org.keycloak.crypto.KeyWrapper;
@@ -29,7 +30,6 @@ import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.JWKBuilder;
-import org.keycloak.jose.jws.Algorithm;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.testsuite.rest.TestApplicationResourceProviderFactory;
@@ -77,21 +77,24 @@ public class TestingOIDCEndpointsApplicationResource {
             String keyType = null;
 
             switch (jwaAlgorithm) {
-                case org.keycloak.crypto.Algorithm.RS256:
-                case org.keycloak.crypto.Algorithm.RS384:
-                case org.keycloak.crypto.Algorithm.RS512:
+                case Algorithm.RS256:
+                case Algorithm.RS384:
+                case Algorithm.RS512:
+                case Algorithm.PS256:
+                case Algorithm.PS384:
+                case Algorithm.PS512:
                     keyType = KeyType.RSA;
                     keyPair = KeyUtils.generateRsaKeyPair(2048);
                     break;
-                case org.keycloak.crypto.Algorithm.ES256:
+                case Algorithm.ES256:
                     keyType = KeyType.EC;
                     keyPair = generateEcdsaKey("secp256r1");
                     break;
-                case org.keycloak.crypto.Algorithm.ES384:
+                case Algorithm.ES384:
                     keyType = KeyType.EC;
                     keyPair = generateEcdsaKey("secp384r1");
                     break;
-                case org.keycloak.crypto.Algorithm.ES512:
+                case Algorithm.ES512:
                     keyType = KeyType.EC;
                     keyPair = generateEcdsaKey("secp521r1");
                     break;
@@ -193,12 +196,15 @@ public class TestingOIDCEndpointsApplicationResource {
         boolean ret = false;
         switch (signingAlgorithm) {
             case "none":
-            case org.keycloak.crypto.Algorithm.RS256:
-            case org.keycloak.crypto.Algorithm.RS384:
-            case org.keycloak.crypto.Algorithm.RS512:
-            case org.keycloak.crypto.Algorithm.ES256:
-            case org.keycloak.crypto.Algorithm.ES384:
-            case org.keycloak.crypto.Algorithm.ES512:
+            case Algorithm.RS256:
+            case Algorithm.RS384:
+            case Algorithm.RS512:
+            case Algorithm.PS256:
+            case Algorithm.PS384:
+            case Algorithm.PS512:
+            case Algorithm.ES256:
+            case Algorithm.ES384:
+            case Algorithm.ES512:
                 ret = true;
         }
         return ret;

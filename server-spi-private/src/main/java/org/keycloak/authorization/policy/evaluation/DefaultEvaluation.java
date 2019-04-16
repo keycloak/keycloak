@@ -46,7 +46,6 @@ import org.keycloak.representations.idm.authorization.Logic;
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
 public class DefaultEvaluation implements Evaluation {
-
     private final ResourcePermission permission;
     private final EvaluationContext executionContext;
     private final Decision decision;
@@ -173,10 +172,12 @@ public class DefaultEvaluation implements Evaluation {
 
                 if (Objects.isNull(user)) {
                     user = session.users().getUserByUsername(id, realm);
-
-                    if (Objects.isNull(user)) {
-                        user = session.users().getUserByEmail(id, realm);
-                    }
+                }
+                if (Objects.isNull(user)) {
+                    user = session.users().getUserByEmail(id, realm);
+                }
+                if (Objects.isNull(user)) {
+                    user = session.users().getServiceAccount(realm.getClientById(id));
                 }
 
                 return user;
