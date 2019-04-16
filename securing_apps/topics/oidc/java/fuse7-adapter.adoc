@@ -6,7 +6,7 @@
 
 JBoss Fuse 7 leverages Undertow adapter which is essentially the same as 
 ifeval::[{project_community}==true]
-<<_jboss_adapter,EAP 7 / WildFly 10 Adapter>>
+<<_jboss_adapter,EAP 7 / WildFly Adapter>>
 endif::[]
 ifeval::[{project_product}==true]
 <<_jboss_adapter,JBoss EAP 7 Adapter>>
