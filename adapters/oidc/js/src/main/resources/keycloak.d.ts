@@ -34,6 +34,7 @@ declare namespace Keycloak {
 	type KeycloakResponseMode = 'query'|'fragment';
 	type KeycloakResponseType = 'code'|'id_token token'|'code id_token token';
 	type KeycloakFlow = 'standard'|'implicit'|'hybrid';
+	type KeycloakPromiseType = 'native'
 
 	interface KeycloakInitOptions {
 		/**
@@ -109,6 +110,13 @@ declare namespace Keycloak {
 		 * @default standard
 		 */
 		flow?: KeycloakFlow;
+
+		/**
+		 * Set the promise type. If set to `'native'` all methods returning a promise
+		 * will return a native JavaScript promise. If not set will return
+		 * Keycloak specific promise objects.
+		 */
+		promiseType?: KeycloakPromiseType;
 	}
 
 	interface KeycloakLoginOptions {
