@@ -359,6 +359,24 @@ The tests also use some constants placed in [test-constants.properties](tests/ba
 
 In case a custom `settings.xml` is used for Maven, you need to specify it also in `-Dkie.maven.settings.custom=path/to/settings.xml`.
 
+
+## Spring Boot adapter tests
+
+Currently we are testing Spring Boot with three different containers `Tomcat 8`, `Undertow` and `Jetty [9.2, 9.3, 9.4]`. We are testing two versions of Spring Boot 1.5.x and 2.1.x. All versions are specified in [root pom.xml](../../pom.xml) (see properties `spring-boot15.version` and `spring-boot21.version`).
+
+To run tests execute following command. Default version of Spring Boot is 1.5.x, to run tests with version 2.1.x add profile `-Pspringboot21`
+
+```
+mvn -f testsuite/integration-arquillian/tests/other/springboot-tests/pom.xml \
+    clean test \
+    -Ptest-springboot \
+    -Dauth.server.ssl.required=false \
+    -Dadapter.container=[tomcat|undertow|jetty92|jetty93|jetty94]
+    [-Pspringboot21]
+```
+
+Note: Spring Boot 21 doesn't work with jetty92 and jetty93, only jetty94 is tested.
+
 #### Execution example
 ```
 mvn -f testsuite/integration-arquillian/tests/other/console/pom.xml \
