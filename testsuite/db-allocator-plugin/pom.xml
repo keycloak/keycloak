@@ -31,7 +31,7 @@
     <name>DB Allocator Plugin</name>
 
     <properties>
-        <maven.version>3.6.0</maven.version>
+        <maven.version>3.3.9</maven.version>
     </properties>
 
     <dependencies>
@@ -43,13 +43,13 @@
         <dependency>
             <groupId>org.apache.maven.plugin-tools</groupId>
             <artifactId>maven-plugin-annotations</artifactId>
-            <version>${maven.version}</version>
+            <version>3.4</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.maven</groupId>
             <artifactId>maven-core</artifactId>
-            <version>3.6.0</version>
+            <version>${maven.version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
@@ -69,7 +69,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-plugin-plugin</artifactId>
-                <version>${maven.version}</version>
+                <version>3.6.0</version>
             </plugin>
         </plugins>
     </build>
