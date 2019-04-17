@@ -51,7 +51,7 @@
         <dependency>
             <groupId>org.apache.cxf</groupId>
             <artifactId>cxf-rt-frontend-jaxrs</artifactId>
-            <version>${cxf.version}</version>
+            <version>${cxf.jaxrs.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.cxf</groupId>
@@ -61,7 +61,7 @@
         <dependency>
             <groupId>org.apache.cxf</groupId>
             <artifactId>cxf-rt-transports-http-undertow</artifactId>
-            <version>${cxf.version}</version>
+            <version>${cxf.undertow.version}</version>
         </dependency>
     </dependencies>
 
