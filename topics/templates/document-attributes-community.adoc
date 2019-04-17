@@ -2,10 +2,10 @@
 :project_name_full: Keycloak
 :project_community: true
 :project_product: false
-:project_version: 6.0.0
-:project_versionMvn: 6.0.0
-:project_versionNpm: 6.0.0
-:project_versionDoc: 6.0
+:project_version: 7.0.0
+:project_versionMvn: 7.0.0
+:project_versionNpm: 7.0.0
+:project_versionDoc: 7.0
 :project_images: keycloak-images
 :project_doc_base_url: https://www.keycloak.org/docs/{project_versionDoc}
 :project_dirref: KEYCLOAK_HOME
