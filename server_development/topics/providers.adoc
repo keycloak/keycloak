@@ -22,27 +22,27 @@ import ...
 
 public class MyThemeSelectorProviderFactory implements ThemeSelectorProviderFactory {
 
-      @Override
-        public ThemeSelectorProvider create(KeycloakSession session) {
-            return new MyThemeSelectorProvider(session);
-        }
+    @Override
+    public ThemeSelectorProvider create(KeycloakSession session) {
+        return new MyThemeSelectorProvider(session);
+    }
 
-        @Override
-        public void init(Config.Scope config) {
-        }
+    @Override
+    public void init(Config.Scope config) {
+    }
 
-        @Override
-        public void postInit(KeycloakSessionFactory factory) {
-        }
+    @Override
+    public void postInit(KeycloakSessionFactory factory) {
+    }
 
-        @Override
-        public void close() {
-        }
+    @Override
+    public void close() {
+    }
 
-        @Override
-        public String getId() {
-            return "myThemeSelector";
-        }
+    @Override
+    public String getId() {
+        return "myThemeSelector";
+    }
 }
 ----
 
@@ -68,9 +68,9 @@ public class MyThemeSelectorProvider implements ThemeSelectorProvider {
         return "my-theme";
     }
 	
-	@Override
+    @Override
 	public void close() {
-	}
+    }
 }
 ----
 
@@ -233,7 +233,7 @@ For example to disable the Infinispan user cache provider add:
 
 The service providers can be packaged within any Java EE component so long as you set up the `META-INF/services`
 file correctly to point to your providers.  For example, if your provider needs to use third party libraries, you
-can package up your provider within an ear and store these third pary libraries in the ear's `lib/` directory.
+can package up your provider within an ear and store these third party libraries in the ear's `lib/` directory.
 Also note that provider jars can make use of the `jboss-deployment-structure.xml` file that EJBs, WARS, and EARs
 can use in a {appserver_name} environment.  See the {appserver_name} documentation for more details on this file.  It
 allows you to pull in external dependencies among other fine grain actions.
@@ -283,7 +283,7 @@ You must put the `@Remove` annotation on the `close()` method of your provider. 
 will never be cleaned up and you may eventually see error messages.
 
 Implementations of `ProviderFactory` are required to be plain java objects.  Your factory class would
-perform a JNDI lookup of the Stateful EJB in its create() method.
+perform a JNDI lookup of the Stateful EJB in its `create()` method.
 
 [source,java]
 ----
