@@ -23,13 +23,7 @@ import {App} from './app/App';
 
 const e = React.createElement;
 
-export interface MainProps {
-}
-
-//declare function loadjs(url,loadListener?);
- 
-//loadjs('/js/MyExtension.js');
-
+export interface MainProps {}
 export class Main extends React.Component<MainProps> {
     
     public constructor(props: MainProps) {
