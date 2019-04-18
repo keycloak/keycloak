@@ -16,29 +16,25 @@
  */
 package org.keycloak.testsuite.adapter.example.fuse;
 
-import static org.hamcrest.Matchers.anyOf;
-import static org.hamcrest.Matchers.allOf;
-import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.auth.page.AuthRealm.DEMO;
+import static org.keycloak.testsuite.utils.fuse.FuseUtils.assertCommand;
+import static org.keycloak.testsuite.utils.fuse.FuseUtils.getCommandOutput;
 import static org.keycloak.testsuite.utils.io.IOUtil.loadRealm;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlDoesntStartWith;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
+import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWithLoginUrlOf;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-
 import javax.management.InstanceNotFoundException;
 import javax.management.MBeanException;
 import javax.management.MBeanServerConnection;
@@ -47,14 +43,6 @@ import javax.management.ReflectionException;
 import javax.management.remote.JMXConnector;
 import javax.management.remote.JMXConnectorFactory;
 import javax.management.remote.JMXServiceURL;
-
-import org.apache.sshd.client.SshClient;
-import org.apache.sshd.client.future.ConnectFuture;
-import org.apache.sshd.client.channel.ChannelExec;
-import org.apache.sshd.client.channel.ClientChannelEvent;
-import org.apache.sshd.client.session.ClientSession;
-import org.apache.sshd.client.session.ClientSession.ClientSessionEvent;
-import org.hamcrest.Matchers;
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
@@ -64,19 +52,24 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.adapter.AbstractExampleAdapterTest;
 import org.keycloak.testsuite.adapter.page.Hawtio2Page;
 import org.keycloak.testsuite.adapter.page.HawtioPage;
+import org.keycloak.testsuite.adapter.page.fuse.AdminInterface;
+import org.keycloak.testsuite.adapter.page.fuse.CustomerListing;
+import org.keycloak.testsuite.adapter.page.fuse.CustomerPortalFuseExample;
+import org.keycloak.testsuite.adapter.page.fuse.ProductPortalFuseExample;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
-import org.keycloak.testsuite.arquillian.containers.ContainerConstants;
+import org.keycloak.testsuite.auth.page.account.Account;
+import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
 import org.keycloak.testsuite.auth.page.login.OIDCLogin;
-import org.keycloak.testsuite.util.ContainerAssume;
 import org.keycloak.testsuite.util.DroneUtils;
 import org.keycloak.testsuite.util.JavascriptBrowser;
 import org.keycloak.testsuite.util.WaitUtils;
+import org.keycloak.testsuite.utils.fuse.FuseUtils.Result;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 
 @AppServerContainer(ContainerConstants.APP_SERVER_FUSE63)
 @AppServerContainer(ContainerConstants.APP_SERVER_FUSE7X)
-public class FuseAdminAdapterTest extends AbstractExampleAdapterTest {
+public class FuseAdapterTest extends AbstractExampleAdapterTest {
 
     @Drone
     @JavascriptBrowser
@@ -85,19 +78,28 @@ public class FuseAdminAdapterTest extends AbstractExampleAdapterTest {
     @Page
     @JavascriptBrowser
     private HawtioPage hawtioPage;
-
     @Page
     @JavascriptBrowser
     private Hawtio2Page hawtio2Page;
-
     @Page
     @JavascriptBrowser
     private OIDCLogin testRealmLoginPageFuse;
-
-    private SshClient client;
-
-    protected enum Result { OK, NOT_FOUND, NO_CREDENTIALS, NO_ROLES };
-
+    @Page
+    @JavascriptBrowser
+    protected CustomerPortalFuseExample customerPortal;
+    @Page
+    @JavascriptBrowser
+    protected CustomerListing customerListing;
+    @Page
+    @JavascriptBrowser
+    protected AdminInterface adminInterface;
+    @Page
+    @JavascriptBrowser
+    protected ProductPortalFuseExample productPortal;
+    @Page
+    @JavascriptBrowser
+    protected Account testRealmAccount;
+    
     @Override
     public void addAdapterTestRealms(List<RealmRepresentation> testRealms) {
         RealmRepresentation fuseRealm = loadRealm(new File(TEST_APPS_HOME_DIR + "/fuse/demorealm.json"));
@@ -108,6 +110,9 @@ public class FuseAdminAdapterTest extends AbstractExampleAdapterTest {
     public void setDefaultPageUriParameters() {
         super.setDefaultPageUriParameters();
         testRealmLoginPageFuse.setAuthRealm(DEMO);
+        testRealmPage.setAuthRealm(DEMO);
+        testRealmLoginPage.setAuthRealm(DEMO);
+        testRealmAccount.setAuthRealm(DEMO);
     }
 
     @Before
@@ -115,12 +120,17 @@ public class FuseAdminAdapterTest extends AbstractExampleAdapterTest {
         DroneUtils.addWebDriver(jsDriver);
     }
 
-    @Test
-    public void hawtio1LoginTest() throws Exception {
-        // Note that this does work only in Fuse 6 with Hawtio 1, Fuse 7 contains Hawtio 2
-        ContainerAssume.assumeNotAppServerFuse7();
+    @Override
+    public boolean isImportAfterEachMethod() {
+        return false;
+    }
 
+    @Test
+    @AppServerContainer(value = ContainerConstants.APP_SERVER_FUSE7X, skip = true)
+    public void hawtio1LoginTest() throws Exception {
         hawtioPage.navigateTo();
+        WaitUtils.waitForPageToLoad();
+        assertCurrentUrlDoesntStartWith(hawtioPage);
         testRealmLoginPageFuse.form().login("user", "invalid-password");
         assertCurrentUrlDoesntStartWith(hawtioPage);
 
@@ -145,13 +155,12 @@ public class FuseAdminAdapterTest extends AbstractExampleAdapterTest {
     }
 
     @Test
+    @AppServerContainer(value = ContainerConstants.APP_SERVER_FUSE63, skip = true)
     public void hawtio2LoginTest() throws Exception {
-        // Note that this does work only in Fuse 7 with Hawtio 2, Fuse 6 contains Hawtio 1
-        ContainerAssume.assumeNotAppServerFuse6();
-
         hawtio2Page.navigateTo();
         WaitUtils.waitForPageToLoad();
 
+        assertCurrentUrlDoesntStartWith(hawtio2Page);
         testRealmLoginPageFuse.form().login("user", "invalid-password");
         assertCurrentUrlDoesntStartWith(hawtio2Page);
 
@@ -182,10 +191,8 @@ public class FuseAdminAdapterTest extends AbstractExampleAdapterTest {
     }    
 
     @Test
+    @AppServerContainer(value = ContainerConstants.APP_SERVER_FUSE7X, skip = true)
     public void sshLoginTestFuse6() throws Exception {
-        // Note that this does not work for Fuse 7 since the error codes have changed
-        ContainerAssume.assumeNotAppServerFuse7();
-
         assertCommand("mary", "password", "shell:date", Result.NO_CREDENTIALS);
         assertCommand("john", "password", "shell:info", Result.NO_CREDENTIALS);
         assertCommand("john", "password", "shell:date", Result.OK);
@@ -193,10 +200,8 @@ public class FuseAdminAdapterTest extends AbstractExampleAdapterTest {
     }
 
     @Test
+    @AppServerContainer(value = ContainerConstants.APP_SERVER_FUSE63, skip = true)
     public void sshLoginTestFuse7() throws Exception {
-        // Note that this works for Fuse 7 and newer
-        ContainerAssume.assumeNotAppServerFuse6();
-
         assertCommand("mary", "password", "shell:date", Result.NOT_FOUND);
         assertCommand("john", "password", "shell:info", Result.NOT_FOUND);
         assertCommand("john", "password", "shell:date", Result.OK);
@@ -218,104 +223,39 @@ public class FuseAdminAdapterTest extends AbstractExampleAdapterTest {
     private void assertRoles(String username, String... expectedRoles) throws Exception {
         final String commandOutput = getCommandOutput(username, "password", "jaas:whoami -r --no-format");
         final List<String> parsedOutput = Arrays.asList(commandOutput.split("\\n+"));
-        assertThat(parsedOutput, Matchers.containsInAnyOrder(expectedRoles));
+        assertThat(parsedOutput, containsInAnyOrder(expectedRoles));
     }
 
     @Test
     public void jmxLoginTest() throws Exception {
-        setJMXAuthentication("keycloak", "password");
         ObjectName mbean = new ObjectName("org.apache.karaf:type=config,name=root");
-        //invalid credentials
-        try {
-            getJMXConnector("mary", "password1").getMBeanServerConnection();
+        log.debug("jmxLoginTest - testing: invalid credentials");
+        try (JMXConnector jmxConnector = getJMXConnector(10, TimeUnit.SECONDS, "mary", "password1")) {
+            jmxConnector.getMBeanServerConnection();
             Assert.fail();
-        } catch (SecurityException se) {}
-        //no role
-        MBeanServerConnection connection = getJMXConnector("mary", "password").getMBeanServerConnection();
-        assertJmxInvoke(false, connection, mbean, "listProperties", new Object [] {""}, new String [] {String.class.getName()});
-        assertJmxInvoke(false, connection, mbean, "setProperty", new Object [] {"", "x", "y"}, new String [] {String.class.getName(), String.class.getName(), String.class.getName()});
-        //read only role  
-        connection = getJMXConnector("john", "password").getMBeanServerConnection();
-        assertJmxInvoke(true, connection, mbean, "listProperties", new Object [] {""}, new String [] {String.class.getName()});
-        assertJmxInvoke(false, connection, mbean, "setProperty", new Object [] {"", "x", "y"}, new String [] {String.class.getName(), String.class.getName(), String.class.getName()});
-        //read write role
-        connection = getJMXConnector("root", "password").getMBeanServerConnection();
-        assertJmxInvoke(true, connection, mbean, "listProperties", new Object [] {""}, new String [] {String.class.getName()});
-        assertJmxInvoke(true, connection, mbean, "setProperty", new Object [] {"", "x", "y"}, new String [] {String.class.getName(), String.class.getName(), String.class.getName()});
-        setJMXAuthentication("karaf", "admin");
-    }
-
-    protected String assertCommand(String user, String password,  String command, Result result) throws Exception, IOException {
-        if (!command.endsWith("\n"))
-            command += "\n";
-
-        String output = getCommandOutput(user, password, command);
-
-        switch(result) {
-        case OK:
-            Assert.assertThat(output,
-                    not(anyOf(containsString("Insufficient credentials"), Matchers.containsString("Command not found"))));
-            break;
-        case NOT_FOUND:
-            Assert.assertThat(output,
-                    containsString("Command not found"));
-            break;
-        case NO_CREDENTIALS:
-            Assert.assertThat(output,
-                    containsString("Insufficient credentials"));
-            break;
-        case NO_ROLES:
-            Assert.assertThat(output,
-                    containsString("Current user has no associated roles"));
-            break;
-        default:
-            Assert.fail("Unexpected enum value: " + result);
+        } catch (TimeoutException expected) {
+            assertThat(expected.getCause().toString(), containsString("java.lang.SecurityException: Authentication failed"));
         }
-
-        return output;
-    }
-    
-    protected String getCommandOutput(String user, String password, String command) throws Exception, IOException {
-        if (!command.endsWith("\n"))
-            command += "\n";
-
-        try (ClientSession session = openSshChannel(user, password);
-          ChannelExec channel = session.createExecChannel(command);
-          ByteArrayOutputStream out = new ByteArrayOutputStream()) {
-            channel.setOut(out);
-            channel.setErr(out);
-            channel.open();
-            channel.waitFor(EnumSet.of(ClientChannelEvent.CLOSED, ClientChannelEvent.EOF), 0);
-
-            return new String(out.toByteArray());
+        log.debug("jmxLoginTest - testing: no role");
+        try (JMXConnector jmxConnector = getJMXConnector("mary", "password")) {
+            MBeanServerConnection connection = jmxConnector.getMBeanServerConnection();
+            assertJmxInvoke(false, connection, mbean, "listProperties", new Object [] {""}, new String [] {String.class.getName()});
+            assertJmxInvoke(false, connection, mbean, "setProperty", new Object [] {"", "x", "y"}, new String [] {String.class.getName(), String.class.getName(), String.class.getName()});
+        }
+        log.debug("jmxLoginTest - testing: read only role");
+        try (JMXConnector jmxConnector = getJMXConnector("john", "password")) {
+            MBeanServerConnection connection = jmxConnector.getMBeanServerConnection();
+            assertJmxInvoke(true, connection, mbean, "listProperties", new Object [] {""}, new String [] {String.class.getName()});
+            assertJmxInvoke(false, connection, mbean, "setProperty", new Object [] {"", "x", "y"}, new String [] {String.class.getName(), String.class.getName(), String.class.getName()});
+        }
+        log.debug("jmxLoginTest - testing: read write role");
+        try (JMXConnector jmxConnector = getJMXConnector("root", "password")) {
+            MBeanServerConnection connection = jmxConnector.getMBeanServerConnection();
+            assertJmxInvoke(true, connection, mbean, "listProperties", new Object [] {""}, new String [] {String.class.getName()});
+            assertJmxInvoke(true, connection, mbean, "setProperty", new Object [] {"", "x", "y"}, new String [] {String.class.getName(), String.class.getName(), String.class.getName()});
         }
     }
 
-    protected ClientSession openSshChannel(String username, String password) throws Exception {
-        client = SshClient.setUpDefaultClient();
-        client.start();
-        ConnectFuture future = client.connect(username, "localhost", 8101);
-        future.await();
-        ClientSession session = future.getSession();
-
-        Set<ClientSessionEvent> ret = EnumSet.of(ClientSessionEvent.WAIT_AUTH);
-        while (ret.contains(ClientSessionEvent.WAIT_AUTH)) {
-            session.addPasswordIdentity(password);
-            session.auth().verify();
-            ret = session.waitFor(EnumSet.of(ClientSessionEvent.WAIT_AUTH, ClientSessionEvent.CLOSED, ClientSessionEvent.AUTHED), 0);
-        }
-        if (ret.contains(ClientSessionEvent.CLOSED)) {
-            throw new Exception("Could not open SSH channel");
-        }
-
-        return session;
-    }
-
-    protected void setJMXAuthentication(String realm, String password) throws Exception {
-       assertCommand("admin", "password", "config:edit org.apache.karaf.management; config:propset jmxRealm " + realm + "; config:update", Result.OK);
-       getMBeanServerConnection(10000, TimeUnit.MILLISECONDS, "admin", password);
-    }
-    
     private Object assertJmxInvoke(boolean expectSuccess, MBeanServerConnection connection, ObjectName mbean, String method,
             Object[] params, String[] signature) throws InstanceNotFoundException, MBeanException, ReflectionException, IOException {
         try {
@@ -327,34 +267,113 @@ public class FuseAdminAdapterTest extends AbstractExampleAdapterTest {
             return null;
         }
     }
-    
-    private MBeanServerConnection getMBeanServerConnection(long timeout, final TimeUnit unit, String username, String password) throws Exception {
+
+    private JMXConnector getJMXConnector(String username, String password) throws Exception {
+        return getJMXConnector(2, TimeUnit.MINUTES, username, password);
+    }
+
+    private JMXConnector getJMXConnector(long timeout, TimeUnit unit, String username, String password) throws Exception {
         Exception lastException = null;
         long timeoutMillis = System.currentTimeMillis() + unit.toMillis(timeout);
         while (System.currentTimeMillis() < timeoutMillis) {
             try {
-                return getJMXConnector(username, password).getMBeanServerConnection();
+                Map<String, ?> env = Collections.singletonMap(JMXConnector.CREDENTIALS, new String[] { username, password });
+                return JMXConnectorFactory.connect(new JMXServiceURL(getJmxServiceUrl()), env);
             } catch (Exception ex) {
                 lastException = ex;
                 Thread.sleep(500);
-                ex.printStackTrace();
+                log.debug("Loop: Getting MBean Server Connection: last caught exception: " + lastException.getClass().getName());
             }
         }
+        log.error("Failed to get MBean Server Connection within " + timeout + " " + unit.toString());
         TimeoutException timeoutException = new TimeoutException();
         timeoutException.initCause(lastException);
         throw timeoutException;
-    }
-    
-    private JMXConnector getJMXConnector(String userName, String password) throws Exception {
-        JMXServiceURL url = new JMXServiceURL(getJmxServiceUrl());
-        String[] credentials = new String[] { userName, password };
-        Map<String, ?> env = Collections.singletonMap(JMXConnector.CREDENTIALS, credentials);
-        JMXConnector connector = JMXConnectorFactory.connect(url, env);
-        return connector;
     }
 
     private String getJmxServiceUrl() throws Exception {
         return "service:jmx:rmi://localhost:44444/jndi/rmi://localhost:1099/karaf-root";
     }
 
+    @Test
+    public void testCustomerListingAndAccountManagement() {
+        customerPortal.navigateTo();
+        assertCurrentUrlStartsWith(customerPortal);
+
+        customerPortal.clickCustomerListingLink();
+        assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
+
+        testRealmLoginPageFuse.form().login("bburke@redhat.com", "password");
+        assertCurrentUrlStartsWith(customerListing);
+
+        assertThat(DroneUtils.getCurrentDriver().getPageSource(), allOf(
+            containsString("Username: bburke@redhat.com"),
+            containsString("Bill Burke"),
+            containsString("Stian Thorgersen")
+        ));
+
+        // account mgmt
+        customerListing.clickAccountManagement();
+
+        assertCurrentUrlStartsWith(testRealmAccount);
+        assertThat(testRealmAccount.getUsername(), equalTo("bburke@redhat.com"));
+
+        DroneUtils.getCurrentDriver().navigate().back();
+        customerListing.clickLogOut();
+
+        // assert user not logged in
+        customerPortal.clickCustomerListingLink();
+        assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
+
+    }
+
+    @Test
+    public void testAdminInterface() {
+        customerPortal.navigateTo();
+        assertCurrentUrlStartsWith(customerPortal);
+
+        customerPortal.clickAdminInterfaceLink();
+        WaitUtils.waitForPageToLoad();
+        assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
+
+        testRealmLoginPageFuse.form().login("admin", "password");
+        assertCurrentUrlStartsWith(adminInterface);
+        assertThat(DroneUtils.getCurrentDriver().getPageSource(), containsString("Hello admin!"));
+        assertThat(DroneUtils.getCurrentDriver().getPageSource(), containsString("This second sentence is returned from a Camel RestDSL endpoint"));
+
+        customerListing.navigateTo();
+        WaitUtils.waitForPageToLoad();
+        customerListing.clickLogOut();
+        WaitUtils.waitForPageToLoad();
+
+        WaitUtils.pause(2500);
+        customerPortal.navigateTo();//needed for phantomjs
+        WaitUtils.waitForPageToLoad();
+        customerPortal.clickAdminInterfaceLink();
+        WaitUtils.waitForPageToLoad();
+        assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
+
+        testRealmLoginPageFuse.form().login("bburke@redhat.com", "password");
+        assertCurrentUrlStartsWith(adminInterface);
+        assertThat(DroneUtils.getCurrentDriver().getPageSource(), containsString("Status code is 403"));
+    }
+
+    @Test
+    public void testProductPortal() {
+        productPortal.navigateTo();
+        WaitUtils.waitForPageToLoad();
+
+        assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
+
+        testRealmLoginPageFuse.form().login("bburke@redhat.com", "password");
+        assertCurrentUrlStartsWith(productPortal);
+
+        assertThat(productPortal.getProduct1UnsecuredText(), containsString("401: Unauthorized"));
+        assertThat(productPortal.getProduct1SecuredText(), containsString("Product received: id=1"));
+        assertThat(productPortal.getProduct2SecuredText(), containsString("Product received: id=2"));
+
+        productPortal.clickLogOutLink();
+        WaitUtils.waitForPageToLoad();
+        assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
+    }
 }

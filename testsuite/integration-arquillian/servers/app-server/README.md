@@ -31,14 +31,6 @@ Submodules are enabled with profiles: `-Papp-server-MODULE`
 
 Configures SSL in `standalone.xml`. See profile `ssl`.
 
-
-## App Server - Karaf
-Submodules are enabled with profiles: `-Papp-server-MODULE`
-### Modules
-* __`karaf3` Karaf 3__
-* __`fuse61` JBoss Fuse 6.1__
-* __`fuse62` JBoss Fuse 6.2__
-
 ## App Server - Tomcat
 Submodules are enabled with profiles: `-Papp-server-MODULE`
 ### Modules

@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.testsuite.arquillian.containers;
+package org.keycloak.testsuite.utils.arquillian;
 
 public interface ContainerConstants {
     public static final String APP_SERVER_PREFIX = "app-server-";
