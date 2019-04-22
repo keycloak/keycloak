@@ -1,20 +1,20 @@
 [[_auth_spi]]
 == Authentication SPI
 
-Keycloak comes out of the box with a bunch of different authentication mechanisms: kerberos, password, and otp.
+{project_name} comes out of the box with a bunch of different authentication mechanisms: kerberos, password, and otp.
 These mechanisms may not meet all of your requirements and you may want to plug in your own custom ones.
-Keycloak provides an authentication SPI that you can use to write new plugins.
+{project_name} provides an authentication SPI that you can use to write new plugins.
 The admin console supports applying, ordering, and configuring these new mechanisms. 
 
-Keycloak also supports a simple registration form.
+{project_name} also supports a simple registration form.
 Different aspects of this form can be enabled and disabled i.e.
 Recaptcha support can be turned off and on.
 The same authentication SPI can be used to add another page to the registration flow or reimplement it entirely.
 There's also an additional fine-grain SPI you can use to add specific validations and user extensions to the built in registration form. 
 
-A required action in Keycloak is an action that a user has to perform after he authenticates.
+A required action in {project_name} is an action that a user has to perform after he authenticates.
 After the action is performed successfully, the user doesn't have to perform the action again.
-Keycloak comes with some built in required actions like "reset password".  This action forces the user to change their password after they have logged in.
+{project_name} comes with some built in required actions like "reset password".  This action forces the user to change their password after they have logged in.
 You can write and plug in your own required actions. 
 
 === Terms
@@ -69,7 +69,7 @@ This means that if any of these are successful, then the others do not have to e
 The Username/Password form is not executed if there is an SSO Cookie set or a successful Kerberos login.
 Let's walk through the steps from when a client first redirects to keycloak to authenticate the user. 
 
-. The OpenID Connect or SAML protocol provider unpacks relevent data, verifies the client and any signatures.
+. The OpenID Connect or SAML protocol provider unpacks relevant data, verifies the client and any signatures.
   It creates an AuthenticationSessionModel.
   It looks up what the browser flow should be, then starts executing the flow. 
 . The flow looks at the cookie execution and sees that it is an alternative.
@@ -97,7 +97,7 @@ Let's walk through the steps from when a client first redirects to keycloak to a
   If the browser then responds with a successful negotiate header, the provider associates the user with the AuthenticationSession and the flow ends because the rest of the executions on this level of the flow are all alternatives.
   Otherwise, again, the kerberos provider sets an attempted() status and the flow continues. 
 . The next execution is a subflow called Forms.
-  The executions for this subflow are loaded and the same processing logic occurs 
+  The executions for this subflow are loaded and the same processing logic occurs.
 . The first execution in the Forms subflow is the UsernamePassword provider.
   This provider also does not require for a user to already be associated with the flow.
   This provider creates challenge HTTP response and sets its status to challenge(). This execution is required, so the flow honors this challenge and sends the HTTP response back to the browser.
@@ -107,7 +107,7 @@ Let's walk through the steps from when a client first redirects to keycloak to a
   If the user entered an invalid username or password, a new challenge response is created and a status of failureChallenge() is set for this execution.
   A failureChallenge() means that there is a challenge, but that the flow should log this as an error in the error log.
   This error log can be used to lock accounts or IP Addresses that have had too many login failures.
-  If the username and password is valid, the provider associated the UserModel with the AuthenticationSessionModel and returns a status of success()
+  If the username and password is valid, the provider associated the UserModel with the AuthenticationSessionModel and returns a status of success().
 . The next execution is the OTP Form.
   This provider requires that a user has been associated with the flow.
   This requirement is satisfied because the UsernamePassword provider already associated the user with the flow.
@@ -130,18 +130,18 @@ Let's walk through the steps from when a client first redirects to keycloak to a
 === Authenticator SPI Walk Through
 
 In this section, we'll take a look at the Authenticator interface.
-For this, we are going to implement an authenticator that requires that a user enter in the answer to a secret question like "What is your mother's maiden name?".  This example is fully implemented and contained in the examples/providers/authenticator directory of the demo distribution of Keycloak. 
+For this, we are going to implement an authenticator that requires that a user enter in the answer to a secret question like "What is your mother's maiden name?".  This example is fully implemented and contained in the examples/providers/authenticator directory of the demo distribution of {project_name}. 
 
 The classes you must implement are the org.keycloak.authentication.AuthenticatorFactory and Authenticator interfaces.
 The Authenticator interface defines the logic.
 The AuthenticatorFactory is responsible for creating instances of an Authenticator.
-They both extend a more generic Provider and ProviderFactory set of interfaces that other Keycloak components like User Federation do. 
+They both extend a more generic Provider and ProviderFactory set of interfaces that other {project_name} components like User Federation do. 
 
 ==== Packaging Classes and Deployment
 
 You will package your classes within a single jar.
-This jar must contain a file named  `org.keycloak.authentication.AuthenticatorFactory`                and must be contained in the `META-INF/services/` directory of your jar.
-This file must list the fully qualified classname of each AuthenticatorFactory implementation you have in the jar.
+This jar must contain a file named  `org.keycloak.authentication.AuthenticatorFactory` and must be contained in the `META-INF/services/` directory of your jar.
+This file must list the fully qualified class name of each AuthenticatorFactory implementation you have in the jar.
 For example: 
 
 [source]
@@ -150,7 +150,7 @@ org.keycloak.examples.authenticator.SecretQuestionAuthenticatorFactory
 org.keycloak.examples.authenticator.AnotherProviderFactory
 ----            
 
-This services/ file is used by Keycloak to scan the providers it has to load into the system. 
+This services/ file is used by {project_name} to scan the providers it has to load into the system. 
 
 To deploy this jar, just copy it to the providers directory. 
 
@@ -168,9 +168,9 @@ In our case we are storing this information, hashed, within a UserCredentialValu
 
 [source,java]
 ----
-@Override
-  public boolean configuredFor(KeycloakSession session, RealmModel realm, UserModel user) {
-     return session.users().configuredForCredentialType("secret_question", realm, user);
+    @Override
+    public boolean configuredFor(KeycloakSession session, RealmModel realm, UserModel user) {
+        return session.users().configuredForCredentialType("secret_question", realm, user);
     }
 ----            
 
@@ -223,7 +223,7 @@ Calling LoginFormsProvider.createForm() returns a JAX-RS Response object.
 We then call AuthenticationFlowContext.challenge() passing in this response.
 This sets the status of the execution as CHALLENGE and if the execution is Required, this JAX-RS Response object will be sent to the browser. 
 
-So, the HTML page asking for the answer to a secret question is displayed to the user and the user enteres in the answer and clicks submit.
+So, the HTML page asking for the answer to a secret question is displayed to the user and the user enters in the answer and clicks submit.
 The action URL of the HTML form will send an HTTP request to the flow.
 The flow will end up invoking the action() method of our Authenticator implementation. 
 
@@ -373,7 +373,7 @@ getReferenceCategory() is just a category the Authenticator belongs to.
 
 ==== Adding Authenticator Form
 
-Keycloak comes with a Freemarker <<_themes,theme and template engine>>.
+{project_name} comes with a Freemarker <<_themes,theme and template engine>>.
 The createForm() method you called within authenticate() of your Authenticator class, builds an HTML page from a file within your login theme: `secret-question.ftl`.
 This file should be added to the `theme-resources/templates` in your JAR, see <<_theme_resource,Theme Resource Provider>> for more details.
 
@@ -438,7 +438,7 @@ For example:
 org.keycloak.examples.authenticator.SecretQuestionRequiredActionFactory
 ----            
 
-This services/ file is used by Keycloak to scan the providers it has to load into the system. 
+This services/ file is used by {project_name} to scan the providers it has to load into the system. 
 
 To deploy this jar, just copy it to the `standalone/deployments` directory. 
 
@@ -530,7 +530,7 @@ Your new required action should now be displayed and enabled in the required act
 
 === Modifying/Extending the Registration Form
 
-It is entirely possible for you to implement your own flow with a set of Authenticators to totally change how registration is done in Keycloak.
+It is entirely possible for you to implement your own flow with a set of Authenticators to totally change how registration is done in {project_name}.
 But what you'll usually want to do is just add a little bit of validation to the out of the box registration page.
 An additional SPI was created to be able to do this.
 It basically allows you to add validation of form elements on the page as well as to initialize UserModel attributes and data after the user has been registered.
@@ -570,9 +570,9 @@ The code above is from the registration recaptcha plugin.
 Recaptcha requires some specific settings that must be obtained from configuration.
 FormActions are configured in the exact same as Authenticators are.
 In this example, we pull the Google Recaptcha site key from configuration and add it as an attribute to the form provider.
-Our regstration template file can read this attribute now. 
+Our registration template file can read this attribute now. 
 
-Recaptcha also has the requirement of loading a javascript script.
+Recaptcha also has the requirement of loading a JavaScript script.
 You can do this by calling LoginFormsProvider.addScript() passing in the URL. 
 
 For user profile processing, there is no additional information that it needs to add to the form, so its buildPage() method is empty. 
@@ -662,7 +662,7 @@ Let's also look at the user profile plugin that is used to validate email addres
     }
 ----        
 
-As you can see, this validate() method of user profile processing makes sure that the email, first, and last name are filled in in the form.
+As you can see, this validate() method of user profile processing makes sure that the email, first, and last name are filled in the form.
 It also makes sure that email is in the right format.
 If any of these validations fail, an error message is queued up for rendering.
 Any fields in error are removed from the form data.
@@ -701,7 +701,7 @@ This class is implemented similarly to AuthenticatorFactory, so we won't go over
 
 You will package your classes within a single jar.
 This jar must contain a file named  `org.keycloak.authentication.FormActionFactory`                and must be contained in the `META-INF/services/` directory of your jar.
-This file must list the fully qualified classname of each FormActionFactory implementation you have in the jar.
+This file must list the fully qualified class name of each FormActionFactory implementation you have in the jar.
 For example: 
 
 [source]
@@ -711,7 +711,7 @@ org.keycloak.authentication.forms.RegistrationProfile
 org.keycloak.authentication.forms.RegistrationRecaptcha
 ----            
 
-This services/ file is used by Keycloak to scan the providers it has to load into the system. 
+This services/ file is used by {project_name} to scan the providers it has to load into the system. 
 
 To deploy this jar, just copy it to the `standalone/deployments` directory. 
 
@@ -725,16 +725,16 @@ I'm hoping the UI is intuitive enough so that you can figure out for yourself ho
 Basically you'll have to copy the registration flow.
 Then click Actions menu to the right of the Registration Form, and pick "Add execution" to add a new execution.
 You'll pick the FormAction from the selection list.
-Make sure your FormAction comes after "Registration User Creation" by using the down errors to move it if your FormAction isn't already listed after "Registration User Creation".  You want your FormAction to come after user creation because the success() method of Regsitration User Creation is responsible for creating the new UserModel. 
+Make sure your FormAction comes after "Registration User Creation" by using the down buttons to move it if your FormAction isn't already listed after "Registration User Creation".  You want your FormAction to come after user creation because the success() method of Registration User Creation is responsible for creating the new UserModel. 
 
 After you've created your flow, you have to bind it to registration.
 If you go to the Authentication menu and go  to the Bindings tab you will see options to bind a flow to the browser, registration, or direct grant flow. 
 
 === Modifying Forgot Password/Credential Flow
 
-Keycloak also has a specific authentication flow for forgot password, or rather credential reset initiated by a user.
+{project_name} also has a specific authentication flow for forgot password, or rather credential reset initiated by a user.
 If you go to the admin console flows page, there is a "reset credentials" flow.
-By default, Keycloak asks for the email or username of the user and sends an email to them.
+By default, {project_name} asks for the email or username of the user and sends an email to them.
 If the user clicks on the link, then they are able to reset both their password and OTP (if an OTP has been set up).  You can disable automatic OTP reset by disabling the "Reset OTP" authenticator in the flow. 
 
 You can add additional functionality to this flow as well.
@@ -770,16 +770,16 @@ For more details about {project_name} adapter and OAuth2 flows see link:{adapter
 
 ==== Default implementations
 
-Actually Keycloak has 2 builtin implementations of client authentication: 
+Actually {project_name} has 2 builtin implementations of client authentication: 
 
 Traditional authentication with client_id and client_secret::
-  This is default mechanism mentioned in the https://openid.net/specs/openid-connect-core-1_0.html[OpenID Connect]                                or https://tools.ietf.org/html/rfc6749[OAuth2] specification and Keycloak supports it since it's early days.
-  The public client needs to include `client_id` parameter with it's ID in the POST request (so it's defacto not authenticated) and the confidential client needs to include `Authorization: Basic` header with the clientId and clientSecret used as username and password. 
+  This is default mechanism mentioned in the https://openid.net/specs/openid-connect-core-1_0.html[OpenID Connect]                                or https://tools.ietf.org/html/rfc6749[OAuth2] specification and {project_name} supports it since it's early days.
+  The public client needs to include `client_id` parameter with its ID in the POST request (so it's defacto not authenticated) and the confidential client needs to include `Authorization: Basic` header with the clientId and clientSecret used as username and password. 
 
 Authentication with signed JWT::
   This is based on the https://tools.ietf.org/html/rfc7523[JWT Bearer Token Profiles for OAuth 2.0] specification.
   The client/adapter generates the https://tools.ietf.org/html/rfc7519[JWT] and signs it with his private key.
-  The Keycloak then verifies the signed JWT with the client's public key and authenticates client based on it.             
+  The {project_name} then verifies the signed JWT with the client's public key and authenticates client based on it.             
 
 See the demo example and especially the `examples/preconfigured-demo/product-app` for the example application showing
 the application using client authentication with signed JWT.
