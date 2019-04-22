@@ -16,12 +16,8 @@
  */
 import {KeycloakLoginOptions, KeycloakError} from './keycloak.d';
 
-// If using a local keycloak.js, uncomment this import.  With keycloak.js fetched
-// from the server, you get a compile-time warning on use of the Keycloak()
-// method below.  I'm not sure how to fix this, but it's certainly cleaner
-// to get keycloak.js from the server.
-// 
-import * as Keycloak from './keycloak';
+// keycloak.js downloaded in index.ftl
+declare function Keycloak(config?: string|{}): Keycloak.KeycloakInstance;
 
 export type KeycloakClient = Keycloak.KeycloakInstance;
 type InitOptions = Keycloak.KeycloakInitOptions;
