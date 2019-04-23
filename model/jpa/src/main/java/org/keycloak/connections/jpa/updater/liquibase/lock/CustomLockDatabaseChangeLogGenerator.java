@@ -48,13 +48,15 @@ public class CustomLockDatabaseChangeLogGenerator extends LockDatabaseChangeLogG
     @Override
     public Sql[] generateSql(LockDatabaseChangeLogStatement statement, Database database, SqlGeneratorChain sqlGeneratorChain) {
 
-        Sql selectForUpdateSql = generateSelectForUpdate(database);
+        Sql selectForUpdateSql = generateSelectForUpdate(database,
+                (statement instanceof CustomLockDatabaseChangeLogStatement)?
+                        ((CustomLockDatabaseChangeLogStatement) statement).getId() : 1);
 
         return new Sql[] { selectForUpdateSql };
     }
 
 
-    private Sql generateSelectForUpdate(Database database) {
+    private Sql generateSelectForUpdate(Database database, int id) {
         String catalog = database.getLiquibaseCatalogName();
         String schema = database.getLiquibaseSchemaName();
         String rawLockTableName = database.getDatabaseChangeLogLockTableName();
@@ -63,7 +65,7 @@ public class CustomLockDatabaseChangeLogGenerator extends LockDatabaseChangeLogG
         String idColumnName  = database.escapeColumnName(catalog, schema, rawLockTableName, "ID");
 
         String sqlBase = "SELECT " + idColumnName + " FROM " + lockTableName;
-        String sqlWhere = " WHERE " + idColumnName + "=1";
+        String sqlWhere = " WHERE " + idColumnName + "=" + id;
 
         String sql;
         if (database instanceof MySQLDatabase || database instanceof PostgresDatabase || database instanceof H2Database ||
