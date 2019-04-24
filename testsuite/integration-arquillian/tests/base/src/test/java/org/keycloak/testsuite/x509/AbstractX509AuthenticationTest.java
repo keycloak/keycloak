@@ -434,12 +434,12 @@ public abstract class AbstractX509AuthenticationTest extends AbstractTestRealmKe
                 .setUserIdentityMapperType(USERNAME_EMAIL);
     }
 
-    protected static X509AuthenticatorConfigModel createLoginIssuerCNToCustomAttributeConfig() {
+    protected static X509AuthenticatorConfigModel createLoginWithSpecifiedSourceTypeToCustomAttributeConfig(X509AuthenticatorConfigModel.MappingSourceType sourceType, String userAttributeName) {
         return new X509AuthenticatorConfigModel()
                 .setConfirmationPageAllowed(true)
-                .setMappingSourceType(ISSUERDN_CN)
+                .setMappingSourceType(sourceType)
                 .setUserIdentityMapperType(USER_ATTRIBUTE)
-                .setCustomAttributeName("x509_issuer_identity");
+                .setCustomAttributeName(userAttributeName);
     }
 
     protected static X509AuthenticatorConfigModel createLoginIssuerDN_OU2CustomAttributeConfig() {
