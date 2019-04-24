@@ -39,6 +39,9 @@ import static org.hamcrest.Matchers.startsWith;
 import static org.junit.Assert.assertEquals;
 import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel.IdentityMapperType.USERNAME_EMAIL;
 import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel.IdentityMapperType.USER_ATTRIBUTE;
+import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel.MappingSourceType.ISSUERDN_CN;
+import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel.MappingSourceType.ISSUERDN_EMAIL;
+import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel.MappingSourceType.SERIALNUMBER;
 import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel.MappingSourceType.SUBJECTDN;
 import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel.MappingSourceType.SUBJECTDN_EMAIL;
 import org.keycloak.testsuite.ProfileAssume;
@@ -165,7 +168,8 @@ public class X509BrowserLoginTest extends AbstractX509AuthenticationTest {
 
     @Test
     public void loginAsUserFromCertIssuerCNMappedToUserAttribute() {
-        x509BrowserLogin(createLoginIssuerCNToCustomAttributeConfig(), userId2, "keycloak", "Keycloak Intermediate CA");
+        x509BrowserLogin(createLoginWithSpecifiedSourceTypeToCustomAttributeConfig(ISSUERDN_CN, "x509_issuer_identity"),
+                userId2, "keycloak", "Keycloak Intermediate CA");
     }
 
     @Test
@@ -181,6 +185,39 @@ public class X509BrowserLoginTest extends AbstractX509AuthenticationTest {
 
         x509BrowserLogin(createLoginIssuerDN_OU2CustomAttributeConfig(), userId2, "keycloak", "Red Hat");
     }
+
+
+    @Test
+    public void loginAsUserFromCertIssuerEmailMappedToUserAttribute() {
+
+        UserRepresentation user = testRealm().users().get(userId2).toRepresentation();
+        Assert.assertNotNull(user);
+
+        user.singleAttribute("x509_issuer_identity", "contact@keycloak.org");
+        this.updateUser(user);
+
+        events.clear();
+
+        x509BrowserLogin(createLoginWithSpecifiedSourceTypeToCustomAttributeConfig(ISSUERDN_EMAIL, "x509_issuer_identity"),
+                userId2, "keycloak", "contact@keycloak.org");
+    }
+
+
+    @Test
+    public void loginAsUserFromCertSerialNumberMappedToUserAttribute() {
+
+        UserRepresentation user = testRealm().users().get(userId2).toRepresentation();
+        Assert.assertNotNull(user);
+
+        user.singleAttribute("x509_serial_number", "4105");
+        this.updateUser(user);
+
+        events.clear();
+
+        x509BrowserLogin(createLoginWithSpecifiedSourceTypeToCustomAttributeConfig(SERIALNUMBER, "x509_serial_number"),
+                userId2, "keycloak", "4105");
+    }
+
 
     @Test
     public void loginDuplicateUsersNotAllowed() {
