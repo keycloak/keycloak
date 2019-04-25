@@ -12,8 +12,6 @@
     <artifactId>integration-arquillian-tests-springboot</artifactId>
 
     <properties>
-        <exclude.springboot>**/springboot/**/*Test.java</exclude.springboot>
-
         <adapter.container>tomcat</adapter.container>
 
         <maven.settings.file/>
@@ -22,6 +20,9 @@
         <app.server.debug.port>5006</app.server.debug.port>
         <app.server.debug.suspend>n</app.server.debug.suspend>
         <maven.binary.path>mvn</maven.binary.path>
+
+        <!-- For now springboot doesn't work with auth server ssl enabled -->
+        <auth.server.ssl.required>false</auth.server.ssl.required>
     </properties>
 
     <dependencies>
@@ -37,26 +38,15 @@
         </dependency>
     </dependencies>
 
-    <build>
-        <plugins>
-
-            <plugin>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <configuration>
-                    <excludes>
-                        <exclude>${exclude.springboot}</exclude>
-                    </excludes>
-                </configuration>
-            </plugin>
-        </plugins>
-    </build>
-
     <profiles>
         <profile>
             <id>test-springboot</id>
-            <properties>
-                <exclude.springboot>-</exclude.springboot>
-            </properties>
+
+            <activation>
+                <property>
+                    <name>!settings.path</name>
+                </property>
+            </activation>
 
             <build>
                 <plugins>
@@ -124,9 +114,16 @@
             </build>
         </profile>
         <profile>
-            <id>test-springboot-prod</id>
+            <id>test-springboot-with-settings</id>
+
+            <activation>
+                <property>
+                    <name>settings.path</name>
+                </property>
+            </activation>
+
             <properties>
-                <exclude.springboot>-</exclude.springboot>
+                <repo.argument>-Dno-repo</repo.argument>
             </properties>
 
             <build>
@@ -152,11 +149,12 @@
                                         <argument>clean</argument>
                                         <argument>install</argument>
                                         <argument>-s</argument>
-                                        <argument>${maven.settings.file}</argument>
+                                        <argument>${settings.path}</argument>
                                         <argument>-B</argument>
                                         <argument>-Pspring-boot-adapter-${adapter.container}</argument>
                                         <argument>-Dmaven.repo.local=${settings.localRepository}</argument>
                                         <argument>${springboot.version.option}</argument>
+                                        <argument>${repo.argument}</argument>
                                     </arguments>
                                 </configuration>
                             </execution>
@@ -176,12 +174,13 @@
                                         <argument>spring-boot:run</argument>
                                         <argument>-B</argument>
                                         <argument>-s</argument>
-                                        <argument>${maven.settings.file}</argument>
+                                        <argument>${settings.path}</argument>
                                         <argument>-Pspring-boot-adapter-${adapter.container}</argument>
                                         <argument>-Dmaven.repo.local=${settings.localRepository}</argument>
                                         <argument>${springboot.version.option}</argument>
                                         <argument>-Dapp.server.debug.port=${app.server.debug.port}</argument>
                                         <argument>-Dapp.server.debug.suspend=${app.server.debug.suspend}</argument>
+                                        <argument>${repo.argument}</argument>
                                     </arguments>
                                 </configuration>
                             </execution>
@@ -202,6 +201,18 @@
             <id>springboot21</id>
             <properties>
                 <springboot.version.option>-Dspringboot21</springboot.version.option>
+            </properties>
+        </profile>
+
+        <profile>
+            <id>turn-on-repo-url</id>
+            <activation>
+                <property>
+                    <name>repo.url</name>
+                </property>
+            </activation>
+            <properties>
+                <repo.argument>-Drepo.url=${repo.url}</repo.argument>
             </properties>
         </profile>
     </profiles>

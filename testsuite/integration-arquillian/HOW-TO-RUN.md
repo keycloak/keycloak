@@ -369,9 +369,7 @@ To run tests execute following command. Default version of Spring Boot is 1.5.x,
 ```
 mvn -f testsuite/integration-arquillian/tests/other/springboot-tests/pom.xml \
     clean test \
-    -Ptest-springboot \
-    -Dauth.server.ssl.required=false \
-    -Dadapter.container=[tomcat|undertow|jetty92|jetty93|jetty94]
+    -Dadapter.container=[tomcat|undertow|jetty92|jetty93|jetty94] \
     [-Pspringboot21]
 ```
 
