@@ -84,7 +84,7 @@ We introduced a more flexible way to configure the hostname for RH-SSO which giv
 
 == X509 Client Authenticator
 
-The newly added Client Authenticator uses X509 Client Certificates and Mutual TLS to secure a connection from the client. In addition, the RH-SSO Server validates the Subject DN field of the client’s certificate.
+The newly added Client Authenticator uses X509 Client Certificates and Mutual TLS to secure a connection from the client. In addition, the RH-SSO Server validates the Subject DN field of the client's certificate.
 
 == Client Scopes
 

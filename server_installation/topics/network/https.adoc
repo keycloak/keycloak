@@ -9,7 +9,7 @@ link:{adminguide_link}[{adminguide_name}], but let's give some context and a bri
 
 external requests::
   {project_name} can run out of the box without SSL so long as you stick to private IP addresses like `localhost`, `127.0.0.1`, `10.0.x.x`, `192.168.x.x`, and `172.16.x.x`.
-  If you don’t have SSL/HTTPS configured on the server or you try to access {project_name} over HTTP from a non-private IP adress you will get an error.
+  If you don't have SSL/HTTPS configured on the server or you try to access {project_name} over HTTP from a non-private IP adress you will get an error.
 
 none::
   {project_name} does not require SSL.  This should really only be used in development when you are playing around with things.

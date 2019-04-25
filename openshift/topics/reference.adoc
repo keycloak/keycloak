@@ -169,14 +169,14 @@ image without requiring a rebuild, and should be set by the user as desired.
 |*_AB_JOLOKIA_AUTH_OPENSHIFT_*
 |Switch on client authentication for OpenShift TLS communication. The value of
 this parameter can be a relative distinguished name which must be contained in
-a presented client’s certificate. Enabling this parameter will automatically
+a presented client's certificate. Enabling this parameter will automatically
 switch Jolokia into https communication mode. The default CA cert is set to
 `/var/run/secrets/kubernetes.io/serviceaccount/ca.crt`.
 |*_true_*
 
 |*_AB_JOLOKIA_CONFIG_*
 |If set uses this file (including path) as Jolokia JVM agent properties (as
-described in Jolokia’s
+described in Jolokia's
 link:https://jolokia.org/reference/html/agents.html#agents-jvm[reference
 manual]). If not set, the `/opt/jolokia/etc/jolokia.properties` file will be
 created using the settings as defined in this document, otherwise the rest of

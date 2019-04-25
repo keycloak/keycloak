@@ -58,5 +58,5 @@ Or run this CLI command:
 
 When you start the server with this configuration it checks if the database needs to be migrated. The required changes
 are written to an SQL file that you can review and manually run against the database. For further details on how to
-apply this file to the database, see the documentation for the relational database you’re using. After the changes have
+apply this file to the database, see the documentation for the relational database you're using. After the changes have
 been written to the file, the server exits.

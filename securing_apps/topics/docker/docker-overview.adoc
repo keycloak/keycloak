@@ -50,6 +50,6 @@ NOTE: it is recommended that you configure the Docker registry client in a realm
 
 Once the above configuration has taken place, and the keycloak server and Docker registry are running, docker authentication should be successful:
 
-	[user ~]# docker login localhost:5000 -u $username
+	[user ~]# docker login localhost:5000 -u $username
 	Password: *******
 	Login Succeeded

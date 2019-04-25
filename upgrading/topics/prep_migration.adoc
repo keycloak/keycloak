@@ -9,7 +9,7 @@ the adapters.
 . Prior to applying the upgrade, handle any open transactions and delete the data/tx-object-store/ transaction directory.
 . Back up the old installation (configuration, themes, and so on).
 . Back up the database. For detailed information on how to back up the database, see the documentation for the relational
-  database you’re using.
+  database you're using.
 . Upgrade {project_name} server.
 * Testing the upgrade in a non-production environment first, to prevent any installation issues from being exposed in
   production, is a best practice.

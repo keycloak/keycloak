@@ -407,7 +407,7 @@ After the {project_name} web server pod has started, it can be accessed at its c
 * *\http://sso-_<project-name>_._<hostname>_/auth/admin*: for the {project_name} web server, and
 * *\https://secure-sso-_<project-name>_._<hostname>_/auth/admin*: for the encrypted {project_name} web server.
 
-Use the xref:sso-administrator-setup[administrator user credentials] to log in into the `master` realm’s administration console.
+Use the xref:sso-administrator-setup[administrator user credentials] to log in into the `master` realm's administration console.
 
 [[SSO-Clients]]
 === {project_name} Clients

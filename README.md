@@ -24,6 +24,10 @@ First, clone the Keycloak Documentation repository:
     git clone https://github.com/keycloak/keycloak-documentation.git
     cd keycloak-documentation
 
+If you are using Windows, you need to run the following command with administrator privilege because this project uses symbolic links:
+
+    git clone -c core.symlinks=true https://github.com/keycloak/keycloak-documentation.git
+
 To build Keycloak Documentation run:
 
     mvn clean install

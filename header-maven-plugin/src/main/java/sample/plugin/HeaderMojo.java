@@ -23,13 +23,10 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 
-import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.nio.file.Files;
@@ -51,8 +48,6 @@ public class HeaderMojo extends AbstractMojo {
     private File outputDir;
 
     private File baseDir;
-
-    private File topicsFile;
 
     private File topicsDir;
 
@@ -85,46 +80,54 @@ public class HeaderMojo extends AbstractMojo {
     }
 
     private void processTopics(File f) throws IOException {
-        File out = new File(outputDir, f.getAbsolutePath().replaceFirst(topicsDir.getParentFile().getAbsolutePath(), ""));
+        String topicsAbsolutePath = f.getAbsolutePath();
+        String topicsParentDirPath = topicsDir.getParentFile().getAbsolutePath();
+        if (isWindows()) {
+            topicsAbsolutePath = topicsAbsolutePath.replace("\\", "/");
+            topicsParentDirPath = topicsParentDirPath.replace("\\", "/");
+        }
+        File out = new File(outputDir, topicsAbsolutePath.replaceFirst(topicsParentDirPath, ""));
 
-        if (f.isFile() && f.getAbsolutePath().contains("/templates/")) {
+        if (f.isFile() && topicsAbsolutePath.contains("/templates/")) {
             out.getParentFile().mkdirs();
             Files.copy(f.toPath(), out.toPath(), StandardCopyOption.REPLACE_EXISTING);
         } else if (f.isDirectory()) {
-            for (File c : f.listFiles()) {
-                processTopics(c);
+            File[] files = f.listFiles();
+            if(files != null){
+                for (File c : files) {
+                    processTopics(c);
+                }
             }
         } else if (f.getName().endsWith(".adoc")) {
             out.getParentFile().mkdirs();
 
             String filePath = f.getAbsolutePath().replace(baseDir.getParent(), "").substring(1);
-
+            if (isWindows()) {
+                filePath = filePath.replace("\\", "/");
+            }
             String includeHeaderPath = filePath.substring(baseDir.getName().length() + 7);
             includeHeaderPath = includeHeaderPath.substring(0, includeHeaderPath.lastIndexOf('/'));
             includeHeaderPath = includeHeaderPath.replaceAll("/[^/]+", "../");
             includeHeaderPath = includeHeaderPath + "templates/header.adoc";
 
             String header = "\n\n:include_filename: " + filePath + "\ninclude::" + includeHeaderPath + "[]\n\n";
+            try(PrintStream ps = new PrintStream(new FileOutputStream(out));BufferedReader br = new BufferedReader(new FileReader(f));){
+                for (String l = br.readLine(); l != null; l = br.readLine()) {
+                    ps.println(l);
+                    if (l.contains("=")) {
+                        break;
+                    }
+                }
+                ps.print(header);
 
-            PrintStream ps = new PrintStream(new FileOutputStream(out));
-
-
-            BufferedReader br = new BufferedReader(new FileReader(f));
-            for (String l = br.readLine(); l != null; l = br.readLine()) {
-                ps.println(l);
-                if (l.contains("=")) {
-                    break;
+                for (String l = br.readLine(); l != null; l = br.readLine()) {
+                    ps.println(l);
                 }
             }
-
-            ps.print(header);
-
-            for (String l = br.readLine(); l != null; l = br.readLine()) {
-                ps.println(l);
-            }
-
-            br.close();
-            ps.close();
         }
+    }
+    private boolean isWindows(){
+        String osName = System.getProperty("os.name");
+        return osName != null && osName.toLowerCase().startsWith("windows");
     }
 }
