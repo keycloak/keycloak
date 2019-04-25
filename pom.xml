@@ -1663,7 +1663,7 @@
                                 <configuration>
                                     <name>product.filename.version</name>
                                     <value>${product.rhsso.version}</value>
-                                    <regex>^(\d+\.\d+).*$</regex>
+                                    <regex>^(\d+(\.\d+)?).*?$</regex>
                                     <replacement>$1</replacement>
                                     <failIfNoMatch>true</failIfNoMatch>
                                 </configuration>
