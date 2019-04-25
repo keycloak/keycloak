@@ -535,4 +535,13 @@
         </plugins>
     </build>
 
+    <profiles>
+        <profile>
+            <id>product</id>
+            <properties>
+                <jbossHome>${project.build.directory}/${product.name}-${product.filename.version}</jbossHome>
+            </properties>
+        </profile>
+    </profiles>
+
 </project>
