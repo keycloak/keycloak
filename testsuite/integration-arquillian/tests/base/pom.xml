@@ -943,7 +943,7 @@
             <properties>
                 <skip.clean.second.cache>false</skip.clean.second.cache>
                 <exclude.crossdc>-</exclude.crossdc>
-                <surefire.memory.settings>-Xms512m -Xmx1024m -XX:MetaspaceSize=96m -XX:MaxMetaspaceSize=256m</surefire.memory.settings>
+                <surefire.memory.Xmx>1024m</surefire.memory.Xmx>
             </properties>
         </profile>
         <profile>
@@ -952,7 +952,7 @@
                 <skip.clean.second.cache>false</skip.clean.second.cache>
                 <skip.copy.auth.crossdc.nodes>false</skip.copy.auth.crossdc.nodes>
                 <exclude.crossdc>-</exclude.crossdc>
-                <surefire.memory.settings>-Xms512m -Xmx1024m -XX:MetaspaceSize=96m -XX:MaxMetaspaceSize=256m</surefire.memory.settings>
+                <surefire.memory.Xmx>1024m</surefire.memory.Xmx>
             </properties>
         </profile>
     </profiles>
