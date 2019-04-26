@@ -150,7 +150,11 @@
         <docker.maven.plugin.version>0.28.0</docker.maven.plugin.version>
 
         <!-- Surefire Settings -->
-        <surefire.memory.settings>-Xms512m -Xmx2048m -XX:MetaspaceSize=96m -XX:MaxMetaspaceSize=256m</surefire.memory.settings>
+        <surefire.memory.Xms>512m</surefire.memory.Xms>
+        <surefire.memory.Xmx>2048m</surefire.memory.Xmx>
+        <surefire.memory.metaspace>96m</surefire.memory.metaspace>
+        <surefire.memory.metaspace.max>256m</surefire.memory.metaspace.max>
+        <surefire.memory.settings>-Xms${surefire.memory.Xms} -Xmx${surefire.memory.Xmx} -XX:MetaspaceSize=${surefire.memory.metaspace} -XX:MaxMetaspaceSize=${surefire.memory.metaspace.max}</surefire.memory.settings>
 
         <!-- Tomcat versions -->
         <tomcat7.version>7.0.92</tomcat7.version>
@@ -1499,8 +1503,7 @@
                     <artifactId>maven-surefire-plugin</artifactId>
                     <configuration>
                         <forkMode>once</forkMode>
-                        <argLine>${surefire.memory.settings}</argLine>
-                        <argLine>-Djava.awt.headless=true</argLine>
+                        <argLine>-Djava.awt.headless=true ${surefire.memory.settings}</argLine>
                     </configuration>
                 </plugin>
                 <plugin>
