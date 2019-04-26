@@ -1913,6 +1913,13 @@ module.factory('RoleMembership', function($resource) {
     });
 });
 
+module.factory('ClientRoleMembership', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/clients/:client/roles/:role/users', {
+        realm : '@realm',
+        client : '@client',
+        role : '@role'
+    });
+});
 
 module.factory('UserGroupMembership', function($resource) {
     return $resource(authUrl + '/admin/realms/:realm/users/:userId/groups', {

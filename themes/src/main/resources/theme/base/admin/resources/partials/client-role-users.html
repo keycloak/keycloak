@@ -1,0 +1,52 @@
+<div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2">
+    <ol class="breadcrumb">
+        <li><a href="#/realms/{{realm.realm}}/clients">{{:: 'clients' | translate}}</a></li>
+        <li><a href="#/realms/{{realm.realm}}/clients/{{client.id}}">{{client.clientId}}</a></li>
+        <li><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/roles">{{:: 'roles' | translate}}</a></li>
+        <li>{{role.name}}</li>
+    </ol>
+
+    <kc-tabs-client-role></kc-tabs-client-role>
+
+    <table class="table table-striped table-bordered">
+        <caption data-ng-show="users" class="hidden">{{:: 'table-of-role-members' | translate}}</caption>
+        <thead>
+        <tr>
+        <tr data-ng-show="searchLoaded && users.length > 0">
+            <th>{{:: 'username' | translate}}</th>
+            <th>{{:: 'last-name' | translate}}</th>
+            <th>{{:: 'first-name' | translate}}</th>
+            <th>{{:: 'email' | translate}}</th>
+            <th></th>
+        </tr>
+        </tr>
+        </thead>
+        <tfoot data-ng-show="users && (users.length >= query.max || query.first > 0)">
+        <tr>
+            <td colspan="7">
+                <div class="table-nav">
+                    <button data-ng-click="firstPage()" class="first" ng-disabled="query.first == 0">{{:: 'first-page' | translate}}</button>
+                    <button data-ng-click="previousPage()" class="prev" ng-disabled="query.first == 0">{{:: 'previous-page' | translate}}</button>
+                    <button data-ng-click="nextPage()" class="next" ng-disabled="users.length < query.max">{{:: 'next-page' | translate}}</button>
+                </div>
+            </td>
+        </tr>
+        </tfoot>
+        <tbody>
+        <tr ng-repeat="user in users">
+            <td><a href="#/realms/{{realm.realm}}/users/{{user.id}}">{{user.username}}</a></td>
+            <td>{{user.lastName}}</td>
+            <td>{{user.firstName}}</td>
+            <td>{{user.email}}</td>
+            <td class="kc-action-cell" kc-open="/realms/{{realm.realm}}/users/{{user.id}}">{{:: 'edit' | translate}}</td>
+        </tr>
+        <tr data-ng-show="!users || users.length == 0">
+            <td class="text-muted" data-ng-show="searchLoaded && users.length == 0 && lastSearch != null">{{:: 'no-role-members' | translate}}</td>
+            <td class="text-muted" data-ng-show="searchLoaded && users.length == 0 && lastSearch == null">{{:: 'no-role-members' | translate}}</td>
+        </tr>
+        </tbody>
+    </table>
+
+</div>
+
+<kc-menu></kc-menu>

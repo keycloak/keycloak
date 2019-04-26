@@ -758,6 +758,51 @@ module.controller('ClientRoleDetailCtrl', function($scope, realm, client, role, 
 
 });
 
+module.controller('ClientRoleMembersCtrl', function($scope, realm, client, role, ClientRoleMembership, Dialog, Notifications, $location) {
+    $scope.realm = realm;
+    $scope.page = 0;
+    $scope.role = role;
+    $scope.client = client;
+
+    $scope.query = {
+        realm: realm.realm,
+        role: role.name,
+        client: client.id,
+        max : 5,
+        first : 0
+    }
+
+    $scope.firstPage = function() {
+        $scope.query.first = 0;
+        $scope.searchQuery();
+    }
+
+    $scope.previousPage = function() {
+        $scope.query.first -= parseInt($scope.query.max);
+        if ($scope.query.first < 0) {
+            $scope.query.first = 0;
+        }
+        $scope.searchQuery();
+    }
+
+    $scope.nextPage = function() {
+        $scope.query.first += parseInt($scope.query.max);
+        $scope.searchQuery();
+    }
+
+    $scope.searchQuery = function() {
+        $scope.searchLoaded = false;
+
+        $scope.users = ClientRoleMembership.query($scope.query, function() {
+            console.log('search loaded');
+            $scope.searchLoaded = true;
+            $scope.lastSearch = $scope.query.search;
+        });
+    };
+
+    $scope.searchQuery();
+});
+
 module.controller('ClientImportCtrl', function($scope, $location, $upload, realm, serverInfo, Notifications) {
 
     $scope.realm = realm;
