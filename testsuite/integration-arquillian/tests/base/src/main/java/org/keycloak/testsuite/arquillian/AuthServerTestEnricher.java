@@ -41,6 +41,7 @@ import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
 import org.keycloak.testsuite.util.LogChecker;
 import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.SystemInfoHelper;
 import org.wildfly.extras.creaper.commands.undertow.AddUndertowListener;
 import org.wildfly.extras.creaper.commands.undertow.RemoveUndertowListener;
 import org.wildfly.extras.creaper.commands.undertow.SslVerifyClient;
@@ -289,6 +290,7 @@ public class AuthServerTestEnricher {
         suiteContextProducer.set(suiteContext);
         CrossDCTestEnricher.initializeSuiteContext(suiteContext);
         log.info("\n\n" + suiteContext);
+        log.info("\n\n" + SystemInfoHelper.getSystemInfo());
     }
 
     private ContainerInfo updateWithAuthServerInfo(ContainerInfo authServerInfo) {
