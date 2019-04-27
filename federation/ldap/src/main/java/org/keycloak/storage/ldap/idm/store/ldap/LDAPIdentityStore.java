@@ -285,7 +285,7 @@ public class LDAPIdentityStore implements IdentityStore {
     }
 
     @Override
-    public void updatePassword(LDAPObject user, String password, LDAPOperationDecorator passwordUpdateDecorator) {
+    public void updatePassword(LDAPObject user, String newPassword, String currentPassword, LDAPOperationDecorator passwordUpdateDecorator) {
         String userDN = user.getDn().toString();
 
         if (logger.isDebugEnabled()) {
@@ -293,16 +293,10 @@ public class LDAPIdentityStore implements IdentityStore {
         }
 
         if (getConfig().isActiveDirectory()) {
-            updateADPassword(userDN, password, passwordUpdateDecorator);
+            updateADPassword(userDN, newPassword, passwordUpdateDecorator);
         } else {
-            ModificationItem[] mods = new ModificationItem[1];
-
             try {
-                BasicAttribute mod0 = new BasicAttribute(LDAPConstants.USER_PASSWORD_ATTRIBUTE, password);
-
-                mods[0] = new ModificationItem(DirContext.REPLACE_ATTRIBUTE, mod0);
-
-                operationManager.modifyAttributes(userDN, mods, passwordUpdateDecorator);
+                operationManager.modifyUserPasswordAttribute(userDN, newPassword, currentPassword, passwordUpdateDecorator);
             } catch (ModelException me) {
                 throw me;
             } catch (Exception e) {

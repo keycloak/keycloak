@@ -56,12 +56,14 @@ public class LDAPEmbeddedServer {
     public static final String PROPERTY_LDIF_FILE = "ldap.ldif";
     public static final String PROPERTY_SASL_PRINCIPAL = "ldap.saslPrincipal";
     public static final String PROPERTY_DSF = "ldap.dsf";
+    public static final String PROPERTY_DISABLE_ACCESS_CONTROL = "ldap.accessControlEnabled";
 
     private static final String DEFAULT_BASE_DN = "dc=keycloak,dc=org";
     private static final String DEFAULT_BIND_HOST = "localhost";
     private static final String DEFAULT_BIND_PORT = "10389";
     private static final String DEFAULT_BIND_LDAPS_PORT = "10636";
     private static final String DEFAULT_LDIF_FILE = "classpath:ldap/default-users.ldif";
+    private static final String DEFAULT_DISABLE_ACCESS_CONTROL = Boolean.FALSE.toString();
     private static final String PROPERTY_ENABLE_SSL = "enableSSL";
     private static final String PROPERTY_KEYSTORE_FILE = "keystoreFile";
     private static final String PROPERTY_CERTIFICATE_PASSWORD = "certificatePassword";
@@ -82,6 +84,7 @@ public class LDAPEmbeddedServer {
     protected boolean enableSSL = false;
     protected String keystoreFile;
     protected String certPassword;
+    protected boolean disableAccessControl;
 
     protected DirectoryService directoryService;
     protected LdapServer ldapServer;
@@ -128,6 +131,7 @@ public class LDAPEmbeddedServer {
         this.enableSSL = Boolean.valueOf(readProperty(PROPERTY_ENABLE_SSL, "false"));
         this.keystoreFile = readProperty(PROPERTY_KEYSTORE_FILE, null);
         this.certPassword = readProperty(PROPERTY_CERTIFICATE_PASSWORD, null);
+        this.disableAccessControl = Boolean.valueOf(readProperty(PROPERTY_DISABLE_ACCESS_CONTROL, DEFAULT_DISABLE_ACCESS_CONTROL));
     }
 
     protected String readProperty(String propertyName, String defaultValue) {
@@ -181,7 +185,7 @@ public class LDAPEmbeddedServer {
         }
 
         DirectoryService service = dsf.getDirectoryService();
-        service.setAccessControlEnabled(false);
+        service.setAccessControlEnabled(!disableAccessControl);
         service.setAllowAnonymousAccess(false);
         service.getChangeLog().setEnabled(false);
 
@@ -201,7 +205,7 @@ public class LDAPEmbeddedServer {
         partition.initialize();
 
         partition.setSchemaManager( schemaManager );
-
+        
         // Inject the partition into the DirectoryService
         service.addPartition( partition );
 
@@ -210,7 +214,8 @@ public class LDAPEmbeddedServer {
                 "dn: " + baseDN + "\n" +
                         "dc: " + dcName + "\n" +
                         "objectClass: top\n" +
-                        "objectClass: domain\n\n";
+                        "objectClass: domain\n" +
+                        "administrativeRole: accessControlSpecificArea\n\n";
         importLdifContent(service, entryLdif);
 
         return service;

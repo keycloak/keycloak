@@ -627,7 +627,7 @@ public class LDAPStorageProvider implements UserStorageProvider,
                     operationDecorator = updater.beforePasswordUpdate(user, ldapUser, cred);
                 }
 
-                ldapIdentityStore.updatePassword(ldapUser, password, operationDecorator);
+                ldapIdentityStore.updatePassword(ldapUser, password, cred.getOldPassword(), operationDecorator);
 
                 if (updater != null) updater.passwordUpdated(user, ldapUser, cred);
                 return true;

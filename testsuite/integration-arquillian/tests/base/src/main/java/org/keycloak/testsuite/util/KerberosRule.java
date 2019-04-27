@@ -82,6 +82,8 @@ public class KerberosRule extends LDAPRule {
         } else if ("KC2.COM".equals(kerberosRealm)) {
             defaultProperties.setProperty(LDAPEmbeddedServer.PROPERTY_LDIF_FILE, "classpath:kerberos/users-kerberos-kc2.ldif");
         }
+        
+        defaultProperties.setProperty(LDAPEmbeddedServer.PROPERTY_DISABLE_ACCESS_CONTROL, Boolean.TRUE.toString());
 
         return new KerberosEmbeddedServer(defaultProperties);
     }

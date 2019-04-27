@@ -23,3 +23,22 @@ dn: ou=Groups,dc=keycloak,dc=org
 objectclass: top
 objectclass: organizationalUnit
 ou: Groups
+
+dn: uid=readonly,dc=keycloak,dc=org
+objectClass: organizationalPerson
+objectClass: person
+objectClass: inetOrgPerson
+objectClass: top
+cn: readonly
+sn: readonly
+uid: readonly
+userpassword: readonly
+
+dn: cn=keycloakAcl,dc=keycloak,dc=org
+objectclass: top
+objectclass: subentry
+objectclass: accessControlSubentry
+cn: keycloakAcl
+subtreeSpecification: {}
+prescriptiveACI: { identificationTag "restrictReadonlyUserToReadPermissions", precedence 0, authenticationLevel none, itemOrUserFirst userFirst: { userClasses { name { "uid=readonly,dc=keycloak,dc=org" } }, userPermissions { { protectedItems { entry, allUserAttributeTypesAndValues }, grantsAndDenials { grantRead, grantCompare, grantBrowse, grantReturnDN } } } } }
+prescriptiveACI: { identificationTag "allowAnyUserToChangeItsOwnPassword", precedence 0, authenticationLevel none, itemOrUserFirst userFirst: { userClasses { thisEntry }, userPermissions { { protectedItems { allAttributeValues { userPassword } }, grantsAndDenials { grantRemove, grantAdd } }, { protectedItems { entry }, grantsAndDenials { grantModify, grantRead, grantBrowse } } } } }

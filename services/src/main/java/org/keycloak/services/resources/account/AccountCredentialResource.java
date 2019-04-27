@@ -84,7 +84,7 @@ public class AccountCredentialResource {
         }
 
         try {
-            session.userCredentialManager().updateCredential(realm, user, UserCredentialModel.password(update.getNewPassword(), false));
+            session.userCredentialManager().updateCredential(realm, user, UserCredentialModel.password(update.getNewPassword(), false, update.getCurrentPassword()));
         } catch (ModelException e) {
             return ErrorResponse.error(e.getMessage(), e.getParameters(), Response.Status.BAD_REQUEST);
         }

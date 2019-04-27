@@ -57,13 +57,18 @@ public class UserCredentialModel implements CredentialInput {
     }
 
     public static PasswordUserCredentialModel password(String password, boolean adminRequest) {
+        return password(password, adminRequest, null);
+    }
+    
+    public static PasswordUserCredentialModel password(String password, boolean adminRequest, String oldPassword){
         PasswordUserCredentialModel model = new PasswordUserCredentialModel();
         model.setType(PASSWORD);
         model.setValue(password);
         model.setAdminRequest(adminRequest);
+        model.setOldPassword(oldPassword);
         return model;
     }
-
+    
     public static UserCredentialModel passwordToken(String passwordToken) {
         UserCredentialModel model = new UserCredentialModel();
         model.setType(PASSWORD_TOKEN);

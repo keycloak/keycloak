@@ -24,7 +24,6 @@ import org.keycloak.storage.UserStorageProvider;
 import javax.naming.directory.SearchControls;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 
@@ -108,6 +107,11 @@ public class LDAPConfig {
     public boolean isValidatePasswordPolicy() {
         String validatePPolicy = config.getFirst(LDAPConstants.VALIDATE_PASSWORD_POLICY);
         return Boolean.parseBoolean(validatePPolicy);
+    }
+
+    public boolean isBindUserDNOnSelfPasswordUpdate() {
+        String bindUserDNOnSelfPasswordUpdate = config.getFirst(LDAPConstants.BIND_USER_DN_ON_SELF_PASSWORD_UPDATE);
+        return Boolean.parseBoolean(bindUserDNOnSelfPasswordUpdate);
     }
 
     public String getConnectionPooling() {
@@ -270,4 +274,5 @@ public class LDAPConfig {
                 .append(", binaryAttributes: ").append(binaryAttributeNames)
                 .toString();
     }
+
 }

@@ -108,9 +108,10 @@ public interface IdentityStore {
      * Updates the specified credential value.
      *
      * @param user Keycloak user
-     * @param password Ldap password
+     * @param newPassword New ldap password
+     * @param currentPassword Current ldap password
      * @param passwordUpdateDecorator Callback to be executed before/after password update. Can be null
      */
-    void updatePassword(LDAPObject user, String password, LDAPOperationDecorator passwordUpdateDecorator);
+    void updatePassword(LDAPObject user, String newPassword, String currentPassword, LDAPOperationDecorator passwordUpdateDecorator);
 
 }

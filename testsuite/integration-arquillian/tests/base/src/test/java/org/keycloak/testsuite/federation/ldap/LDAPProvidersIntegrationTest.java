@@ -17,16 +17,6 @@
 
 package org.keycloak.testsuite.federation.ldap;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.keycloak.testsuite.arquillian.DeploymentTargetModifier.AUTH_SERVER_CURRENT;
-
-import java.util.List;
-import java.util.Map;
-
-import javax.naming.AuthenticationException;
-import javax.ws.rs.core.Response;
-
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.container.test.api.TargetsContainer;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
@@ -37,6 +27,7 @@ import org.junit.Test;
 import org.junit.runners.MethodSorters;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.models.GroupModel;
@@ -78,12 +69,21 @@ import org.keycloak.testsuite.util.LDAPRule;
 import org.keycloak.testsuite.util.LDAPTestUtils;
 import org.keycloak.testsuite.util.OAuthClient;
 
+import javax.naming.AuthenticationException;
+import javax.ws.rs.core.Response;
+import java.util.List;
+import java.util.Map;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.keycloak.testsuite.arquillian.DeploymentTargetModifier.AUTH_SERVER_CURRENT;
+
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
-
+    
     @ClassRule
     public static LDAPRule ldapRule = new LDAPRule();
 
@@ -344,8 +344,42 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
         Assert.assertEquals("Invalid username or password.", loginPage.getError());
     }
 
+    @SuppressWarnings("unchecked")
     @Test
-    public void passwordChangeLdap() throws Exception {
+    public void passwordChangeLdapWithUserDnBind() {
+        MultivaluedHashMap<String, String> previousLdapConfig = testingClient.server().fetch(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel appRealm = ctx.getRealm();
+            
+            MultivaluedHashMap<String, String> ldapConfig = ctx.getLdapModel().getConfig();
+            MultivaluedHashMap<String, String> oldConfig = new MultivaluedHashMap<>(ldapConfig);
+
+            ldapConfig.putSingle(LDAPConstants.BIND_DN, "uid=readonly,dc=keycloak,dc=org");
+            ldapConfig.putSingle(LDAPConstants.BIND_CREDENTIAL, "readonly");
+            ldapConfig.putSingle(LDAPConstants.BIND_USER_DN_ON_SELF_PASSWORD_UPDATE, Boolean.TRUE.toString());
+
+            appRealm.updateComponent(ctx.getLdapModel());
+            return oldConfig;
+        }, MultivaluedHashMap.class);
+
+        testPasswordChangeLdap();
+
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel appRealm = ctx.getRealm();
+            
+            ctx.getLdapModel().setConfig(previousLdapConfig);
+
+            appRealm.updateComponent(ctx.getLdapModel());
+        });
+    }
+
+    @Test
+    public void passwordChangeLdap() {
+        testPasswordChangeLdap();
+    }
+    
+    private void testPasswordChangeLdap(){
         changePasswordPage.open();
         loginPage.login("johnkeycloak", "Password1");
         changePasswordPage.changePassword("Password1", "New-password1", "New-password1");

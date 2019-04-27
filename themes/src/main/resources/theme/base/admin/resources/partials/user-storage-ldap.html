@@ -191,6 +191,13 @@
                 </div>
                 <kc-tooltip>{{:: 'ldap.validate-password-policy.tooltip' | translate}}</kc-tooltip>
             </div>
+            <div class="form-group clearfix">
+                <label class="col-md-2 control-label" for="bindUserDNOnSelfPasswordUpdate">{{:: 'bind-user-dn-on-self-password-update' | translate}}</label>
+                <div class="col-md-6">
+                    <input ng-model="instance.config['bindUserDNOnSelfPasswordUpdate'][0]" name="bindUserDNOnSelfPasswordUpdate" id="bindUserDNOnSelfPasswordUpdate" onoffswitchvalue on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" />
+                </div>
+                <kc-tooltip>{{:: 'ldap.bind-user-dn-on-self-password-update.tooltip' | translate}}</kc-tooltip>
+            </div>
             <div class="form-group">
                 <label class="col-md-2 control-label" for="useTruststoreSpi">{{:: 'use-truststore-spi' | translate}}</label>
                 <div class="col-md-6">

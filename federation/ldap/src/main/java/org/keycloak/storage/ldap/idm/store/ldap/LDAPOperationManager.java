@@ -29,12 +29,12 @@ import org.keycloak.storage.ldap.mappers.LDAPOperationDecorator;
 import javax.naming.AuthenticationException;
 import javax.naming.Binding;
 import javax.naming.Context;
-import javax.naming.InitialContext;
 import javax.naming.NameAlreadyBoundException;
 import javax.naming.NamingEnumeration;
 import javax.naming.NamingException;
 import javax.naming.directory.Attribute;
 import javax.naming.directory.Attributes;
+import javax.naming.directory.BasicAttribute;
 import javax.naming.directory.DirContext;
 import javax.naming.directory.ModificationItem;
 import javax.naming.directory.SearchControls;
@@ -495,6 +495,23 @@ public class LDAPOperationManager {
         InitialLdapContext authCtx = null;
 
         try {
+            authCtx = doAuthenticate(dn, password);
+        } catch (Exception e) {
+            logger.errorf(e, "Unexpected exception when validating password of DN [%s]", dn);
+            throw new AuthenticationException("Unexpected exception when validating password of user");
+        } finally {
+            if (authCtx != null) {
+                try {
+                    authCtx.close();
+                } catch (NamingException e) {
+
+                }
+            }
+        }
+    }
+    
+    private InitialLdapContext doAuthenticate(String dn, String password) throws NamingException {
+        try {
             if (password == null || password.isEmpty()) {
                 throw new AuthenticationException("Empty password used");
             }
@@ -510,29 +527,19 @@ public class LDAPOperationManager {
                 env.put(Context.SECURITY_CREDENTIALS, password);
             }
 
-            authCtx = new InitialLdapContext(env, null);
+			InitialLdapContext authCtx = new InitialLdapContext(env, null);
             startTLS(authCtx, this.config.getAuthType(), dn, password);
-
+			return authCtx;
+			
         } catch (AuthenticationException ae) {
             if (logger.isDebugEnabled()) {
                 logger.debugf(ae, "Authentication failed for DN [%s]", dn);
             }
 
             throw ae;
-        } catch (Exception e) {
-            logger.errorf(e, "Unexpected exception when validating password of DN [%s]", dn);
-            throw new AuthenticationException("Unexpected exception when validating password of user");
-        } finally {
-            if (authCtx != null) {
-                try {
-                    authCtx.close();
-                } catch (NamingException e) {
-
-                }
-            }
         }
     }
-
+    
     private void startTLS(LdapContext ldapContext, String authType, String bindDN, String bindCredentials) throws NamingException {
         if(this.config.isStartTls()) {
             try {
@@ -559,6 +566,10 @@ public class LDAPOperationManager {
     }
 
     public void modifyAttributesNaming(final String dn, final ModificationItem[] mods, LDAPOperationDecorator decorator) throws NamingException {
+        modifyAttributesNaming(dn, mods, null, decorator);
+    }
+
+    private void modifyAttributesNaming(final String dn, final ModificationItem[] mods, LdapContext context, LDAPOperationDecorator decorator) throws NamingException {
         if (logger.isTraceEnabled()) {
             logger.tracef("Modifying attributes for entry [%s]: [", dn);
 
@@ -598,7 +609,33 @@ public class LDAPOperationManager {
                         .toString();
             }
 
-        }, null, decorator);
+        }, context, decorator);
+    } 
+    
+    public void modifyUserPasswordAttribute(final String userDN, final String newPassword, final String currentPassword, LDAPOperationDecorator passwordUpdateDecorator) throws NamingException {
+        ModificationItem[] mods = new ModificationItem[1];
+        BasicAttribute mod0 = new BasicAttribute(LDAPConstants.USER_PASSWORD_ATTRIBUTE, newPassword);
+
+        mods[0] = new ModificationItem(DirContext.REPLACE_ATTRIBUTE, mod0);
+        
+        if (currentPassword == null || !config.isBindUserDNOnSelfPasswordUpdate()) {
+            modifyAttributesNaming(userDN, mods, null, passwordUpdateDecorator);
+            return;
+        }
+
+        LdapContext context = null;
+        try {
+            context = doAuthenticate(userDN, currentPassword);
+            modifyAttributesNaming(userDN, mods, context, passwordUpdateDecorator);
+        } finally {
+            if (context != null) {
+                try {
+                    context.close();
+                } catch (NamingException e) {
+
+                }
+            }
+        }
     }
 
     public void modifyAttributes(final String dn, final ModificationItem[] mods, LDAPOperationDecorator decorator) {

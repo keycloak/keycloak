@@ -26,6 +26,7 @@ public class PasswordUserCredentialModel extends UserCredentialModel {
 
     // True if we have password-update request triggered by admin, not by user himself
     private static final String ADMIN_REQUEST = "adminRequest";
+    private static final String OLD_PASSWORD = "oldPassword";
 
     public boolean isAdminRequest() {
         Boolean b = (Boolean) this.notes.get(ADMIN_REQUEST);
@@ -34,5 +35,13 @@ public class PasswordUserCredentialModel extends UserCredentialModel {
 
     public void setAdminRequest(boolean adminRequest) {
         this.notes.put(ADMIN_REQUEST, adminRequest);
+    }
+    
+    public String getOldPassword(){
+        return (String) this.notes.get(OLD_PASSWORD);
+    }
+    
+    public void setOldPassword(String oldPassword){
+        this.notes.put(OLD_PASSWORD, oldPassword);
     }
 }
