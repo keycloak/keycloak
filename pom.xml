@@ -156,6 +156,11 @@
         <tomcat7.version>7.0.92</tomcat7.version>
         <tomcat8.version>8.5.38</tomcat8.version>
         <tomcat9.version>9.0.16</tomcat9.version>
+
+        <!-- Spring Boot versions, used for tests -->
+        <spring-boot15.version>1.5.20.RELEASE</spring-boot15.version>
+        <spring-boot21.version>2.1.3.RELEASE</spring-boot21.version>
+
     </properties>
 
     <url>http://keycloak.org</url>

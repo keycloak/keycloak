@@ -24,9 +24,7 @@
         <module>app-profile-jee</module>
         <module>cors</module>
         <module>fuse</module>
-        <module>spring-boot-adapter</module>
-        <module>spring-boot-2-adapter</module>
-        <module>spring-boot-21-adapter</module>
+        <module>spring-boot-adapter-app</module>
     </modules>
 
     <properties>

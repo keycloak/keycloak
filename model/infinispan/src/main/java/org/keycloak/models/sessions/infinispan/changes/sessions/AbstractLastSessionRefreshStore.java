@@ -54,7 +54,7 @@ public abstract class AbstractLastSessionRefreshStore {
 
     void checkSendingMessage(KeycloakSession kcSession, int currentTime) {
         if (lastSessionRefreshes.size() >= maxCount || lastRun + maxIntervalBetweenMessagesSeconds <= currentTime) {
-            Map<String, SessionData> refreshesToSend = prepareSendingMessage(currentTime);
+            Map<String, SessionData> refreshesToSend = prepareSendingMessage();
 
             // Sending message doesn't need to be synchronized
             if (refreshesToSend != null) {
@@ -65,7 +65,9 @@ public abstract class AbstractLastSessionRefreshStore {
 
 
     // synchronized manipulation with internal object instances. Will return map if message should be sent. Otherwise return null
-    private synchronized Map<String, SessionData> prepareSendingMessage(int currentTime) {
+    private synchronized Map<String, SessionData> prepareSendingMessage() {
+        // Safer to retrieve currentTime to avoid race conditions during testsuite
+        int currentTime = Time.currentTime();
         if (lastSessionRefreshes.size() >= maxCount || lastRun + maxIntervalBetweenMessagesSeconds <= currentTime) {
             // Create new map instance, so that new writers will use that one
             Map<String, SessionData> copiedRefreshesToSend = lastSessionRefreshes;
@@ -76,6 +78,12 @@ public abstract class AbstractLastSessionRefreshStore {
         } else {
             return null;
         }
+    }
+
+
+    public synchronized void reset() {
+        lastRun = Time.currentTime();
+        lastSessionRefreshes = new ConcurrentHashMap<>();
     }
 
 

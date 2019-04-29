@@ -30,6 +30,7 @@ import org.keycloak.models.*;
 import org.keycloak.models.session.UserSessionPersisterProvider;
 import org.keycloak.models.sessions.infinispan.changes.sessions.PersisterLastSessionRefreshStoreFactory;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.models.utils.ResetTimeOffsetEvent;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.ClientManager;
@@ -438,6 +439,7 @@ public class UserSessionProviderOfflineTest extends AbstractTestRealmKeycloakTes
         // Suspend periodic tasks to avoid race-conditions, which may cause missing updates of lastSessionRefresh times to UserSessionPersisterProvider
         TimerProvider timer = session.getProvider(TimerProvider.class);
         TimerProvider.TimerTaskContext timerTaskCtx = timer.cancelTask(PersisterLastSessionRefreshStoreFactory.DB_LSR_PERIODIC_TASK_NAME);
+        log.info("Cancelled periodic task " + PersisterLastSessionRefreshStoreFactory.DB_LSR_PERIODIC_TASK_NAME);
 
         try {
             AtomicReference<UserSessionModel[]> origSessionsAt = new AtomicReference<>();
@@ -474,6 +476,8 @@ public class UserSessionProviderOfflineTest extends AbstractTestRealmKeycloakTes
                 }
             });
 
+            log.info("Persisted 3 sessions to UserSessionPersisterProvider");
+
             KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession sessionExpired3) -> {
                 currentSession = sessionExpired3;
                 realm = currentSession.realms().getRealm("test");
@@ -487,22 +491,29 @@ public class UserSessionProviderOfflineTest extends AbstractTestRealmKeycloakTes
                 Assert.assertEquals(3, persister.getUserSessionsCount(true));
 
                 Time.setOffset(300);
+                log.infof("Set time offset to 300. Time is: %d", Time.currentTime());
 
                 // Set lastSessionRefresh to currentSession[0] to 0
                 session0.setLastSessionRefresh(Time.currentTime());
             });
 
 
-            KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession sessionExpired4) -> {
-                currentSession = sessionExpired4;
-                realm = currentSession.realms().getRealm("test");
-                UserSessionModel[] origSessions = origSessionsAt.get();
-                // Increase timeOffset - 20 days
-                Time.setOffset(1728000);
+            // Increase timeOffset and update LSR of the session two times - first to 20 days and then to 21 days. At least one of updates
+            // will propagate to PersisterLastSessionRefreshStore and update DB (Single update is not 100% sure as there is still a
+            // chance of delayed periodic task to be run in the meantime and causing race-condition, which would mean LSR not updated in the DB)
+            for (int i=0 ; i<2 ; i++) {
+                int timeOffset = 1728000 + (i * 86400);
+                KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession sessionExpired4) -> {
+                    currentSession = sessionExpired4;
+                    realm = currentSession.realms().getRealm("test");
+                    UserSessionModel[] origSessions = origSessionsAt.get();
+                    Time.setOffset(timeOffset);
+                    log.infof("Set time offset to %d. Time is: %d", timeOffset, Time.currentTime());
 
-                UserSessionModel session0 = currentSession.sessions().getOfflineUserSession(realm, origSessions[0].getId());
-                session0.setLastSessionRefresh(Time.currentTime());
-            });
+                    UserSessionModel session0 = currentSession.sessions().getOfflineUserSession(realm, origSessions[0].getId());
+                    session0.setLastSessionRefresh(Time.currentTime());
+                });
+            }
 
             KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession sessionExpired5) -> {
                 currentSession = sessionExpired5;
@@ -511,6 +522,7 @@ public class UserSessionProviderOfflineTest extends AbstractTestRealmKeycloakTes
 
                 // Increase timeOffset - 40 days
                 Time.setOffset(3456000);
+                log.infof("Set time offset to 3456000. Time is: %d", Time.currentTime());
 
                 // Expire and ensure that all sessions despite session0 were removed
                 currentSession.sessions().removeExpired(realm);
@@ -552,6 +564,7 @@ public class UserSessionProviderOfflineTest extends AbstractTestRealmKeycloakTes
 
         } finally {
             Time.setOffset(0);
+            session.getKeycloakSessionFactory().publish(new ResetTimeOffsetEvent());
             timer.schedule(timerTaskCtx.getRunnable(), timerTaskCtx.getIntervalMillis(), PersisterLastSessionRefreshStoreFactory.DB_LSR_PERIODIC_TASK_NAME);
         }
     }
