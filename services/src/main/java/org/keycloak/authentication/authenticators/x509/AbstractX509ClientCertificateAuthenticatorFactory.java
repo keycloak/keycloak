@@ -79,7 +79,8 @@ public abstract class AbstractX509ClientCertificateAuthenticatorFactory implemen
             MAPPING_SOURCE_CERT_ISSUERDN,
             MAPPING_SOURCE_CERT_ISSUERDN_EMAIL,
             MAPPING_SOURCE_CERT_ISSUERDN_CN,
-            MAPPING_SOURCE_CERT_SERIALNUMBER
+            MAPPING_SOURCE_CERT_SERIALNUMBER,
+            MAPPING_SOURCE_CERT_CERTIFICATE_PEM
     };
 
     private static final String[] userModelMappers = {

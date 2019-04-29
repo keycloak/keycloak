@@ -50,4 +50,13 @@ class GreaterThanCondition extends NamedParameterCondition {
             filter.append("(").append(getParameterName()).append(">").append(parameterValue).append(")");
         }
     }
+
+    @Override
+    public void setBinary(boolean binary) {
+    }
+
+    @Override
+    public boolean isBinary() {
+        return false;
+    }
 }
