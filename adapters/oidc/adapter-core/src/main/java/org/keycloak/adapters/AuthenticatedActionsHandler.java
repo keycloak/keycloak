@@ -118,15 +118,14 @@ public class AuthenticatedActionsHandler {
         if (securityContext != null && origin != null && !origin.equals(requestOrigin)) {
             AccessToken token = securityContext.getToken();
             Set<String> allowedOrigins = token.getAllowedOrigins();
-            if (log.isDebugEnabled()) {
-                for (String a : allowedOrigins) log.debug("   " + a);
-            }
+
+            log.debugf("Allowed origins in token: %s", allowedOrigins);
+
             if (allowedOrigins == null || (!allowedOrigins.contains("*") && !allowedOrigins.contains(origin))) {
                 if (allowedOrigins == null) {
                     log.debugv("allowedOrigins was null in token");
                 } else {
                     log.debugv("allowedOrigins did not contain origin");
-
                 }
                 facade.getResponse().sendError(403);
                 facade.getResponse().end();
