@@ -28,6 +28,7 @@ import org.bouncycastle.asn1.DERUTF8String;
 import org.bouncycastle.asn1.x500.RDN;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x500.style.IETFUtils;
+import org.keycloak.common.util.PemUtils;
 import org.keycloak.services.ServicesLogger;
 
 import java.io.ByteArrayInputStream;
@@ -274,5 +275,20 @@ public abstract class UserIdentityExtractor {
 
     public static OrBuilder either(UserIdentityExtractor extractor) {
         return new OrBuilder(extractor);
+    }
+
+    public static UserIdentityExtractor getCertificatePemIdentityExtractor(X509AuthenticatorConfigModel config) {
+        return new UserIdentityExtractor() {
+              @Override
+              public Object extractUserIdentity(X509Certificate[] certs) {
+                if (certs == null || certs.length == 0) {
+                  throw new IllegalArgumentException();
+                }
+
+                String pem = PemUtils.encodeCertificate(certs[0]);
+                logger.debugf("Using PEM certificate \"%s\" as user identity.", pem);
+                return pem;
+              }
+        };
     }
 }

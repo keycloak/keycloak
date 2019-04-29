@@ -25,6 +25,7 @@ import org.keycloak.storage.ldap.idm.query.Condition;
 public abstract class NamedParameterCondition implements Condition {
 
     private String parameterName;
+    private boolean binary;
 
     public NamedParameterCondition(String parameterName) {
         this.parameterName = parameterName;
@@ -46,5 +47,15 @@ public abstract class NamedParameterCondition implements Condition {
         if (parameterName.equalsIgnoreCase(modelParamName)) {
             this.parameterName = ldapParamName;
         }
+    }
+
+    @Override
+    public void setBinary(boolean binary) {
+        this.binary = binary;
+    }
+
+    @Override
+    public boolean isBinary() {
+        return binary;
     }
 }
