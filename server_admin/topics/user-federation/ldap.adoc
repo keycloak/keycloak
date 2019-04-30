@@ -149,6 +149,12 @@ MSAD User Account Mapper::
   and there will be an UPDATE_PASSWORD required action added to the user. If `userAccountControl` is
   `514` (disabled account) the {project_name} user is disabled as well.
 
+Certificate Mapper::
+  This mapper is specific for mapping X.509 certificates. It will generally be used in conjunction with X.509 authentication
+  and `Full certificate in PEM format` as an identity source.
+  It behaves the same way as the `User Attribute Mapper`, but allows {project_name} to filter for an LDAP attribute which stores
+  a certificate in either PEM or DER format. It is generally advised to enable `Always Read Value From LDAP` with this mapper.
+
 By default, there are User Attribute mappers that map basic {project_name} user attributes like username, firstname, lastname, and email to corresponding LDAP attributes.
 You are free to extend these and provide additional attribute mappings.
 Admin console provides tooltips, which should help with configuring the corresponding mappers.
