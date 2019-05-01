@@ -68,6 +68,8 @@ import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.representations.UserInfo;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.services.resources.RealmsResource;
+import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
 import org.keycloak.testsuite.runonserver.RunOnServerException;
 import org.keycloak.util.BasicAuthHelper;
 import org.keycloak.util.JsonSerialization;
@@ -860,6 +862,71 @@ public class OAuthClient {
         }
     }
 
+    public DeviceAuthorizationResponse doDeviceAuthorizationRequest(String clientId, String clientSecret) throws Exception {
+        try (CloseableHttpClient client = httpClient.get()) {
+            HttpPost post = new HttpPost(getDeviceAuthorizationUrl());
+
+            List<NameValuePair> parameters = new LinkedList<>();
+            if (clientSecret != null) {
+                String authorization = BasicAuthHelper.createHeader(clientId, clientSecret);
+                post.setHeader("Authorization", authorization);
+            } else {
+                parameters.add(new BasicNameValuePair("client_id", clientId));
+            }
+
+            if (origin != null) {
+                post.addHeader("Origin", origin);
+            }
+
+            if (scope != null) {
+                parameters.add(new BasicNameValuePair(OAuth2Constants.SCOPE, scope));
+            }
+            if (nonce != null) {
+                parameters.add(new BasicNameValuePair(OIDCLoginProtocol.NONCE_PARAM, scope));
+            }
+
+            UrlEncodedFormEntity formEntity;
+            try {
+                formEntity = new UrlEncodedFormEntity(parameters, "UTF-8");
+            } catch (UnsupportedEncodingException e) {
+                throw new RuntimeException(e);
+            }
+            post.setEntity(formEntity);
+
+            return new DeviceAuthorizationResponse(client.execute(post));
+        }
+    }
+
+    public AccessTokenResponse doDeviceTokenRequest(String clientId, String clientSecret, String deviceCode) throws Exception {
+        try (CloseableHttpClient client = httpClient.get()) {
+            HttpPost post = new HttpPost(getAccessTokenUrl());
+
+            List<NameValuePair> parameters = new LinkedList<>();
+            parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.DEVICE_CODE_GRANT_TYPE));
+            parameters.add(new BasicNameValuePair("device_code", deviceCode));
+            if (clientSecret != null) {
+                String authorization = BasicAuthHelper.createHeader(clientId, clientSecret);
+                post.setHeader("Authorization", authorization);
+            } else {
+                parameters.add(new BasicNameValuePair("client_id", clientId));
+            }
+
+            if (origin != null) {
+                post.addHeader("Origin", origin);
+            }
+
+            UrlEncodedFormEntity formEntity;
+            try {
+                formEntity = new UrlEncodedFormEntity(parameters, "UTF-8");
+            } catch (UnsupportedEncodingException e) {
+                throw new RuntimeException(e);
+            }
+            post.setEntity(formEntity);
+
+            return new AccessTokenResponse(client.execute(post));
+        }
+    }
+
     public OIDCConfigurationRepresentation doWellKnownRequest(String realm) {
         try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
             return SimpleHttp.doGet(baseUrl + "/realms/" + realm + "/.well-known/openid-configuration", client).asJson(OIDCConfigurationRepresentation.class);
@@ -989,6 +1056,15 @@ public class OAuthClient {
 
     public void openLoginForm() {
         driver.navigate().to(getLoginFormUrl());
+    }
+
+    public void openOAuth2DeviceVerificationForm() {
+        UriBuilder b = RealmsResource.oauth2DeviceVerificationUrl(UriBuilder.fromUri(baseUrl));
+        openOAuth2DeviceVerificationForm(b.build(realm).toString());
+    }
+
+    public void openOAuth2DeviceVerificationForm(String verificationUri) {
+        driver.navigate().to(verificationUri);
     }
 
     public void openLogout() {
@@ -1127,6 +1203,11 @@ public class OAuthClient {
 
     public String getServiceAccountUrl() {
         return getResourceOwnerPasswordCredentialGrantUrl();
+    }
+
+    public String getDeviceAuthorizationUrl() {
+        UriBuilder b = OIDCLoginProtocolService.oauth2DeviceAuthUrl(UriBuilder.fromUri(baseUrl));
+        return b.build(realm).toString();
     }
 
     public String getRefreshTokenUrl() {
@@ -1572,4 +1653,94 @@ public class OAuthClient {
 
     }
 
+    public static class DeviceAuthorizationResponse {
+        private int statusCode;
+
+        private String deviceCode;
+        private String userCode;
+        private String verificationUri;
+        private String verificationUriComplete;
+        private int expiresIn;
+        private int interval;
+
+        private String error;
+        private String errorDescription;
+
+        private Map<String, String> headers;
+
+        public DeviceAuthorizationResponse(CloseableHttpResponse response) throws Exception {
+            try {
+                statusCode = response.getStatusLine().getStatusCode();
+
+                headers = new HashMap<>();
+
+                for (Header h : response.getAllHeaders()) {
+                    headers.put(h.getName(), h.getValue());
+                }
+
+                Header[] contentTypeHeaders = response.getHeaders("Content-Type");
+                String contentType = (contentTypeHeaders != null && contentTypeHeaders.length > 0) ? contentTypeHeaders[0].getValue() : null;
+                if (!"application/json".equals(contentType)) {
+                    Assert.fail("Invalid content type. Status: " + statusCode + ", contentType: " + contentType);
+                }
+
+                String s = IOUtils.toString(response.getEntity().getContent(), "UTF-8");
+                Map responseJson = JsonSerialization.readValue(s, Map.class);
+
+                if (statusCode == 200) {
+                    deviceCode = (String) responseJson.get("device_code");
+                    userCode = (String) responseJson.get("user_code");
+                    verificationUri = (String) responseJson.get("verification_uri");
+                    verificationUriComplete = (String) responseJson.get("verification_uri_complete");
+                    expiresIn = (Integer) responseJson.get("expires_in");
+                    interval = (Integer) responseJson.get("interval");
+                } else {
+                    error = (String) responseJson.get(OAuth2Constants.ERROR);
+                    errorDescription = responseJson.containsKey(OAuth2Constants.ERROR_DESCRIPTION) ? (String) responseJson.get(OAuth2Constants.ERROR_DESCRIPTION) : null;
+                }
+            } finally {
+                response.close();
+            }
+        }
+
+        public String getError() {
+            return error;
+        }
+
+        public String getErrorDescription() {
+            return errorDescription;
+        }
+
+        public String getDeviceCode() {
+            return deviceCode;
+        }
+
+        public String getUserCode() {
+            return userCode;
+        }
+
+        public String getVerificationUri() {
+            return verificationUri;
+        }
+
+        public String getVerificationUriComplete() {
+            return verificationUriComplete;
+        }
+
+        public int getExpiresIn() {
+            return expiresIn;
+        }
+
+        public int getInterval() {
+            return interval;
+        }
+
+        public int getStatusCode() {
+            return statusCode;
+        }
+
+        public Map<String, String> getHeaders() {
+            return headers;
+        }
+    }
 }

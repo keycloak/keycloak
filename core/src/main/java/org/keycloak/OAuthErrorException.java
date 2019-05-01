@@ -45,6 +45,12 @@ public class OAuthErrorException extends Exception {
     public static final String INVALID_REDIRECT_URI = "invalid_redirect_uri";
     public static final String INVALID_CLIENT_METADATA = "invalid_client_metadata";
 
+    // OAuth2 Device Authorization Grant
+    // https://tools.ietf.org/html/draft-ietf-oauth-device-flow-15#section-3.5
+    public static final String AUTHORIZATION_PENDING = "authorization_pending";
+    public static final String SLOW_DOWN = "slow_down";
+    public static final String EXPIRED_TOKEN = "expired_token";
+
     // Others
     public static final String INVALID_CLIENT = "invalid_client";
     public static final String INVALID_GRANT = "invalid_grant";

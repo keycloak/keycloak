@@ -37,11 +37,13 @@ import org.keycloak.protocol.oidc.endpoints.AuthorizationEndpoint;
 import org.keycloak.protocol.oidc.endpoints.LoginStatusIframeEndpoint;
 import org.keycloak.protocol.oidc.endpoints.LogoutEndpoint;
 import org.keycloak.protocol.oidc.endpoints.ThirdPartyCookiesIframeEndpoint;
+import org.keycloak.protocol.oidc.endpoints.OAuth2DeviceAuthorizationEndpoint;
 import org.keycloak.protocol.oidc.endpoints.TokenEndpoint;
 import org.keycloak.protocol.oidc.endpoints.TokenRevocationEndpoint;
 import org.keycloak.protocol.oidc.endpoints.UserInfoEndpoint;
 import org.keycloak.protocol.oidc.ext.OIDCExtProvider;
 import org.keycloak.services.CorsErrorResponseException;
+import org.keycloak.saml.common.util.StringUtil;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.Cors;
@@ -50,6 +52,7 @@ import org.keycloak.services.util.CacheControlUtil;
 
 import java.util.Objects;
 
+import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.OPTIONS;
@@ -115,6 +118,21 @@ public class OIDCLoginProtocolService {
         return uriBuilder.path(OIDCLoginProtocolService.class, "auth");
     }
 
+    public static UriBuilder oauth2DeviceAuthUrl(UriBuilder baseUriBuilder) {
+        UriBuilder uriBuilder = tokenServiceBaseUrl(baseUriBuilder);
+        return uriBuilder.path(OIDCLoginProtocolService.class, "oauth2DeviceAuth");
+    }
+
+    public static UriBuilder oauth2DeviceVerificationCompletedUrl(UriInfo uriInfo) {
+        UriBuilder uriBuilder = tokenServiceBaseUrl(uriInfo);
+        return uriBuilder.path(OIDCLoginProtocolService.class, "oauth2DeviceVerificationCompleted");
+    }
+
+    public static UriBuilder delegatedUrl(UriInfo uriInfo) {
+        UriBuilder uriBuilder = tokenServiceBaseUrl(uriInfo);
+        return uriBuilder.path(OIDCLoginProtocolService.class, "kcinitBrowserLoginComplete");
+    }
+
     public static UriBuilder tokenUrl(UriBuilder baseUriBuilder) {
         UriBuilder uriBuilder = tokenServiceBaseUrl(baseUriBuilder);
         return uriBuilder.path(OIDCLoginProtocolService.class, "token");
@@ -157,6 +175,58 @@ public class OIDCLoginProtocolService {
         AuthorizationEndpoint endpoint = new AuthorizationEndpoint(realm, event);
         ResteasyProviderFactory.getInstance().injectProperties(endpoint);
         return endpoint;
+    }
+
+    /**
+     * OAuth 2.0 Device Authorization endpoint
+     */
+    @Path("device/auth")
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Object oauth2DeviceAuth() {
+        OAuth2DeviceAuthorizationEndpoint endpoint = new OAuth2DeviceAuthorizationEndpoint(realm, event);
+        ResteasyProviderFactory.getInstance().injectProperties(endpoint);
+        return endpoint;
+    }
+
+    /**
+     * Showing the result of verification process for OAuth 2.0 Device Authorization Grant.
+     * This outputs login success or failure messages.
+     *
+     * @param error
+     * @return
+     */
+    @GET
+    @Path("device/verification")
+    public Response oauth2DeviceVerificationCompleted(@QueryParam("error") String error) {
+        if (!StringUtil.isNullOrEmpty(error)) {
+            String message;
+            switch (error) {
+                case OAuthErrorException.ACCESS_DENIED:
+                    // cased by CANCELLED_BY_USER or CONSENT_DENIED:
+                    message = Messages.OAUTH2_DEVICE_CONSENT_DENIED;
+                    break;
+                case OAuthErrorException.EXPIRED_TOKEN:
+                    message = Messages.OAUTH2_DEVICE_EXPIRED_USER_CODE;
+                    break;
+                default:
+                    message = Messages.OAUTH2_DEVICE_VERIFICATION_FAILED;
+            }
+            LoginFormsProvider forms = session.getProvider(LoginFormsProvider.class);
+            String restartUri = RealmsResource.oauth2DeviceVerificationUrl(session.getContext().getUri()).build(realm.getName()).toString();
+            return forms
+                    .setAttribute("messageHeader", forms.getMessage(Messages.OAUTH2_DEVICE_VERIFICATION_FAILED_HEADER))
+                    .setAttribute(Constants.TEMPLATE_ATTR_ACTION_URI, restartUri)
+                    .setError(message)
+                    .createInfoPage();
+        } else {
+            LoginFormsProvider forms = session.getProvider(LoginFormsProvider.class);
+            return forms
+                    .setAttribute("messageHeader", forms.getMessage(Messages.OAUTH2_DEVICE_VERIFICATION_COMPLETE_HEADER))
+                    .setAttribute(Constants.SKIP_LINK, true)
+                    .setSuccess(Messages.OAUTH2_DEVICE_VERIFICATION_COMPLETE)
+                    .createInfoPage();
+        }
     }
 
     /**

@@ -140,6 +140,13 @@
                 </div>
             </div>
             <div class="form-group" data-ng-show="protocol == 'openid-connect' && !clientEdit.publicClient && !clientEdit.bearerOnly">
+                <label class="col-md-2 control-label" for="oauth2DeviceAuthorizationGrantEnabled">{{:: 'oauth2-device-authorization-grant-enabled' | translate}}</label>
+                <kc-tooltip>{{:: 'oauth2-device-authorization-grant-enabled.tooltip' | translate}}</kc-tooltip>
+                <div class="col-md-6">
+                    <input ng-model="clientEdit.oauth2DeviceAuthorizationGrantEnabled" name="oauth2DeviceAuthorizationGrantEnabled" id="oauth2DeviceAuthorizationGrantEnabled" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}"/>
+                </div>
+            </div>
+            <div class="form-group" data-ng-show="protocol == 'openid-connect' && !clientEdit.publicClient && !clientEdit.bearerOnly">
                 <label class="col-md-2 control-label" for="authorizationServicesEnabled">{{:: 'authz-authorization-services-enabled' | translate}}</label>
                 <kc-tooltip>{{:: 'authz-authorization-services-enabled.tooltip' | translate}}</kc-tooltip>
                 <div class="col-md-6">

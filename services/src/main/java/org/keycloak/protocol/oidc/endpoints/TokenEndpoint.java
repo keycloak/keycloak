@@ -39,6 +39,7 @@ import org.keycloak.common.Profile;
 import org.keycloak.common.constants.ServiceAccountConstants;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.KeycloakUriBuilder;
+import org.keycloak.common.util.Time;
 import org.keycloak.constants.AdapterConstants;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
@@ -56,6 +57,8 @@ import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.OAuth2DeviceCodeModel;
+import org.keycloak.models.OAuth2DeviceTokenStoreProvider;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
@@ -71,6 +74,7 @@ import org.keycloak.protocol.saml.JaxrsSAML2BindingBuilder;
 import org.keycloak.protocol.saml.SamlClient;
 import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.protocol.saml.SamlService;
+import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.JsonWebToken;
@@ -95,6 +99,7 @@ import org.keycloak.services.managers.ClientManager;
 import org.keycloak.protocol.oidc.utils.OAuth2Code;
 import org.keycloak.protocol.oidc.utils.OAuth2CodeParser;
 import org.keycloak.services.managers.RealmManager;
+import org.keycloak.services.managers.UserSessionCrossDCManager;
 import org.keycloak.services.resources.Cors;
 import org.keycloak.services.resources.IdentityBrokerService;
 import org.keycloak.services.resources.admin.AdminAuth;
@@ -148,7 +153,7 @@ public class TokenEndpoint {
     private Map<String, String> clientAuthAttributes;
 
     private enum Action {
-        AUTHORIZATION_CODE, REFRESH_TOKEN, PASSWORD, CLIENT_CREDENTIALS, TOKEN_EXCHANGE, PERMISSION
+        AUTHORIZATION_CODE, REFRESH_TOKEN, PASSWORD, CLIENT_CREDENTIALS, TOKEN_EXCHANGE, PERMISSION, OAUTH2_DEVICE_CODE
     }
 
     // https://tools.ietf.org/html/rfc7636#section-4.2
@@ -228,6 +233,8 @@ public class TokenEndpoint {
                 return tokenExchange();
             case PERMISSION:
                 return permissionGrant();
+            case OAUTH2_DEVICE_CODE:
+                return oauth2DeviceCodeToToken();
         }
 
         throw new RuntimeException("Unknown action " + action);
@@ -299,6 +306,9 @@ public class TokenEndpoint {
         } else if (grantType.equals(OAuth2Constants.UMA_GRANT_TYPE)) {
             event.event(EventType.PERMISSION_TOKEN);
             action = Action.PERMISSION;
+        } else if (grantType.equals(OAuth2Constants.DEVICE_CODE_GRANT_TYPE)) {
+            event.event(EventType.OAUTH2_DEVICE_CODE_TO_TOKEN);
+            action = Action.OAUTH2_DEVICE_CODE;
         } else {
             throw new CorsErrorResponseException(cors, OAuthErrorException.UNSUPPORTED_GRANT_TYPE,
                 "Unsupported " + OIDCLoginProtocol.GRANT_TYPE_PARAM, Response.Status.BAD_REQUEST);
@@ -1362,6 +1372,137 @@ public class TokenEndpoint {
         event.success();
 
         return authorizationResponse;
+    }
+
+    public Response oauth2DeviceCodeToToken() {
+        if (!client.isOAuth2DeviceAuthorizationGrantEnabled()) {
+            event.error(Errors.NOT_ALLOWED);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, "Client not allowed OAuth 2.0 Device Authorization Grant", Response.Status.BAD_REQUEST);
+        }
+
+        String deviceCode = formParams.getFirst(OAuth2Constants.DEVICE_CODE);
+        if (deviceCode == null) {
+            event.error(Errors.INVALID_OAUTH2_DEVICE_CODE);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "Missing parameter: " + OAuth2Constants.DEVICE_CODE, Response.Status.BAD_REQUEST);
+        }
+
+        OAuth2DeviceTokenStoreProvider store = session.getProvider(OAuth2DeviceTokenStoreProvider.class);
+        OAuth2DeviceCodeModel deviceCodeModel = store.getByDeviceCode(realm, deviceCode);
+
+        if (deviceCodeModel == null) {
+            event.error(Errors.INVALID_OAUTH2_DEVICE_CODE);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, "Device code not valid", Response.Status.BAD_REQUEST);
+        }
+
+        if (!store.isPollingAllowed(deviceCodeModel)) {
+            event.error(Errors.SLOW_DOWN);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.SLOW_DOWN, "Slow down", Response.Status.BAD_REQUEST);
+        }
+
+        int expiresIn = deviceCodeModel.getExpiration() - Time.currentTime();
+        if (expiresIn < 0) {
+            event.error(Errors.EXPIRED_OAUTH2_DEVICE_CODE);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.EXPIRED_TOKEN, "Device code is expired", Response.Status.BAD_REQUEST);
+        }
+
+        if (deviceCodeModel.isPending()) {
+            throw new CorsErrorResponseException(cors, OAuthErrorException.AUTHORIZATION_PENDING, "The authorization request is still pending", Response.Status.BAD_REQUEST);
+        }
+
+        if (deviceCodeModel.isDenied()) {
+            event.error(Errors.ACCESS_DENIED);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.ACCESS_DENIED, "The end user denied the authorization request", Response.Status.BAD_REQUEST);
+        }
+
+        // Approved
+
+        String userSessionId = deviceCodeModel.getUserSessionId();
+        event.detail(Details.CODE_ID, userSessionId);
+        event.session(userSessionId);
+
+        // Retrieve UserSession
+        UserSessionModel userSession = new UserSessionCrossDCManager(session)
+                .getUserSessionWithClient(realm, userSessionId, client.getId());
+
+        if (userSession == null) {
+            userSession = session.sessions().getUserSession(realm, userSessionId);
+            if (userSession == null) {
+                throw new CorsErrorResponseException(cors, OAuthErrorException.AUTHORIZATION_PENDING, "The authorization request is verified but can not lookup the user session yet", Response.Status.BAD_REQUEST);
+            }
+        }
+
+        // Now, remove the device code
+        store.removeDeviceCode(realm, deviceCode);
+
+        UserModel user = userSession.getUser();
+        if (user == null) {
+            event.error(Errors.USER_NOT_FOUND);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, "User not found", Response.Status.BAD_REQUEST);
+        }
+
+        event.user(userSession.getUser());
+
+        if (!user.isEnabled()) {
+            event.error(Errors.USER_DISABLED);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, "User disabled", Response.Status.BAD_REQUEST);
+        }
+
+        AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessionByClient(client.getId());
+        if (!client.getClientId().equals(clientSession.getClient().getClientId())) {
+            event.error(Errors.INVALID_CODE);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, "Auth error", Response.Status.BAD_REQUEST);
+        }
+
+        if (!AuthenticationManager.isSessionValid(realm, userSession)) {
+            event.error(Errors.USER_SESSION_NOT_FOUND);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, "Session not active", Response.Status.BAD_REQUEST);
+        }
+
+        updateClientSession(clientSession);
+        updateUserSessionFromClientAuth(userSession);
+
+        // Compute client scopes again from scope parameter. Check if user still has them granted
+        // (but in device_code-to-token request, it could just theoretically happen that they are not available)
+        String scopeParam = deviceCodeModel.getScope();
+        Stream<ClientScopeModel> clientScopes = TokenManager.getRequestedClientScopes(scopeParam, client);
+        if (!TokenManager.verifyConsentStillAvailable(session, user, client, clientScopes)) {
+            event.error(Errors.NOT_ALLOWED);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_SCOPE, "Client no longer has requested consent from user", Response.Status.BAD_REQUEST);
+        }
+
+        ClientSessionContext clientSessionCtx = DefaultClientSessionContext.fromClientSessionAndClientScopes(clientSession, clientScopes, session);
+
+        // Set nonce as an attribute in the ClientSessionContext. Will be used for the token generation
+        clientSessionCtx.setAttribute(OIDCLoginProtocol.NONCE_PARAM, deviceCodeModel.getNonce());
+
+        AccessToken token = tokenManager.createClientAccessToken(session, realm, client, user, userSession, clientSessionCtx);
+
+        TokenManager.AccessTokenResponseBuilder responseBuilder = tokenManager.responseBuilder(realm, client, event, session, userSession, clientSessionCtx)
+                .accessToken(token)
+                .generateRefreshToken();
+
+        // KEYCLOAK-6771 Certificate Bound Token
+        // https://tools.ietf.org/html/draft-ietf-oauth-mtls-08#section-3
+        if (OIDCAdvancedConfigWrapper.fromClientModel(client).isUseMtlsHokToken()) {
+            AccessToken.CertConf certConf = MtlsHoKTokenUtil.bindTokenWithClientCertificate(request, session);
+            if (certConf != null) {
+                responseBuilder.getAccessToken().setCertConf(certConf);
+                responseBuilder.getRefreshToken().setCertConf(certConf);
+            } else {
+                event.error(Errors.INVALID_REQUEST);
+                throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "Client Certification missing for MTLS HoK Token Binding", Response.Status.BAD_REQUEST);
+            }
+        }
+
+        if (TokenUtil.isOIDCRequest(scopeParam)) {
+            responseBuilder.generateIDToken();
+        }
+
+        AccessTokenResponse res = responseBuilder.build();
+
+        event.success();
+
+        return cors.builder(Response.ok(res).type(MediaType.APPLICATION_JSON_TYPE)).build();
     }
 
     // https://tools.ietf.org/html/rfc7636#section-4.1

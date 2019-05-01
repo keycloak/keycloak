@@ -573,9 +573,13 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
         return createResponse(LoginFormsPages.OAUTH_GRANT);
     }
 
-    @Override
     public Response createSelectAuthenticator() {
         return createResponse(LoginFormsPages.LOGIN_SELECT_AUTHENTICATOR);
+    }
+
+    @Override
+    public Response createOAuth2DeviceVerifyUserCodePage() {
+        return createResponse(LoginFormsPages.LOGIN_OAUTH2_DEVICE_VERIFY_USER_CODE);
     }
 
     @Override

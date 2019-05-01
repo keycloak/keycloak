@@ -33,6 +33,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.OAuth2DeviceTokenStoreProvider;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.LoginProtocol;
@@ -117,6 +118,10 @@ public class OIDCLoginProtocol implements LoginProtocol {
     public static final String PKCE_METHOD_PLAIN = "plain";
     public static final String PKCE_METHOD_S256 = "S256";
 
+    // OAuth 2.0 Device Authorization Grant
+    public static final String OAUTH2_DEVICE_VERIFIED_USER_CODE = "OAUTH2_DEVICE_VERIFIED_USER_CODE";
+    public static final String OAUTH2_DEVICE_USER_CODE_EXPIRATION = "OAUTH2_DEVICE_USER_CODE_EXPIRATION";
+
     private static final Logger logger = Logger.getLogger(OIDCLoginProtocol.class);
 
     protected KeycloakSession session;
@@ -184,7 +189,11 @@ public class OIDCLoginProtocol implements LoginProtocol {
 
     @Override
     public Response authenticated(AuthenticationSessionModel authSession, UserSessionModel userSession, ClientSessionContext clientSessionCtx) {
-        AuthenticatedClientSessionModel clientSession= clientSessionCtx.getClientSession();
+        AuthenticatedClientSessionModel clientSession = clientSessionCtx.getClientSession();
+
+        if (AuthenticationManager.isOAuth2DeviceVerificationFlow(authSession)) {
+            return approveOAuth2DeviceAuthorization(authSession, clientSession);
+        }
 
         String responseTypeParam = authSession.getClientNote(OIDCLoginProtocol.RESPONSE_TYPE_PARAM);
         String responseModeParam = authSession.getClientNote(OIDCLoginProtocol.RESPONSE_MODE_PARAM);
@@ -267,9 +276,12 @@ public class OIDCLoginProtocol implements LoginProtocol {
         return redirectUri.build();
     }
 
-
     @Override
     public Response sendError(AuthenticationSessionModel authSession, Error error) {
+        if (AuthenticationManager.isOAuth2DeviceVerificationFlow(authSession)) {
+            return denyOAuth2DeviceAuthorization(authSession, error);
+        }
+
         String responseTypeParam = authSession.getClientNote(OIDCLoginProtocol.RESPONSE_TYPE_PARAM);
         String responseModeParam = authSession.getClientNote(OIDCLoginProtocol.RESPONSE_MODE_PARAM);
         setupResponseTypeAndMode(responseTypeParam, responseModeParam);
@@ -290,6 +302,47 @@ public class OIDCLoginProtocol implements LoginProtocol {
         
         new AuthenticationSessionManager(session).removeAuthenticationSession(realm, authSession, true);
         return redirectUri.build();
+    }
+
+    private Response approveOAuth2DeviceAuthorization(AuthenticationSessionModel authSession, AuthenticatedClientSessionModel clientSession) {
+        UriBuilder uriBuilder = OIDCLoginProtocolService.oauth2DeviceVerificationCompletedUrl(uriInfo);
+
+        String verifiedUserCode = authSession.getClientNote(OIDCLoginProtocol.OAUTH2_DEVICE_VERIFIED_USER_CODE);
+        String userSessionId = clientSession.getUserSession().getId();
+        OAuth2DeviceTokenStoreProvider store = session.getProvider(OAuth2DeviceTokenStoreProvider.class);
+        if (!store.approve(realm, verifiedUserCode, userSessionId)) {
+            // Already expired and removed in the store
+            return Response.status(302).location(
+                    uriBuilder.queryParam(OAuth2Constants.ERROR, OAuthErrorException.EXPIRED_TOKEN)
+                            .build(realm.getName())
+            ).build();
+        }
+
+        // Now, remove the verified user code
+        store.removeUserCode(realm, verifiedUserCode);
+
+        return Response.status(302).location(
+                uriBuilder.build(realm.getName())
+        ).build();
+    }
+
+    private Response denyOAuth2DeviceAuthorization(AuthenticationSessionModel authSession, Error error) {
+        UriBuilder uriBuilder = OIDCLoginProtocolService.oauth2DeviceVerificationCompletedUrl(uriInfo);
+        String errorType = OAuthErrorException.SERVER_ERROR;
+        if (error == Error.CONSENT_DENIED) {
+            String verifiedUserCode = authSession.getClientNote(OIDCLoginProtocol.OAUTH2_DEVICE_VERIFIED_USER_CODE);
+            OAuth2DeviceTokenStoreProvider store = session.getProvider(OAuth2DeviceTokenStoreProvider.class);
+            if (!store.deny(realm, verifiedUserCode)) {
+                // Already expired and removed in the store
+                errorType = OAuthErrorException.EXPIRED_TOKEN;
+            } else {
+                errorType = OAuthErrorException.ACCESS_DENIED;
+            }
+        }
+        return Response.status(302).location(
+                uriBuilder.queryParam(OAuth2Constants.ERROR, errorType)
+                        .build(realm.getName())
+        ).build();
     }
 
     private String translateError(Error error) {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2019 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,17 +15,12 @@
  * limitations under the License.
  */
 
-package org.keycloak.forms.login;
+package org.keycloak.models;
+
+import org.keycloak.provider.ProviderFactory;
 
 /**
- * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
+ * @author <a href="mailto:h2-wada@nri.co.jp">Hiroyuki Wada</a>
  */
-public enum LoginFormsPages {
-
-    LOGIN, LOGIN_USERNAME, LOGIN_PASSWORD, LOGIN_TOTP, LOGIN_CONFIG_TOTP, LOGIN_WEBAUTHN, LOGIN_VERIFY_EMAIL,
-    LOGIN_IDP_LINK_CONFIRM, LOGIN_IDP_LINK_EMAIL,
-    OAUTH_GRANT, LOGIN_RESET_PASSWORD, LOGIN_UPDATE_PASSWORD, LOGIN_SELECT_AUTHENTICATOR, REGISTER, INFO, ERROR, ERROR_WEBAUTHN, LOGIN_UPDATE_PROFILE,
-    LOGIN_PAGE_EXPIRED, CODE, X509_CONFIRM, SAML_POST_FORM,
-    LOGIN_OAUTH2_DEVICE_VERIFY_USER_CODE;
-
+public interface OAuth2DeviceTokenStoreProviderFactory extends ProviderFactory<OAuth2DeviceTokenStoreProvider> {
 }

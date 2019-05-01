@@ -643,6 +643,35 @@ public class RealmAdapter implements CachedRealmModel {
         return cached.getRequiredCredentials().stream();
     }
 
+    public int getOAuth2DeviceCodeLifespan() {
+        if (isUpdated()) return updated.getOAuth2DeviceCodeLifespan();
+        return cached.getOAuth2DeviceCodeLifespan();
+    }
+
+    @Override
+    public void setOAuth2DeviceCodeLifespan(int oauth2DeviceCodeLifespan) {
+        getDelegateForUpdate();
+        updated.setOAuth2DeviceCodeLifespan(oauth2DeviceCodeLifespan);
+    }
+
+    @Override
+    public int getOAuth2DevicePollingInterval() {
+        if (isUpdated()) return updated.getOAuth2DevicePollingInterval();
+        return cached.getOAuth2DevicePollingInterval();
+    }
+
+    @Override
+    public void setOAuth2DevicePollingInterval(int oauth2DevicePollingInterval) {
+        getDelegateForUpdate();
+        updated.setOAuth2DevicePollingInterval(oauth2DevicePollingInterval);
+    }
+
+    @Override
+    public List<RequiredCredentialModel> getRequiredCredentials() {
+        if (isUpdated()) return updated.getRequiredCredentials();
+        return cached.getRequiredCredentials();
+    }
+
     @Override
     public void addRequiredCredential(String cred) {
         getDelegateForUpdate();
