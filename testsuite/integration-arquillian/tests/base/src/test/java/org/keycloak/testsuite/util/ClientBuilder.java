@@ -108,6 +108,11 @@ public class ClientBuilder {
         return this;
     }
 
+    public ClientBuilder oauth2DeviceAuthorizationGrant() {
+        rep.setOAuth2DeviceAuthorizationGrantEnabled(true);
+        return this;
+    }
+
     public ClientRepresentation build() {
         return rep;
     }

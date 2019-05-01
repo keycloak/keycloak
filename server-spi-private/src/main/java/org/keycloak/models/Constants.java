@@ -105,4 +105,9 @@ public final class Constants {
     public static final Pattern CFG_DELIMITER_PATTERN = Pattern.compile("\\s*" + CFG_DELIMITER + "\\s*");
 
     public static final String OFFLINE_ACCESS_SCOPE_CONSENT_TEXT = "${offlineAccessScopeConsentText}";
+
+    // 10 minutes
+    public static final int DEFAULT_OAUTH2_DEVICE_CODE_LIFESPAN = 600;
+    // 5 seconds
+    public static final int DEFAULT_OAUTH2_DEVICE_POLLING_INTERVAL = 5;
 }

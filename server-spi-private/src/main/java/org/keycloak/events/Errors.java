@@ -94,4 +94,10 @@ public interface Errors {
     String ILLEGAL_ORIGIN = "illegal_origin";
     String DISPLAY_UNSUPPORTED = "display_unsupported";
 
+    String INVALID_OAUTH2_DEVICE_CODE = "invalid_oauth2_device_code";
+    String EXPIRED_OAUTH2_DEVICE_CODE = "expired_oauth2_device_code";
+    String INVALID_OAUTH2_USER_CODE = "invalid_oauth2_user_code";
+    String EXPIRED_OAUTH2_USER_CODE = "expired_oauth2_user_code";
+    String ACCESS_DENIED = "access_denied";
+    String SLOW_DOWN = "slow_down";
 }
