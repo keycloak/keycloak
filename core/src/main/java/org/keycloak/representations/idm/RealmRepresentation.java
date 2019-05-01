@@ -59,6 +59,8 @@ public class RealmRepresentation {
     protected Integer accessCodeLifespanLogin;
     protected Integer actionTokenGeneratedByAdminLifespan;
     protected Integer actionTokenGeneratedByUserLifespan;
+    protected Integer oauth2DeviceCodeLifespan;
+    protected Integer oauth2DevicePollingInterval;
     protected Boolean enabled;
     protected String sslRequired;
     @Deprecated
@@ -474,6 +476,22 @@ public class RealmRepresentation {
 
     public void setActionTokenGeneratedByAdminLifespan(Integer actionTokenGeneratedByAdminLifespan) {
         this.actionTokenGeneratedByAdminLifespan = actionTokenGeneratedByAdminLifespan;
+    }
+
+    public void setOAuth2DeviceCodeLifespan(Integer oauth2DeviceCodeLifespan) {
+        this.oauth2DeviceCodeLifespan = oauth2DeviceCodeLifespan;
+    }
+
+    public Integer getOAuth2DeviceCodeLifespan() {
+        return oauth2DeviceCodeLifespan;
+    }
+
+    public void setOAuth2DevicePollingInterval(Integer oauth2DevicePollingInterval) {
+        this.oauth2DevicePollingInterval = oauth2DevicePollingInterval;
+    }
+
+    public Integer getOAuth2DevicePollingInterval() {
+        return oauth2DevicePollingInterval;
     }
 
     public Integer getActionTokenGeneratedByUserLifespan() {

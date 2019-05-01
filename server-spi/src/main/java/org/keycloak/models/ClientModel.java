@@ -36,6 +36,7 @@ public interface ClientModel extends ClientScopeModel, RoleContainerModel,  Prot
     String PRIVATE_KEY = "privateKey";
     String PUBLIC_KEY = "publicKey";
     String X509CERTIFICATE = "X509Certificate";
+    String OAUTH2_DEVICE_AUTHORIZATION_GRANT_ENABLED = "oauth2.device.authorization.grant.enabled";
 
     public static class SearchableFields {
         public static final SearchableModelField<ClientModel> ID                = new SearchableModelField<>("id", String.class);
@@ -198,6 +199,15 @@ public interface ClientModel extends ClientScopeModel, RoleContainerModel,  Prot
 
     boolean isServiceAccountsEnabled();
     void setServiceAccountsEnabled(boolean serviceAccountsEnabled);
+
+    default boolean isOAuth2DeviceAuthorizationGrantEnabled() {
+        String enabled = getAttribute(OAUTH2_DEVICE_AUTHORIZATION_GRANT_ENABLED);
+        return Boolean.parseBoolean(enabled);
+    }
+
+    default void setOAuth2DeviceAuthorizationGrantEnabled(boolean oauth2DeviceAuthorizationGrantEnabled) {
+        setAttribute(OAUTH2_DEVICE_AUTHORIZATION_GRANT_ENABLED, Boolean.toString(oauth2DeviceAuthorizationGrantEnabled));
+    }
 
     RealmModel getRealm();
 

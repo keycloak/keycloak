@@ -312,6 +312,9 @@ public class DescriptionConverter {
         if (client.isServiceAccountsEnabled()) {
             grantTypes.add(OAuth2Constants.CLIENT_CREDENTIALS);
         }
+        if (client.isOAuth2DeviceAuthorizationGrantEnabled()) {
+            grantTypes.add(OAuth2Constants.DEVICE_CODE_GRANT_TYPE);
+        }
         if (client.getAuthorizationServicesEnabled() != null && client.getAuthorizationServicesEnabled()) {
             grantTypes.add(OAuth2Constants.UMA_GRANT_TYPE);
         }

@@ -51,6 +51,7 @@ public class ClientRepresentation {
     protected Boolean implicitFlowEnabled;
     protected Boolean directAccessGrantsEnabled;
     protected Boolean serviceAccountsEnabled;
+    protected Boolean oauth2DeviceAuthorizationGrantEnabled;
     protected Boolean authorizationServicesEnabled;
     @Deprecated
     protected Boolean directGrantsOnly;
@@ -265,6 +266,14 @@ public class ClientRepresentation {
 
     public void setServiceAccountsEnabled(Boolean serviceAccountsEnabled) {
         this.serviceAccountsEnabled = serviceAccountsEnabled;
+    }
+
+    public Boolean isOAuth2DeviceAuthorizationGrantEnabled() {
+        return oauth2DeviceAuthorizationGrantEnabled;
+    }
+
+    public void setOAuth2DeviceAuthorizationGrantEnabled(Boolean oauth2DeviceAuthorizationGrantEnabled) {
+        this.oauth2DeviceAuthorizationGrantEnabled = oauth2DeviceAuthorizationGrantEnabled;
     }
 
     public Boolean getAuthorizationServicesEnabled() {

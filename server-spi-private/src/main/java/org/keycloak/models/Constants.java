@@ -118,4 +118,9 @@ public final class Constants {
      * If {@code #STORAGE_BATCH_ENABLED} is set, indicates the batch size.
      */
     public static final String STORAGE_BATCH_SIZE = "org.keycloak.storage.batch_size";
+
+    // 10 minutes
+    public static final int DEFAULT_OAUTH2_DEVICE_CODE_LIFESPAN = 600;
+    // 5 seconds
+    public static final int DEFAULT_OAUTH2_DEVICE_POLLING_INTERVAL = 5;
 }

@@ -245,6 +245,10 @@ public class Urls {
         return loginActionsBase(baseUri).path(LoginActionsService.class, "processConsent").build(realmName);
     }
 
+    public static URI realmOAuth2DeviceVerificationAction(URI baseUri, String realmName) {
+        return loginActionsBase(baseUri).path(LoginActionsService.class, "processOAuth2DeviceVerification").build(realmName);
+    }
+
     public static URI firstBrokerLoginProcessor(URI baseUri, String realmName) {
         return loginActionsBase(baseUri).path(LoginActionsService.class, "firstBrokerLoginGet")
                 .build(realmName);
