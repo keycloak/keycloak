@@ -120,6 +120,9 @@ public interface OAuth2Constants {
 
     String UMA_GRANT_TYPE = "urn:ietf:params:oauth:grant-type:uma-ticket";
 
+    // https://tools.ietf.org/html/draft-ietf-oauth-device-flow-15#section-3.4
+    String DEVICE_CODE_GRANT_TYPE = "urn:ietf:params:oauth:grant-type:device_code";
+    String DEVICE_CODE = "device_code";
 
     String DISPLAY_CONSOLE = "console";
 }

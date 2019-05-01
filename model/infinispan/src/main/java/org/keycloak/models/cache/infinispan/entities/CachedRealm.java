@@ -96,6 +96,8 @@ public class CachedRealm extends AbstractExtendableRevisioned {
     protected int accessCodeLifespan;
     protected int accessCodeLifespanUserAction;
     protected int accessCodeLifespanLogin;
+    protected int oauth2DeviceCodeLifespan;
+    protected int oauth2DevicePollingInterval;
     protected int actionTokenGeneratedByAdminLifespan;
     protected int actionTokenGeneratedByUserLifespan;
     protected int notBefore;
@@ -211,6 +213,8 @@ public class CachedRealm extends AbstractExtendableRevisioned {
         accessTokenLifespan = model.getAccessTokenLifespan();
         accessTokenLifespanForImplicitFlow = model.getAccessTokenLifespanForImplicitFlow();
         accessCodeLifespan = model.getAccessCodeLifespan();
+        oauth2DeviceCodeLifespan = model.getOAuth2DeviceCodeLifespan();
+        oauth2DevicePollingInterval = model.getOAuth2DevicePollingInterval();
         accessCodeLifespanUserAction = model.getAccessCodeLifespanUserAction();
         accessCodeLifespanLogin = model.getAccessCodeLifespanLogin();
         actionTokenGeneratedByAdminLifespan = model.getActionTokenGeneratedByAdminLifespan();
@@ -485,6 +489,14 @@ public class CachedRealm extends AbstractExtendableRevisioned {
 
     public int getAccessCodeLifespanLogin() {
         return accessCodeLifespanLogin;
+    }
+
+    public int getOAuth2DeviceCodeLifespan() {
+        return oauth2DeviceCodeLifespan;
+    }
+
+    public int getOAuth2DevicePollingInterval() {
+        return oauth2DevicePollingInterval;
     }
 
     public int getActionTokenGeneratedByAdminLifespan() {

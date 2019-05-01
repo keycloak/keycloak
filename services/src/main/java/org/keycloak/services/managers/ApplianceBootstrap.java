@@ -81,6 +81,8 @@ public class ApplianceBootstrap {
         realm.setAccessCodeLifespan(60);
         realm.setAccessCodeLifespanUserAction(300);
         realm.setAccessCodeLifespanLogin(1800);
+        realm.setOAuth2DeviceCodeLifespan(Constants.DEFAULT_OAUTH2_DEVICE_CODE_LIFESPAN);
+        realm.setOAuth2DevicePollingInterval(Constants.DEFAULT_OAUTH2_DEVICE_POLLING_INTERVAL);
         realm.setSslRequired(SslRequired.EXTERNAL);
         realm.setRegistrationAllowed(false);
         realm.setRegistrationEmailAsUsername(false);

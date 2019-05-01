@@ -347,6 +347,31 @@
         </div>
 
         <div class="form-group">
+            <label class="col-md-2 control-label" for="oauth2DeviceCodeLifespan">{{:: 'oauth2-device-code-lifespan' | translate}}</label>
+
+            <div class="col-md-6 time-selector">
+                <input class="form-control" type="number" required min="1" max="31536000" data-ng-model="realm.oauth2DeviceCodeLifespan.time" id="oauth2DeviceCodeLifespan"
+                       name="oauth2DeviceCodeLifespan">
+                <select class="form-control" name="oauth2DeviceCodeLifespanUnit" data-ng-model="realm.oauth2DeviceCodeLifespan.unit">
+                    <option value="Minutes">{{:: 'minutes' | translate}}</option>
+                    <option value="Hours">{{:: 'hours' | translate}}</option>
+                    <option value="Days">{{:: 'days' | translate}}</option>
+                </select>
+            </div>
+            <kc-tooltip>{{:: 'oauth2-device-code-lifespan.tooltip' | translate}}</kc-tooltip>
+        </div>
+
+        <div class="form-group">
+            <label class="col-md-2 control-label" for="oauth2DevicePollingInterval">{{:: 'oauth2-device-polling-interval' | translate}}</label>
+
+            <div class="col-md-6 time-selector">
+                <input class="form-control" type="number" required min="1" max="31536000" data-ng-model="realm.oauth2DevicePollingInterval" id="oauth2DevicePollingInterval"
+                       name="oauth2DevicePollingInterval">
+            </div>
+            <kc-tooltip>{{:: 'oauth2-device-polling-interval.tooltip' | translate}}</kc-tooltip>
+        </div>
+
+        <div class="form-group">
             <div class="col-md-10 col-md-offset-2" data-ng-show="access.manageRealm">
                 <button kc-save data-ng-disabled="!changed">{{:: 'save' | translate}}</button>
                 <button kc-reset data-ng-disabled="!changed">{{:: 'cancel' | translate}}</button>
