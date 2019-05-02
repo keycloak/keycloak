@@ -21,8 +21,9 @@ module.exports = {
     'react',
   ],
   rules: {
-      "no-useless-constructor" :  "off",
-      "@typescript-eslint/indent" : "off",
-      "@typescript-eslint/no-empty-interface" : "off"
+      "no-useless-constructor":  "off",
+      "@typescript-eslint/indent": "off",
+      "@typescript-eslint/no-empty-interface": "off",
+      "no-restricted-properties": "off"
   },
 };
