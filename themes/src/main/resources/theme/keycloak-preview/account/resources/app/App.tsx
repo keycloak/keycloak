@@ -15,7 +15,6 @@
  */
 
 import * as React from 'react';
-import {Route} from 'react-router-dom';
 
 import * as moment from 'moment';
 
@@ -24,15 +23,7 @@ import {KeycloakService} from './keycloak-service/keycloak.service';
 import {PageNav} from './PageNav';
 import {PageToolbar} from './PageToolbar';
 import {Background} from './Background';
-
-import {AccountPage} from './content/account-page/AccountPage';
-import {PasswordPage} from './content/password-page/PasswordPage';
-import {AuthenticatorPage} from './content/authenticator-page/AuthenticatorPage';
-import {DeviceActivityPage} from './content/device-activity-page/DeviceActivityPage';
-import {LinkedAccountsPage} from './content/linked-accounts-page/LinkedAccountsPage';
-import {ApplicationsPage} from './content/applications-page/ApplicationsPage';
-import {MyResourcesPage} from './content/my-resources-page/MyResourcesPage';
-import {ExtensionPages} from './content/extensions/ExtensionPages';
+import {makeRoutes} from './ContentPages';
 
 import {
     Avatar,
@@ -89,14 +80,7 @@ export class App extends React.Component<AppProps> {
                 <Background/>
                 <Page header={Header} sidebar={Sidebar} isManagedSidebar>
                     <PageSection>
-                        <Route path='/app/account' component={AccountPage} />
-                        <Route path='/app/password' component={PasswordPage} />
-                        <Route path='/app/authenticator' component={AuthenticatorPage} />
-                        <Route path='/app/device-activity' component={DeviceActivityPage} />
-                        <Route path='/app/linked-accounts' component={LinkedAccountsPage} />
-                        <Route path='/app/applications' component={ApplicationsPage} />
-                        <Route path='/app/my-resources' component={MyResourcesPage} />
-                        {ExtensionPages.Routes}
+                        {makeRoutes()}
                     </PageSection>
                 </Page>
             </React.Fragment>
