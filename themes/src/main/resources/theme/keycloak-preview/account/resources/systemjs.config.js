@@ -65,7 +65,7 @@
       rxjs: {
         defaultExtension: false
       },
-      
+           
       // Components that map to @empty will not be loaded.
       // To load a component, replace @empty with its commented path.
       'npm:@patternfly/react-core/dist/umd/components': {
