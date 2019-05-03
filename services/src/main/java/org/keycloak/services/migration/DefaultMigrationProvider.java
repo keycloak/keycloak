@@ -96,6 +96,10 @@ public class DefaultMigrationProvider implements MigrationProvider {
         return OIDCLoginProtocolFactory.addWebOriginsClientScope(realm);
     }
 
+    @Override
+    public ClientScopeModel addOIDCMicroprofileJWTClientScope(RealmModel realm) {
+        return OIDCLoginProtocolFactory.addMicroprofileJWTClientScope(realm);
+    }
 
     @Override
     public void close() {
