@@ -729,7 +729,7 @@ public class UserResource {
         }
     }
 
-    /**
+/**
      * Send an email-verification email to the user
      *
      * An email contains a link the user can click to verify their email address.
@@ -746,8 +746,74 @@ public class UserResource {
     public Response sendVerifyEmail(@QueryParam(OIDCLoginProtocol.REDIRECT_URI_PARAM) String redirectUri, @QueryParam(OIDCLoginProtocol.CLIENT_ID_PARAM) String clientId) {
         List<String> actions = new LinkedList<>();
         actions.add(UserModel.RequiredAction.VERIFY_EMAIL.name());
-        return executeActionsEmail(redirectUri, clientId, null, actions);
+        // Kilian Audebert <kilian.audebert@libre-logic.fr>
+        //return executeActionsEmail(redirectUri, clientId, null, actions);
+        Integer lifespan = 300;
+
+        auth.users().requireManage(user);
+
+        if (user.getEmail() == null) {
+            return ErrorResponse.error("User email missing", Status.BAD_REQUEST);
+        }
+
+        if (!user.isEnabled()) {
+            throw new WebApplicationException(
+                ErrorResponse.error("User is disabled", Status.BAD_REQUEST));
+        }
+
+        if (redirectUri != null && clientId == null) {
+            throw new WebApplicationException(
+                ErrorResponse.error("Client id missing", Status.BAD_REQUEST));
+        }
+
+        if (clientId == null) {
+            clientId = Constants.ACCOUNT_MANAGEMENT_CLIENT_ID;
+        }
+
+        ClientModel client = realm.getClientByClientId(clientId);
+        if (client == null || !client.isEnabled()) {
+            throw new WebApplicationException(
+                ErrorResponse.error(clientId + " not enabled", Status.BAD_REQUEST));
+        }
+
+        String redirect;
+        if (redirectUri != null) {
+            redirect = RedirectUtils.verifyRedirectUri(session.getContext().getUri(), redirectUri, realm, client);
+            if (redirect == null) {
+                throw new WebApplicationException(
+                    ErrorResponse.error("Invalid redirect uri.", Status.BAD_REQUEST));
+            }
+        }
+
+        if (lifespan == null) {
+            lifespan = realm.getActionTokenGeneratedByAdminLifespan();
+        }
+        int expiration = Time.currentTime() + lifespan;
+        ExecuteActionsActionToken token = new ExecuteActionsActionToken(user.getId(), expiration, actions, redirectUri, clientId);
+
+        try {
+            UriBuilder builder = LoginActionsService.actionTokenProcessor(session.getContext().getUri());
+            builder.queryParam("key", token.serialize(session, realm, session.getContext().getUri()));
+
+            String link = builder.build(realm.getName()).toString();
+
+            this.session.getProvider(EmailTemplateProvider.class)
+              .setAttribute(Constants.TEMPLATE_ATTR_REQUIRED_ACTIONS, token.getRequiredActions())
+              .setRealm(realm)
+              .setUser(user)
+              .sendVerifyEmail(link, TimeUnit.SECONDS.toMinutes(lifespan));
+
+            //audit.user(user).detail(Details.EMAIL, user.getEmail()).detail(Details.CODE_ID, accessCode.getCodeId()).success();
+
+            adminEvent.operation(OperationType.ACTION).resourcePath(session.getContext().getUri()).success();
+
+            return Response.ok().build();
+        } catch (EmailException e) {
+            ServicesLogger.LOGGER.failedToSendActionsEmail(e);
+            return ErrorResponse.error("Failed to send execute actions email", Status.INTERNAL_SERVER_ERROR);
+        }
     }
+
 
     @GET
     @Path("groups")
