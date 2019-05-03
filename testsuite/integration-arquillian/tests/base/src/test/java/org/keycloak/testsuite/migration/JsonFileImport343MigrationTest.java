@@ -66,6 +66,7 @@ public class JsonFileImport343MigrationTest extends AbstractJsonFileImportMigrat
         checkRealmsImported();
         testMigrationTo4_x(true, false);
         testMigrationTo5_x();
+        testMigrationTo6_x();
     }
 
 }
