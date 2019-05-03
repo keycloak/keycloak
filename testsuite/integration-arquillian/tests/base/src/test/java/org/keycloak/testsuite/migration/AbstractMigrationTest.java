@@ -232,6 +232,13 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         testRolesAndWebOriginsScopesAddedToClient();
     }
 
+    protected void testMigrationTo6_0_0() {
+        // check that all expected scopes exist in the migrated realm.
+        testRealmDefaultClientScopes(migrationRealm);
+        // check that the 'microprofile-jwt' scope was added to the migrated clients.
+        testMicroprofileJWTScopeAddedToClient();
+    }
+
     private void testGroupPolicyTypeFineGrainedAdminPermission() {
         ClientsResource clients = migrationRealm.clients();
         ClientRepresentation clientRepresentation = clients.findByClientId("realm-management").get(0);
@@ -519,6 +526,23 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
 
     }
 
+    /**
+     * Checks if the {@code microprofile-jwt} optional client scope has been added to the clients.
+     */
+    private void testMicroprofileJWTScopeAddedToClient() {
+        log.infof("Testing microprofile-jwt optional scope present in realm %s for client migration-test-client", migrationRealm.toRepresentation().getRealm());
+
+        List<ClientScopeRepresentation> optionalClientScopes = ApiUtil.findClientByClientId(this.migrationRealm, "migration-test-client").getOptionalClientScopes();
+
+        Set<String> defaultClientScopeNames = optionalClientScopes.stream()
+                .map(ClientScopeRepresentation::getName)
+                .collect(Collectors.toSet());
+
+        if (!defaultClientScopeNames.contains(OIDCLoginProtocolFactory.MICROPROFILE_JWT_SCOPE)) {
+            Assert.fail("Client scope 'microprofile-jwt' not found as optional scope of client migration-test-client");
+        }
+    }
+
     private void testRequiredActionsPriority(RealmResource... realms) {
         log.info("testing required action's priority");
         for (RealmResource realm : realms) {
@@ -571,5 +595,9 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
 
     protected void testMigrationTo5_x() {
         // so far nothing
+    }
+
+    protected void testMigrationTo6_x() {
+        testMigrationTo6_0_0();
     }
 }
