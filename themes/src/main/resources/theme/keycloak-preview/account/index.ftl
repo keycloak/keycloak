@@ -153,13 +153,13 @@
         </div>
         <div class="pf-c-page__header-tools">
             <#if referrer?has_content && referrer_uri?has_content>
-            <div class="pf-c-page__header-tools-group pf-m-icons pf-screen-reader">
+            <div class="pf-c-page__header-tools-group pf-m-icons">
               <a href="${referrer_uri}" id="referrer" tabindex="0"><span class="pf-icon pf-icon-arrow"></span>${msg("backTo",referrerName)}</a>
             </div>
             </#if>
             
             <#if realm.internationalizationEnabled  && supportedLocales?size gt 1>
-            <div class="pf-c-page__header-tools-group pf-screen-reader pf-m-icons">
+            <div class="pf-c-page__header-tools-group pf-m-icons">
               <div id="landing-locale-dropdown" class="pf-c-dropdown">
                 <button onclick="toggleLocaleDropdown();" class="pf-c-dropdown__toggle pf-m-plain" id="landing-locale-dropdown-button" aria-expanded="false" aria-haspopup="true">
                     <span class="pf-c-dropdown__toggle-text">
@@ -180,7 +180,7 @@
             </div>
             </#if>
             
-            <div class="pf-c-page__header-tools-group pf-m-icons pf-screen-reader">
+            <div class="pf-c-page__header-tools-group pf-m-icons">
               <button id="signInButton" tabindex="0" style="display:none" onclick="keycloak.login();" class="pf-c-button pf-m-primary" type="button">${msg("doLogIn")}</button>
               <button id="signOutButton" tabindex="0" style="display:none" onclick="keycloak.logout();" class="pf-c-button pf-m-primary" type="button">${msg("doSignOut")}</button>
             </div>

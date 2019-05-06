@@ -11,8 +11,8 @@
   "author": "Stan Silvert",
   "license": "Apache-2.0",
   "dependencies": {
-    "@patternfly/patternfly": "^1.0.248",
-    "@patternfly/react-core": "^2.9.2",
+    "@patternfly/patternfly": "^2.6.6",
+    "@patternfly/react-core": "^3.16.10",
     "axios": "^0.18.0",
     "moment": "^2.22.2",
     "react": "^16.8.5",
