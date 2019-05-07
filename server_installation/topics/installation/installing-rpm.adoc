@@ -2,7 +2,7 @@
 
 === Installing RH-SSO from an RPM
 
-NOTE: With Red Hat Enterprise Linux 7, the term channel was replaced with the term repository. In these instructions only the term repository is used.
+NOTE: With Red Hat Enterprise Linux 7 and 8, the term channel was replaced with the term repository. In these instructions only the term repository is used.
 
 You must subscribe to both the {appserver_name} {appserver_version} and RH-SSO {project_versionDoc} repositories before you can install RH-SSO from an RPM.
 
@@ -17,11 +17,18 @@ NOTE: You cannot continue to receive upgrades to EAP RPMs but stop receiving upd
 
 . If you are already subscribed to another {appserver_name} repository, you must unsubscribe from that repository first.
 
-Using Red Hat Subscription Manager, subscribe to the {appserver_name} {appserver_version} repository using the following command. Replace <RHEL_VERSION> with either 6 or 7 depending on your Red Hat Enterprise Linux version.
+For Red Hat Enterprise Linux 6, 7: Using Red Hat Subscription Manager, subscribe to the {appserver_name} {appserver_version} repository using the following command. Replace <RHEL_VERSION> with either 6 or 7 depending on your Red Hat Enterprise Linux version.
 
 [source,bash,subs="attributes+"]
 ----
 subscription-manager repos --enable=jb-eap-{appserver_version}-for-rhel-<RHEL_VERSION>-server-rpms --enable=rhel-<RHEL_VERSION>-server-rpms
+----
+
+For Red Hat Enterprise Linux 8: Using Red Hat Subscription Manager, subscribe to the {appserver_name} {appserver_version} repository using the following command:
+
+[source,bash,subs="attributes+"]
+----
+subscription-manager repos --enable=jb-eap-{appserver_version}-for-rhel-8-x86_64-rpms --enable=rhel-8-for-x86_64-baseos-rpms --enable=rhel-8-for-x86_64-appstream-rpms
 ----
 
 ==== Subscribing to the RH-SSO {project_versionDoc} Repository and Installing RH-SSO {project_versionDoc}
@@ -33,11 +40,18 @@ subscription-manager repos --enable=jb-eap-{appserver_version}-for-rhel-<RHEL_VE
 
 To subscribe to the RH-SSO {project_versionDoc} repository and install RH-SSO {project_versionDoc}, complete the following steps:
 
-. Using Red Hat Subscription Manager, subscribe to the RH-SSO {project_versionDoc} repository using the following command. Replace <RHEL_VERSION> with either 6 or 7 depending on your Red Hat Enterprise Linux version.
+. For Red Hat Enterprise Linux 6, 7: Using Red Hat Subscription Manager, subscribe to the RH-SSO {project_versionDoc} repository using the following command. Replace <RHEL_VERSION> with either 6 or 7 depending on your Red Hat Enterprise Linux version.
 +
 [source,bash,subs="attributes+"]
 ----
 subscription-manager repos --enable=rh-sso-{project_versionDoc}-for-rhel-<RHEL-VERSION>-server-rpms
+----
+
+. For Red Hat Enterprise Linux 8: Using Red Hat Subscription Manager, subscribe to the RH-SSO {project_versionDoc} repository using the following command:
++
+[source,bash,subs="attributes+"]
+----
+subscription-manager repos --enable=rh-sso-{project_versionDoc}-for-rhel-8-x86_64-rpms
 ----
 
 . Install RH-SSO from your subscribed RH-SSO {project_versionDoc} repository using the following command:
