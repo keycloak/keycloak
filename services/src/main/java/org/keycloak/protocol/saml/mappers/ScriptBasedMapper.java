@@ -55,7 +55,7 @@ public class ScriptBasedMapper extends AbstractSAMLProtocolMapper implements SAM
                 " * realm - the current realm\n" + //
                 " * clientSession - the current clientSession\n" + //
                 " * userSession - the current userSession\n" + //
-                " * keycloakSession - the current userSession\n" + //
+                " * keycloakSession - the current keycloakSession\n" + //
                 " */\n\n\n//insert your code here..." //
         );
         configProperties.add(property);
