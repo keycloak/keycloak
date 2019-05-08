@@ -18,6 +18,8 @@
 
 package org.keycloak.testsuite.x509;
 
+import org.hamcrest.CoreMatchers;
+import org.hamcrest.Matchers;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.logging.Logger;
 import org.junit.AfterClass;
@@ -524,10 +526,20 @@ public abstract class AbstractX509AuthenticationTest extends AbstractTestRealmKe
         Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
 
-        events.expectLogin()
+        AssertEvents.ExpectedEvent expectedEvent = events.expectLogin()
                 .user(userId)
                 .detail(Details.USERNAME, attemptedUsername)
-                .removeDetail(Details.REDIRECT_URI)
+                .removeDetail(Details.REDIRECT_URI);
+
+        addX509CertificateDetails(expectedEvent)
                 .assertEvent();
+    }
+
+
+    protected AssertEvents.ExpectedEvent addX509CertificateDetails(AssertEvents.ExpectedEvent expectedEvent) {
+        return expectedEvent
+                .detail(Details.X509_CERTIFICATE_SERIAL_NUMBER, Matchers.not(Matchers.isEmptyOrNullString()))
+                .detail(Details.X509_CERTIFICATE_SUBJECT_DISTINGUISHED_NAME, Matchers.startsWith("EMAILADDRESS=test-user@localhost"))
+                .detail(Details.X509_CERTIFICATE_ISSUER_DISTINGUISHED_NAME, Matchers.startsWith("EMAILADDRESS=contact@keycloak.org"));
     }
 }
