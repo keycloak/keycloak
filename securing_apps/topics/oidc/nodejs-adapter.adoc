@@ -157,6 +157,83 @@ To secure a resource with a realm role:
 [source,javascript]
     app.get( '/admin', keycloak.protect( 'realm:admin' ), adminHandler );
 
+Resource-Based Authorization::
+
+Resource-Based Authorization allows you to protect resources, and their specific methods/actions,**** based on a set of policies defined in Keycloak, thus externalizing authorization from your application. This is achieved by exposing a `keycloak.enforcer` method which you can use to protect resources.*
+
+[source,javascript]
+----
+    app.get('/apis/me', keycloak.enforcer('user:profile'), userProfileHandler);
+----
+
+The `keycloak-enforcer` method operates in two modes, depending on the value of the `response_mode` configuration option.
+
+[source,javascript]
+----
+    app.get('/apis/me', keycloak.enforcer('user:profile', {response_mode: 'token'}), userProfileHandler);
+----
+
+If `response_mode` is set to `token`, permissions are obtained from the server on behalf of the subject represented by the bearer token that was sent to your application. In this case, a new access token is issued by Keycloak with the permissions granted by the server. If the server did not respond with a token with the expected permissions, the request is denied. When using this mode, you should be able to obtain the token from the request as follows:
+
+[source,javascript]
+----
+    app.get('/apis/me', keycloak.enforcer('user:profile', {response_mode: 'token'}), function (req, res) {
+        var token = var token = req.kauth.grant.access_token.content;
+        var permissions = token.authorization ? token.authorization.permissions : undefined;
+
+        // show user profile
+    });
+----
+
+Prefer this mode when your application is using sessions and you want to cache previous decisions from the server, as well automatically handle refresh tokens. This mode is especially useful for applications acting as a client and resource server.
+
+If `response_mode` is set to `permissions` (default mode), the server only returns the list of granted permissions, without issuing a new access token. In addition to not issuing a new token, this method exposes the permissions granted by the server through the `request` as follows:
+
+[source,javascript]
+----
+    app.get('/apis/me', keycloak.enforcer('user:profile', {response_mode: 'token'}), function (req, res) {
+        var permissions = req.permissions;
+
+        // show user profile
+    });
+----
+
+Regardless of the `response_mode` in use, the `keycloak.enforcer` method will first try to check the permissions within the bearer token that was sent to your application. If the bearer token already carries the expected permissions, there is no need
+to interact with the server to obtain a decision. This is specially useful when your clients are capable of obtaining access tokens from the server with the expected permissions before accessing a protected resource, so they can use some capabilities provided by Keycloak Authorization Services such as incremental authorization and avoid additional requests to the server when `keycloak.enforcer` is enforcing access to the resource.
+
+By default, the policy enforcer will use the `client_id` defined to the application (for instance, via `keycloak.json`) to
+ reference a client in Keycloak that supports Keycloak Authorization Services. In this case, the client can not be public given
+ that it is actually a resource server.
+
+If your application is acting as both a public client(frontend) and resource server(backend), you can use the following configuration to reference a different
+client in Keycloak with the policies that you want to enforce:
+
+[source,javascript]
+----
+      keycloak.enforcer('user:profile', {resource_server_id: 'my-apiserver'})
+----
+
+It is recommended to use distinct clients in Keycloak to represent your frontend and backend.
+
+If the application you are protecting is enabled with Keycloak authorization services and you have defined client credentials
+ in `keycloak.json`, you can push additional claims to the server and make them available to your policies in order to make decisions.
+For that, you can define a `claims` configuration option which expects a `function` that returns a JSON with the claims you want to push:
+
+[source,javascript]
+----
+      app.get('/protected/resource', keycloak.enforcer(['resource:view', 'resource:write'], {
+          claims: function(request) {
+            return {
+              "http.uri": ["/protected/resource"],
+              "user.agent": // get user agent  from request
+            }
+          }
+        }), function (req, res) {
+          // access granted
+----
+
+For more details about how to configure Keycloak to protected your application resources, please take a look at the link:{authorizationguide_link}[{authorizationguide_name}].
+
 Advanced authorization::
 
 To secure resources based on parts of the URL itself, assuming a role exists
@@ -167,7 +244,7 @@ for each section:
     function protectBySection(token, request) {
       return token.hasRole( request.params.section );
     }
-    
+
     app.get( '/:section/:page', keycloak.protect( protectBySection ), sectionHandler );
 ----
 
