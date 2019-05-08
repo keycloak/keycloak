@@ -15,67 +15,47 @@
  */
 
 import * as React from 'react';
+import {withRouter, RouteComponentProps} from 'react-router-dom';
+import {Nav, NavList} from '@patternfly/react-core';
 
-import {Nav, NavExpandable, NavList, NavItem} from '@patternfly/react-core';
-
-import {Msg} from './widgets/Msg';
-import {ExtensionPages} from './content/extensions/ExtensionPages';
+import {makeNavItems, flattenContent, ContentItem, PageDef} from './ContentPages';
  
-export interface PageNavProps {
-}
- 
-interface PageNavState {
-    activeGroup: string | number;
-    activeItem: string | number;
-}
+declare const content: ContentItem[];
 
-export class PageNav extends React.Component<PageNavProps, PageNavState> {
+export interface PageNavProps extends RouteComponentProps {}
+ 
+export interface PageNavState {}
+
+class PageNavigation extends React.Component<PageNavProps, PageNavState> {
     
     public constructor(props: PageNavProps) {
         super(props);
-        this.state = {
-            activeGroup: '',
-            activeItem: 'grp-0_itm-0'
-        };
     }
-
-    private onNavSelect = (groupId: number, itemId: number): void => {
-        this.setState({
-            activeItem: itemId,
-            activeGroup: groupId
-        });
-    };
     
+    private findActiveItem(): PageDef {
+        const currentPath: string = this.props.location.pathname;
+        const items: PageDef[] = flattenContent(content);
+        const firstItem = items[0];
+        for (let item of items) {
+            const itemPath: string = '/app/' + item.path;
+            if (itemPath === currentPath) {
+                return item;
+            }
+        };
+
+        return firstItem;
+    }
+  
     public render(): React.ReactNode {
+        const activeItem: PageDef = this.findActiveItem();
         return (
-            <Nav onSelect={this.onNavSelect} aria-label="Nav">
+            <Nav aria-label="Nav">
                 <NavList>
-                    <NavItem to="#/app/account" itemId="grp-0_itm-0" isActive={this.state.activeItem === 'grp-0_itm-0'}>
-                        {Msg.localize("account")}
-                    </NavItem>
-                    <NavExpandable title="Account Security" groupId="grp-1" isActive={this.state.activeGroup === 'grp-1'}>
-                        <NavItem to="#/app/password" groupId="grp-1" itemId="grp-1_itm-1" isActive={this.state.activeItem === 'grp-1_itm-1'}>
-                            {Msg.localize("password")}
-                        </NavItem>
-                        <NavItem to="#/app/authenticator" groupId="grp-1" itemId="grp-1_itm-2" isActive={this.state.activeItem === 'grp-1_itm-2'}>
-                            {Msg.localize("authenticator")}
-                        </NavItem>
-                        <NavItem to="#/app/device-activity" groupId="grp-1" itemId="grp-1_itm-3" isActive={this.state.activeItem === 'grp-1_itm-3'}>
-                            {Msg.localize("device-activity")}
-                        </NavItem>
-                        <NavItem to="#/app/linked-accounts" groupId="grp-1" itemId="grp-1_itm-4" isActive={this.state.activeItem === 'grp-1_itm-4'}>
-                            {Msg.localize("linkedAccountsHtmlTitle")}
-                        </NavItem>
-                    </NavExpandable>
-                    <NavItem to="#/app/applications" itemId="grp-2_itm-0" isActive={this.state.activeItem === 'grp-2_itm-0'}>
-                        {Msg.localize("applications")}
-                    </NavItem>
-                    <NavItem to="#/app/my-resources" itemId="grp-3_itm-0" isActive={this.state.activeItem === 'grp-3_itm-0'}>
-                        {Msg.localize("myResources")}
-                    </NavItem>
-                    {ExtensionPages.Links}
+                    {makeNavItems(activeItem)}
                 </NavList>
             </Nav>
         );
     }
 }
+
+export const PageNav = withRouter(PageNavigation);
