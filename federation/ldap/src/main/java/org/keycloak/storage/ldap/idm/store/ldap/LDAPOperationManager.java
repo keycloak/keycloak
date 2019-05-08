@@ -39,12 +39,7 @@ import javax.naming.directory.DirContext;
 import javax.naming.directory.ModificationItem;
 import javax.naming.directory.SearchControls;
 import javax.naming.directory.SearchResult;
-import javax.naming.ldap.Control;
-import javax.naming.ldap.InitialLdapContext;
-import javax.naming.ldap.LdapContext;
-import javax.naming.ldap.LdapName;
-import javax.naming.ldap.PagedResultsControl;
-import javax.naming.ldap.PagedResultsResponseControl;
+import javax.naming.ldap.*;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -490,7 +485,7 @@ public class LDAPOperationManager {
      *
      */
     public void authenticate(String dn, String password) throws AuthenticationException {
-        InitialContext authCtx = null;
+        InitialLdapContext authCtx = null;
 
         try {
             if (password == null || password.isEmpty()) {
@@ -499,15 +494,15 @@ public class LDAPOperationManager {
 
             Hashtable<String, Object> env = new Hashtable<String, Object>(this.connectionProperties);
 
-            env.put(Context.SECURITY_AUTHENTICATION, LDAPConstants.AUTH_TYPE_SIMPLE);
-            env.put(Context.SECURITY_PRINCIPAL, dn);
-            env.put(Context.SECURITY_CREDENTIALS, password);
-
             // Never use connection pool to prevent password caching
             env.put("com.sun.jndi.ldap.connect.pool", "false");
 
             authCtx = new InitialLdapContext(env, null);
+            startTLS(authCtx);
 
+            authCtx.addToEnvironment(Context.SECURITY_AUTHENTICATION, LDAPConstants.AUTH_TYPE_SIMPLE);
+            authCtx.addToEnvironment(Context.SECURITY_PRINCIPAL, dn);
+            authCtx.addToEnvironment(Context.SECURITY_CREDENTIALS, password);
         } catch (AuthenticationException ae) {
             if (logger.isDebugEnabled()) {
                 logger.debugf(ae, "Authentication failed for DN [%s]", dn);
@@ -524,6 +519,17 @@ public class LDAPOperationManager {
                 } catch (NamingException e) {
 
                 }
+            }
+        }
+    }
+
+    private void startTLS(LdapContext ldapContext) {
+        if(this.config.isTls()) {
+            try {
+                StartTlsResponse tls = (StartTlsResponse) ldapContext.extendedOperation(new StartTlsRequest());
+                tls.negotiate();
+            } catch (Exception e) {
+                logger.error("Could not negotiate TLS", e);
             }
         }
     }
@@ -652,28 +658,32 @@ public class LDAPOperationManager {
     }
 
     private LdapContext createLdapContext() throws NamingException {
-        return new InitialLdapContext(new Hashtable<Object, Object>(this.connectionProperties), null);
-    }
-
-    private Map<String, Object> createConnectionProperties() {
-        HashMap<String, Object> env = new HashMap<String, Object>();
+        LdapContext ldapContext =  new InitialLdapContext(new Hashtable<Object, Object>(this.connectionProperties), null);
+        startTLS(ldapContext);
 
         String authType = this.config.getAuthType();
-        env.put(Context.INITIAL_CONTEXT_FACTORY, this.config.getFactoryName());
-        env.put(Context.SECURITY_AUTHENTICATION, authType);
-
         String bindDN = this.config.getBindDN();
 
         char[] bindCredential = null;
+
+        ldapContext.addToEnvironment(Context.SECURITY_AUTHENTICATION, authType);
 
         if (this.config.getBindCredential() != null) {
             bindCredential = this.config.getBindCredential().toCharArray();
         }
 
         if (!LDAPConstants.AUTH_TYPE_NONE.equals(authType)) {
-            env.put(Context.SECURITY_PRINCIPAL, bindDN);
-            env.put(Context.SECURITY_CREDENTIALS, bindCredential);
+            ldapContext.addToEnvironment(Context.SECURITY_PRINCIPAL, bindDN);
+            ldapContext.addToEnvironment(Context.SECURITY_CREDENTIALS, bindCredential);
         }
+
+        return ldapContext;
+    }
+
+    private Map<String, Object> createConnectionProperties() {
+        HashMap<String, Object> env = new HashMap<String, Object>();
+
+        env.put(Context.INITIAL_CONTEXT_FACTORY, this.config.getFactoryName());
 
         String url = this.config.getConnectionUrl();
 

@@ -111,7 +111,11 @@ public class LDAPConfig {
     }
 
     public String getConnectionPooling() {
-        return config.getFirst(LDAPConstants.CONNECTION_POOLING);
+        if(isTls()) {
+            return null;
+        } else {
+            return config.getFirst(LDAPConstants.CONNECTION_POOLING);
+        }
     }
 
     public String getConnectionPoolingAuthentication() {
@@ -217,6 +221,11 @@ public class LDAPConfig {
             }
         }
         return null;
+    }
+
+    public boolean isTls() {
+        String tls = config.getFirst(LDAPConstants.TLS);
+        return Boolean.parseBoolean(tls);
     }
 
     public UserStorageProvider.EditMode getEditMode() {
