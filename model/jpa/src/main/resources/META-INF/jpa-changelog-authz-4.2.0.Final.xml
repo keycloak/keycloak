@@ -33,4 +33,8 @@
 
         <dropColumn columnName="URI" tableName="RESOURCE_SERVER_RESOURCE"/>
     </changeSet>
+    
+    <changeSet author="hmlnarik@redhat.com" id="authz-4.2.0.Final-KEYCLOAK-9944">
+        <addPrimaryKey constraintName="CONSTRAINT_RESOUR_URIS_PK" tableName="RESOURCE_URIS" columnNames="RESOURCE_ID,VALUE"/>
+    </changeSet>
 </databaseChangeLog>
