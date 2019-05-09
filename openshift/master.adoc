@@ -7,6 +7,6 @@ include::topics/templates/document-attributes-product.adoc[]
 
 :openshift:
 
-= {openshift_name}
+= {project_openshift_product_name}
 
 include::topics.adoc[]
