@@ -54,6 +54,7 @@ import javax.ws.rs.core.Response;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -139,6 +140,8 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
             user.singleAttribute("country", "USA");
             user.singleAttribute("formatted", "6 Foo Street");
             user.singleAttribute("phone", "617-777-6666");
+            user.singleAttribute("json-attribute", "{\"a\": 1, \"b\": 2, \"c\": [{\"a\": 1, \"b\": 2}], \"d\": {\"a\": 1, \"b\": 2}}");
+            user.getAttributes().put("json-attribute-multi", Arrays.asList("{\"a\": 1, \"b\": 2, \"c\": [{\"a\": 1, \"b\": 2}], \"d\": {\"a\": 1, \"b\": 2}}", "{\"a\": 1, \"b\": 2, \"c\": [{\"a\": 1, \"b\": 2}], \"d\": {\"a\": 1, \"b\": 2}}"));
 
             List<String> departments = Arrays.asList("finance", "development");
             user.getAttributes().put("departments", departments);
@@ -165,6 +168,10 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
             app.getProtocolMappers().createMapper(createRoleNameMapper("rename-app-role", "test-app.customer-user", "realm-user")).close();
             app.getProtocolMappers().createMapper(createScriptMapper("test-script-mapper1","computed-via-script", "computed-via-script", "String", true, true, "'hello_' + user.username", false)).close();
             app.getProtocolMappers().createMapper(createScriptMapper("test-script-mapper2","multiValued-via-script", "multiValued-via-script", "String", true, true, "new java.util.ArrayList(['A','B'])", true)).close();
+            app.getProtocolMappers().createMapper(createClaimMapper("json-attribute-mapper", "json-attribute", "claim-from-json-attribute",
+                    "JSON", true, true, false)).close();
+            app.getProtocolMappers().createMapper(createClaimMapper("json-attribute-mapper-multi", "json-attribute-multi", "claim-from-json-attribute-multi",
+                    "JSON", true, true, true)).close();
 
             Response response = app.getProtocolMappers().createMapper(createScriptMapper("test-script-mapper3", "syntax-error-script", "syntax-error-script", "String", true, true, "func_tion foo(){ return 'fail';} foo()", false));
             assertThat(response.getStatusInfo().getFamily(), is(Response.Status.Family.CLIENT_ERROR));
@@ -200,6 +207,17 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
             assertThat(firstDepartment, instanceOf(String.class));
             assertThat(firstDepartment, anyOf(is("finance"), is("development")));   // Has to be the first item
 
+            Map jsonClaim = (Map) idToken.getOtherClaims().get("claim-from-json-attribute");
+            assertThat(jsonClaim.get("a"), instanceOf(int.class));
+            assertThat(jsonClaim.get("c"), instanceOf(Collection.class));
+            assertThat(jsonClaim.get("d"), instanceOf(Map.class));
+
+            List<Map> jsonClaims = (List<Map>) idToken.getOtherClaims().get("claim-from-json-attribute-multi");
+            assertEquals(2, jsonClaims.size());
+            assertThat(jsonClaims.get(0).get("a"), instanceOf(int.class));
+            assertThat(jsonClaims.get(1).get("c"), instanceOf(Collection.class));
+            assertThat(jsonClaims.get(1).get("d"), instanceOf(Map.class));
+
             AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
             assertEquals(accessToken.getName(), "Tom Brady");
             assertNotNull(accessToken.getAddress());
@@ -233,6 +251,11 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
             // Assert allowed origins
             Assert.assertNames(accessToken.getAllowedOrigins(), "http://localhost:8180", "https://localhost:8543");
 
+            jsonClaim = (Map) accessToken.getOtherClaims().get("claim-from-json-attribute");
+            assertThat(jsonClaim.get("a"), instanceOf(int.class));
+            assertThat(jsonClaim.get("c"), instanceOf(Collection.class));
+            assertThat(jsonClaim.get("d"), instanceOf(Map.class));
+
             oauth.openLogout();
         }
 
@@ -253,6 +276,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
                         || model.getName().equals("hard-realm")
                         || model.getName().equals("hard-app")
                         || model.getName().equals("test-script-mapper")
+                        || model.getName().equals("json-attribute-mapper")
                         ) {
                     app.getProtocolMappers().delete(model.getId());
                 }
