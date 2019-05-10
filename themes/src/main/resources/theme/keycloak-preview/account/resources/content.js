@@ -1,8 +1,8 @@
 
 var content = [
     {
-        path: 'account',
-        label: 'account',
+        path: 'personal-info',
+        label: 'personalInfoHtmlTitle',
         modulePath: '/app/content/account-page/AccountPage',
         componentName: 'AccountPage'
     },

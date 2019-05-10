@@ -240,7 +240,7 @@
                     <h6>${msg("personalInfoIntroMessage")}</h6>
                 </div>
                 <div class="pf-c-card__body pf-c-content">
-                    <h5 id="personalInfoLink"><a href="#/app/account">${msg("personalInfoHtmlTitle")}</a></h5>
+                    <h5 id="personalInfoLink"><a href="#/app/personal-info">${msg("personalInfoHtmlTitle")}</a></h5>
                 </div>
               </div>
             </div>
