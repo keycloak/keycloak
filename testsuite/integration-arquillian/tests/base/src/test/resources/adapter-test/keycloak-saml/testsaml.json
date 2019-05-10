@@ -33,7 +33,7 @@
             "realmRoles": ["manager", "user"],
             "applicationRoles": {
                 "http://localhost:8280/employee/": [ "employee" ],
-                "http://localhost:8280/employee2/": [ "employee" ]
+                "http://localhost:8280/employee2/": [ "empl.oyee", "employee" ]
             }
         },
         {
@@ -680,6 +680,10 @@
             {
                 "name": "user",
                 "description": "Have User privileges"
+            },
+            {
+                "name": "role.with.dots",
+                "description": "Role with dots in the name"
             }
         ],
         "application" : {
@@ -693,6 +697,10 @@
                 {
                     "name": "employee",
                     "description": "Have Employee privileges"
+                },
+                {
+                    "name": "empl.oyee",
+                    "description": "Have Employee privileges with dots"
                 }
             ]
         }
