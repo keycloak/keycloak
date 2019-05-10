@@ -88,6 +88,7 @@ public abstract class AbstractBrokerTest extends AbstractInitializedBaseBrokerTe
     public static final String ROLE_USER = "user";
     public static final String ROLE_MANAGER = "manager";
     public static final String ROLE_FRIENDLY_MANAGER = "friendly-manager";
+    public static final String ROLE_USER_DOT_GUIDE = "user.guide";
 
     @Drone
     @SecondBrowser
@@ -1428,10 +1429,12 @@ public abstract class AbstractBrokerTest extends AbstractInitializedBaseBrokerTe
         RoleRepresentation managerRole = new RoleRepresentation(ROLE_MANAGER,null, false);
         RoleRepresentation friendlyManagerRole = new RoleRepresentation(ROLE_FRIENDLY_MANAGER,null, false);
         RoleRepresentation userRole = new RoleRepresentation(ROLE_USER,null, false);
+        RoleRepresentation userGuideRole = new RoleRepresentation(ROLE_USER_DOT_GUIDE,null, false);
 
         adminClient.realm(realm).roles().create(managerRole);
         adminClient.realm(realm).roles().create(friendlyManagerRole);
         adminClient.realm(realm).roles().create(userRole);
+        adminClient.realm(realm).roles().create(userGuideRole);
     }
 
     protected void createRoleMappersForConsumerRealm() {
