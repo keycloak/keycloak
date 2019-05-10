@@ -17,6 +17,8 @@
 
 package org.keycloak.protocol.oidc.mappers;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.protocol.ProtocolMapper;
 import org.keycloak.protocol.ProtocolMapperUtils;
@@ -117,6 +119,13 @@ public class OIDCAttributeMapperHelper {
                     return transform((List<Integer>) attributeValue, OIDCAttributeMapperHelper::getInteger);
                 }
                 throw new RuntimeException("cannot map type for token claim");
+            case "JSON":
+                JsonNode jsonNodeObject = getJsonNode(attributeValue);
+                if (jsonNodeObject != null) return jsonNodeObject;
+                if (attributeValue instanceof List) {
+                    return transform((List<JsonNode>) attributeValue, OIDCAttributeMapperHelper::getJsonNode);
+                }
+                throw new RuntimeException("cannot map type for token claim");
             default:
                 return null;
         }
@@ -142,6 +151,18 @@ public class OIDCAttributeMapperHelper {
     private static Boolean getBoolean(Object attributeValue) {
         if (attributeValue instanceof Boolean) return (Boolean) attributeValue;
         if (attributeValue instanceof String) return Boolean.valueOf((String) attributeValue);
+        return null;
+    }
+    
+    private static JsonNode getJsonNode(Object attributeValue) {
+        if (attributeValue instanceof JsonNode) return (JsonNode) attributeValue;
+        if (attributeValue instanceof String) {
+            try {
+                final ObjectMapper mapper = new ObjectMapper();
+                return mapper.readTree(attributeValue.toString());
+            } catch (Exception ex) {
+            }
+        }
         return null;
     }
 
@@ -267,11 +288,12 @@ public class OIDCAttributeMapperHelper {
         ProviderConfigProperty property = new ProviderConfigProperty();
         property.setName(JSON_TYPE);
         property.setLabel(JSON_TYPE);
-        List<String> types = new ArrayList(3);
+        List<String> types = new ArrayList(5);
         types.add("String");
         types.add("long");
         types.add("int");
         types.add("boolean");
+        types.add("JSON");
         property.setType(ProviderConfigProperty.LIST_TYPE);
         property.setOptions(types);
         property.setHelpText(JSON_TYPE_TOOLTIP);

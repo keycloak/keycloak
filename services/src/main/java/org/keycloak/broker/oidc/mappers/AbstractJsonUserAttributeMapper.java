@@ -224,9 +224,11 @@ public abstract class AbstractJsonUserAttributeMapper extends AbstractIdentityPr
 					}
 					return arrayIndex == idx? values : null;
 				}
-				if (!currentNode.isValueNode() || currentNode.isNull()) {
-					logger.debug("JsonNode is not value node for name " + currentFieldName);
+				if (currentNode.isNull()) {
+					logger.debug("JsonNode is null node for name " + currentFieldName);
 					return null;
+				} else if (!currentNode.isValueNode()) {
+					return currentNode;
 				}
 				String ret = currentNode.asText();
 				if (ret != null && !ret.trim().isEmpty())

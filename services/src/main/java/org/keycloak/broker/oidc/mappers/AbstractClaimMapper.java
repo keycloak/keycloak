@@ -18,6 +18,7 @@
 package org.keycloak.broker.oidc.mappers;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.keycloak.broker.oidc.KeycloakOIDCIdentityProvider;
 import org.keycloak.broker.oidc.OIDCIdentityProvider;
 import org.keycloak.broker.provider.AbstractIdentityProviderMapper;
@@ -121,6 +122,13 @@ public abstract class AbstractClaimMapper extends AbstractIdentityProviderMapper
             List list = (List)value;
             for (Object val : list) {
             	if (valueEquals(desiredValue, val)) return true;
+            }
+        } else if (value instanceof JsonNode) {
+            try {
+                final ObjectMapper objectMapper = new ObjectMapper();
+                objectMapper.readTree(desiredValue).equals(value);
+            } catch (Exception e) {
+
             }
         }
         return false;

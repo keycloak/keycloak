@@ -73,14 +73,25 @@ public class AbstractJsonUserAttributeMapperTest {
 
 	@Test
 	public void getJsonValue_nestedSimpleValues() throws JsonProcessingException, IOException {
+		// JsonNode if path points to JSON object
+		Assert.assertEquals(mapper.readTree("{\n"
+                    + "		\"value1\": \" fgh \",\n"
+                    + "		\"value_null\" : null,\n"
+                    + "		\"value_empty\" : \"\",\n"
+                    + "		\"nest2\":{\n"
+                    + "			\"value_b\" : false,\n"
+                    + "			\"value_i\" : 43\n"
+                    + "		}\n"
+                    + "	}"), AbstractJsonUserAttributeMapper.getJsonValue(getJsonNode(), "nest1"));
+                Assert.assertEquals(mapper.readTree("{\n"
+                    + "			\"value_b\" : false,\n"
+                    + "			\"value_i\" : 43\n"
+                    + "		}"), AbstractJsonUserAttributeMapper.getJsonValue(getJsonNode(), "nest1.nest2"));
+		Assert.assertEquals(mapper.readTree("{\"av1\": \"vala1\"}"), AbstractJsonUserAttributeMapper.getJsonValue(getJsonNode(), "nesta.a[0]"));
 
-		// null if path points to JSON object
-		Assert.assertEquals(null, AbstractJsonUserAttributeMapper.getJsonValue(getJsonNode(), "nest1"));
-		Assert.assertEquals(null, AbstractJsonUserAttributeMapper.getJsonValue(getJsonNode(), "nest1.nest2"));
-
-		//unknown field returns null
-		Assert.assertEquals(null, AbstractJsonUserAttributeMapper.getJsonValue(getJsonNode(), "nest1.value_unknown"));
-		Assert.assertEquals(null, AbstractJsonUserAttributeMapper.getJsonValue(getJsonNode(), "nest1.nest2.value_unknown"));
+                //unknown field returns null
+                Assert.assertEquals(null, AbstractJsonUserAttributeMapper.getJsonValue(getJsonNode(), "nest1.value_unknown"));
+                Assert.assertEquals(null, AbstractJsonUserAttributeMapper.getJsonValue(getJsonNode(), "nest1.nest2.value_unknown"));
 
 		// we check value is trimmed also!
 		Assert.assertEquals("fgh", AbstractJsonUserAttributeMapper.getJsonValue(getJsonNode(), "nest1.value1"));
@@ -123,7 +134,6 @@ public class AbstractJsonUserAttributeMapperTest {
 
 		//different path erros or nonexisting indexes or fields return null
 		Assert.assertEquals(null, AbstractJsonUserAttributeMapper.getJsonValue(getJsonNode(), "nesta.a[2].av1"));
-		Assert.assertEquals(null, AbstractJsonUserAttributeMapper.getJsonValue(getJsonNode(), "nesta.a[0]"));
 		Assert.assertEquals(null, AbstractJsonUserAttributeMapper.getJsonValue(getJsonNode(), "nesta.a[0].av_unknown"));
 		Assert.assertEquals(null, AbstractJsonUserAttributeMapper.getJsonValue(getJsonNode(), "nesta.a[].av1"));
 		Assert.assertEquals(null, AbstractJsonUserAttributeMapper.getJsonValue(getJsonNode(), "nesta.a"));
