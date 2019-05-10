@@ -25,12 +25,10 @@ import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
 import org.keycloak.representations.JsonWebToken;
+import org.keycloak.util.JsonSerialization;
 
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -121,6 +119,11 @@ public abstract class AbstractClaimMapper extends AbstractIdentityProviderMapper
             List list = (List)value;
             for (Object val : list) {
             	if (valueEquals(desiredValue, val)) return true;
+            }
+        } else if (value instanceof JsonNode) {
+            try {
+                if (JsonSerialization.readValue(desiredValue, JsonNode.class).equals(value)) return true;
+            } catch (Exception ignore) {
             }
         }
         return false;
