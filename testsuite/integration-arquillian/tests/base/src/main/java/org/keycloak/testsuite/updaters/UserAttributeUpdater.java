@@ -27,7 +27,9 @@ public class UserAttributeUpdater extends ServerResourceUpdater<UserAttributeUpd
      */
     public static UserAttributeUpdater forUserByUsername(Keycloak adminClient, String realm, String userName) {
         UsersResource users = adminClient.realm(realm).users();
-        List<UserRepresentation> foundUsers = users.search(userName);
+        List<UserRepresentation> foundUsers = users.search(userName).stream()
+          .filter(ur -> userName.equalsIgnoreCase(ur.getUsername()))
+          .collect(Collectors.toList());
         assertThat(foundUsers, hasSize(1));
         UserResource userRes = users.get(foundUsers.get(0).getId());
 
