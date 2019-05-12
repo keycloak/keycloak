@@ -22,6 +22,7 @@ org.keycloak.models.RealmSpi
 org.keycloak.models.ActionTokenStoreSpi
 org.keycloak.models.CodeToTokenStoreSpi
 org.keycloak.models.OAuth2DeviceTokenStoreSpi
+org.keycloak.models.OAuth2DeviceUserCodeSpi
 org.keycloak.models.SingleUseTokenStoreSpi
 org.keycloak.models.UserSessionSpi
 org.keycloak.models.UserSpi
