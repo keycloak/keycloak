@@ -22,7 +22,6 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.common.util.Base64Url;
-import org.keycloak.common.util.RandomString;
 import org.keycloak.common.util.Time;
 import org.keycloak.constants.AdapterConstants;
 import org.keycloak.events.Details;
@@ -35,6 +34,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.OAuth2DeviceCodeModel;
 import org.keycloak.models.OAuth2DeviceTokenStoreProvider;
 import org.keycloak.models.OAuth2DeviceUserCodeModel;
+import org.keycloak.models.OAuth2DeviceUserCodeProvider;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.SystemClientUtil;
@@ -50,7 +50,6 @@ import org.keycloak.services.ErrorPageException;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.Urls;
 import org.keycloak.services.managers.AuthenticationManager;
-import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.Cors;
@@ -58,7 +57,6 @@ import org.keycloak.services.resources.LoginActionsService;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.services.util.CacheControlUtil;
 import org.keycloak.sessions.AuthenticationSessionModel;
-import org.keycloak.sessions.RootAuthenticationSessionModel;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.TokenUtil;
 
@@ -67,7 +65,6 @@ import javax.ws.rs.POST;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
-import java.security.SecureRandom;
 
 import static org.keycloak.protocol.oidc.endpoints.AuthorizationEndpoint.LOGIN_SESSION_NOTE_ADDITIONAL_REQ_PARAMS_PREFIX;
 
@@ -138,8 +135,8 @@ public class OAuth2DeviceAuthorizationEndpoint extends AuthorizationEndpointBase
         OAuth2DeviceCodeModel deviceCode = OAuth2DeviceCodeModel.create(realm, client,
                 Base64Url.encode(KeycloakModelUtils.generateSecret()), request.getScope(), request.getNonce());
 
-        // TODO Configure user code format
-        String secret = new RandomString(10, new SecureRandom(), RandomString.upper).nextString();
+        OAuth2DeviceUserCodeProvider userCodeProvider = session.getProvider(OAuth2DeviceUserCodeProvider.class);
+        String secret = userCodeProvider.generate();
         OAuth2DeviceUserCodeModel userCode = new OAuth2DeviceUserCodeModel(realm,
                 deviceCode.getDeviceCode(),
                 secret);
@@ -155,7 +152,7 @@ public class OAuth2DeviceAuthorizationEndpoint extends AuthorizationEndpointBase
 
             OAuth2DeviceAuthorizationResponse response = new OAuth2DeviceAuthorizationResponse();
             response.setDeviceCode(deviceCode.getDeviceCode());
-            response.setUserCode(secret);
+            response.setUserCode(userCodeProvider.display(secret));
             response.setExpiresIn(expiresIn);
             response.setInterval(interval);
             response.setVerificationUri(deviceUrl);
@@ -272,8 +269,13 @@ public class OAuth2DeviceAuthorizationEndpoint extends AuthorizationEndpointBase
             return createVerificationPage(Messages.OAUTH2_DEVICE_INVALID_USER_CODE);
         }
 
+        // Format inputted user code
+        OAuth2DeviceUserCodeProvider userCodeProvider = session.getProvider(OAuth2DeviceUserCodeProvider.class);
+        String formattedUserCode = userCodeProvider.format(userCode);
+
+        // Find the token from store
         OAuth2DeviceTokenStoreProvider store = session.getProvider(OAuth2DeviceTokenStoreProvider.class);
-        OAuth2DeviceCodeModel deviceCodeModel = store.getByUserCode(realm, userCode);
+        OAuth2DeviceCodeModel deviceCodeModel = store.getByUserCode(realm, formattedUserCode);
         if (deviceCodeModel == null) {
             event.error(Errors.INVALID_OAUTH2_USER_CODE);
             return createVerificationPage(Messages.OAUTH2_DEVICE_INVALID_USER_CODE);
@@ -289,7 +291,7 @@ public class OAuth2DeviceAuthorizationEndpoint extends AuthorizationEndpointBase
         updateAuthenticationSession(deviceCodeModel);
 
         // Verification OK
-        authenticationSession.setClientNote(OIDCLoginProtocol.OAUTH2_DEVICE_VERIFIED_USER_CODE, userCode);
+        authenticationSession.setClientNote(OIDCLoginProtocol.OAUTH2_DEVICE_VERIFIED_USER_CODE, formattedUserCode);
 
         // Event logging for the verification
         event.client(deviceCodeModel.getClientId())
