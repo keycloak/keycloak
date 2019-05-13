@@ -33,6 +33,7 @@ import org.keycloak.forms.login.freemarker.model.ProfileBean;
 import org.keycloak.forms.login.freemarker.model.RealmBean;
 import org.keycloak.forms.login.freemarker.model.RegisterBean;
 import org.keycloak.forms.login.freemarker.model.RequiredActionUrlFormatterMethod;
+import org.keycloak.forms.login.freemarker.model.SAMLPostFormBean;
 import org.keycloak.forms.login.freemarker.model.TotpBean;
 import org.keycloak.forms.login.freemarker.model.UrlBean;
 import org.keycloak.forms.login.freemarker.model.X509ConfirmBean;
@@ -208,6 +209,9 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
                 break;
             case X509_CONFIRM:
                 attributes.put("x509", new X509ConfirmBean(formData));
+                break;
+            case SAML_POST_FORM:
+                attributes.put("samlPost", new SAMLPostFormBean(formData));
                 break;
         }
 
@@ -519,6 +523,11 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
     @Override
     public Response createX509ConfirmPage() {
         return createResponse(LoginFormsPages.X509_CONFIRM);
+    }
+
+    @Override
+    public Response createSamlPostForm() {
+        return createResponse(LoginFormsPages.SAML_POST_FORM);
     }
 
     protected void setMessage(MessageType type, String message, Object... parameters) {
