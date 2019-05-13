@@ -518,4 +518,5 @@ Keep in mind link:http://browsercookielimits.squawky.net/[browser cookie limits]
 All cookies are part of the header request, so you might find a problem with the max headers size limits in your infrastructure (some load balancers have very low this value, such as 8 KB). Be sure that all network devices have sufficient header size limits. Otherwise, your users won't be able to obtain an access token.
 
 ==== Known Issues
-* There is a known issue with the Keycloak server 4.7.0.Final in which Gatekeeper is unable to find the _client_id_ in the _aud_ claim. This is due to the fact the _client_id_ is not in the audience anymore. The workaround is to add the "Audience" protocol mapper to the client with the audience pointed to the _client_id_. For more information, see link:https://issues.jboss.org/browse/KEYCLOAK-8954[KEYCLOAK-8954].
+
+There is a known issue with the Keycloak server 4.7.0.Final in which Gatekeeper is unable to find the _client_id_ in the _aud_ claim. This is due to the fact the _client_id_ is not in the audience anymore. The workaround is to add the "Audience" protocol mapper to the client with the audience pointed to the _client_id_. For more information, see link:https://issues.jboss.org/browse/KEYCLOAK-8954[KEYCLOAK-8954].
