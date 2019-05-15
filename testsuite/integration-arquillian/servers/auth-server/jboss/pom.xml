@@ -424,7 +424,14 @@
                                     </goals>
                                     <configuration>
                                         <target>
-                                            <ant antfile="${common.resources}/ant/configure.xml" target="configure-server-jpa" />
+                                            <ant antfile="${common.resources}/ant/configure.xml" target="configure-server-jpa" >
+                                                <!-- These properties become equivalent to properties defined on the command line. -->
+                                                <!-- Without specifying those the default values would be used regardless what is -->
+                                                <!-- defined via -Dproperty=value when executing maven command -->
+                                                <property name="jdbc.mvn.groupId">${jdbc.mvn.groupId}</property>
+                                                <property name="jdbc.mvn.artifactId">${jdbc.mvn.artifactId}</property>
+                                                <property name="jdbc.mvn.version">${jdbc.mvn.version}</property>
+                                            </ant>
                                         </target>
                                     </configuration>
                                 </execution>
