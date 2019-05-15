@@ -269,7 +269,7 @@ This test will:
  - Do some test that data are correct
  
 
-1) Prepare MySQL DB and ensure that MySQL DB is empty. See [../../misc/DatabaseTesting.md](../../misc/DatabaseTesting.md) for some hints for locally prepare Docker MySQL image.
+1) Prepare MySQL DB and ensure that MySQL DB is empty. See [../../docs/tests-db.md](../../docs/tests-db.md) for some hints for locally prepare Docker MySQL image.
 
 2) Run the test (Update according to your DB connection, versions etc):
 

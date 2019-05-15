@@ -404,7 +404,8 @@
                 <keycloak.connectionsJpa.database>keycloak</keycloak.connectionsJpa.database>
                 <keycloak.connectionsJpa.user>keycloak</keycloak.connectionsJpa.user>
                 <keycloak.connectionsJpa.password>keycloak</keycloak.connectionsJpa.password>
-                <keycloak.connectionsJpa.url>jdbc:mysql://${auth.server.db.host}/${keycloak.connectionsJpa.database}</keycloak.connectionsJpa.url>
+                <!-- Disable SSL is needed when using newer JDBC drivers like mysql 8.0.12 to avoid warnings in the log -->
+                <keycloak.connectionsJpa.url>jdbc:mysql://${auth.server.db.host}/${keycloak.connectionsJpa.database}?useSSL=false</keycloak.connectionsJpa.url>
                 <jdbc.mvn.groupId>mysql</jdbc.mvn.groupId>
                 <jdbc.mvn.artifactId>mysql-connector-java</jdbc.mvn.artifactId>
                 <jdbc.mvn.version>${mysql.version}</jdbc.mvn.version>
