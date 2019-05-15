@@ -101,8 +101,9 @@
         <app.server.debug.port>5006</app.server.debug.port>
         <app.server.debug.suspend>n</app.server.debug.suspend>
         <app.server.jboss.jvm.debug.args>-agentlib:jdwp=transport=dt_socket,server=y,suspend=${app.server.debug.suspend},address=localhost:${app.server.debug.port}</app.server.jboss.jvm.debug.args>
-        <!-- Cluster tests are failing with -Xmx512 for insufficient physical memory -->
-        <app.server.memory.settings>-Xms64m -Xmx384m -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=256m</app.server.memory.settings>
+        <app.server.memory.Xms>64m</app.server.memory.Xms>
+        <app.server.memory.Xmx>512m</app.server.memory.Xmx>
+        <app.server.memory.settings>-Xms${app.server.memory.Xms} -Xmx${app.server.memory.Xmx} -XX:MetaspaceSize=${surefire.memory.metaspace} -XX:MaxMetaspaceSize=${surefire.memory.metaspace.max}</app.server.memory.settings>
         <app.server.ssl.required>false</app.server.ssl.required>
         <app.server.jvm.args.extra/>
 
@@ -1676,6 +1677,13 @@
             <id>java11-app-server</id> <!-- a temporary workaround; TODO remove this once Java 11 is officially supported by Arquillian -->
             <properties>
                 <app.server.jvm.args.extra>--add-exports=java.base/sun.nio.ch=ALL-UNNAMED --add-exports=jdk.unsupported/sun.misc=ALL-UNNAMED --add-exports=jdk.unsupported/sun.reflect=ALL-UNNAMED --add-modules=java.se</app.server.jvm.args.extra>
+            </properties>
+        </profile>
+
+        <profile>
+            <id>java7-app-server</id>
+            <properties>
+                <app.server.memory.settings>-Xms${app.server.memory.Xms} -Xmx${app.server.memory.Xmx} -XX:PermSize=${surefire.memory.metaspace} -XX:MaxPermSize=${surefire.memory.metaspace.max}</app.server.memory.settings>
             </properties>
         </profile>
 
