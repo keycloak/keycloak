@@ -228,6 +228,34 @@ public class UserTest extends AbstractAdminTest {
         assertEquals("theSalt", new String(credentialHashed.getSalt()));
         assertEquals(CredentialRepresentation.PASSWORD, credentialHashed.getType());
     }
+    
+    @Test
+    public void updateUserWithHashedCredentials(){
+        String userId = createUser("user_hashed_creds", "user_hashed_creds@localhost");
+
+        CredentialRepresentation hashedPassword = new CredentialRepresentation();
+        hashedPassword.setAlgorithm("pbkdf2-sha256");
+        hashedPassword.setCreatedDate(1001l);
+        hashedPassword.setHashIterations(27500);
+        hashedPassword.setHashedSaltedValue("uskEPZWMr83pl2mzNB95SFXfIabe2UH9ClENVx/rrQqOjFEjL2aAOGpWsFNNF3qoll7Qht2mY5KxIDm3Rnve2w==");
+        hashedPassword.setSalt("u1VXYxqVfWOzHpF2bGSLyA==");
+        hashedPassword.setType(CredentialRepresentation.PASSWORD);
+        
+        UserRepresentation userRepresentation = new UserRepresentation();
+        userRepresentation.setCredentials(Collections.singletonList(hashedPassword));
+        
+        realm.users().get(userId).update(userRepresentation);
+
+        String accountUrl = RealmsResource.accountUrl(UriBuilder.fromUri(getAuthServerRoot())).build(REALM_NAME).toString();
+
+        driver.navigate().to(accountUrl);
+
+        assertEquals("Log In", PageUtils.getPageTitle(driver));
+
+        loginPage.login("user_hashed_creds", "admin");
+
+        assertTrue(driver.getTitle().contains("Account Management"));
+    }
 
     @Test
     public void createUserWithRawCredentials() {
@@ -1312,7 +1340,7 @@ public class UserTest extends AbstractAdminTest {
 
         // Remove UPDATE_PASSWORD default action
         updatePasswordReqAction = realm.flows().getRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD.toString());
-        updatePasswordReqAction.setDefaultAction(true);
+        updatePasswordReqAction.setDefaultAction(false);
         realm.flows().updateRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD.toString(), updatePasswordReqAction);
         assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, AdminEventPaths.authRequiredActionPath(UserModel.RequiredAction.UPDATE_PASSWORD.toString()), updatePasswordReqAction, ResourceType.REQUIRED_ACTION);
     }
