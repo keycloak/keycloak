@@ -8,7 +8,6 @@
 
 ifeval::[{project_product_cd}==false]
 :project_name_full: Red Hat Single Sign-On
-:project_openshift_product_name: {project_name_full} for OpenShift
 :project_version: 7.3.0.GA
 :project_versionDoc: 7.3
 :project_templates_version: sso73
@@ -19,7 +18,6 @@ endif::[]
 
 ifeval::[{project_product_cd}==true]
 :project_name_full: Red Hat Single Sign-On Continuous Delivery
-:project_openshift_product_name: {project_name_full}
 :project_version: 6
 :project_versionDoc: 6
 :project_templates_version: sso-cd
@@ -28,6 +26,7 @@ ifeval::[{project_product_cd}==true]
 :maven_repository: https://maven.repository.redhat.com/earlyaccess/
 endif::[]
 
+:project_openshift_product_name: {project_name} for OpenShift
 
 :project_dirref: RHSSO_HOME
 
@@ -60,6 +59,7 @@ endif::[]
 :upgradingguide_link: {project_doc_base_url}/upgrading_guide/
 :releasenotes_name: Release Notes
 :releasenotes_link: {project_doc_base_url}/release_notes/
+:openshift_name: Red Hat Single Sign-On for OpenShift
 :openshift_link: {project_doc_base_url}/red_hat_single_sign-on_for_openshift/
 :installguide_name: Server Installation and Configuration Guide
 :installguide_link: {project_doc_base_url}/server_installation_and_configuration_guide/
