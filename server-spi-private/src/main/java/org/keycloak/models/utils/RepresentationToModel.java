@@ -83,6 +83,7 @@ import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
+import org.keycloak.models.cache.UserCache;
 import org.keycloak.models.credential.PasswordUserCredentialModel;
 import org.keycloak.policy.PasswordPolicyNotMetException;
 import org.keycloak.provider.ProviderConfigProperty;
@@ -1681,6 +1682,10 @@ public class RepresentationToModel {
             }
             hashedCred.setCreatedDate(cred.getCreatedDate());
             session.userCredentialManager().createCredential(realm, user, hashedCred);
+            UserCache userCache = session.userCache();
+            if (userCache != null) {
+                userCache.evict(realm, user);
+            }
         }
     }
 
