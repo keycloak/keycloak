@@ -69,6 +69,15 @@ public class JSObjectBuilder {
     }
 
 
+    public JSObjectBuilder pkceS256() {
+        return pkceMethod("S256");
+    }
+
+    private JSObjectBuilder pkceMethod(String method) {
+        arguments.put("pkceMethod", method);
+        return this;
+    }
+
     public String build() {
         StringBuilder argument = new StringBuilder("{");
         String comma = "";
