@@ -141,7 +141,18 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
                 .init(defaultArguments(), this::assertSuccessfullyLoggedIn)
                 .login("{kcLocale: 'en'}", assertLocaleIsSet("en"));
     }
-    
+
+    @Test
+    public void testLoginWithPkceS256() {
+        JSObjectBuilder pkceS256 = defaultArguments().pkceS256();
+        testExecutor.init(pkceS256, this::assertInitNotAuth)
+                .login(this::assertOnLoginPage)
+                .loginForm(testUser, this::assertOnTestAppUrl)
+                .init(pkceS256, this::assertSuccessfullyLoggedIn)
+                .logout(this::assertOnTestAppUrl)
+                .init(pkceS256, this::assertInitNotAuth);
+    }
+
     @Test
     public void testRefreshToken() {
         testExecutor.init(defaultArguments(), this::assertInitNotAuth)
