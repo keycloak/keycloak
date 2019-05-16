@@ -62,7 +62,7 @@ public class LoginStatusIframeEndpoint {
 
         InputStream resource = getClass().getClassLoader().getResourceAsStream("login-status-iframe.html");
         if (resource != null) {
-            P3PHelper.addP3PHeader(session);
+            P3PHelper.addP3PHeader();
             return Response.ok(resource).cacheControl(cacheControl).build();
         } else {
             return Response.status(Response.Status.NOT_FOUND).build();
