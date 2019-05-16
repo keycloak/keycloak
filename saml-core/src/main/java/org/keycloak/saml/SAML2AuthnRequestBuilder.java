@@ -90,27 +90,31 @@ public class SAML2AuthnRequestBuilder implements SamlProtocolExtensionsAwareBuil
 
     public Document toDocument() {
         try {
-            AuthnRequestType authnRequestType = this.authnRequestType;
-
-            NameIDType nameIDType = new NameIDType();
-
-            nameIDType.setValue(this.issuer);
-
-            authnRequestType.setIssuer(nameIDType);
-
-            authnRequestType.setDestination(URI.create(this.destination));
-
-            if (! this.extensions.isEmpty()) {
-                ExtensionsType extensionsType = new ExtensionsType();
-                for (NodeGenerator extension : this.extensions) {
-                    extensionsType.addExtension(extension);
-                }
-                authnRequestType.setExtensions(extensionsType);
-            }
+            AuthnRequestType authnRequestType = createAuthnRequest();
 
             return new SAML2Request().convert(authnRequestType);
         } catch (Exception e) {
             throw new RuntimeException("Could not convert " + authnRequestType + " to a document.", e);
         }
+    }
+
+    public AuthnRequestType createAuthnRequest() {
+        AuthnRequestType res = this.authnRequestType;
+        NameIDType nameIDType = new NameIDType();
+        nameIDType.setValue(this.issuer);
+
+        res.setIssuer(nameIDType);
+
+        res.setDestination(URI.create(this.destination));
+
+        if (! this.extensions.isEmpty()) {
+            ExtensionsType extensionsType = new ExtensionsType();
+            for (NodeGenerator extension : this.extensions) {
+                extensionsType.addExtension(extension);
+            }
+            res.setExtensions(extensionsType);
+        }
+
+        return res;
     }
 }
