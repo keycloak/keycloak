@@ -143,17 +143,6 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
     }
 
     @Test
-    public void testLoginWithPkcePlain() {
-        JSObjectBuilder pkcePlain = defaultArguments().pkcePlain();
-        testExecutor.init(pkcePlain, this::assertInitNotAuth)
-                .login(this::assertOnLoginPage)
-                .loginForm(testUser, this::assertOnTestAppUrl)
-                .init(pkcePlain, this::assertSuccessfullyLoggedIn)
-                .logout(this::assertOnTestAppUrl)
-                .init(pkcePlain, this::assertInitNotAuth);
-    }
-
-    @Test
     public void testLoginWithPkceS256() {
         JSObjectBuilder pkceS256 = defaultArguments().pkceS256();
         testExecutor.init(pkceS256, this::assertInitNotAuth)

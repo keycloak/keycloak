@@ -59,10 +59,6 @@ public class JSObjectBuilder {
         return pkceMethod("S256");
     }
 
-    public JSObjectBuilder pkcePlain() {
-        return pkceMethod("plain");
-    }
-
     private JSObjectBuilder pkceMethod(String method) {
         arguments.put("pkceMethod", method);
         return this;

@@ -117,13 +117,8 @@
                 }
 
                 if (initOptions.pkceMethod) {
-                    switch(initOptions.pkceMethod) {
-                        case "plain":
-                            break;
-                        case "S256":
-                            break;
-                        default:
-                            throw 'Invalid value for pkceMethod';
+                    if (initOptions.pkceMethod !== "S256") {
+                        throw 'Invalid value for pkceMethod';
                     }
                     kc.pkceMethod = initOptions.pkceMethod;
                 }
@@ -288,8 +283,7 @@
 
         function generatePkceChallenge(pkceMethod, codeVerifier) {
             switch (pkceMethod) {
-                case "plain":
-                    return codeVerifier;
+                    // The use of the "plain" method is considered insecure and therefore not supported.
                 case "S256":
                     // hash codeVerifier, then encode as url-safe base64 without padding
                     var hashBytes = new Uint8Array(sha256.arrayBuffer(codeVerifier));
@@ -318,8 +312,6 @@
             if (options && options.prompt) {
                 callbackState.prompt = options.prompt;
             }
-
-            callbackStorage.add(callbackState);
 
             var baseUrl;
             if (options && options.action == 'register') {
@@ -376,11 +368,13 @@
 
             if (options && kc.pkceMethod) {
                 var codeVerifier = generateCodeVerifier(96);
-                localStorage.setItem('kc-pkceCodeVerifier', codeVerifier);
+                callbackState.pkceCodeVerifier = codeVerifier;
                 var pkceChallenge = generatePkceChallenge(kc.pkceMethod, codeVerifier);
                 url += '&code_challenge=' + pkceChallenge;
                 url += '&code_challenge_method=' + kc.pkceMethod;
             }
+
+            callbackStorage.add(callbackState);
 
             return url;
         }
@@ -661,9 +655,9 @@
                 }
 
                 params += '&redirect_uri=' + oauth.redirectUri;
-                var pkceCodeVerifier = localStorage.getItem('kc-pkceCodeVerifier');
-                if (pkceCodeVerifier) {
-                    params += '&code_verifier=' + pkceCodeVerifier;
+                
+                if (oauth.pkceCodeVerifier) {
+                    params += '&code_verifier=' + oauth.pkceCodeVerifier;
                 }
 
                 req.withCredentials = true;
@@ -679,7 +673,6 @@
                             kc.onAuthError && kc.onAuthError();
                             promise && promise.setError();
                         }
-                        localStorage.removeItem('kc-pkceCodeVerifier');
                     }
                 };
 
@@ -984,6 +977,7 @@
                 oauth.redirectUri = oauthState.redirectUri;
                 oauth.storedNonce = oauthState.nonce;
                 oauth.prompt = oauthState.prompt;
+                oauth.pkceCodeVerifier = oauthState.pkceCodeVerifier;
             }
 
             return oauth;
