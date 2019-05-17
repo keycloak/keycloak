@@ -11,7 +11,7 @@
 
     <name>Server Developer</name>
     <artifactId>server-development</artifactId>
-    <packaging>jar</packaging>
+    <packaging>pom</packaging>
 
     <build>
         <plugins>

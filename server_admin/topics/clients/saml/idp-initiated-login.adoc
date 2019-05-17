@@ -6,7 +6,7 @@ In the `Settings` tab for your client, you need to specify the `IDP Initiated SS
 This is a simple string with no whitespace in it.
 After this you can reference your client at the following URL: `root/auth/realms/{realm}/protocol/saml/clients/{url-name}`
 
-The IDP initiated login implementation prefers _POST_ over _REDIRECT_ binding (check <<saml-bindings, saml bindings>> for more information).
+The IDP initiated login implementation prefers _POST_ over _REDIRECT_ binding (check <<_saml, saml bindings>> for more information).
 Therefore the final binding and SP URL are selected in the following way:
 
 1. If the specific `Assertion Consumer Service POST Binding URL` is defined (inside `Fine Grain SAML Endpoint Configuration` section
