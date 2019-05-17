@@ -19,10 +19,9 @@ package org.keycloak.saml.processing.core.saml.v2.util;
 import org.keycloak.saml.common.PicketLinkLogger;
 import org.keycloak.saml.common.PicketLinkLoggerFactory;
 import org.keycloak.saml.common.constants.GeneralConstants;
-import org.keycloak.saml.common.exceptions.ConfigurationException;
-import org.keycloak.saml.common.exceptions.ParsingException;
 import org.keycloak.saml.common.util.SecurityActions;
 import org.keycloak.saml.common.util.SystemPropertiesUtil;
+import org.keycloak.common.util.Time;
 
 import javax.xml.datatype.DatatypeConfigurationException;
 import javax.xml.datatype.DatatypeConstants;
@@ -31,6 +30,7 @@ import javax.xml.datatype.Duration;
 import javax.xml.datatype.XMLGregorianCalendar;
 import java.util.GregorianCalendar;
 import java.util.TimeZone;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Util class dealing with xml based time
@@ -49,8 +49,6 @@ public class XMLTimeUtil {
      * @param millis
      *
      * @return calendar value with the addition
-     *
-     * @throws org.keycloak.saml.common.exceptions.ConfigurationException
      */
     public static XMLGregorianCalendar add(XMLGregorianCalendar value, long millis) {
         if (value == null) {
@@ -76,8 +74,6 @@ public class XMLTimeUtil {
      * @param millis miliseconds entered in a positive value
      *
      * @return
-     *
-     * @throws ConfigurationException
      */
     public static XMLGregorianCalendar subtract(XMLGregorianCalendar value, long millis) {
         return add(value, - millis);
@@ -91,8 +87,6 @@ public class XMLTimeUtil {
      * @param timezone
      *
      * @return
-     *
-     * @throws ConfigurationException
      */
     public static XMLGregorianCalendar getIssueInstant(String timezone) {
         TimeZone tz = TimeZone.getTimeZone(timezone);
@@ -102,6 +96,12 @@ public class XMLTimeUtil {
         GregorianCalendar gc = new GregorianCalendar(tz);
         XMLGregorianCalendar xgc = dtf.newXMLGregorianCalendar(gc);
 
+        Long offsetMilis = TimeUnit.MILLISECONDS.convert(Time.getOffset(), TimeUnit.SECONDS);
+        if (offsetMilis != 0) {
+            if (logger.isDebugEnabled()) logger.debug(XMLTimeUtil.class.getName() + " timeOffset: " + offsetMilis);
+            xgc.add(parseAsDuration(offsetMilis.toString()));
+        }
+        if (logger.isDebugEnabled()) logger.debug(XMLTimeUtil.class.getName() + " issueInstant: " + xgc.toString());
         return xgc;
     }
 
@@ -109,8 +109,6 @@ public class XMLTimeUtil {
      * Get the current instant of time
      *
      * @return
-     *
-     * @throws ConfigurationException
      */
     public static XMLGregorianCalendar getIssueInstant() {
         return getIssueInstant(getCurrentTimeZoneID());
@@ -179,10 +177,8 @@ public class XMLTimeUtil {
      * @param timeValue
      *
      * @return
-     *
-     * @throws org.keycloak.saml.common.exceptions.ParsingException
      */
-    public static Duration parseAsDuration(String timeValue) throws ParsingException {
+    public static Duration parseAsDuration(String timeValue) {
         if (timeValue == null) {
             PicketLinkLoggerFactory.getLogger().nullArgumentError("duration time");
         }
@@ -207,10 +203,8 @@ public class XMLTimeUtil {
      * @param timeString
      *
      * @return
-     *
-     * @throws ParsingException
      */
-    public static XMLGregorianCalendar parse(String timeString) throws ParsingException {
+    public static XMLGregorianCalendar parse(String timeString) {
         DatatypeFactory factory = DATATYPE_FACTORY.get();
         return factory.newXMLGregorianCalendar(timeString);
     }

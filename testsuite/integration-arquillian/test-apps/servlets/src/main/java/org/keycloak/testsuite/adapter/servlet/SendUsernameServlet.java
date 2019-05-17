@@ -24,7 +24,7 @@ import org.keycloak.adapters.saml.SamlPrincipal;
 import org.keycloak.adapters.spi.AuthenticationError;
 import org.keycloak.saml.processing.core.saml.v2.constants.X500SAMLProfileConstants;
 
-import javax.servlet.ServletException;
+import javax.servlet.RequestDispatcher;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -109,7 +109,7 @@ public class SendUsernameServlet {
     @Path("error.html")
     public Response errorPagePost() {
         authError = (SamlAuthenticationError) httpServletRequest.getAttribute(AuthenticationError.class.getName());
-        Integer statusCode = (Integer) httpServletRequest.getAttribute("javax.servlet.error.status_code");
+        Integer statusCode = (Integer) httpServletRequest.getAttribute(RequestDispatcher.ERROR_STATUS_CODE);
         System.out.println("In SendUsername Servlet errorPage() status code: " + statusCode);
 
         return Response.ok(getErrorOutput(statusCode)).header(HttpHeaders.CONTENT_TYPE, MediaType.TEXT_HTML_TYPE + ";charset=UTF-8").build();
