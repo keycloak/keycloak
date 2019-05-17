@@ -22,6 +22,7 @@ import {AccountServiceClient} from '../../account-service/account.service';
 import {Features} from '../../widgets/features';
 import {Msg} from '../../widgets/Msg';
 import {ContentPage} from '../ContentPage';
+import {ContentAlert} from '../ContentAlert';
 
 declare const features: Features;
  
@@ -88,7 +89,7 @@ export class AccountPage extends React.Component<AccountPageProps, AccountPageSt
         AccountServiceClient.Instance.doPost("/", {data: reqData})
             .then((response: AxiosResponse<FormFields>) => {
                 this.setState({canSubmit: false});
-                alert('Data posted:' + response.statusText);
+                ContentAlert.success('accountUpdatedMessage');
             });
     }
     

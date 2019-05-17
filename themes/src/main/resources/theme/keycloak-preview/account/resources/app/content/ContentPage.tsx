@@ -16,7 +16,8 @@
 
 import * as React from 'react';
 import {Msg} from '../widgets/Msg';
- 
+import {ContentAlert} from './ContentAlert';
+
 interface ContentPageProps {
     title: string; // Literal title or key into message bundle
     introMessage?: string; // Literal message or key into message bundle
@@ -35,6 +36,7 @@ export class ContentPage extends React.Component<ContentPageProps> {
     public render(): React.ReactNode {
         return (
             <React.Fragment>
+                <ContentAlert/>
                 <section className="pf-c-page__main-section pf-m-light">
                     <div className="pf-c-content">
                       <h1><Msg msgKey={this.props.title}/></h1>
