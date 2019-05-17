@@ -14,7 +14,7 @@
       'react': 'npm:react/umd/' + reactRuntime,
       'react-dom': 'npm:react-dom/umd/' + reactDOMRuntime,
       'react-router-dom': 'npm:react-router-dom/umd/' + reactRouterRuntime,
-      
+
       '@patternfly/patternfly': 'npm:@patternfly/react-core/dist/umd/@patternfly/patternfly',
       '@patternfly/react-core': 'npm:@patternfly/react-core/dist/umd/index.js',
       '@patternfly/react-styles': 'npm:@patternfly/react-styles/dist/umd/index.js',
@@ -31,14 +31,14 @@
       'focus-trap-react': 'npm:focus-trap-react/dist/focus-trap-react.js',
       '@tippy.js/react': 'npm:@tippy.js/react/dist/Tippy.min.js',
       'tippy.js': 'npm:tippy.js/dist/tippy.min.js',
-      
+
       'moment': 'npm:moment/min/moment-with-locales.min.js',
-      
+
       'axios': 'npm:axios/dist/axios.min.js',
-      
+
       'history': 'npm:history/umd/history.min.js',
     },
-    
+
     bundles: {
         "npm:rxjs-system-bundle/Rx.system.min.js": [
           "rxjs",
@@ -52,7 +52,7 @@
           "rxjs/util/*"
         ]
       },
-      
+
     // packages tells the System loader how to load when no filename and/or no extension
     packages: {
       app: {
@@ -65,7 +65,7 @@
       rxjs: {
         defaultExtension: false
       },
-           
+
       // Components that map to @empty will not be loaded.
       // To load a component, replace @empty with its commented path.
       'npm:@patternfly/react-core/dist/umd/components': {
@@ -103,7 +103,7 @@
               './Label': '@empty', //'./Label/index.js',
               './List': '@empty', //'./List/index.js',
               './LoginPage': '@empty', //'./LoginPage/index.js',
-              './Modal': '@empty', //'./Modal/index.js',
+              './Modal': './Modal/index.js', //'./Modal/index.js',
               './Nav': './Nav/index.js',
               './OptionsMenu': '@empty', //./OptionsMenu/index.js',
               './Page': './Page/index.js',
@@ -114,11 +114,11 @@
               './Select': '@empty', //'./Select/index.js',
               './SkipToContent': '@empty', //'./SkipToContent/index.js',
               './Switch': '@empty', //'./Switch/index.js',
-              './Tabs': '@empty', //'./Tabs/index.js',
+              './Tabs': './Tabs/index.js', //'./Tabs/index.js',
               './Text': '@empty', //'./Text/index.js',
               './TextArea': '@empty', //'./TextArea/index.js',
               './TextInput': './TextInput/index.js',
-              './Title': '@empty', //'./Title/index.js',
+              './Title': './Title/index.js', //'./Title/index.js',
               './Tooltip': '@empty', //'./Tooltip/index.js',
               './Wizard': '@empty', //'./Wizard/index.js',
               './Bullseye': '@empty', //'./Bullseye/index.js',
@@ -130,7 +130,7 @@
               './Toolbar': '@empty', //'./Toolbar/index.js',
           }
       },
-      
+
       'npm:@patternfly/react-core/dist/umd/styles': {
           main: './index.js',
           defaultExtension: 'js',
@@ -139,11 +139,11 @@
           main: './index.js',
           defaultExtension: 'js',
       },
-      
+
       'npm:@patternfly/react-core/dist/umd/@patternfly/patternfly': {
           defaultExtension: 'js',
       },
-      
+
       // Layouts that map to @empty will not be loaded.
       // To load a layout, replace @empty with its commented path.
       'npm:@patternfly/react-core/dist/umd/layouts': {
@@ -171,7 +171,7 @@
       'npm:no-case/vendor': {
           defaultExtension: 'js',
       },
-      
+
       // Icons that map to @empty will not be loaded.
       // To load an icon, just comment out its mapping.
       'npm:@patternfly/react-icons/dist/umd': {
@@ -196,7 +196,7 @@
              './icons/angle-double-right-icon.js': '@empty',
              './icons/angle-double-up-icon.js': '@empty',
              //'./icons/angle-down-icon.js': '@empty',
-             './icons/angle-left-icon.js': '@empty',
+             // './icons/angle-left-icon.js': '@empty',
              //'./icons/angle-right-icon.js': '@empty',
              './icons/angle-up-icon.js': '@empty',
              './icons/angry-icon.js': '@empty',
@@ -1378,7 +1378,7 @@
              './icons/pficon-sort-common-asc-icon.js': '@empty',
              './icons/pficon-sort-common-desc-icon.js': '@empty',
              './icons/pficon-dragdrop-icon.js': '@empty',
-              
+
           }
       },
     }
