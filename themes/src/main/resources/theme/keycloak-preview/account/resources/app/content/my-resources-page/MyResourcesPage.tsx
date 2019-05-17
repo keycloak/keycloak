@@ -24,7 +24,7 @@ export class MyResourcesPage extends React.Component<MyResourcesPageProps> {
     public constructor(props: MyResourcesPageProps) {
         super(props);
     }
-
+    
     public render(): React.ReactNode {
         return (
             <div>
