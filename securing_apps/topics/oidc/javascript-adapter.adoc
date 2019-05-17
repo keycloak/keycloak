@@ -289,6 +289,11 @@ adapter::
 responseType::
     Response type sent to {project_name} with login requests. This is determined based on the flow value used during initialization, but can be overridden by setting this value.
 
+pkceMethod::
+    The method for Proof Key Code Exchange (https://tools.ietf.org/html/rfc7636[PKCE]) to use. Configuring this value enables the PKCE mechanism.
+    Available options:
+    * "S256" - The SHA256 based PKCE method
+
 ===== Methods
 
 ====== init(options)
