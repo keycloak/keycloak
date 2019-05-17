@@ -49,7 +49,11 @@
             <fileset dir="${cli.tmp.dir}" includes="*.cli"/>
         </concat>
         <bin-chmod/>
-        <exec dir="${auth.server.home}/bin" executable="./${jboss.cli.executable}" failonerror="true">
+        <exec osfamily="unix" dir="${auth.server.home}/bin" executable="./${jboss.cli.executable}" failonerror="true">
+            <arg value="--file=${cli.tmp.dir}/result.cli"/>
+        </exec>
+        <exec osfamily="windows" executable="powershell" failonerror="true">
+            <arg value="${auth.server.home}/bin/${jboss.cli.executable}"/>
             <arg value="--file=${cli.tmp.dir}/result.cli"/>
         </exec>
         <cleanup/>
