@@ -228,6 +228,20 @@
             }
         },
         {
+            "clientId": "http://localhost:8280/sales-post-clock-skew/",
+            "enabled": true,
+            "fullScopeAllowed": true,
+            "protocol": "saml",
+            "baseUrl": "http://localhost:8080/sales-post-clock-skew",
+            "redirectUris": [
+                "http://localhost:8080/sales-post-clock-skew/*"
+            ],
+            "attributes": {
+                "saml.authnstatement": "true",
+                "saml_idp_initiated_sso_url_name": "sales-post-clock-skew"
+            }
+        },
+        {
             "clientId": "http://localhost:8280/sales-post-passive/",
             "enabled": true,
             "fullScopeAllowed": true,

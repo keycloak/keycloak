@@ -46,7 +46,8 @@ public class AdapterTestExecutionDecider implements TestExecutionDecider {
         }
         if (testContext.isAdapterContainerEnabled() || testContext.isAdapterContainerEnabledCluster()) {
 
-            if (method.isAnnotationPresent(AppServerContainer.class)) { // taking method level annotation first as it has higher priority
+            // taking method level annotation first as it has higher priority
+            if (method.isAnnotationPresent(AppServerContainers.class) || method.isAnnotationPresent(AppServerContainer.class)) {
                 if (getCorrespondingAnnotation(method) == null) { //no corresponding annotation - taking class level annotation
                     if (getCorrespondingAnnotation(testContext.getTestClass()).skip()) {
                         return ExecutionDecision.dontExecute("Skipped by @AppServerContainer class level annotation.");
@@ -55,7 +56,8 @@ public class AdapterTestExecutionDecider implements TestExecutionDecider {
                     return ExecutionDecision.dontExecute("Skipped by @AppServerContainer method level annotation.");
                 }
             } else { //taking class level annotation
-                if (getCorrespondingAnnotation(testContext.getTestClass()).skip()) {
+                if (getCorrespondingAnnotation(testContext.getTestClass()) == null || 
+                        getCorrespondingAnnotation(testContext.getTestClass()).skip()) {
                     return ExecutionDecision.dontExecute("Skipped by @AppServerContainer class level annotation.");
                 }
             }
