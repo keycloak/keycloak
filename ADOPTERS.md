@@ -25,6 +25,7 @@ List of organization names below is based on information collected using Keycloa
 * DukeCon
 * European Synchrotron Radiation Facility
 * Fluance AG
+* Genchi Genbutsu SRL
 * Hewlett-Packard Enterprise
 * Hitachi
 * INEAT
