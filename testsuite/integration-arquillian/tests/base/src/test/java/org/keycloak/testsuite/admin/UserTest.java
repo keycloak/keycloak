@@ -192,6 +192,38 @@ public class UserTest extends AbstractAdminTest {
         assertEquals(409, response.getStatus());
         response.close();
     }
+    
+    @Test
+    public void createUserWithRawCredentialsThenUpdateItWithHashedCredentials(){
+        UserRepresentation user = new UserRepresentation();
+        user.setUsername("user_raw_then_hashed_creds");
+        user.setEmail("user_raw_then_hashed_creds.raw@localhost");
+
+        CredentialRepresentation rawPassword = new CredentialRepresentation();
+        rawPassword.setValue("ABCD");
+        rawPassword.setType(CredentialRepresentation.PASSWORD);
+        user.setCredentials(Collections.singletonList(rawPassword));
+
+        String userId = createUser(user);
+
+        assertEquals(1, countCredentials(user.getUsername()));
+
+        CredentialRepresentation hashedPassword = new CredentialRepresentation();
+        hashedPassword.setAlgorithm("pbkdf2-sha256");
+        hashedPassword.setCreatedDate(1001l);
+        hashedPassword.setHashIterations(27500);
+        hashedPassword.setHashedSaltedValue("uskEPZWMr83pl2mzNB95SFXfIabe2UH9ClENVx/rrQqOjFEjL2aAOGpWsFNNF3qoll7Qht2mY5KxIDm3Rnve2w==");
+        hashedPassword.setSalt("u1VXYxqVfWOzHpF2bGSLyA==");
+        hashedPassword.setType(CredentialRepresentation.PASSWORD);
+
+        UserRepresentation userRepresentation = new UserRepresentation();
+        userRepresentation.setCredentials(Collections.singletonList(hashedPassword));
+
+        realm.users().get(userId).update(userRepresentation);
+
+        assertEquals(1, countCredentials(user.getUsername()));
+        assertEquals(hashedPassword.getHashedSaltedValue(), fetchCredentials(user.getUsername()).getValue());
+    }
 
     @Test
     public void createUserWithHashedCredentials() {
@@ -258,6 +290,14 @@ public class UserTest extends AbstractAdminTest {
             System.out.println(storedCredentialsByType.size());
             return storedCredentialsByType.get(0);
         }, CredentialModel.class);
+    }
+    
+    private long countCredentials(String username){
+        return getTestingClient().server(REALM_NAME).fetch(session -> {
+            RealmModel realm = session.getContext().getRealm();
+            UserModel userModel = session.users().getUserByUsername(username, realm);
+            return session.userCredentialManager().getStoredCredentialsByType(realm, userModel, CredentialRepresentation.PASSWORD).size();
+        }, Long.TYPE);
     }
 
     @Test
