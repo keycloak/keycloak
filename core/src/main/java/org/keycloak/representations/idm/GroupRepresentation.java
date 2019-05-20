@@ -36,6 +36,7 @@ public class GroupRepresentation {
     protected List<GroupRepresentation> subGroups;
     private Map<String, Boolean> access;
     protected boolean hasChild;
+    protected Long userCount;
 
     public String getId() {
         return id;
@@ -114,5 +115,13 @@ public class GroupRepresentation {
 
     public void setHasChild(boolean hasChild) {
         this.hasChild = hasChild;
+    }
+
+    public Long getUserCount() {
+        return userCount;
+    }
+
+    public void setUserCount(Long userCount) {
+        this.userCount = userCount;
     }
 }

@@ -288,4 +288,12 @@ public class GroupAdapter implements GroupModel {
         getDelegateForUpdate();
         updated.setHasChild(hasChild);
     }
+
+    @Override
+    public Long getUserCount() {
+        if (isUpdated()) return updated.getUserCount();
+        return cached.getUserCount();
+    }
+
+
 }

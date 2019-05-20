@@ -18,11 +18,7 @@
 package org.keycloak.models.jpa;
 
 import org.keycloak.common.util.MultivaluedHashMap;
-import org.keycloak.models.ClientModel;
-import org.keycloak.models.GroupModel;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.RoleContainerModel;
-import org.keycloak.models.RoleModel;
+import org.keycloak.models.*;
 import org.keycloak.models.jpa.entities.GroupAttributeEntity;
 import org.keycloak.models.jpa.entities.GroupEntity;
 import org.keycloak.models.jpa.entities.GroupRoleMappingEntity;
@@ -31,21 +27,16 @@ import org.keycloak.models.utils.RoleUtils;
 
 import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class GroupAdapter implements GroupModel , JpaModel<GroupEntity> {
+public class GroupAdapter implements GroupModel, JpaModel<GroupEntity> {
 
-    protected GroupEntity group;
     protected EntityManager em;
+    protected GroupEntity group;
     protected RealmModel realm;
 
     public GroupAdapter(RealmModel realm, EntityManager em, GroupEntity group) {
@@ -54,8 +45,42 @@ public class GroupAdapter implements GroupModel , JpaModel<GroupEntity> {
         this.realm = realm;
     }
 
-    public GroupEntity getEntity() {
-        return group;
+    @Override
+    public void addChild(GroupModel subGroup) {
+        if (subGroup.getId().equals(getId())) {
+            return;
+        }
+        subGroup.setParent(this);
+    }
+
+    @Override
+    public List<String> getAttribute(String name) {
+        List<String> result = new ArrayList<>();
+        for (GroupAttributeEntity attr : group.getAttributes()) {
+            if (attr.getName().equals(name)) {
+                result.add(attr.getValue());
+            }
+        }
+        return result;
+    }
+
+    @Override
+    public Map<String, List<String>> getAttributes() {
+        MultivaluedHashMap<String, String> result = new MultivaluedHashMap<>();
+        for (GroupAttributeEntity attr : group.getAttributes()) {
+            result.add(attr.getName(), attr.getValue());
+        }
+        return result;
+    }
+
+    @Override
+    public String getFirstAttribute(String name) {
+        for (GroupAttributeEntity attr : group.getAttributes()) {
+            if (attr.getName().equals(name)) {
+                return attr.getValue();
+            }
+        }
+        return null;
     }
 
     @Override
@@ -81,45 +106,21 @@ public class GroupAdapter implements GroupModel , JpaModel<GroupEntity> {
     }
 
     @Override
-    public String getParentId() {
-        GroupEntity parent = group.getParent();
-        if (parent == null) return null;
-        return parent.getId();
-    }
-
-    public static GroupEntity toEntity(GroupModel model, EntityManager em) {
-        if (model instanceof GroupAdapter) {
-            return ((GroupAdapter)model).getEntity();
-        }
-        return em.getReference(GroupEntity.class, model.getId());
-    }
-
-    @Override
     public void setParent(GroupModel parent) {
         if (parent == null) group.setParent(null);
         else if (parent.getId().equals(getId())) {
             return;
-        }
-        else {
+        } else {
             GroupEntity parentEntity = toEntity(parent, em);
             group.setParent(parentEntity);
         }
     }
 
     @Override
-    public void addChild(GroupModel subGroup) {
-        if (subGroup.getId().equals(getId())) {
-            return;
-        }
-        subGroup.setParent(this);
-    }
-
-    @Override
-    public void removeChild(GroupModel subGroup) {
-        if (subGroup.getId().equals(getId())) {
-            return;
-        }
-        subGroup.setParent(null);
+    public String getParentId() {
+        GroupEntity parent = group.getParent();
+        if (parent == null) return null;
+        return parent.getId();
     }
 
     @Override
@@ -134,6 +135,55 @@ public class GroupAdapter implements GroupModel , JpaModel<GroupEntity> {
             set.add(subGroup);
         }
         return set;
+    }
+
+    @Override
+    public Long getUserCount() {
+        Long count = em.createNamedQuery("getCountByGroup", Long.class)
+                .setParameter("groupId", getId())
+                .getSingleResult();
+        return count;
+    }
+
+    @Override
+    public boolean isHasChild() {
+        return group.isHasChild();
+    }
+
+    @Override
+    public void setHasChild(boolean hasChild) {
+        group.setHasChild(hasChild);
+    }
+
+    @Override
+    public void removeAttribute(String name) {
+        Iterator<GroupAttributeEntity> it = group.getAttributes().iterator();
+        while (it.hasNext()) {
+            GroupAttributeEntity attr = it.next();
+            if (attr.getName().equals(name)) {
+                it.remove();
+                em.remove(attr);
+            }
+        }
+    }
+
+    @Override
+    public void removeChild(GroupModel subGroup) {
+        if (subGroup.getId().equals(getId())) {
+            return;
+        }
+        subGroup.setParent(null);
+    }
+
+    @Override
+    public void setAttribute(String name, List<String> values) {
+        // Remove all existing
+        removeAttribute(name);
+
+        // Put all new
+        for (String value : values) {
+            persistAttributeValue(name, value);
+        }
     }
 
     @Override
@@ -163,17 +213,6 @@ public class GroupAdapter implements GroupModel , JpaModel<GroupEntity> {
         persistAttributeValue(name, value);
     }
 
-    @Override
-    public void setAttribute(String name, List<String> values) {
-        // Remove all existing
-        removeAttribute(name);
-
-        // Put all new
-        for (String value : values) {
-            persistAttributeValue(name, value);
-        }
-    }
-
     private void persistAttributeValue(String name, String value) {
         GroupAttributeEntity attr = new GroupAttributeEntity();
         attr.setId(KeycloakModelUtils.generateId());
@@ -184,70 +223,15 @@ public class GroupAdapter implements GroupModel , JpaModel<GroupEntity> {
         group.getAttributes().add(attr);
     }
 
-    @Override
-    public void removeAttribute(String name) {
-        Iterator<GroupAttributeEntity> it = group.getAttributes().iterator();
-        while (it.hasNext()) {
-            GroupAttributeEntity attr = it.next();
-            if (attr.getName().equals(name)) {
-                it.remove();
-                em.remove(attr);
-            }
+    public static GroupEntity toEntity(GroupModel model, EntityManager em) {
+        if (model instanceof GroupAdapter) {
+            return ((GroupAdapter) model).getEntity();
         }
+        return em.getReference(GroupEntity.class, model.getId());
     }
 
-    @Override
-    public String getFirstAttribute(String name) {
-        for (GroupAttributeEntity attr : group.getAttributes()) {
-            if (attr.getName().equals(name)) {
-                return attr.getValue();
-            }
-        }
-        return null;
-    }
-
-    @Override
-    public List<String> getAttribute(String name) {
-        List<String> result = new ArrayList<>();
-        for (GroupAttributeEntity attr : group.getAttributes()) {
-            if (attr.getName().equals(name)) {
-                result.add(attr.getValue());
-            }
-        }
-        return result;
-    }
-
-    @Override
-    public Map<String, List<String>> getAttributes() {
-        MultivaluedHashMap<String, String> result = new MultivaluedHashMap<>();
-        for (GroupAttributeEntity attr : group.getAttributes()) {
-            result.add(attr.getName(), attr.getValue());
-        }
-        return result;
-    }
-
-    @Override
-    public boolean hasRole(RoleModel role) {
-        Set<RoleModel> roles = getRoleMappings();
-        return RoleUtils.hasRole(roles, role);
-    }
-
-    protected TypedQuery<GroupRoleMappingEntity> getGroupRoleMappingEntityTypedQuery(RoleModel role) {
-        TypedQuery<GroupRoleMappingEntity> query = em.createNamedQuery("groupHasRole", GroupRoleMappingEntity.class);
-        query.setParameter("group", getEntity());
-        query.setParameter("roleId", role.getId());
-        return query;
-    }
-
-    @Override
-    public void grantRole(RoleModel role) {
-        if (hasRole(role)) return;
-        GroupRoleMappingEntity entity = new GroupRoleMappingEntity();
-        entity.setGroup(getEntity());
-        entity.setRoleId(role.getId());
-        em.persist(entity);
-        em.flush();
-        em.detach(entity);
+    public GroupEntity getEntity() {
+        return group;
     }
 
     @Override
@@ -264,6 +248,39 @@ public class GroupAdapter implements GroupModel , JpaModel<GroupEntity> {
         return realmRoles;
     }
 
+    @Override
+    public Set<RoleModel> getClientRoleMappings(ClientModel app) {
+        Set<RoleModel> roleMappings = getRoleMappings();
+
+        Set<RoleModel> roles = new HashSet<RoleModel>();
+        for (RoleModel role : roleMappings) {
+            RoleContainerModel container = role.getContainer();
+            if (container instanceof ClientModel) {
+                ClientModel appModel = (ClientModel) container;
+                if (appModel.getId().equals(app.getId())) {
+                    roles.add(role);
+                }
+            }
+        }
+        return roles;
+    }
+
+    @Override
+    public boolean hasRole(RoleModel role) {
+        Set<RoleModel> roles = getRoleMappings();
+        return RoleUtils.hasRole(roles, role);
+    }
+
+    @Override
+    public void grantRole(RoleModel role) {
+        if (hasRole(role)) return;
+        GroupRoleMappingEntity entity = new GroupRoleMappingEntity();
+        entity.setGroup(getEntity());
+        entity.setRoleId(role.getId());
+        em.persist(entity);
+        em.flush();
+        em.detach(entity);
+    }
 
     @Override
     public Set<RoleModel> getRoleMappings() {
@@ -294,21 +311,16 @@ public class GroupAdapter implements GroupModel , JpaModel<GroupEntity> {
         em.flush();
     }
 
-    @Override
-    public Set<RoleModel> getClientRoleMappings(ClientModel app) {
-        Set<RoleModel> roleMappings = getRoleMappings();
+    protected TypedQuery<GroupRoleMappingEntity> getGroupRoleMappingEntityTypedQuery(RoleModel role) {
+        TypedQuery<GroupRoleMappingEntity> query = em.createNamedQuery("groupHasRole", GroupRoleMappingEntity.class);
+        query.setParameter("group", getEntity());
+        query.setParameter("roleId", role.getId());
+        return query;
+    }
 
-        Set<RoleModel> roles = new HashSet<RoleModel>();
-        for (RoleModel role : roleMappings) {
-            RoleContainerModel container = role.getContainer();
-            if (container instanceof ClientModel) {
-                ClientModel appModel = (ClientModel)container;
-                if (appModel.getId().equals(app.getId())) {
-                   roles.add(role);
-                }
-            }
-        }
-        return roles;
+    @Override
+    public int hashCode() {
+        return getId().hashCode();
     }
 
     @Override
@@ -320,19 +332,5 @@ public class GroupAdapter implements GroupModel , JpaModel<GroupEntity> {
         return that.getId().equals(getId());
     }
 
-    @Override
-    public int hashCode() {
-        return getId().hashCode();
-    }
 
-
-    @Override
-    public boolean isHasChild() {
-        return group.isHasChild();
-    }
-
-    @Override
-    public void setHasChild(boolean hasChild) {
-        group.setHasChild(hasChild);
-    }
 }

@@ -42,6 +42,7 @@ public class CachedGroup extends AbstractRevisioned implements InRealm {
     private final LazyLoader<GroupModel, Set<String>> roleMappings;
     private final LazyLoader<GroupModel, Set<String>> subGroups;
     private final boolean hasChild;
+    private final Long userCount;
 
     public CachedGroup(Long revision, RealmModel realm, GroupModel group) {
         super(revision, group.getId());
@@ -52,6 +53,7 @@ public class CachedGroup extends AbstractRevisioned implements InRealm {
         this.roleMappings = new DefaultLazyLoader<>(source -> source.getRoleMappings().stream().map(RoleModel::getId).collect(Collectors.toSet()), Collections::emptySet);
         this.subGroups = new DefaultLazyLoader<>(source -> source.getSubGroups().stream().map(GroupModel::getId).collect(Collectors.toSet()), Collections::emptySet);
         this.hasChild = group.isHasChild();
+        this.userCount=group.getUserCount();
     }
 
     public String getRealm() {
@@ -84,5 +86,9 @@ public class CachedGroup extends AbstractRevisioned implements InRealm {
 
     public boolean isHasChild() {
         return hasChild;
+    }
+
+    public Long getUserCount() {
+        return userCount;
     }
 }
