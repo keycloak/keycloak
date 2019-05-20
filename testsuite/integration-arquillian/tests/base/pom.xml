@@ -360,6 +360,7 @@
                                             <ORACLE_SID>${keycloak.connectionsJpa.database}</ORACLE_SID>
                                             <ORACLE_PWD>sa</ORACLE_PWD>
                                         </env>
+                                        <cmd>${docker.database.cmd}</cmd>
                                         <wait>
                                             <!-- Do not use waiting for port since that is unreliable, sometimes port is listening before DB is ready to serve -->
                                             <log>${docker.database.wait-for-log-regex}</log>

@@ -33,6 +33,7 @@ import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
 
 import java.util.Arrays;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.keycloak.testsuite.arquillian.DeploymentTargetModifier.AUTH_SERVER_CURRENT;
@@ -41,6 +42,8 @@ import static org.keycloak.testsuite.arquillian.DeploymentTargetModifier.AUTH_SE
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class ConcurrentTransactionsTest extends AbstractTestRealmKeycloakTest {
+
+    private static final int LATCH_TIMEOUT_MS = 30000;
 
     @Deployment
     @TargetsContainer(AUTH_SERVER_CURRENT)
@@ -59,6 +62,7 @@ public class ConcurrentTransactionsTest extends AbstractTestRealmKeycloakTest {
 
         final ClientModel[] client = {null};
         AtomicReference<String> clientDBIdAtomic = new AtomicReference<>();
+        AtomicReference<Exception> exceptionHolder = new AtomicReference<>();
 
         KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession sessionSetup) -> {
 
@@ -89,7 +93,9 @@ public class ConcurrentTransactionsTest extends AbstractTestRealmKeycloakTest {
                         // Wait until transaction in both threads started
                         transactionsCounter.countDown();
                         logger.info("transaction1 started");
-                        transactionsCounter.await();
+                        if (!transactionsCounter.await(LATCH_TIMEOUT_MS, TimeUnit.MILLISECONDS)) {
+                            throw new IllegalStateException("Timeout when waiting for transactionsCounter latch in thread1");
+                        }
 
                         // Read client
                         RealmModel realm1 = currentSession.realms().getRealmByName("original");
@@ -98,13 +104,17 @@ public class ConcurrentTransactionsTest extends AbstractTestRealmKeycloakTest {
                         readLatch.countDown();
 
                         // Wait until thread2 updates client and commits
-                        updateLatch.await();
+                        if (!updateLatch.await(LATCH_TIMEOUT_MS, TimeUnit.MILLISECONDS)) {
+                            throw new IllegalStateException("Timeout when waiting for updateLatch");
+                        }
+
                         logger.info("transaction1: Going to read client again");
 
                         client1 = currentSession.realms().getClientByClientId("client", realm1);
                         logger.info("transaction1: secret: " + client1.getSecret());
 
                     } catch (Exception e) {
+                        exceptionHolder.set(e);
                         throw new RuntimeException(e);
                     }
                 });
@@ -117,15 +127,22 @@ public class ConcurrentTransactionsTest extends AbstractTestRealmKeycloakTest {
                         // Wait until transaction in both threads started
                         transactionsCounter.countDown();
                         logger.info("transaction2 started");
-                        transactionsCounter.await();
+                        if (!transactionsCounter.await(LATCH_TIMEOUT_MS, TimeUnit.MILLISECONDS)) {
+                            throw new IllegalStateException("Timeout when waiting for transactionsCounter latch in thread2");
+                        }
 
-                        readLatch.await();
+                        // Wait until reader thread reads the client
+                        if (!readLatch.await(LATCH_TIMEOUT_MS, TimeUnit.MILLISECONDS)) {
+                            throw new IllegalStateException("Timeout when waiting for readLatch");
+                        }
+
                         logger.info("transaction2: Going to update client secret");
 
                         RealmModel realm12 = currentSession.realms().getRealmByName("original");
                         ClientModel client12 = currentSession.realms().getClientByClientId("client", realm12);
                         client12.setSecret("new");
                     } catch (Exception e) {
+                        exceptionHolder.set(e);
                         throw new RuntimeException(e);
                     }
                 });
@@ -141,6 +158,10 @@ public class ConcurrentTransactionsTest extends AbstractTestRealmKeycloakTest {
                 thread2.join();
             } catch (InterruptedException e) {
                 e.printStackTrace();
+            }
+
+            if (exceptionHolder.get() != null) {
+                Assert.fail("Some thread thrown an exception. See the log for the details");
             }
 
             logger.info("after thread join");
