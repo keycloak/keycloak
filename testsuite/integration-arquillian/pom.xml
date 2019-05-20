@@ -82,6 +82,7 @@
         <docker.database.skip>true</docker.database.skip>
         <docker.database.postStart>/bin/true</docker.database.postStart>
         <docker.database.wait-for-log-regex>NEVER-MATCHING-REGEX</docker.database.wait-for-log-regex>
+        <docker.database.cmd>NEVER-USED-CMD</docker.database.cmd>
         <docker.database.shmsize>67108864</docker.database.shmsize>
 
         <jdbc.mvn.groupId>com.h2database</jdbc.mvn.groupId>
@@ -412,6 +413,7 @@
                 <docker.database.image>mysql:5.7.25</docker.database.image>
                 <docker.database.port>3306</docker.database.port>
                 <docker.database.skip>false</docker.database.skip>
+                <docker.database.cmd>mysqld</docker.database.cmd>
                 <docker.database.wait-for-log-regex>(?si)Ready for start up.*ready [^\n]{0,30}connections</docker.database.wait-for-log-regex>
             </properties>
         </profile>
@@ -439,6 +441,7 @@
                 <docker.database.image>postgres:9.6.11</docker.database.image>
                 <docker.database.port>5432</docker.database.port>
                 <docker.database.skip>false</docker.database.skip>
+                <docker.database.cmd>postgres</docker.database.cmd>
                 <docker.database.wait-for-log-regex>(?si)Ready for start up.*ready [^\n]{0,30}connections</docker.database.wait-for-log-regex>
             </properties>
         </profile>
@@ -463,9 +466,11 @@
                 <jdbc.mvn.groupId>org.mariadb.jdbc</jdbc.mvn.groupId>
                 <jdbc.mvn.artifactId>mariadb-java-client</jdbc.mvn.artifactId>
                 <jdbc.mvn.version>${mariadb.version}</jdbc.mvn.version>
-                <docker.database.image>mariadb:10.2.21</docker.database.image>
+                <docker.database.image>mariadb:10.1.19</docker.database.image>
                 <docker.database.port>3306</docker.database.port>
                 <docker.database.skip>false</docker.database.skip>
+                <!-- Need to explicitly enable utf8 as it is not the default settings in the mariadb docker image -->
+                <docker.database.cmd>--character-set-server=utf8 --collation-server=utf8_unicode_ci</docker.database.cmd>
                 <docker.database.wait-for-log-regex>(?si)Ready for start up.*ready [^\n]{0,30}connections</docker.database.wait-for-log-regex>
             </properties>
         </profile>
@@ -486,6 +491,7 @@
                 <docker.database.port>1433</docker.database.port>
                 <docker.database.skip>false</docker.database.skip>
                 <docker.database.postStart>/opt/mssql-tools/bin/sqlcmd -e -U sa -P vEry5tron9Pwd -d master -Q CREATE\ DATABASE\ ${keycloak.connectionsJpa.database}</docker.database.postStart>
+                <docker.database.cmd>/bin/sh -c /opt/mssql/bin/sqlservr</docker.database.cmd>
                 <docker.database.wait-for-log-regex>(?si)SQL Server is now ready for client connections.*Service Broker manager has started</docker.database.wait-for-log-regex>
                 <keycloak.connectionsJpa.driver>com.microsoft.sqlserver.jdbc.SQLServerDriver</keycloak.connectionsJpa.driver>
                 <keycloak.connectionsJpa.database>keycloak</keycloak.connectionsJpa.database>
@@ -514,6 +520,7 @@
                 <docker.database.port>1521</docker.database.port>
                 <docker.database.shmsize>1073741824</docker.database.shmsize>
                 <docker.database.skip>false</docker.database.skip>
+                <docker.database.cmd>/bin/sh -c exec\ $ORACLE_BASE/$RUN_FILE</docker.database.cmd>
                 <docker.database.wait-for-log-regex>(?si)DATABASE IS READY TO USE</docker.database.wait-for-log-regex>
                 <keycloak.connectionsJpa.driver>oracle.jdbc.OracleDriver</keycloak.connectionsJpa.driver>
                 <keycloak.connectionsJpa.database>XE</keycloak.connectionsJpa.database>

@@ -17,6 +17,7 @@ echo ** Updating connection properties **
 /subsystem=datasources/data-source=KeycloakDS/:write-attribute(name=min-pool-size,value="10")
 /subsystem=datasources/data-source=KeycloakDS/:write-attribute(name=max-pool-size,value="50")
 /subsystem=datasources/data-source=KeycloakDS/:write-attribute(name=pool-prefill,value="true")
+/subsystem=datasources/data-source=KeycloakDS/:write-attribute(name=idle-timeout-minutes,value="5")
 
 echo *** Adding dialect logger ***
 /subsystem=logging/logger=org.hibernate.dialect:add(level=${org.hibernate.dialect.Dialect:ALL})
