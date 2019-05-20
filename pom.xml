@@ -987,22 +987,12 @@
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-tomcat6-adapter</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-saml-servlet-filter-adapter</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-servlet-filter-adapter</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-saml-tomcat6-adapter</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -1282,12 +1272,6 @@
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-tomcat6-adapter-dist</artifactId>
-                <version>${project.version}</version>
-                <type>zip</type>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-tomcat7-adapter-dist</artifactId>
                 <version>${project.version}</version>
                 <type>zip</type>
@@ -1343,12 +1327,6 @@
             <dependency>
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-adapter-feature-pack</artifactId>
-                <version>${project.version}</version>
-                <type>zip</type>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-saml-tomcat6-adapter-dist</artifactId>
                 <version>${project.version}</version>
                 <type>zip</type>
             </dependency>

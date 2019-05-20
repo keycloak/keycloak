@@ -44,7 +44,6 @@
                 </property>
             </activation>
             <modules>
-                <module>tomcat6</module>
                 <module>tomcat7</module>
             </modules>
         </profile>
