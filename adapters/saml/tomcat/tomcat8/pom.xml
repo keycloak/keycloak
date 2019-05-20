@@ -31,8 +31,6 @@
     <properties>
         <maven.compiler.target>1.7</maven.compiler.target>
         <maven.compiler.source>1.7</maven.compiler.source>
-
-        <tomcat.version>${tomcat8.version}</tomcat.version>
     </properties>
     <description />
 
@@ -44,13 +42,13 @@
         <dependency>
             <groupId>org.apache.tomcat</groupId>
             <artifactId>tomcat-servlet-api</artifactId>
-            <version>${tomcat.version}</version>
+            <version>${tomcat8.version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.tomcat</groupId>
             <artifactId>tomcat-catalina</artifactId>
-            <version>${tomcat.version}</version>
+            <version>${tomcat8.version}</version>
             <scope>provided</scope>
         </dependency>
 
