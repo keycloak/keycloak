@@ -458,7 +458,7 @@ public class SamlService extends AuthorizationEndpointBase {
             builder.logoutRequestID(logoutRequest.getID());
             builder.destination(logoutBindingUri);
             builder.issuer(RealmsResource.realmBaseUrl(session.getContext().getUri()).build(realm.getName()).toString());
-            JaxrsSAML2BindingBuilder binding = new JaxrsSAML2BindingBuilder().relayState(logoutRelayState);
+            JaxrsSAML2BindingBuilder binding = new JaxrsSAML2BindingBuilder(session).relayState(logoutRelayState);
             boolean postBinding = SamlProtocol.SAML_POST_BINDING.equals(logoutBinding);
             if (samlClient.requiresRealmSignature()) {
                 SignatureAlgorithm algorithm = samlClient.getSignatureAlgorithm();
