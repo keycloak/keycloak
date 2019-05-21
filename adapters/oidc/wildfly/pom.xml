@@ -34,18 +34,4 @@
         <module>wildfly-adapter</module>
         <module>wildfly-subsystem</module>
     </modules>
-
-    <profiles>
-        <profile>
-            <id>community</id>
-            <activation>
-                <property>
-                    <name>!product</name>
-                </property>
-            </activation>
-            <modules>
-                <module>wf8-subsystem</module>
-            </modules>
-        </profile>
-    </profiles>
 </project>
