@@ -13,7 +13,6 @@
     keycloak-js-adapter-dist
     keycloak-tomcat7-adapter-dist
     keycloak-tomcat8-adapter-dist
-    keycloak-wf8-adapter-dist
     keycloak-wildfly-adapter-dist
     keycloak-fuse-adapter-dist
 

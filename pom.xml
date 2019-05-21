@@ -73,7 +73,6 @@
         <javax.mail.version>1.6.2</javax.mail.version>
         <jboss.logging.version>3.3.2.Final</jboss.logging.version>
         <jboss.logging.tools.version>2.1.0.Final</jboss.logging.tools.version>
-        <jboss.logging.tools.wf8.version>1.2.0.Final</jboss.logging.tools.wf8.version>
         <jboss-jaxrs-api_2.1_spec>1.0.2.Final</jboss-jaxrs-api_2.1_spec>
         <jboss-transaction-api_1.2_spec>1.1.1.Final</jboss-transaction-api_1.2_spec>
         <jboss.spec.javax.xml.bind.jboss-jaxb-api_2.3_spec.version>1.0.1.Final</jboss.spec.javax.xml.bind.jboss-jaxb-api_2.3_spec.version>
@@ -927,11 +926,6 @@
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-wf8-subsystem</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-wildfly-subsystem</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -1189,12 +1183,6 @@
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-wf8-modules</artifactId>
-                <version>${project.version}</version>
-                <type>zip</type>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-wildfly-modules</artifactId>
                 <version>${project.version}</version>
                 <type>zip</type>
@@ -1261,12 +1249,6 @@
             <dependency>
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-examples-dist</artifactId>
-                <version>${project.version}</version>
-                <type>zip</type>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-wf8-adapter-dist</artifactId>
                 <version>${project.version}</version>
                 <type>zip</type>
             </dependency>
