@@ -1324,15 +1324,19 @@
                         return promise.promise;
                     },
 
-                    register : function() {
+                    register : function(options) {
+                        var promise = createPromise(false);
                         var registerUrl = kc.createRegisterUrl();
                         var cordovaOptions = createCordovaOptions(options);
                         var ref = cordovaOpenWindowWrapper(registerUrl, '_blank', cordovaOptions);
                         ref.addEventListener('loadstart', function(event) {
                             if (event.url.indexOf('http://localhost') == 0) {
                                 ref.close();
+                                var oauth = parseCallback(event.url);
+                                processCallback(oauth, promise);
                             }
                         });
+                        return promise.promise;
                     },
 
                     accountManagement : function() {
