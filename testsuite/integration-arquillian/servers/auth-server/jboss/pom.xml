@@ -242,7 +242,12 @@
                                 </goals>
                                 <configuration>
                                     <target>
-                                        <ant antfile="${common.resources}/ant/configure.xml" target="apply-cli-scripts" />
+                                        <ant antfile="${common.resources}/ant/configure.xml" target="apply-cli-scripts">
+                                            <!-- See the comment above. In this case "auth.server.home" can contain
+                                                 "product.unpacked.folder.name" which is set at runtime and therefore
+                                                  not resolved. -->
+                                            <property name="auth.server.home">${auth.server.home}</property>
+                                        </ant>
                                     </target>
                                 </configuration>
                             </execution>
