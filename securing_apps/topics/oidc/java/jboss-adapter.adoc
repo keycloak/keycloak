@@ -40,14 +40,6 @@ $ cd $WILDFLY_HOME
 $ unzip keycloak-wildfly-adapter-dist-{project_version}.zip
 ----
 
-Install on WildFly 8:
-
-[source, subs="attributes"]
-----
-$ cd $WILDFLY_HOME
-$ unzip keycloak-wf8-adapter-dist-{project_version}.zip
-----
-
 Install on JBoss EAP 7:
 
 [source, subs="attributes"]
