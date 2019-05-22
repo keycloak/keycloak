@@ -38,7 +38,7 @@ curl -X POST \
   --data "ticket=${permission_ticket}
 ```
 
-If ${project_name} assessment process results in issuance of permissions, it issues the RPT with which it has associated
+If {project_name} assessment process results in issuance of permissions, it issues the RPT with which it has associated
 the permissions:
 
 .{project_name} responds to the client with the RPT
