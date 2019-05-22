@@ -18,7 +18,7 @@ This parameter is *optional*. The most recent permission ticket received by the 
 * **claim_token**
 +
 This parameter is *optional*. A string representing additional claims that should be considered by the server when evaluating
-permissions for the resource(s) and scope(s) being requested. This parameter allow clients to push claims to {project_name}. For more details about all supported token formats see `claim_token_format` parameter.
+permissions for the resource(s) and scope(s) being requested. This parameter allows clients to push claims to {project_name}. For more details about all supported token formats see `claim_token_format` parameter.
 +
 * **claim_token_format**
 +
@@ -45,7 +45,7 @@ in case the `permission` parameter is defined. It serves as a hint to {project_n
 +
 * **response_include_resource_name**
 +
-This parameter is *optional*. A boolean value indicating to the server whether resource names should be included in the RPT's permissions. if false, only the resource
+This parameter is *optional*. A boolean value indicating to the server whether resource names should be included in the RPT's permissions. If false, only the resource
 identifier is included.
 +
 * **response_permissions_limit**
@@ -61,7 +61,7 @@ This parameter only have effect if used together with the `ticket` parameter as 
 * **response_mode**
 +
 This parameter is *optional*. A string value indicating how the server should respond to authorization requests. This parameter is specially useful when
-you are mainly interested in either the overall decision or the permissions granted by the server, instead of an standard OAuth2 response. Possible values are:
+you are mainly interested in either the overall decision or the permissions granted by the server, instead of a standard OAuth2 response. Possible values are:
 +
 *** `decision`
 +
@@ -125,7 +125,7 @@ curl -X POST \
   --data "ticket=${permission_ticket}
 ```
 
-If ${project_name} assessment process results in issuance of permissions, it issues the RPT with which it has associated
+If {project_name} assessment process results in issuance of permissions, it issues the RPT with which it has associated
 the permissions:
 
 .{project_name} responds to the client with the RPT
