@@ -34,13 +34,8 @@
         <assembly.xml>${project.parent.basedir}/assembly.xml</assembly.xml>
         <app.server.tomcat.home>${containers.home}/${app.server.tomcat.unpacked.folder.name}</app.server.tomcat.home>
         <tomcat.resteasy.version>${resteasy.version}</tomcat.resteasy.version>
-        <skip.dependencies.for.tomcat7>true</skip.dependencies.for.tomcat7>
-        <skip.dependencies.for.tomcat8>true</skip.dependencies.for.tomcat8>
+        <skip.dependencies.for.tomcat>false</skip.dependencies.for.tomcat>
 
-        <tomcat.scannotation.version>1.0.3</tomcat.scannotation.version>
-        <tomcat.javassist.version>3.18.2-GA</tomcat.javassist.version>
-        <tomcat.javaee-api.version>7.0</tomcat.javaee-api.version>
-        <tomcat.org.glassfish.web.el-impl.version>2.2</tomcat.org.glassfish.web.el-impl.version>
         <tomcat.reactive-streams.version>1.0.2</tomcat.reactive-streams.version>
         <tomcat.javax.json.bind-api.version>1.0</tomcat.javax.json.bind-api.version>
         <tomcat.validation-api.version>1.0.0.GA</tomcat.validation-api.version>
@@ -110,53 +105,13 @@
                                 </configuration>
                             </execution>
                             <execution>
-                                <id>libs-for-tomcat-7</id>
-                                <phase>generate-test-resources</phase>
-                                <goals>
-                                    <goal>copy</goal>
-                                </goals>
-                                <configuration>
-                                    <skip>${skip.dependencies.for.tomcat7}</skip>
-                                    <artifactItems>
-                                        <artifactItem>
-                                            <groupId>org.jboss.resteasy</groupId>
-                                            <artifactId>resteasy-jaxrs</artifactId>
-                                            <version>${tomcat.resteasy.version}</version>
-                                        </artifactItem>
-                                        <artifactItem>
-                                            <groupId>org.scannotation</groupId>
-                                            <artifactId>scannotation</artifactId>
-                                            <version>${tomcat.scannotation.version}</version>
-                                        </artifactItem>
-                                        <artifactItem>
-                                            <groupId>org.javassist</groupId>
-                                            <artifactId>javassist</artifactId>
-                                            <version>${tomcat.javassist.version}</version>
-                                        </artifactItem>
-                                        <artifactItem>
-                                            <groupId>javax</groupId>
-                                            <artifactId>javaee-api</artifactId>
-                                            <version>${tomcat.javaee-api.version}</version>
-                                        </artifactItem>
-                                        <artifactItem>
-                                            <!-- JSP compilation failed without this -->
-                                            <groupId>org.glassfish.web</groupId>
-                                            <artifactId>el-impl</artifactId>
-                                            <version>${tomcat.org.glassfish.web.el-impl.version}</version>
-                                        </artifactItem>
-                                    </artifactItems>
-                                    <outputDirectory>${app.server.tomcat.home}/lib</outputDirectory>
-                                    <overWriteIfNewer>true</overWriteIfNewer>
-                                </configuration>
-                            </execution>
-                            <execution>
                                 <id>libs-for-tomcat-8-and-9</id>
                                 <phase>generate-test-resources</phase>
                                 <goals>
                                     <goal>copy</goal>
                                 </goals>
                                 <configuration>
-                                    <skip>${skip.dependencies.for.tomcat8}</skip>
+                                    <skip>${skip.dependencies.for.tomcat}</skip>
                                     <artifactItems>
                                         <artifactItem>
                                             <groupId>org.jboss.spec.javax.ws.rs</groupId>

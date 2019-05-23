@@ -39,9 +39,14 @@
         <app.server.oidc.adapter.artifactId>keycloak-tomcat7-adapter-dist</app.server.oidc.adapter.artifactId>
         <app.server.saml.adapter.artifactId>keycloak-saml-tomcat7-adapter-dist</app.server.saml.adapter.artifactId>
 
+        <skip.dependencies.for.tomcat>true</skip.dependencies.for.tomcat>
+
         <!-- newer resteasy-jaxrs is not compatible with annotation-api which is provided by Tomcat7 -->
         <tomcat.resteasy.version>2.3.1.GA</tomcat.resteasy.version>
-        <skip.dependencies.for.tomcat7>false</skip.dependencies.for.tomcat7>
+        <tomcat.scannotation.version>1.0.3</tomcat.scannotation.version>
+        <tomcat.javassist.version>3.18.2-GA</tomcat.javassist.version>
+        <tomcat.javaee-api.version>7.0</tomcat.javaee-api.version>
+        <tomcat.org.glassfish.web.el-impl.version>2.2</tomcat.org.glassfish.web.el-impl.version>
     </properties>
 
     <dependencies>
@@ -56,4 +61,53 @@
             <version>${arquillian-tomcat7-container-version}</version>
         </dependency>
     </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>libs-for-tomcat-7</id>
+                        <phase>generate-test-resources</phase>
+                        <goals>
+                            <goal>copy</goal>
+                        </goals>
+                        <configuration>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>org.jboss.resteasy</groupId>
+                                    <artifactId>resteasy-jaxrs</artifactId>
+                                    <version>${tomcat.resteasy.version}</version>
+                                </artifactItem>
+                                <artifactItem>
+                                    <groupId>org.scannotation</groupId>
+                                    <artifactId>scannotation</artifactId>
+                                    <version>${tomcat.scannotation.version}</version>
+                                </artifactItem>
+                                <artifactItem>
+                                    <groupId>org.javassist</groupId>
+                                    <artifactId>javassist</artifactId>
+                                    <version>${tomcat.javassist.version}</version>
+                                </artifactItem>
+                                <artifactItem>
+                                    <groupId>javax</groupId>
+                                    <artifactId>javaee-api</artifactId>
+                                    <version>${tomcat.javaee-api.version}</version>
+                                </artifactItem>
+                                <artifactItem>
+                                    <!-- JSP compilation failed without this -->
+                                    <groupId>org.glassfish.web</groupId>
+                                    <artifactId>el-impl</artifactId>
+                                    <version>${tomcat.org.glassfish.web.el-impl.version}</version>
+                                </artifactItem>
+                            </artifactItems>
+                            <outputDirectory>${app.server.tomcat.home}/lib</outputDirectory>
+                            <overWriteIfNewer>true</overWriteIfNewer>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 </project>

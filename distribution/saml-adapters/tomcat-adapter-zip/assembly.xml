@@ -30,7 +30,7 @@
             <useTransitiveDependencies>true</useTransitiveDependencies>
             <useTransitiveFiltering>true</useTransitiveFiltering>
             <includes>
-                <include>org.keycloak:keycloak-tomcat8-adapter</include>
+                <include>org.keycloak:keycloak-saml-tomcat-adapter</include>
             </includes>
             <excludes>
                 <exclude>org.apache.tomcat:tomcat-servlet-api</exclude>

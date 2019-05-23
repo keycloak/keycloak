@@ -25,15 +25,15 @@
         <relativePath>../../../pom.xml</relativePath>
     </parent>
 
-    <artifactId>keycloak-saml-tomcat8-adapter-dist</artifactId>
+    <artifactId>keycloak-tomcat-adapter-dist</artifactId>
     <packaging>pom</packaging>
-    <name>Keycloak SAML Tomcat 8 Adapter Distro</name>
+    <name>Keycloak Tomcat Adapter Distro</name>
     <description/>
 
     <dependencies>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-saml-tomcat8-adapter</artifactId>
+            <artifactId>keycloak-tomcat-adapter</artifactId>
         </dependency>
     </dependencies>
     <build>
