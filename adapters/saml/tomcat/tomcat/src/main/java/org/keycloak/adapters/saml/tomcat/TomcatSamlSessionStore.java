@@ -32,8 +32,8 @@ import org.keycloak.adapters.tomcat.GenericPrincipalFactory;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class Tomcat8SamlSessionStore extends CatalinaSamlSessionStore {
-    public Tomcat8SamlSessionStore(CatalinaUserSessionManagement sessionManagement, GenericPrincipalFactory principalFactory, SessionIdMapper idMapper, Request request, AbstractSamlAuthenticatorValve valve, HttpFacade facade, SamlDeployment deployment) {
+public class TomcatSamlSessionStore extends CatalinaSamlSessionStore {
+    public TomcatSamlSessionStore(CatalinaUserSessionManagement sessionManagement, GenericPrincipalFactory principalFactory, SessionIdMapper idMapper, Request request, AbstractSamlAuthenticatorValve valve, HttpFacade facade, SamlDeployment deployment) {
         super(sessionManagement, principalFactory, idMapper, SessionIdMapperUpdater.DIRECT, request, valve, facade, deployment);
     }
 

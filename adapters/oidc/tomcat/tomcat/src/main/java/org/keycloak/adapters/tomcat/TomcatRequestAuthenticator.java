@@ -27,8 +27,8 @@ import javax.servlet.http.HttpSession;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class Tomcat8RequestAuthenticator extends CatalinaRequestAuthenticator {
-    public Tomcat8RequestAuthenticator(KeycloakDeployment deployment, AdapterTokenStore tokenStore, CatalinaHttpFacade facade, Request request, GenericPrincipalFactory principalFactory) {
+public class TomcatRequestAuthenticator extends CatalinaRequestAuthenticator {
+    public TomcatRequestAuthenticator(KeycloakDeployment deployment, AdapterTokenStore tokenStore, CatalinaHttpFacade facade, Request request, GenericPrincipalFactory principalFactory) {
         super(deployment, tokenStore, facade, request, principalFactory);
     }
 

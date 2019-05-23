@@ -26,8 +26,8 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>keycloak-saml-tomcat8-adapter</artifactId>
-    <name>Keycloak Tomcat 8 SAML Integration</name>
+    <artifactId>keycloak-saml-tomcat-adapter</artifactId>
+    <name>Keycloak Tomcat SAML Integration</name>
     <properties>
         <maven.compiler.target>1.7</maven.compiler.target>
         <maven.compiler.source>1.7</maven.compiler.source>

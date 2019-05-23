@@ -44,6 +44,7 @@ public class SamlAuthenticatorValve extends AbstractSamlAuthenticatorValve {
     /**
      * Method called by Tomcat &lt; 8.5.5
      */
+    @Override
     public boolean authenticate(Request request, HttpServletResponse response) throws IOException {
        return authenticateInternal(request, response, request.getContext().getLoginConfig());
     }
@@ -51,6 +52,7 @@ public class SamlAuthenticatorValve extends AbstractSamlAuthenticatorValve {
     /**
      * Method called by Tomcat &gt;= 8.5.5
      */
+    @Override
     protected boolean doAuthenticate(Request request, HttpServletResponse response) throws IOException {
        return this.authenticate(request, response);
     }
@@ -62,16 +64,7 @@ public class SamlAuthenticatorValve extends AbstractSamlAuthenticatorValve {
         if (config.getErrorPage() == null) return false;
         // had to do this to get around compiler/IDE issues :(
         try {
-            Method method = null;
-            /*
-            for (Method m : getClass().getDeclaredMethods()) {
-                if (m.getName().equals("forwardToErrorPage")) {
-                    method = m;
-                    break;
-                }
-            }
-            */
-            method = FormAuthenticator.class.getDeclaredMethod("forwardToErrorPage", Request.class, HttpServletResponse.class, LoginConfig.class);
+            Method method = FormAuthenticator.class.getDeclaredMethod("forwardToErrorPage", Request.class, HttpServletResponse.class, LoginConfig.class);
             method.setAccessible(true);
             method.invoke(this, request, response, config);
         } catch (Exception e) {
@@ -80,11 +73,13 @@ public class SamlAuthenticatorValve extends AbstractSamlAuthenticatorValve {
         return true;
     }
 
+    @Override
     protected void initInternal() {
         StandardContext standardContext = (StandardContext) context;
         standardContext.addLifecycleListener(this);
     }
 
+    @Override
     public void logout(Request request) {
         logoutInternal(request);
     }
@@ -102,7 +97,7 @@ public class SamlAuthenticatorValve extends AbstractSamlAuthenticatorValve {
     @Override
     protected SamlSessionStore createSessionStore(Request request, HttpFacade facade, SamlDeployment resolvedDeployment) {
         SamlSessionStore store;
-        store = new Tomcat8SamlSessionStore(userSessionManagement, createPrincipalFactory(), mapper, request, this, facade, resolvedDeployment);
+        store = new TomcatSamlSessionStore(userSessionManagement, createPrincipalFactory(), mapper, request, this, facade, resolvedDeployment);
         return store;
     }
 

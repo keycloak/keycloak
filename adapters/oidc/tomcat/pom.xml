@@ -32,7 +32,7 @@
 
     <modules>
         <module>tomcat-core</module>
-        <module>tomcat8</module>
+        <module>tomcat</module>
     </modules>
 
     <profiles>

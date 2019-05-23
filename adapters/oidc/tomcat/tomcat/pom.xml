@@ -26,8 +26,8 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>keycloak-tomcat8-adapter</artifactId>
-    <name>Keycloak Tomcat 8 Integration</name>
+    <artifactId>keycloak-tomcat-adapter</artifactId>
+    <name>Keycloak Tomcat Integration</name>
     <properties>
         <maven.compiler.target>1.7</maven.compiler.target>
         <maven.compiler.source>1.7</maven.compiler.source>
