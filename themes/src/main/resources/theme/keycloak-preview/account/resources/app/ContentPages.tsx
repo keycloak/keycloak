@@ -15,9 +15,10 @@
  */
 
 import * as React from 'react';
-import {Route} from 'react-router-dom';
+import {Route, Switch} from 'react-router-dom';
 import {NavItem, NavExpandable} from '@patternfly/react-core';
 import {Msg} from './widgets/Msg';
+import {PageNotFound} from './content/page-not-found/PageNotFound';
 
 export interface ContentItem {
     label: string;
@@ -152,12 +153,15 @@ export function makeRoutes(): React.ReactNode {
 
     const routes: React.ReactElement<Route>[] = pageDefs.map((page: PageDef) => {
         if (isModulePageDef(page)) {
-            return <Route key={page.itemId} path={'/app/' + page.path} component={page.module[page.componentName]}/>;
+            return <Route key={page.itemId} path={'/app/' + page.path} exact component={page.module[page.componentName]}/>;
         } else {
             const pageDef: ComponentPageDef = page as ComponentPageDef;
-            return <Route key={page.itemId} path={'/app/' + page.path} component={pageDef.component}/>;
+            return <Route key={page.itemId} path={'/app/' + page.path} exact component={pageDef.component}/>;
         }
     });
 
-    return (<React.Fragment>{routes}</React.Fragment>);
+    return (<Switch>
+                {routes}
+                <Route component={PageNotFound}/>
+            </Switch>);
 }
