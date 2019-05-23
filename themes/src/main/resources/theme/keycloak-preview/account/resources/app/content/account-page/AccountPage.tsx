@@ -87,7 +87,7 @@ export class AccountPage extends React.Component<AccountPageProps, AccountPageSt
         if (!this.requiredFieldsHaveData()) return;
         const reqData: FormFields = {...this.state.formFields};
         AccountServiceClient.Instance.doPost("/", {data: reqData})
-            .then((response: AxiosResponse<FormFields>) => {
+            .then(() => { // to use response, say ((response: AxiosResponse<FormFields>) => {
                 this.setState({canSubmit: false});
                 ContentAlert.success('accountUpdatedMessage');
             });

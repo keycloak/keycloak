@@ -39,28 +39,28 @@ export class ContentAlert extends React.Component<ContentAlertProps, ContentAler
     /**
      * @param message A literal text message or localization key.
      */
-    public static success(message: string) {
+    public static success(message: string): void {
         ContentAlert.instance.postAlert(message, 'success');
     }
     
     /**
      * @param message A literal text message or localization key.
      */
-    public static danger(message: string) {
+    public static danger(message: string): void {
         ContentAlert.instance.postAlert(message, 'danger');
     }
     
     /**
      * @param message A literal text message or localization key.
      */
-    public static warning(message: string) {
+    public static warning(message: string): void {
         ContentAlert.instance.postAlert(message, 'warning');
     }
     
     /**
      * @param message A literal text message or localization key.
      */
-    public static info(message: string) {
+    public static info(message: string): void {
         ContentAlert.instance.postAlert(message, 'info');
     }
     
