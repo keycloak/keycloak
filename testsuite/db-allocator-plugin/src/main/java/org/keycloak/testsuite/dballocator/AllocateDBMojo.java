@@ -10,6 +10,7 @@ import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 import org.keycloak.testsuite.dballocator.client.data.AllocationResult;
 import org.keycloak.testsuite.dballocator.client.DBAllocatorServiceClient;
+import org.keycloak.testsuite.dballocator.client.data.EraseResult;
 import org.keycloak.testsuite.dballocator.client.exceptions.DBAllocatorException;
 import org.keycloak.testsuite.dballocator.client.retry.IncrementalBackoffRetryPolicy;
 
@@ -145,6 +146,12 @@ public class AllocateDBMojo extends AbstractMojo {
                 logger.info("-- User: " + allocate.getUser());
                 logger.info("-- Password: " + allocate.getPassword());
                 logger.info("-- URL: " + allocate.getURL());
+            }
+
+            EraseResult eraseResult = client.erase(allocate);
+            if (printSummary) {
+                logger.info("Erased database:");
+                logger.info("-- UUID: " + eraseResult.getUUID());
             }
 
         } catch (DBAllocatorException e) {
