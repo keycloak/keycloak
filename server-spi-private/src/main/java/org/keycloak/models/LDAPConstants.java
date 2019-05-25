@@ -82,7 +82,7 @@ public class LDAPConstants {
     // Custom user search filter
     public static final String CUSTOM_USER_SEARCH_FILTER = "customUserSearchFilter";
 
-    public static final String TLS = "tls";
+    public static final String START_TLS = "startTls";
 
     // Custom attributes on UserModel, which is mapped to LDAP
     public static final String LDAP_ID = "LDAP_ID";
