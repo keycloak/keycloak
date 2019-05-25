@@ -39,7 +39,14 @@ import javax.naming.directory.DirContext;
 import javax.naming.directory.ModificationItem;
 import javax.naming.directory.SearchControls;
 import javax.naming.directory.SearchResult;
-import javax.naming.ldap.*;
+import javax.naming.ldap.Control;
+import javax.naming.ldap.InitialLdapContext;
+import javax.naming.ldap.LdapContext;
+import javax.naming.ldap.LdapName;
+import javax.naming.ldap.PagedResultsControl;
+import javax.naming.ldap.PagedResultsResponseControl;
+import javax.naming.ldap.StartTlsRequest;
+import javax.naming.ldap.StartTlsResponse;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -497,7 +504,7 @@ public class LDAPOperationManager {
             // Never use connection pool to prevent password caching
             env.put("com.sun.jndi.ldap.connect.pool", "false");
 
-            if(!this.config.isTls()) {
+            if(!this.config.isStartTls()) {
                 env.put(Context.SECURITY_AUTHENTICATION, this.config.getAuthType());
                 env.put(Context.SECURITY_PRINCIPAL, dn);
                 env.put(Context.SECURITY_CREDENTIALS, password);
@@ -527,7 +534,7 @@ public class LDAPOperationManager {
     }
 
     private void startTLS(LdapContext ldapContext, String authType, String bindDN, String bindCredentials) throws NamingException {
-        if(this.config.isTls()) {
+        if(this.config.isStartTls()) {
             try {
                 StartTlsResponse tls = (StartTlsResponse) ldapContext.extendedOperation(new StartTlsRequest());
                 tls.negotiate();
@@ -675,7 +682,7 @@ public class LDAPOperationManager {
     }
 
     private LdapContext createLdapContext() throws NamingException {
-        if(!config.isTls()) {
+        if(!config.isStartTls()) {
             return new InitialLdapContext(new Hashtable<Object, Object>(this.connectionProperties), null);
         } else {
             LdapContext ldapContext = new InitialLdapContext(new Hashtable<Object, Object>(this.connectionProperties), null);
@@ -689,7 +696,7 @@ public class LDAPOperationManager {
 
         env.put(Context.INITIAL_CONTEXT_FACTORY, this.config.getFactoryName());
 
-        if(!this.config.isTls()) {
+        if(!this.config.isStartTls()) {
             String authType = this.config.getAuthType();
 
             env.put(Context.SECURITY_AUTHENTICATION, authType);
