@@ -39,6 +39,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -476,6 +477,64 @@ public class PolicyEnforcerTest extends AbstractKeycloakTest {
 
         context = policyEnforcer.enforce(httpFacade);
         assertTrue(context.isGranted());
+    }
+
+    @Test
+    public void testLazyLoadPaths() {
+        ClientResource clientResource = getClientResource(RESOURCE_SERVER_CLIENT_ID);
+
+        for (int i = 0; i < 200; i++) {
+            ResourceRepresentation representation = new ResourceRepresentation();
+
+            representation.setType("test");
+            representation.setName("Resource " + i);
+            representation.setUri("/api/" + i);
+
+            javax.ws.rs.core.Response response = clientResource.authorization().resources().create(representation);
+
+            representation.setId(response.readEntity(ResourceRepresentation.class).getId());
+
+            response.close();
+        }
+
+        ResourcePermissionRepresentation permission = new ResourcePermissionRepresentation();
+
+        permission.setName("Test Permission");
+        permission.setResourceType("test");
+        permission.addPolicy("Only User Policy");
+
+        PermissionsResource permissions = clientResource.authorization().permissions();
+        permissions.resource().create(permission).close();
+
+        KeycloakDeployment deployment = KeycloakDeploymentBuilder.build(getAdapterConfiguration("enforcer-no-lazyload.json"));
+        PolicyEnforcer policyEnforcer = deployment.getPolicyEnforcer();
+
+        assertEquals(203, policyEnforcer.getPaths().size());
+
+        deployment = KeycloakDeploymentBuilder.build(getAdapterConfiguration("enforcer-lazyload.json"));
+        policyEnforcer = deployment.getPolicyEnforcer();
+        assertEquals(0, policyEnforcer.getPathMatcher().getPathCache().size());
+        assertEquals(0, policyEnforcer.getPaths().size());
+
+        oauth.realm(REALM_NAME);
+        oauth.clientId("public-client-test");
+        oauth.doLogin("marta", "password");
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, null);
+        String token = response.getAccessToken();
+
+        for (int i = 0; i < 101; i++) {
+            policyEnforcer.enforce(createHttpFacade("/api/" + i, token));
+        }
+
+        assertEquals(101, policyEnforcer.getPathMatcher().getPathCache().size());
+
+        for (int i = 101; i < 200; i++) {
+            policyEnforcer.enforce(createHttpFacade("/api/" + i, token));
+        }
+
+        assertEquals(200, policyEnforcer.getPathMatcher().getPathCache().size());
+        assertEquals(0, policyEnforcer.getPaths().size());
     }
 
     private void initAuthorizationSettings(ClientResource clientResource) {
