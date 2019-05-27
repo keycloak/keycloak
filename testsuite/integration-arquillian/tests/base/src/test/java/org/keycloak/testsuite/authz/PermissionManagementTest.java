@@ -24,6 +24,7 @@ import static org.junit.Assert.fail;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -378,5 +379,39 @@ public class PermissionManagementTest extends AbstractResourceServerTest {
             assertEquals(400, HttpResponseException.class.cast(cause.getCause()).getStatusCode());
             assertTrue(new String((HttpResponseException.class.cast(cause.getCause()).getBytes())).contains("invalid_scope"));
         }
+    }
+
+    @Test
+    public void testGetPermissionTicketWithPagination() throws Exception {
+      String[] scopes = {"ScopeA", "ScopeB", "ScopeC", "ScopeD"};
+      ResourceRepresentation resource = addResource("Resource A", "kolo", true, scopes);
+      AuthzClient authzClient = getAuthzClient();
+      PermissionResponse response = authzClient.protection("marta", "password").permission().create(new PermissionRequest(resource.getId(), scopes));
+      AuthorizationRequest request = new AuthorizationRequest();
+      request.setTicket(response.getTicket());
+      request.setClaimToken(authzClient.obtainAccessToken("marta", "password").getToken());
+
+      try {
+        authzClient.authorization().authorize(request);
+      } catch (Exception e) {
+
+      }
+
+      // start with fetching the second half of all permission tickets
+      Collection<String> expectedScopes = new ArrayList(Arrays.asList(scopes));
+      List<PermissionTicketRepresentation> tickets = getAuthzClient().protection().permission().find(resource.getId(), null, null, null, null, true, 2, 2);
+      assertEquals("Returned number of permissions tickets must match the specified page size (i.e., 'maxResult').", 2, tickets.size());
+      boolean foundScope = expectedScopes.remove(tickets.get(0).getScopeName());
+      assertTrue("Returned set of permission tickets must be only a sub-set as per pagination offset and specified page size.", foundScope);
+      foundScope = expectedScopes.remove(tickets.get(1).getScopeName());
+      assertTrue("Returned set of permission tickets must be only a sub-set as per pagination offset and specified page size.", foundScope);
+
+      // fetch the first half of all permission tickets
+      tickets = getAuthzClient().protection().permission().find(resource.getId(), null, null, null, null, true, 0, 2);
+      assertEquals("Returned number of permissions tickets must match the specified page size (i.e., 'maxResult').", 2, tickets.size());
+      foundScope = expectedScopes.remove(tickets.get(0).getScopeName());
+      assertTrue("Returned set of permission tickets must be only a sub-set as per pagination offset and specified page size.", foundScope);
+      foundScope = expectedScopes.remove(tickets.get(1).getScopeName());
+      assertTrue("Returned set of permission tickets must be only a sub-set as per pagination offset and specified page size.", foundScope);
     }
 }

@@ -215,7 +215,7 @@ public class JPAPermissionTicketStore implements PermissionTicketStore {
             }
         });
 
-        querybuilder.where(predicates.toArray(new Predicate[predicates.size()])).orderBy(builder.asc(root.get("resource").get("id")));
+        querybuilder.where(predicates.toArray(new Predicate[predicates.size()])).orderBy(builder.asc(root.get("id")));
 
         Query query = entityManager.createQuery(querybuilder);
 

@@ -213,8 +213,8 @@ public class PermissionResource {
                         .param("requester", requester)
                         .param("granted", granted == null ? null : granted.toString())
                         .param("returnNames", returnNames == null ? null : returnNames.toString())
-                        .param("firstResult", firstResult == null ? null : firstResult.toString())
-                        .param("maxResult", maxResult == null ? null : maxResult.toString())
+                        .param("first", firstResult == null ? null : firstResult.toString())
+                        .param("max", maxResult == null ? null : maxResult.toString())
                         .response().json(new TypeReference<List<PermissionTicketRepresentation>>(){}).execute();
             }
         };
