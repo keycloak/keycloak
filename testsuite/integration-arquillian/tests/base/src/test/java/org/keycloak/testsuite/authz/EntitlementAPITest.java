@@ -51,6 +51,7 @@ import org.keycloak.admin.client.resource.AuthorizationResource;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.admin.client.resource.ResourceResource;
 import org.keycloak.authorization.client.AuthorizationDeniedException;
 import org.keycloak.authorization.client.AuthzClient;
 import org.keycloak.authorization.client.Configuration;
@@ -839,6 +840,189 @@ public class EntitlementAPITest extends AbstractAuthzTest {
             assertEquals(2, grantedPermission.getScopes().size());
             assertTrue(grantedPermission.getScopes().containsAll(Arrays.asList("scope:view", "scope:update")));
         }
+    }
+
+    @Test
+    public void testObtainAllEntitlementsForResourceType() throws Exception {
+        ClientResource client = getClient(getRealm(), RESOURCE_SERVER_TEST);
+        AuthorizationResource authorization = client.authorization();
+
+        JSPolicyRepresentation policy = new JSPolicyRepresentation();
+
+        policy.setName(KeycloakModelUtils.generateId());
+        policy.setCode("$evaluation.grant();");
+
+        authorization.policies().js().create(policy).close();
+
+        for (int i = 0; i < 10; i++) {
+            ResourceRepresentation resource = new ResourceRepresentation();
+
+            resource.setType("type-one");
+            resource.setName(KeycloakModelUtils.generateId());
+
+            authorization.resources().create(resource).close();
+        }
+
+        for (int i = 0; i < 10; i++) {
+            ResourceRepresentation resource = new ResourceRepresentation();
+
+            resource.setType("type-two");
+            resource.setName(KeycloakModelUtils.generateId());
+
+            authorization.resources().create(resource).close();
+        }
+
+        for (int i = 0; i < 10; i++) {
+            ResourceRepresentation resource = new ResourceRepresentation();
+
+            resource.setType("type-three");
+            resource.setName(KeycloakModelUtils.generateId());
+
+            authorization.resources().create(resource).close();
+        }
+
+        ResourcePermissionRepresentation permission = new ResourcePermissionRepresentation();
+
+        permission.setName(KeycloakModelUtils.generateId());
+        permission.setResourceType("type-one");
+        permission.addPolicy(policy.getName());
+
+        authorization.permissions().resource().create(permission).close();
+
+        permission = new ResourcePermissionRepresentation();
+
+        permission.setName(KeycloakModelUtils.generateId());
+        permission.setResourceType("type-two");
+        permission.addPolicy(policy.getName());
+
+        authorization.permissions().resource().create(permission).close();
+
+        permission = new ResourcePermissionRepresentation();
+
+        permission.setName(KeycloakModelUtils.generateId());
+        permission.setResourceType("type-three");
+        permission.addPolicy(policy.getName());
+
+        authorization.permissions().resource().create(permission).close();
+
+        String accessToken = new OAuthClient().realm("authz-test").clientId(RESOURCE_SERVER_TEST).doGrantAccessTokenRequest("secret", "kolo", "password").getAccessToken();
+        AuthzClient authzClient = getAuthzClient(AUTHZ_CLIENT_CONFIG);
+
+        AuthorizationRequest request = new AuthorizationRequest();
+        request.addPermission("resource-type:type-one");
+        AuthorizationResponse response = authzClient.authorization(accessToken).authorize(request);
+        assertNotNull(response.getToken());
+        Collection<Permission> permissions = toAccessToken(response.getToken()).getAuthorization().getPermissions();
+        assertEquals(10, permissions.size());
+
+        request = new AuthorizationRequest();
+        request.addPermission("resource-type:type-three");
+        response = authzClient.authorization(accessToken).authorize(request);
+        assertNotNull(response.getToken());
+        permissions = toAccessToken(response.getToken()).getAuthorization().getPermissions();
+        assertEquals(10, permissions.size());
+
+
+        for (int i = 0; i < 5; i++) {
+            ResourceRepresentation resource = new ResourceRepresentation();
+
+            resource.setOwner("kolo");
+            resource.setType("type-two");
+            resource.setName(KeycloakModelUtils.generateId());
+
+            authorization.resources().create(resource).close();
+        }
+
+        request = new AuthorizationRequest();
+        request.addPermission("resource-type-any:type-two");
+        response = authzClient.authorization(accessToken).authorize(request);
+        assertNotNull(response.getToken());
+        permissions = toAccessToken(response.getToken()).getAuthorization().getPermissions();
+        assertEquals(15, permissions.size());
+
+        request = new AuthorizationRequest();
+        request.addPermission("resource-type-owner:type-two");
+        response = authzClient.authorization(accessToken).authorize(request);
+        assertNotNull(response.getToken());
+        permissions = toAccessToken(response.getToken()).getAuthorization().getPermissions();
+        assertEquals(5, permissions.size());
+
+        request = new AuthorizationRequest();
+        request.addPermission("resource-type-instance:type-two");
+        response = authzClient.authorization(accessToken).authorize(request);
+        assertNotNull(response.getToken());
+        permissions = toAccessToken(response.getToken()).getAuthorization().getPermissions();
+        assertEquals(5, permissions.size());
+
+        Permission next = permissions.iterator().next();
+
+        ResourceResource resourceMgmt = client.authorization().resources().resource(next.getResourceId());
+        ResourceRepresentation representation = resourceMgmt.toRepresentation();
+
+        representation.setType("type-three");
+
+        resourceMgmt.update(representation);
+
+        request = new AuthorizationRequest();
+        request.addPermission("resource-type-instance:type-two");
+        response = authzClient.authorization(accessToken).authorize(request);
+        assertNotNull(response.getToken());
+        permissions = toAccessToken(response.getToken()).getAuthorization().getPermissions();
+        assertEquals(4, permissions.size());
+
+        request = new AuthorizationRequest();
+        request.addPermission("resource-type-instance:type-three");
+        response = authzClient.authorization(accessToken).authorize(request);
+        assertNotNull(response.getToken());
+        permissions = toAccessToken(response.getToken()).getAuthorization().getPermissions();
+        assertEquals(1, permissions.size());
+
+        request = new AuthorizationRequest();
+        request.addPermission("resource-type-any:type-three");
+        response = authzClient.authorization(accessToken).authorize(request);
+        assertNotNull(response.getToken());
+        permissions = toAccessToken(response.getToken()).getAuthorization().getPermissions();
+        assertEquals(11, permissions.size());
+
+        for (int i = 0; i < 2; i++) {
+            ResourceRepresentation resource = new ResourceRepresentation();
+
+            resource.setOwner("marta");
+            resource.setType("type-one");
+            resource.setName(KeycloakModelUtils.generateId());
+
+            authorization.resources().create(resource).close();
+        }
+
+        request = new AuthorizationRequest();
+        request.addPermission("resource-type:type-one");
+        response = authzClient.authorization(accessToken).authorize(request);
+        assertNotNull(response.getToken());
+        permissions = toAccessToken(response.getToken()).getAuthorization().getPermissions();
+        assertEquals(10, permissions.size());
+
+        accessToken = new OAuthClient().realm("authz-test").clientId(RESOURCE_SERVER_TEST).doGrantAccessTokenRequest("secret", "marta", "password").getAccessToken();
+
+        request = new AuthorizationRequest();
+        request.addPermission("resource-type-owner:type-one");
+        response = authzClient.authorization(accessToken).authorize(request);
+        assertNotNull(response.getToken());
+        permissions = toAccessToken(response.getToken()).getAuthorization().getPermissions();
+        assertEquals(2, permissions.size());
+
+        request = new AuthorizationRequest();
+        request.addPermission("resource-type-instance:type-one");
+        response = authzClient.authorization(accessToken).authorize(request);
+        assertNotNull(response.getToken());
+        permissions = toAccessToken(response.getToken()).getAuthorization().getPermissions();
+        assertEquals(2, permissions.size());
+
+        request = new AuthorizationRequest();
+        request.addPermission("resource-type-any:type-one");
+        response = authzClient.authorization(accessToken).authorize(request);
+        assertNotNull(response.getToken());
+        permissions = toAccessToken(response.getToken()).getAuthorization().getPermissions();
+        assertEquals(12, permissions.size());
     }
 
     @Test

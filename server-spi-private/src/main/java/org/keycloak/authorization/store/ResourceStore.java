@@ -143,9 +143,33 @@ public interface ResourceStore {
      * Finds all {@link Resource} with the given type.
      *
      * @param type the type of the resource
+     * @param owner the resource owner or null for any resource with a given type
+     * @return a list of resources with the given type
+     */
+    List<Resource> findByType(String type, String owner, String resourceServerId);
+
+    /**
+     * Finds all {@link Resource} with the given type.
+     *
+     * @param type the type of the resource
      * @param resourceServerId the resource server id
      * @param consumer the result consumer
      * @return a list of resources with the given type
      */
     void findByType(String type, String resourceServerId, Consumer<Resource> consumer);
+
+    /**
+     * Finds all {@link Resource} with the given type.
+     *
+     * @param type the type of the resource
+     * @param owner the resource owner or null for any resource with a given type
+     * @param resourceServerId the resource server id
+     * @param consumer the result consumer
+     * @return a list of resources with the given type
+     */
+    void findByType(String type, String owner, String resourceServerId, Consumer<Resource> consumer);
+
+    List<Resource> findByTypeInstance(String type, String resourceServerId);
+
+    void findByTypeInstance(String type, String resourceServerId, Consumer<Resource> consumer);
 }

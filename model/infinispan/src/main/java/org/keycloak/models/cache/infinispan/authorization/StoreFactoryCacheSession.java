@@ -360,6 +360,14 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
         return "resource.type." + type + "." + serverId;
     }
 
+    public static String getResourceByTypeCacheKey(String type, String owner, String serverId) {
+        return "resource.type." + type + ".owner." + owner + "." + serverId;
+    }
+
+    public static String getResourceByTypeInstanceCacheKey(String type, String serverId) {
+        return "resource.type.instance." + type + "." + serverId;
+    }
+
     public static String getResourceByUriCacheKey(String uri, String serverId) {
         return "resource.uri." + uri + "." + serverId;
     }
@@ -722,6 +730,42 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
             if (type == null) return;
             String cacheKey = getResourceByTypeCacheKey(type, resourceServerId);
             cacheQuery(cacheKey, ResourceListQuery.class, () -> getResourceStoreDelegate().findByType(type, resourceServerId),
+                    (revision, resources) -> new ResourceListQuery(revision, cacheKey, resources.stream().map(resource -> resource.getId()).collect(Collectors.toSet()), resourceServerId), resourceServerId, consumer);
+        }
+
+        @Override
+        public List<Resource> findByType(String type, String owner, String resourceServerId) {
+            if (resourceServerId.equals(owner)) {
+                return findByType(type, resourceServerId);
+            } else {
+                if (type == null) return Collections.emptyList();
+                String cacheKey = getResourceByTypeCacheKey(type, owner, resourceServerId);
+                return cacheQuery(cacheKey, ResourceListQuery.class, () -> getResourceStoreDelegate().findByType(type, owner, resourceServerId),
+                        (revision, resources) -> new ResourceListQuery(revision, cacheKey, resources.stream().map(resource -> resource.getId()).collect(Collectors.toSet()), resourceServerId), resourceServerId);
+            }
+        }
+
+        @Override
+        public void findByType(String type, String owner, String resourceServerId, Consumer<Resource> consumer) {
+            if (type == null) return;
+            String cacheKey = getResourceByTypeCacheKey(type, owner, resourceServerId);
+            cacheQuery(cacheKey, ResourceListQuery.class, () -> getResourceStoreDelegate().findByType(type, owner, resourceServerId),
+                    (revision, resources) -> new ResourceListQuery(revision, cacheKey, resources.stream().map(resource -> resource.getId()).collect(Collectors.toSet()), resourceServerId), resourceServerId, consumer);
+        }
+
+        @Override
+        public List<Resource> findByTypeInstance(String type, String resourceServerId) {
+            if (type == null) return Collections.emptyList();
+            String cacheKey = getResourceByTypeInstanceCacheKey(type, resourceServerId);
+            return cacheQuery(cacheKey, ResourceListQuery.class, () -> getResourceStoreDelegate().findByTypeInstance(type, resourceServerId),
+                    (revision, resources) -> new ResourceListQuery(revision, cacheKey, resources.stream().map(resource -> resource.getId()).collect(Collectors.toSet()), resourceServerId), resourceServerId);
+        }
+
+        @Override
+        public void findByTypeInstance(String type, String resourceServerId, Consumer<Resource> consumer) {
+            if (type == null) return;
+            String cacheKey = getResourceByTypeInstanceCacheKey(type, resourceServerId);
+            cacheQuery(cacheKey, ResourceListQuery.class, () -> getResourceStoreDelegate().findByTypeInstance(type, resourceServerId),
                     (revision, resources) -> new ResourceListQuery(revision, cacheKey, resources.stream().map(resource -> resource.getId()).collect(Collectors.toSet()), resourceServerId), resourceServerId, consumer);
         }
 

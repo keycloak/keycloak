@@ -87,6 +87,9 @@ public class StoreFactoryCacheManager extends CacheManager {
 
         if (type != null) {
             invalidations.add(StoreFactoryCacheSession.getResourceByTypeCacheKey(type, serverId));
+            invalidations.add(StoreFactoryCacheSession.getResourceByTypeCacheKey(type, owner, serverId));
+            invalidations.add(StoreFactoryCacheSession.getResourceByTypeCacheKey(type, null, serverId));
+            invalidations.add(StoreFactoryCacheSession.getResourceByTypeInstanceCacheKey(type, serverId));
             addInvalidations(InResourcePredicate.create().resource(type), invalidations);
         }
 
