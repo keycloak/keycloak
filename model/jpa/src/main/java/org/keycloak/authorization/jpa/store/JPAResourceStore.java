@@ -39,7 +39,6 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.function.Consumer;
 
 /**
@@ -290,12 +289,60 @@ public class JPAResourceStore implements ResourceStore {
     }
 
     @Override
+    public List<Resource> findByType(String type, String owner, String resourceServerId) {
+        List<Resource> list = new LinkedList<>();
+
+        findByType(type, owner, resourceServerId, list::add);
+
+        return list;
+    }
+
+    @Override
     public void findByType(String type, String resourceServerId, Consumer<Resource> consumer) {
-        TypedQuery<ResourceEntity> query = entityManager.createNamedQuery("findResourceIdByType", ResourceEntity.class);
+        findByType(type, resourceServerId, resourceServerId, consumer);
+    }
+
+    @Override
+    public void findByType(String type, String owner, String resourceServerId, Consumer<Resource> consumer) {
+        TypedQuery<ResourceEntity> query;
+
+        if (owner != null) {
+            query = entityManager.createNamedQuery("findResourceIdByType", ResourceEntity.class);
+        } else {
+            query = entityManager.createNamedQuery("findResourceIdByTypeNoOwner", ResourceEntity.class);
+        }
 
         query.setFlushMode(FlushModeType.COMMIT);
         query.setParameter("type", type);
-        query.setParameter("ownerId", resourceServerId);
+
+        if (owner != null) {
+            query.setParameter("ownerId", owner);
+        }
+
+        query.setParameter("serverId", resourceServerId);
+
+        StoreFactory storeFactory = provider.getStoreFactory();
+
+        query.getResultList().stream()
+                .map(entity -> new ResourceAdapter(entity, entityManager, storeFactory))
+                .forEach(consumer);
+    }
+
+    @Override
+    public List<Resource> findByTypeInstance(String type, String resourceServerId) {
+        List<Resource> list = new LinkedList<>();
+
+        findByTypeInstance(type, resourceServerId, list::add);
+
+        return list;
+    }
+
+    @Override
+    public void findByTypeInstance(String type, String resourceServerId, Consumer<Resource> consumer) {
+        TypedQuery<ResourceEntity> query = entityManager.createNamedQuery("findResourceIdByTypeInstance", ResourceEntity.class);
+
+        query.setFlushMode(FlushModeType.COMMIT);
+        query.setParameter("type", type);
         query.setParameter("serverId", resourceServerId);
 
         StoreFactory storeFactory = provider.getStoreFactory();

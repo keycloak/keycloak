@@ -410,6 +410,22 @@ public class AuthorizationTokenService {
 
                 if (resource != null) {
                     requestedResources.add(resource);
+                } else if (resourceId.startsWith("resource-type:")) {
+                    // only resource types, no resource instances. resource types are owned by the resource server
+                    String resourceType = resourceId.substring("resource-type:".length());
+                    resourceStore.findByType(resourceType, resourceServer.getId(), resourceServer.getId(), requestedResources::add);
+                } else if (resourceId.startsWith("resource-type-any:")) {
+                    // any resource with a given type
+                    String resourceType = resourceId.substring("resource-type-any:".length());
+                    resourceStore.findByType(resourceType, null, resourceServer.getId(), requestedResources::add);
+                } else if (resourceId.startsWith("resource-type-instance:")) {
+                    // only resource instances with a given type
+                    String resourceType = resourceId.substring("resource-type-instance:".length());
+                    resourceStore.findByTypeInstance(resourceType, resourceServer.getId(), requestedResources::add);
+                } else if (resourceId.startsWith("resource-type-owner:")) {
+                    // only resources where the current identity is the owner
+                    String resourceType = resourceId.substring("resource-type-owner:".length());
+                    resourceStore.findByType(resourceType, identity.getId(), resourceServer.getId(), requestedResources::add);
                 } else {
                     String resourceName = resourceId;
                     Resource ownerResource = resourceStore.findByName(resourceName, identity.getId(), resourceServer.getId());
