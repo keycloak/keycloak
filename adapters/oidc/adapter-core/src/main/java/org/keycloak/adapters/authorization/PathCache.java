@@ -143,6 +143,10 @@ public class PathCache {
         return false;
     }
 
+    public int size() {
+        return cache.size();
+    }
+
     private static final class CacheEntry {
 
         final String key;
