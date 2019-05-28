@@ -71,9 +71,6 @@ import java.util.List;
  */
 public class KeycloakContainerEventsController extends ContainerEventController {
 
-    public static final String WITHOUT_KEYCLOAK_ADD_USER_FILE = "restart-without-keycloak-add-user-file";
-    public static final String NO_CHANGE = "restart-no-change";
-
     protected static final Logger log = Logger.getLogger(KeycloakContainerEventsController.class);
 
     @Inject
