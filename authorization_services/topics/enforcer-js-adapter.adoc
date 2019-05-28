@@ -71,7 +71,7 @@ The ```keycloak-authz.js``` library provides an `entitlement` function that you 
 the resources and scopes your client wants to access.
 
 .Example about how to obtain an RPT with permissions for all resources and scopes the user can access
-```json
+```javascript
 authorization.entitlement('my-resource-server-id').then(function (rpt) {
     // onGrant callback function.
     // If authorization was successful you'll receive an RPT
@@ -80,7 +80,7 @@ authorization.entitlement('my-resource-server-id').then(function (rpt) {
 ```
 
 .Example about how to obtain an RPT with permissions for specific resources and scopes
-```json
+```javascript
 authorization.entitlement('my-resource-server', {
     "permissions": [
         {
