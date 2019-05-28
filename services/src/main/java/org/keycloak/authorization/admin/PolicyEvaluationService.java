@@ -236,6 +236,10 @@ public class PolicyEvaluationService {
         UserSessionModel userSession = null;
         if (subject != null) {
             UserModel userModel = keycloakSession.users().getUserById(subject, realm);
+            
+            if (userModel == null) {
+                userModel = keycloakSession.users().getUserByUsername(subject, realm);
+            }
 
             if (userModel != null) {
                 String clientId = representation.getClientId();
@@ -280,7 +284,6 @@ public class PolicyEvaluationService {
             accessToken.audience(client.getId());
             accessToken.issuer(Urls.realmIssuer(keycloakSession.getContext().getUri().getBaseUri(), realm.getName()));
             accessToken.setRealmAccess(new AccessToken.Access());
-
         }
 
         if (representation.getRoleIds() != null && !representation.getRoleIds().isEmpty()) {
