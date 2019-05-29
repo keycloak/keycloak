@@ -366,7 +366,7 @@
                 url += '&kc_locale=' + encodeURIComponent(options.kcLocale);
             }
 
-            if (options && kc.pkceMethod) {
+            if (kc.pkceMethod) {
                 var codeVerifier = generateCodeVerifier(96);
                 callbackState.pkceCodeVerifier = codeVerifier;
                 var pkceChallenge = generatePkceChallenge(kc.pkceMethod, codeVerifier);
