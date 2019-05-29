@@ -65,7 +65,7 @@ Considering you have a ```keycloak.json``` file in your classpath, you can creat
 Here is an example illustrating how to obtain user entitlements:
 
 ```java
-// create a new instance based on the configuration defined in keycloak-authz.json
+// create a new instance based on the configuration defined in keycloak.json
 AuthzClient authzClient = AuthzClient.create();
 
 // create an authorization request
@@ -84,7 +84,7 @@ System.out.println("You got an RPT: " + rpt);
 Here is an example illustrating how to obtain user entitlements for a set of one or more resources:
 
 ```java
-// create a new instance based on the configuration defined in keycloak-authz.json
+// create a new instance based on the configuration defined in keycloak.json
 AuthzClient authzClient = AuthzClient.create();
 
 // create an authorization request
@@ -106,7 +106,7 @@ System.out.println("You got an RPT: " + rpt);
 == Creating a Resource Using the Protection API
 
 ```java
-// create a new instance based on the configuration defined in keycloak-authz.json
+// create a new instance based on the configuration defined in keycloak.json
 AuthzClient authzClient = AuthzClient.create();
 
 // create a new resource representation with the information we want
@@ -137,7 +137,7 @@ System.out.println(resource);
 == Introspecting an RPT
 
 ```java
-// create a new instance based on the configuration defined in keycloak-authz.json
+// create a new instance based on the configuration defined in keycloak.json
 AuthzClient authzClient = AuthzClient.create();
 
 // send the authorization request to the server in order to
