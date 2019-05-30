@@ -5,7 +5,7 @@ Install the EAP 7 Adapters from an RPM:
 
 NOTE: With Red Hat Enterprise Linux 7, the term channel was replaced with the term repository. In these instructions only the term repository is used.
 
-You must subscribe to the JBoss EAP 7.2 repository before you can install the EAP 7 adapters from an RPM.
+You must subscribe to the {appserver_name} {appserver_version} repository before you can install the {appserver_name} 7 adapters from an RPM.
 
 .Prerequisites
 
@@ -13,16 +13,30 @@ You must subscribe to the JBoss EAP 7.2 repository before you can install the EA
 
 . If you are already subscribed to another JBoss EAP repository, you must unsubscribe from that repository first.
 
-Using Red Hat Subscription Manager, subscribe to the JBoss EAP 7.2 repository using the following command. Replace <RHEL_VERSION> with either 6 or 7 depending on your Red Hat Enterprise Linux version.
+For Red Hat Enterprise Linux 6, 7: Using Red Hat Subscription Manager, subscribe to the {appserver_name} {appserver_version} repository using the following command. Replace <RHEL_VERSION> with either 6 or 7 depending on your Red Hat Enterprise Linux version.
 
+[source,bash,subs="attributes+"]
 ----
 $ sudo subscription-manager repos --enable=jb-eap-7-for-rhel-<RHEL_VERSION>-server-rpms
 ----
 
-Install the EAP 7 adapters for OIDC using the following command:
+For Red Hat Enterprise Linux 8: Using Red Hat Subscription Manager, subscribe to the {appserver_name} {appserver_version} repository using the following command:
+
+[source,bash,subs="attributes+"]
+----
+$ sudo subscription-manager repos --enable=jb-eap-{appserver_version}-for-rhel-8-x86_64-rpms --enable=rhel-8-for-x86_64-baseos-rpms --enable=rhel-8-for-x86_64-appstream-rpms
+----
+
+Install the {appserver_name} 7 adapters for OIDC using the following command at Red Hat Enterprise Linux 6, 7:
 
 ----
 $ sudo yum install eap7-keycloak-adapter-sso7_3
+----
+
+or use following one for Red Hat Red Hat Enterprise Linux 8:
+
+----
+$ sudo dnf install eap7-keycloak-adapter-sso7_3
 ----
 
 NOTE: The default EAP_HOME path for the RPM installation is /opt/rh/eap7/root/usr/share/wildfly.
