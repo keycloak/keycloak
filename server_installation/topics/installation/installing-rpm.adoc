@@ -54,8 +54,12 @@ subscription-manager repos --enable=rh-sso-{project_versionDoc}-for-rhel-<RHEL-V
 subscription-manager repos --enable=rh-sso-{project_versionDoc}-for-rhel-8-x86_64-rpms
 ----
 
-. Install RH-SSO from your subscribed RH-SSO {project_versionDoc} repository using the following command:
+. For Red Hat Enterprise Linux 6, 7: Install RH-SSO from your subscribed RH-SSO {project_versionDoc} repository using the following command:
 
  yum groupinstall rh-sso7
+
+. For Red Hat Enterprise Linux 8: Install RH-SSO from your subscribed RH-SSO {project_versionDoc} repository using the following command:
+
+ dnf groupinstall rh-sso7
 
 Your installation is complete. The default RH-SSO_HOME path for the RPM installation is /opt/rh/rh-sso7/root/usr/share/keycloak.
