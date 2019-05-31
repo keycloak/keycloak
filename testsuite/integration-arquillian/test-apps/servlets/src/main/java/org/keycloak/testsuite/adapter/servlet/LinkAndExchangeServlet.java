@@ -16,9 +16,16 @@
  */
 package org.keycloak.testsuite.adapter.servlet;
 
+import org.apache.http.HttpResponse;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.ContentType;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.util.EntityUtils;
 import org.junit.Assert;
 import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.adapters.HttpClientBuilder;
 import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
@@ -31,14 +38,9 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.HttpHeaders;
-import java.io.BufferedWriter;
 import java.io.IOException;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.net.URLEncoder;
 import java.util.HashMap;
 import java.util.Map;
@@ -69,22 +71,20 @@ public class LinkAndExchangeServlet extends HttpServlet {
 
     public AccessTokenResponse doTokenExchange(String realm, String token, String requestedIssuer,
                                                String clientId, String clientSecret) throws Exception {
-        try {
+
+        try (CloseableHttpClient client = (CloseableHttpClient) new HttpClientBuilder().disableTrustManager().build()) {
             String exchangeUrl = KeycloakUriBuilder.fromUri(ServletTestUtils.getAuthServerUrlBase())
                     .path("/auth/realms/{realm}/protocol/openid-connect/token").build(realm).toString();
 
-            URL url = new URL(exchangeUrl);
-            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-            conn.setRequestMethod("POST");
-            conn.setDoInput(true);
-            conn.setDoOutput(true);
+            HttpPost post = new HttpPost(exchangeUrl);
             HashMap<String, String> parameters = new HashMap<>();
+
             if (clientSecret != null) {
                 String authorization = BasicAuthHelper.createHeader(clientId, clientSecret);
-                conn.setRequestProperty(HttpHeaders.AUTHORIZATION, authorization);
+                post.setHeader(HttpHeaders.CONTENT_TYPE, ContentType.APPLICATION_FORM_URLENCODED.toString());
+                post.setHeader(HttpHeaders.AUTHORIZATION, authorization);
             } else {
                 parameters.put("client_id", clientId);
-
             }
 
             parameters.put(OAuth2Constants.GRANT_TYPE, OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE);
@@ -92,27 +92,15 @@ public class LinkAndExchangeServlet extends HttpServlet {
             parameters.put(OAuth2Constants.SUBJECT_TOKEN_TYPE, OAuth2Constants.ACCESS_TOKEN_TYPE);
             parameters.put(OAuth2Constants.REQUESTED_ISSUER, requestedIssuer);
 
-            OutputStream os = conn.getOutputStream();
-            BufferedWriter writer = new BufferedWriter(
-                    new OutputStreamWriter(os, "UTF-8"));
-            writer.write(getPostDataString(parameters));
+            post.setEntity(new StringEntity(getPostDataString(parameters)));
+            HttpResponse response = client.execute(post);
+            int statusCode = response.getStatusLine().getStatusCode();
 
-            writer.flush();
-            writer.close();
-            os.close();
-            if (conn.getResponseCode() == 200) {
-                AccessTokenResponse tokenResponse = JsonSerialization.readValue(conn.getInputStream(), AccessTokenResponse.class);
-                conn.getInputStream().close();
-                return tokenResponse;
-            } else if (conn.getResponseCode() == 400) {
-                AccessTokenResponse tokenResponse = JsonSerialization.readValue(conn.getErrorStream(), AccessTokenResponse.class);
-                conn.getErrorStream().close();
-                return tokenResponse;
-
+            if (statusCode == 200 || statusCode == 400) {
+                return JsonSerialization.readValue(EntityUtils.toString(response.getEntity()), AccessTokenResponse.class);
             } else {
                 throw new RuntimeException("Unknown error!");
             }
-        } finally {
         }
     }
 
