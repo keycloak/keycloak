@@ -21,6 +21,7 @@ import liquibase.Liquibase;
 import liquibase.exception.DatabaseException;
 import liquibase.exception.LiquibaseException;
 import org.jboss.logging.Logger;
+import org.keycloak.common.util.Retry;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.connections.jpa.JpaConnectionProviderFactory;
 import org.keycloak.connections.jpa.updater.liquibase.conn.LiquibaseConnectionProvider;
@@ -38,8 +39,8 @@ public class LiquibaseDBLockProvider implements DBLockProvider {
 
     private static final Logger logger = Logger.getLogger(LiquibaseDBLockProvider.class);
 
-    // 3 should be sufficient (Potentially one failure for createTable and one for insert record)
-    private int DEFAULT_MAX_ATTEMPTS = 3;
+    // 10 should be sufficient
+    private int DEFAULT_MAX_ATTEMPTS = 10;
 
 
     private final LiquibaseDBLockProviderFactory factory;
@@ -48,8 +49,6 @@ public class LiquibaseDBLockProvider implements DBLockProvider {
     private CustomLockService lockService;
     private Connection dbConnection;
     private boolean initialized = false;
-
-    private int maxAttempts = DEFAULT_MAX_ATTEMPTS;
 
     public LiquibaseDBLockProvider(LiquibaseDBLockProviderFactory factory, KeycloakSession session) {
         this.factory = factory;
@@ -96,23 +95,23 @@ public class LiquibaseDBLockProvider implements DBLockProvider {
 
             lazyInit();
 
-            while (maxAttempts > 0) {
-                try {
-                    lockService.waitForLock();
-                    factory.setHasLock(true);
-                    this.maxAttempts = DEFAULT_MAX_ATTEMPTS;
-                    return;
-                } catch (LockRetryException le) {
+            Retry.executeWithBackoff((int iteration) -> {
+
+                lockService.waitForLock();
+                factory.setHasLock(true);
+
+            }, (int iteration, Throwable e) -> {
+
+                if (e instanceof LockRetryException && iteration < (DEFAULT_MAX_ATTEMPTS - 1)) {
                     // Indicates we should try to acquire lock again in different transaction
                     safeRollbackConnection();
                     restart();
-                    maxAttempts--;
-                } catch (RuntimeException re) {
+                } else {
                     safeRollbackConnection();
                     safeCloseConnection();
-                    throw re;
                 }
-            }
+
+            }, DEFAULT_MAX_ATTEMPTS, 10);
         });
 
     }
