@@ -19,6 +19,7 @@ package org.keycloak.connections.jpa.updater.liquibase.lock;
 
 import liquibase.database.core.DerbyDatabase;
 import liquibase.exception.DatabaseException;
+import liquibase.exception.UnexpectedLiquibaseException;
 import liquibase.executor.Executor;
 import liquibase.executor.ExecutorService;
 import liquibase.lockservice.StandardLockService;
@@ -78,24 +79,24 @@ public class CustomLockService extends StandardLockService {
         }
 
 
-        if (!isDatabaseChangeLogLockTableInitialized(createdTable)) {
-            try {
+        try {
+            if (!isDatabaseChangeLogLockTableInitialized(createdTable)) {
                 if (log.isTraceEnabled()) {
                     log.trace("Initialize Database Lock Table");
                 }
                 executor.execute(new InitializeDatabaseChangeLogLockTableStatement());
                 database.commit();
 
-            } catch (DatabaseException de) {
-                log.warn("Failed to insert first record to the lock table. Maybe other transaction inserted in the meantime. Retrying...");
-                if (log.isTraceEnabled()) {
-                    log.trace(de.getMessage(), de); // Log details at trace level
-                }
-                database.rollback();
-                throw new LockRetryException(de);
+                log.debug("Initialized record in the database lock table");
             }
 
-            log.debug("Initialized record in the database lock table");
+        } catch (DatabaseException de) {
+            log.warn("Failed to insert first record to the lock table. Maybe other transaction inserted in the meantime. Retrying...");
+            if (log.isTraceEnabled()) {
+                log.trace(de.getMessage(), de); // Log details at trace level
+            }
+            database.rollback();
+            throw new LockRetryException(de);
         }
 
 
@@ -110,6 +111,20 @@ public class CustomLockService extends StandardLockService {
             }
         }
 
+    }
+
+    @Override
+    public boolean isDatabaseChangeLogLockTableInitialized(boolean tableJustCreated) throws DatabaseException {
+        try {
+            return super.isDatabaseChangeLogLockTableInitialized(tableJustCreated);
+        } catch (UnexpectedLiquibaseException ulie) {
+            // It can happen with MariaDB Galera 10.1 that UnexpectedLiquibaseException is rethrown due the DB lock. It is sufficient to just rollback transaction and retry in that case.
+            if (ulie.getCause() != null && ulie.getCause() instanceof DatabaseException) {
+                throw (DatabaseException) ulie.getCause();
+            } else {
+                throw ulie;
+            }
+        }
     }
 
     @Override
