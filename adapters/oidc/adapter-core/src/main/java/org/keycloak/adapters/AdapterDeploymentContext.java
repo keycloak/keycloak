@@ -104,15 +104,24 @@ public class AdapterDeploymentContext {
             // Absolute URI are already set to everything
             return deployment;
         } else {
+            KeycloakUriBuilder requestAuthServerBaseUrl = getBaseBuilder(facade, this.deployment.getAuthServerBaseUrl());
+
             DeploymentDelegate delegate = new DeploymentDelegate(this.deployment);
-            delegate.setAuthServerBaseUrl(getBaseBuilder(facade, this.deployment.getAuthServerBaseUrl()).build().toString());
+            delegate.setAuthServerBaseUrl(requestAuthServerBaseUrl.build().toString());
+            if(this.deployment.getAuthServerBackChannelBaseUrl() == null) {
+                delegate.resolveUrls(requestAuthServerBaseUrl);
+            }
+            else {
+                // backchannel urls are already resolved by the deployment
+                delegate.resolveFrontChanneUrls(requestAuthServerBaseUrl);
+            }
             return delegate;
         }
     }
 
     /**
      * This delegate is used to store temporary, per-request metadata like request resolved URLs.
-     * Ever method is delegated except URL get methods and isConfigured()
+     * Every method is delegated except request dependent URL get methods and isConfigured()
      *
      */
     protected static class DeploymentDelegate extends KeycloakDeployment {
@@ -124,8 +133,16 @@ public class AdapterDeploymentContext {
 
         public void setAuthServerBaseUrl(String authServerBaseUrl) {
             this.authServerBaseUrl = authServerBaseUrl;
-            KeycloakUriBuilder serverBuilder = KeycloakUriBuilder.fromUri(authServerBaseUrl);
-            resolveUrls(serverBuilder);
+        }
+
+        @Override
+        public String getAuthServerBaseUrl() {
+            return (this.authServerBaseUrl != null) ? this.authServerBaseUrl : delegate.getAuthServerBaseUrl();
+        }
+
+        @Override
+        public String getAuthServerBackChannelBaseUrl() {
+            return delegate.getAuthServerBackChannelBaseUrl();
         }
 
         @Override
@@ -136,6 +153,11 @@ public class AdapterDeploymentContext {
         @Override
         public String getRealmInfoUrl() {
             return (this.realmInfoUrl != null) ? this.realmInfoUrl : delegate.getRealmInfoUrl();
+        }
+
+        @Override
+        public KeycloakUriBuilder getAuthUrl() {
+            return (this.authUrl != null) ? this.authUrl : delegate.getAuthUrl();
         }
 
         @Override

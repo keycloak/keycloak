@@ -2016,7 +2016,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
             HttpClient client = HttpClients.custom()
                     .setConnectionManager(connectionManager)
                     .build();
-            authzClient = AuthzClient.create(new Configuration(configuration.getAuthServerUrl(), configuration.getRealm(), configuration.getResource(), configuration.getCredentials(), client));
+            authzClient = AuthzClient.create(new Configuration(configuration.getAuthServerUrl(),configuration.getAuthServerBackChannelUrl(), configuration.getRealm(), configuration.getResource(), configuration.getCredentials(), client));
         }
 
         return authzClient;

@@ -22,6 +22,7 @@ import org.keycloak.representations.adapters.config.AdapterConfig;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertNull;
 
 /**
  * @author <a href="mailto:brad.culley@spartasystems.com">Brad Culley</a>
@@ -63,6 +64,15 @@ public class KeycloakDeploymentTest {
         keycloakDeployment.setAuthServerBaseUrl(config);
 
         assertEquals("https://localhost/auth", keycloakDeployment.getAuthServerBaseUrl());
+
+
+        config.setAuthServerBackChannelUrl("http://backchannel:80/auth");
+        keycloakDeployment.setAuthServerBackChannelBaseUrl(config);
+        assertEquals("http://backchannel/auth", keycloakDeployment.getAuthServerBackChannelBaseUrl());
+
+        config.setAuthServerBackChannelUrl("https://backchannel:443/auth");
+        keycloakDeployment.setAuthServerBackChannelBaseUrl(config);
+        assertEquals("https://backchannel/auth", keycloakDeployment.getAuthServerBackChannelBaseUrl());
     }
 
 }

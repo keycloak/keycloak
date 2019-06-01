@@ -139,6 +139,8 @@ public class KeycloakDeploymentBuilder {
             throw new RuntimeException("You must specify auth-server-url");
         }
         deployment.setAuthServerBaseUrl(adapterConfig);
+        deployment.setAuthServerBackChannelBaseUrl(adapterConfig);
+
         if (adapterConfig.getTurnOffChangeSessionIdOnLogin() != null) {
             deployment.setTurnOffChangeSessionIdOnLogin(adapterConfig.getTurnOffChangeSessionIdOnLogin());
         }

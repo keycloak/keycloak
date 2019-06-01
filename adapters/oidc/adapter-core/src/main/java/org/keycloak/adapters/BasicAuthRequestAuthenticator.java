@@ -89,9 +89,7 @@ public class BasicAuthRequestAuthenticator extends BearerTokenRequestAuthenticat
     	AccessTokenResponse tokenResponse=null;
     	HttpClient client = deployment.getClient();
 
-        HttpPost post = new HttpPost(
-                KeycloakUriBuilder.fromUri(deployment.getAuthServerBaseUrl())
-                .path(ServiceUrlConstants.TOKEN_PATH).build(deployment.getRealm()));
+        HttpPost post = new HttpPost(deployment.getTokenUrl());
         java.util.List <NameValuePair> formparams = new java.util.ArrayList <NameValuePair>();
         formparams.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.PASSWORD));
         formparams.add(new BasicNameValuePair("username", username));

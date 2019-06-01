@@ -62,7 +62,7 @@ public class PolicyEnforcer {
     public PolicyEnforcer(KeycloakDeployment deployment, AdapterConfig adapterConfig) {
         this.deployment = deployment;
         this.enforcerConfig = adapterConfig.getPolicyEnforcerConfig();
-        Configuration configuration = new Configuration(adapterConfig.getAuthServerUrl(), adapterConfig.getRealm(), adapterConfig.getResource(), adapterConfig.getCredentials(), deployment.getClient());
+        Configuration configuration = new Configuration(adapterConfig.getAuthServerUrl(), adapterConfig.getAuthServerBackChannelUrl(), adapterConfig.getRealm(), adapterConfig.getResource(), adapterConfig.getCredentials(), deployment.getClient());
         this.authzClient = AuthzClient.create(configuration, new ClientAuthenticator() {
             @Override
             public void configureClientCredentials(Map<String, List<String>> requestParams, Map<String, String> requestHeaders) {

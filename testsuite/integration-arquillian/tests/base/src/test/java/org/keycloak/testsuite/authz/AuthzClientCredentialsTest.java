@@ -252,7 +252,7 @@ public class AuthzClientCredentialsTest extends AbstractAuthzTest {
     private AuthzClient getAuthzClient(String adapterConfig) {
         KeycloakDeployment deployment = KeycloakDeploymentBuilder.build(getConfigurationStream(adapterConfig));
 
-        return AuthzClient.create(new Configuration(deployment.getAuthServerBaseUrl(), deployment.getRealm(), deployment.getResourceName(), deployment.getResourceCredentials(), deployment.getClient()), new ClientAuthenticator() {
+        return AuthzClient.create(new Configuration(deployment.getAuthServerBaseUrl(), deployment.getAuthServerBaseUrl(), deployment.getRealm(), deployment.getResourceName(), deployment.getResourceCredentials(), deployment.getClient()), new ClientAuthenticator() {
             @Override
             public void configureClientCredentials(Map<String, List<String>> requestParams, Map<String, String> requestHeaders) {
                 Map<String, String> formparams = new HashMap<>();

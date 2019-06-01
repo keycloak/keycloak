@@ -619,6 +619,7 @@ public class ResourcesRestServiceTest extends AbstractRestServiceTest {
 
         return AuthzClient
                 .create(new Configuration(suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth",
+                        suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth",
                         testRealm().toRepresentation().getRealm(), client.getClientId(),
                         credentials, httpClient));
     }

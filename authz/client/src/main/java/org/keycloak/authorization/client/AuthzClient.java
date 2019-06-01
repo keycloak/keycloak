@@ -232,28 +232,40 @@ public class AuthzClient {
         if (configuration == null) {
             throw new IllegalArgumentException("Client configuration can not be null.");
         }
+        boolean useBackChannelUrl = configuration.getAuthServerBackChannelUrl() != null;
+        String authServerUrl = getAuthServerUrl(configuration, useBackChannelUrl);
 
-        String configurationUrl = configuration.getAuthServerUrl();
-
-        if (configurationUrl == null) {
+        if (authServerUrl == null) {
             throw new IllegalArgumentException("Configuration URL can not be null.");
         }
 
-        configurationUrl += "/realms/" + configuration.getRealm() + "/.well-known/uma2-configuration";
+        String configurationUrl = authServerUrl + "/realms/" + configuration.getRealm() + "/.well-known/uma2-configuration";
 
         this.configuration = configuration;
 
         this.http = new Http(configuration, authenticator != null ? authenticator : configuration.getClientAuthenticator());
 
         try {
-            this.serverConfiguration = this.http.<ServerConfiguration>get(configurationUrl)
+            ServerConfiguration discoveredConfiguration = this.http.<ServerConfiguration>get(configurationUrl)
                     .response().json(ServerConfiguration.class)
                     .execute();
+
+            if(useBackChannelUrl) {
+                this.serverConfiguration = new ServerBackChannelUrlConfiguration(discoveredConfiguration, authServerUrl, configuration.getRealm());
+            }
+            else {
+                this.serverConfiguration = discoveredConfiguration;
+            }
+
         } catch (Exception e) {
             throw new RuntimeException("Could not obtain configuration from server [" + configurationUrl + "].", e);
         }
 
         this.http.setServerConfiguration(this.serverConfiguration);
+    }
+
+    private String getAuthServerUrl(Configuration configuration, boolean useBackChannelUrl) {
+        return useBackChannelUrl ? configuration.getAuthServerBackChannelUrl() : configuration.getAuthServerUrl();
     }
 
     private TokenCallable createPatSupplier(String userName, String password) {

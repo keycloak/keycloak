@@ -45,14 +45,16 @@ public class Configuration extends AdapterConfig {
      * Creates a new instance.
      *
      * @param authServerUrl the server's URL. E.g.: http://{server}:{port}/auth.(not {@code null})
+     * @param authServerBackChannelUrl the server's backchannel URL. E.g.: http://{server}:{port}/auth.(not {@code null})
      * @param realm the realm name (not {@code null})
      * @param clientId the client id (not {@code null})
      * @param clientCredentials a map with the client credentials (not {@code null})
      * @param httpClient the {@link HttpClient} instance that should be used when sending requests to the server, or {@code null} if a default instance should be created
      */
-    public Configuration(String authServerUrl, String realm, String clientId, Map<String, Object> clientCredentials, HttpClient httpClient) {
+    public Configuration(String authServerUrl, String authServerBackChannelUrl, String realm, String clientId, Map<String, Object> clientCredentials, HttpClient httpClient) {
         this.authServerUrl = authServerUrl;
         setAuthServerUrl(authServerUrl);
+        setAuthServerBackChannelUrl(authServerBackChannelUrl);
         setRealm(realm);
         setResource(clientId);
         setCredentials(clientCredentials);

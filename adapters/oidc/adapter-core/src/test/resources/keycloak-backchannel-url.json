@@ -1,0 +1,6 @@
+{
+    "realm": "test",
+    "resource": "test-resource",
+    "auth-server-url": "https://test.frontchannel:8443/auth",
+    "auth-server-backchannel-url": "https://test.backchannel:8443/auth"
+}
