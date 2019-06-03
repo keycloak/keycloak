@@ -89,11 +89,6 @@
         <jdbc.mvn.artifactId>h2</jdbc.mvn.artifactId>
         <jdbc.mvn.version>${h2.version}</jdbc.mvn.version>
 
-        <keycloak.connectionsJpa.driver>org.h2.Driver</keycloak.connectionsJpa.driver>
-        <keycloak.connectionsJpa.database>keycloak</keycloak.connectionsJpa.database>
-        <keycloak.connectionsJpa.user>sa</keycloak.connectionsJpa.user>
-        <keycloak.connectionsJpa.password></keycloak.connectionsJpa.password>
-        <keycloak.connectionsJpa.url>jdbc:h2:mem:test;MVCC=TRUE;DB_CLOSE_DELAY=-1</keycloak.connectionsJpa.url>
         <keycloak.connectionsJpa.schema>DEFAULT</keycloak.connectionsJpa.schema>
 
         <dballocator.skip>true</dballocator.skip>
@@ -392,6 +387,23 @@
                     </plugins>
                 </pluginManagement>
             </build>
+        </profile>
+        <!-- Specifies default DB properties, which are used for test with embedded H2. Those are overriden when testing with any docker container
+             profile like "db-mysql" or any dballocator profile. Also those can be manually overriden when running the test from CMD -->
+        <profile>
+            <id>db-default-properties</id>
+            <activation>
+                <property>
+                    <name>!dballocator.uri</name>
+                </property>
+            </activation>
+            <properties>
+                <keycloak.connectionsJpa.driver>org.h2.Driver</keycloak.connectionsJpa.driver>
+                <keycloak.connectionsJpa.database>keycloak</keycloak.connectionsJpa.database>
+                <keycloak.connectionsJpa.user>sa</keycloak.connectionsJpa.user>
+                <keycloak.connectionsJpa.password></keycloak.connectionsJpa.password>
+                <keycloak.connectionsJpa.url>jdbc:h2:mem:test;MVCC=TRUE;DB_CLOSE_DELAY=-1</keycloak.connectionsJpa.url>
+            </properties>
         </profile>
         <profile>
             <id>db-mysql</id>
