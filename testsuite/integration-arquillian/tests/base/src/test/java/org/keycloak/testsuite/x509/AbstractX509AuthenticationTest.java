@@ -49,6 +49,7 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
 import org.keycloak.testsuite.pages.AbstractPage;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
@@ -187,7 +188,7 @@ public abstract class AbstractX509AuthenticationTest extends AbstractTestRealmKe
      * @return server home directory. This directory is supposed to contain client key, certificate and CRLs used in the tests
      */
     protected static String getAuthServerHome() {
-        String authServerHome = System.getProperty("auth.server.home");
+        String authServerHome = System.getProperty(AuthServerTestEnricher.AUTH_SERVER_HOME_PROPERTY);
         if (authServerHome == null) {
             return null;
         }
