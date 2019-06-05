@@ -284,7 +284,7 @@ route "sso" patched
 [[sso-connecting-to-an-external-database]]
 ==== Connecting to an external database
 
-{project_name} can be configured to connect to an external (to OpenShift cluster) database. In order to achieve this, you need to modify the `sso-{database name}` Endpoints object to point to proper address. The procedure has been described in https://docs.openshift.com/container-platform/latest/dev_guide/expose_service/expose_internal_ip_service.html#manually-assign-ip-service[OpenShift manual].
+{project_name} can be configured to connect to an external (to OpenShift cluster) database. In order to achieve this, you need to modify the `sso-{database name}` Endpoints object to point to the proper address. The procedure has been described in https://docs.openshift.com/container-platform/latest/dev_guide/expose_service/expose_internal_ip_service.html#manually-assign-ip-service[OpenShift manual].
 
 Tip: The easiest way to get started is to deploy {project_name} from a template and then modify the Endpoints object. You might also need to update some of the datasource configuration variables in the DeploymentConfig. Once you're done, just roll a new deployment out.
 
