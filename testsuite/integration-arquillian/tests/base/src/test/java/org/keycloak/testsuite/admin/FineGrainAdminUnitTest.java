@@ -48,6 +48,7 @@ import org.keycloak.services.resources.admin.permissions.GroupPermissionManageme
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
+import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
 import org.keycloak.testsuite.auth.page.AuthRealm;
 import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
 import org.keycloak.testsuite.util.AdminClientUtil;
@@ -66,7 +67,6 @@ import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-//@Ignore
 public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
 
     public static final String CLIENT_NAME = "application";
@@ -858,44 +858,25 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
      * @throws Exception
      */
     @Test
+    @UncaughtServerErrorExpected
     public void testWithTokenExchange() throws Exception {
+        checkTokenExchange(false);
+
+        Response featureResponse = testingClient.testing().enableFeature(Profile.Feature.TOKEN_EXCHANGE.toString());
+        Assert.assertEquals(200, featureResponse.getStatus());
         ProfileAssume.assumeFeatureEnabled(Profile.Feature.TOKEN_EXCHANGE);
-        testingClient.server().run(session -> {
-            RealmModel realm = session.realms().getRealmByName("master");
-            ClientModel client = session.realms().getClientByClientId("kcinit", realm);
-            if (client != null) {
-                return;
+
+        try {
+            String exchanged = checkTokenExchange(true);
+            Assert.assertNotNull(exchanged);
+            try (Keycloak client = Keycloak.getInstance(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth",
+                    AuthRealm.MASTER, Constants.ADMIN_CLI_CLIENT_ID, exchanged, TLSUtils.initializeTLS())) {
+                Assert.assertNotNull(client.realm("master").roles().get("offline_access"));
             }
-
-            ClientModel kcinit = realm.addClient("kcinit");
-            kcinit.setEnabled(true);
-            kcinit.addRedirectUri("http://localhost:*");
-            kcinit.setPublicClient(false);
-            kcinit.setSecret("password");
-            kcinit.setDirectAccessGrantsEnabled(true);
-
-            // permission for client to client exchange to "target" client
-            ClientModel adminCli = realm.getClientByClientId(ConfigUtil.DEFAULT_CLIENT);
-            AdminPermissionManagement management = AdminPermissions.management(session, realm);
-            management.clients().setPermissionsEnabled(adminCli, true);
-            ClientPolicyRepresentation clientRep = new ClientPolicyRepresentation();
-            clientRep.setName("to");
-            clientRep.addClient(kcinit.getId());
-            ResourceServer server = management.realmResourceServer();
-            Policy clientPolicy = management.authz().getStoreFactory().getPolicyStore().create(clientRep, server);
-            management.clients().exchangeToPermission(adminCli).addAssociatedPolicy(clientPolicy);
-        });
-
-        oauth.realm("master");
-        oauth.clientId("kcinit");
-        String token = oauth.doGrantAccessTokenRequest("password", "admin", "admin").getAccessToken();
-        Assert.assertNotNull(token);
-        String exchanged = oauth.doTokenExchange("master", token, "admin-cli", "kcinit", "password").getAccessToken();
-        Assert.assertNotNull(exchanged);
-
-        try (Keycloak client = Keycloak.getInstance(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth",
-                AuthRealm.MASTER, Constants.ADMIN_CLI_CLIENT_ID, exchanged, TLSUtils.initializeTLS())) {
-            Assert.assertNotNull(client.realm("master").roles().get("offline_access"));
+        } finally {
+            featureResponse = testingClient.testing().disableFeature(Profile.Feature.TOKEN_EXCHANGE.toString());
+            Assert.assertEquals(200, featureResponse.getStatus());
+            checkTokenExchange(false);
         }
     }
 
@@ -990,4 +971,48 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
         }
     }
 
+    private String checkTokenExchange(boolean shouldPass) throws Exception {
+        testingClient.server().run(FineGrainAdminUnitTest::setupTokenExchange);
+        oauth.realm("master");
+        oauth.clientId("kcinit");
+        String exchanged = null;
+        String token = oauth.doGrantAccessTokenRequest("password", "admin", "admin").getAccessToken();
+        Assert.assertNotNull(token);
+        try {
+            exchanged = oauth.doTokenExchange("master", token, "admin-cli", "kcinit", "password").getAccessToken();
+        } catch (AssertionError e) {
+            log.info("Error message is expected from oauth: " + e.getMessage());
+        }
+        if (shouldPass)
+            Assert.assertNotNull(exchanged);
+        else
+            Assert.assertNull(exchanged);
+        return exchanged;
+    }
+
+    private static void setupTokenExchange(KeycloakSession session) {
+        RealmModel realm = session.realms().getRealmByName("master");
+        ClientModel client = session.realms().getClientByClientId("kcinit", realm);
+        if (client != null) {
+            return;
+        }
+
+        ClientModel kcinit = realm.addClient("kcinit");
+        kcinit.setEnabled(true);
+        kcinit.addRedirectUri("http://localhost:*");
+        kcinit.setPublicClient(false);
+        kcinit.setSecret("password");
+        kcinit.setDirectAccessGrantsEnabled(true);
+
+        // permission for client to client exchange to "target" client
+        ClientModel adminCli = realm.getClientByClientId(ConfigUtil.DEFAULT_CLIENT);
+        AdminPermissionManagement management = AdminPermissions.management(session, realm);
+        management.clients().setPermissionsEnabled(adminCli, true);
+        ClientPolicyRepresentation clientRep = new ClientPolicyRepresentation();
+        clientRep.setName("to");
+        clientRep.addClient(kcinit.getId());
+        ResourceServer server = management.realmResourceServer();
+        Policy clientPolicy = management.authz().getStoreFactory().getPolicyStore().create(clientRep, server);
+        management.clients().exchangeToPermission(adminCli).addAssociatedPolicy(clientPolicy);
+    }
 }
