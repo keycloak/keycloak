@@ -220,7 +220,7 @@ th.w-40 {
 
 .sidebar-pf .nav-pills > li > a:hover{
   background: #393f44;
-  border-color:#292e34; 
+  border-color:#292e34;
   border-left-color: #393f44;
   color: #fff;
 }
@@ -422,4 +422,10 @@ div[tree-model] li .deactivate_selected {
     background-color: #dcdcdc;
     font-weight: bold;
     padding: 1px 5px;
+}
+
+/* search highlighting */
+
+div[tree-model] li .highlight {
+    background-color: #aaddff;
 }

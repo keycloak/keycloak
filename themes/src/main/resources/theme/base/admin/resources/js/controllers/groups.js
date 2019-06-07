@@ -66,6 +66,16 @@ module.controller('GroupListCtrl', function($scope, $route, $q, realm, Groups, G
                     "subGroups": sortGroups('name', groups)
                 }
             ];
+            if (angular.isDefined(search) && search !== '') {
+                // Add highlight for concrete text match
+                setTimeout(function () {
+                    document.querySelectorAll('span').forEach(function (element) {
+                        if (element.textContent.indexOf(search) != -1) {
+                            angular.element(element).addClass('highlight');
+                        }
+                    });
+                }, 500);
+            }
         }, function (failed) {
             Notifications.error(failed);
         });
