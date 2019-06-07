@@ -17,6 +17,7 @@
 package org.keycloak.forms.account.freemarker.model;
 
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.PasswordPolicy;
 
 import java.util.Set;
 
@@ -72,4 +73,8 @@ public class RealmBean {
     public boolean isUserManagedAccessAllowed() {
         return realm.isUserManagedAccessAllowed();
     }
+    
+    public PasswordPolicy getPasswordPolicy() {
+		return realm.getPasswordPolicy();
+	}
 }
