@@ -1,0 +1,12 @@
+{
+  "realm" : "demo",
+  "resource" : "basic-auth-service",
+  "auth-server-url": "https://keycloak.invalid:8543/auth/",
+  "auth-server-backchannel-url": "https://localhost:8543/auth/",
+  "ssl-required" : "external",
+  "enable-basic-auth" : "true",
+  "register-node-at-startup": true,
+  "credentials": {
+    "secret": "password"
+  }
+}

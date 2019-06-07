@@ -469,7 +469,7 @@ public class AuthServerTestEnricher {
         }
     }
 
-    private static OnlineManagementClient getManagementClient(ContainerInfo containerInfo) {
+    public static OnlineManagementClient getManagementClient(ContainerInfo containerInfo) {
         try {
             return ManagementClient.online(OnlineOptions
                     .standalone()

@@ -40,4 +40,7 @@ public class SessionPortal extends AbstractPageWithInjectedUrl {
         return url;
     }
 
+    public String logoutURL() {
+        return  url + "logout";
+    }
 }

@@ -195,6 +195,9 @@ public class DeploymentArchiveProcessorUtils {
                     .getAsset().openStream(), AdapterConfig.class);
 
             adapterConfig.setAuthServerUrl(getAuthServerUrl());
+            if(adapterConfig.getAuthServerBackChannelUrl() != null) {
+                adapterConfig.setAuthServerBackChannelUrl(getAuthServerBackChannelUrl());
+            }
 
             if (APP_SERVER_SSL_REQUIRED) {
                 adapterConfig.setSslRequired("all");
@@ -252,8 +255,16 @@ public class DeploymentArchiveProcessorUtils {
     }
 
     private static String getAuthServerUrl() {
+        return getAuthServerUrl("auth.server.host");
+    }
+
+    private static String getAuthServerBackChannelUrl() {
+        return getAuthServerUrl("auth.server.backchannel.host");
+    }
+
+    private static String getAuthServerUrl(String authServerHostProperty) {
         String scheme = AUTH_SERVER_SSL_REQUIRED ? "https" : "http";
-        String host = System.getProperty("auth.server.host", "localhost");
+        String host = System.getProperty(authServerHostProperty, "localhost");
         String port = AUTH_SERVER_SSL_REQUIRED ? System.getProperty("auth.server.https.port", "8443") :
                 System.getProperty("auth.server.http.port", "8180");
 

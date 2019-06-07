@@ -1,0 +1,9 @@
+{
+    "realm": "authz-test",
+    "auth-server-url" : "https://keycloak.invalid:8543/auth/",
+    "auth-server-backchannel-url" : "http://localhost:8180/auth",
+    "resource" : "resource-server-test",
+    "credentials": {
+        "secret": "secret"
+    }
+}

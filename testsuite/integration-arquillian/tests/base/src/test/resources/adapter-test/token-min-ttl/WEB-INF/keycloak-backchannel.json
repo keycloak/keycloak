@@ -1,0 +1,10 @@
+{
+  "realm": "demo",
+  "resource": "token-min-ttl",
+  "auth-server-url" : "https://keycloak.invalid:8543/auth/",
+  "auth-server-backchannel-url": "https://localhost:8543/auth/",
+  "ssl-required" : "external",
+  "credentials": {
+    "secret": "password"
+  }
+}

@@ -32,7 +32,9 @@ import java.io.IOException;
  */
 public abstract class AbstractShowTokensPage extends AbstractPageWithInjectedUrl {
 
-    @FindBy(id = "accessToken")
+    public static final String ACCESS_TOKEN_ID = "accessToken";
+
+    @FindBy(id = ACCESS_TOKEN_ID)
     private WebElement accessToken;
 
     @FindBy(id = "refreshToken")

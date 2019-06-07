@@ -37,4 +37,8 @@ public class TokenMinTTLPage extends AbstractShowTokensPage {
     public URL getInjectedUrl() {
         return url;
     }
+
+    public String getUnsecuredUrl() {
+        return url + "unsecured";
+    }
 }
