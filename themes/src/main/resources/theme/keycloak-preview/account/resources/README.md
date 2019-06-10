@@ -8,7 +8,9 @@ Here is what you need to know in order to do development on the new console.
 
 Building
 --------
-First, you must install node and npm.  Then run install.
+First, you must install node and npm.  The recommended version of npm is 6.9.0 or higher.
+
+Then run install.
 
 `npm install`
 
