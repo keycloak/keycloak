@@ -104,13 +104,13 @@ public class PermissionResource {
         if (ticket == null) {
             throw new IllegalArgumentException("Permission ticket must not be null or empty");
         }
-        if (ticket.getRequester() == null || ticket.getRequesterName() == null) {
+        if (ticket.getRequester() == null && ticket.getRequesterName() == null) {
             throw new IllegalArgumentException("Permission ticket must have a requester");
         }
-        if (ticket.getResource() == null || ticket.getResourceName() == null) {
+        if (ticket.getResource() == null && ticket.getResourceName() == null) {
             throw new IllegalArgumentException("Permission ticket must have a resource");
         }
-        if (ticket.getScope() == null || ticket.getScopeName() == null) {
+        if (ticket.getScope() == null && ticket.getScopeName() == null) {
             throw new IllegalArgumentException("Permission ticket must have a scope");
         }
         Callable<PermissionTicketRepresentation> callable = new Callable<PermissionTicketRepresentation>() {

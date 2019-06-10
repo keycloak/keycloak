@@ -266,6 +266,13 @@ public class ResourceRepresentation {
         }
     }
 
+    public void addScope(ScopeRepresentation scope) {
+        if (scopes == null) {
+            scopes = new HashSet<>();
+        }
+        scopes.add(scope);
+    }
+
     public Map<String, List<String>> getAttributes() {
         return attributes;
     }
