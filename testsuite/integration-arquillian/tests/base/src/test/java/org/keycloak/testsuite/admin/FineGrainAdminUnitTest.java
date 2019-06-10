@@ -19,6 +19,7 @@ package org.keycloak.testsuite.admin;
 import org.hamcrest.Matchers;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.admin.client.Keycloak;
@@ -84,6 +85,20 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
         testRealmRep.setEnabled(true);
         testRealms.add(testRealmRep);
     }
+
+    @After
+    public void checkTokenExchangeFeature() throws Exception {
+        if (Profile.isFeatureEnabled(Profile.Feature.TOKEN_EXCHANGE)) {
+            disableTokenExchange();
+        }
+    }
+
+    private void disableTokenExchange() throws Exception {
+        Response featureResponse = testingClient.testing().disableFeature(Profile.Feature.TOKEN_EXCHANGE.toString());
+        Assert.assertEquals(200, featureResponse.getStatus());
+        checkTokenExchange(false);
+    }
+
     public static void setupDemo(KeycloakSession session) {
         RealmModel realm = session.realms().getRealmByName(TEST);
         realm.addRole("realm-role");
@@ -860,13 +875,13 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
     @Test
     @UncaughtServerErrorExpected
     public void testWithTokenExchange() throws Exception {
-        checkTokenExchange(false);
-
-        Response featureResponse = testingClient.testing().enableFeature(Profile.Feature.TOKEN_EXCHANGE.toString());
-        Assert.assertEquals(200, featureResponse.getStatus());
-        ProfileAssume.assumeFeatureEnabled(Profile.Feature.TOKEN_EXCHANGE);
-
         try {
+            checkTokenExchange(false);
+
+            Response featureResponse = testingClient.testing().enableFeature(Profile.Feature.TOKEN_EXCHANGE.toString());
+            Assert.assertEquals(200, featureResponse.getStatus());
+            ProfileAssume.assumeFeatureEnabled(Profile.Feature.TOKEN_EXCHANGE);
+
             String exchanged = checkTokenExchange(true);
             Assert.assertNotNull(exchanged);
             try (Keycloak client = Keycloak.getInstance(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth",
@@ -874,9 +889,7 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
                 Assert.assertNotNull(client.realm("master").roles().get("offline_access"));
             }
         } finally {
-            featureResponse = testingClient.testing().disableFeature(Profile.Feature.TOKEN_EXCHANGE.toString());
-            Assert.assertEquals(200, featureResponse.getStatus());
-            checkTokenExchange(false);
+            disableTokenExchange();
         }
     }
 
