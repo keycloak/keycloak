@@ -7,6 +7,8 @@ If turned on, a user account will be temporarily disabled if a threshold of logi
 To enable this feature go to the `Realm Settings` left menu item, click on the `Security Defenses` tab, then additional
 go to the `Brute Force Detection` sub-tab.
 
+NOTE: Brute Force Detection is disabled by default. Enabling this feature is highly recommended to protect against this type of attack.
+
 .Brute Force Detection
 image:{project_images}/brute-force.png[]
 
