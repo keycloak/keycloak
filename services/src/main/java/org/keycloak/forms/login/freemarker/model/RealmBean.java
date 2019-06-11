@@ -18,6 +18,7 @@ package org.keycloak.forms.login.freemarker.model;
 
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredCredentialModel;
+import org.keycloak.models.PasswordPolicy;
 import org.keycloak.representations.idm.CredentialRepresentation;
 
 /**
@@ -93,5 +94,9 @@ public class RealmBean {
         }
         return false;
     }
+    
+    public PasswordPolicy getPasswordPolicy() {
+		return realm.getPasswordPolicy();
+	}
 
 }
