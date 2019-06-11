@@ -55,5 +55,9 @@
             </div>
         </div>
     </form>
-
+    
+    <div class="col-sm-10 col-md-10">
+        <p>${realm.getPasswordPolicy()}</p>
+    </div>
+    
 </@layout.mainLayout>
