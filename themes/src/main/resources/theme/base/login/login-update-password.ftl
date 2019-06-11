@@ -36,5 +36,9 @@
                 </div>
             </div>
         </form>
+    <#elseif section = "info">
+        <div class="${properties.kcFormGroupClass!}">
+            <p>${realm.getPasswordPolicy()}</p>
+        </div>
     </#if>
 </@layout.registrationLayout>
