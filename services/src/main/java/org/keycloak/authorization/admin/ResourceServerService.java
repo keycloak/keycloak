@@ -100,6 +100,7 @@ public class ResourceServerService {
         this.auth.realm().requireManageAuthorization();
         this.resourceServer.setAllowRemoteResourceManagement(server.isAllowRemoteResourceManagement());
         this.resourceServer.setPolicyEnforcementMode(server.getPolicyEnforcementMode());
+        this.resourceServer.setDecisionStrategy(server.getDecisionStrategy());
         audit(OperationType.UPDATE, session.getContext().getUri(), false);
         return Response.noContent().build();
     }

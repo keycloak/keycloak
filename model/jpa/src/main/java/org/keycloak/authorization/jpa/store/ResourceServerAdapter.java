@@ -21,6 +21,7 @@ import org.keycloak.authorization.model.AbstractAuthorizationModel;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.models.jpa.JpaModel;
+import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.representations.idm.authorization.PolicyEnforcementMode;
 
 import javax.persistence.EntityManager;
@@ -73,6 +74,17 @@ public class ResourceServerAdapter extends AbstractAuthorizationModel implements
         throwExceptionIfReadonly();
         entity.setPolicyEnforcementMode(enforcementMode);
 
+    }
+
+    @Override
+    public DecisionStrategy getDecisionStrategy() {
+        return entity.getDecisionStrategy();
+    }
+
+    @Override
+    public void setDecisionStrategy(DecisionStrategy decisionStrategy) {
+        throwExceptionIfReadonly();
+        entity.setDecisionStrategy(decisionStrategy);
     }
 
     @Override

@@ -42,8 +42,9 @@ import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
-import org.keycloak.representations.idm.authorization.PolicyRepresentation;
+import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
+import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
@@ -237,6 +238,13 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         testRealmDefaultClientScopes(migrationRealm);
         // check that the 'microprofile-jwt' scope was added to the migrated clients.
         testMicroprofileJWTScopeAddedToClient();
+    }
+
+    private void testDecisionStrategySetOnResourceServer() {
+        ClientsResource clients = migrationRealm.clients();
+        ClientRepresentation clientRepresentation = clients.findByClientId("authz-servlet").get(0);
+        ResourceServerRepresentation settings = clients.get(clientRepresentation.getId()).authorization().getSettings();
+        assertEquals(DecisionStrategy.UNANIMOUS, settings.getDecisionStrategy());
     }
 
     private void testGroupPolicyTypeFineGrainedAdminPermission() {
@@ -599,5 +607,11 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
 
     protected void testMigrationTo6_x() {
         testMigrationTo6_0_0();
+    }
+
+    protected void testMigrationTo7_x(boolean supportedAuthzServices) {
+        if (supportedAuthzServices) {
+            testDecisionStrategySetOnResourceServer();
+        }
     }
 }

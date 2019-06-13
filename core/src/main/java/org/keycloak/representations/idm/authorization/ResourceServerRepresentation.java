@@ -34,6 +34,7 @@ public class ResourceServerRepresentation {
     private List<ResourceRepresentation> resources = emptyList();
     private List<PolicyRepresentation> policies = emptyList();
     private List<ScopeRepresentation> scopes = emptyList();
+    private DecisionStrategy decisionStrategy;
 
     public void setId(String id) {
         this.id = id;
@@ -97,5 +98,13 @@ public class ResourceServerRepresentation {
 
     public List<ScopeRepresentation> getScopes() {
         return scopes;
+    }
+
+    public void setDecisionStrategy(DecisionStrategy decisionStrategy) {
+        this.decisionStrategy = decisionStrategy;
+    }
+
+    public DecisionStrategy getDecisionStrategy() {
+        return decisionStrategy;
     }
 }
