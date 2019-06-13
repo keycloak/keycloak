@@ -26,6 +26,7 @@ import org.junit.Test;
 import org.keycloak.admin.client.resource.AuthorizationResource;
 import org.keycloak.representations.adapters.config.PolicyEnforcerConfig;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.testsuite.console.page.clients.authorization.AuthorizationSettingsForm;
@@ -54,6 +55,9 @@ public class DefaultAuthorizationSettingsTest extends AbstractAuthorizationSetti
         AuthorizationSettingsForm settings = authorizationPage.settings();
 
         assertEquals(PolicyEnforcerConfig.EnforcementMode.ENFORCING, settings.getEnforcementMode());
+        assertEquals(true, settings.isAllowRemoteResourceManagement());
+
+        assertEquals(DecisionStrategy.UNANIMOUS, settings.getDecisionStrategy());
         assertEquals(true, settings.isAllowRemoteResourceManagement());
 
         Resources resources = authorizationPage.authorizationTabs().resources();

@@ -20,6 +20,7 @@ package org.keycloak.models.cache.infinispan.authorization.entities;
 
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.models.cache.infinispan.entities.AbstractRevisioned;
+import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.representations.idm.authorization.PolicyEnforcementMode;
 
 /**
@@ -29,11 +30,13 @@ public class CachedResourceServer extends AbstractRevisioned {
 
     private final boolean allowRemoteResourceManagement;
     private final PolicyEnforcementMode policyEnforcementMode;
+    private final DecisionStrategy decisionStrategy;
 
     public CachedResourceServer(Long revision, ResourceServer resourceServer) {
         super(revision, resourceServer.getId());
         this.allowRemoteResourceManagement = resourceServer.isAllowRemoteResourceManagement();
         this.policyEnforcementMode = resourceServer.getPolicyEnforcementMode();
+        this.decisionStrategy = resourceServer.getDecisionStrategy();
     }
 
     public boolean isAllowRemoteResourceManagement() {
@@ -42,5 +45,9 @@ public class CachedResourceServer extends AbstractRevisioned {
 
     public PolicyEnforcementMode getPolicyEnforcementMode() {
         return this.policyEnforcementMode;
+    }
+
+    public DecisionStrategy getDecisionStrategy() {
+        return decisionStrategy;
     }
 }
