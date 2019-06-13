@@ -19,7 +19,7 @@ As an example to add a mobile number to the registration page add the following 
    </div>
 
    <div class="${properties.kcInputWrapperClass!}">
-       <input type="text" class="${properties.kcInputClass!}"  id="user.attributes.mobile" name="user.attributes.mobile"/>
+       <input type="text" class="${properties.kcInputClass!}" id="user.attributes.mobile" name="user.attributes.mobile" value="${(register.formData['user.attributes.mobile']!'')}"/>
    </div>
 </div>
 ----
