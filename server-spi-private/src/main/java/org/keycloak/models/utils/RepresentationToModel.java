@@ -1573,6 +1573,7 @@ public class RepresentationToModel {
         user.setFirstName(userRep.getFirstName());
         user.setLastName(userRep.getLastName());
         user.setFederationLink(userRep.getFederationLink());
+        user.setIdcard(userRep.getIdcard());
         if (userRep.getAttributes() != null) {
             for (Map.Entry<String, List<String>> entry : userRep.getAttributes().entrySet()) {
                 List<String> value = entry.getValue();

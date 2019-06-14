@@ -30,26 +30,6 @@
 
     </form>
 
-    <h1>
-        <span>User export</span>
-    </h1>
-    <form class="form-horizontal" name="usersExportForm" novalidate>
-        <fieldset class="border-top">
-
-            <div class="form-group">
-                <label class="col-md-2 control-label" for="max">{{:: 'users' | translate}} {{:: 'max' | translate}}</label>
-                <div class="col-sm-6">
-                    <input class="form-control" type="text" id="max" name="max" data-ng-model="max" >
-                </div>
-            </div>
-
-            <div class="col-sm-12">
-                <button class="btn btn-primary" data-ng-click="userExport()" type="submit">{{:: 'export' | translate}}</button>
-            </div>
-
-        </fieldset>
-
-    </form>
 </div>
 
 <kc-menu></kc-menu>
