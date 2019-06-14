@@ -39,7 +39,7 @@ import java.util.Set;
  * Assumes everything is managed by federated storage except for username.  getId() returns a default value
  * of "f:" + providerId + ":" + getUsername().  UserModel properties like enabled, firstName, lastName, email, etc. are all
  * stored as attributes in federated storage.
- *
+ * <p>
  * isEnabled() defaults to true if the ENABLED_ATTRIBUTE isn't set in federated storage
  *
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -52,6 +52,8 @@ public abstract class AbstractUserAdapterFederatedStorage implements UserModel {
     public static String EMAIL_VERIFIED_ATTRIBUTE = "EMAIL_VERIFIED";
     public static String CREATED_TIMESTAMP_ATTRIBUTE = "CREATED_TIMESTAMP";
     public static String ENABLED_ATTRIBUTE = "ENABLED";
+    public static String IDCARD_ATTRIBUTE = "IDCARD";
+    public static String MODIFY_TIMESTAMP_ATTRIBUTE = "MODIFY_TIMESTAMP";
 
 
     protected KeycloakSession session;
@@ -121,7 +123,6 @@ public abstract class AbstractUserAdapterFederatedStorage implements UserModel {
      * Also calls getGroupsInternal() method
      * to pull group membership from provider.  Implementors can override that method
      *
-     *
      * @return
      */
     @Override
@@ -156,7 +157,6 @@ public abstract class AbstractUserAdapterFederatedStorage implements UserModel {
      * Also calls getRoleMappingsInternal() method
      * to pull role mappings from provider.  Implementors can override that method
      *
-     *
      * @return
      */
     @Override
@@ -177,7 +177,6 @@ public abstract class AbstractUserAdapterFederatedStorage implements UserModel {
      * Gets role mappings from federated storage and automatically appends default roles.
      * Also calls getRoleMappingsInternal() method
      * to pull role mappings from provider.  Implementors can override that method
-     *
      *
      * @return
      */
@@ -202,7 +201,7 @@ public abstract class AbstractUserAdapterFederatedStorage implements UserModel {
     public boolean hasRole(RoleModel role) {
         Set<RoleModel> roles = getRoleMappings();
         return RoleUtils.hasRole(roles, role)
-          || RoleUtils.hasRoleFromGroup(getGroups(), role, true);
+                || RoleUtils.hasRoleFromGroup(getGroups(), role, true);
     }
 
     @Override
@@ -261,7 +260,7 @@ public abstract class AbstractUserAdapterFederatedStorage implements UserModel {
 
     @Override
     public void setEnabled(boolean enabled) {
-       setSingleAttribute(ENABLED_ATTRIBUTE, Boolean.toString(enabled));
+        setSingleAttribute(ENABLED_ATTRIBUTE, Boolean.toString(enabled));
     }
 
     /**
@@ -446,6 +445,33 @@ public abstract class AbstractUserAdapterFederatedStorage implements UserModel {
 
         UserModel that = (UserModel) o;
         return that.getId().equals(getId());
+    }
+
+    @Override
+    public String getIdcard() {
+        return getFirstAttribute(IDCARD_ATTRIBUTE);
+    }
+
+    @Override
+    public void setIdcard(String idcard) {
+        setSingleAttribute(IDCARD_ATTRIBUTE, idcard);
+    }
+
+
+    @Override
+    public Long getModifyTimestamp() {
+        String val = getFirstAttribute(MODIFY_TIMESTAMP_ATTRIBUTE);
+        if (val == null) return null;
+        else return Long.valueOf(val);
+    }
+
+    @Override
+    public void setModifyTimestamp(Long modifyTimestamp) {
+        if (modifyTimestamp == null) {
+            setSingleAttribute(MODIFY_TIMESTAMP_ATTRIBUTE, null);
+        } else {
+            setSingleAttribute(MODIFY_TIMESTAMP_ATTRIBUTE, Long.toString(modifyTimestamp));
+        }
     }
 
     @Override

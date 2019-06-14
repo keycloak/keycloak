@@ -32,4 +32,6 @@ public interface UserLookupProvider {
     UserModel getUserByUsername(String username, RealmModel realm);
 
     UserModel getUserByEmail(String email, RealmModel realm);
+
+    UserModel getUserByIdcard(String idcard, RealmModel realm);
 }

@@ -452,6 +452,11 @@ public final class AuthorizationProvider implements Provider {
             }
 
             @Override
+            public Resource create(String id, String name, Resource parent, ResourceServer resourceServer, String owner) {
+                return delegate.create(id, name, parent, resourceServer, owner);
+            }
+
+            @Override
             public void delete(String id) {
                 Resource resource = findById(id, null);
                 StoreFactory storeFactory = AuthorizationProvider.this.getStoreFactory();
@@ -555,6 +560,22 @@ public final class AuthorizationProvider implements Provider {
             public void findByTypeInstance(String type, String resourceServerId, Consumer<Resource> consumer) {
                 delegate.findByTypeInstance(type, resourceServerId, consumer);
             }
+
+            @Override
+            public List<Resource> findByParent(String resourceServerId, String parent) {
+                return delegate.findByParent(resourceServerId, parent);
+            }
+
+            @Override
+            public void findByParent(String resourceServerId, String parent, Consumer<Resource> consumer) {
+                delegate.findByParent(resourceServerId, parent, consumer);
+            }
+
+            @Override
+            public List<Resource> findTopLevel(String resourceServerId, int firstResult, int maxResult) {
+                return delegate.findTopLevel(resourceServerId, firstResult, maxResult);
+            }
+
         };
     }
 }

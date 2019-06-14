@@ -538,7 +538,6 @@
                 <groupId>org.subethamail</groupId>
                 <artifactId>subethasmtp</artifactId>
                 <version>${subethasmtp.version}</version>
-                <scope>test</scope>
             </dependency>
 
             <!-- Apache DS -->
@@ -611,7 +610,6 @@
                 <groupId>mysql</groupId>
                 <artifactId>mysql-connector-java</artifactId>
                 <version>${mysql.version}</version>
-                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.apache.httpcomponents</groupId>

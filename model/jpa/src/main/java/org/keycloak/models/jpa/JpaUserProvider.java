@@ -52,11 +52,7 @@ import org.keycloak.storage.client.ClientStorageProvider;
 
 import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
-import javax.persistence.criteria.CriteriaBuilder;
-import javax.persistence.criteria.CriteriaQuery;
-import javax.persistence.criteria.Predicate;
-import javax.persistence.criteria.Root;
-import javax.persistence.criteria.Subquery;
+import javax.persistence.criteria.*;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -66,8 +62,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-import javax.persistence.criteria.Expression;
-import javax.persistence.criteria.Path;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -731,6 +725,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
                 case UserModel.FIRST_NAME:
                 case UserModel.LAST_NAME:
                 case UserModel.EMAIL:
+                case UserModel.IDCARD:
                     predicates.add(builder.like(builder.lower(root.get(key)), "%" + value.toLowerCase() + "%"));
             }
         }
@@ -754,7 +749,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
             Root from1 = subquery1.from(ResourceEntity.class);
 
             List<Predicate> subs = new ArrayList<>();
-            
+
             Expression<String> groupId = from.get("groupId");
             subs.add(builder.like(from1.get("name"), builder.concat("group.resource.", groupId)));
 
@@ -1064,5 +1059,15 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
         UserEntity user = em.getReference(UserEntity.class, id);
         boolean isLoaded = em.getEntityManagerFactory().getPersistenceUnitUtil().isLoaded(user);
         return isLoaded ? user : null;
+    }
+
+    @Override
+    public UserModel getUserByIdcard(String idcard, RealmModel realm) {
+        TypedQuery<UserEntity> query = em.createNamedQuery("getRealmUserByIdcard", UserEntity.class);
+        query.setParameter("idcard", idcard);
+        query.setParameter("realmId", realm.getId());
+        List<UserEntity> results = query.getResultList();
+        if (results.size() == 0) return null;
+        return new UserAdapter(session, realm, em, results.get(0));
     }
 }

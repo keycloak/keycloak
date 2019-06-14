@@ -104,7 +104,6 @@ public class UserAdapter implements CachedUserModel {
     @Override
     public void setUsername(String username) {
         getDelegateForUpdate();
-        username = KeycloakModelUtils.toLowerCaseSafe(username);
         updated.setUsername(username);
     }
 
@@ -398,5 +397,28 @@ public class UserAdapter implements CachedUserModel {
 
     private UserModel getUserModel() {
         return userProviderCache.getDelegate().getUserById(cached.getId(), realm);
+    }
+    @Override
+    public String getIdcard() {
+        if (updated != null) return updated.getIdcard();
+        return cached.getIdcard();
+    }
+
+    @Override
+    public void setIdcard(String idcard) {
+        getDelegateForUpdate();
+        updated.setIdcard(idcard);
+    }
+
+    @Override
+    public Long getModifyTimestamp() {
+        if (updated != null) return updated.getModifyTimestamp();
+        return cached.getModifyTimestamp();
+    }
+
+    @Override
+    public void setModifyTimestamp(Long modifyTimestamp) {
+        getDelegateForUpdate();
+        updated.setModifyTimestamp(modifyTimestamp);
     }
 }

@@ -2899,6 +2899,10 @@ module.controller('RealmExportCtrl', function($scope, realm, $http,
     $scope.realm = realm;
     $scope.exportGroupsAndRoles = false;
     $scope.exportClients = false;
+    $scope.exportUsers = false;
+    $scope.first = 0;
+    $scope.max = 500;
+    $scope.page = 0;
 
     $scope.export = function() {
         if ($scope.exportGroupsAndRoles || $scope.exportClients) {
@@ -2929,4 +2933,39 @@ module.controller('RealmExportCtrl', function($scope, realm, $http,
                 Notifications.error("Sorry, something went wrong.");
             });
     }
+
+
+    $scope.userExport = function() {
+        if ($scope.exportUsers) {
+            Dialog.confirm('Export', '用户导出会造成服务器暂时缓慢，确定导出吗?', userDownload);
+        } else {
+            userDownload();
+        }
+    }
+
+    function userDownload() {
+        var exportUrl = authUrl + '/admin/realms/' + realm.realm + '/user-export';
+        var params = {};
+        params['first'] = $scope.first;
+        if ($scope.max > 0) {
+            params['max'] = $scope.max;
+        }
+        if (Object.keys(params).length > 0) {
+            exportUrl += '?' + $httpParamSerializer(params);
+        }
+        $http.post(exportUrl)
+            .then(function(response) {
+                var download = angular.fromJson(response.data);
+                download = angular.toJson({users: download}, true);
+                saveAs(new Blob([download], { type: 'application/json' }), realm.realm+'-users-'+page+'.json');
+//                if(response.data.length == $scope.max){
+//                    $scope.first += parseInt($scope.max);
+//                    page++;
+//                    userDownload();
+//                }
+            }).catch(function() {
+                Notifications.error("Sorry, something went wrong.");
+            });
+    }
+
 });

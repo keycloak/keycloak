@@ -53,8 +53,8 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * @resource Groups
  * @author Bill Burke
+ * @resource Groups
  */
 public class GroupResource {
 
@@ -72,9 +72,7 @@ public class GroupResource {
         this.group = group;
     }
 
-     /**
-     *
-     *
+    /**
      * @return
      */
     @GET
@@ -109,8 +107,17 @@ public class GroupResource {
     @DELETE
     public void deleteGroup() {
         this.auth.groups().requireManage(group);
-
+        if(group.isHasChild()){
+            throw new RuntimeException("Group has children and cannot be deleted!");
+        }
         realm.removeGroup(group);
+        GroupModel parent = group.getParent();
+        if (parent != null) {
+            parent.getSubGroups().remove(group);
+            if (parent.getSubGroups().isEmpty()) {
+                group.getParent().setHasChild(false);
+            }
+        }
         adminEvent.operation(OperationType.DELETE).resourcePath(session.getContext().getUri()).success();
     }
 
@@ -147,13 +154,14 @@ public class GroupResource {
             child = realm.createGroup(rep.getName());
             updateGroup(rep, child);
             URI uri = session.getContext().getUri().getBaseUriBuilder()
-                                           .path(session.getContext().getUri().getMatchedURIs().get(2))
-                                           .path(child.getId()).build();
+                    .path(session.getContext().getUri().getMatchedURIs().get(2))
+                    .path(child.getId()).build();
             builder.status(201).location(uri);
             rep.setId(child.getId());
             adminEvent.operation(OperationType.CREATE);
 
         }
+
         realm.moveGroup(child, group);
         adminEvent.resourcePath(session.getContext().getUri()).representation(rep).success();
 
@@ -177,11 +185,12 @@ public class GroupResource {
         }
     }
 
+
     @Path("role-mappings")
     public RoleMapperResource getRoleMappings() {
         AdminPermissionEvaluator.RequirePermissionCheck manageCheck = () -> auth.groups().requireManage(group);
         AdminPermissionEvaluator.RequirePermissionCheck viewCheck = () -> auth.groups().requireView(group);
-        RoleMapperResource resource =  new RoleMapperResource(realm, auth, group, adminEvent, manageCheck, viewCheck);
+        RoleMapperResource resource = new RoleMapperResource(realm, auth, group, adminEvent, manageCheck, viewCheck);
         ResteasyProviderFactory.getInstance().injectProperties(resource);
         return resource;
 
@@ -189,11 +198,11 @@ public class GroupResource {
 
     /**
      * Get users
-     *
+     * <p>
      * Returns a list of users, filtered according to query parameters
      *
      * @param firstResult Pagination offset
-     * @param maxResults Maximum results size (defaults to 100)
+     * @param maxResults  Maximum results size (defaults to 100)
      * @return
      */
     @GET
@@ -247,7 +256,6 @@ public class GroupResource {
 
     /**
      * Return object stating whether client Authorization permissions have been initialized or not and a reference
-     *
      *
      * @return initialized manage permissions reference
      */

@@ -57,13 +57,14 @@ public class UserRepresentation {
     protected Map<String, List<String>> clientRoles;
     protected List<UserConsentRepresentation> clientConsents;
     protected Integer notBefore;
+    protected String idcard;
 
     @Deprecated
     protected Map<String, List<String>> applicationRoles;
     @Deprecated
     protected List<SocialLinkRepresentation> socialLinks;
 
-    protected List<String> groups;
+    protected List<GroupRepresentation> groups;
     private Map<String, Boolean> access;
 
     public String getSelf() {
@@ -247,11 +248,11 @@ public class UserRepresentation {
         this.serviceAccountClientId = serviceAccountClientId;
     }
 
-    public List<String> getGroups() {
+    public List<GroupRepresentation> getGroups() {
         return groups;
     }
 
-    public void setGroups(List<String> groups) {
+    public void setGroups(List<GroupRepresentation> groups) {
         this.groups = groups;
     }
 
@@ -282,5 +283,13 @@ public class UserRepresentation {
 
     public void setAccess(Map<String, Boolean> access) {
         this.access = access;
+    }
+
+    public String getIdcard() {
+        return idcard;
+    }
+
+    public void setIdcard(String idcard) {
+        this.idcard = idcard;
     }
 }

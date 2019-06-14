@@ -788,4 +788,27 @@ public class ClientAdapter implements ClientModel, JpaModel<ClientEntity> {
         return getClientId();
     }
 
+
+    @Override
+    public Set<String> getResourceKeys() {
+        Set<String> result = new HashSet<String>();
+        result.addAll(entity.getResourceKeys());
+        return result;
+    }
+
+    @Override
+    public void setResourceKey(Set<String> resourceKeys) {
+        entity.setResourceKeys(resourceKeys);
+    }
+
+    @Override
+    public void addResourceKey(String resourceKey) {
+        entity.getResourceKeys().add(resourceKey);
+    }
+
+    @Override
+    public void removeResourceKey(String resourceKey) {
+        entity.getResourceKeys().remove(resourceKey);
+    }
+
 }

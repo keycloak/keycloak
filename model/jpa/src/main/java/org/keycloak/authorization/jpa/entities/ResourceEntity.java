@@ -66,7 +66,9 @@ import org.hibernate.annotations.FetchMode;
                 @NamedQuery(name="findResourceIdByTypeInstance", query="select distinct(r) from ResourceEntity r left join fetch r.scopes s where  r.resourceServer.id = :serverId and r.type = :type and r.owner <> :serverId"),
                 @NamedQuery(name="findResourceIdByServerId", query="select r.id from ResourceEntity r where  r.resourceServer.id = :serverId "),
                 @NamedQuery(name="findResourceIdByScope", query="select r from ResourceEntity r inner join r.scopes s where r.resourceServer.id = :serverId and (s.resourceServer.id = :serverId and s.id in (:scopeIds))"),
-                @NamedQuery(name="deleteResourceByResourceServer", query="delete from ResourceEntity r where r.resourceServer.id = :serverId")
+                @NamedQuery(name="deleteResourceByResourceServer", query="delete from ResourceEntity r where r.resourceServer.id = :serverId"),
+                @NamedQuery(name = "getResourceByParent", query = "select r from ResourceEntity r where r.resourceServer.id = :serverId and r.owner = :ownerId and r.parent = :parent order by r.sort"),
+                @NamedQuery(name = "getTopLevelResource", query = "select r from ResourceEntity r where r.resourceServer.id = :serverId and r.owner = :ownerId and r.parent is null order by r.sort"),
         }
 )
 public class ResourceEntity {
@@ -115,6 +117,20 @@ public class ResourceEntity {
     @Fetch(FetchMode.SELECT)
     @BatchSize(size = 20)
     private Collection<ResourceAttributeEntity> attributes = new ArrayList<>();
+
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "PARENT_RESOURCE")
+    private ResourceEntity parent;
+
+    @Column(name = "SORT")
+    private Integer sort;
+
+    @Column(name = "PERMISSION")
+    private String permission;
+
+    @Column(name="ENABLED")
+    protected boolean enabled;
 
     public String getId() {
         return id;
@@ -222,5 +238,37 @@ public class ResourceEntity {
     @Override
     public int hashCode() {
         return getId().hashCode();
+    }
+
+    public ResourceEntity getParent() {
+        return parent;
+    }
+
+    public void setParent(ResourceEntity parent) {
+        this.parent = parent;
+    }
+
+    public Integer getSort() {
+        return sort;
+    }
+
+    public void setSort(Integer sort) {
+        this.sort = sort;
+    }
+
+    public String getPermission() {
+        return permission;
+    }
+
+    public void setPermission(String permission) {
+        this.permission = permission;
+    }
+
+    public boolean isEnabled() {
+        return enabled;
+    }
+
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
     }
 }

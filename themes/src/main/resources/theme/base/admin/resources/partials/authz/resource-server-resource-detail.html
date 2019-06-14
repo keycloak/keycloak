@@ -74,10 +74,28 @@
             <div class="form-group">
                 <label class="col-md-2 control-label" for="iconUri">{{:: 'authz-icon-uri' | translate}} </label>
                 <div class="col-sm-6">
-                    <input class="form-control" type="text" id="iconUri" name="name" data-ng-model="resource.icon_uri" autofocus>
+                    <input class="form-control" type="text" id="iconUri" name="iconUri" data-ng-model="resource.icon_uri" autofocus>
                 </div>
                 <kc-tooltip>{{:: 'authz-icon-uri.tooltip' | translate}}</kc-tooltip>
             </div>
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="permission">{{:: 'authz-permissions' | translate}} </label>
+                <div class="col-sm-6">
+                    <input class="form-control" type="text" id="permission" name="permission" data-ng-model="resource.permission" autofocus>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="sort">Sort </label>
+                <div class="col-sm-6">
+                    <input class="form-control" type="text" id="sort" name="sort" data-ng-model="resource.sort" autofocus>
+                </div>
+            </div>
+            <div class="form-group">
+            <label class="col-md-2 control-label" for="resource.enabled">{{:: 'enabled' | translate}} </label>
+            <div class="col-md-6">
+                <input ng-model="resource.enabled" id="resource.enabled" onoffswitch />
+            </div>
+        </div>
             <div class="form-group">
                 <label class="col-md-2 control-label" for="resource.ownerManagedAccess">{{:: 'authz-resource-user-managed-access-enabled' | translate}}</label>
                 <div class="col-md-6">

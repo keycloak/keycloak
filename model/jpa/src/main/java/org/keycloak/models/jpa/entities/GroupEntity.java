@@ -29,6 +29,7 @@ import java.util.Collection;
  */
 @NamedQueries({
         @NamedQuery(name="getGroupIdsByParent", query="select u.id from GroupEntity u where u.parent = :parent"),
+        @NamedQuery(name="getGroupIdsByName", query="select u.id from GroupEntity u where u.name = :name"),
         @NamedQuery(name="getGroupIdsByNameContaining", query="select u.id from GroupEntity u where u.realm.id = :realm and u.name like concat('%',:search,'%') order by u.name ASC"),
         @NamedQuery(name="getTopLevelGroupIds", query="select u.id from GroupEntity u where u.parent is null and u.realm.id = :realm"),
         @NamedQuery(name="getGroupCount", query="select count(u) from GroupEntity u where u.realm.id = :realm"),
@@ -58,6 +59,9 @@ public class GroupEntity {
             cascade = CascadeType.REMOVE,
             orphanRemoval = true, mappedBy="group")
     protected Collection<GroupAttributeEntity> attributes = new ArrayList<GroupAttributeEntity>();
+
+    @Column(name = "HAS_CHILD")
+    protected boolean hasChild;
 
     public String getId() {
         return id;
@@ -97,6 +101,15 @@ public class GroupEntity {
 
     public void setParent(GroupEntity parent) {
         this.parent = parent;
+    }
+
+
+    public boolean isHasChild() {
+        return hasChild;
+    }
+
+    public void setHasChild(boolean hasChild) {
+        this.hasChild = hasChild;
     }
 
     @Override

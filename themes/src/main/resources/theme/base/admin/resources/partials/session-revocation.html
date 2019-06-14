@@ -11,7 +11,7 @@
             <div class="form-group">
                 <label class="col-md-2 control-label" for="notBefore">{{:: 'not-before' | translate}}</label>
                 <div class="col-md-6">
-                    <input ng-disabled="true" class="form-control" type="text" id="notBefore" name="notBefore" data-ng-model="notBefore" autofocus>
+                    <input ng-disabled="true" class="form-control" type="text" id="notBefore" name="notBefore" data-ng-model="notBefore|date:'yyyy-MM-dd HH:mm:ss'" autofocus>
                 </div>
                 <kc-tooltip>{{:: 'not-before.tooltip' | translate}}</kc-tooltip>
             </div>

@@ -29,15 +29,19 @@
         <tr data-ng-show="searchLoaded && users.length > 0">
             <th class="w-15">{{:: 'id' | translate}}</th>
             <th class="w-15">{{:: 'username' | translate}}</th>
+            <th class="w-15">{{:: 'first-name' | translate}}</th>
+            <th class="w-15">{{:: 'idcard' | translate}}</th>
+            <!--
             <th class="w-15">{{:: 'email' | translate}}</th>
             <th class="w-15">{{:: 'last-name' | translate}}</th>
-            <th class="w-15">{{:: 'first-name' | translate}}</th>
+            -->
+            <th class="w-30">{{:: 'groups' | translate}}</th>
             <th colspan="{{serverInfo.featureEnabled('IMPERSONATION') && access.impersonation == true ? '3' : '2'}}">{{:: 'actions' | translate}}</th>
         </tr>
         </thead>
         <tfoot data-ng-show="users && (users.length >= query.max || query.first > 0)">
         <tr>
-            <td colspan="7">
+            <td colspan="8">
                 <div class="table-nav">
                     <button data-ng-click="firstPage()" class="first" ng-disabled="query.first == 0">{{:: 'first-page' | translate}}</button>
                     <button data-ng-click="previousPage()" class="prev" ng-disabled="query.first == 0">{{:: 'previous-page' | translate}}</button>
@@ -50,20 +54,24 @@
         <tr ng-repeat="user in users">
             <td class="clip"><a href="#/realms/{{realm.realm}}/users/{{user.id}}">{{user.id}}</a></td>
             <td class="clip">{{user.username}}</td>
-            <td class="clip">{{user.email}}</td>
-            <td class="clip">{{user.lastName}}</td>
             <td class="clip">{{user.firstName}}</td>
-            <td class="kc-action-cell" kc-open="/realms/{{realm.realm}}/users/{{user.id}}">{{:: 'edit' | translate}}</td>
-            <td data-ng-show="serverInfo.featureEnabled('IMPERSONATION') && access.impersonation" class="kc-action-cell" data-ng-click="impersonate(user.id)">{{:: 'impersonate' | translate}}</td>
-            <td data-ng-show="user.access.manage" class="kc-action-cell" data-ng-click="removeUser(user)">{{:: 'delete' | translate}}</td>
-        </tr>
-        <tr data-ng-show="!users || users.length == 0">
-            <td class="text-muted" data-ng-show="!users">{{:: 'users.instruction' | translate}}</td>
-            <td class="text-muted" data-ng-show="searchLoaded && users.length == 0 && lastSearch != null">{{:: 'no-results' | translate}}</td>
-            <td class="text-muted" data-ng-show="searchLoaded && users.length == 0 && lastSearch == null">{{:: 'no-users-available' | translate}}</td>
-        </tr>
-        </tbody>
-    </table>
+            <td class="clip">{{user.idcard}}</td>
+            <!--
+           <td class="clip">{{user.email}}</td>
+           <td class="clip">{{user.lastName}}</td>
+           -->
+           <td class="clip">{{user.groups[0].name}}</td>
+           <td class="kc-action-cell" kc-open="/realms/{{realm.realm}}/users/{{user.id}}">{{:: 'edit' | translate}}</td>
+           <td data-ng-show="serverInfo.featureEnabled('IMPERSONATION') && access.impersonation" class="kc-action-cell" data-ng-click="impersonate(user.id)">{{:: 'impersonate' | translate}}</td>
+           <td data-ng-show="user.access.manage" class="kc-action-cell" data-ng-click="removeUser(user)">{{:: 'delete' | translate}}</td>
+       </tr>
+       <tr data-ng-show="!users || users.length == 0">
+           <td class="text-muted" data-ng-show="!users">{{:: 'users.instruction' | translate}}</td>
+           <td class="text-muted" data-ng-show="searchLoaded && users.length == 0 && lastSearch != null">{{:: 'no-results' | translate}}</td>
+           <td class="text-muted" data-ng-show="searchLoaded && users.length == 0 && lastSearch == null">{{:: 'no-users-available' | translate}}</td>
+       </tr>
+       </tbody>
+   </table>
 </div>
 
 <kc-menu></kc-menu>

@@ -30,16 +30,28 @@
                 </security>
             </datasource>
             <datasource jndi-name="java:jboss/datasources/KeycloakDS" pool-name="KeycloakDS" enabled="true" use-java-context="true" statistics-enabled="${wildfly.datasources.statistics-enabled:${wildfly.statistics-enabled:false}}">
-                <connection-url><?KEYCLOAK_DS_CONNECTION_URL?></connection-url>
-                <driver>h2</driver>
+                <connection-url>jdbc:mysql://127.0.0.1:3306/keycloak?useUnicode=true&amp;characterEncoding=utf8&amp;useSSL=false</connection-url>
+                <driver>mysql</driver>
+                <pool>
+                    <max-pool-size>20</max-pool-size>
+                    <flush-strategy>IdleConnections</flush-strategy>
+                </pool>
                 <security>
-                    <user-name>sa</user-name>
-                    <password>sa</password>
+                    <user-name>root</user-name>
+                    <password>root</password>
                 </security>
+                <validation>
+                    <check-valid-connection-sql>SELECT 1</check-valid-connection-sql>
+                    <background-validation>true</background-validation>
+                    <background-validation-millis>20000</background-validation-millis>
+                </validation>
             </datasource>
             <drivers>
                 <driver name="h2" module="com.h2database.h2">
                     <xa-datasource-class>org.h2.jdbcx.JdbcDataSource</xa-datasource-class>
+                </driver>
+                <driver name="mysql" module="com.mysql">
+                    <xa-datasource-class>com.mysql.jdbc.jdbc2.optional.MysqlXADataSource</xa-datasource-class>
                 </driver>
             </drivers>
         </datasources>

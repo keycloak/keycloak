@@ -21,6 +21,7 @@ import org.jboss.resteasy.spi.NotFoundException;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
+import org.keycloak.models.Constants;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -46,8 +47,8 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
- * @resource Groups
  * @author Bill Burke
+ * @resource Groups
  */
 public class GroupsResource {
 
@@ -74,17 +75,21 @@ public class GroupsResource {
     @Produces(MediaType.APPLICATION_JSON)
     public List<GroupRepresentation> getGroups(@QueryParam("search") String search,
                                                @QueryParam("first") Integer firstResult,
-                                               @QueryParam("max") Integer maxResults) {
+                                               @QueryParam("max") Integer maxResults,
+                                               @QueryParam("parent") String parent) {
         auth.groups().requireList();
 
         List<GroupRepresentation> results;
 
+        firstResult = firstResult != null ? firstResult : 0;
+        maxResults = maxResults != null ? maxResults : Constants.DEFAULT_MAX_RESULTS;
+
         if (Objects.nonNull(search)) {
-            results = ModelToRepresentation.searchForGroupByName(realm, search.trim(), firstResult, maxResults);
-        } else if(Objects.nonNull(firstResult) && Objects.nonNull(maxResults)) {
-            results = ModelToRepresentation.toGroupHierarchy(realm, false, firstResult, maxResults);
+            results = ModelToRepresentation.searchForGroupByName(realm, search.trim(), firstResult, maxResults, true);
+        } else if (Objects.nonNull(parent)) {
+            results = ModelToRepresentation.toSubGroupsByParent(realm, parent);
         } else {
-            results = ModelToRepresentation.toGroupHierarchy(realm, false);
+            results = ModelToRepresentation.toTopLevelGroup(realm, firstResult, maxResults);
         }
 
         return results;
@@ -102,7 +107,7 @@ public class GroupsResource {
         if (group == null) {
             throw new NotFoundException("Could not find group by id");
         }
-        GroupResource resource =  new GroupResource(realm, group, session, this.auth, adminEvent);
+        GroupResource resource = new GroupResource(realm, group, session, this.auth, adminEvent);
         ResteasyProviderFactory.getInstance().injectProperties(resource);
         return resource;
     }
@@ -168,4 +173,22 @@ public class GroupsResource {
         adminEvent.representation(rep).success();
         return builder.build();
     }
+
+
+    @Path("name")
+    @GET
+    @NoCache
+    @Produces(MediaType.APPLICATION_JSON)
+    public GroupRepresentation getGroup(@QueryParam("groupName") String groupName, @QueryParam("hierarchy") Boolean hierarchy) {
+        GroupModel group = realm.getGroupByName(realm, groupName);
+        if (group == null) {
+            throw new NotFoundException("Could not find group by name");
+        }
+        if (hierarchy!=null && hierarchy) {
+            return ModelToRepresentation.toGroupHierarchy(group, false);
+        }
+        return ModelToRepresentation.toRepresentation(group, false);
+    }
+
+
 }

@@ -126,7 +126,18 @@ module.config(['$routeProvider', function ($routeProvider) {
             }
         },
         controller: 'ResourceServerResourceDetailCtrl'
-    }).when('/realms/:realm/clients/:client/authz/resource-server/resource/:rsrid', {
+    }).when('/realms/:realm/clients/:client/authz/resource-server/resource/:rsrid/create', {
+              templateUrl: resourceUrl + '/partials/authz/resource-server-resource-detail.html',
+              resolve: {
+                  realm: function (RealmLoader) {
+                      return RealmLoader();
+                  },
+                  client : function(ClientLoader) {
+                      return ClientLoader();
+                  }
+              },
+              controller: 'ResourceServerResourceCreateChildrenCtrl'
+     }).when('/realms/:realm/clients/:client/authz/resource-server/resource/:rsrid', {
         templateUrl: resourceUrl + '/partials/authz/resource-server-resource-detail.html',
         resolve: {
             realm: function (RealmLoader) {

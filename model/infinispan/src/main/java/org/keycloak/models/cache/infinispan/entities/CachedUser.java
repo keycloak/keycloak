@@ -52,6 +52,8 @@ public class CachedUser extends AbstractExtendableRevisioned implements InRealm 
     private final LazyLoader<UserModel, MultivaluedHashMap<String, String>> attributes;
     private final LazyLoader<UserModel, Set<String>> roleMappings;
     private final LazyLoader<UserModel, Set<String>> groups;
+    private String idcard;
+    private Long modifyTimestamp;
 
     public CachedUser(Long revision, RealmModel realm, UserModel user, int notBefore) {
         super(revision, user.getId());
@@ -66,6 +68,8 @@ public class CachedUser extends AbstractExtendableRevisioned implements InRealm 
         this.federationLink = user.getFederationLink();
         this.serviceAccountClientLink = user.getServiceAccountClientLink();
         this.notBefore = notBefore;
+        this.idcard=user.getIdcard();
+        this.modifyTimestamp=user.getModifyTimestamp();
         this.requiredActions = new DefaultLazyLoader<>(UserModel::getRequiredActions, Collections::emptySet);
         this.attributes = new DefaultLazyLoader<>(userModel -> new MultivaluedHashMap<>(userModel.getAttributes()), MultivaluedHashMap::new);
         this.roleMappings = new DefaultLazyLoader<>(userModel -> userModel.getRoleMappings().stream().map(RoleModel::getId).collect(Collectors.toSet()), Collections::emptySet);
@@ -130,5 +134,21 @@ public class CachedUser extends AbstractExtendableRevisioned implements InRealm 
 
     public int getNotBefore() {
         return notBefore;
+    }
+
+    public String getIdcard() {
+        return idcard;
+    }
+
+    public void setIdcard(String idcard) {
+        this.idcard = idcard;
+    }
+
+    public Long getModifyTimestamp() {
+        return modifyTimestamp;
+    }
+
+    public void setModifyTimestamp(Long modifyTimestamp) {
+        this.modifyTimestamp = modifyTimestamp;
     }
 }

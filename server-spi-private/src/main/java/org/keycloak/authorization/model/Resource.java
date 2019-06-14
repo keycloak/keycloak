@@ -18,6 +18,8 @@
 
 package org.keycloak.authorization.model;
 
+import org.keycloak.models.GroupModel;
+
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -98,7 +100,7 @@ public interface Resource {
      *
      * @return a list with all scopes associated with this resource
      */
-     List<Scope> getScopes();
+    List<Scope> getScopes();
 
     /**
      * Returns an icon {@link java.net.URI} for this resource.
@@ -119,7 +121,7 @@ public interface Resource {
      *
      * @return the resource server associated with this resource
      */
-     ResourceServer getResourceServer();
+    ResourceServer getResourceServer();
 
     /**
      * Returns the resource's owner, which is usually an identifier that uniquely identifies the resource's owner.
@@ -173,7 +175,7 @@ public interface Resource {
     /**
      * Sets an attribute with the given <code>name</code> and <code>values</code>.
      *
-     * @param name the attribute name
+     * @param name  the attribute name
      * @param value the attribute values
      * @return a map holding the attributes associated with this resource
      */
@@ -182,4 +184,38 @@ public interface Resource {
     void removeAttribute(String name);
 
     boolean isFetched(String association);
+
+    Resource getParent();
+
+    String getParentId();
+
+    void setParent(Resource resource);
+
+    Set<Resource> getSubResources();
+
+    Integer getSort();
+
+    void setSort(Integer sort);
+
+    String getPermission();
+
+    void setPermission(String permission);
+
+    boolean isEnabled();
+
+    void setEnabled(boolean enabled);
+
+    /**
+     * Automatically calls setParent() on the subResource
+     *
+     * @param subResource
+     */
+    void addChild(Resource subResource);
+
+    /**
+     * Automatically calls setParent() on the subResource
+     *
+     * @param subResource
+     */
+    void removeChild(Resource subResource);
 }

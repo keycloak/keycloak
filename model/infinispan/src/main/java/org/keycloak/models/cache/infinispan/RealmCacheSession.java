@@ -54,7 +54,7 @@ import java.util.*;
  * the revision cache entry for this object has its version number bumped.
  * - Whenever an object is marked for invalidation, the cache is also searched for any objects that are related to this object
  * and need to also be evicted/removed.  We use the Infinispan Stream SPI for this.
- *
+ * <p>
  * ClientList caches:
  * - lists of clients are cached in a specific cache entry i.e. realm clients, find client by clientId
  * - realm client lists need to be invalidated and evited whenever a client is added or removed from a realm.  RealmProvider
@@ -65,7 +65,7 @@ import java.util.*;
  * avoid caching an uncommitted removal/add in a query cache.
  * - when a client is removed, any queries that contain that client must also be removed.
  * - a client removal will also cause anything that is contained and cached within that client to be removed
- *
+ * <p>
  * Clustered caches:
  * - There is a Infinispan @Listener registered.  If an invalidation event happens, this is treated like
  * the object was removed from the database and will perform evictions based on that assumption.
@@ -73,20 +73,20 @@ import java.util.*;
  * - With an invalidation cache, if you remove an entry on node 1 and this entry does not exist on node 2, node 2 will not receive a @Listener invalidation event.
  * so, hat we have to put a marker entry in the invalidation cache before we read from the DB, so if the DB changes in between reading and adding a cache entry, the cache will be notified and bump
  * the version information.
- *
+ * <p>
  * DBs with Repeatable Read:
  * - DBs like MySQL are Repeatable Read by default.  So, if you query a Client for instance, it will always return the same result in the same transaction even if the DB
  * was updated in between these queries.  This makes it possible to store stale cache entries.  To avoid this problem, this class stores the current local version counter
  * at the beginningof the transaction.  Whenever an entry is added to the cache, the current coutner is compared against the counter at the beginning of the tx.  If the current
  * is greater, then don't cache.
- *
+ * <p>
  * Groups and Roles:
  * - roles are tricky because of composites.  Composite lists are cached too.  So, when a role is removed
  * we also iterate and invalidate any role or group that contains that role being removed.
- *
+ * <p>
  * - any relationship should be resolved from session.realms().  For example if JPA.getClientByClientId() is invoked,
- *  JPA should find the id of the client and then call session.realms().getClientById().  THis is to ensure that the cached
- *  object is invoked and all proper invalidation are being invoked.
+ * JPA should find the id of the client and then call session.realms().getClientById().  THis is to ensure that the cached
+ * object is invoked and all proper invalidation are being invoked.
  *
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
@@ -148,14 +148,13 @@ public class RealmCacheSession implements CacheRealmProvider {
         realmDelegate = session.realmLocalStorage();
         return realmDelegate;
     }
+
     public ClientProvider getClientDelegate() {
         if (!transactionActive) throw new IllegalStateException("Cannot access delegate without a transaction");
         if (clientDelegate != null) return clientDelegate;
         clientDelegate = session.clientStorageManager();
         return clientDelegate;
     }
-
-
 
 
     @Override
@@ -177,7 +176,7 @@ public class RealmCacheSession implements CacheRealmProvider {
     private void invalidateClient(String id) {
         invalidations.add(id);
         ClientModel adapter = managedApplications.get(id);
-        if (adapter != null && adapter instanceof ClientAdapter) ((ClientAdapter)adapter).invalidate();
+        if (adapter != null && adapter instanceof ClientAdapter) ((ClientAdapter) adapter).invalidate();
     }
 
     @Override
@@ -208,8 +207,8 @@ public class RealmCacheSession implements CacheRealmProvider {
         // need to make sure that scope and group mapping clients and groups are invalidated
         for (String id : newInvalidations) {
             ClientModel adapter = managedApplications.get(id);
-            if (adapter != null && adapter instanceof ClientAdapter){
-                ((ClientAdapter)adapter).invalidate();
+            if (adapter != null && adapter instanceof ClientAdapter) {
+                ((ClientAdapter) adapter).invalidate();
                 continue;
             }
             GroupAdapter group = managedGroups.get(id);
@@ -231,8 +230,6 @@ public class RealmCacheSession implements CacheRealmProvider {
 
         }
     }
-
-
 
 
     private void invalidateRole(String id) {
@@ -379,7 +376,7 @@ public class RealmCacheSession implements CacheRealmProvider {
 
     @Override
     public RealmModel createRealm(String id, String name) {
-        RealmModel realm =  getRealmDelegate().createRealm(id, name);
+        RealmModel realm = getRealmDelegate().createRealm(id, name);
         registerRealmInvalidation(realm.getId(), realm.getName());
         return realm;
     }
@@ -398,7 +395,7 @@ public class RealmCacheSession implements CacheRealmProvider {
             if (invalidations.contains(id)) return model;
             cached = new CachedRealm(loaded, model);
             cache.addRevisioned(cached, startupRevision);
-            wasCached =true;
+            wasCached = true;
         } else if (invalidations.contains(id)) {
             return getRealmDelegate().getRealm(id);
         } else if (managedRealms.containsKey(id)) {
@@ -532,6 +529,7 @@ public class RealmCacheSession implements CacheRealmProvider {
     static String getRolesCacheKey(String container) {
         return container + ROLES_QUERY_SUFFIX;
     }
+
     static String getRoleByNameCacheKey(String container, String name) {
         return container + "." + name + ROLES_QUERY_SUFFIX;
     }
@@ -790,7 +788,7 @@ public class RealmCacheSession implements CacheRealmProvider {
         } else if (managedRoles.containsKey(id)) {
             return managedRoles.get(id);
         }
-        RoleAdapter adapter = new RoleAdapter(cached,this, realm);
+        RoleAdapter adapter = new RoleAdapter(cached, this, realm);
         managedRoles.put(id, adapter);
         return adapter;
     }
@@ -1200,5 +1198,157 @@ public class RealmCacheSession implements CacheRealmProvider {
     @Override
     public void decreaseRemainingCount(RealmModel realm, ClientInitialAccessModel clientInitialAccess) {
         getRealmDelegate().decreaseRemainingCount(realm, clientInitialAccess);
+    }
+
+    @Override
+    public List<GroupModel> getGroupsByParent(RealmModel realm, String parent) {
+        String cacheKey = getGroupsQueryCacheKey(realm.getId() + parent);
+        boolean queryDB = invalidations.contains(cacheKey) || listInvalidations.contains(realm.getId() + parent);
+        if (queryDB) {
+            return getRealmDelegate().getGroupsByParent(realm, parent);
+        }
+
+        GroupListQuery query = cache.get(cacheKey, GroupListQuery.class);
+        if (Objects.nonNull(query)) {
+            logger.tracev("getGroupsByParent cache hit: {0}", realm.getName());
+        }
+
+        if (Objects.isNull(query)) {
+            Long loaded = cache.getCurrentRevision(cacheKey);
+            List<GroupModel> model = getRealmDelegate().getGroupsByParent(realm, parent);
+            if (model == null) return null;
+            Set<String> ids = new HashSet<>();
+            for (GroupModel client : model) ids.add(client.getId());
+            query = new GroupListQuery(loaded, cacheKey, realm, ids);
+            logger.tracev("adding realm getGroupsByParent cache miss: realm {0} key {1}", realm.getName(), cacheKey);
+            cache.addRevisioned(query, startupRevision);
+            return model;
+        }
+        List<GroupModel> list = new LinkedList<>();
+        for (String id : query.getGroups()) {
+            GroupModel group = session.realms().getGroupById(id, realm);
+            if (Objects.isNull(group)) {
+                invalidations.add(cacheKey);
+                return getRealmDelegate().getGroupsByParent(realm, parent);
+            }
+            list.add(group);
+        }
+
+        list.sort(Comparator.comparing(GroupModel::getName));
+
+        return list;
+    }
+
+    @Override
+    public List<GroupModel> getRoleGroups(RealmModel realm, RoleModel role) {
+        String cacheKey = getGroupsQueryCacheKey(realm.getId() + role.getId());
+        boolean queryDB = invalidations.contains(cacheKey) || listInvalidations.contains(realm.getId() + role.getId());
+        if (queryDB) {
+            return getRealmDelegate().getRoleGroups(realm, role);
+        }
+
+        GroupListQuery query = cache.get(cacheKey, GroupListQuery.class);
+        if (Objects.nonNull(query)) {
+            logger.tracev("getRoleGroups cache hit: {0}", realm.getName());
+        }
+
+        if (Objects.isNull(query)) {
+            Long loaded = cache.getCurrentRevision(cacheKey);
+            List<GroupModel> model = getRealmDelegate().getRoleGroups(realm, role);
+            if (model == null) return null;
+            Set<String> ids = new HashSet<>();
+            for (GroupModel client : model) ids.add(client.getId());
+            query = new GroupListQuery(loaded, cacheKey, realm, ids);
+            logger.tracev("adding realm getRoleGroups cache miss: realm {0} key {1}", realm.getName(), cacheKey);
+            cache.addRevisioned(query, startupRevision);
+            return model;
+        }
+        List<GroupModel> list = new LinkedList<>();
+        for (String id : query.getGroups()) {
+            GroupModel group = session.realms().getGroupById(id, realm);
+            if (Objects.isNull(group)) {
+                invalidations.add(cacheKey);
+                return getRealmDelegate().getRoleGroups(realm, role);
+            }
+            list.add(group);
+        }
+
+        list.sort(Comparator.comparing(GroupModel::getName));
+
+        return list;
+    }
+
+
+    @Override
+    public GroupModel getGroupByName(RealmModel realm, String groupName) {
+        String cacheKey = getGroupsQueryCacheKey(realm.getId() + groupName);
+        boolean queryDB = invalidations.contains(cacheKey) || listInvalidations.contains(realm.getId() + groupName);
+        if (queryDB) {
+            return getRealmDelegate().getGroupByName(realm, groupName);
+        }
+
+        GroupListQuery query = cache.get(cacheKey, GroupListQuery.class);
+        if (Objects.nonNull(query)) {
+            logger.tracev("getGroupByName cache hit: {0}", realm.getName());
+        }
+
+        if (Objects.isNull(query)) {
+            Long loaded = cache.getCurrentRevision(cacheKey);
+            GroupModel model = getRealmDelegate().getGroupByName(realm, groupName);
+            if (model == null) return null;
+            Set<String> ids = new HashSet<>();
+            ids.add(model.getId());
+            query = new GroupListQuery(loaded, cacheKey, realm, ids);
+            logger.tracev("adding realm getGroupByName cache miss: realm {0} key {1}", realm.getName(), cacheKey);
+            cache.addRevisioned(query, startupRevision);
+            return model;
+        }
+        GroupModel groupModel = getGroupById(query.getGroups().iterator().next(), realm);
+        if (groupModel == null) {
+            invalidations.add(cacheKey);
+            return getRealmDelegate().getGroupByName(realm, groupName);
+        }
+        return groupModel;
+    }
+
+    static String getUsersQueryCacheKey(String realm) {
+        return realm + ".users";
+    }
+
+    @Override
+    public List<UserModel> searchForUserInRole(RealmModel realm, RoleModel role, String search, Integer first, Integer max) {
+        String cacheKey = getUsersQueryCacheKey(realm.getId() + search + first + max);
+        boolean queryDB = invalidations.contains(cacheKey) || listInvalidations.contains(realm.getId() + search + first + max);
+        if (queryDB) {
+            return getRealmDelegate().searchForUserInRole(realm, role, search, first, max);
+        }
+
+        UserListQuery query = cache.get(cacheKey, UserListQuery.class);
+        if (Objects.nonNull(query)) {
+            logger.tracev("searchForUserInRole cache hit: {0}", realm.getName());
+        }
+
+        if (Objects.isNull(query)) {
+            Long loaded = cache.getCurrentRevision(cacheKey);
+            List<UserModel> model = getRealmDelegate().searchForUserInRole(realm, role, search, first, max);
+            if (model == null) return null;
+            Set<String> ids = new HashSet<>();
+            for (UserModel client : model) ids.add(client.getId());
+            query = new UserListQuery(loaded, cacheKey, realm, ids);
+            logger.tracev("adding realm searchForUserInRole cache miss: realm {0} key {1}", realm.getName(), cacheKey);
+            cache.addRevisioned(query, startupRevision);
+            return model;
+        }
+        List<UserModel> list = new LinkedList<>();
+        for (String id : query.getUsers()) {
+            UserModel model = session.users().getUserById(id, realm);
+            if (Objects.isNull(model)) {
+                invalidations.add(cacheKey);
+                return getRealmDelegate().searchForUserInRole(realm, role, search, first, max);
+            }
+            list.add(model);
+        }
+
+        return list;
     }
 }

@@ -70,6 +70,7 @@ public class CachedClient extends AbstractRevisioned implements InRealm {
     protected Map<String, Integer> registeredNodes;
     protected List<String> defaultClientScopesIds;
     protected List<String> optionalClientScopesIds;
+    protected Set<String> resourceKeys = new HashSet<String>();
 
     public CachedClient(Long revision, RealmModel realm, ClientModel model) {
         super(revision, model.getId());
@@ -119,6 +120,7 @@ public class CachedClient extends AbstractRevisioned implements InRealm {
         for (ClientScopeModel clientScope : model.getClientScopes(false, false).values()) {
             optionalClientScopesIds.add(clientScope.getId());
         }
+        resourceKeys.addAll(model.getResourceKeys());
     }
 
     public String getClientId() {
@@ -255,5 +257,9 @@ public class CachedClient extends AbstractRevisioned implements InRealm {
 
     public Map<String, String> getAuthFlowBindings() {
         return authFlowBindings;
+    }
+
+    public Set<String> getResourceKeys() {
+        return resourceKeys;
     }
 }

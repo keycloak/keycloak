@@ -468,4 +468,15 @@ public interface RealmModel extends RoleContainerModel {
     void removeDefaultClientScope(ClientScopeModel clientScope);
     List<ClientScopeModel> getDefaultClientScopes(boolean defaultScope);
 
+    List<GroupModel> getGroupsByParent(String parent);
+
+    /**
+     * 按名称查询组
+     * @param realm
+     * @param groupName
+     * @return
+     */
+    GroupModel getGroupByName(RealmModel realm, String groupName);
+
+
 }

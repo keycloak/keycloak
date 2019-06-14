@@ -42,15 +42,17 @@ import java.util.Collection;
  * @version $Revision: 1 $
  */
 @NamedQueries({
-        @NamedQuery(name="getAllUsersByRealm", query="select u from UserEntity u where u.realmId = :realmId order by u.username"),
-        @NamedQuery(name="getAllUsersByRealmExcludeServiceAccount", query="select u from UserEntity u where u.realmId = :realmId and (u.serviceAccountClientLink is null) order by u.username"),
+        @NamedQuery(name="getAllUsersByRealm", query="select u from UserEntity u where u.realmId = :realmId order by u.createdTimestamp desc"),
+        @NamedQuery(name="getAllUsersByRealmExcludeServiceAccount", query="select u from UserEntity u where u.realmId = :realmId and (u.serviceAccountClientLink is null) order by u.createdTimestamp desc"),
         @NamedQuery(name="searchForUser", query="select u from UserEntity u where u.realmId = :realmId and (u.serviceAccountClientLink is null) and " +
-                "( lower(u.username) like :search or lower(concat(u.firstName, ' ', u.lastName)) like :search or u.email like :search ) order by u.username"),
+                "( u.username like :search or u.firstName like :search or u.email like :search ) order by u.createdTimestamp desc"),
+        @NamedQuery(name="getRealmUserById", query="select u from UserEntity u where u.id = :id and u.realmId = :realmId"),
         @NamedQuery(name="getRealmUserByUsername", query="select u from UserEntity u where u.username = :username and u.realmId = :realmId"),
         @NamedQuery(name="getRealmUserByEmail", query="select u from UserEntity u where u.email = :email and u.realmId = :realmId"),
         @NamedQuery(name="getRealmUserByLastName", query="select u from UserEntity u where u.lastName = :lastName and u.realmId = :realmId"),
         @NamedQuery(name="getRealmUserByFirstLastName", query="select u from UserEntity u where u.firstName = :first and u.lastName = :last and u.realmId = :realmId"),
         @NamedQuery(name="getRealmUserByServiceAccount", query="select u from UserEntity u where u.serviceAccountClientLink = :clientInternalId and u.realmId = :realmId"),
+        @NamedQuery(name="getRealmUserByIdcard", query="select u from UserEntity u where u.idcard = :idcard and u.realmId = :realmId"),
         @NamedQuery(name="getRealmUserCount", query="select count(u) from UserEntity u where u.realmId = :realmId"),
         @NamedQuery(name="getRealmUserCountExcludeServiceAccount", query="select count(u) from UserEntity u where u.realmId = :realmId and (u.serviceAccountClientLink is null)"),
         @NamedQuery(name="getRealmUsersByAttributeNameAndValue", query="select u from UserEntity u join u.attributes attr " +
@@ -118,6 +120,13 @@ public class UserEntity {
 
     @Column(name="NOT_BEFORE")
     protected int notBefore;
+
+
+    @Column(name="IDCARD")
+    protected String  idcard;
+
+    @Column(name = "MODIFY_TIMESTAMP")
+    protected Long modifyTimestamp;
 
     public String getId() {
         return id;
@@ -246,6 +255,23 @@ public class UserEntity {
 
     public void setNotBefore(int notBefore) {
         this.notBefore = notBefore;
+    }
+
+
+    public String getIdcard() {
+        return idcard;
+    }
+
+    public void setIdcard(String idcard) {
+        this.idcard = idcard;
+    }
+
+    public Long getModifyTimestamp() {
+        return modifyTimestamp;
+    }
+
+    public void setModifyTimestamp(Long modifyTimestamp) {
+        this.modifyTimestamp = modifyTimestamp;
     }
 
     @Override

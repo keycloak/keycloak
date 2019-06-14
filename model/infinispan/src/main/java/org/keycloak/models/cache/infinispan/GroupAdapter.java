@@ -275,4 +275,25 @@ public class GroupAdapter implements GroupModel {
     private GroupModel getGroupModel() {
         return cacheSession.getRealmDelegate().getGroupById(cached.getId(), realm);
     }
+
+
+    @Override
+    public boolean isHasChild() {
+        if (isUpdated()) return updated.isHasChild();
+        return cached.isHasChild();
+    }
+
+    @Override
+    public void setHasChild(boolean hasChild) {
+        getDelegateForUpdate();
+        updated.setHasChild(hasChild);
+    }
+
+    @Override
+    public Long getUserCount() {
+        if (isUpdated()) return updated.getUserCount();
+        return cached.getUserCount();
+    }
+
+
 }

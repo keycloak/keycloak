@@ -219,4 +219,10 @@ public class UserPropertyFileStorage implements UserLookupProvider, UserStorageP
     public void close() {
 
     }
+
+
+    @Override
+    public UserModel getUserByIdcard(String idcard, RealmModel realm) {
+        return null;
+    }
 }

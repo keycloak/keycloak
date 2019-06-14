@@ -28,34 +28,12 @@ import java.util.Set;
  * @version $Revision: 1 $
  */
 public interface GroupModel extends RoleMapperModel {
-    interface GroupRemovedEvent extends ProviderEvent {
-        RealmModel getRealm();
-        GroupModel getGroup();
-        KeycloakSession getKeycloakSession();
-    }
-    String getId();
-
-    String getName();
-
-    void setName(String name);
-
     /**
-     * Set single value of specified attribute. Remove all other existing values
+     * Automatically calls setParent() on the subGroup
      *
-     * @param name
-     * @param value
+     * @param subGroup
      */
-    void setSingleAttribute(String name, String value);
-
-    void setAttribute(String name, List<String> values);
-
-    void removeAttribute(String name);
-
-    /**
-     * @param name
-     * @return null if there is not any value of specified attribute or first value otherwise. Don't throw exception if there are more values of the attribute
-     */
-    String getFirstAttribute(String name);
+    void addChild(GroupModel subGroup);
 
     /**
      * @param name
@@ -65,9 +43,19 @@ public interface GroupModel extends RoleMapperModel {
 
     Map<String, List<String>> getAttributes();
 
+    /**
+     * @param name
+     * @return null if there is not any value of specified attribute or first value otherwise. Don't throw exception if there are more values of the attribute
+     */
+    String getFirstAttribute(String name);
+
+    String getId();
+
+    String getName();
+
+    void setName(String name);
+
     GroupModel getParent();
-    String getParentId();
-    Set<GroupModel> getSubGroups();
 
     /**
      * You must also call addChild on the parent group, addChild on RealmModel if there is no parent group
@@ -76,12 +64,17 @@ public interface GroupModel extends RoleMapperModel {
      */
     void setParent(GroupModel group);
 
-    /**
-     * Automatically calls setParent() on the subGroup
-     *
-     * @param subGroup
-     */
-    void addChild(GroupModel subGroup);
+    String getParentId();
+
+    Set<GroupModel> getSubGroups();
+
+    Long getUserCount();
+
+    boolean isHasChild();
+
+    void setHasChild(boolean hasChild);
+
+    void removeAttribute(String name);
 
     /**
      * Automatically calls setParent() on the subGroup
@@ -89,4 +82,23 @@ public interface GroupModel extends RoleMapperModel {
      * @param subGroup
      */
     void removeChild(GroupModel subGroup);
+
+    void setAttribute(String name, List<String> values);
+
+    /**
+     * Set single value of specified attribute. Remove all other existing values
+     *
+     * @param name
+     * @param value
+     */
+    void setSingleAttribute(String name, String value);
+
+
+    interface GroupRemovedEvent extends ProviderEvent {
+        GroupModel getGroup();
+
+        KeycloakSession getKeycloakSession();
+
+        RealmModel getRealm();
+    }
 }

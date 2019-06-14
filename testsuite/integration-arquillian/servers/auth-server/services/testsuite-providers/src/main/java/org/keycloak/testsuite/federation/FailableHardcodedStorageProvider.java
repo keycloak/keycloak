@@ -303,4 +303,9 @@ public class FailableHardcodedStorageProvider implements UserStorageProvider, Us
     public void close() {
 
     }
+
+    @Override
+    public UserModel getUserByIdcard(String idcard, RealmModel realm) {
+        return null;
+    }
 }

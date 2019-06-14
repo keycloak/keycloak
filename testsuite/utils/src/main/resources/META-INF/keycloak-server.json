@@ -57,8 +57,8 @@
 
     "theme": {
         "staticMaxAge": "${keycloak.theme.staticMaxAge:2592000}",
-        "cacheTemplates": "${keycloak.theme.cacheTemplates:true}",
-        "cacheThemes": "${keycloak.theme.cacheThemes:true}",
+        "cacheTemplates": "${keycloak.theme.cacheTemplates:false}",
+        "cacheThemes": "${keycloak.theme.cacheThemes:false}",
         "folder": {
             "dir": "${keycloak.theme.dir}"
         }
@@ -74,15 +74,15 @@
 
     "connectionsJpa": {
         "default": {
-            "url": "${keycloak.connectionsJpa.url:jdbc:h2:mem:test;DB_CLOSE_DELAY=-1}",
-            "driver": "${keycloak.connectionsJpa.driver:org.h2.Driver}",
+            "url": "${keycloak.connectionsJpa.url:jdbc:mysql://192.168.3.206:3306/keycloak_uc_test?useUnicode=true&amp;characterEncoding=utf8&amp;useSSL=false}",
+            "driver": "${keycloak.connectionsJpa.driver:com.mysql.jdbc.Driver}",
             "driverDialect": "${keycloak.connectionsJpa.driverDialect:}",
-            "user": "${keycloak.connectionsJpa.user:sa}",
-            "password": "${keycloak.connectionsJpa.password:}",
+            "user": "${keycloak.connectionsJpa.user:root}",
+            "password": "${keycloak.connectionsJpa.password:govnet123}",
             "initializeEmpty": true,
             "migrationStrategy": "update",
             "showSql": "${keycloak.connectionsJpa.showSql:false}",
-            "formatSql": "${keycloak.connectionsJpa.formatSql:true}",
+            "formatSql": "${keycloak.connectionsJpa.formatSql:false}",
             "globalStatsInterval": "${keycloak.connectionsJpa.globalStatsInterval:-1}"
         }
     },

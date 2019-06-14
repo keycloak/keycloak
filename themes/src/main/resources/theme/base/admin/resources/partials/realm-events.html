@@ -65,8 +65,8 @@
             </th>
         </tr>
         <tr>
-            <th width="100px">{{:: 'time' | translate}}</th>
-            <th width="180px">{{:: 'event-type' | translate}}</th>
+            <th width="150px">{{:: 'time' | translate}}</th>
+            <th width="120px">{{:: 'event-type' | translate}}</th>
             <th>{{:: 'details' | translate}}</th>
         </tr>
         </thead>
@@ -81,12 +81,12 @@
         </tfoot>
         <tbody>
             <tr ng-repeat="event in events">
-                <td>{{event.time|date:'shortDate'}}<br>{{event.time|date:'mediumTime'}}</td>
+                <td>{{event.time|date:'yyyy-MM-dd HH:mm:ss'}}</td>
                 <td>{{event.type}}</td>
                 <td>
                     <table class="table table-striped table-bordered">
                         <tr><td width="100px">{{:: 'client' | translate}}</td><td>{{event.clientId}}</td></tr>
-                        <tr><td>{{:: 'user' | translate}}</td><td>{{event.userId}}</td></tr>
+                        <tr><td>{{:: 'user' | translate}}</td><td data-ng-show="event.user">{{event.user.username}} &nbsp;&nbsp;{{event.user.firstName}}</td></tr>
                         <tr><td>{{:: 'ip-address' | translate}}</td><td>{{event.ipAddress}}</td></tr>
                         <tr data-ng-show="event.error"><td>{{:: 'error' | translate}}</td><td>{{event.error}}</td></tr>
                         <tr>

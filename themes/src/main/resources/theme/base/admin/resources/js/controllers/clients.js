@@ -99,7 +99,7 @@ module.controller('ClientCredentialsCtrl', function($scope, $location, realm, cl
     };
 });
 
-module.controller('ClientSecretCtrl', function($scope, $location, ClientSecret, Notifications) {
+module.controller('ClientSecretCtrl', function($scope, $location, ClientSecret, Notifications,Dialog) {
     var secret = ClientSecret.get({ realm : $scope.realm.realm, client : $scope.client.id },
         function() {
             $scope.secret = secret.value;
@@ -107,16 +107,20 @@ module.controller('ClientSecretCtrl', function($scope, $location, ClientSecret, 
     );
 
     $scope.changePassword = function() {
-        var secret = ClientSecret.update({ realm : $scope.realm.realm, client : $scope.client.id },
-            function() {
-                Notifications.success('The secret has been changed.');
-                $scope.secret = secret.value;
-            },
-            function() {
-                Notifications.error("The secret was not changed due to a problem.");
-                $scope.secret = "error";
-            }
-        );
+         Dialog.confirm("生成密钥","您确定重新生成密钥!",function(){
+            var secret = ClientSecret.update({ realm : $scope.realm.realm, client : $scope.client.id },
+                function() {
+                    Notifications.success('The secret has been changed.');
+                    $scope.secret = secret.value;
+                },
+                function() {
+                    Notifications.error("The secret was not changed due to a problem.");
+                    $scope.secret = "error";
+                }
+            );
+         },function(){
+             Notifications.error("The secret was not changed.");
+         });
     };
 
     $scope.$watch(function() {
@@ -1340,6 +1344,15 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, flows, $ro
     $scope.addRedirectUri = function() {
         $scope.clientEdit.redirectUris.push($scope.newRedirectUri);
         $scope.newRedirectUri = "";
+    }
+
+    $scope.deleteResourceKey = function(index) {
+        $scope.clientEdit.resourceKeys.splice(index, 1);
+    }
+
+    $scope.addResourceKey = function() {
+        $scope.clientEdit.resourceKeys.push($scope.newResourceKey);
+        $scope.newResourceKey = "";
     }
 
     $scope.save = function() {

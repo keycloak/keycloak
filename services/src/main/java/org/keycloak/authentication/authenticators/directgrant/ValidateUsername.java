@@ -54,6 +54,10 @@ public class ValidateUsername extends AbstractDirectGrantAuthenticator {
             context.failure(AuthenticationFlowError.INVALID_USER, challengeResponse);
             return;
         }
+        String ip = retrieveIp(context);
+        if (!"".equals(ip)) {
+            context.getEvent().ipAddress(ip);
+        }
         context.getEvent().detail(Details.USERNAME, username);
         context.getAuthenticationSession().setAuthNote(AbstractUsernameFormAuthenticator.ATTEMPTED_USERNAME, username);
 
@@ -153,9 +157,14 @@ public class ValidateUsername extends AbstractDirectGrantAuthenticator {
     public String getId() {
         return PROVIDER_ID;
     }
- 
+
     protected String retrieveUsername(AuthenticationFlowContext context) {
         MultivaluedMap<String, String> inputData = context.getHttpRequest().getDecodedFormParameters();
         return inputData.getFirst(AuthenticationManager.FORM_USERNAME);
+    }
+
+    protected String retrieveIp(AuthenticationFlowContext context) {
+        MultivaluedMap<String, String> inputData = context.getHttpRequest().getDecodedFormParameters();
+        return inputData.getFirst("ip");
     }
 }

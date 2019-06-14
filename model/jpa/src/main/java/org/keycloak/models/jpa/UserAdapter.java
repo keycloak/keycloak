@@ -86,7 +86,6 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
 
     @Override
     public void setUsername(String username) {
-        username = KeycloakModelUtils.toLowerCaseSafe(username);
         user.setUsername(username);
     }
 
@@ -525,6 +524,26 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
         user.setServiceAccountClientLink(clientInternalId);
     }
 
+
+    @Override
+    public String getIdcard() {
+        return user.getIdcard();
+    }
+
+    @Override
+    public void setIdcard(String idcard) {
+        user.setIdcard(idcard);
+    }
+
+    @Override
+    public Long getModifyTimestamp() {
+        return user.getModifyTimestamp();
+    }
+
+    @Override
+    public void setModifyTimestamp(Long modifyTimestamp) {
+        user.setModifyTimestamp(modifyTimestamp);
+    }
 
     @Override
     public boolean equals(Object o) {

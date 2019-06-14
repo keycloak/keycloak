@@ -72,7 +72,7 @@ public final class Constants {
     // Indication to admin-rest-endpoint that realm keys should be re-generated
     public static final String GENERATE = "GENERATE";
 
-    public static final int DEFAULT_MAX_RESULTS = 100;
+    public static final int DEFAULT_MAX_RESULTS = 20;
 
     // Delimiter to be used in the configuration of authenticators (and some other components) in case that we need to save
     // multiple values into single string

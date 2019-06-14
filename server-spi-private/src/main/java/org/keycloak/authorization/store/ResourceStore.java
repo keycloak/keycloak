@@ -53,6 +53,18 @@ public interface ResourceStore {
     Resource create(String id, String name, ResourceServer resourceServer, String owner);
 
     /**
+     * <p>Creates a {@link Resource} instance backed by this persistent storage implementation.
+     *
+     * @param id             the id of this resource. It must be unique.
+     * @param name           the name of this resource. It must be unique.
+     * @param parent
+     * @param resourceServer the resource server to where the given resource belongs to
+     * @param owner          the owner of this resource or null if the resource server is the owner
+     * @return an instance backed by the underlying storage implementation
+     */
+    Resource create(String id, String name, Resource parent,ResourceServer resourceServer, String owner);
+
+    /**
      * Removes a {@link Resource} instance, with the given {@code id} from the persistent storage.
      *
      * @param id the identifier of an existing resource instance
@@ -172,4 +184,35 @@ public interface ResourceStore {
     List<Resource> findByTypeInstance(String type, String resourceServerId);
 
     void findByTypeInstance(String type, String resourceServerId, Consumer<Resource> consumer);
+
+    /**
+     * Finds by  parent
+     *
+     * @param resourceServerId
+     * @param parent
+     * @return
+     */
+    List<Resource> findByParent(String resourceServerId, String parent);
+
+
+    /**
+     * Finds by  parent
+     *
+     * @param resourceServerId
+     * @param parent
+     * @return
+     */
+    void findByParent(String resourceServerId, String parent, Consumer<Resource> consumer);
+
+
+    /**
+     * Finds top level
+     *
+     * @param resourceServerId
+     * @return
+     */
+    List<Resource> findTopLevel(String resourceServerId, int firstResult, int maxResult);
+
+
+
 }
