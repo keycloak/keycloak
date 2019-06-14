@@ -1,3 +1,19 @@
+function sortGroups(prop, arr) {
+    // sort current elements
+    arr.sort(function (a, b) {
+        if (a[prop] < b[prop]) { return -1; }
+        if (a[prop] > b[prop]) { return 1; }
+        return 0;
+    });
+    // check sub groups
+    arr.forEach(function (item, index) {
+        if (!!item.subGroups) {
+            sortGroups(prop, item.subGroups);
+        }
+    });
+    return arr;
+};
+
 module.controller('GroupListCtrl', function($scope, $route, $q, realm, Groups, GroupsCount, Group, GroupChildren, Notifications, $location, Dialog) {
     $scope.realm = realm;
     $scope.groupList = [
@@ -47,9 +63,19 @@ module.controller('GroupListCtrl', function($scope, $route, $q, realm, Groups, G
                 {
                     "id" : "realm",
                     "name": "Groups",
-                    "subGroups" : groups
+                    "subGroups": sortGroups('name', groups)
                 }
             ];
+            if (angular.isDefined(search) && search !== '') {
+                // Add highlight for concrete text match
+                setTimeout(function () {
+                    document.querySelectorAll('span').forEach(function (element) {
+                        if (element.textContent.indexOf(search) != -1) {
+                            angular.element(element).addClass('highlight');
+                        }
+                    });
+                }, 500);
+            }
         }, function (failed) {
             Notifications.error(failed);
         });
@@ -930,5 +956,4 @@ module.controller('GroupBindUsersCtrl', function($scope, $route, $q, realm, Grou
 
 
 });
-
 

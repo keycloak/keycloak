@@ -34,9 +34,9 @@ public interface ResourceStore {
     /**
      * <p>Creates a {@link Resource} instance backed by this persistent storage implementation.
      *
-     * @param name           the name of this resource. It must be unique.
+     * @param name the name of this resource. It must be unique.
      * @param resourceServer the resource server to where the given resource belongs to
-     * @param owner          the owner of this resource or null if the resource server is the owner
+     * @param owner the owner of this resource or null if the resource server is the owner
      * @return an instance backed by the underlying storage implementation
      */
     Resource create(String name, ResourceServer resourceServer, String owner);
@@ -44,10 +44,10 @@ public interface ResourceStore {
     /**
      * <p>Creates a {@link Resource} instance backed by this persistent storage implementation.
      *
-     * @param id             the id of this resource. It must be unique.
-     * @param name           the name of this resource. It must be unique.
+     * @param id the id of this resource. It must be unique.
+     * @param name the name of this resource. It must be unique.
      * @param resourceServer the resource server to where the given resource belongs to
-     * @param owner          the owner of this resource or null if the resource server is the owner
+     * @param owner the owner of this resource or null if the resource server is the owner
      * @return an instance backed by the underlying storage implementation
      */
     Resource create(String id, String name, ResourceServer resourceServer, String owner);
@@ -108,7 +108,7 @@ public interface ResourceStore {
     /**
      * Finds all {@link Resource} instances associated with a given resource server.
      *
-     * @param attributes       a map holding the attributes that will be used as a filter
+     * @param attributes a map holding the attributes that will be used as a filter
      * @param resourceServerId the identifier of the resource server
      * @return a list with all resources associated with the given resource server
      */
@@ -127,7 +127,7 @@ public interface ResourceStore {
     /**
      * Find a {@link Resource} by its name where the owner is the resource server itself.
      *
-     * @param name             the name of the resource
+     * @param name the name of the resource
      * @param resourceServerId the identifier of the resource server
      * @return a resource with the given name
      */
@@ -136,8 +136,8 @@ public interface ResourceStore {
     /**
      * Find a {@link Resource} by its name where the owner is the given <code>ownerId</code>.
      *
-     * @param name             the name of the resource
-     * @param ownerId          the owner id
+     * @param name the name of the resource
+     * @param ownerId the owner id
      * @param resourceServerId the identifier of the resource server
      * @return a resource with the given name
      */
@@ -154,12 +154,36 @@ public interface ResourceStore {
     /**
      * Finds all {@link Resource} with the given type.
      *
-     * @param type             the type of the resource
+     * @param type the type of the resource
+     * @param owner the resource owner or null for any resource with a given type
+     * @return a list of resources with the given type
+     */
+    List<Resource> findByType(String type, String owner, String resourceServerId);
+
+    /**
+     * Finds all {@link Resource} with the given type.
+     *
+     * @param type the type of the resource
      * @param resourceServerId the resource server id
-     * @param consumer         the result consumer
+     * @param consumer the result consumer
      * @return a list of resources with the given type
      */
     void findByType(String type, String resourceServerId, Consumer<Resource> consumer);
+
+    /**
+     * Finds all {@link Resource} with the given type.
+     *
+     * @param type the type of the resource
+     * @param owner the resource owner or null for any resource with a given type
+     * @param resourceServerId the resource server id
+     * @param consumer the result consumer
+     * @return a list of resources with the given type
+     */
+    void findByType(String type, String owner, String resourceServerId, Consumer<Resource> consumer);
+
+    List<Resource> findByTypeInstance(String type, String resourceServerId);
+
+    void findByTypeInstance(String type, String resourceServerId, Consumer<Resource> consumer);
 
     /**
      * Finds by  parent

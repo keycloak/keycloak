@@ -37,6 +37,7 @@ import org.keycloak.services.managers.Auth;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.Cors;
+import org.keycloak.services.resources.account.resources.ResourcesService;
 import org.keycloak.storage.ReadOnlyException;
 
 import javax.ws.rs.*;
@@ -286,6 +287,13 @@ public class AccountRestService {
     public AccountCredentialResource credentials() {
         checkAccountApiEnabled();
         return new AccountCredentialResource(session, event, user, auth);
+    }
+
+    @Path("/resources")
+    public ResourcesService resources() {
+        checkAccountApiEnabled();
+        auth.requireOneOf(AccountRoles.MANAGE_ACCOUNT, AccountRoles.VIEW_PROFILE);
+        return new ResourcesService(session, user, auth, request);
     }
 
    // TODO Federated identities

@@ -101,7 +101,7 @@ public final class AuthorizationProvider implements Provider {
 
     /**
      * Cache sits in front of this
-     * <p>
+     *
      * Returns a {@link StoreFactory}.
      *
      * @return the {@link StoreFactory}
@@ -138,7 +138,7 @@ public final class AuthorizationProvider implements Provider {
      * Returns a {@link PolicyProviderFactory} given a <code>type</code>.
      *
      * @param type the type of the policy provider
-     * @param <F>  the expected type of the provider
+     * @param <F> the expected type of the provider
      * @return a {@link PolicyProviderFactory} with the given <code>type</code>
      */
     public <F extends PolicyProviderFactory> F getProviderFactory(String type) {
@@ -149,7 +149,7 @@ public final class AuthorizationProvider implements Provider {
      * Returns a {@link PolicyProviderFactory} given a <code>type</code>.
      *
      * @param type the type of the policy provider
-     * @param <P>  the expected type of the provider
+     * @param <P> the expected type of the provider
      * @return a {@link PolicyProvider} with the given <code>type</code>
      */
     public <P extends PolicyProvider> P getProvider(String type) {
@@ -539,6 +539,26 @@ public final class AuthorizationProvider implements Provider {
             @Override
             public void findByType(String type, String resourceServerId, Consumer<Resource> consumer) {
                 delegate.findByType(type, resourceServerId, consumer);
+            }
+
+            @Override
+            public void findByType(String type, String owner, String resourceServerId, Consumer<Resource> consumer) {
+                delegate.findByType(type, owner, resourceServerId, consumer);
+            }
+
+            @Override
+            public List<Resource> findByType(String type, String owner, String resourceServerId) {
+                return delegate.findByType(type, resourceServerId);
+            }
+
+            @Override
+            public List<Resource> findByTypeInstance(String type, String resourceServerId) {
+                return delegate.findByTypeInstance(type, resourceServerId);
+            }
+
+            @Override
+            public void findByTypeInstance(String type, String resourceServerId, Consumer<Resource> consumer) {
+                delegate.findByTypeInstance(type, resourceServerId, consumer);
             }
 
             @Override

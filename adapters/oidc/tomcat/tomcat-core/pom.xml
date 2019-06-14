@@ -31,8 +31,6 @@
     <properties>
         <maven.compiler.target>1.7</maven.compiler.target>
         <maven.compiler.source>1.7</maven.compiler.source>
-
-        <tomcat.version>6.0.41</tomcat.version>
     </properties>
     <description />
 
@@ -94,8 +92,8 @@
         -->
         <dependency>
             <groupId>org.apache.tomcat</groupId>
-            <artifactId>catalina</artifactId>
-            <version>${tomcat.version}</version>
+            <artifactId>tomcat-catalina</artifactId>
+            <version>${tomcat7.version}</version>
             <scope>compile</scope>
         </dependency>
 

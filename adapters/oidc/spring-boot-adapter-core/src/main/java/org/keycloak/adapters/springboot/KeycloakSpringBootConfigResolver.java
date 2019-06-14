@@ -26,7 +26,7 @@ public class KeycloakSpringBootConfigResolver implements org.keycloak.adapters.K
 
     private KeycloakDeployment keycloakDeployment;
 
-    private static AdapterConfig adapterConfig;
+    private AdapterConfig adapterConfig;
 
     @Override
     public KeycloakDeployment resolve(OIDCHttpFacade.Request request) {
@@ -34,12 +34,12 @@ public class KeycloakSpringBootConfigResolver implements org.keycloak.adapters.K
             return keycloakDeployment;
         }
 
-        keycloakDeployment = KeycloakDeploymentBuilder.build(KeycloakSpringBootConfigResolver.adapterConfig);
+        keycloakDeployment = KeycloakDeploymentBuilder.build(adapterConfig);
 
         return keycloakDeployment;
     }
 
-    static void setAdapterConfig(AdapterConfig adapterConfig) {
-        KeycloakSpringBootConfigResolver.adapterConfig = adapterConfig;
+    void setAdapterConfig(AdapterConfig adapterConfig) {
+        this.adapterConfig = adapterConfig;
     }
 }

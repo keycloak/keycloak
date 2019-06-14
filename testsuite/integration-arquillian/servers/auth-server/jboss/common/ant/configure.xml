@@ -49,13 +49,19 @@
             <fileset dir="${cli.tmp.dir}" includes="*.cli"/>
         </concat>
         <bin-chmod/>
-        <exec dir="${auth.server.home}/bin" executable="./${jboss.cli.executable}" failonerror="true">
+        <exec osfamily="unix" dir="${auth.server.home}/bin" executable="./${jboss.cli.executable}" failonerror="true">
+            <arg value="--file=${cli.tmp.dir}/result.cli"/>
+        </exec>
+        <exec osfamily="windows" executable="powershell" failonerror="true">
+            <arg value="${auth.server.home}/bin/${jboss.cli.executable}"/>
             <arg value="--file=${cli.tmp.dir}/result.cli"/>
         </exec>
         <cleanup/>
     </target>
 
-    <target name="scenario-standalone-generate" depends="io-worker-threads, inject-provider-and-truststore">
+    <target name="scenario-standalone-generate" depends="io-worker-threads,
+                                                         inject-provider-and-truststore,
+                                                         log-level">
         <echo>cli scripts for standalone prepared</echo>
     </target>
 
@@ -63,14 +69,14 @@
                                                       inject-provider-and-truststore, 
                                                       undertow-subsystem-cluster,
                                                       ispn-cache-owners,
-                                                      ispn-log-level">
+                                                      log-level">
         <echo>cli scripts for cluster prepared</echo>
     </target>
 
     <target name="scenario-crossdc-generate" depends="io-worker-threads, 
                                                       inject-provider-and-truststore, 
                                                       cross-dc-setup,
-                                                      ispn-log-level">
+                                                      log-level">
         <echo>cli scripts for crossdc prepared</echo>
     </target>
 
@@ -163,26 +169,34 @@
         </copy>
     </target>
 
-    <target name="ispn-log-level" if="set.ispn.log.level" depends="ispn-log-level-update-required">
+    <target name="log-level" if="set.log.level" depends="log-level-update-required">
         <copy todir="${cli.tmp.dir}">
             <resources>
-                <file file="${common.resources}/jboss-cli/add-infinispan-log-level.cli"/>
+                <file file="${common.resources}/jboss-cli/add-log-level.cli"/>
             </resources>
             <filterset>
                 <filter token="INFINISPAN_LOG_LEVEL" value="${infinispan.log.level}"/>
+                <filter token="SCHEDULED_TASKS_LOG_LEVEL" value="${scheduled.tasks.log.level}"/>
             </filterset>
         </copy>
     </target>
 
-    <target name="ispn-log-level-update-required">
-        <condition property="set.ispn.log.level">
+    <target name="log-level-update-required">
+        <!-- Default log levels -->
+        <property name="infinispan.log.level" value="INFO"/>
+        <property name="scheduled.tasks.log.level" value="INFO"/>
+
+        <condition property="set.log.level">
             <or>
                 <equals arg1="${infinispan.log.level}" arg2="DEBUG"/>
                 <equals arg1="${infinispan.log.level}" arg2="TRACE"/>
+                <equals arg1="${scheduled.tasks.log.level}" arg2="DEBUG"/>
+                <equals arg1="${scheduled.tasks.log.level}" arg2="TRACE"/>
             </or>
         </condition>
-        <echo>Updating infinispan log level?: ${set.ispn.log.level}</echo>
+        <echo>Updating log level?: ${set.log.level}</echo>
         <echo>infinispan.log.level: ${infinispan.log.level}</echo>
+        <echo>sheduled.tasks.log.level: ${scheduled.tasks.log.level}</echo>
     </target>
 
     <target name="replace-jdbc-url">

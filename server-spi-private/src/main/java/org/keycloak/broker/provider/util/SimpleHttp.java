@@ -27,8 +27,10 @@ import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.HttpEntityEnclosingRequestBase;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.entity.StringEntity;
@@ -95,6 +97,10 @@ public class SimpleHttp {
 
     public static SimpleHttp doPost(String url, HttpClient client) {
         return new SimpleHttp(url, "POST", client);
+    }
+
+    public static SimpleHttp doPut(String url, HttpClient client) {
+        return new SimpleHttp(url, "PUT", client);
     }
 
     public SimpleHttp header(String name, String value) {
@@ -166,9 +172,11 @@ public class SimpleHttp {
     private Response makeRequest() throws IOException {
         boolean get = method.equals("GET");
         boolean post = method.equals("POST");
+        boolean put = method.equals("PUT");
         boolean delete = method.equals("DELETE");
 
         HttpRequestBase httpRequest = new HttpPost(url);
+        
         if (get) {
             httpRequest = new HttpGet(appendParameterToUrl(url));
         }
@@ -177,14 +185,18 @@ public class SimpleHttp {
             httpRequest = new HttpDelete(appendParameterToUrl(url));
         }
 
-        if (post) {
+        if (put) {
+            httpRequest = new HttpPut(appendParameterToUrl(url));
+        }
+
+        if (post || put) {
             if (params != null) {
-                ((HttpPost) httpRequest).setEntity(getFormEntityFromParameter());
+                ((HttpEntityEnclosingRequestBase) httpRequest).setEntity(getFormEntityFromParameter());
             } else if (entity != null) {
                 if (headers == null || !headers.containsKey("Content-Type")) {
                     header("Content-Type", "application/json");
                 }
-                ((HttpPost) httpRequest).setEntity(getJsonEntity());
+                ((HttpEntityEnclosingRequestBase) httpRequest).setEntity(getJsonEntity());
             } else {
                 throw new IllegalStateException("No content set");
             }

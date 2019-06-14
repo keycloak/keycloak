@@ -128,6 +128,9 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
                 .type(ProviderConfigProperty.STRING_TYPE)
                 .defaultValue("simple")
                 .add()
+                .property().name(LDAPConstants.START_TLS)
+                .type(ProviderConfigProperty.BOOLEAN_TYPE)
+                .add()
                 .property().name(LDAPConstants.BIND_DN)
                 .type(ProviderConfigProperty.STRING_TYPE)
                 .add()
@@ -267,6 +270,9 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
             }
         }
 
+        if(cfg.isStartTls() && cfg.getConnectionPooling() != null) {
+            throw new ComponentValidationException("ldapErrorCantEnableStartTlsAndConnectionPooling");
+        }
     }
 
     @Override

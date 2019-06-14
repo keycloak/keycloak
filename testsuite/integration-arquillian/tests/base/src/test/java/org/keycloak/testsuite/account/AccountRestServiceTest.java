@@ -17,11 +17,6 @@
 package org.keycloak.testsuite.account;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.representations.account.SessionRepresentation;
@@ -31,12 +26,8 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.account.AccountCredentialResource;
 import org.keycloak.services.resources.account.AccountCredentialResource.PasswordUpdate;
-import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
-import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.util.TokenUtil;
-import org.keycloak.testsuite.util.UserBuilder;
 
-import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
@@ -51,57 +42,11 @@ import static org.keycloak.testsuite.ProfileAssume.assumeFeatureEnabled;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class AccountRestServiceTest extends AbstractTestRealmKeycloakTest {
-
-    @Rule
-    public TokenUtil tokenUtil = new TokenUtil();
-
-    @Rule
-    public AssertEvents events = new AssertEvents(this);
-
-    private CloseableHttpClient client;
-
-    @Before
-    public void before() {
-        client = HttpClientBuilder.create().build();
-        try {
-            checkIfFeatureWorks(false);
-            Response response = testingClient.testing().enableFeature(ACCOUNT_API.toString());
-            assertEquals(200, response.getStatus());
-
-            assumeFeatureEnabled(ACCOUNT_API);
-            checkIfFeatureWorks(true);
-        } catch (Exception e) {
-            disableFeature();
-            throw e;
-        }
-    }
-
-    @After
-    public void after() {
-        try {
-            disableFeature();
-            client.close();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private void disableFeature() {
-        Response response = testingClient.testing().disableFeature(ACCOUNT_API.toString());
-        assertEquals(200, response.getStatus());
-        checkIfFeatureWorks(false);
-    }
-
-    @Override
-    public void configureTestRealm(RealmRepresentation testRealm) {
-        testRealm.getUsers().add(UserBuilder.create().username("no-account-access").password("password").build());
-        testRealm.getUsers().add(UserBuilder.create().username("view-account-access").role("account", "view-profile").password("password").build());
-    }
+public class AccountRestServiceTest extends AbstractRestServiceTest {
 
     @Test
     public void testGetProfile() throws IOException {
-        UserRepresentation user = SimpleHttp.doGet(getAccountUrl(null), client).auth(tokenUtil.getToken()).asJson(UserRepresentation.class);
+        UserRepresentation user = SimpleHttp.doGet(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).asJson(UserRepresentation.class);
         assertEquals("Tom", user.getFirstName());
         assertEquals("Brady", user.getLastName());
         assertEquals("test-user@localhost", user.getEmail());
@@ -111,7 +56,7 @@ public class AccountRestServiceTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void testUpdateProfile() throws IOException {
-        UserRepresentation user = SimpleHttp.doGet(getAccountUrl(null), client).auth(tokenUtil.getToken()).asJson(UserRepresentation.class);
+        UserRepresentation user = SimpleHttp.doGet(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).asJson(UserRepresentation.class);
         String originalFirstName = user.getFirstName();
         String originalLastName = user.getLastName();
         String originalEmail = user.getEmail();
@@ -182,7 +127,7 @@ public class AccountRestServiceTest extends AbstractTestRealmKeycloakTest {
             user.setLastName(originalLastName);
             user.setEmail(originalEmail);
             user.setAttributes(originalAttributes);
-            SimpleHttp.Response response = SimpleHttp.doPost(getAccountUrl(null), client).auth(tokenUtil.getToken()).json(user).asResponse();
+            SimpleHttp.Response response = SimpleHttp.doPost(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).json(user).asResponse();
             System.out.println(response.asString());
             assertEquals(200, response.getStatus());
         }
@@ -196,7 +141,7 @@ public class AccountRestServiceTest extends AbstractTestRealmKeycloakTest {
         realmRep.setRegistrationEmailAsUsername(true);
         adminClient.realm("test").update(realmRep);
 
-        UserRepresentation user = SimpleHttp.doGet(getAccountUrl(null), client).auth(tokenUtil.getToken()).asJson(UserRepresentation.class);
+        UserRepresentation user = SimpleHttp.doGet(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).asJson(UserRepresentation.class);
         String originalFirstname = user.getFirstName();
 
         try {
@@ -207,20 +152,20 @@ public class AccountRestServiceTest extends AbstractTestRealmKeycloakTest {
             assertEquals("Homer1", user.getFirstName());
         } finally {
             user.setFirstName(originalFirstname);
-            int status = SimpleHttp.doPost(getAccountUrl(null), client).auth(tokenUtil.getToken()).json(user).asStatus();
+            int status = SimpleHttp.doPost(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).json(user).asStatus();
             assertEquals(200, status);
         }
     }
 
     private UserRepresentation updateAndGet(UserRepresentation user) throws IOException {
-        int status = SimpleHttp.doPost(getAccountUrl(null), client).auth(tokenUtil.getToken()).json(user).asStatus();
+        int status = SimpleHttp.doPost(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).json(user).asStatus();
         assertEquals(200, status);
-        return SimpleHttp.doGet(getAccountUrl(null), client).auth(tokenUtil.getToken()).asJson(UserRepresentation.class);
+        return SimpleHttp.doGet(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).asJson(UserRepresentation.class);
     }
 
 
     private void updateError(UserRepresentation user, int expectedStatus, String expectedMessage) throws IOException {
-        SimpleHttp.Response response = SimpleHttp.doPost(getAccountUrl(null), client).auth(tokenUtil.getToken()).json(user).asResponse();
+        SimpleHttp.Response response = SimpleHttp.doPost(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).json(user).asResponse();
         assertEquals(expectedStatus, response.getStatus());
         assertEquals(expectedMessage, response.asJson(ErrorRepresentation.class).getErrorMessage());
     }
@@ -231,13 +176,13 @@ public class AccountRestServiceTest extends AbstractTestRealmKeycloakTest {
         TokenUtil viewToken = new TokenUtil("view-account-access", "password");
 
         // Read with no access
-        assertEquals(403, SimpleHttp.doGet(getAccountUrl(null), client).header("Accept", "application/json").auth(noaccessToken.getToken()).asStatus());
+        assertEquals(403, SimpleHttp.doGet(getAccountUrl(null), httpClient).header("Accept", "application/json").auth(noaccessToken.getToken()).asStatus());
 
         // Update with no access
-        assertEquals(403, SimpleHttp.doPost(getAccountUrl(null), client).auth(noaccessToken.getToken()).json(new UserRepresentation()).asStatus());
+        assertEquals(403, SimpleHttp.doPost(getAccountUrl(null), httpClient).auth(noaccessToken.getToken()).json(new UserRepresentation()).asStatus());
 
         // Update with read only
-        assertEquals(403, SimpleHttp.doPost(getAccountUrl(null), client).auth(viewToken.getToken()).json(new UserRepresentation()).asStatus());
+        assertEquals(403, SimpleHttp.doPost(getAccountUrl(null), httpClient).auth(viewToken.getToken()).json(new UserRepresentation()).asStatus());
     }
     
     @Test
@@ -248,38 +193,38 @@ public class AccountRestServiceTest extends AbstractTestRealmKeycloakTest {
         TokenUtil viewToken = new TokenUtil("view-account-access", "password");
         
         // Read sessions with no access
-        assertEquals(403, SimpleHttp.doGet(getAccountUrl("sessions"), client).header("Accept", "application/json").auth(noaccessToken.getToken()).asStatus());
+        assertEquals(403, SimpleHttp.doGet(getAccountUrl("sessions"), httpClient).header("Accept", "application/json").auth(noaccessToken.getToken()).asStatus());
         
         // Delete all sessions with no access
-        assertEquals(403, SimpleHttp.doDelete(getAccountUrl("sessions"), client).header("Accept", "application/json").auth(noaccessToken.getToken()).asStatus());
+        assertEquals(403, SimpleHttp.doDelete(getAccountUrl("sessions"), httpClient).header("Accept", "application/json").auth(noaccessToken.getToken()).asStatus());
         
         // Delete all sessions with read only
-        assertEquals(403, SimpleHttp.doDelete(getAccountUrl("sessions"), client).header("Accept", "application/json").auth(viewToken.getToken()).asStatus());
+        assertEquals(403, SimpleHttp.doDelete(getAccountUrl("sessions"), httpClient).header("Accept", "application/json").auth(viewToken.getToken()).asStatus());
         
         // Delete single session with no access
-        assertEquals(403, SimpleHttp.doDelete(getAccountUrl("session?id=bogusId"), client).header("Accept", "application/json").auth(noaccessToken.getToken()).asStatus());
+        assertEquals(403, SimpleHttp.doDelete(getAccountUrl("session?id=bogusId"), httpClient).header("Accept", "application/json").auth(noaccessToken.getToken()).asStatus());
         
         // Delete single session with read only
-        assertEquals(403, SimpleHttp.doDelete(getAccountUrl("session?id=bogusId"), client).header("Accept", "application/json").auth(viewToken.getToken()).asStatus());
+        assertEquals(403, SimpleHttp.doDelete(getAccountUrl("session?id=bogusId"), httpClient).header("Accept", "application/json").auth(viewToken.getToken()).asStatus());
         
         // Read password details with no access
-        assertEquals(403, SimpleHttp.doGet(getAccountUrl("credentials/password"), client).header("Accept", "application/json").auth(noaccessToken.getToken()).asStatus());
+        assertEquals(403, SimpleHttp.doGet(getAccountUrl("credentials/password"), httpClient).header("Accept", "application/json").auth(noaccessToken.getToken()).asStatus());
         
         // Update password with no access
-        assertEquals(403, SimpleHttp.doPost(getAccountUrl("credentials/password"), client).auth(noaccessToken.getToken()).json(new PasswordUpdate()).asStatus());
+        assertEquals(403, SimpleHttp.doPost(getAccountUrl("credentials/password"), httpClient).auth(noaccessToken.getToken()).json(new PasswordUpdate()).asStatus());
         
         // Update password with read only
-        assertEquals(403, SimpleHttp.doPost(getAccountUrl("credentials/password"), client).auth(viewToken.getToken()).json(new PasswordUpdate()).asStatus());
+        assertEquals(403, SimpleHttp.doPost(getAccountUrl("credentials/password"), httpClient).auth(viewToken.getToken()).json(new PasswordUpdate()).asStatus());
     }
 
     @Test
     public void testUpdateProfilePermissions() throws IOException {
         TokenUtil noaccessToken = new TokenUtil("no-account-access", "password");
-        int status = SimpleHttp.doGet(getAccountUrl(null), client).header("Accept", "application/json").auth(noaccessToken.getToken()).asStatus();
+        int status = SimpleHttp.doGet(getAccountUrl(null), httpClient).header("Accept", "application/json").auth(noaccessToken.getToken()).asStatus();
         assertEquals(403, status);
 
         TokenUtil viewToken = new TokenUtil("view-account-access", "password");
-        status = SimpleHttp.doGet(getAccountUrl(null), client).header("Accept", "application/json").auth(viewToken.getToken()).asStatus();
+        status = SimpleHttp.doGet(getAccountUrl(null), httpClient).header("Accept", "application/json").auth(viewToken.getToken()).asStatus();
         assertEquals(200, status);
     }
 
@@ -287,7 +232,7 @@ public class AccountRestServiceTest extends AbstractTestRealmKeycloakTest {
     public void testGetSessions() throws IOException {
         assumeFeatureEnabled(ACCOUNT_API);
         
-        List<SessionRepresentation> sessions = SimpleHttp.doGet(getAccountUrl("sessions"), client).auth(tokenUtil.getToken()).asJson(new TypeReference<List<SessionRepresentation>>() {});
+        List<SessionRepresentation> sessions = SimpleHttp.doGet(getAccountUrl("sessions"), httpClient).auth(tokenUtil.getToken()).asJson(new TypeReference<List<SessionRepresentation>>() {});
 
         assertEquals(1, sessions.size());
     }
@@ -337,7 +282,7 @@ public class AccountRestServiceTest extends AbstractTestRealmKeycloakTest {
     }
 
     private AccountCredentialResource.PasswordDetails getPasswordDetails() throws IOException {
-        AccountCredentialResource.PasswordDetails details = SimpleHttp.doGet(getAccountUrl("credentials/password"), client).auth(tokenUtil.getToken()).asJson(new TypeReference<AccountCredentialResource.PasswordDetails>() {});
+        AccountCredentialResource.PasswordDetails details = SimpleHttp.doGet(getAccountUrl("credentials/password"), httpClient).auth(tokenUtil.getToken()).asJson(new TypeReference<AccountCredentialResource.PasswordDetails>() {});
         assertTrue(details.isRegistered());
         assertNotNull(details.getLastUpdate());
         return details;
@@ -352,18 +297,18 @@ public class AccountRestServiceTest extends AbstractTestRealmKeycloakTest {
         passwordUpdate.setCurrentPassword(currentPass);
         passwordUpdate.setNewPassword(newPass);
         passwordUpdate.setConfirmation(confirmation);
-        int status = SimpleHttp.doPost(getAccountUrl("credentials/password"), client).auth(tokenUtil.getToken()).json(passwordUpdate).asStatus();
+        int status = SimpleHttp.doPost(getAccountUrl("credentials/password"), httpClient).auth(tokenUtil.getToken()).json(passwordUpdate).asStatus();
         assertEquals(expectedStatus, status);
     }
 
     public void testDeleteSessions() throws IOException {
         TokenUtil viewToken = new TokenUtil("view-account-access", "password");
         oauth.doLogin("view-account-access", "password");
-        List<SessionRepresentation> sessions = SimpleHttp.doGet(getAccountUrl("sessions"), client).auth(viewToken.getToken()).asJson(new TypeReference<List<SessionRepresentation>>() {});
+        List<SessionRepresentation> sessions = SimpleHttp.doGet(getAccountUrl("sessions"), httpClient).auth(viewToken.getToken()).asJson(new TypeReference<List<SessionRepresentation>>() {});
         assertEquals(2, sessions.size());
-        int status = SimpleHttp.doDelete(getAccountUrl("sessions?current=false"), client).acceptJson().auth(viewToken.getToken()).asStatus();
+        int status = SimpleHttp.doDelete(getAccountUrl("sessions?current=false"), httpClient).acceptJson().auth(viewToken.getToken()).asStatus();
         assertEquals(200, status);
-        sessions = SimpleHttp.doGet(getAccountUrl("sessions"), client).auth(viewToken.getToken()).asJson(new TypeReference<List<SessionRepresentation>>() {});
+        sessions = SimpleHttp.doGet(getAccountUrl("sessions"), httpClient).auth(viewToken.getToken()).asJson(new TypeReference<List<SessionRepresentation>>() {});
         assertEquals(1, sessions.size());
     }
 
@@ -373,41 +318,19 @@ public class AccountRestServiceTest extends AbstractTestRealmKeycloakTest {
         
         TokenUtil viewToken = new TokenUtil("view-account-access", "password");
         String sessionId = oauth.doLogin("view-account-access", "password").getSessionState();
-        List<SessionRepresentation> sessions = SimpleHttp.doGet(getAccountUrl("sessions"), client).auth(viewToken.getToken()).asJson(new TypeReference<List<SessionRepresentation>>() {});
+        List<SessionRepresentation> sessions = SimpleHttp.doGet(getAccountUrl("sessions"), httpClient).auth(viewToken.getToken()).asJson(new TypeReference<List<SessionRepresentation>>() {});
         assertEquals(2, sessions.size());
 
         // With `ViewToken` you can only read
-        int status = SimpleHttp.doDelete(getAccountUrl("session?id=" + sessionId), client).acceptJson().auth(viewToken.getToken()).asStatus();
+        int status = SimpleHttp.doDelete(getAccountUrl("session?id=" + sessionId), httpClient).acceptJson().auth(viewToken.getToken()).asStatus();
         assertEquals(403, status);
-        sessions = SimpleHttp.doGet(getAccountUrl("sessions"), client).auth(viewToken.getToken()).asJson(new TypeReference<List<SessionRepresentation>>() {});
+        sessions = SimpleHttp.doGet(getAccountUrl("sessions"), httpClient).auth(viewToken.getToken()).asJson(new TypeReference<List<SessionRepresentation>>() {});
         assertEquals(2, sessions.size());
 
         // Here you can delete the session
-        status = SimpleHttp.doDelete(getAccountUrl("session?id=" + sessionId), client).acceptJson().auth(tokenUtil.getToken()).asStatus();
+        status = SimpleHttp.doDelete(getAccountUrl("session?id=" + sessionId), httpClient).acceptJson().auth(tokenUtil.getToken()).asStatus();
         assertEquals(200, status);
-        sessions = SimpleHttp.doGet(getAccountUrl("sessions"), client).auth(tokenUtil.getToken()).asJson(new TypeReference<List<SessionRepresentation>>() {});
+        sessions = SimpleHttp.doGet(getAccountUrl("sessions"), httpClient).auth(tokenUtil.getToken()).asJson(new TypeReference<List<SessionRepresentation>>() {});
         assertEquals(1, sessions.size());
-    }
-
-    private String getAccountUrl(String resource) {
-        return suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth/realms/test/account" + (resource != null ? "/" + resource : "");
-    }
-
-    // Check if the feature really works
-    private void checkIfFeatureWorks(boolean shouldWorks) {
-        try {
-            List<SessionRepresentation> sessions = SimpleHttp.doGet(getAccountUrl("sessions"), client).auth(tokenUtil.getToken())
-                    .asJson(new TypeReference<List<SessionRepresentation>>() {
-                    });
-            assertEquals(1, sessions.size());
-            if (!shouldWorks)
-                fail("Feature is available, but this moment should be disabled");
-
-        } catch (Exception e) {
-            if (shouldWorks) {
-                e.printStackTrace();
-                fail("Feature is not available");
-            }
-        }
     }
 }

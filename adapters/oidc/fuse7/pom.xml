@@ -32,7 +32,6 @@
 
     <properties>
         <fuse7.version>7.0.1-SNAPSHOT</fuse7.version>
-        <tomcat.version>${tomcat8.version}</tomcat.version>
         <jetty9.version>9.4.2.v20170220</jetty9.version>
     </properties>
 

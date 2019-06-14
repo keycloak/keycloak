@@ -32,6 +32,8 @@
     <name>Auth Server - JBoss - EAP</name>
 
     <properties>
+        <product.unpacked.folder.name>${product.name}-${product.filename.version}</product.unpacked.folder.name>
+
         <auth.server.jboss>eap</auth.server.jboss>
         <auth.server.home>${project.build.directory}/unpacked/${product.unpacked.folder.name}</auth.server.home>
 
@@ -61,9 +63,6 @@
                             <rules>
                                 <requireProperty>
                                     <property>product.version</property>
-                                </requireProperty>
-                                <requireProperty>
-                                    <property>product.unpacked.folder.name</property>
                                 </requireProperty>
                             </rules>
                         </configuration>

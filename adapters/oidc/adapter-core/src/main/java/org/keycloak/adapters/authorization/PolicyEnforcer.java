@@ -143,7 +143,7 @@ public class PolicyEnforcer {
     }
 
     private Map<String, PathConfig> configurePaths(ProtectedResource protectedResource, PolicyEnforcerConfig enforcerConfig) {
-        boolean loadPathsFromServer = true;
+        boolean loadPathsFromServer = !enforcerConfig.getLazyLoadPaths();
 
         for (PathConfig pathConfig : enforcerConfig.getPaths()) {
             if (!PolicyEnforcerConfig.EnforcementMode.DISABLED.equals(pathConfig.getEnforcementMode())) {
@@ -304,6 +304,10 @@ public class PolicyEnforcer {
         @Override
         protected Collection<PathConfig> getPaths() {
             return paths.values();
+        }
+
+        public PathCache getPathCache() {
+            return pathCache;
         }
 
         @Override

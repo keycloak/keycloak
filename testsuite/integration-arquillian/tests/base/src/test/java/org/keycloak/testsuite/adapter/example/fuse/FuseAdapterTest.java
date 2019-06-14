@@ -23,7 +23,6 @@ import static org.keycloak.testsuite.auth.page.AuthRealm.DEMO;
 import static org.keycloak.testsuite.utils.fuse.FuseUtils.assertCommand;
 import static org.keycloak.testsuite.utils.fuse.FuseUtils.getCommandOutput;
 import static org.keycloak.testsuite.utils.io.IOUtil.loadRealm;
-import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlDoesntStartWith;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWithLoginUrlOf;
 
@@ -57,6 +56,7 @@ import org.keycloak.testsuite.adapter.page.fuse.CustomerListing;
 import org.keycloak.testsuite.adapter.page.fuse.CustomerPortalFuseExample;
 import org.keycloak.testsuite.adapter.page.fuse.ProductPortalFuseExample;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
+import org.keycloak.testsuite.auth.page.AuthRealm;
 import org.keycloak.testsuite.auth.page.account.Account;
 import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
 import org.keycloak.testsuite.auth.page.login.OIDCLogin;
@@ -86,6 +86,9 @@ public class FuseAdapterTest extends AbstractExampleAdapterTest {
     private OIDCLogin testRealmLoginPageFuse;
     @Page
     @JavascriptBrowser
+    private AuthRealm loginPageFuse;
+    @Page
+    @JavascriptBrowser
     protected CustomerPortalFuseExample customerPortal;
     @Page
     @JavascriptBrowser
@@ -99,7 +102,7 @@ public class FuseAdapterTest extends AbstractExampleAdapterTest {
     @Page
     @JavascriptBrowser
     protected Account testRealmAccount;
-    
+
     @Override
     public void addAdapterTestRealms(List<RealmRepresentation> testRealms) {
         RealmRepresentation fuseRealm = loadRealm(new File(TEST_APPS_HOME_DIR + "/fuse/demorealm.json"));
@@ -113,6 +116,7 @@ public class FuseAdapterTest extends AbstractExampleAdapterTest {
         testRealmPage.setAuthRealm(DEMO);
         testRealmLoginPage.setAuthRealm(DEMO);
         testRealmAccount.setAuthRealm(DEMO);
+        loginPageFuse.setAuthRealm(DEMO);
     }
 
     @Before
@@ -130,12 +134,12 @@ public class FuseAdapterTest extends AbstractExampleAdapterTest {
     public void hawtio1LoginTest() throws Exception {
         hawtioPage.navigateTo();
         WaitUtils.waitForPageToLoad();
-        assertCurrentUrlDoesntStartWith(hawtioPage);
+        assertCurrentUrlStartsWith(loginPageFuse);
         testRealmLoginPageFuse.form().login("user", "invalid-password");
-        assertCurrentUrlDoesntStartWith(hawtioPage);
+        assertCurrentUrlStartsWith(loginPageFuse);
 
         testRealmLoginPageFuse.form().login("invalid-user", "password");
-        assertCurrentUrlDoesntStartWith(hawtioPage);
+        assertCurrentUrlStartsWith(loginPageFuse);
 
         testRealmLoginPageFuse.form().login("root", "password");
         assertCurrentUrlStartsWith(hawtioPage.toString() + "/welcome");
@@ -160,12 +164,12 @@ public class FuseAdapterTest extends AbstractExampleAdapterTest {
         hawtio2Page.navigateTo();
         WaitUtils.waitForPageToLoad();
 
-        assertCurrentUrlDoesntStartWith(hawtio2Page);
+        assertCurrentUrlStartsWith(loginPageFuse);
         testRealmLoginPageFuse.form().login("user", "invalid-password");
-        assertCurrentUrlDoesntStartWith(hawtio2Page);
+        assertCurrentUrlStartsWith(loginPageFuse);
 
         testRealmLoginPageFuse.form().login("invalid-user", "password");
-        assertCurrentUrlDoesntStartWith(hawtio2Page);
+        assertCurrentUrlStartsWith(loginPageFuse);
 
         testRealmLoginPageFuse.form().login("root", "password");
         assertCurrentUrlStartsWith(hawtio2Page.toString());

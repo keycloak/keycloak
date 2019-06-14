@@ -11,10 +11,8 @@
     keycloak-jetty93-adapter-dist
     keycloak-jetty94-adapter-dist
     keycloak-js-adapter-dist
-    keycloak-tomcat6-adapter-dist
     keycloak-tomcat7-adapter-dist
     keycloak-tomcat8-adapter-dist
-    keycloak-wf8-adapter-dist
     keycloak-wildfly-adapter-dist
     keycloak-fuse-adapter-dist
 
@@ -24,7 +22,6 @@
     keycloak-saml-jetty92-adapter-dist
     keycloak-saml-jetty93-adapter-dist
     keycloak-saml-jetty94-adapter-dist
-    keycloak-saml-tomcat6-adapter-dist
     keycloak-saml-tomcat7-adapter-dist
     keycloak-saml-tomcat8-adapter-dist
     keycloak-saml-wildfly-adapter-dist

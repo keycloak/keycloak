@@ -47,7 +47,6 @@ import java.util.Set;
 import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
-import org.keycloak.models.jpa.entities.GroupEntity;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -58,14 +57,16 @@ import org.keycloak.models.jpa.entities.GroupEntity;
 })
 @NamedQueries(
         {
-                @NamedQuery(name = "findResourceIdByOwner", query = "select distinct(r) from ResourceEntity r left join fetch r.scopes s where r.resourceServer.id = :serverId and r.owner = :owner"),
-                @NamedQuery(name = "findAnyResourceIdByOwner", query = "select distinct(r) from ResourceEntity r left join fetch r.scopes s where r.owner = :owner"),
-                @NamedQuery(name = "findResourceIdByUri", query = "select r.id from ResourceEntity r where  r.resourceServer.id = :serverId  and :uri in elements(r.uris)"),
-                @NamedQuery(name = "findResourceIdByName", query = "select distinct(r) from ResourceEntity r left join fetch r.scopes s where  r.resourceServer.id = :serverId  and r.owner = :ownerId and r.name = :name"),
-                @NamedQuery(name = "findResourceIdByType", query = "select distinct(r) from ResourceEntity r left join fetch r.scopes s where  r.resourceServer.id = :serverId  and r.owner = :ownerId and r.type = :type"),
-                @NamedQuery(name = "findResourceIdByServerId", query = "select r.id from ResourceEntity r where  r.resourceServer.id = :serverId "),
-                @NamedQuery(name = "findResourceIdByScope", query = "select r from ResourceEntity r inner join r.scopes s where r.resourceServer.id = :serverId and (s.resourceServer.id = :serverId and s.id in (:scopeIds))"),
-                @NamedQuery(name = "deleteResourceByResourceServer", query = "delete from ResourceEntity r where r.resourceServer.id = :serverId"),
+                @NamedQuery(name="findResourceIdByOwner", query="select distinct(r) from ResourceEntity r left join fetch r.scopes s where r.resourceServer.id = :serverId and r.owner = :owner"),
+                @NamedQuery(name="findAnyResourceIdByOwner", query="select distinct(r) from ResourceEntity r left join fetch r.scopes s where r.owner = :owner"),
+                @NamedQuery(name="findResourceIdByUri", query="select r.id from ResourceEntity r where  r.resourceServer.id = :serverId  and :uri in elements(r.uris)"),
+                @NamedQuery(name="findResourceIdByName", query="select distinct(r) from ResourceEntity r left join fetch r.scopes s where  r.resourceServer.id = :serverId  and r.owner = :ownerId and r.name = :name"),
+                @NamedQuery(name="findResourceIdByType", query="select distinct(r) from ResourceEntity r left join fetch r.scopes s where  r.resourceServer.id = :serverId  and r.owner = :ownerId and r.type = :type"),
+                @NamedQuery(name="findResourceIdByTypeNoOwner", query="select distinct(r) from ResourceEntity r left join fetch r.scopes s where  r.resourceServer.id = :serverId  and r.type = :type"),
+                @NamedQuery(name="findResourceIdByTypeInstance", query="select distinct(r) from ResourceEntity r left join fetch r.scopes s where  r.resourceServer.id = :serverId and r.type = :type and r.owner <> :serverId"),
+                @NamedQuery(name="findResourceIdByServerId", query="select r.id from ResourceEntity r where  r.resourceServer.id = :serverId "),
+                @NamedQuery(name="findResourceIdByScope", query="select r from ResourceEntity r inner join r.scopes s where r.resourceServer.id = :serverId and (s.resourceServer.id = :serverId and s.id in (:scopeIds))"),
+                @NamedQuery(name="deleteResourceByResourceServer", query="delete from ResourceEntity r where r.resourceServer.id = :serverId"),
                 @NamedQuery(name = "getResourceByParent", query = "select r from ResourceEntity r where r.resourceServer.id = :serverId and r.owner = :ownerId and r.parent = :parent order by r.sort"),
                 @NamedQuery(name = "getTopLevelResource", query = "select r from ResourceEntity r where r.resourceServer.id = :serverId and r.owner = :ownerId and r.parent is null order by r.sort"),
         }
@@ -73,9 +74,8 @@ import org.keycloak.models.jpa.entities.GroupEntity;
 public class ResourceEntity {
 
     @Id
-    @Column(name = "ID", length = 36)
-    @Access(AccessType.PROPERTY)
-    // we do this because relationships often fetch id, but not entity.  This avoids an extra SQL
+    @Column(name="ID", length = 36)
+    @Access(AccessType.PROPERTY) // we do this because relationships often fetch id, but not entity.  This avoids an extra SQL
     private String id;
 
     @Column(name = "NAME")
@@ -86,7 +86,7 @@ public class ResourceEntity {
 
     @ElementCollection(fetch = FetchType.LAZY)
     @Column(name = "VALUE")
-    @CollectionTable(name = "RESOURCE_URIS", joinColumns = {@JoinColumn(name = "RESOURCE_ID")})
+    @CollectionTable(name = "RESOURCE_URIS", joinColumns = { @JoinColumn(name="RESOURCE_ID") })
     private Set<String> uris = new HashSet<>();
 
     @Column(name = "TYPE")
@@ -113,7 +113,7 @@ public class ResourceEntity {
     @JoinTable(name = "RESOURCE_POLICY", joinColumns = @JoinColumn(name = "RESOURCE_ID"), inverseJoinColumns = @JoinColumn(name = "POLICY_ID"))
     private List<PolicyEntity> policies = new LinkedList<>();
 
-    @OneToMany(cascade = CascadeType.REMOVE, orphanRemoval = true, mappedBy = "resource", fetch = FetchType.LAZY)
+    @OneToMany(cascade = CascadeType.REMOVE, orphanRemoval = true, mappedBy="resource", fetch = FetchType.LAZY)
     @Fetch(FetchMode.SELECT)
     @BatchSize(size = 20)
     private Collection<ResourceAttributeEntity> attributes = new ArrayList<>();

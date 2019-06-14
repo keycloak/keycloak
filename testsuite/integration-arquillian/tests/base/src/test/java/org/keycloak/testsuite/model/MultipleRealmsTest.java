@@ -118,14 +118,17 @@ public class MultipleRealmsTest extends AbstractTestRealmKeycloakTest {
             UserModel user1 = currentSession.users().getUserByUsername("user1", realm1);
             UserModel user1a = currentSession.users().getUserByUsername("user1", realm2);
 
-            UserManager um = new UserManager(session);
+            UserManager um = new UserManager(currentSession);
             if (user1 != null) {
                 um.removeUser(realm1, user1);
             }
             if (user1a != null) {
                 um.removeUser(realm2, user1a);
             }
+        });
 
+        KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession sessionTestUser3) -> {
+            KeycloakSession currentSession = sessionTestUser3;
             currentSession.realms().removeRealm("id1");
             currentSession.realms().removeRealm("id2");
         });

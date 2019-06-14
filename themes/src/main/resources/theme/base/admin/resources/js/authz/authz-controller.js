@@ -1179,7 +1179,7 @@ module.controller('ResourceServerPolicyResourceDetailCtrl', function($scope, $ro
                 $scope.policy.resources = [];
                 $scope.policy.resources.push($scope.selectedResource._id);
             } else {
-                delete $scope.policy.resources
+                $scope.policy.resources = [];
             }
 
             var policies = [];

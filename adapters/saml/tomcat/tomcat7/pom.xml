@@ -28,17 +28,16 @@
 
 	<artifactId>keycloak-saml-tomcat7-adapter</artifactId>
 	<name>Keycloak Tomcat 7 SAML Integration</name>
-    <properties>
-        <!--<tomcat.version>8.0.14</tomcat.version>-->
-        <tomcat.version>${tomcat7.version}</tomcat.version>
-    </properties>
+        <properties>
+            <maven.compiler.target>1.7</maven.compiler.target>
+            <maven.compiler.source>1.7</maven.compiler.source>
+        </properties>
 	<description />
 
 	<dependencies>
         <dependency>
             <groupId>org.jboss.logging</groupId>
             <artifactId>jboss-logging</artifactId>
-            <version>${jboss.logging.version}</version>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
@@ -67,16 +66,16 @@
 			<artifactId>bcprov-jdk15on</artifactId>
 		</dependency>
 		<dependency>
-			<groupId>org.apache.tomcat</groupId>
-			<artifactId>tomcat-servlet-api</artifactId>
-			<version>${tomcat.version}</version>
-			<scope>provided</scope>
+                    <groupId>org.apache.tomcat</groupId>
+                    <artifactId>tomcat-servlet-api</artifactId>
+                    <version>${tomcat7.version}</version>
+                    <scope>provided</scope>
 		</dependency>
 		<dependency>
-			<groupId>org.apache.tomcat</groupId>
-			<artifactId>tomcat-catalina</artifactId>
-            <version>${tomcat.version}</version>
-			<scope>provided</scope>
+                    <groupId>org.apache.tomcat</groupId>
+                    <artifactId>tomcat-catalina</artifactId>
+                    <version>${tomcat7.version}</version>
+                    <scope>provided</scope>
 		</dependency>
 
 		<dependency>
@@ -85,17 +84,4 @@
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
-	<build>
-		<plugins>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-compiler-plugin</artifactId>
-				<configuration>
-					<source>1.6</source>
-					<target>1.6</target>
-				</configuration>
-			</plugin>
-		</plugins>
-	</build>
-
 </project>

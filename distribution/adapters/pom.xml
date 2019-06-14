@@ -35,7 +35,6 @@
         <module>fuse-adapter-zip</module>
         <module>js-adapter-zip</module>
         <module>osgi</module>
-
         <module>wildfly-adapter</module>
     </modules>
 
@@ -48,13 +47,11 @@
                 </property>
             </activation>
             <modules>
-                <module>tomcat6-adapter-zip</module>
                 <module>tomcat7-adapter-zip</module>
                 <module>tomcat8-adapter-zip</module>
                 <module>jetty92-adapter-zip</module>
                 <module>jetty93-adapter-zip</module>
                 <module>jetty94-adapter-zip</module>
-                <module>wf8-adapter</module>
                 <module>js-adapter-npm-zip</module>
             </modules>
         </profile>

@@ -77,7 +77,20 @@ So for example using `-Dkeycloak.logging.level=debug` will enable debug logging 
 
 For more fine-tuning of individual categories, you can look at log4j.properties file and temporarily enable/disable them here.
 
-TODO: Add info about Wildfly logging
+### Wildfly server logging
+
+When using Keycloak on Wildfly/EAP, there is INFO logging level enabled by default for most of the java packages.
+You can use those system properties to enable DEBUG logging for particular packages:
+
+
+* `-Dinfinispan.logging.level=DEBUG` - for package `org.infinispan`
+* `-Dorg.keycloak.services.scheduled=DEBUG` - for package `org.keycloak.services.scheduled`
+
+You can use value `TRACE` if you want to enable even TRACE logging.
+
+There is no support for more packages ATM, you need to edit the file `testsuite/integration-arquillian/servers/auth-server/jboss/common/jboss-cli/add-log-level.cli`
+and add packages manually.
+
 
 ## Run adapter tests
 
@@ -269,7 +282,7 @@ This test will:
  - Do some test that data are correct
  
 
-1) Prepare MySQL DB and ensure that MySQL DB is empty. See [../../misc/DatabaseTesting.md](../../misc/DatabaseTesting.md) for some hints for locally prepare Docker MySQL image.
+1) Prepare MySQL DB and ensure that MySQL DB is empty. See [../../docs/tests-db.md](../../docs/tests-db.md) for some hints for locally prepare Docker MySQL image.
 
 2) Run the test (Update according to your DB connection, versions etc):
 

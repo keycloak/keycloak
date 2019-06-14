@@ -43,8 +43,8 @@ var content = [
         componentName: 'ApplicationsPage'
     },
     {
-        path: 'my-resources',
-        label: 'myResources',
+        path: 'resources',
+        label: 'resources',
         modulePath: '/app/content/my-resources-page/MyResourcesPage',
         componentName: 'MyResourcesPage',
         hidden: !features.isMyResourcesEnabled
