@@ -376,6 +376,11 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
         return "resource.scope." + scopeId + "." + serverId;
     }
 
+    public static String getResourceByParentCacheKey(String parent, String serverId) {
+        return "resource.parent." + parent + "." + serverId;
+    }
+
+
     public static String getPolicyByNameCacheKey(String name, String serverId) {
         return "policy.name." + name + "." + serverId;
     }
@@ -586,6 +591,17 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
         @Override
         public Resource create(String id, String name, ResourceServer resourceServer, String owner) {
             Resource resource = getResourceStoreDelegate().create(id, name, resourceServer, owner);
+            Resource cached = findById(resource.getId(), resourceServer.getId());
+            registerResourceInvalidation(resource.getId(), resource.getName(), resource.getType(), resource.getUris(), resource.getScopes().stream().map(scope -> scope.getId()).collect(Collectors.toSet()), resourceServer.getId(), resource.getOwner());
+            if (cached == null) {
+                cached = findById(resource.getId(), resourceServer.getId());
+            }
+            return cached;
+        }
+
+        @Override
+        public Resource create(String id, String name, Resource parent, ResourceServer resourceServer, String owner) {
+            Resource resource = getResourceStoreDelegate().create(id, name, parent, resourceServer, owner);
             Resource cached = findById(resource.getId(), resourceServer.getId());
             registerResourceInvalidation(resource.getId(), resource.getName(), resource.getType(), resource.getUris(), resource.getScopes().stream().map(scope -> scope.getId()).collect(Collectors.toSet()), resourceServer.getId(), resource.getOwner());
             if (cached == null) {
@@ -818,6 +834,29 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
 
                 return resources.stream().map(resourceId -> (R) findById(resourceId, resourceServerId)).collect(Collectors.toList());
             }
+        }
+
+
+
+        @Override
+        public List<Resource> findByParent(String resourceServerId, String parent) {
+            if (parent == null) return Collections.emptyList();
+            String cacheKey = getResourceByParentCacheKey(parent, resourceServerId);
+            return cacheQuery(cacheKey, ResourceListQuery.class, () -> getResourceStoreDelegate().findByParent(resourceServerId, parent),
+                    (revision, resources) -> new ResourceListQuery(revision, cacheKey, resources.stream().map(resource -> resource.getId()).collect(Collectors.toSet()), resourceServerId), resourceServerId);
+        }
+
+        @Override
+        public void findByParent(String resourceServerId, String parent, Consumer<Resource> consumer) {
+            if (parent == null) return;
+            String cacheKey = getResourceByParentCacheKey(parent, resourceServerId);
+            cacheQuery(cacheKey, ResourceListQuery.class, () -> getResourceStoreDelegate().findByParent(resourceServerId, parent),
+                    (revision, resources) -> new ResourceListQuery(revision, cacheKey, resources.stream().map(resource -> resource.getId()).collect(Collectors.toSet()), resourceServerId), resourceServerId, consumer);
+        }
+
+        @Override
+        public List<Resource> findTopLevel(String resourceServerId, int firstResult, int maxResult) {
+            return getResourceStoreDelegate().findTopLevel(resourceServerId, firstResult, maxResult);
         }
     }
 
