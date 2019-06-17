@@ -130,7 +130,7 @@ public class SamlService extends AuthorizationEndpointBase {
 
             if (samlRequest == null && samlResponse == null) {
                 event.event(EventType.LOGIN);
-                event.error(Errors.INVALID_TOKEN);
+                event.error(Errors.SAML_TOKEN_NOT_FOUND);
                 return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_REQUEST);
 
             }
