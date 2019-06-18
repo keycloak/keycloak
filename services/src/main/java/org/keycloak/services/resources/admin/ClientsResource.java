@@ -278,7 +278,11 @@ public class ClientsResource {
         final Set<Resource> resources = new LinkedHashSet<>();
         if (clientModel != null && resourceServer != null && auth.clients().canView(clientModel)) {
             UserModel user = session.users().getUserById(userId, realm);
-            Set<RoleModel> userRoles = user.getClientRoleMappings(clientModel);
+            Set<RoleModel> userRoles = new HashSet<>();
+            Set<RoleModel> roles = clientModel.getRoles();
+            for (RoleModel roleModel : roles) {
+                if (user.hasRole(roleModel)) userRoles.add(roleModel);
+            }
             policyStore.findByType("resource", resourceServer.getId()).forEach(policy -> {
                 resources.addAll(policyToResource(authorizationProvider, resourceServer, userRoles, policy));
             });
