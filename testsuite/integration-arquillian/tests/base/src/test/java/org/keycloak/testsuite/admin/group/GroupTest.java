@@ -23,6 +23,7 @@ import org.keycloak.admin.client.resource.GroupResource;
 import org.keycloak.admin.client.resource.GroupsResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.RoleMappingResource;
+import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
@@ -728,16 +729,17 @@ public class GroupTest extends AbstractGroupTest {
 
     @Test
     public void testBriefRepresentationOnGroupMembers() {
-        String groupName = "group-" + UUID.randomUUID();
+        RealmResource realm = adminClient.realms().realm("test");
+        String groupName = "brief-grouptest-group";
+        String userName = "brief-grouptest-user";
 
-        GroupsResource groups = adminClient.realms().realm("test").groups();
+        GroupsResource groups = realm.groups();
         try (Response response = groups.add(GroupBuilder.create().name(groupName).build())) {
             String groupId = ApiUtil.getCreatedId(response);
 
             GroupResource group = groups.group(groupId);
 
-            UsersResource users = adminClient.realms().realm("test").users();
-            String userName = "user-" + UUID.randomUUID();
+            UsersResource users = realm.users();
 
             UserRepresentation userRepresentation = UserBuilder.create()
                     .username(userName)
@@ -745,7 +747,8 @@ public class GroupTest extends AbstractGroupTest {
                     .build();
 
             Response r = users.create(userRepresentation);
-            users.get(ApiUtil.getCreatedId(r)).joinGroup(groupId);
+            UserResource user = users.get(ApiUtil.getCreatedId(r));
+            user.joinGroup(groupId);
 
             UserRepresentation defaultRepresentation = group.members(null, null).get(0);
             UserRepresentation fullRepresentation = group.members(null, null, false).get(0);
@@ -754,6 +757,9 @@ public class GroupTest extends AbstractGroupTest {
             assertEquals("full group member representation includes attributes", fullRepresentation.getAttributes(), userRepresentation.getAttributes());
             assertEquals("default group member representation is full", defaultRepresentation.getAttributes(), userRepresentation.getAttributes());
             assertNull("brief group member representation omits attributes", briefRepresentation.getAttributes());
+
+            group.remove();
+            user.remove();
         }
     }
 }
