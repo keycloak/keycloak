@@ -9,9 +9,11 @@ function run-server-tests() {
     exit ${PIPESTATUS[0]}
 }
 
+travis_fold start source_checkout
 # The following lines are due to travis internals. See https://github.com/travis-ci/travis-ci/issues/6069#issuecomment-319710346
 git config remote.origin.fetch "+refs/heads/*:refs/remotes/origin/*"
 git fetch
+travis_fold end source_checkout
 
 function should-tests-run() {
     # If this is not a pull request, it is build as a branch update. In that case test everything
@@ -47,7 +49,17 @@ if declare -f "should-tests-run-$1" > /dev/null && ! eval "should-tests-run-$1";
     exit 0
 fi
 
-mvn install -B -nsu -Pdistribution -DskipTests -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
+travis_fold start compile_keycloak
+echo Compiling Keycloak
+( while : ; do echo "Compiling, please wait..." ; sleep 50 ; done ) &
+COMPILING_PID=$!
+TMPFILE=`mktemp`
+if ! mvn install -B -nsu -Pdistribution -DskipTests -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn &> "$TMPFILE"; then
+    cat "$TMPFILE"
+    exit 1
+fi
+kill $COMPILING_PID
+travis_fold end compile_keycloak
 
 if [ $1 == "unit" ]; then
     mvn -B test -DskipTestsuite
