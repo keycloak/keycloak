@@ -2,11 +2,12 @@ package org.keycloak.testsuite.adapter.example.authorization;
 
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
+import org.junit.Assume;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.adapter.AbstractExampleAdapterTest;
-import org.keycloak.testsuite.adapter.javascript.AbstractJavascriptTest;
 import org.keycloak.testsuite.auth.page.login.OAuthGrant;
 import org.keycloak.testsuite.auth.page.login.OIDCLogin;
 import org.keycloak.testsuite.util.JavascriptBrowser;
@@ -51,6 +52,11 @@ public abstract class AbstractPhotozJavascriptExecutorTest extends AbstractExamp
     protected UserRepresentation adminUser = UserBuilder.create().username("admin").password("admin").build();
 
     protected UserRepresentation jdoeUser = UserBuilder.create().username("jdoe").password("jdoe").build();
+
+    @BeforeClass
+    public static void checkIfTLSIsTurnedOn() {
+        Assume.assumeTrue(AUTH_SERVER_SSL_REQUIRED);
+    }
 
     @Before
     public void setDefaultValues() {

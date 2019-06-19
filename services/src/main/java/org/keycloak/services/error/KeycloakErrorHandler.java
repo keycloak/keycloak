@@ -9,6 +9,7 @@ import org.keycloak.forms.login.freemarker.model.UrlBean;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakTransaction;
 import org.keycloak.models.RealmModel;
+import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.theme.FreeMarkerUtil;
@@ -41,6 +42,8 @@ public class KeycloakErrorHandler implements ExceptionMapper<Throwable> {
 
     private static final Pattern realmNamePattern = Pattern.compile(".*/realms/([^/]+).*");
 
+    public static final String UNCAUGHT_SERVER_ERROR_TEXT = "Uncaught server error";
+
     @Context
     private KeycloakSession session;
 
@@ -58,11 +61,18 @@ public class KeycloakErrorHandler implements ExceptionMapper<Throwable> {
         int statusCode = getStatusCode(throwable);
 
         if (statusCode >= 500 && statusCode <= 599) {
-            logger.error("Uncaught server error", throwable);
+            logger.error(UNCAUGHT_SERVER_ERROR_TEXT, throwable);
         }
 
         if (!MediaTypeMatcher.isHtmlRequest(headers)) {
-            return Response.status(statusCode).build();
+            OAuth2ErrorRepresentation error = new OAuth2ErrorRepresentation();
+
+            error.setError(getErrorCode(throwable));
+            
+            return Response.status(statusCode)
+                    .header(HttpHeaders.CONTENT_TYPE, javax.ws.rs.core.MediaType.APPLICATION_JSON_TYPE.toString())
+                    .entity(error)
+                    .build();
         }
 
         try {
@@ -96,6 +106,16 @@ public class KeycloakErrorHandler implements ExceptionMapper<Throwable> {
             status = f.getErrorCode();
         }
         return status;
+    }
+
+    private String getErrorCode(Throwable throwable) {
+        String error = throwable.getMessage();
+
+        if (error == null) {
+            return "unknown_error";
+        }
+
+        return error;
     }
 
     private RealmModel resolveRealm() {

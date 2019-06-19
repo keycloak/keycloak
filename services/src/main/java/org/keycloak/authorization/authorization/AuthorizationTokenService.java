@@ -47,6 +47,7 @@ import org.keycloak.authorization.common.KeycloakIdentity;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
+import org.keycloak.authorization.model.PermissionTicket;
 import org.keycloak.authorization.permission.ResourcePermission;
 import org.keycloak.authorization.policy.evaluation.EvaluationContext;
 import org.keycloak.authorization.policy.evaluation.PermissionTicketAwareDecisionResultCollector;
@@ -409,6 +410,22 @@ public class AuthorizationTokenService {
 
                 if (resource != null) {
                     requestedResources.add(resource);
+                } else if (resourceId.startsWith("resource-type:")) {
+                    // only resource types, no resource instances. resource types are owned by the resource server
+                    String resourceType = resourceId.substring("resource-type:".length());
+                    resourceStore.findByType(resourceType, resourceServer.getId(), resourceServer.getId(), requestedResources::add);
+                } else if (resourceId.startsWith("resource-type-any:")) {
+                    // any resource with a given type
+                    String resourceType = resourceId.substring("resource-type-any:".length());
+                    resourceStore.findByType(resourceType, null, resourceServer.getId(), requestedResources::add);
+                } else if (resourceId.startsWith("resource-type-instance:")) {
+                    // only resource instances with a given type
+                    String resourceType = resourceId.substring("resource-type-instance:".length());
+                    resourceStore.findByTypeInstance(resourceType, resourceServer.getId(), requestedResources::add);
+                } else if (resourceId.startsWith("resource-type-owner:")) {
+                    // only resources where the current identity is the owner
+                    String resourceType = resourceId.substring("resource-type-owner:".length());
+                    resourceStore.findByType(resourceType, identity.getId(), resourceServer.getId(), requestedResources::add);
                 } else {
                     String resourceName = resourceId;
                     Resource ownerResource = resourceStore.findByName(resourceName, identity.getId(), resourceServer.getId());
@@ -419,6 +436,11 @@ public class AuthorizationTokenService {
                     }
 
                     if (!identity.isResourceServer()) {
+                        List<PermissionTicket> tickets = storeFactory.getPermissionTicketStore().findGranted(resourceName, identity.getId(), resourceServer.getId());
+                        for (PermissionTicket permissionTicket : tickets) {
+                            requestedResources.add(permissionTicket.getResource());
+                        }
+
                         Resource serverResource = resourceStore.findByName(resourceName, resourceServer.getId());
 
                         if (serverResource != null) {

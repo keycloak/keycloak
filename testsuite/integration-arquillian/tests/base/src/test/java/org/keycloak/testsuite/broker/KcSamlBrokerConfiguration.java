@@ -135,7 +135,7 @@ public class KcSamlBrokerConfiguration implements BrokerConfiguration {
 
         Map<String, String> userFriendlyAttrMapperConfig = userFriendlyAttrMapper.getConfig();
         userFriendlyAttrMapperConfig.put(ProtocolMapperUtils.USER_ATTRIBUTE, AbstractUserAttributeMapperTest.ATTRIBUTE_TO_MAP_FRIENDLY_NAME);
-        userFriendlyAttrMapperConfig.put(AttributeStatementHelper.SAML_ATTRIBUTE_NAME, "");
+        userFriendlyAttrMapperConfig.put(AttributeStatementHelper.SAML_ATTRIBUTE_NAME, "urn:oid:1.2.3.4.5.6.7");
         userFriendlyAttrMapperConfig.put(AttributeStatementHelper.SAML_ATTRIBUTE_NAMEFORMAT, AttributeStatementHelper.BASIC);
         userFriendlyAttrMapperConfig.put(AttributeStatementHelper.FRIENDLY_NAME, AbstractUserAttributeMapperTest.ATTRIBUTE_TO_MAP_FRIENDLY_NAME);
 
@@ -153,7 +153,8 @@ public class KcSamlBrokerConfiguration implements BrokerConfiguration {
             .fullScopeEnabled(true)
             .protocol(SamlProtocol.LOGIN_PROTOCOL)
             .baseUrl("http://localhost:8080/sales-post")
-            .addRedirectUri("http://localhost:8080/sales-post/*")
+            .addRedirectUri("http://localhost:8180/sales-post/*")
+            .addRedirectUri("https://localhost:8543/sales-post/*")
             .attribute(SamlConfigAttributes.SAML_AUTHNSTATEMENT, SamlProtocol.ATTRIBUTE_TRUE_VALUE)
             .attribute(SamlConfigAttributes.SAML_CLIENT_SIGNATURE_ATTRIBUTE, SamlProtocol.ATTRIBUTE_FALSE_VALUE)
             .build(),
@@ -163,7 +164,8 @@ public class KcSamlBrokerConfiguration implements BrokerConfiguration {
             .fullScopeEnabled(true)
             .protocol(SamlProtocol.LOGIN_PROTOCOL)
             .baseUrl("http://localhost:8080/sales-post")
-            .addRedirectUri("http://localhost:8080/sales-post/*")
+            .addRedirectUri("http://localhost:8180/sales-post/*")
+            .addRedirectUri("https://localhost:8543/sales-post/*")
             .attribute(SamlConfigAttributes.SAML_AUTHNSTATEMENT, SamlProtocol.ATTRIBUTE_TRUE_VALUE)
             .attribute(SamlConfigAttributes.SAML_CLIENT_SIGNATURE_ATTRIBUTE, SamlProtocol.ATTRIBUTE_FALSE_VALUE)
             .build(),
@@ -173,6 +175,7 @@ public class KcSamlBrokerConfiguration implements BrokerConfiguration {
             .name("broker-app")
             .secret("broker-app-secret")
             .enabled(true)
+            .directAccessGrants()
             .addRedirectUri(getAuthRoot(suiteContext) + "/auth/*")
             .baseUrl(getAuthRoot(suiteContext) + "/auth/realms/" + REALM_CONS_NAME + "/app")
             .build()

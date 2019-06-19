@@ -37,7 +37,6 @@ import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
-import org.keycloak.keys.RsaKeyMetadata;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeyManager;
@@ -80,6 +79,9 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
 import org.keycloak.common.util.StringPropertyReplacer;
+import org.keycloak.crypto.Algorithm;
+import org.keycloak.crypto.KeyUse;
+import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.dom.saml.v2.metadata.KeyTypes;
 import org.keycloak.rotation.HardcodedKeyLocator;
 import org.keycloak.rotation.KeyLocator;
@@ -87,6 +89,8 @@ import org.keycloak.saml.SPMetadataDescriptor;
 import org.keycloak.saml.processing.core.util.KeycloakKeySamlExtensionGenerator;
 import org.keycloak.saml.validators.DestinationValidator;
 import org.keycloak.sessions.AuthenticationSessionModel;
+import java.nio.charset.StandardCharsets;
+import java.util.logging.Level;
 
 /**
  * Resource class for the saml connect token service
@@ -126,7 +130,7 @@ public class SamlService extends AuthorizationEndpointBase {
 
             if (samlRequest == null && samlResponse == null) {
                 event.event(EventType.LOGIN);
-                event.error(Errors.INVALID_TOKEN);
+                event.error(Errors.SAML_TOKEN_NOT_FOUND);
                 return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_REQUEST);
 
             }
@@ -454,7 +458,7 @@ public class SamlService extends AuthorizationEndpointBase {
             builder.logoutRequestID(logoutRequest.getID());
             builder.destination(logoutBindingUri);
             builder.issuer(RealmsResource.realmBaseUrl(session.getContext().getUri()).build(realm.getName()).toString());
-            JaxrsSAML2BindingBuilder binding = new JaxrsSAML2BindingBuilder().relayState(logoutRelayState);
+            JaxrsSAML2BindingBuilder binding = new JaxrsSAML2BindingBuilder(session).relayState(logoutRelayState);
             boolean postBinding = SamlProtocol.SAML_POST_BINDING.equals(logoutBinding);
             if (samlClient.requiresRealmSignature()) {
                 SignatureAlgorithm algorithm = samlClient.getSignatureAlgorithm();
@@ -590,27 +594,33 @@ public class SamlService extends AuthorizationEndpointBase {
 
     }
 
-    public static String getIDPMetadataDescriptor(UriInfo uriInfo, KeycloakSession session, RealmModel realm) throws IOException {
+    public static String getIDPMetadataDescriptor(UriInfo uriInfo, KeycloakSession session, RealmModel realm) {
         InputStream is = SamlService.class.getResourceAsStream("/idp-metadata-template.xml");
-        String template = StreamUtil.readString(is);
+        String template;
+        try {
+            template = StreamUtil.readString(is, StandardCharsets.UTF_8);
+        } catch (IOException ex) {
+            logger.error("Cannot generate IdP metadata", ex);
+            return "";
+        }
         Properties props = new Properties();
         props.put("idp.entityID", RealmsResource.realmBaseUrl(uriInfo).build(realm.getName()).toString());
         props.put("idp.sso.HTTP-POST", RealmsResource.protocolUrl(uriInfo).build(realm.getName(), SamlProtocol.LOGIN_PROTOCOL).toString());
         props.put("idp.sso.HTTP-Redirect", RealmsResource.protocolUrl(uriInfo).build(realm.getName(), SamlProtocol.LOGIN_PROTOCOL).toString());
         props.put("idp.sls.HTTP-POST", RealmsResource.protocolUrl(uriInfo).build(realm.getName(), SamlProtocol.LOGIN_PROTOCOL).toString());
         StringBuilder keysString = new StringBuilder();
-        Set<RsaKeyMetadata> keys = new TreeSet<>((o1, o2) -> o1.getStatus() == o2.getStatus() // Status can be only PASSIVE OR ACTIVE, push PASSIVE to end of list
+        Set<KeyWrapper> keys = new TreeSet<>((o1, o2) -> o1.getStatus() == o2.getStatus() // Status can be only PASSIVE OR ACTIVE, push PASSIVE to end of list
           ? (int) (o2.getProviderPriority() - o1.getProviderPriority())
           : (o1.getStatus() == KeyStatus.PASSIVE ? 1 : -1));
-        keys.addAll(session.keys().getRsaKeys(realm));
-        for (RsaKeyMetadata key : keys) {
+        keys.addAll(session.keys().getKeys(realm, KeyUse.SIG, Algorithm.RS256));
+        for (KeyWrapper key : keys) {
             addKeyInfo(keysString, key, KeyTypes.SIGNING.value());
         }
         props.put("idp.signing.certificates", keysString.toString());
         return StringPropertyReplacer.replaceProperties(template, props);
     }
 
-    private static void addKeyInfo(StringBuilder target, RsaKeyMetadata key, String purpose) {
+    private static void addKeyInfo(StringBuilder target, KeyWrapper key, String purpose) {
         if (key == null) {
             return;
         }
@@ -655,17 +665,43 @@ public class SamlService extends AuthorizationEndpointBase {
             event.error(Errors.INVALID_CLIENT);
             return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, "Wrong client protocol.");
         }
-        if (client.getManagementUrl() == null && client.getAttribute(SamlProtocol.SAML_ASSERTION_CONSUMER_URL_POST_ATTRIBUTE) == null && client.getAttribute(SamlProtocol.SAML_ASSERTION_CONSUMER_URL_REDIRECT_ATTRIBUTE) == null) {
+
+        session.getContext().setClient(client);
+
+        AuthenticationSessionModel authSession = getOrCreateLoginSessionForIdpInitiatedSso(this.session, this.realm, client, relayState);
+        if (authSession == null) {
             logger.error("SAML assertion consumer url not set up");
             event.error(Errors.INVALID_REDIRECT_URI);
             return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_REDIRECT_URI);
         }
 
-        session.getContext().setClient(client);
-
-        AuthenticationSessionModel authSession = getOrCreateLoginSessionForIdpInitiatedSso(this.session, this.realm, client, relayState);
-
         return newBrowserAuthentication(authSession, false, false);
+    }
+
+    /**
+     * Checks the client configuration to return the redirect URL and the binding type.
+     * POST is preferred, only if the SAML_ASSERTION_CONSUMER_URL_POST_ATTRIBUTE
+     * and management URL are empty REDIRECT is chosen.
+     *
+     * @param client Client to create client session for
+     * @return a two string array [samlUrl, bindingType] or null if error
+     */
+    private String[] getUrlAndBindingForIdpInitiatedSso(ClientModel client) {
+        String postUrl = client.getAttribute(SamlProtocol.SAML_ASSERTION_CONSUMER_URL_POST_ATTRIBUTE);
+        String getUrl = client.getAttribute(SamlProtocol.SAML_ASSERTION_CONSUMER_URL_REDIRECT_ATTRIBUTE);
+        if (postUrl != null && !postUrl.trim().isEmpty()) {
+            // first the POST binding URL
+            return new String[] {postUrl.trim(), SamlProtocol.SAML_POST_BINDING};
+        } else if (client.getManagementUrl() != null && !client.getManagementUrl().trim().isEmpty()) {
+            // second the management URL and POST
+            return new String[] {client.getManagementUrl().trim(), SamlProtocol.SAML_POST_BINDING};
+        } else if (getUrl != null && !getUrl.trim().isEmpty()){
+            // last option REDIRECT binding and URL
+            return new String[] {getUrl.trim(), SamlProtocol.SAML_REDIRECT_BINDING};
+        } else {
+            // error
+            return null;
+        }
     }
 
     /**
@@ -677,29 +713,21 @@ public class SamlService extends AuthorizationEndpointBase {
      * @param realm Realm to create client session in
      * @param client Client to create client session for
      * @param relayState Optional relay state - free field as per SAML specification
-     * @return
+     * @return The auth session model or null if there is no SAML url is found
      */
     public AuthenticationSessionModel getOrCreateLoginSessionForIdpInitiatedSso(KeycloakSession session, RealmModel realm, ClientModel client, String relayState) {
-        String bindingType = SamlProtocol.SAML_POST_BINDING;
-        if (client.getManagementUrl() == null && client.getAttribute(SamlProtocol.SAML_ASSERTION_CONSUMER_URL_POST_ATTRIBUTE) == null && client.getAttribute(SamlProtocol.SAML_ASSERTION_CONSUMER_URL_REDIRECT_ATTRIBUTE) != null) {
-            bindingType = SamlProtocol.SAML_REDIRECT_BINDING;
+        String[] bindingProperties = getUrlAndBindingForIdpInitiatedSso(client);
+        if (bindingProperties == null) {
+            return null;
         }
-
-        String redirect;
-        if (bindingType.equals(SamlProtocol.SAML_REDIRECT_BINDING)) {
-            redirect = client.getAttribute(SamlProtocol.SAML_ASSERTION_CONSUMER_URL_REDIRECT_ATTRIBUTE);
-        } else {
-            redirect = client.getAttribute(SamlProtocol.SAML_ASSERTION_CONSUMER_URL_POST_ATTRIBUTE);
-        }
-        if (redirect == null) {
-            redirect = client.getManagementUrl();
-        }
+        String redirect = bindingProperties[0];
+        String bindingType = bindingProperties[1];
 
         AuthenticationSessionModel authSession = createAuthenticationSession(client, null);
 
         authSession.setProtocol(SamlProtocol.LOGIN_PROTOCOL);
         authSession.setAction(AuthenticationSessionModel.Action.AUTHENTICATE.name());
-        authSession.setClientNote(SamlProtocol.SAML_BINDING, SamlProtocol.SAML_POST_BINDING);
+        authSession.setClientNote(SamlProtocol.SAML_BINDING, bindingType);
         authSession.setClientNote(SamlProtocol.SAML_IDP_INITIATED_LOGIN, "true");
         authSession.setRedirectUri(redirect);
 

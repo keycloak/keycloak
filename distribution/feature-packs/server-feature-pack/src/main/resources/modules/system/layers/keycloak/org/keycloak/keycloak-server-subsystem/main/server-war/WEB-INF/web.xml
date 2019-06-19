@@ -38,6 +38,11 @@
         <async-supported>true</async-supported>
     </servlet>
 
+    <context-param>
+       <param-name>resteasy.disable.html.sanitizer</param-name>
+       <param-value>true</param-value>
+    </context-param>
+
     <listener>
         <listener-class>org.keycloak.services.listeners.KeycloakSessionDestroyListener</listener-class>
     </listener>

@@ -107,6 +107,27 @@ public class LogoutTest extends AbstractKeycloakTest {
         }
     }
 
+
+    @Test
+    public void postLogoutFailWithCredentialsOfDifferentClient() throws Exception {
+        oauth.doLogin("test-user@localhost", "password");
+
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+
+        oauth.clientSessionState("client-session");
+        OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
+        String refreshTokenString = tokenResponse.getRefreshToken();
+
+        oauth.clientId("test-app-scope");
+
+        // Assert logout fails with 400 when trying to use different client credentials
+        try (CloseableHttpResponse response = oauth.doLogout(refreshTokenString, "password")) {
+            assertThat(response, Matchers.statusCodeIsHC(Status.BAD_REQUEST));
+        }
+
+        oauth.clientId("test-app");
+    }
+
     @Test
     public void postLogoutWithValidIdToken() throws Exception {
         oauth.doLogin("test-user@localhost", "password");
@@ -119,13 +140,13 @@ public class LogoutTest extends AbstractKeycloakTest {
 
         String logoutUrl = oauth.getLogoutUrl()
           .idTokenHint(idTokenString)
-          .postLogoutRedirectUri(AppPage.baseUrl)
+          .postLogoutRedirectUri(oauth.APP_AUTH_ROOT)
           .build();
         
         try (CloseableHttpClient c = HttpClientBuilder.create().disableRedirectHandling().build();
           CloseableHttpResponse response = c.execute(new HttpGet(logoutUrl))) {
             assertThat(response, Matchers.statusCodeIsHC(Status.FOUND));
-            assertThat(response.getFirstHeader(HttpHeaders.LOCATION).getValue(), is(AppPage.baseUrl));
+            assertThat(response.getFirstHeader(HttpHeaders.LOCATION).getValue(), is(oauth.APP_AUTH_ROOT));
         }
     }
 
@@ -144,13 +165,13 @@ public class LogoutTest extends AbstractKeycloakTest {
 
         String logoutUrl = oauth.getLogoutUrl()
           .idTokenHint(idTokenString)
-          .postLogoutRedirectUri(AppPage.baseUrl)
+          .postLogoutRedirectUri(oauth.APP_AUTH_ROOT)
           .build();
 
         try (CloseableHttpClient c = HttpClientBuilder.create().disableRedirectHandling().build();
           CloseableHttpResponse response = c.execute(new HttpGet(logoutUrl))) {
             assertThat(response, Matchers.statusCodeIsHC(Status.FOUND));
-            assertThat(response.getFirstHeader(HttpHeaders.LOCATION).getValue(), is(AppPage.baseUrl));
+            assertThat(response.getFirstHeader(HttpHeaders.LOCATION).getValue(), is(oauth.APP_AUTH_ROOT));
         }
     }
 
@@ -169,13 +190,13 @@ public class LogoutTest extends AbstractKeycloakTest {
         // Logout should succeed with user already logged out, see KEYCLOAK-3399
         String logoutUrl = oauth.getLogoutUrl()
           .idTokenHint(idTokenString)
-          .postLogoutRedirectUri(AppPage.baseUrl)
+          .postLogoutRedirectUri(oauth.APP_AUTH_ROOT)
           .build();
 
         try (CloseableHttpClient c = HttpClientBuilder.create().disableRedirectHandling().build();
           CloseableHttpResponse response = c.execute(new HttpGet(logoutUrl))) {
             assertThat(response, Matchers.statusCodeIsHC(Status.FOUND));
-            assertThat(response.getFirstHeader(HttpHeaders.LOCATION).getValue(), is(AppPage.baseUrl));
+            assertThat(response.getFirstHeader(HttpHeaders.LOCATION).getValue(), is(oauth.APP_AUTH_ROOT));
         }
     }
 
@@ -205,13 +226,13 @@ public class LogoutTest extends AbstractKeycloakTest {
 
         String logoutUrl = oauth.getLogoutUrl()
           .idTokenHint(idTokenString)
-          .postLogoutRedirectUri(AppPage.baseUrl)
+          .postLogoutRedirectUri(oauth.APP_AUTH_ROOT)
           .build();
         
         try (CloseableHttpClient c = HttpClientBuilder.create().disableRedirectHandling().build();
           CloseableHttpResponse response = c.execute(new HttpGet(logoutUrl))) {
             assertThat(response, Matchers.statusCodeIsHC(Status.FOUND));
-            assertThat(response.getFirstHeader(HttpHeaders.LOCATION).getValue(), is(AppPage.baseUrl));
+            assertThat(response.getFirstHeader(HttpHeaders.LOCATION).getValue(), is(oauth.APP_AUTH_ROOT));
         }
     }
 

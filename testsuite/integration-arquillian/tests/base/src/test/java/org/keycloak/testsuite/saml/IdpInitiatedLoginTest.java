@@ -16,11 +16,11 @@
  */
 package org.keycloak.testsuite.saml;
 
-import org.apache.http.client.HttpResponseException;
+import java.io.Closeable;
+import java.io.IOException;
 import org.junit.Assert;
 import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.admin.client.resource.UsersResource;
-import org.keycloak.client.registration.HttpErrorException;
 import org.keycloak.dom.saml.v2.protocol.ResponseType;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.saml.SamlProtocol;
@@ -39,12 +39,17 @@ import java.util.stream.Collectors;
 import org.junit.Test;
 
 import javax.ws.rs.core.Response;
+import static org.hamcrest.Matchers.allOf;
 
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.hasSize;
 import static org.junit.Assert.assertThat;
+import org.keycloak.broker.saml.SAMLIdentityProviderConfig;
+import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
+import org.keycloak.testsuite.updaters.IdentityProviderCreator;
+import org.keycloak.testsuite.util.IdentityProviderBuilder;
 import static org.keycloak.testsuite.util.Matchers.bodyHC;
 import static org.keycloak.testsuite.util.Matchers.statusCodeIsHC;
 
@@ -55,7 +60,7 @@ import static org.keycloak.testsuite.util.Matchers.statusCodeIsHC;
 public class IdpInitiatedLoginTest extends AbstractSamlTest {
 
     @Test
-    public void testIdpInitiatedLogin() {
+    public void testIdpInitiatedLoginPost() {
         new SamlClientBuilder()
           .idpInitiatedLogin(getAuthServerSamlEndpoint(REALM_NAME), "sales-post").build()
           .login().user(bburkeUser).build()
@@ -69,6 +74,53 @@ public class IdpInitiatedLoginTest extends AbstractSamlTest {
             .build()
           .execute()
         ;
+    }
+
+    @Test
+    public void testIdpInitiatedLoginPostAdminUrl() throws IOException {
+        String url = adminClient.realm(REALM_NAME).clients().findByClientId(SAML_CLIENT_ID_SALES_POST).get(0)
+                .getAttributes().get(SamlProtocol.SAML_ASSERTION_CONSUMER_URL_POST_ATTRIBUTE);
+        try (Closeable c = ClientAttributeUpdater.forClient(adminClient, REALM_NAME, SAML_CLIENT_ID_SALES_POST)
+                .setAdminUrl(url)
+                .setAttribute(SamlProtocol.SAML_ASSERTION_CONSUMER_URL_POST_ATTRIBUTE, null)
+                .setAttribute(SamlProtocol.SAML_ASSERTION_CONSUMER_URL_REDIRECT_ATTRIBUTE, null)
+                .update()) {
+            new SamlClientBuilder()
+                    .idpInitiatedLogin(getAuthServerSamlEndpoint(REALM_NAME), "sales-post").build()
+                    .login().user(bburkeUser).build()
+                    .processSamlResponse(Binding.POST)
+                    .transformObject(ob -> {
+                        assertThat(ob, Matchers.isSamlResponse(JBossSAMLURIConstants.STATUS_SUCCESS));
+                        ResponseType resp = (ResponseType) ob;
+                        assertThat(resp.getDestination(), is(SAML_ASSERTION_CONSUMER_URL_SALES_POST));
+                        return null;
+                    })
+                    .build()
+                    .execute();
+        }
+    }
+
+    @Test
+    public void testIdpInitiatedLoginRedirect() throws IOException {
+        String url = adminClient.realm(REALM_NAME).clients().findByClientId(SAML_CLIENT_ID_SALES_POST).get(0)
+                .getAttributes().get(SamlProtocol.SAML_ASSERTION_CONSUMER_URL_POST_ATTRIBUTE);
+        try (Closeable c = ClientAttributeUpdater.forClient(adminClient, REALM_NAME, SAML_CLIENT_ID_SALES_POST)
+                .setAttribute(SamlProtocol.SAML_ASSERTION_CONSUMER_URL_POST_ATTRIBUTE, null)
+                .setAttribute(SamlProtocol.SAML_ASSERTION_CONSUMER_URL_REDIRECT_ATTRIBUTE, url)
+                .update()) {
+            new SamlClientBuilder()
+                    .idpInitiatedLogin(getAuthServerSamlEndpoint(REALM_NAME), "sales-post").build()
+                    .login().user(bburkeUser).build()
+                    .processSamlResponse(Binding.REDIRECT)
+                    .transformObject(ob -> {
+                        assertThat(ob, Matchers.isSamlResponse(JBossSAMLURIConstants.STATUS_SUCCESS));
+                        ResponseType resp = (ResponseType) ob;
+                        assertThat(resp.getDestination(), is(SAML_ASSERTION_CONSUMER_URL_SALES_POST));
+                        return null;
+                    })
+                    .build()
+                    .execute();
+        }
     }
 
     @Test
@@ -135,5 +187,43 @@ public class IdpInitiatedLoginTest extends AbstractSamlTest {
 
         adminClient.realm(REALM_NAME).clients().get(clientRep.getId()).update(ClientBuilder.edit(clientRep)
                 .protocol(SamlProtocol.LOGIN_PROTOCOL).build());
+    }
+
+    @Test
+    public void testSamlPostBindingPageLogin() {
+        new SamlClientBuilder()
+                .idpInitiatedLogin(getAuthServerSamlEndpoint(REALM_NAME), "sales-post").build()
+                .login().user(bburkeUser).build()
+                .execute(r -> {
+                    Assert.assertThat(r, statusCodeIsHC(Response.Status.OK));
+                    Assert.assertThat(r, bodyHC(allOf(
+                            containsString("Redirecting, please wait."),
+                            containsString("<input type=\"hidden\" name=\"SAMLResponse\""), 
+                            containsString("<h1 id=\"kc-page-title\">")
+                    )));
+                });
+    }
+
+    @Test
+    public void testSamlPostBindingPageIdP() throws Exception {
+        try (IdentityProviderCreator idp = new IdentityProviderCreator(adminClient.realm(REALM_NAME), 
+                IdentityProviderBuilder.create()
+                    .alias("saml-idp")
+                    .providerId("saml")
+                    .setAttribute(SAMLIdentityProviderConfig.SINGLE_SIGN_ON_SERVICE_URL, "http://saml-idp-sso-service/")
+                    .setAttribute(SAMLIdentityProviderConfig.POST_BINDING_AUTHN_REQUEST, "true")
+                    .build())) {
+            new SamlClientBuilder()
+                .idpInitiatedLogin(getAuthServerSamlEndpoint(REALM_NAME), "sales-post").build()
+                .login().idp("saml-idp").build()
+                .execute(r -> {
+                    Assert.assertThat(r, statusCodeIsHC(Response.Status.OK));
+                    Assert.assertThat(r, bodyHC(allOf(
+                            containsString("Redirecting, please wait."),
+                            containsString("<input type=\"hidden\" name=\"SAMLRequest\""), 
+                            containsString("<h1 id=\"kc-page-title\">")
+                    )));
+                });
+        }
     }
 }

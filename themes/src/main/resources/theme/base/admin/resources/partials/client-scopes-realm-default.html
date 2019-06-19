@@ -25,10 +25,12 @@
                     <div class="col-md-4">
                         <label class="control-label" for="available">{{:: 'default-client-scopes.default.available' | translate}}</label>
                         <kc-tooltip>{{:: 'default-client-scopes.default.available.tooltip' | translate}}</kc-tooltip>
-                        <select id="available" class="form-control" multiple size="5"
+                        <select id="available" class="form-control overflow-select" multiple size="5"
                                 ng-multiple="true"
-                                ng-model="selectedDefaultClientScopes"
-                                ng-options="r.name for r in availableClientScopes | orderBy:'toString()'">
+                                ng-model="selectedDefaultClientScopes">
+                            <option ng-repeat="r in availableClientScopes | orderBy:'name'" value="{{r}}" title="{{r.name}}">
+                                {{r.name}}
+                            </option>
                         </select>
                         <button ng-disabled="selectedDefaultClientScopes.length == 0" class="btn btn-default" type="submit" ng-click="addDefaultClientScope()">
                             {{:: 'add-selected' | translate}} <i class="fa fa-angle-double-right"></i>
@@ -37,10 +39,12 @@
                     <div class="col-md-4">
                         <label class="control-label" for="assigned">{{:: 'default-client-scopes.default.assigned' | translate}}</label>
                         <kc-tooltip>{{:: 'default-client-scopes.default.assigned.tooltip' | translate}}</kc-tooltip>
-                        <select id="assigned" class="form-control" multiple size=5
+                        <select id="assigned" class="form-control overflow-select" multiple size=5
                                 ng-multiple="true"
-                                ng-model="selectedDefDefaultClientScopes"
-                                ng-options="r.name for r in realmDefaultClientScopes | orderBy:'toString()'">
+                                ng-model="selectedDefDefaultClientScopes">
+                            <option ng-repeat="r in realmDefaultClientScopes | orderBy:'name'" value="{{r}}" title="{{r.name}}">
+                                {{r.name}}
+                            </option>
                         </select>
                         <button ng-disabled="selectedDefDefaultClientScopes.length == 0" class="btn btn-default" type="submit" ng-click="deleteDefaultClientScope()">
                             <i class="fa fa-angle-double-left"></i> {{:: 'remove-selected' | translate}}
@@ -59,10 +63,12 @@
                     <div class="col-md-4">
                         <label class="control-label" for="available-opt">{{:: 'default-client-scopes.optional.available' | translate}}</label>
                         <kc-tooltip>{{:: 'default-client-scopes.optional.available.tooltip' | translate}}</kc-tooltip>
-                        <select id="available-opt" class="form-control" multiple size="5"
+                        <select id="available-opt" class="form-control overflow-select" multiple size="5"
                                 ng-multiple="true"
-                                ng-model="selectedOptionalClientScopes"
-                                ng-options="r.name for r in availableClientScopes | orderBy:'toString()'">
+                                ng-model="selectedOptionalClientScopes">
+                            <option ng-repeat="r in availableClientScopes | orderBy:'name'" value="{{r}}" title="{{r.name}}">
+                                {{r.name}}
+                            </option>
                         </select>
                         <button ng-disabled="selectedOptionalClientScopes.length == 0" class="btn btn-default" type="submit" ng-click="addOptionalClientScope()">
                             {{:: 'add-selected' | translate}} <i class="fa fa-angle-double-right"></i>
@@ -71,10 +77,12 @@
                     <div class="col-md-4">
                         <label class="control-label" for="assigned-opt">{{:: 'default-client-scopes.optional.assigned' | translate}}</label>
                         <kc-tooltip>{{:: 'default-client-scopes.optional.assigned.tooltip' | translate}}</kc-tooltip>
-                        <select id="assigned-opt" class="form-control" multiple size=5
+                        <select id="assigned-opt" class="form-control overflow-select" multiple size=5
                                 ng-multiple="true"
-                                ng-model="selectedDefOptionalClientScopes"
-                                ng-options="r.name for r in realmOptionalClientScopes | orderBy:'toString()'">
+                                ng-model="selectedDefOptionalClientScopes">
+                            <option ng-repeat="r in realmOptionalClientScopes | orderBy:'name'" value="{{r}}" title="{{r.name}}">
+                                {{r.name}}
+                            </option>
                         </select>
                         <button ng-disabled="selectedDefOptionalClientScopes.length == 0" class="btn btn-default" type="submit" ng-click="deleteOptionalClientScope()">
                             <i class="fa fa-angle-double-left"></i> {{:: 'remove-selected' | translate}}

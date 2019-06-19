@@ -543,17 +543,21 @@ public final class KeycloakModelUtils {
 
     // Used in various role mappers
     public static RoleModel getRoleFromString(RealmModel realm, String roleName) {
-        String[] parsedRole = parseRole(roleName);
-        RoleModel role = null;
-        if (parsedRole[0] == null) {
-            role = realm.getRole(parsedRole[1]);
-        } else {
-            ClientModel client = realm.getClientByClientId(parsedRole[0]);
+        // Check client roles for all possible splits by dot
+        int scopeIndex = roleName.lastIndexOf('.');
+        while (scopeIndex >= 0) {
+            String appName = roleName.substring(0, scopeIndex);
+            ClientModel client = realm.getClientByClientId(appName);
             if (client != null) {
-                role = client.getRole(parsedRole[1]);
+                String role = roleName.substring(scopeIndex + 1);
+                return client.getRole(role);
             }
+
+            scopeIndex = roleName.lastIndexOf('.', scopeIndex - 1);
         }
-        return role;
+
+        // determine if roleName is a realm role
+        return realm.getRole(roleName);
     }
 
     // Used for hardcoded role mappers
@@ -628,8 +632,13 @@ public final class KeycloakModelUtils {
      * Lookup clientScope OR client by id. Method is useful if you know just ID, but you don't know
      * if underlying model is clientScope or client
      */
-    public static ClientScopeModel findClientScopeById(RealmModel realm, String clientScopeId) {
+    public static ClientScopeModel findClientScopeById(RealmModel realm, ClientModel client, String clientScopeId) {
         ClientScopeModel clientScope = realm.getClientScopeById(clientScopeId);
+
+        if (clientScope ==  null) {
+            // as fallback we try to resolve dynamic scopes
+            clientScope = client.getDynamicClientScope(clientScopeId);
+        }
 
         if (clientScope != null) {
             return clientScope;

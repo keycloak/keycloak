@@ -453,7 +453,7 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
             return root.realm().canManageRealm();
         } else if (role.getContainer() instanceof ClientModel) {
             ClientModel client = (ClientModel)role.getContainer();
-            return root.clients().canManage(client);
+            return root.clients().canConfigure(client);
         }
         return false;
     }

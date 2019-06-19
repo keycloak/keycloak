@@ -52,6 +52,11 @@ public class ProviderConfigProperty {
     public static final String CLIENT_LIST_TYPE="ClientList";
     public static final String PASSWORD="Password";
 
+    /**
+     * textarea field
+     */
+    public static final String TEXT_TYPE="Text";
+
     protected String name;
     protected String label;
     protected String helpText;

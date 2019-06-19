@@ -2,6 +2,8 @@ package org.keycloak.testsuite.cli.registration;
 
 import org.hamcrest.Matchers;
 import org.junit.Assert;
+import org.junit.Assume;
+import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.ClientResource;
@@ -32,6 +34,11 @@ import static org.keycloak.testsuite.cli.KcRegExec.execute;
  */
 public class KcRegCreateTest extends AbstractRegCliTest {
 
+    @Before
+    public void assumeTLSEnabled() {
+        Assume.assumeTrue(AUTH_SERVER_SSL_REQUIRED);
+    }
+
     @Test
     public void testCreateWithRealmOverride() throws IOException {
 
@@ -41,15 +48,15 @@ public class KcRegCreateTest extends AbstractRegCliTest {
 
             // authenticate as a regular user against one realm
             KcRegExec exe = execute("config credentials -x --config '" + configFile.getName() +
-                    "' --server " + serverUrl + " --realm master --user admin --password admin");
+                    "' --insecure --server " + oauth.AUTH_SERVER_ROOT + " --realm master --user admin --password admin");
 
-            assertExitCodeAndStreamSizes(exe, 0, 0, 1);
+            assertExitCodeAndStreamSizes(exe, 0, 0, 3);
 
             // use initial token of another realm with server, and realm override
             String token = issueInitialAccessToken("test");
-            exe = execute("create --config '" + configFile.getName() + "' --server " + serverUrl + " --realm test -s clientId=my_first_client -t " + token);
+            exe = execute("create --config '" + configFile.getName() + "' --insecure --server " + oauth.AUTH_SERVER_ROOT + " --realm test -s clientId=my_first_client -t " + token);
 
-            assertExitCodeAndStreamSizes(exe, 0, 0, 1);
+            assertExitCodeAndStreamSizes(exe, 0, 0, 3);
         }
     }
 
@@ -66,15 +73,15 @@ public class KcRegCreateTest extends AbstractRegCliTest {
             final String realm = "test";
 
             KcRegExec exe = execute("config initial-token -x --config '" + configFile.getName() +
-                    "' --server " + serverUrl + " --realm " + realm + " " + token);
+                    "' --insecure --server " + oauth.AUTH_SERVER_ROOT + " --realm " + realm + " " + token);
 
             assertExitCodeAndStreamSizes(exe, 0, 0, 0);
 
             // check that current server, realm, and initial token are saved in the file
             ConfigData config = handler.loadConfig();
-            Assert.assertEquals("Config serverUrl", serverUrl, config.getServerUrl());
+            Assert.assertEquals("Config serverUrl", oauth.AUTH_SERVER_ROOT, config.getServerUrl());
             Assert.assertEquals("Config realm", realm, config.getRealm());
-            Assert.assertEquals("Config initial access token", token, config.ensureRealmConfigData(serverUrl, realm).getInitialToken());
+            Assert.assertEquals("Config initial access token", token, config.ensureRealmConfigData(oauth.AUTH_SERVER_ROOT, realm).getInitialToken());
 
             // create configuration from file using stdin redirect ... output an object
             String content = "{\n" +
@@ -96,9 +103,9 @@ public class KcRegCreateTest extends AbstractRegCliTest {
 
             try (TempFileResource tmpFile = new TempFileResource(initTempFile(".json", content))) {
 
-                exe = execute("create --config '" + configFile.getName() + "' -o -f - < '" + tmpFile.getName() + "'");
+                exe = execute("create --insecure --config '" + configFile.getName() + "' -o -f - < '" + tmpFile.getName() + "'");
 
-                assertExitCodeAndStdErrSize(exe, 0, 0);
+                assertExitCodeAndStdErrSize(exe, 0, 2);
 
                 ClientRepresentation client = JsonSerialization.readValue(exe.stdout(), ClientRepresentation.class);
                 Assert.assertNotNull("id", client.getId());
@@ -119,12 +126,12 @@ public class KcRegCreateTest extends AbstractRegCliTest {
                 Assert.assertNull("mappers are null", client.getProtocolMappers());
 
                 // create configuration from file as a template and override clientId and other attributes ... output an object
-                exe = execute("create --config '" + configFile.getName() + "' -o -f '" + tmpFile.getName() +
+                exe = execute("create --insecure --config '" + configFile.getName() + "' -o -f '" + tmpFile.getName() +
                         "' -s clientId=my_client2 -s enabled=false -s 'redirectUris=[\"http://localhost:8980/myapp2/*\"]'" +
                         " -s 'name=My Client App II' -s protocol=openid-connect -s 'webOrigins=[\"http://localhost:8980/myapp2\"]'" +
                         " -s baseUrl=http://localhost:8980/myapp2 -s rootUrl=http://localhost:8980/myapp2");
 
-                assertExitCodeAndStdErrSize(exe, 0, 0);
+                assertExitCodeAndStdErrSize(exe, 0, 2);
 
                 ClientRepresentation client2 = JsonSerialization.readValue(exe.stdout(), ClientRepresentation.class);
                 Assert.assertNotNull("id", client2.getId());
@@ -152,16 +159,16 @@ public class KcRegCreateTest extends AbstractRegCliTest {
             }
 
             // simple create, output an id
-            exe = execute("create --config '" + configFile.getName() + "' -i -s clientId=my_client3");
+            exe = execute("create --insecure --config '" + configFile.getName() + "' -i -s clientId=my_client3");
 
-            assertExitCodeAndStreamSizes(exe, 0, 1, 0);
+            assertExitCodeAndStreamSizes(exe, 0, 1, 2);
             Assert.assertEquals("only clientId returned", "my_client3", exe.stdoutLines().get(0));
 
             // simple create, default output
-            exe = execute("create --config '" + configFile.getName() + "' -s clientId=my_client4");
+            exe = execute("create --insecure --config '" + configFile.getName() + "' -s clientId=my_client4");
 
-            assertExitCodeAndStreamSizes(exe, 0, 0, 1);
-            Assert.assertEquals("only clientId returned", "Registered new client with client_id 'my_client4'", exe.stderrLines().get(0));
+            assertExitCodeAndStreamSizes(exe, 0, 0, 3);
+            Assert.assertEquals("only clientId returned", "Registered new client with client_id 'my_client4'", exe.stderrLines().get(2));
 
 
 
@@ -176,11 +183,11 @@ public class KcRegCreateTest extends AbstractRegCliTest {
 
             try (TempFileResource tmpFile = new TempFileResource(initTempFile(".json", content))) {
 
-                exe = execute("create --config '" + configFile.getName() + "' -s 'client_name=My Client App V' " +
+                exe = execute("create --insecure --config '" + configFile.getName() + "' -s 'client_name=My Client App V' " +
                         " -s 'redirect_uris=[\"http://localhost:8980/myapp5/*\"]' -s client_uri=http://localhost:8980/myapp5" +
                         " -o -f - < '" + tmpFile.getName() + "'");
 
-                assertExitCodeAndStdErrSize(exe, 0, 0);
+                assertExitCodeAndStdErrSize(exe, 0, 2);
 
                 OIDCClientRepresentation client = JsonSerialization.readValue(exe.stdout(), OIDCClientRepresentation.class);
 
@@ -205,9 +212,9 @@ public class KcRegCreateTest extends AbstractRegCliTest {
             File samlSpMetaFile = new File(System.getProperty("user.dir") + "/src/test/resources/cli/kcreg/saml-sp-metadata.xml");
             Assert.assertTrue("saml-sp-metadata.xml exists", samlSpMetaFile.isFile());
 
-            exe = execute("create --config '" + configFile.getName() + "' -o -f - < '" + samlSpMetaFile.getAbsolutePath() + "'");
+            exe = execute("create --insecure --config '" + configFile.getName() + "' -o -f - < '" + samlSpMetaFile.getAbsolutePath() + "'");
 
-            assertExitCodeAndStdErrSize(exe, 0, 0);
+            assertExitCodeAndStdErrSize(exe, 0, 2);
 
             ClientRepresentation client = JsonSerialization.readValue(exe.stdout(), ClientRepresentation.class);
             Assert.assertNotNull("id", client.getId());
@@ -219,7 +226,7 @@ public class KcRegCreateTest extends AbstractRegCliTest {
 
 
             // delete initial token
-            exe = execute("config initial-token --config '" + configFile.getName() + "' --server " + serverUrl + " --realm " + realm + " --delete");
+            exe = execute("config initial-token --config '" + configFile.getName() + "' --insecure --server " + serverUrl + " --realm " + realm + " --delete");
             assertExitCodeAndStreamSizes(exe, 0, 0, 0);
 
             config = handler.loadConfig();
@@ -234,12 +241,12 @@ public class KcRegCreateTest extends AbstractRegCliTest {
         try (TempFileResource configFile = new TempFileResource(handler.getConfigFile())) {
 
             KcRegExec exe = execute("config credentials -x --config '" + configFile.getName() +
-                    "' --server " + serverUrl + " --realm master --user admin --password admin");
-            assertExitCodeAndStreamSizes(exe, 0, 0, 1);
+                    "' --insecure --server " + oauth.AUTH_SERVER_ROOT + " --realm master --user admin --password admin");
+            assertExitCodeAndStreamSizes(exe, 0, 0, 3);
 
             String token = issueInitialAccessToken("test");
-            exe = execute("create --config '" + configFile.getName() + "' --server " + serverUrl + " --realm test -s clientId=authz-client -s authorizationServicesEnabled=true -t " + token);
-            assertExitCodeAndStreamSizes(exe, 0, 0, 1);
+            exe = execute("create --config '" + configFile.getName() + "' --insecure --server " + oauth.AUTH_SERVER_ROOT + " --realm test -s clientId=authz-client -s authorizationServicesEnabled=true -t " + token);
+            assertExitCodeAndStreamSizes(exe, 0, 0, 3);
 
             RealmResource realm = adminClient.realm("test");
             ClientsResource clients = realm.clients();
@@ -271,11 +278,11 @@ public class KcRegCreateTest extends AbstractRegCliTest {
 
             try (TempFileResource tmpFile = new TempFileResource(initTempFile(".json", content))) {
 
-                exe = execute("create --config '" + configFile.getName() + "' -s 'client_name=My Reg Authz' --realm test -t " + token +
+                exe = execute("create --insecure --config '" + configFile.getName() + "' -s 'client_name=My Reg Authz' --realm test -t " + token +
                         " -s 'redirect_uris=[\"http://localhost:8980/myapp5/*\"]' -s client_uri=http://localhost:8980/myapp5" +
                         " -o -f - < '" + tmpFile.getName() + "'");
 
-                assertExitCodeAndStdErrSize(exe, 0, 0);
+                assertExitCodeAndStdErrSize(exe, 0, 2);
 
                 OIDCClientRepresentation oidcClient = JsonSerialization.readValue(exe.stdout(), OIDCClientRepresentation.class);
 

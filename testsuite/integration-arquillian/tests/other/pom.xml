@@ -24,7 +24,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian-tests</artifactId>
-        <version>4.7.0.Final-SNAPSHOT</version>
+        <version>7.0.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>integration-arquillian-tests-other</artifactId>
@@ -39,12 +39,7 @@
     <modules>
         <module>adapters</module>
         <module>sssd</module>
-        <module>springboot-tests</module>
     </modules>
-
-    <properties>
-        <skip.unpack.test.resources>false</skip.unpack.test.resources>
-    </properties>
 
     <build>
         <pluginManagement>
@@ -59,7 +54,6 @@
                                 <goal>unpack</goal>
                             </goals>
                             <configuration>
-                                <skip>${skip.unpack.test.resources}</skip>
                                 <artifactItems>
                                     <artifactItem>
                                         <groupId>org.keycloak.testsuite</groupId>
@@ -150,27 +144,21 @@
             </modules>
         </profile>
         <profile>
-            <id>nodejs-adapter-tests</id>
-            <modules>
-                <module>nodejs_adapter</module>
-            </modules>
-        </profile>
-        <profile>
             <id>server-config-migration</id>
             <modules>
                 <module>server-config-migration</module>
             </modules>
         </profile>
         <profile>
-            <id>welcome-page</id>
-            <modules>
-                <module>welcome-page</module>
-            </modules>
-        </profile>
-        <profile>
             <id>base-ui</id>
             <modules>
                 <module>base-ui</module>
+            </modules>
+        </profile>
+        <profile>
+            <id>springboot</id>
+            <modules>
+                <module>springboot-tests</module>
             </modules>
         </profile>
     </profiles>

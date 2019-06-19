@@ -28,7 +28,7 @@ import org.jboss.arquillian.container.test.impl.client.deployment.AnnotationDepl
 import org.jboss.arquillian.test.spi.TestClass;
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.StringPropertyReplacer;
-import org.keycloak.testsuite.arquillian.containers.ContainerConstants;
+import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
 
 import static org.keycloak.testsuite.arquillian.AppServerTestEnricher.getAppServerQualifiers;
 

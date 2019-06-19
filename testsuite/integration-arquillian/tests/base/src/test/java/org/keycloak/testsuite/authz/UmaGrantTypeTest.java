@@ -79,8 +79,7 @@ public class UmaGrantTypeTest extends AbstractResourceServerTest {
         policy.setName("Default Policy");
         policy.setCode("$evaluation.grant();");
 
-        Response response = authorization.policies().js().create(policy);
-        response.close();
+        authorization.policies().js().create(policy).close();
 
         ResourcePermissionRepresentation permission = new ResourcePermissionRepresentation();
         resourceA = addResource("Resource A", "ScopeA", "ScopeB", "ScopeC");
@@ -89,16 +88,14 @@ public class UmaGrantTypeTest extends AbstractResourceServerTest {
         permission.addResource(resourceA.getName());
         permission.addPolicy(policy.getName());
 
-        response = authorization.permissions().resource().create(permission);
-        response.close();
+        authorization.permissions().resource().create(permission).close();
 
         policy = new JSPolicyRepresentation();
 
         policy.setName("Deny Policy");
         policy.setCode("$evaluation.deny();");
 
-        response = authorization.policies().js().create(policy);
-        response.close();
+        authorization.policies().js().create(policy).close();
     }
 
     @Test

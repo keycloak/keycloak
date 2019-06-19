@@ -145,18 +145,20 @@ public class GroupPolicyManagementTest extends AbstractPolicyManagementTest {
         representation.addGroupPath("Group F");
 
         GroupPoliciesResource policies = authorization.policies().group();
-        Response response = policies.create(representation);
-        GroupPolicyRepresentation created = response.readEntity(GroupPolicyRepresentation.class);
 
-        policies.findById(created.getId()).remove();
+        try (Response response = policies.create(representation)) {
+            GroupPolicyRepresentation created = response.readEntity(GroupPolicyRepresentation.class);
 
-        GroupPolicyResource removed = policies.findById(created.getId());
+            policies.findById(created.getId()).remove();
 
-        try {
-            removed.toRepresentation();
-            fail("Permission not removed");
-        } catch (NotFoundException ignore) {
+            GroupPolicyResource removed = policies.findById(created.getId());
 
+            try {
+                removed.toRepresentation();
+                fail("Permission not removed");
+            } catch (NotFoundException ignore) {
+
+            }
         }
     }
 
@@ -183,18 +185,20 @@ public class GroupPolicyManagementTest extends AbstractPolicyManagementTest {
         representation.addGroupPath("/Group A");
 
         GroupPoliciesResource policies = authorization.policies().group();
-        Response response = policies.create(representation);
-        GroupPolicyRepresentation created = response.readEntity(GroupPolicyRepresentation.class);
 
-        PolicyResource policy = authorization.policies().policy(created.getId());
-        PolicyRepresentation genericConfig = policy.toRepresentation();
+        try (Response response = policies.create(representation)) {
+            GroupPolicyRepresentation created = response.readEntity(GroupPolicyRepresentation.class);
 
-        assertNotNull(genericConfig.getConfig());
-        assertNotNull(genericConfig.getConfig().get("groups"));
+            PolicyResource policy = authorization.policies().policy(created.getId());
+            PolicyRepresentation genericConfig = policy.toRepresentation();
 
-        GroupRepresentation group = getRealm().groups().groups().stream().filter(groupRepresentation -> groupRepresentation.getName().equals("Group A")).findFirst().get();
+            assertNotNull(genericConfig.getConfig());
+            assertNotNull(genericConfig.getConfig().get("groups"));
 
-        assertTrue(genericConfig.getConfig().get("groups").contains(group.getId()));
+            GroupRepresentation group = getRealm().groups().groups().stream().filter(groupRepresentation -> groupRepresentation.getName().equals("Group A")).findFirst().get();
+
+            assertTrue(genericConfig.getConfig().get("groups").contains(group.getId()));
+        }
     }
 
     private void assertCreated(AuthorizationResource authorization, GroupPolicyRepresentation representation) {

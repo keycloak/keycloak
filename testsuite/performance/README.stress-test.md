@@ -1,68 +1,79 @@
-# Stress Testing
-
-Stress testing is a type of performance testing focused on *finding the maximum performance* of the system for a specific scenario.
-
-There are various strategies but in general the stress test is a cycle of individual tests runs.
-After each run the performance assertions are evaluated before deciding if/how the loop should continue.
-
-The [test assertions](https://gatling.io/docs/2.3/general/assertions/) are constructed as boolean expressions on top of computed performance metrics, such as mean response time, percentage of failed requests, etc.
-
+# Keycloak Performance Testsuite - Stress Testing
 
 ## Requirements
 
-- `bc` tool for floating-point arithmetic
+- Bash
+- `bc`: Arbitrary precision calculator.
 
+## Stress Test
+
+The performance testsuite contains a stress-testing script: `stress-test.sh`.
+
+The stress test is implemented as a loop of individual performance test runs.
+The script supports two algorithms:
+- incremental (default)
+- bisection
+
+The *incremental algorithm* loop starts from a base load and then increases the load by a specified amount in each iteration.
+The loop ends when a performance test fails, or when the maximum number of iterations is reached.
+
+The *bisection algorithm* loop has a lower and an upper bound, and a resolution parameter.
+In each iteration the middle of the interval is used as a value for the performance test load.
+Depending on whether the test passes or fails the lower or upper half of the interval is used for the next iteration.
+The loop ends if size of the interval is lower than the specified resolution, or when the maximum number of iterations is reached.
 
 ## Usage
 
-`./stress-test.sh [ADDITIONAL_TEST_PARAMS]`
+```
+export PARAMETER1=value1
+export PARAMETER2=value2
+...
+stress-test.sh [-DadditionalTestsuiteParam1=value1 -DadditionalTestsuiteParam2=value2 ...]
+```
 
-Parameters of the stress test are loaded from `stress-test-config.sh`.
+## Parameters
 
-Additional `PROVISIONING_PARAMETERS` can be set via environment variable.
+### Script Execution Parameters
 
-## Common Parameters
-
-| Environment Variable | Description | Default Value |
+| Variable | Description | Default Value |
 | --- | --- | --- | 
-| `algorithm` | Stress test loop algorithm. Available values: `incremental`, `bisection`. | `incremental`  |
-| `provisioning` | When `true` (enabled), the `provision` and `import-dump` operations are run before, and the `teardown` operation is run after test in each iteration. Warm-up is applied in all iterations. When `false` (disabled), there is no provisioning or teardown, and the warm-up is only applied in the first iteration. | `true` (enabled) |
-| `PROVISIONING_PARAMETERS` | Additional set of parameters passed to the provisioning command. | |
-| `maxIterations` | Maximum number of iterations of the stress test loop. | `10` iterations |
-| `dataset` | Dataset to be used. | `100u2c`  |
-| `warmUpPeriod` | Sets value of `warmUpPeriod` parameter. If `provisioning` is disabled the warm-up is only done in the first iteration. | `120` seconds  |
-| `sequentialUsersFrom` | Value for the `sequentialUsersFrom` test parameter. If provisioning is disabled the value passed to the test command will be multiplied with each iteration. To be used with registration test scenario. | `-1` (random user iteration) |
+| `MVN` | The base Maven command to be used. | `mvn` |
+| `KEYCLOAK_PROJECT_HOME` | Root directory of the Keycloak project. | Root directory relative to the location of the `stress-test.sh` script. |
+| `DRY_RUN` | Don't execute performance tests. Only print out execution information for each iteration. | `false` |
 
+### Performance Testuite Parameters
 
-## Incremental Method
-
-Incremental stress test is a loop with gradually increasing load being put on the system.
-The cycle breaks with the first loop that fails the performance assertions, or after a maximum number of iterations
-
-It is useful for testing how various performance metrics evolve dependning on linear increments of load.
-
-### Parameters of Incremental Stress Test
-
-| Environment Variable | Description | Default Value |
+| Variable | Description | Default Value |
 | --- | --- | --- | 
-| `usersPerSec0` | Value of `usersPerSec` parameter for the first iteration. | `5` user per second |
-| `incrementFactor` | Factor of increment of `usersPerSec` with each subsequent iteration. The `usersPerSec` for iteration `i` (counted from 0) is computed as `usersPerSec0 + i * incrementFactor`. | `1` |
+| `DATASET` | Dataset to be used. | `1r_10c_100u`  |
+| `WARMUP_PERIOD` | Value of `warmUpPeriod` testsuite parameter. | `120` seconds  |
+| `RAMPUP_PERIOD` | Value of `rampUpPeriod` testsuite parameter. | `60` seconds  |
+| `MEASUREMENT_PERIOD` | Value of `measurementPeriod` testsuite parameter. | `120` seconds  |
+| `FILTER_RESULTS` | Value of `filterResults` testsuite parameter. Should be enabled. | `true` |
+| `@` | Any parameters provided to the `stress-test.sh` script will be passed to the performance testsuite. Optional. | |
 
+### Stress Test Parameters
 
-## Bisection Method
-
-This method (also called interval halving method) halves an interval defined by the lowest and highest expected value.
-The test is performed with a load value from the middle of the specified interval and depending on the result either the lower or the upper half is used in the next iteration.
-The cycle breaks when the interval gets smaller than a specified tolerance value, or after a maximum number of iterations.
-
-If set up properly the bisection algorithm is typically faster and more precise than the incremental method.
-However it doesn't show metrics evolving with the linear progression of load.
-
-### Parameters of Bisection Stress Test
-
-| Environment Variable | Description | Default Value |
+| Variable | Description | Default Value |
 | --- | --- | --- | 
-| `lowPoint` | The lower bound of the halved interval. Should be set to the lowest reasonably expected value of maximum performance. | `0` users per second |
-| `highPoint` | The upper bound of the halved interval. | `10` users per second |
-| `tolerance` | Indicates the precision of measurement. The stress test loop stops when the size of the halved interval is lower than this value. | `1` users per second |
+| `STRESS_TEST_ALGORITHM` | Stress test loop algorithm: `incremental` or `bisection`. | `incremental`  |
+| `STRESS_TEST_MAX_ITERATIONS` | Maximum number of stress test loop iterations. | `10` iterations |
+| `STRESS_TEST_PROVISIONING` | Should the system be re-provisioned in each iteration? If enabled the dataset DB dump is re-imported and the warmup is run in each iteration. | `false` |
+| `STRESS_TEST_PROVISIONING_GENERATE_DATASET` | Should the dataset be generated, instead of imported from DB dump? | `false` |
+| `STRESS_TEST_PROVISIONING_PARAMETERS` | Additional parameters for the provisioning command. Optional. | |
+
+#### Incremental Algorithm
+
+| Variable | Description | Default Value |
+| --- | --- | --- | 
+| `STRESS_TEST_UPS_FIRST` | Value of `usersPerSec` parameter in the first iteration. | `1.000` users per second |
+| `STRESS_TEST_UPS_INCREMENT` | Increment of `usersPerSec` parameter for each subsequent iteration. | `1.000` users per second |
+
+#### Bisection Algorithm
+
+| Variable | Description | Default Value |
+| --- | --- | --- | 
+| `STRESS_TEST_UPS_LOWER_BOUND` | Lower bound of `usersPerSec` parameter. | `0.000` users per second |
+| `STRESS_TEST_UPS_UPPER_BOUND` | Upper bound of `usersPerSec` parameter. | `10.000` users per second |
+| `STRESS_TEST_UPS_RESOLUTION` | Required resolution of the bisection algorithm. | `1.000` users per second |
 

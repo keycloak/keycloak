@@ -18,11 +18,12 @@ public class H2TestEnricher {
     protected final Logger log = Logger.getLogger(this.getClass());
 
     boolean runH2 = Boolean.parseBoolean(System.getProperty("run.h2", "false"));
+    boolean dockerDatabaseSkip = Boolean.parseBoolean(System.getProperty("docker.database.skip", "true"));
 
     private Server server = null;
 
     public void startH2(@Observes(precedence = 3) BeforeSuite event) throws SQLException {
-        if (runH2) {
+        if (runH2 && dockerDatabaseSkip) {
             log.info("Starting H2 database.");
             server = Server.createTcpServer();
             server.start();
@@ -31,7 +32,7 @@ public class H2TestEnricher {
     }
 
     public void stopH2(@Observes(precedence = -2) AfterSuite event) {
-        if (runH2 && server.isRunning(false)) {
+        if (runH2 && dockerDatabaseSkip && server.isRunning(false)) {
             log.info("Stopping H2 database.");
             server.stop();
             assert !server.isRunning(false);

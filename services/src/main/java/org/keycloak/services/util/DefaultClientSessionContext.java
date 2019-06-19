@@ -199,7 +199,7 @@ public class DefaultClientSessionContext implements ClientSessionContext {
     private Set<ClientScopeModel> loadClientScopes() {
         Set<ClientScopeModel> clientScopes = new HashSet<>();
         for (String scopeId : clientScopeIds) {
-            ClientScopeModel clientScope = KeycloakModelUtils.findClientScopeById(clientSession.getClient().getRealm(), scopeId);
+            ClientScopeModel clientScope = KeycloakModelUtils.findClientScopeById(clientSession.getClient().getRealm(), getClientSession().getClient(), scopeId);
             if (clientScope != null) {
                 if (isClientScopePermittedForUser(clientScope)) {
                     clientScopes.add(clientScope);

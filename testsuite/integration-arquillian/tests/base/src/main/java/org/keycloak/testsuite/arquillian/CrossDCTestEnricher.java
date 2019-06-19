@@ -16,24 +16,19 @@
  */
 package org.keycloak.testsuite.arquillian;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import org.apache.commons.io.FileUtils;
-import static org.hamcrest.Matchers.lessThan;
+import org.jboss.arquillian.container.spi.event.StopContainer;
+import org.jboss.arquillian.container.spi.event.StopSuiteContainers;
 import org.jboss.arquillian.container.test.api.ContainerController;
+import org.jboss.arquillian.core.api.Event;
 import org.jboss.arquillian.core.api.Instance;
-import org.jboss.arquillian.core.spi.Validate;
 import org.jboss.arquillian.core.api.annotation.Inject;
 import org.jboss.arquillian.core.api.annotation.Observes;
+import org.jboss.arquillian.core.spi.Validate;
 import org.jboss.arquillian.test.spi.event.suite.After;
+import org.jboss.arquillian.test.spi.event.suite.AfterSuite;
 import org.jboss.arquillian.test.spi.event.suite.Before;
 import org.jboss.logging.Logger;
-import static org.junit.Assert.assertThat;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.models.Constants;
 import org.keycloak.testsuite.arquillian.annotation.InitialDcState;
@@ -41,14 +36,20 @@ import org.keycloak.testsuite.auth.page.AuthRealm;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
 import org.keycloak.testsuite.crossdc.DC;
 import org.keycloak.testsuite.crossdc.ServerSetup;
+import org.keycloak.testsuite.utils.tls.TLSUtils;
+
+import java.io.File;
+import java.io.IOException;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
-import org.jboss.arquillian.container.spi.Container;
-import org.jboss.arquillian.container.spi.event.StopContainer;
-import org.jboss.arquillian.container.spi.event.StopSuiteContainers;
-import org.jboss.arquillian.core.api.Event;
-import org.jboss.arquillian.test.spi.event.suite.AfterSuite;
+
+import static org.hamcrest.Matchers.lessThan;
+import static org.junit.Assert.assertThat;
 
 /**
  *
@@ -71,6 +72,10 @@ public class CrossDCTestEnricher {
     static void initializeSuiteContext(SuiteContext suiteContext) {
         Validate.notNull(suiteContext, "Suite context cannot be null.");
         CrossDCTestEnricher.suiteContext = suiteContext;
+
+        if (AuthServerTestEnricher.AUTH_SERVER_CROSS_DC && suiteContext.getCacheServersInfo().isEmpty() && !AuthServerTestEnricher.CACHE_SERVER_LIFECYCLE_SKIP) {
+            throw new IllegalStateException("Cache containers misconfiguration");
+        }
     }
 
     public void beforeTest(@Observes(precedence = -2) Before event) {
@@ -154,7 +159,7 @@ public class CrossDCTestEnricher {
         
         suspendPeriodicTasks();
     }
-    
+
     public void afterTest(@Observes After event) {
         if (!suiteContext.isAuthServerCrossDc()) return;
 
@@ -173,11 +178,13 @@ public class CrossDCTestEnricher {
           .map(StopContainer::new)
           .forEach(stopContainer::fire);
 
-        DC.validDcsStream()
-          .map(CrossDCTestEnricher::getCacheServer)
-          .map(ContainerInfo::getArquillianContainer)
-          .map(StopContainer::new)
-          .forEach(stopContainer::fire);
+        if (!AuthServerTestEnricher.CACHE_SERVER_LIFECYCLE_SKIP) {
+            DC.validDcsStream()
+                    .map(CrossDCTestEnricher::getCacheServer)
+                    .map(ContainerInfo::getArquillianContainer)
+                    .map(StopContainer::new)
+                    .forEach(stopContainer::fire);
+        }
     }
 
     public void stopSuiteContainers(@Observes(precedence = 4) StopSuiteContainers event) {
@@ -196,7 +203,7 @@ public class CrossDCTestEnricher {
             backendTestingClients.put(node, createTestingClientFor(node));
         }
     }
-    
+
     private static void removeRESTClientsForNode(ContainerInfo node) {
         if (backendAdminClients.containsKey(node)) {
             backendAdminClients.get(node).close();
@@ -219,15 +226,15 @@ public class CrossDCTestEnricher {
 
     private static Keycloak createAdminClientFor(ContainerInfo node) {
         log.info("--DC: Initializing admin client for " + node.getContextRoot() + "/auth");
-        return Keycloak.getInstance(node.getContextRoot() + "/auth", AuthRealm.MASTER, AuthRealm.ADMIN, AuthRealm.ADMIN, Constants.ADMIN_CLI_CLIENT_ID);
+        return Keycloak.getInstance(node.getContextRoot() + "/auth", AuthRealm.MASTER, AuthRealm.ADMIN, AuthRealm.ADMIN, Constants.ADMIN_CLI_CLIENT_ID, TLSUtils.initializeTLS());
     }
-    
+
     private static KeycloakTestingClient createTestingClientFor(ContainerInfo node) {
         log.info("--DC: Initializing testing client for " + node.getContextRoot() + "/auth");
         return KeycloakTestingClient.getInstance(node.getContextRoot() + "/auth");
     }
-
     // Disable periodic tasks in cross-dc tests. It's needed to have some scenarios more stable.
+
     private static void suspendPeriodicTasks() {
         log.debug("--DC: suspendPeriodicTasks");
         backendTestingClients.values().stream().forEach((KeycloakTestingClient testingClient) -> {
@@ -260,6 +267,8 @@ public class CrossDCTestEnricher {
     }
 
     public static void startCacheServer(DC dc) {
+        if (AuthServerTestEnricher.CACHE_SERVER_LIFECYCLE_SKIP) return;
+
         if (!containerController.get().isStarted(getCacheServer(dc).getQualifier())) {
             log.infof("--DC: Starting %s", getCacheServer(dc).getQualifier());
             containerController.get().start(getCacheServer(dc).getQualifier());
@@ -268,6 +277,8 @@ public class CrossDCTestEnricher {
     }
 
     public static void stopCacheServer(DC dc) {
+        if (AuthServerTestEnricher.CACHE_SERVER_LIFECYCLE_SKIP) return;
+
         String qualifier = getCacheServer(dc).getQualifier();
 
         if (containerController.get().isStarted(qualifier)) {
@@ -275,7 +286,7 @@ public class CrossDCTestEnricher {
 
             containerController.get().stop(qualifier);
 
-            // Workaround for possible arquillian bug. Needs to cleanup dir manually 
+            // Workaround for possible arquillian bug. Needs to cleanup dir manually
             String setupCleanServerBaseDir = getContainerProperty(getCacheServer(dc), "setupCleanServerBaseDir");
             String cleanServerBaseDir = getContainerProperty(getCacheServer(dc), "cleanServerBaseDir");
 
@@ -327,6 +338,7 @@ public class CrossDCTestEnricher {
         if (! containerInfo.isStarted()) {
             log.infof("--DC: Starting backend auth-server node: %s", containerInfo.getQualifier());
             containerController.get().start(containerInfo.getQualifier());
+            AuthServerTestEnricher.initializeTLS(containerInfo);
             createRESTClientsForNode(containerInfo);
         }
     }

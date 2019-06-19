@@ -1,13 +1,16 @@
 package org.keycloak.testsuite.springboot;
 
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.RolesResource;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.admin.ApiUtil;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
+import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 
 public class BasicSpringBootTest extends AbstractSpringBootTest {
 
@@ -26,6 +29,8 @@ public class BasicSpringBootTest extends AbstractSpringBootTest {
         rolesResource.create(role);
 
         addUser(USER_LOGIN_2, USER_EMAIL_2, USER_PASSWORD_2, INCORRECT_ROLE);
+
+        testRealmLoginPage.setAuthRealm(REALM_NAME);
     }
 
     @After
@@ -39,56 +44,61 @@ public class BasicSpringBootTest extends AbstractSpringBootTest {
         adminClient.realm(REALM_NAME).roles().deleteRole(INCORRECT_ROLE);
     }
 
+    private void navigateToApplication() {
+        driver.navigate().to(APPLICATION_URL + "/index.html");
+        waitForPageToLoad();
+    }
+
     @Test
     public void testCorrectUser() {
-        driver.navigate().to(APPLICATION_URL + "/index.html");
+        navigateToApplication();
 
-        Assert.assertTrue("Must be on application page", applicationPage.isCurrent());
-
+        applicationPage.assertIsCurrent();
         applicationPage.goAdmin();
 
-        Assert.assertTrue("Must be on login page", loginPage.isCurrent());
+        assertCurrentUrlStartsWith(testRealmLoginPage);
 
-        loginPage.login(USER_LOGIN, USER_PASSWORD);
+        testRealmLoginPage.form().login(USER_LOGIN, USER_PASSWORD);
 
-        Assert.assertTrue("Must be on admin page", adminPage.isCurrent());
-        Assert.assertTrue("Admin page must contain correct div",
-                driver.getPageSource().contains("You are now admin"));
+        adminPage.assertIsCurrent();
+        assertThat(driver.getPageSource()).contains("You are now admin");
 
         driver.navigate().to(logoutPage(BASE_URL));
+        waitForPageToLoad();
 
-        Assert.assertTrue("Must be on login page", loginPage.isCurrent());
+        assertCurrentUrlStartsWith(testRealmLoginPage);
 
     }
 
     @Test
     public void testIncorrectUser() {
-        driver.navigate().to(APPLICATION_URL + "/index.html");
+        navigateToApplication();
 
-        Assert.assertTrue("Must be on application page", applicationPage.isCurrent());
-
+        applicationPage.assertIsCurrent();
         applicationPage.goAdmin();
 
-        Assert.assertTrue("Must be on login page", loginPage.isCurrent());
+        assertCurrentUrlStartsWith(testRealmLoginPage);
 
-        loginPage.login(USER_LOGIN_2, USER_PASSWORD_2);
+        testRealmLoginPage.form().login(USER_LOGIN_2, USER_PASSWORD_2);
 
-        Assert.assertTrue("Must return 403 because of incorrect role", driver.getPageSource().contains("Forbidden"));
+        assertThat(driver.getPageSource()).contains("Forbidden");
+
+        driver.navigate().to(logoutPage(BASE_URL));
+        waitForPageToLoad();
     }
 
     @Test
     public void testIncorrectCredentials() {
-        driver.navigate().to(APPLICATION_URL + "/index.html");
+        navigateToApplication();
 
-        Assert.assertTrue("Must be on application page", applicationPage.isCurrent());
-
+        applicationPage.assertIsCurrent();
         applicationPage.goAdmin();
 
-        Assert.assertTrue("Must be on login page", loginPage.isCurrent());
+        assertCurrentUrlStartsWith(testRealmLoginPage);
 
-        loginPage.login(USER_LOGIN, USER_PASSWORD_2);
+        testRealmLoginPage.form().login(USER_LOGIN, USER_PASSWORD_2);
 
-        Assert.assertEquals("Error message about password",
-                "Invalid username or password.", loginPage.getError());
+        assertThat(testRealmLoginPage.feedbackMessage().isError()).isTrue();
+        assertThat(testRealmLoginPage.feedbackMessage().getText()).isEqualTo("Invalid username or password.");
     }
 }

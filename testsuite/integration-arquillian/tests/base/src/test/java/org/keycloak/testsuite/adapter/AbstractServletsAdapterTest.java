@@ -24,6 +24,7 @@ import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.adapter.filter.AdapterActionsFilter;
 import org.keycloak.testsuite.util.WaitUtils;
+import org.keycloak.testsuite.utils.arquillian.DeploymentArchiveProcessorUtils;
 import org.keycloak.testsuite.utils.io.IOUtil;
 import org.openqa.selenium.By;
 
@@ -51,9 +52,16 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
         URL config2Url = AbstractServletsAdapterTest.class.getResource(webInfPath + config2);
         Assert.assertNotNull("config2Url should be in " + webInfPath + config2, config2Url);
 
-        return servletDeployment
+        servletDeployment
                 .add(new UrlAsset(config1Url), "/WEB-INF/classes/" + config1)
                 .add(new UrlAsset(config2Url), "/WEB-INF/classes/" + config2);
+
+        // In this scenario DeploymentArchiveProcessorUtils can not act automatically since the adapter configurations
+        // are not stored in typical places. We need to modify them manually.
+        DeploymentArchiveProcessorUtils.modifyOIDCAdapterConfig(servletDeployment, "/WEB-INF/classes/" + config1);
+        DeploymentArchiveProcessorUtils.modifyOIDCAdapterConfig(servletDeployment, "/WEB-INF/classes/" + config2);
+
+        return servletDeployment;
     }
 
     protected static WebArchive servletDeployment(String name, Class... servletClasses) {

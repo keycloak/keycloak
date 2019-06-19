@@ -29,6 +29,17 @@
         <delete dir="${server.unpacked.home}/standalone/log"/>
         <delete dir="${server.unpacked.home}/standalone/data"/>
         <delete dir="${server.unpacked.home}/standalone/tmp"/>
+        <replace file="${server.unpacked.home}/bin/standalone.sh">
+            <replacetoken><![CDATA[JBOSS_PID=$!]]></replacetoken>
+            <replacevalue><![CDATA[JBOSS_PID=$!
+
+      if [ "$JSTAT" = "true" ] ; then 
+        echo "Starting jstat"
+        mkdir -p $JBOSS_LOG_DIR
+        jstat -gc -t $JBOSS_PID 1000 > $JBOSS_LOG_DIR/jstat-gc.log &
+      fi
+]]></replacevalue>
+        </replace>
         <touch file="${project.build.directory}/configured"/>
     </target>
 

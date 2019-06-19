@@ -315,7 +315,7 @@ public class SAMLEndpoint {
             builder.logoutRequestID(request.getID());
             builder.destination(config.getSingleLogoutServiceUrl());
             builder.issuer(issuerURL);
-            JaxrsSAML2BindingBuilder binding = new JaxrsSAML2BindingBuilder()
+            JaxrsSAML2BindingBuilder binding = new JaxrsSAML2BindingBuilder(session)
                         .relayState(relayState);
             boolean postBinding = config.isPostBindingLogout();
             if (config.isWantAuthnRequestsSigned()) {
@@ -418,7 +418,9 @@ public class SAMLEndpoint {
                     String issuerURL = getEntityId(session.getContext().getUri(), realm);
                     cvb.addAllowedAudience(URI.create(issuerURL));
                     // getDestination has been validated to match request URL already so it matches SAML endpoint
-                    cvb.addAllowedAudience(URI.create(responseType.getDestination()));
+                    if (responseType.getDestination() != null) {
+                        cvb.addAllowedAudience(URI.create(responseType.getDestination()));
+                    }
                 } catch (IllegalArgumentException ex) {
                     // warning has been already emitted in DeploymentBuilder
                 }

@@ -55,6 +55,10 @@ public class JSObjectBuilder {
         return this;
     }
 
+    public boolean contains(String key, Object value) {
+       return arguments.containsKey(key) && arguments.get(key).equals(value);
+    }
+
     public JSObjectBuilder add(String key, Object value) {
         arguments.put(key, value);
         return this;
@@ -64,6 +68,15 @@ public class JSObjectBuilder {
         return arguments.get("onLoad").equals("login-required");
     }
 
+
+    public JSObjectBuilder pkceS256() {
+        return pkceMethod("S256");
+    }
+
+    private JSObjectBuilder pkceMethod(String method) {
+        arguments.put("pkceMethod", method);
+        return this;
+    }
 
     public String build() {
         StringBuilder argument = new StringBuilder("{");

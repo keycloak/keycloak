@@ -27,6 +27,9 @@ public interface Algorithm {
     String ES256 = "ES256";
     String ES384 = "ES384";
     String ES512 = "ES512";
+    String PS256 = "PS256";
+    String PS384 = "PS384";
+    String PS512 = "PS512";
 
     String AES = "AES";
 }

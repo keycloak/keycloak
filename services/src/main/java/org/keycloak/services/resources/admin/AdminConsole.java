@@ -38,7 +38,6 @@ import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.ClientManager;
 import org.keycloak.services.managers.RealmManager;
-import org.keycloak.services.resources.KeycloakApplication;
 import org.keycloak.theme.BrowserSecurityHeaderSetup;
 import org.keycloak.theme.FreeMarkerException;
 import org.keycloak.theme.FreeMarkerUtil;
@@ -85,9 +84,6 @@ public class AdminConsole {
 
     @Context
     protected Providers providers;
-
-    @Context
-    protected KeycloakApplication keycloak;
 
     protected AppAuthManager authManager;
     protected RealmModel realm;
@@ -173,7 +169,7 @@ public class AdminConsole {
         if (consoleApp == null) {
             throw new NotFoundException("Could not find admin console client");
         }
-        return new ClientManager(new RealmManager(session)).toInstallationRepresentation(realm, consoleApp, keycloak.getBaseUri(session.getContext().getUri()));
+        return new ClientManager(new RealmManager(session)).toInstallationRepresentation(realm, consoleApp, session.getContext().getAuthServerUrl());
 
     }
 

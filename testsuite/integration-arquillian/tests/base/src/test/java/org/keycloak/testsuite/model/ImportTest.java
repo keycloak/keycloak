@@ -57,7 +57,7 @@ public class ImportTest extends AbstractTestRealmKeycloakTest {
     @Deployment
     @TargetsContainer(AUTH_SERVER_CURRENT)
     public static WebArchive deploy() {
-        return RunOnServerDeployment.create(UserResource.class, AbstractLDAPTest.class)
+        return RunOnServerDeployment.create(UserResource.class, ImportTest.class)
                 .addPackages(true,
                         "org.keycloak.testsuite",
                         "org.keycloak.testsuite.model");

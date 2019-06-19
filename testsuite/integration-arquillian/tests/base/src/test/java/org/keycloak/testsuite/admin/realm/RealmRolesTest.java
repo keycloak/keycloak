@@ -25,6 +25,7 @@ import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.Assert;
@@ -110,7 +111,12 @@ public class RealmRolesTest extends AbstractAdminTest {
         getCleanup().addRoleId(ids.get("role-without-users"));
         getCleanup().addUserId(adminClient.realm(REALM_NAME).users().search(userRep.getUsername()).get(0).getId());
         
-
+        GroupRepresentation groupRep = new GroupRepresentation();
+        groupRep.setName("test-role-group");
+        groupRep.setPath("/test-role-group");
+        adminClient.realm(REALM_NAME).groups().add(groupRep);
+        getCleanup().addGroupId(adminClient.realm(REALM_NAME).groups().groups().get(0).getId());
+        
         resource = adminClient.realm(REALM_NAME).roles();
 
         assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.roleResourcePath("role-a"), roleA, ResourceType.REALM_ROLE);
@@ -122,7 +128,7 @@ public class RealmRolesTest extends AbstractAdminTest {
         assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.clientRoleResourcePath(clientUuid, "role-c"), roleC, ResourceType.CLIENT_ROLE);
         
         assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.userResourcePath(adminClient.realm(REALM_NAME).users().search(userRep.getUsername()).get(0).getId()), userRep, ResourceType.USER);
-        
+        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.groupPath(adminClient.realm(REALM_NAME).groups().groups().get(0).getId()), groupRep, ResourceType.GROUP);
         
     }
 
@@ -221,6 +227,7 @@ public class RealmRolesTest extends AbstractAdminTest {
 
     }
     
+    
     /**
      * KEYCLOAK-2035  Verifies that Role with no users assigned is being properly retrieved without members in API endpoint for role membership
      */
@@ -234,6 +241,41 @@ public class RealmRolesTest extends AbstractAdminTest {
         
     }
     
+    
+    /**
+     * KEYCLOAK-4978 Verifies that Groups assigned to Role are being properly retrieved as members in API endpoint for role membership
+     */
+    @Test
+    public void testGroupsInRole() {   
+        RoleResource role = resource.get("role-with-users");
+
+        List<GroupRepresentation> groups = adminClient.realm(REALM_NAME).groups().groups();
+        GroupRepresentation groupRep = groups.stream().filter(g -> g.getPath().equals("/test-role-group")).findFirst().get();
+        
+        RoleResource roleResource = adminClient.realm(REALM_NAME).roles().get(role.toRepresentation().getName());        
+        List<RoleRepresentation> rolesToAdd = new LinkedList<>();
+        rolesToAdd.add(roleResource.toRepresentation());
+        adminClient.realm(REALM_NAME).groups().group(groupRep.getId()).roles().realmLevel().add(rolesToAdd);
+
+        roleResource = adminClient.realm(REALM_NAME).roles().get(role.toRepresentation().getName());  
+        
+        Set<GroupRepresentation> groupsInRole = roleResource.getRoleGroupMembers();
+        assertTrue(groupsInRole.stream().filter(g -> g.getPath().equals("/test-role-group")).findFirst().isPresent());
+    }
+    
+    /**
+     * KEYCLOAK-4978  Verifies that Role with no users assigned is being properly retrieved without groups in API endpoint for role membership
+     */
+    @Test
+    public void testGroupsNotInRole() {
+        RoleResource role = resource.get("role-without-users");                
+        
+        role = adminClient.realm(REALM_NAME).roles().get(role.toRepresentation().getName());
+        
+        Set<GroupRepresentation> groupsInRole = role.getRoleGroupMembers();
+        assertTrue(groupsInRole.isEmpty());
+    }
+
     /**
      * KEYCLOAK-2035 Verifies that Role Membership is ok after user removal
      */

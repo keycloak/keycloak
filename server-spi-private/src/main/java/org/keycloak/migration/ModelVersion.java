@@ -29,6 +29,7 @@ public class ModelVersion {
     int minor;
     int micro;
     String qualifier;
+    boolean snapshot;
 
     public ModelVersion(int major, int minor, int micro) {
         this.major = major;
@@ -37,6 +38,11 @@ public class ModelVersion {
     }
 
     public ModelVersion(String version) {
+        if (version.endsWith("-SNAPSHOT") || version.endsWith("-snapshot")) {
+            snapshot = true;
+            version = version.substring(0, version.length() - 9);
+        }
+
         String[] split = version.split("\\.");
         try {
             if (split.length > 0) {
@@ -72,6 +78,10 @@ public class ModelVersion {
         return qualifier;
     }
 
+    public boolean isSnapshot() {
+        return snapshot;
+    }
+
     public boolean lessThan(ModelVersion version) {
         if (major < version.major) {
             return true;
@@ -95,7 +105,16 @@ public class ModelVersion {
         if (qualifier == null) return false;
         if (version.qualifier == null) return true;
         int comp = qualifier.compareTo(version.qualifier);
-        if (comp < 0) return true;
+        if (comp < 0) {
+            return true;
+        } else if (comp > 0){
+            return false;
+        }
+
+        if (snapshot && !version.snapshot) {
+            return true;
+        }
+
         return false;
     }
 

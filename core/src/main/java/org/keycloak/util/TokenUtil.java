@@ -40,6 +40,8 @@ public class TokenUtil {
 
     public static final String TOKEN_TYPE_BEARER = "Bearer";
 
+    public static final String TOKEN_TYPE_KEYCLOAK_ID = "Serialized-ID";
+
     public static final String TOKEN_TYPE_ID = "ID";
 
     public static final String TOKEN_TYPE_REFRESH = "Refresh";

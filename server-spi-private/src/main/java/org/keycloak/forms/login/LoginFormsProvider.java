@@ -18,8 +18,6 @@
 package org.keycloak.forms.login;
 
 import org.keycloak.models.ClientScopeModel;
-import org.keycloak.models.ProtocolMapperModel;
-import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.FormMessage;
 import org.keycloak.provider.Provider;
@@ -82,6 +80,8 @@ public interface LoginFormsProvider extends Provider {
     Response createCode();
 
     Response createX509ConfirmPage();
+
+    Response createSamlPostForm();
 
     LoginFormsProvider setAuthenticationSession(AuthenticationSessionModel authenticationSession);
 

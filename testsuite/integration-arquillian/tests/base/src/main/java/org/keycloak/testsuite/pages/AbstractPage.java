@@ -21,6 +21,7 @@ import org.jboss.arquillian.test.api.ArquillianResource;
 import org.junit.Assert;
 import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.testsuite.arquillian.SuiteContext;
+import org.keycloak.testsuite.util.OAuthClient;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 
@@ -37,6 +38,9 @@ public abstract class AbstractPage {
 
     @ArquillianResource
     protected WebDriver driver;
+
+    @ArquillianResource
+    protected OAuthClient oauth;
 
     public void assertCurrent() {
         String name = getClass().getSimpleName();
@@ -55,5 +59,10 @@ public abstract class AbstractPage {
     abstract public boolean isCurrent();
 
     abstract public void open() throws Exception;
+
+    public void setDriver(WebDriver driver) {
+        this.driver = driver ;
+        oauth.setDriver(driver);
+    }
 
 }

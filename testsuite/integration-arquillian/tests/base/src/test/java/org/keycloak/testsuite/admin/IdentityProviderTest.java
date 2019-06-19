@@ -638,7 +638,7 @@ public class IdentityProviderTest extends AbstractAdminTest {
         Assert.assertEquals("Parsed export type", EntityDescriptorType.class, entBody.getClass());
         EntityDescriptorType entity = (EntityDescriptorType) entBody;
 
-        Assert.assertEquals("EntityID", "http://localhost:8180/auth/realms/admin-client-test", entity.getEntityID());
+        Assert.assertEquals("EntityID", oauth.AUTH_SERVER_ROOT + "/realms/admin-client-test", entity.getEntityID());
 
         Assert.assertNotNull("ChoiceType not null", entity.getChoiceType());
         Assert.assertEquals("ChoiceType.size", 1, entity.getChoiceType().size());
@@ -667,7 +667,7 @@ public class IdentityProviderTest extends AbstractAdminTest {
         IndexedEndpointType endpoint = desc.getAssertionConsumerService().get(0);
 
         Assert.assertEquals("AssertionConsumerService.Location",
-                new URI("http://localhost:8180/auth/realms/admin-client-test/broker/saml/endpoint"), endpoint.getLocation());
+                new URI(oauth.AUTH_SERVER_ROOT + "/realms/admin-client-test/broker/saml/endpoint"), endpoint.getLocation());
         Assert.assertEquals("AssertionConsumerService.Binding",
                 new URI("urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST"), endpoint.getBinding());
         Assert.assertTrue("AssertionConsumerService.isDefault", endpoint.isIsDefault());
@@ -679,7 +679,7 @@ public class IdentityProviderTest extends AbstractAdminTest {
         EndpointType sloEndpoint = desc.getSingleLogoutService().get(0);
 
         Assert.assertEquals("SingleLogoutService.Location",
-                new URI("http://localhost:8180/auth/realms/admin-client-test/broker/saml/endpoint"), sloEndpoint.getLocation());
+                new URI(oauth.AUTH_SERVER_ROOT + "/realms/admin-client-test/broker/saml/endpoint"), sloEndpoint.getLocation());
         Assert.assertEquals("SingleLogoutService.Binding",
                 new URI("urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST"), sloEndpoint.getBinding());
 

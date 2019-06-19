@@ -53,6 +53,9 @@ public class ValidateX509CertificateUsername extends AbstractX509ClientCertifica
             return;
         }
 
+        saveX509CertificateAuditDataToAuthSession(context, certs[0]);
+        recordX509CertificateAuditDataViaContextEvent(context);
+
         X509AuthenticatorConfigModel config = null;
         if (context.getAuthenticatorConfig() != null && context.getAuthenticatorConfig().getConfig() != null) {
             config = new X509AuthenticatorConfigModel(context.getAuthenticatorConfig());

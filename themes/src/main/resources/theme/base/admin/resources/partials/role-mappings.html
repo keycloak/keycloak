@@ -14,10 +14,13 @@
                 <div class="row">
                     <div class="col-md-3">
                         <label class="control-label" for="available">{{:: 'available-roles' | translate}}</label>
-                        <select id="available" class="form-control" multiple size="5"
+                        <select id="available" class="form-control overflow-select" multiple size="5" realmMappings
                                 ng-multiple="true"
-                                ng-model="selectedRealmRoles"
-                                ng-options="r.name for r in realmRoles | orderBy:'name'">
+                                ng-model="selectedRealmRoles">
+                            <option ng-repeat="r in realmRoles | orderBy:'name'"
+                                    value="{{r}}" title="{{r.name}}">
+                                {{r.name}}
+                            </option>
                         </select>
                         <button ng-disabled="selectedRealmRoles.length == 0" ng-disabled="c.length == 0" class="btn btn-default" type="submit" ng-click="addRealmRole()">
                             {{:: 'add-selected' | translate}} <i class="fa fa-angle-right"></i>
@@ -27,10 +30,13 @@
                     <div class="col-md-3">
                         <label class="control-label" for="assigned">{{:: 'assigned-roles' | translate}}</label>
                         <kc-tooltip>{{:: 'user.assigned-roles.tooltip' | translate}}</kc-tooltip>
-                        <select id="assigned" class="form-control" multiple size=5
+                        <select id="assigned" class="form-control overflow-select" multiple size="5"
                                 ng-multiple="true"
-                                ng-model="selectedRealmMappings"
-                                ng-options="r.name for r in realmMappings | orderBy:'name'">
+                                ng-model="selectedRealmMappings">
+                            <option ng-repeat="r in realmMappings | orderBy:'name'"
+                                    value="{{r}}" title="{{r.name}}">
+                                {{r.name}}
+                            </option>
                         </select>
                         <button ng-disabled="selectedRealmMappings.length == 0" class="btn btn-default" type="submit" ng-click="deleteRealmRole()">
                             <i class="fa fa-angle-double-left"></i> {{:: 'remove-selected' | translate}}
@@ -39,10 +45,13 @@
                     <div class="col-md-3">
                         <label class="control-label" for="realm-composite">{{:: 'effective-roles' | translate}}</label>
                         <kc-tooltip>{{:: 'user.effective-roles.tooltip' | translate}}</kc-tooltip>
-                        <select id="realm-composite" class="form-control" multiple size=5
+                        <select id="realm-composite" class="form-control overflow-select" multiple size="5"
                                 disabled="true"
-                                ng-model="dummymodel"
-                                ng-options="r.name for r in realmComposite | orderBy:'name'">
+                                ng-model="dummymodel">
+                            <option ng-repeat="r in realmComposite | orderBy:'name'"
+                                    value="{{r}}" title="{{r.name}}">
+                                {{r.name}}
+                            </option>
                         </select>
                     </div>
                 </div>
@@ -62,10 +71,13 @@
                         <div class="col-md-3">
                             <label class="control-label" for="available-client">{{:: 'available-roles' | translate}}</label>
                             <kc-tooltip>{{:: 'user.available-roles.tooltip' | translate}}</kc-tooltip>
-                            <select id="available-client" class="form-control" multiple size="5"
+                            <select id="available-client" class="form-control overflow-select" multiple size="5"
                                     ng-multiple="true"
-                                    ng-model="selectedClientRoles"
-                                    ng-options="r.name for r in clientRoles | orderBy:'name'">
+                                    ng-model="selectedClientRoles">
+                                <option ng-repeat="r in clientRoles | orderBy:'name'"
+                                    value="{{r}}" title="{{r.name}}">
+                                    {{r.name}}
+                                </option>
                             </select>
                             <button ng-disabled="selectedClientRoles.length == 0" class="btn btn-default" type="submit" ng-click="addClientRole()">
                                 {{:: 'add-selected' | translate}} <i class="fa fa-angle-double-right"></i>
@@ -74,10 +86,13 @@
                         <div class="col-md-3">
                             <label class="control-label" for="assigned-client">{{:: 'assigned-roles' | translate}}</label>
                             <kc-tooltip>{{:: 'user.assigned-roles-client.tooltip' | translate}}</kc-tooltip>
-                            <select id="assigned-client" class="form-control" multiple size=5
+                            <select id="assigned-client" class="form-control overflow-select" multiple size=5
                                     ng-multiple="true"
-                                    ng-model="selectedClientMappings"
-                                    ng-options="r.name for r in clientMappings | orderBy:'name'">
+                                    ng-model="selectedClientMappings">
+                                <option ng-repeat="r in clientMappings | orderBy:'name'"
+                                    value="{{r}}" title="{{r.name}}">
+                                    {{r.name}}
+                                </option>
                             </select>
                             <button ng-disabled="selectedClientMappings.length == 0" class="btn btn-default" type="submit" ng-click="deleteClientRole()">
                                 <i class="fa fa-angle-double-left"></i> {{:: 'remove-selected' | translate}}
@@ -86,10 +101,13 @@
                         <div class="col-md-3">
                             <label class="control-label" for="client-composite">{{:: 'effective-roles' | translate}}</label>
                             <kc-tooltip>{{:: 'user.effective-roles-client.tooltip' | translate}}</kc-tooltip>
-                            <select id="client-composite" class="form-control" multiple size=5
+                            <select id="client-composite" class="form-control overflow-select" multiple size=5
                                     disabled="true"
-                                    ng-model="dummymodel"
-                                    ng-options="r.name for r in clientComposite | orderBy:'name'">
+                                    ng-model="dummymodel">
+                                <option ng-repeat="r in clientComposite | orderBy:'name'"
+                                    value="{{r}}" title="{{r.name}}">
+                                    {{r.name}}
+                                </option>
                             </select>
                         </div>
                     </div>

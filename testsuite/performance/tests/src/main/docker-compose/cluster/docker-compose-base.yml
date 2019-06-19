@@ -48,6 +48,7 @@ services:
             HTTP_MAX_CONNECTIONS: ${LB_HTTP_MAX_CONNECTIONS:-50000}
             WORKER_IO_THREADS: ${LB_WORKER_IO_THREADS:-2}
             WORKER_TASK_MAX_THREADS: ${LB_WORKER_TASK_MAX_THREADS:-16}
+            JSTAT: "${LB_JSTAT:-false}"
         ports:
             - "8080:8080"
             - "9990:9990"

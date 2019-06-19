@@ -20,7 +20,7 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 import org.keycloak.testsuite.utils.annotation.UseServletFilter;
-import org.keycloak.testsuite.arquillian.containers.ContainerConstants;
+import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
 
 @AppServerContainer(ContainerConstants.APP_SERVER_UNDERTOW)
 @AppServerContainer(ContainerConstants.APP_SERVER_WILDFLY)
@@ -86,5 +86,12 @@ public class DemoFilterServletAdapterTest extends DemoServletsAdapterTest {
     @Ignore
     public void testTokenInCookieRefresh() {
         
+    }
+
+    @Test
+    @Override
+    @Ignore
+    public void testTokenInCookieSSORoot() {
+
     }
 }

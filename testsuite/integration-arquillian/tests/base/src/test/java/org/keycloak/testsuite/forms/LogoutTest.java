@@ -73,7 +73,7 @@ public class LogoutTest extends AbstractTestRealmKeycloakTest {
 
         String sessionId = events.expectLogin().assertEvent().getSessionId();
 
-        String redirectUri = AppPage.baseUrl + "?logout";
+        String redirectUri = oauth.APP_AUTH_ROOT + "?logout";
 
         String logoutUrl = oauth.getLogoutUrl().redirectUri(redirectUri).build();
         driver.navigate().to(logoutUrl);
@@ -130,8 +130,8 @@ public class LogoutTest extends AbstractTestRealmKeycloakTest {
         events.expectLogin().session(sessionId).removeDetail(Details.USERNAME).assertEvent();
 
          //  Logout session 1 by redirect
-        driver.navigate().to(oauth.getLogoutUrl().redirectUri(AppPage.baseUrl).build());
-        events.expectLogout(sessionId).detail(Details.REDIRECT_URI, AppPage.baseUrl).assertEvent();
+        driver.navigate().to(oauth.getLogoutUrl().redirectUri(oauth.APP_AUTH_ROOT).build());
+        events.expectLogout(sessionId).detail(Details.REDIRECT_URI, oauth.APP_AUTH_ROOT).assertEvent();
 
          // Check session 1 not logged-in
         oauth.openLoginForm();
@@ -147,8 +147,8 @@ public class LogoutTest extends AbstractTestRealmKeycloakTest {
         events.expectLogin().session(sessionId3).removeDetail(Details.USERNAME).assertEvent();
 
         //  Logout session 3 by redirect
-        driver.navigate().to(oauth.getLogoutUrl().redirectUri(AppPage.baseUrl).build());
-        events.expectLogout(sessionId3).detail(Details.REDIRECT_URI, AppPage.baseUrl).assertEvent();
+        driver.navigate().to(oauth.getLogoutUrl().redirectUri(oauth.APP_AUTH_ROOT).build());
+        events.expectLogout(sessionId3).detail(Details.REDIRECT_URI, oauth.APP_AUTH_ROOT).assertEvent();
     }
 
     //KEYCLOAK-2741
@@ -244,11 +244,8 @@ public class LogoutTest extends AbstractTestRealmKeycloakTest {
     // KEYCLOAK-5982
     @Test
     public void testLogoutWhenAccountClientRenamed() throws IOException {
-        // Rename client "account"
-        ClientResource accountClient = ApiUtil.findClientByClientId(adminClient.realm("test"), Constants.ACCOUNT_MANAGEMENT_CLIENT_ID);
-
         // Temporarily rename client "account" . Revert it back after the test
-        try (Closeable accountClientUpdater = new ClientAttributeUpdater(accountClient)
+        try (Closeable accountClientUpdater = ClientAttributeUpdater.forClient(adminClient, "test", Constants.ACCOUNT_MANAGEMENT_CLIENT_ID)
                 .setClientId("account-changed")
                 .update()) {
 

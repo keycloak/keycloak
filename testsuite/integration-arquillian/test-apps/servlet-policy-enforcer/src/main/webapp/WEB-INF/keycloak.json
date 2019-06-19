@@ -15,6 +15,10 @@
                 "path": "/index.jsp"
             },
             {
+                "name": "Welcome Resource",
+                "path": "/"
+            },
+            {
                 "name": "Pattern 1",
                 "path": "/resource/{pattern}/{sub-resource}"
             },

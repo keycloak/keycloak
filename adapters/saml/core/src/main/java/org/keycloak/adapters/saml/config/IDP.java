@@ -269,6 +269,7 @@ public class IDP implements Serializable {
     private List<Key> keys;
     private AdapterHttpClientConfig httpClientConfig = new HttpClientConfig();
     private boolean signaturesRequired = false;
+    private String metadataUrl;
 
     public String getEntityID() {
         return entityID;
@@ -340,4 +341,11 @@ public class IDP implements Serializable {
         this.signaturesRequired = signaturesRequired;
     }
 
+    public String getMetadataUrl() {
+        return metadataUrl;
+    }
+
+    public void setMetadataUrl(String metadataUrl) {
+        this.metadataUrl = metadataUrl;
+    }
 }

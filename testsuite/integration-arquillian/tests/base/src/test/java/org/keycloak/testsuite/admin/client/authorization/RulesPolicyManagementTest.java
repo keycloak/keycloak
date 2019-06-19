@@ -77,18 +77,20 @@ public class RulesPolicyManagementTest extends AbstractPolicyManagementTest {
         RulePolicyRepresentation representation = createDefaultRepresentation("Delete Rule Policy");
 
         RulePoliciesResource policies = authorization.policies().rule();
-        Response response = policies.create(representation);
-        RulePolicyRepresentation created = response.readEntity(RulePolicyRepresentation.class);
 
-        policies.findById(created.getId()).remove();
+        try (Response response = policies.create(representation)) {
+            RulePolicyRepresentation created = response.readEntity(RulePolicyRepresentation.class);
 
-        RulePolicyResource removed = policies.findById(created.getId());
+            policies.findById(created.getId()).remove();
 
-        try {
-            removed.toRepresentation();
-            fail("Policy not removed");
-        } catch (NotFoundException ignore) {
+            RulePolicyResource removed = policies.findById(created.getId());
 
+            try {
+                removed.toRepresentation();
+                fail("Policy not removed");
+            } catch (NotFoundException ignore) {
+
+            }
         }
     }
 
@@ -112,10 +114,12 @@ public class RulesPolicyManagementTest extends AbstractPolicyManagementTest {
 
     private void assertCreated(AuthorizationResource authorization, RulePolicyRepresentation representation) {
         RulePoliciesResource permissions = authorization.policies().rule();
-        Response response = permissions.create(representation);
-        RulePolicyRepresentation created = response.readEntity(RulePolicyRepresentation.class);
-        RulePolicyResource permission = permissions.findById(created.getId());
-        assertRepresentation(representation, permission);
+
+        try (Response response = permissions.create(representation)) {
+            RulePolicyRepresentation created = response.readEntity(RulePolicyRepresentation.class);
+            RulePolicyResource permission = permissions.findById(created.getId());
+            assertRepresentation(representation, permission);
+        }
     }
 
     private void assertRepresentation(RulePolicyRepresentation expected, RulePolicyResource policy) {

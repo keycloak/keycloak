@@ -1347,7 +1347,9 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
             entity.setConfig(mapping.getConfig());
         } else {
             entity.getConfig().clear();
-            entity.getConfig().putAll(mapping.getConfig());
+            if (mapping.getConfig() != null) {
+                entity.getConfig().putAll(mapping.getConfig());
+            }
         }
         em.flush();
 
@@ -1662,7 +1664,9 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
             entity.setConfig(model.getConfig());
         } else {
             entity.getConfig().clear();
-            entity.getConfig().putAll(model.getConfig());
+            if (model.getConfig() != null) {
+                entity.getConfig().putAll(model.getConfig());
+            }
         }
         em.flush();
 
@@ -1744,7 +1748,9 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
             entity.setConfig(model.getConfig());
         } else {
             entity.getConfig().clear();
-            entity.getConfig().putAll(model.getConfig());
+            if (model.getConfig() != null) {
+                entity.getConfig().putAll(model.getConfig());
+            }
         }
         em.flush();
 

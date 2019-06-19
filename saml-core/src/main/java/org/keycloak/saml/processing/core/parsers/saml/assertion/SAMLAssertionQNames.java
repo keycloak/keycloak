@@ -79,6 +79,7 @@ public enum SAMLAssertionQNames implements HasQName {
     ATTR_NOT_ON_OR_AFTER(null, "NotOnOrAfter"),
     ATTR_RECIPIENT(null, "Recipient"),
     ATTR_SESSION_INDEX(null, "SessionIndex"),
+    ATTR_SESSION_NOT_ON_OR_AFTER(null, "SessionNotOnOrAfter"),
     ATTR_SP_PROVIDED_ID(null, "SPProvidedID"),
     ATTR_SP_NAME_QUALIFIER(null, "SPNameQualifier"),
     ATTR_VERSION(null, "Version"),

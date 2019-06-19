@@ -349,24 +349,23 @@ public abstract class AbstractPolicyEnforcer {
     }
 
     protected Map<String, List<String>> resolveClaims(PathConfig pathConfig, OIDCHttpFacade httpFacade) {
-        Map<String, List<String>> claims = getClaims(getEnforcerConfig().getClaimInformationPointConfig(), httpFacade);
+        Map<String, List<String>> claims = new HashMap<>();
 
-        claims.putAll(getClaims(pathConfig.getClaimInformationPointConfig(), httpFacade));
+        resolveClaims(claims, getEnforcerConfig().getClaimInformationPointConfig(), httpFacade);
+        resolveClaims(claims, pathConfig.getClaimInformationPointConfig(), httpFacade);
 
         return claims;
     }
 
-    private Map<String, List<String>> getClaims(Map<String, Map<String, Object>>claimInformationPointConfig, HttpFacade httpFacade) {
+    private void resolveClaims(Map<String, List<String>> claims, Map<String, Map<String, Object>> claimInformationPointConfig, HttpFacade httpFacade) {
         if (claimInformationPointConfig != null) {
             for (Entry<String, Map<String, Object>> claimDef : claimInformationPointConfig.entrySet()) {
                 ClaimInformationPointProviderFactory factory = getPolicyEnforcer().getClaimInformationPointProviderFactories().get(claimDef.getKey());
 
                 if (factory != null) {
-                    return factory.create(claimDef.getValue()).resolve(httpFacade);
+                    claims.putAll(factory.create(claimDef.getValue()).resolve(httpFacade));
                 }
             }
         }
-
-        return new HashMap<>();
     }
 }

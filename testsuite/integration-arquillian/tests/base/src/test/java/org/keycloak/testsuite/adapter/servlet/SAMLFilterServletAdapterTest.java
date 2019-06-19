@@ -1,12 +1,14 @@
 package org.keycloak.testsuite.adapter.servlet;
 
 import org.junit.After;
+import org.junit.Assume;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 import org.keycloak.testsuite.utils.annotation.UseServletFilter;
-import org.keycloak.testsuite.arquillian.containers.ContainerConstants;
+import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
 
 /**
  * @author mhajas
@@ -20,6 +22,12 @@ import org.keycloak.testsuite.arquillian.containers.ContainerConstants;
 @UseServletFilter(filterName = "saml-filter", filterClass = "org.keycloak.adapters.saml.servlet.SamlFilter",
         filterDependency = "org.keycloak:keycloak-saml-servlet-filter-adapter")
 public class SAMLFilterServletAdapterTest extends SAMLServletAdapterTest {
+
+    @BeforeClass
+    public static void enabled() {
+        String appServerJavaHome = System.getProperty("app.server.java.home", "");
+        Assume.assumeFalse(appServerJavaHome.contains("1.7") || appServerJavaHome.contains("ibm-java-70"));
+    }
 
     @Before
     public void checkRoles() {

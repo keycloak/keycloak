@@ -84,6 +84,10 @@ public class AccountFederatedIdentityPage extends AbstractAccountPage {
         return errorMessage.getText();
     }
 
+    public boolean isLinked(String idpAlias) {
+        return driver.getPageSource().contains("id=\"remove-link-" + idpAlias + "\"");
+    }
+
     public static class FederatedIdentity {
 
         private String providerId;

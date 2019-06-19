@@ -42,9 +42,9 @@ public class PermissionTicketAdapter implements PermissionTicket, CachedModel<Pe
     @Override
     public PermissionTicket getDelegateForUpdate() {
         if (updated == null) {
-            cacheSession.registerPermissionTicketInvalidation(cached.getId(), cached.getOwner(), cached.getRequester(), cached.getResourceId(), cached.getScopeId(), cached.getResourceServerId());
             updated = cacheSession.getPermissionTicketStoreDelegate().findById(cached.getId(), cached.getResourceServerId());
             if (updated == null) throw new IllegalStateException("Not found in database");
+            cacheSession.registerPermissionTicketInvalidation(cached.getId(), cached.getOwner(), cached.getRequester(), cached.getResourceId(), updated.getResource().getName(), cached.getScopeId(), cached.getResourceServerId());
         }
         return updated;
     }
@@ -114,7 +114,7 @@ public class PermissionTicketAdapter implements PermissionTicket, CachedModel<Pe
     @Override
     public void setGrantedTimestamp(Long millis) {
         getDelegateForUpdate();
-        cacheSession.registerPermissionTicketInvalidation(cached.getId(), cached.getOwner(), cached.getRequester(), cached.getResourceId(), cached.getScopeId(), cached.getResourceServerId());
+        cacheSession.registerPermissionTicketInvalidation(cached.getId(), cached.getOwner(), cached.getRequester(), cached.getResourceId(), updated.getResource().getName(), cached.getScopeId(), cached.getResourceServerId());
         updated.setGrantedTimestamp(millis);
     }
 
@@ -132,7 +132,7 @@ public class PermissionTicketAdapter implements PermissionTicket, CachedModel<Pe
     @Override
     public void setPolicy(Policy policy) {
         getDelegateForUpdate();
-        cacheSession.registerPermissionTicketInvalidation(cached.getId(), cached.getOwner(), cached.getRequester(), cached.getResourceId(), cached.getScopeId(), cached.getResourceServerId());
+        cacheSession.registerPermissionTicketInvalidation(cached.getId(), cached.getOwner(), cached.getRequester(), cached.getResourceId(), updated.getResource().getName(), cached.getScopeId(), cached.getResourceServerId());
         updated.setPolicy(policy);
     }
 

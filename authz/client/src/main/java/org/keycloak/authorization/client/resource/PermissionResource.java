@@ -104,13 +104,13 @@ public class PermissionResource {
         if (ticket == null) {
             throw new IllegalArgumentException("Permission ticket must not be null or empty");
         }
-        if (ticket.getRequester() == null || ticket.getRequesterName() == null) {
+        if (ticket.getRequester() == null && ticket.getRequesterName() == null) {
             throw new IllegalArgumentException("Permission ticket must have a requester");
         }
-        if (ticket.getResource() == null || ticket.getResourceName() == null) {
+        if (ticket.getResource() == null && ticket.getResourceName() == null) {
             throw new IllegalArgumentException("Permission ticket must have a resource");
         }
-        if (ticket.getScope() == null || ticket.getScopeName() == null) {
+        if (ticket.getScope() == null && ticket.getScopeName() == null) {
             throw new IllegalArgumentException("Permission ticket must have a scope");
         }
         Callable<PermissionTicketRepresentation> callable = new Callable<PermissionTicketRepresentation>() {
@@ -213,8 +213,8 @@ public class PermissionResource {
                         .param("requester", requester)
                         .param("granted", granted == null ? null : granted.toString())
                         .param("returnNames", returnNames == null ? null : returnNames.toString())
-                        .param("firstResult", firstResult == null ? null : firstResult.toString())
-                        .param("maxResult", maxResult == null ? null : maxResult.toString())
+                        .param("first", firstResult == null ? null : firstResult.toString())
+                        .param("max", maxResult == null ? null : maxResult.toString())
                         .response().json(new TypeReference<List<PermissionTicketRepresentation>>(){}).execute();
             }
         };
