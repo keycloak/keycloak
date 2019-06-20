@@ -16,11 +16,11 @@
  */
 package org.keycloak.connections.httpclient;
 
-import org.apache.http.HttpHost;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
+import org.keycloak.connections.httpclient.ProxyMappings.ProxyMapping;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -47,6 +47,8 @@ public class ProxyMappingsTest {
 
   private static final List<String> MAPPINGS_WITH_FALLBACK_AND_PROXY_EXCEPTION = new ArrayList<>();
 
+  private static final List<String> MAPPINGS_WITH_PROXY_AUTHENTICATION = new ArrayList<>();
+
   static {
     MAPPINGS_WITH_FALLBACK.addAll(DEFAULT_MAPPINGS);
     MAPPINGS_WITH_FALLBACK.add(".*;http://fallback:8080");
@@ -58,6 +60,11 @@ public class ProxyMappingsTest {
     MAPPINGS_WITH_FALLBACK_AND_PROXY_EXCEPTION.add(".*;http://fallback:8080");
   }
 
+  static {
+    MAPPINGS_WITH_PROXY_AUTHENTICATION.add(".*stackexchange\\.com;http://user01:pas2w0rd@proxy3:88");
+    MAPPINGS_WITH_PROXY_AUTHENTICATION.addAll(MAPPINGS_WITH_FALLBACK_AND_PROXY_EXCEPTION);
+  }
+
   @Rule
   public ExpectedException expectedException = ExpectedException.none();
 
@@ -65,6 +72,7 @@ public class ProxyMappingsTest {
 
   @Before
   public void setup() {
+    ProxyMappings.clearCache();
     proxyMappings = ProxyMappings.valueOf(DEFAULT_MAPPINGS);
   }
 
@@ -76,40 +84,40 @@ public class ProxyMappingsTest {
   @Test
   public void shouldReturnProxy1ForConfiguredProxyMapping() {
 
-    HttpHost proxy = proxyMappings.getProxyFor("account.google.com");
-    assertThat(proxy, is(notNullValue()));
-    assertThat(proxy.getHostName(), is("proxy1"));
+    ProxyMapping proxy = proxyMappings.getProxyFor("account.google.com");
+    assertThat(proxy.getProxyHost(), is(notNullValue()));
+    assertThat(proxy.getProxyHost().getHostName(), is("proxy1"));
   }
 
   @Test
   public void shouldReturnProxy1ForConfiguredProxyMappingAlternative() {
 
-    HttpHost proxy = proxyMappings.getProxyFor("www.googleapis.com");
-    assertThat(proxy, is(notNullValue()));
-    assertThat(proxy.getHostName(), is("proxy1"));
+    ProxyMapping proxy = proxyMappings.getProxyFor("www.googleapis.com");
+    assertThat(proxy.getProxyHost(), is(notNullValue()));
+    assertThat(proxy.getProxyHost().getHostName(), is("proxy1"));
   }
 
   @Test
   public void shouldReturnProxy1ForConfiguredProxyMappingWithSubDomain() {
 
-    HttpHost proxy = proxyMappings.getProxyFor("awesome.account.google.com");
-    assertThat(proxy, is(notNullValue()));
-    assertThat(proxy.getHostName(), is("proxy1"));
+    ProxyMapping proxy = proxyMappings.getProxyFor("awesome.account.google.com");
+    assertThat(proxy.getProxyHost(), is(notNullValue()));
+    assertThat(proxy.getProxyHost().getHostName(), is("proxy1"));
   }
 
   @Test
   public void shouldReturnProxy2ForConfiguredProxyMapping() {
 
-    HttpHost proxy = proxyMappings.getProxyFor("login.facebook.com");
-    assertThat(proxy, is(notNullValue()));
-    assertThat(proxy.getHostName(), is("proxy2"));
+    ProxyMapping proxy = proxyMappings.getProxyFor("login.facebook.com");
+    assertThat(proxy.getProxyHost(), is(notNullValue()));
+    assertThat(proxy.getProxyHost().getHostName(), is("proxy2"));
   }
 
   @Test
   public void shouldReturnNoProxyForUnknownHost() {
 
-    HttpHost proxy = proxyMappings.getProxyFor("login.microsoft.com");
-    assertThat(proxy, is(nullValue()));
+    ProxyMapping proxy = proxyMappings.getProxyFor("login.microsoft.com");
+    assertThat(proxy.getProxyHost(), is(nullValue()));
   }
 
   @Test
@@ -126,8 +134,8 @@ public class ProxyMappingsTest {
 
     ProxyMappings proxyMappingsWithFallback = ProxyMappings.valueOf(MAPPINGS_WITH_FALLBACK);
 
-    HttpHost proxy = proxyMappingsWithFallback.getProxyFor("login.salesforce.com");
-    assertThat(proxy.getHostName(), is("fallback"));
+    ProxyMapping proxy = proxyMappingsWithFallback.getProxyFor("login.salesforce.com");
+    assertThat(proxy.getProxyHost().getHostName(), is("fallback"));
   }
 
   @Test
@@ -135,17 +143,17 @@ public class ProxyMappingsTest {
 
     ProxyMappings proxyMappingsWithFallback = ProxyMappings.valueOf(MAPPINGS_WITH_FALLBACK);
 
-    HttpHost forGoogle = proxyMappingsWithFallback.getProxyFor("login.google.com");
-    assertThat(forGoogle.getHostName(), is("proxy1"));
+    ProxyMapping forGoogle = proxyMappingsWithFallback.getProxyFor("login.google.com");
+    assertThat(forGoogle.getProxyHost().getHostName(), is("proxy1"));
 
-    HttpHost forFacebook = proxyMappingsWithFallback.getProxyFor("login.facebook.com");
-    assertThat(forFacebook.getHostName(), is("proxy2"));
+    ProxyMapping forFacebook = proxyMappingsWithFallback.getProxyFor("login.facebook.com");
+    assertThat(forFacebook.getProxyHost().getHostName(), is("proxy2"));
 
-    HttpHost forMicrosoft = proxyMappingsWithFallback.getProxyFor("login.microsoft.com");
-    assertThat(forMicrosoft.getHostName(), is("fallback"));
+    ProxyMapping forMicrosoft = proxyMappingsWithFallback.getProxyFor("login.microsoft.com");
+    assertThat(forMicrosoft.getProxyHost().getHostName(), is("fallback"));
 
-    HttpHost forSalesForce = proxyMappingsWithFallback.getProxyFor("login.salesforce.com");
-    assertThat(forSalesForce.getHostName(), is("fallback"));
+    ProxyMapping forSalesForce = proxyMappingsWithFallback.getProxyFor("login.salesforce.com");
+    assertThat(forSalesForce.getProxyHost().getHostName(), is("fallback"));
   }
 
   @Test
@@ -153,19 +161,46 @@ public class ProxyMappingsTest {
 
     ProxyMappings proxyMappingsWithFallbackAndProxyException = ProxyMappings.valueOf(MAPPINGS_WITH_FALLBACK_AND_PROXY_EXCEPTION);
 
-    HttpHost forGoogle = proxyMappingsWithFallbackAndProxyException.getProxyFor("login.google.com");
-    assertThat(forGoogle.getHostName(), is("proxy1"));
+    ProxyMapping forGoogle = proxyMappingsWithFallbackAndProxyException.getProxyFor("login.google.com");
+    assertThat(forGoogle.getProxyHost().getHostName(), is("proxy1"));
 
-    HttpHost forFacebook = proxyMappingsWithFallbackAndProxyException.getProxyFor("login.facebook.com");
-    assertThat(forFacebook.getHostName(), is("proxy2"));
+    ProxyMapping forFacebook = proxyMappingsWithFallbackAndProxyException.getProxyFor("login.facebook.com");
+    assertThat(forFacebook.getProxyHost().getHostName(), is("proxy2"));
 
-    HttpHost forAcmeCorp = proxyMappingsWithFallbackAndProxyException.getProxyFor("myapp.acme.corp.com");
-    assertThat(forAcmeCorp, is(nullValue()));
+    ProxyMapping forAcmeCorp = proxyMappingsWithFallbackAndProxyException.getProxyFor("myapp.acme.corp.com");
+    assertThat(forAcmeCorp.getProxyHost(), is(nullValue()));
 
-    HttpHost forMicrosoft = proxyMappingsWithFallbackAndProxyException.getProxyFor("login.microsoft.com");
-    assertThat(forMicrosoft.getHostName(), is("fallback"));
+    ProxyMapping forMicrosoft = proxyMappingsWithFallbackAndProxyException.getProxyFor("login.microsoft.com");
+    assertThat(forMicrosoft.getProxyHost().getHostName(), is("fallback"));
 
-    HttpHost forSalesForce = proxyMappingsWithFallbackAndProxyException.getProxyFor("login.salesforce.com");
-    assertThat(forSalesForce.getHostName(), is("fallback"));
+    ProxyMapping forSalesForce = proxyMappingsWithFallbackAndProxyException.getProxyFor("login.salesforce.com");
+    assertThat(forSalesForce.getProxyHost().getHostName(), is("fallback"));
+  }
+
+  @Test
+  public void shouldReturnProxyAuthentication() {
+
+    ProxyMappings proxyMappingsWithProxyAuthen = ProxyMappings.valueOf(MAPPINGS_WITH_PROXY_AUTHENTICATION);
+
+    ProxyMapping forGoogle = proxyMappingsWithProxyAuthen.getProxyFor("login.google.com");
+    assertThat(forGoogle.getProxyHost().getHostName(), is("proxy1"));
+
+    ProxyMapping forFacebook = proxyMappingsWithProxyAuthen.getProxyFor("login.facebook.com");
+    assertThat(forFacebook.getProxyHost().getHostName(), is("proxy2"));
+
+    ProxyMapping forStackOverflow = proxyMappingsWithProxyAuthen.getProxyFor("stackexchange.com");
+    assertThat(forStackOverflow.getProxyHost().getHostName(), is("proxy3"));
+    assertThat(forStackOverflow.getProxyHost().getPort(), is(88));
+    assertThat(forStackOverflow.getProxyCredentials().getUserName(), is("user01"));
+    assertThat(forStackOverflow.getProxyCredentials().getPassword(), is("pas2w0rd"));
+
+    ProxyMapping forAcmeCorp = proxyMappingsWithProxyAuthen.getProxyFor("myapp.acme.corp.com");
+    assertThat(forAcmeCorp.getProxyHost(), is(nullValue()));
+
+    ProxyMapping forMicrosoft = proxyMappingsWithProxyAuthen.getProxyFor("login.microsoft.com");
+    assertThat(forMicrosoft.getProxyHost().getHostName(), is("fallback"));
+
+    ProxyMapping forSalesForce = proxyMappingsWithProxyAuthen.getProxyFor("login.salesforce.com");
+    assertThat(forSalesForce.getProxyHost().getHostName(), is("fallback"));
   }
 }
