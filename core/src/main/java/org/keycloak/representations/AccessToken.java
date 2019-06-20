@@ -17,6 +17,8 @@
 
 package org.keycloak.representations;
 
+import com.fasterxml.jackson.annotation.JsonAnyGetter;
+import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.keycloak.TokenCategory;
@@ -105,6 +107,8 @@ public class AccessToken extends IDToken {
         @JsonProperty("x5t#S256")
         protected String certThumbprint;
 
+        protected Map<String, Object> otherClaims = new HashMap<>();
+        
         public String getCertThumbprint() {
             return certThumbprint;
         }
@@ -112,6 +116,22 @@ public class AccessToken extends IDToken {
         public void setCertThumbprint(String certThumbprint) {
             this.certThumbprint = certThumbprint;
         }
+        
+        /**
+         * This is a map of any other claims and data that might be in the cnf claim.  Could be from the RFC7800 specification or an extension on it.
+         *
+         * @return
+         */
+        @JsonAnyGetter
+        public Map<String, Object> getOtherClaims() {
+            return otherClaims;
+        }
+
+        @JsonAnySetter
+        public void setOtherClaims(String name, Object value) {
+            otherClaims.put(name, value);
+        }
+        
     }
 
     @JsonProperty("trusted-certs")
