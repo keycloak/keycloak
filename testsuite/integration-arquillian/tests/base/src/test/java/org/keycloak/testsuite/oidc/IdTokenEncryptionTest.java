@@ -56,6 +56,7 @@ import org.keycloak.testsuite.pages.OAuthGrantPage;
 import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
 import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.OAuthClient.AccessTokenResponse;
 import org.keycloak.testsuite.util.TokenSignatureUtil;
 import org.keycloak.util.TokenUtil;
 
@@ -235,11 +236,15 @@ public class IdTokenEncryptionTest extends AbstractTestRealmKeycloakTest {
  
             // get id token but failed
             OAuthClient.AuthorizationEndpointResponse response = oauth.doLogin("test-user@localhost", "password");
+            AccessTokenResponse atr = null;
             try {
-                oauth.doAccessTokenRequest(response.getCode(), "password");
+                atr = oauth.doAccessTokenRequest(response.getCode(), "password");
             } catch (AssertionError ae) {
                 Assert.assertEquals(ae.getMessage(), "Invalid content type. Status: 500, contentType: null");
+            } catch (Exception e) {
+                Assert.assertEquals(atr.getError(), "can not get encryption KEK");
             }
+            Assert.assertEquals(atr.getError(), "can not get encryption KEK");
         } finally {
             // Revert
             clientResource = ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app");
