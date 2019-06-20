@@ -66,7 +66,7 @@ This change specifies to the policy enforcer to redirect users to a `/app-authz-
 To build and deploy the application execute the following command:
 
 ```bash
-$ cd redhat-sso-quickstarts/app-authz-jee-vanilla
+$ cd keycloak-quickstarts/app-authz-jee-vanilla
 $ mvn clean package wildfly:deploy
 ```
 
