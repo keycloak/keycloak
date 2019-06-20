@@ -16,31 +16,49 @@
 
 import * as React from 'react';
  
-declare const l18n_msg: {[key:string]: string};
+declare const l18nMsg: {[key: string]: string};
 
 export interface MsgProps {
-    readonly msgKey:string;
-    readonly params?:Array<string>;
+    readonly msgKey: string;
+    readonly params?: string[];
 }
  
 export class Msg extends React.Component<MsgProps> {
 
-    constructor(props: MsgProps) {
+    public constructor(props: MsgProps) {
         super(props);
     }
     
-    render() {
-        let message:string = l18n_msg[this.props.msgKey];
-        if (message === undefined) message = this.props.msgKey;
+    public render(): React.ReactNode {
+        return (
+            <React.Fragment>{Msg.localize(this.props.msgKey, this.props.params)}</React.Fragment>
+        );
+    }
+    
+    public static localize(msgKey: string, params?: string[]): string {
+        let message: string = l18nMsg[msgKey];
+        if (message === undefined) message = msgKey;
         
-        if (this.props.params !== undefined) {
-            this.props.params.forEach((value: string, index: number) => {
+        if ((params !== undefined) && (params.length > 0)) {
+            params.forEach((value: string, index: number) => {
+                value = this.processParam(value);
                 message = message.replace('{{param_'+ index + '}}', value);
             })
         }
         
-        return (
-            <span>{message}</span>
-        );
+        return message;
+    }
+    
+    // if the param has Freemarker syntax, try to look up its value
+    private static processParam(param: string): string {
+        if (!(param.startsWith('${') && param.endsWith('}'))) return param;
+
+        // remove Freemarker syntax
+        const key: string = param.substring(2, param.length - 1);
+        
+        let value: string = l18nMsg[key];
+        if (value === undefined) return param;
+        
+        return value;
     }
 }

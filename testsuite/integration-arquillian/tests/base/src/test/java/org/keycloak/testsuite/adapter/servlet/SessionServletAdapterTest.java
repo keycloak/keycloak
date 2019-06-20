@@ -34,8 +34,7 @@ import org.keycloak.testsuite.adapter.page.SessionPortal;
 import org.keycloak.testsuite.auth.page.account.Sessions;
 import org.keycloak.testsuite.auth.page.login.Login;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
-import org.keycloak.testsuite.arquillian.containers.ContainerConstants;
-import org.keycloak.testsuite.util.ContainerAssume;
+import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
 import org.keycloak.testsuite.util.SecondBrowser;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
@@ -56,6 +55,9 @@ import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWithLo
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP)
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP6)
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP71)
+@AppServerContainer(ContainerConstants.APP_SERVER_TOMCAT7)
+@AppServerContainer(ContainerConstants.APP_SERVER_TOMCAT8)
+@AppServerContainer(ContainerConstants.APP_SERVER_TOMCAT9)
 public class SessionServletAdapterTest extends AbstractServletsAdapterTest {
 
     @Page
@@ -129,7 +131,6 @@ public class SessionServletAdapterTest extends AbstractServletsAdapterTest {
     //KEYCLOAK-741
     @Test
     public void testSessionInvalidatedAfterFailedRefresh() {
-        ContainerAssume.assumeNotAppServerUndertow();
         RealmRepresentation testRealmRep = testRealmResource().toRepresentation();
         ClientResource sessionPortalRes = null;
         for (ClientRepresentation clientRep : testRealmResource().clients().findAll()) {
@@ -173,7 +174,7 @@ public class SessionServletAdapterTest extends AbstractServletsAdapterTest {
         // logout mposolda with admin client
         UserRepresentation mposolda = testRealmResource().users().search("mposolda", null, null, null, null, null).get(0);
         testRealmResource().users().get(mposolda.getId()).logout();
-        
+
         // bburke should be still logged with original httpSession in our browser window
         sessionPortalPage.navigateTo();
         assertCurrentUrlEquals(sessionPortalPage);
@@ -187,7 +188,6 @@ public class SessionServletAdapterTest extends AbstractServletsAdapterTest {
     //KEYCLOAK-1216
     @Test
     public void testAccountManagementSessionsLogout() {
-        ContainerAssume.assumeNotAppServerUndertow();
         // login as bburke
         loginAndCheckSession(testRealmLoginPage);
         testRealmSessions.navigateTo();
@@ -195,7 +195,7 @@ public class SessionServletAdapterTest extends AbstractServletsAdapterTest {
         // Assert I need to login again (logout was propagated to the app)
         loginAndCheckSession(testRealmLoginPage);
     }
-    
+
     private void loginAndCheckSession(Login login) {
         sessionPortalPage.navigateTo();
         assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
@@ -211,3 +211,4 @@ public class SessionServletAdapterTest extends AbstractServletsAdapterTest {
     }
 
 }
+

@@ -189,13 +189,14 @@ public class GenericPolicyManagementTest extends AbstractAuthorizationTest {
         newPolicy.setConfig(config);
 
         PoliciesResource policies = getClientResource().authorization().policies();
-        Response response = policies.create(newPolicy);
 
-        assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
+        try (Response response = policies.create(newPolicy)) {
+            assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
 
-        PolicyRepresentation stored = response.readEntity(PolicyRepresentation.class);
+            PolicyRepresentation stored = response.readEntity(PolicyRepresentation.class);
 
-        return policies.policy(stored.getId());
+            return policies.policy(stored.getId());
+        }
     }
 
     private ResourceResource createResource(String name) {
@@ -205,13 +206,13 @@ public class GenericPolicyManagementTest extends AbstractAuthorizationTest {
 
         ResourcesResource resources = getClientResource().authorization().resources();
 
-        Response response = resources.create(newResource);
+        try (Response response = resources.create(newResource)) {
+            assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
 
-        assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
+            ResourceRepresentation stored = response.readEntity(ResourceRepresentation.class);
 
-        ResourceRepresentation stored = response.readEntity(ResourceRepresentation.class);
-
-        return resources.resource(stored.getId());
+            return resources.resource(stored.getId());
+        }
     }
 
     private ResourceScopeResource createScope(String name) {
@@ -221,13 +222,14 @@ public class GenericPolicyManagementTest extends AbstractAuthorizationTest {
 
         ResourceScopesResource scopes = getClientResource().authorization().scopes();
 
-        Response response = scopes.create(newScope);
+        try (Response response = scopes.create(newScope)) {
 
-        assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
+            assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
 
-        ScopeRepresentation stored = response.readEntity(ScopeRepresentation.class);
+            ScopeRepresentation stored = response.readEntity(ScopeRepresentation.class);
 
-        return scopes.scope(stored.getId());
+            return scopes.scope(stored.getId());
+        }
     }
 
     private String buildConfigOption(String... values) {

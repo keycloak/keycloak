@@ -985,6 +985,34 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
         });
     }
 
+
+    // KEYCLOAK-9002
+    @Test
+    public void testSearchWithPartiallyCachedUser() {
+        testingClient.server().run(session -> {
+            session.userCache().clear();
+        });
+
+
+        // This will load user from LDAP and partially cache him (including attributes)
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel appRealm = ctx.getRealm();
+            UserModel user = session.users().getUserByUsername("johnkeycloak", appRealm);
+            Assert.assertNotNull(user);
+
+            user.getAttributes();
+        });
+
+
+        // Assert search without arguments won't blow up with StackOverflowError
+        adminClient.realm("test").users().search(null, 0, 10, false);
+
+        List<UserRepresentation> users = adminClient.realm("test").users().search("johnkeycloak", 0, 10, false);
+        Assert.assertTrue(users.stream().anyMatch(userRepresentation -> "johnkeycloak".equals(userRepresentation.getUsername())));
+    }
+
+
     @Test
     public void testLDAPUserRefreshCache() {
         testingClient.server().run(session -> {

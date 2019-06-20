@@ -21,7 +21,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
-import org.keycloak.broker.oidc.OIDCIdentityProvider.OIDCEndpoint;
 import org.keycloak.broker.provider.AbstractIdentityProvider;
 import org.keycloak.broker.provider.AuthenticationRequest;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
@@ -63,7 +62,6 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -404,12 +402,12 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
                                      @QueryParam(AbstractOAuth2IdentityProvider.OAUTH2_PARAMETER_CODE) String authorizationCode,
                                      @QueryParam(OAuth2Constants.ERROR) String error) {
             if (error != null) {
-                //logger.error("Failed " + getConfig().getAlias() + " broker login: " + error);
+                logger.error(error + " for broker login " + getConfig().getProviderId());
                 if (error.equals(ACCESS_DENIED)) {
-                    logger.error(ACCESS_DENIED + " for broker login " + getConfig().getProviderId());
                     return callback.cancelled(state);
+                } else if (error.equals(OAuthErrorException.LOGIN_REQUIRED) || error.equals(OAuthErrorException.INTERACTION_REQUIRED)) {
+                    return callback.error(state, error);
                 } else {
-                    logger.error(error + " for broker login " + getConfig().getProviderId());
                     return callback.error(state, Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR);
                 }
             }

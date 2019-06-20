@@ -1,6 +1,5 @@
 package org.keycloak.testsuite.broker;
 
-import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.broker.saml.SAMLIdentityProviderConfig;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.dom.saml.v2.protocol.AuthnRequestType;
@@ -117,14 +116,6 @@ public class KcSamlSignedBrokerTest extends KcSamlBrokerTest {
     }
 
     public void withSignedEncryptedAssertions(Runnable testBody, boolean signedAssertion, boolean encryptedAssertion) throws Exception {
-        ClientRepresentation client = adminClient.realm(bc.providerRealmName())
-          .clients()
-          .findByClientId(bc.getIDPClientIdInProviderRealm(suiteContext))
-          .get(0);
-
-        final ClientResource clientResource = realmsResouce().realm(bc.providerRealmName()).clients().get(client.getId());
-        Assert.assertThat(clientResource, Matchers.notNullValue());
-
         String providerCert = KeyUtils.getActiveKey(adminClient.realm(bc.providerRealmName()).keys().getKeyMetadata(), Algorithm.RS256).getCertificate();
         Assert.assertThat(providerCert, Matchers.notNullValue());
 
@@ -138,7 +129,7 @@ public class KcSamlSignedBrokerTest extends KcSamlBrokerTest {
             .setAttribute(SAMLIdentityProviderConfig.WANT_AUTHN_REQUESTS_SIGNED, "false")
             .setAttribute(SAMLIdentityProviderConfig.SIGNING_CERTIFICATE_KEY, providerCert)
             .update();
-          Closeable clientUpdater = new ClientAttributeUpdater(clientResource)
+          Closeable clientUpdater = ClientAttributeUpdater.forClient(adminClient, bc.providerRealmName(), bc.getIDPClientIdInProviderRealm(suiteContext))
             .setAttribute(SamlConfigAttributes.SAML_ENCRYPT, Boolean.toString(encryptedAssertion))
             .setAttribute(SamlConfigAttributes.SAML_ENCRYPTION_CERTIFICATE_ATTRIBUTE, consumerCert)
             .setAttribute(SamlConfigAttributes.SAML_SERVER_SIGNATURE, "false")      // only sign assertions
@@ -218,7 +209,7 @@ public class KcSamlSignedBrokerTest extends KcSamlBrokerTest {
     // KEYCLOAK-5581
     @Test
     public void loginUserAllNamespacesInTopElement() {
-        AuthnRequestType loginRep = SamlClient.createLoginRequestDocument(AbstractSamlTest.SAML_CLIENT_ID_SALES_POST, AbstractSamlTest.SAML_ASSERTION_CONSUMER_URL_SALES_POST, null);
+        AuthnRequestType loginRep = SamlClient.createLoginRequestDocument(AbstractSamlTest.SAML_CLIENT_ID_SALES_POST, AUTH_SERVER_SCHEME + "://localhost:" + AUTH_SERVER_PORT + "/sales-post/saml", null);
 
         Document doc;
         try {
@@ -269,14 +260,6 @@ public class KcSamlSignedBrokerTest extends KcSamlBrokerTest {
 
     @Test
     public void testWithExpiredBrokerCertificate() throws Exception {
-        ClientRepresentation client = adminClient.realm(bc.providerRealmName())
-          .clients()
-          .findByClientId(bc.getIDPClientIdInProviderRealm(suiteContext))
-          .get(0);
-
-        final ClientResource clientResource = realmsResouce().realm(bc.providerRealmName()).clients().get(client.getId());
-        Assert.assertThat(clientResource, Matchers.notNullValue());
-
         try (Closeable idpUpdater = new IdentityProviderAttributeUpdater(identityProviderResource)
             .setAttribute(SAMLIdentityProviderConfig.VALIDATE_SIGNATURE, Boolean.toString(true))
             .setAttribute(SAMLIdentityProviderConfig.WANT_ASSERTIONS_SIGNED, Boolean.toString(true))
@@ -284,7 +267,7 @@ public class KcSamlSignedBrokerTest extends KcSamlBrokerTest {
             .setAttribute(SAMLIdentityProviderConfig.WANT_AUTHN_REQUESTS_SIGNED, "true")
             .setAttribute(SAMLIdentityProviderConfig.SIGNING_CERTIFICATE_KEY, AbstractSamlTest.SAML_CLIENT_SALES_POST_SIG_EXPIRED_CERTIFICATE)
             .update();
-          Closeable clientUpdater = new ClientAttributeUpdater(clientResource)
+          Closeable clientUpdater = ClientAttributeUpdater.forClient(adminClient, bc.providerRealmName(), bc.getIDPClientIdInProviderRealm(suiteContext))
             .setAttribute(SamlConfigAttributes.SAML_ENCRYPT, Boolean.toString(false))
             .setAttribute(SamlConfigAttributes.SAML_SERVER_SIGNATURE, "true")
             .setAttribute(SamlConfigAttributes.SAML_ASSERTION_SIGNATURE, Boolean.toString(true))

@@ -20,10 +20,10 @@ module.controller('UserRoleMappingCtrl', function($scope, $http, realm, user, cl
     $scope.realmComposite = CompositeRealmRoleMapping.query({realm : realm.realm, userId : user.id});
 
     $scope.addRealmRole = function() {
-        var roles = $scope.selectedRealmRoles;
+        $scope.realmRolesToAdd = JSON.parse('[' + $scope.selectedRealmRoles + ']');
         $scope.selectedRealmRoles = [];
         $http.post(authUrl + '/admin/realms/' + realm.realm + '/users/' + user.id + '/role-mappings/realm',
-                roles).then(function() {
+                $scope.realmRolesToAdd).then(function() {
                 $scope.realmMappings = RealmRoleMapping.query({realm : realm.realm, userId : user.id});
                 $scope.realmRoles = AvailableRealmRoleMapping.query({realm : realm.realm, userId : user.id});
                 $scope.realmComposite = CompositeRealmRoleMapping.query({realm : realm.realm, userId : user.id});
@@ -43,8 +43,9 @@ module.controller('UserRoleMappingCtrl', function($scope, $http, realm, user, cl
     };
 
     $scope.deleteRealmRole = function() {
+        $scope.realmRolesToRemove = JSON.parse('[' + $scope.selectedRealmMappings + ']');
         $http.delete(authUrl + '/admin/realms/' + realm.realm + '/users/' + user.id + '/role-mappings/realm',
-            {data : $scope.selectedRealmMappings, headers : {"content-type" : "application/json"}}).then(function() {
+            {data : $scope.realmRolesToRemove, headers : {"content-type" : "application/json"}}).then(function() {
                 $scope.realmMappings = RealmRoleMapping.query({realm : realm.realm, userId : user.id});
                 $scope.realmRoles = AvailableRealmRoleMapping.query({realm : realm.realm, userId : user.id});
                 $scope.realmComposite = CompositeRealmRoleMapping.query({realm : realm.realm, userId : user.id});
@@ -63,8 +64,9 @@ module.controller('UserRoleMappingCtrl', function($scope, $http, realm, user, cl
     };
 
     $scope.addClientRole = function() {
+        $scope.clientRolesToAdd = JSON.parse('[' + $scope.selectedClientRoles + ']');
         $http.post(authUrl + '/admin/realms/' + realm.realm + '/users/' + user.id + '/role-mappings/clients/' + $scope.targetClient.id,
-                $scope.selectedClientRoles).then(function() {
+                $scope.clientRolesToAdd).then(function() {
                 $scope.clientMappings = ClientRoleMapping.query({realm : realm.realm, userId : user.id, client : $scope.targetClient.id});
                 $scope.clientRoles = AvailableClientRoleMapping.query({realm : realm.realm, userId : user.id, client : $scope.targetClient.id});
                 $scope.clientComposite = CompositeClientRoleMapping.query({realm : realm.realm, userId : user.id, client : $scope.targetClient.id});
@@ -77,8 +79,9 @@ module.controller('UserRoleMappingCtrl', function($scope, $http, realm, user, cl
     };
 
     $scope.deleteClientRole = function() {
+        $scope.clientRolesToRemove = JSON.parse('[' + $scope.selectedClientMappings + ']');
         $http.delete(authUrl + '/admin/realms/' + realm.realm + '/users/' + user.id + '/role-mappings/clients/' + $scope.targetClient.id,
-            {data : $scope.selectedClientMappings, headers : {"content-type" : "application/json"}}).then(function() {
+            {data : $scope.clientRolesToRemove, headers : {"content-type" : "application/json"}}).then(function() {
                 $scope.clientMappings = ClientRoleMapping.query({realm : realm.realm, userId : user.id, client : $scope.targetClient.id});
                 $scope.clientRoles = AvailableClientRoleMapping.query({realm : realm.realm, userId : user.id, client : $scope.targetClient.id});
                 $scope.clientComposite = CompositeClientRoleMapping.query({realm : realm.realm, userId : user.id, client : $scope.targetClient.id});
@@ -972,6 +975,7 @@ module.controller('UserGroupMembershipCtrl', function($scope, $q, realm, user, U
     };
 
     var refreshUserGroupMembership = function (search) {
+        $scope.currentMembershipPageInput = $scope.currentMembershipPage;
         var first = ($scope.currentMembershipPage * $scope.pageSize) - $scope.pageSize;
         var queryParams = {
             realm : realm.realm,
@@ -1018,21 +1022,25 @@ module.controller('UserGroupMembershipCtrl', function($scope, $q, realm, user, U
             } else {
                 $scope.numberOfMembershipPages = 1;
             }
+            if (parseInt($scope.currentMembershipPage, 10) > $scope.numberOfMembershipPages) {
+                $scope.currentMembershipPage = $scope.numberOfMembershipPages;
+            }
         }, function (failed) {
             Notifications.error(failed);
         });
     };
 
     var refreshAvailableGroups = function (search) {
+        $scope.currentPageInput = $scope.currentPage;
         var first = ($scope.currentPage * $scope.pageSize) - $scope.pageSize;
         var queryParams = {
-            realm : realm.id,
+            realm : realm.realm,
             first : first,
             max : $scope.pageSize
         };
 
         var countParams = {
-            realm : realm.id,
+            realm : realm.realm,
             top : 'true'
         };
 
@@ -1074,14 +1082,19 @@ module.controller('UserGroupMembershipCtrl', function($scope, $q, realm, user, U
 
     $scope.clearSearchMembership = function() {
         $scope.searchCriteriaMembership = '';
-        $scope.currentMembershipPage = 1;
-        $scope.currentMembershipPageInput = 1;
-        refreshUserGroupMembership();
+        if (parseInt($scope.currentMembershipPage, 10) === 1) {
+            refreshUserGroupMembership();
+        } else {
+            $scope.currentMembershipPage = 1;
+        }
     };
 
     $scope.searchGroupMembership = function() {
-        $scope.currentMembershipPage = 1;
-        refreshUserGroupMembership($scope.searchCriteriaMembership);
+        if (parseInt($scope.currentMembershipPage, 10) === 1) {
+            refreshUserGroupMembership($scope.searchCriteriaMembership);
+        } else {
+            $scope.currentMembershipPage = 1;
+        }
     };
 
     refreshAvailableGroups();
@@ -1089,30 +1102,32 @@ module.controller('UserGroupMembershipCtrl', function($scope, $q, realm, user, U
     refreshCompleteUserGroupMembership();
 
     $scope.$watch('currentPage', function(newValue, oldValue) {
-        if(newValue !== oldValue) {
-            refreshAvailableGroups($scope.searchCriteria)
-            .then(function(){
-                refreshUserGroupMembership($scope.searchCriteriaMembership);
-            });
+        if(parseInt(newValue, 10) !== parseInt(oldValue, 10)) {
+            refreshAvailableGroups($scope.searchCriteria);
         }
     });
 
     $scope.$watch('currentMembershipPage', function(newValue, oldValue) {
-        if(newValue !== oldValue) {
+        if(parseInt(newValue, 10) !== parseInt(oldValue, 10)) {
             refreshUserGroupMembership($scope.searchCriteriaMembership);
         }
     });
 
     $scope.clearSearch = function() {
         $scope.searchCriteria = '';
-        $scope.currentPage = 1;
-        $scope.currentPageInput = 1;
-        refreshAvailableGroups();
+        if (parseInt($scope.currentPage, 10) === 1) {
+            refreshAvailableGroups();
+        } else {
+            $scope.currentPage = 1;
+        }
     };
 
     $scope.searchGroup = function() {
-        $scope.currentPage = 1;
-        refreshAvailableGroups($scope.searchCriteria);
+        if (parseInt($scope.currentPage, 10) === 1) {
+            refreshAvailableGroups($scope.searchCriteria);
+        } else {
+            $scope.currentPage = 1;
+        }
     };
 
     $scope.joinGroup = function() {
@@ -1126,7 +1141,7 @@ module.controller('UserGroupMembershipCtrl', function($scope, $q, realm, user, U
         }
         UserGroupMapping.update({realm: realm.realm, userId: user.id, groupId: $scope.tree.currentNode.id}, function() {
             $scope.allGroupMemberships.push($scope.tree.currentNode);
-            refreshUserGroupMembership();
+            refreshUserGroupMembership($scope.searchCriteriaMembership);
             Notifications.success('Added group membership');
         });
 
@@ -1139,8 +1154,7 @@ module.controller('UserGroupMembershipCtrl', function($scope, $q, realm, user, U
         }
         UserGroupMapping.remove({realm: realm.realm, userId: user.id, groupId: $scope.membershipTree.currentNode.id}, function () {
             removeGroupMember($scope.allGroupMemberships, $scope.membershipTree.currentNode);
-            refreshAvailableGroups();
-            refreshUserGroupMembership();
+            refreshUserGroupMembership($scope.searchCriteriaMembership);
             Notifications.success('Removed group membership');
         });
 
@@ -1509,6 +1523,7 @@ module.controller('LDAPUserStorageCtrl', function($scope, $location, Notificatio
             bindCredential: ldapConfig.bindCredential,
             useTruststoreSpi: ldapConfig.useTruststoreSpi,
             connectionTimeout: ldapConfig.connectionTimeout,
+            startTls: ldapConfig.startTls,
             componentId: instance.id
         };
     };
@@ -1686,6 +1701,10 @@ module.controller('LDAPMapperCreateCtrl', function($scope, realm, provider, mapp
         $scope.mapper.providerId = $scope.mapperType.id;
         $scope.mapper.providerType = 'org.keycloak.storage.ldap.mappers.LDAPStorageMapper';
         $scope.mapper.parentId = provider.id;
+
+        if ($scope.mapper.config && $scope.mapper.config["role"] && !Array.isArray($scope.mapper.config["role"])) {
+            $scope.mapper.config["role"] = [$scope.mapper.config["role"]];
+        }
 
         Components.save({realm: realm.realm}, $scope.mapper,  function (data, headers) {
             var l = headers().location;

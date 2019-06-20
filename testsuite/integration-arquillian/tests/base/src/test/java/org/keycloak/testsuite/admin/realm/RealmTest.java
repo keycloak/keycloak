@@ -59,6 +59,7 @@ import org.keycloak.testsuite.util.CredentialBuilder;
 import org.keycloak.testsuite.util.OAuthClient.AccessTokenResponse;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
+import org.keycloak.testsuite.utils.tls.TLSUtils;
 import org.keycloak.util.JsonSerialization;
 
 import javax.ws.rs.NotFoundException;
@@ -271,8 +272,9 @@ public class RealmTest extends AbstractAdminTest {
     public void loginAfterRemoveRealm() {
         realm.remove();
 
-        ServerInfoResource serverInfoResource = Keycloak.getInstance(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth", "master", "admin", "admin", Constants.ADMIN_CLI_CLIENT_ID).serverInfo();
-        serverInfoResource.getInfo();
+        try (Keycloak client = Keycloak.getInstance(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth", "master", "admin", "admin", Constants.ADMIN_CLI_CLIENT_ID, TLSUtils.initializeTLS())) {
+            client.serverInfo().getInfo();
+        }
 
         reCreateRealm();
     }
@@ -661,7 +663,7 @@ public class RealmTest extends AbstractAdminTest {
         GlobalRequestResult globalRequestResult = realm.pushRevocation();
         assertAdminEvents.assertEvent(realmId, OperationType.ACTION, "push-revocation", globalRequestResult, ResourceType.REALM);
 
-        assertThat(globalRequestResult.getSuccessRequests(), Matchers.containsInAnyOrder("http://localhost:8180/auth/realms/master/app/admin"));
+        assertThat(globalRequestResult.getSuccessRequests(), Matchers.containsInAnyOrder(oauth.AUTH_SERVER_ROOT + "/realms/master/app/admin"));
         assertNull(globalRequestResult.getFailedRequests());
 
         PushNotBeforeAction adminPushNotBefore = testingClient.testApp().getAdminPushNotBefore();
@@ -683,8 +685,8 @@ public class RealmTest extends AbstractAdminTest {
         GlobalRequestResult globalRequestResult = realm.pushRevocation();
         assertAdminEvents.assertEvent(realmId, OperationType.ACTION, "push-revocation", globalRequestResult, ResourceType.REALM);
 
-        assertThat(globalRequestResult.getSuccessRequests(), Matchers.containsInAnyOrder("http://localhost:8180/auth/realms/master/app/admin"));
-        assertThat(globalRequestResult.getFailedRequests(), Matchers.containsInAnyOrder("http://localhost:8180/auth/realms/master/saml-app/saml"));
+        assertThat(globalRequestResult.getSuccessRequests(), Matchers.containsInAnyOrder(oauth.AUTH_SERVER_ROOT + "/realms/master/app/admin"));
+        assertThat(globalRequestResult.getFailedRequests(), Matchers.containsInAnyOrder(oauth.AUTH_SERVER_ROOT + "/realms/master/saml-app/saml"));
 
         PushNotBeforeAction adminPushNotBefore = testingClient.testApp().getAdminPushNotBefore();
         assertEquals(time, adminPushNotBefore.getNotBefore());
@@ -708,7 +710,7 @@ public class RealmTest extends AbstractAdminTest {
         assertAdminEvents.assertEvent(realmId, OperationType.ACTION, "logout-all", globalRequestResult, ResourceType.REALM);
 
         assertEquals(1, globalRequestResult.getSuccessRequests().size());
-        assertEquals("http://localhost:8180/auth/realms/master/app/admin", globalRequestResult.getSuccessRequests().get(0));
+        assertEquals(oauth.AUTH_SERVER_ROOT + "/realms/master/app/admin", globalRequestResult.getSuccessRequests().get(0));
         assertNull(globalRequestResult.getFailedRequests());
 
         assertNotNull(testingClient.testApp().getAdminLogoutAction());

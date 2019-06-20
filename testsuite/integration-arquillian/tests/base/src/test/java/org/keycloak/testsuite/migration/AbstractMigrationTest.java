@@ -85,7 +85,6 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
     public static final String MIGRATION2 = "Migration2";
     protected RealmResource migrationRealm;
     protected RealmResource migrationRealm2;
-    protected RealmResource migrationRealm3;
     protected RealmResource masterRealm;
 
     protected void testMigratedData() {
@@ -233,6 +232,13 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         testRolesAndWebOriginsScopesAddedToClient();
     }
 
+    protected void testMigrationTo6_0_0() {
+        // check that all expected scopes exist in the migrated realm.
+        testRealmDefaultClientScopes(migrationRealm);
+        // check that the 'microprofile-jwt' scope was added to the migrated clients.
+        testMicroprofileJWTScopeAddedToClient();
+    }
+
     private void testGroupPolicyTypeFineGrainedAdminPermission() {
         ClientsResource clients = migrationRealm.clients();
         ClientRepresentation clientRepresentation = clients.findByClientId("realm-management").get(0);
@@ -359,21 +365,6 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
                 assertEquals("keytab", component.getConfig().getFirst(KerberosConstants.KEYTAB));
             }
         }
-    }
-
-    protected void testDroolsToRulesPolicyTypeMigration() {
-        log.info("testing drools to rules in authorization services");
-        List<ClientRepresentation> client = migrationRealm3.clients().findByClientId("photoz-restful-api");
-
-        assertEquals(1, client.size());
-
-        ClientRepresentation representation = client.get(0);
-
-        List<PolicyRepresentation> policies = migrationRealm3.clients().get(representation.getId()).authorization().policies().policies();
-
-        List<PolicyRepresentation> migratedRulesPolicies = policies.stream().filter(policyRepresentation -> "rules".equals(policyRepresentation.getType())).collect(Collectors.toList());
-
-        assertEquals(1, migratedRulesPolicies.size());
     }
 
     private void testResourceWithMultipleUris() {
@@ -535,6 +526,23 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
 
     }
 
+    /**
+     * Checks if the {@code microprofile-jwt} optional client scope has been added to the clients.
+     */
+    private void testMicroprofileJWTScopeAddedToClient() {
+        log.infof("Testing microprofile-jwt optional scope present in realm %s for client migration-test-client", migrationRealm.toRepresentation().getRealm());
+
+        List<ClientScopeRepresentation> optionalClientScopes = ApiUtil.findClientByClientId(this.migrationRealm, "migration-test-client").getOptionalClientScopes();
+
+        Set<String> defaultClientScopeNames = optionalClientScopes.stream()
+                .map(ClientScopeRepresentation::getName)
+                .collect(Collectors.toSet());
+
+        if (!defaultClientScopeNames.contains(OIDCLoginProtocolFactory.MICROPROFILE_JWT_SCOPE)) {
+            Assert.fail("Client scope 'microprofile-jwt' not found as optional scope of client migration-test-client");
+        }
+    }
+
     private void testRequiredActionsPriority(RealmResource... realms) {
         log.info("testing required action's priority");
         for (RealmResource realm : realms) {
@@ -583,5 +591,13 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
 
     protected void testMigrationTo4_x() {
         testMigrationTo4_x(true, true);
+    }
+
+    protected void testMigrationTo5_x() {
+        // so far nothing
+    }
+
+    protected void testMigrationTo6_x() {
+        testMigrationTo6_0_0();
     }
 }

@@ -32,10 +32,27 @@
             "claim-from-secure": "{request.secure}",
             "claim-from-json-body-object": "{request.body['/a/b/c']}",
             "claim-from-json-body-array": "{request.body['/d/1']}",
+            "claim-from-json-body-number": "{request.body['/e/number']}",
             "claim-from-body": "{request.body}",
             "claim-from-static-value": "static value",
             "claim-from-multiple-static-value": ["static", "value"],
             "param-replace-multiple-placeholder": "Test {keycloak.access_token['/custom_claim/0']} and {request.parameter['a']} "
+          }
+        }
+      },
+      {
+        "path": "/claims-from-body-json-object",
+        "methods": [
+          {
+            "method": "POST",
+            "scopes": [
+              "create"
+            ]
+          }
+        ],
+        "claim-information-point": {
+          "claims": {
+            "individualRoles": "{request.body['/Individual/individualRoles']}"
           }
         }
       },

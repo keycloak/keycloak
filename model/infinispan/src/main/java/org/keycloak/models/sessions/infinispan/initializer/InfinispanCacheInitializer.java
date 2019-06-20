@@ -33,6 +33,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import org.infinispan.commons.CacheConfigurationException;
+import org.infinispan.factories.ComponentRegistry;
 
 /**
  * Startup initialization for reading persistent userSessions to be filled into infinispan/memory . In cluster,
@@ -48,7 +50,6 @@ public class InfinispanCacheInitializer extends BaseCacheInitializer {
 
     private final int maxErrors;
 
-
     public InfinispanCacheInitializer(KeycloakSessionFactory sessionFactory, Cache<String, Serializable> workCache, SessionLoader sessionLoader, String stateKeySuffix, int sessionsPerSegment, int maxErrors) {
         super(sessionFactory, workCache, sessionLoader, stateKeySuffix, sessionsPerSegment);
         this.maxErrors = maxErrors;
@@ -56,7 +57,14 @@ public class InfinispanCacheInitializer extends BaseCacheInitializer {
 
     @Override
     public void initCache() {
-        this.workCache.getAdvancedCache().getComponentRegistry().registerComponent(sessionFactory, KeycloakSessionFactory.class);
+        final ComponentRegistry cr = this.workCache.getAdvancedCache().getComponentRegistry();
+        try {
+            cr.registerComponent(sessionFactory, KeycloakSessionFactory.class);
+        } catch (UnsupportedOperationException | CacheConfigurationException ex) {
+            if (cr.getComponent(KeycloakSessionFactory.class) != sessionFactory) {
+                throw ex;
+            }
+        }
     }
 
 

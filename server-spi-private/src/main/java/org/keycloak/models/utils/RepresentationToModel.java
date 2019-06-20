@@ -83,6 +83,7 @@ import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
+import org.keycloak.models.cache.UserCache;
 import org.keycloak.models.credential.PasswordUserCredentialModel;
 import org.keycloak.policy.PasswordPolicyNotMetException;
 import org.keycloak.provider.ProviderConfigProperty;
@@ -1336,7 +1337,6 @@ public class RepresentationToModel {
             }
         }
 
-
         if (rep.getNotBefore() != null) {
             resource.setNotBefore(rep.getNotBefore());
         }
@@ -1363,6 +1363,39 @@ public class RepresentationToModel {
         if (rep.getSecret() != null) resource.setSecret(rep.getSecret());
 
         resource.updateClient();
+    }
+
+    public static void updateClientProtocolMappers(ClientRepresentation rep, ClientModel resource) {
+
+        if (rep.getProtocolMappers() != null) {
+            Map<String,ProtocolMapperModel> existingProtocolMappers = new HashMap<>();
+            for (ProtocolMapperModel existingProtocolMapper : resource.getProtocolMappers()) {
+                existingProtocolMappers.put(generateProtocolNameKey(existingProtocolMapper.getProtocol(), existingProtocolMapper.getName()), existingProtocolMapper);
+            }
+
+            for (ProtocolMapperRepresentation protocolMapperRepresentation : rep.getProtocolMappers()) {
+                String protocolNameKey = generateProtocolNameKey(protocolMapperRepresentation.getProtocol(), protocolMapperRepresentation.getName());
+                ProtocolMapperModel existingMapper = existingProtocolMappers.get(protocolNameKey);
+                    if (existingMapper != null) {
+                        ProtocolMapperModel updatedProtocolMapperModel = toModel(protocolMapperRepresentation);
+                        updatedProtocolMapperModel.setId(existingMapper.getId());
+                        resource.updateProtocolMapper(updatedProtocolMapperModel);
+
+                        existingProtocolMappers.remove(protocolNameKey);
+
+                } else {
+                    resource.addProtocolMapper(toModel(protocolMapperRepresentation));
+                }
+            }
+
+            for (Map.Entry<String, ProtocolMapperModel> entryToDelete : existingProtocolMappers.entrySet()) {
+                resource.removeProtocolMapper(entryToDelete.getValue());
+            }
+        }
+    }
+
+    private static String generateProtocolNameKey(String protocol, String name) {
+        return String.format("%s%%%s", protocol, name);
     }
 
     // CLIENT SCOPES
@@ -1649,6 +1682,10 @@ public class RepresentationToModel {
             }
             hashedCred.setCreatedDate(cred.getCreatedDate());
             session.userCredentialManager().createCredential(realm, user, hashedCred);
+            UserCache userCache = session.userCache();
+            if (userCache != null) {
+                userCache.evict(realm, user);
+            }
         }
     }
 

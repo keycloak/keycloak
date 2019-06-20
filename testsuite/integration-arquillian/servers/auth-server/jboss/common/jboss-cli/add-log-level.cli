@@ -1,0 +1,10 @@
+
+echo *** Adding infinispan logger ***
+/subsystem=logging/logger=org.infinispan:add(level=@INFINISPAN_LOG_LEVEL@)
+
+echo *** Adding scheduled tasks logger ***
+/subsystem=logging/logger=org.keycloak.services.scheduled:add(level=@SCHEDULED_TASKS_LOG_LEVEL@)
+
+echo *** Switching console handler logger to TRACE ***
+/subsystem=logging/console-handler=CONSOLE:change-log-level(level=TRACE)
+

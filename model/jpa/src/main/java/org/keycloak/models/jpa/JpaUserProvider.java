@@ -66,6 +66,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import javax.persistence.criteria.Expression;
+import javax.persistence.criteria.Path;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -305,7 +307,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
         Collection<UserConsentClientScopeEntity> grantedClientScopeEntities = entity.getGrantedClientScopes();
         if (grantedClientScopeEntities != null) {
             for (UserConsentClientScopeEntity grantedClientScope : grantedClientScopeEntities) {
-                ClientScopeModel grantedClientScopeModel = KeycloakModelUtils.findClientScopeById(realm, grantedClientScope.getScopeId());
+                ClientScopeModel grantedClientScopeModel = KeycloakModelUtils.findClientScopeById(realm, client, grantedClientScope.getScopeId());
                 if (grantedClientScopeModel != null) {
                     model.addGrantedClientScope(grantedClientScopeModel);
                 }
@@ -752,8 +754,9 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
             Root from1 = subquery1.from(ResourceEntity.class);
 
             List<Predicate> subs = new ArrayList<>();
-
-            subs.add(builder.like(from1.get("name"), builder.concat("group.resource.", from.get("groupId"))));
+            
+            Expression<String> groupId = from.get("groupId");
+            subs.add(builder.like(from1.get("name"), builder.concat("group.resource.", groupId)));
 
             subquery1.where(subs.toArray(new Predicate[subs.size()]));
 

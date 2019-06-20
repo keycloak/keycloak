@@ -20,7 +20,6 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.client.LaxRedirectStrategy;
-import org.hamcrest.CoreMatchers;
 import org.jboss.arquillian.container.test.api.Deployer;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.arquillian.test.api.ArquillianResource;
@@ -51,15 +50,17 @@ import org.keycloak.representations.idm.authorization.ResourceServerRepresentati
 import org.keycloak.testsuite.adapter.page.PhotozClientAuthzTestApp;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.AppServerTestEnricher;
+import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
 import org.keycloak.testsuite.auth.page.login.OAuthGrant;
-import org.keycloak.testsuite.util.ContainerAssume;
 import org.keycloak.testsuite.util.DroneUtils;
 import org.keycloak.testsuite.util.JavascriptBrowser;
 import org.keycloak.testsuite.util.javascript.JavascriptTestExecutorWithAuthorization;
 import org.keycloak.util.JsonSerialization;
+import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
+import org.openqa.selenium.support.ui.WebDriverWait;
 import org.wildfly.extras.creaper.core.online.CliException;
 import org.wildfly.extras.creaper.core.online.OnlineManagementClient;
 import org.wildfly.extras.creaper.core.online.operations.admin.Administration;
@@ -148,7 +149,7 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractPhotozJav
             OnlineManagementClient client = AppServerTestEnricher.getManagementClient();
             Administration administration = new Administration(client);
 
-            client.execute("/system-property=jackson.deserialization.whitelist.packages:add(value=org.keycloak.testsuite.photoz)");
+            client.execute("/system-property=jackson.deserialization.whitelist.packages:add(value=org.keycloak.example.photoz)");
             administration.reloadIfRequired();
         }
     }
@@ -216,6 +217,7 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractPhotozJav
     }
 
     @Test
+    @UncaughtServerErrorExpected
     public void createAlbumWithInvalidUser() throws Exception {
         loginToClientPage(aliceUser);
 
@@ -227,8 +229,6 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractPhotozJav
 
     @Test
     public void testOnlyOwnerCanDeleteAlbum() throws Exception {
-        ContainerAssume.assumeNotAppServerUndertow();
-
         loginToClientPage(aliceUser);
         clientPage.createAlbum(ALICE_ALBUM_NAME);
 
@@ -301,8 +301,6 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractPhotozJav
 
     @Test
     public void testAdminWithoutPermissionsToTypedResource() throws Exception {
-        ContainerAssume.assumeNotAppServerUndertow();
-
         loginToClientPage(aliceUser);
         clientPage.createAlbum(ALICE_ALBUM_NAME);
         
@@ -538,8 +536,6 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractPhotozJav
 
     @Test
     public void testInheritPermissionFromResourceParent() throws Exception {
-        ContainerAssume.assumeNotAppServerUndertow();
-
         loginToClientPage(aliceUser);
 
         final String RESOURCE_NAME = "My-Resource-Instance";
@@ -763,6 +759,16 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractPhotozJav
                 .login(this::assertOnLoginPage)
                 .loginFormWithScopesWithPossibleConsentPage(user, this::assertOnTestAppUrl, oAuthGrantPage, scopes)
                 .init(defaultArguments(), this::assertSuccessfullyLoggedIn);
+
+        new WebDriverWait(jsDriver, 10).until(this::isLoaded);
+    }
+
+    public boolean isLoaded(WebDriver w) {
+        JavascriptExecutor jsExecutor = (JavascriptExecutor) w;
+
+        Map<String, Object> o = (Map<String, Object>) jsExecutor.executeScript("return window.authorization.config");
+
+        return o != null && o.containsKey("token_endpoint");
     }
 
     private void setManageAlbumScopeRequired() {

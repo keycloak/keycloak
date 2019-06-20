@@ -20,7 +20,7 @@
     <parent>
         <artifactId>keycloak-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>4.7.0.Final-SNAPSHOT</version>
+        <version>7.0.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -47,11 +47,10 @@
 
     <profiles>
         <profile>
-            <id>jboss-release</id>
+            <id>distribution-downloads</id>
             <modules>
                 <module>api-docs-dist</module>
                 <module>examples-dist</module>
-                <module>proxy-dist</module>
                 <module>downloads</module>
             </modules>
         </profile>

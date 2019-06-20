@@ -99,8 +99,8 @@ public class LDAPGroupMapperSyncTest extends AbstractLDAPTest {
             LDAPObject group11 = LDAPTestUtils.createLDAPGroup(session, appRealm, ctx.getLdapModel(), "group11");
             LDAPObject group12 = LDAPTestUtils.createLDAPGroup(session, appRealm, ctx.getLdapModel(), "group12", descriptionAttrName, "group12 - description");
 
-            LDAPUtils.addMember(ctx.getLdapProvider(), MembershipType.DN, LDAPConstants.MEMBER, "not-used", group1, group11, false);
-            LDAPUtils.addMember(ctx.getLdapProvider(), MembershipType.DN, LDAPConstants.MEMBER, "not-used", group1, group12, true);
+            LDAPUtils.addMember(ctx.getLdapProvider(), MembershipType.DN, LDAPConstants.MEMBER, "not-used", group1, group11);
+            LDAPUtils.addMember(ctx.getLdapProvider(), MembershipType.DN, LDAPConstants.MEMBER, "not-used", group1, group12);
 
         });
     }
@@ -135,7 +135,7 @@ public class LDAPGroupMapperSyncTest extends AbstractLDAPTest {
             // Add recursive group mapping to LDAP. Check that sync with preserve group inheritance will fail
             LDAPObject group1 = groupMapper.loadLDAPGroupByName("group1");
             LDAPObject group12 = groupMapper.loadLDAPGroupByName("group12");
-            LDAPUtils.addMember(ldapProvider, MembershipType.DN, LDAPConstants.MEMBER, "not-used", group12, group1, true);
+            LDAPUtils.addMember(ldapProvider, MembershipType.DN, LDAPConstants.MEMBER, "not-used", group12, group1);
 
             try {
                 new GroupLDAPStorageMapperFactory().create(session, mapperModel).syncDataFromFederationProviderToKeycloak(realm);
@@ -298,7 +298,7 @@ public class LDAPGroupMapperSyncTest extends AbstractLDAPTest {
             GroupMapperConfig groupMapperConfig = new GroupMapperConfig(mapperModel);
             LDAPObject ldapGroup = groupMapper.loadLDAPGroupByName("group11");
             LDAPUtils.addMember(ldapProvider, groupMapperConfig.getMembershipTypeLdapAttribute(), groupMapperConfig.getMembershipLdapAttribute(),
-                    groupMapperConfig.getMembershipUserLdapAttribute(ldapProvider.getLdapIdentityStore().getConfig()), ldapGroup, johnLdap, true);
+                    groupMapperConfig.getMembershipUserLdapAttribute(ldapProvider.getLdapIdentityStore().getConfig()), ldapGroup, johnLdap);
 
             // Assert groups not yet imported to Keycloak DB
             Assert.assertNull(KeycloakModelUtils.findGroupByPath(realm, "/group1"));

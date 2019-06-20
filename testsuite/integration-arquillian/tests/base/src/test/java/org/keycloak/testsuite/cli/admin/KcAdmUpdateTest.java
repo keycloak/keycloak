@@ -9,16 +9,61 @@ import org.keycloak.testsuite.util.TempFileResource;
 import org.keycloak.util.JsonSerialization;
 
 import java.io.ByteArrayInputStream;
+import java.io.Closeable;
+import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
+import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.broker.saml.SAMLIdentityProviderConfig;
+import org.keycloak.broker.saml.SAMLIdentityProviderFactory;
+import org.keycloak.representations.idm.IdentityProviderRepresentation;
 
 import static org.keycloak.testsuite.cli.KcAdmExec.CMD;
 import static org.keycloak.testsuite.cli.KcAdmExec.execute;
+import org.keycloak.testsuite.updaters.IdentityProviderCreator;
+import org.keycloak.testsuite.util.IdentityProviderBuilder;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
  */
 public class KcAdmUpdateTest extends AbstractAdmCliTest {
+
+    @Test
+    public void testUpdateIDPWithoutInternalId() throws IOException {
+        
+        final String realm = "test";
+        final RealmResource realmResource = adminClient.realm(realm);
+        
+        IdentityProviderRepresentation identityProvider = IdentityProviderBuilder.create()
+                .providerId(SAMLIdentityProviderFactory.PROVIDER_ID)
+                .alias("idpAlias")
+                .displayName("SAML")
+                .setAttribute(SAMLIdentityProviderConfig.SINGLE_SIGN_ON_SERVICE_URL, "http://saml.idp/saml")
+                .setAttribute(SAMLIdentityProviderConfig.SINGLE_LOGOUT_SERVICE_URL, "http://saml.idp/saml")
+                .setAttribute(SAMLIdentityProviderConfig.NAME_ID_POLICY_FORMAT, "urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress")
+                .setAttribute(SAMLIdentityProviderConfig.POST_BINDING_RESPONSE, "false")
+                .setAttribute(SAMLIdentityProviderConfig.POST_BINDING_AUTHN_REQUEST, "false")
+                .setAttribute(SAMLIdentityProviderConfig.BACKCHANNEL_SUPPORTED, "false")
+                .build();
+        
+        try (Closeable ipc = new IdentityProviderCreator(realmResource, identityProvider)) {
+            FileConfigHandler handler = initCustomConfigFile();
+            try (TempFileResource configFile = new TempFileResource(handler.getConfigFile())) {
+                loginAsUser(configFile.getFile(), serverUrl, realm, "user1", "userpass");
+
+                KcAdmExec exe = execute("get identity-provider/instances/idpAlias -r " + realm + " --config " + configFile.getFile());
+                assertExitCodeAndStdErrSize(exe, 0, 0);
+
+                final File idpJson = new File("target/test-classes/cli/idp-keycloak-9167.json");
+                exe = execute("update identity-provider/instances/idpAlias -r " + realm + " -f " + idpJson.getAbsolutePath() + " --config " + configFile.getFile());
+                assertExitCodeAndStdErrSize(exe, 0, 0);
+            }
+
+            Assert.assertThat(realmResource.identityProviders().get("idpAlias").toRepresentation().getDisplayName(), is(equalTo("SAML_UPDATED")));
+        }
+    }
 
     @Test
     public void testUpdateThoroughly() throws IOException {
@@ -39,9 +84,9 @@ public class KcAdmUpdateTest extends AbstractAdmCliTest {
 
             ClientRepresentation client = JsonSerialization.readValue(exe.stdout(), ClientRepresentation.class);
 
-            Assert.assertEquals("enabled", true, client.isEnabled());
-            Assert.assertEquals("publicClient", false, client.isPublicClient());
-            Assert.assertEquals("bearerOnly", false, client.isBearerOnly());
+            Assert.assertTrue("enabled", client.isEnabled());
+            Assert.assertFalse("publicClient", client.isPublicClient());
+            Assert.assertFalse("bearerOnly", client.isBearerOnly());
             Assert.assertTrue("redirectUris is empty", client.getRedirectUris().isEmpty());
 
 
@@ -52,7 +97,7 @@ public class KcAdmUpdateTest extends AbstractAdmCliTest {
             assertExitCodeAndStdErrSize(exe, 0, 0);
 
             client = JsonSerialization.readValue(exe.stdout(), ClientRepresentation.class);
-            Assert.assertEquals("enabled", false, client.isEnabled());
+            Assert.assertFalse("enabled", client.isEnabled());
             Assert.assertEquals("redirectUris", Arrays.asList("http://localhost:8980/myapp/*"), client.getRedirectUris());
 
 

@@ -156,7 +156,7 @@ public class BasicSamlTest extends AbstractSamlTest {
 
     @Test
     public void testExplicitPortInDestination() throws Exception {
-        testWithOverriddenPort(Integer.valueOf(System.getProperty("auth.server.http.port")), Response.Status.OK, containsString("login"));
+        testWithOverriddenPort(Integer.valueOf(AUTH_SERVER_PORT), Response.Status.OK, containsString("login"));
     }
 
     @Test

@@ -28,12 +28,20 @@ import javax.net.ssl.SSLContext;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import javax.net.ssl.HostnameVerifier;
+import org.apache.http.HttpHost;
+import org.apache.http.client.config.RequestConfig;
+import org.apache.http.conn.HttpClientConnectionManager;
+import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.ssl.SSLContexts;
+import org.jboss.resteasy.client.jaxrs.ClientHttpEngine;
+import org.jboss.resteasy.client.jaxrs.ClientHttpEngineBuilder43;
+import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
 import org.jboss.resteasy.plugins.providers.jackson.ResteasyJackson2Provider;
 import org.keycloak.admin.client.Keycloak;
+import org.keycloak.admin.client.KeycloakBuilder;
 import org.keycloak.models.Constants;
 import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
-import org.keycloak.testsuite.arquillian.SuiteContext;
 
 import static org.keycloak.testsuite.auth.page.AuthRealm.ADMIN;
 import static org.keycloak.testsuite.auth.page.AuthRealm.MASTER;
@@ -51,29 +59,40 @@ public class AdminClientUtil {
     }
 
     public static Keycloak createAdminClient(boolean ignoreUnknownProperties, String authServerContextRoot, String realmName, String username, String password, String clientId, String clientSecret) throws CertificateException, NoSuchAlgorithmException, KeyStoreException, IOException, KeyManagementException {
-        SSLContext ssl = null;
+        ResteasyClientBuilder resteasyClientBuilder = new ResteasyClientBuilder();
+
         if ("true".equals(System.getProperty("auth.server.ssl.required"))) {
             File trustore = new File(PROJECT_BUILD_DIRECTORY, "dependency/keystore/keycloak.truststore");
-            ssl = getSSLContextWithTrustore(trustore, "secret");
+            resteasyClientBuilder.sslContext(getSSLContextWithTrustore(trustore, "secret"));
 
             System.setProperty("javax.net.ssl.trustStore", trustore.getAbsolutePath());
         }
-
-        ResteasyJackson2Provider jacksonProvider = null;
 
         // We need to ignore unknown JSON properties e.g. in the adapter configuration representation
         // during adapter backward compatibility testing
         if (ignoreUnknownProperties) {
             // We need to use anonymous class to avoid the following error from RESTEasy:
             // Provider class org.jboss.resteasy.plugins.providers.jackson.ResteasyJackson2Provider is already registered.  2nd registration is being ignored.
-            jacksonProvider = new ResteasyJackson2Provider() {};
+            ResteasyJackson2Provider jacksonProvider = new ResteasyJackson2Provider() {};
             ObjectMapper objectMapper = new ObjectMapper();
             objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
             jacksonProvider.setMapper(objectMapper);
+            resteasyClientBuilder.register(jacksonProvider, 100);
         }
 
-        return Keycloak.getInstance(authServerContextRoot + "/auth",
-                realmName, username, password, clientId, clientSecret, ssl, jacksonProvider);
+        resteasyClientBuilder
+            .hostnameVerification(ResteasyClientBuilder.HostnameVerificationPolicy.WILDCARD)
+            .connectionPoolSize(10)
+            .httpEngine(getCustomClientHttpEngine(resteasyClientBuilder, 1));
+        
+        return KeycloakBuilder.builder()
+                .serverUrl(authServerContextRoot + "/auth")
+                .realm(realmName)
+                .username(username)
+                .password(password)
+                .clientId(clientId)
+                .clientSecret(clientSecret)
+                .resteasyClient(resteasyClientBuilder.build()).build();
     }
 
     public static Keycloak createAdminClient() throws Exception {
@@ -95,4 +114,35 @@ public class AdminClientUtil {
         return theContext;
     }
 
+    public static ClientHttpEngine getCustomClientHttpEngine(ResteasyClientBuilder resteasyClientBuilder, int validateAfterInactivity) {
+        return new CustomClientHttpEngineBuilder43(validateAfterInactivity).resteasyClientBuilder(resteasyClientBuilder).build();
+    }
+
+    /**
+     * Adds a possibility to pass validateAfterInactivity parameter into underlying ConnectionManager. The parameter affects how
+     * long the connection is being used without testing if it became stale, default value is 2000ms
+     */
+    private static class CustomClientHttpEngineBuilder43 extends ClientHttpEngineBuilder43 {
+
+        private final int validateAfterInactivity;
+
+        private CustomClientHttpEngineBuilder43(int validateAfterInactivity) {
+            this.validateAfterInactivity = validateAfterInactivity;
+        }
+
+        @Override
+        protected ClientHttpEngine createEngine(final HttpClientConnectionManager cm, final RequestConfig.Builder rcBuilder,
+                final HttpHost defaultProxy, final int responseBufferSize, final HostnameVerifier verifier, final SSLContext theContext) {
+
+            if (cm instanceof PoolingHttpClientConnectionManager) {
+                PoolingHttpClientConnectionManager pcm = (PoolingHttpClientConnectionManager) cm;
+                pcm.setValidateAfterInactivity(validateAfterInactivity);
+
+                return super.createEngine(pcm, rcBuilder, defaultProxy, responseBufferSize, verifier, theContext);
+            } else {
+                return super.createEngine(cm, rcBuilder, defaultProxy, responseBufferSize, verifier, theContext);
+            }
+        }
+    }
+   
 }

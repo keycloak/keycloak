@@ -88,6 +88,8 @@ public class ChallengeFlowTest extends AbstractTestRealmKeycloakTest {
 
     @Before
     public void setupFlows() {
+        SerializableApplicationData serializedApplicationData = new SerializableApplicationData(oauth.APP_AUTH_ROOT, oauth.APP_ROOT + "/admin", oauth.APP_AUTH_ROOT + "/*");
+
         testingClient.server().run(session -> {
             RealmModel realm = session.realms().getRealmByName("test");
 
@@ -116,10 +118,10 @@ public class ChallengeFlowTest extends AbstractTestRealmKeycloakTest {
 
             client = realm.addClient(TEST_APP_FLOW);
             client.setSecret("password");
-            client.setBaseUrl("http://localhost:8180/auth/realms/master/app/auth");
-            client.setManagementUrl("http://localhost:8180/auth/realms/master/app/admin");
+            client.setBaseUrl(serializedApplicationData.applicationBaseUrl);
+            client.setManagementUrl(serializedApplicationData.applicationManagementUrl);
             client.setEnabled(true);
-            client.addRedirectUri("http://localhost:8180/auth/realms/master/app/auth/*");
+            client.addRedirectUri(serializedApplicationData.applicationRedirectUrl);
             client.addRedirectUri("urn:ietf:wg:oauth:2.0:oob");
             client.setAuthenticationFlowBindingOverride(AuthenticationFlowBindings.BROWSER_BINDING, browser.getId());
             client.setPublicClient(false);

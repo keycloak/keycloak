@@ -90,7 +90,7 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
                     .forceAuthn(getConfig().isForceAuthn())
                     .protocolBinding(protocolBinding)
                     .nameIdPolicy(SAML2NameIDPolicyBuilder.format(nameIDPolicyFormat));
-            JaxrsSAML2BindingBuilder binding = new JaxrsSAML2BindingBuilder()
+            JaxrsSAML2BindingBuilder binding = new JaxrsSAML2BindingBuilder(session)
                     .relayState(request.getState().getEncoded());
             boolean postBinding = getConfig().isPostBindingAuthnRequest();
 
@@ -197,7 +197,7 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
     }
 
     private JaxrsSAML2BindingBuilder buildLogoutBinding(KeycloakSession session, UserSessionModel userSession, RealmModel realm) {
-        JaxrsSAML2BindingBuilder binding = new JaxrsSAML2BindingBuilder()
+        JaxrsSAML2BindingBuilder binding = new JaxrsSAML2BindingBuilder(session)
                 .relayState(userSession.getId());
         if (getConfig().isWantAuthnRequestsSigned()) {
             KeyManager.ActiveRsaKey keys = session.keys().getActiveRsaKey(realm);

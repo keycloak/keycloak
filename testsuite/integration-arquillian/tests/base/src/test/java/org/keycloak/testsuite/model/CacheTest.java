@@ -21,22 +21,17 @@ package org.keycloak.testsuite.model;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.container.test.api.TargetsContainer;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
-import org.junit.ClassRule;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.cache.infinispan.ClientAdapter;
 import org.keycloak.models.cache.infinispan.RealmAdapter;
-import org.keycloak.testsuite.federation.ldap.AbstractLDAPTest;
-import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
 
-import java.util.List;
 import java.util.List;
 import java.util.Set;
 
@@ -47,10 +42,7 @@ import static org.keycloak.testsuite.arquillian.DeploymentTargetModifier.AUTH_SE
 
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.Assert;
-import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.testsuite.client.KeycloakTestingClient;
-import org.keycloak.testsuite.arquillian.TestContext;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

@@ -38,12 +38,14 @@ import javax.ws.rs.core.UriBuilder;
  */
 public class GoogleIdentityProvider extends OIDCIdentityProvider implements SocialIdentityProvider<OIDCIdentityProviderConfig> {
 
-    public static final String AUTH_URL = "https://accounts.google.com/o/oauth2/auth";
-    public static final String TOKEN_URL = "https://www.googleapis.com/oauth2/v3/token";
-    public static final String PROFILE_URL = "https://www.googleapis.com/plus/v1/people/me/openIdConnect";
+    public static final String AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth";
+    public static final String TOKEN_URL = "https://oauth2.googleapis.com/token";
+    public static final String PROFILE_URL = "https://openidconnect.googleapis.com/v1/userinfo";
     public static final String DEFAULT_SCOPE = "openid profile email";
 
     private static final String OIDC_PARAMETER_HOSTED_DOMAINS = "hd";
+    private static final String OIDC_PARAMETER_ACCESS_TYPE = "access_type";
+    private static final String ACCESS_TYPE_OFFLINE = "offline";
 
     public GoogleIdentityProvider(KeycloakSession session, GoogleIdentityProviderConfig config) {
         super(session, config);
@@ -93,12 +95,17 @@ public class GoogleIdentityProvider extends OIDCIdentityProvider implements Soci
     @Override
     protected UriBuilder createAuthorizationUrl(AuthenticationRequest request) {
         UriBuilder uriBuilder = super.createAuthorizationUrl(request);
-        String hostedDomain = ((GoogleIdentityProviderConfig) getConfig()).getHostedDomain();
+        final GoogleIdentityProviderConfig googleConfig = (GoogleIdentityProviderConfig) getConfig();
+        String hostedDomain = googleConfig.getHostedDomain();
 
         if (hostedDomain != null) {
             uriBuilder.queryParam(OIDC_PARAMETER_HOSTED_DOMAINS, hostedDomain);
         }
-
+        
+        if (googleConfig.isOfflineAccess()) {
+            uriBuilder.queryParam(OIDC_PARAMETER_ACCESS_TYPE, ACCESS_TYPE_OFFLINE);
+        }
+        
         return uriBuilder;
     }
 

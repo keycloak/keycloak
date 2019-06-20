@@ -283,6 +283,6 @@ public class ProtectedResource {
                 .param("matchingUri", Boolean.valueOf(matchingUri).toString())
                 .param("deep", Boolean.toString(deep))
                 .param("first", firstResult != null ? firstResult.toString() : null)
-                .param("max", maxResult != null ? maxResult.toString() : null);
+                .param("max", maxResult != null ? maxResult.toString() : Integer.toString(-1));
     }
 }

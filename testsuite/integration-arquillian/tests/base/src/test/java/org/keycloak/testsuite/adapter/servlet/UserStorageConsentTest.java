@@ -50,12 +50,11 @@ import org.keycloak.testsuite.adapter.AbstractServletsAdapterTest;
 import org.keycloak.testsuite.adapter.page.ProductPortal;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
-import org.keycloak.testsuite.arquillian.containers.ContainerConstants;
+import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
 import org.keycloak.testsuite.auth.page.login.PageWithLoginUrl;
 import org.keycloak.testsuite.federation.UserMapStorageFactory;
 import org.keycloak.testsuite.pages.ConsentPage;
 import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
-import org.keycloak.testsuite.util.ContainerAssume;
 
 import static org.keycloak.testsuite.arquillian.DeploymentTargetModifier.AUTH_SERVER_CURRENT;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlEquals;
@@ -150,8 +149,6 @@ public class UserStorageConsentTest extends AbstractServletsAdapterTest {
      */
     @Test
     public void testLogin() throws Exception {
-        ContainerAssume.assumeNotAppServerUndertow();
-
         testingClient.server().run(UserStorageConsentTest::setupConsent);
         UserRepresentation memuser = new UserRepresentation();
         memuser.setUsername("memuser");

@@ -16,93 +16,202 @@
 
 import * as React from 'react';
 import {AxiosResponse} from 'axios';
+import {ActionGroup, Button, Form, FormGroup, TextInput} from '@patternfly/react-core';
 
 import {AccountServiceClient} from '../../account-service/account.service';
+import {Features} from '../../widgets/features';
 import {Msg} from '../../widgets/Msg';
+import {ContentPage} from '../ContentPage';
+import {ContentAlert} from '../ContentAlert';
+
+declare const features: Features;
  
 interface AccountPageProps {
 }
 
+interface FormFields {
+    readonly username?: string;
+    readonly firstName?: string;
+    readonly lastName?: string;
+    readonly email?: string;
+    readonly emailVerified?: boolean;
+}
+
 interface AccountPageState {
-    readonly changed: boolean,
-    readonly username: string,
-    readonly firstName?: string,
-    readonly lastName?: string,
-    readonly email?: string,
-    readonly emailVerified?: boolean
+    readonly canSubmit: boolean;
+    readonly formFields: FormFields;
 }
 
 /**
  * @author Stan Silvert ssilvert@redhat.com (C) 2018 Red Hat Inc.
  */
 export class AccountPage extends React.Component<AccountPageProps, AccountPageState> {
-    readonly state: AccountPageState = {
-        changed: false,
-        username: '',
-        firstName: '',
-        lastName: '',
-        email: ''
+    private isRegistrationEmailAsUsername: boolean = features.isRegistrationEmailAsUsername;
+    private isEditUserNameAllowed: boolean = features.isEditUserNameAllowed;
+    
+    public state: AccountPageState = {
+        canSubmit: false,
+        formFields: {username: '',
+                     firstName: '',
+                     lastName: '',
+                     email: ''}
     };
     
-    constructor(props: AccountPageProps) {
+    public constructor(props: AccountPageProps) {
         super(props);
+        this.fetchPersonalInfo();
+    }
+    
+    private fetchPersonalInfo(): void {
         AccountServiceClient.Instance.doGet("/")
-            .then((response: AxiosResponse<AccountPageState>) => {
-                this.setState(response.data);
+            .then((response: AxiosResponse<FormFields>) => {
+                this.setState({formFields: response.data});
                 console.log({response});
             });
-            
-        this.handleChange = this.handleChange.bind(this);
-        this.handleSubmit = this.handleSubmit.bind(this);
-        this.makeTextInput = this.makeTextInput.bind(this);
-    }
-
-    private handleChange(event: React.ChangeEvent<HTMLInputElement>): void  {
-        const target: HTMLInputElement = event.target;
-        const value: string = target.value;
-        const name: string = target.name;
-        this.setState({
-            changed: true,
-            username: this.state.username,
-            [name]: value
-        } as AccountPageState);
     }
     
-    private handleSubmit(event: React.FormEvent<HTMLFormElement>): void {
-        event.preventDefault();
-        const reqData = {...this.state};
-        delete reqData.changed;
+    private handleCancel = (): void => {
+        this.fetchPersonalInfo();
+    }
+
+    private handleChange = (value: string, event: React.FormEvent<HTMLInputElement>) => {
+        const target: HTMLInputElement = event.currentTarget;
+        const name: string = target.name;
+        this.setState({
+            canSubmit: this.requiredFieldsHaveData(name, value),
+            formFields: {...this.state.formFields, [name]:value}
+        });
+    }
+    
+    private handleSubmit = (): void => {
+        if (!this.requiredFieldsHaveData()) return;
+        const reqData: FormFields = {...this.state.formFields};
         AccountServiceClient.Instance.doPost("/", {data: reqData})
-            .then((response: AxiosResponse<AccountPageState>) => {
-                this.setState({changed: false});
-                alert('Data posted');
+            .then(() => { // to use response, say ((response: AxiosResponse<FormFields>) => {
+                this.setState({canSubmit: false});
+                ContentAlert.success('accountUpdatedMessage');
             });
     }
     
-    private makeTextInput(name: string, 
-                          disabled = false): React.ReactElement<any> {
+    private requiredFieldsHaveData(fieldName?: string, newValue?: string): boolean { 
+        const fields: FormFields = {...this.state.formFields};
+        
+        if (fieldName && newValue) {
+            fields[fieldName] = newValue;
+        }
+        
+        for (const field of Object.keys(fields)) {
+            if (!fields[field]) return false;
+        }
+        
+        return true;
+    }
+    
+    public render(): React.ReactNode {
+        const fields: FormFields = this.state.formFields;
         return (
-            <label><Msg msgKey={name}/>:
-                <input disabled={disabled} type="text" name={name} value={this.state[name]} onChange={this.handleChange} />
-            </label>
+            <ContentPage title="personalInfoHtmlTitle" 
+                     introMessage="personalSubMessage">
+                <Form isHorizontal>
+                    {!this.isRegistrationEmailAsUsername && 
+                        <FormGroup
+                            label={Msg.localize('username')}
+                            isRequired
+                            fieldId="user-name"
+                        >
+                            {this.isEditUserNameAllowed && <this.UsernameInput/>}
+                            {!this.isEditUserNameAllowed && <this.RestrictedUsernameInput/>}
+                        </FormGroup>
+                    }
+                    <FormGroup
+                        label={Msg.localize('email')}
+                        isRequired
+                        fieldId="email-address"
+                    >
+                        <TextInput
+                            isRequired
+                            type="email"
+                            id="email-address"
+                            name="email"
+                            value={fields.email}
+                            onChange={this.handleChange}
+                            isValid={fields.email !== ''}
+                            >
+                        </TextInput>
+                    </FormGroup>
+                    <FormGroup
+                        label={Msg.localize('firstName')}
+                        isRequired
+                        fieldId="first-name"
+                    >
+                        <TextInput
+                            isRequired
+                            type="text"
+                            id="first-name"
+                            name="firstName"
+                            value={fields.firstName}
+                            onChange={this.handleChange}
+                            isValid={fields.firstName !== ''}
+                            >
+                        </TextInput>
+                    </FormGroup>
+                    <FormGroup
+                        label={Msg.localize('lastName')}
+                        isRequired
+                        fieldId="last-name"
+                    >
+                        <TextInput
+                            isRequired
+                            type="text"
+                            id="last-name"
+                            name="lastName"
+                            value={fields.lastName}
+                            onChange={this.handleChange}
+                            isValid={fields.lastName !== ''}
+                            >
+                        </TextInput>
+                    </FormGroup>
+                    <ActionGroup>
+                        <Button 
+                            variant="primary"
+                            isDisabled={!this.state.canSubmit && this.requiredFieldsHaveData()}
+                            onClick={this.handleSubmit}
+                        >
+                            <Msg msgKey="doSave"/>                          
+                        </Button>
+                        <Button 
+                            variant="secondary"
+                            onClick={this.handleCancel}
+                        >
+                            <Msg msgKey="doCancel"/>
+                        </Button>
+                    </ActionGroup>
+                </Form>
+            </ContentPage>
         );
     }
     
-    render() {
-        return (
-            <form onSubmit={this.handleSubmit}>
-                {this.makeTextInput('username', true)}
-                <br/>
-                {this.makeTextInput('firstName')}
-                <br/>
-                {this.makeTextInput('lastName')}
-                <br/>
-                {this.makeTextInput('email')}
-                <br/>
-                <button className="btn btn-primary btn-lg btn-sign" 
-                        disabled={!this.state.changed}
-                        value="Submit"><Msg msgKey="doSave"/></button>
-            </form>
-        );
-    }
+    private UsernameInput = () => (
+        <TextInput
+            isRequired
+            type="text"
+            id="user-name"
+            name="username"
+            value={this.state.formFields.username}
+            onChange={this.handleChange}
+            isValid={this.state.formFields.username !== ''}
+            >
+        </TextInput>
+    );
+    
+    private RestrictedUsernameInput = () => (
+        <TextInput
+            isDisabled
+            type="text"
+            id="user-name"
+            name="username"
+            value={this.state.formFields.username}
+            >
+        </TextInput>
+    );
 };

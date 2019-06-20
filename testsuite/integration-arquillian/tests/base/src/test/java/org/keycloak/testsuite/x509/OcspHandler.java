@@ -68,13 +68,17 @@ import io.undertow.util.Headers;
 
 final class OcspHandler implements HttpHandler {
 
-    private static final String OCSP_RESPONDER_CERT_PATH = "/client-auth-test/intermediate-ca.crt";
+    // certificates created by the same ca than the client certs
+    public static final String OCSP_RESPONDER_CERT_PATH = "/client-auth-test/intermediate-ca.crt";
+    public static final String OCSP_RESPONDER_KEYPAIR_PATH = "/client-auth-test/intermediate-ca.key";
 
-    private static final String OCSP_RESPONDER_KEYPAIR_PATH = "/client-auth-test/intermediate-ca.key";
+    // certificates specific for responderCert
+    public static final String OCSP_RESPONDER_CERT_PATH_SPECIFIC = "/client-auth-test/intermediate-ca-2.crt";
+    public static final String OCSP_RESPONDER_KEYPAIR_PATH_SPECIFIC = "/client-auth-test/intermediate-ca-2.key";
 
     // add any certificates that the OCSP responder needs to know about in the tests here
     private static final Map<BigInteger, CertificateStatus> REVOKED_CERTIFICATES_STATUS = ImmutableMap
-            .of(BigInteger.valueOf(4096), new RevokedStatus(new Date(1472169600000L), CRLReason.unspecified));
+            .of(BigInteger.valueOf(4105), new RevokedStatus(new Date(1472169600000L), CRLReason.unspecified));
 
     private final SubjectPublicKeyInfo subjectPublicKeyInfo;
 
@@ -82,9 +86,10 @@ final class OcspHandler implements HttpHandler {
 
     private final AsymmetricKeyParameter privateKey;
 
-    OcspHandler() throws OperatorCreationException, GeneralSecurityException, IOException {
+    public OcspHandler(String responderCertPath, String responderKeyPath)
+            throws OperatorCreationException, GeneralSecurityException, IOException {
         final Certificate certificate = CertificateFactory.getInstance("X509")
-                .generateCertificate(X509OCSPResponderTest.class.getResourceAsStream(OCSP_RESPONDER_CERT_PATH));
+                .generateCertificate(X509OCSPResponderTest.class.getResourceAsStream(responderCertPath));
 
         chain = new X509CertificateHolder[] {new X509CertificateHolder(certificate.getEncoded())};
 
@@ -92,7 +97,7 @@ final class OcspHandler implements HttpHandler {
 
         subjectPublicKeyInfo = SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(publicKey);
 
-        final InputStream keyPairStream = X509OCSPResponderTest.class.getResourceAsStream(OCSP_RESPONDER_KEYPAIR_PATH);
+        final InputStream keyPairStream = X509OCSPResponderTest.class.getResourceAsStream(responderKeyPath);
 
         try (final PEMParser keyPairReader = new PEMParser(new InputStreamReader(keyPairStream))) {
             final PEMKeyPair keyPairPem = (PEMKeyPair) keyPairReader.readObject();

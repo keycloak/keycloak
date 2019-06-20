@@ -26,7 +26,7 @@ export = Keycloak;
  * Creates a new Keycloak client instance.
  * @param config Path to a JSON config file or a plain config object.
  */
-declare function Keycloak(config?: string|{}): Keycloak.KeycloakInstance;
+declare function Keycloak<TPromise extends Keycloak.PromiseType = undefined>(config?: string|{}): Keycloak.KeycloakInstance<TPromise>;
 
 declare namespace Keycloak {
 	type KeycloakAdapterName = 'cordova' | 'cordova-native' |'default' | any;
@@ -34,6 +34,8 @@ declare namespace Keycloak {
 	type KeycloakResponseMode = 'query'|'fragment';
 	type KeycloakResponseType = 'code'|'id_token token'|'code id_token token';
 	type KeycloakFlow = 'standard'|'implicit'|'hybrid';
+	type KeycloakPromiseType = 'native';
+	type KeycloakPkceMethod = 'S256';
 
 	interface KeycloakInitOptions {
 		/**
@@ -109,6 +111,20 @@ declare namespace Keycloak {
 		 * @default standard
 		 */
 		flow?: KeycloakFlow;
+
+		/**
+		 * Set the promise type. If set to `'native'` all methods returning a promise
+		 * will return a native JavaScript promise. If not set will return
+		 * Keycloak specific promise objects.
+		 */
+		promiseType?: KeycloakPromiseType;
+
+		/**
+		 * Configures the Proof Key for Code Exchange (PKCE) method to use.
+		 * The currently allowed method is 'S256'.
+		 * If not configured, PKCE will not be used.
+		 */
+		pkceMethod?: KeycloakPkceMethod;
 	}
 
 	interface KeycloakLoginOptions {
@@ -226,13 +242,29 @@ declare namespace Keycloak {
 		resource_access?: string[];
 	}
 
+	interface KeycloakResourceAccess {
+		[key: string]: KeycloakRoles
+	}
+
+	interface KeycloakRoles {
+		roles: string[];
+	}
+
 	// export interface KeycloakUserInfo {}
+
+	/**
+	 * Conditional CompatPromise type in order to support
+	 * both legacy promises and native promises as return types.
+	 */
+	type PromiseType = KeycloakPromiseType | undefined;
+	type CompatPromise<TPromiseType extends PromiseType, TSuccess, TError> = 
+		TPromiseType extends KeycloakPromiseType ? Promise<TSuccess> : KeycloakPromise<TSuccess, TError>;
 
 	/**
 	 * A client for the Keycloak authentication server.
 	 * @see {@link https://keycloak.gitbooks.io/securing-client-applications-guide/content/topics/oidc/javascript-adapter.html|Keycloak JS adapter documentation}
 	 */
-	interface KeycloakInstance {
+	interface KeycloakInstance<TPromise extends PromiseType = undefined> {
 		/**
 		 * Is true if the user is authenticated, false otherwise.
 		 */
@@ -263,12 +295,12 @@ declare namespace Keycloak {
 		/**
 		 * The realm roles associated with the token.
 		 */
-		realmAccess?: { roles: string[] };
+		realmAccess?: KeycloakRoles;
 
 		/**
 		 * The resource roles associated with the token.
 		 */
-		resourceAccess?: string[];
+		resourceAccess?: KeycloakResourceAccess;
 
 		/**
 		 * The base64 encoded token that can be sent in the Authorization header in
@@ -397,32 +429,32 @@ declare namespace Keycloak {
 		 * @param initOptions Initialization options.
 		 * @returns A promise to set functions to be invoked on success or error.
 		 */
-		init(initOptions: KeycloakInitOptions): KeycloakPromise<boolean, KeycloakError>;
+		init(initOptions: KeycloakInitOptions): CompatPromise<TPromise, boolean, KeycloakError>;
 
 		/**
 		 * Redirects to login form.
 		 * @param options Login options.
 		 */
-		login(options?: KeycloakLoginOptions): KeycloakPromise<void, void>;
+		login(options?: KeycloakLoginOptions): CompatPromise<TPromise, void, void>;
 
 		/**
 		 * Redirects to logout.
 		 * @param options Logout options.
 		 * @param options.redirectUri Specifies the uri to redirect to after logout.
 		 */
-		logout(options?: any): KeycloakPromise<void, void>;
+		logout(options?: any): CompatPromise<TPromise, void, void>;
 
 		/**
 		 * Redirects to registration form.
 		 * @param options Supports same options as Keycloak#login but `action` is
 		 *                set to `'register'`.
 		 */
-		register(options?: any): KeycloakPromise<void, void>;
+		register(options?: any): CompatPromise<TPromise, void, void>;
 
 		/**
 		 * Redirects to the Account Management Console.
 		 */
-		accountManagement(): KeycloakPromise<void, void>;
+		accountManagement(): CompatPromise<TPromise, void, void>;
 
 		/**
 		 * Returns the URL to login form.
@@ -474,7 +506,7 @@ declare namespace Keycloak {
 		 *   alert('Failed to refresh the token, or the session has expired');
 		 * });
 		 */
-		updateToken(minValidity: number): KeycloakPromise<boolean, boolean>;
+		updateToken(minValidity: number): CompatPromise<TPromise, boolean, boolean>;
 
 		/**
 		 * Clears authentication state, including tokens. This can be useful if
@@ -501,11 +533,11 @@ declare namespace Keycloak {
 		 * Loads the user's profile.
 		 * @returns A promise to set functions to be invoked on success or error.
 		 */
-		loadUserProfile(): KeycloakPromise<KeycloakProfile, void>;
+		loadUserProfile(): CompatPromise<TPromise, KeycloakProfile, void>;
 
 		/**
 		 * @private Undocumented.
 		 */
-		loadUserInfo(): KeycloakPromise<{}, void>;
+		loadUserInfo(): CompatPromise<TPromise, {}, void>;
 	}
 }

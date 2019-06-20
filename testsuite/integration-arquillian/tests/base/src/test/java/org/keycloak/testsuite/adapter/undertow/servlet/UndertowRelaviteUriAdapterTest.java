@@ -140,7 +140,7 @@ public class UndertowRelaviteUriAdapterTest extends AbstractServletsAdapterTest 
         Assert.assertTrue(driver.getPageSource().contains("iPhone"));
         
         // test logout
-        driver.navigate().to(customerPortal.logout());
+        driver.navigate().to(customerPortal.logout().toASCIIString());
         Assert.assertTrue(driver.getPageSource().contains("servlet logout ok"));
         
         customerPortal.navigateTo();

@@ -45,6 +45,4 @@ public interface ClientSessionContext {
 
     <T> T getAttribute(String attribute, Class<T> clazz);
 
-
-    String AUTHENTICATION_SESSION_ATTR = "AUTH_SESSION_ATTR";
 }

@@ -37,6 +37,7 @@ import org.keycloak.services.managers.Auth;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.Cors;
+import org.keycloak.services.resources.account.resources.ResourcesService;
 import org.keycloak.storage.ReadOnlyException;
 
 import javax.ws.rs.*;
@@ -207,6 +208,8 @@ public class AccountRestService {
     @NoCache
     public Response sessions() {
         checkAccountApiEnabled();
+        auth.requireOneOf(AccountRoles.MANAGE_ACCOUNT, AccountRoles.VIEW_PROFILE);
+        
         List<SessionRepresentation> reps = new LinkedList<>();
 
         List<UserSessionModel> sessions = session.sessions().getUserSessions(realm, user);
@@ -245,6 +248,8 @@ public class AccountRestService {
     @NoCache
     public Response sessionsLogout(@QueryParam("current") boolean removeCurrent) {
         checkAccountApiEnabled();
+        auth.require(AccountRoles.MANAGE_ACCOUNT);
+        
         UserSessionModel userSession = auth.getSession();
 
         List<UserSessionModel> userSessions = session.sessions().getUserSessions(realm, user);
@@ -269,6 +274,8 @@ public class AccountRestService {
     @NoCache
     public Response sessionLogout(@QueryParam("id") String id) {
         checkAccountApiEnabled();
+        auth.require(AccountRoles.MANAGE_ACCOUNT);
+        
         UserSessionModel userSession = session.sessions().getUserSession(realm, id);
         if (userSession != null && userSession.getUser().equals(user)) {
             AuthenticationManager.backchannelLogout(session, userSession, true);
@@ -279,7 +286,14 @@ public class AccountRestService {
     @Path("/credentials")
     public AccountCredentialResource credentials() {
         checkAccountApiEnabled();
-        return new AccountCredentialResource(session, event, user);
+        return new AccountCredentialResource(session, event, user, auth);
+    }
+
+    @Path("/resources")
+    public ResourcesService resources() {
+        checkAccountApiEnabled();
+        auth.requireOneOf(AccountRoles.MANAGE_ACCOUNT, AccountRoles.VIEW_PROFILE);
+        return new ResourcesService(session, user, auth, request);
     }
 
    // TODO Federated identities

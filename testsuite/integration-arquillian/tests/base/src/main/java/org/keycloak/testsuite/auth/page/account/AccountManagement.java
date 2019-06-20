@@ -61,6 +61,9 @@ public class AccountManagement extends AuthRealm implements PageWithLogOutAction
     @FindBy(linkText = "Applications")
     private WebElement applicationsLink;
 
+    @FindBy(linkText = "Federated Identity")
+    private WebElement federatedIdentityLink;
+
     @FindByJQuery("button[value='Save']")
     private WebElement save;
 
@@ -108,6 +111,11 @@ public class AccountManagement extends AuthRealm implements PageWithLogOutAction
 
     public void applications() {
         applicationsLink.click();
+        waitForPageToLoad();
+    }
+
+    public void federatedIdentity() {
+        federatedIdentityLink.click();
         waitForPageToLoad();
     }
 

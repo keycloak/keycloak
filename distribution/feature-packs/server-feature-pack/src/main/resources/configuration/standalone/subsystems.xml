@@ -40,6 +40,9 @@
        <subsystem supplement="standalone-wildfly">elytron.xml</subsystem>
        <subsystem>security.xml</subsystem>
        <subsystem>transactions.xml</subsystem>
+       <subsystem>microprofile-config-smallrye.xml</subsystem>
+       <subsystem>microprofile-health-smallrye.xml</subsystem>
+       <subsystem>microprofile-metrics-smallrye.xml</subsystem>
        <subsystem>keycloak-undertow.xml</subsystem>
        <subsystem>keycloak-server.xml</subsystem>
    </subsystems>

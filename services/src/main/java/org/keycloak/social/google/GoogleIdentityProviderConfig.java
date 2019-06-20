@@ -47,4 +47,12 @@ public class GoogleIdentityProviderConfig extends OIDCIdentityProviderConfig {
         getConfig().put("hostedDomain", hostedDomain);
     }
 
+    public boolean isOfflineAccess() {
+        String offlineAccess = getConfig().get("offlineAccess");
+        return offlineAccess == null ? false : Boolean.valueOf(offlineAccess);
+    }
+    
+    public void setOfflineAccess(boolean offlineAccess) {
+        getConfig().put("offlineAccess", String.valueOf(offlineAccess));
+    }
 }

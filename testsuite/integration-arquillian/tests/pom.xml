@@ -24,7 +24,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian</artifactId>
-        <version>4.7.0.Final-SNAPSHOT</version>
+        <version>7.0.0-SNAPSHOT</version>
     </parent>
 
     <packaging>pom</packaging>
@@ -63,12 +63,13 @@
         <auth.server.https.port>8543</auth.server.https.port>
         <auth.server.management.port>10090</auth.server.management.port>
         <auth.server.management.port.jmx>10099</auth.server.management.port.jmx>
-        <auth.server.ssl.required>false</auth.server.ssl.required>
-        <auth.server.memory.settings>-Xms64m -Xmx512m -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=256m</auth.server.memory.settings>
+        <auth.server.ssl.required>true</auth.server.ssl.required>
+        <auth.server.memory.settings>-Xms64m -Xmx512m</auth.server.memory.settings>
         <auth.server.config.property.name>serverConfig</auth.server.config.property.name>
         <auth.server.adapter.impl.class>org.jboss.as.arquillian.container.managed.ManagedDeployableContainer</auth.server.adapter.impl.class>
         <auth.server.truststore>&#36;{jboss.home.dir}/standalone/configuration/keycloak.truststore</auth.server.truststore>
         <auth.server.truststore.password>secret</auth.server.truststore.password>
+        <auth.server.jvm.args.extra/>
 
         <auth.server.jboss.artifactId>integration-arquillian-servers-auth-server-${auth.server}</auth.server.jboss.artifactId>
         <auth.server.jboss.skip.unpack>${auth.server.undertow}</auth.server.jboss.skip.unpack>
@@ -100,9 +101,11 @@
         <app.server.debug.port>5006</app.server.debug.port>
         <app.server.debug.suspend>n</app.server.debug.suspend>
         <app.server.jboss.jvm.debug.args>-agentlib:jdwp=transport=dt_socket,server=y,suspend=${app.server.debug.suspend},address=localhost:${app.server.debug.port}</app.server.jboss.jvm.debug.args>
-        <!-- Cluster tests are failing with -Xmx512 for insufficient physical memory -->
-        <app.server.memory.settings>-Xms64m -Xmx384m -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=256m</app.server.memory.settings>
+        <app.server.memory.Xms>64m</app.server.memory.Xms>
+        <app.server.memory.Xmx>512m</app.server.memory.Xmx>
+        <app.server.memory.settings>-Xms${app.server.memory.Xms} -Xmx${app.server.memory.Xmx} -XX:MetaspaceSize=${surefire.memory.metaspace} -XX:MaxMetaspaceSize=${surefire.memory.metaspace.max}</app.server.memory.settings>
         <app.server.ssl.required>false</app.server.ssl.required>
+        <app.server.jvm.args.extra/>
 
         <cache.server>undefined</cache.server>
         <cache.server.container>cache-server-${cache.server}</cache.server.container>
@@ -144,6 +147,7 @@
         <examples.home>${project.build.directory}/examples</examples.home>
         <examples.basedir>${keycloak-parent.basedir}/examples</examples.basedir> <!--keycloak/examples directory-->
         <examples.version.suffix>${project.version}</examples.version.suffix>
+        <skip.copy.example.wars>false</skip.copy.example.wars>
 
         <browser>htmlUnit</browser>
         <webdriverDownloadBinaries>true</webdriverDownloadBinaries>
@@ -245,6 +249,7 @@
                                 <goal>copy</goal>
                             </goals>
                             <configuration>
+                                <skip>${skip.copy.example.wars}</skip>
                                 <artifactItems>
                                     <artifactItem>
                                         <groupId>org.keycloak.testsuite</groupId>
@@ -432,6 +437,7 @@
                             <auth.server.jboss.jvm.debug.args>${auth.server.jboss.jvm.debug.args}</auth.server.jboss.jvm.debug.args>
                             <auth.server.truststore>${auth.server.truststore}</auth.server.truststore>
                             <auth.server.truststore.password>${auth.server.truststore.password}</auth.server.truststore.password>
+                            <auth.server.jvm.args.extra>${auth.server.jvm.args.extra}</auth.server.jvm.args.extra>
 
                             <auth.server.profile>${auth.server.profile}</auth.server.profile>
                             <auth.server.feature>${auth.server.feature}</auth.server.feature>
@@ -452,6 +458,7 @@
                             <app.server.2.port.offset>${app.server.2.port.offset}</app.server.2.port.offset>
                             <app.server.2.management.port>${app.server.2.management.port}</app.server.2.management.port>
                             <app.server.jboss.jvm.debug.args>${app.server.jboss.jvm.debug.args}</app.server.jboss.jvm.debug.args>
+                            <app.server.jvm.args.extra>${app.server.jvm.args.extra}</app.server.jvm.args.extra>
 
                             <frontend.console.output>${frontend.console.output}</frontend.console.output>
                             <backends.console.output>${backend.console.output}</backends.console.output>
@@ -540,6 +547,12 @@
 
                             <!-- used by PasswordPolicyTest.testBlacklistPasswordPolicyWithTestBlacklist, see KEYCLOAK-5244 -->
                             <keycloak.password.blacklists.path>${project.build.directory}/dependency/password-blacklists</keycloak.password.blacklists.path>
+
+                            <keycloak.connectionsJpa.driver>${keycloak.connectionsJpa.driver}</keycloak.connectionsJpa.driver>
+                            <keycloak.connectionsJpa.url>${keycloak.connectionsJpa.url}</keycloak.connectionsJpa.url>
+                            <keycloak.connectionsJpa.database>${keycloak.connectionsJpa.database}</keycloak.connectionsJpa.database>
+                            <keycloak.connectionsJpa.user>${keycloak.connectionsJpa.user}</keycloak.connectionsJpa.user>
+                            <keycloak.connectionsJpa.password>${keycloak.connectionsJpa.password}</keycloak.connectionsJpa.password>
                         </systemPropertyVariables>
                         <properties>
                             <property>
@@ -631,6 +644,7 @@
                 <auth.server.config.property.value>standalone.xml</auth.server.config.property.value>
                 <auth.server.config.dir>${auth.server.home}/standalone/configuration</auth.server.config.dir>
                 <h2.version>1.3.173</h2.version>
+                <surefire.memory.Xmx>1024m</surefire.memory.Xmx>
             </properties>
             <dependencies>
                 <dependency>
@@ -655,6 +669,7 @@
                 <auth.server.config.property.value>standalone.xml</auth.server.config.property.value>
                 <auth.server.config.dir>${auth.server.home}/standalone/configuration</auth.server.config.dir>
                 <h2.version>1.3.173</h2.version>
+                <surefire.memory.Xmx>1024m</surefire.memory.Xmx>
             </properties>
             <dependencies>
                 <dependency>
@@ -1168,7 +1183,8 @@
                             <configuration>
                                 <systemPropertyVariables>
                                     <run.h2>true</run.h2>
-
+                                    <docker.database.skip>${docker.database.skip}</docker.database.skip>
+                                    
                                     <auth.server.jboss>false</auth.server.jboss>
 
                                     <auth.server.backend1.home>${auth.server.backend1.home}</auth.server.backend1.home>
@@ -1229,46 +1245,6 @@
                         </plugin>
                     </plugins>
                 </pluginManagement>
-            </build>
-        </profile>
-
-        <profile>
-            <id>jdbc-driver-dependency</id>
-            <activation>
-                <property>
-                    <name>jdbc.mvn.artifactId</name>
-                </property>
-            </activation>
-            <dependencies>
-                <dependency>
-                    <groupId>${jdbc.mvn.groupId}</groupId>
-                    <artifactId>${jdbc.mvn.artifactId}</artifactId>
-                    <version>${jdbc.mvn.version}</version>
-                </dependency>
-            </dependencies>
-            <build>
-                <plugins>
-                    <plugin>
-                        <artifactId>maven-enforcer-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <goals>
-                                    <goal>enforce</goal>
-                                </goals>
-                                <configuration>
-                                    <rules>
-                                        <requireProperty>
-                                            <property>jdbc.mvn.groupId</property>
-                                        </requireProperty>
-                                        <requireProperty>
-                                            <property>jdbc.mvn.version</property>
-                                        </requireProperty>
-                                    </rules>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
             </build>
         </profile>
 
@@ -1434,11 +1410,21 @@
                     <version>${appium.client.version}</version>
                 </dependency>
 
+                <!-- 
+                    httpclient and httpcore are here to ensure we use the same version
+                    as in keycloak/pom.xml and to prevent the other versions beeing present 
+                    on classpath during tests (as a transitive dependencies e.g.). 
+                    There has beeen issues due to this.
+                -->
                 <dependency>
                     <groupId>org.apache.httpcomponents</groupId>
                     <artifactId>httpclient</artifactId>
-                    <version>4.5.3</version>
                 </dependency>
+                <dependency>
+                    <groupId>org.apache.httpcomponents</groupId>
+                    <artifactId>httpcore</artifactId>
+                </dependency>
+
                 <dependency>
                     <groupId>jfree</groupId>
                     <artifactId>jfreechart</artifactId>
@@ -1479,20 +1465,15 @@
                 <dependency>
                     <groupId>org.apache.ant</groupId>
                     <artifactId>ant</artifactId>
-                    <version>1.9.2</version>
+                    <version>1.8.4</version>
                     <type>jar</type>
                 </dependency>
 
                 <dependency>
                     <groupId>com.h2database</groupId>
                     <artifactId>h2</artifactId>
+                    <version>${h2.version}</version>
                     <scope>compile</scope>
-                </dependency>
-
-                <dependency>
-                    <groupId>org.apache.sshd</groupId>
-                    <artifactId>sshd-core</artifactId>
-                    <version>1.2.0</version>
                 </dependency>
 
                 <!-- Email Test Server -->
@@ -1614,18 +1595,10 @@
                 </dependency>
 
                 <dependency>
-                    <groupId>mysql</groupId>
-                    <artifactId>mysql-connector-java</artifactId>
-                </dependency>
-                <dependency>
-                    <groupId>org.postgresql</groupId>
-                    <artifactId>postgresql</artifactId>
-                    <version>${postgresql.version}</version>
-                </dependency>
-                <dependency>
-                    <groupId>org.mariadb.jdbc</groupId>
-                    <artifactId>mariadb-java-client</artifactId>
-                    <version>${mariadb.version}</version>
+                    <groupId>${jdbc.mvn.groupId}</groupId>
+                    <artifactId>${jdbc.mvn.artifactId}</artifactId>
+                    <version>${jdbc.mvn.version}</version>
+                    <scope>compile</scope>
                 </dependency>
 
                 <!-- CLI -->
@@ -1690,6 +1663,27 @@
                 <auth.server.https.port>8443</auth.server.https.port>
                 <auth.server.management.port>9990</auth.server.management.port>
                 <auth.server.management.port.jmx>9999</auth.server.management.port.jmx>
+            </properties>
+        </profile>
+
+        <profile>
+            <id>java11-auth-server</id> <!-- a temporary workaround; TODO remove this once Java 11 is officially supported by Arquillian -->
+            <properties>
+                <auth.server.jvm.args.extra>--add-exports=java.base/sun.nio.ch=ALL-UNNAMED --add-exports=jdk.unsupported/sun.misc=ALL-UNNAMED --add-exports=jdk.unsupported/sun.reflect=ALL-UNNAMED --add-modules=java.se</auth.server.jvm.args.extra>
+            </properties>
+        </profile>
+
+        <profile>
+            <id>java11-app-server</id> <!-- a temporary workaround; TODO remove this once Java 11 is officially supported by Arquillian -->
+            <properties>
+                <app.server.jvm.args.extra>--add-exports=java.base/sun.nio.ch=ALL-UNNAMED --add-exports=jdk.unsupported/sun.misc=ALL-UNNAMED --add-exports=jdk.unsupported/sun.reflect=ALL-UNNAMED --add-modules=java.se</app.server.jvm.args.extra>
+            </properties>
+        </profile>
+
+        <profile>
+            <id>java7-app-server</id>
+            <properties>
+                <app.server.memory.settings>-Xms${app.server.memory.Xms} -Xmx${app.server.memory.Xmx} -XX:PermSize=${surefire.memory.metaspace} -XX:MaxPermSize=${surefire.memory.metaspace.max}</app.server.memory.settings>
             </properties>
         </profile>
 

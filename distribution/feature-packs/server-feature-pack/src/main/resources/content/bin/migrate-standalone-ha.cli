@@ -567,4 +567,94 @@ if (outcome == success) of /subsystem=jgroups/stack=tcp/transport=TCP/property=p
     end-try
 end-if
 
+# Migrate from 4.8.3 to 5.0.0
+if (outcome == failed) of /subsystem=logging/logger=io.jaegertracing.Configuration/:read-resource
+    echo Adding io.jaegertracing.Configuration logger
+    /subsystem=logging/logger=io.jaegertracing.Configuration/:add(category=io.jaegertracing.Configuration,level=WARN)
+    echo
+end-if
+
+# Migrate from 5.0.0 to 6.0.0
+if (result == NON_XA) of /subsystem=infinispan/cache-container=hibernate/local-cache=entity/component=transaction/:read-attribute(name=mode)
+    echo Removing NON_XA transaction mode from infinispan/hibernate/entity
+    /subsystem=infinispan/cache-container=hibernate/local-cache=entity/component=transaction/:undefine-attribute(name=mode)
+    echo
+end-if
+
+if (result == false) of /subsystem=datasources/data-source=ExampleDS/:read-attribute(name=statistics-enabled)
+    echo Adding statistics-enabled expression to ExampleDS datasource 
+    /subsystem=datasources/data-source=ExampleDS/:write-attribute(name=statistics-enabled,value=${wildfly.datasources.statistics-enabled:${wildfly.statistics-enabled:false}})
+    echo
+end-if
+
+if (result == false) of /subsystem=datasources/data-source=KeycloakDS/:read-attribute(name=statistics-enabled)
+    echo Adding statistics-enabled expression to KeycloakDS datasource 
+    /subsystem=datasources/data-source=KeycloakDS/:write-attribute(name=statistics-enabled,value=${wildfly.datasources.statistics-enabled:${wildfly.statistics-enabled:false}})
+    echo
+end-if
+
+if (result == false) of /subsystem=ejb3/:read-attribute(name=statistics-enabled)
+    echo Adding statistics-enabled expression to ejb3 subsystem
+    /subsystem=ejb3/:write-attribute(name=statistics-enabled,value=${wildfly.ejb3.statistics-enabled:${wildfly.statistics-enabled:false}})
+    echo
+end-if
+
+if (result == false) of /subsystem=transactions/:read-attribute(name=statistics-enabled)
+    echo Adding statistics-enabled expression to transactions subsystem
+    /subsystem=transactions/:write-attribute(name=statistics-enabled,value=${wildfly.transactions.statistics-enabled:${wildfly.statistics-enabled:false}})
+    echo
+end-if
+
+if (result == false) of /subsystem=undertow/:read-attribute(name=statistics-enabled)
+    echo Adding statistics-enabled expression to undertow subsystem
+    /subsystem=undertow/:write-attribute(name=statistics-enabled,value=${wildfly.undertow.statistics-enabled:${wildfly.statistics-enabled:false}})
+    echo
+end-if
+
+if (result == false) of /subsystem=webservices/:read-attribute(name=statistics-enabled)
+    echo Adding statistics-enabled expression to webservices subsystem
+    /subsystem=webservices/:write-attribute(name=statistics-enabled,value=${wildfly.webservices.statistics-enabled:${wildfly.statistics-enabled:false}})
+    echo
+end-if
+
+if (outcome == failed) of /extension=org.wildfly.extension.microprofile.config-smallrye/:read-resource
+    echo Adding microprofile.config-smallrye extension...
+    /extension=org.wildfly.extension.microprofile.config-smallrye/:add(module=org.wildfly.extension.microprofile.config-smallrye)
+    echo
+end-if
+
+if (outcome == failed) of /subsystem=microprofile-config-smallrye/:read-resource
+    echo Adding microprofile-config-smallrye subsystem
+    /subsystem=microprofile-config-smallrye/:add
+    echo
+end-if
+
+if (outcome == failed) of /extension=org.wildfly.extension.microprofile.health-smallrye/:read-resource
+    echo Adding microprofile.health-smallrye extension...
+    /extension=org.wildfly.extension.microprofile.health-smallrye/:add(module=org.wildfly.extension.microprofile.health-smallrye)
+    echo
+end-if
+
+if (outcome == failed) of /subsystem=microprofile-health-smallrye/:read-resource
+    echo Adding microprofile-health-smallrye subsystem
+    /subsystem=microprofile-health-smallrye/:add
+    /subsystem=microprofile-health-smallrye/:write-attribute(name=security-enabled,value=false)
+    echo
+end-if
+
+if (outcome == failed) of /extension=org.wildfly.extension.microprofile.metrics-smallrye/:read-resource
+    echo Adding microprofile.metrics-smallrye extension...
+    /extension=org.wildfly.extension.microprofile.metrics-smallrye/:add(module=org.wildfly.extension.microprofile.metrics-smallrye)
+    echo
+end-if
+
+if (outcome == failed) of /subsystem=microprofile-metrics-smallrye/:read-resource
+    echo Adding microprofile-metrics-smallrye subsystem
+    /subsystem=microprofile-metrics-smallrye/:add
+    /subsystem=microprofile-metrics-smallrye/:write-attribute(name=security-enabled,value=false)
+    /subsystem=microprofile-metrics-smallrye/:write-attribute(name=exposed-subsystems,value=[*])
+    /subsystem=microprofile-metrics-smallrye/:write-attribute(name=prefix,value=${wildfly.metrics.prefix:wildfly})
+    echo
+end-if
+
 echo *** End Migration ***

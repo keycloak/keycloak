@@ -17,13 +17,14 @@
  
 //import {KeycloakNotificationService} from '../notification/keycloak-notification.service';
 import {KeycloakService} from '../keycloak-service/keycloak.service';
-import Axios, {AxiosRequestConfig, AxiosResponse, AxiosPromise} from 'axios';
+import Axios, {AxiosRequestConfig, AxiosResponse} from 'axios';
+import {ContentAlert} from '../content/ContentAlert';
 
 //import {NotificationType} from 'patternfly-ng/notification';*/
  
-type AxiosResolve = (AxiosResponse) => void;
-type ConfigResolve = (AxiosRequestConfig) => void;
-type ErrorReject = (Error) => void;
+type AxiosResolve = (response: AxiosResponse) => void;
+type ConfigResolve = (config: AxiosRequestConfig) => void;
+type ErrorReject = (error: Error) => void;
 
  /**
  *
@@ -84,11 +85,12 @@ export class AccountServiceClient {
             });
     }
     
-    private handleError(error: Error) {
+    private handleError(error: Error): void {
         console.log(error);
+        ContentAlert.danger(error.name + ': ' + error.message);
     }
     
-    private makeConfig(endpoint: string, config?: AxiosRequestConfig): Promise<AxiosRequestConfig> {
+    private makeConfig(endpoint: string, config: AxiosRequestConfig = {}): Promise<AxiosRequestConfig> {
         return new Promise( (resolve: ConfigResolve, reject: ErrorReject) => {
             this.kcSvc.getToken()
                 .then( (token: string) => {

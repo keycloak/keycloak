@@ -30,7 +30,6 @@ import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.AuthenticatorConfigModel;
-import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.Constants;
@@ -77,6 +76,7 @@ public class AuthenticationProcessor {
 
     public static final String BROKER_SESSION_ID = "broker.session.id";
     public static final String BROKER_USER_ID = "broker.user.id";
+    public static final String FORWARDED_PASSIVE_LOGIN = "forwarded.passive.login";
 
     protected static final Logger logger = Logger.getLogger(AuthenticationProcessor.class);
     protected RealmModel realm;
@@ -979,7 +979,7 @@ public class AuthenticationProcessor {
         event.success();
         RealmModel realm = authenticationSession.getRealm();
         ClientSessionContext clientSessionCtx = attachSession();
-        return AuthenticationManager.redirectAfterSuccessfulFlow(session, realm, userSession, clientSessionCtx, request, uriInfo, connection, event, protocol);
+        return AuthenticationManager.redirectAfterSuccessfulFlow(session, realm, userSession, clientSessionCtx, request, uriInfo, connection, event, authenticationSession, protocol);
 
     }
 

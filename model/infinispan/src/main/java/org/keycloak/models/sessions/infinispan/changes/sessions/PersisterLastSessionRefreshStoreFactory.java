@@ -27,6 +27,9 @@ import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
  */
 public class PersisterLastSessionRefreshStoreFactory extends AbstractLastSessionRefreshStoreFactory {
 
+    // Name of periodic task to update DB with lastSessionRefreshes
+    public static final String DB_LSR_PERIODIC_TASK_NAME = "db-last-session-refresh";
+
     public PersisterLastSessionRefreshStore createAndInit(KeycloakSession kcSession, boolean offline) {
         return createAndInit(kcSession, DEFAULT_TIMER_INTERVAL_MS, DEFAULT_MAX_INTERVAL_BETWEEN_MESSAGES_SECONDS, DEFAULT_MAX_COUNT, offline);
     }
@@ -37,7 +40,7 @@ public class PersisterLastSessionRefreshStoreFactory extends AbstractLastSession
         PersisterLastSessionRefreshStore store = createStoreInstance(maxIntervalBetweenMessagesSeconds, maxCount, offline);
 
         // Setup periodic timer check
-        setupPeriodicTimer(kcSession, store, timerIntervalMs, "db-last-session-refresh");
+        setupPeriodicTimer(kcSession, store, timerIntervalMs, DB_LSR_PERIODIC_TASK_NAME);
 
         return store;
     }

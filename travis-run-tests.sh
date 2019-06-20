@@ -9,9 +9,11 @@ function run-server-tests() {
     exit ${PIPESTATUS[0]}
 }
 
+travis_fold start source_checkout
 # The following lines are due to travis internals. See https://github.com/travis-ci/travis-ci/issues/6069#issuecomment-319710346
 git config remote.origin.fetch "+refs/heads/*:refs/remotes/origin/*"
 git fetch
+travis_fold end source_checkout
 
 function should-tests-run() {
     # If this is not a pull request, it is build as a branch update. In that case test everything
@@ -47,16 +49,17 @@ if declare -f "should-tests-run-$1" > /dev/null && ! eval "should-tests-run-$1";
     exit 0
 fi
 
-mvn install -B -nsu -Pdistribution -DskipTests -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
-
-if [ $1 == "old" ]; then
-    cd testsuite
-    mvn test -B -nsu -f integration-deprecated
-    mvn test -B -nsu -f jetty
-    mvn test -B -nsu -f proxy
-    mvn test -B -nsu -f tomcat7
-    mvn test -B -nsu -f tomcat8
+travis_fold start compile_keycloak
+echo Compiling Keycloak
+( while : ; do echo "Compiling, please wait..." ; sleep 50 ; done ) &
+COMPILING_PID=$!
+TMPFILE=`mktemp`
+if ! mvn install -B -nsu -Pdistribution -DskipTests -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn &> "$TMPFILE"; then
+    cat "$TMPFILE"
+    exit 1
 fi
+kill $COMPILING_PID
+travis_fold end compile_keycloak
 
 if [ $1 == "unit" ]; then
     mvn -B test -DskipTestsuite
@@ -65,11 +68,11 @@ if [ $1 == "unit" ]; then
 fi
 
 if [ $1 == "server-group1" ]; then
-    run-server-tests org.keycloak.testsuite.adm.**.*Test,org.keycloak.testsuite.add.**.*Test
+    run-server-tests org.keycloak.testsuite.adm*.**.*Test,org.keycloak.testsuite.add*.**.*Test
 fi
 
 if [ $1 == "server-group2" ]; then
-    run-server-tests org.keycloak.testsuite.ac*.**.*Test,org.keycloak.testsuite.b*.**.*Test,org.keycloak.testsuite.cli*.**.*Test,org.keycloak.testsuite.co*.**.*Test
+    run-server-tests org.keycloak.testsuite.ac*.**.*Test,org.keycloak.testsuite.cli*.**.*Test,org.keycloak.testsuite.co*.**.*Test,org.keycloak.testsuite.j*.**.*Test
 fi
 
 if [ $1 == "server-group3" ]; then
@@ -104,6 +107,6 @@ if [ $1 == "crossdc-adapter" ]; then
     exit ${PIPESTATUS[0]}
 fi
 
-if [ $1 == "ssl" ]; then
-    run-server-tests org.keycloak.testsuite.client.MutualTLSClientTest,org.keycloak.testsuite.hok.HoKTest "-Dauth.server.ssl.required -Dbrowser=phantomjs"
+if [ $1 == "broker" ]; then
+    run-server-tests org.keycloak.testsuite.broker.**.*Test
 fi

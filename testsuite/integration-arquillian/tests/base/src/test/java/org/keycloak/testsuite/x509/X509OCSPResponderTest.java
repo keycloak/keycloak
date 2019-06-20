@@ -18,6 +18,7 @@
 
 package org.keycloak.testsuite.x509;
 
+import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -35,6 +36,8 @@ import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorC
 
 import io.undertow.Undertow;
 import io.undertow.server.handlers.BlockingHandler;
+import org.keycloak.testsuite.util.PhantomJSBrowser;
+import org.openqa.selenium.WebDriver;
 
 /**
  * Verifies Certificate revocation using OCSP responder.
@@ -52,6 +55,15 @@ public class X509OCSPResponderTest extends AbstractX509AuthenticationTest {
     private static final int OCSP_RESPONDER_PORT = 8888;
 
     private Undertow ocspResponder;
+
+    @Drone
+    @PhantomJSBrowser
+    private WebDriver phantomJS;
+
+    @Before
+    public void replaceTheDefaultDriver() {
+        replaceDefaultWebDriver(phantomJS);
+    }
 
     @Test
     public void loginFailedOnOCSPResponderRevocationCheck() throws Exception {
@@ -76,7 +88,9 @@ public class X509OCSPResponderTest extends AbstractX509AuthenticationTest {
     @Before
     public void startOCSPResponder() throws Exception {
         ocspResponder = Undertow.builder().addHttpListener(OCSP_RESPONDER_PORT, OCSP_RESPONDER_HOST)
-                .setHandler(new BlockingHandler(new OcspHandler())).build();
+                .setHandler(new BlockingHandler(
+                        new OcspHandler(OcspHandler.OCSP_RESPONDER_CERT_PATH, OcspHandler.OCSP_RESPONDER_KEYPAIR_PATH))
+                ).build();
 
         ocspResponder.start();
     }

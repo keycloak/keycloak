@@ -704,13 +704,13 @@ public class AccountFormService extends AbstractSecuredLocalService {
     @Path("resource")
     @GET
     public Response resourcesPage(@QueryParam("resource_id") String resourceId) {
-        return forwardToPage("resources", AccountPages.RESOURCES);
+        return forwardToPage("resource", AccountPages.RESOURCES);
     }
 
     @Path("resource/{resource_id}")
     @GET
     public Response resourceDetailPage(@PathParam("resource_id") String resourceId) {
-        return forwardToPage("resource-detail", AccountPages.RESOURCE_DETAIL);
+        return forwardToPage("resource", AccountPages.RESOURCE_DETAIL);
     }
 
     @Path("resource/{resource_id}/grant")
@@ -815,10 +815,10 @@ public class AccountFormService extends AbstractSecuredLocalService {
         }
 
         if (isRevoke || isRevokePolicy || isRevokePolicyAll) {
-            return forwardToPage("resource-detail", AccountPages.RESOURCE_DETAIL);
+            return forwardToPage("resource", AccountPages.RESOURCE_DETAIL);
         }
 
-        return forwardToPage("resources", AccountPages.RESOURCES);
+        return forwardToPage("resource", AccountPages.RESOURCES);
     }
 
     @Path("resource/{resource_id}/share")
@@ -894,7 +894,7 @@ public class AccountFormService extends AbstractSecuredLocalService {
             }
         }
 
-        return forwardToPage("resource-detail", AccountPages.RESOURCE_DETAIL);
+        return forwardToPage("resource", AccountPages.RESOURCE_DETAIL);
     }
 
     @Path("resource")

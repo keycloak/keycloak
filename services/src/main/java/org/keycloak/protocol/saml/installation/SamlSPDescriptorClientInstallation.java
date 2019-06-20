@@ -38,18 +38,34 @@ import org.keycloak.dom.saml.v2.metadata.KeyTypes;
  * @version $Revision: 1 $
  */
 public class SamlSPDescriptorClientInstallation implements ClientInstallationProvider {
+
+    public static final String SAML_CLIENT_INSTALATION_SP_DESCRIPTOR = "saml-sp-descriptor";
+    private static final String FALLBACK_ERROR_URL_STRING = "ERROR:ENDPOINT NOT SET";
+
     public static String getSPDescriptorForClient(ClientModel client) {
         SamlClient samlClient = new SamlClient(client);
-        String assertionUrl = client.getAttribute(SamlProtocol.SAML_ASSERTION_CONSUMER_URL_POST_ATTRIBUTE);
-        if (assertionUrl == null) assertionUrl = client.getManagementUrl();
-        String logoutUrl = client.getAttribute(SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_POST_ATTRIBUTE);
-        if (logoutUrl == null) logoutUrl = client.getManagementUrl();
+        String assertionUrl;
+        String logoutUrl;
+        String binding;
+        if (samlClient.forcePostBinding()) {
+            assertionUrl = client.getAttribute(SamlProtocol.SAML_ASSERTION_CONSUMER_URL_POST_ATTRIBUTE);
+            logoutUrl = client.getAttribute(SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_POST_ATTRIBUTE);
+            binding = JBossSAMLURIConstants.SAML_HTTP_POST_BINDING.get();
+        } else { //redirect binding
+            assertionUrl = client.getAttribute(SamlProtocol.SAML_ASSERTION_CONSUMER_URL_REDIRECT_ATTRIBUTE);
+            logoutUrl = client.getAttribute(SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_REDIRECT_ATTRIBUTE);
+            binding = JBossSAMLURIConstants.SAML_HTTP_REDIRECT_BINDING.get();
+        }
+        if (assertionUrl == null || assertionUrl.isEmpty()) assertionUrl = client.getManagementUrl();
+        if (assertionUrl == null || assertionUrl.isEmpty()) assertionUrl = FALLBACK_ERROR_URL_STRING;
+        if (logoutUrl == null || assertionUrl.isEmpty()) logoutUrl = client.getManagementUrl();
+        if (logoutUrl == null || assertionUrl.isEmpty()) logoutUrl = FALLBACK_ERROR_URL_STRING;
         String nameIdFormat = samlClient.getNameIDFormat();
         if (nameIdFormat == null) nameIdFormat = SamlProtocol.SAML_DEFAULT_NAMEID_FORMAT;
         String spCertificate = SPMetadataDescriptor.xmlKeyInfo("        ", null, samlClient.getClientSigningCertificate(), KeyTypes.SIGNING.value(), true);
         String encCertificate = SPMetadataDescriptor.xmlKeyInfo("        ", null, samlClient.getClientEncryptingCertificate(), KeyTypes.ENCRYPTION.value(), true);
-        return SPMetadataDescriptor.getSPDescriptor(JBossSAMLURIConstants.SAML_HTTP_POST_BINDING.get(), assertionUrl, logoutUrl,
-                samlClient.requiresClientSignature(), samlClient.requiresAssertionSignature(), samlClient.requiresEncryption(),
+        return SPMetadataDescriptor.getSPDescriptor(binding, assertionUrl, logoutUrl, samlClient.requiresClientSignature(), 
+                samlClient.requiresAssertionSignature(), samlClient.requiresEncryption(),
                 client.getClientId(), nameIdFormat, spCertificate, encCertificate);
     }
 
@@ -110,6 +126,6 @@ public class SamlSPDescriptorClientInstallation implements ClientInstallationPro
 
     @Override
     public String getId() {
-        return "saml-sp-descriptor";
+        return SAML_CLIENT_INSTALATION_SP_DESCRIPTOR;
     }
 }

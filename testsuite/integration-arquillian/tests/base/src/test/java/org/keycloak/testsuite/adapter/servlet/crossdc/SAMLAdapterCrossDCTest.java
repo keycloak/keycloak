@@ -27,7 +27,7 @@ import org.keycloak.testsuite.adapter.AbstractSAMLAdapterClusteredTest;
 import org.keycloak.testsuite.adapter.servlet.SendUsernameServlet;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 import org.keycloak.testsuite.arquillian.annotation.InitialDcState;
-import org.keycloak.testsuite.arquillian.containers.ContainerConstants;
+import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
 
 import org.keycloak.testsuite.crossdc.ServerSetup;
 import static org.hamcrest.Matchers.is;

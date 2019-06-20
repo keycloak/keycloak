@@ -133,7 +133,7 @@ public class UserSessionPredicate implements Predicate<Map.Entry<String, Session
         }
 
         if (entity.isRememberMe()) {
-            if (expiredRememberMe != null && expiredRefreshRememberMe != null && entity.getStarted() > expiredRefreshRememberMe && entity.getLastSessionRefresh() > expiredRefreshRememberMe) {
+            if (expiredRememberMe != null && expiredRefreshRememberMe != null && entity.getStarted() > expiredRememberMe && entity.getLastSessionRefresh() > expiredRefreshRememberMe) {
                 return false;
             }
         }

@@ -210,6 +210,13 @@
                 <kc-tooltip>{{:: 'prompt.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group">
+                <label class="col-md-2 control-label" for="acceptsPromptNoneForwardFromClient">{{:: 'accepts-prompt-none-forward-from-client' | translate}}</label>
+                <div class="col-md-6">
+                    <input ng-model="identityProvider.config.acceptsPromptNoneForwardFromClient" id="acceptsPromptNoneForwardFromClient" onoffswitchvalue on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" />
+                </div>
+                <kc-tooltip>{{:: 'accepts-prompt-none-forward-from-client.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group">
                 <label class="col-md-2 control-label" for="validateSignature">{{:: 'validate-signatures' | translate}}</label>
                 <div class="col-md-6">
                     <input ng-model="identityProvider.config.validateSignature" id="validateSignature" onoffswitchvalue on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" />

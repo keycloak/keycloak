@@ -17,16 +17,34 @@
 
 package org.keycloak.testsuite.admin.client;
 
+import java.io.IOException;
+import java.io.StringReader;
+import java.util.HashMap;
+import java.util.Map;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
+import org.keycloak.protocol.saml.SamlConfigAttributes;
+import org.keycloak.protocol.saml.SamlProtocol;
+import org.keycloak.protocol.saml.installation.SamlSPDescriptorClientInstallation;
+import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
+import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.util.AdminEventPaths;
+import org.w3c.dom.Document;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
 
+import javax.ws.rs.NotFoundException;
 import static org.junit.Assert.assertThat;
 import static org.hamcrest.Matchers.*;
 
@@ -139,13 +157,9 @@ public class InstallationTest extends AbstractClientTest {
         assertThat(config, containsString(authServerUrl()));
     }
 
-    @Test
+    @Test(expected = NotFoundException.class)
     public void testSamlMetadataIdpDescriptor() {
-        String xml = samlClient.getInstallationProvider("saml-idp-descriptor");
-        assertThat(xml, containsString("<EntityDescriptor"));
-        assertThat(xml, containsString("<IDPSSODescriptor"));
-        assertThat(xml, containsString(ApiUtil.findActiveKey(testRealmResource()).getCertificate()));
-        assertThat(xml, containsString(samlUrl()));
+        samlClient.getInstallationProvider("saml-idp-descriptor");
     }
 
     @Test
@@ -159,7 +173,7 @@ public class InstallationTest extends AbstractClientTest {
 
     @Test
     public void testSamlMetadataSpDescriptor() {
-        String xml = samlClient.getInstallationProvider("saml-sp-descriptor");
+        String xml = samlClient.getInstallationProvider(SamlSPDescriptorClientInstallation.SAML_CLIENT_INSTALATION_SP_DESCRIPTOR);
         assertThat(xml, containsString("<EntityDescriptor"));
         assertThat(xml, containsString("<SPSSODescriptor"));
         assertThat(xml, containsString(SAML_NAME));
@@ -172,5 +186,114 @@ public class InstallationTest extends AbstractClientTest {
         assertThat(xml, containsString(SAML_NAME));
         assertThat(xml, not(containsString(ApiUtil.findActiveKey(testRealmResource()).getCertificate())));
         assertThat(xml, containsString(samlUrl()));
+    }
+
+    @Test
+    public void testSamlMetadataSpDescriptorPost() throws Exception {
+        try (ClientAttributeUpdater updater = ClientAttributeUpdater.forClient(adminClient, getRealmId(), SAML_NAME)) {
+
+            assertThat(updater.getResource().toRepresentation().getAttributes().get(SamlConfigAttributes.SAML_FORCE_POST_BINDING), equalTo("true"));
+
+            //error fallback
+            Document doc = getDocumentFromXmlString(updater.getResource().getInstallationProvider(SamlSPDescriptorClientInstallation.SAML_CLIENT_INSTALATION_SP_DESCRIPTOR));
+            Map<String, String> attrNamesAndValues = new HashMap<>();
+            attrNamesAndValues.put("Binding", JBossSAMLURIConstants.SAML_HTTP_POST_BINDING.get());
+            attrNamesAndValues.put("Location", "ERROR:ENDPOINT NOT SET");
+            assertElements(doc, "SingleLogoutService", attrNamesAndValues);
+            assertElements(doc, "AssertionConsumerService", attrNamesAndValues);
+            attrNamesAndValues.clear();
+
+            //fallback to adminUrl
+            updater.setAdminUrl("admin-url").update();
+            assertAdminEvents.assertEvent(getRealmId(), OperationType.UPDATE, AdminEventPaths.clientResourcePath(samlClientId), ResourceType.CLIENT);
+            doc = getDocumentFromXmlString(updater.getResource().getInstallationProvider(SamlSPDescriptorClientInstallation.SAML_CLIENT_INSTALATION_SP_DESCRIPTOR));
+            attrNamesAndValues.put("Binding", JBossSAMLURIConstants.SAML_HTTP_POST_BINDING.get());
+            attrNamesAndValues.put("Location", "admin-url");
+            assertElements(doc, "SingleLogoutService", attrNamesAndValues);
+            assertElements(doc, "AssertionConsumerService", attrNamesAndValues);
+            attrNamesAndValues.clear();
+
+            //fine grained
+            updater.setAttribute(SamlProtocol.SAML_ASSERTION_CONSUMER_URL_POST_ATTRIBUTE, "saml-assertion-post-url")
+                   .setAttribute(SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_POST_ATTRIBUTE, "saml-logout-post-url")
+                   .setAttribute(SamlProtocol.SAML_ASSERTION_CONSUMER_URL_REDIRECT_ATTRIBUTE, "saml-assertion-redirect-url")
+                   .setAttribute(SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_REDIRECT_ATTRIBUTE, "saml-logout-redirect-url")
+                   .update();
+            assertAdminEvents.assertEvent(getRealmId(), OperationType.UPDATE, AdminEventPaths.clientResourcePath(samlClientId), ResourceType.CLIENT);
+
+            doc = getDocumentFromXmlString(updater.getResource().getInstallationProvider(SamlSPDescriptorClientInstallation.SAML_CLIENT_INSTALATION_SP_DESCRIPTOR));
+            attrNamesAndValues.put("Binding", JBossSAMLURIConstants.SAML_HTTP_POST_BINDING.get());
+            attrNamesAndValues.put("Location", "saml-logout-post-url");
+            assertElements(doc, "SingleLogoutService", attrNamesAndValues);
+            attrNamesAndValues.clear();
+            attrNamesAndValues.put("Binding", JBossSAMLURIConstants.SAML_HTTP_POST_BINDING.get());
+            attrNamesAndValues.put("Location", "saml-assertion-post-url");
+            assertElements(doc, "AssertionConsumerService", attrNamesAndValues);
+        }
+        assertAdminEvents.assertEvent(getRealmId(), OperationType.UPDATE, AdminEventPaths.clientResourcePath(samlClientId), ResourceType.CLIENT);
+    }
+
+    @Test
+    public void testSamlMetadataSpDescriptorRedirect() throws Exception {
+        try (ClientAttributeUpdater updater = ClientAttributeUpdater.forClient(adminClient, getRealmId(), SAML_NAME)
+                .setAttribute(SamlConfigAttributes.SAML_FORCE_POST_BINDING, "false")
+                .update()) {
+
+            assertAdminEvents.assertEvent(getRealmId(), OperationType.UPDATE, AdminEventPaths.clientResourcePath(samlClientId), ResourceType.CLIENT);
+            assertThat(updater.getResource().toRepresentation().getAttributes().get(SamlConfigAttributes.SAML_FORCE_POST_BINDING), equalTo("false"));
+
+            //error fallback
+            Document doc = getDocumentFromXmlString(updater.getResource().getInstallationProvider(SamlSPDescriptorClientInstallation.SAML_CLIENT_INSTALATION_SP_DESCRIPTOR));
+            Map<String, String> attrNamesAndValues = new HashMap<>();
+            attrNamesAndValues.put("Binding", JBossSAMLURIConstants.SAML_HTTP_REDIRECT_BINDING.get());
+            attrNamesAndValues.put("Location", "ERROR:ENDPOINT NOT SET");
+            assertElements(doc, "SingleLogoutService", attrNamesAndValues);
+            assertElements(doc, "AssertionConsumerService", attrNamesAndValues);
+            attrNamesAndValues.clear();
+
+            //fallback to adminUrl
+            updater.setAdminUrl("admin-url").update();
+            assertAdminEvents.assertEvent(getRealmId(), OperationType.UPDATE, AdminEventPaths.clientResourcePath(samlClientId), ResourceType.CLIENT);
+            doc = getDocumentFromXmlString(updater.getResource().getInstallationProvider(SamlSPDescriptorClientInstallation.SAML_CLIENT_INSTALATION_SP_DESCRIPTOR));
+            attrNamesAndValues.put("Binding", JBossSAMLURIConstants.SAML_HTTP_REDIRECT_BINDING.get());
+            attrNamesAndValues.put("Location", "admin-url");
+            assertElements(doc, "SingleLogoutService", attrNamesAndValues);
+            assertElements(doc, "AssertionConsumerService", attrNamesAndValues);
+            attrNamesAndValues.clear();
+
+            //fine grained
+            updater.setAttribute(SamlProtocol.SAML_ASSERTION_CONSUMER_URL_POST_ATTRIBUTE, "saml-assertion-post-url")
+                   .setAttribute(SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_POST_ATTRIBUTE, "saml-logout-post-url")
+                   .setAttribute(SamlProtocol.SAML_ASSERTION_CONSUMER_URL_REDIRECT_ATTRIBUTE, "saml-assertion-redirect-url")
+                   .setAttribute(SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_REDIRECT_ATTRIBUTE, "saml-logout-redirect-url")
+                   .update();
+            assertAdminEvents.assertEvent(getRealmId(), OperationType.UPDATE, AdminEventPaths.clientResourcePath(samlClientId), ResourceType.CLIENT);
+            doc = getDocumentFromXmlString(updater.getResource().getInstallationProvider(SamlSPDescriptorClientInstallation.SAML_CLIENT_INSTALATION_SP_DESCRIPTOR));
+            attrNamesAndValues.put("Binding", JBossSAMLURIConstants.SAML_HTTP_REDIRECT_BINDING.get());
+            attrNamesAndValues.put("Location", "saml-logout-redirect-url");
+            assertElements(doc, "SingleLogoutService", attrNamesAndValues);
+            attrNamesAndValues.clear();
+            attrNamesAndValues.put("Binding", JBossSAMLURIConstants.SAML_HTTP_REDIRECT_BINDING.get());
+            attrNamesAndValues.put("Location", "saml-assertion-redirect-url");
+            assertElements(doc, "AssertionConsumerService", attrNamesAndValues);
+        }
+        assertAdminEvents.assertEvent(getRealmId(), OperationType.UPDATE, AdminEventPaths.clientResourcePath(samlClientId), ResourceType.CLIENT);
+    }
+
+    private Document getDocumentFromXmlString(String xml) throws SAXException, ParserConfigurationException, IOException {
+        DocumentBuilder db = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+        InputSource is = new InputSource();
+        is.setCharacterStream(new StringReader(xml));
+        return db.parse(is);
+    }
+
+    private void assertElements(Document doc, String tagName, Map<String, String> attrNamesAndValues) {
+        NodeList elementsByTagName = doc.getElementsByTagName(tagName);
+        assertThat("Expected exactly one " + tagName + " element!", elementsByTagName.getLength(), is(equalTo(1)));
+        Node element = elementsByTagName.item(0);
+
+        for (String attrName : attrNamesAndValues.keySet()) {
+            assertThat(element.getAttributes().getNamedItem(attrName).getNodeValue(), containsString(attrNamesAndValues.get(attrName)));
+        }
     }
 }

@@ -18,7 +18,6 @@ package org.keycloak.testsuite.oauth;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 import org.junit.Rule;
 import org.junit.Test;
@@ -249,16 +248,24 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void testIntrospectAccessTokenES256() throws Exception {
+        testIntrospectAccessToken(Algorithm.ES256);
+    }
+
+    @Test
+    public void testIntrospectAccessTokenPS256() throws Exception {
+        testIntrospectAccessToken(Algorithm.PS256);
+    }
+
+    private void testIntrospectAccessToken(String jwaAlgorithm) throws Exception {
         try {
-            TokenSignatureUtil.registerKeyProvider("P-256", adminClient, testContext);
-            TokenSignatureUtil.changeClientAccessTokenSignatureProvider(ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), Algorithm.ES256);
+            TokenSignatureUtil.changeClientAccessTokenSignatureProvider(ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), jwaAlgorithm);
 
             oauth.doLogin("test-user@localhost", "password");
             String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
             EventRepresentation loginEvent = events.expectLogin().assertEvent();
             AccessTokenResponse accessTokenResponse = oauth.doAccessTokenRequest(code, "password");
 
-            assertEquals("ES256", new JWSInput(accessTokenResponse.getAccessToken()).getHeader().getAlgorithm().name());
+            assertEquals(jwaAlgorithm, new JWSInput(accessTokenResponse.getAccessToken()).getHeader().getAlgorithm().name());
 
             String tokenResponse = oauth.introspectAccessTokenWithClientCredential("confidential-cli", "secret1", accessTokenResponse.getAccessToken());
 

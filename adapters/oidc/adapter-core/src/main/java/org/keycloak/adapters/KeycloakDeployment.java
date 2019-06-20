@@ -32,6 +32,7 @@ import org.keycloak.representations.adapters.config.AdapterConfig;
 import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.Callable;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -64,7 +65,7 @@ public class KeycloakDeployment {
     protected boolean publicClient;
     protected Map<String, Object> resourceCredentials = new HashMap<>();
     protected ClientCredentialsProvider clientAuthenticator;
-    protected HttpClient client;
+    protected Callable<HttpClient> client;
 
     protected String scope;
     protected SslRequired sslRequired = SslRequired.ALL;
@@ -88,7 +89,7 @@ public class KeycloakDeployment {
     protected int tokenMinimumTimeToLive;
     protected int minTimeBetweenJwksRequests;
     protected int publicKeyCacheTtl;
-    private PolicyEnforcer policyEnforcer;
+    protected Callable<PolicyEnforcer> policyEnforcer;
 
     // https://tools.ietf.org/html/rfc7636
     protected boolean pkce = false;
@@ -259,11 +260,20 @@ public class KeycloakDeployment {
     }
 
     public HttpClient getClient() {
-        return client;
+        try {
+            return client.call();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
-    public void setClient(HttpClient client) {
-        this.client = client;
+    public void setClient(final HttpClient client) {
+        this.client = new Callable<HttpClient>() {
+            @Override
+            public HttpClient call() {
+                return client;
+            }
+        };
     }
 
     public String getScope() {
@@ -280,6 +290,13 @@ public class KeycloakDeployment {
 
     public void setSslRequired(SslRequired sslRequired) {
         this.sslRequired = sslRequired;
+    }
+
+    public boolean isSSLEnabled() {
+        if (SslRequired.NONE == sslRequired) {
+            return false;
+        }
+        return true;
     }
 
     public int getConfidentialPort() {
@@ -447,12 +464,19 @@ public class KeycloakDeployment {
         this.publicKeyCacheTtl = publicKeyCacheTtl;
     }
 
-    public void setPolicyEnforcer(PolicyEnforcer policyEnforcer) {
+    public void setPolicyEnforcer(Callable<PolicyEnforcer> policyEnforcer) {
         this.policyEnforcer = policyEnforcer;
     }
 
     public PolicyEnforcer getPolicyEnforcer() {
-        return policyEnforcer;
+        if (policyEnforcer == null) {
+            return null;
+        }
+        try {
+            return policyEnforcer.call();
+        } catch (Exception cause) {
+            throw new RuntimeException("Failed to obtain policy enforcer", cause);
+        }
     }
 
     // https://tools.ietf.org/html/rfc7636
@@ -494,5 +518,9 @@ public class KeycloakDeployment {
 
     public void setVerifyTokenAudience(boolean verifyTokenAudience) {
         this.verifyTokenAudience = verifyTokenAudience;
+    }
+
+    public void setClient(Callable<HttpClient> callable) {
+        client = callable;
     }
 }

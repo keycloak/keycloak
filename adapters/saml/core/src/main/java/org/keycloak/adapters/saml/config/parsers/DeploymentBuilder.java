@@ -20,6 +20,7 @@ package org.keycloak.adapters.saml.config.parsers;
 import org.jboss.logging.Logger;
 import org.keycloak.adapters.saml.DefaultSamlDeployment;
 import org.keycloak.adapters.saml.SamlDeployment;
+import org.keycloak.adapters.saml.config.IDP;
 import org.keycloak.adapters.saml.config.Key;
 import org.keycloak.adapters.saml.config.KeycloakSamlAdapter;
 import org.keycloak.adapters.saml.config.SP;
@@ -58,11 +59,11 @@ public class DeploymentBuilder {
 
     public SamlDeployment build(InputStream xml, ResourceLoader resourceLoader) throws ParsingException {
         DefaultSamlDeployment deployment = new DefaultSamlDeployment();
-        DefaultSamlDeployment.DefaultIDP idp = new DefaultSamlDeployment.DefaultIDP();
+        DefaultSamlDeployment.DefaultIDP defaultIDP = new DefaultSamlDeployment.DefaultIDP();
         DefaultSamlDeployment.DefaultSingleSignOnService sso = new DefaultSamlDeployment.DefaultSingleSignOnService();
         DefaultSamlDeployment.DefaultSingleLogoutService slo = new DefaultSamlDeployment.DefaultSingleLogoutService();
-        idp.setSingleSignOnService(sso);
-        idp.setSingleLogoutService(slo);
+        defaultIDP.setSingleSignOnService(sso);
+        defaultIDP.setSingleLogoutService(slo);
 
         KeycloakSamlAdapter adapter = (KeycloakSamlAdapter) KeycloakSamlAdapterParser.getInstance().parse(xml);
         SP sp = adapter.getSps().get(0);
@@ -77,11 +78,12 @@ public class DeploymentBuilder {
         deployment.setIsPassive(sp.isIsPassive());
         deployment.setNameIDPolicyFormat(sp.getNameIDPolicyFormat());
         deployment.setLogoutPage(sp.getLogoutPage());
-        deployment.setSignatureCanonicalizationMethod(sp.getIdp().getSignatureCanonicalizationMethod());
+        IDP idp = sp.getIdp();
+        deployment.setSignatureCanonicalizationMethod(idp.getSignatureCanonicalizationMethod());
         deployment.setAutodetectBearerOnly(sp.isAutodetectBearerOnly());
         deployment.setSignatureAlgorithm(SignatureAlgorithm.RSA_SHA256);
-        if (sp.getIdp().getSignatureAlgorithm() != null) {
-            deployment.setSignatureAlgorithm(SignatureAlgorithm.valueOf(sp.getIdp().getSignatureAlgorithm()));
+        if (idp.getSignatureAlgorithm() != null) {
+            deployment.setSignatureAlgorithm(SignatureAlgorithm.valueOf(idp.getSignatureAlgorithm()));
         }
         if (sp.getPrincipalNameMapping() != null) {
             SamlDeployment.PrincipalNamePolicy policy = SamlDeployment.PrincipalNamePolicy.valueOf(sp.getPrincipalNameMapping().getPolicy());
@@ -161,49 +163,53 @@ public class DeploymentBuilder {
             }
         }
 
-        deployment.setIdp(idp);
-        idp.setEntityID(sp.getIdp().getEntityID());
-        sso.setRequestBinding(SamlDeployment.Binding.parseBinding(sp.getIdp().getSingleSignOnService().getRequestBinding()));
-        sso.setRequestBindingUrl(sp.getIdp().getSingleSignOnService().getBindingUrl());
-        if (sp.getIdp().getSingleSignOnService().getResponseBinding() != null) {
-            sso.setResponseBinding(SamlDeployment.Binding.parseBinding(sp.getIdp().getSingleSignOnService().getResponseBinding()));
+        deployment.setIdp(defaultIDP);
+        defaultIDP.setEntityID(idp.getEntityID());
+        sso.setRequestBinding(SamlDeployment.Binding.parseBinding(
+            idp.getSingleSignOnService().getRequestBinding()));
+        sso.setRequestBindingUrl(idp.getSingleSignOnService().getBindingUrl());
+        if (idp.getSingleSignOnService().getResponseBinding() != null) {
+            sso.setResponseBinding(SamlDeployment.Binding.parseBinding(
+                idp.getSingleSignOnService().getResponseBinding()));
         }
-        if (sp.getIdp().getSingleSignOnService().getAssertionConsumerServiceUrl() != null) {
-            if (! sp.getIdp().getSingleSignOnService().getAssertionConsumerServiceUrl().endsWith("/saml")) {
+        if (idp.getSingleSignOnService().getAssertionConsumerServiceUrl() != null) {
+            if (! idp.getSingleSignOnService().getAssertionConsumerServiceUrl().endsWith("/saml")) {
                 throw new RuntimeException("AssertionConsumerServiceUrl must end with \"/saml\".");
             }
-            sso.setAssertionConsumerServiceUrl(URI.create(sp.getIdp().getSingleSignOnService().getAssertionConsumerServiceUrl()));
+            sso.setAssertionConsumerServiceUrl(URI.create(idp.getSingleSignOnService().getAssertionConsumerServiceUrl()));
         }
-        sso.setSignRequest(sp.getIdp().getSingleSignOnService().isSignRequest());
-        sso.setValidateResponseSignature(sp.getIdp().getSingleSignOnService().isValidateResponseSignature());
-        sso.setValidateAssertionSignature(sp.getIdp().getSingleSignOnService().isValidateAssertionSignature());
+        sso.setSignRequest(idp.getSingleSignOnService().isSignRequest());
+        sso.setValidateResponseSignature(idp.getSingleSignOnService().isValidateResponseSignature());
+        sso.setValidateAssertionSignature(idp.getSingleSignOnService().isValidateAssertionSignature());
 
-        slo.setSignRequest(sp.getIdp().getSingleLogoutService().isSignRequest());
-        slo.setSignResponse(sp.getIdp().getSingleLogoutService().isSignResponse());
-        slo.setValidateResponseSignature(sp.getIdp().getSingleLogoutService().isValidateResponseSignature());
-        slo.setValidateRequestSignature(sp.getIdp().getSingleLogoutService().isValidateRequestSignature());
-        slo.setRequestBinding(SamlDeployment.Binding.parseBinding(sp.getIdp().getSingleLogoutService().getRequestBinding()));
-        slo.setResponseBinding(SamlDeployment.Binding.parseBinding(sp.getIdp().getSingleLogoutService().getResponseBinding()));
+        slo.setSignRequest(idp.getSingleLogoutService().isSignRequest());
+        slo.setSignResponse(idp.getSingleLogoutService().isSignResponse());
+        slo.setValidateResponseSignature(idp.getSingleLogoutService().isValidateResponseSignature());
+        slo.setValidateRequestSignature(idp.getSingleLogoutService().isValidateRequestSignature());
+        slo.setRequestBinding(SamlDeployment.Binding.parseBinding(
+            idp.getSingleLogoutService().getRequestBinding()));
+        slo.setResponseBinding(SamlDeployment.Binding.parseBinding(
+            idp.getSingleLogoutService().getResponseBinding()));
         if (slo.getRequestBinding() == SamlDeployment.Binding.POST) {
-            slo.setRequestBindingUrl(sp.getIdp().getSingleLogoutService().getPostBindingUrl());
+            slo.setRequestBindingUrl(idp.getSingleLogoutService().getPostBindingUrl());
         } else {
-            slo.setRequestBindingUrl(sp.getIdp().getSingleLogoutService().getRedirectBindingUrl());
+            slo.setRequestBindingUrl(idp.getSingleLogoutService().getRedirectBindingUrl());
         }
         if (slo.getResponseBinding() == SamlDeployment.Binding.POST) {
-            slo.setResponseBindingUrl(sp.getIdp().getSingleLogoutService().getPostBindingUrl());
+            slo.setResponseBindingUrl(idp.getSingleLogoutService().getPostBindingUrl());
         } else {
-            slo.setResponseBindingUrl(sp.getIdp().getSingleLogoutService().getRedirectBindingUrl());
+            slo.setResponseBindingUrl(idp.getSingleLogoutService().getRedirectBindingUrl());
         }
-        if (sp.getIdp().getKeys() != null) {
-            for (Key key : sp.getIdp().getKeys()) {
+        if (idp.getKeys() != null) {
+            for (Key key : idp.getKeys()) {
                 if (key.isSigning()) {
-                    processSigningKey(idp, key, resourceLoader);
+                    processSigningKey(defaultIDP, key, resourceLoader);
                 }
             }
         }
-
-        idp.setClient(new HttpClientBuilder().build(sp.getIdp().getHttpClientConfig()));
-        idp.refreshKeyLocatorConfiguration();
+        defaultIDP.setMetadataUrl(idp.getMetadataUrl());
+        defaultIDP.setClient(new HttpClientBuilder().build(idp.getHttpClientConfig()));
+        defaultIDP.refreshKeyLocatorConfiguration();
 
         return deployment;
     }

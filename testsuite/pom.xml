@@ -21,7 +21,7 @@
     <parent>
         <artifactId>keycloak-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>4.7.0.Final-SNAPSHOT</version>
+        <version>7.0.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
@@ -43,37 +43,12 @@
         </plugins>
     </build>
     <modules>
-        <module>integration-deprecated</module>
-        <module>tomcat8</module>
+        <module>db-allocator-plugin</module>
         <module>integration-arquillian</module>
         <module>utils</module>
     </modules>
 
     <profiles>
-        <profile>
-            <id>community</id>
-            <activation>
-                <property>
-                    <name>!product</name>
-                </property>
-            </activation>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-deploy-plugin</artifactId>
-                        <configuration>
-                            <skip>true</skip>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-            <modules>
-                <module>jetty</module>
-                <module>proxy</module>
-                <module>tomcat7</module>
-            </modules>
-        </profile>
         <profile>
             <id>performance</id>
             <modules>

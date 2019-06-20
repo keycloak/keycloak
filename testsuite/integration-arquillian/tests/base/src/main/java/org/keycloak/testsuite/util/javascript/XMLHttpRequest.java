@@ -67,7 +67,7 @@ public class XMLHttpRequest {
                         getHeadersString() +
                         "        req.onreadystatechange = function () {" +
                         "            if (req.readyState == 4) {" +
-                        "                callback({\"status\" : req.status, \"responseHeaders\" : req.getAllResponseHeaders(), \"res\" : req.response, \"req\" : req})" +
+                        "                callback({\"status\" : req.status, \"responseHeaders\" : req.getAllResponseHeaders(), \"res\" : req.response})" +
                         "            }" +
                         "        };" +
                         "        req.send(" + content + ");";

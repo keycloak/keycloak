@@ -41,6 +41,10 @@ and adapter are all in the same JVM and you can debug them easily. If it is not 
  
    
     -Dmaven.surefire.debug=true
+    
+Or slightly longer version (that allows you to specify debugging port as well as wait till you attach the debugger):
+    
+    -Dmaven.surefire.debug="-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=5006 -Xnoagent -Djava.compiler=NONE"
    
    
 and you will be able to attach remote debugger to the test. Unfortunately server and adapter are running in different JVMs, so this won't help to debug those. 
@@ -73,12 +77,39 @@ So for example using `-Dkeycloak.logging.level=debug` will enable debug logging 
 
 For more fine-tuning of individual categories, you can look at log4j.properties file and temporarily enable/disable them here.
 
-TODO: Add info about Wildfly logging
+### Wildfly server logging
+
+When using Keycloak on Wildfly/EAP, there is INFO logging level enabled by default for most of the java packages.
+You can use those system properties to enable DEBUG logging for particular packages:
+
+
+* `-Dinfinispan.logging.level=DEBUG` - for package `org.infinispan`
+* `-Dorg.keycloak.services.scheduled=DEBUG` - for package `org.keycloak.services.scheduled`
+
+You can use value `TRACE` if you want to enable even TRACE logging.
+
+There is no support for more packages ATM, you need to edit the file `testsuite/integration-arquillian/servers/auth-server/jboss/common/jboss-cli/add-log-level.cli`
+and add packages manually.
+
 
 ## Run adapter tests
 
 ### Undertow
     mvn -f testsuite/integration-arquillian/tests/base/pom.xml \
+        -Dtest=org.keycloak.testsuite.adapter.**.*Test
+
+### Jetty
+
+At the moment we can run the testsuite with Jetty `9.2` and `9.4`.
+Each version has its corresponding profile:
+
+* Jetty `9.2`: `app-server-jetty92`
+* Jetty `9.4`: `app-server-jetty94`
+
+Here's how to run the tests with Jetty `9.4`:
+
+    mvn -f testsuite/integration-arquillian/pom.xml \
+        -Papp-server-jetty94 \
         -Dtest=org.keycloak.testsuite.adapter.**.*Test
 
 ### Wildfly
@@ -88,6 +119,19 @@ TODO: Add info about Wildfly logging
        clean install \
        -Papp-server-wildfly \
        -Dtest=org.keycloak.testsuite.adapter.**
+       
+### Tomcat
+
+We run testsuite with Tomcat 7, 8 and 9. For specific versions see properties `${tomcat[7,8,9].version}` in parent [pom.xml](../../pom.xml). 
+
+To run tests on Tomcat:
+
+````
+mvn -f testsuite/integration-arquillian/pom.xml \
+       clean install \
+       -Papp-server-tomcat[7,8,9] \
+       -Dtest=org.keycloak.testsuite.adapter.**
+````
        
 ### Wildfly with legacy non-elytron adapter
     
@@ -118,7 +162,6 @@ Assumed you downloaded `jboss-fuse-karaf-6.3.0.redhat-229.zip`
 
 2) Install to your local maven repository and change the properties according to your env (This step can be likely avoided if you somehow configure your local maven settings to point directly to Fuse repo):
 
-
     mvn install:install-file \
       -DgroupId=org.jboss.fuse \
       -DartifactId=jboss-fuse-karaf \
@@ -134,24 +177,22 @@ Assumed you downloaded `jboss-fuse-karaf-6.3.0.redhat-229.zip`
     mvn -f testsuite/integration-arquillian/servers/pom.xml \
       clean install \
       -Papp-server-fuse63 \
-      -Dfuse63.version=6.3.0.redhat-229 \
-      -Dapp.server.karaf.update.config=true \
-      -Dmaven.local.settings=$HOME/.m2/settings.xml \
-      -Drepositories=,http://REPO-SERVER/brewroot/repos/sso-7.1-build/latest/maven/ \
-      -Dmaven.repo.local=$HOME/.m2/repository
+      -Dfuse63.version=6.3.0.redhat-229
  
     # Run the Fuse adapter tests
     mvn -f testsuite/integration-arquillian/tests/base/pom.xml \
       clean install \
       -Pauth-server-wildfly \
       -Papp-server-fuse63 \
-      -Dtest=Fuse*AdapterTest
+      -Dauth.server.ssl.required=false \
+      -Dadditional.fuse.repos=,$REPO \
+      -Dtest=*.fuse.*
 
 
 ### JBoss Fuse 7.X
 
-1) Download JBoss Fuse 7 to your filesystem. It can be downloaded from http://origin-repository.jboss.org/nexus/content/groups/m2-proxy/org/jboss/fuse/fuse-karaf 
-Assumed you downloaded `fuse-karaf-7.0.0.fuse-000202.zip`
+1) Download JBoss Fuse 7 to your filesystem. It can be downloaded from http://origin-repository.jboss.org/nexus/content/groups/m2-proxy/org/jboss/fuse/fuse-karaf  (Fuse 7.3 or higher is required)
+Assumed you downloaded `fuse-karaf-7.3.0.fuse-730065-redhat-00002.zip`
 
 2) Install to your local maven repository and change the properties according to your env (This step can be likely avoided if you somehow configure your local maven settings to point directly to Fuse repo):
 
@@ -159,9 +200,9 @@ Assumed you downloaded `fuse-karaf-7.0.0.fuse-000202.zip`
     mvn install:install-file \
       -DgroupId=org.jboss.fuse \
       -DartifactId=fuse-karaf \
-      -Dversion=7.0.0.fuse-000202 \
+      -Dversion=7.3.0.fuse-730065-redhat-00002 \
       -Dpackaging=zip \
-      -Dfile=/mydownloads/fuse-karaf-7.0.0.fuse-000202.zip
+      -Dfile=/mydownloads/fuse-karaf-7.3.0.fuse-730065-redhat-00002.zip
 
 
 3) Prepare Fuse and run the tests (change props according to your environment, versions etc):
@@ -171,17 +212,15 @@ Assumed you downloaded `fuse-karaf-7.0.0.fuse-000202.zip`
     mvn -f testsuite/integration-arquillian/servers/pom.xml \
       clean install \
       -Papp-server-fuse7x \
-      -Dfuse7x.version=7.0.0.fuse-000202 \
-      -Dapp.server.karaf.update.config=true \
-      -Dmaven.local.settings=$HOME/.m2/settings.xml \
-      -Drepositories=,http://REPO-SERVER/brewroot/repos/sso-7.1-build/latest/maven/ \
-      -Dmaven.repo.local=$HOME/.m2/repository
+      -Dfuse7x.version=7.3.0.fuse-730065-redhat-00002
  
     # Run the Fuse adapter tests
     mvn -f testsuite/integration-arquillian/tests/base/pom.xml \
       clean test \
       -Papp-server-fuse7x \
-      -Dtest=Fuse*AdapterTest
+      -Dauth.server.ssl.required=false \
+      -Dadditional.fuse.repos=,$REPO \
+      -Dtest=*.fuse.*
 
 
 ### EAP6 with Hawtio
@@ -243,7 +282,7 @@ This test will:
  - Do some test that data are correct
  
 
-1) Prepare MySQL DB and ensure that MySQL DB is empty. See [../../misc/DatabaseTesting.md](../../misc/DatabaseTesting.md) for some hints for locally prepare Docker MySQL image.
+1) Prepare MySQL DB and ensure that MySQL DB is empty. See [../../docs/tests-db.md](../../docs/tests-db.md) for some hints for locally prepare Docker MySQL image.
 
 2) Run the test (Update according to your DB connection, versions etc):
 
@@ -256,8 +295,9 @@ This test will:
       -Dtest=MigrationTest \
       -Dmigration.mode=auto \
       -Djdbc.mvn.groupId=mysql \
-      -Djdbc.mvn.version=5.1.29 \
       -Djdbc.mvn.artifactId=mysql-connector-java \
+      -Djdbc.mvn.version=8.0.12 \
+      -Djdbc.mvn.version.legacy=5.1.38 \
       -Dkeycloak.connectionsJpa.url=jdbc:mysql://$DB_HOST/keycloak \
       -Dkeycloak.connectionsJpa.user=keycloak \
       -Dkeycloak.connectionsJpa.password=keycloak
@@ -265,7 +305,8 @@ This test will:
 The profile "test-7X-migration" indicates from which version you want to test migration. The valid values are:
 * test-70-migration - indicates migration from RHSSO 7.0 (Equivalent to Keycloak 1.9.8.Final)
 * test-71-migration - indicates migration from RHSSO 7.1 (Equivalent to Keycloak 2.5.5.Final)
-* test-72-migration - indicates migration from RHSSO 7.2 (Equivalent to Keycloak 3.4.3.Final)      
+* test-72-migration - indicates migration from RHSSO 7.2 (Equivalent to Keycloak 3.4.3.Final)
+* test-73-migration - indicates migration from RHSSO 7.3 (Equivalent to Keycloak 4.8.3.Final)
       
 ### DB migration test with manual mode
       
@@ -282,8 +323,9 @@ just exports the needed SQL into the script. This SQL script then needs to be ma
       -Dtest=MigrationTest \
       -Dmigration.mode=manual \
       -Djdbc.mvn.groupId=mysql \
-      -Djdbc.mvn.version=5.1.29 \
       -Djdbc.mvn.artifactId=mysql-connector-java \
+      -Djdbc.mvn.version=8.0.12 \
+      -Djdbc.mvn.version.legacy=5.1.38 \
       -Dkeycloak.connectionsJpa.url=jdbc:mysql://$DB_HOST/keycloak \
       -Dkeycloak.connectionsJpa.user=keycloak \
       -Dkeycloak.connectionsJpa.password=keycloak
@@ -330,6 +372,22 @@ The tests also use some constants placed in [test-constants.properties](tests/ba
 
 In case a custom `settings.xml` is used for Maven, you need to specify it also in `-Dkie.maven.settings.custom=path/to/settings.xml`.
 
+
+## Spring Boot adapter tests
+
+Currently we are testing Spring Boot with three different containers `Tomcat 8`, `Undertow` and `Jetty [9.2, 9.3, 9.4]`. We are testing two versions of Spring Boot 1.5.x and 2.1.x. All versions are specified in [root pom.xml](../../pom.xml) (see properties `spring-boot15.version` and `spring-boot21.version`).
+
+To run tests execute following command. Default version of Spring Boot is 1.5.x, to run tests with version 2.1.x add profile `-Pspringboot21`
+
+```
+mvn -f testsuite/integration-arquillian/tests/other/springboot-tests/pom.xml \
+    clean test \
+    -Dadapter.container=[tomcat|undertow|jetty92|jetty93|jetty94] \
+    [-Pspringboot21]
+```
+
+Note: Spring Boot 21 doesn't work with jetty92 and jetty93, only jetty94 is tested.
+
 #### Execution example
 ```
 mvn -f testsuite/integration-arquillian/tests/other/console/pom.xml \
@@ -348,21 +406,6 @@ mvn -f testsuite/integration-arquillian/tests/other/base-ui/pom.xml \
     -Pandroid \
     -Dappium.avd=Nexus_5X_API_27
 ```
-
-## Welcome Page tests
-The Welcome Page tests need to be run on WildFly/EAP. So that they are disabled by default and are meant to be run separately.
-
-
-    # Prepare servers
-    mvn -f testsuite/integration-arquillian/servers/pom.xml \
-        clean install \
-        -Pauth-server-wildfly
-
-    # Run tests
-    mvn -f testsuite/integration-arquillian/tests/other/welcome-page/pom.xml \
-        clean test \
-        -Pauth-server-wildfly
-
 
 ## Social Login
 The social login tests require setup of all social networks including an example social user. These details can't be 
@@ -430,7 +473,8 @@ Although technically they can be run with almost every test in the testsuite, th
 * **Supported test modules:** `console`, `base-ui`
 * **Supported version:** 11
 * **Driver download required:** [Internet Explorer Driver Server](http://www.seleniumhq.org/download/); recommended version [3.5.1 32-bit](http://selenium-release.storage.googleapis.com/3.5/IEDriverServer_Win32_3.5.1.zip)
-* **Run with:** `-Dbrowser=internetExplorer -Dwebdriver.ie.driver=path/to/IEDriverServer.exe`
+* **Run with:** `-Dbrowser=internetExplorer -Dwebdriver.ie.driver=path/to/IEDriverServer.exe -Dauth.server.ssl.required=false`   
+Note: We currently do not support SSL in IE.
 
 #### Apple Safari
 * **Supported test modules:** `base-ui`
@@ -475,38 +519,17 @@ To use a mobile browser you need to create a virtual device. The most convenient
 * **Supported mobile OS version:** iOS 11.x
 * **Run with:** `mvn clean test -Pios -Dappium.deviceName=device_name` where the device name is your device identification (e.g. `iPhone X`)
 
-## Run X.509 tests
+## Disabling TLS (SSL) in the tests
 
-To run the X.509 client certificate authentication tests:
-
-    mvn -f testsuite/integration-arquillian/pom.xml \
-          clean install \
-	  -Pauth-server-wildfly \
-	  -Dauth.server.ssl.required \
-	  -Dbrowser=phantomjs \
-	  "-Dtest=*.x509.*"
-
-## Run Mutual TLS Client Certificate Bound Access Tokens tests
-
-To run the Mutual TLS Client Certificate Bound Access Tokens tests:
+All tests are executed with TLS by default. In order to disable it, you need to switch the `auth.server.ssl.required` property off.
+Here's an example:
 
     mvn -f testsuite/integration-arquillian/pom.xml \
           clean install \
-      -Pauth-server-wildfly \
-      -Dauth.server.ssl.required \
-      -Dbrowser=phantomjs \
-      -Dtest=org.keycloak.testsuite.hok.HoKTest
+      -Dauth.server.ssl.required=false
 
-## Run Mutual TLS for the Client tests
-
-To run the Mutual TLS test for the client:
-
-    mvn -f testsuite/integration-arquillian/pom.xml \
-          clean install \
-      -Pauth-server-wildfly \
-      -Dauth.server.ssl.required \
-      -Dbrowser=phantomjs \
-      -Dtest=org.keycloak.testsuite.client.MutualTLSClientTest
+NOTE: You can also do it ad-hoc from your IDE, however some tests (like AuthZ or JS Adapter tests) require rebuilt test applications.
+so please make sure you rebuild all `testsuite/integration-arquillian` child modules.
 
 ## Cluster tests
 
@@ -524,44 +547,29 @@ The setup includes:
 
 ### Cluster tests with Keycloak on Wildfly
 
-After build the sources, distribution and setup of clean shared database (replace command according your DB), you can use this command to setup servers:
+After you build the distribution, you run this command to setup servers and run cluster tests using shared Docker database:
 
-    export DB_HOST=localhost
-    mvn -f testsuite/integration-arquillian/servers/pom.xml \
-    -Pauth-server-wildfly,auth-server-cluster,jpa \
-    -Dsession.cache.owners=2 \
-    -Djdbc.mvn.groupId=mysql \
-    -Djdbc.mvn.version=5.1.29 \
-    -Djdbc.mvn.artifactId=mysql-connector-java \
-    -Dkeycloak.connectionsJpa.url=jdbc:mysql://$DB_HOST/keycloak \
-    -Dkeycloak.connectionsJpa.user=keycloak \
-    -Dkeycloak.connectionsJpa.password=keycloak \
-    clean install
-    
-And then this to run the cluster tests:
-   
-    mvn -f testsuite/integration-arquillian/tests/base/pom.xml \
-    -Pauth-server-wildfly,auth-server-cluster \
+    mvn -f testsuite/integration-arquillian/pom.xml \
+    -Pauth-server-wildfly,auth-server-cluster,db-mysql,jpa \
     -Dsession.cache.owners=2 \
     -Dbackends.console.output=true \
     -Dauth.server.log.check=false \
     -Dfrontend.console.output=true \
     -Dtest=org.keycloak.testsuite.cluster.**.*Test clean install
-   
-	  
+
 ### Cluster tests with Keycloak on embedded undertow
 
     mvn -f testsuite/integration-arquillian/tests/base/pom.xml \
-    -Pauth-server-cluster-undertow \
+    -Pauth-server-cluster-undertow,db-mysql \
     -Dsession.cache.owners=2 \
     -Dkeycloak.connectionsInfinispan.sessionsOwners=2 \
     -Dbackends.console.output=true \
     -Dauth.server.log.check=false \
     -Dfrontend.console.output=true \
-    -Dkeycloak.connectionsJpa.url=jdbc:mysql://$DB_HOST/keycloak \
-    -Dkeycloak.connectionsJpa.user=keycloak \
-    -Dkeycloak.connectionsJpa.password=keycloak \
     -Dtest=org.keycloak.testsuite.cluster.**.*Test clean install
+
+Note that after update, you might encounter `org.infinispan.commons.CacheException: Initial state transfer timed out for cache org.infinispan.CONFIG`
+error in some environments. This can be fixed by adding `-Djava.net.preferIPv4Stack=true` parameter to the command above.
 
 #### Run cluster tests from IDE on embedded undertow
 
@@ -604,6 +612,13 @@ For an example of a test, see [org.keycloak.testsuite.crossdc.ActionTokenCrossDC
 The cross DC requires setting a profile specifying used cache server by specifying
 `cache-server-infinispan` or `cache-server-jdg` profile in maven.
 
+Since JDG does not distribute `infinispan-server` zip artifact anymore, for `cache-server-jdg` profile it is
+necessary to download the artifact and install it to local Maven repository. For JDG 7.3.0, the command is the following:
+
+    mvn install:install-file \
+    -DgroupId=org.infinispan.server -DartifactId=infinispan-server -Dpackaging=zip -Dclassifier=bin -DgeneratePom=true \
+    -Dversion=9.4.6.Final-redhat-00002 -Dfile=jboss-datagrid-7.3.0-server.zip
+
 #### Run Cross-DC Tests from Maven
 
 a) Prepare the environment. Compile the infinispan server and eventually Keycloak on JBoss server.
@@ -624,9 +639,9 @@ a2) If you want to use **JBoss-based** Keycloak backend containers instead of co
 
 *note: 'auth-server-wildfly' can be replaced by 'auth-server-eap'*
 
-By default JBoss-based containers use TCP-based h2 database. It can be configured to use real DB, e.g. with following command:
+By default JBoss-based containers use TCP-based h2 database. It can be configured to use real DB spawn in Docker, e.g. with following command:
 
-  `mvn -Pcache-server-infinispan,auth-servers-crossdc-jboss,auth-server-wildfly,jpa -f testsuite/integration-arquillian -DskipTests clean install -Djdbc.mvn.groupId=org.mariadb.jdbc -Djdbc.mvn.artifactId=mariadb-java-client -Djdbc.mvn.version=2.0.3 -Dkeycloak.connectionsJpa.url=jdbc:mariadb://localhost:3306/keycloak -Dkeycloak.connectionsJpa.password=keycloak -Dkeycloak.connectionsJpa.user=keycloak`
+  `mvn -Pcache-server-infinispan,auth-servers-crossdc-jboss,auth-server-wildfly,jpa,db-mariadb -f testsuite/integration-arquillian -DskipTests clean install`
 
 b1) For **Undertow** Keycloak backend containers, you can run the tests using the following command (adjust the test specification according to your needs):
 
@@ -649,7 +664,7 @@ b2) For **JBoss-based** Keycloak backend containers, you can run the tests like 
 **note**:
 For **JBoss-based** Keycloak backend containers on real DB, the previous commands from (a2) and (b2) can be "squashed" into one. E.g.:
 
-  `mvn -f testsuite/integration-arquillian clean install -Dtest=*.crossdc.* -Djdbc.mvn.groupId=org.mariadb.jdbc -Djdbc.mvn.artifactId=mariadb-java-client -Djdbc.mvn.version=2.0.3 -Dkeycloak.connectionsJpa.url=jdbc:mariadb://localhost:3306/keycloak -Dkeycloak.connectionsJpa.password=keycloak -Dkeycloak.connectionsJpa.user=keycloak -Pcache-server-infinispan,auth-servers-crossdc-jboss,auth-server-wildfly,jpa clean install`
+  `mvn -f testsuite/integration-arquillian -Dtest=*.crossdc.* -Pcache-server-infinispan,auth-servers-crossdc-jboss,auth-server-wildfly,jpa,db-mariadb clean install`
     
 
 #### Run Cross-DC Tests from Intellij IDEA
@@ -657,8 +672,9 @@ For **JBoss-based** Keycloak backend containers on real DB, the previous command
 First we will manually download, configure and run infinispan servers. Then we can run the tests from IDE against the servers. 
 It's more effective during development as there is no need to restart infinispan server(s) among test runs.
 
-1) Download infinispan server 8.2.X from http://infinispan.org/download/ and go through the steps 
-from the [Keycloak Cross-DC documentation](http://www.keycloak.org/docs/latest/server_installation/index.html#jdgsetup) for setup infinispan servers.
+1) Download infinispan server of corresponding version (See "infinispan.version" property in [root pom.xml](../../pom.xml)) 
+from http://infinispan.org/download/ and go through the steps from the 
+[Keycloak Cross-DC documentation](http://www.keycloak.org/docs/latest/server_installation/index.html#jdgsetup) for setup infinispan servers.
 
 The difference to original docs is, that you need to have JDG servers available on localhost with port offsets. So:
 
@@ -708,6 +724,7 @@ The exact steps to configure Docker depend on the operating system.
 
 By default, the test will run against Undertow based embedded Keycloak Server, thus no distribution build is required beforehand.
 The exact command line arguments depend on the operating system.
+
 
 ### General guidelines
 
@@ -800,3 +817,7 @@ Then, before running the test, setup Keycloak Server distribution for the tests:
 When running the test, add the following arguments to the command line:
 
     -Pauth-server-wildfly -Pauth-server-enable-disable-feature -Dfeature.name=docker -Dfeature.value=enabled
+
+## Java 11 support
+Java 11 requires some arguments to be passed to JVM. Those can be activated using `-Pjava11-auth-server` and
+`-Pjava11-app-server` profiles, respectively.

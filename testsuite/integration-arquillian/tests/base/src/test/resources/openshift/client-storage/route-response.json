@@ -1,0 +1,44 @@
+{
+  "kind": "Route",
+  "apiVersion": "v1",
+  "metadata": {
+    "name": "proxy",
+    "namespace": "default",
+    "selfLink": "/oapi/v1/namespaces/default/routes/proxy",
+    "uid": "3bf12cd8-d14a-11e8-82c2-5254001e7d16",
+    "resourceVersion": "45934",
+    "creationTimestamp": "2018-10-16T13:48:59Z",
+    "annotations": {
+      "openshift.io/host.generated": "true"
+    }
+  },
+  "spec": {
+    "host": "myapp.org",
+    "to": {
+      "kind": "Service",
+      "name": "proxy",
+      "weight": 100
+    },
+    "tls": {
+      "termination": "reencrypt",
+      "destinationCACertificate": "-----BEGIN COMMENT-----\nThis is an empty PEM file created to provide backwards compatibility\nfor reencrypt routes that have no destinationCACertificate. This \ncontent will only appear for routes accessed via /oapi/v1/routes.\n-----END COMMENT-----\n"
+    },
+    "wildcardPolicy": "None"
+  },
+  "status": {
+    "ingress": [
+      {
+        "host": "myapp.org",
+        "routerName": "router",
+        "conditions": [
+          {
+            "type": "Admitted",
+            "status": "True",
+            "lastTransitionTime": "2018-10-16T13:49:00Z"
+          }
+        ],
+        "wildcardPolicy": "None"
+      }
+    ]
+  }
+}

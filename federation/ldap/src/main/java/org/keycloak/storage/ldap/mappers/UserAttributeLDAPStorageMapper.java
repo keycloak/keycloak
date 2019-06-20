@@ -44,6 +44,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.keycloak.models.ModelException;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -178,6 +179,26 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
         }
     }
 
+    protected void checkDuplicateUsername(String userModelAttrName, String username, RealmModel realm, KeycloakSession session, UserModel user) {
+        // only if working in USERNAME attribute
+        if (UserModel.USERNAME.equalsIgnoreCase(userModelAttrName)) {
+            if (username == null || username.isEmpty()) {
+                throw new ModelException("Cannot set an empty username");
+            }
+            boolean usernameChanged = !username.equals(user.getUsername());
+            if (realm.isEditUsernameAllowed() && usernameChanged) {
+                UserModel that = session.users().getUserByUsername(username, realm);
+                if (that != null && !that.getId().equals(user.getId())) {
+                    throw new ModelDuplicateException(
+                            String.format("Cannot change the username to '%s' because the username already exists in keycloak", username),
+                            UserModel.USERNAME);
+                }
+            } else if (usernameChanged) {
+                throw new ModelException("Cannot change username if the realm is not configured to allow edit the usernames");
+            }
+        }
+    }
+
     @Override
     public UserModel proxy(final LDAPObject ldapUser, UserModel delegate, RealmModel realm) {
         final String userModelAttrName = mapperModel.getConfig().getFirst(USER_MODEL_ATTRIBUTE);
@@ -210,6 +231,13 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
                     if ( setLDAPAttribute(name, null)) {
                         super.removeAttribute(name);
                     }
+                }
+
+                @Override
+                public void setUsername(String username) {
+                    checkDuplicateUsername(userModelAttrName, username, realm, ldapProvider.getSession(), this);
+                    setLDAPAttribute(UserModel.USERNAME, username);
+                    super.setUsername(username);
                 }
 
                 @Override

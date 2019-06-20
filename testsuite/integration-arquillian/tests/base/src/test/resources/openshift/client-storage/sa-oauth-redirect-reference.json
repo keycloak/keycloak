@@ -1,0 +1,15 @@
+{
+  "kind": "ServiceAccount",
+  "apiVersion": "v1",
+  "metadata": {
+    "name": "proxy-with-redirect-reference",
+    "namespace": "default",
+    "selfLink": "/api/v1/namespaces/default/serviceaccounts/proxy",
+    "uid": "3befc25c-d14a-11e8-8666-5254001e7d16",
+    "resourceVersion": "205225",
+    "creationTimestamp": "2018-10-16T13: 48:59Z",
+    "annotations": {
+      "serviceaccounts.openshift.io/oauth-redirectreference.primary": "{\"kind\":\"OAuthRedirectReference\",\"apiVersion\":\"v1\",\"reference\":{\"kind\":\"Route\",\"name\":\"proxy\"}}"
+    }
+  }
+}

@@ -53,18 +53,21 @@ public class RequiredActionsTest extends AbstractAuthenticationTest {
         compareRequiredActions(expected, sort(result));
 
         RequiredActionProviderRepresentation forUpdate = newRequiredAction("VERIFY_EMAIL", "Verify Email", false, false, null);
-        try {
-            authMgmtResource.updateRequiredAction(forUpdate.getAlias(), forUpdate);
-            Assert.fail("updateRequiredAction should fail due to null config");
-        } catch (Exception ignored) {
-        }
+        authMgmtResource.updateRequiredAction(forUpdate.getAlias(), forUpdate);
+        assertAdminEvents.assertEvent(REALM_NAME, OperationType.UPDATE, AdminEventPaths.authRequiredActionPath(forUpdate.getAlias()), ResourceType.REQUIRED_ACTION);
+
+        result = authMgmtResource.getRequiredActions();
+        RequiredActionProviderRepresentation updated = findRequiredActionByAlias(forUpdate.getAlias(), result);
+
+        Assert.assertNotNull("Required Action still there", updated);
+        compareRequiredAction(forUpdate, updated);
 
         forUpdate.setConfig(Collections.<String, String>emptyMap());
         authMgmtResource.updateRequiredAction(forUpdate.getAlias(), forUpdate);
         assertAdminEvents.assertEvent(REALM_NAME, OperationType.UPDATE, AdminEventPaths.authRequiredActionPath(forUpdate.getAlias()), ResourceType.REQUIRED_ACTION);
 
         result = authMgmtResource.getRequiredActions();
-        RequiredActionProviderRepresentation updated = findRequiredActionByAlias(forUpdate.getAlias(), result);
+        updated = findRequiredActionByAlias(forUpdate.getAlias(), result);
 
         Assert.assertNotNull("Required Action still there", updated);
         compareRequiredAction(forUpdate, updated);

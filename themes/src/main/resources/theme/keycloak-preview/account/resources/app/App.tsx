@@ -15,54 +15,75 @@
  */
 
 import * as React from 'react';
-import {Route, Link} from 'react-router-dom';
+
+import * as moment from 'moment';
 
 import {KeycloakService} from './keycloak-service/keycloak.service';
 
-import {Logout} from './widgets/Logout';
-import {Msg} from './widgets/Msg';
-import {AccountPage} from './content/account-page/AccountPage';
-import {ApplicationsPage} from './content/applications-page/ApplicationsPage';
-import {PasswordPage} from './content/password-page/PasswordPage';
-import {ExtensionPages} from './content/extensions/ExtensionPages';
+import {PageNav} from './PageNav';
+import {PageToolbar} from './PageToolbar';
+import {Background} from './Background';
+import {makeRoutes} from './ContentPages';
 
-declare function toggleReact():void;
+import {
+    Avatar,
+    Brand,
+    Page,
+    PageHeader,
+    PageSection,
+    PageSidebar,
+} from '@patternfly/react-core';
+
+declare function toggleReact(): void;
 declare function isWelcomePage(): boolean;
 
-export interface AppProps {};
+declare const locale: string;
+declare const resourceUrl: string;
 
+const pFlyImages = resourceUrl + '/node_modules/@patternfly/patternfly/assets/images/';
+const brandImg = resourceUrl + '/app/assets/img/keycloak-logo-min.png';
+const avatarImg = pFlyImages + 'img_avatar.svg';
+
+export interface AppProps {};
 export class App extends React.Component<AppProps> {
     private kcSvc: KeycloakService = KeycloakService.Instance;
-    
-    constructor(props:AppProps) {
+
+    public constructor(props: AppProps) {
         super(props);
-        console.log('Called into App constructor');
         toggleReact();
     }
-        
-    render() {
+
+    public render(): React.ReactNode {
         toggleReact();
-        
+
         // check login
         if (!this.kcSvc.authenticated() && !isWelcomePage()) {
             this.kcSvc.login();
         }
-        
+
+        // globally set up locale for date formatting
+        moment.locale(locale);
+
+        const Header = (
+            <PageHeader
+                logo={<Brand src={brandImg} alt="Patternfly Logo" />}
+                toolbar={<PageToolbar/>}
+                avatar={<Avatar src={avatarImg} alt="Avatar image" />}
+                showNavToggle
+            />
+        );
+
+        const Sidebar = <PageSidebar nav={<PageNav/>} />;
+
         return (
-            <span>
-                <nav>
-                    <Link to="/app/account" className="btn btn-primary btn-lg btn-sign" type="button"><Msg msgKey="account"/></Link>
-                    <Link to="/app/applications" className="btn btn-primary btn-lg btn-sign" type="button"><Msg msgKey="applications"/></Link>
-                    <Link to="/app/password" className="btn btn-primary btn-lg btn-sign" type="button"><Msg msgKey="password"/></Link>
-                    {ExtensionPages.Links}
-                    <Logout/>
-                    <Route path='/app/account' component={AccountPage}/>
-                    <Route path='/app/applications' component={ApplicationsPage}/>
-                    <Route path='/app/password' component={PasswordPage}/>
-                    {ExtensionPages.Routes}
-                </nav>
-                
-            </span>
+            <React.Fragment>
+                <Background/>
+                <Page header={Header} sidebar={Sidebar} isManagedSidebar>
+                    <PageSection>
+                        {makeRoutes()}
+                    </PageSection>
+                </Page>
+            </React.Fragment>
         );
     }
 };

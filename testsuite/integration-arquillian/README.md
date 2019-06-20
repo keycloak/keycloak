@@ -175,7 +175,6 @@ integration-arquillian
       │
       ├──adapters         (common settings for all adapter test modules - will be moved into base)
       │  ├──jboss
-      │  ├──tomcat
       │  └──karaf
       │
       ├──console          

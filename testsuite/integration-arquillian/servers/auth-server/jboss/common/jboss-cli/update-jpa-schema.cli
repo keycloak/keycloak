@@ -1,0 +1,3 @@
+
+echo *** Updating schema within keycloak-server subsystem connectionsJpa spi ***
+/subsystem=keycloak-server/spi=connectionsJpa/provider=default/:write-attribute(name=properties.schema,value=@SCHEMA@)

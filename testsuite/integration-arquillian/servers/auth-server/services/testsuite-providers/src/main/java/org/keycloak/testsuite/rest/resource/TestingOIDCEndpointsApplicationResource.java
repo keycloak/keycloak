@@ -83,6 +83,9 @@ public class TestingOIDCEndpointsApplicationResource {
                 case Algorithm.RS256:
                 case Algorithm.RS384:
                 case Algorithm.RS512:
+                case Algorithm.PS256:
+                case Algorithm.PS384:
+                case Algorithm.PS512:
                     keyType = KeyType.RSA;
                     keyPair = KeyUtils.generateRsaKeyPair(2048);
                     break;
@@ -210,6 +213,9 @@ public class TestingOIDCEndpointsApplicationResource {
             case Algorithm.RS256:
             case Algorithm.RS384:
             case Algorithm.RS512:
+            case Algorithm.PS256:
+            case Algorithm.PS384:
+            case Algorithm.PS512:
             case Algorithm.ES256:
             case Algorithm.ES384:
             case Algorithm.ES512:

@@ -20,6 +20,7 @@ package org.keycloak.testsuite.rest;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.BadRequestException;
 import org.jboss.resteasy.spi.HttpRequest;
+import org.keycloak.common.Profile;
 import org.keycloak.common.util.Time;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.events.Event;
@@ -46,6 +47,7 @@ import org.keycloak.models.UserProvider;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.sessions.infinispan.changes.sessions.CrossDCLastSessionRefreshStoreFactory;
 import org.keycloak.models.utils.ModelToRepresentation;
+import org.keycloak.models.utils.ResetTimeOffsetEvent;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.mappers.AudienceProtocolMapper;
 import org.keycloak.provider.ProviderFactory;
@@ -206,6 +208,12 @@ public class TestingResourceProvider implements RealmResourceProvider {
     public Map<String, String> setTimeOffset(Map<String, String> time) {
         int offset = Integer.parseInt(time.get("offset"));
         Time.setOffset(offset);
+
+        // Time offset was restarted
+        if (offset == 0) {
+            session.getKeycloakSessionFactory().publish(new ResetTimeOffsetEvent());
+        }
+
         return getTimeOffset();
     }
 
@@ -278,18 +286,18 @@ public class TestingResourceProvider implements RealmResourceProvider {
 
     /**
      * Query events
-     *
+     * <p>
      * Returns all events, or filters them based on URL query parameters listed here
      *
-     * @param realmId The realm
-     * @param types The types of events to return
-     * @param client App or oauth client name
-     * @param user User id
-     * @param dateFrom From date
-     * @param dateTo To date
-     * @param ipAddress IP address
+     * @param realmId     The realm
+     * @param types       The types of events to return
+     * @param client      App or oauth client name
+     * @param user        User id
+     * @param dateFrom    From date
+     * @param dateTo      To date
+     * @param ipAddress   IP address
      * @param firstResult Paging offset
-     * @param maxResults Paging size
+     * @param maxResults  Paging size
      * @return
      */
     @Path("query-events")
@@ -297,9 +305,9 @@ public class TestingResourceProvider implements RealmResourceProvider {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     public List<EventRepresentation> queryEvents(@QueryParam("realmId") String realmId, @QueryParam("type") List<String> types, @QueryParam("client") String client,
-            @QueryParam("user") String user, @QueryParam("dateFrom") String dateFrom, @QueryParam("dateTo") String dateTo,
-            @QueryParam("ipAddress") String ipAddress, @QueryParam("first") Integer firstResult,
-            @QueryParam("max") Integer maxResults) {
+                                                 @QueryParam("user") String user, @QueryParam("dateFrom") String dateFrom, @QueryParam("dateTo") String dateTo,
+                                                 @QueryParam("ipAddress") String ipAddress, @QueryParam("first") Integer firstResult,
+                                                 @QueryParam("max") Integer maxResults) {
 
         EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
 
@@ -325,12 +333,12 @@ public class TestingResourceProvider implements RealmResourceProvider {
             query.user(user);
         }
 
-        if(dateFrom != null) {
+        if (dateFrom != null) {
             Date from = formatDate(dateFrom, "Date(From)");
             query.fromDate(from);
         }
 
-        if(dateTo != null) {
+        if (dateTo != null) {
             Date to = formatDate(dateTo, "Date(To)");
             query.toDate(to);
         }
@@ -429,17 +437,17 @@ public class TestingResourceProvider implements RealmResourceProvider {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     public List<AdminEventRepresentation> getAdminEvents(@QueryParam("realmId") String realmId, @QueryParam("operationTypes") List<String> operationTypes, @QueryParam("authRealm") String authRealm, @QueryParam("authClient") String authClient,
-            @QueryParam("authUser") String authUser, @QueryParam("authIpAddress") String authIpAddress,
-            @QueryParam("resourcePath") String resourcePath, @QueryParam("dateFrom") String dateFrom,
-            @QueryParam("dateTo") String dateTo, @QueryParam("first") Integer firstResult,
-            @QueryParam("max") Integer maxResults) {
+                                                         @QueryParam("authUser") String authUser, @QueryParam("authIpAddress") String authIpAddress,
+                                                         @QueryParam("resourcePath") String resourcePath, @QueryParam("dateFrom") String dateFrom,
+                                                         @QueryParam("dateTo") String dateTo, @QueryParam("first") Integer firstResult,
+                                                         @QueryParam("max") Integer maxResults) {
 
         EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
         AdminEventQuery query = eventStore.createAdminQuery();
 
         if (realmId != null) {
             query.realm(realmId);
-        };
+        }
 
         if (authRealm != null) {
             query.authRealm(authRealm);
@@ -469,12 +477,12 @@ public class TestingResourceProvider implements RealmResourceProvider {
             query.operation(t);
         }
 
-        if(dateFrom != null) {
+        if (dateFrom != null) {
             Date from = formatDate(dateFrom, "Date(From)");
             query.fromTime(from);
         }
 
-        if(dateTo != null) {
+        if (dateTo != null) {
             Date to = formatDate(dateTo, "Date(To)");
             query.toTime(to);
         }
@@ -525,7 +533,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
         event.setError(rep.getError());
         event.setOperationType(OperationType.valueOf(rep.getOperationType()));
         if (rep.getResourceType() != null) {
-            event.setResourceType(ResourceType.valueOf(rep.getResourceType()));
+            event.setResourceTypeAsString(rep.getResourceType());
         }
         event.setRealmId(rep.getRealmId());
         event.setRepresentation(rep.getRepresentation());
@@ -548,7 +556,9 @@ public class TestingResourceProvider implements RealmResourceProvider {
     @Produces(MediaType.APPLICATION_JSON)
     public String getSSOCookieValue() {
         Map<String, Cookie> cookies = request.getHttpHeaders().getCookies();
-        return cookies.get(AuthenticationManager.KEYCLOAK_IDENTITY_COOKIE).getValue();
+        Cookie cookie = cookies.get(AuthenticationManager.KEYCLOAK_IDENTITY_COOKIE);
+        if (cookie == null) return null;
+        return cookie.getValue();
     }
 
 
@@ -616,7 +626,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
     public UserRepresentation getUserByUsernameFromFedProviderFactory(@QueryParam("realmName") String realmName,
                                                                       @QueryParam("userName") String userName) {
         RealmModel realm = getRealmByName(realmName);
-        DummyUserFederationProviderFactory factory = (DummyUserFederationProviderFactory)session.getKeycloakSessionFactory().getProviderFactory(UserStorageProvider.class, "dummy");
+        DummyUserFederationProviderFactory factory = (DummyUserFederationProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(UserStorageProvider.class, "dummy");
         UserModel user = factory.create(session, null).getUserByUsername(userName, realm);
         if (user == null) return null;
         return ModelToRepresentation.toRepresentation(session, realm, user);
@@ -766,7 +776,6 @@ public class TestingResourceProvider implements RealmResourceProvider {
     }
 
 
-
     @POST
     @Path("/run-on-server")
     @Consumes(MediaType.TEXT_PLAIN_UTF_8)
@@ -820,6 +829,62 @@ public class TestingResourceProvider implements RealmResourceProvider {
     @Path("/javascript")
     public TestJavascriptResource getJavascriptResource() {
         return new TestJavascriptResource();
+    }
+
+    @POST
+    @Path("/enable-feature/{feature}")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response enableFeature(@PathParam("feature") String feature) {
+
+        Profile.Feature featureProfile = Profile.Feature.valueOf(feature);
+
+        if (featureProfile == null)
+            return Response.status(Response.Status.NOT_FOUND).build();
+
+        if (Profile.isFeatureEnabled(featureProfile))
+            return Response.ok().build();
+
+        System.setProperty("keycloak.profile.feature." + feature.toLowerCase(), "enabled");
+
+        switch (featureProfile.getType()) {
+            case PREVIEW:
+                Profile.getPreviewFeatures().add(featureProfile);
+                break;
+            case EXPERIMENTAL:
+                Profile.getExperimentalFeatures().add(featureProfile);
+                break;
+        }
+
+        Profile.getDisabledFeatures().remove(featureProfile);
+        Profile.init();
+
+        if (Profile.isFeatureEnabled(featureProfile))
+            return Response.ok().build();
+        else
+            return Response.status(Response.Status.NOT_FOUND).build();
+    }
+
+    @POST
+    @Path("/disable-feature/{feature}")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response disableFeature(@PathParam("feature") String feature) {
+
+        Profile.Feature featureProfile = Profile.Feature.valueOf(feature);
+
+        if (featureProfile == null)
+            return Response.status(Response.Status.NOT_FOUND).build();
+
+        if (!Profile.isFeatureEnabled(featureProfile))
+            return Response.ok().build();
+
+        System.getProperties().remove("keycloak.profile.feature." + feature.toLowerCase());
+        Profile.getDisabledFeatures().add(featureProfile);
+        Profile.init();
+
+        if (!Profile.isFeatureEnabled(featureProfile))
+            return Response.ok().build();
+        else
+            return Response.status(Response.Status.NOT_FOUND).build();
     }
 
     private RealmModel getRealmByName(String realmName) {
