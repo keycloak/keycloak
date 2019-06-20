@@ -60,7 +60,7 @@
                 <constraints nullable="false"/>
             </column>
             <column name="ALIAS" type="VARCHAR(255)"/>
-            <column name="AUTHENTICATOR" type="VARCHAR(100)"/>
+            <column name="AUTHENTICATOR" type="VARCHAR(36)"/>
             <column name="REALM_ID" type="VARCHAR(36)"/>
             <column name="FLOW_ID" type="VARCHAR(36)"/>
             <column name="REQUIREMENT" type="INT"/>
@@ -120,7 +120,7 @@
             </column>
         </addColumn>
         <createTable tableName="CLIENT_SESSION_AUTH_STATUS">
-            <column name="AUTHENTICATOR" type="VARCHAR(100)">
+            <column name="AUTHENTICATOR" type="VARCHAR(36)">
                 <constraints nullable="false"/>
             </column>
             <column name="STATUS" type="INT"/>

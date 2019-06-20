@@ -66,4 +66,10 @@
     </changeSet>
 
 
+    <changeSet author="liubinwang@govnet.com.cn" id="4.3.0.beta5.uc" >
+        <modifyDataType tableName="AUTHENTICATION_EXECUTION" columnName="AUTHENTICATOR" newDataType="VARCHAR(255)"/>
+        <modifyDataType tableName="CLIENT_SESSION_AUTH_STATUS" columnName="AUTHENTICATOR" newDataType="VARCHAR(255)"/>
+    </changeSet>
+
+
 </databaseChangeLog>
