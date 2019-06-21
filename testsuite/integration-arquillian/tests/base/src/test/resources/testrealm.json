@@ -548,5 +548,8 @@
   "internationalizationEnabled": true,
   "supportedLocales": ["en", "de"],
   "defaultLocale": "en",
-  "eventsListeners": ["jboss-logging", "event-queue"]
+  "eventsListeners": ["jboss-logging", "event-queue"],
+
+  "otpPolicyDigits" : 6,
+  "otpPolicyLookAheadWindow" : 20
 }
