@@ -17,6 +17,7 @@
 
 package org.keycloak.models;
 
+import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.credential.CredentialInput;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.models.credential.PasswordUserCredentialModel;
@@ -45,6 +46,7 @@ public class UserCredentialModel implements CredentialInput {
     protected String value;
     protected String device;
     protected String algorithm;
+    protected MultivaluedHashMap<String, String> config;
 
     // Additional context informations
     protected Map<String, Object> notes = new HashMap<>();
@@ -147,6 +149,14 @@ public class UserCredentialModel implements CredentialInput {
 
     public void setAlgorithm(String algorithm) {
         this.algorithm = algorithm;
+    }
+
+    public MultivaluedHashMap<String, String> getConfig() {
+        return config;
+    }
+
+    public void setConfig(MultivaluedHashMap<String, String> config) {
+        this.config = config;
     }
 
     public void setNote(String key, String value) {

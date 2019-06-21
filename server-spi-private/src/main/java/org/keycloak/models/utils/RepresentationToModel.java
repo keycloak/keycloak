@@ -1688,6 +1688,7 @@ public class RepresentationToModel {
         PasswordUserCredentialModel credential = new PasswordUserCredentialModel();
         credential.setType(cred.getType());
         credential.setValue(cred.getValue());
+        credential.setConfig(cred.getConfig());
         return credential;
     }
 

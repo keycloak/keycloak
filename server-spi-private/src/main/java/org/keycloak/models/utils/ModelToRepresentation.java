@@ -479,6 +479,7 @@ public class ModelToRepresentation {
         CredentialRepresentation rep = new CredentialRepresentation();
         rep.setType(CredentialRepresentation.SECRET);
         rep.setValue(cred.getValue());
+        rep.setConfig(cred.getConfig());
         return rep;
     }
 
