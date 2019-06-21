@@ -45,6 +45,8 @@ import java.net.MalformedURLException;
  */
 public class LoginHotpTest extends AbstractTestRealmKeycloakTest {
 
+    private static final String HEX_STRING_SECRET = "0CD202958DA465879011A725FAB5069FCC10CC57";
+
     public static OTPPolicy policy;
 
     @Override
@@ -52,9 +54,20 @@ public class LoginHotpTest extends AbstractTestRealmKeycloakTest {
         testRealm.setOtpPolicyType(UserCredentialModel.HOTP);
         testRealm.setOtpPolicyAlgorithm(HmacOTP.DEFAULT_ALGORITHM);
         testRealm.setOtpPolicyLookAheadWindow(2);
+
         UserRepresentation user = RealmRepUtil.findUser(testRealm, "test-user@localhost");
         UserBuilder.edit(user)
                    .hotpSecret("hotpSecret")
+                   .otpEnabled();
+
+        UserRepresentation user2 = RealmRepUtil.findUser(testRealm, "john-doh@localhost");
+        UserBuilder.edit(user2)
+                   .hotpSecret("totpSecrÆt", UserBuilder.OtpSecretMode.LEGACY)
+                   .otpEnabled();
+
+        UserRepresentation user3 = RealmRepUtil.findUser(testRealm, "keycloak-user@localhost");
+        UserBuilder.edit(user3)
+                   .hotpSecret(HEX_STRING_SECRET, UserBuilder.OtpSecretMode.HEX_STRING)
                    .otpEnabled();
     }
 
@@ -158,5 +171,35 @@ public class LoginHotpTest extends AbstractTestRealmKeycloakTest {
         events.expectLogin().error("invalid_user_credentials").session((String) null)
                 .removeDetail(Details.CONSENT)
                 .assertEvent();
+    }
+
+    // KEYCLOAK-8681
+    @Test
+    public void loginWithHotpUnencodedSpecialSecret() throws Exception {
+        loginPage.open();
+        loginPage.login("john-doh@localhost", "password");
+
+        Assert.assertTrue("expecting totpPage got: " + driver.getCurrentUrl(), loginTotpPage.isCurrent());
+
+        loginTotpPage.login(otp.generateHOTP("totpSecrÆt", counter++));
+
+        Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+
+        events.expectLogin().user(findUser("john-doh@localhost")).assertEvent();
+    }
+
+    @Test
+    public void loginWithTotpEncodedSpecialSecret() throws Exception {
+        loginPage.open();
+        loginPage.login("keycloak-user@localhost", "password");
+
+        Assert.assertTrue(loginTotpPage.isCurrent());
+
+        loginTotpPage.login(otp.generateHOTP(otp.hexStr2Bytes(HEX_STRING_SECRET), counter++));
+
+        Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+
+        events.expectLogin().user(findUser("keycloak-user@localhost")).assertEvent();
+
     }
 }

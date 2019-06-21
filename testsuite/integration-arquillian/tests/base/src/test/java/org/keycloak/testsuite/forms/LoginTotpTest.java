@@ -34,6 +34,7 @@ import org.keycloak.testsuite.pages.LoginTotpPage;
 import org.keycloak.testsuite.util.GreenMailRule;
 import org.keycloak.testsuite.util.RealmRepUtil;
 import org.keycloak.testsuite.util.UserBuilder;
+import org.keycloak.testsuite.util.UserBuilder.OtpSecretMode;
 
 import java.net.MalformedURLException;
 
@@ -43,11 +44,23 @@ import java.net.MalformedURLException;
  */
 public class LoginTotpTest extends AbstractTestRealmKeycloakTest {
 
+    private static final String HEX_STRING_SECRET = "0CD202958DA465879011A725FAB5069FCC10CC57";
+
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
         UserRepresentation user = RealmRepUtil.findUser(testRealm, "test-user@localhost");
         UserBuilder.edit(user)
                    .totpSecret("totpSecret")
+                   .otpEnabled();
+
+        UserRepresentation user2 = RealmRepUtil.findUser(testRealm, "john-doh@localhost");
+        UserBuilder.edit(user2)
+                   .totpSecret("totpSecrÆt", OtpSecretMode.LEGACY)
+                   .otpEnabled();
+
+        UserRepresentation user3 = RealmRepUtil.findUser(testRealm, "keycloak-user@localhost");
+        UserBuilder.edit(user3)
+                   .totpSecret(HEX_STRING_SECRET, OtpSecretMode.HEX_STRING)
                    .otpEnabled();
     }
 
@@ -170,4 +183,34 @@ public class LoginTotpTest extends AbstractTestRealmKeycloakTest {
                 .removeDetail(Details.CONSENT)
                 .assertEvent();
     }
+
+    // KEYCLOAK-8681
+    @Test
+    public void loginWithTotpUnencodedSpecialSecret() throws Exception {
+        loginPage.open();
+        loginPage.login("john-doh@localhost", "password");
+
+        Assert.assertTrue(loginTotpPage.isCurrent());
+
+        loginTotpPage.login(totp.generateTOTP("totpSecrÆt"));
+
+        Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+
+        events.expectLogin().user(findUser("john-doh@localhost")).assertEvent();
+    }
+
+    @Test
+    public void loginWithTotpEncodedSpecialSecret() throws Exception {
+        loginPage.open();
+        loginPage.login("keycloak-user@localhost", "password");
+
+        Assert.assertTrue(loginTotpPage.isCurrent());
+
+        loginTotpPage.login(totp.generateTOTP(totp.hexStr2Bytes(HEX_STRING_SECRET)));
+
+        Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+
+        events.expectLogin().user(findUser("keycloak-user@localhost")).assertEvent();
+    }
+
 }
