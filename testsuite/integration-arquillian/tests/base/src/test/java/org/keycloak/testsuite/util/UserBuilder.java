@@ -22,6 +22,10 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
 
+import org.keycloak.common.util.Base64;
+import org.keycloak.common.util.MultivaluedHashMap;
+import org.keycloak.credential.OTPCredentialProvider;
+import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 
@@ -142,13 +146,31 @@ public class UserBuilder {
     }
 
     public UserBuilder secret(String type, String secret) {
+        return secret(type, secret, OtpSecretMode.DEFAULT);
+    }
+
+    public UserBuilder secret(String type, String secret, OtpSecretMode mode) {
         if (rep.getCredentials() == null) {
             rep.setCredentials(new LinkedList<>());
         }
 
         CredentialRepresentation credential = new CredentialRepresentation();
         credential.setType(type);
-        credential.setValue(secret);
+        credential.setConfig(new MultivaluedHashMap<>());
+
+        switch (mode) {
+            case HEX_STRING:
+                credential.setValue(Base64.encodeBytes((new TimeBasedOTP()).hexStr2Bytes(secret)));
+                credential.getConfig().putSingle(OTPCredentialProvider.BASE64_ENCODED_KEY, Boolean.TRUE.toString());
+                break;
+            case LEGACY:
+                credential.setValue(secret);
+                credential.getConfig().putSingle(OTPCredentialProvider.BASE64_ENCODED_KEY, Boolean.FALSE.toString());
+                break;
+            default:
+                credential.setValue(Base64.encodeBytes(secret.getBytes()));
+                credential.getConfig().putSingle(OTPCredentialProvider.BASE64_ENCODED_KEY, Boolean.TRUE.toString());
+        }
 
         rep.getCredentials().add(credential);
         rep.setTotp(true);
@@ -156,11 +178,19 @@ public class UserBuilder {
     }
 
     public UserBuilder totpSecret(String totpSecret) {
-        return secret(CredentialRepresentation.TOTP, totpSecret);
+        return totpSecret(totpSecret, OtpSecretMode.DEFAULT);
+    }
+
+    public UserBuilder totpSecret(String totpSecret, OtpSecretMode mode) {
+        return secret(CredentialRepresentation.TOTP, totpSecret, mode);
     }
 
     public UserBuilder hotpSecret(String hotpSecret) {
-        return secret(CredentialRepresentation.HOTP, hotpSecret);
+        return hotpSecret(hotpSecret, OtpSecretMode.DEFAULT);
+    }
+
+    public UserBuilder hotpSecret(String hotpSecret, OtpSecretMode mode) {
+        return secret(CredentialRepresentation.HOTP, hotpSecret, mode);
     }
 
     public UserBuilder otpEnabled() {
@@ -178,5 +208,9 @@ public class UserBuilder {
 
     public UserRepresentation build() {
         return rep;
+    }
+
+    public enum OtpSecretMode {
+        DEFAULT, HEX_STRING, LEGACY
     }
 }
