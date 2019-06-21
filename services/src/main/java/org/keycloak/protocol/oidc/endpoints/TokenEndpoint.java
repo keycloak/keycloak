@@ -633,7 +633,7 @@ public class TokenEndpoint {
         authSession.setClientNote(OIDCLoginProtocol.SCOPE_PARAM, scope);
 
         UserSessionModel userSession = session.sessions().createUserSession(authSession.getParentSession().getId(), realm, clientUser, clientUsername,
-                clientConnection.getRemoteAddr(), ServiceAccountConstants.CLIENT_AUTH, false, null, null);
+                clientConnection.getRemoteAddr(), clientConnection.getDeviceInfo(), ServiceAccountConstants.CLIENT_AUTH, false, null, null);
         event.session(userSession);
 
         AuthenticationManager.setClientScopesInSession(authSession);
@@ -758,7 +758,7 @@ public class TokenEndpoint {
                 }
             }
 
-            tokenSession = session.sessions().createUserSession(realm, requestedUser, requestedUser.getUsername(), clientConnection.getRemoteAddr(), "impersonate", false, null, null);
+            tokenSession = session.sessions().createUserSession(realm, requestedUser, requestedUser.getUsername(), clientConnection.getRemoteAddr(), clientConnection.getDeviceInfo(), "impersonate", false, null, null);
             if (tokenUser != null) {
                 tokenSession.setNote(IMPERSONATOR_ID.toString(), tokenUser.getId());
                 tokenSession.setNote(IMPERSONATOR_USERNAME.toString(), tokenUser.getUsername());
@@ -922,7 +922,7 @@ public class TokenEndpoint {
 
         UserModel user = importUserFromExternalIdentity(context);
 
-        UserSessionModel userSession = session.sessions().createUserSession(realm, user, user.getUsername(), clientConnection.getRemoteAddr(), "external-exchange", false, null, null);
+        UserSessionModel userSession = session.sessions().createUserSession(realm, user, user.getUsername(), clientConnection.getRemoteAddr(), clientConnection.getDeviceInfo(),"external-exchange", false, null, null);
         externalIdp.exchangeExternalComplete(userSession, context, formParams);
 
         // this must exist so that we can obtain access token from user session if idp's store tokens is off

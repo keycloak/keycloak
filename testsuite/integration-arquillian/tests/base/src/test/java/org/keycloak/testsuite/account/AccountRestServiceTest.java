@@ -19,6 +19,7 @@ package org.keycloak.testsuite.account;
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.junit.Test;
 import org.keycloak.broker.provider.util.SimpleHttp;
+import org.keycloak.common.DeviceInfo;
 import org.keycloak.representations.account.SessionRepresentation;
 import org.keycloak.representations.account.UserRepresentation;
 import org.keycloak.representations.idm.ErrorRepresentation;
@@ -235,6 +236,14 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         List<SessionRepresentation> sessions = SimpleHttp.doGet(getAccountUrl("sessions"), httpClient).auth(tokenUtil.getToken()).asJson(new TypeReference<List<SessionRepresentation>>() {});
 
         assertEquals(1, sessions.size());
+        DeviceInfo deviceInfo = sessions.iterator().next().getDeviceInfo();
+        String device = deviceInfo.getDevice();
+        String browser = deviceInfo.getBrowser();
+        String os = deviceInfo.getOs();
+
+        assertEquals("Other", device);
+        assertEquals("Apache-HttpClient", browser);
+        assertEquals("Other", os);
     }
 
     @Test

@@ -31,4 +31,6 @@ public interface ClientConnection {
 
     String getLocalAddr();
     int getLocalPort();
+
+    DeviceInfo getDeviceInfo();
 }

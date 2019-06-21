@@ -96,6 +96,7 @@
         <xmlsec.version>2.1.2</xmlsec.version>
         <glassfish.json.version>1.1.2</glassfish.json.version>
         <wildfly.common.version>1.4.0.Final</wildfly.common.version>
+        <ua-parser.version>1.4.3</ua-parser.version>
         <picketbox.version>5.0.3.Final</picketbox.version>
         <google.guava.version>25.0-jre</google.guava.version>
 
@@ -273,6 +274,11 @@
                 <groupId>org.bouncycastle</groupId>
                 <artifactId>bcpkix-jdk15on</artifactId>
                 <version>${bouncycastle.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.github.ua-parser</groupId>
+                <artifactId>uap-java</artifactId>
+                <version>${ua-parser.version}</version>
             </dependency>
             <dependency>
                 <groupId>javax.mail</groupId>

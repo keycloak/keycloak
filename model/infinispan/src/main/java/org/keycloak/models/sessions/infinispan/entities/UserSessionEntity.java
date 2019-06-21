@@ -21,6 +21,7 @@ import org.infinispan.commons.marshall.Externalizer;
 import org.infinispan.commons.marshall.MarshallUtil;
 import org.infinispan.commons.marshall.SerializeWith;
 import org.jboss.logging.Logger;
+import org.keycloak.common.DeviceInfo;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.UserSessionModel.State;
 import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
@@ -102,6 +103,14 @@ public class UserSessionEntity extends SessionEntity {
 
     public void setIpAddress(String ipAddress) {
         this.ipAddress = ipAddress;
+    }
+
+    public DeviceInfo getDeviceInfo() {
+        return DeviceInfo.create(this.getNotes().get(DeviceInfo.ID));
+    }
+
+    public void setDeviceInfo(DeviceInfo deviceInfo) {
+        this.getNotes().put(DeviceInfo.ID, deviceInfo.toString());
     }
 
     public String getAuthMethod() {

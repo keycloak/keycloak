@@ -53,6 +53,7 @@ import org.keycloak.authorization.policy.evaluation.Result;
 import org.keycloak.authorization.store.ScopeStore;
 import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.authorization.util.Permissions;
+import org.keycloak.common.DeviceInfo;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.KeycloakSession;
@@ -256,7 +257,7 @@ public class PolicyEvaluationService {
                             .createAuthenticationSession(clientModel);
                     authSession.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
                     authSession.setAuthenticatedUser(userModel);
-                    userSession = keycloakSession.sessions().createUserSession(authSession.getParentSession().getId(), realm, userModel, userModel.getUsername(), "127.0.0.1", "passwd", false, null, null);
+                    userSession = keycloakSession.sessions().createUserSession(authSession.getParentSession().getId(), realm, userModel, userModel.getUsername(), "127.0.0.1", new DeviceInfo(),"passwd", false, null, null);
 
                     AuthenticationManager.setClientScopesInSession(authSession);
                     ClientSessionContext clientSessionCtx = TokenManager.attachAuthenticationSession(keycloakSession, userSession, authSession);

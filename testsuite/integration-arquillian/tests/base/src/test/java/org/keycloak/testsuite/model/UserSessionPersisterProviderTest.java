@@ -22,6 +22,7 @@ import org.jboss.arquillian.container.test.api.TargetsContainer;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.*;
 import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.common.DeviceInfo;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.*;
 import org.keycloak.models.session.UserSessionPersisterProvider;
@@ -238,7 +239,7 @@ public class UserSessionPersisterProviderTest extends AbstractTestRealmKeycloakT
             fooRealm.addClient("foo-app");
             currentSession.users().addUser(fooRealm, "user3");
 
-            UserSessionModel userSession = currentSession.sessions().createUserSession(fooRealm, currentSession.users().getUserByUsername("user3", fooRealm), "user3", "127.0.0.1", "form", true, null, null);
+            UserSessionModel userSession = currentSession.sessions().createUserSession(fooRealm, currentSession.users().getUserByUsername("user3", fooRealm), "user3", "127.0.0.1", new DeviceInfo(), "form", true, null, null);
             userSessionID.set(userSession.getId());
 
             createClientSession(currentSession, fooRealm.getClientByClientId("foo-app"), userSession, "http://redirect", "state");
@@ -286,7 +287,7 @@ public class UserSessionPersisterProviderTest extends AbstractTestRealmKeycloakT
             fooRealm.addClient("bar-app");
             currentSession.users().addUser(fooRealm, "user3");
 
-            UserSessionModel userSession = currentSession.sessions().createUserSession(fooRealm, currentSession.users().getUserByUsername("user3", fooRealm), "user3", "127.0.0.1", "form", true, null, null);
+            UserSessionModel userSession = currentSession.sessions().createUserSession(fooRealm, currentSession.users().getUserByUsername("user3", fooRealm), "user3", "127.0.0.1", new DeviceInfo(),"form", true, null, null);
             userSessionID.set(userSession.getId());
 
             createClientSession(currentSession, fooRealm.getClientByClientId("foo-app"), userSession, "http://redirect", "state");
@@ -437,7 +438,7 @@ public class UserSessionPersisterProviderTest extends AbstractTestRealmKeycloakT
                 // Having different offsets for each session (to ensure that lastSessionRefresh is also different)
                 Time.setOffset(i);
 
-                UserSessionModel userSession = currentSession.sessions().createUserSession(realm, user, "user1", "127.0.0.1", "form", true, null, null);
+                UserSessionModel userSession = currentSession.sessions().createUserSession(realm, user, "user1", "127.0.0.1", new DeviceInfo(),"form", true, null, null);
                 createClientSession(currentSession, realm.getClientByClientId("test-app"), userSession, "http://redirect", "state");
                 userSessions.add(userSession);
             }
@@ -538,15 +539,15 @@ public class UserSessionPersisterProviderTest extends AbstractTestRealmKeycloakT
     private UserSessionModel[] createSessions(KeycloakSession session) {
         RealmModel realm = session.realms().getRealm("test");
         UserSessionModel[] sessions = new UserSessionModel[3];
-        sessions[0] = session.sessions().createUserSession(realm, session.users().getUserByUsername("user1", realm), "user1", "127.0.0.1", "form", true, null, null);
+        sessions[0] = session.sessions().createUserSession(realm, session.users().getUserByUsername("user1", realm), "user1", "127.0.0.1", new DeviceInfo(),"form", true, null, null);
 
         createClientSession(session, realm.getClientByClientId("test-app"), sessions[0], "http://redirect", "state");
         createClientSession(session, realm.getClientByClientId("third-party"), sessions[0], "http://redirect", "state");
 
-        sessions[1] = session.sessions().createUserSession(realm, session.users().getUserByUsername("user1", realm), "user1", "127.0.0.2", "form", true, null, null);
+        sessions[1] = session.sessions().createUserSession(realm, session.users().getUserByUsername("user1", realm), "user1", "127.0.0.2", new DeviceInfo(),"form", true, null, null);
         createClientSession(session, realm.getClientByClientId("test-app"), sessions[1], "http://redirect", "state");
 
-        sessions[2] = session.sessions().createUserSession(realm, session.users().getUserByUsername("user2", realm), "user2", "127.0.0.3", "form", true, null, null);
+        sessions[2] = session.sessions().createUserSession(realm, session.users().getUserByUsername("user2", realm), "user2", "127.0.0.3", new DeviceInfo(),"form", true, null, null);
         createClientSession(session, realm.getClientByClientId("test-app"), sessions[2], "http://redirect", "state");
 
         return sessions;

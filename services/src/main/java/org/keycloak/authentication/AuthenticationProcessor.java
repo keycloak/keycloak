@@ -940,10 +940,10 @@ public class AuthenticationProcessor {
 
             userSession = session.sessions().getUserSession(realm, authSession.getParentSession().getId());
             if (userSession == null) {
-                userSession = session.sessions().createUserSession(authSession.getParentSession().getId(), realm, authSession.getAuthenticatedUser(), username, connection.getRemoteAddr(), authSession.getProtocol()
+                userSession = session.sessions().createUserSession(authSession.getParentSession().getId(), realm, authSession.getAuthenticatedUser(), username, connection.getRemoteAddr(), connection.getDeviceInfo(), authSession.getProtocol()
                         , remember, brokerSessionId, brokerUserId);
             } else if (userSession.getUser() == null || !AuthenticationManager.isSessionValid(realm, userSession)) {
-                userSession.restartSession(realm, authSession.getAuthenticatedUser(), username, connection.getRemoteAddr(), authSession.getProtocol()
+                userSession.restartSession(realm, authSession.getAuthenticatedUser(), username, connection.getRemoteAddr(), connection.getDeviceInfo(), authSession.getProtocol()
                         , remember, brokerSessionId, brokerUserId);
             } else {
                 // We have existing userSession even if it wasn't attached to authenticator. Could happen if SSO authentication was ignored (eg. prompt=login) and in some other cases.

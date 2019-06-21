@@ -61,6 +61,7 @@
         <module name="com.fasterxml.jackson.core.jackson-annotations"/>
         <module name="com.fasterxml.jackson.core.jackson-databind"/>
         <module name="com.fasterxml.jackson.jaxrs.jackson-jaxrs-json-provider"/>
+        <module name="com.github.ua-parser"/>
         <module name="com.google.zxing.core"/>
         <module name="com.google.zxing.javase"/>
         <module name="org.jboss.logging"/>

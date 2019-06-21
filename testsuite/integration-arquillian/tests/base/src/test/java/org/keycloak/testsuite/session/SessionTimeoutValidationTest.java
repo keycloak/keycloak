@@ -26,6 +26,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.common.DeviceInfo;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserManager;
@@ -95,7 +96,7 @@ public class SessionTimeoutValidationTest extends AbstractTestRealmKeycloakTest 
             session.sessions().createUserSession(
                                                  realm,
                                                  session.users().getUserByUsername("user1", realm),
-                                                 "user1", "127.0.0.1", "form", true, null, null
+                                                 "user1", "127.0.0.1", new DeviceInfo(), "form", true, null, null
                                                  );
 
         realm.setSsoSessionIdleTimeout(Integer.MAX_VALUE);
