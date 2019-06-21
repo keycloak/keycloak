@@ -277,8 +277,10 @@ class GroupPermissions implements GroupPermissionEvaluator, GroupPermissionManag
     }
     @Override
     public boolean canView() {
-        return root.users().canViewDefault();
+        return root.users().canViewDefault() || root.hasOneAdminRole(AdminRoles.VIEW_GROUPS);
     }
+
+
 
     @Override
     public void requireView() {

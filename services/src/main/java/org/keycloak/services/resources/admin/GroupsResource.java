@@ -44,6 +44,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * @resource Groups
@@ -77,17 +78,20 @@ public class GroupsResource {
                                                @QueryParam("max") Integer maxResults) {
         auth.groups().requireList();
 
-        List<GroupRepresentation> results;
+        List<GroupModel> results;
 
         if (Objects.nonNull(search)) {
-            results = ModelToRepresentation.searchForGroupByName(realm, search.trim(), firstResult, maxResults);
+            results = realm.searchForGroupByName(search.trim(), firstResult, maxResults);
         } else if(Objects.nonNull(firstResult) && Objects.nonNull(maxResults)) {
-            results = ModelToRepresentation.toGroupHierarchy(realm, false, firstResult, maxResults);
+            results = realm.getTopLevelGroups(firstResult, maxResults);
         } else {
-            results = ModelToRepresentation.toGroupHierarchy(realm, false);
+            results = realm.getTopLevelGroups();
         }
 
-        return results;
+        return results.stream()
+                .filter(group -> auth.groups().canView(group))
+                .map(group -> ModelToRepresentation.toGroupHierarchy(group, false))
+                .collect(Collectors.toList());
     }
 
     /**
