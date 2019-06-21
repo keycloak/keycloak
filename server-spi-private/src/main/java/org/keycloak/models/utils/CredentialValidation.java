@@ -31,7 +31,7 @@ public class CredentialValidation {
         OTPPolicy policy = realm.getOTPPolicy();
         if (policy.getType().equals(UserCredentialModel.TOTP)) {
             TimeBasedOTP validator = new TimeBasedOTP(policy.getAlgorithm(), policy.getDigits(), policy.getPeriod(), policy.getLookAheadWindow());
-            return validator.validateTOTP(token, secret.getBytes());
+            return validator.validateTOTP(token, secret);
         } else {
             HmacOTP validator = new HmacOTP(policy.getDigits(), policy.getAlgorithm(), policy.getLookAheadWindow());
             int c = validator.validateHOTP(token, secret, policy.getInitialCounter());
@@ -39,6 +39,5 @@ public class CredentialValidation {
         }
 
     }
-
 
 }

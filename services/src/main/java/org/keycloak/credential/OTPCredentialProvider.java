@@ -17,6 +17,8 @@
 package org.keycloak.credential;
 
 import org.jboss.logging.Logger;
+import org.keycloak.common.util.Base64;
+import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OTPPolicy;
@@ -29,6 +31,7 @@ import org.keycloak.models.cache.UserCache;
 import org.keycloak.models.utils.HmacOTP;
 import org.keycloak.models.utils.TimeBasedOTP;
 
+import java.io.IOException;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -40,6 +43,8 @@ import java.util.Set;
  */
 public class OTPCredentialProvider implements CredentialProvider, CredentialInputValidator, CredentialInputUpdater, OnUserCache {
     private static final Logger logger = Logger.getLogger(OTPCredentialProvider.class);
+
+    public static final String BASE64_ENCODED_KEY = "base64Encoded";
 
     protected KeycloakSession session;
 
@@ -94,10 +99,27 @@ public class OTPCredentialProvider implements CredentialProvider, CredentialInpu
         model.setCounter(policy.getInitialCounter());
         model.setAlgorithm(policy.getAlgorithm());
         model.setType(input.getType());
-        model.setValue(inputModel.getValue());
         model.setDevice(inputModel.getDevice());
         model.setPeriod(policy.getPeriod());
         model.setCreatedDate(Time.currentTimeMillis());
+
+		// KEYCLOAK-8681: Any new OTP credential will be stored as a Base64 value
+		if (model.getConfig() == null) {
+			model.setConfig(inputModel.getConfig());
+			if (model.getConfig() == null) {
+				model.setConfig(new MultivaluedHashMap<>());
+			}
+		}
+		if (model.getConfig().containsKey(BASE64_ENCODED_KEY) && model.getId() == null) {
+			// If config is set and not loaded from the database, this is a credential loaded from a realm import (also from tests)
+			// In this case, we need to set the plain value
+			model.setValue(inputModel.getValue());
+		}
+		else {
+			model.getConfig().putSingle(BASE64_ENCODED_KEY, Boolean.TRUE.toString());
+			model.setValue(Base64.encodeBytes(inputModel.getValue().getBytes()));
+		}
+
         if (model.getId() == null) {
             getCredentialStore().createCredential(realm, user, model);
         } else {
@@ -108,9 +130,6 @@ public class OTPCredentialProvider implements CredentialProvider, CredentialInpu
             userCache.evict(realm, user);
         }
         return true;
-
-
-
     }
 
     @Override
@@ -121,7 +140,6 @@ public class OTPCredentialProvider implements CredentialProvider, CredentialInpu
             disableHOTP = true;
         } else if (CredentialModel.HOTP.equals(credentialType)) {
             disableHOTP = true;
-
         } else if (CredentialModel.TOTP.equals(credentialType)) {
             disableTOTP = true;
         }
@@ -199,17 +217,17 @@ public class OTPCredentialProvider implements CredentialProvider, CredentialInpu
         return !cachedCredentials.isEmpty();
     }
 
+    @Deprecated
     public static boolean validOTP(RealmModel realm, String token, String secret) {
         OTPPolicy policy = realm.getOTPPolicy();
         if (policy.getType().equals(UserCredentialModel.TOTP)) {
             TimeBasedOTP validator = new TimeBasedOTP(policy.getAlgorithm(), policy.getDigits(), policy.getPeriod(), policy.getLookAheadWindow());
-            return validator.validateTOTP(token, secret.getBytes());
+            return validator.validateTOTP(token, secret);
         } else {
             HmacOTP validator = new HmacOTP(policy.getDigits(), policy.getAlgorithm(), policy.getLookAheadWindow());
             int c = validator.validateHOTP(token, secret, policy.getInitialCounter());
             return c > -1;
         }
-
     }
 
     @Override
@@ -228,7 +246,7 @@ public class OTPCredentialProvider implements CredentialProvider, CredentialInpu
         if (realm.getOTPPolicy().getType().equals(CredentialModel.HOTP)) {
             HmacOTP validator = new HmacOTP(policy.getDigits(), policy.getAlgorithm(), policy.getLookAheadWindow());
             for (CredentialModel cred : getCredentialStore().getStoredCredentialsByType(realm, user, CredentialModel.HOTP)) {
-                int counter = validator.validateHOTP(token, cred.getValue(), cred.getCounter());
+                int counter = validator.validateHOTP(token, getOTPCredentialValue(cred), cred.getCounter());
                 if (counter < 0) continue;
                 cred.setCounter(counter);
                 getCredentialStore().updateCredential(realm, user, cred);
@@ -243,7 +261,7 @@ public class OTPCredentialProvider implements CredentialProvider, CredentialInpu
                 logger.debugv("Cache hit for TOTP for user {0}", user.getUsername());
             }
             for (CredentialModel cred : creds) {
-                if (validator.validateTOTP(token, cred.getValue().getBytes())) {
+                if (validator.validateTOTP(token, getOTPCredentialValue(cred))) {
                     return true;
                 }
             }
@@ -251,4 +269,18 @@ public class OTPCredentialProvider implements CredentialProvider, CredentialInpu
         }
         return false;
     }
+
+	// KEYCLOAK-8681: Get the correct value for the OTP credential
+    protected byte[] getOTPCredentialValue(CredentialModel cred) {
+        if (Boolean.TRUE.toString().equals(cred.getConfig().getFirst(BASE64_ENCODED_KEY))) {
+        	try {
+				return Base64.decode(cred.getValue());
+			}
+        	catch(IOException ioe) {
+        		logger.warn("Unable to Base64 decode secret from CredentialModel, returning plain value");
+			}
+        }
+        return cred.getValue().getBytes();
+    }
+
 }
