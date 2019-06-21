@@ -217,6 +217,7 @@ public class AccountRestService {
             SessionRepresentation rep = new SessionRepresentation();
             rep.setId(s.getId());
             rep.setIpAddress(s.getIpAddress());
+            rep.setDeviceInfo(s.getDeviceInfo());
             rep.setStarted(s.getStarted());
             rep.setLastAccess(s.getLastSessionRefresh());
             rep.setExpires(s.getStarted() + realm.getSsoSessionMaxLifespan());

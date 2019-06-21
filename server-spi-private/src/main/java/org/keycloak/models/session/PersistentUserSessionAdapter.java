@@ -18,6 +18,7 @@
 package org.keycloak.models.session;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.keycloak.common.DeviceInfo;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
@@ -52,6 +53,7 @@ public class PersistentUserSessionAdapter implements OfflineUserSessionModel {
         data.setBrokerSessionId(other.getBrokerSessionId());
         data.setBrokerUserId(other.getBrokerUserId());
         data.setIpAddress(other.getIpAddress());
+        data.setDeviceInfo(other.getDeviceInfo());
         data.setNotes(other.getNotes());
         data.setRememberMe(other.isRememberMe());
         if (other.getState() != null) {
@@ -143,6 +145,11 @@ public class PersistentUserSessionAdapter implements OfflineUserSessionModel {
     @Override
     public String getIpAddress() {
         return getData().getIpAddress();
+    }
+
+    @Override
+    public DeviceInfo getDeviceInfo() {
+        return getData().getDeviceInfo();
     }
 
     @Override
@@ -239,7 +246,7 @@ public class PersistentUserSessionAdapter implements OfflineUserSessionModel {
     }
 
     @Override
-    public void restartSession(RealmModel realm, UserModel user, String loginUsername, String ipAddress, String authMethod, boolean rememberMe, String brokerSessionId, String brokerUserId) {
+    public void restartSession(RealmModel realm, UserModel user, String loginUsername, String ipAddress, DeviceInfo device, String authMethod, boolean rememberMe, String brokerSessionId, String brokerUserId) {
         throw new IllegalStateException("Not supported");
     }
 
@@ -267,6 +274,9 @@ public class PersistentUserSessionAdapter implements OfflineUserSessionModel {
 
         @JsonProperty("ipAddress")
         private String ipAddress;
+
+        @JsonProperty("deviceInfo")
+        private DeviceInfo device;
 
         @JsonProperty("authMethod")
         private String authMethod;
@@ -306,6 +316,14 @@ public class PersistentUserSessionAdapter implements OfflineUserSessionModel {
 
         public void setIpAddress(String ipAddress) {
             this.ipAddress = ipAddress;
+        }
+
+        public DeviceInfo getDeviceInfo() {
+            return device;
+        }
+
+        public void setDeviceInfo(DeviceInfo device) {
+            this.device = device;
         }
 
         public String getAuthMethod() {

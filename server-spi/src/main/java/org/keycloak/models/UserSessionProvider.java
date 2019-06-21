@@ -17,6 +17,7 @@
 
 package org.keycloak.models;
 
+import org.keycloak.common.DeviceInfo;
 import org.keycloak.provider.Provider;
 
 import java.util.Collection;
@@ -34,8 +35,8 @@ public interface UserSessionProvider extends Provider {
     AuthenticatedClientSessionModel createClientSession(RealmModel realm, ClientModel client, UserSessionModel userSession);
     AuthenticatedClientSessionModel getClientSession(UserSessionModel userSession, ClientModel client, UUID clientSessionId, boolean offline);
 
-    UserSessionModel createUserSession(RealmModel realm, UserModel user, String loginUsername, String ipAddress, String authMethod, boolean rememberMe, String brokerSessionId, String brokerUserId);
-    UserSessionModel createUserSession(String id, RealmModel realm, UserModel user, String loginUsername, String ipAddress, String authMethod, boolean rememberMe, String brokerSessionId, String brokerUserId);
+    UserSessionModel createUserSession(RealmModel realm, UserModel user, String loginUsername, String ipAddress, DeviceInfo device, String authMethod, boolean rememberMe, String brokerSessionId, String brokerUserId);
+    UserSessionModel createUserSession(String id, RealmModel realm, UserModel user, String loginUsername, String ipAddress, DeviceInfo device, String authMethod, boolean rememberMe, String brokerSessionId, String brokerUserId);
     UserSessionModel getUserSession(RealmModel realm, String id);
     List<UserSessionModel> getUserSessions(RealmModel realm, UserModel user);
     List<UserSessionModel> getUserSessions(RealmModel realm, ClientModel client);

@@ -17,6 +17,8 @@
 
 package org.keycloak.models;
 
+import org.keycloak.common.DeviceInfo;
+
 import java.util.Collection;
 import java.util.Map;
 
@@ -42,6 +44,8 @@ public interface UserSessionModel {
     String getLoginUsername();
 
     String getIpAddress();
+
+    DeviceInfo getDeviceInfo();
 
     String getAuthMethod();
 
@@ -83,7 +87,7 @@ public interface UserSessionModel {
     void setState(State state);
 
     // Will completely restart whole state of user session. It will just keep same ID.
-    void restartSession(RealmModel realm, UserModel user, String loginUsername, String ipAddress, String authMethod, boolean rememberMe, String brokerSessionId, String brokerUserId);
+    void restartSession(RealmModel realm, UserModel user, String loginUsername, String ipAddress, DeviceInfo device, String authMethod, boolean rememberMe, String brokerSessionId, String brokerUserId);
 
     public static enum State {
         LOGGED_IN,

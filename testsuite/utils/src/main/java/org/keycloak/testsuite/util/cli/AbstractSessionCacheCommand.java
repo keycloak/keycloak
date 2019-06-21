@@ -20,6 +20,7 @@ package org.keycloak.testsuite.util.cli;
 import org.infinispan.AdvancedCache;
 import org.infinispan.Cache;
 import org.infinispan.context.Flag;
+import org.keycloak.common.DeviceInfo;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.models.ClientModel;
@@ -338,7 +339,7 @@ public abstract class AbstractSessionCacheCommand extends AbstractCommand {
                 UserModel user = batchSession.users().getUserByUsername(username, realm);
 
                 for (int i=0 ; i<countInIteration ; i++) {
-                    UserSessionModel userSession = session.sessions().createUserSession(realm, user, username, "127.0.0.1", "form", false, null, null);
+                    UserSessionModel userSession = session.sessions().createUserSession(realm, user, username, "127.0.0.1", new DeviceInfo(),"form", false, null, null);
 
                     session.sessions().createClientSession(userSession.getRealm(), client, userSession);
                 }

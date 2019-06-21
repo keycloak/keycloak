@@ -16,6 +16,8 @@
  */
 package org.keycloak.models;
 
+import org.keycloak.common.DeviceInfo;
+
 /**
  * Hacked extension to UserSessionModel so that user id can be obtain directly so
  *

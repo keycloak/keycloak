@@ -17,6 +17,7 @@
 
 package org.keycloak.models.sessions.infinispan;
 
+import org.keycloak.common.DeviceInfo;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
@@ -191,6 +192,10 @@ public class UserSessionAdapter implements UserSessionModel {
         return entity.getIpAddress();
     }
 
+    public DeviceInfo getDeviceInfo() {
+        return entity.getDeviceInfo();
+    }
+
     @Override
     public String getAuthMethod() {
         return entity.getAuthMethod();
@@ -310,12 +315,12 @@ public class UserSessionAdapter implements UserSessionModel {
     }
 
     @Override
-    public void restartSession(RealmModel realm, UserModel user, String loginUsername, String ipAddress, String authMethod, boolean rememberMe, String brokerSessionId, String brokerUserId) {
+    public void restartSession(RealmModel realm, UserModel user, String loginUsername, String ipAddress, DeviceInfo device, String authMethod, boolean rememberMe, String brokerSessionId, String brokerUserId) {
         UserSessionUpdateTask task = new UserSessionUpdateTask() {
 
             @Override
             public void runUpdate(UserSessionEntity entity) {
-                provider.updateSessionEntity(entity, realm, user, loginUsername, ipAddress, authMethod, rememberMe, brokerSessionId, brokerUserId);
+                provider.updateSessionEntity(entity, realm, user, loginUsername, ipAddress, device, authMethod, rememberMe, brokerSessionId, brokerUserId);
 
                 entity.setState(null);
                 entity.getNotes().clear();

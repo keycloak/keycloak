@@ -19,9 +19,12 @@ package org.keycloak.services.filters;
 
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.common.ClientConnection;
+import org.keycloak.common.DeviceInfo;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.KeycloakTransaction;
+import ua_parser.Client;
+import ua_parser.Parser;
 
 import javax.servlet.AsyncEvent;
 import javax.servlet.AsyncListener;
@@ -78,6 +81,37 @@ public class KeycloakSessionServletFilter implements Filter {
             public int getLocalPort() {
                 return request.getLocalPort();
             }
+
+            @Override
+            public DeviceInfo getDeviceInfo() {
+                try {
+                    Parser parser = new Parser();
+                    String userAgent = request.getHeader("user-agent");
+                    if(userAgent == null)
+                        return new DeviceInfo();
+                    Client client = parser.parse(userAgent);
+
+                    String device = client.device.family;
+                    String browser = client.userAgent.family;
+                    String browserVersion = client.userAgent.major;
+                    if (client.userAgent.minor != null)
+                        browserVersion += "." + client.userAgent.minor;
+                    if (client.userAgent.patch != null)
+                        browserVersion += "." + client.userAgent.patch;
+                    String os = client.os.family;
+                    String osVersion = client.os.major;
+                    if (client.os.minor != null)
+                        osVersion += "." + client.os.minor;
+                    if (client.os.patch != null)
+                        osVersion += "." + client.os.patch;
+                    if (client.os.patchMinor != null)
+                        osVersion += "." + client.os.patchMinor;
+                    return new DeviceInfo(device, browser, browserVersion, os, osVersion, userAgent);
+                } catch (IOException ex) {
+                    return new DeviceInfo();
+                }
+            }
+
         };
         session.getContext().setConnection(connection);
         ResteasyProviderFactory.pushContext(ClientConnection.class, connection);
