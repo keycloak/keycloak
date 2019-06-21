@@ -1,6 +1,6 @@
 module.controller('UserRoleMappingCtrl', function($scope, $http, realm, user, clients, client, Notifications, RealmRoleMapping,
                                                   ClientRoleMapping, AvailableRealmRoleMapping, AvailableClientRoleMapping,
-                                                  CompositeRealmRoleMapping, CompositeClientRoleMapping) {
+                                                  CompositeRealmRoleMapping, CompositeClientRoleMapping, ComponentUtils) {
     $scope.realm = realm;
     $scope.user = user;
     $scope.selectedRealmRoles = [];
@@ -232,17 +232,17 @@ module.controller('UserOfflineSessionsCtrl', function($scope, $location, realm, 
 
 
 module.controller('UserListCtrl', function($scope, realm, User, UserSearchState, UserImpersonation, BruteForce, Notifications, $route, Dialog) {
-    
+
     $scope.init = function() {
         $scope.realm = realm;
-        
+
         UserSearchState.query.realm = realm.realm;
         $scope.query = UserSearchState.query;
         $scope.query.briefRepresentation = 'true';
-        
+
         if (!UserSearchState.isFirstSearch) $scope.searchQuery();
     };
-    
+
     $scope.impersonate = function(userId) {
         UserImpersonation.save({realm : realm.realm, user: userId}, function (data) {
             if (data.sameRealm) {
@@ -296,11 +296,11 @@ module.controller('UserListCtrl', function($scope, realm, User, UserSearchState,
                 userId : user.id
             }, function() {
                 $route.reload();
-                
+
                 if ($scope.users.length === 1 && $scope.query.first > 0) {
                     $scope.previousPage();
-                } 
-                
+                }
+
                 Notifications.success("The user has been deleted.");
             }, function() {
                 Notifications.error("User couldn't be deleted");
@@ -536,7 +536,7 @@ module.controller('UserCredentialsCtrl', function($scope, realm, user, $route, R
     $scope.resetPassword = function() {
         // hit enter without entering both fields - ignore
         if (!$scope.passwordAndConfirmPasswordEntered()) return;
-        
+
         if ($scope.pwdChange) {
             if ($scope.password != $scope.confirmPassword) {
                 Notifications.error("Password and confirmation does not match.");
@@ -563,7 +563,7 @@ module.controller('UserCredentialsCtrl', function($scope, realm, user, $route, R
     $scope.passwordAndConfirmPasswordEntered = function() {
         return $scope.password && $scope.confirmPassword;
     }
-    
+
     $scope.disableCredentialTypes = function() {
         Dialog.confirm('Disable credentials', 'Are you sure you want to disable these users credentials?', function() {
             UserCredentials.disableCredentialTypes({ realm: realm.realm, userId: user.id }, $scope.disableableCredentialTypes, function() {
@@ -635,7 +635,7 @@ module.controller('UserFederationCtrl', function($scope, $location, $route, real
     $scope.instancesLoaded = false;
 
     if (!$scope.providers) $scope.providers = [];
-    
+
     $scope.addProvider = function(provider) {
         console.log('Add provider: ' + provider.id);
         $location.url("/create/user-storage/" + realm.realm + "/providers/" + provider.id);
@@ -788,7 +788,7 @@ module.controller('GenericUserStorageCtrl', function($scope, $location, Notifica
             if (!instance.config['priority']) {
                 instance.config['priority'] = ['0'];
             }
-            
+
             if (providerFactory.properties) {
                 for (var i = 0; i < providerFactory.properties.length; i++) {
                     var configProperty = providerFactory.properties[i];
@@ -1057,7 +1057,7 @@ module.controller('UserGroupMembershipCtrl', function($scope, $q, realm, user, U
         });
 
         promiseGetGroups.promise.then(function(groups) {
-            $scope.groupList = groups;
+            $scope.groupList = ComponentUtils.sortGroups('name', groups);
         }, function (failed) {
             Notifications.error(failed);
         });
@@ -1485,7 +1485,7 @@ module.controller('LDAPUserStorageCtrl', function($scope, $location, Notificatio
         console.log('GenericCtrl: triggerChangedUsersSync');
         triggerSync('triggerChangedUsersSync');
     }
-    
+
 
     function triggerSync(action) {
         UserStorageOperations.sync.save({ action: action, realm: $scope.realm.realm, componentId: $scope.instance.id }, {}, function(syncResult) {
@@ -1721,8 +1721,3 @@ module.controller('LDAPMapperCreateCtrl', function($scope, realm, provider, mapp
 
 
 });
-
-
-
-
-
