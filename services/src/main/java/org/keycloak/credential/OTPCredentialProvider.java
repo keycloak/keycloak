@@ -103,22 +103,21 @@ public class OTPCredentialProvider implements CredentialProvider, CredentialInpu
         model.setPeriod(policy.getPeriod());
         model.setCreatedDate(Time.currentTimeMillis());
 
-		// KEYCLOAK-8681: Any new OTP credential will be stored as a Base64 value
-		if (model.getConfig() == null) {
-			model.setConfig(inputModel.getConfig());
-			if (model.getConfig() == null) {
-				model.setConfig(new MultivaluedHashMap<>());
-			}
-		}
-		if (model.getConfig().containsKey(BASE64_ENCODED_KEY) && model.getId() == null) {
-			// If config is set and not loaded from the database, this is a credential loaded from a realm import (also from tests)
-			// In this case, we need to set the plain value
-			model.setValue(inputModel.getValue());
-		}
-		else {
-			model.getConfig().putSingle(BASE64_ENCODED_KEY, Boolean.TRUE.toString());
-			model.setValue(Base64.encodeBytes(inputModel.getValue().getBytes()));
-		}
+        // KEYCLOAK-8681: Any new OTP credential will be stored as a Base64 value
+        if (model.getConfig() == null) {
+            model.setConfig(inputModel.getConfig());
+            if (model.getConfig() == null) {
+                model.setConfig(new MultivaluedHashMap<>());
+            }
+        }
+        if (model.getConfig().containsKey(BASE64_ENCODED_KEY) && model.getId() == null) {
+            // If config is set and not loaded from the database, this is a credential loaded from a realm import (also from tests)
+            // In this case, we need to set the plain value
+            model.setValue(inputModel.getValue());
+        } else {
+            model.getConfig().putSingle(BASE64_ENCODED_KEY, Boolean.TRUE.toString());
+            model.setValue(Base64.encodeBytes(inputModel.getValue().getBytes()));
+        }
 
         if (model.getId() == null) {
             getCredentialStore().createCredential(realm, user, model);
@@ -270,15 +269,14 @@ public class OTPCredentialProvider implements CredentialProvider, CredentialInpu
         return false;
     }
 
-	// KEYCLOAK-8681: Get the correct value for the OTP credential
+    // KEYCLOAK-8681: Get the correct value for the OTP credential
     protected byte[] getOTPCredentialValue(CredentialModel cred) {
         if (Boolean.TRUE.toString().equals(cred.getConfig().getFirst(BASE64_ENCODED_KEY))) {
-        	try {
-				return Base64.decode(cred.getValue());
-			}
-        	catch(IOException ioe) {
-        		logger.warn("Unable to Base64 decode secret from CredentialModel, returning plain value");
-			}
+            try {
+                return Base64.decode(cred.getValue());
+            }  catch(IOException ioe) {
+                logger.warn("Unable to Base64 decode secret from CredentialModel, returning plain value");
+            }
         }
         return cred.getValue().getBytes();
     }
