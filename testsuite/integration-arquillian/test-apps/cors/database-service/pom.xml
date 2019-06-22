@@ -31,14 +31,6 @@
     <description/>
     <url>http://maven.apache.org</url>
 
-    <repositories>
-        <repository>
-            <id>jboss</id>
-            <name>jboss repo</name>
-            <url>http://repository.jboss.org/nexus/content/groups/public/</url>
-        </repository>
-    </repositories>
-
     <dependencies>
         <dependency>
             <groupId>org.jboss.resteasy</groupId>

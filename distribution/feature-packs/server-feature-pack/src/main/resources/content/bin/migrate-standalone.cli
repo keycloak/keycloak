@@ -282,8 +282,13 @@ if (outcome == failed) of /subsystem=elytron/:read-resource
 end-if
 
 if (outcome == failed) of /subsystem=ejb3/service=remote/channel-creation-options=READ_TIMEOUT/:read-resource
-    echo Adding channel-creation-options READ_TIMEOUT and MAX_OUTBOUND_MESSAGES to ejb3 remote
+    echo Adding channel-creation-options READ_TIMEOUT to ejb3 remote
     /subsystem=ejb3/service=remote/channel-creation-options=READ_TIMEOUT/:add(value="${prop.remoting-connector.read.timeout:20}",type=xnio)
+    echo
+end-if
+
+if (outcome == failed) of /subsystem=ejb3/service=remote/channel-creation-options=MAX_OUTBOUND_MESSAGES/:read-resource
+    echo Adding channel-creation-options MAX_OUTBOUND_MESSAGES to ejb3 remote
     /subsystem=ejb3/service=remote/channel-creation-options=MAX_OUTBOUND_MESSAGES/:add(value=1234,type=remoting)
     echo
 end-if
@@ -506,6 +511,18 @@ if (result == false) of /subsystem=webservices/:read-attribute(name=statistics-e
     echo
 end-if
 
+if (outcome == failed) of /extension=org.jboss.as.weld/:read-resource
+    echo Adding weld extension
+    /extension=org.jboss.as.weld/:add
+    echo
+end-if
+
+if (outcome == failed) of /subsystem=weld/:read-resource
+    echo Adding weld subsystem
+    /subsystem=weld/:add
+    echo
+end-if
+
 if (outcome == failed) of /extension=org.wildfly.extension.microprofile.health-smallrye/:read-resource
     echo Adding microprofile.health-smallrye extension...
     /extension=org.wildfly.extension.microprofile.health-smallrye/:add(module=org.wildfly.extension.microprofile.health-smallrye)
@@ -543,6 +560,27 @@ if (outcome == failed) of /subsystem=microprofile-metrics-smallrye/:read-resourc
     /subsystem=microprofile-metrics-smallrye/:write-attribute(name=security-enabled,value=false)
     /subsystem=microprofile-metrics-smallrye/:write-attribute(name=exposed-subsystems,value=[*])
     /subsystem=microprofile-metrics-smallrye/:write-attribute(name=prefix,value=${wildfly.metrics.prefix:wildfly})
+    echo
+end-if
+
+# Migrate from 6.0.1 to 7.0.0
+if (outcome == success) of /subsystem=ejb3/service=remote/channel-creation-options=READ_TIMEOUT/:read-resource
+    echo Removing READ_TIMEOUT option from remote service from ejb3 subsystem
+    /subsystem=ejb3/service=remote/channel-creation-options=READ_TIMEOUT/:remove
+    echo
+end-if
+
+if (outcome == failed) of /subsystem=infinispan/cache-container=web/local-cache=routing:read-resource
+    echo Adding local cache routing to web cache container to infinispan subsystem
+    /subsystem=infinispan/cache-container=web/local-cache=routing/:add
+    echo
+end-if
+
+if (outcome == failed) of /subsystem=infinispan/cache-container=web/local-cache=sso:read-resource
+    echo Adding local cache sso to web cache container to infinispan subsystem
+    /subsystem=infinispan/cache-container=web/local-cache=sso/:add
+    /subsystem=infinispan/cache-container=web/local-cache=sso/component=locking/:add(isolation=REPEATABLE_READ)
+    /subsystem=infinispan/cache-container=web/local-cache=sso/component=transaction/:add(mode=BATCH)
     echo
 end-if
 

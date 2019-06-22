@@ -63,40 +63,26 @@
         <dependency>
             <groupId>org.jboss.as</groupId>
             <artifactId>jboss-as-naming</artifactId>
-            <version>${jboss.as.version}</version>
         </dependency>
 
         <dependency>
             <groupId>org.jboss.as</groupId>
             <artifactId>jboss-as-server</artifactId>
-            <version>${jboss.as.version}</version>
         </dependency>
 
         <dependency>
             <groupId>org.jboss.as</groupId>
             <artifactId>jboss-as-ee</artifactId>
-            <version>${jboss.as.version}</version>
         </dependency>
 
         <dependency>
             <groupId>org.jboss.as</groupId>
             <artifactId>jboss-as-web</artifactId>
-            <version>${jboss.as.version}</version>
         </dependency>
 
         <dependency>
             <groupId>org.jboss.logging</groupId>
-            <artifactId>jboss-logging</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.jboss.logging</groupId>
-            <artifactId>jboss-logging-processor</artifactId>
-            <!-- This is a compile-time dependency of this project, but is not needed at compile or runtime by other
-projects that depend on this project.-->
-            <scope>provided</scope>
-            <optional>true</optional>
-            <version>1.0.0.Final</version>
+            <artifactId>jboss-logging-annotations</artifactId>
         </dependency>
 
         <dependency>

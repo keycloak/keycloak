@@ -42,8 +42,8 @@
         <app.server>undertow</app.server>
 
         <!-- Wildfly deprecated versions -->
-        <wildfly.deprecated.version>15.0.1.Final</wildfly.deprecated.version>
-        <wildfly.deprecated.wildfly.core.version>7.0.0.Final</wildfly.deprecated.wildfly.core.version>
+        <wildfly.deprecated.version>16.0.0.Final</wildfly.deprecated.version>
+        <wildfly.deprecated.wildfly.core.version>8.0.0.Final</wildfly.deprecated.wildfly.core.version>
         <wildfly.deprecated.arquillian.wildfly.container>2.1.1.Final</wildfly.deprecated.arquillian.wildfly.container>
 
         <!--component versions-->

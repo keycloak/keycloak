@@ -281,8 +281,13 @@ if (outcome == failed) of /profile=$standaloneProfile/subsystem=elytron/:read-re
 end-if
 
 if (outcome == failed) of /profile=$standaloneProfile/subsystem=ejb3/service=remote/channel-creation-options=READ_TIMEOUT/:read-resource
-    echo Adding channel-creation-options READ_TIMEOUT and MAX_OUTBOUND_MESSAGES to ejb3 remote
+    echo Adding channel-creation-options READ_TIMEOUT to ejb3 remote
     /profile=$standaloneProfile/subsystem=ejb3/service=remote/channel-creation-options=READ_TIMEOUT/:add(value="${prop.remoting-connector.read.timeout:20}",type=xnio)
+    echo
+end-if
+
+if (outcome == failed) of /profile=$standaloneProfile/subsystem=ejb3/service=remote/channel-creation-options=MAX_OUTBOUND_MESSAGES/:read-resource
+    echo Adding channel-creation-options MAX_OUTBOUND_MESSAGES to ejb3 remote
     /profile=$standaloneProfile/subsystem=ejb3/service=remote/channel-creation-options=MAX_OUTBOUND_MESSAGES/:add(value=1234,type=remoting)
     echo
 end-if
@@ -320,18 +325,6 @@ end-if
 if (outcome == failed) of /profile=$standaloneProfile/subsystem=undertow/server=default-server/https-listener=https/:read-resource
     echo Adding https-listener
     /profile=$standaloneProfile/subsystem=undertow/server=default-server/https-listener=https/:add(socket-binding=https,security-realm=ApplicationRealm,enable-http2=true)
-    echo
-end-if
-
-if (outcome == success) of /socket-binding-group=ha-sockets/socket-binding=jgroups-tcp-fd/:read-resource
-    echo Removing socket-binding jgroups-tcp-fd
-    /socket-binding-group=ha-sockets/socket-binding=jgroups-tcp-fd/:remove
-    echo
-end-if
-
-if (outcome == success) of /socket-binding-group=ha-sockets/socket-binding=jgroups-udp-fd/:read-resource
-    echo Removing socket-binding jgroups-udp-fd
-    /socket-binding-group=ha-sockets/socket-binding=jgroups-udp-fd/:remove
     echo
 end-if
 
@@ -543,6 +536,27 @@ end-if
 if (result == false) of /profile=$standaloneProfile/subsystem=webservices/:read-attribute(name=statistics-enabled)
     echo Adding statistics-enabled expression to webservices subsystem
     /profile=$standaloneProfile/subsystem=webservices/:write-attribute(name=statistics-enabled,value=${wildfly.webservices.statistics-enabled:${wildfly.statistics-enabled:false}})
+    echo
+end-if
+
+# Migrate from 6.0.1 to 7.0.0
+if (outcome == success) of /profile=$standaloneProfile/subsystem=ejb3/service=remote/channel-creation-options=READ_TIMEOUT/:read-resource
+    echo Removing READ_TIMEOUT option from remote service from ejb3 subsystem
+    /profile=$standaloneProfile/subsystem=ejb3/service=remote/channel-creation-options=READ_TIMEOUT/:remove
+    echo
+end-if
+
+if (outcome == failed) of /profile=$standaloneProfile/subsystem=infinispan/cache-container=web/local-cache=routing:read-resource
+    echo Adding local cache routing to web cache container to infinispan subsystem
+    /profile=$standaloneProfile/subsystem=infinispan/cache-container=web/local-cache=routing/:add
+    echo
+end-if
+
+if (outcome == failed) of /profile=$standaloneProfile/subsystem=infinispan/cache-container=web/local-cache=sso:read-resource
+    echo Adding local cache sso to web cache container to infinispan subsystem
+    /profile=$standaloneProfile/subsystem=infinispan/cache-container=web/local-cache=sso/:add
+    /profile=$standaloneProfile/subsystem=infinispan/cache-container=web/local-cache=sso/component=locking/:add(isolation=REPEATABLE_READ)
+    /profile=$standaloneProfile/subsystem=infinispan/cache-container=web/local-cache=sso/component=transaction/:add(mode=BATCH)
     echo
 end-if
 
