@@ -35,7 +35,6 @@
     <maven.compiler.source>1.7</maven.compiler.source>
     <spring-boot.version>1.5.16.RELEASE</spring-boot.version>
     <spring.version>4.1.6.RELEASE</spring.version>
-    <mockito.version>1.9.5</mockito.version>
   </properties>
 
   <dependencies>
