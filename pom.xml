@@ -133,6 +133,7 @@
         <selenium.version>2.35.0</selenium.version>
         <xml-apis.version>1.4.01</xml-apis.version>
         <subethasmtp.version>3.1.7</subethasmtp.version>
+        <mockito.version>1.9.5</mockito.version>
 
         <!-- Maven Plugins -->
         <enforcer.plugin.version>1.4</enforcer.plugin.version>
