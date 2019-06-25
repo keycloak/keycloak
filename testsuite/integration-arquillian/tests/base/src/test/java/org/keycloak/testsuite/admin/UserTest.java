@@ -709,7 +709,7 @@ public class UserTest extends AbstractAdminTest {
             assertEquals(400, e.getResponse().getStatus());
 
             ErrorRepresentation error = e.getResponse().readEntity(ErrorRepresentation.class);
-            Assert.assertEquals("invalidClientId not enabled", error.getErrorMessage());
+            Assert.assertEquals("Client doesn't exist", error.getErrorMessage());
         }
     }
 
@@ -1108,7 +1108,7 @@ public class UserTest extends AbstractAdminTest {
             assertEquals(400, e.getResponse().getStatus());
 
             ErrorRepresentation error = e.getResponse().readEntity(ErrorRepresentation.class);
-            Assert.assertEquals("invalidClientId not enabled", error.getErrorMessage());
+            Assert.assertEquals("Client doesn't exist", error.getErrorMessage());
         }
 
         user.sendVerifyEmail();

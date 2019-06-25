@@ -686,9 +686,15 @@ public class UserResource {
         }
 
         ClientModel client = realm.getClientByClientId(clientId);
-        if (client == null || !client.isEnabled()) {
+        if (client == null) {
+            logger.debugf("Client %s doesn't exist", clientId);
             throw new WebApplicationException(
-                ErrorResponse.error(clientId + " not enabled", Status.BAD_REQUEST));
+                ErrorResponse.error("Client doesn't exist", Status.BAD_REQUEST));
+        }
+        if (!client.isEnabled()) {
+            logger.debugf("Client %s is not enabled", clientId);
+            throw new WebApplicationException(
+                    ErrorResponse.error("Client is not enabled", Status.BAD_REQUEST));
         }
 
         String redirect;
