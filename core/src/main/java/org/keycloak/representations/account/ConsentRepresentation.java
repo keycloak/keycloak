@@ -21,7 +21,7 @@ import java.util.List;
 
 public class ConsentRepresentation {
 
-    private List<ConsentScopeRepresentation> scopes;
+    private List<ConsentScopeRepresentation> grantedScopes;
 
     private Long createdDate;
 
@@ -30,18 +30,18 @@ public class ConsentRepresentation {
     public ConsentRepresentation() {
     }
 
-    public ConsentRepresentation(List<ConsentScopeRepresentation> scopes, Long createdDate, Long lastUpdatedDate) {
-        this.scopes = scopes;
+    public ConsentRepresentation(List<ConsentScopeRepresentation> grantedScopes, Long createdDate, Long lastUpdatedDate) {
+        this.grantedScopes = grantedScopes;
         this.createdDate = createdDate;
         this.lastUpdatedDate = lastUpdatedDate;
     }
 
-    public List<ConsentScopeRepresentation> getScopes() {
-        return scopes;
+    public List<ConsentScopeRepresentation> getGrantedScopes() {
+        return grantedScopes;
     }
 
-    public void setScopes(List<ConsentScopeRepresentation> scopes) {
-        this.scopes = scopes;
+    public void setGrantedScopes(List<ConsentScopeRepresentation> grantedScopes) {
+        this.grantedScopes = grantedScopes;
     }
 
     public Long getCreatedDate() {
