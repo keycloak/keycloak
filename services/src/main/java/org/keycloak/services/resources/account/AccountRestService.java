@@ -23,12 +23,8 @@ import org.keycloak.events.Details;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventStoreProvider;
 import org.keycloak.events.EventType;
-import org.keycloak.models.AccountRoles;
-import org.keycloak.models.ClientModel;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserModel;
-import org.keycloak.models.UserSessionModel;
+import org.keycloak.forms.account.freemarker.model.ApplicationsBean;
+import org.keycloak.models.*;
 import org.keycloak.representations.account.ClientRepresentation;
 import org.keycloak.representations.account.SessionRepresentation;
 import org.keycloak.representations.account.UserRepresentation;
@@ -45,10 +41,10 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+
 import org.keycloak.common.Profile;
+import org.keycloak.storage.StorageId;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -296,8 +292,55 @@ public class AccountRestService {
         return new ResourcesService(session, user, auth, request);
     }
 
-   // TODO Federated identities
-    // TODO Applications
+    // TODO Federated identities
+
+    @Path("/applications")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @NoCache
+    public Response applications() {
+        checkAccountApiEnabled();
+        auth.requireOneOf(AccountRoles.MANAGE_ACCOUNT, AccountRoles.VIEW_PROFILE);
+
+        List<String> activeClients = new LinkedList<String>();
+        List<UserSessionModel> sessions = session.sessions().getUserSessions(realm, user);
+        for (UserSessionModel s : sessions) {
+            activeClients.addAll(s.getAuthenticatedClientSessions().keySet());
+        }
+
+        List<ClientRepresentation> apps = new LinkedList<>();
+        for (ClientModel client : realm.getClients()) {
+            // Don't show bearerOnly clients
+            if (client.isBearerOnly()) {
+                continue;
+            }
+
+            ClientRepresentation clientRep = new ClientRepresentation();
+            clientRep.setClientId(client.getClientId());
+            clientRep.setClientName(client.getName());
+            clientRep.setInternal(true);
+            clientRep.setInUse(activeClients.contains(client.getClientId()));
+            clientRep.setUrl(client.getBaseUrl());
+            apps.add(clientRep);
+        }
+
+        for (UserConsentModel consent : session.users().getConsents(realm, user.getId())) {
+            ClientModel client = consent.getClient();
+
+            if (!new StorageId(client.getId()).isLocal()) {
+                ClientRepresentation clientRep = new ClientRepresentation();
+                clientRep.setClientId(client.getClientId());
+                clientRep.setClientName(client.getName());
+                clientRep.setInternal(false);
+                clientRep.setInUse(activeClients.contains(client.getClientId()));
+                clientRep.setUrl(client.getBaseUrl());
+                apps.add(clientRep);
+            }
+        }
+
+        return Cors.add(request, Response.ok(apps)).auth().allowedOrigins(auth.getToken()).build();
+    }
+
     // TODO Logs
     
     private static void checkAccountApiEnabled() {
