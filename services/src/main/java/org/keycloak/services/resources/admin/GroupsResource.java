@@ -80,17 +80,34 @@ public class GroupsResource {
 
         List<GroupModel> results;
 
+        /**
+         * For now fetching (as in UsersResource) all groups and filtering in Java
+         * TODO: IMHO we should consider different pagination technique:
+         * (1) REST return filtered results (in some cases even epty page) and JS
+         * client retrieves next pages until it gets all page of results or reaches the end of list
+         * (2) or we fetch results in backend page by page until we get all required results.
+         */
         if (Objects.nonNull(search)) {
-            results = realm.searchForGroupByName(search.trim(), firstResult, maxResults);
-        } else if(Objects.nonNull(firstResult) && Objects.nonNull(maxResults)) {
-            results = realm.getTopLevelGroups(firstResult, maxResults);
+            results = realm.searchForGroupByName(search.trim(),null, null);
         } else {
             results = realm.getTopLevelGroups();
         }
 
-        return results.stream()
-                .filter(group -> auth.groups().canView(group))
+        List<GroupRepresentation> ret = results.stream()
                 .map(group -> ModelToRepresentation.toGroupHierarchy(group, false))
+                .collect(Collectors.toList());
+
+        return checkGroupsPermissions(ret);
+
+    }
+
+    private List<GroupRepresentation> checkGroupsPermissions(List<GroupRepresentation> list) {
+        return list.stream()
+                .filter(group -> auth.groups().canView(realm.getGroupById(group.getId())))
+                .map(group -> {
+                    group.setSubGroups(checkGroupsPermissions(group.getSubGroups()));
+                    return group;
+                })
                 .collect(Collectors.toList());
     }
 
@@ -122,14 +139,20 @@ public class GroupsResource {
     @Produces(MediaType.APPLICATION_JSON)
     public Map<String, Long> getGroupCount(@QueryParam("search") String search,
                                            @QueryParam("top") @DefaultValue("false") boolean onlyTopGroups) {
-        Long results;
+        List<GroupModel> results;
         Map<String, Long> map = new HashMap<>();
+
         if (Objects.nonNull(search)) {
-            results = realm.getGroupsCountByNameContaining(search);
+            results = realm.searchForGroupByName(search, null, null);
         } else {
-            results = realm.getGroupsCount(onlyTopGroups);
+            results = realm.getTopLevelGroups();
         }
-        map.put("count", results);
+
+        Long count = results.stream()
+                .filter(group -> auth.groups().canView(group))
+                .count();
+
+        map.put("count", count);
         return map;
     }
 
