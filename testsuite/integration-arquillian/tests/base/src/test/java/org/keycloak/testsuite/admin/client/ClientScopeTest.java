@@ -439,6 +439,43 @@ public class ClientScopeTest extends AbstractClientTest {
         Assert.assertFalse(clientOptionalScopes .contains("scope-opt"));
     }
 
+    // KEYCLOAK-9999
+    @Test
+    public void defaultOptionalClientScopeCanBeAssignedToClientAsDefaultScope() {
+
+        // Create optional client scope
+        ClientScopeRepresentation optionalClientScope = new ClientScopeRepresentation();
+        optionalClientScope.setName("optional-client-scope");
+        optionalClientScope.setProtocol("openid-connect");
+        String optionalClientScopeId = createClientScope(optionalClientScope);
+        getCleanup().addClientScopeId(optionalClientScopeId);
+
+        testRealmResource().addDefaultOptionalClientScope(optionalClientScopeId);
+        assertAdminEvents.assertEvent(getRealmId(), OperationType.CREATE, AdminEventPaths.defaultOptionalClientScopePath(optionalClientScopeId), ResourceType.CLIENT_SCOPE);
+
+        // Ensure that scope is optional
+        List<String> realmOptionalScopes = getClientScopeNames(testRealmResource().getDefaultOptionalClientScopes());
+        Assert.assertTrue(realmOptionalScopes.contains("optional-client-scope"));
+
+        // Create client
+        ClientRepresentation client = new ClientRepresentation();
+        client.setClientId("test-client");
+        client.setDefaultClientScopes(Collections.singletonList("optional-client-scope"));
+        String clientUuid = createClient(client);
+        getCleanup().addClientUuid(clientUuid);
+
+        // Ensure that default optional client scope is a default scope of the client
+        List<String> clientDefaultScopes = getClientScopeNames(testRealmResource().clients().get(clientUuid).getDefaultClientScopes());
+        Assert.assertTrue(clientDefaultScopes.contains("optional-client-scope"));
+
+        // Ensure that no optional scopes are assigned to the client, even if there are default optional scopes!
+        List<String> clientOptionalScopes = getClientScopeNames(testRealmResource().clients().get(clientUuid).getOptionalClientScopes());
+        Assert.assertTrue(clientOptionalScopes.isEmpty());
+
+        // Unassign optional client scope from realm for cleanup
+        testRealmResource().removeDefaultOptionalClientScope(optionalClientScopeId);
+        assertAdminEvents.assertEvent(getRealmId(), OperationType.DELETE, AdminEventPaths.defaultOptionalClientScopePath(optionalClientScopeId), ResourceType.CLIENT_SCOPE);
+    }
 
     // KEYCLOAK-5863
     @Test
