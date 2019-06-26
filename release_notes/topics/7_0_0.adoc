@@ -1,0 +1,3 @@
+= Apache Tomcat Adapter
+
+Java adapter for Apache Tomcat 8 and Apache Tomcat 9 was unified and now it serves for both of them.
