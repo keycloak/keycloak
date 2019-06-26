@@ -19,17 +19,20 @@ package org.keycloak.services.resources.account;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.common.ClientConnection;
+import org.keycloak.common.util.StringPropertyReplacer;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventStoreProvider;
 import org.keycloak.events.EventType;
 import org.keycloak.models.AccountRoles;
+import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.UserSessionModel;
 import org.keycloak.representations.account.ClientRepresentation;
 import org.keycloak.representations.account.ConsentRepresentation;
 import org.keycloak.representations.account.ConsentScopeRepresentation;
@@ -56,10 +59,15 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.keycloak.common.Profile;
@@ -243,28 +251,6 @@ public class AccountRestService {
     // TODO Federated identities
 
     /**
-     * Returns the list of available applications in the specified
-     * realm.
-     *
-     * @return list of applications in that realm
-     */
-    @Path("/applications")
-    @GET
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response getApplications() {
-        checkAccountApiEnabled();
-        auth.require(AccountRoles.VIEW_APPLICATIONS);
-
-        List<ClientModel> clients = realm.getClients();
-
-        List<ClientRepresentation> clientRepresentations = clients.stream()
-                .map(this::modelToRepresentation)
-                .collect(Collectors.toList());
-
-        return Cors.add(request, Response.ok(clientRepresentations)).build();
-    }
-
-    /**
      * Returns the applications with the given id in the specified realm.
      *
      * @param clientId client id to search for
@@ -275,42 +261,56 @@ public class AccountRestService {
     @Produces(MediaType.APPLICATION_JSON)
     public Response getApplication(final @PathParam("clientId") String clientId) {
         checkAccountApiEnabled();
-        auth.require(AccountRoles.VIEW_APPLICATIONS);
+        auth.requireOneOf(AccountRoles.MANAGE_ACCOUNT, AccountRoles.VIEW_APPLICATIONS);
         ClientModel client = realm.getClientByClientId(clientId);
-        if (client == null) {
+        if (client == null || client.isBearerOnly() || client.getBaseUrl() == null) {
             return Cors.add(request, Response.status(Response.Status.NOT_FOUND).entity("No client with clientId: " + clientId + " found.")).build();
         }
 
-        return Cors.add(request, Response.ok(modelToRepresentation(client))).build();
+        List<String> inUseClients = new LinkedList<>();
+        if(!session.sessions().getUserSessions(realm, client).isEmpty()) {
+            inUseClients.add(clientId);
+        }
+
+        List<String> offlineClients = new LinkedList<>();
+        if(session.sessions().getOfflineSessionsCount(realm, client) > 0) {
+            offlineClients.add(clientId);
+        }
+
+        UserConsentModel consentModel = session.users().getConsentByClient(realm, user.getId(), client.getId());
+        Map<String, UserConsentModel> consentModels = Collections.singletonMap(client.getClientId(), consentModel);
+
+        return Cors.add(request, Response.ok(modelToRepresentation(client, inUseClients, offlineClients, consentModels))).build();
     }
 
-    private ClientRepresentation modelToRepresentation(ClientModel model) {
+    private ClientRepresentation modelToRepresentation(ClientModel model, List<String> inUseClients, List<String> offlineClients, Map<String, UserConsentModel> consents) {
         ClientRepresentation representation = new ClientRepresentation();
         representation.setClientId(model.getClientId());
-        representation.setClientName(getTranslationOrDefault(model.getName()));
+        representation.setClientName(StringPropertyReplacer.replaceProperties(model.getName(), getProperties()));
+        representation.setDescription(model.getDescription());
+        representation.setUserConsentRequired(model.isConsentRequired());
+        representation.setInUse(inUseClients.contains(model.getClientId()));
+        representation.setOfflineAccess(offlineClients.contains(model.getClientId()));
+        representation.setBaseUrl(model.getBaseUrl());
+        UserConsentModel consentModel = consents.get(client.getClientId());
+        if(consentModel != null) {
+            representation.setConsent(modelToRepresentation(consentModel));
+        }
         return representation;
     }
 
     private ConsentRepresentation modelToRepresentation(UserConsentModel model) {
-        List<ConsentScopeRepresentation> scopes = model.getGrantedClientScopes().stream()
-                .map(m -> new ConsentScopeRepresentation(m.getId(), m.getName(), getTranslationOrDefault(m.getConsentScreenText())))
+        List<ConsentScopeRepresentation> grantedScopes = model.getGrantedClientScopes().stream()
+                .map(m -> new ConsentScopeRepresentation(m.getId(), m.getName(), StringPropertyReplacer.replaceProperties(m.getConsentScreenText(), getProperties())))
                 .collect(Collectors.toList());
-        return new ConsentRepresentation(scopes, model.getCreatedDate(), model.getLastUpdatedDate());
+        return new ConsentRepresentation(grantedScopes, model.getCreatedDate(), model.getLastUpdatedDate());
     }
 
-    private String getTranslationOrDefault(String key) {
-        if (key == null) {
-            return null;
-        }
-        String defaultValue = key;
-        if (key.startsWith("${")) {
-            key = key.substring(2, key.length() - 1);
-        }
+    private Properties getProperties() {
         try {
-            Properties messages = session.theme().getTheme(Theme.Type.ACCOUNT).getMessages(locale);
-            return messages.getProperty(key, defaultValue);
+            return session.theme().getTheme(Theme.Type.ACCOUNT).getMessages(locale);
         } catch (IOException e) {
-            return key;
+            return null;
         }
     }
 
@@ -325,7 +325,7 @@ public class AccountRestService {
     @Produces(MediaType.APPLICATION_JSON)
     public Response getConsent(final @PathParam("clientId") String clientId) {
         checkAccountApiEnabled();
-        auth.requireOneOf(AccountRoles.VIEW_CONSENT, AccountRoles.MANAGE_CONSENT);
+        auth.requireOneOf(AccountRoles.MANAGE_ACCOUNT, AccountRoles.VIEW_CONSENT, AccountRoles.MANAGE_CONSENT);
 
         ClientModel client = realm.getClientByClientId(clientId);
         if (client == null) {
@@ -350,7 +350,7 @@ public class AccountRestService {
     @DELETE
     public Response revokeConsent(final @PathParam("clientId") String clientId) {
         checkAccountApiEnabled();
-        auth.require(AccountRoles.MANAGE_CONSENT);
+        auth.requireOneOf(AccountRoles.MANAGE_ACCOUNT, AccountRoles.MANAGE_CONSENT);
 
         event.event(EventType.REVOKE_GRANT);
         ClientModel client = realm.getClientByClientId(clientId);
@@ -420,7 +420,7 @@ public class AccountRestService {
      */
     private Response upsert(String clientId, ConsentRepresentation consent) {
         checkAccountApiEnabled();
-        auth.require(AccountRoles.MANAGE_CONSENT);
+        auth.requireOneOf(AccountRoles.MANAGE_ACCOUNT, AccountRoles.MANAGE_CONSENT);
 
         event.event(EventType.GRANT_CONSENT);
         ClientModel client = realm.getClientByClientId(clientId);
@@ -463,7 +463,7 @@ public class AccountRestService {
             availableGrants.put(client.getId(), client);
         }
 
-        for (ConsentScopeRepresentation scopeRepresentation : requested.getScopes()) {
+        for (ConsentScopeRepresentation scopeRepresentation : requested.getGrantedScopes()) {
             ClientScopeModel scopeModel = availableGrants.get(scopeRepresentation.getId());
             if (scopeModel == null) {
                 String msg = String.format("Scope id %s does not exist for client %s.", scopeRepresentation, consent.getClient().getName());
@@ -479,6 +479,54 @@ public class AccountRestService {
     @Path("/linked-accounts")
     public LinkedAccountsResource linkedAccounts() {
         return new LinkedAccountsResource(session, request, client, auth, event, user);
+    }
+
+    @Path("/applications")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @NoCache
+    public Response applications() {
+        checkAccountApiEnabled();
+        auth.requireOneOf(AccountRoles.MANAGE_ACCOUNT, AccountRoles.VIEW_APPLICATIONS);
+
+        Set<ClientModel> clients = new HashSet<ClientModel>();
+        List<String> inUseClients = new LinkedList<String>();
+        List<UserSessionModel> sessions = session.sessions().getUserSessions(realm, user);
+        for(UserSessionModel s : sessions) {
+            for (AuthenticatedClientSessionModel a : s.getAuthenticatedClientSessions().values()) {
+                ClientModel client = a.getClient();
+                clients.add(client);
+                inUseClients.add(client.getClientId());
+            }
+        }
+
+        List<String> offlineClients = new LinkedList<String>();
+        List<UserSessionModel> offlineSessions = session.sessions().getOfflineUserSessions(realm, user);
+        for(UserSessionModel s : offlineSessions) {
+            for(AuthenticatedClientSessionModel a : s.getAuthenticatedClientSessions().values()) {
+                ClientModel client = a.getClient();
+                clients.add(client);
+                offlineClients.add(client.getClientId());
+            }
+        }
+
+        Map<String, UserConsentModel> consentModels = new HashMap<String, UserConsentModel>();
+        List<UserConsentModel> consents = session.users().getConsents(realm, user.getId());
+        for (UserConsentModel consent : consents) {
+            ClientModel client = consent.getClient();
+            clients.add(client);
+            consentModels.put(client.getClientId(), consent);
+        }
+
+        List<ClientRepresentation> apps = new LinkedList<ClientRepresentation>();
+        for (ClientModel client : clients) {
+            if (client.isBearerOnly() || client.getBaseUrl() == null) {
+                continue;
+            }
+            apps.add(modelToRepresentation(client, inUseClients, offlineClients, consentModels));
+        }
+
+        return Cors.add(request, Response.ok(apps)).auth().allowedOrigins(auth.getToken()).build();
     }
 
     // TODO Logs
