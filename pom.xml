@@ -1427,6 +1427,11 @@
                 <enabled>false</enabled>
             </snapshots>
         </repository>
+        <!-- Travis rate limits workaround -->
+        <repository>
+            <id>central</id>
+            <url>https://repository.jboss.org/nexus/content/groups/public-jboss</url>
+        </repository>
     </repositories>
 
     <build>
