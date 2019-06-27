@@ -18,6 +18,7 @@
 package org.keycloak.testsuite.adapter.servlet;
 
 import static javax.ws.rs.core.Response.Status.OK;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.*;
 import static org.keycloak.OAuth2Constants.PASSWORD;
 import static org.keycloak.testsuite.admin.ApiUtil.createUserAndResetPasswordWithAdminClient;
@@ -50,6 +51,8 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import javax.ws.rs.client.Client;
@@ -175,7 +178,7 @@ import org.xml.sax.SAXException;
 @AppServerContainer(ContainerConstants.APP_SERVER_TOMCAT7)
 @AppServerContainer(ContainerConstants.APP_SERVER_TOMCAT8)
 @AppServerContainer(ContainerConstants.APP_SERVER_TOMCAT9)
-public class SAMLServletAdapterTest extends AbstractServletsAdapterTest {
+public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
     @Page
     protected BadClientSalesPostSigServlet badClientSalesPostSigServletPage;
 
@@ -430,21 +433,6 @@ public class SAMLServletAdapterTest extends AbstractServletsAdapterTest {
                 "tenant1-keycloak-saml.xml", "tenant2-keycloak-saml.xml",
                 "keystore-tenant1.jks", "keystore-tenant2.jks",
                 SendUsernameServlet.class, SamlMultiTenantResolver.class);
-    }
-
-    @Override
-    public void addAdapterTestRealms(List<RealmRepresentation> testRealms) {
-        testRealms.add(IOUtil.loadRealm("/adapter-test/keycloak-saml/testsaml.json"));
-        testRealms.add(IOUtil.loadRealm("/adapter-test/keycloak-saml/tenant1-realm.json"));
-        testRealms.add(IOUtil.loadRealm("/adapter-test/keycloak-saml/tenant2-realm.json"));
-    }
-
-    @Override
-    public void setDefaultPageUriParameters() {
-        super.setDefaultPageUriParameters();
-        testRealmPage.setAuthRealm(SAMLSERVLETDEMO);
-        testRealmSAMLRedirectLoginPage.setAuthRealm(SAMLSERVLETDEMO);
-        testRealmSAMLPostLoginPage.setAuthRealm(SAMLSERVLETDEMO);
     }
 
     private void assertForbidden(AbstractPage page, String expectedNotContains) {
@@ -1583,7 +1571,7 @@ public class SAMLServletAdapterTest extends AbstractServletsAdapterTest {
 
           .execute(r -> {
               Assert.assertThat(r, statusCodeIsHC(Response.Status.OK));
-              Assert.assertThat(r, bodyHC(allOf(containsString("principal="), not(containsString("500")))));
+              Assert.assertThat(r, bodyHC(containsString("principal=")));
           });
     }
 

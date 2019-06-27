@@ -77,6 +77,7 @@ import java.security.Signature;
 import java.security.SignatureException;
 import java.util.*;
 
+import javax.xml.datatype.XMLGregorianCalendar;
 import javax.xml.namespace.QName;
 
 import org.keycloak.dom.saml.v2.SAML2Object;
@@ -488,9 +489,9 @@ public abstract class AbstractSamlAuthenticationHandler implements SamlAuthentic
         URI nameFormat = subjectNameID == null ? null : subjectNameID.getFormat();
         String nameFormatString = nameFormat == null ? JBossSAMLURIConstants.NAMEID_FORMAT_UNSPECIFIED.get() : nameFormat.toString();
         final SamlPrincipal principal = new SamlPrincipal(assertion, principalName, principalName, nameFormatString, attributes, friendlyAttributes);
-        String index = authn == null ? null : authn.getSessionIndex();
-        final String sessionIndex = index;
-        SamlSession account = new SamlSession(principal, roles, sessionIndex);
+        final String sessionIndex = authn == null ? null : authn.getSessionIndex();
+        final XMLGregorianCalendar sessionNotOnOrAfter = authn == null ? null : authn.getSessionNotOnOrAfter();
+        SamlSession account = new SamlSession(principal, roles, sessionIndex, sessionNotOnOrAfter);
         sessionStore.saveAccount(account);
         onCreateSession.onSessionCreated(account);
 

@@ -19,6 +19,7 @@ package org.keycloak.adapters.saml;
 
 import org.keycloak.adapters.spi.KeycloakAccount;
 
+import javax.xml.datatype.XMLGregorianCalendar;
 import java.io.Serializable;
 import java.util.Set;
 
@@ -30,14 +31,16 @@ public class SamlSession implements Serializable, KeycloakAccount {
     private SamlPrincipal principal;
     private Set<String> roles;
     private String sessionIndex;
+    private XMLGregorianCalendar sessionNotOnOrAfter;
 
     public SamlSession() {
     }
 
-    public SamlSession(SamlPrincipal principal, Set<String> roles, String sessionIndex) {
+    public SamlSession(SamlPrincipal principal, Set<String> roles, String sessionIndex, XMLGregorianCalendar sessionNotOnOrAfter) {
         this.principal = principal;
         this.roles = roles;
         this.sessionIndex = sessionIndex;
+        this.sessionNotOnOrAfter = sessionNotOnOrAfter;
     }
 
     public SamlPrincipal getPrincipal() {
@@ -50,6 +53,10 @@ public class SamlSession implements Serializable, KeycloakAccount {
 
     public String getSessionIndex() {
         return sessionIndex;
+    }
+
+    public XMLGregorianCalendar getSessionNotOnOrAfter() {
+        return sessionNotOnOrAfter;
     }
 
     @Override

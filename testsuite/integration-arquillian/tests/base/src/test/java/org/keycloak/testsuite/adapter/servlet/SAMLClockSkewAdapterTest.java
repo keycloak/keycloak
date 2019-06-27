@@ -53,7 +53,7 @@ import static org.keycloak.testsuite.util.SamlClient.Binding.POST;
 @AppServerContainer(ContainerConstants.APP_SERVER_JETTY92)
 @AppServerContainer(ContainerConstants.APP_SERVER_JETTY93)
 @AppServerContainer(ContainerConstants.APP_SERVER_JETTY94)
-public class SAMLClockSkewAdapterTest extends AbstractServletsAdapterTest {
+public class SAMLClockSkewAdapterTest extends AbstractSAMLServletAdapterTest {
 
     @Page protected SalesPostClockSkewServlet salesPostClockSkewServletPage;
     private static final String DEPLOYMENT_NAME_3_SEC = SalesPostClockSkewServlet.DEPLOYMENT_NAME + "_3Sec";
@@ -88,13 +88,13 @@ public class SAMLClockSkewAdapterTest extends AbstractServletsAdapterTest {
                     .login().user(bburkeUser).build()
                     .processSamlResponse(POST)
                     .transformDocument(doc -> {
-                        setAdapterAndServerTimeOffset(timeOffset, salesPostClockSkewServletPage.toString() + "unsecured");
+                        setAdapterAndServerTimeOffset(timeOffset, salesPostClockSkewServletPage.toString());
                         return doc;
                     }).build().executeAndTransform(resp -> EntityUtils.toString(resp.getEntity()));
 
             Assert.assertThat(resultPage, matcher);
         } finally {
-            setAdapterAndServerTimeOffset(0);
+            setAdapterAndServerTimeOffset(0, salesPostClockSkewServletPage.toString());
         }
     }
 
