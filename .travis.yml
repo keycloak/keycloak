@@ -1,7 +1,8 @@
 language: java
 
 cache:
-  cache: false
+  directories:
+    - $HOME/.m2
 
 env:
   global:
