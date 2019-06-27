@@ -16,6 +16,7 @@
  */
 package org.keycloak.saml.processing.core.saml.v2.util;
 
+import org.keycloak.common.util.Time;
 import org.keycloak.saml.common.PicketLinkLogger;
 import org.keycloak.saml.common.PicketLinkLoggerFactory;
 import org.keycloak.saml.common.constants.GeneralConstants;
@@ -31,6 +32,7 @@ import javax.xml.datatype.Duration;
 import javax.xml.datatype.XMLGregorianCalendar;
 import java.util.GregorianCalendar;
 import java.util.TimeZone;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Util class dealing with xml based time
@@ -101,6 +103,13 @@ public class XMLTimeUtil {
 
         GregorianCalendar gc = new GregorianCalendar(tz);
         XMLGregorianCalendar xgc = dtf.newXMLGregorianCalendar(gc);
+
+        Long offsetMilis = TimeUnit.MILLISECONDS.convert(Time.getOffset(), TimeUnit.SECONDS);
+        if (offsetMilis != 0) {
+            if (logger.isDebugEnabled()) logger.debug(XMLTimeUtil.class.getName() + " timeOffset: " + offsetMilis);
+            xgc.add(parseAsDuration(offsetMilis.toString()));
+        }
+        if (logger.isDebugEnabled()) logger.debug(XMLTimeUtil.class.getName() + " issueInstant: " + xgc.toString());
 
         return xgc;
     }
@@ -179,10 +188,8 @@ public class XMLTimeUtil {
      * @param timeValue
      *
      * @return
-     *
-     * @throws org.keycloak.saml.common.exceptions.ParsingException
      */
-    public static Duration parseAsDuration(String timeValue) throws ParsingException {
+    public static Duration parseAsDuration(String timeValue) {
         if (timeValue == null) {
             PicketLinkLoggerFactory.getLogger().nullArgumentError("duration time");
         }
@@ -207,10 +214,8 @@ public class XMLTimeUtil {
      * @param timeString
      *
      * @return
-     *
-     * @throws ParsingException
      */
-    public static XMLGregorianCalendar parse(String timeString) throws ParsingException {
+    public static XMLGregorianCalendar parse(String timeString) {
         DatatypeFactory factory = DATATYPE_FACTORY.get();
         return factory.newXMLGregorianCalendar(timeString);
     }

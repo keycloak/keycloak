@@ -122,6 +122,14 @@ public class SamlClientBuilder {
         return this;
     }
 
+    public SamlClientBuilder assertResponse(Consumer<HttpResponse> consumer) {
+        steps.add((client, currentURI, currentResponse, context) -> {
+            consumer.accept(currentResponse);
+            return null;
+        });
+        return this;
+    }
+
     /**
      * When executing the {@link HttpUriRequest} obtained from the previous step,
      * do not to follow HTTP redirects but pass the first response immediately

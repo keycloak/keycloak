@@ -36,10 +36,13 @@ import org.keycloak.adapters.undertow.SavedRequest;
 import org.keycloak.adapters.undertow.ServletHttpFacade;
 import org.keycloak.adapters.undertow.UndertowUserSessionManagement;
 import org.keycloak.common.util.KeycloakUriBuilder;
+import org.keycloak.saml.processing.core.saml.v2.util.XMLTimeUtil;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
+import javax.xml.datatype.DatatypeConstants;
+import javax.xml.datatype.XMLGregorianCalendar;
 import java.security.Principal;
 import java.util.LinkedList;
 import java.util.List;
@@ -162,9 +165,8 @@ public class ServletSamlSessionStore implements SamlSessionStore {
             return false;
         }
 
-        final SamlSession samlSession = (SamlSession)session.getAttribute(SamlSession.class.getName());
+        final SamlSession samlSession = SamlUtil.validateSamlSession(session.getAttribute(SamlSession.class.getName()), deployment);
         if (samlSession == null) {
-            log.debug("SamlSession was not found in the session");
             return false;
         }
 
@@ -192,7 +194,6 @@ public class ServletSamlSessionStore implements SamlSessionStore {
         sessionManagement.login(servletRequestContext.getDeployment().getSessionManager());
         String sessionId = changeSessionId(session);
         idMapperUpdater.map(idMapper, account.getSessionIndex(), account.getPrincipal().getSamlSubject(), sessionId);
-
     }
 
     protected String changeSessionId(HttpSession session) {
