@@ -31,6 +31,13 @@ public class TestJavascriptResource {
     }
 
     @GET
+    @Path("/silent-check-sso.html")
+    @Produces(MediaType.TEXT_HTML)
+    public String getJavascriptTestingEnvironmentSilentCheckSso() throws IOException {
+        return resourceToString("/javascript/silent-check-sso.html");
+    }
+
+    @GET
     @Path("/keycloak.json")
     @Produces(MediaType.APPLICATION_JSON)
     public String getKeycloakJSON() throws IOException {

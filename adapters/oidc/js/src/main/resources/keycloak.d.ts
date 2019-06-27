@@ -107,6 +107,13 @@ declare namespace Keycloak {
 		redirectUri?: string;
 
 		/**
+		 * Specifies an uri to redirect to after silent check-sso.
+		 * Silent check-sso will only happen, when this redirect uri is given and
+		 * the specified uri is available whithin the application.
+		 */
+		silentCheckSsoRedirectUri?: string;
+
+		/**
 		 * Set the OpenID Connect flow.
 		 * @default standard
 		 */

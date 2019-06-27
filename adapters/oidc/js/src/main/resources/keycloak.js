@@ -116,6 +116,10 @@
                     kc.redirectUri = initOptions.redirectUri;
                 }
 
+                if (initOptions.silentCheckSsoRedirectUri) {
+                    kc.silentCheckSsoRedirectUri = initOptions.silentCheckSsoRedirectUri;
+                }
+
                 if (initOptions.pkceMethod) {
                     if (initOptions.pkceMethod !== "S256") {
                         throw 'Invalid value for pkceMethod';
@@ -157,6 +161,29 @@
                     });
                 }
 
+                var checkSsoSilently = function() {
+                    var ifrm = document.createElement("iframe");
+                    var src = kc.createLoginUrl({prompt: 'none', redirectUri: kc.silentCheckSsoRedirectUri});
+                    ifrm.setAttribute("src", src);
+                    ifrm.setAttribute("title", "keycloak-silent-check-sso");
+                    ifrm.style.display = "none";
+                    document.body.appendChild(ifrm);
+
+                    var messageCallback = function(event) {
+                        if (event.origin !== window.location.origin || ifrm.contentWindow !== event.source) {
+                            return;
+                        }
+
+                        var oauth = parseCallback(event.data);
+                        processCallback(oauth, initPromise);
+
+                        document.body.removeChild(ifrm);
+                        window.removeEventListener("message", messageCallback);
+                    };
+
+                    window.addEventListener("message", messageCallback);
+                };
+
                 var options = {};
                 switch (initOptions.onLoad) {
                     case 'check-sso':
@@ -164,7 +191,7 @@
                             setupCheckLoginIframe().success(function() {
                                 checkLoginIframe().success(function (unchanged) {
                                     if (!unchanged) {
-                                        doLogin(false);
+                                        kc.silentCheckSsoRedirectUri ? checkSsoSilently() : doLogin(false);
                                     } else {
                                         initPromise.setSuccess();
                                     }
@@ -173,7 +200,7 @@
                                 });
                             });
                         } else {
-                            doLogin(false);
+                            kc.silentCheckSsoRedirectUri ? checkSsoSilently() : doLogin(false);
                         }
                         break;
                     case 'login-required':
