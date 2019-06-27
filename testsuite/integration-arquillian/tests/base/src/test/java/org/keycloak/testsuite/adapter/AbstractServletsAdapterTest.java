@@ -38,6 +38,7 @@ import org.jboss.shrinkwrap.api.asset.UrlAsset;
 
 import org.junit.Assert;
 import static org.keycloak.testsuite.auth.page.AuthRealm.DEMO;
+import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 
 public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
 
@@ -132,7 +133,7 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
             } else {
                 deployment.addAsWebInfResource(keycloakSAMLConfig, "keycloak-saml.xml");
             }
-            
+
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -211,7 +212,7 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
                     .build().toString();
 
             DroneUtils.getCurrentDriver().navigate().to(timeOffsetUri);
-            WaitUtils.waitUntilElement(By.tagName("body")).is().visible();
+            waitForPageToLoad();
             String pageSource = DroneUtils.getCurrentDriver().getPageSource();
             System.out.println(pageSource);
         }

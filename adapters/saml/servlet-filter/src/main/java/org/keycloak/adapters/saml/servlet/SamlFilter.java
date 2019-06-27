@@ -135,7 +135,7 @@ public class SamlFilter implements Filter {
             log.fine("deployment not configured");
             return;
         }
-        FilterSamlSessionStore tokenStore = new FilterSamlSessionStore(request, facade, 100000, idMapper);
+        FilterSamlSessionStore tokenStore = new FilterSamlSessionStore(request, facade, 100000, idMapper, deployment);
         boolean isEndpoint = request.getRequestURI().substring(request.getContextPath().length()).endsWith("/saml");
         SamlAuthenticator authenticator;
         if (isEndpoint) {
