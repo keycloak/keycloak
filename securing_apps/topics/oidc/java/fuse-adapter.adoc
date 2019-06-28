@@ -2,7 +2,7 @@
 [[_fuse_adapter]]
 ==== JBoss Fuse 6 Adapter
 
-{project_name} supports securing your web applications running inside https://developers.redhat.com/products/fuse/overview/[JBoss Fuse 6].
+{project_name} supports securing your web applications running inside https://developers.redhat.com/products/fuse/overview[JBoss Fuse 6].
 
 ifeval::[{project_community}==true]
 JBoss Fuse 6 leverages <<_jetty9_adapter,Jetty 9 adapter>> as {fuseVersion} is bundled with http://www.eclipse.org/jetty/[Jetty 9.2 server]

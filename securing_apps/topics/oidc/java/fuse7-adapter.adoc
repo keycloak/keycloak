@@ -2,7 +2,7 @@
 [[_fuse7_adapter]]
 ==== JBoss Fuse 7 Adapter
 
-{project_name} supports securing your web applications running inside https://developers.redhat.com/products/fuse/overview/[JBoss Fuse 7].
+{project_name} supports securing your web applications running inside https://developers.redhat.com/products/fuse/overview[JBoss Fuse 7].
 
 JBoss Fuse 7 leverages Undertow adapter which is essentially the same as 
 ifeval::[{project_community}==true]
