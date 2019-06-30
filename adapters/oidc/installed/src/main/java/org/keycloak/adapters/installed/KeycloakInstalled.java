@@ -43,7 +43,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Locale;
 import java.util.UUID;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -144,6 +144,20 @@ public class KeycloakInstalled {
             logoutDesktop();
         }
 
+        removeTokens();
+    }
+
+    public CompletableFuture<Void> logoutAsync() throws IOException, InterruptedException, URISyntaxException {
+        if (status == Status.LOGGED_DESKTOP) {
+            return logoutDesktopAsync();
+        }
+        else {
+            removeTokens();
+            return CompletableFuture.completedFuture(null);
+        }
+    }
+
+    private void removeTokens() {
         tokenString = null;
         token = null;
 
@@ -156,11 +170,52 @@ public class KeycloakInstalled {
     }
 
     public void loginDesktop() throws IOException, VerificationException, OAuthErrorException, URISyntaxException, ServerRequest.HttpFailure, InterruptedException {
-        CallbackListener callback = new CallbackListener(getLoginResponseWriter());
-        callback.start();
+        CompletableFuture<Void> composedFuture = loginDesktopAsync();
+        try {
+            composedFuture.get();
+        } catch (ExecutionException executionException) {
+            try {
+                throw executionException.getCause();
+            }
+            catch (IOException | VerificationException | OAuthErrorException | ServerRequest.HttpFailure |RuntimeException | Error e) {
+                throw e;
+            }
+            catch (Throwable e){
+                throw new IllegalStateException(e);
+            }
+        }
+    }
 
+    public CompletableFuture<Void> loginDesktopAsync() throws IOException, URISyntaxException {
+        CallbackListener callback = new CallbackListener(getLoginResponseWriter());
         String redirectUri = "http://localhost:" + callback.server.getLocalPort();
         String state = UUID.randomUUID().toString();
+        final CompletableFuture<Void> future = callback.runAsync().thenCompose((Void dummy) ->
+        {
+            final CompletableFuture<Void> statusFuture = new CompletableFuture<>();
+            if (!state.equals(callback.state)) {
+                statusFuture.completeExceptionally(
+                        new VerificationException("Invalid state"));
+            }
+            else if (callback.error != null) {
+                statusFuture.completeExceptionally(
+                        new OAuthErrorException(callback.error, callback.errorDescription));
+            }
+            else {
+                try {
+                    processCode(callback.code, redirectUri);
+                    status = Status.LOGGED_DESKTOP;
+                    statusFuture.complete(null);
+                } catch (IOException | ServerRequest.HttpFailure | VerificationException | RuntimeException e) {
+                    statusFuture.completeExceptionally(e);
+                }
+            }
+            return statusFuture;
+        });
+        future.whenComplete((x, y) -> {
+            callback.closeSockets();
+        });
+
 
         KeycloakUriBuilder builder = deployment.getAuthUrl().clone()
                 .queryParam(OAuth2Constants.RESPONSE_TYPE, OAuth2Constants.CODE)
@@ -175,28 +230,30 @@ public class KeycloakInstalled {
 
         Desktop.getDesktop().browse(new URI(authUrl));
 
-        callback.join();
-
-        if (!state.equals(callback.state)) {
-            throw new VerificationException("Invalid state");
-        }
-
-        if (callback.error != null) {
-            throw new OAuthErrorException(callback.error, callback.errorDescription);
-        }
-
-        if (callback.errorException != null) {
-            throw callback.errorException;
-        }
-
-        processCode(callback.code, redirectUri);
-
-        status = Status.LOGGED_DESKTOP;
+		return future;
     }
 
     private void logoutDesktop() throws IOException, URISyntaxException, InterruptedException {
+        final CompletableFuture<Void> future = logoutDesktopAsync();
+
+        try {
+            future.get();
+        } catch (ExecutionException executionException) {
+            try {
+                throw executionException.getCause();
+            }
+            catch (IOException | RuntimeException | Error e) {
+                throw e;
+            }
+            catch (Throwable e){
+                throw new IllegalStateException(e);
+            }
+        }
+    }
+
+    private CompletableFuture<Void> logoutDesktopAsync() throws IOException, URISyntaxException {
         CallbackListener callback = new CallbackListener(getLogoutResponseWriter());
-        callback.start();
+        final CompletableFuture<Void> future = callback.runAsync();
 
         String redirectUri = "http://localhost:" + callback.server.getLocalPort();
 
@@ -205,12 +262,12 @@ public class KeycloakInstalled {
                 .build().toString();
 
         Desktop.getDesktop().browse(new URI(logoutUrl));
-
-        callback.join();
-
-        if (callback.errorException != null) {
-            throw callback.errorException;
-        }
+        future.whenComplete((x, y) -> {
+        	callback.closeSockets();
+        	if(y == null)
+        		removeTokens();
+        });
+        return future;
     }
 
     public void loginManual() throws IOException, ServerRequest.HttpFailure, VerificationException {
@@ -590,7 +647,7 @@ public class KeycloakInstalled {
     }
 
 
-    public class CallbackListener extends Thread {
+    class CallbackListener {
 
         private ServerSocket server;
 
@@ -599,8 +656,6 @@ public class KeycloakInstalled {
         private String error;
 
         private String errorDescription;
-
-        private IOException errorException;
 
         private String state;
 
@@ -613,8 +668,13 @@ public class KeycloakInstalled {
             server = new ServerSocket(0);
         }
 
-        @Override
-        public void run() {
+        public CompletableFuture<Void> runAsync(){
+            CompletableFuture<Void> future = new CompletableFuture<Void>();
+            new Thread(() -> awaitCallback(future), "KeycloakInstaller callback listener").start();
+            return future;
+        }
+
+        private void awaitCallback(CompletableFuture<Void> future) {
             try {
                 socket = server.accept();
 
@@ -665,17 +725,23 @@ public class KeycloakInstalled {
                 }
                 pw.flush();
                 socket.close();
-            } catch (IOException e) {
-                errorException = e;
+                future.complete(null);
+            } catch (IOException | RuntimeException e) {
+                if(! future.isCompletedExceptionally())
+                    future.completeExceptionally(e);
             }
 
+            closeSockets();
+        }
+
+        private void closeSockets() {
             try {
-                server.close();
+            	if (! server.isClosed())
+            		server.close();
+            	if(socket != null && ! socket.isClosed())
+            		socket.close();
             } catch (IOException e) {
             }
         }
-
     }
-
-
 }
