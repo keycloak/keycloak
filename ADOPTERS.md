@@ -16,6 +16,7 @@ List of organization names below is based on information collected using Keycloa
 * Capgemini
 * Chassi
 * CloudNative Inc.
+* Conciso GmbH
 * Copenhagen Optimization
 * Curecomp GmbH
 * Cybertech
