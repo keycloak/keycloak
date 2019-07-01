@@ -165,7 +165,7 @@ public class KeycloakInstalled {
 
         String redirectUri = "http://localhost:" + callback.server.getLocalPort();
         String state = UUID.randomUUID().toString();
-        Pkce pkce = generatePkce();
+        Pkce pkce = deployment.isPkce() ? generatePkce() : null;
 
         String authUrl = createAuthUrl(redirectUri, state, pkce);
 
