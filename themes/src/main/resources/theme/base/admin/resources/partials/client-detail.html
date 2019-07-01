@@ -500,6 +500,20 @@
                 </div>
                 <kc-tooltip>{{:: 'tls-client-certificate-bound-access-tokens.tooltip' | translate}}</kc-tooltip>
             </div>
+
+            <div class="form-group clearfix block" data-ng-show="protocol == 'openid-connect'">
+                <label class="col-md-2 control-label" for="changePkceCodeChallengeMethod">{{:: 'pkce-code-challenge-method' | translate}}</label>
+                <div class="col-sm-6">
+                    <div>
+                        <select class="form-control" id="pkceCodeChallengeMethod"
+                                ng-change="changePkceCodeChallengeMethod()"
+                                ng-model="pkceCodeChallengeMethod"
+                                ng-options="method for method in changePkceCodeChallengeMethodOptions">
+                        </select>
+                    </div>
+                </div>
+                <kc-tooltip>{{:: 'pkce-code-challenge-method.tooltip' | translate}}</kc-tooltip>
+            </div>
         </fieldset>
 
         <fieldset>
