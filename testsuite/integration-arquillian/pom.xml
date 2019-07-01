@@ -454,7 +454,7 @@
                 <jdbc.mvn.groupId>org.postgresql</jdbc.mvn.groupId>
                 <jdbc.mvn.artifactId>postgresql</jdbc.mvn.artifactId>
                 <jdbc.mvn.version>${postgresql.version}</jdbc.mvn.version>
-                <docker.database.image>postgres:9.6.11</docker.database.image>
+                <docker.database.image>postgres:10.1</docker.database.image>
                 <docker.database.port>5432</docker.database.port>
                 <docker.database.skip>false</docker.database.skip>
                 <docker.database.cmd>postgres</docker.database.cmd>
@@ -471,6 +471,20 @@
                 <jdbc.mvn.artifactId>postgresql</jdbc.mvn.artifactId>
                 <jdbc.mvn.version>${postgresql.version}</jdbc.mvn.version>
                 <dballocator.type>postgresql96</dballocator.type>
+                <dballocator.skip>false</dballocator.skip>
+            </properties>
+        </profile>
+        <profile>
+            <id>db-allocator-db-postgresplus</id>
+            <properties>
+                <!-- JDBC properties point to "default" JDBC driver for the particular DB -->
+                <!-- For EAP testing, it is recommended to override those with system properties pointing to GAV of more appropriate JDBC driver -->
+                <!-- for the particular EAP version -->
+                <!-- For EDB, the JDBC driver will need to be downloaded and manually added to local maven repository -->
+                <jdbc.mvn.groupId>com.edb.Driver</jdbc.mvn.groupId>
+                <jdbc.mvn.artifactId>edb-jdbc</jdbc.mvn.artifactId>
+                <jdbc.mvn.version>18</jdbc.mvn.version>
+                <dballocator.type>postgresplus101</dballocator.type>
                 <dballocator.skip>false</dballocator.skip>
             </properties>
         </profile>
