@@ -104,8 +104,11 @@ import org.w3c.dom.NodeList;
 public class SAMLEndpoint {
     protected static final Logger logger = Logger.getLogger(SAMLEndpoint.class);
     public static final String SAML_FEDERATED_SESSION_INDEX = "SAML_FEDERATED_SESSION_INDEX";
+    @Deprecated // in favor of SAML_FEDERATED_SUBJECT_NAMEID
     public static final String SAML_FEDERATED_SUBJECT = "SAML_FEDERATED_SUBJECT";
+    @Deprecated // in favor of SAML_FEDERATED_SUBJECT_NAMEID
     public static final String SAML_FEDERATED_SUBJECT_NAMEFORMAT = "SAML_FEDERATED_SUBJECT_NAMEFORMAT";
+    public static final String SAML_FEDERATED_SUBJECT_NAMEID = "SAML_FEDERATED_SUBJECT_NAME_ID";
     public static final String SAML_LOGIN_RESPONSE = "SAML_LOGIN_RESPONSE";
     public static final String SAML_ASSERTION = "SAML_ASSERTION";
     public static final String SAML_IDP_INITIATED_CLIENT_ID = "SAML_IDP_INITIATED_CLIENT_ID";

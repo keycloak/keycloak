@@ -17,6 +17,7 @@
 package org.keycloak.testsuite.util;
 
 import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
+import org.keycloak.testsuite.page.AbstractPage;
 import org.keycloak.testsuite.util.SamlClient.Binding;
 import org.keycloak.testsuite.util.SamlClient.DoNotFollowRedirectStep;
 import org.keycloak.testsuite.util.SamlClient.ResultExtractor;
@@ -192,6 +193,10 @@ public class SamlClientBuilder {
     public SamlClientBuilder navigateTo(String httpGetUri) {
         steps.add((client, currentURI, currentResponse, context) -> new HttpGet(httpGetUri));
         return this;
+    }
+
+    public SamlClientBuilder navigateTo(AbstractPage page) {
+        return navigateTo(page.buildUri());
     }
 
     public SamlClientBuilder navigateTo(URI httpGetUri) {
