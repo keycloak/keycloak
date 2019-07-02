@@ -22,10 +22,7 @@ import org.junit.Test;
 import org.keycloak.models.AuthenticationExecutionModel.Requirement;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.models.utils.TimeBasedOTP;
-import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
-import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
-import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.representations.idm.RoleRepresentation;
+import org.keycloak.representations.idm.*;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.admin.Users;
 import org.keycloak.testsuite.auth.page.login.OneTimeCode;
@@ -34,10 +31,7 @@ import org.keycloak.testsuite.pages.PageUtils;
 
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -337,6 +331,34 @@ public class CustomAuthFlowOTPTest extends AbstractCustomAccountManagementTest {
         assertCurrentUrlStartsWith(testLoginOneTimeCodePage);
     }
 
+    @Test
+    public void conditionalOTPRoleForceViaGroup() {
+        //prepare config - role, default to skip
+        Map<String, String> config = new HashMap<>();
+        config.put(FORCE_OTP_ROLE, "otp_role");
+        config.put(DEFAULT_OTP_OUTCOME, SKIP);
+
+        setConditionalOTPForm(config);
+
+        //create role
+        GroupRepresentation group = getOrCreateOTPRoleInGroup();
+
+        //add group to user
+        testRealmResource().users().get(testUser.getId()).groups().add(group);
+
+        //test OTP is required
+        testRealmAccountManagementPage.navigateTo();
+        testRealmLoginPage.form().login(testUser);
+
+        assertTrue(loginConfigTotpPage.isCurrent());
+
+        configureOTP();
+        testRealmLoginPage.form().login(testUser);
+
+        //verify that the page is login page, not totp setup
+        assertCurrentUrlStartsWith(testLoginOneTimeCodePage);
+    }
+
     private RoleRepresentation getOrCreateOTPRole() {
         try {
             return testRealmResource().roles().get("otp_role").toRepresentation();
@@ -345,6 +367,20 @@ public class CustomAuthFlowOTPTest extends AbstractCustomAccountManagementTest {
             testRealmResource().roles().create(role);
             //obtain id
             return testRealmResource().roles().get("otp_role").toRepresentation();
+        }
+    }
+
+    private GroupRepresentation getOrCreateOTPRoleInGroup() {
+        try {
+            return testRealmResource().groups().groups("otp_group",0,1).get(0);
+        } catch (NotFoundException | IndexOutOfBoundsException ex ) {
+            RoleRepresentation role = this.getOrCreateOTPRole();
+            GroupRepresentation group = new GroupRepresentation();
+            group.setName("otp_group");
+            group.setRealmRoles(Arrays.asList("otp_role"));
+            testRealmResource().groups().add(group);
+            //obtain id
+            return testRealmResource().groups().groups("otp_group",0,1).get(0);
         }
     }
 
