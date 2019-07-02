@@ -20,7 +20,9 @@ package org.keycloak.adapters.saml;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.dom.saml.v2.assertion.AssertionType;
 
+import org.keycloak.dom.saml.v2.assertion.NameIDType;
 import java.io.Serializable;
+import java.net.URI;
 import java.security.Principal;
 import java.util.Collections;
 import java.util.List;
@@ -79,6 +81,27 @@ public class SamlPrincipal implements Serializable, Principal {
      */
     public String getNameIDFormat() {
         return nameIDFormat;
+    }
+
+    /**
+     * Subject nameID format
+     *
+     * @return
+     */
+    public NameIDType getNameID() {
+        if (assertion != null
+          && assertion.getSubject() != null
+          && assertion.getSubject().getSubType() != null
+          && assertion.getSubject().getSubType().getBaseID() instanceof NameIDType) {
+            return (NameIDType) assertion.getSubject().getSubType().getBaseID();
+        }
+
+        NameIDType res = new NameIDType();
+        res.setValue(getSamlSubject());
+        if (getNameIDFormat() != null) {
+            res.setFormat(URI.create(getNameIDFormat()));
+        }
+        return res;
     }
 
     @Override

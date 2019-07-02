@@ -71,6 +71,14 @@ import static org.keycloak.testsuite.util.SamlClient.Binding.*;
  */
 public class LogoutTest extends AbstractSamlTest {
 
+    private static final String SP_PROVIDED_ID = "spProvidedId";
+    private static final String SP_NAME_QUALIFIER = "spNameQualifier";
+    private static final String NAME_QUALIFIER = "nameQualifier";
+
+    private static final String BROKER_SIGN_ON_SERVICE_URL = "http://saml.idp/saml";
+    private static final String BROKER_LOGOUT_SERVICE_URL = "http://saml.idp/SLO/saml";
+    private static final String BROKER_SERVICE_ID = "http://saml.idp/saml";
+
     private ClientRepresentation salesRep;
     private ClientRepresentation sales2Rep;
 
@@ -315,8 +323,8 @@ public class LogoutTest extends AbstractSamlTest {
           .providerId(SAMLIdentityProviderFactory.PROVIDER_ID)
           .alias(SAML_BROKER_ALIAS)
           .displayName("SAML")
-          .setAttribute(SAMLIdentityProviderConfig.SINGLE_SIGN_ON_SERVICE_URL, "http://saml.idp/saml")
-          .setAttribute(SAMLIdentityProviderConfig.SINGLE_LOGOUT_SERVICE_URL, "http://saml.idp/saml")
+          .setAttribute(SAMLIdentityProviderConfig.SINGLE_SIGN_ON_SERVICE_URL, BROKER_SIGN_ON_SERVICE_URL)
+          .setAttribute(SAMLIdentityProviderConfig.SINGLE_LOGOUT_SERVICE_URL, BROKER_LOGOUT_SERVICE_URL)
           .setAttribute(SAMLIdentityProviderConfig.NAME_ID_POLICY_FORMAT, "urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress")
           .setAttribute(SAMLIdentityProviderConfig.POST_BINDING_RESPONSE, "false")
           .setAttribute(SAMLIdentityProviderConfig.POST_BINDING_AUTHN_REQUEST, "false")
@@ -328,10 +336,10 @@ public class LogoutTest extends AbstractSamlTest {
     private SAML2Object createAuthnResponse(SAML2Object so) {
         AuthnRequestType req = (AuthnRequestType) so;
         try {
-            return new SAML2LoginResponseBuilder()
+            final ResponseType res = new SAML2LoginResponseBuilder()
               .requestID(req.getID())
               .destination(req.getAssertionConsumerServiceURL().toString())
-              .issuer("http://saml.idp/saml")
+              .issuer(BROKER_SERVICE_ID)
               .assertionExpiration(1000000)
               .subjectExpiration(1000000)
               .requestIssuer(getAuthServerRealmBase(REALM_NAME).toString())
@@ -339,6 +347,13 @@ public class LogoutTest extends AbstractSamlTest {
               .authMethod(JBossSAMLURIConstants.AC_UNSPECIFIED.get())
               .sessionIndex("idp:" + UUID.randomUUID())
               .buildModel();
+
+            NameIDType nameId = (NameIDType) res.getAssertions().get(0).getAssertion().getSubject().getSubType().getBaseID();
+            nameId.setNameQualifier(NAME_QUALIFIER);
+            nameId.setSPNameQualifier(SP_NAME_QUALIFIER);
+            nameId.setSPProvidedID(SP_PROVIDED_ID);
+
+            return res;
         } catch (ConfigurationException | ProcessingException ex) {
             throw new RuntimeException(ex);
         }
@@ -350,7 +365,7 @@ public class LogoutTest extends AbstractSamlTest {
             return new SAML2LogoutResponseBuilder()
               .logoutRequestID(req.getID())
               .destination(getSamlBrokerUrl(REALM_NAME).toString())
-              .issuer("http://saml.idp/saml")
+              .issuer(BROKER_SERVICE_ID)
               .buildModel();
         } catch (ConfigurationException ex) {
             throw new RuntimeException(ex);
@@ -406,6 +421,58 @@ public class LogoutTest extends AbstractSamlTest {
               .getSamlResponse(REDIRECT);
 
             assertThat(samlResponse.getSamlObject(), isSamlStatusResponse(JBossSAMLURIConstants.STATUS_SUCCESS));
+        }
+    }
+
+    @Test
+    public void testLogoutPropagatesToSamlIdentityProviderNameIdPreserved() throws IOException {
+        final RealmResource realm = adminClient.realm(REALM_NAME);
+
+        try (
+          Closeable sales = ClientAttributeUpdater.forClient(adminClient, REALM_NAME, SAML_CLIENT_ID_SALES_POST)
+          .setFrontchannelLogout(true)
+          .removeAttribute(SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_POST_ATTRIBUTE)
+          .setAttribute(SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_REDIRECT_ATTRIBUTE, "http://url")
+          .update();
+
+          Closeable idp = new IdentityProviderCreator(realm, addIdentityProvider())
+          ) {
+            SAMLDocumentHolder samlResponse = new SamlClientBuilder()
+              .authnRequest(getAuthServerSamlEndpoint(REALM_NAME), SAML_CLIENT_ID_SALES_POST, SAML_ASSERTION_CONSUMER_URL_SALES_POST, POST).build()
+
+              // Virtually perform login at IdP (return artificial SAML response)
+              .login().idp(SAML_BROKER_ALIAS).build()
+              .processSamlResponse(REDIRECT)
+                .transformObject(this::createAuthnResponse)
+                .targetAttributeSamlResponse()
+                .targetUri(getSamlBrokerUrl(REALM_NAME))
+                .build()
+              .updateProfile().username("a").email("a@b.c").firstName("A").lastName("B").build()
+              .followOneRedirect()
+
+              // Now returning back to the app
+              .processSamlResponse(POST)
+                .transformObject(this::extractNameIdAndSessionIndexAndTerminate)
+                .build()
+
+              // ----- Logout phase ------
+
+              // Logout initiated from the app
+              .logoutRequest(getAuthServerSamlEndpoint(REALM_NAME), SAML_CLIENT_ID_SALES_POST, REDIRECT)
+                .nameId(nameIdRef::get)
+                .sessionIndex(sessionIndexRef::get)
+                .build()
+
+              .getSamlResponse(REDIRECT);
+
+            assertThat(samlResponse.getSamlObject(), isSamlLogoutRequest(BROKER_LOGOUT_SERVICE_URL));
+            LogoutRequestType lr = (LogoutRequestType) samlResponse.getSamlObject();
+            NameIDType logoutRequestNameID = lr.getNameID();
+            assertThat(logoutRequestNameID.getFormat(), is(JBossSAMLURIConstants.NAMEID_FORMAT_EMAIL.getUri()));
+            assertThat(logoutRequestNameID.getValue(), is("a@b.c"));
+            assertThat(logoutRequestNameID.getNameQualifier(), is(NAME_QUALIFIER));
+            assertThat(logoutRequestNameID.getSPProvidedID(), is(SP_PROVIDED_ID));
+            assertThat(logoutRequestNameID.getSPNameQualifier(), is(SP_NAME_QUALIFIER));
         }
     }
 
