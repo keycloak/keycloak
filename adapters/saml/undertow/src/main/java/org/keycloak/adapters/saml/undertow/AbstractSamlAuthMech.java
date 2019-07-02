@@ -136,6 +136,7 @@ public abstract class AbstractSamlAuthMech implements AuthenticationMechanism {
         }
         if (outcome == AuthOutcome.NOT_AUTHENTICATED) {
             // we are in passive mode and user is not authenticated, let app server to try another auth mechanism
+            // See KEYCLOAK-2107, AbstractSamlAuthenticationHandler
             return AuthenticationMechanismOutcome.NOT_ATTEMPTED;
         }
         if (outcome == AuthOutcome.LOGGED_OUT) {
@@ -148,6 +149,9 @@ public abstract class AbstractSamlAuthMech implements AuthenticationMechanism {
         AuthChallenge challenge = authenticator.getChallenge();
         if (challenge != null) {
             exchange.putAttachment(KEYCLOAK_CHALLENGE_ATTACHMENT_KEY, challenge);
+            if (authenticator instanceof UndertowSamlEndpoint) {
+                exchange.getSecurityContext().setAuthenticationRequired();
+            }
         }
 
         if (outcome == AuthOutcome.FAILED) {
