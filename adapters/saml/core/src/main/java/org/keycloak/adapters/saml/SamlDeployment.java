@@ -183,4 +183,6 @@ public interface SamlDeployment {
     String getPrincipalAttributeName();
     boolean isAutodetectBearerOnly();
 
+    boolean isKeepDOMAssertion();
+
 }

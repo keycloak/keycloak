@@ -87,6 +87,17 @@ public class KeycloakSamlAdapterXMLParserTest {
     }
 
     @Test
+    public void testValidationWithKeepDOMAssertion() throws Exception {
+        testValidationValid("keycloak-saml-keepdomassertion.xml");
+        // check keep dom assertion is TRUE
+        KeycloakSamlAdapter config = parseKeycloakSamlAdapterConfig("keycloak-saml-keepdomassertion.xml", KeycloakSamlAdapter.class);
+        assertNotNull(config);
+        assertEquals(1, config.getSps().size());
+        SP sp = config.getSps().get(0);
+        assertTrue(sp.isKeepDOMAssertion());
+    }
+
+    @Test
     public void testValidationKeyInvalid() throws Exception {
         InputStream schemaIs = KeycloakSamlAdapterV1Parser.class.getResourceAsStream(CURRENT_XSD_LOCATION);
         InputStream is = getClass().getResourceAsStream("keycloak-saml-invalid.xml");
@@ -115,6 +126,7 @@ public class KeycloakSamlAdapterXMLParserTest {
         assertTrue(sp.isForceAuthentication());
         assertTrue(sp.isIsPassive());
         assertFalse(sp.isAutodetectBearerOnly());
+        assertFalse(sp.isKeepDOMAssertion());
         assertEquals(2, sp.getKeys().size());
         Key signing = sp.getKeys().get(0);
         assertTrue(signing.isSigning());

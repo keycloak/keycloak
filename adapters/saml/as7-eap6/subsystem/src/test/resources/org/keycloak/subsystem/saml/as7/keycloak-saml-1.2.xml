@@ -15,12 +15,13 @@
   ~ limitations under the License.
   -->
 
-<subsystem xmlns="urn:jboss:domain:keycloak-saml:1.1">
+<subsystem xmlns="urn:jboss:domain:keycloak-saml:1.2">
     <secure-deployment name="my-app.war">
         <SP entityID="http://localhost:8080/sales-post-enc/"
             sslPolicy="EXTERNAL"
             nameIDPolicyFormat="urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified"
             logoutPage="/logout.jsp"
+            keepDOMAssertion="false"
             forceAuthentication="false">
 
             <Keys>
@@ -28,24 +29,24 @@
                     <PrivateKeyPem>my_key.pem</PrivateKeyPem>
                     <PublicKeyPem>my_key.pub</PublicKeyPem>
                     <CertificatePem>cert.cer</CertificatePem>
-                    <KeyStore resource="/WEB-INF/keystore.jks" password="store123" file="test" alias="test" type="jks">
+                    <KeyStore resource="/WEB-INF/keystore.jks" password="store123">
                         <PrivateKey alias="http://localhost:8080/sales-post-enc/" password="test123"/>
                         <Certificate alias="http://localhost:8080/sales-post-enc/"/>
                     </KeyStore>
                 </Key>
             </Keys>
-            <PrincipalNameMapping policy="FROM_NAME_ID" attribute="test"/>
+            <PrincipalNameMapping policy="FROM_NAME_ID"/>
             <RoleIdentifiers>
                 <Attribute name="Role"/>
                 <Attribute name="Role2"/>
             </RoleIdentifiers>
-            <IDP entityID="idp" signaturesRequired="true" signatureAlgorithm="test" signatureCanonicalizationMethod="test" encryption="test">
+            <IDP entityID="idp">
                 <SingleSignOnService signRequest="true"
                                      validateResponseSignature="true"
                                      validateAssertionSignature="true"
                                      requestBinding="POST"
-                                     responseBinding="POST"
-                                     bindingUrl="http://localhost:8080/auth/realms/saml-demo/protocol/saml"/>
+                                     bindingUrl="http://localhost:8080/auth/realms/saml-demo/protocol/saml"
+                                     assertionConsumerServiceUrl="acsUrl"/>
                 <SingleLogoutService
                         validateRequestSignature="true"
                         validateResponseSignature="true"

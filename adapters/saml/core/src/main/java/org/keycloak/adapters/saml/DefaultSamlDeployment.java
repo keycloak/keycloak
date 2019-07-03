@@ -315,6 +315,7 @@ public class DefaultSamlDeployment implements SamlDeployment {
     private SignatureAlgorithm signatureAlgorithm;
     private String signatureCanonicalizationMethod;
     private boolean autodetectBearerOnly;
+    private boolean keepDOMAssertion;
 
     @Override
     public boolean turnOffChangeSessionIdOnLogin() {
@@ -477,5 +478,14 @@ public class DefaultSamlDeployment implements SamlDeployment {
 
     public void setAutodetectBearerOnly(boolean autodetectBearerOnly) {
         this.autodetectBearerOnly = autodetectBearerOnly;
+    }
+
+    @Override
+    public boolean isKeepDOMAssertion() {
+        return keepDOMAssertion;
+    }
+
+    public void setKeepDOMAssertion(Boolean keepDOMAssertion) {
+        this.keepDOMAssertion = keepDOMAssertion != null && keepDOMAssertion;
     }
 }

@@ -90,6 +90,7 @@ public enum KeycloakSamlAdapterV1QNames implements HasQName {
     ATTR_VALIDATE_REQUEST_SIGNATURE(null, "validateRequestSignature"),
     ATTR_VALIDATE_RESPONSE_SIGNATURE(null, "validateResponseSignature"),
     ATTR_VALUE(null, "value"),
+    ATTR_KEEP_DOM_ASSERTION(null, "keepDOMAssertion"),
 
     UNKNOWN_ELEMENT("")
     ;
