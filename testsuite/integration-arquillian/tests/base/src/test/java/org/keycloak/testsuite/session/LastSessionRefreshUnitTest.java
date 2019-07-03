@@ -24,6 +24,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.infinispan.Cache;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.UserResource;
@@ -40,6 +41,7 @@ import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.common.util.Retry;
 import org.keycloak.testsuite.runonserver.RunOnServer;
 import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
+import org.keycloak.timer.TimerProvider;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -56,6 +58,18 @@ public class LastSessionRefreshUnitTest extends AbstractKeycloakTest {
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
 
+    }
+
+
+    @After
+    public void cleanupPeriodicTask() {
+        // Cleanup unneeded periodic task, which was added during this test
+        testingClient.server().run((session -> {
+
+            TimerProvider timer = session.getProvider(TimerProvider.class);
+            timer.cancelTask(CrossDCLastSessionRefreshStoreFactory.LSR_PERIODIC_TASK_NAME);
+
+        }));
     }
 
 
