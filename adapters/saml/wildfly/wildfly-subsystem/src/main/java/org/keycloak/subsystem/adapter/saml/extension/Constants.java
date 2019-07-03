@@ -30,6 +30,7 @@ public class Constants {
         static final String NAME_ID_POLICY_FORMAT = "nameIDPolicyFormat";
         static final String LOGOUT_PAGE = "logoutPage";
         static final String FORCE_AUTHENTICATION = "forceAuthentication";
+        static final String KEEP_DOM_ASSERTION = "keepDOMAssertion";
         static final String IS_PASSIVE = "isPassive";
         static final String TURN_OFF_CHANGE_SESSSION_ID_ON_LOGIN = "turnOffChangeSessionIdOnLogin";
         static final String ROLE_ATTRIBUTES = "RoleIdentifiers";
@@ -86,6 +87,7 @@ public class Constants {
         static final String NAME_ID_POLICY_FORMAT = "nameIDPolicyFormat";
         static final String LOGOUT_PAGE = "logoutPage";
         static final String FORCE_AUTHENTICATION = "forceAuthentication";
+        static final String KEEP_DOM_ASSERTION = "keepDOMAssertion";
         static final String ROLE_IDENTIFIERS = "RoleIdentifiers";
         static final String SIGNING = "signing";
         static final String ENCRYPTION = "encryption";
