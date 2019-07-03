@@ -124,6 +124,7 @@ public abstract class AbstractBaseServletAuthzAdapterTest extends AbstractExampl
 
             this.loginPage.form().login(username, password);
         } catch (Exception cause) {
+            log.warnf("Login failed, currentURL:%s\nPage source\n%s", driver.getCurrentUrl(), driver.getPageSource());
             throw new RuntimeException("Login failed", cause);
         }
     }

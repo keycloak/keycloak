@@ -17,6 +17,7 @@
 
 package org.keycloak.connections.httpclient;
 
+import org.apache.http.NoHttpResponseException;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.conn.ssl.AllowAllHostnameVerifier;
 import org.apache.http.conn.ssl.BrowserCompatHostnameVerifier;
@@ -25,7 +26,9 @@ import org.apache.http.conn.ssl.SSLContexts;
 import org.apache.http.conn.ssl.StrictHostnameVerifier;
 import org.apache.http.conn.ssl.X509HostnameVerifier;
 import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.DefaultHttpRequestRetryHandler;
 import org.apache.http.impl.client.HttpClients;
+import org.apache.http.protocol.HttpContext;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
@@ -105,6 +108,7 @@ public class HttpClientBuilder {
     protected TimeUnit establishConnectionTimeoutUnits = TimeUnit.MILLISECONDS;
     protected boolean disableCookies = false;
     protected ProxyMappings proxyMappings;
+    protected boolean retryUnfinishedRequests = false;
 
     /**
      * Socket inactivity timeout
@@ -153,6 +157,11 @@ public class HttpClientBuilder {
 
     public HttpClientBuilder connectionPoolSize(int connectionPoolSize) {
         this.connectionPoolSize = connectionPoolSize;
+        return this;
+    }
+
+    public HttpClientBuilder retryUnfinishedRequests(boolean retryUnfinishedRequests) {
+        this.retryUnfinishedRequests = retryUnfinishedRequests;
         return this;
     }
 
@@ -289,6 +298,17 @@ public class HttpClientBuilder {
                     .setMaxConnPerRoute(maxPooledPerRoute)
                     .setConnectionTimeToLive(connectionTTL, connectionTTLUnit);
 
+            if (retryUnfinishedRequests) {
+                builder.setRetryHandler(new DefaultHttpRequestRetryHandler(3, false) {
+                    @Override
+                    public boolean retryRequest(IOException exception, int executionCount, HttpContext context) {
+                        if (exception instanceof NoHttpResponseException) {
+                            return true;
+                        }
+                        return super.retryRequest(exception, executionCount, context);
+                    }
+                });
+            }
 
             if (proxyMappings != null && !proxyMappings.isEmpty()) {
                 builder.setRoutePlanner(new ProxyMappingsAwareRoutePlanner(proxyMappings));

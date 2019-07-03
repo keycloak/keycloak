@@ -140,6 +140,7 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
                     long connectionTTL = config.getLong("connection-ttl-millis", -1L);
                     long maxConnectionIdleTime = config.getLong("max-connection-idle-time-millis", 900000L);
                     boolean disableCookies = config.getBoolean("disable-cookies", true);
+                    boolean retryUnfinishedRequests = config.getBoolean("retry-unfinished-requests", false);
                     String clientKeystore = config.get("client-keystore");
                     String clientKeystorePassword = config.get("client-keystore-password");
                     String clientPrivateKeyPassword = config.get("client-key-password");
@@ -154,6 +155,8 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
                             : HttpClientBuilder.HostnameVerificationPolicy.valueOf(truststoreProvider.getPolicy().name());
 
                     HttpClientBuilder builder = new HttpClientBuilder();
+
+                    builder.retryUnfinishedRequests(retryUnfinishedRequests);
 
                     builder.socketTimeout(socketTimeout, TimeUnit.MILLISECONDS)
                             .establishConnectionTimeout(establishConnectionTimeout, TimeUnit.MILLISECONDS)
