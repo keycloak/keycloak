@@ -90,6 +90,7 @@ public class SP implements Serializable {
     private RoleMappingsProviderConfig roleMappingsProviderConfig;
     private IDP idp;
     private boolean autodetectBearerOnly;
+    private boolean keepDOMAssertion;
 
     public String getEntityID() {
         return entityID;
@@ -129,6 +130,14 @@ public class SP implements Serializable {
 
     public void setTurnOffChangeSessionIdOnLogin(Boolean turnOffChangeSessionIdOnLogin) {
         this.turnOffChangeSessionIdOnLogin = turnOffChangeSessionIdOnLogin != null && turnOffChangeSessionIdOnLogin;
+    }
+
+    public boolean isKeepDOMAssertion() {
+        return keepDOMAssertion;
+    }
+
+    public void setKeepDOMAssertion(Boolean keepDOMAssertion) {
+        this.keepDOMAssertion = keepDOMAssertion != null && keepDOMAssertion;
     }
 
     public List<Key> getKeys() {

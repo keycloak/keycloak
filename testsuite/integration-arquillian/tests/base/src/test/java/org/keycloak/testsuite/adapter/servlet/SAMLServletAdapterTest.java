@@ -39,10 +39,13 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.io.StringReader;
 import java.net.URI;
 import java.net.URL;
 import java.security.KeyPair;
 import java.security.PublicKey;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateFactory;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -132,6 +135,7 @@ import org.keycloak.saml.common.util.DocumentUtil;
 import org.keycloak.saml.common.util.XmlKeyInfoKeyNameTransformer;
 import org.keycloak.saml.processing.core.parsers.saml.SAMLParser;
 import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
+import org.keycloak.saml.processing.core.saml.v2.util.AssertionUtil;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.testsuite.adapter.page.*;
 import org.keycloak.testsuite.admin.ApiUtil;
@@ -188,6 +192,9 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
 
     @Page
     protected Employee2Servlet employee2ServletPage;
+
+    @Page
+    protected EmployeeDomServlet employeeDomServletPage;
 
     @Page
     protected EmployeeSigServlet employeeSigServletPage;
@@ -305,6 +312,11 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
     @Deployment(name = Employee2Servlet.DEPLOYMENT_NAME)
     protected static WebArchive employee2() {
         return samlServletDeployment(Employee2Servlet.DEPLOYMENT_NAME, SendUsernameServlet.class);
+    }
+
+    @Deployment(name = EmployeeDomServlet.DEPLOYMENT_NAME)
+    protected static WebArchive employeedom() {
+        return samlServletDeployment(EmployeeDomServlet.DEPLOYMENT_NAME, SendUsernameServlet.class);
     }
 
     @Deployment(name = EmployeeSigServlet.DEPLOYMENT_NAME)
@@ -1421,6 +1433,10 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
         waitUntilElement(By.xpath("//body")).text().contains("phone: 617");
         waitUntilElement(By.xpath("//body")).text().contains("friendlyAttribute phone: null");
 
+        driver.navigate().to(employee2ServletPage.getUriBuilder().clone().path("getAssertionFromDocument").build().toURL());
+        waitForPageToLoad();
+        Assert.assertEquals("", driver.getPageSource());
+
         employee2ServletPage.logout();
         checkLoggedOut(employee2ServletPage, testRealmSAMLPostLoginPage);
 
@@ -1483,6 +1499,25 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
         validateXMLWithSchema(driver.getPageSource(), "/adapter-test/keycloak-saml/metadata-schema/saml-schema-metadata-2.0.xsd");
     }
 
+    @Test
+    public void testDOMAssertion() throws Exception {
+        assertSuccessfulLogin(employeeDomServletPage, bburkeUser, testRealmSAMLPostLoginPage, "principal=bburke");
+        assertSuccessfullyLoggedIn(employeeDomServletPage, "principal=bburke");
+
+        driver.navigate().to(employeeDomServletPage.getUriBuilder().clone().path("getAssertionFromDocument").build().toURL());
+        waitForPageToLoad();
+        String xml = driver.getPageSource();
+        Assert.assertNotEquals("", xml);
+        Document doc = DocumentUtil.getDocument(new StringReader(xml));
+        String certBase64 = DocumentUtil.getElement(doc, new QName("http://www.w3.org/2000/09/xmldsig#", "X509Certificate")).getTextContent();
+        CertificateFactory cf = CertificateFactory.getInstance("X.509");
+        Certificate cert = cf.generateCertificate(new ByteArrayInputStream(Base64.decode(certBase64)));
+        PublicKey pubkey = cert.getPublicKey();
+        Assert.assertTrue(AssertionUtil.isSignatureValid(doc.getDocumentElement(), pubkey));
+
+        employeeDomServletPage.logout();
+        checkLoggedOut(employeeDomServletPage, testRealmSAMLPostLoginPage);
+    }
 
     @Test
     public void spMetadataValidation() throws Exception {

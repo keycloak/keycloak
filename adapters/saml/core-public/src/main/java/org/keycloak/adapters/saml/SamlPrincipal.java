@@ -28,6 +28,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.w3c.dom.Document;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -43,14 +44,20 @@ public class SamlPrincipal implements Serializable, Principal {
     private String samlSubject;
     private String nameIDFormat;
     private AssertionType assertion;
+    private Document assertionDocument;
 
     public SamlPrincipal(AssertionType assertion, String name, String samlSubject, String nameIDFormat, MultivaluedHashMap<String, String> attributes, MultivaluedHashMap<String, String> friendlyAttributes) {
+        this(assertion, null, name, samlSubject, nameIDFormat, attributes, friendlyAttributes);
+    }
+
+    public SamlPrincipal(AssertionType assertion, Document assertionDocument, String name, String samlSubject, String nameIDFormat, MultivaluedHashMap<String, String> attributes, MultivaluedHashMap<String, String> friendlyAttributes) {
         this.name = name;
         this.attributes = attributes;
         this.friendlyAttributes = friendlyAttributes;
         this.samlSubject = samlSubject;
         this.nameIDFormat = nameIDFormat;
         this.assertion = assertion;
+        this.assertionDocument = assertionDocument;
     }
 
     public SamlPrincipal() {
@@ -102,6 +109,16 @@ public class SamlPrincipal implements Serializable, Principal {
             res.setFormat(URI.create(getNameIDFormat()));
         }
         return res;
+    }
+
+    /*
+     * The assertion element in DOM format, to respect the original syntax.
+     * It's only available if option <em>keepDOMAssertion</em> is set to true.
+     *
+     * @return The document assertion or null
+     */
+    public Document getAssertionDocument() {
+        return assertionDocument;
     }
 
     @Override

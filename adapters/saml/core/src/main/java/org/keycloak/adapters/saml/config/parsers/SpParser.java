@@ -53,6 +53,7 @@ public class SpParser extends AbstractKeycloakSamlAdapterV1Parser<SP> {
         sp.setIsPassive(StaxParserUtil.getBooleanAttributeValueRP(element, KeycloakSamlAdapterV1QNames.ATTR_IS_PASSIVE));
         sp.setAutodetectBearerOnly(StaxParserUtil.getBooleanAttributeValueRP(element, KeycloakSamlAdapterV1QNames.ATTR_AUTODETECT_BEARER_ONLY));
         sp.setTurnOffChangeSessionIdOnLogin(StaxParserUtil.getBooleanAttributeValueRP(element, KeycloakSamlAdapterV1QNames.ATTR_TURN_OFF_CHANGE_SESSSION_ID_ON_LOGIN));
+        sp.setKeepDOMAssertion(StaxParserUtil.getBooleanAttributeValueRP(element, KeycloakSamlAdapterV1QNames.ATTR_KEEP_DOM_ASSERTION));
 
         return sp;
     }

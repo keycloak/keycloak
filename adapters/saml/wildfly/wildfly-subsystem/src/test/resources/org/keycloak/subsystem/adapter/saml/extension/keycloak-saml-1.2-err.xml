@@ -15,7 +15,7 @@
   ~ limitations under the License.
   -->
 
-<subsystem xmlns="urn:jboss:domain:keycloak-saml:1.1">
+<subsystem xmlns="urn:jboss:domain:keycloak-saml:1.2">
     <secure-deployment name="my-app.war">
         <SP entityID="http://localhost:8080/sales-post-enc/"
             sslPolicy="EXTERNAL"
@@ -28,24 +28,24 @@
                     <PrivateKeyPem>my_key.pem</PrivateKeyPem>
                     <PublicKeyPem>my_key.pub</PublicKeyPem>
                     <CertificatePem>cert.cer</CertificatePem>
-                    <KeyStore resource="/WEB-INF/keystore.jks" password="store123">
+                    <KeyStore resource="/WEB-INF/keystore.jks" password="store123" file="test" alias="test" type="jks">
                         <PrivateKey alias="http://localhost:8080/sales-post-enc/" password="test123"/>
                         <Certificate alias="http://localhost:8080/sales-post-enc/"/>
                     </KeyStore>
                 </Key>
             </Keys>
-            <PrincipalNameMapping policy="FROM_NAME_ID"/>
+            <PrincipalNameMapping policy="FROM_NAME_ID" attribute="test"/>
             <RoleIdentifiers>
                 <Attribute name="Role"/>
                 <Attribute name="Role2"/>
             </RoleIdentifiers>
-            <IDP entityID="idp">
+            <IDP entityID="idp" signaturesRequired="true" signatureAlgorithm="test" signatureCanonicalizationMethod="test" encryption="test">
                 <SingleSignOnService signRequest="true"
                                      validateResponseSignature="true"
                                      validateAssertionSignature="true"
                                      requestBinding="POST"
-                                     bindingUrl="http://localhost:8080/auth/realms/saml-demo/protocol/saml"
-                                     assertionConsumerServiceUrl="acsUrl"/>
+                                     responseBinding="POST"
+                                     bindingUrl="http://localhost:8080/auth/realms/saml-demo/protocol/saml"/>
                 <SingleLogoutService
                         validateRequestSignature="true"
                         validateResponseSignature="true"

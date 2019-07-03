@@ -97,6 +97,11 @@
                     <xs:documentation>SAML clients can request that a user is re-authenticated even if they are already logged in at the IDP. Default value is false.</xs:documentation>
                 </xs:annotation>
         </xs:attribute>
+        <xs:attribute name="keepDOMAssertion" type="xs:boolean" use="optional">
+                <xs:annotation>
+                    <xs:documentation>Attribute to inject the DOM representation of the assertion into the SamlPrincipal (respecting the original syntax). Default value is false</xs:documentation>
+                </xs:annotation>
+        </xs:attribute>
         <xs:attribute name="isPassive" type="xs:boolean" use="optional">
                 <xs:annotation>
                     <xs:documentation>SAML clients can request that a user is never asked to authenticate even if they are not logged in at the IDP. Set this to true if you want this. Do not use together with forceAuthentication as they are opposite. Default value is false.</xs:documentation>

@@ -84,6 +84,11 @@
                 <xs:documentation>Redirected unauthenticated request to a login page</xs:documentation>
             </xs:annotation>
         </xs:attribute>
+        <xs:attribute name="keepDOMAssertion" type="xs:boolean" use="optional">
+                <xs:annotation>
+                    <xs:documentation>Attribute to inject the DOM representation of the assertion into the SamlPrincipal (respecting the original syntax). Default value is false</xs:documentation>
+                </xs:annotation>
+        </xs:attribute>
         <xs:attribute name="isPassive" type="xs:boolean" use="optional">
             <xs:annotation>
                 <xs:documentation>If user isn't logged in just return with an error.  Used to check if a user is already logged in or not</xs:documentation>
