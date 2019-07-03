@@ -149,6 +149,21 @@ WARNING:
 None of the keycloak client adapters currently support holder-of-key token verification.
 Instead, keycloak adapters currently treat access and refresh tokens as bearer tokens.
 
+[[_proof-key-for-code-exchange]]
+*Proof Key for Code Exchange (PKCE)*
+
+When an attacker steals an authorization code that was issued to a legitimate client, PKCE prevents the attacker from receiving the tokens that apply to that code.
+
+The administrator can select the following three options:
+
+*Proof Key for Code Exchange Code Challenge Method*
+
+* (blank) : {project_name} does not apply PKCE unless the client sends PKCE's parameters appropriately to keycloak's authorization endpoint. It is the default setting.
+* S256 : {project_name} applies to the client PKCE whose code challenge method is S256.
+* plain : {project_name} applies to the client PKCE whose code challenge method is plain.
+
+Please see https://tools.ietf.org/html/rfc7636[RFC 7636 Proof Key for Code Exchange by OAuth Public Clients] for more details.
+
 
 
 
