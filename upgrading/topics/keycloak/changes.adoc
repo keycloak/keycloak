@@ -1,5 +1,23 @@
 == Migration Changes
 
+=== Migrating to 7.0.0
+
+==== Upgrade to Wildfly 17
+
+The {project_name} server was upgraded to use Wildfly 17 as the underlying container. This does not directly involve any
+specific {project_name} server functionality, but there are a few changes related to the migration, which are worth mentioning.
+
+Dependency updates::
+  The dependencies were updated to the versions used by Wildfly 17 server. For example, Infinispan is now 9.4.14.Final.
+
+Configuration changes::
+  There are few configuration changes in the `standalone(-ha).xml` and `domain.xml` files. You should follow the <<_install_new_version>>
+  section to handle the migration of configuration files automatically.
+
+Cross-Datacenter Replication changes::
+  * You will need to upgrade {jdgserver_name} server to version {jdgserver_version}. The older version may still work, but it is
+  not guaranteed as we don't test it anymore.
+
 === Migrating to 6.0.0
 
 ==== Upgrade to Wildfly 16

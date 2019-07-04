@@ -113,14 +113,14 @@ endif::[]
 :jdgserver_version: 7.3.0
 :jdgserver_crossdcdocs_link: https://access.redhat.com/documentation/en-us/red_hat_data_grid/7.3/html/red_hat_data_grid_user_guide/x_site_replication
 
-:fuseVersion: JBoss Fuse 6.3.0 Rollup 10
+:fuseVersion: JBoss Fuse 6.3.0 Rollup 11
 :fuseHawtioEAPVersion: JBoss EAP 6.4
-:fuseHawtioWARVersion: hawtio-wildfly-1.4.0.redhat-630254.war
+:fuseHawtioWARVersion: hawtio-wildfly-1.4.0.redhat-630377.war
 
-:fuse7Version: JBoss Fuse 7.2.0
+:fuse7Version: JBoss Fuse 7.3.1
 
-:subsystem_undertow_xml_urn: urn:jboss:domain:undertow:6.0
-:subsystem_infinispan_xml_urn: urn:jboss:domain:infinispan:6.0
+:subsystem_undertow_xml_urn: urn:jboss:domain:undertow:9.0
+:subsystem_infinispan_xml_urn: urn:jboss:domain:infinispan:8.0
 :subsystem_datasources_xml_urn: urn:jboss:domain:datasources:5.0
 :saml_adapter_xsd_urn: https://www.keycloak.org/schema/keycloak_saml_adapter_1_10.xsd
 :generic_adapter_name: keycloak-gatekeeper

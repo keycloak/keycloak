@@ -1,3 +1,7 @@
 = Apache Tomcat Adapter
 
 Java adapter for Apache Tomcat 8 and Apache Tomcat 9 was unified and now it serves for both of them.
+
+= WildFly 17 Upgrade
+
+Keycloak server was upgraded to use WildFly 17 under the covers.
