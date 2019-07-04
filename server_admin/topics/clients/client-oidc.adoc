@@ -67,6 +67,18 @@ _bearer-only_::
   Bearer-only access type means that the application only allows bearer token requests.
   If this is turned on, this application cannot participate in browser logins.
 
+*Standard Flow Enabled*
+
+If this is on, clients are allowed to use the OIDC <<_oidc-auth-flows,Authorization Code Flow>>.
+
+*Implicit Flow Enabled*
+
+If this is on, clients are allowed to use the OIDC <<_oidc-auth-flows,Implicit Flow>>.
+
+*Direct Access Grants Enabled*
+
+If this is on, clients are allowed to use the OIDC <<_oidc-auth-flows,Direct Access Grants>>.
+
 *Root URL*
 
 If {project_name} uses any configured relative URLs, this value is prepended to them.
@@ -84,18 +96,6 @@ for more information.
 *Base URL*
 
 If {project_name} needs to link to the client, this URL is used.
-
-*Standard Flow Enabled*
-
-If this is on, clients are allowed to use the OIDC <<_oidc-auth-flows,Authorization Code Flow>>.
-
-*Implicit Flow Enabled*
-
-If this is on, clients are allowed to use the OIDC <<_oidc-auth-flows,Implicit Flow>>.
-
-*Direct Access Grants Enabled*
-
-If this is on, clients are allowed to use the OIDC <<_oidc-auth-flows,Direct Access Grants>>.
 
 *Admin URL*
 
@@ -145,8 +145,7 @@ In the following cases, {project_name} will verify the client sending the access
 
 Please see https://tools.ietf.org/html/draft-ietf-oauth-mtls-08#section-3[Mutual TLS Client Certificate Bound Access Tokens] in the OAuth 2.0 Mutual TLS Client Authentication and Certificate Bound Access Tokens for more details.
 
-WARNING:
-None of the keycloak client adapters currently support holder-of-key token verification.
+WARNING: None of the keycloak client adapters currently support holder-of-key token verification.
 Instead, keycloak adapters currently treat access and refresh tokens as bearer tokens.
 
 [[_proof-key-for-code-exchange]]
