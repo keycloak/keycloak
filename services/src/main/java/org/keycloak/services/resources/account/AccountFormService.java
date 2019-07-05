@@ -714,6 +714,12 @@ public class AccountFormService extends AbstractSecuredLocalService {
     }
 
     @Path("resource/{resource_id}/grant")
+    @GET
+    public Response resourceDetailPageAfterGrant(@PathParam("resource_id") String resourceId) {
+        return resourceDetailPage(resourceId);
+    }
+
+    @Path("resource/{resource_id}/grant")
     @POST
     public Response grantPermission(@PathParam("resource_id") String resourceId, @FormParam("action") String action, @FormParam("permission_id") String[] permissionId, @FormParam("requester") String requester) {
         AuthorizationProvider authorization = session.getProvider(AuthorizationProvider.class);
@@ -819,6 +825,12 @@ public class AccountFormService extends AbstractSecuredLocalService {
         }
 
         return forwardToPage("resource", AccountPages.RESOURCES);
+    }
+
+    @Path("resource/{resource_id}/share")
+    @GET
+    public Response resourceDetailPageAfterShare(@PathParam("resource_id") String resourceId) {
+        return resourceDetailPage(resourceId);
     }
 
     @Path("resource/{resource_id}/share")
