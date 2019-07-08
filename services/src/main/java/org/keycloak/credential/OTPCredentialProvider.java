@@ -110,9 +110,11 @@ public class OTPCredentialProvider implements CredentialProvider, CredentialInpu
                 model.setConfig(new MultivaluedHashMap<>());
             }
         }
-        if (model.getConfig().containsKey(BASE64_ENCODED_KEY) && model.getId() == null) {
-            // If config is set and not loaded from the database, this is a credential loaded from a realm import (also from tests)
-            // In this case, we need to set the plain value
+        if (model.getConfig().containsKey(BASE64_ENCODED_KEY) &&
+            ( model.getId() == null || Boolean.FALSE.toString().equals(model.getConfig().getFirst(BASE64_ENCODED_KEY)) )
+        ) {
+            // If config is set and not loaded from the database, this is a credential loaded from a realm import (also from tests).
+            // In this case, we need to set the plain value. A FALSE value should not occur in the DB, but is handled for consistency.
             model.setValue(inputModel.getValue());
         } else {
             model.getConfig().putSingle(BASE64_ENCODED_KEY, Boolean.TRUE.toString());
