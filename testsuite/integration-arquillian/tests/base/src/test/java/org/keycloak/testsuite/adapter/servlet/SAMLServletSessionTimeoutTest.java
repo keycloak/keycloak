@@ -16,6 +16,7 @@ import org.keycloak.saml.processing.core.saml.v2.util.XMLTimeUtil;
 import org.keycloak.testsuite.adapter.filter.AdapterActionsFilter;
 import org.keycloak.testsuite.adapter.page.Employee2Servlet;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
+import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.Matchers;
 import org.keycloak.testsuite.util.SamlClient;
 import org.keycloak.testsuite.util.SamlClientBuilder;
@@ -27,7 +28,10 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertThat;
+import static org.keycloak.testsuite.saml.AbstractSamlTest.REALM_NAME;
 import static org.keycloak.testsuite.util.Matchers.bodyHC;
 
 
@@ -145,5 +149,55 @@ public class SAMLServletSessionTimeoutTest extends AbstractSAMLServletAdapterTes
                 .execute();
 
         setAdapterAndServerTimeOffset(0, employee2ServletPage.toString());
+    }
+
+    @Test
+    public void testKeycloakReturnsSessionNotOnOrAfter() throws Exception {
+        sessionNotOnOrAfter.set(null);
+
+        try(AutoCloseable c = new RealmAttributeUpdater(adminClient.realm(REALM_NAME))
+                .updateWith(r -> r.setSsoSessionMaxLifespan(SESSION_LENGTH_IN_SECONDS))
+                .update()) {
+            beginAuthenticationAndLogin()
+                    .processSamlResponse(SamlClient.Binding.POST) // Process response
+                        .transformObject(ob -> { // Check sessionNotOnOrAfter is present and it has correct value
+                            assertThat(ob, Matchers.isSamlResponse(JBossSAMLURIConstants.STATUS_SUCCESS));
+                            ResponseType resp = (ResponseType) ob;
+
+                            Set<StatementAbstractType> statements = resp.getAssertions().get(0).getAssertion().getStatements();
+
+                            AuthnStatementType authType = (AuthnStatementType) statements.stream()
+                                    .filter(statement -> statement instanceof AuthnStatementType)
+                                    .findFirst().orElseThrow(() -> new RuntimeException("SamlReponse doesn't contain AuthStatement"));
+
+                            assertThat(authType.getSessionNotOnOrAfter(), notNullValue());
+                            XMLGregorianCalendar expectedSessionTimeout = XMLTimeUtil.add(authType.getAuthnInstant(), SESSION_LENGTH_IN_SECONDS * 1000);
+                            assertThat(authType.getSessionNotOnOrAfter(), is(expectedSessionTimeout));
+                            sessionNotOnOrAfter.set(expectedSessionTimeout.toString());
+
+                            return ob;
+                        })
+                        .build()
+
+                    .navigateTo(employee2ServletPage.buildUri())
+                    .assertResponse(response -> // Check that session is still valid within sessionTimeout limit
+                            assertThat(response, // Cannot use matcher as sessionNotOnOrAfter variable is not set in time of creating matcher
+                                    bodyHC(allOf(containsString("principal=bburke"),
+                                            containsString("SessionNotOnOrAfter: " + sessionNotOnOrAfter.get())))))
+                    .addStep(() -> setAdapterAndServerTimeOffset(KEYCLOAK_SESSION_TIMEOUT, employee2ServletPage.toString())) // Move in time after sessionNotOnOrAfter and keycloak session
+                    .navigateTo(employee2ServletPage.buildUri())
+                    .processSamlResponse(SamlClient.Binding.POST) // AuthnRequest should be send
+                    .transformObject(ob -> {
+                        assertThat(ob, Matchers.isSamlAuthnRequest());
+                        return ob;
+                    })
+                    .build()
+
+                    .followOneRedirect() // There is a redirect on Keycloak side
+                    .assertResponse(Matchers.bodyHC(containsString("form id=\"kc-form-login\"")))
+                    .execute();
+
+            setAdapterAndServerTimeOffset(0, employee2ServletPage.toString());
+        }
     }
 }
