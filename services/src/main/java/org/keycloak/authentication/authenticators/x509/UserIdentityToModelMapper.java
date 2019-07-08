@@ -18,9 +18,12 @@
 
 package org.keycloak.authentication.authenticators.x509;
 
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.keycloak.authentication.AuthenticationFlowContext;
+import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.UserModel;
@@ -45,16 +48,27 @@ public abstract class UserIdentityToModelMapper {
     }
 
     static class UserIdentityToCustomAttributeMapper extends UserIdentityToModelMapper {
-
-        private String _customAttribute;
-        UserIdentityToCustomAttributeMapper(String customAttribute) {
-            _customAttribute = customAttribute;
+        private List<String> _customAttributes;
+        UserIdentityToCustomAttributeMapper(String customAttributes) {
+            _customAttributes = Arrays.asList(Constants.CFG_DELIMITER_PATTERN.split(customAttributes));
         }
 
         @Override
         public UserModel find(AuthenticationFlowContext context, Object userIdentity) throws Exception {
             KeycloakSession session = context.getSession();
-            List<UserModel> users = session.users().searchForUserByUserAttribute(_customAttribute, userIdentity.toString(), context.getRealm());
+            List<String> userIdentityValues = Arrays.asList(Constants.CFG_DELIMITER_PATTERN.split(userIdentity.toString()));
+
+            if (_customAttributes.isEmpty() || userIdentityValues.isEmpty() || (_customAttributes.size() != userIdentityValues.size())) {
+                return null;
+            }
+            List<UserModel> users = session.users().searchForUserByUserAttribute(_customAttributes.get(0), userIdentityValues.get(0), context.getRealm());
+            
+            for (int i = 1; i <_customAttributes.size(); ++i) {
+                String customAttribute = _customAttributes.get(i);
+                String userIdentityValue = userIdentityValues.get(i);
+                
+                users = users.stream().filter(user -> user.getFirstAttribute(customAttribute).equals(userIdentityValue)).collect(Collectors.toList());
+            }
             if (users != null && users.size() > 1) {
                 throw new ModelDuplicateException();
             }

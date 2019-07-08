@@ -37,6 +37,7 @@ import java.security.cert.X509Certificate;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -222,7 +223,7 @@ public abstract class UserIdentityExtractor {
 
         @Override
         public Object extractUserIdentity(X509Certificate[] certs) {
-            String value = _f.apply(certs);
+            String value = Optional.ofNullable(_f.apply(certs)).orElseThrow(IllegalArgumentException::new);
 
             Pattern r = Pattern.compile(_pattern, Pattern.CASE_INSENSITIVE);
 
