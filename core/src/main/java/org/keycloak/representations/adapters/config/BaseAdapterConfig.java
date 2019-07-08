@@ -33,7 +33,7 @@ import java.util.TreeMap;
         "resource", "public-client", "credentials",
         "use-resource-role-mappings",
         "enable-cors", "cors-max-age", "cors-allowed-methods", "cors-exposed-headers",
-        "expose-token", "bearer-only", "autodetect-bearer-only", "enable-basic-auth"})
+        "expose-token", "use-nonce", "bearer-only", "autodetect-bearer-only", "enable-basic-auth"})
 public class BaseAdapterConfig extends BaseRealmConfig {
     @JsonProperty("resource")
     protected String resource;
@@ -63,6 +63,8 @@ public class BaseAdapterConfig extends BaseRealmConfig {
     protected Map<String, Object> credentials = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
      @JsonProperty("redirect-rewrite-rules")
     protected Map<String, String> redirectRewriteRules;
+    @JsonProperty("use-nonce")
+    protected boolean useNonce;
 
     public boolean isUseResourceRoleMappings() {
         return useResourceRoleMappings;
@@ -127,6 +129,10 @@ public class BaseAdapterConfig extends BaseRealmConfig {
     public void setExposeToken(boolean exposeToken) {
          this.exposeToken = exposeToken;
      }
+
+    public boolean isUseNonce() { return useNonce; }
+
+    public void setUseNonce(boolean useNonce){ this.useNonce = useNonce; }
 
     public boolean isBearerOnly() {
         return bearerOnly;

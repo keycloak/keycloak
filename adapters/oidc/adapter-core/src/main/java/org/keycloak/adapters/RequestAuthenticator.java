@@ -55,7 +55,11 @@ public abstract class RequestAuthenticator {
         return challenge;
     }
 
-    public AuthOutcome authenticate() {
+    public AuthOutcome authenticate(){
+        return authenticate(null);
+    }
+
+    public AuthOutcome authenticate(String nonce) {
         if (log.isTraceEnabled()) {
             log.trace("--> authenticate()");
         }
@@ -136,7 +140,7 @@ public abstract class RequestAuthenticator {
         }
 
         OAuthRequestAuthenticator oauth = createOAuthAuthenticator();
-        outcome = oauth.authenticate();
+        outcome = oauth.authenticate(nonce);
         if (outcome == AuthOutcome.FAILED) {
             challenge = oauth.getChallenge();
             return AuthOutcome.FAILED;

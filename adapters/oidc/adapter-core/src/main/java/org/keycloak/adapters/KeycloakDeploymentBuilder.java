@@ -100,6 +100,7 @@ public class KeycloakDeploymentBuilder {
 
         deployment.setPublicClient(adapterConfig.isPublicClient());
         deployment.setUseResourceRoleMappings(adapterConfig.isUseResourceRoleMappings());
+        deployment.setUseNonce(adapterConfig.isUseNonce());
 
         deployment.setExposeToken(adapterConfig.isExposeToken());
 

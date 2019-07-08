@@ -84,6 +84,7 @@ public class KeycloakDeployment {
     protected boolean registerNodeAtStartup;
     protected int registerNodePeriod;
     protected boolean turnOffChangeSessionIdOnLogin;
+    protected boolean useNonce;
 
     protected volatile int notBefore;
     protected int tokenMinimumTimeToLive;
@@ -297,6 +298,14 @@ public class KeycloakDeployment {
             return false;
         }
         return true;
+    }
+
+    public boolean isUseNonce(){
+        return useNonce;
+    }
+
+    public void setUseNonce(boolean useNonce){
+        this.useNonce = useNonce;
     }
 
     public int getConfidentialPort() {

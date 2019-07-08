@@ -139,10 +139,10 @@ public class OAuthRequestAuthenticator {
         return getQueryParamValue(OAuth2Constants.CODE);
     }
 
-    protected String getRedirectUri(String state) {
+    protected String getRedirectUri(String state, String nonce) {
         String url = getRequestUrl();
         log.debugf("callback uri: %s", url);
-      
+
         if (!facade.getRequest().isSecure() && deployment.getSslRequired().isRequired(facade.getRequest().getRemoteAddr())) {
             int port = sslRedirectPort();
             if (port < 0) {
@@ -155,7 +155,7 @@ public class OAuthRequestAuthenticator {
         }
 
         String loginHint = getQueryParamValue("login_hint");
-        url = UriUtils.stripQueryParam(url,"login_hint");
+        url = UriUtils.stripQueryParam(url, "login_hint");
 
         String idpHint = getQueryParamValue(AdapterConstants.KC_IDP_HINT);
         url = UriUtils.stripQueryParam(url, AdapterConstants.KC_IDP_HINT);
@@ -178,11 +178,14 @@ public class OAuthRequestAuthenticator {
                 .queryParam(OAuth2Constants.REDIRECT_URI, rewrittenRedirectUri(url))
                 .queryParam(OAuth2Constants.STATE, state)
                 .queryParam("login", "true");
-        if(loginHint != null && loginHint.length() > 0){
-            redirectUriBuilder.queryParam("login_hint",loginHint);
+        if (nonce != null && !nonce.isEmpty()) {
+            redirectUriBuilder.queryParam(OAuth2Constants.NONCE, nonce);
+        }
+        if (loginHint != null && loginHint.length() > 0) {
+            redirectUriBuilder.queryParam("login_hint", loginHint);
         }
         if (idpHint != null && idpHint.length() > 0) {
-            redirectUriBuilder.queryParam(AdapterConstants.KC_IDP_HINT,idpHint);
+            redirectUriBuilder.queryParam(AdapterConstants.KC_IDP_HINT, idpHint);
         }
         if (prompt != null && prompt.length() > 0) {
             redirectUriBuilder.queryParam(OAuth2Constants.PROMPT, prompt);
@@ -208,9 +211,9 @@ public class OAuthRequestAuthenticator {
         return AdapterUtils.generateId();
     }
 
-    protected AuthChallenge loginRedirect() {
+    protected AuthChallenge loginRedirect(String nonce) {
         final String state = getStateCode();
-        final String redirect =  getRedirectUri(state);
+        final String redirect = getRedirectUri(state, nonce);
         if (redirect == null) {
             return challenge(403, OIDCAuthenticationError.Reason.NO_REDIRECT_URI, null);
         }
@@ -260,7 +263,12 @@ public class OAuthRequestAuthenticator {
 
     }
 
-    public AuthOutcome authenticate() {
+    /**
+     * Authenticates OAuth request with a challenge.
+     * @param nonce optional security nonce
+     * @return auth outcome
+     */
+    public AuthOutcome authenticate(String nonce) {
         String code = getCode();
         if (code == null) {
             log.debug("there was no code");
@@ -272,7 +280,7 @@ public class OAuthRequestAuthenticator {
                 return AuthOutcome.FAILED;
             } else {
                 log.debug("redirecting to auth server");
-                challenge = loginRedirect();
+                challenge = loginRedirect(nonce);
                 return AuthOutcome.NOT_ATTEMPTED;
             }
         } else {
@@ -328,7 +336,7 @@ public class OAuthRequestAuthenticator {
 
         AccessTokenResponse tokenResponse = null;
         strippedOauthParametersRequestUri = rewrittenRedirectUri(stripOauthParametersFromRedirect());
-    
+
         try {
             // For COOKIE store we don't have httpSessionId and single sign-out won't be available
             String httpSessionId = deployment.getTokenStore() == TokenStore.SESSION ? reqAuthenticator.changeHttpSessionId(true) : null;
@@ -387,22 +395,22 @@ public class OAuthRequestAuthenticator {
                 .replaceQueryParam(OAuth2Constants.SESSION_STATE, null);
         return builder.build().toString();
     }
-    
+
     private String rewrittenRedirectUri(String originalUri) {
         Map<String, String> rewriteRules = deployment.getRedirectRewriteRules();
-            if(rewriteRules != null && !rewriteRules.isEmpty()) {
+        if (rewriteRules != null && !rewriteRules.isEmpty()) {
             try {
                 URL url = new URL(originalUri);
-                Map.Entry<String, String> rule =  rewriteRules.entrySet().iterator().next();
+                Map.Entry<String, String> rule = rewriteRules.entrySet().iterator().next();
                 StringBuilder redirectUriBuilder = new StringBuilder(url.getProtocol());
-                redirectUriBuilder.append("://"+ url.getAuthority());
+                redirectUriBuilder.append("://" + url.getAuthority());
                 redirectUriBuilder.append(url.getPath().replaceFirst(rule.getKey(), rule.getValue()));
                 return redirectUriBuilder.toString();
             } catch (MalformedURLException ex) {
                 log.error("Not a valid request url");
                 throw new RuntimeException(ex);
             }
-            }
+        }
         return originalUri;
     }
 

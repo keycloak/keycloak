@@ -40,6 +40,8 @@ public interface OAuth2Constants {
 
     String STATE = "state";
 
+    String NONCE = "nonce";
+
     String GRANT_TYPE = "grant_type";
 
     String RESPONSE_TYPE = "response_type";
