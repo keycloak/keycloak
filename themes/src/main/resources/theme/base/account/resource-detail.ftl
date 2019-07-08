@@ -87,7 +87,7 @@
     <div class="row">
         <div class="col-md-10">
             <h2>
-                <a href="${url.resourceUrl}">My Resources</a> <i class="fa fa-angle-right"></i> <#if authorization.resource.displayName??>${authorization.resource.displayName}<#else>${authorization.resource.name}</#if>
+                <a href="${url.resourceUrl}">${msg("myResources")}</a> <i class="fa fa-angle-right"></i> <#if authorization.resource.displayName??>${authorization.resource.displayName}<#else>${authorization.resource.name}</#if>
             </h2>
         </div>
     </div>
@@ -157,7 +157,7 @@
                             </#list>
                         <#else>
                             <tr>
-                                <td colspan="4">The resource is not being shared</td>
+                                <td colspan="4">${msg("resourceIsNotBeingShared")}</td>
                             </tr>
                         </#if>
                     </tbody>
