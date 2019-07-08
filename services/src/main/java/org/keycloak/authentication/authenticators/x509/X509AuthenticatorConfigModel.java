@@ -55,16 +55,16 @@ public class X509AuthenticatorConfigModel extends AuthenticatorConfigModel {
 
     public enum MappingSourceType {
         SERIALNUMBER(MAPPING_SOURCE_CERT_SERIALNUMBER),
-        ISSUERDN_CN(MAPPING_SOURCE_CERT_ISSUERDN_CN),
-        ISSUERDN_EMAIL(MAPPING_SOURCE_CERT_ISSUERDN_EMAIL),
         ISSUERDN(MAPPING_SOURCE_CERT_ISSUERDN),
         SUBJECTDN_CN(MAPPING_SOURCE_CERT_SUBJECTDN_CN),
         SUBJECTDN_EMAIL(MAPPING_SOURCE_CERT_SUBJECTDN_EMAIL),
         SUBJECTALTNAME_EMAIL(MAPPING_SOURCE_CERT_SUBJECTALTNAME_EMAIL),
         SUBJECTALTNAME_OTHERNAME(MAPPING_SOURCE_CERT_SUBJECTALTNAME_OTHERNAME),
         SUBJECTDN(MAPPING_SOURCE_CERT_SUBJECTDN),
+        SHA256_THUMBPRINT(MAPPING_SOURCE_CERT_SHA256_THUMBPRINT),
+        SERIALNUMBER_ISSUERDN(MAPPING_SOURCE_CERT_SERIALNUMBER_ISSUERDN),
         CERTIFICATE_PEM(MAPPING_SOURCE_CERT_CERTIFICATE_PEM);
-
+        
         private String name;
         MappingSourceType(String name) {
             this.name = name;
@@ -251,6 +251,15 @@ public class X509AuthenticatorConfigModel extends AuthenticatorConfigModel {
 
     public X509AuthenticatorConfigModel setCanonicalDnEnabled(boolean value) {
         getConfig().put(CANONICAL_DN, Boolean.toString(value));
+        return this;
+    }
+    
+    public boolean isSerialnumberHex() {
+        return Boolean.parseBoolean(getConfig().get(SERIALNUMBER_HEX));
+    }
+
+    public X509AuthenticatorConfigModel setSerialnumberHex(boolean value) {
+        getConfig().put(SERIALNUMBER_HEX, Boolean.toString(value));
         return this;
     }
 }
