@@ -14,14 +14,14 @@ import java.util.regex.Pattern;
 public class StringSerialization {
 
     // Since there is still need to support JDK 7, we have to work without functional interfaces
-    private static enum DeSerializer {
+    private static enum DeSerializerFunction {
         OBJECT {
-            @Override public String serialize(Object o)   { return o.toString(); };
-            @Override public Object deserialize(String s) { return s; };
+            @Override public String serialize(Object o)   { return o.toString(); }
+            @Override public Object deserialize(String s) { return s; }
         },
         URI {
-            @Override public String serialize(Object o)   { return o.toString(); };
-            @Override public Object deserialize(String s) { return java.net.URI.create(s); };
+            @Override public String serialize(Object o)   { return o.toString(); }
+            @Override public Object deserialize(String s) { return java.net.URI.create(s); }
         },
         ;
 
@@ -30,7 +30,7 @@ public class StringSerialization {
         public abstract Object deserialize(String s);
     }
 
-    private static final Map<Class<?>, DeSerializer> WELL_KNOWN_DESERIALIZERS = new LinkedHashMap<>();
+    private static final Map<Class<?>, DeSerializerFunction> WELL_KNOWN_DESERIALIZERS = new LinkedHashMap<>();
     private static final String SEPARATOR = ";";
     private static final Pattern ESCAPE_PATTERN = Pattern.compile(SEPARATOR);
     private static final Pattern UNESCAPE_PATTERN = Pattern.compile(SEPARATOR + SEPARATOR);
@@ -42,8 +42,8 @@ public class StringSerialization {
     );
 
     static {
-        WELL_KNOWN_DESERIALIZERS.put(URI.class, DeSerializer.URI);
-        WELL_KNOWN_DESERIALIZERS.put(String.class, DeSerializer.OBJECT);
+        WELL_KNOWN_DESERIALIZERS.put(URI.class, DeSerializerFunction.URI);
+        WELL_KNOWN_DESERIALIZERS.put(String.class, DeSerializerFunction.OBJECT);
     }
 
     /**
@@ -78,12 +78,12 @@ public class StringSerialization {
         }
 
         Class<?> c = o.getClass();
-        DeSerializer f = WELL_KNOWN_DESERIALIZERS.get(c);
+        DeSerializerFunction f = WELL_KNOWN_DESERIALIZERS.get(c);
         return "V" + (f == null ? o : f.serialize(o));
     }
 
     private static <T> T getObjectFrom(String escapedString, Class<T> clazz) {
-        DeSerializer f = WELL_KNOWN_DESERIALIZERS.get(clazz);
+        DeSerializerFunction f = WELL_KNOWN_DESERIALIZERS.get(clazz);
         Object res = f == null ? escapedString : f.deserialize(escapedString);
         return clazz.cast(res);
     }
