@@ -390,8 +390,15 @@ public class SamlProtocol implements LoginProtocol {
         clientSession.setNote(SAML_NAME_ID_FORMAT, nameIdFormat);
 
         SAML2LoginResponseBuilder builder = new SAML2LoginResponseBuilder();
-        builder.requestID(requestID).destination(redirectUri).issuer(responseIssuer).assertionExpiration(realm.getAccessCodeLifespan()).subjectExpiration(realm.getAccessTokenLifespan())
-                .requestIssuer(clientSession.getClient().getClientId()).nameIdentifier(nameIdFormat, nameId).authMethod(JBossSAMLURIConstants.AC_UNSPECIFIED.get());
+        builder.requestID(requestID)
+                .destination(redirectUri)
+                .issuer(responseIssuer)
+                .assertionExpiration(realm.getAccessCodeLifespan())
+                .subjectExpiration(realm.getAccessTokenLifespan())
+                .sessionExpiration(realm.getSsoSessionMaxLifespan())
+                .requestIssuer(clientSession.getClient().getClientId())
+                .nameIdentifier(nameIdFormat, nameId)
+                .authMethod(JBossSAMLURIConstants.AC_UNSPECIFIED.get());
 
         String sessionIndex = SamlSessionUtils.getSessionIndex(clientSession);
         builder.sessionIndex(sessionIndex);
