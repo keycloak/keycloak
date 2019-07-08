@@ -191,4 +191,32 @@ public class SamlPrincipal implements Serializable, Principal {
 
     }
 
+    @Override
+    public boolean equals(Object other) {
+        if (this == other)
+            return true;
+
+        if (!(other instanceof SamlPrincipal))
+            return false;
+
+        SamlPrincipal otherPrincipal = (SamlPrincipal) other;
+
+        return (this.name != null ? this.name.equals(otherPrincipal.name) : otherPrincipal.name == null) &&
+                (this.samlSubject != null ? this.samlSubject.equals(otherPrincipal.samlSubject) : otherPrincipal.samlSubject == null) &&
+                (this.nameIDFormat != null ? this.nameIDFormat.equals(otherPrincipal.nameIDFormat) : otherPrincipal.nameIDFormat == null) &&
+                (this.attributes != null ? this.attributes.equals(otherPrincipal.attributes) : otherPrincipal.attributes == null) &&
+                (this.friendlyAttributes != null ? this.friendlyAttributes.equals(otherPrincipal.friendlyAttributes) : otherPrincipal.friendlyAttributes == null);
+    }
+
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + (this.name == null ? 0 : this.name.hashCode());
+        result = prime * result + (this.samlSubject == null ? 0 : this.samlSubject.hashCode());
+        result = prime * result + (this.nameIDFormat == null ? 0 : this.nameIDFormat.hashCode());
+        result = prime * result + (this.attributes == null ? 0 : this.attributes.hashCode());
+        result = prime * result + (this.friendlyAttributes == null ? 0 : this.friendlyAttributes.hashCode());
+        return result;
+    }
 }

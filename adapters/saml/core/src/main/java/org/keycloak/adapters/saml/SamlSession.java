@@ -51,4 +51,29 @@ public class SamlSession implements Serializable, KeycloakAccount {
     public String getSessionIndex() {
         return sessionIndex;
     }
+
+    @Override
+    public boolean equals(Object other) {
+        if (this == other)
+            return true;
+
+        if (!(other instanceof SamlSession))
+            return false;
+
+        SamlSession otherSession = (SamlSession) other;
+
+        return (this.principal != null ? this.principal.equals(otherSession.principal) : otherSession.principal == null) &&
+                (this.roles != null ? this.roles.equals(otherSession.roles) : otherSession.roles == null) &&
+                (this.sessionIndex != null ? this.sessionIndex.equals(otherSession.sessionIndex) : otherSession.sessionIndex == null);
+    }
+
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + (this.principal == null ? 0 : this.principal.hashCode());
+        result = prime * result + (this.roles == null ? 0 : this.roles.hashCode());
+        result = prime * result + (this.sessionIndex == null ? 0 : this.sessionIndex.hashCode());
+        return result;
+    }
 }
