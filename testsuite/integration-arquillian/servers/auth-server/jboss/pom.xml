@@ -187,6 +187,7 @@
                                                 <include>keycloak.jks</include>
                                                 <include>keycloak.truststore</include>
                                                 <include>client.jks</include>
+                                                <include>client-ca.jks</include>
                                                 <include>ca.crt</include>
                                                 <include>client.crt</include>
                                                 <include>client.key</include>
