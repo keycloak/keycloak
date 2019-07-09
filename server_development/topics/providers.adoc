@@ -109,7 +109,7 @@ Your provider can also lookup other providers if needed. For example:
 
 [source,java]
 ----
-public class MyThemeSelectorProvider implements EventListenerProvider {
+public class MyThemeSelectorProvider implements ThemeSelectorProvider {
 
     private KeycloakSession session;
 
