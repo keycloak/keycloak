@@ -2634,6 +2634,9 @@ public class RepresentationToModel {
     }
 
     public static ResourceServer createResourceServer(ClientModel client, KeycloakSession session, boolean addDefaultRoles) {
+        if (client.isBearerOnly() || client.isPublicClient()) {
+            throw new RuntimeException("Only confidential clients are allowed to set authorization settings");
+        }
         AuthorizationProvider authorization = session.getProvider(AuthorizationProvider.class);
         UserModel serviceAccount = session.users().getServiceAccount(client);
 

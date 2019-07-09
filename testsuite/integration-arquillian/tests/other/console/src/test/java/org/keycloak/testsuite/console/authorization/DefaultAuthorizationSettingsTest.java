@@ -17,15 +17,12 @@
 package org.keycloak.testsuite.console.authorization;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
-import java.util.List;
-
 import org.junit.Test;
-import org.keycloak.admin.client.resource.AuthorizationResource;
 import org.keycloak.representations.adapters.config.PolicyEnforcerConfig;
-import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
@@ -34,6 +31,8 @@ import org.keycloak.testsuite.console.page.clients.authorization.permission.Perm
 import org.keycloak.testsuite.console.page.clients.authorization.policy.Policies;
 import org.keycloak.testsuite.console.page.clients.authorization.resource.Resources;
 import org.keycloak.testsuite.console.page.clients.authorization.scope.Scopes;
+import org.keycloak.testsuite.console.page.clients.settings.ClientSettingsForm;
+import org.openqa.selenium.By;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -48,6 +47,27 @@ public class DefaultAuthorizationSettingsTest extends AbstractAuthorizationSetti
         clientSettingsPage.form().save();
         assertAlertSuccess();
         clientSettingsPage.tabs().authorization();
+        assertDefaultSettings();
+    }
+
+    @Test
+    public void testNotAvailableForNonConfidentialClients() {
+        clientSettingsPage.navigateTo();
+        clientSettingsPage.form().setAccessType(ClientSettingsForm.OidcAccessType.BEARER_ONLY);
+        clientSettingsPage.form().save();
+        assertAlertSuccess();
+        assertTrue(driver.findElements(By.linkText("Authorization")).isEmpty());
+        assertFalse(driver.findElements(By.xpath(".//div[@class='onoffswitch' and ./input[@id='authorizationServicesEnabled']]")).get(0).isDisplayed());
+        clientSettingsPage.form().setAccessType(ClientSettingsForm.OidcAccessType.PUBLIC);
+        clientSettingsPage.form().save();
+        assertAlertSuccess();
+        assertTrue(driver.findElements(By.linkText("Authorization")).isEmpty());
+        assertFalse(driver.findElements(By.xpath(".//div[@class='onoffswitch' and ./input[@id='authorizationServicesEnabled']]")).get(0).isDisplayed());
+        clientSettingsPage.navigateTo();
+        clientSettingsPage.form().setAccessType(ClientSettingsForm.OidcAccessType.CONFIDENTIAL);
+        clientSettingsPage.form().setAuthorizationSettingsEnabled(true);
+        clientSettingsPage.form().save();
+        authorizationPage.navigateTo();
         assertDefaultSettings();
     }
 
