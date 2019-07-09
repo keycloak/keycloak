@@ -267,34 +267,43 @@ public class OAuthClient {
         return this;
     }
 
+    public Supplier<CloseableHttpClient> getHttpClient() {
+        return httpClient;
+    }
+
     public static CloseableHttpClient newCloseableHttpClient() {
         if (sslRequired) {
-            KeyStore keystore = null;
-            // load the keystore containing the client certificate - keystore type is probably jks or pkcs12
             String keyStorePath = System.getProperty("client.certificate.keystore");
             String keyStorePassword = System.getProperty("client.certificate.keystore.passphrase");
-            try {
-                keystore = KeystoreUtil.loadKeyStore(keyStorePath, keyStorePassword);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-
-            // load the trustore
-            KeyStore truststore = null;
             String trustStorePath = System.getProperty("client.truststore");
             String trustStorePassword = System.getProperty("client.truststore.passphrase");
-            try {
-                truststore = KeystoreUtil.loadKeyStore(trustStorePath, trustStorePassword);
-            } catch(Exception e) {
-                e.printStackTrace();
-            }
-            return (CloseableHttpClient) new org.keycloak.adapters.HttpClientBuilder()
-                    .keyStore(keystore, keyStorePassword)
-                    .trustStore(truststore)
-                    .hostnameVerification(org.keycloak.adapters.HttpClientBuilder.HostnameVerificationPolicy.ANY)
-                    .build();
+            return newCloseableHttpClientSSL(keyStorePath, keyStorePassword, trustStorePath, trustStorePassword);
         }
         return HttpClientBuilder.create().build();
+    }
+
+    public static CloseableHttpClient newCloseableHttpClientSSL(String keyStorePath,
+            String keyStorePassword, String trustStorePath, String trustStorePassword) {
+        KeyStore keystore = null;
+        // load the keystore containing the client certificate - keystore type is probably jks or pkcs12
+        try {
+            keystore = KeystoreUtil.loadKeyStore(keyStorePath, keyStorePassword);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        // load the trustore
+        KeyStore truststore = null;
+        try {
+            truststore = KeystoreUtil.loadKeyStore(trustStorePath, trustStorePassword);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return (CloseableHttpClient) new org.keycloak.adapters.HttpClientBuilder()
+                .keyStore(keystore, keyStorePassword)
+                .trustStore(truststore)
+                .hostnameVerification(org.keycloak.adapters.HttpClientBuilder.HostnameVerificationPolicy.ANY)
+                .build();
     }
 
     public CloseableHttpResponse doPreflightRequest() {
