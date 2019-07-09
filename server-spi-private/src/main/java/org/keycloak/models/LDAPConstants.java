@@ -72,6 +72,8 @@ public class LDAPConstants {
 
     public static final String VALIDATE_PASSWORD_POLICY = "validatePasswordPolicy";
 
+    public static final String TRUST_EMAIL = "trustEmail";
+
     // Count of users processed per single transaction during sync process
     public static final String BATCH_SIZE_FOR_SYNC = "batchSizeForSync";
     public static final int DEFAULT_BATCH_SIZE_FOR_SYNC = 1000;

@@ -191,6 +191,13 @@
                 </div>
                 <kc-tooltip>{{:: 'ldap.validate-password-policy.tooltip' | translate}}</kc-tooltip>
             </div>
+            <div class="form-group clearfix">
+                <label class="col-md-2 control-label" for="trustEmail">{{:: 'trust-email' | translate}}</label>
+                <div class="col-md-6">
+                    <input ng-model="instance.config['trustEmail'][0]" name="trustEmail" id="trustEmail" onoffswitchvalue on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" />
+                </div>
+                <kc-tooltip>{{:: 'trust-email.tooltip' | translate}}</kc-tooltip>
+            </div>
             <div class="form-group">
                 <label class="col-md-2 control-label" for="useTruststoreSpi">{{:: 'use-truststore-spi' | translate}}</label>
                 <div class="col-md-6">
