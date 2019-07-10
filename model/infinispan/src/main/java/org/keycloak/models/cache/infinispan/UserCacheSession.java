@@ -194,6 +194,11 @@ public class UserCacheSession implements UserCache {
         }
 
         CachedUser cached = cache.get(id, CachedUser.class);
+
+        if (cached != null && !cached.getRealm().equals(realm.getId())) {
+            cached = null;
+        }
+        
         UserModel adapter = null;
         if (cached == null) {
             logger.trace("not cached");

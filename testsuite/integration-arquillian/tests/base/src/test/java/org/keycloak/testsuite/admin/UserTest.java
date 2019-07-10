@@ -76,6 +76,7 @@ import org.openqa.selenium.WebDriver;
 import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
 import javax.ws.rs.ClientErrorException;
+import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import java.io.IOException;
@@ -143,11 +144,18 @@ public class UserTest extends AbstractAdminTest {
     }
 
     private String createUser(UserRepresentation userRep) {
+        return createUser(userRep, true);
+    }
+    
+    private String createUser(UserRepresentation userRep, boolean assertAdminEvent) {
         Response response = realm.users().create(userRep);
         String createdId = ApiUtil.getCreatedId(response);
         response.close();
 
-        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.userResourcePath(createdId), userRep, ResourceType.USER);
+        if (assertAdminEvent) {
+            assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.userResourcePath(createdId), userRep,
+                    ResourceType.USER);
+        }
 
         getCleanup().addUserId(createdId);
 
@@ -1458,6 +1466,40 @@ public class UserTest extends AbstractAdminTest {
         assertEquals(100, result.size());
         for (UserRepresentation user : result) {
             assertThat(user.getAttributes(), Matchers.nullValue());
+        }
+    }
+    
+    @Test
+    public void testAccessUserFromOtherRealm() {
+        RealmRepresentation firstRealm = new RealmRepresentation();
+        
+        firstRealm.setRealm("first-realm");
+        
+        adminClient.realms().create(firstRealm);
+        
+        realm = adminClient.realm(firstRealm.getRealm());
+        realmId = realm.toRepresentation().getId();
+
+        UserRepresentation firstUser = new UserRepresentation();
+
+        firstUser.setUsername("first");
+        firstUser.setEmail("first@first-realm.org");
+        
+        firstUser.setId(createUser(firstUser, false));
+
+        RealmRepresentation secondRealm = new RealmRepresentation();
+
+        secondRealm.setRealm("second-realm");
+
+        adminClient.realms().create(secondRealm);
+
+        adminClient.realm(firstRealm.getRealm()).users().get(firstUser.getId()).update(firstUser);
+
+        try {
+            adminClient.realm(secondRealm.getRealm()).users().get(firstUser.getId()).toRepresentation();
+            fail("Should not have access to firstUser from another realm");
+        } catch (NotFoundException nfe) {
+            // ignore
         }
     }
 
