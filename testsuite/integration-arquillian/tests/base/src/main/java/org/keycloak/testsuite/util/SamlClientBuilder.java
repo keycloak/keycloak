@@ -183,6 +183,21 @@ public class SamlClientBuilder {
           .executeAndTransform(responseBinding::extractResponse);
     }
 
+    /** Returns RelayState from Saml response. Note that the redirects are disabled for this to work. */
+    public String getSamlRelayState(Binding responseBinding) {
+        return doNotFollowRedirects()
+                .executeAndTransform(responseBinding::extractRelayState);
+    }
+
+    /** Provide possibility to consume RelayState from saml response. Note that the redirects are disabled for this to work. */
+    public SamlClientBuilder assertSamlRelayState(Binding responseBinding, Consumer<String> relayStateConsumer) {
+        if (responseBinding.equals(Binding.REDIRECT)) doNotFollowRedirects();
+        return addStep((client, currentURI, currentResponse, context) -> {
+            relayStateConsumer.accept(responseBinding.extractRelayState(currentResponse));
+            return null;
+        });
+    }
+
     /** Returns SAML request or response as replied from server. Note that the redirects are disabled for this to work. */
     public ModifySamlResponseStepBuilder processSamlResponse(Binding responseBinding) {
         return
