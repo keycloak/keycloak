@@ -34,6 +34,7 @@ import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.ResourcesResource;
 import org.keycloak.admin.client.resource.RoleResource;
+import org.keycloak.admin.client.resource.RoleScopeResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.protocol.ProtocolMapperUtils;
@@ -420,6 +421,8 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractPhotozJav
         ClientRepresentation clientRepresentation = html5ClientApp.toRepresentation();
 
         userResource.revokeConsent(clientRepresentation.getClientId());
+        RoleScopeResource roleScopeResource = userResource.roles().clientLevel(getClientResource("photoz-restful-api").toRepresentation().getId());
+        roleScopeResource.remove(roleScopeResource.listAll());
 
         setManageAlbumScopeRequired();
 
@@ -444,10 +447,11 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractPhotozJav
 
         UserRepresentation userRepresentation = users.get(0);
         UserResource userResource = usersResource.get(userRepresentation.getId());
-
         ClientResource html5ClientApp = getClientResource("photoz-html5-client");
 
         userResource.revokeConsent(html5ClientApp.toRepresentation().getClientId());
+        RoleScopeResource roleScopeResource = userResource.roles().clientLevel(getClientResource("photoz-restful-api").toRepresentation().getId());
+        roleScopeResource.remove(roleScopeResource.listAll());
 
         ClientResource resourceServerClient = getClientResource(RESOURCE_SERVER_ID);
         RoleResource manageAlbumRole = resourceServerClient.roles().get("manage-albums");

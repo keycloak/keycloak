@@ -815,13 +815,13 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
             newClient.setPublicClient(false);
             newClient.setEnabled(true);
             Response response = realmClient.realm("anotherRealm").clients().create(newClient);
-            Assert.assertEquals(403, response.getStatus());
+            Assert.assertEquals(201, response.getStatus());
 
             realmClient.close();
             realmClient = AdminClientUtil.createAdminClient(suiteContext.isAdapterCompatTesting(),
                     "master", "admin", "admin", "fullScopedClient", "618268aa-51e6-4e64-93c4-3c0bc65b8171");
             response = realmClient.realm("anotherRealm").clients().create(newClient);
-            Assert.assertEquals(201, response.getStatus());
+            Assert.assertEquals(409, response.getStatus());
         } finally {
             adminClient.realm("anotherRealm").remove();
             realmClient.close();

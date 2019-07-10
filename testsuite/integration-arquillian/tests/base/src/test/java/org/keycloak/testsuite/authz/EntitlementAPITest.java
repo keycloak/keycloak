@@ -49,7 +49,9 @@ import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.AuthorizationResource;
 import org.keycloak.admin.client.resource.ClientResource;
+import org.keycloak.admin.client.resource.ClientScopesResource;
 import org.keycloak.admin.client.resource.ClientsResource;
+import org.keycloak.admin.client.resource.ProtocolMappersResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.ResourceResource;
 import org.keycloak.admin.client.resource.ScopePermissionsResource;
@@ -67,6 +69,7 @@ import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessToken.Authorization;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.authorization.AuthorizationRequest;
@@ -81,6 +84,7 @@ import org.keycloak.representations.idm.authorization.PermissionTicketRepresenta
 import org.keycloak.representations.idm.authorization.ResourcePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
+import org.keycloak.representations.idm.authorization.RolePolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
@@ -118,6 +122,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
                 .user(UserBuilder.create().username("marta").password("password").addRoles("uma_authorization"))
                 .user(UserBuilder.create().username("kolo").password("password"))
                 .user(UserBuilder.create().username("offlineuser").password("password").addRoles("offline_access"))
+                .user(UserBuilder.create().username("roleuser").password("password").addRoles("role-a").role(PUBLIC_TEST_CLIENT, "client-role-a"))
                 .client(ClientBuilder.create().clientId(RESOURCE_SERVER_TEST)
                         .secret("secret")
                         .authorizationServicesEnabled(true)
@@ -1869,6 +1874,118 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         authorizationResponse = getAuthzClient(AUTHZ_CLIENT_CONFIG).authorization(response.getAccessToken()).authorize(request);
         token = toAccessToken(authorizationResponse.getToken());
         assertEquals(RESOURCE_SERVER_TEST, token.getOtherClaims().get("custom_claim"));
+        assertEquals(PUBLIC_TEST_CLIENT, token.getIssuedFor());
+    }
+
+    @Test
+    public void testNoRolesFromSubjectToken() throws Exception {
+        RealmResource realm = getRealm();
+        List<ProtocolMapperRepresentation> mappers = new ArrayList<>();
+        ProtocolMappersResource protocolMappers = null;
+        
+        for (ClientScopeRepresentation defaultClientScope : realm.getDefaultDefaultClientScopes()) {
+            if (defaultClientScope.getName().contains("role")) {
+                ClientScopesResource clientScopes = realm.clientScopes();
+                protocolMappers = clientScopes.get(defaultClientScope.getId()).getProtocolMappers();
+                for (ProtocolMapperRepresentation mapper : protocolMappers
+                        .getMappers()) {
+                    mappers.add(protocolMappers.getMapperById(mapper.getId()));
+                    protocolMappers.delete(mapper.getId());
+                }
+            }
+        }
+
+        oauth.realm("authz-test");
+        oauth.clientId(PUBLIC_TEST_CLIENT);
+        oauth.doLogin("roleuser", "password");
+
+        // Token request
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, null);
+        AccessToken token = toAccessToken(response.getAccessToken());
+
+        assertNull(token.getRealmAccess());
+
+        assertRoleBasedPermission(realm, response);
+
+        for (ProtocolMapperRepresentation mapper : mappers) {
+            mapper.setId(null);
+            protocolMappers.createMapper(mapper);
+        }
+    }
+
+    @Test
+    public void testRolesFromSubjectToken() throws Exception {
+        oauth.realm("authz-test");
+        oauth.clientId(PUBLIC_TEST_CLIENT);
+        oauth.doLogin("roleuser", "password");
+
+        // Token request
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, null);
+        AccessToken token = toAccessToken(response.getAccessToken());
+
+        assertNotNull(token.getRealmAccess());
+        assertFalse(token.getRealmAccess().getRoles().isEmpty());
+        assertNotNull(token.getResourceAccess());
+        assertFalse(token.getResourceAccess().isEmpty());
+
+        assertRoleBasedPermission(getRealm(), response);
+    }
+
+    private void assertRoleBasedPermission(RealmResource realm, OAuthClient.AccessTokenResponse response) {
+        ClientResource client = getClient(realm, RESOURCE_SERVER_TEST);
+        AuthorizationResource authorization = client.authorization();
+
+        RolePolicyRepresentation realmPolicy = new RolePolicyRepresentation();
+
+        realmPolicy.setName(KeycloakModelUtils.generateId());
+        realmPolicy.addRole("role-a");
+
+        authorization.policies().role().create(realmPolicy).close();
+
+        ResourceRepresentation resource = new ResourceRepresentation();
+
+        resource.setName("Sensors");
+
+        try (Response resp = authorization.resources().create(resource)) {
+            resource = resp.readEntity(ResourceRepresentation.class);
+        }
+
+        ResourcePermissionRepresentation permission = new ResourcePermissionRepresentation();
+
+        permission.setName("View Sensor");
+        permission.addResource(resource.getName());
+        permission.addPolicy(realmPolicy.getName());
+
+        try (Response resp = authorization.permissions().resource().create(permission)) {
+            permission.setId(resp.readEntity(ResourcePermissionRepresentation.class).getId());
+        }
+
+        AuthorizationRequest request = new AuthorizationRequest();
+
+        request.addPermission("Sensors");
+
+        String accessToken = response.getAccessToken();
+        AuthorizationResponse authorizationResponse = getAuthzClient(AUTHZ_CLIENT_CONFIG).authorization(
+                accessToken).authorize(request);
+        AccessToken token = toAccessToken(authorizationResponse.getToken());
+        assertEquals(PUBLIC_TEST_CLIENT, token.getIssuedFor());
+
+        RolePolicyRepresentation clientPolicy = new RolePolicyRepresentation();
+
+        clientPolicy.setName(KeycloakModelUtils.generateId());
+        clientPolicy.addClientRole(PUBLIC_TEST_CLIENT, "client-role-a");
+
+        authorization.policies().role().create(clientPolicy).close();
+
+        permission.setPolicies(new HashSet<>());
+        permission.addPolicy(clientPolicy.getName());
+
+        authorization.permissions().resource().findById(permission.getId()).update(permission);
+
+        authorizationResponse = getAuthzClient(AUTHZ_CLIENT_CONFIG).authorization(accessToken).authorize(request);
+        token = toAccessToken(authorizationResponse.getToken());
         assertEquals(PUBLIC_TEST_CLIENT, token.getIssuedFor());
     }
 

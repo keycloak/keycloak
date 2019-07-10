@@ -30,6 +30,7 @@ import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.UserSessionProvider;
@@ -45,11 +46,9 @@ import javax.ws.rs.core.Response.Status;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -60,6 +59,8 @@ public class KeycloakIdentity implements Identity {
     protected final RealmModel realm;
     protected final KeycloakSession keycloakSession;
     protected final Attributes attributes;
+    private UserModel user;
+    private ClientModel targetClient;
 
     public KeycloakIdentity(KeycloakSession keycloakSession) {
         this(Tokens.getAccessToken(keycloakSession), keycloakSession);
@@ -246,26 +247,106 @@ public class KeycloakIdentity implements Identity {
     }
 
     private ClientModel getTargetClient() {
-        if (this.accessToken.getIssuedFor() != null) {
-            return realm.getClientByClientId(accessToken.getIssuedFor());
+        if (targetClient == null) {
+            if (this.accessToken.getIssuedFor() != null) {
+                targetClient = realm.getClientByClientId(accessToken.getIssuedFor());
+            } else if (this.accessToken.getAudience() != null && this.accessToken.getAudience().length > 0) {
+                String audience = this.accessToken.getAudience()[0];
+                targetClient = realm.getClientByClientId(audience);
+            }
         }
 
-        if (this.accessToken.getAudience() != null && this.accessToken.getAudience().length > 0) {
-            String audience = this.accessToken.getAudience()[0];
-            return realm.getClientByClientId(audience);
-        }
-
-        return null;
+        return targetClient;
     }
 
     private UserModel getUserFromSessionState() {
-        UserSessionProvider sessions = keycloakSession.sessions();
-        UserSessionModel userSession = sessions.getUserSession(realm, accessToken.getSessionState());
+        if (user == null) {
+            UserSessionProvider sessions = keycloakSession.sessions();
+            UserSessionModel userSession = sessions.getUserSession(realm, accessToken.getSessionState());
 
-        if (userSession == null) {
-            userSession = sessions.getOfflineUserSession(realm, accessToken.getSessionState());
+            if (userSession == null) {
+                userSession = sessions.getOfflineUserSession(realm, accessToken.getSessionState());
+            }
+
+            user = userSession.getUser();
+        }
+        
+        return user;
+    }
+
+    @Override
+    public boolean hasRealmRole(String roleName) {
+        if (getAttributes().exists("kc.realm.roles")) {
+            return Identity.super.hasRealmRole(roleName);
         }
 
-        return userSession.getUser();
+        RoleModel role = realm.getRole(roleName);
+
+        if (role == null) {
+            return false;
+        }
+
+        return getUserFromSessionState().hasRole(role);
+    }
+
+    @Override
+    public boolean hasClientRole(String clientId, String roleName) {
+        if (getAttributes().exists("kc.client." + clientId + ".roles")) {
+            return Identity.super.hasClientRole(clientId, roleName);
+        }
+
+        ClientModel client = realm.getClientByClientId(clientId);
+        
+        if (client == null) {
+            client = realm.getClientById(clientId);
+        }
+        
+        if (client == null) {
+            return false;
+        }
+
+        RoleModel role = client.getRole(roleName);
+        
+        if (role == null) {
+            return false;
+        }
+
+        UserModel user = getUserFromSessionState();
+
+        if (user.hasRole(role)) {
+            return true;
+        }
+
+        ClientModel targetClient = getTargetClient();
+
+        // if the client is not the same as the client that owns the role, check if consent is required. If so, the client is
+        // only granted with the role if there is a user consent
+        if (targetClient.isConsentRequired() && !targetClient.equals(client)) {
+            Map<String, ClientScopeModel> clientScopes = new HashMap<>(targetClient.getClientScopes(false, true));
+
+            clientScopes.putAll(targetClient.getClientScopes(true, true));
+
+            ClientScopeModel clientScope = null;
+
+            for (ClientScopeModel scope : clientScopes.values()) {
+                if (scope.hasScope(role)) {
+                    clientScope = scope;
+                    break;
+                }
+            }
+
+            if (clientScope != null) {
+                UserConsentModel consent = keycloakSession.users().getConsentByClient(realm, user.getId(),
+                        targetClient.getId());
+
+                if (consent != null) {
+                    if (consent.getGrantedClientScopes().contains(clientScope)) {
+                        return true;
+                    }
+                }
+            }
+        }
+        
+        return false;
     }
 }
