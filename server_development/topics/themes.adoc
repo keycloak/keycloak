@@ -25,7 +25,6 @@ NOTE: To set the theme for the `master` admin console you need to set the admin 
 refresh the page.
 
 To change the welcome theme you need to edit `standalone.xml`, `standalone-ha.xml`, or `domain.xml`.
-For more information on where these files reside see the link:{installguide_link}[{installguide_name}].
 
 Add `welcomeTheme` to the theme element, for example:
 

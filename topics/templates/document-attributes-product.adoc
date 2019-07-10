@@ -48,7 +48,7 @@ endif::[]
 :adminguide_clearcache_name: Clearing Server Caches
 :adminguide_clearcache_link: {adminguide_link}#_clear-cache
 :apidocs_name: API Documentation
-:apidocs_link: {project_doc_base_url}/api-documentation/
+:apidocs_link: {project_doc_base_url}/api_documentation/
 :developerguide_name: Server Developer Guide
 :developerguide_link: {project_doc_base_url}/server_developer_guide/
 :developerguide_actiontoken_name: Action Token SPI

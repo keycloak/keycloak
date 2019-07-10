@@ -67,7 +67,7 @@ public class MyThemeSelectorProvider implements ThemeSelectorProvider {
     public String getThemeName(Theme.Type type) {
         return "my-theme";
     }
-	
+
     @Override
 	public void close() {
     }
@@ -81,9 +81,7 @@ Example service configuration file (`META-INF/services/org.keycloak.theme.ThemeS
 org.acme.provider.MyThemeSelectorProviderFactory
 ----
 
-You can configure your provider through `standalone.xml`, `standalone-ha.xml`, or `domain.xml`.  
-See the link:{installguide_link}[{installguide_name}] for more details on
-where to find these files.
+You can configure your provider through `standalone.xml`, `standalone-ha.xml`, or `domain.xml`.
 
 For example by adding the following to `standalone.xml`:
 
@@ -153,7 +151,7 @@ public class MyThemeSelectorProviderFactory implements ThemeSelectorProviderFact
         return ret;
     }
 }
-----            
+----
 
 === Registering provider implementations
 
@@ -178,12 +176,12 @@ it really easy to use third party jars as you can just put these libraries in th
 
 To register a provider using Modules first create a module.
 To do this you can either use the jboss-cli script or manually create a folder inside `KEYCLOAK_HOME/modules` and add your jar and a `module.xml`.
-For example to add the event listener sysout example provider using the `jboss-cli` script execute: 
+For example to add the event listener sysout example provider using the `jboss-cli` script execute:
 
 [source]
 ----
 KEYCLOAK_HOME/bin/jboss-cli.sh --command="module add --name=org.acme.provider --resources=target/provider.jar --dependencies=org.keycloak.keycloak-core,org.keycloak.keycloak-server-spi"
-----                
+----
 Or to manually create it start by creating the folder `KEYCLOAK_HOME/modules/org/acme/provider/main`.
 Then copy `provider.jar` to this folder and create `module.xml` with the following content:
 
@@ -200,11 +198,11 @@ Then copy `provider.jar` to this folder and create `module.xml` with the followi
         <module name="org.keycloak.keycloak-server-spi"/>
     </dependencies>
 </module>
-----            
+----
 
 Once you've created the module you need to register this module with {project_name}.
-This is done by editing the keycloak-server subsystem section of 
-`standalone.xml`, `standalone-ha.xml`, or `domain.xml`, and adding it to the providers: 
+This is done by editing the keycloak-server subsystem section of
+`standalone.xml`, `standalone-ha.xml`, or `domain.xml`, and adding it to the providers:
 
 [source,xml]
 ----
@@ -214,13 +212,13 @@ This is done by editing the keycloak-server subsystem section of
         <provider>module:org.keycloak.examples.event-sysout</provider>
     </providers>
     ...
-----            
+----
 
 ==== Disabling a provider
 
-You can disable a provider by setting the enabled attribute for the provider to false 
+You can disable a provider by setting the enabled attribute for the provider to false
 in `standalone.xml`, `standalone-ha.xml`, or `domain.xml`.
-For example to disable the Infinispan user cache provider add: 
+For example to disable the Infinispan user cache provider add:
 
 [source,xml]
 ----

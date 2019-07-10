@@ -1,6 +1,8 @@
-  
+
 [[crossdc-mode]]
 === Cross-Datacenter Replication Mode
+
+NOTE: Cross-Datacenter Replication Mode is Technology Preview and is not fully supported.
 
 :tech_feature_name: Cross-Datacenter Replication Mode
 :tech_feature_disabled: false
@@ -32,23 +34,23 @@ When setting up for Cross-Datacenter Replication, you will use more independent 
 ==== Technical details
 
 This section provides an introduction to the concepts and details of how {project_name} Cross-Datacenter Replication is accomplished.
- 
+
 .Data
 
 {project_name} is stateful application. It uses the following as data sources:
 
 * A database is used to persist permanent data, such as user information.
-* An Infinispan cache is used to cache persistent data from the database and also to save some short-lived and frequently-changing metadata, such as for user sessions. 
-Infinispan is usually much faster than a database, however the data saved using Infinispan are not permanent and is not expected to persist across cluster restarts.  
+* An Infinispan cache is used to cache persistent data from the database and also to save some short-lived and frequently-changing metadata, such as for user sessions.
+Infinispan is usually much faster than a database, however the data saved using Infinispan are not permanent and is not expected to persist across cluster restarts.
 
-In our example architecture, there are two data centers called `site1` and `site2`. For Cross-Datacenter Replication, we must make sure that both sources of data work reliably and that {project_name} 
-servers from `site1` are eventually able to read the data saved by {project_name} servers on `site2` . 
+In our example architecture, there are two data centers called `site1` and `site2`. For Cross-Datacenter Replication, we must make sure that both sources of data work reliably and that {project_name}
+servers from `site1` are eventually able to read the data saved by {project_name} servers on `site2` .
 
 Based on the environment, you have the option to decide if you prefer:
 
 * Reliability - which is typically used in Active/Active mode. Data written on `site1` must be visible immediately on `site2`.
-* Performance - which is typically used in Active/Passive mode. Data written on `site1` does not need to be visible immediately on `site2`. 
-In some cases, the data may not be visible on `site2` at all. 
+* Performance - which is typically used in Active/Passive mode. Data written on `site1` does not need to be visible immediately on `site2`.
+In some cases, the data may not be visible on `site2` at all.
 
 For more details, see <<Modes>>.
 
@@ -60,13 +62,13 @@ An end user's browser sends an HTTP request to the link:{installguide_loadbalanc
 
 The load balancer then forwards the HTTP requests it receives to the underlying {project_name} instances, which can be spread among multiple data centers. Load balancers typically offer support for link:{installguide_stickysessions_link}[sticky sessions], which means that the load balancer is able to always forward all HTTP requests from the same user to the same {project_name} instance in same data center.
 
-HTTP requests that are sent from client applications to the load balancer are called `backchannel requests`. 
-These are not seen by an end user's browser and therefore can not be part of a sticky session between the user and the load balancer. For backchannel requests, the loadbalancer can forward the HTTP request to any {project_name} instance in any data center. This is challenging as some OpenID Connect and some SAML flows require multiple HTTP requests from both the user and the application. Because we can not reliably depend on sticky sessions to force all the related requests to be sent to the same {project_name} instance in the same data center, we must instead replicate some data across data centers, so the data are seen by subsequent HTTP requests during a particular flow.  
+HTTP requests that are sent from client applications to the load balancer are called `backchannel requests`.
+These are not seen by an end user's browser and therefore can not be part of a sticky session between the user and the load balancer. For backchannel requests, the loadbalancer can forward the HTTP request to any {project_name} instance in any data center. This is challenging as some OpenID Connect and some SAML flows require multiple HTTP requests from both the user and the application. Because we can not reliably depend on sticky sessions to force all the related requests to be sent to the same {project_name} instance in the same data center, we must instead replicate some data across data centers, so the data are seen by subsequent HTTP requests during a particular flow.
 
 
 [[modes]]
 ==== Modes
-   
+
 According your requirements, there are two basic operating modes for Cross-Datacenter Replication:
 
 * Active/Passive - Here the users and client applications send the requests just to the {project_name} nodes in just a single data center.
@@ -75,7 +77,7 @@ The second data center is used just as a `backup` for saving the data. In case o
 * Active/Active - Here the users and client applications send the requests to the {project_name} nodes in both data centers.
 It means that data need to be visible immediately on both sites and available to be consumed immediately from {project_name} servers on both sites. This is especially true if {project_name} server writes some data on `site1`, and it is required that the data are available immediately for reading by {project_name} servers on `site2` immediately after the write on `site1` is finished.
 
-The active/passive mode is better for performance. For more information about how to configure caches for either mode, see: <<backups>>.    
+The active/passive mode is better for performance. For more information about how to configure caches for either mode, see: <<backups>>.
 
 
 [[database]]
@@ -96,7 +98,7 @@ This section begins with a high level description of the Infinispan caches. More
 
 .Authentication sessions
 
-In {project_name} we have the concept of authentication sessions. There is a separate Infinispan cache called `authenticationSessions` used to save data during authentication of particular user. Requests from this cache usually involve only a browser and the {project_name} server, not the application. Here we can rely on sticky sessions and the `authenticationSessions` cache content does not need to be replicated across data centers, even if you are in Active/Active mode. 
+In {project_name} we have the concept of authentication sessions. There is a separate Infinispan cache called `authenticationSessions` used to save data during authentication of particular user. Requests from this cache usually involve only a browser and the {project_name} server, not the application. Here we can rely on sticky sessions and the `authenticationSessions` cache content does not need to be replicated across data centers, even if you are in Active/Active mode.
 
 ifeval::[{project_community}==true]
 .Action tokens
@@ -106,25 +108,25 @@ endif::[]
 
 .Caching and invalidation of persistent data
 
-{project_name} uses Infinispan to cache persistent data to avoid many unnecessary requests to the database. 
+{project_name} uses Infinispan to cache persistent data to avoid many unnecessary requests to the database.
 Caching improves performance, however it adds an additional challenge. When some {project_name} server updates any data, all other {project_name} servers in all data centers need to be aware of it, so they invalidate particular data from their caches. {project_name} uses local Infinispan caches called `realms`, `users`, and `authorization` to cache persistent data.
 
-We use a separate cache, `work`, which is replicated across all data centers. The work cache itself does not cache 
+We use a separate cache, `work`, which is replicated across all data centers. The work cache itself does not cache
 any real data. It is used only for sending invalidation messages between cluster nodes and data centers.
-In other words, when data is updated, such as the user `john`, the {project_name} node sends the invalidation message to all other cluster nodes in the same data center and also to all other data centers. After receiving the invalidation notice, every node then invalidates the appropriate data from their local cache. 
+In other words, when data is updated, such as the user `john`, the {project_name} node sends the invalidation message to all other cluster nodes in the same data center and also to all other data centers. After receiving the invalidation notice, every node then invalidates the appropriate data from their local cache.
 
 
 .User sessions
 
-There are Infinispan caches called `sessions`, `clientSessions`, `offlineSessions`, and `offlineClientSessions`, 
-all of which usually need to be replicated across data centers. These caches are used to save data about user 
-sessions, which are valid for the length of a user's browser session. The caches must handle the HTTP requests from the end user and from the application. As described above, sticky sessions can not be reliably used in this instance, but we still want to ensure that subsequent HTTP requests can see the latest data. For this reason, the data are usually replicated across data centers. 
+There are Infinispan caches called `sessions`, `clientSessions`, `offlineSessions`, and `offlineClientSessions`,
+all of which usually need to be replicated across data centers. These caches are used to save data about user
+sessions, which are valid for the length of a user's browser session. The caches must handle the HTTP requests from the end user and from the application. As described above, sticky sessions can not be reliably used in this instance, but we still want to ensure that subsequent HTTP requests can see the latest data. For this reason, the data are usually replicated across data centers.
 
 
 .Brute force protection
 
-Finally the `loginFailures` cache is used to track data about failed logins, such as how many times the user `john` 
-entered a bad password. The details are described link:{adminguide_bruteforce_link}[here]. It is up to the admin whether this cache should be replicated across data centers. To have an accurate count of login failures, the replication is needed. On the other hand, not replicating this data can save some performance. So if performance is more important than accurate counts of login failures, the replication can be avoided. 
+Finally the `loginFailures` cache is used to track data about failed logins, such as how many times the user `john`
+entered a bad password. The details are described link:{adminguide_bruteforce_link}[here]. It is up to the admin whether this cache should be replicated across data centers. To have an accurate count of login failures, the replication is needed. On the other hand, not replicating this data can save some performance. So if performance is more important than accurate counts of login failures, the replication can be avoided.
 
 For more detail about how caches can be configured see <<tuningcache>>.
 
@@ -134,9 +136,9 @@ For more detail about how caches can be configured see <<tuningcache>>.
 
 {project_name} uses multiple, separate clusters of Infinispan caches. Every {project_name} node is in the cluster with the other {project_name} nodes in same data center, but not with the {project_name} nodes in different data centers. A {project_name} node does not communicate directly with the {project_name} nodes from different data centers. {project_name} nodes use external JDG (actually {jdgserver_name} servers) for communication across data centers. This is done using the link:https://infinispan.org/docs/8.2.x/user_guide/user_guide.html#using_hot_rod_server[Infinispan HotRod protocol].
 
-The Infinispan caches on the {project_name} side must be configured with the link:https://infinispan.org/docs/8.2.x/user_guide/user_guide.html#remote_store[remoteStore] to ensure that data are saved to the remote cache. There is separate Infinispan cluster between JDG servers, so the data saved on JDG1 on `site1` are replicated to JDG2 on `site2` . 
+The Infinispan caches on the {project_name} side must be configured with the link:https://infinispan.org/docs/8.2.x/user_guide/user_guide.html#remote_store[remoteStore] to ensure that data are saved to the remote cache. There is separate Infinispan cluster between JDG servers, so the data saved on JDG1 on `site1` are replicated to JDG2 on `site2` .
 
-Finally, the receiving JDG server notifies the {project_name} servers in its cluster through the Client Listeners, which are a feature of the HotRod protocol. {project_name} nodes on `site2` then update their Infinispan caches and the particular user session is also visible on {project_name} nodes on `site2`. 
+Finally, the receiving JDG server notifies the {project_name} servers in its cluster through the Client Listeners, which are a feature of the HotRod protocol. {project_name} nodes on `site2` then update their Infinispan caches and the particular user session is also visible on {project_name} nodes on `site2`.
 
 See the <<archdiagram>> for more details.
 
@@ -144,20 +146,20 @@ See the <<archdiagram>> for more details.
 [[setup]]
 ==== Basic setup
 
-For this example, we describe using two data centers, `site1` and `site2`. Each data center consists of 1 {jdgserver_name} server and 2 {project_name} servers. We will end up with 2 {jdgserver_name} servers and 4 {project_name} servers in total. 
+For this example, we describe using two data centers, `site1` and `site2`. Each data center consists of 1 {jdgserver_name} server and 2 {project_name} servers. We will end up with 2 {jdgserver_name} servers and 4 {project_name} servers in total.
 
 * `Site1` consists of {jdgserver_name} server, `jdg1`, and 2 {project_name} servers, `node11` and `node12` .
 
 * `Site2` consists of {jdgserver_name} server, `jdg2`, and 2 {project_name} servers, `node21` and `node22` .
- 
+
 * {jdgserver_name} servers `jdg1` and `jdg2` are connected to each other through the RELAY2 protocol and `backup` based {jdgserver_name}
 caches in a similar way as described in the link:{jdgserver_crossdcdocs_link}[JDG documentation].
 
 * {project_name} servers `node11` and `node12` form a cluster with each other, but they do not communicate directly with any server in `site2`.
 They communicate with the Infinispan server `jdg1` using the HotRod protocol (Remote cache). See <<communication>> for the details.
-  
+
 * The same details apply for `node21` and `node22`. They cluster with each other and communicate only with `jdg2` server using the HotRod protocol.
-  
+
 Our example setup assumes all that all 4 {project_name} servers talk to the same database. In production, it is recommended to use separate synchronously replicated databases across data centers as described in <<database>>.
 
 
@@ -202,14 +204,14 @@ Follow these steps to set up the {jdgserver_name} server:
     ...
 </stack>
 ```
-NOTE: This is just an example setup to have things quickly running. In production, you are not required to use `tcp` stack for the JGroups `RELAY2`, but you can configure any other stack. For example, you could use the default udp stack, if the network between your data centers is able to support multicast. Just make sure that the {jdgserver_name} and {project_name} clusters are mutually indiscoverable. Similarly, you are not required to use `TCPPING` as discovery protocol. And in production, you probably won't use `TCPPING` due it's static nature. Finally, site names are also configurable. 
+NOTE: This is just an example setup to have things quickly running. In production, you are not required to use `tcp` stack for the JGroups `RELAY2`, but you can configure any other stack. For example, you could use the default udp stack, if the network between your data centers is able to support multicast. Just make sure that the {jdgserver_name} and {project_name} clusters are mutually indiscoverable. Similarly, you are not required to use `TCPPING` as discovery protocol. And in production, you probably won't use `TCPPING` due it's static nature. Finally, site names are also configurable.
 Details of this more-detailed setup are out-of-scope of the {project_name} documentation. See the {jdgserver_name} documentation and JGroups documentation for more details.
 
 +
 
 . Add this into `JDG1_HOME/standalone/configuration/clustered.xml` under cache-container named `clustered`:
 +
-```xml   
+```xml
 <cache-container name="clustered" default-cache="default" statistics="true">
         ...
         <replicated-cache-configuration name="sessions-cfg" mode="SYNC" start="EAGER" batching="false">
@@ -231,7 +233,7 @@ endif::[]
         <replicated-cache name="offlineClientSessions" configuration="sessions-cfg"/>
         <replicated-cache name="actionTokens" configuration="sessions-cfg"/>
         <replicated-cache name="loginFailures" configuration="sessions-cfg"/>
-                
+
 </cache-container>
 ```
 +
@@ -280,7 +282,7 @@ Issues related to authorization may exist just for some other versions of {jdgse
                 <identity-role-mapper/>
                 <role name="___script_manager" permissions="ALL"/>
             </authorization>
-        </security> 
+        </security>
         ...
 ```
 
@@ -374,7 +376,7 @@ NOTE: In production, you can have more {jdgserver_name} servers in every data ce
 
 . Configure a shared database for KeycloakDS datasource. It is recommended to use MySQL or MariaDB for testing purposes. See <<database>> for more details.
 +
-In production you will likely need to have a separate database server in every data center and both database servers should be synchronously replicated to each other. In the example setup, we just use a single database and connect all 4 {project_name} servers to it.   
+In production you will likely need to have a separate database server in every data center and both database servers should be synchronously replicated to each other. In the example setup, we just use a single database and connect all 4 {project_name} servers to it.
 +
 . Edit `NODE11/standalone/configuration/standalone-ha.xml` :
 
@@ -383,14 +385,14 @@ In production you will likely need to have a separate database server in every d
 ```xml
                   <stack name="udp">
                       <transport type="UDP" socket-binding="jgroups-udp" site="${jboss.site.name}"/>
-```  
+```
 +
 
 .. Add this `module` attribute under `cache-container` element of name `keycloak` :
 +
 ```xml
  <cache-container name="keycloak" module="org.keycloak.keycloak-model-infinispan">
-``` 
+```
 +
 
 .. Add the `remote-store` under `work` cache:
@@ -412,7 +414,7 @@ endif::[]
 +
 ```xml
 <distributed-cache name="sessions" owners="1">
-    <remote-store cache="sessions" remote-servers="remote-cache" passivation="false" fetch-state="false" purge="false" preload="false" shared="true">   
+    <remote-store cache="sessions" remote-servers="remote-cache" passivation="false" fetch-state="false" purge="false" preload="false" shared="true">
         <property name="rawValues">true</property>
         <property name="marshaller">org.keycloak.cluster.infinispan.KeycloakHotRodMarshallerFactory</property>
 ifeval::[{project_product}==true]
@@ -510,7 +512,7 @@ endif::[]
 +
 
 . Copy the `NODE11` to 3 other directories referred later as `NODE12`, `NODE21` and `NODE22`.
- 
+
 . Start `NODE11` :
 +
 [source,subs="+quotes"]
@@ -582,16 +584,16 @@ NOTE: The channel name in the log might be different.
 
 .. Go to `http://node11:8080/auth/admin` and login as admin to admin console.
 
-.. Open a second browser and go to any of nodes `http://node12:8080/auth/admin` or `http://node21:8080/auth/admin` or `http://node22:8080/auth/admin`. After login, you should be able to see 
+.. Open a second browser and go to any of nodes `http://node12:8080/auth/admin` or `http://node21:8080/auth/admin` or `http://node22:8080/auth/admin`. After login, you should be able to see
 the same sessions in tab `Sessions` of particular user, client or realm on all 4 servers.
 
-.. After doing any change in Keycloak admin console (eg. update some user or some realm), the update 
+.. After doing any change in Keycloak admin console (eg. update some user or some realm), the update
 should be immediately visible on any of 4 nodes as caches should be properly invalidated everywhere.
 
 .. Check server.logs if needed. After login or logout, the message like this should be on all the nodes `NODEXY/standalone/log/server.log` :
 +
 ```
-2017-08-25 17:35:17,737 DEBUG [org.keycloak.models.sessions.infinispan.remotestore.RemoteCacheSessionListener] (Client-Listener-sessions-30012a77422542f5) Received event from remote store. 
+2017-08-25 17:35:17,737 DEBUG [org.keycloak.models.sessions.infinispan.remotestore.RemoteCacheSessionListener] (Client-Listener-sessions-30012a77422542f5) Received event from remote store.
 Event 'CLIENT_CACHE_ENTRY_REMOVED', key '193489e7-e2bc-4069-afe8-f1dfa73084ea', skip 'false'
 ```
 +
@@ -604,10 +606,10 @@ This section contains some tips and options related to Cross-Datacenter Replicat
 
 * When you run the {project_name} server inside a data center, it is required that the database referenced in `KeycloakDS` datasource is already running and available in that data center. It is also necessary that the {jdgserver_name} server referenced by the `outbound-socket-binding`, which is referenced from the Infinispan cache `remote-store` element, is already running. Otherwise the {project_name} server will fail to start.
 
-* Every data center can have more database nodes if you want to support database failover and better reliability. Refer to the documentation of your database and JDBC driver for the details how to set this up on the database side and how the `KeycloakDS` datasource on Keycloak side needs to be configured.  
+* Every data center can have more database nodes if you want to support database failover and better reliability. Refer to the documentation of your database and JDBC driver for the details how to set this up on the database side and how the `KeycloakDS` datasource on Keycloak side needs to be configured.
 
 * Every datacenter can have more {jdgserver_name} servers running in the cluster. This is useful if you want some failover and better fault tolerance. The HotRod protocol used for communication between {jdgserver_name} servers and {project_name} servers has a feature that {jdgserver_name} servers will automatically send new topology to the {project_name} servers about the change in the {jdgserver_name} cluster, so the remote store on {project_name} side will know to which {jdgserver_name} servers it can connect. Read the {jdgserver_name} and WildFly documentation for more details.
- 
+
 * It is highly recommended that a master {jdgserver_name} server is running in every site before the {project_name} servers in **any** site are started. As in our example, we started both `jdg1` and `jdg2` first, before all {project_name} servers. If you still need to run the {project_name} server and the backup site is offline, it is recommended to manually switch the backup site offline on the {jdgserver_name} servers on your site, as described in <<onoffline>>. If you do not manually switch the unavailable site offline, the first startup may fail or they may be some exceptions during startup until the backup site is taken offline automatically due the configured count of failed operations.
 
 
@@ -616,9 +618,9 @@ This section contains some tips and options related to Cross-Datacenter Replicat
 
 For example, assume this scenario:
 
-. Site `site2` is entirely offline from the `site1` perspective. This means that all {jdgserver_name} servers on `site2` are off *or* the network between `site1` and `site2` is broken. 
-. You run {project_name} servers and {jdgserver_name} server `jdg1` in site `site1` 
-. Someone logs in on a {project_name} server on `site1`. 
+. Site `site2` is entirely offline from the `site1` perspective. This means that all {jdgserver_name} servers on `site2` are off *or* the network between `site1` and `site2` is broken.
+. You run {project_name} servers and {jdgserver_name} server `jdg1` in site `site1`
+. Someone logs in on a {project_name} server on `site1`.
 . The {project_name} server from `site1` will try to write the session to the remote cache on `jdg1` server, which is supposed to backup data to the `jdg2` server in the `site2`. See <<communication>> for more information.
 . Server `jdg2` is offline or unreachable from `jdg1`. So the backup from `jdg1` to `jdg2` will fail.
 . The exception is thrown in `jdg1` log and the failure will be propagated from `jdg1` server to {project_name} servers as well because the default `FAIL` backup failure policy is configured. See <<backupfailure>> for details around the backup policies.
@@ -631,9 +633,9 @@ According to your environment, it may be more or less probable that the network 
 There are 2 ways to take the site offline.
 
 **Manually by admin** - Admin can use the `jconsole` or other tool and run some JMX operations to manually take the particular site offline.
-This is useful especially if the outage is planned. With `jconsole` or CLI, you can connect to the `jdg1` server and take the `site2` offline. 
+This is useful especially if the outage is planned. With `jconsole` or CLI, you can connect to the `jdg1` server and take the `site2` offline.
 More details about this are available in the link:{jdgserver_crossdcdocs_link}#taking_a_site_offline[JDG documentation].
- 
+
 WARNING: These steps usually need to be done for all the {project_name} caches mentioned in <<backups>>.
 
 **Automatically** - After some amount of failed backups, the `site2` will usually be taken offline automatically. This is done due the configuration of `take-offline` element inside the cache configuration as configured in <<jdgsetup>>.
@@ -644,11 +646,11 @@ WARNING: These steps usually need to be done for all the {project_name} caches m
 
 This example shows that the site will be taken offline automatically for the particular single cache if there are at least 3 subsequent failed backups and there is no any successful backup within 60 seconds.
 
-Automatically taking a site offline is useful especially if the broken network between sites is unplanned. The disadvantage is that there will be some failed backups until the network outage is detected, which could also mean  failures on the application side. 
+Automatically taking a site offline is useful especially if the broken network between sites is unplanned. The disadvantage is that there will be some failed backups until the network outage is detected, which could also mean  failures on the application side.
 For example, there will be failed logins for some users or big login timeouts. Especially if `failure-policy` with value `FAIL` is used.
 
 WARNING: The tracking of whether a site is offline is tracked separately for every cache.
- 
+
 
 .Take site online
 
@@ -658,7 +660,7 @@ Again, you may need to check all the caches and bring them online.
 Once the sites are put online, it's usually good to:
 
 * Do the <<statetransfer>>.
-* Manually <<clearcache>>. 
+* Manually <<clearcache>>.
 
 
 [[statetransfer]]
@@ -692,11 +694,11 @@ This section contains tips and options for configuring your JDG cache.
 [[backupfailure]]
 .Backup failure policy
 
-By default, the configuration of backup `failure-policy` in the Infinispan cache configuration in the JDG `clustered.xml` file is configured as `FAIL`. You may change it to `WARN` or `IGNORE`, as you prefer. 
+By default, the configuration of backup `failure-policy` in the Infinispan cache configuration in the JDG `clustered.xml` file is configured as `FAIL`. You may change it to `WARN` or `IGNORE`, as you prefer.
 
-The difference between `FAIL` and `WARN` is that when `FAIL` is used and the {jdgserver_name} server tries to back data up to the other site and the backup fails then the failure will be propagated back to the caller (the {project_name} server). The backup might fail because the second site is temporarily unreachable or there is a concurrent transaction which is trying to update same entity. In this case, the {project_name} server will then retry the operation a few times. However, if the retry fails, then the user might see the error after a longer timeout. 
+The difference between `FAIL` and `WARN` is that when `FAIL` is used and the {jdgserver_name} server tries to back data up to the other site and the backup fails then the failure will be propagated back to the caller (the {project_name} server). The backup might fail because the second site is temporarily unreachable or there is a concurrent transaction which is trying to update same entity. In this case, the {project_name} server will then retry the operation a few times. However, if the retry fails, then the user might see the error after a longer timeout.
 
-When using `WARN`, the failed backups are not propagated from the {jdgserver_name} server to the {project_name} server. The user won't see the error and the failed backup will be just ignored. There will be a shorter timeout, typically 10 seconds as that's the default timeout for backup. It can be changed by the attribute `timeout` of `backup` element. There won't be retries. There will just be a WARNING message in the {jdgserver_name} server log. 
+When using `WARN`, the failed backups are not propagated from the {jdgserver_name} server to the {project_name} server. The user won't see the error and the failed backup will be just ignored. There will be a shorter timeout, typically 10 seconds as that's the default timeout for backup. It can be changed by the attribute `timeout` of `backup` element. There won't be retries. There will just be a WARNING message in the {jdgserver_name} server log.
 
 The potential issue is, that in some cases, there may be just some a short network outage between sites, where the retry (usage of the `FAIL` policy) may help, so with `WARN` (without retry), there will be some data inconsistencies across sites. This can also happen if there is an attempt to update the same entity concurrently on both sites.
 
@@ -704,7 +706,7 @@ How bad are these inconsistencies? Usually only means that a user will need to r
 
 When using the `WARN` policy, it may happen that the single-use cache, which is provided by the `actionTokens` cache and which handles that particular key is really single use, but may "successfully" write the same key twice. But, for example, the OAuth2 specification link:https://tools.ietf.org/html/rfc6749#section-10.5[mentions] that code must be single-use. With the `WARN` policy, this may not be strictly guaranteed and the same code could be written twice if there is an attempt to write it concurrently in both sites.
 
-If there is a longer network outage or split-brain, then with both `FAIL` and `WARN`, the other site will be taken offline after some time and failures as described in <<onoffline>>. With the default 1 minute timeout, it is usually 1-3 minutes until all the involved caches are taken offline. After that, all the operations will work fine from an end user perspective. 
+If there is a longer network outage or split-brain, then with both `FAIL` and `WARN`, the other site will be taken offline after some time and failures as described in <<onoffline>>. With the default 1 minute timeout, it is usually 1-3 minutes until all the involved caches are taken offline. After that, all the operations will work fine from an end user perspective.
 You only need to manually restore the site when it is back online as mentioned in <<onoffline>>.
 
 In summary, if you expect frequent, longer outages between sites and it is acceptable for you to have some data inconsistencies and a not 100% accurate single-use cache, but you never want end-users to see the errors and long timeouts, then switch to `WARN`.
@@ -717,10 +719,10 @@ The difference between `WARN` and `IGNORE` is, that with `IGNORE` warnings are n
 The default configuration is using transaction in NON_DURABLE_XA mode with acquire timeout 0. This means that transaction will fail-fast if there is another transaction in progress for the same key.
 
 The reason to switch this to 0 instead of default 10 seconds was to avoid possible deadlock issues. With {project_name}, it can happen that the same entity (typically session entity or loginFailure) is updated concurrently from both sites. This can cause deadlock under some circumstances, which will cause the transaction to be blocked for 10 seconds. See link:https://issues.jboss.org/browse/JDG-1318[this JIRA report] for details.
- 
+
 With timeout 0, the transaction will immediately fail and then will be retried from {project_name} if backup `failure-policy` with the value `FAIL` is configured. As long as the second concurrent transaction is finished, the retry will usually be successful and the entity will have applied updates from both concurrent transactions.
 
-We see very good consistency and results for concurrent transaction with this configuration, and it is recommended to keep it. 
+We see very good consistency and results for concurrent transaction with this configuration, and it is recommended to keep it.
 
 The only (non-functional) problem is the exception in the {jdgserver_name} server log, which happens every time when the lock is not immediately available.
 
@@ -746,7 +748,7 @@ By default, all 7 caches are configured with `SYNC` backup, which is the safest 
 
 * The `actionTokens` cache is used as single-use cache to track that some tokens/tickets were used just once. For example action tokens or OAuth2 codes. It is possible to set this to `ASYNC` to slightly improved performance, but then it is not guaranteed that particular ticket is really single-use. For example, if there is concurrent request for same ticket in both sites, then it is possible that both requests will be successful with the `ASYNC` strategy. So what you set here will depend on whether you prefer better security (`SYNC` strategy) or better performance (`ASYNC` strategy).
 
-* The `loginFailures` cache may be used in any of the 3 modes. If there is no backup at all, it means that count of login failures for a user will be counted separately for every site (See <<cache>> for details). This has some security implications, however it has some performance advantages. Also it mitigates the possible risk of denial of service (DoS) attacks. For example, if an attacker simulates 1000 concurrent requests using the username and password of the user on both sites, it will mean lots of messages being passed between the sites, which may result in network congestion. The `ASYNC` strategy might be even worse as the attacker requests won't be blocked by waiting for the backup to the other site, resulting in potentially even more congested network traffic. 
+* The `loginFailures` cache may be used in any of the 3 modes. If there is no backup at all, it means that count of login failures for a user will be counted separately for every site (See <<cache>> for details). This has some security implications, however it has some performance advantages. Also it mitigates the possible risk of denial of service (DoS) attacks. For example, if an attacker simulates 1000 concurrent requests using the username and password of the user on both sites, it will mean lots of messages being passed between the sites, which may result in network congestion. The `ASYNC` strategy might be even worse as the attacker requests won't be blocked by waiting for the backup to the other site, resulting in potentially even more congested network traffic.
 The count of login failures also will not be accurate with the `ASYNC` strategy.
 
 For the environments with slower network between data centers and probability of DoS, it is recommended to not backup the `loginFailures` cache at all.
@@ -776,12 +778,12 @@ The following tips are intended to assist you should you need to troubleshoot:
 
 * It is recommended to go through the <<setup>> and have this one working first, so that you have some understanding of how things work. It is also wise to read this entire document to have some understanding of things.
 
-* Check in jconsole cluster status (GMS) and the JGroups status (RELAY) of {jdgserver_name} as described in <<jdgsetup>>. If things do not look as expected, then the issue is likely in the setup of {jdgserver_name} servers. 
+* Check in jconsole cluster status (GMS) and the JGroups status (RELAY) of {jdgserver_name} as described in <<jdgsetup>>. If things do not look as expected, then the issue is likely in the setup of {jdgserver_name} servers.
 
 * For the {project_name} servers, you should see a message like this during the server startup:
 +
 ```
-18:09:30,156 INFO  [org.keycloak.connections.infinispan.DefaultInfinispanConnectionProviderFactory] (ServerService Thread Pool -- 54) 
+18:09:30,156 INFO  [org.keycloak.connections.infinispan.DefaultInfinispanConnectionProviderFactory] (ServerService Thread Pool -- 54)
 Node name: node11, Site name: site1
 ```
 +
@@ -800,7 +802,7 @@ Caused by: org.infinispan.client.hotrod.exceptions.TransportException:: Could no
 
 ```
 +
-it usually means that {project_name} server is not able to reach the {jdgserver_name} server in his own datacenter. Make sure that firewall is set as expected and {jdgserver_name} server is possible to connect. 
+it usually means that {project_name} server is not able to reach the {jdgserver_name} server in his own datacenter. Make sure that firewall is set as expected and {jdgserver_name} server is possible to connect.
 
 * If there are exceptions during startup of {project_name} server like this:
 +
@@ -809,19 +811,19 @@ it usually means that {project_name} server is not able to reach the {jdgserver_
  ...
 ```
 +
-then check the log of corresponding {jdgserver_name} server of your site and check if has failed to backup to the other site. If the backup site is unavailable, then it is recommended to switch it offline, so that {jdgserver_name} server won't try to backup to the offline site causing the operations to pass successfully on {project_name} server side as well. See <<administration>> for more information.   
+then check the log of corresponding {jdgserver_name} server of your site and check if has failed to backup to the other site. If the backup site is unavailable, then it is recommended to switch it offline, so that {jdgserver_name} server won't try to backup to the offline site causing the operations to pass successfully on {project_name} server side as well. See <<administration>> for more information.
 
 * Check the Infinispan statistics, which are available through JMX. For example, try to login and then see if the new session was successfully written to both {jdgserver_name} servers and is available in the `sessions` cache there. This can be done indirectly by checking the count of elements in the `sessions` cache for the MBean `jboss.datagrid-infinispan:type=Cache,name="sessions(repl_sync)",manager="clustered",component=Statistics` and attribute `numberOfEntries`. After login, there should be one more entry for `numberOfEntries` on both {jdgserver_name} servers on both sites.
 
 * Enable DEBUG logging as described <<serversetup>>. For example, if you log in and you think that the new session is not available on the second site, it's good to check the {project_name} server logs and check that listeners were triggered as described in the <<serversetup>>. If you do not know and want to ask on keycloak-user mailing list, it is helpful to send the log files from {project_name} servers on both datacenters in the email. Either add the log snippets to the mails or put the logs somewhere and reference them in the email.
 
-* If you updated the entity, such as `user`, on {project_name} server on `site1` and you do not see that entity updated on the {project_name} server on `site2`, then the issue can be either in the replication of the synchronous database itself or that {project_name} caches are not properly invalidated. You may try to temporarily disable the {project_name} caches as described link:{installguide_disablingcaching_link}[here] to nail down if the issue is at the database replication level. Also it may help to manually connect to the database and check if data are updated as expected. This is specific to every database, so you will need to consult the documentation for your database.  
+* If you updated the entity, such as `user`, on {project_name} server on `site1` and you do not see that entity updated on the {project_name} server on `site2`, then the issue can be either in the replication of the synchronous database itself or that {project_name} caches are not properly invalidated. You may try to temporarily disable the {project_name} caches as described link:{installguide_disablingcaching_link}[here] to nail down if the issue is at the database replication level. Also it may help to manually connect to the database and check if data are updated as expected. This is specific to every database, so you will need to consult the documentation for your database.
 
 * Sometimes you may see the exceptions related to locks like this in {jdgserver_name} server log:
 +
 ```
-(HotRodServerHandler-6-35) ISPN000136: Error executing command ReplaceCommand, 
-writing keys [[B0x033E243034396234..[39]]: org.infinispan.util.concurrent.TimeoutException: ISPN000299: Unable to acquire lock after 
+(HotRodServerHandler-6-35) ISPN000136: Error executing command ReplaceCommand,
+writing keys [[B0x033E243034396234..[39]]: org.infinispan.util.concurrent.TimeoutException: ISPN000299: Unable to acquire lock after
 0 milliseconds for key [B0x033E243034396234..[39] and requestor GlobalTx:jdg1:4353. Lock is held by GlobalTx:jdg1:4352
 ```
 +
