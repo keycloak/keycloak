@@ -99,6 +99,7 @@ public class RootAuthenticationSessionAdapter implements RootAuthenticationSessi
 
         AuthenticationSessionModel authSession = getAuthenticationSessions().get(tabId);
         if (authSession != null && client.equals(authSession.getClient())) {
+            session.getContext().setAuthenticationSession(authSession);
             return authSession;
         } else {
             return null;
@@ -118,7 +119,9 @@ public class RootAuthenticationSessionAdapter implements RootAuthenticationSessi
 
         update();
 
-        return new AuthenticationSessionAdapter(session, this, tabId, authSessionEntity);
+        AuthenticationSessionAdapter authSession = new AuthenticationSessionAdapter(session, this, tabId, authSessionEntity);
+        session.getContext().setAuthenticationSession(authSession);
+        return authSession;
     }
 
     @Override
