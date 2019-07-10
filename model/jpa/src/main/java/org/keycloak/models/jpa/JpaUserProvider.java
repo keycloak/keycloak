@@ -520,7 +520,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
     @Override
     public UserModel getUserById(String id, RealmModel realm) {
         UserEntity userEntity = em.find(UserEntity.class, id);
-        if (userEntity == null) return null;
+        if (userEntity == null || !realm.getId().equals(userEntity.getRealmId())) return null;
         return new UserAdapter(session, realm, em, userEntity);
     }
 
