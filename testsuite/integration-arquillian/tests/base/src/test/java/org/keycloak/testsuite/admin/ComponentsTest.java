@@ -67,9 +67,9 @@ public class ComponentsTest extends AbstractAdminTest {
         }
 
         try {
-            assertTrue("Did not create all components in time", this.remainingDeleteSubmissions.await(30, TimeUnit.SECONDS));
+            assertTrue("Did not create all components in time", this.remainingDeleteSubmissions.await(100, TimeUnit.SECONDS));
             s.shutdown();
-            assertTrue("Did not finish before timeout", s.awaitTermination(30, TimeUnit.SECONDS));
+            assertTrue("Did not finish before timeout", s.awaitTermination(100, TimeUnit.SECONDS));
         } finally {
             s.shutdownNow();
         }
