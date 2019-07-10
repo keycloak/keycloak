@@ -29,13 +29,15 @@ public class ResolveRelative {
         if (url == null || !url.startsWith("/")) return url;
         if (rootUrl != null) {
             return rootUrl + url;
-        } else {
+        } else if (requestUri != null) {
             UriBuilder builder = UriBuilder.fromPath(url).host(requestUri.getHost());
             builder.scheme(requestUri.getScheme());
             if (requestUri.getPort() != -1) {
                 builder.port(requestUri.getPort());
             }
             return builder.build().toString();
+        } else {
+            return null;
         }
     }
 }
