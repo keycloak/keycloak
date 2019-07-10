@@ -783,7 +783,7 @@ $ kcadm.sh get-roles --rid fc400897-ef6a-4e8c-872b-1581b7fa8a71 --all
 
 Use a dedicated [command]`remove-roles` command to remove client roles from a composite role.
 
-Use the following example to remove two roles defined on the client [command]`realm management` - `create-client` role and the [command]`view-users` role from the [command]`testrole` composite role.
+Use the following example to remove two roles defined on the client [command]`realm-management` - `create-client` role and the [command]`view-users` role from the [command]`testrole` composite role.
 [options="nowrap"]
 ----
 $ kcadm.sh remove-roles -r demorealm --rname testrole --cclientid realm-management --rolename create-client --rolename view-users
@@ -1051,6 +1051,7 @@ You can use a dedicated [command]`get-roles` command to list assigned, available
 .  Specify the target user by either user name or ID to list *assigned* realm roles for the user.
 +
 For example:
++
 [options="nowrap"]
 ----
 $ kcadm.sh get-roles -r demorealm --uusername testuser
