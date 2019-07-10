@@ -16,14 +16,18 @@
  */
 package org.keycloak.testsuite.util.saml;
 
+import org.keycloak.saml.common.constants.GeneralConstants;
 import org.keycloak.testsuite.util.SamlClient.Step;
 import org.keycloak.testsuite.util.SamlClientBuilder;
 import java.net.URI;
+import java.util.function.Supplier;
+
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.impl.client.CloseableHttpClient;
+
 
 /**
  *
@@ -34,6 +38,7 @@ public class IdPInitiatedLoginBuilder implements Step {
     private final SamlClientBuilder clientBuilder;
     private final URI authServerSamlUrl;
     private final String clientId;
+    private Supplier<String> relayState;
 
     public IdPInitiatedLoginBuilder(URI authServerSamlUrl, String clientId, SamlClientBuilder clientBuilder) {
         this.clientBuilder = clientBuilder;
@@ -43,7 +48,22 @@ public class IdPInitiatedLoginBuilder implements Step {
 
     @Override
     public HttpUriRequest perform(CloseableHttpClient client, URI currentURI, CloseableHttpResponse currentResponse, HttpClientContext context) throws Exception {
-        return new HttpGet(authServerSamlUrl.toString() + "/clients/" + this.clientId);
+        return new HttpGet(authServerSamlUrl.toString() + "/clients/" + this.clientId + getRelayStateQueryParamString());
+    }
+
+    private String getRelayStateQueryParamString(){
+        if (relayState == null) return "";
+        return "?" + GeneralConstants.RELAY_STATE + "=" + relayState.get();
+    }
+
+    public IdPInitiatedLoginBuilder relayState(String relayState) {
+        this.relayState = () -> relayState;
+        return this;
+    }
+
+    public IdPInitiatedLoginBuilder relayState(Supplier<String> relayState) {
+        this.relayState = relayState;
+        return this;
     }
 
     public SamlClientBuilder build() {
