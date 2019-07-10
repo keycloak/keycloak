@@ -2,6 +2,7 @@ package org.keycloak.testsuite.util.javascript;
 
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.auth.page.login.OIDCLogin;
+import org.keycloak.testsuite.util.WaitUtils;
 import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebDriver;
@@ -29,7 +30,7 @@ public class JavascriptTestExecutor {
 
     protected JavascriptTestExecutor(WebDriver driver, OIDCLogin loginPage) {
         this.jsDriver = driver;
-        driver.manage().timeouts().setScriptTimeout(10, TimeUnit.SECONDS);
+        driver.manage().timeouts().setScriptTimeout(WaitUtils.PAGELOAD_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS);
         jsExecutor = (JavascriptExecutor) driver;
         events = driver.findElement(By.id("events"));
         output = driver.findElement(By.id("output"));
