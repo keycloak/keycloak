@@ -111,14 +111,14 @@ public class ClientPublicKeyLoader implements PublicKeyLoader {
             // Check if we have kid in DB, generate otherwise
             kid = certInfo.getKid() != null ? certInfo.getKid() : KeyUtils.createKeyId(clientCert.getPublicKey());
             keyWrapper.setKid(kid);
-            keyWrapper.setVerifyKey(clientCert.getPublicKey());
+            keyWrapper.setPublicKey(clientCert.getPublicKey());
             keyWrapper.setCertificate(clientCert);
         } else {
             PublicKey publicKey = KeycloakModelUtils.getPublicKey(encodedPublicKey);
             // Check if we have kid in DB, generate otherwise
             kid = certInfo.getKid() != null ? certInfo.getKid() : KeyUtils.createKeyId(publicKey);
             keyWrapper.setKid(kid);
-            keyWrapper.setVerifyKey(publicKey);
+            keyWrapper.setPublicKey(publicKey);
         }
         return keyWrapper;
     }

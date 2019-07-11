@@ -18,6 +18,8 @@ package org.keycloak.jose.jws;
 
 import java.io.UnsupportedEncodingException;
 import java.security.Key;
+import java.util.LinkedList;
+import java.util.List;
 
 import org.jboss.logging.Logger;
 import org.keycloak.Token;
@@ -158,13 +160,13 @@ public class DefaultTokenManager implements TokenManager {
     @Override
     public String encodeAndEncrypt(Token token) {
         String encodedToken = encode(token);
-        if (isTokenEncyptRequired(token.getCategory())) {
+        if (isTokenEncryptRequired(token.getCategory())) {
             encodedToken = getEncryptedToken(token.getCategory(), encodedToken);
         }
         return encodedToken;
     }
 
-    private boolean isTokenEncyptRequired(TokenCategory category) {
+    private boolean isTokenEncryptRequired(TokenCategory category) {
         if (cekManagementAlgorithm(category) == null) return false;
         if (encryptAlgorithm(category) == null) return false;
         return true;
@@ -184,7 +186,8 @@ public class DefaultTokenManager implements TokenManager {
 
         ClientModel client = session.getContext().getClient();
 
-        KeyWrapper keyWrapper = getEncryptionKekWrapper(algAlgorithm, client);
+        //KeyWrapper keyWrapper = getEncryptionKekWrapper(algAlgorithm, client);
+        KeyWrapper keyWrapper = PublicKeyStorageManager.getClientPublicKeyWrapper(session, client, JWK.Use.ENCRYPTION, algAlgorithm);
         if (keyWrapper == null) {
             throw new RuntimeException("can not get encryption KEK");
         }
@@ -200,11 +203,8 @@ public class DefaultTokenManager implements TokenManager {
 
     private KeyWrapper getEncryptionKekWrapper(String algAlgorithm, ClientModel client) {
         if (algAlgorithm == null) return null;
-        switch (algAlgorithm) {
-            case JWEConstants.RSA1_5:
-            case JWEConstants.RSA_OAEP:
-                return PublicKeyStorageManager.getClientPublicKeyWrapper(session, client, JWK.Use.ENCRYPTION);
-        }
+        List<String> providerIds = new LinkedList<>(session.listProviderIds(CekManagementProvider.class));
+        if (providerIds.contains(algAlgorithm)) return PublicKeyStorageManager.getClientPublicKeyWrapper(session, client, JWK.Use.ENCRYPTION);
         return null;
     }
 

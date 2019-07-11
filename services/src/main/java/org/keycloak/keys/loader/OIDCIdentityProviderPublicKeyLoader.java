@@ -84,7 +84,7 @@ public class OIDCIdentityProviderPublicKeyLoader implements PublicKeyLoader {
             keyWrapper.setType(KeyType.RSA);
             keyWrapper.setAlgorithm(Algorithm.RS256);
             keyWrapper.setUse(KeyUse.SIG);
-            keyWrapper.setVerifyKey(publicKey);
+            keyWrapper.setPublicKey(publicKey);
         } else {
             logger.warnf("No public key saved on identityProvider %s", config.getAlias());
         }

@@ -33,8 +33,11 @@ import org.keycloak.common.util.KeyUtils;
 import org.keycloak.jose.jwe.*;
 import org.keycloak.jose.jwe.alg.JWEAlgorithmProvider;
 import org.keycloak.jose.jwe.alg.KeyEncryptionJWEAlgorithmProvider;
+import org.keycloak.jose.jwe.alg.RsaKeyEncryptionJWEAlgorithmProvider;
 import org.keycloak.jose.jwe.enc.AesCbcHmacShaEncryptionProvider;
+import org.keycloak.jose.jwe.enc.AesCbcHmacShaJWEEncryptionProvider;
 import org.keycloak.jose.jwe.enc.AesGcmEncryptionProvider;
+import org.keycloak.jose.jwe.enc.AesGcmJWEEncryptionProvider;
 import org.keycloak.jose.jwe.enc.JWEEncryptionProvider;
 
 /**
@@ -261,7 +264,7 @@ public class JWETest {
     private void testKeyEncryption_ContentEncryptionAesGcm(String jweAlgorithmName, String jweEncryptionName) throws Exception {
         // generate key pair for KEK
         KeyPair keyPair = KeyUtils.generateRsaKeyPair(2048);
-        JWEAlgorithmProvider jweAlgorithmProvider = new RsaKeyEncryptionJWEAlgorithmProvider(jweAlgorithmName);
+        JWEAlgorithmProvider jweAlgorithmProvider = new RsaKeyEncryptionJWEAlgorithmProvider(getJcaAlgorithmName(jweAlgorithmName));
         JWEEncryptionProvider jweEncryptionProvider = new AesGcmJWEEncryptionProvider(jweEncryptionName);
 
         JWEHeader jweHeader = new JWEHeader(jweAlgorithmName, jweEncryptionName, null);
@@ -294,7 +297,7 @@ public class JWETest {
         final SecretKey aesKey = new SecretKeySpec(AES_128_KEY, "AES");
         final SecretKey hmacKey = new SecretKeySpec(HMAC_SHA256_KEY, "HMACSHA2");
 
-        JWEAlgorithmProvider jweAlgorithmProvider = new RsaKeyEncryptionJWEAlgorithmProvider(jweAlgorithmName);
+        JWEAlgorithmProvider jweAlgorithmProvider = new RsaKeyEncryptionJWEAlgorithmProvider(getJcaAlgorithmName(jweAlgorithmName));
         JWEEncryptionProvider jweEncryptionProvider = new AesCbcHmacShaJWEEncryptionProvider(jweEncryptionName);
 
         JWEHeader jweHeader = new JWEHeader(jweAlgorithmName, jweEncryptionName, null);
@@ -326,69 +329,14 @@ public class JWETest {
 
         Assert.assertEquals(PAYLOAD, decodedContent);
     }
- 
-    private class RsaKeyEncryptionJWEAlgorithmProvider extends KeyEncryptionJWEAlgorithmProvider {
-        private final String jweAlgorithmName;
-        public RsaKeyEncryptionJWEAlgorithmProvider(String jweAlgorithmName) {
-            this.jweAlgorithmName = jweAlgorithmName;
+
+    private String getJcaAlgorithmName(String jweAlgorithmName) {
+        String jcaAlgorithmName = null;
+        if (JWEConstants.RSA1_5.equals(jweAlgorithmName)) {
+            jcaAlgorithmName = "RSA/ECB/PKCS1Padding";
+        } else if (JWEConstants.RSA_OAEP.equals(jweAlgorithmName)) {
+            jcaAlgorithmName = "RSA/ECB/OAEPWithSHA-1AndMGF1Padding";
         }
-        @Override
-        protected Cipher getCipherProvider() throws Exception {
-            String jcaAlgorithmName = null;
-            if (JWEConstants.RSA1_5.equals(jweAlgorithmName)) {
-                jcaAlgorithmName = "RSA/ECB/PKCS1Padding";
-            } else if (JWEConstants.RSA_OAEP.equals(jweAlgorithmName)) {
-                jcaAlgorithmName = "RSA/ECB/OAEPWithSHA-1AndMGF1Padding";
-            }
-            return Cipher.getInstance(jcaAlgorithmName);
-        }
+        return jcaAlgorithmName;
     }
-
-    private class AesGcmJWEEncryptionProvider extends AesGcmEncryptionProvider {
-        private final int expectedAesKeyLength;
-        private final int expectedCEKLength;
-        public AesGcmJWEEncryptionProvider(String jwaAlgorithmName) {
-            if (JWEConstants.A128GCM.equals(jwaAlgorithmName)) {
-                expectedAesKeyLength = 16;
-                expectedCEKLength = 16;
-            } else {
-                expectedAesKeyLength = 0;
-                expectedCEKLength = 0;
-            }
-        }
-        @Override
-        protected int getExpectedAesKeyLength() {return expectedAesKeyLength;}
-        @Override
-        public int getExpectedCEKLength() {return expectedCEKLength;}
-
-    }
-
-    private class AesCbcHmacShaJWEEncryptionProvider extends AesCbcHmacShaEncryptionProvider {
-        private final int expectedCEKLength;
-        private final int expectedAesKeyLenght;
-        private final String hmacShaAlgorithm;
-        private final int authenticationTag;
-        public AesCbcHmacShaJWEEncryptionProvider(String jwaAlgorithmName) {
-            if (JWEConstants.A128CBC_HS256.equals(jwaAlgorithmName)) {
-                expectedCEKLength = 16;
-                expectedAesKeyLenght = 16;
-                hmacShaAlgorithm = "HMACSHA256";
-                authenticationTag = 32;
-            } else {
-                expectedCEKLength = 0;
-                expectedAesKeyLenght = 0;
-                hmacShaAlgorithm = null;
-                authenticationTag = 0;
-            }
-        }
-        @Override
-        public int getExpectedCEKLength() {return expectedCEKLength;}
-        @Override
-        protected int getExpectedAesKeyLength() {return expectedAesKeyLenght;}
-        @Override
-        protected String getHmacShaAlgorithm() {return hmacShaAlgorithm;}
-        @Override
-        protected int getAuthenticationTagLength() {return authenticationTag;}
-    }
-
 }

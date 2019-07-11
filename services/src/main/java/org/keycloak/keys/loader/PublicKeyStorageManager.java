@@ -42,7 +42,7 @@ public class PublicKeyStorageManager {
         KeyWrapper keyWrapper = getClientPublicKeyWrapper(session, client, input);
         PublicKey publicKey = null;
         if (keyWrapper != null) {
-            publicKey = (PublicKey)keyWrapper.getVerifyKey();
+            publicKey = (PublicKey)keyWrapper.getPublicKey();
         }
         return publicKey;
     }
@@ -60,6 +60,13 @@ public class PublicKeyStorageManager {
         String modelKey = PublicKeyStorageUtils.getClientModelCacheKey(client.getRealm().getId(), client.getId(), keyUse);
         ClientPublicKeyLoader loader = new ClientPublicKeyLoader(session, client, keyUse);
         return keyStorage.getPublicKey(modelKey, null, loader);
+    }
+
+    public static KeyWrapper getClientPublicKeyWrapper(KeycloakSession session, ClientModel client, JWK.Use keyUse, String algAlgorithm) {
+        PublicKeyStorageProvider keyStorage = session.getProvider(PublicKeyStorageProvider.class);
+        String modelKey = PublicKeyStorageUtils.getClientModelCacheKey(client.getRealm().getId(), client.getId(), keyUse);
+        ClientPublicKeyLoader loader = new ClientPublicKeyLoader(session, client, keyUse);
+        return keyStorage.getFirstPublicKey(modelKey, algAlgorithm, loader);
     }
 
     public static PublicKey getIdentityProviderPublicKey(KeycloakSession session, RealmModel realm, OIDCIdentityProviderConfig idpConfig, JWSInput input) {
@@ -88,6 +95,6 @@ public class PublicKeyStorageManager {
                 : kid, pem);
         }
 
-        return (PublicKey)keyStorage.getPublicKey(modelKey, kid, loader).getVerifyKey();
+        return (PublicKey)keyStorage.getPublicKey(modelKey, kid, loader).getPublicKey();
     }
 }

@@ -98,30 +98,6 @@ public class KeyWrapper {
         this.secretKey = secretKey;
     }
 
-    public Key getSignKey() {
-        return privateKey;
-    }
-
-    public void setSignKey(Key signKey) {
-        this.privateKey = signKey;
-    }
-
-    public Key getVerifyKey() {
-        return publicKey;
-    }
-
-    public void setVerifyKey(Key verifyKey) {
-        this.publicKey = verifyKey;
-    }
-
-    public X509Certificate getCertificate() {
-        return certificate;
-    }
-
-    public void setCertificate(X509Certificate certificate) {
-        this.certificate = certificate;
-    }
-
     public Key getPrivateKey() {
         return privateKey;
     }
@@ -136,6 +112,14 @@ public class KeyWrapper {
 
     public void setPublicKey(Key publicKey) {
         this.publicKey = publicKey;
+    }
+
+    public X509Certificate getCertificate() {
+        return certificate;
+    }
+
+    public void setCertificate(X509Certificate certificate) {
+        this.certificate = certificate;
     }
 
 }

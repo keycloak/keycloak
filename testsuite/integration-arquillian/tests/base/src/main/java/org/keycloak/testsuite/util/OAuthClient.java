@@ -1207,7 +1207,7 @@ public class OAuthClient {
                 KeyWrapper key = new KeyWrapper();
                 key.setKid(k.getKeyId());
                 key.setAlgorithm(k.getAlgorithm());
-                key.setVerifyKey(publicKey);
+                key.setPublicKey(publicKey);
                 key.setUse(KeyUse.SIG);
 
                 return key;

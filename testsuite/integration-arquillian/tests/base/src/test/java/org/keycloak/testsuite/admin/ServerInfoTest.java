@@ -20,10 +20,13 @@ package org.keycloak.testsuite.admin;
 import org.junit.Test;
 import org.keycloak.common.Version;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.info.ProviderRepresentation;
 import org.keycloak.representations.info.ServerInfoRepresentation;
+import org.keycloak.representations.info.SpiInfoRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -65,4 +68,5 @@ public class ServerInfoTest extends AbstractKeycloakTest {
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
     }
+
 }

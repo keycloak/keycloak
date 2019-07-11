@@ -199,7 +199,7 @@ public class TestingOIDCEndpointsApplicationResource {
             KeyWrapper keyWrapper = new KeyWrapper();
             keyWrapper.setAlgorithm(clientData.getSigningKeyAlgorithm());
             keyWrapper.setKid(kid);
-            keyWrapper.setSignKey(privateKey);
+            keyWrapper.setPrivateKey(privateKey);
             SignatureSignerContext signer = new AsymmetricSignatureSignerContext(keyWrapper);
             clientData.setOidcRequest(new JWSBuilder().kid(kid).jsonContent(oidcRequest).sign(signer));
         }

@@ -120,32 +120,8 @@ public class JWE {
 
     public String encodeJwe() throws JWEException {
         try {
-            if (header == null) {
-                throw new IllegalStateException("Header must be set");
-            }
-            if (content == null) {
-                throw new IllegalStateException("Content must be set");
-            }
-
-            JWEAlgorithmProvider algorithmProvider = JWERegistry.getAlgProvider(header.getAlgorithm());
-            if (algorithmProvider == null) {
-                throw new IllegalArgumentException("No provider for alg '" + header.getAlgorithm() + "'");
-            }
-
-            JWEEncryptionProvider encryptionProvider = JWERegistry.getEncProvider(header.getEncryptionAlgorithm());
-            if (encryptionProvider == null) {
-                throw new IllegalArgumentException("No provider for enc '" + header.getAlgorithm() + "'");
-            }
-
-            keyStorage.setEncryptionProvider(encryptionProvider);
-            keyStorage.getCEKKey(JWEKeyStorage.KeyUse.ENCRYPTION, true); // Will generate CEK if it's not already present
-
-            byte[] encodedCEK = algorithmProvider.encodeCek(encryptionProvider, keyStorage, keyStorage.getEncryptionKey());
-            base64Cek = Base64Url.encode(encodedCEK);
-
-            encryptionProvider.encodeJwe(this);
-
-            return getEncodedJweString();
+            if (header == null) throw new IllegalStateException("Header must be set");
+            return encodeJwe(JWERegistry.getAlgProvider(header.getAlgorithm()), JWERegistry.getEncProvider(header.getEncryptionAlgorithm()));
         } catch (Exception e) {
             throw new JWEException(e);
         }
@@ -193,39 +169,44 @@ public class JWE {
         return builder.toString();
     }
 
+    private void setupJWEHeader(String jweStr) throws IllegalStateException {
+        String[] parts = jweStr.split("\\.");
+        if (parts.length != 5) {
+            throw new IllegalStateException("Not a JWE String");
+        }
+
+        this.base64Header = parts[0];
+        this.base64Cek = parts[1];
+        this.initializationVector = Base64Url.decode(parts[2]);
+        this.encryptedContent = Base64Url.decode(parts[3]);
+        this.authenticationTag = Base64Url.decode(parts[4]);
+
+        this.header = getHeader();
+    }
+
+    private JWE getProcessedJWE(JWEAlgorithmProvider algorithmProvider, JWEEncryptionProvider encryptionProvider) throws Exception {
+        if (algorithmProvider == null) {
+            throw new IllegalArgumentException("No provider for alg ");
+        }
+
+        if (encryptionProvider == null) {
+            throw new IllegalArgumentException("No provider for enc ");
+        }
+
+        keyStorage.setEncryptionProvider(encryptionProvider);
+
+        byte[] decodedCek = algorithmProvider.decodeCek(Base64Url.decode(base64Cek), keyStorage.getDecryptionKey());
+        keyStorage.setCEKBytes(decodedCek);
+
+        encryptionProvider.verifyAndDecodeJwe(this);
+
+        return this;
+    }
 
     public JWE verifyAndDecodeJwe(String jweStr) throws JWEException {
         try {
-            String[] parts = jweStr.split("\\.");
-            if (parts.length != 5) {
-                throw new IllegalStateException("Not a JWE String");
-            }
-
-            this.base64Header = parts[0];
-            this.base64Cek = parts[1];
-            this.initializationVector = Base64Url.decode(parts[2]);
-            this.encryptedContent = Base64Url.decode(parts[3]);
-            this.authenticationTag = Base64Url.decode(parts[4]);
-
-            this.header = getHeader();
-            JWEAlgorithmProvider algorithmProvider = JWERegistry.getAlgProvider(header.getAlgorithm());
-            if (algorithmProvider == null) {
-                throw new IllegalArgumentException("No provider for alg '" + header.getAlgorithm() + "'");
-            }
-
-            JWEEncryptionProvider encryptionProvider = JWERegistry.getEncProvider(header.getEncryptionAlgorithm());
-            if (encryptionProvider == null) {
-                throw new IllegalArgumentException("No provider for enc '" + header.getAlgorithm() + "'");
-            }
-
-            keyStorage.setEncryptionProvider(encryptionProvider);
-
-            byte[] decodedCek = algorithmProvider.decodeCek(Base64Url.decode(base64Cek), keyStorage.getDecryptionKey());
-            keyStorage.setCEKBytes(decodedCek);
-
-            encryptionProvider.verifyAndDecodeJwe(this);
-
-            return this;
+            setupJWEHeader(jweStr);
+            return getProcessedJWE(JWERegistry.getAlgProvider(header.getAlgorithm()), JWERegistry.getEncProvider(header.getEncryptionAlgorithm()));
         } catch (Exception e) {
             throw new JWEException(e);
         }
@@ -233,34 +214,8 @@ public class JWE {
 
     public JWE verifyAndDecodeJwe(String jweStr, JWEAlgorithmProvider algorithmProvider, JWEEncryptionProvider encryptionProvider) throws JWEException {
         try {
-            String[] parts = jweStr.split("\\.");
-            if (parts.length != 5) {
-                throw new IllegalStateException("Not a JWE String");
-            }
-
-            this.base64Header = parts[0];
-            this.base64Cek = parts[1];
-            this.initializationVector = Base64Url.decode(parts[2]);
-            this.encryptedContent = Base64Url.decode(parts[3]);
-            this.authenticationTag = Base64Url.decode(parts[4]);
-
-            this.header = getHeader();
-            if (algorithmProvider == null) {
-                throw new IllegalArgumentException("No provider for alg ");
-            }
-
-            if (encryptionProvider == null) {
-                throw new IllegalArgumentException("No provider for enc ");
-            }
-
-            keyStorage.setEncryptionProvider(encryptionProvider);
-
-            byte[] decodedCek = algorithmProvider.decodeCek(Base64Url.decode(base64Cek), keyStorage.getDecryptionKey());
-            keyStorage.setCEKBytes(decodedCek);
-
-            encryptionProvider.verifyAndDecodeJwe(this);
-
-            return this;
+            setupJWEHeader(jweStr);
+            return getProcessedJWE(algorithmProvider, encryptionProvider);
         } catch (Exception e) {
             throw new JWEException(e);
         }

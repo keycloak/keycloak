@@ -195,7 +195,6 @@ public class IdTokenEncryptionTest extends AbstractTestRealmKeycloakTest {
         }
     }
 
-    // tnorimat
     private JWEAlgorithmProvider getJweAlgorithmProvider(String algAlgorithm) {
         JWEAlgorithmProvider jweAlgorithmProvider = null;
         if (JWEConstants.RSA1_5.equals(algAlgorithm) || JWEConstants.RSA_OAEP.equals(algAlgorithm) ) {

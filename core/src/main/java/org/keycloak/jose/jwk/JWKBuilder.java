@@ -90,7 +90,7 @@ public class JWKBuilder {
 
     public JWK rsa(Key key, KeyUse keyUse) {
         JWK k = rsa(key);
-        String keyUseString = DEFAULT_PUBLIC_KEY_USE;
+        String keyUseString = keyUse == null ? DEFAULT_PUBLIC_KEY_USE : keyUse.getSpecName();
         if (KeyUse.ENC == keyUse) keyUseString = "enc";
         k.setPublicKeyUse(keyUseString);
         return k;
