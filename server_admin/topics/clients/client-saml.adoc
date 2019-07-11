@@ -50,8 +50,9 @@ Consent Required::
   If you've ever done a social login to Google, you'll often see a similar page.  {project_name} provides the same functionality.
 
 Include AuthnStatement::
-  SAML login responses may specify the authentication method used (password, etc.) as well as a timestamp of the login.
-  Setting this to on will include that statement in the response document. 
+  SAML login responses may specify the authentication method used (password, etc.) as well as timestamps of the login and the session expiration.
+  This is enabled by default, which means that `AuthStatement` element will be included in login responses. Note that setting this to off
+  would prevent the client from determining the maximum session length which could result into never expiring client session.
 
 Sign Documents::
   When turned on, {project_name} will sign the document using the realm's private key.
