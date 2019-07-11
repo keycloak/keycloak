@@ -518,7 +518,7 @@ module.controller('UserDetailCtrl', function($scope, realm, user, BruteForceUser
     }
 
     $scope.addDefaltAttribute = function(){
-        var keys = ['phone', 'policeNo',  'sex','avatarUrl', 'mac', 'workNature', 'isFirst', 'verifyIp', 'ip', 'login_not_password'];
+        var keys = ['phone', 'policeNo',  'sex','avatarUrl', 'mac', 'workNature', 'isFirst', 'verifyIp', 'ip', 'loginNotPassword'];
         var attrs = $scope.user.attributes;
         for(var i=0; i< keys.length; i++){
             if (!attrs[keys[i]]) {

@@ -14,7 +14,7 @@
                 <div class="row">
                     <div class="col-md-3">
                         <label class="control-label" for="available">{{:: 'available-roles' | translate}}</label>
-                        <select id="available" class="form-control overflow-select" multiple size="5" realmMappings
+                        <select id="available" class="form-control overflow-select" multiple size="8" realmMappings
                                 ng-multiple="true"
                                 ng-model="selectedRealmRoles">
                             <option ng-repeat="r in realmRoles | orderBy:'name'"
@@ -30,7 +30,7 @@
                     <div class="col-md-3">
                         <label class="control-label" for="assigned">{{:: 'assigned-roles' | translate}}</label>
                         <kc-tooltip>{{:: 'user.assigned-roles.tooltip' | translate}}</kc-tooltip>
-                        <select id="assigned" class="form-control overflow-select" multiple size="5"
+                        <select id="assigned" class="form-control overflow-select" multiple size="8"
                                 ng-multiple="true"
                                 ng-model="selectedRealmMappings">
                             <option ng-repeat="r in realmMappings | orderBy:'name'"
@@ -45,7 +45,7 @@
                     <div class="col-md-3">
                         <label class="control-label" for="realm-composite">{{:: 'effective-roles' | translate}}</label>
                         <kc-tooltip>{{:: 'user.effective-roles.tooltip' | translate}}</kc-tooltip>
-                        <select id="realm-composite" class="form-control overflow-select" multiple size="5"
+                        <select id="realm-composite" class="form-control overflow-select" multiple size="8"
                                 disabled="true"
                                 ng-model="dummymodel">
                             <option ng-repeat="r in realmComposite | orderBy:'name'"
@@ -61,7 +61,7 @@
         <div class="form-group">
                 <label class="col-md-2 control-label" class="control-label">
                     <span>{{:: 'client-roles' | translate}}</span>
-                    <select class="form-control" id="clients" name="clients" ng-change="changeClient()" ng-model="targetClient" ng-options="a.clientId for a in clients | orderBy:'clientId'" ng-disabled="false"></select>
+                    <select class="form-control" size="8" id="clients" name="clients" ng-change="changeClient()" ng-model="targetClient" ng-options="a.clientId for a in clients | orderBy:'clientId'" ng-disabled="false"></select>
                 </label>
                 <div class="col-md-10" kc-read-only="!user.access.mapRoles">
                     <div class="row" data-ng-hide="targetClient">
@@ -71,7 +71,7 @@
                         <div class="col-md-3">
                             <label class="control-label" for="available-client">{{:: 'available-roles' | translate}}</label>
                             <kc-tooltip>{{:: 'user.available-roles.tooltip' | translate}}</kc-tooltip>
-                            <select id="available-client" class="form-control overflow-select" multiple size="5"
+                            <select id="available-client" class="form-control overflow-select" multiple size="8"
                                     ng-multiple="true"
                                     ng-model="selectedClientRoles">
                                 <option ng-repeat="r in clientRoles | orderBy:'name'"

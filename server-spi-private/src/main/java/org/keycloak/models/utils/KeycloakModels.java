@@ -42,7 +42,7 @@ public class KeycloakModels {
                 return user;
             }
         }
-        return session.users().getUserByUsername(username, realm);
+        return null;
     }
 
 }

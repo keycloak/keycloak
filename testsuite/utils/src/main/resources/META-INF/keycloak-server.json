@@ -74,11 +74,11 @@
 
     "connectionsJpa": {
         "default": {
-            "url": "${keycloak.connectionsJpa.url:jdbc:mysql://192.168.3.206:3306/keycloak_uc_test?useUnicode=true&amp;characterEncoding=utf8&amp;useSSL=false}",
+            "url": "${keycloak.connectionsJpa.url:jdbc:mysql://localhost:3306/keycloak_uc_test?useUnicode=true&characterEncoding=UTF-8&useSSL=false&serverTimezone=UTC}",
             "driver": "${keycloak.connectionsJpa.driver:com.mysql.jdbc.Driver}",
-            "driverDialect": "${keycloak.connectionsJpa.driverDialect:}",
+            "driverDialect": "${keycloak.connectionsJpa.driverDialect:org.hibernate.dialect.MySQLDialect}",
             "user": "${keycloak.connectionsJpa.user:root}",
-            "password": "${keycloak.connectionsJpa.password:govnet123}",
+            "password": "${keycloak.connectionsJpa.password:root}",
             "initializeEmpty": true,
             "migrationStrategy": "update",
             "showSql": "${keycloak.connectionsJpa.showSql:false}",
