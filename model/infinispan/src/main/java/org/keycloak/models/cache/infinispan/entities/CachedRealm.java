@@ -33,6 +33,7 @@ import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.RequiredCredentialModel;
+import org.keycloak.models.WebAuthnPolicy;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -95,6 +96,7 @@ public class CachedRealm extends AbstractExtendableRevisioned {
     protected int notBefore;
     protected PasswordPolicy passwordPolicy;
     protected OTPPolicy otpPolicy;
+    protected WebAuthnPolicy webAuthnPolicy;
 
     protected String loginTheme;
     protected String accountTheme;
@@ -203,6 +205,7 @@ public class CachedRealm extends AbstractExtendableRevisioned {
         notBefore = model.getNotBefore();
         passwordPolicy = model.getPasswordPolicy();
         otpPolicy = model.getOTPPolicy();
+        webAuthnPolicy = model.getWebAuthnPolicy();
 
         loginTheme = model.getLoginTheme();
         accountTheme = model.getAccountTheme();
@@ -596,6 +599,10 @@ public class CachedRealm extends AbstractExtendableRevisioned {
 
     public OTPPolicy getOtpPolicy() {
         return otpPolicy;
+    }
+
+    public WebAuthnPolicy getWebAuthnPolicy() {
+        return webAuthnPolicy;
     }
 
     public AuthenticationFlowModel getBrowserFlow() {

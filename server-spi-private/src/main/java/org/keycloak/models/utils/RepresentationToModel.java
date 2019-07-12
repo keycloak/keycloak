@@ -19,6 +19,7 @@ package org.keycloak.models.utils;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -84,6 +85,7 @@ import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
+import org.keycloak.models.WebAuthnPolicy;
 import org.keycloak.models.cache.UserCache;
 import org.keycloak.models.credential.PasswordUserCredentialModel;
 import org.keycloak.policy.PasswordPolicyNotMetException;
@@ -260,6 +262,55 @@ public class RepresentationToModel {
             newRealm.setPasswordPolicy(PasswordPolicy.parse(session, rep.getPasswordPolicy()));
         if (rep.getOtpPolicyType() != null) newRealm.setOTPPolicy(toPolicy(rep));
         else newRealm.setOTPPolicy(OTPPolicy.DEFAULT_POLICY);
+
+        WebAuthnPolicy webAuthnPolicy = new WebAuthnPolicy();
+
+        String webAuthnPolicyRpEntityName = rep.getWebAuthnPolicyRpEntityName();
+        if (webAuthnPolicyRpEntityName == null || webAuthnPolicyRpEntityName.isEmpty())
+            webAuthnPolicyRpEntityName = Constants.DEFAULT_WEBAUTHN_POLICY_RP_ENTITY_NAME;
+        webAuthnPolicy.setRpEntityName(webAuthnPolicyRpEntityName);
+
+        List<String> webAuthnPolicySignatureAlgorithms = rep.getWebAuthnPolicySignatureAlgorithms();
+        if (webAuthnPolicySignatureAlgorithms == null || webAuthnPolicySignatureAlgorithms.isEmpty())
+            webAuthnPolicySignatureAlgorithms = Arrays.asList(Constants.DEFAULT_WEBAUTHN_POLICY_SIGNATURE_ALGORITHMS.split(","));
+        webAuthnPolicy.setSignatureAlgorithm(webAuthnPolicySignatureAlgorithms);
+
+        String webAuthnPolicyRpId = rep.getWebAuthnPolicyRpId();
+        if (webAuthnPolicyRpId == null || webAuthnPolicyRpId.isEmpty())
+            webAuthnPolicyRpId = "";
+        webAuthnPolicy.setRpId(webAuthnPolicyRpId);
+
+        String webAuthnPolicyAttestationConveyancePreference = rep.getWebAuthnPolicyAttestationConveyancePreference();
+        if (webAuthnPolicyAttestationConveyancePreference == null || webAuthnPolicyAttestationConveyancePreference.isEmpty())
+            webAuthnPolicyAttestationConveyancePreference = Constants.DEFAULT_WEBAUTHN_POLICY_NOT_SPECIFIED;
+        webAuthnPolicy.setAttestationConveyancePreference(webAuthnPolicyAttestationConveyancePreference);
+
+        String webAuthnPolicyAuthenticatorAttachment = rep.getWebAuthnPolicyAuthenticatorAttachment();
+        if (webAuthnPolicyAuthenticatorAttachment == null || webAuthnPolicyAuthenticatorAttachment.isEmpty())
+            webAuthnPolicyAuthenticatorAttachment = Constants.DEFAULT_WEBAUTHN_POLICY_NOT_SPECIFIED;
+        webAuthnPolicy.setAuthenticatorAttachment(webAuthnPolicyAuthenticatorAttachment);
+
+        String webAuthnPolicyRequireResidentKey = rep.getWebAuthnPolicyRequireResidentKey();
+        if (webAuthnPolicyRequireResidentKey == null || webAuthnPolicyRequireResidentKey.isEmpty())
+            webAuthnPolicyRequireResidentKey = Constants.DEFAULT_WEBAUTHN_POLICY_NOT_SPECIFIED;
+        webAuthnPolicy.setRequireResidentKey(webAuthnPolicyRequireResidentKey);
+
+        String webAuthnPolicyUserVerificationRequirement = rep.getWebAuthnPolicyUserVerificationRequirement();
+        if (webAuthnPolicyUserVerificationRequirement == null || webAuthnPolicyUserVerificationRequirement.isEmpty())
+            webAuthnPolicyUserVerificationRequirement = Constants.DEFAULT_WEBAUTHN_POLICY_NOT_SPECIFIED;
+        webAuthnPolicy.setUserVerificationRequirement(webAuthnPolicyUserVerificationRequirement);
+
+        Integer webAuthnPolicyCreateTimeout = rep.getWebAuthnPolicyCreateTimeout();
+        if (webAuthnPolicyCreateTimeout != null) webAuthnPolicy.setCreateTimeout(webAuthnPolicyCreateTimeout);
+        else webAuthnPolicy.setCreateTimeout(0);
+
+        Boolean webAuthnPolicyAvoidSameAuthenticatorRegister = rep.isWebAuthnPolicyAvoidSameAuthenticatorRegister();
+        if (webAuthnPolicyAvoidSameAuthenticatorRegister != null) webAuthnPolicy.setAvoidSameAuthenticatorRegister(webAuthnPolicyAvoidSameAuthenticatorRegister);
+
+        List<String> webAuthnPolicyAcceptableAaguids = rep.getWebAuthnPolicyAcceptableAaguids();
+        if (webAuthnPolicyAcceptableAaguids != null) webAuthnPolicy.setAcceptableAaguids(webAuthnPolicyAcceptableAaguids);
+
+        newRealm.setWebAuthnPolicy(webAuthnPolicy);
 
         Map<String, String> mappedFlows = importAuthenticationFlows(newRealm, rep);
         if (rep.getRequiredActions() != null) {
@@ -960,6 +1011,55 @@ public class RepresentationToModel {
         if (rep.getDefaultRoles() != null) {
             realm.updateDefaultRoles(rep.getDefaultRoles().toArray(new String[rep.getDefaultRoles().size()]));
         }
+
+        WebAuthnPolicy webAuthnPolicy = new WebAuthnPolicy();
+
+        String webAuthnPolicyRpEntityName = rep.getWebAuthnPolicyRpEntityName();
+        if (webAuthnPolicyRpEntityName == null || webAuthnPolicyRpEntityName.isEmpty())
+            webAuthnPolicyRpEntityName = Constants.DEFAULT_WEBAUTHN_POLICY_RP_ENTITY_NAME;
+        webAuthnPolicy.setRpEntityName(webAuthnPolicyRpEntityName);
+
+        List<String> webAuthnPolicySignatureAlgorithms = rep.getWebAuthnPolicySignatureAlgorithms();
+        if (webAuthnPolicySignatureAlgorithms == null || webAuthnPolicySignatureAlgorithms.isEmpty())
+            webAuthnPolicySignatureAlgorithms = Arrays.asList(Constants.DEFAULT_WEBAUTHN_POLICY_SIGNATURE_ALGORITHMS.split(","));
+        webAuthnPolicy.setSignatureAlgorithm(webAuthnPolicySignatureAlgorithms);
+
+        String webAuthnPolicyRpId = rep.getWebAuthnPolicyRpId();
+        if (webAuthnPolicyRpId == null || webAuthnPolicyRpId.isEmpty())
+            webAuthnPolicyRpId = "";
+        webAuthnPolicy.setRpId(webAuthnPolicyRpId);
+
+        String webAuthnPolicyAttestationConveyancePreference = rep.getWebAuthnPolicyAttestationConveyancePreference();
+        if (webAuthnPolicyAttestationConveyancePreference == null || webAuthnPolicyAttestationConveyancePreference.isEmpty())
+            webAuthnPolicyAttestationConveyancePreference = Constants.DEFAULT_WEBAUTHN_POLICY_NOT_SPECIFIED;
+        webAuthnPolicy.setAttestationConveyancePreference(webAuthnPolicyAttestationConveyancePreference);
+
+        String webAuthnPolicyAuthenticatorAttachment = rep.getWebAuthnPolicyAuthenticatorAttachment();
+        if (webAuthnPolicyAuthenticatorAttachment == null || webAuthnPolicyAuthenticatorAttachment.isEmpty())
+            webAuthnPolicyAuthenticatorAttachment = Constants.DEFAULT_WEBAUTHN_POLICY_NOT_SPECIFIED;
+        webAuthnPolicy.setAuthenticatorAttachment(webAuthnPolicyAuthenticatorAttachment);
+
+        String webAuthnPolicyRequireResidentKey = rep.getWebAuthnPolicyRequireResidentKey();
+        if (webAuthnPolicyRequireResidentKey == null || webAuthnPolicyRequireResidentKey.isEmpty())
+            webAuthnPolicyRequireResidentKey = Constants.DEFAULT_WEBAUTHN_POLICY_NOT_SPECIFIED;
+        webAuthnPolicy.setRequireResidentKey(webAuthnPolicyRequireResidentKey);
+
+        String webAuthnPolicyUserVerificationRequirement = rep.getWebAuthnPolicyUserVerificationRequirement();
+        if (webAuthnPolicyUserVerificationRequirement == null || webAuthnPolicyUserVerificationRequirement.isEmpty())
+            webAuthnPolicyUserVerificationRequirement = Constants.DEFAULT_WEBAUTHN_POLICY_NOT_SPECIFIED;
+        webAuthnPolicy.setUserVerificationRequirement(webAuthnPolicyUserVerificationRequirement);
+
+        Integer webAuthnPolicyCreateTimeout = rep.getWebAuthnPolicyCreateTimeout();
+        if (webAuthnPolicyCreateTimeout != null) webAuthnPolicy.setCreateTimeout(webAuthnPolicyCreateTimeout);
+        else webAuthnPolicy.setCreateTimeout(0);
+
+        Boolean webAuthnPolicyAvoidSameAuthenticatorRegister = rep.isWebAuthnPolicyAvoidSameAuthenticatorRegister();
+        if (webAuthnPolicyAvoidSameAuthenticatorRegister != null) webAuthnPolicy.setAvoidSameAuthenticatorRegister(webAuthnPolicyAvoidSameAuthenticatorRegister);
+
+        List<String> webAuthnPolicyAcceptableAaguids = rep.getWebAuthnPolicyAcceptableAaguids();
+        webAuthnPolicy.setAcceptableAaguids(webAuthnPolicyAcceptableAaguids);
+
+        realm.setWebAuthnPolicy(webAuthnPolicy);
 
         if (rep.getSmtpServer() != null) {
             Map<String, String> config = new HashMap(rep.getSmtpServer());

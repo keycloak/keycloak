@@ -397,6 +397,19 @@ module.controller('RealmOtpPolicyCtrl', function($scope, Current, Realm, realm, 
     genericRealmUpdate($scope, Current, Realm, realm, serverInfo, $http, $route, Dialog, Notifications, "/realms/" + realm.realm + "/authentication/otp-policy");
 });
 
+module.controller('RealmWebAuthnPolicyCtrl', function($scope, Current, Realm, realm, serverInfo, $http, $route, Dialog, Notifications) {
+
+    $scope.deleteAcceptableAaguid = function(index) {
+        $scope.realm.webAuthnPolicyAcceptableAaguids.splice(index, 1);
+    }
+
+    $scope.addAcceptableAaguid = function() {
+        $scope.realm.webAuthnPolicyAcceptableAaguids.push($scope.newAcceptableAaguid);
+        $scope.newAcceptableAaguid = "";
+    }
+
+    genericRealmUpdate($scope, Current, Realm, realm, serverInfo, $http, $route, Dialog, Notifications, "/realms/" + realm.realm + "/authentication/webauthn-policy");
+});
 
 module.controller('RealmThemeCtrl', function($scope, Current, Realm, realm, serverInfo, $http, $route, Dialog, Notifications) {
     genericRealmUpdate($scope, Current, Realm, realm, serverInfo, $http, $route, Dialog, Notifications, "/realms/" + realm.realm + "/theme-settings");
