@@ -110,7 +110,7 @@ Audiences of all the clients, for which authenticated user has at least one clie
 to the `aud` claim in the access token now. On the other hand, an access token may not automatically contain the audience of the
 frontend client, for which it was issued. Read the link:{adminguide_link}#_audience[{adminguide_name}] for more details.
 
-==== JavaScipt Adapter Promise
+==== JavaScript Adapter Promise
 
 To use native JavaScript promise with the JavaScript adapter it is now required to set `promiseType` to `native` in the
 init options.
@@ -295,7 +295,7 @@ to use the more secure hashing algorithm.
 OpenID Connect specification requires that parameter `scope` with value `openid` is used in initial authorization request. So in {project_name}
 2.1.0 we changed our adapters to use `scope=openid` in the redirect URI to {project_name}. Now we changed the server part too and ID token
 will be sent to the application just if `scope=openid` is really used. If it's not used, then ID token will be skipped and just Access token and Refresh token will be sent to the application.
-This also allows that you can ommit the generation of ID Token on purpose - for example for space or performance purposes.
+This also allows that you can omit the generation of ID Token on purpose - for example for space or performance purposes.
 
 Direct grants (OAuth2 Resource Owner Password Credentials Grant) and Service accounts login (OAuth2 Client credentials grant) also don't use ID Token by default now.
 You need to explicitly add `scope=openid` parameter to have ID Token included.
@@ -417,7 +417,7 @@ The following scenarios are affected:
 
 ==== Authenticate by default removed from Identity Providers
 
-Identity providers no longer has an option to set it as a default authenticaton provider. Instead go to Authentication, select the `Browser` flow and configure the `Identity Provider Redirector`. It has an option to set the default identity provider.
+Identity providers no longer has an option to set it as a default authentication provider. Instead go to Authentication, select the `Browser` flow and configure the `Identity Provider Redirector`. It has an option to set the default identity provider.
 
 === Migrating to 2.0.0
 
@@ -647,7 +647,7 @@ There are now 3 separate adapter downloads for WildFly, JBoss EAP and JBoss AS7:
 Make sure you grab the correct one.
 
 You also need to update standalone.xml as the extension module and subsystem definition has changed.
-See link:{adapterguide_link}[{adapterguide_name] for details.
+See link:{adapterguide_link}[{adapterguide_name}] for details.
 
 === Migrating from 1.2.0.Beta1 to 1.2.0.RC1
 
@@ -695,7 +695,7 @@ The old endpoints (`/realms/{realm-name}/protocols/openid-connect/login`, `/real
 
 ==== Theme changes
 
-The layout of themes have changed.
+The layout of themes has changed.
 The directory hierarchy used to be `type/name` this is now changed to `name/type`.
 For example a login theme named `sunrise` used to be deployed to `standalone/configuration/themes/login/sunrise`, which is now moved to `standalone/configuration/themes/sunrise/login`.
 This change was done to make it easier to have groups of the different types for the same theme into one folder.
@@ -729,7 +729,7 @@ Facebook admin console).
 
 * Adapters are now a separate download.  They are not included in appliance and war distribution.  We have too many now and the distro
   is getting bloated.
-* org.keycloak.adapters.tomcat7.KeycloakAuthenticatorValve
+* `org.keycloak.adapters.tomcat7.KeycloakAuthenticatorValve`
 +`org.keycloak.adapters.tomcat.KeycloakAuthenticatorValve`
 
 * JavaScript adapter now has idToken and idTokenParsed properties. If you use idToken to retrieve first name, email, etc. you need to change this to idTokenParsed.
@@ -763,7 +763,7 @@ Facebook admin console).
   Users->Federation.  Add Provider will show you an "ldap" option.
 * Authentication SPI has been removed and rewritten.  The new SPI is UserFederationProvider and is
   more flexible.
-* ssl-not-required
+* `ssl-not-required`
 +`ssl-required`
 +`all`
 +`external`
@@ -808,5 +808,5 @@ Facebook admin console).
 * There is no longer required Application or OAuth Client credentials.  These client types are now
   hard coded to use the "secret" credential type.
 * Because of the "secret" credential change to Application and OAuth Client, you'll have to update
-  your keycloak.json configuration files and regenarate a secret within the Application or OAuth Client
+  your keycloak.json configuration files and regenerate a secret within the Application or OAuth Client
   credentials tab in the administration console.
