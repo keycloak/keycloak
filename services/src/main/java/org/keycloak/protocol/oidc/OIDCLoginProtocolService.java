@@ -254,9 +254,9 @@ public class OIDCLoginProtocolService {
     @GET
     @Path("delegated")
     public Response kcinitBrowserLoginComplete(@QueryParam("error") boolean error) {
-        AuthenticationManager.expireIdentityCookie(realm, session.getContext().getUri(), clientConnection);
-        AuthenticationManager.expireRememberMeCookie(realm, session.getContext().getUri(), clientConnection);
         if (error) {
+        	AuthenticationManager.expireIdentityCookie(realm, session.getContext().getUri(), clientConnection);
+        	AuthenticationManager.expireRememberMeCookie(realm, session.getContext().getUri(), clientConnection);
             LoginFormsProvider forms = session.getProvider(LoginFormsProvider.class);
             return forms
                     .setAttribute("messageHeader", forms.getMessage(Messages.DELEGATION_FAILED_HEADER))
