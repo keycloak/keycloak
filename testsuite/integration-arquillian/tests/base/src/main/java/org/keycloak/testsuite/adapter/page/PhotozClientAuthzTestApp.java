@@ -36,6 +36,7 @@ import org.openqa.selenium.support.FindBy;
 
 import java.net.URL;
 
+import static org.junit.Assert.assertEquals;
 import static org.keycloak.testsuite.util.UIUtils.clickLink;
 import static org.keycloak.testsuite.util.WaitUtils.pause;
 import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
@@ -206,6 +207,10 @@ public class PhotozClientAuthzTestApp extends AbstractPageWithInjectedUrl {
 
     public void accountGrantResource(String name, String requester) {
         accountMyResources();
+        grantResource(name, requester);
+    }
+
+    public void grantResource(String name, String requester) {
         WebElement grantResource = driver.findElement(By.id("grant-" + name + "-" + requester));
         waitUntilElement(grantResource).is().clickable();
         grantResource.click();
@@ -220,6 +225,10 @@ public class PhotozClientAuthzTestApp extends AbstractPageWithInjectedUrl {
 
     public void accountRevokeResource(String name, String requester) {
         accountMyResource(name);
+        revokeResource(name, requester);
+    }
+
+    public void revokeResource(String name, String requester) {
         WebElement revokeResource = driver.findElement(By.id("revoke-" + name + "-" + requester));
         waitUntilElement(revokeResource).is().clickable();
         revokeResource.click();
@@ -227,31 +236,32 @@ public class PhotozClientAuthzTestApp extends AbstractPageWithInjectedUrl {
 
     public void accountShareResource(String name, String user) {
         accountMyResource(name);
-        WebElement userIdInput = driver.findElement(By.id("user_id"));
-        UIUtils.setTextInputValue(userIdInput, user);
-        pause(200); // We need to wait a bit for the form to "accept" the input (otherwise it registers the input as empty)
-        waitUntilElement(userIdInput).attribute(UIUtils.VALUE_ATTR_NAME).contains(user);
-        
-        WebElement shareButton = driver.findElement(By.id("share-button"));
-        waitUntilElement(shareButton).is().clickable();
-        shareButton.click();
+        shareResource(user);
     }
 
     public void accountShareRemoveScope(String name, String user, String scope) {
         accountMyResource(name);
         
-        WebElement userIdInput = driver.findElement(By.id("user_id"));
-        UIUtils.setTextInputValue(userIdInput, user);
-        pause(200); // We need to wait a bit for the form to "accept" the input (otherwise it registers the input as empty)
-        waitUntilElement(userIdInput).attribute(UIUtils.VALUE_ATTR_NAME).contains(user);
-        
         WebElement shareRemoveScope = driver.findElement(By.id("share-remove-scope-" + name + "-" + scope));
         waitUntilElement(shareRemoveScope).is().clickable();
         shareRemoveScope.click();
 
+        shareResource(user);
+    }
+    
+    public void shareResource(String user) {
+        WebElement userIdInput = driver.findElement(By.id("user_id"));
+        UIUtils.setTextInputValue(userIdInput, user);
+        pause(200); // We need to wait a bit for the form to "accept" the input (otherwise it registers the input as empty)
+        waitUntilElement(userIdInput).attribute(UIUtils.VALUE_ATTR_NAME).contains(user);
+
         WebElement shareButton = driver.findElement(By.id("share-button"));
         waitUntilElement(shareButton).is().clickable();
         shareButton.click();
+    }
+    
+    public void assertError() {
+        assertEquals("We're sorry...", driver.findElement(By.id("kc-page-title")).getText());
     }
 
     public void accountDenyResource(String name) {
@@ -291,5 +301,9 @@ public class PhotozClientAuthzTestApp extends AbstractPageWithInjectedUrl {
     @Override
     public boolean isCurrent() {
         return URLUtils.currentUrlStartsWith(toString());
+    }
+
+    public void executeScript(String script) {
+        testExecutor.executeScript(script);
     }
 }
