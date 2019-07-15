@@ -43,7 +43,7 @@ public class UserAttributeLDAPStorageMapperFactory extends AbstractLDAPStorageMa
         configProperties = props;
     }
 
-    private static List<ProviderConfigProperty> getConfigProps(ComponentModel p) {
+    static List<ProviderConfigProperty> getConfigProps(ComponentModel p) {
         String readOnly = "false";
         UserStorageProviderModel parent = new UserStorageProviderModel();
         if (p != null) {

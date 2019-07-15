@@ -53,8 +53,8 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * @author Bill Burke
  * @resource Groups
+ * @author Bill Burke
  */
 public class GroupResource {
 
@@ -72,7 +72,9 @@ public class GroupResource {
         this.group = group;
     }
 
-    /**
+     /**
+     *
+     *
      * @return
      */
     @GET
@@ -161,7 +163,6 @@ public class GroupResource {
             adminEvent.operation(OperationType.CREATE);
 
         }
-
         realm.moveGroup(child, group);
         adminEvent.resourcePath(session.getContext().getUri()).representation(rep).success();
 
@@ -185,12 +186,11 @@ public class GroupResource {
         }
     }
 
-
     @Path("role-mappings")
     public RoleMapperResource getRoleMappings() {
         AdminPermissionEvaluator.RequirePermissionCheck manageCheck = () -> auth.groups().requireManage(group);
         AdminPermissionEvaluator.RequirePermissionCheck viewCheck = () -> auth.groups().requireView(group);
-        RoleMapperResource resource = new RoleMapperResource(realm, auth, group, adminEvent, manageCheck, viewCheck);
+        RoleMapperResource resource =  new RoleMapperResource(realm, auth, group, adminEvent, manageCheck, viewCheck);
         ResteasyProviderFactory.getInstance().injectProperties(resource);
         return resource;
 
@@ -198,11 +198,14 @@ public class GroupResource {
 
     /**
      * Get users
-     * <p>
+     *
      * Returns a list of users, filtered according to query parameters
      *
      * @param firstResult Pagination offset
-     * @param maxResults  Maximum results size (defaults to 100)
+     * @param maxResults Maximum results size (defaults to 100)
+     * @param briefRepresentation Only return basic information (only guaranteed to return id, username, created, first and last name,
+     *  email, enabled state, email verification state, federation link, and access.
+     *  Note that it means that namely user attributes, required actions, and not before are not returned.)
      * @return
      */
     @GET
@@ -210,18 +213,23 @@ public class GroupResource {
     @Path("members")
     @Produces(MediaType.APPLICATION_JSON)
     public List<UserRepresentation> getMembers(@QueryParam("first") Integer firstResult,
-                                               @QueryParam("max") Integer maxResults) {
+                                               @QueryParam("max") Integer maxResults,
+                                               @QueryParam("briefRepresentation") Boolean briefRepresentation) {
         this.auth.groups().requireViewMembers(group);
-
 
         firstResult = firstResult != null ? firstResult : 0;
         maxResults = maxResults != null ? maxResults : Constants.DEFAULT_MAX_RESULTS;
+        boolean briefRepresentationB = briefRepresentation != null && briefRepresentation;
 
         List<UserRepresentation> results = new ArrayList<UserRepresentation>();
         List<UserModel> userModels = session.users().getGroupMembers(realm, group, firstResult, maxResults);
 
         for (UserModel user : userModels) {
-            results.add(ModelToRepresentation.toRepresentation(session, realm, user));
+            UserRepresentation userRep = briefRepresentationB
+                    ? ModelToRepresentation.toBriefRepresentation(user)
+                    : ModelToRepresentation.toRepresentation(session, realm, user);
+
+            results.add(userRep);
         }
         return results;
     }
@@ -256,6 +264,7 @@ public class GroupResource {
 
     /**
      * Return object stating whether client Authorization permissions have been initialized or not and a reference
+     *
      *
      * @return initialized manage permissions reference
      */

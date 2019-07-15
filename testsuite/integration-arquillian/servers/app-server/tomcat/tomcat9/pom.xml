@@ -36,9 +36,8 @@
         <app.server.tomcat.version>${tomcat9.version}</app.server.tomcat.version>
         <app.server.tomcat.unpacked.folder.name>apache-tomcat-${tomcat9.version}</app.server.tomcat.unpacked.folder.name>
 
-        <!-- KEYCLOAK-9598 - There are no adapters for Tomcat 9 for now we use adapters for Tomcat 8 -->
-        <app.server.oidc.adapter.artifactId>keycloak-tomcat8-adapter-dist</app.server.oidc.adapter.artifactId>
-        <app.server.saml.adapter.artifactId>keycloak-saml-tomcat8-adapter-dist</app.server.saml.adapter.artifactId>
+        <app.server.oidc.adapter.artifactId>keycloak-tomcat-adapter-dist</app.server.oidc.adapter.artifactId>
+        <app.server.saml.adapter.artifactId>keycloak-saml-tomcat-adapter-dist</app.server.saml.adapter.artifactId>
         <skip.dependencies.for.tomcat8>false</skip.dependencies.for.tomcat8>
     </properties>
 

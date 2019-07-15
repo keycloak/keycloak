@@ -1004,7 +1004,7 @@
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-saml-tomcat8-adapter</artifactId>
+                <artifactId>keycloak-saml-tomcat-adapter</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -1014,7 +1014,7 @@
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-tomcat8-adapter</artifactId>
+                <artifactId>keycloak-tomcat-adapter</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -1258,7 +1258,7 @@
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-tomcat8-adapter-dist</artifactId>
+                <artifactId>keycloak-tomcat-adapter-dist</artifactId>
                 <version>${project.version}</version>
                 <type>zip</type>
             </dependency>
@@ -1318,7 +1318,7 @@
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-saml-tomcat8-adapter-dist</artifactId>
+                <artifactId>keycloak-saml-tomcat-adapter-dist</artifactId>
                 <version>${project.version}</version>
                 <type>zip</type>
             </dependency>

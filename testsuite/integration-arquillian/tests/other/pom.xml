@@ -144,12 +144,6 @@
             </modules>
         </profile>
         <profile>
-            <id>nodejs-adapter-tests</id>
-            <modules>
-                <module>nodejs_adapter</module>
-            </modules>
-        </profile>
-        <profile>
             <id>server-config-migration</id>
             <modules>
                 <module>server-config-migration</module>

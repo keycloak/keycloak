@@ -70,16 +70,15 @@ public class OfflinePersistentUserSessionLoader implements SessionLoader<Offline
 
 
     @Override
-    public OfflinePersistentWorkerContext computeWorkerContext(OfflinePersistentLoaderContext loaderCtx, int segment, int workerId, List<OfflinePersistentWorkerResult> previousResults) {
+    public OfflinePersistentWorkerContext computeWorkerContext(OfflinePersistentLoaderContext loaderCtx, int segment, int workerId, OfflinePersistentWorkerResult previousResult) {
         int lastCreatedOn;
         String lastSessionId;
-        if (previousResults.isEmpty()) {
+        if (previousResult == null) {
             lastCreatedOn = 0;
             lastSessionId = FIRST_SESSION_ID;
         } else {
-            OfflinePersistentWorkerResult lastResult = previousResults.get(previousResults.size() - 1);
-            lastCreatedOn = lastResult.getLastCreatedOn();
-            lastSessionId = lastResult.getLastSessionId();
+            lastCreatedOn = previousResult.getLastCreatedOn();
+            lastSessionId = previousResult.getLastSessionId();
         }
 
         // We know the last loaded session. New workers iteration will start from this place
@@ -97,12 +96,12 @@ public class OfflinePersistentUserSessionLoader implements SessionLoader<Offline
     public OfflinePersistentWorkerResult loadSessions(KeycloakSession session, OfflinePersistentLoaderContext loaderContext, OfflinePersistentWorkerContext ctx) {
         int first = ctx.getWorkerId() * sessionsPerSegment;
 
-        log.tracef("Loading sessions for segment: %d", ctx.getSegment());
+        log.tracef("Loading sessions for segment=%d createdOn=%d lastSessionId=%s", ctx.getSegment(), ctx.getLastCreatedOn(), ctx.getLastSessionId());
 
         UserSessionPersisterProvider persister = session.getProvider(UserSessionPersisterProvider.class);
         List<UserSessionModel> sessions = persister.loadUserSessions(first, sessionsPerSegment, true, ctx.getLastCreatedOn(), ctx.getLastSessionId());
 
-        log.tracef("Sessions loaded from DB - segment: %d", ctx.getSegment());
+        log.tracef("Sessions loaded from DB - segment=%d createdOn=%d lastSessionId=%s", ctx.getSegment(), ctx.getLastCreatedOn(), ctx.getLastSessionId());
 
         UserSessionModel lastSession = null;
         if (!sessions.isEmpty()) {

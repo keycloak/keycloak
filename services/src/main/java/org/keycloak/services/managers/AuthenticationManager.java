@@ -242,7 +242,8 @@ public class AuthenticationManager {
             backchannelLogoutAll(session, realm, userSession, logoutAuthSession, uriInfo, headers, logoutBroker);
             checkUserSessionOnlyHasLoggedOutClients(realm, userSession, logoutAuthSession);
         } finally {
-            asm.removeAuthenticationSession(realm, logoutAuthSession, false);
+            RootAuthenticationSessionModel rootAuthSession = logoutAuthSession.getParentSession();
+            rootAuthSession.removeAuthenticationSessionByTabId(logoutAuthSession.getTabId());
         }
 
         userSession.setState(UserSessionModel.State.LOGGED_OUT);
@@ -707,7 +708,7 @@ public class AuthenticationManager {
     }
 
     public static void expireCookie(RealmModel realm, String cookieName, String path, boolean httpOnly, ClientConnection connection) {
-        logger.debugv("Expiring cookie: {0} path: {1}", cookieName, path);
+        logger.debugf("Expiring cookie: %s path: %s", cookieName, path);
         boolean secureOnly = realm.getSslRequired().isRequired(connection);;
         CookieHelper.addCookie(cookieName, "", path, null, "Expiring cookie", 0, secureOnly, httpOnly);
     }

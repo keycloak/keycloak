@@ -25,6 +25,7 @@ import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.permission.ResourcePermission;
 import org.keycloak.authorization.store.ResourceStore;
 import org.keycloak.representations.idm.authorization.AuthorizationRequest;
+import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.representations.idm.authorization.Permission;
 
 import java.util.ArrayList;
@@ -70,6 +71,8 @@ public class DecisionPermissionCollector extends AbstractDecisionCollector {
             for (Result.PolicyResult policyResult : result.getResults()) {
                 Policy policy = policyResult.getPolicy();
                 Set<Scope> policyScopes = policy.getScopes();
+                Set<Resource> policyResources = policy.getResources();
+                boolean containsResource = policyResources.contains(resource);
 
                 if (isGranted(policyResult)) {
                     if (isScopePermission(policy)) {
@@ -89,15 +92,21 @@ public class DecisionPermissionCollector extends AbstractDecisionCollector {
                         userManagedPermissions.add(policyResult);
                     }
                     if (!resourceGranted) {
-                        resourceGranted = policy.getResources().contains(resource);
+                        resourceGranted = containsResource;
                     }
                 } else {
                     if (isResourcePermission(policy)) {
-                        if (!resourceGranted) {
+                        // deny all requested scopes if the resource-based permission is associated with the resource or if the
+                        // resource was not granted by any other permission
+                        if (containsResource || !resourceGranted) {
                             deniedScopes.addAll(requestedScopes);
                         }
                     } else {
-                        deniedScopes.addAll(policyScopes);
+                        // deny all scopes associated with the scope-based permission if the permission is associated with the 
+                        // resource or if the permission applies to any resource associated with the scopes
+                        if (containsResource || policyResources.isEmpty()) {
+                            deniedScopes.addAll(policyScopes);
+                        }
                     }
                     if (!anyDeny) {
                         anyDeny = true;
@@ -105,7 +114,11 @@ public class DecisionPermissionCollector extends AbstractDecisionCollector {
                 }
             }
 
-            // remove any scope denied from the list of granted scopes
+            if (DecisionStrategy.AFFIRMATIVE.equals(resourceServer.getDecisionStrategy())) {
+                // remove any scope that was granted from the list of denied scopes if the decision strategy is affirmative
+                deniedScopes.removeAll(grantedScopes);
+            }
+
             grantedScopes.removeAll(deniedScopes);
 
             if (userManagedPermissions.isEmpty()) {

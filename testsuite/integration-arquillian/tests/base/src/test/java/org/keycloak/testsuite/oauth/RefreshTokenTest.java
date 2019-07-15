@@ -16,12 +16,14 @@
  */
 package org.keycloak.testsuite.oauth;
 
+import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.common.enums.SslRequired;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.events.Details;
@@ -29,6 +31,7 @@ import org.keycloak.events.Errors;
 import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.models.utils.SessionTimeoutHelper;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.RefreshToken;
@@ -37,6 +40,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RealmBuilder;
@@ -63,6 +67,7 @@ import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.lessThan;
 import static org.hamcrest.Matchers.lessThanOrEqualTo;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
@@ -73,6 +78,9 @@ import static org.keycloak.testsuite.util.OAuthClient.AUTH_SERVER_ROOT;
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class RefreshTokenTest extends AbstractKeycloakTest {
+
+    @Page
+    protected LoginPage loginPage;
 
     @Rule
     public AssertEvents events = new AssertEvents(this);
@@ -470,7 +478,6 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
 
     private void processExpectedValidRefresh(String sessionId, RefreshToken requestToken, String refreshToken) {
         OAuthClient.AccessTokenResponse response2 = oauth.doRefreshTokenRequest(refreshToken, "password");
-        RefreshToken refreshToken2 = oauth.parseRefreshToken(response2.getRefreshToken());
 
         assertEquals(200, response2.getStatusCode());
 
@@ -538,6 +545,93 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
         events.expectRefresh(refreshId, sessionId).error(Errors.INVALID_TOKEN);
 
         events.clear();
+    }
+
+    @Test
+    public void refreshTokenAfterUserLogoutAndLoginAgain() {
+        String refreshToken1 = loginAndForceNewLoginPage();
+
+        oauth.doLogout(refreshToken1, "password");
+        events.clear();
+
+        // Set time offset to 2 (Just to simulate to be more close to real situation)
+        setTimeOffset(2);
+
+        // Continue with login
+        oauth.fillLoginForm("test-user@localhost", "password");
+
+        assertFalse(loginPage.isCurrent());
+
+        OAuthClient.AccessTokenResponse tokenResponse2 = null;
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        tokenResponse2 = oauth.doAccessTokenRequest(code, "password");
+
+        // Now try refresh with the original refreshToken1 created in logged-out userSession. It should fail
+        OAuthClient.AccessTokenResponse responseReuseExceeded = oauth.doRefreshTokenRequest(refreshToken1, "password");
+        assertEquals(400, responseReuseExceeded.getStatusCode());
+
+        // Finally try with valid refresh token
+        responseReuseExceeded = oauth.doRefreshTokenRequest(tokenResponse2.getRefreshToken(), "password");
+        assertEquals(200, responseReuseExceeded.getStatusCode());
+    }
+
+    @Test
+    public void refreshTokenAfterAdminLogoutAllAndLoginAgain() {
+        String refreshToken1 = loginAndForceNewLoginPage();
+
+        adminClient.realm("test").logoutAll();
+
+        events.clear();
+
+        // Set time offset to 2 (Just to simulate to be more close to real situation)
+        setTimeOffset(2);
+
+        // Continue with login
+        oauth.fillLoginForm("test-user@localhost", "password");
+
+        assertFalse(loginPage.isCurrent());
+
+        OAuthClient.AccessTokenResponse tokenResponse2 = null;
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        tokenResponse2 = oauth.doAccessTokenRequest(code, "password");
+
+        // Now try refresh with the original refreshToken1 created in logged-out userSession. It should fail
+        OAuthClient.AccessTokenResponse responseReuseExceeded = oauth.doRefreshTokenRequest(refreshToken1, "password");
+        assertEquals(400, responseReuseExceeded.getStatusCode());
+
+        // Finally try with valid refresh token
+        responseReuseExceeded = oauth.doRefreshTokenRequest(tokenResponse2.getRefreshToken(), "password");
+        assertEquals(200, responseReuseExceeded.getStatusCode());
+    }
+
+    @Test
+    public void refreshTokenAfterUserAdminLogoutEndpointAndLoginAgain() {
+        String refreshToken1 = loginAndForceNewLoginPage();
+
+        RefreshToken refreshTokenParsed1 = oauth.parseRefreshToken(refreshToken1);
+        String userId = refreshTokenParsed1.getSubject();
+        UserResource user = adminClient.realm("test").users().get(userId);
+        user.logout();
+
+        // Set time offset to 2 (Just to simulate to be more close to real situation)
+        setTimeOffset(2);
+
+        // Continue with login
+        oauth.fillLoginForm("test-user@localhost", "password");
+
+        assertFalse(loginPage.isCurrent());
+
+        OAuthClient.AccessTokenResponse tokenResponse2 = null;
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        tokenResponse2 = oauth.doAccessTokenRequest(code, "password");
+
+        // Now try refresh with the original refreshToken1 created in logged-out userSession. It should fail
+        OAuthClient.AccessTokenResponse responseReuseExceeded = oauth.doRefreshTokenRequest(refreshToken1, "password");
+        assertEquals(400, responseReuseExceeded.getStatusCode());
+
+        // Finally try with valid refresh token
+        responseReuseExceeded = oauth.doRefreshTokenRequest(tokenResponse2.getRefreshToken(), "password");
+        assertEquals(200, responseReuseExceeded.getStatusCode());
     }
 
     @Test
@@ -1009,4 +1103,34 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
         setTimeOffset(0);
     }
 
+    private String loginAndForceNewLoginPage() {
+        oauth.doLogin("test-user@localhost", "password");
+
+        EventRepresentation loginEvent = events.expectLogin().assertEvent();
+
+        String sessionId = loginEvent.getSessionId();
+
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
+
+        events.poll();
+
+        // Assert refresh successful
+        String refreshToken = tokenResponse.getRefreshToken();
+        RefreshToken refreshTokenParsed1 = oauth.parseRefreshToken(tokenResponse.getRefreshToken());
+        processExpectedValidRefresh(sessionId, refreshTokenParsed1, refreshToken);
+
+        // Set time offset to 1 (Just to simulate to be more close to real situation)
+        setTimeOffset(1);
+
+        // Open the tab with prompt=login. AuthenticationSession will be created with same ID like userSession
+        String loginFormUri = UriBuilder.fromUri(oauth.getLoginFormUrl())
+                .queryParam(OIDCLoginProtocol.PROMPT_PARAM, OIDCLoginProtocol.PROMPT_VALUE_LOGIN)
+                .build().toString();
+        driver.navigate().to(loginFormUri);
+
+        loginPage.assertCurrent();
+
+        return refreshToken;
+    }
 }

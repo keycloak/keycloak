@@ -45,6 +45,7 @@ import javax.management.remote.JMXServiceURL;
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -161,6 +162,9 @@ public class FuseAdapterTest extends AbstractExampleAdapterTest {
     @Test
     @AppServerContainer(value = ContainerConstants.APP_SERVER_FUSE63, skip = true)
     public void hawtio2LoginTest() throws Exception {
+
+        Assume.assumeTrue("This test doesn't work with phantomjs", !"phantomjs".equals(System.getProperty("js.browser")));
+
         hawtio2Page.navigateTo();
         WaitUtils.waitForPageToLoad();
 
@@ -171,11 +175,15 @@ public class FuseAdapterTest extends AbstractExampleAdapterTest {
         testRealmLoginPageFuse.form().login("invalid-user", "password");
         assertCurrentUrlStartsWith(loginPageFuse);
 
+        log.debug("logging in as root");
         testRealmLoginPageFuse.form().login("root", "password");
         assertCurrentUrlStartsWith(hawtio2Page.toString());
-        WaitUtils.waitForPageToLoad();
-        WaitUtils.waitUntilElement(By.xpath("//img[@alt='Red Hat Fuse Management Console'] | //img[@ng-src='img/fuse-logo.svg']")).is().present();
-        assertThat(DroneUtils.getCurrentDriver().getPageSource(), containsString("OSGi"));
+        
+        assertHawtio2Page("camel", true);
+        assertHawtio2Page("jmx", true);
+        assertHawtio2Page("osgi", true);
+        assertHawtio2Page("logs", true);
+
         hawtio2Page.logout();
         WaitUtils.waitForPageToLoad();
 
@@ -188,11 +196,23 @@ public class FuseAdapterTest extends AbstractExampleAdapterTest {
         testRealmLoginPageFuse.form().login("mary", "password");
         log.debug("Current URL: " + DroneUtils.getCurrentDriver().getCurrentUrl());
         assertCurrentUrlStartsWith(hawtio2Page.toString());
+        
+        assertHawtio2Page("camel", false);
+        assertHawtio2Page("jmx", false);
+        assertHawtio2Page("osgi", false);
+        assertHawtio2Page("logs", false);
+    }
+
+    private void assertHawtio2Page(String urlFragment, boolean expectedSuccess) {
+        DroneUtils.getCurrentDriver().navigate().to(hawtio2Page.getUrl() + "/" + urlFragment);
         WaitUtils.waitForPageToLoad();
         WaitUtils.waitUntilElement(By.xpath("//img[@alt='Red Hat Fuse Management Console'] | //img[@ng-src='img/fuse-logo.svg']")).is().present();
-        assertThat(DroneUtils.getCurrentDriver().getPageSource(), containsString("OSGi"));
-        assertThat(DroneUtils.getCurrentDriver().getPageSource(), not(containsString("Camel")));
-    }    
+        if (expectedSuccess) {
+            assertCurrentUrlStartsWith(hawtio2Page.getUrl() + "/" + urlFragment);
+        } else {
+            assertCurrentUrlStartsWith(hawtio2Page.getUrl() + "/jvm");
+        }
+    }
 
     @Test
     @AppServerContainer(value = ContainerConstants.APP_SERVER_FUSE7X, skip = true)

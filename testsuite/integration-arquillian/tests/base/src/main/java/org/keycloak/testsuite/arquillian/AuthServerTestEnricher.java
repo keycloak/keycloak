@@ -18,6 +18,7 @@ package org.keycloak.testsuite.arquillian;
 
 import org.apache.commons.lang.StringUtils;
 import org.jboss.arquillian.container.spi.ContainerRegistry;
+import org.jboss.arquillian.container.spi.client.container.LifecycleException;
 import org.jboss.arquillian.container.spi.event.StartContainer;
 import org.jboss.arquillian.container.spi.event.StartSuiteContainers;
 import org.jboss.arquillian.container.spi.event.StopContainer;
@@ -35,28 +36,28 @@ import org.jboss.arquillian.test.spi.event.suite.BeforeClass;
 import org.jboss.arquillian.test.spi.event.suite.BeforeSuite;
 import org.jboss.logging.Logger;
 import org.keycloak.admin.client.Keycloak;
+import org.keycloak.common.util.StringPropertyReplacer;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.error.KeycloakErrorHandler;
 import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
 import org.keycloak.testsuite.util.LogChecker;
 import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.SqlUtils;
 import org.keycloak.testsuite.util.SystemInfoHelper;
 import org.wildfly.extras.creaper.commands.undertow.AddUndertowListener;
 import org.wildfly.extras.creaper.commands.undertow.RemoveUndertowListener;
 import org.wildfly.extras.creaper.commands.undertow.SslVerifyClient;
 import org.wildfly.extras.creaper.commands.undertow.UndertowListenerType;
-import org.wildfly.extras.creaper.core.CommandFailedException;
 import org.keycloak.testsuite.util.TextFileChecker;
 import org.wildfly.extras.creaper.core.ManagementClient;
-import org.wildfly.extras.creaper.core.online.CliException;
 import org.wildfly.extras.creaper.core.online.OnlineManagementClient;
 import org.wildfly.extras.creaper.core.online.OnlineOptions;
 import org.wildfly.extras.creaper.core.online.operations.Address;
-import org.wildfly.extras.creaper.core.online.operations.OperationException;
 import org.wildfly.extras.creaper.core.online.operations.Operations;
 import org.wildfly.extras.creaper.core.online.operations.admin.Administration;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -65,7 +66,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
-import java.util.concurrent.TimeoutException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -113,12 +113,17 @@ public class AuthServerTestEnricher {
     public static final String AUTH_SERVER_CROSS_DC_PROPERTY = "auth.server.crossdc";
     public static final boolean AUTH_SERVER_CROSS_DC = Boolean.parseBoolean(System.getProperty(AUTH_SERVER_CROSS_DC_PROPERTY, "false"));
 
+    public static final String AUTH_SERVER_HOME_PROPERTY = "auth.server.home";
+
     public static final String CACHE_SERVER_LIFECYCLE_SKIP_PROPERTY = "cache.server.lifecycle.skip";
     public static final boolean CACHE_SERVER_LIFECYCLE_SKIP = Boolean.parseBoolean(System.getProperty(CACHE_SERVER_LIFECYCLE_SKIP_PROPERTY, "false"));
 
 
-    public static final Boolean START_MIGRATION_CONTAINER = "auto".equals(System.getProperty("migration.mode")) ||
-            "manual".equals(System.getProperty("migration.mode"));
+    private static final String MIGRATION_MODE_PROPERTY = "migration.mode";
+    private static final String MIGRATION_MODE_AUTO = "auto";
+    private static final String MIGRATION_MODE_MANUAL = "manual";
+    public static final Boolean START_MIGRATION_CONTAINER = MIGRATION_MODE_AUTO.equals(System.getProperty(MIGRATION_MODE_PROPERTY)) ||
+            MIGRATION_MODE_MANUAL.equals(System.getProperty(MIGRATION_MODE_PROPERTY));
 
     @Inject
     @SuiteScoped
@@ -333,8 +338,59 @@ public class AuthServerTestEnricher {
     public void startAuthContainer(@Observes(precedence = 0) StartSuiteContainers event) {
         //frontend-only (either load-balancer or auth-server)
         log.debug("Starting auth server before suite");
-        startContainerEvent.fire(new StartContainer(suiteContext.getAuthServerInfo().getArquillianContainer()));
+
+        try {
+            startContainerEvent.fire(new StartContainer(suiteContext.getAuthServerInfo().getArquillianContainer()));
+        } catch (Exception e) {
+            // It is expected that server startup fails with migration-mode-manual
+            if (e instanceof LifecycleException && handleManualMigration()) {
+                log.info("Starting server again after manual DB migration was finished");
+                startContainerEvent.fire(new StartContainer(suiteContext.getAuthServerInfo().getArquillianContainer()));
+                return;
+            }
+
+            // Just re-throw the exception
+            throw e;
+        }
     }
+
+
+    /**
+     * Returns true if we are in manual DB migration test and if the previously created SQL script was successfully executed.
+     * Returns false if we are not in manual DB migration test or SQL script couldn't be executed for any reason.
+     * @return see method description
+     */
+    private boolean handleManualMigration() {
+        // It is expected that server startup fails with migration-mode-manual
+        if (!MIGRATION_MODE_MANUAL.equals(System.getProperty(MIGRATION_MODE_PROPERTY))) {
+            return false;
+        }
+
+        String authServerHome = System.getProperty(AUTH_SERVER_HOME_PROPERTY);
+        if (authServerHome == null) {
+            log.warnf("Property '%s' was missing during manual mode migration test", AUTH_SERVER_HOME_PROPERTY);
+            return false;
+        }
+
+        String sqlScriptPath = authServerHome + File.separator + "keycloak-database-update.sql";
+        if (!new File(sqlScriptPath).exists()) {
+            log.warnf("File '%s' didn't exists during manual mode migration test", sqlScriptPath);
+            return false;
+        }
+
+        // Run manual migration with the ant task
+        log.infof("Running SQL script created by liquibase during manual migration flow", sqlScriptPath);
+        String prefix = "keycloak.connectionsJpa.";
+        String jdbcDriver = System.getProperty(prefix + "driver");
+        String dbUrl = StringPropertyReplacer.replaceProperties(System.getProperty(prefix + "url"));
+        String dbUser = System.getProperty(prefix + "user");
+        String dbPassword = System.getProperty(prefix + "password");
+
+        SqlUtils.runSqlScript(sqlScriptPath, jdbcDriver, dbUrl, dbUser, dbPassword);
+
+        return true;
+    }
+
 
     private static final Pattern RECOGNIZED_ERRORS = Pattern.compile("ERROR|SEVERE|Exception ");
     private static final Pattern IGNORED = Pattern.compile("Jetty ALPN support not found|org.keycloak.events");

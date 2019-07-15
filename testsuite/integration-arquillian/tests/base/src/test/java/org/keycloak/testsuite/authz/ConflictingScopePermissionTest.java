@@ -45,6 +45,7 @@ import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.authorization.AuthorizationResponse;
+import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.representations.idm.authorization.Permission;
 import org.keycloak.representations.idm.authorization.PolicyEnforcementMode;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
@@ -102,6 +103,7 @@ public class ConflictingScopePermissionTest extends AbstractAuthzTest {
         ResourceServerRepresentation settings = authorization.getSettings();
 
         settings.setPolicyEnforcementMode(PolicyEnforcementMode.ENFORCING);
+        settings.setDecisionStrategy(DecisionStrategy.UNANIMOUS);
 
         authorization.update(settings);
 
@@ -129,6 +131,46 @@ public class ConflictingScopePermissionTest extends AbstractAuthzTest {
         assertTrue(permissions.isEmpty());
     }
 
+    /**
+     * <p>Scope Read on Resource A has two conflicting permissions. One is granting access for Marta and the other for Kolo.
+     *
+     * <p>Scope Read should not be granted for Marta.
+     */
+    @Test
+    public void testMartaCanAccessResourceA() throws Exception {
+        ClientResource client = getClient(getRealm());
+        AuthorizationResource authorization = client.authorization();
+        ResourceServerRepresentation settings = authorization.getSettings();
+
+        settings.setPolicyEnforcementMode(PolicyEnforcementMode.ENFORCING);
+        settings.setDecisionStrategy(DecisionStrategy.AFFIRMATIVE);
+
+        authorization.update(settings);
+
+        Collection<Permission> permissions = getEntitlements("marta", "password");
+
+        assertEquals(1, permissions.size());
+
+        for (Permission permission : new ArrayList<>(permissions)) {
+            String resourceSetName = permission.getResourceName();
+
+            switch (resourceSetName) {
+                case "Resource A":
+                    assertThat(permission.getScopes(), containsInAnyOrder("execute", "write", "read"));
+                    permissions.remove(permission);
+                    break;
+                case "Resource C":
+                    assertThat(permission.getScopes(), containsInAnyOrder("execute", "write", "read"));
+                    permissions.remove(permission);
+                    break;
+                default:
+                    fail("Unexpected permission for resource [" + resourceSetName + "]");
+            }
+        }
+
+        assertTrue(permissions.isEmpty());
+    }
+
     @Test
     public void testWithPermissiveMode() throws Exception {
         ClientResource client = getClient(getRealm());
@@ -136,6 +178,7 @@ public class ConflictingScopePermissionTest extends AbstractAuthzTest {
         ResourceServerRepresentation settings = authorization.getSettings();
 
         settings.setPolicyEnforcementMode(PolicyEnforcementMode.PERMISSIVE);
+        settings.setDecisionStrategy(DecisionStrategy.UNANIMOUS);
 
         authorization.update(settings);
 
@@ -174,6 +217,7 @@ public class ConflictingScopePermissionTest extends AbstractAuthzTest {
         ResourceServerRepresentation settings = authorization.getSettings();
 
         settings.setPolicyEnforcementMode(PolicyEnforcementMode.DISABLED);
+        settings.setDecisionStrategy(DecisionStrategy.UNANIMOUS);
 
         authorization.update(settings);
 

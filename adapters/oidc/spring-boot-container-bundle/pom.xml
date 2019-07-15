@@ -12,7 +12,7 @@
     <dependencies>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-tomcat8-adapter</artifactId>
+            <artifactId>keycloak-tomcat-adapter</artifactId>
             <scope>compile</scope>
         </dependency>
         <dependency>
@@ -41,7 +41,7 @@
                         <configuration>
                             <artifactSet>
                                 <includes>
-                                    <include>org.keycloak:keycloak-tomcat8-adapter</include>
+                                    <include>org.keycloak:keycloak-tomcat-adapter</include>
                                     <include>org.keycloak:keycloak-undertow-adapter</include>
                                     <include>org.keycloak:keycloak-jetty93-adapter</include>
                                     <include>org.keycloak:keycloak-tomcat-core-adapter</include>

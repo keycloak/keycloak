@@ -312,44 +312,13 @@ The profile "test-7X-migration" indicates from which version you want to test mi
       
 Same test as above, but it uses manual migration mode. During startup of the new Keycloak server, Liquibase won't automatically perform DB update, but it 
 just exports the needed SQL into the script. This SQL script then needs to be manually executed against the DB.
+Then there is another startup of the new Keycloak server against the DB, which already has SQL changes applied and
+the same test as in `auto` mode (MigrationTest) is executed to test that data are correct.
 
-1) Prepare MySQL DB (Same as above)
+The test is executed in same way as the "auto" DB migration test with the only difference
+that you need to use property `migration.mode` with the value `manual` .
 
-2) Run the test (Update according to your DB connection, versions etc). This step will end with failure, but that's expected:
-
-    mvn -f testsuite/integration-arquillian/pom.xml \
-      clean install \
-      -Pauth-server-wildfly,jpa,clean-jpa,auth-server-migration,test-70-migration \
-      -Dtest=MigrationTest \
-      -Dmigration.mode=manual \
-      -Djdbc.mvn.groupId=mysql \
-      -Djdbc.mvn.artifactId=mysql-connector-java \
-      -Djdbc.mvn.version=8.0.12 \
-      -Djdbc.mvn.version.legacy=5.1.38 \
-      -Dkeycloak.connectionsJpa.url=jdbc:mysql://$DB_HOST/keycloak \
-      -Dkeycloak.connectionsJpa.user=keycloak \
-      -Dkeycloak.connectionsJpa.password=keycloak
-      
-3) Manually execute the SQL script against your DB. With Mysql, you can use this command (KEYCLOAK_SRC points to the directory with the Keycloak codebase):
-       
-    mysql -h $DB_HOST -u keycloak -pkeycloak < $KEYCLOAK_SRC/testsuite/integration-arquillian/tests/base/target/containers/auth-server-wildfly/keycloak-database-update.sql       
-
-4) Finally run the migration test, which will verify that DB migration was successful. This should end with success:
- 
-    mvn -f testsuite/integration-arquillian/tests/base/pom.xml \
-      clean install \
-      -Pauth-server-wildfly,test-70-migration \
-      -Dskip.add.user.json=true \
-      -Dtest=MigrationTest
-
-### JSON export/import migration test
-This will start latest Keycloak and import the realm JSON file, which was previously exported from Keycloak 1.9.8.Final
-  
-
-    mvn -f testsuite/integration-arquillian/pom.xml \
-      clean install \
-      -Pauth-server-wildfly \
-      -Dtest=JsonFileImport*MigrationTest
+    -Dmigration.mode=manual
 
 
 ## Server configuration migration test

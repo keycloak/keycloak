@@ -17,6 +17,8 @@
 
 package org.keycloak.testsuite.auth.page.login;
 
+import org.keycloak.testsuite.util.DroneUtils;
+
 /**
  *
  * @author tkyjovsk
@@ -25,6 +27,16 @@ public class OIDCLogin extends Login {
 
     public OIDCLogin() {
         setProtocol(OIDC);
+    }
+
+    @Override
+    public boolean isCurrent() {
+        String realm = "test";
+        return isCurrent(realm);
+    }
+
+    public boolean isCurrent(String realm) {
+        return DroneUtils.getCurrentDriver().getTitle().equals("Log in to " + realm) || DroneUtils.getCurrentDriver().getTitle().equals("Anmeldung bei " + realm);
     }
 
 }

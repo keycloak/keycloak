@@ -68,6 +68,7 @@ public abstract class AbstractX509ClientCertificateAuthenticator implements Auth
     public static final String MAPPING_SOURCE_CERT_ISSUERDN_EMAIL = "Issuer's e-mail";
     public static final String MAPPING_SOURCE_CERT_ISSUERDN_CN = "Issuer's Common Name";
     public static final String MAPPING_SOURCE_CERT_SERIALNUMBER = "Certificate Serial Number";
+    public static final String MAPPING_SOURCE_CERT_CERTIFICATE_PEM = "Full Certificate in PEM format";
     public static final String USER_MAPPER_SELECTION = "x509-cert-auth.mapper-selection";
     public static final String USER_ATTRIBUTE_MAPPER = "Custom Attribute Mapper";
     public static final String USERNAME_EMAIL_MAPPER = "Username or Email";
@@ -85,10 +86,11 @@ public abstract class AbstractX509ClientCertificateAuthenticator implements Auth
 
     protected static class CertificateValidatorConfigBuilder {
 
-        static CertificateValidator.CertificateValidatorBuilder fromConfig(X509AuthenticatorConfigModel config) throws Exception {
+        static CertificateValidator.CertificateValidatorBuilder fromConfig(KeycloakSession session, X509AuthenticatorConfigModel config) throws Exception {
 
             CertificateValidator.CertificateValidatorBuilder builder = new CertificateValidator.CertificateValidatorBuilder();
             return builder
+                    .session(session)
                     .keyUsage()
                         .parse(config.getKeyUsage())
                     .extendedKeyUsage()
@@ -104,8 +106,8 @@ public abstract class AbstractX509ClientCertificateAuthenticator implements Auth
     }
 
     // The method is purely for purposes of facilitating the unit testing
-    public CertificateValidator.CertificateValidatorBuilder certificateValidationParameters(X509AuthenticatorConfigModel config) throws Exception {
-        return CertificateValidatorConfigBuilder.fromConfig(config);
+    public CertificateValidator.CertificateValidatorBuilder certificateValidationParameters(KeycloakSession session, X509AuthenticatorConfigModel config) throws Exception {
+        return CertificateValidatorConfigBuilder.fromConfig(session, config);
     }
 
     protected static class UserIdentityExtractorBuilder {
@@ -173,6 +175,9 @@ public abstract class AbstractX509ClientCertificateAuthenticator implements Auth
                     extractor = UserIdentityExtractor
                             .either(UserIdentityExtractor.getX500NameExtractor(BCStyle.EmailAddress, issuer))
                             .or(UserIdentityExtractor.getX500NameExtractor(BCStyle.E, issuer));
+                    break;
+                case CERTIFICATE_PEM:
+                    extractor = UserIdentityExtractor.getCertificatePemIdentityExtractor(config);
                     break;
                 default:
                     logger.warnf("[UserIdentityExtractorBuilder:fromConfig] Unknown or unsupported user identity source: \"%s\"", userIdentitySource.getName());
