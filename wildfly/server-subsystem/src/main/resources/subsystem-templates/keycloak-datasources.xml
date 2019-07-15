@@ -30,7 +30,7 @@
                 </security>
             </datasource>
             <datasource jndi-name="java:jboss/datasources/KeycloakDS" pool-name="KeycloakDS" enabled="true" use-java-context="true" statistics-enabled="${wildfly.datasources.statistics-enabled:${wildfly.statistics-enabled:false}}">
-                <connection-url>jdbc:mysql://127.0.0.1:3306/keycloak?useUnicode=true&amp;characterEncoding=utf8&amp;useSSL=false</connection-url>
+                <connection-url>jdbc:mysql://127.0.0.1:3306/keycloak?useUnicode=true&amp;characterEncoding=UTF-8&amp;useSSL=false&amp;serverTimezone=UTC</connection-url>
                 <driver>mysql</driver>
                 <pool>
                     <max-pool-size>20</max-pool-size>
@@ -44,6 +44,8 @@
                     <check-valid-connection-sql>SELECT 1</check-valid-connection-sql>
                     <background-validation>true</background-validation>
                     <background-validation-millis>20000</background-validation-millis>
+                    <valid-connection-checker class-name="org.jboss.jca.adapters.jdbc.extensions.mysql.MySQLValidConnectionChecker"/>
+                    <exception-sorter class-name="org.jboss.jca.adapters.jdbc.extensions.mysql.MySQLExceptionSorter"/>
                 </validation>
             </datasource>
             <drivers>
@@ -51,7 +53,7 @@
                     <xa-datasource-class>org.h2.jdbcx.JdbcDataSource</xa-datasource-class>
                 </driver>
                 <driver name="mysql" module="com.mysql">
-                    <xa-datasource-class>com.mysql.jdbc.jdbc2.optional.MysqlXADataSource</xa-datasource-class>
+                    <xa-datasource-class>com.mysql.cj.jdbc.MysqlXADataSource</xa-datasource-class>
                 </driver>
             </drivers>
         </datasources>
