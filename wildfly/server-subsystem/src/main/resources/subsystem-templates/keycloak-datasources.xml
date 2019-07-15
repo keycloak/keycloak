@@ -44,8 +44,6 @@
                     <check-valid-connection-sql>SELECT 1</check-valid-connection-sql>
                     <background-validation>true</background-validation>
                     <background-validation-millis>20000</background-validation-millis>
-                    <valid-connection-checker class-name="org.jboss.jca.adapters.jdbc.extensions.mysql.MySQLValidConnectionChecker"/>
-                    <exception-sorter class-name="org.jboss.jca.adapters.jdbc.extensions.mysql.MySQLExceptionSorter"/>
                 </validation>
             </datasource>
             <drivers>
