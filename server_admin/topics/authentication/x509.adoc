@@ -47,7 +47,7 @@ The certificate identity mapping can be configured to map the extracted user ide
 
 IMPORTANT: Please notice that if we disable `Login with email` at realm settings, the same rules will be applied to certificate authentication. In other words, users won't be able to log in using e-mail attribute. 
 
-IMPORTANT: Usage of `Full certificate in PEM format` as an identity source is limited to custom attributes mapped to external federation sources like LDAP. You must enable `Always Read Value From LDAP` in this case, cause certificates cannot be stored in Keycloak database due to a length limitation.
+IMPORTANT: Usage of `Full certificate in PEM format` as an identity source is limited to custom attributes mapped to external federation sources like LDAP. You must enable `Always Read Value From LDAP` in this case, because certificates cannot be stored in Keycloak database due to a length limitation.
 
 Other Features: Extended Certificate Validation::
 - Revocation status checking using CRL
