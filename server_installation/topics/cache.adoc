@@ -14,6 +14,6 @@ The second type of cache handles managing user sessions, offline tokens, and kee
 server can detect password phishing and other attacks.  The data held in these caches is temporary, in memory only,
 but is possibly replicated across the cluster.
 
-This chapter discusses some configuration options for these caches for both clustered a non-clustered deployments.
+This chapter discusses some configuration options for these caches for both clustered and non-clustered deployments.
 
 NOTE:  More advanced configuration of these caches can be found in the  link:{appserver_caching_link}[Infinispan] section of the _{appserver_caching_name}_.
