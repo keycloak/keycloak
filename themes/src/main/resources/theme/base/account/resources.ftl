@@ -136,6 +136,7 @@
                                 <form action="${url.getResourceGrant(resource.id)}" name="approveForm-${resource.id}-${permission.requester.username}" method="post">
                                     <input type="hidden" name="action" value="grant">
                                     <input type="hidden" name="requester" value="${permission.requester.username}">
+                                    <input type="hidden" id="stateChecker" name="stateChecker" value="${stateChecker}">
                                     <tr>
                                         <td>
                                             <#if resource.displayName??>${resource.displayName}<#else>${resource.name}</#if>
@@ -234,6 +235,7 @@
         <div class="col-md-12">
             <form action="${url.resourceUrl}" name="shareForm" method="post">
                 <input type="hidden" name="action" value="cancel"/>
+                <input type="hidden" id="stateChecker" name="stateChecker" value="${stateChecker}">
                 <table class="table table-striped table-bordered">
                     <thead>
                         <tr>
@@ -331,6 +333,7 @@
                     <div class="col-md-12">
                         <form action="${url.resourceUrl}" name="waitingApprovalForm" method="post">
                             <input type="hidden" name="action" value="cancelRequest"/>
+                            <input type="hidden" id="stateChecker" name="stateChecker" value="${stateChecker}">
                             <table class="table table-striped table-bordered">
                                 <thead>
                                     <tr>

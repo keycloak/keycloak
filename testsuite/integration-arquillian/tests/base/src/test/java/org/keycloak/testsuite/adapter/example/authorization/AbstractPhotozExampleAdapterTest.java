@@ -680,6 +680,51 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractPhotozJav
     }
 
     @Test
+    public void testCsrfGrantAccess() throws Exception {
+        loginToClientPage(aliceUser);
+        clientPage.createAlbum(ALICE_ALBUM_NAME, true);
+
+        loginToClientPage(jdoeUser);
+        clientPage.viewAlbum(ALICE_ALBUM_NAME, this::assertWasDenied);
+        clientPage.deleteAlbum(ALICE_ALBUM_NAME, this::assertWasDenied);
+
+        loginToClientPage(aliceUser);
+        clientPage.viewAlbum(ALICE_ALBUM_NAME, this::assertWasNotDenied);
+        
+        clientPage.accountMyResources();
+        clientPage.executeScript("document.forms[0].stateChecker.value = 'invalid'");
+        clientPage.grantResource(ALICE_ALBUM_NAME, "jdoe");
+        clientPage.assertError();
+    }
+
+    @Test
+    public void testCsrfRevokeResource() throws Exception {
+        loginToClientPage(aliceUser);
+        clientPage.createAlbum(ALICE_ALBUM_NAME, true);
+
+        loginToClientPage(jdoeUser);
+        clientPage.viewAlbum(ALICE_ALBUM_NAME, this::assertWasDenied);
+        clientPage.deleteAlbum(ALICE_ALBUM_NAME, this::assertWasDenied);
+
+        loginToClientPage(aliceUser);
+        clientPage.viewAlbum(ALICE_ALBUM_NAME, this::assertWasNotDenied);
+
+        clientPage.accountGrantResource(ALICE_ALBUM_NAME, "jdoe");
+
+        clientPage.navigateTo();
+        testExecutor.init(defaultArguments(), this::assertInitNotAuth)
+                .login(this::assertOnTestAppUrl)
+                .init(defaultArguments(), this::assertSuccessfullyLoggedIn);
+
+        loginToClientPage(aliceUser);
+        clientPage.viewAlbum(ALICE_ALBUM_NAME, this::assertWasNotDenied);
+        clientPage.accountMyResource(ALICE_ALBUM_NAME);
+        clientPage.executeScript("document.forms[0].stateChecker.value = 'invalid'");
+        clientPage.revokeResource(ALICE_ALBUM_NAME, "jdoe");
+        clientPage.assertError();
+    }
+
+    @Test
     public void testOwnerSharingResource() throws Exception {
         loginToClientPage(aliceUser);
         clientPage.createAlbum(ALICE_ALBUM_NAME, true);
@@ -720,6 +765,34 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractPhotozJav
 
         loginToClientPage(jdoeUser);
         clientPage.viewAlbum(ALICE_ALBUM_NAME, this::assertWasDenied);
+    }
+
+    @Test
+    public void testCrfCheckSharingResource() throws Exception {
+        loginToClientPage(aliceUser);
+        clientPage.createAlbum(ALICE_ALBUM_NAME, true);
+        clientPage.accountMyResource(ALICE_ALBUM_NAME);
+
+        clientPage.executeScript("document.forms['shareForm'].stateChecker.value = 'invalid'");
+        clientPage.shareResource("jdoe");
+        clientPage.assertError();
+
+        clientPage.navigateTo();
+        testExecutor.init(defaultArguments(), this::assertInitNotAuth)
+                .login()
+                .init(defaultArguments(), this::assertSuccessfullyLoggedIn);
+
+        loginToClientPage(aliceUser);
+        clientPage.accountMyResource(ALICE_ALBUM_NAME);
+        clientPage.shareResource("jdoe");
+
+        clientPage.navigateTo();
+        testExecutor.init(defaultArguments(), this::assertInitNotAuth)
+                .login(this::assertOnTestAppUrl)
+                .init(defaultArguments(), this::assertSuccessfullyLoggedIn);
+        loginToClientPage(jdoeUser);
+        clientPage.viewAlbum(ALICE_ALBUM_NAME, this::assertWasNotDenied);
+        clientPage.deleteAlbum(ALICE_ALBUM_NAME, this::assertWasNotDenied);
     }
 
     private void importResourceServerSettings() throws FileNotFoundException {
