@@ -320,12 +320,10 @@ public class PolicyService {
     }
 
     private void audit(AbstractPolicyRepresentation resource, String id, OperationType operation, KeycloakSession session) {
-        if (authorization.getRealm().isAdminEventsEnabled()) {
-            if (id != null) {
-                adminEvent.operation(operation).resourcePath(session.getContext().getUri(), id).representation(resource).success();
-            } else {
-                adminEvent.operation(operation).resourcePath(session.getContext().getUri()).representation(resource).success();
-            }
+        if (id != null) {
+            adminEvent.operation(operation).resourcePath(session.getContext().getUri(), id).representation(resource).success();
+        } else {
+            adminEvent.operation(operation).resourcePath(session.getContext().getUri()).representation(resource).success();
         }
     }
 }
