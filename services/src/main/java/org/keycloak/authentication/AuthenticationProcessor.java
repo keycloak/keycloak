@@ -993,7 +993,7 @@ public class AuthenticationProcessor {
             }
         }
     }
-
+    
     protected Response authenticationComplete() {
         // attachSession(); // Session will be attached after requiredActions + consents are finished.
         AuthenticationManager.setClientScopesInSession(authenticationSession);

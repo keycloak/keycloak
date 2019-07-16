@@ -101,6 +101,7 @@ import java.net.URI;
 import java.util.Map;
 
 import static org.keycloak.authentication.actiontoken.DefaultActionToken.ACTION_TOKEN_BASIC_CHECKS;
+import static org.keycloak.services.managers.AuthenticationManager.IS_AIA_REQUEST;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -122,6 +123,8 @@ public class LoginActionsService {
 
     public static final String SESSION_CODE = "session_code";
     public static final String AUTH_SESSION_ID = "auth_session_id";
+    
+    public static final String CANCEL_AIA = "cancel-aia";
 
     private RealmModel realm;
 
@@ -988,7 +991,12 @@ public class LoginActionsService {
 
 
         Response response;
-        provider.processAction(context);
+        
+        if (isCancelAppInitiatedAction(authSession, context)) {
+            context.failure();
+        } else {
+            provider.processAction(context);
+        }
 
         if (action != null) {
             authSession.setAuthNote(AuthenticationProcessor.LAST_PROCESSED_EXECUTION, action);
@@ -1020,6 +1028,15 @@ public class LoginActionsService {
         }
 
         return BrowserHistoryHelper.getInstance().saveResponseAndRedirect(session, authSession, response, true, request);
+    }
+    
+    private boolean isCancelAppInitiatedAction(AuthenticationSessionModel authSession, RequiredActionContextResult context) {
+        MultivaluedMap<String, String> formData = context.getHttpRequest().getDecodedFormParameters();
+        
+        boolean userRequestedCancelAIA = formData.getFirst(CANCEL_AIA) != null;
+        boolean isAIARequest = authSession.getClientNote(IS_AIA_REQUEST) != null;
+        
+        return isAIARequest && userRequestedCancelAIA;
     }
 
 }

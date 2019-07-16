@@ -1409,7 +1409,7 @@ public class UserTest extends AbstractAdminTest {
         assertNames(all.getRealmMappings(), "realm-role", "realm-composite", "user", "offline_access", Constants.AUTHZ_UMA_AUTHORIZATION);
         assertEquals(2, all.getClientMappings().size());
         assertNames(all.getClientMappings().get("myclient").getMappings(), "client-role", "client-composite");
-        assertNames(all.getClientMappings().get("account").getMappings(), "manage-account", "view-profile");
+        assertNames(all.getClientMappings().get("account").getMappings(), "initiate-action", "manage-account", "view-profile");
 
         // Remove realm role
         RoleRepresentation realmRoleRep = realm.roles().get("realm-role").toRepresentation();

@@ -40,9 +40,10 @@ import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
  * @author Stan Silvert ssilvert@redhat.com (C) 2016 Red Hat Inc.
  */
 public abstract class AbstractTestRealmKeycloakTest extends AbstractKeycloakTest {
-
+    public static final String TEST_REALM_NAME = "test";
+    
     protected RealmResource testRealm() {
-        return adminClient.realm("test");
+        return adminClient.realm(TEST_REALM_NAME);
     }
 
     protected UserRepresentation findUser(String userNameOrEmail) {

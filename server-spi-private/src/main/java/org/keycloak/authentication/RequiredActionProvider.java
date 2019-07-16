@@ -27,7 +27,17 @@ import org.keycloak.provider.Provider;
  */
 public interface RequiredActionProvider extends Provider {
     /**
-     * Called every time a uesr authenticates.  This checks to see if this required action should be triggered.
+     * Determines what type of support is provided for application-initiated
+     * actions.
+     * 
+     * @return InititatedActionsSupport
+     */
+    default InitiatedActionSupport initiatedActionSupport() {
+        return InitiatedActionSupport.NOT_SUPPORTED;
+    }
+    
+    /**
+     * Called every time a user authenticates.  This checks to see if this required action should be triggered.
      * The implementation of this method is responsible for setting the required action on the UserModel.
      *
      * For example, the UpdatePassword required actions checks the password policies to see if the password has expired.
