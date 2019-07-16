@@ -61,6 +61,8 @@ public final class Constants {
     public static final String CLIENT_ID = "client_id";
     public static final String TAB_ID = "tab_id";
     public static final String KEY = "key";
+    public static final String KC_ACTION = "kc_action";
+    public static final String IS_AIA_REQUEST = "IS_AIA_REQUEST";
 
     public static final String SKIP_LINK = "skipLink";
     public static final String TEMPLATE_ATTR_ACTION_URI = "actionUri";

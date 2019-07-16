@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2019 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,19 +14,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package org.keycloak.models;
+package org.keycloak.authentication;
 
 /**
- * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
+ *
+ * @author Stan Silvert
  */
-public interface AccountRoles {
-
-    String VIEW_PROFILE = "view-profile";
-    String MANAGE_ACCOUNT = "manage-account";
-    String INITIATE_ACTION = "initiate-action";
-    String MANAGE_ACCOUNT_LINKS = "manage-account-links";
-
-    String[] ALL = {VIEW_PROFILE, MANAGE_ACCOUNT, INITIATE_ACTION};
-
+public enum InitiatedActionSupport {
+    SUPPORTED, NOT_SUPPORTED, CONSENT_REQUIRED
 }

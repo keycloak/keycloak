@@ -45,6 +45,7 @@ import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.JWKParser;
 import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.models.Constants;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
@@ -115,6 +116,8 @@ public class OAuthClient {
     private String clientId;
 
     private String redirectUri;
+    
+    private String kcAction;
 
     private StateParamProvider state;
 
@@ -771,6 +774,15 @@ public class OAuthClient {
     public String getRedirectUri() {
         return redirectUri;
     }
+    
+    /**
+     * Application-initiated action.
+     * 
+     * @return The action name.
+     */
+    public String getKcAction() {
+        return kcAction;
+    }
 
     public String getState() {
         return state.getState();
@@ -793,6 +805,9 @@ public class OAuthClient {
         }
         if (redirectUri != null) {
             b.queryParam(OAuth2Constants.REDIRECT_URI, redirectUri);
+        }
+        if (kcAction != null) {
+            b.queryParam(Constants.KC_ACTION, kcAction);
         }
         String state = this.state.getState();
         if (state != null) {
@@ -895,6 +910,11 @@ public class OAuthClient {
 
     public OAuthClient redirectUri(String redirectUri) {
         this.redirectUri = redirectUri;
+        return this;
+    }
+    
+    public OAuthClient kcAction(String kcAction) {
+        this.kcAction = kcAction;
         return this;
     }
 

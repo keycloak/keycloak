@@ -129,7 +129,7 @@ public class KcAdmSessionTest extends AbstractAdmCliTest {
 
             realmMappings = StreamSupport.stream(clientRoles.get("account").get("mappings").spliterator(), false)
                     .map(o -> o.get("name").asText()).sorted().collect(Collectors.toList());
-            Assert.assertEquals(Arrays.asList("manage-account", "view-profile"), realmMappings);
+            Assert.assertEquals(Arrays.asList("initiate-action", "manage-account", "view-profile"), realmMappings);
 
             realmMappings = StreamSupport.stream(clientRoles.get("realm-management").get("mappings").spliterator(), false)
                     .map(o -> o.get("name").asText()).sorted().collect(Collectors.toList());

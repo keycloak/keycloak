@@ -123,7 +123,7 @@ public class AddUserTest extends AbstractKeycloakTest {
             }
 
             List<RoleRepresentation> accountRoles = userResource.roles().clientLevel(accountId).listAll();
-            assertRoles(accountRoles, "view-profile", "manage-account");
+            assertRoles(accountRoles, "initiate-action", "view-profile", "manage-account");
         } finally {
             userResource.remove();
         }
