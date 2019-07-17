@@ -42,6 +42,7 @@ import org.xml.sax.SAXException;
 
 import javax.xml.bind.JAXBException;
 import javax.xml.crypto.MarshalException;
+import javax.xml.crypto.XMLStructure;
 import javax.xml.crypto.dsig.CanonicalizationMethod;
 import javax.xml.crypto.dsig.DigestMethod;
 import javax.xml.crypto.dsig.Reference;
@@ -740,7 +741,7 @@ public class XMLSignatureUtil {
     private static KeyInfo createKeyInfo(String keyName, PublicKey publicKey, X509Certificate x509Certificate) throws KeyException {
         KeyInfoFactory keyInfoFactory = fac.getKeyInfoFactory();
 
-        List<Object> items = new LinkedList<>();
+        List<XMLStructure> items = new LinkedList<>();
 
         if (keyName != null) {
             items.add(keyInfoFactory.newKeyName(keyName));

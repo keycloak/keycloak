@@ -36,6 +36,7 @@
 
         <timestamp>${maven.build.timestamp}</timestamp>
         <maven.build.timestamp.format>yyyy-MM-dd HH:mm</maven.build.timestamp.format>
+        <javax.xml.bind.jaxb.api.version>2.1</javax.xml.bind.jaxb.api.version>
     </properties>
     <dependencies>
         <dependency>
@@ -51,6 +52,11 @@
         <dependency>
             <groupId>org.apache.santuario</groupId>
             <artifactId>xmlsec</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>javax.xml.bind</groupId>
+            <artifactId>jaxb-api</artifactId>
+            <version>${javax.xml.bind.jaxb.api.version}</version>
         </dependency>
     </dependencies>
     <build>

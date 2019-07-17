@@ -32,6 +32,7 @@
 
     <properties>
         <version.swagger.doclet>1.1.2</version.swagger.doclet>
+        <javax.xml.soap.version>1.4.0</javax.xml.soap.version>
     </properties>
 
     <dependencies>
@@ -55,6 +56,11 @@
         <dependency>
             <groupId>javax.mail</groupId>
             <artifactId>javax.mail-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>javax.xml.soap</groupId>
+            <artifactId>javax.xml.soap-api</artifactId>
+            <version>${javax.xml.soap.version}</version>
         </dependency>
         <dependency>
             <groupId>org.glassfish</groupId>

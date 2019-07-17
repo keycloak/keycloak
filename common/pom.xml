@@ -43,6 +43,7 @@
         <keycloak.osgi.import>
             *;resolution:=optional
         </keycloak.osgi.import>
+        <javax.activation.api.version>1.2.0</javax.activation.api.version>
     </properties>
     <dependencies>
         <dependency>
@@ -67,6 +68,11 @@
             <groupId>org.hamcrest</groupId>
             <artifactId>hamcrest-all</artifactId>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>javax.activation</groupId>
+            <artifactId>javax.activation-api</artifactId>
+            <version>${javax.activation.api.version}</version>
         </dependency>
     </dependencies>
     <build>

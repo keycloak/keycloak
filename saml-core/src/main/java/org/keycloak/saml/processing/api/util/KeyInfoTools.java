@@ -17,6 +17,8 @@
 package org.keycloak.saml.processing.api.util;
 
 import java.security.cert.X509Certificate;
+import java.util.List;
+import javax.xml.crypto.XMLStructure;
 import javax.xml.crypto.dsig.keyinfo.KeyInfo;
 import javax.xml.crypto.dsig.keyinfo.KeyName;
 import javax.xml.crypto.dsig.keyinfo.X509Data;
@@ -34,18 +36,17 @@ public class KeyInfoTools {
      * @param clazz
      * @return The object or {@code null} if not found.
      */
-    public static <T> T getContent(Iterable<Object> objects, Class<T> clazz) {
+    public static <T> T getContent(List<XMLStructure> objects, Class<T> clazz) {
         if (objects == null) {
             return null;
         }
-        for (Object o : objects) {
+        for (XMLStructure o : objects) {
             if (clazz.isInstance(o)) {
                 return (T) o;
             }
         }
         return null;
     }
-
 
     public static KeyName getKeyName(KeyInfo keyInfo) {
         return keyInfo == null ? null : getContent(keyInfo.getContent(), KeyName.class);
@@ -56,8 +57,7 @@ public class KeyInfoTools {
     }
 
     public static X509Certificate getX509Certificate(KeyInfo keyInfo) {
-        X509Data d = getX509Data(keyInfo);
-        return d == null ? null : getContent(d.getContent(), X509Certificate.class);
+        return keyInfo == null ? null : getContent(keyInfo.getContent(), X509Certificate.class);
     }
 
 }
