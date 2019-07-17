@@ -235,15 +235,7 @@ public class IdTokenEncryptionTest extends AbstractTestRealmKeycloakTest {
  
             // get id token but failed
             OAuthClient.AuthorizationEndpointResponse response = oauth.doLogin("test-user@localhost", "password");
-            AccessTokenResponse atr = null;
-            try {
-                atr = oauth.doAccessTokenRequest(response.getCode(), "password");
-            } catch (AssertionError ae) {
-                Assert.assertEquals(ae.getMessage(), "Invalid content type. Status: 500, contentType: null");
-            } catch (Exception e) {
-                Assert.assertEquals(atr.getError(), "can not get encryption KEK");
-            }
-            Assert.assertEquals(atr.getError(), "can not get encryption KEK");
+            AccessTokenResponse atr = oauth.doAccessTokenRequest(response.getCode(), "password");
         } finally {
             // Revert
             clientResource = ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app");
