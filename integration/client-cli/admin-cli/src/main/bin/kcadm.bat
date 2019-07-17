@@ -5,4 +5,4 @@ if "%OS%" == "Windows_NT" (
 ) else (
   set DIRNAME=.\
 )
-java %KC_OPTS% -cp %DIRNAME%\client\keycloak-admin-cli-${project.version}.jar org.keycloak.client.admin.cli.KcAdmMain %*
+java %KC_OPTS% -cp "%DIRNAME%\client\keycloak-admin-cli-${project.version}.jar" org.keycloak.client.admin.cli.KcAdmMain %*
