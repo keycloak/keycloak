@@ -472,7 +472,7 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
     }
 
     @Override
-    public void setSsoSessionIdleTimeoutRememberMe(int seconds){
+    public void setSsoSessionIdleTimeoutRememberMe(int seconds) {
         realm.setSsoSessionIdleTimeoutRememberMe(seconds);
     }
 
@@ -499,12 +499,12 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
     // KEYCLOAK-7688 Offline Session Max for Offline Token
     @Override
     public boolean isOfflineSessionMaxLifespanEnabled() {
-    	return getAttribute(RealmAttributes.OFFLINE_SESSION_MAX_LIFESPAN_ENABLED, false);
+        return getAttribute(RealmAttributes.OFFLINE_SESSION_MAX_LIFESPAN_ENABLED, false);
     }
 
     @Override
     public void setOfflineSessionMaxLifespanEnabled(boolean offlineSessionMaxLifespanEnabled) {
-    	setAttribute(RealmAttributes.OFFLINE_SESSION_MAX_LIFESPAN_ENABLED, offlineSessionMaxLifespanEnabled);
+        setAttribute(RealmAttributes.OFFLINE_SESSION_MAX_LIFESPAN_ENABLED, offlineSessionMaxLifespanEnabled);
     }
 
     @Override
@@ -1069,7 +1069,7 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
 
     @Override
     public void setMasterAdminClient(ClientModel client) {
-        ClientEntity appEntity = client !=null ? em.getReference(ClientEntity.class, client.getId()) : null;
+        ClientEntity appEntity = client != null ? em.getReference(ClientEntity.class, client.getId()) : null;
         realm.setMasterAdminClient(appEntity);
         em.flush();
     }
@@ -1080,7 +1080,7 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
         if (entities.isEmpty()) return Collections.EMPTY_LIST;
         List<IdentityProviderModel> identityProviders = new ArrayList<IdentityProviderModel>();
 
-        for (IdentityProviderEntity entity: entities) {
+        for (IdentityProviderEntity entity : entities) {
             IdentityProviderModel identityProviderModel = entityToModel(entity);
 
             identityProviders.add(identityProviderModel);
@@ -1526,7 +1526,7 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
     @Override
     public AuthenticationFlowModel addAuthenticationFlow(AuthenticationFlowModel model) {
         AuthenticationFlowEntity entity = new AuthenticationFlowEntity();
-        String id = (model.getId() == null) ? KeycloakModelUtils.generateId(): model.getId();
+        String id = (model.getId() == null) ? KeycloakModelUtils.generateId() : model.getId();
         entity.setId(id);
         entity.setAlias(model.getAlias());
         entity.setDescription(model.getDescription());
@@ -1575,7 +1575,7 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
     @Override
     public AuthenticationExecutionModel addAuthenticatorExecution(AuthenticationExecutionModel model) {
         AuthenticationExecutionEntity entity = new AuthenticationExecutionEntity();
-        String id = (model.getId() == null) ? KeycloakModelUtils.generateId(): model.getId();
+        String id = (model.getId() == null) ? KeycloakModelUtils.generateId() : model.getId();
         entity.setId(id);
         entity.setAuthenticator(model.getAuthenticator());
         entity.setPriority(model.getPriority());
@@ -1618,7 +1618,7 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
     @Override
     public AuthenticatorConfigModel addAuthenticatorConfig(AuthenticatorConfigModel model) {
         AuthenticatorConfigEntity auth = new AuthenticatorConfigEntity();
-        String id = (model.getId() == null) ? KeycloakModelUtils.generateId(): model.getId();
+        String id = (model.getId() == null) ? KeycloakModelUtils.generateId() : model.getId();
         auth.setId(id);
         auth.setAlias(model.getAlias());
         auth.setRealm(realm);
@@ -1686,7 +1686,7 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
     @Override
     public RequiredActionProviderModel addRequiredActionProvider(RequiredActionProviderModel model) {
         RequiredActionProviderEntity auth = new RequiredActionProviderEntity();
-        String id = (model.getId() == null) ? KeycloakModelUtils.generateId(): model.getId();
+        String id = (model.getId() == null) ? KeycloakModelUtils.generateId() : model.getId();
         auth.setId(id);
         auth.setAlias(model.getAlias());
         auth.setName(model.getName());
@@ -1928,7 +1928,7 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
         query.setParameter("defaultScope", defaultScope);
         List<String> ids = query.getResultList();
 
-        List<ClientScopeModel>  clientScopes = new LinkedList<>();
+        List<ClientScopeModel> clientScopes = new LinkedList<>();
         for (String clientScopeId : ids) {
             ClientScopeModel clientScope = getClientScopeById(clientScopeId);
             if (clientScope == null) continue;
@@ -1947,7 +1947,6 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
 
     /**
      * This just exists for testing purposes
-     * 
      */
     public static final String COMPONENT_PROVIDER_EXISTS_DISABLED = "component.provider.exists.disabled";
 
@@ -2106,7 +2105,12 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
     }
 
     @Override
-    public GroupModel getGroupByName(RealmModel realm, String groupName) {
-        return session.realms().getGroupByName(realm,groupName);
+    public GroupModel getGroupByName(String groupName) {
+        return session.realms().getGroupByName(this, groupName);
+    }
+
+    @Override
+    public List<GroupModel> searchGroupByAttributeNameAndValue(String attrName, String attrValue, Integer first, Integer max) {
+        return session.realms().searchGroupByAttributeNameAndValue(this, attrName, attrValue, first, max);
     }
 }

@@ -130,6 +130,17 @@ public class ModelToRepresentation {
         return result;
     }
 
+
+    public static List<GroupRepresentation> searchForGroupByAttribute(RealmModel realm, String attrName, String attrValue, Integer first, Integer max, boolean full) {
+        List<GroupRepresentation> result = new LinkedList<>();
+        List<GroupModel> groups = realm.searchGroupByAttributeNameAndValue(attrName, attrValue, first, max);
+        if (Objects.isNull(groups)) return result;
+        for (GroupModel group : groups) {
+            result.add(toRepresentation(group, true));
+        }
+        return result;
+    }
+
     public static UserRepresentation toBriefRepresentation(UserModel user) {
         UserRepresentation rep = new UserRepresentation();
         rep.setId(user.getId());

@@ -472,11 +472,11 @@ public interface RealmModel extends RoleContainerModel {
 
     /**
      * 按名称查询组
-     * @param realm
      * @param groupName
      * @return
      */
-    GroupModel getGroupByName(RealmModel realm, String groupName);
+    GroupModel getGroupByName(String groupName);
+    List<GroupModel> searchGroupByAttributeNameAndValue(String attrName, String attrValue, Integer first, Integer max);
 
 
 }

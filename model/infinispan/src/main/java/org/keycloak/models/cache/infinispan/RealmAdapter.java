@@ -204,7 +204,7 @@ public class RealmAdapter implements CachedRealmModel {
 
     @Override
     public String getDefaultSignatureAlgorithm() {
-        if(isUpdated()) return updated.getDefaultSignatureAlgorithm();
+        if (isUpdated()) return updated.getDefaultSignatureAlgorithm();
         return cached.getDefaultSignatureAlgorithm();
     }
 
@@ -228,7 +228,7 @@ public class RealmAdapter implements CachedRealmModel {
 
     @Override
     public boolean isPermanentLockout() {
-        if(isUpdated()) return updated.isPermanentLockout();
+        if (isUpdated()) return updated.isPermanentLockout();
         return cached.isPermanentLockout();
     }
 
@@ -625,7 +625,7 @@ public class RealmAdapter implements CachedRealmModel {
     public RoleModel getRoleById(String id) {
         if (isUpdated()) return updated.getRoleById(id);
         return cacheSession.getRoleById(id, this);
-     }
+    }
 
     @Override
     public List<GroupModel> getDefaultGroups() {
@@ -912,7 +912,7 @@ public class RealmAdapter implements CachedRealmModel {
 
     @Override
     public ClientModel getMasterAdminClient() {
-        return cached.getMasterAdminClient()==null ? null : cacheSession.getRealm(Config.getAdminRealm()).getClientById(cached.getMasterAdminClient());
+        return cached.getMasterAdminClient() == null ? null : cacheSession.getRealm(Config.getAdminRealm()).getClientById(cached.getMasterAdminClient());
     }
 
     @Override
@@ -1099,6 +1099,7 @@ public class RealmAdapter implements CachedRealmModel {
         updated.setDirectGrantFlow(flow);
 
     }
+
     @Override
     public AuthenticationFlowModel getResetCredentialsFlow() {
         if (isUpdated()) return updated.getResetCredentialsFlow();
@@ -1376,7 +1377,7 @@ public class RealmAdapter implements CachedRealmModel {
     @Override
     public ClientScopeModel addClientScope(String id, String name) {
         getDelegateForUpdate();
-        ClientScopeModel app =  updated.addClientScope(id, name);
+        ClientScopeModel app = updated.addClientScope(id, name);
         cacheSession.registerClientScopeInvalidation(app.getId());
         return app;
     }
@@ -1438,25 +1439,25 @@ public class RealmAdapter implements CachedRealmModel {
 
     public void executeEvictions(ComponentModel model) {
         if (model == null) return;
-        
+
         // if user cache is disabled this is null
-        UserCache userCache = session.userCache(); 
-        if (userCache != null) {        
-          // If not realm component, check to see if it is a user storage provider child component (i.e. LDAP mapper)
-          if (model.getParentId() != null && !model.getParentId().equals(getId())) {
-              ComponentModel parent = getComponent(model.getParentId());
-              if (parent != null && UserStorageProvider.class.getName().equals(parent.getProviderType())) {
+        UserCache userCache = session.userCache();
+        if (userCache != null) {
+            // If not realm component, check to see if it is a user storage provider child component (i.e. LDAP mapper)
+            if (model.getParentId() != null && !model.getParentId().equals(getId())) {
+                ComponentModel parent = getComponent(model.getParentId());
+                if (parent != null && UserStorageProvider.class.getName().equals(parent.getProviderType())) {
+                    userCache.evict(this);
+                }
+                return;
+            }
+
+            // invalidate entire user cache if we're dealing with user storage SPI
+            if (UserStorageProvider.class.getName().equals(model.getProviderType())) {
                 userCache.evict(this);
-              }
-              return;
-          }
-  
-          // invalidate entire user cache if we're dealing with user storage SPI
-          if (UserStorageProvider.class.getName().equals(model.getProviderType())) {
-            userCache.evict(this);
-          }
+            }
         }
-        
+
         // invalidate entire realm if we're dealing with client storage SPI
         // entire realm because of client roles, client lists, and clients
         if (ClientStorageProvider.class.getName().equals(model.getProviderType())) {
@@ -1508,7 +1509,7 @@ public class RealmAdapter implements CachedRealmModel {
         if (isUpdated()) return updated.getComponents();
         List<ComponentModel> results = new LinkedList<>();
         results.addAll(cached.getComponents().values());
-         return Collections.unmodifiableList(results);
+        return Collections.unmodifiableList(results);
     }
 
     @Override
@@ -1582,7 +1583,12 @@ public class RealmAdapter implements CachedRealmModel {
     }
 
     @Override
-    public GroupModel getGroupByName(RealmModel realm, String groupName) {
-        return cacheSession.getGroupByName(this,groupName);
+    public GroupModel getGroupByName(String groupName) {
+        return cacheSession.getGroupByName(this, groupName);
+    }
+
+    @Override
+    public List<GroupModel> searchGroupByAttributeNameAndValue(String attrName, String attrValue, Integer first, Integer max) {
+        return cacheSession.searchGroupByAttributeNameAndValue(this, attrName, attrValue, first, max);
     }
 }

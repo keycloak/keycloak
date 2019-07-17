@@ -60,9 +60,9 @@ import java.util.Set;
 /**
  * Base resource for managing users
  *
- * @resource Users
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
+ * @resource Users
  */
 public class UsersResource {
 
@@ -92,7 +92,7 @@ public class UsersResource {
 
     /**
      * Create a new user
-     *
+     * <p>
      * Username must be unique.
      *
      * @param rep
@@ -111,11 +111,11 @@ public class UsersResource {
             return ErrorResponse.exists("User exists with same email");
         }
 
-        if(rep.getIdcard()!=null && !IdcardUtil.validateCard(rep.getIdcard())){
+        if (rep.getIdcard() != null && !IdcardUtil.validateCard(rep.getIdcard())) {
             return ErrorResponse.exists("User idcard is not validate ");
         }
 
-        if(rep.getIdcard()!=null && session.users().getUserByIdcard(rep.getIdcard(), realm) != null){
+        if (rep.getIdcard() != null && session.users().getUserByIdcard(rep.getIdcard(), realm) != null) {
             return ErrorResponse.exists("User exists with same idcard ");
         }
 
@@ -138,7 +138,7 @@ public class UsersResource {
                 session.getTransactionManager().setRollbackOnly();
             }
             return ErrorResponse.exists("User exists with same username or email");
-        } catch (ModelException me){
+        } catch (ModelException me) {
             if (session.getTransactionManager().isActive()) {
                 session.getTransactionManager().setRollbackOnly();
             }
@@ -146,6 +146,7 @@ public class UsersResource {
             return ErrorResponse.exists("Could not create user");
         }
     }
+
     /**
      * Get representation of the user
      *
@@ -168,15 +169,15 @@ public class UsersResource {
 
     /**
      * Get users
-     *
+     * <p>
      * Returns a list of users, filtered according to query parameters
      *
-     * @param search A String contained in username, first or last name, or email
+     * @param search     A String contained in username, first or last name, or email
      * @param last
      * @param first
      * @param email
      * @param username
-     * @param first Pagination offset
+     * @param first      Pagination offset
      * @param maxResults Maximum results size (defaults to 100)
      * @return
      */
@@ -205,6 +206,9 @@ public class UsersResource {
                 if (userModel != null) {
                     userModels = Arrays.asList(userModel);
                 }
+            } else if (search.indexOf(":") != -1) {
+                String[] searchs = search.split(":");
+                userModels = session.users().searchForUserByUserAttribute(searchs[0], searchs[1], realm);
             } else {
                 userModels = session.users().searchForUser(search.trim(), realm, firstResult, maxResults);
             }
@@ -233,10 +237,10 @@ public class UsersResource {
         boolean canViewGlobal = auth.users().canView();
         boolean briefRepresentationB = briefRepresentation != null && briefRepresentation;
         for (UserModel user : userModels) {
-            if (!canViewGlobal  && !auth.users().canView(user)) continue;
+            if (!canViewGlobal && !auth.users().canView(user)) continue;
             UserRepresentation userRep = briefRepresentationB
-              ? ModelToRepresentation.toBriefRepresentation(user)
-              : ModelToRepresentation.toRepresentation(session, realm, user);
+                    ? ModelToRepresentation.toBriefRepresentation(user)
+                    : ModelToRepresentation.toRepresentation(session, realm, user);
             userRep.setAccess(auth.users().getAccess(user));
             results.add(userRep);
         }

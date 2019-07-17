@@ -29,10 +29,10 @@
                     <span ng-if="key=='isFirst'">是否首次登录</span>
                     <span ng-if="key=='verifyIp'">登录是否验证IP</span>
                     <span ng-if="key=='ip'">允许登录的IP</span>
-                    <span ng-if="key=='login_not_password'">是否限制登录不能使用密码（仅证书登录）</span>
+                    <span ng-if="key=='loginNotPassword'">是否限制登录不能使用密码（仅证书登录）</span>
                 </td>
                 <td>
-                    <span ng-if="key!='sex' && key!='workNature' && key!='isFirst' &&  key!='verifyIp' &&  key!='login_not_password'">
+                    <span ng-if="key!='sex' && key!='workNature' && key!='isFirst' &&  key!='verifyIp' &&  key!='loginNotPassword'">
                         <input ng-model="user.attributes[key]" class="form-control" type="text" name="{{key}}" id="attribute-{{key}}" />
                     </span>
                     <span ng-if="key=='sex'">
@@ -49,7 +49,7 @@
                     <span ng-if="key=='verifyIp'">
                         <input ng-model="user.attributes[key]" name="{{key}}" id="attribute-verifyIp"  onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}"/>
                     </span>
-                    <span ng-if="key=='login_not_password'">
+                    <span ng-if="key=='loginNotPassword'">
                         <input ng-model="user.attributes[key]" name="{{key}}" id="attribute-login_not_password"  onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}"/>
                     </span>
                 </td>

@@ -778,4 +778,20 @@ public class JpaRealmProvider implements RealmProvider {
         for (UserEntity entity : results) users.add(new UserAdapter(session, realm, em, entity));
         return users;
     }
+
+    @Override
+    public List<GroupModel> searchGroupByAttributeNameAndValue(RealmModel realm,String attrName, String attrValue, Integer first, Integer max) {
+        TypedQuery<GroupEntity> query = em.createNamedQuery("getGroupByAttributeNameAndValue", GroupEntity.class);
+        query.setParameter("name", attrName);
+        query.setParameter("value", attrValue);
+        query.setParameter("realmId", realm.getId());
+        List<GroupEntity> results = query.getResultList();
+
+        List<GroupModel> groups = new ArrayList<GroupModel>();
+        for (GroupEntity group : results) {
+            groups.add(new GroupAdapter(realm, em, group));
+        }
+        return groups;
+    }
 }
+

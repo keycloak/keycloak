@@ -33,7 +33,9 @@ import java.util.Collection;
         @NamedQuery(name="getGroupIdsByNameContaining", query="select u.id from GroupEntity u where u.realm.id = :realm and u.name like concat('%',:search,'%') order by u.name ASC"),
         @NamedQuery(name="getTopLevelGroupIds", query="select u.id from GroupEntity u where u.parent is null and u.realm.id = :realm"),
         @NamedQuery(name="getGroupCount", query="select count(u) from GroupEntity u where u.realm.id = :realm"),
-        @NamedQuery(name="getTopLevelGroupCount", query="select count(u) from GroupEntity u where u.realm.id = :realm and u.parent is null")
+        @NamedQuery(name="getTopLevelGroupCount", query="select count(u) from GroupEntity u where u.realm.id = :realm and u.parent is null"),
+        @NamedQuery(name="getGroupByAttributeNameAndValue", query="select g from GroupEntity g join g.attributes attr " +
+                "where g.realm.id = :realmId and attr.name = :name and attr.value = :value")
 })
 @Entity
 @Table(name="KEYCLOAK_GROUP")

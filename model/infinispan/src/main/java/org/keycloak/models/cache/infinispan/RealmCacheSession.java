@@ -449,7 +449,7 @@ public class RealmCacheSession implements CacheRealmProvider {
     static String getRealmByNameCacheKey(String name) {
         return "realm.query.by.name." + name;
     }
-    
+
     @Override
     public List<RealmModel> getRealmsWithProviderType(Class<?> type) {
         // Retrieve realms from backend
@@ -876,10 +876,10 @@ public class RealmCacheSession implements CacheRealmProvider {
     public Long getGroupsCountByNameContaining(RealmModel realm, String search) {
         return getRealmDelegate().getGroupsCountByNameContaining(realm, search);
     }
-    
+
     @Override
     public List<GroupModel> getGroupsByRole(RealmModel realm, RoleModel role, int firstResult, int maxResults) {
-    	return getRealmDelegate().getGroupsByRole(realm, role, firstResult, maxResults);
+        return getRealmDelegate().getGroupsByRole(realm, role, firstResult, maxResults);
     }
 
     @Override
@@ -1348,6 +1348,45 @@ public class RealmCacheSession implements CacheRealmProvider {
             }
             list.add(model);
         }
+
+        return list;
+    }
+
+    @Override
+    public List<GroupModel> searchGroupByAttributeNameAndValue(RealmModel realm, String attrName, String attrValue, Integer first, Integer max) {
+        String cacheKey = getGroupsQueryCacheKey(realm.getId() + attrName + attrValue);
+        boolean queryDB = invalidations.contains(cacheKey) || listInvalidations.contains(realm.getId() + attrName + attrValue);
+        if (queryDB) {
+            return getRealmDelegate().searchGroupByAttributeNameAndValue(realm,  attrName,  attrValue,  first,  max);
+        }
+
+        GroupListQuery query = cache.get(cacheKey, GroupListQuery.class);
+        if (Objects.nonNull(query)) {
+            logger.tracev("searchGroupByAttributeNameAndValue cache hit: {0}", realm.getName());
+        }
+
+        if (Objects.isNull(query)) {
+            Long loaded = cache.getCurrentRevision(cacheKey);
+            List<GroupModel> model = getRealmDelegate().searchGroupByAttributeNameAndValue(realm,  attrName,  attrValue,  first,  max);
+            if (model == null) return null;
+            Set<String> ids = new HashSet<>();
+            for (GroupModel client : model) ids.add(client.getId());
+            query = new GroupListQuery(loaded, cacheKey, realm, ids);
+            logger.tracev("adding realm searchGroupByAttributeNameAndValue cache miss: realm {0} key {1}", realm.getName(), cacheKey);
+            cache.addRevisioned(query, startupRevision);
+            return model;
+        }
+        List<GroupModel> list = new LinkedList<>();
+        for (String id : query.getGroups()) {
+            GroupModel group = session.realms().getGroupById(id, realm);
+            if (Objects.isNull(group)) {
+                invalidations.add(cacheKey);
+                return getRealmDelegate().searchGroupByAttributeNameAndValue(realm,  attrName,  attrValue,  first,  max);
+            }
+            list.add(group);
+        }
+
+        list.sort(Comparator.comparing(GroupModel::getName));
 
         return list;
     }

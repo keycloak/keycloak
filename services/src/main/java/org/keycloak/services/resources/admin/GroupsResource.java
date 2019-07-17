@@ -85,7 +85,12 @@ public class GroupsResource {
         maxResults = maxResults != null ? maxResults : Constants.DEFAULT_MAX_RESULTS;
 
         if (Objects.nonNull(search)) {
-            results = ModelToRepresentation.searchForGroupByName(realm, search.trim(), firstResult, maxResults, true);
+            if (search.indexOf(":") != -1) {
+                String[] searchs = search.split(":");
+                results = ModelToRepresentation.searchForGroupByAttribute(realm, searchs[0], searchs[1], firstResult, maxResults, true);
+            } else {
+                results = ModelToRepresentation.searchForGroupByName(realm, search.trim(), firstResult, maxResults, true);
+            }
         } else if (Objects.nonNull(parent)) {
             results = ModelToRepresentation.toSubGroupsByParent(realm, parent);
         } else {
@@ -180,11 +185,11 @@ public class GroupsResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     public GroupRepresentation getGroup(@QueryParam("groupName") String groupName, @QueryParam("hierarchy") Boolean hierarchy) {
-        GroupModel group = realm.getGroupByName(realm, groupName);
+        GroupModel group = realm.getGroupByName(groupName);
         if (group == null) {
             throw new NotFoundException("Could not find group by name");
         }
-        if (hierarchy!=null && hierarchy) {
+        if (hierarchy != null && hierarchy) {
             return ModelToRepresentation.toGroupHierarchy(group, false);
         }
         return ModelToRepresentation.toRepresentation(group, false);

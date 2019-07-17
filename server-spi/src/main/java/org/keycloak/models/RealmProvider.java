@@ -45,7 +45,7 @@ public interface RealmProvider extends Provider, ClientProvider {
     Long getGroupsCount(RealmModel realm, Boolean onlyTopGroups);
 
     Long getGroupsCountByNameContaining(RealmModel realm, String search);
-    
+
     List<GroupModel> getGroupsByRole(RealmModel realm, RoleModel role, int firstResult, int maxResults);
 
     List<GroupModel> getTopLevelGroups(RealmModel realm);
@@ -121,4 +121,12 @@ public interface RealmProvider extends Provider, ClientProvider {
      * @return
      */
     List<UserModel> searchForUserInRole(RealmModel realm, RoleModel role, String search, Integer first, Integer max);
+
+    /**
+     * 查询组按属性
+     * @param first
+     * @param max
+     * @return
+     */
+    List<GroupModel> searchGroupByAttributeNameAndValue(RealmModel realm, String attrName, String attrValue, Integer first, Integer max);
 }
