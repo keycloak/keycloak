@@ -455,12 +455,19 @@ public class TokenEndpoint {
         try {
             // https://tools.ietf.org/html/rfc7636#section-4.2
             // plain or S256
-            if (codeChallengeMethod != null && codeChallengeMethod.equals(OAuth2Constants.PKCE_METHOD_S256)) {
-                logger.debugf("PKCE codeChallengeMethod = %s", codeChallengeMethod);
-                codeVerifierEncoded = generateS256CodeChallenge(codeVerifier);
-            } else {
-                logger.debug("PKCE codeChallengeMethod is plain");
-                codeVerifierEncoded = codeVerifier;
+            if(codeChallengeMethod != null) {
+                if(codeChallengeMethod.equals(OAuth2Constants.PKCE_METHOD_S256))) {
+                    logger.debugf("PKCE codeChallengeMethod = %s", codeChallengeMethod);
+                    codeVerifierEncoded = generateS256CodeChallenge(codeVerifier);
+                }
+                else if(codeChallengeMethod.equals(OAuth2Constants.PKCE_METHOD_PLAIN) {
+                    logger.debug("PKCE codeChallengeMethod is plain");
+                    codeVerifierEncoded = codeVerifier;
+                }
+                else {
+                    logger.warn("PKCE codeChallengeMethod neither S256 nor PLAIN : using PLAIN (missing code_challenge_method in headers ?)");
+                    codeVerifierEncoded = codeVerifier;
+                }
             }
         } catch (Exception nae) {
             logger.infof("PKCE code verification failed, not supported algorithm specified");
