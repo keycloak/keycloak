@@ -32,6 +32,7 @@ import org.junit.After;
 import org.junit.Assume;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -104,6 +105,7 @@ public class EAP6Fuse6HawtioAdapterTest extends AbstractExampleAdapterTest imple
     }
 
     @Test
+    @Ignore("KEYCLOAK-10797")
     public void hawtioLoginAndLogoutTest() {
         testRealmLoginPageFuse.setAuthRealm(DEMO);
 
