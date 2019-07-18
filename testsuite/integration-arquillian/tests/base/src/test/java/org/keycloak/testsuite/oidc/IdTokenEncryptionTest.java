@@ -46,6 +46,7 @@ import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.AbstractAdminTest;
 import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
 import org.keycloak.testsuite.client.resources.TestApplicationResourceUrls;
 import org.keycloak.testsuite.client.resources.TestOIDCEndpointsApplicationResource;
 import org.keycloak.testsuite.pages.AccountUpdateProfilePage;
@@ -213,6 +214,7 @@ public class IdTokenEncryptionTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
+    @UncaughtServerErrorExpected
     public void testIdTokenEncryptionWithoutEncryptionKEK() {
         ClientResource clientResource = null;
         ClientRepresentation clientRep = null;
