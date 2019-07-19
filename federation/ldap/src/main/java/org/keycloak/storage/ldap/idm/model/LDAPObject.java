@@ -102,6 +102,16 @@ public class LDAPObject {
         setAttribute(attributeName, asSet);
     }
 
+    public void setSingleBooleanAttribute(String attributeName, Boolean attributeValue) {
+        Set<String> asSet = new LinkedHashSet<>();
+	if (attributeValue == true) {
+            asSet.add("TRUE");
+	} else {
+            asSet.add("FALSE");
+	}
+        setAttribute(attributeName, asSet);
+    }
+
     public void setAttribute(String attributeName, Set<String> attributeValue) {
         attributes.put(attributeName, attributeValue);
         lowerCasedAttributes.put(attributeName.toLowerCase(), attributeValue);

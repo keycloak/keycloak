@@ -132,6 +132,12 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
             // we have java property on UserModel. Assuming we support just properties of simple types
             Object attrValue = userModelProperty.getValue(localUser);
 
+            if (Boolean.class.equals(userModelProperty.getJavaClass()) || boolean.class.equals(userModelProperty.getJavaClass())) {
+		attrValue = false;
+		if (attrValue.equals("TRUE") || attrValue.equals("true")) {
+		    attrValue = true;
+		}
+	    }
             if (attrValue == null) {
                 if (isMandatoryInLdap) {
                     ldapUser.setSingleAttribute(ldapAttrName, LDAPConstants.EMPTY_ATTRIBUTE_VALUE);
@@ -139,7 +145,11 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
                     ldapUser.setAttribute(ldapAttrName, new LinkedHashSet<String>());
                 }
             } else {
-                ldapUser.setSingleAttribute(ldapAttrName, attrValue.toString());
+            	if (Boolean.class.equals(userModelProperty.getJavaClass()) || boolean.class.equals(userModelProperty.getJavaClass())) {
+              	    ldapUser.setSingleBooleanAttribute(ldapAttrName, (Boolean)attrValue);
+		} else {
+              	    ldapUser.setSingleAttribute(ldapAttrName, attrValue.toString());
+		}
             }
         } else {
 
@@ -259,6 +269,12 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
                     super.setFirstName(firstName);
                 }
 
+                @Override
+                public void setEmailVerified(boolean verified) {
+                    setLDAPAttribute(UserModel.EMAIL_VERIFIED, verified);
+                    super.setEmailVerified(verified);
+                }
+
                 protected boolean setLDAPAttribute(String modelAttrName, Object value) {
                     if (modelAttrName.equalsIgnoreCase(userModelAttrName)) {
                         if (UserAttributeLDAPStorageMapper.logger.isTraceEnabled()) {
@@ -275,6 +291,8 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
                             }
                         } else if (value instanceof String) {
                             ldapUser.setSingleAttribute(ldapAttrName, (String) value);
+                        } else if (value instanceof Boolean) {
+              	    	    ldapUser.setSingleBooleanAttribute(ldapAttrName, (Boolean)value);
                         } else {
                             List<String> asList = (List<String>) value;
                             if (asList.isEmpty() && isMandatoryInLdap) {
