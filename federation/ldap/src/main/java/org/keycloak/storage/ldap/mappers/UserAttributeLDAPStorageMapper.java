@@ -478,7 +478,10 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
             if (String.class.equals(clazz)) {
                 userModelProperty.setValue(user, ldapAttrValue);
             } else if (Boolean.class.equals(clazz) || boolean.class.equals(clazz)) {
-                Boolean boolVal = Boolean.valueOf(ldapAttrValue);
+                Boolean boolVal = false;
+		if (ldapAttrValue.equals("TRUE") || ldapAttrValue.equals("true")) {
+		    boolVal = true;
+		}
                 userModelProperty.setValue(user, boolVal);
             } else {
                 logger.warnf("Don't know how to set the property '%s' on user '%s' . Value of LDAP attribute is '%s' ", userModelProperty.getName(), user.getUsername(), ldapAttrValue.toString());
