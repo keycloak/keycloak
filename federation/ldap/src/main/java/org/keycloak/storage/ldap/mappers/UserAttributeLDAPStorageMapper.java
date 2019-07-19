@@ -134,7 +134,7 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
 
             if (Boolean.class.equals(userModelProperty.getJavaClass()) || boolean.class.equals(userModelProperty.getJavaClass())) {
 		attrValue = false;
-		if (attrValue == "true" || attrValue == "TRUE") {
+		if (attrValue.equals("true") || attrValue.equals("TRUE")) {
 		    attrValue = true;
 		}
 	    }
