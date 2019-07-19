@@ -186,7 +186,6 @@ public class DefaultTokenManager implements TokenManager {
 
         ClientModel client = session.getContext().getClient();
 
-        //KeyWrapper keyWrapper = getEncryptionKekWrapper(algAlgorithm, client);
         KeyWrapper keyWrapper = PublicKeyStorageManager.getClientPublicKeyWrapper(session, client, JWK.Use.ENCRYPTION, algAlgorithm);
         if (keyWrapper == null) {
             throw new RuntimeException("can not get encryption KEK");

@@ -27,6 +27,7 @@ import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.keycloak.OAuthErrorException;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.crypto.AesCbcHmacShaContentEncryptionProvider;
@@ -238,6 +239,9 @@ public class IdTokenEncryptionTest extends AbstractTestRealmKeycloakTest {
             // get id token but failed
             OAuthClient.AuthorizationEndpointResponse response = oauth.doLogin("test-user@localhost", "password");
             AccessTokenResponse atr = oauth.doAccessTokenRequest(response.getCode(), "password");
+            Assert.assertEquals(OAuthErrorException.INVALID_REQUEST, atr.getError());
+            Assert.assertEquals("can not get encryption KEK", atr.getErrorDescription());
+
         } finally {
             // Revert
             clientResource = ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app");

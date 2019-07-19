@@ -445,9 +445,18 @@ public class TokenEndpoint {
         if (TokenUtil.isOIDCRequest(scopeParam)) {
             responseBuilder.generateIDToken();
         }
-
-        AccessTokenResponse res = responseBuilder.build();
-
+        
+        AccessTokenResponse res = null;
+        try {
+            res = responseBuilder.build();
+        } catch (RuntimeException re) {
+            if ("can not get encryption KEK".equals(re.getMessage())) {
+                throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "can not get encryption KEK", Response.Status.BAD_REQUEST);
+            } else {
+                throw re;
+            }
+        }
+        
         event.success();
 
         return cors.builder(Response.ok(res).type(MediaType.APPLICATION_JSON_TYPE)).build();
@@ -582,6 +591,7 @@ public class TokenEndpoint {
             responseBuilder.generateIDToken();
         }
 
+        // TODO : do the same as codeToToken()
         AccessTokenResponse res = responseBuilder.build();
 
 
@@ -655,6 +665,7 @@ public class TokenEndpoint {
             responseBuilder.generateIDToken();
         }
 
+        // TODO : do the same as codeToToken()
         AccessTokenResponse res = responseBuilder.build();
 
         event.success();
