@@ -60,7 +60,9 @@
            <td class="clip">{{user.email}}</td>
            <td class="clip">{{user.lastName}}</td>
            -->
-           <td class="clip">{{user.groups[0].name}}</td>
+           <td class="clip">
+               <span ng-repeat="group in user.groups">{{group.name}}，</span>
+           </td>
            <td class="kc-action-cell" kc-open="/realms/{{realm.realm}}/users/{{user.id}}">{{:: 'edit' | translate}}</td>
            <td data-ng-show="serverInfo.featureEnabled('IMPERSONATION') && access.impersonation" class="kc-action-cell" data-ng-click="impersonate(user.id)">{{:: 'impersonate' | translate}}</td>
            <td data-ng-show="user.access.manage" class="kc-action-cell" data-ng-click="removeUser(user)">{{:: 'delete' | translate}}</td>

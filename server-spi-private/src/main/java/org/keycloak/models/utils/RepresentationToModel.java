@@ -18,16 +18,8 @@
 package org.keycloak.models.utils;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.ListIterator;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -199,8 +191,10 @@ public class RepresentationToModel {
         else newRealm.setSsoSessionIdleTimeout(1800);
         if (rep.getSsoSessionMaxLifespan() != null) newRealm.setSsoSessionMaxLifespan(rep.getSsoSessionMaxLifespan());
         else newRealm.setSsoSessionMaxLifespan(36000);
-        if (rep.getSsoSessionMaxLifespanRememberMe() != null) newRealm.setSsoSessionMaxLifespanRememberMe(rep.getSsoSessionMaxLifespanRememberMe());
-        if (rep.getSsoSessionIdleTimeoutRememberMe() != null) newRealm.setSsoSessionIdleTimeoutRememberMe(rep.getSsoSessionIdleTimeoutRememberMe());
+        if (rep.getSsoSessionMaxLifespanRememberMe() != null)
+            newRealm.setSsoSessionMaxLifespanRememberMe(rep.getSsoSessionMaxLifespanRememberMe());
+        if (rep.getSsoSessionIdleTimeoutRememberMe() != null)
+            newRealm.setSsoSessionIdleTimeoutRememberMe(rep.getSsoSessionIdleTimeoutRememberMe());
         if (rep.getOfflineSessionIdleTimeout() != null)
             newRealm.setOfflineSessionIdleTimeout(rep.getOfflineSessionIdleTimeout());
         else newRealm.setOfflineSessionIdleTimeout(Constants.DEFAULT_OFFLINE_SESSION_IDLE_TIMEOUT);
@@ -931,8 +925,10 @@ public class RepresentationToModel {
             realm.setAccessTokenLifespanForImplicitFlow(rep.getAccessTokenLifespanForImplicitFlow());
         if (rep.getSsoSessionIdleTimeout() != null) realm.setSsoSessionIdleTimeout(rep.getSsoSessionIdleTimeout());
         if (rep.getSsoSessionMaxLifespan() != null) realm.setSsoSessionMaxLifespan(rep.getSsoSessionMaxLifespan());
-        if (rep.getSsoSessionIdleTimeoutRememberMe() != null) realm.setSsoSessionIdleTimeoutRememberMe(rep.getSsoSessionIdleTimeoutRememberMe());
-        if (rep.getSsoSessionMaxLifespanRememberMe() != null) realm.setSsoSessionMaxLifespanRememberMe(rep.getSsoSessionMaxLifespanRememberMe());
+        if (rep.getSsoSessionIdleTimeoutRememberMe() != null)
+            realm.setSsoSessionIdleTimeoutRememberMe(rep.getSsoSessionIdleTimeoutRememberMe());
+        if (rep.getSsoSessionMaxLifespanRememberMe() != null)
+            realm.setSsoSessionMaxLifespanRememberMe(rep.getSsoSessionMaxLifespanRememberMe());
         if (rep.getOfflineSessionIdleTimeout() != null)
             realm.setOfflineSessionIdleTimeout(rep.getOfflineSessionIdleTimeout());
         // KEYCLOAK-7688 Offline Session Max for Offline Token
@@ -1380,7 +1376,7 @@ public class RepresentationToModel {
     public static void updateClientProtocolMappers(ClientRepresentation rep, ClientModel resource) {
 
         if (rep.getProtocolMappers() != null) {
-            Map<String,ProtocolMapperModel> existingProtocolMappers = new HashMap<>();
+            Map<String, ProtocolMapperModel> existingProtocolMappers = new HashMap<>();
             for (ProtocolMapperModel existingProtocolMapper : resource.getProtocolMappers()) {
                 existingProtocolMappers.put(generateProtocolNameKey(existingProtocolMapper.getProtocol(), existingProtocolMapper.getName()), existingProtocolMapper);
             }
@@ -1388,12 +1384,12 @@ public class RepresentationToModel {
             for (ProtocolMapperRepresentation protocolMapperRepresentation : rep.getProtocolMappers()) {
                 String protocolNameKey = generateProtocolNameKey(protocolMapperRepresentation.getProtocol(), protocolMapperRepresentation.getName());
                 ProtocolMapperModel existingMapper = existingProtocolMappers.get(protocolNameKey);
-                    if (existingMapper != null) {
-                        ProtocolMapperModel updatedProtocolMapperModel = toModel(protocolMapperRepresentation);
-                        updatedProtocolMapperModel.setId(existingMapper.getId());
-                        resource.updateProtocolMapper(updatedProtocolMapperModel);
+                if (existingMapper != null) {
+                    ProtocolMapperModel updatedProtocolMapperModel = toModel(protocolMapperRepresentation);
+                    updatedProtocolMapperModel.setId(existingMapper.getId());
+                    resource.updateProtocolMapper(updatedProtocolMapperModel);
 
-                        existingProtocolMappers.remove(protocolNameKey);
+                    existingProtocolMappers.remove(protocolNameKey);
 
                 } else {
                     resource.addProtocolMapper(toModel(protocolMapperRepresentation));
@@ -2081,11 +2077,11 @@ public class RepresentationToModel {
         resourceServer.setAllowRemoteResourceManagement(rep.isAllowRemoteResourceManagement());
 
         DecisionStrategy decisionStrategy = rep.getDecisionStrategy();
-        
+
         if (decisionStrategy == null) {
             decisionStrategy = DecisionStrategy.UNANIMOUS;
         }
-        
+
         resourceServer.setDecisionStrategy(decisionStrategy);
 
         for (ScopeRepresentation scope : rep.getScopes()) {
@@ -2095,7 +2091,14 @@ public class RepresentationToModel {
         KeycloakSession session = authorization.getKeycloakSession();
         RealmModel realm = authorization.getRealm();
 
-        for (ResourceRepresentation resource : rep.getResources()) {
+        List<ResourceRepresentation> list =rep.getResources();
+        Collections.sort(list, new Comparator<ResourceRepresentation>() {
+            @Override
+            public int compare(ResourceRepresentation o1, ResourceRepresentation o2) {
+                return o1.getSort().compareTo(o2.getSort());
+            }
+        });
+        for (ResourceRepresentation resource : list) {
             ResourceOwnerRepresentation owner = resource.getOwner();
 
             if (owner == null) {
@@ -2470,6 +2473,10 @@ public class RepresentationToModel {
             existing.setPermission(resource.getPermission());
             existing.setSort(resource.getSort());
             existing.setEnabled(resource.isEnabled());
+            Resource parent= resourceStore.findById(resource.getParent(), resourceServer.getId());
+            if(parent!=null){
+                existing.setParent(parent);
+            }
 
             return existing;
         }
@@ -2485,6 +2492,11 @@ public class RepresentationToModel {
         model.setPermission(resource.getPermission());
         model.setSort(resource.getSort());
         model.setEnabled(resource.isEnabled());
+
+        Resource parent= resourceStore.findById(resource.getParent(), resourceServer.getId());
+        if(parent!=null){
+            model.setParent(parent);
+        }
 
         Set<ScopeRepresentation> scopes = resource.getScopes();
 
