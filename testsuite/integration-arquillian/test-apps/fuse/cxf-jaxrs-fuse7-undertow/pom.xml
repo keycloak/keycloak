@@ -27,7 +27,7 @@
     <modelVersion>4.0.0</modelVersion>
     <artifactId>fuse-example-cxf-jaxrs-fuse7-undertow</artifactId>
     <packaging>bundle</packaging>
-    <name>CXF JAXRS Example - Secured in Karaf/Fuse 7.0 on Undertow</name>
+    <name>CXF JAXRS Example - Secured in Karaf/Fuse 7 on Undertow</name>
 
     <properties>
         <keycloak.osgi.export>
@@ -38,7 +38,7 @@
             META-INF.cxf.osgi;version="[2.7,3.3)";resolution:=optional,
             org.apache.cxf.transport.http;version="[2.7,3.3)",
             org.apache.cxf.*;version="[2.7,3.3)",
-            com.fasterxml.jackson.jaxrs.json;version="${jackson.version}",
+            com.fasterxml.jackson.jaxrs.json;version="[2.8,3)",
             org.keycloak.*;version="${project.version}",
             *;resolution:=optional
         </keycloak.osgi.import>

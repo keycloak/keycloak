@@ -35,8 +35,8 @@
         <keycloak.osgi.import>
             javax.jws;resolution:=optional,
             javax.wsdl,
-            javax.xml.bind,
-            javax.xml.bind.annotation,
+            javax.xml.bind;version="[2.2,3)",
+            javax.xml.bind.annotation;version="[2.2,3)",
             javax.xml.namespace,
             javax.xml.ws,
             META-INF.cxf;version="[2.7,3.2)",
