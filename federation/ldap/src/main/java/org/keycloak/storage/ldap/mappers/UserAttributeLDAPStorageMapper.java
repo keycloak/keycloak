@@ -132,6 +132,12 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
             // we have java property on UserModel. Assuming we support just properties of simple types
             Object attrValue = userModelProperty.getValue(localUser);
 
+            if (Boolean.class.equals(userModelProperty.getJavaClass()) || boolean.class.equals(userModelProperty.getJavaClass())) {
+		attrValue = false;
+		if (attrValue.equals("TRUE")) {
+		    attrValue = true;
+		}
+	    }
             if (attrValue == null) {
                 if (isMandatoryInLdap) {
                     ldapUser.setSingleAttribute(ldapAttrName, LDAPConstants.EMPTY_ATTRIBUTE_VALUE);
@@ -139,7 +145,11 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
                     ldapUser.setAttribute(ldapAttrName, new LinkedHashSet<String>());
                 }
             } else {
-                ldapUser.setSingleAttribute(ldapAttrName, attrValue.toString());
+            	if (Boolean.class.equals(userModelProperty.getJavaClass()) || boolean.class.equals(userModelProperty.getJavaClass())) {
+              	    ldapUser.setSingleBooleanAttribute(ldapAttrName, (Boolean)attrValue);
+		} else {
+              	    ldapUser.setSingleAttribute(ldapAttrName, attrValue.toString());
+		}
             }
         } else {
 
@@ -259,6 +269,12 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
                     super.setFirstName(firstName);
                 }
 
+                @Override
+                public void setEmailVerified(boolean verified) {
+                    setLDAPAttribute(UserModel.EMAIL_VERIFIED, verified);
+                    super.setEmailVerified(verified);
+                }
+
                 protected boolean setLDAPAttribute(String modelAttrName, Object value) {
                     if (modelAttrName.equalsIgnoreCase(userModelAttrName)) {
                         if (UserAttributeLDAPStorageMapper.logger.isTraceEnabled()) {
@@ -275,6 +291,8 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
                             }
                         } else if (value instanceof String) {
                             ldapUser.setSingleAttribute(ldapAttrName, (String) value);
+                        } else if (value instanceof Boolean) {
+              	    	    ldapUser.setSingleBooleanAttribute(ldapAttrName, (Boolean)value);
                         } else {
                             List<String> asList = (List<String>) value;
                             if (asList.isEmpty() && isMandatoryInLdap) {
@@ -453,6 +471,11 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
 
     protected void setPropertyOnUserModel(Property<Object> userModelProperty, UserModel user, String ldapAttrValue) {
         if (ldapAttrValue == null) {
+            if (Boolean.class.equals(userModelProperty.getJavaClass()) || boolean.class.equals(userModelProperty.getJavaClass())) {
+                userModelProperty.setValue(user, false);
+            } else {
+                userModelProperty.setValue(user, null);
+            }	
             userModelProperty.setValue(user, null);
         } else {
             Class<Object> clazz = userModelProperty.getJavaClass();
@@ -460,7 +483,11 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
             if (String.class.equals(clazz)) {
                 userModelProperty.setValue(user, ldapAttrValue);
             } else if (Boolean.class.equals(clazz) || boolean.class.equals(clazz)) {
-                Boolean boolVal = Boolean.valueOf(ldapAttrValue);
+   		Boolean boolVal = false;
+                if (ldapAttrValue.equals("TRUE")) {
+                   boolVal = true;
+                }
+                //Boolean boolVal = Boolean.valueOf(ldapAttrValue);
                 userModelProperty.setValue(user, boolVal);
             } else {
                 logger.warnf("Don't know how to set the property '%s' on user '%s' . Value of LDAP attribute is '%s' ", userModelProperty.getName(), user.getUsername(), ldapAttrValue.toString());
