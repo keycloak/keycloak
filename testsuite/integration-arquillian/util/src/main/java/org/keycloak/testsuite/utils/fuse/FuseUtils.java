@@ -92,6 +92,12 @@ public class FuseUtils {
         Result.EMPTY);
 
         assertCommand(managementUser, managementPassword,
+            "config:edit org.apache.karaf.management; " +
+            "config:property-set jmxRealm keycloak;" +
+            "config:update",
+        Result.EMPTY);
+
+        assertCommand(managementUser, managementPassword,
             "feature:repo-add mvn:org.keycloak/keycloak-osgi-features/" + projectVersion + "/xml/features; " +
             "feature:repo-add mvn:org.keycloak.testsuite/fuse-example-keycloak-features/" + projectVersion + "/xml/features; " +
             "feature:install pax-http-undertow; " +
@@ -118,12 +124,6 @@ public class FuseUtils {
             "system:property -p hawtio.roles admin,manager,viewer,ssh; " +
             "system:property -p hawtio.rolePrincipalClasses org.keycloak.adapters.jaas.RolePrincipal,org.apache.karaf.jaas.boot.principal.RolePrincipal;" +
             "restart io.hawt.hawtio-war",
-        Result.EMPTY);
-
-        assertCommand(managementUser, managementPassword,
-            "config:edit org.apache.karaf.management; " +
-            "config:property-set jmxRealm keycloak;" +
-            "config:update",
         Result.EMPTY);
 
         assertCommand(managementUser, managementPassword,
@@ -155,6 +155,12 @@ public class FuseUtils {
         Result.EMPTY);
 
         assertCommand(managementUser, managementPassword,
+            "config:edit org.apache.karaf.management; " +
+            "config:propset jmxRealm keycloak;" +
+            "config:update",
+        Result.EMPTY);
+
+        assertCommand(managementUser, managementPassword,
             "features:addurl mvn:org.keycloak/keycloak-osgi-features/" + projectVersion + "/xml/features; " +
             "features:addurl mvn:org.keycloak.testsuite/fuse-example-keycloak-features/" + projectVersion + "/xml/features; " +
             "features:install keycloak-fuse-6.3-example",
@@ -176,12 +182,6 @@ public class FuseUtils {
         log.debug("osgi hawtio-web id: " + id);
         assertCommand(managementUser, managementPassword,
             "osgi:restart " + id,
-        Result.EMPTY);
-
-        assertCommand(managementUser, managementPassword,
-            "config:edit org.apache.karaf.management; " +
-            "config:propset jmxRealm keycloak;" +
-            "config:update",
         Result.EMPTY);
 
         assertCommand(managementUser, managementPassword,
