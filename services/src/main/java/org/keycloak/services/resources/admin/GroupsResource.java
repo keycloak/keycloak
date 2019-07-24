@@ -21,9 +21,11 @@ import org.jboss.resteasy.spi.NotFoundException;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
+import org.keycloak.models.Constants;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.services.ErrorResponse;
@@ -40,11 +42,9 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.net.URI;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * @resource Groups
@@ -77,27 +77,28 @@ public class GroupsResource {
                                                @QueryParam("first") Integer firstResult,
                                                @QueryParam("max") Integer maxResults) {
         auth.groups().requireList();
+        List<GroupRepresentation> results;
 
-        List<GroupModel> results;
-
-        /**
-         * For now fetching (as in UsersResource) all groups and filtering in Java
-         * TODO: IMHO we should consider different pagination technique:
-         * (1) REST return filtered results (in some cases even epty page) and JS
-         * client retrieves next pages until it gets all page of results or reaches the end of list
-         * (2) or we fetch results in backend page by page until we get all required results.
-         */
-        if (Objects.nonNull(search)) {
-            results = realm.searchForGroupByName(search.trim(),null, null);
+        if (auth.users().canView()) {
+            if (Objects.nonNull(search)) {
+                results = ModelToRepresentation.searchForGroupByName(realm, search.trim(), firstResult, maxResults);
+            } else if(Objects.nonNull(firstResult) && Objects.nonNull(maxResults)) {
+                results = ModelToRepresentation.toGroupHierarchy(realm, false, firstResult, maxResults);
+            } else {
+                results = ModelToRepresentation.toGroupHierarchy(realm, false);
+            }
         } else {
-            results = realm.getTopLevelGroups();
+            Set<String> groups = auth.groups().getGroupsWithViewPermission();
+            Stream<String> s = groups.stream();
+            if (search!=null) s=s.filter(group->group.contains(search.trim()));
+            if (firstResult != null) s=s.skip(firstResult);
+            if (maxResults != null) s=s.limit(maxResults);
+            results = s
+                    .map(group -> ModelToRepresentation.toGroupHierarchy(session.realms().getGroupById(group, session.getContext().getRealm()),false))
+                    .collect(Collectors.toList());
+
         }
-
-        List<GroupRepresentation> ret = results.stream()
-                .map(group -> ModelToRepresentation.toGroupHierarchy(group, false))
-                .collect(Collectors.toList());
-
-        return checkGroupsPermissions(ret);
+        return results;
 
     }
 
