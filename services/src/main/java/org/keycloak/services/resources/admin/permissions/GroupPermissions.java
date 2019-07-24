@@ -307,6 +307,17 @@ class GroupPermissions implements GroupPermissionEvaluator, GroupPermissionManag
 
     @Override
     public Set<String> getGroupsWithViewPermission() {
+        return getGroupsWithPermission(root.realmViewScope().getName(), root.realmManageScope().getName(), VIEW_MEMBERS_SCOPE, MANAGE_MEMBERS_SCOPE, MANAGE_MEMBERSHIP_SCOPE);
+    }
+
+    @Override
+    public Set<String> getGroupsWithViewMembersPermission() {
+        return getGroupsWithPermission(VIEW_MEMBERS_SCOPE, MANAGE_MEMBERS_SCOPE);
+    }
+
+
+    @Override
+    public Set<String> getGroupsWithPermission(String... scopes) {
         if (root.users().canView() || root.users().canManage()) return Collections.emptySet();
 
         if (!root.isAdminSameRealm()) {
@@ -322,7 +333,7 @@ class GroupPermissions implements GroupPermissionEvaluator, GroupPermissionManag
         Set<String> granted = new HashSet<>();
 
         resourceStore.findByType("Group", server.getId(), resource -> {
-            if (hasPermission(resource, null, VIEW_MEMBERS_SCOPE, MANAGE_MEMBERS_SCOPE)) {
+            if (hasPermission(resource, null, scopes)) {
                 granted.add(resource.getName().substring(RESOURCE_NAME_PREFIX.length()));
             }
         });

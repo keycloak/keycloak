@@ -237,7 +237,7 @@ public class UsersResource {
         session.setAttribute(UserModel.INCLUDE_SERVICE_ACCOUNT, includeServiceAccounts);
 
         if (!auth.users().canView()) {
-            Set<String> groupModels = auth.groups().getGroupsWithViewPermission();
+            Set<String> groupModels = auth.groups().getGroupsWithViewMembersPermission();
 
             if (!groupModels.isEmpty()) {
                 session.setAttribute(UserModel.GROUPS, groupModels);

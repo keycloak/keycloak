@@ -58,5 +58,9 @@ public interface GroupPermissionEvaluator {
 
     Map<String, Boolean> getAccess(GroupModel group);
 
+    Set<String> getGroupsWithPermission(String... scopes);
+
     Set<String> getGroupsWithViewPermission();
+
+    Set<String> getGroupsWithViewMembersPermission();
 }
