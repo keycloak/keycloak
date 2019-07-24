@@ -429,7 +429,7 @@ public class LDAPIdentityStore implements IdentityStore {
                         } if (val instanceof Boolean) { //Boolean
 			    Boolean attrVal = (Boolean)val;
                             attrValues.add("FALSE");
-		    	    if (attrVal == true) {
+		    	    if (attrVal) {
 		        	attrValues.add("TRUE");
 	    	   	    }
 			}else { // String
