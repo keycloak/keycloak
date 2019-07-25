@@ -60,7 +60,7 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> ext
             // Lookup entity from cache
             SessionEntityWrapper<V> wrappedEntity = cache.get(key);
             if (wrappedEntity == null) {
-                logger.warnf("Not present cache item for key %s", key);
+                logger.tracef("Not present cache item for key %s", key);
                 return;
             }
 
