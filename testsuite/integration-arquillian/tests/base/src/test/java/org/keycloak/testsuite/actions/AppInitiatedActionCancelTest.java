@@ -50,6 +50,7 @@ public class AppInitiatedActionCancelTest extends AbstractAppInitiatedActionTest
         updateProfilePage.assertCurrent();
         updateProfilePage.cancel();
         assertRedirectSuccess();
+        assertCancelMessage();
         
         appPage.logout();
         
@@ -57,5 +58,15 @@ public class AppInitiatedActionCancelTest extends AbstractAppInitiatedActionTest
         loginPage.assertCurrent();
         loginPage.login("test-user@localhost", "password");
         updateProfilePage.assertCurrent();
+    }
+    
+    @Test
+    public void silentCancelUpdateProfile() {
+        doAIA(true);
+        loginPage.login("test-user@localhost", "password");
+        updateProfilePage.assertCurrent();
+        updateProfilePage.cancel();
+        assertRedirectSuccess();
+        assertSilentCancelMessage();      
     }
 }

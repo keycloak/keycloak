@@ -83,6 +83,7 @@ public class AppInitiatedActionResetPasswordTest extends AbstractAppInitiatedAct
         changePasswordPage.cancel();
         
         assertRedirectSuccess();
+        assertCancelMessage();
     }
 
 }

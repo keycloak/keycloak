@@ -127,6 +127,7 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
         totpPage.cancel();
         
         assertRedirectSuccess();
+        assertCancelMessage();
     }
 
     @Test

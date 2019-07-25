@@ -102,6 +102,7 @@ import java.util.Map;
 
 import static org.keycloak.authentication.actiontoken.DefaultActionToken.ACTION_TOKEN_BASIC_CHECKS;
 import static org.keycloak.services.managers.AuthenticationManager.IS_AIA_REQUEST;
+import static org.keycloak.services.managers.AuthenticationManager.IS_SILENT_CANCEL;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -993,7 +994,8 @@ public class LoginActionsService {
         Response response;
         
         if (isCancelAppInitiatedAction(authSession, context)) {
-            context.failure();
+            provider.initiatedActionCanceled(session, authSession);
+            context.cancelAIA();
         } else {
             provider.processAction(context);
         }
@@ -1014,20 +1016,29 @@ public class LoginActionsService {
         } else if (context.getStatus() == RequiredActionContext.Status.CHALLENGE) {
             response = context.getChallenge();
         } else if (context.getStatus() == RequiredActionContext.Status.FAILURE) {
-            LoginProtocol protocol = context.getSession().getProvider(LoginProtocol.class, authSession.getProtocol());
-            protocol.setRealm(context.getRealm())
-                    .setHttpHeaders(context.getHttpRequest().getHttpHeaders())
-                    .setUriInfo(context.getUriInfo())
-                    .setEventBuilder(event);
-
-            event.detail(Details.CUSTOM_REQUIRED_ACTION, action);
-            response = protocol.sendError(authSession, Error.CONSENT_DENIED);
-            event.error(Errors.REJECTED_BY_USER);
+            response = interruptionResponse(context, authSession, action, Error.CONSENT_DENIED);
+        } else if (isSilentAIACancel(authSession, context)) {
+            response = interruptionResponse(context, authSession, action, Error.CANCELLED_AIA_SILENT);
+        } else if (context.getStatus() == RequiredActionContext.Status.CANCELED_AIA) {
+            response = interruptionResponse(context, authSession, action, Error.CANCELLED_AIA);
         } else {
             throw new RuntimeException("Unreachable");
         }
 
         return BrowserHistoryHelper.getInstance().saveResponseAndRedirect(session, authSession, response, true, request);
+    }
+    
+    private Response interruptionResponse(RequiredActionContextResult context, AuthenticationSessionModel authSession, String action, Error error) {
+        LoginProtocol protocol = context.getSession().getProvider(LoginProtocol.class, authSession.getProtocol());
+        protocol.setRealm(context.getRealm())
+                .setHttpHeaders(context.getHttpRequest().getHttpHeaders())
+                .setUriInfo(context.getUriInfo())
+                .setEventBuilder(event);
+
+        event.detail(Details.CUSTOM_REQUIRED_ACTION, action);
+        
+        event.error(Errors.REJECTED_BY_USER);
+        return protocol.sendError(authSession, error);
     }
     
     private boolean isCancelAppInitiatedAction(AuthenticationSessionModel authSession, RequiredActionContextResult context) {
@@ -1037,6 +1048,14 @@ public class LoginActionsService {
         boolean isAIARequest = authSession.getClientNote(IS_AIA_REQUEST) != null;
         
         return isAIARequest && userRequestedCancelAIA;
+    }
+    
+    private boolean isSilentAIACancel(AuthenticationSessionModel authSession, RequiredActionContextResult context) {
+        String silentCancel = authSession.getClientNote(IS_SILENT_CANCEL);
+        boolean isSilentCancel = "true".equalsIgnoreCase(silentCancel);
+        boolean isAIACancel = isCancelAppInitiatedAction(authSession, context);
+        
+        return isSilentCancel && isAIACancel;
     }
 
 }

@@ -21,5 +21,5 @@ package org.keycloak.authentication;
  * @author Stan Silvert
  */
 public enum InitiatedActionSupport {
-    SUPPORTED, NOT_SUPPORTED, CONSENT_REQUIRED
+    SUPPORTED, NOT_SUPPORTED
 }

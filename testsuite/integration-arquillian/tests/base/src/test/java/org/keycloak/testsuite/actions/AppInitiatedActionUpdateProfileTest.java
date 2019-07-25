@@ -133,6 +133,7 @@ public class AppInitiatedActionUpdateProfileTest extends AbstractAppInitiatedAct
         updateProfilePage.cancel();
 
         assertRedirectSuccess();
+        assertCancelMessage();
         
         // assert nothing was updated in persistent store
         UserRepresentation user = ActionUtil.findUserWithAdminClient(adminClient, "test-user@localhost");

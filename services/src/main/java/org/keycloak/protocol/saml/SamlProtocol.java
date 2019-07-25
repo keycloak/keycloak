@@ -225,6 +225,7 @@ public class SamlProtocol implements LoginProtocol {
     private JBossSAMLURIConstants translateErrorToSAMLStatus(Error error) {
         switch (error) {
         case CANCELLED_BY_USER:
+        case CANCELLED_AIA:
         case CONSENT_DENIED:
             return JBossSAMLURIConstants.STATUS_REQUEST_DENIED;
         case PASSIVE_INTERACTION_REQUIRED:

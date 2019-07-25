@@ -45,7 +45,6 @@ import org.keycloak.migration.migrators.MigrateTo4_0_0;
 import org.keycloak.migration.migrators.MigrateTo4_2_0;
 import org.keycloak.migration.migrators.MigrateTo4_6_0;
 import org.keycloak.migration.migrators.MigrateTo6_0_0;
-import org.keycloak.migration.migrators.MigrateTo7_0_0;
 import org.keycloak.migration.migrators.Migration;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -82,8 +81,7 @@ public class MigrationModelManager {
             new MigrateTo4_0_0(),
             new MigrateTo4_2_0(),
             new MigrateTo4_6_0(),
-            new MigrateTo6_0_0(),
-            new MigrateTo7_0_0()
+            new MigrateTo6_0_0()
     };
 
     public static void migrate(KeycloakSession session) {

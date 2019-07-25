@@ -416,9 +416,9 @@
     ],
     "client" : {
       "test-app" : [
-        { 
-          "name" : "initiate-action",
-          "description": "Allow application-initiated actions"
+        {
+          "name": "manage-account",
+          "description": "Allows application-initiated actions."
         },
         {
           "name": "customer-user",

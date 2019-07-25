@@ -41,7 +41,8 @@ public interface RequiredActionContext {
         CHALLENGE,
         SUCCESS,
         IGNORE,
-        FAILURE
+        FAILURE,
+        CANCELED_AIA
     }
 
     /**
@@ -138,5 +139,11 @@ public interface RequiredActionContext {
      *
      */
     void ignore();
+    
+    /**
+     * Mark application-initiated action as canceled by the user.
+     *
+     */
+    void cancelAIA();
 
 }

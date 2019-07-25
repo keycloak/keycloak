@@ -17,16 +17,21 @@
 package org.keycloak.testsuite.actions;
 
 import java.util.List;
+import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Test;
 import org.keycloak.models.AccountRoles;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
+import org.keycloak.testsuite.pages.ErrorPage;
 
 /**
  *
  * @author Stan Silvert
  */
 public class AppInitiatedActionRoleTest extends AbstractAppInitiatedActionTest {
+    
+    @Page
+    protected ErrorPage errorPage;
     
     public AppInitiatedActionRoleTest() {
         super("update_profile");
@@ -36,15 +41,15 @@ public class AppInitiatedActionRoleTest extends AbstractAppInitiatedActionTest {
     public void configureTestRealm(RealmRepresentation testRealm) {
         List<RoleRepresentation> roleList = testRealm.getRoles().getClient().get("test-app");
         
-        RoleRepresentation initiateActionRole = null;
+        RoleRepresentation manageAccountRole = null;
         for (RoleRepresentation role : roleList) {
-            if (role.getName().equals(AccountRoles.INITIATE_ACTION)) {
-                initiateActionRole = role;
+            if (role.getName().equals(AccountRoles.MANAGE_ACCOUNT)) {
+                manageAccountRole = role;
                 break;
             }
         }
         
-        roleList.remove(initiateActionRole);
+        roleList.remove(manageAccountRole);
     }
     
     @Test
@@ -52,6 +57,6 @@ public class AppInitiatedActionRoleTest extends AbstractAppInitiatedActionTest {
         loginPage.open();
         loginPage.login("test-user@localhost", "password");
         doAIA();
-        assertRedirectSuccess();  // update profile screen does not appear
+        errorPage.assertCurrent();
     }
 }
