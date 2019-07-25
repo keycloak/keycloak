@@ -50,8 +50,13 @@ public abstract class AbstractAppInitiatedActionTest extends AbstractTestRealmKe
     }
     
     protected void doAIA() {
+        doAIA(false);
+    }
+    
+    protected void doAIA(boolean silentCancel) {
         UriBuilder builder = OIDCLoginProtocolService.authUrl(authServerPage.createUriBuilder());
         String uri = builder.queryParam("kc_action", this.aiaAction)
+                            .queryParam("silent_cancel", Boolean.toString(silentCancel))
                             .queryParam("response_type", "code")
                             .queryParam("client_id", "test-app")
                             .queryParam("scope", "openid")
@@ -63,5 +68,17 @@ public abstract class AbstractAppInitiatedActionTest extends AbstractTestRealmKe
     
     protected void assertRedirectSuccess() {
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+    }
+    
+    protected void assertCancelMessage() {
+        String url = this.driver.getCurrentUrl();
+        Assert.assertTrue("Expected 'error=interaction_required' in url", url.contains("error=interaction_required"));
+        Assert.assertTrue("Expected 'error_description=User+cancelled+aplication-initiated+action.' in url", url.contains("error_description=User+cancelled+aplication-initiated+action."));
+    }
+    
+    protected void assertSilentCancelMessage() {
+        String url = this.driver.getCurrentUrl();
+        Assert.assertFalse("Expected no 'error=' in url", url.contains("error="));
+        Assert.assertFalse("Expected no 'error_description=' in url", url.contains("error_description="));
     }
 }
