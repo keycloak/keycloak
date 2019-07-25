@@ -38,6 +38,8 @@ many {project_name} server instances will be started on that machine.  When the 
 as many {project_name} server instances as it was configured to do.  These server instances pull their configuration
 from the domain controller.
 
+NOTE: In some environments, such as Microsoft Azure, the domain mode is not applicable. Please consult the {appserver_name} documentation.
+
 ==== Domain Configuration
 
 Various other chapters in this guide walk you through configuring various aspects like databases,
