@@ -58,6 +58,7 @@ import org.keycloak.authorization.client.AuthzClient;
 import org.keycloak.authorization.client.Configuration;
 import org.keycloak.authorization.client.representation.TokenIntrospectionResponse;
 import org.keycloak.authorization.client.util.HttpResponseException;
+import org.keycloak.authorization.permission.ResourcePermission;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -1870,6 +1871,55 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         token = toAccessToken(authorizationResponse.getToken());
         assertEquals(RESOURCE_SERVER_TEST, token.getOtherClaims().get("custom_claim"));
         assertEquals(PUBLIC_TEST_CLIENT, token.getIssuedFor());
+    }
+
+    @Test
+    public void testUsingExpiredToken() throws Exception {
+        ClientResource client = getClient(getRealm(), RESOURCE_SERVER_TEST);
+        AuthorizationResource authorization = client.authorization();
+
+        JSPolicyRepresentation policy = new JSPolicyRepresentation();
+
+        policy.setName(KeycloakModelUtils.generateId());
+        policy.setCode("$evaluation.grant();");
+
+        authorization.policies().js().create(policy).close();
+
+        ResourceRepresentation resource = new ResourceRepresentation();
+
+        resource.setName("Sensors");
+
+        try (Response response = authorization.resources().create(resource)) {
+            resource = response.readEntity(ResourceRepresentation.class);
+        }
+
+        ResourcePermissionRepresentation permission = new ResourcePermissionRepresentation();
+
+        permission.setName("View Sensor");
+        permission.addPolicy(policy.getName());
+
+        authorization.permissions().resource().create(permission).close();
+
+        String accessToken = new OAuthClient().realm("authz-test").clientId(RESOURCE_SERVER_TEST).doGrantAccessTokenRequest("secret", "marta", "password").getAccessToken();
+        AuthzClient authzClient = getAuthzClient(AUTHZ_CLIENT_CONFIG);
+        AccessTokenResponse response = authzClient.authorization(accessToken).authorize();
+        assertNotNull(response.getToken());
+        
+        getRealm().logoutAll();
+
+        AuthorizationRequest request = new AuthorizationRequest();
+
+        request.addPermission("Sensors");
+        request.setSubjectToken(accessToken);
+
+        try {
+            authzClient.authorization().authorize(request);
+            fail("should fail, session invalidated");
+        } catch (Exception e) {
+            Throwable expected = e.getCause();
+            assertEquals(400, HttpResponseException.class.cast(expected).getStatusCode());
+            assertTrue(HttpResponseException.class.cast(expected).toString().contains("unauthorized_client"));
+        }
     }
 
     private void testRptRequestWithResourceName(String configFile) {
