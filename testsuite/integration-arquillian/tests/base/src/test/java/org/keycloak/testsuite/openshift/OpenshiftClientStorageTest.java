@@ -56,6 +56,7 @@ import org.keycloak.storage.openshift.OpenshiftClientStorageProviderFactory;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.arquillian.annotation.RestartContainer;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.ConsentPage;
 import org.keycloak.testsuite.pages.ErrorPage;
@@ -68,6 +69,7 @@ import org.keycloak.testsuite.util.OAuthClient;
  *
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
+@RestartContainer(enableFeatures = OPENSHIFT_INTEGRATION)
 public final class OpenshiftClientStorageTest extends AbstractTestRealmKeycloakTest {
 
     private static Undertow OPENSHIFT_API_SERVER;
