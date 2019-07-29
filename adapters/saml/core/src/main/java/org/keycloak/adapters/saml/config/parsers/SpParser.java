@@ -72,6 +72,10 @@ public class SpParser extends AbstractKeycloakSamlAdapterV1Parser<SP> {
                 target.setRoleAttributes(RoleMappingParser.getInstance().parse(xmlEventReader));
                 break;
 
+            case ROLE_MAPPINGS_PROVIDER:
+                target.setRoleMappingsProviderConfig(RoleMappingsProviderParser.getInstance().parse(xmlEventReader));
+                break;
+
             case IDP:
                 target.setIdp(IdpParser.getInstance().parse(xmlEventReader));
                 break;

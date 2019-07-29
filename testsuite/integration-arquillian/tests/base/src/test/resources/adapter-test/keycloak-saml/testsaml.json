@@ -33,7 +33,8 @@
             "realmRoles": ["manager", "user"],
             "applicationRoles": {
                 "http://localhost:8280/employee/": [ "employee" ],
-                "http://localhost:8280/employee2/": [ "empl.oyee", "employee" ]
+                "http://localhost:8280/employee2/": [ "empl.oyee", "employee" ],
+                "http://localhost:8280/employee-role-mapping/": ["employee"]
             }
         },
         {
@@ -662,6 +663,57 @@
                 "saml.authnstatement": "true",
                 "saml.signing.certificate": "MIIB1DCCAT0CBgFJGP5dZDANBgkqhkiG9w0BAQsFADAwMS4wLAYDVQQDEyVodHRwOi8vbG9jYWxob3N0OjgwODAvc2FsZXMtcG9zdC1zaWcvMB4XDTE0MTAxNjEyNDQyM1oXDTI0MTAxNjEyNDYwM1owMDEuMCwGA1UEAxMlaHR0cDovL2xvY2FsaG9zdDo4MDgwL3NhbGVzLXBvc3Qtc2lnLzCBnzANBgkqhkiG9w0BAQEFAAOBjQAwgYkCgYEA1RvGu8RjemSJA23nnMksoHA37MqY1DDTxOECY4rPAd9egr7GUNIXE0y1MokaR5R2crNpN8RIRwR8phQtQDjXL82c6W+NLQISxztarQJ7rdNJIYwHY0d5ri1XRpDP8zAuxubPYiMAVYcDkIcvlbBpwh/dRM5I2eElRK+eSiaMkCUCAwEAATANBgkqhkiG9w0BAQsFAAOBgQCLms6htnPaY69k1ntm9a5jgwSn/K61cdai8R8B0ccY7zvinn9AfRD7fiROQpFyY29wKn8WCLrJ86NBXfgFUGyR5nLNHVy3FghE36N2oHy53uichieMxffE6vhkKJ4P8ChfJMMOZlmCPsQPDvjoAghHt4mriFiQgRdPgIy/zDjSNw=="
             }
+        },
+        {
+            "clientId": "http://localhost:8280/employee-role-mapping/",
+            "enabled": true,
+            "protocol": "saml",
+            "fullScopeAllowed": true,
+            "baseUrl": "http://localhost:8080/employee-role-mapping",
+            "redirectUris": [
+                "http://localhost:8080/employee-role-mapping/*"
+            ],
+            "adminUrl": "http://localhost:8080/employee-role-mapping",
+            "attributes": {
+                "saml.authnstatement": "true",
+                "saml_idp_initiated_sso_url_name" : "employee-role-mapping"
+            },
+            "protocolMappers": [
+                {
+                    "name": "email",
+                    "protocol": "saml",
+                    "protocolMapper": "saml-user-property-mapper",
+                    "consentRequired": false,
+                    "config": {
+                        "user.attribute": "email",
+                        "friendly.name": "email",
+                        "attribute.name": "urn:oid:1.2.840.113549.1.9.1",
+                        "attribute.nameformat": "URI Reference"
+                    }
+                },
+                {
+                    "name": "phone",
+                    "protocol": "saml",
+                    "protocolMapper": "saml-user-attribute-mapper",
+                    "consentRequired": false,
+                    "config": {
+                        "user.attribute": "phone",
+                        "attribute.name": "phone",
+                        "attribute.nameformat": "Basic"
+                    }
+                },
+                {
+                    "name": "role-list",
+                    "protocol": "saml",
+                    "protocolMapper": "saml-role-list-mapper",
+                    "consentRequired": false,
+                    "config": {
+                        "attribute.name": "Role",
+                        "attribute.nameformat": "Basic",
+                        "single": "false"
+                    }
+                }
+            ]
         }
     ],
     "groups" : [
@@ -716,7 +768,18 @@
                     "name": "empl.oyee",
                     "description": "Have Employee privileges with dots"
                 }
+            ],
+            "http://localhost:8280/employee-role-mapping/" : [
+                {
+                    "name": "employee",
+                    "description": "Have Employee privileges"
+                },
+                {
+                    "name": "supervisor",
+                    "description": "Have Supervisor privileges"
+                }
             ]
+
         }
     }
 }
