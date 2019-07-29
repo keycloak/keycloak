@@ -412,10 +412,12 @@ public class AccountFormService extends AbstractSecuredLocalService {
 
         String clientId = formData.getFirst("clientId");
         if (clientId == null) {
+            setReferrerOnPage();
             return account.setError(Response.Status.BAD_REQUEST, Messages.CLIENT_NOT_FOUND).createResponse(AccountPages.APPLICATIONS);
         }
         ClientModel client = realm.getClientById(clientId);
         if (client == null) {
+            setReferrerOnPage();
             return account.setError(Response.Status.BAD_REQUEST, Messages.CLIENT_NOT_FOUND).createResponse(AccountPages.APPLICATIONS);
         }
 
@@ -845,6 +847,7 @@ public class AccountFormService extends AbstractSecuredLocalService {
         }
 
         if (userIds == null || userIds.length == 0) {
+            setReferrerOnPage();
             return account.setError(Status.BAD_REQUEST, Messages.MISSING_PASSWORD).createResponse(AccountPages.PASSWORD);
         }
 
@@ -860,6 +863,7 @@ public class AccountFormService extends AbstractSecuredLocalService {
             }
 
             if (user == null) {
+                setReferrerOnPage();
                 return account.setError(Status.BAD_REQUEST, Messages.INVALID_USER).createResponse(AccountPages.RESOURCE_DETAIL);
             }
 
