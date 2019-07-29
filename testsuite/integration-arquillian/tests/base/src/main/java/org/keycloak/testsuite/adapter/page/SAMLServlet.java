@@ -17,6 +17,13 @@
 
 package org.keycloak.testsuite.adapter.page;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+
 import javax.ws.rs.core.UriBuilder;
 import org.keycloak.testsuite.page.AbstractPageWithInjectedUrl;
 import org.keycloak.testsuite.util.WaitUtils;
@@ -54,5 +61,23 @@ public abstract class SAMLServlet extends AbstractPageWithInjectedUrl {
         driver.navigate().to(toASCIIString);
         waitForPageToLoad();
         WaitUtils.waitUntilElement(By.tagName("body")).text().contains("These roles will be checked:");
+    }
+
+    public List<String> rolesList() {
+        String rolesPattern = getFromPageByPattern("Roles");
+        if (rolesPattern != null) {
+            return Arrays.stream(rolesPattern.split(",")).filter(s -> !s.isEmpty()).collect(Collectors.toList());
+        } else {
+            return new ArrayList<>();
+        }
+    }
+
+    public String getFromPageByPattern(String text) {
+        Pattern p = Pattern.compile(text + ": (.*)");
+        Matcher m = p.matcher(driver.getPageSource());
+        if (m.find()) {
+            return m.group(1);
+        }
+        return null;
     }
 }

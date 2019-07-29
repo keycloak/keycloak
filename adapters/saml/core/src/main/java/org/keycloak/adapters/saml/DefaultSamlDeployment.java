@@ -308,6 +308,7 @@ public class DefaultSamlDeployment implements SamlDeployment {
     private PrivateKey decryptionKey;
     private KeyPair signingKeyPair;
     private Set<String> roleAttributeNames;
+    private RoleMappingsProvider roleMappingsProvider;
     private PrincipalNamePolicy principalNamePolicy = PrincipalNamePolicy.FROM_NAME_ID;
     private String principalAttributeName;
     private String logoutPage;
@@ -376,6 +377,11 @@ public class DefaultSamlDeployment implements SamlDeployment {
     }
 
     @Override
+    public RoleMappingsProvider getRoleMappingsProvider() {
+        return this.roleMappingsProvider;
+    }
+
+    @Override
     public PrincipalNamePolicy getPrincipalNamePolicy() {
         return principalNamePolicy;
     }
@@ -423,6 +429,10 @@ public class DefaultSamlDeployment implements SamlDeployment {
 
     public void setRoleAttributeNames(Set<String> roleAttributeNames) {
         this.roleAttributeNames = roleAttributeNames;
+    }
+
+    public void setRoleMappingsProvider(final RoleMappingsProvider provider) {
+        this.roleMappingsProvider = provider;
     }
 
     public void setPrincipalNamePolicy(PrincipalNamePolicy principalNamePolicy) {

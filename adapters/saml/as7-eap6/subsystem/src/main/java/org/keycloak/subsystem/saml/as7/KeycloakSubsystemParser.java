@@ -118,6 +118,8 @@ class KeycloakSubsystemParser implements XMLStreamConstants, XMLElementReader<Li
                 readPrincipalNameMapping(addServiceProvider, reader);
             } else if (Constants.XML.ROLE_IDENTIFIERS.equals(tagName)) {
                 readRoleIdentifiers(addServiceProvider, reader);
+            } else if (Constants.XML.ROLE_MAPPINGS_PROVIDER.equals(tagName)) {
+                readRoleMappingsProvider(addServiceProvider, reader);
             } else if (Constants.XML.IDENTITY_PROVIDER.equals(tagName)) {
                 readIdentityProvider(list, reader, addr);
             } else {
@@ -339,6 +341,21 @@ class KeycloakSubsystemParser implements XMLStreamConstants, XMLElementReader<Li
         }
     }
 
+    void readRoleMappingsProvider(final ModelNode addServiceProvider, final XMLExtendedStreamReader reader) throws XMLStreamException {
+        String providerId = readRequiredAttribute(reader, Constants.XML.ID);
+        ServiceProviderDefinition.ROLE_MAPPINGS_PROVIDER_ID.parseAndSetParameter(providerId, addServiceProvider, reader);
+
+        while (reader.hasNext() && nextTag(reader) != END_ELEMENT) {
+            String tagName = reader.getLocalName();
+            if (!Constants.XML.PROPERTY.equals(tagName)) {
+                throw ParseUtils.unexpectedElement(reader);
+            }
+            final String[] array = ParseUtils.requireAttributes(reader, Constants.XML.NAME, Constants.XML.VALUE);
+            ServiceProviderDefinition.ROLE_MAPPINGS_PROVIDER_CONFIG.parseAndAddParameterElement(array[0], array[1], addServiceProvider, reader);
+            ParseUtils.requireNoContent(reader);
+        }
+    }
+
     void readPrincipalNameMapping(ModelNode addServiceProvider, XMLExtendedStreamReader reader) throws XMLStreamException {
 
         boolean policySet = false;
@@ -386,7 +403,7 @@ class KeycloakSubsystemParser implements XMLStreamConstants, XMLElementReader<Li
      */
     @Override
     public void writeContent(final XMLExtendedStreamWriter writer, final SubsystemMarshallingContext context) throws XMLStreamException {
-        context.startSubsystemElement(KeycloakSamlExtension.NAMESPACE, false);
+        context.startSubsystemElement(KeycloakSamlExtension.CURRENT_NAMESPACE, false);
         writeSecureDeployment(writer, context.getModelNode());
         writer.writeEndElement();
     }
@@ -419,6 +436,7 @@ class KeycloakSubsystemParser implements XMLStreamConstants, XMLElementReader<Li
             writeKeys(writer, spAttributes.get(Constants.Model.KEY));
             writePrincipalNameMapping(writer, spAttributes);
             writeRoleIdentifiers(writer, spAttributes);
+            writeRoleMappingsProvider(writer, spAttributes);
             writeIdentityProvider(writer, spAttributes.get(Constants.Model.IDENTITY_PROVIDER));
 
             writer.writeEndElement();
@@ -551,6 +569,17 @@ class KeycloakSubsystemParser implements XMLStreamConstants, XMLElementReader<Li
             writer.writeAttribute("name", item.asString());
             writer.writeEndElement();
         }
+        writer.writeEndElement();
+    }
+
+    void writeRoleMappingsProvider(final XMLExtendedStreamWriter writer, final ModelNode model) throws XMLStreamException {
+        ModelNode providerId = model.get(Constants.Model.ROLE_MAPPINGS_PROVIDER_ID);
+        if (!providerId.isDefined()) {
+            return;
+        }
+        writer.writeStartElement(Constants.XML.ROLE_MAPPINGS_PROVIDER);
+        writer.writeAttribute(Constants.XML.ID, providerId.asString());
+        ServiceProviderDefinition.ROLE_MAPPINGS_PROVIDER_CONFIG.marshallAsElement(model, false, writer);
         writer.writeEndElement();
     }
 

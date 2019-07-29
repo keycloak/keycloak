@@ -68,6 +68,9 @@ public class Constants {
         static final String ALIAS = "alias";
         static final String FILE = "file";
         static final String SIGNATURES_REQUIRED = "signaturesRequired";
+
+        static final String ROLE_MAPPINGS_PROVIDER_ID = "roleMappingsProviderId";
+        static final String ROLE_MAPPINGS_PROVIDER_CONFIG = "roleMappingsProviderConfig";
     }
 
     static class XML {
@@ -123,5 +126,10 @@ public class Constants {
         static final String FILE = "file";
         static final String SIGNATURES_REQUIRED = "signaturesRequired";
         static final String ASSERTION_CONSUMER_SERVICE_URL = "assertionConsumerServiceUrl";
+
+        static final String ID = "id";
+        static final String VALUE = "value";
+        static final String PROPERTY = "Property";
+        static final String ROLE_MAPPINGS_PROVIDER = "RoleMappingsProvider";
     }
 }

@@ -179,6 +179,7 @@ public class SendUsernameServlet {
 
         output += principal.getName() + "\n";
         output += getSessionInfo() + "\n";
+        output += getRoles() + "\n";
 
         return output;
     }
@@ -200,6 +201,15 @@ public class SendUsernameServlet {
         }
 
         return "Session doesn't exists";
+    }
+
+    private String getRoles() {
+        StringBuilder output = new StringBuilder("Roles: ");
+        for (String role : ((SamlPrincipal) httpServletRequest.getUserPrincipal()).getAttributes("Roles")) {
+            output.append(role).append(",");
+        }
+
+        return output.toString();
     }
 
     private String getErrorOutput(Integer statusCode) {
