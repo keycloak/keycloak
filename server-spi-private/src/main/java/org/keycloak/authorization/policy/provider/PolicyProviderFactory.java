@@ -66,4 +66,12 @@ public interface PolicyProviderFactory<R extends AbstractPolicyRepresentation> e
     default PolicyProviderAdminService getAdminResource(ResourceServer resourceServer, AuthorizationProvider authorization) {
         return null;
     }
+
+    default void onCacheUpdate(String id) {
+        
+    }
+
+    default void onClearCache() {
+        
+    }
 }

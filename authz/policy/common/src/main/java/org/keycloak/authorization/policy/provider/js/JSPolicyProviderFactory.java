@@ -75,6 +75,16 @@ public class JSPolicyProviderFactory implements PolicyProviderFactory<JSPolicyRe
     }
 
     @Override
+    public void onCacheUpdate(String id) {
+        scriptCache.remove(id);
+    }
+
+    @Override
+    public void onClearCache() {
+        scriptCache.clear();
+    }
+
+    @Override
     public void init(Config.Scope config) {
         int maxEntries = Integer.parseInt(config.get("cache-max-entries", "100"));
         int maxAge = Integer.parseInt(config.get("cache-entry-max-age", "-1"));

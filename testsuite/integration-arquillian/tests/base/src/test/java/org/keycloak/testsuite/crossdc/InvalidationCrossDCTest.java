@@ -23,12 +23,22 @@ import java.util.concurrent.atomic.AtomicInteger;
 import javax.ws.rs.core.Response;
 
 import org.junit.Test;
+import org.keycloak.admin.client.resource.AuthorizationResource;
 import org.keycloak.admin.client.resource.ClientResource;
+import org.keycloak.admin.client.resource.PermissionsResource;
+import org.keycloak.admin.client.resource.PoliciesResource;
+import org.keycloak.admin.client.resource.ResourcePermissionsResource;
 import org.keycloak.admin.client.resource.ResourcesResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.representations.idm.authorization.DecisionEffect;
+import org.keycloak.representations.idm.authorization.JSPolicyRepresentation;
+import org.keycloak.representations.idm.authorization.PolicyEvaluationRequest;
+import org.keycloak.representations.idm.authorization.PolicyEvaluationResponse;
+import org.keycloak.representations.idm.authorization.PolicyRepresentation;
+import org.keycloak.representations.idm.authorization.ResourcePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.common.util.Retry;
@@ -185,9 +195,14 @@ public class InvalidationCrossDCTest extends AbstractAdminCrossDCTest {
         enableDcOnLoadBalancer(DC.FIRST);
         enableDcOnLoadBalancer(DC.SECOND);
 
-
-        ResourcesResource resourcesDc0Resource = ApiUtil.findClientByClientId(getAdminClientForStartedNodeInDc(0).realms().realm(REALM_NAME), "test-app-authz").authorization().resources();
-        ResourcesResource resourcesDc1Resource = ApiUtil.findClientByClientId(getAdminClientForStartedNodeInDc(1).realms().realm(REALM_NAME), "test-app-authz").authorization().resources();
+        AuthorizationResource authorizationDc0 = ApiUtil
+                .findClientByClientId(getAdminClientForStartedNodeInDc(0).realms().realm(REALM_NAME), "test-app-authz")
+                .authorization();
+        ResourcesResource resourcesDc0Resource = authorizationDc0.resources();
+        AuthorizationResource authorizationDc1 = ApiUtil
+                .findClientByClientId(getAdminClientForStartedNodeInDc(1).realms().realm(REALM_NAME), "test-app-authz")
+                .authorization();
+        ResourcesResource resourcesDc1Resource = authorizationDc1.resources();
         ResourceRepresentation resDc0 = resourcesDc0Resource.findByName("Premium Resource").get(0);
         ResourceRepresentation resDc1 = resourcesDc1Resource.findByName("Premium Resource").get(0);
 
@@ -211,6 +226,55 @@ public class InvalidationCrossDCTest extends AbstractAdminCrossDCTest {
         }, 50, 50);
 
         log.infof("authzResourceInvalidationTest: Passed after '%d' iterations", i.get());
+
+        PoliciesResource policiesDc0Resource = authorizationDc0.policies();
+        PoliciesResource policiesDc1 = authorizationDc1.policies();
+
+        JSPolicyRepresentation policy = new JSPolicyRepresentation();
+        
+        policy.setName("js policy");
+        policy.setCode("$evaluation.grant()");
+
+        try (Response response = policiesDc0Resource.js().create(policy)) {
+            policy.setId(response.readEntity(JSPolicyRepresentation.class).getId());
+        }
+
+        i.set(0);
+        Retry.execute(() -> {
+            i.incrementAndGet();
+            Assert.assertNotNull(policiesDc1.findByName(policy.getName()));
+        }, 50, 50);
+        
+        policy.setCode("$evaluation.deny()");
+        
+        policiesDc0Resource.js().findById(policy.getId()).update(policy);
+
+        ResourcePermissionRepresentation permission = new ResourcePermissionRepresentation();
+        
+        permission.setName("rs permission");
+        permission.addPolicy(policy.getId());
+        permission.addResource(resDc0.getName());
+        
+        authorizationDc0.permissions().resource().create(permission).close();
+
+        i.set(0);
+        Retry.execute(() -> {
+            i.incrementAndGet();
+            Assert.assertNotNull(policiesDc1.findByName(permission.getName()));
+        }, 50, 50);
+
+        PolicyEvaluationRequest request = new PolicyEvaluationRequest();
+        UserResource userResourceDc0 = ApiUtil.findUserByUsernameId(getAdminClientForStartedNodeInDc(0).realms().realm(REALM_NAME), "test-user@localhost");
+        
+        request.setUserId(userResourceDc0.toRepresentation().getId());
+        request.addResource(resDc0.getName());
+
+        i.set(0);
+        Retry.execute(() -> {
+            i.incrementAndGet();
+            PolicyEvaluationResponse result = policiesDc1.evaluate(request);
+            Assert.assertEquals(result.getStatus(), DecisionEffect.DENY);
+        }, 50, 50);
     }
 
 

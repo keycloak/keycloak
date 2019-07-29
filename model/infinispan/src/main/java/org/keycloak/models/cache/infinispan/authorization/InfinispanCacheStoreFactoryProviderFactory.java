@@ -22,6 +22,10 @@ import static org.keycloak.models.cache.infinispan.InfinispanCacheRealmProviderF
 import org.infinispan.Cache;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
+import org.keycloak.authorization.AuthorizationProvider;
+import org.keycloak.authorization.model.Policy;
+import org.keycloak.authorization.policy.provider.PolicyProvider;
+import org.keycloak.authorization.policy.provider.PolicyProviderFactory;
 import org.keycloak.cluster.ClusterEvent;
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
@@ -29,8 +33,12 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.cache.authorization.CachedStoreFactoryProvider;
 import org.keycloak.models.cache.authorization.CachedStoreProviderFactory;
+import org.keycloak.models.cache.infinispan.authorization.events.PolicyRemovedEvent;
+import org.keycloak.models.cache.infinispan.authorization.events.PolicyUpdatedEvent;
 import org.keycloak.models.cache.infinispan.entities.Revisioned;
 import org.keycloak.models.cache.infinispan.events.InvalidationEvent;
+import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.provider.ProviderFactory;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -58,16 +66,31 @@ public class InfinispanCacheStoreFactoryProviderFactory implements CachedStorePr
                     Cache<String, Long> revisions = session.getProvider(InfinispanConnectionProvider.class).getCache(InfinispanConnectionProvider.AUTHORIZATION_REVISIONS_CACHE_NAME);
                     storeCache = new StoreFactoryCacheManager(cache, revisions);
                     ClusterProvider cluster = session.getProvider(ClusterProvider.class);
+                    KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
 
                     cluster.registerListener(AUTHORIZATION_INVALIDATION_EVENTS, (ClusterEvent event) -> {
-
+                        if (event instanceof PolicyUpdatedEvent) {
+                            onCacheRemove(((PolicyUpdatedEvent) event).getId(), sessionFactory);
+                        } else if (event instanceof PolicyRemovedEvent) {
+                            onCacheRemove(((PolicyRemovedEvent) event).getId(), sessionFactory);
+                        }
                         InvalidationEvent invalidationEvent = (InvalidationEvent) event;
                         storeCache.invalidationEventReceived(invalidationEvent);
-
                     });
 
-                    cluster.registerListener(AUTHORIZATION_CLEAR_CACHE_EVENTS, (ClusterEvent event) -> storeCache.clear());
-                    cluster.registerListener(REALM_CLEAR_CACHE_EVENTS, (ClusterEvent event) -> storeCache.clear());
+                    cluster.registerListener(AUTHORIZATION_CLEAR_CACHE_EVENTS, (ClusterEvent event) -> {
+                        storeCache.clear();
+                        for (ProviderFactory providerFactory : sessionFactory.getProviderFactories(PolicyProvider.class)) {
+                            PolicyProviderFactory.class.cast(providerFactory).onClearCache();
+                        }
+                    });
+
+                    cluster.registerListener(REALM_CLEAR_CACHE_EVENTS, (ClusterEvent event) -> {
+                        storeCache.clear();
+                        for (ProviderFactory providerFactory : sessionFactory.getProviderFactories(PolicyProvider.class)) {
+                            PolicyProviderFactory.class.cast(providerFactory).onClearCache();
+                        }
+                    });
 
                     log.debug("Registered cluster listeners");
                 }
@@ -81,7 +104,7 @@ public class InfinispanCacheStoreFactoryProviderFactory implements CachedStorePr
 
     @Override
     public void postInit(KeycloakSessionFactory factory) {
-
+        
     }
 
     @Override
@@ -93,4 +116,14 @@ public class InfinispanCacheStoreFactoryProviderFactory implements CachedStorePr
         return "default";
     }
 
+    private void onCacheRemove(String id, KeycloakSessionFactory factory) {
+        KeycloakModelUtils.runJobInTransaction(factory, (s) -> {
+            AuthorizationProvider authz = s.getProvider(AuthorizationProvider.class);
+            Policy policy = authz.getStoreFactory().getPolicyStore().findById(id, null);
+
+            if (policy != null) {
+                authz.getProviderFactory(policy.getType()).onCacheUpdate(id);
+            }
+        });
+    }
 }

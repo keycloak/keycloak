@@ -124,6 +124,18 @@ public class ScriptCache {
         return false;
     }
 
+    public void clear() {
+        try {
+            if (parkForWriteAndCheckInterrupt()) {
+                return;
+            }
+
+            cache.clear();
+        } finally {
+            writing.lazySet(false);
+        }
+    }
+
     private static final class CacheEntry {
 
         final String key;
