@@ -24,4 +24,5 @@ Red Hat Single Sign-On.
 * Oracle database support added to Keycloak container image. Thanks to https://github.com/nerdstep[nerdstep]
 * Clock Skew support added to SAML adapter. Thanks to https://github.com/steevebtib[steevebtib]
 * TypeScript support for Node.js adapter. Thanks to https://github.com/evanshortiss[evanshortiss]
-* Allow Gatekeeper to provide unencrypted token in header, while encrypting in cookie. Thanks to https://github.com/fredbi[fredbi]
+* Gatekeeper now allows to provide unencrypted token in header, while encrypting in cookie. There was also a bug on Gatekeeper when `Revoke Refresh Token` is enabled on the Keycloak server. The issue was fixed. Thanks to https://github.com/fredbi[fredbi]
+* New tab in the Admin console to display the list of users for client roles. Thanks to https://github.com/unly[unly]
