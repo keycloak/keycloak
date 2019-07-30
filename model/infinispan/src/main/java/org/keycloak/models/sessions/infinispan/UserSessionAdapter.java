@@ -17,6 +17,7 @@
 
 package org.keycloak.models.sessions.infinispan;
 
+import org.keycloak.common.DeviceInfo;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
@@ -32,7 +33,9 @@ import org.keycloak.models.sessions.infinispan.changes.sessions.CrossDCLastSessi
 import org.keycloak.models.sessions.infinispan.entities.AuthenticatedClientSessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.AuthenticatedClientSessionStore;
 import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
+import org.keycloak.util.JsonSerialization;
 
+import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -325,6 +328,32 @@ public class UserSessionAdapter implements UserSessionModel {
         };
 
         update(task);
+    }
+
+    @Override
+    public void setDeviceInfo(DeviceInfo deviceInfo) {
+        if (deviceInfo != null) {
+            try {
+                setNote(DeviceInfo.NOTE, JsonSerialization.writeValueAsString(deviceInfo));
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+    
+    @Override
+    public DeviceInfo getDeviceInfo() {
+        String deviceInfo = getNote(DeviceInfo.NOTE);
+        
+        if (deviceInfo == null) {
+            return null;
+        }
+        
+        try {
+            return JsonSerialization.readValue(deviceInfo, DeviceInfo.class);
+        } catch (Exception cause) {
+            throw new RuntimeException(cause);
+        }
     }
 
     @Override

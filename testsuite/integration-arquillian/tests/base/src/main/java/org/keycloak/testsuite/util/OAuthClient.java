@@ -80,6 +80,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import static org.keycloak.testsuite.admin.Users.getPasswordOf;
@@ -428,12 +429,21 @@ public class OAuthClient {
         return doGrantAccessTokenRequest(realm, username, password, null, clientId, clientSecret);
     }
 
+    public AccessTokenResponse doBeforeGrantAccessTokenRequest(String clientSecret, String username,  String password, Consumer<HttpPost> beforeTokenRequest) throws Exception {
+        return doGrantAccessTokenRequest(realm, username, password, null, clientId, clientSecret, beforeTokenRequest);
+    }
+
     public AccessTokenResponse doGrantAccessTokenRequest(String clientSecret, String username,  String password, String otp) throws Exception {
         return doGrantAccessTokenRequest(realm, username, password, otp, clientId, clientSecret);
     }
 
     public AccessTokenResponse doGrantAccessTokenRequest(String realm, String username, String password, String totp,
-                                                         String clientId, String clientSecret) throws Exception {
+            String clientId, String clientSecret) throws Exception {
+        return doGrantAccessTokenRequest(realm, username, password, totp, clientId, clientSecret, null);
+    }
+
+    public AccessTokenResponse doGrantAccessTokenRequest(String realm, String username, String password, String totp,
+                                                         String clientId, String clientSecret, Consumer<HttpPost> beforeTokenRequest) throws Exception {
         try (CloseableHttpClient client = httpClient.get()) {
             HttpPost post = new HttpPost(getResourceOwnerPasswordCredentialGrantUrl(realm));
 
@@ -473,6 +483,10 @@ public class OAuthClient {
                 throw new RuntimeException(e);
             }
             post.setEntity(formEntity);
+
+            if (beforeTokenRequest != null) {
+                beforeTokenRequest.accept(post);
+            }
 
             return new AccessTokenResponse(client.execute(post));
         }

@@ -18,6 +18,7 @@
 package org.keycloak.models;
 
 import org.keycloak.provider.Provider;
+import org.keycloak.sessions.RootAuthenticationSessionModel;
 
 import java.util.Collection;
 import java.util.List;
@@ -35,6 +36,7 @@ public interface UserSessionProvider extends Provider {
     AuthenticatedClientSessionModel getClientSession(UserSessionModel userSession, ClientModel client, UUID clientSessionId, boolean offline);
 
     UserSessionModel createUserSession(RealmModel realm, UserModel user, String loginUsername, String ipAddress, String authMethod, boolean rememberMe, String brokerSessionId, String brokerUserId);
+    UserSessionModel createUserSession(RootAuthenticationSessionModel parentSession, RealmModel realm, UserModel user, String loginUsername, String ipAddress, String authMethod, boolean rememberMe, String brokerSessionId, String brokerUserId);
     UserSessionModel createUserSession(String id, RealmModel realm, UserModel user, String loginUsername, String ipAddress, String authMethod, boolean rememberMe, String brokerSessionId, String brokerUserId);
     UserSessionModel getUserSession(RealmModel realm, String id);
     List<UserSessionModel> getUserSessions(RealmModel realm, UserModel user);

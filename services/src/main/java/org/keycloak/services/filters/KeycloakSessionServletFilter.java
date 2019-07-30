@@ -17,11 +17,15 @@
 
 package org.keycloak.services.filters;
 
+import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.common.ClientConnection;
+import org.keycloak.common.DeviceInfo;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.KeycloakTransaction;
+import ua_parser.Client;
+import ua_parser.Parser;
 
 import javax.servlet.AsyncEvent;
 import javax.servlet.AsyncListener;
@@ -40,8 +44,18 @@ import java.io.IOException;
  */
 public class KeycloakSessionServletFilter implements Filter {
 
+    private static final Logger logger = Logger.getLogger(KeycloakSessionServletFilter.class);
+    private static final int USER_AGENT_MAX_LENGTH = 512;
+
+    private Parser parser;
+    
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {
+        try {
+            parser = new Parser();
+        } catch (IOException cause) {
+            throw new RuntimeException("Failed to create user agent parser", cause);
+        }
     }
 
     @Override
@@ -53,32 +67,7 @@ public class KeycloakSessionServletFilter implements Filter {
         KeycloakSessionFactory sessionFactory = (KeycloakSessionFactory) servletRequest.getServletContext().getAttribute(KeycloakSessionFactory.class.getName());
         KeycloakSession session = sessionFactory.create();
         ResteasyProviderFactory.pushContext(KeycloakSession.class, session);
-        ClientConnection connection = new ClientConnection() {
-            @Override
-            public String getRemoteAddr() {
-                return request.getRemoteAddr();
-            }
-
-            @Override
-            public String getRemoteHost() {
-                return request.getRemoteHost();
-            }
-
-            @Override
-            public int getRemotePort() {
-                return request.getRemotePort();
-            }
-
-            @Override
-            public String getLocalAddr() {
-                return request.getLocalAddr();
-            }
-
-            @Override
-            public int getLocalPort() {
-                return request.getLocalPort();
-            }
-        };
+        ClientConnection connection = createClientConnection(request);
         session.getContext().setConnection(connection);
         ResteasyProviderFactory.pushContext(ClientConnection.class, connection);
 
@@ -129,6 +118,79 @@ public class KeycloakSessionServletFilter implements Filter {
 
         session.close();
         ResteasyProviderFactory.clearContextData();
+    }
+
+    private ClientConnection createClientConnection(HttpServletRequest request) {
+        return new ClientConnection() {
+            private DeviceInfo deviceInfo;
+
+            @Override
+            public String getRemoteAddr() {
+                return request.getRemoteAddr();
+            }
+
+            @Override
+            public String getRemoteHost() {
+                return request.getRemoteHost();
+            }
+
+            @Override
+            public int getRemotePort() {
+                return request.getRemotePort();
+            }
+
+            @Override
+            public String getLocalAddr() {
+                return request.getLocalAddr();
+            }
+
+            @Override
+            public int getLocalPort() {
+                return request.getLocalPort();
+            }
+
+            @Override
+            public DeviceInfo getDeviceInfo() {
+                if (deviceInfo == null) {
+                    String userAgent = request.getHeader("user-agent");
+
+                    if (userAgent == null) {
+                        return null;
+                    }
+                    
+                    if (userAgent.length() > USER_AGENT_MAX_LENGTH) {
+                        logger.warn("Ignoring User-Agent header. Length is above the permitted: " + USER_AGENT_MAX_LENGTH);
+                        return null;
+                    }
+
+                    deviceInfo = createDeviceInfo(userAgent);
+                }
+
+                return deviceInfo;
+            }
+
+            private DeviceInfo createDeviceInfo(String userAgent) {
+                Client client = parser.parse(userAgent);
+
+                String device = client.device.family;
+                String browser = client.userAgent.family;
+                String browserVersion = client.userAgent.major;
+                if (client.userAgent.minor != null)
+                    browserVersion += "." + client.userAgent.minor;
+                if (client.userAgent.patch != null)
+                    browserVersion += "." + client.userAgent.patch;
+                String os = client.os.family;
+                String osVersion = client.os.major;
+                if (client.os.minor != null)
+                    osVersion += "." + client.os.minor;
+                if (client.os.patch != null)
+                    osVersion += "." + client.os.patch;
+                if (client.os.patchMinor != null)
+                    osVersion += "." + client.os.patchMinor;
+
+                return new DeviceInfo(device, browser, browserVersion, os, osVersion, getRemoteAddr(), userAgent);
+            }
+        };
     }
 
     @Override

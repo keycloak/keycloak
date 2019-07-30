@@ -18,6 +18,7 @@
 package org.keycloak.models.session;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.keycloak.common.DeviceInfo;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
@@ -241,6 +242,32 @@ public class PersistentUserSessionAdapter implements OfflineUserSessionModel {
     @Override
     public void restartSession(RealmModel realm, UserModel user, String loginUsername, String ipAddress, String authMethod, boolean rememberMe, String brokerSessionId, String brokerUserId) {
         throw new IllegalStateException("Not supported");
+    }
+
+    @Override
+    public void setDeviceInfo(DeviceInfo deviceInfo) {
+        if (deviceInfo != null) {
+            try {
+                setNote(DeviceInfo.NOTE, JsonSerialization.writeValueAsString(deviceInfo));
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+    @Override
+    public DeviceInfo getDeviceInfo() {
+        String deviceInfo = getNote(DeviceInfo.NOTE);
+
+        if (deviceInfo == null) {
+            return null;
+        }
+
+        try {
+            return JsonSerialization.readValue(deviceInfo, DeviceInfo.class);
+        } catch (Exception cause) {
+            throw new RuntimeException(cause);
+        }
     }
 
     @Override

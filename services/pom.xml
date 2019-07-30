@@ -186,6 +186,10 @@
             <groupId>com.openshift</groupId>
             <artifactId>openshift-restclient-java</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.github.ua-parser</groupId>
+            <artifactId>uap-java</artifactId>
+        </dependency>
     </dependencies>
     <build>
         <plugins>
