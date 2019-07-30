@@ -1,5 +1,9 @@
 package org.keycloak.testsuite.openshift;
 
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.ContentType;
+import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.junit.Before;
@@ -8,7 +12,6 @@ import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.RealmResource;
-import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.events.Details;
@@ -29,11 +32,16 @@ import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
+import org.keycloak.testsuite.arquillian.annotation.RestartContainer;
+import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.UserBuilder;
+import org.keycloak.util.JsonSerialization;
 
+import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -44,6 +52,7 @@ import static org.junit.Assert.*;
 import static org.keycloak.common.Profile.Feature.OPENSHIFT_INTEGRATION;
 import static org.keycloak.testsuite.ProfileAssume.assumeFeatureEnabled;
 
+@RestartContainer(enableFeatures = OPENSHIFT_INTEGRATION)
 public class OpenShiftTokenReviewEndpointTest extends AbstractTestRealmKeycloakTest {
 
     private static boolean flowConfigured;
@@ -216,30 +225,29 @@ public class OpenShiftTokenReviewEndpointTest extends AbstractTestRealmKeycloakT
     }
 
     @Test
-    public void emptyScope() {
+    public void emptyScope() throws Exception {
         ClientRepresentation clientRep = testRealm().clients().findByClientId("test-app").get(0);
+        List<ClientScopeRepresentation> scopesBefore = testRealm().clients().get(clientRep.getId()).getDefaultClientScopes();
 
-        List<String> scopes = new LinkedList<>();
-        for (ClientScopeRepresentation s : testRealm().clients().get(clientRep.getId()).getDefaultClientScopes()) {
-            scopes.add(s.getId());
-        }
+        try (ClientAttributeUpdater cau = ClientAttributeUpdater.forClient(adminClient, "test", clientRep.getClientId())
+                .setConsentRequired(false)
+                .setFullScopeAllowed(false)
+                .setDefaultClientScopes(Collections.EMPTY_LIST)
+                .update()) {
 
-        for (String s : scopes) {
-            testRealm().clients().get(clientRep.getId()).removeDefaultClientScope(s);
-        }
-
-        oauth.openid(false);
-        try {
-            new Review()
-                    .invoke()
-                    .assertSuccess().assertEmptyScope();
-        } finally {
-            oauth.openid(true);
-
-            for (String s : scopes) {
-                testRealm().clients().get(clientRep.getId()).addDefaultClientScope(s);
+            oauth.openid(false);
+            try {
+                new Review()
+                        .invoke()
+                        .assertSuccess()
+                        .assertEmptyScope();
+            } finally {
+                oauth.openid(true);
             }
         }
+        // The default client scopes should be same like before.
+        int scopesAfterSize = testRealm().clients().get(clientRep.getId()).getDefaultClientScopes().size();
+        assertEquals(scopesBefore.size(), scopesAfterSize);
     }
 
     @Test
@@ -365,25 +373,27 @@ public class OpenShiftTokenReviewEndpointTest extends AbstractTestRealmKeycloakT
                     runAfterTokenRequest.run(this);
                 }
 
-                CloseableHttpClient client = HttpClientBuilder.create().build();
+                try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
+                    String url = AuthServerTestEnricher.getAuthServerContextRoot() + "/auth/realms/" + realm + "/protocol/openid-connect/ext/openshift-token-review/" + clientId;
 
-                String url = AuthServerTestEnricher.getAuthServerContextRoot() + "/auth/realms/" + realm +"/protocol/openid-connect/ext/openshift-token-review/" + clientId;
+                    OpenShiftTokenReviewRequestRepresentation request = new OpenShiftTokenReviewRequestRepresentation();
+                    OpenShiftTokenReviewRequestRepresentation.Spec spec = new OpenShiftTokenReviewRequestRepresentation.Spec();
+                    spec.setToken(token);
+                    request.setSpec(spec);
 
-                OpenShiftTokenReviewRequestRepresentation request = new OpenShiftTokenReviewRequestRepresentation();
-                OpenShiftTokenReviewRequestRepresentation.Spec spec = new OpenShiftTokenReviewRequestRepresentation.Spec();
-                spec.setToken(token);
-                request.setSpec(spec);
+                    HttpPost post = new HttpPost(url);
+                    post.setHeader(HttpHeaders.CONTENT_TYPE, ContentType.APPLICATION_JSON.toString());
+                    post.setHeader(HttpHeaders.ACCEPT, ContentType.APPLICATION_JSON.toString());
+                    post.setEntity(new StringEntity(JsonSerialization.writeValueAsString(request)));
 
-                SimpleHttp.Response r = SimpleHttp.doPost(url, client).json(request).asResponse();
+                    try (CloseableHttpResponse resp = client.execute(post)) {
+                        responseStatus = resp.getStatusLine().getStatusCode();
+                        response = JsonSerialization.readValue(resp.getEntity().getContent(), OpenShiftTokenReviewResponseRepresentation.class);
+                    }
 
-                responseStatus = r.getStatus();
-                response = r.asJson(OpenShiftTokenReviewResponseRepresentation.class);
-
-                assertEquals("authentication.k8s.io/v1beta1", response.getApiVersion());
-                assertEquals("TokenReview", response.getKind());
-
-                client.close();
-
+                    assertEquals("authentication.k8s.io/v1beta1", response.getApiVersion());
+                    assertEquals("TokenReview", response.getKind());
+                }
                 return this;
             } catch (Exception e) {
                 throw new RuntimeException(e);
