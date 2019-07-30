@@ -25,6 +25,8 @@ import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.common.util.ConcurrentMultivaluedHashMap;
 import org.keycloak.testsuite.arquillian.TestContext;
+import java.util.LinkedList;
+import java.util.function.Consumer;
 
 /**
  * Enlist resources to be cleaned after test method
@@ -45,6 +47,7 @@ public class TestCleanup {
 
     private final TestContext testContext;
     private final String realmName;
+    private final List<Runnable> genericCleanups = new LinkedList<>();
 
     // Key is kind of entity (eg. "client", "role", "user" etc), Values are all kind of entities of given type to cleanup
     private ConcurrentMultivaluedHashMap<String, String> entities = new ConcurrentMultivaluedHashMap<>();
@@ -55,6 +58,20 @@ public class TestCleanup {
         this.realmName = realmName;
     }
 
+
+    public void addCleanup(Runnable r) {
+        genericCleanups.add(r);
+    }
+
+    public void addCleanup(AutoCloseable c) {
+        genericCleanups.add(() -> {
+            try {
+                c.close();
+            } catch (Exception ex) {
+                // ignore
+            }
+        });
+    }
 
     public void addUserId(String userId) {
         entities.add(USER_IDS, userId);
@@ -80,7 +97,6 @@ public class TestCleanup {
         entities.add(CLIENT_SCOPE_IDS, clientScopeId);
     }
 
-
     public void addRoleId(String roleId) {
         entities.add(ROLE_IDS, roleId);
     }
@@ -103,6 +119,8 @@ public class TestCleanup {
 
     public void executeCleanup() {
         RealmResource realm = getAdminClient().realm(realmName);
+
+        this.genericCleanups.forEach(Runnable::run);
 
         List<String> userIds = entities.get(USER_IDS);
         if (userIds != null) {
