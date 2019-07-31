@@ -32,6 +32,7 @@ import org.keycloak.events.Errors;
 import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -53,6 +54,7 @@ import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThat;
 
 import javax.ws.rs.ClientErrorException;
 
@@ -92,6 +94,16 @@ public class ServiceAccountTest extends AbstractKeycloakTest {
                 .build();
 
         realm.client(enabledApp);
+
+        ClientRepresentation enabledAppWithSkipRefreshToken = ClientBuilder.create()
+                .id(KeycloakModelUtils.generateId())
+                .clientId("service-account-cl-use-refresh-off")
+                .secret("secret1")
+                .serviceAccountsEnabled(true)
+                .attribute(OIDCConfigAttributes.USE_REFRESH_TOKEN_FOR_CLIENT_CREDENTIALS_GRANT, "false")
+                .build();
+
+        realm.client(enabledAppWithSkipRefreshToken);
 
         ClientRepresentation disabledApp = ClientBuilder.create()
                 .id(KeycloakModelUtils.generateId())
@@ -310,6 +322,23 @@ public class ServiceAccountTest extends AbstractKeycloakTest {
         serviceAccount.update(representation);
     }
     
+    /**
+     * See KEYCLOAK-9551
+     */
+    @Test
+    public void clientCredentialsAuthSuccessWithUseRefreshTokenOff() throws Exception {
+        oauth.clientId("service-account-cl-use-refresh-off");
+
+        OAuthClient.AccessTokenResponse response = oauth.doClientCredentialsGrantAccessTokenRequest("secret1");
+
+        assertEquals(200, response.getStatusCode());
+        String tokenString = response.getAccessToken();
+
+        Assert.assertNotNull("Access-Token should be present", tokenString);
+        oauth.verifyToken(tokenString);
+        Assert.assertNull("Refresh-Token should not be present", response.getRefreshToken());
+    }
+
     private void conductClientCredentialsAuthRequest(String expectedRefreshAlg, String expectedAccessAlg, String realmTokenAlg) throws Exception {
         try {
             /// Realm Setting is used for ID Token Signature Algorithm

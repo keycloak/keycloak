@@ -114,6 +114,21 @@ public class OIDCAdvancedConfigWrapper {
         return Boolean.parseBoolean(useUtlsHokToken);
     }
 
+    // KEYCLOAK-9551 Client Credentials Grant generates refresh token
+    // https://tools.ietf.org/html/rfc6749#section-4.4.3
+    public boolean isUseRefreshTokenForClientCredentialsGrant() {
+        // "true" -> we allow use of refresh_token for client_credentials grant by default for backwards compatibility
+        String val = getAttribute(OIDCConfigAttributes.USE_REFRESH_TOKEN_FOR_CLIENT_CREDENTIALS_GRANT, "true");
+        return Boolean.parseBoolean(val);
+    }
+
+    // KEYCLOAK-9551 Client Credentials Grant generates refresh token
+    // https://tools.ietf.org/html/rfc6749#section-4.4.3
+    public void setUseRefreshTokenForClientCredentialsGrant(boolean enable) {
+        String val =  String.valueOf(enable);
+        setAttribute(OIDCConfigAttributes.USE_REFRESH_TOKEN_FOR_CLIENT_CREDENTIALS_GRANT, val);
+    }
+
     public void setUseMtlsHoKToken(boolean useUtlsHokToken) {
         String val = String.valueOf(useUtlsHokToken);
         setAttribute(OIDCConfigAttributes.USE_MTLS_HOK_TOKEN, val);
@@ -200,6 +215,14 @@ public class OIDCAdvancedConfigWrapper {
         } else {
             return clientRep.getAttributes()==null ? null : clientRep.getAttributes().get(attrKey);
         }
+    }
+
+    private String getAttribute(String attrKey, String defaultValue) {
+        String value = getAttribute(attrKey);
+        if (value == null) {
+            return defaultValue;
+        }
+        return value;
     }
 
     private void setAttribute(String attrKey, String attrValue) {

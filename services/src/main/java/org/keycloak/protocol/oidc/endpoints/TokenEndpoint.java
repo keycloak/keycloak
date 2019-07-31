@@ -732,8 +732,13 @@ public class TokenEndpoint {
         updateUserSessionFromClientAuth(userSession);
 
         TokenManager.AccessTokenResponseBuilder responseBuilder = tokenManager.responseBuilder(realm, client, event, session, userSession, clientSessionCtx)
-                .generateAccessToken()
-                .generateRefreshToken();
+                .generateAccessToken();
+
+        // KEYCLOAK-9551 Client Credentials Grant generates refresh token handling
+        boolean useRefreshToken = OIDCAdvancedConfigWrapper.fromClientModel(client).isUseRefreshTokenForClientCredentialsGrant();
+        if (useRefreshToken) {
+            responseBuilder = responseBuilder.generateRefreshToken();
+        }
 
         String scopeParam = clientSessionCtx.getClientSession().getNote(OAuth2Constants.SCOPE);
         if (TokenUtil.isOIDCRequest(scopeParam)) {
@@ -744,6 +749,13 @@ public class TokenEndpoint {
         AccessTokenResponse res = responseBuilder.build();
 
         event.success();
+
+        // KEYCLOAK-9551 Client Credentials Grant generates refresh token handling
+        if (!useRefreshToken) {
+            // remove dangling user session if refresh_token is not used.
+            // Note that the generated access_token cannot be verified via the token_introspection endpoint if the associated session is missing.
+            session.sessions().removeUserSession(realm, userSession);
+        }
 
         return cors.builder(Response.ok(res, MediaType.APPLICATION_JSON_TYPE)).build();
     }
