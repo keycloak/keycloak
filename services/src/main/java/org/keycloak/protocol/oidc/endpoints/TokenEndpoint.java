@@ -680,8 +680,14 @@ public class TokenEndpoint {
         updateUserSessionFromClientAuth(userSession);
 
         TokenManager.AccessTokenResponseBuilder responseBuilder = tokenManager.responseBuilder(realm, client, event, session, userSession, clientSessionCtx)
-                .generateAccessToken()
-                .generateRefreshToken();
+                .generateAccessToken();
+
+        // KEYCLOAK-9551 Client Credentials Grant generates refresh token handling
+        boolean skipRefreshTokenEnabled = OIDCAdvancedConfigWrapper.fromClientModel(client).isSkipRefreshTokenForClientCredentialsEnabled();
+        if (!skipRefreshTokenEnabled) {
+            responseBuilder = responseBuilder
+                    .generateRefreshToken();
+        }
 
         String scopeParam = clientSessionCtx.getClientSession().getNote(OAuth2Constants.SCOPE);
         if (TokenUtil.isOIDCRequest(scopeParam)) {
@@ -692,6 +698,10 @@ public class TokenEndpoint {
         AccessTokenResponse res = responseBuilder.build();
 
         event.success();
+
+        if (skipRefreshTokenEnabled) {
+            session.sessions().removeUserSession(realm, userSession);
+        }
 
         return cors.builder(Response.ok(res, MediaType.APPLICATION_JSON_TYPE)).build();
     }

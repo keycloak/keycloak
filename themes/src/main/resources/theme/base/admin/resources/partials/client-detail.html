@@ -501,6 +501,13 @@
                 </div>
                 <kc-tooltip>{{:: 'exclude-session-state-from-auth-response.tooltip' | translate}}</kc-tooltip>
             </div>
+            <div class="form-group clearfix block" data-ng-show="protocol == 'openid-connect'">
+                <label class="col-md-2 control-label" for="skipRefreshTokenForClientCredentials">{{:: 'skip-refresh-token-for-client-credentials' | translate}}</label>
+                <div class="col-md-6">
+                    <input ng-model="skipRefreshTokenForClientCredentials" ng-click="switchChange()" name="skipRefreshTokenForClientCredentials" id="skipRefreshTokenForClientCredentials" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}"/>
+                </div>
+                <kc-tooltip>{{:: 'skip-refresh-token-for-client-credentials.tooltip' | translate}}</kc-tooltip>
+            </div>
         </fieldset>
 
         <fieldset data-ng-show="protocol == 'openid-connect'">

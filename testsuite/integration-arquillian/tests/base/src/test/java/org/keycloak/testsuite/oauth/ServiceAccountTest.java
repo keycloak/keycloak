@@ -29,6 +29,7 @@ import org.keycloak.events.Errors;
 import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -48,6 +49,7 @@ import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThat;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -82,6 +84,16 @@ public class ServiceAccountTest extends AbstractKeycloakTest {
                 .build();
 
         realm.client(enabledApp);
+
+        ClientRepresentation enabledAppWithSkipRefreshToken = ClientBuilder.create()
+                .id(KeycloakModelUtils.generateId())
+                .clientId("service-account-cl-skip-refresh")
+                .secret("secret1")
+                .serviceAccountsEnabled(true)
+                .attribute(OIDCConfigAttributes.SKIP_REFRESH_TOKEN_FOR_CLIENT_CREDENTIALS_GRANT, "true")
+                .build();
+
+        realm.client(enabledAppWithSkipRefreshToken);
 
         ClientRepresentation disabledApp = ClientBuilder.create()
                 .id(KeycloakModelUtils.generateId())
@@ -279,6 +291,24 @@ public class ServiceAccountTest extends AbstractKeycloakTest {
     @Test
     public void clientCredentialsAuthRequest_ClientES256_RealmPS256() throws Exception {
     	conductClientCredentialsAuthRequest(Algorithm.HS256, Algorithm.ES256, Algorithm.PS256);
+    }
+
+    /**
+     * See KEYCLOAK-9551
+     * @throws Exception
+     */
+    @Test
+    public void clientCredentialsAuthSuccessWithSkipRefreshToken() throws Exception {
+        oauth.clientId("service-account-cl-skip-refresh\"");
+
+        OAuthClient.AccessTokenResponse response = oauth.doClientCredentialsGrantAccessTokenRequest("secret1");
+
+        assertEquals(200, response.getStatusCode());
+        String tokenString = response.getAccessToken();
+
+        Assert.assertNull("Access-Token should be present", tokenString);
+        oauth.verifyToken(tokenString);
+        Assert.assertNull("Refresh-Token should not be present", response.getRefreshToken());
     }
 
     private void conductClientCredentialsAuthRequest(String expectedRefreshAlg, String expectedAccessAlg, String realmTokenAlg) throws Exception {

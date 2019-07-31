@@ -47,6 +47,8 @@ public final class OIDCConfigAttributes {
 
     public static final String PKCE_CODE_CHALLENGE_METHOD = "pkce.code.challenge.method";
 
+    public static final String SKIP_REFRESH_TOKEN_FOR_CLIENT_CREDENTIALS_GRANT = "client_credentials.skip_refresh_token";
+
     private OIDCConfigAttributes() {
     }
 

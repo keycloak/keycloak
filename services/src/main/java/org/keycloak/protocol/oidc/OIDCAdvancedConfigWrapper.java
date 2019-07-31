@@ -113,6 +113,18 @@ public class OIDCAdvancedConfigWrapper {
         return Boolean.parseBoolean(useUtlsHokToken);
     }
 
+    public boolean isSkipRefreshTokenForClientCredentialsEnabled() {
+        String issueRefreshTokenForClientCredentials = getAttribute(OIDCConfigAttributes.SKIP_REFRESH_TOKEN_FOR_CLIENT_CREDENTIALS_GRANT);
+        return Boolean.parseBoolean(issueRefreshTokenForClientCredentials);
+    }
+
+    // KEYCLOAK-9551 Client Credentials Grant generates refresh token
+    // https://tools.ietf.org/html/rfc6749#section-4.4.3
+    public void setSkipRefreshTokenForClientCredentialsEnabled(boolean enable) {
+        String val = String.valueOf(enable);
+        setAttribute(OIDCConfigAttributes.SKIP_REFRESH_TOKEN_FOR_CLIENT_CREDENTIALS_GRANT, val);
+    }
+
     public void setUseMtlsHoKToken(boolean useUtlsHokToken) {
         String val = String.valueOf(useUtlsHokToken);
         setAttribute(OIDCConfigAttributes.USE_MTLS_HOK_TOKEN, val);
