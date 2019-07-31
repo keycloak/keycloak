@@ -136,7 +136,7 @@ public class ClientManager {
             clientResource.getScopeMappings().realmLevel().remove(Collections.singletonList(newRole));
         }
 
-        public void addRedirectUris(String... redirectUris) {
+        public ClientManagerBuilder addRedirectUris(String... redirectUris) {
             ClientRepresentation app = clientResource.toRepresentation();
             if (app.getRedirectUris() == null) {
                 app.setRedirectUris(new LinkedList<String>());
@@ -145,6 +145,7 @@ public class ClientManager {
                 app.getRedirectUris().add(redirectUri);
             }
             clientResource.update(app);
+            return this;
         }
 
         public void removeRedirectUris(String... redirectUris) {
