@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 Red Hat, Inc. and/or its affiliates
+ * Copyright 2020 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,43 +13,41 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 
 package org.keycloak.models.sessions.infinispan;
 
-import java.util.UUID;
 import java.util.function.Supplier;
 
 import org.infinispan.commons.api.BasicCache;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
-import org.keycloak.models.CodeToTokenStoreProvider;
-import org.keycloak.models.CodeToTokenStoreProviderFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.TokenRevocationStoreProvider;
+import org.keycloak.models.TokenRevocationStoreProviderFactory;
 import org.keycloak.models.sessions.infinispan.entities.ActionTokenValueEntity;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class InfinispanCodeToTokenStoreProviderFactory implements CodeToTokenStoreProviderFactory {
-
-    private static final Logger LOG = Logger.getLogger(InfinispanCodeToTokenStoreProviderFactory.class);
+public class InfinispanTokenRevocationStoreProviderFactory implements TokenRevocationStoreProviderFactory {
 
     // Reuse "actionTokens" infinispan cache for now
-    private volatile Supplier<BasicCache<UUID, ActionTokenValueEntity>> codeCache;
+    private volatile Supplier<BasicCache<String, ActionTokenValueEntity>> tokenCache;
 
     @Override
-    public CodeToTokenStoreProvider create(KeycloakSession session) {
+    public TokenRevocationStoreProvider create(KeycloakSession session) {
         lazyInit(session);
-        return new InfinispanCodeToTokenStoreProvider(session, codeCache);
+        return new InfinispanTokenRevocationStoreProvider(session, tokenCache);
     }
 
     private void lazyInit(KeycloakSession session) {
-        if (codeCache == null) {
+        if (tokenCache == null) {
             synchronized (this) {
-                if (codeCache == null) {
-                    this.codeCache = InfinispanSingleUseTokenStoreProviderFactory.getActionTokenCache(session);
+                if (tokenCache == null) {
+                    this.tokenCache = InfinispanSingleUseTokenStoreProviderFactory.getActionTokenCache(session);
                 }
             }
         }
@@ -74,4 +72,5 @@ public class InfinispanCodeToTokenStoreProviderFactory implements CodeToTokenSto
     public String getId() {
         return "infinispan";
     }
+
 }

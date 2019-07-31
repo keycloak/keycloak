@@ -2284,6 +2284,8 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         AuthorizationResponse response = authzClient.authorization().authorize(request);
 
         assertNotNull(response.getToken());
+        // Refresh token should not be present
+        assertNull(response.getRefreshToken());
     }
 
     private void testRptRequestWithResourceName(String configFile) {

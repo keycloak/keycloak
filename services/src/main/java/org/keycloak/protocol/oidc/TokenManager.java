@@ -46,6 +46,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.TokenRevocationStoreProvider;
 import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
@@ -90,6 +91,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 
 import static org.keycloak.representations.IDToken.NONCE;
+import static org.keycloak.representations.IDToken.PHONE_NUMBER;
 
 /**
  * Stateless object that creates tokens and manages oauth access codes
@@ -233,28 +235,43 @@ public class TokenManager {
             return false;
         }
 
-        boolean valid = false;
-
-        UserSessionModel userSession = new UserSessionCrossDCManager(session).getUserSessionWithClient(realm, token.getSessionState(), false, client.getId());
-
-        if (AuthenticationManager.isSessionValid(realm, userSession)) {
-            valid = isUserValid(session, realm, token, userSession);
-        } else {
-            userSession = new UserSessionCrossDCManager(session).getUserSessionWithClient(realm, token.getSessionState(), true, client.getId());
-            if (AuthenticationManager.isOfflineSessionValid(realm, userSession)) {
-                valid = isUserValid(session, realm, token, userSession);
-            }
+        TokenRevocationStoreProvider revocationStore = session.getProvider(TokenRevocationStoreProvider.class);
+        if (revocationStore.isRevoked(token.getId())) {
+            return false;
         }
 
-        if (valid) {
-            userSession.setLastSessionRefresh(Time.currentTime());
+        boolean valid = false;
+
+        // Tokens without sessions are considered valid. Signature check and revocation check are sufficient checks for them
+        if (token.getSessionState() == null) {
+            UserModel user = lookupUserFromStatelessToken(session, realm, token);
+            valid = isUserValid(session, realm, token, user);
+        } else {
+
+            UserSessionModel userSession = new UserSessionCrossDCManager(session).getUserSessionWithClient(realm, token.getSessionState(), false, client.getId());
+
+            if (AuthenticationManager.isSessionValid(realm, userSession)) {
+                valid = isUserValid(session, realm, token, userSession.getUser());
+            } else {
+                userSession = new UserSessionCrossDCManager(session).getUserSessionWithClient(realm, token.getSessionState(), true, client.getId());
+                if (AuthenticationManager.isOfflineSessionValid(realm, userSession)) {
+                    valid = isUserValid(session, realm, token, userSession.getUser());
+                }
+            }
+
+            if (valid && (token.getIssuedAt() + 1 < userSession.getStarted())) {
+                valid = false;
+            }
+
+            if (valid) {
+                userSession.setLastSessionRefresh(Time.currentTime());
+            }
         }
 
         return valid;
     }
 
-    private boolean isUserValid(KeycloakSession session, RealmModel realm, AccessToken token, UserSessionModel userSession) {
-        UserModel user = userSession.getUser();
+    private boolean isUserValid(KeycloakSession session, RealmModel realm, AccessToken token, UserModel user) {
         if (user == null) {
             return false;
         }
@@ -268,11 +285,28 @@ public class TokenManager {
         } catch (VerificationException e) {
             return false;
         }
-
-        if (token.getIssuedAt() + 1 < userSession.getStarted()) {
-            return false;
-        }
         return true;
+    }
+
+    /**
+     * Lookup user from the "stateless" token. Stateless token is the token without sessionState filled (token doesn't belong to any userSession)
+     */
+    public static UserModel lookupUserFromStatelessToken(KeycloakSession session, RealmModel realm, AccessToken token) {
+        // Try to lookup user based on "sub" claim. It should work for most cases with some rare exceptions (EG. OIDC "pairwise" subjects)
+        UserModel user = session.users().getUserById(token.getSubject(), realm);
+        if (user != null) {
+            return user;
+        }
+
+        // Fallback to lookup user based on username (preferred_username claim)
+        if (token.getPreferredUsername() != null) {
+            user = session.users().getUserByUsername(token.getPreferredUsername(), realm);
+            if (user != null) {
+                return user;
+            }
+        }
+
+        return user;
     }
 
 

@@ -25,6 +25,7 @@ org.keycloak.models.RoleSpi
 org.keycloak.models.ActionTokenStoreSpi
 org.keycloak.models.CodeToTokenStoreSpi
 org.keycloak.models.SingleUseTokenStoreSpi
+org.keycloak.models.TokenRevocationStoreSpi
 org.keycloak.models.UserSessionSpi
 org.keycloak.models.UserSpi
 org.keycloak.models.session.UserSessionPersisterSpi

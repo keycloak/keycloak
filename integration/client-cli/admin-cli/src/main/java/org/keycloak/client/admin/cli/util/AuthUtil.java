@@ -62,7 +62,7 @@ public class AuthUtil {
 
             // check refresh_token against expiry time
             // if it's less than 5s to expiry, fail with credentials expired
-            if (realmConfig.getRefreshExpiresAt() - now < 5000) {
+            if (realmConfig.getRefreshExpiresAt() != null && realmConfig.getRefreshExpiresAt() - now < 5000) {
                 throw new RuntimeException("Session has expired. Login again with '" + OsUtil.CMD + " config credentials'");
             }
 
@@ -72,10 +72,15 @@ public class AuthUtil {
 
             try {
                 String authorization = null;
+                StringBuilder body = new StringBuilder();
+                if (realmConfig.getRefreshToken() != null) {
+                    body.append("grant_type=refresh_token")
+                            .append("&refresh_token=").append(realmConfig.getRefreshToken());
+                } else {
+                    body.append("grant_type=").append(realmConfig.getGrantTypeForAuthentication());
+                }
 
-                StringBuilder body = new StringBuilder("grant_type=refresh_token")
-                        .append("&refresh_token=").append(realmConfig.getRefreshToken())
-                        .append("&client_id=").append(urlencode(realmConfig.getClientId()));
+                body.append("&client_id=").append(urlencode(realmConfig.getClientId()));
 
                 if (realmConfig.getSigningToken() != null) {
                     body.append("&client_assertion_type=urn:ietf:params:oauth:client-assertion-type:jwt-bearer")
@@ -94,7 +99,9 @@ public class AuthUtil {
                     realmData.setToken(token.getToken());
                     realmData.setRefreshToken(token.getRefreshToken());
                     realmData.setExpiresAt(currentTimeMillis() + token.getExpiresIn() * 1000);
-                    realmData.setRefreshExpiresAt(currentTimeMillis() + token.getRefreshExpiresIn() * 1000);
+                    if (token.getRefreshToken() != null) {
+                        realmData.setRefreshExpiresAt(currentTimeMillis() + token.getRefreshExpiresIn() * 1000);
+                    }
                 });
                 return token.getToken();
 
