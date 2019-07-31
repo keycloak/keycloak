@@ -122,6 +122,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
         realmRepresentation.getClients().add(org.keycloak.testsuite.util.ClientBuilder.create()
                 .clientId("service-account-app")
                 .serviceAccount()
+                .attribute(OIDCConfigAttributes.USE_REFRESH_TOKEN_FOR_CLIENT_CREDENTIALS_GRANT, "true")
                 .secret("secret")
                 .build());
 

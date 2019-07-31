@@ -18,6 +18,7 @@ package org.keycloak.client.admin.cli.commands;
 
 import org.jboss.aesh.cl.Option;
 import org.jboss.aesh.console.command.invocation.CommandInvocation;
+import org.keycloak.OAuth2Constants;
 import org.keycloak.client.admin.cli.config.ConfigData;
 import org.keycloak.client.admin.cli.config.ConfigHandler;
 import org.keycloak.client.admin.cli.config.FileConfigHandler;
@@ -264,6 +265,8 @@ public abstract class AbstractAuthOptionsCmd extends AbstractGlobalOptionsCmd {
             rdata.setClientId(clientId);
         if (secret != null)
             rdata.setSecret(secret);
+        String grantTypeForAuthentication = user == null ? OAuth2Constants.CLIENT_CREDENTIALS : OAuth2Constants.PASSWORD;
+        rdata.setGrantTypeForAuthentication(grantTypeForAuthentication);
     }
 
     protected void checkUnsupportedOptions(String ... options) {

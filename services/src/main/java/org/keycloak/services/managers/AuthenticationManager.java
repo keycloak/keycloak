@@ -67,6 +67,7 @@ import org.keycloak.protocol.LoginProtocol.Error;
 import org.keycloak.protocol.oidc.BackchannelLogoutResponse;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.Urls;
@@ -1305,23 +1306,24 @@ public class AuthenticationManager {
                 }
             }
 
-            UserSessionModel userSession = session.sessions().getUserSession(realm, token.getSessionState());
+            UserSessionModel userSession = null;
             UserModel user = null;
-            if (userSession != null) {
-                user = userSession.getUser();
-                if (user == null || !user.isEnabled()) {
-                    logger.debug("Unknown user in identity token");
+            if (token.getSessionState() == null) {
+                user = TokenManager.lookupUserFromStatelessToken(session, realm, token);
+                if (!isUserValid(session, realm, user, token)) {
                     return null;
                 }
-
-                int userNotBefore = session.users().getNotBeforeOfUser(realm, user);
-                if (token.getIssuedAt() < userNotBefore) {
-                    logger.debug("User notBefore newer than token");
-                    return null;
+            } else {
+                userSession = session.sessions().getUserSession(realm, token.getSessionState());
+                if (userSession != null) {
+                    user = userSession.getUser();
+                    if (!isUserValid(session, realm, user, token)) {
+                        return null;
+                    }
                 }
             }
 
-            if (!isSessionValid(realm, userSession)) {
+            if (token.getSessionState() != null && !isSessionValid(realm, userSession)) {
                 // Check if accessToken was for the offline session.
                 if (!isCookie) {
                     UserSessionModel offlineUserSession = session.sessions().getOfflineUserSession(realm, token.getSessionState());
@@ -1343,6 +1345,21 @@ public class AuthenticationManager {
             logger.debugf("Failed to verify identity token: %s", e.getMessage());
         }
         return null;
+    }
+
+    private static boolean isUserValid(KeycloakSession session, RealmModel realm, UserModel user, AccessToken token) {
+        if (user == null || !user.isEnabled()) {
+            logger.debug("Unknown user in identity token");
+            return false;
+        }
+
+        int userNotBefore = session.users().getNotBeforeOfUser(realm, user);
+        if (token.getIssuedAt() < userNotBefore) {
+            logger.debug("User notBefore newer than token");
+            return false;
+        }
+
+        return true;
     }
 
     public enum AuthenticationStatus {
