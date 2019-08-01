@@ -21,7 +21,8 @@ import javax.ws.rs.core.UriBuilder;
 import org.keycloak.testsuite.page.AbstractPageWithInjectedUrl;
 import org.keycloak.testsuite.util.WaitUtils;
 
-import static org.keycloak.testsuite.util.WaitUtils.pause;
+import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
+
 import org.openqa.selenium.By;
 
 /**
@@ -31,7 +32,7 @@ public abstract class SAMLServlet extends AbstractPageWithInjectedUrl {
 
     public void logout() {
         driver.navigate().to(getUriBuilder().clone().queryParam("GLO", "true").build().toASCIIString());
-        pause(300);
+        waitForPageToLoad();
     }
 
     public void checkRoles(boolean check) {
@@ -44,13 +45,14 @@ public abstract class SAMLServlet extends AbstractPageWithInjectedUrl {
 
     public void checkRolesEndPoint(boolean value) {
         driver.navigate().to(getUriBuilder().clone().path((value ? "" : "un") + "checkRoles").build().toASCIIString());
-        pause(300);
+        waitForPageToLoad();
     }
 
     public void setRolesToCheck(String roles) {
         UriBuilder uriBuilder = getUriBuilder().clone();
         String toASCIIString = uriBuilder.path("setCheckRoles").queryParam("roles", roles).build().toASCIIString();
         driver.navigate().to(toASCIIString);
+        waitForPageToLoad();
         WaitUtils.waitUntilElement(By.tagName("body")).text().contains("These roles will be checked:");
     }
 }
