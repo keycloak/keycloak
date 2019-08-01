@@ -153,7 +153,8 @@ export function makeRoutes(): React.ReactNode {
 
     const routes: React.ReactElement<Route>[] = pageDefs.map((page: PageDef) => {
         if (isModulePageDef(page)) {
-            return <Route key={page.itemId} path={'/app/' + page.path} exact component={page.module[page.componentName]}/>;
+            const node: React.ReactNode = React.createElement(page.module[page.componentName], {'pageDef': page});
+            return <Route key={page.itemId} path={'/app/' + page.path} exact render={() => node} />;
         } else {
             const pageDef: ComponentPageDef = page as ComponentPageDef;
             return <Route key={page.itemId} path={'/app/' + page.path} exact component={pageDef.component}/>;
