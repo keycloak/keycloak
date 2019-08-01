@@ -202,7 +202,7 @@
                                 </a>
                             </td>
                             <td>
-                                <a href="${resource.resourceServer.redirectUri}">${resource.resourceServer.name}</a>
+                                <a href="${resource.resourceServer.baseUri}">${resource.resourceServer.name}</a>
                             </td>
                             <td>
                                 <#if resource.shares?size != 0>
@@ -259,7 +259,7 @@
                                         <#if resource.owner.email??>${resource.owner.email}<#else>${resource.owner.username}</#if>
                                     </td>
                                     <td>
-                                        <a href="${resource.resourceServer.redirectUri}">${resource.resourceServer.name}</a>
+                                        <a href="${resource.resourceServer.baseUri}">${resource.resourceServer.name}</a>
                                     </td>
                                     <td>
                                         <#if resource.permissions?size != 0>

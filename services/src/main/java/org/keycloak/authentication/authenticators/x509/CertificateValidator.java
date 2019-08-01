@@ -54,10 +54,13 @@ import java.util.List;
 import java.util.Set;
 import java.util.LinkedList;
 import java.util.ArrayList;
+import java.util.Map;
 import java.util.stream.Collectors;
+import javax.security.auth.x500.X500Principal;
 
 import org.keycloak.saml.common.exceptions.ProcessingException;
 import org.keycloak.saml.processing.core.util.XMLSignatureUtil;
+import org.keycloak.truststore.TruststoreProvider;
 
 /**
  * @author <a href="mailto:pnalyvayko@agi.com">Peter Nalyvayko</a>
@@ -464,20 +467,48 @@ public class CertificateValidator {
         validateExtendedKeyUsage(_certChain, _extendedKeyUsage);
         return this;
     }
+
+    private X509Certificate findCAInTruststore(X500Principal issuer) throws GeneralSecurityException {
+        TruststoreProvider truststoreProvider = session.getProvider(TruststoreProvider.class);
+        if (truststoreProvider == null || truststoreProvider.getTruststore() == null) {
+            return null;
+        }
+        Map<X500Principal, X509Certificate> rootCerts = truststoreProvider.getRootCertificates();
+        X509Certificate ca = rootCerts.get(issuer);
+        if (ca != null) {
+            ca.checkValidity();
+        }
+        return ca;
+    }
+
     private void checkRevocationUsingOCSP(X509Certificate[] certs) throws GeneralSecurityException {
 
-        if (certs.length < 2) {
-            // OCSP requires a responder certificate to verify OCSP
-            // signed response.
-            String message = "OCSP requires a responder certificate. OCSP cannot be used to verify the revocation status of self-signed certificates.";
-            throw new GeneralSecurityException(message);
+        if (logger.isDebugEnabled() && certs != null) {
+            for (X509Certificate cert : certs) {
+                logger.debugf("Certificate: %s", cert.getSubjectDN().getName());
+            }
         }
 
-        for (X509Certificate cert : certs) {
-            logger.debugf("Certificate: %s", cert.getSubjectDN().getName());
+        X509Certificate cert = null;
+        X509Certificate issuer = null;
+
+        if (certs == null || certs.length == 0) {
+             throw new GeneralSecurityException("No certificates sent");
+        } else if (certs.length > 1) {
+            cert = certs[0];
+            issuer = certs[1];
+        } else {
+            // only one cert => find the CA certificate using the truststore SPI
+            cert = certs[0];
+            issuer = findCAInTruststore(cert.getIssuerX500Principal());
+            if (issuer == null) {
+                throw new GeneralSecurityException(
+                        String.format("No trusted CA in certificate found: %s. Add it to truststore SPI if valid.",
+                                cert.getIssuerX500Principal()));
+            }
         }
 
-        OCSPUtils.OCSPRevocationStatus rs = ocspChecker.check(certs[0], certs[1]);
+        OCSPUtils.OCSPRevocationStatus rs = ocspChecker.check(cert, issuer);
 
         if (rs == null) {
             throw new GeneralSecurityException("Unable to check client revocation status using OCSP");

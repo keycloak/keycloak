@@ -76,24 +76,40 @@ public class SAML2Request {
     }
 
     /**
+     * Create authentication request with protocolBinding defaulting to POST
+     *
+     * @param id
+     * @param assertionConsumerURL
+     * @param destination
+     * @param issuerValue
+     * @return
+     * @throws ConfigurationException
+     */
+    public AuthnRequestType createAuthnRequestType(String id, String assertionConsumerURL, String destination,
+                                                   String issuerValue) throws ConfigurationException {
+        return createAuthnRequestType(id, assertionConsumerURL, destination, issuerValue, JBossSAMLURIConstants.SAML_HTTP_POST_BINDING.getUri());
+    }
+
+    /**
      * Create an authentication request
      *
      * @param id
      * @param assertionConsumerURL
      * @param destination
      * @param issuerValue
+     * @param protocolBindingUri
      *
      * @return
      *
      * @throws ConfigurationException
      */
     public AuthnRequestType createAuthnRequestType(String id, String assertionConsumerURL, String destination,
-                                                   String issuerValue) throws ConfigurationException {
+                                                   String issuerValue, URI protocolBinding) throws ConfigurationException {
         XMLGregorianCalendar issueInstant = XMLTimeUtil.getIssueInstant();
 
         AuthnRequestType authnRequest = new AuthnRequestType(id, issueInstant);
         authnRequest.setAssertionConsumerServiceURL(URI.create(assertionConsumerURL));
-        authnRequest.setProtocolBinding(JBossSAMLURIConstants.SAML_HTTP_POST_BINDING.getUri());
+        authnRequest.setProtocolBinding(protocolBinding);
         if (destination != null) {
             authnRequest.setDestination(URI.create(destination));
         }

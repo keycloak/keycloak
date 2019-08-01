@@ -145,6 +145,10 @@ public class LoginForm extends Form {
         return accountFields.getUsernameLabel();
     }
 
+    public String getUsername() {
+        return accountFields.getUsername();
+    }
+
     public String getPasswordLabel() {
         return passwordFields.getPasswordLabel();
     }

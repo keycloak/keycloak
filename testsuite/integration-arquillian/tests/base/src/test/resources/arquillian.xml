@@ -122,6 +122,7 @@
             <!-- This is required for domain mode -->
             <property name="allowConnectingToRunningServer">true</property>
             <property name="jbossArguments">
+                -Djboss.as.management.blocking.timeout=${auth.server.jboss.startup.timeout}
                 -Djboss.socket.binding.port-offset=${auth.server.port.offset}
                 -Djboss.bind.address=0.0.0.0 
                 -Dauth.server.http.port=${auth.server.http.port}
@@ -155,6 +156,7 @@
                 <property name="jbossHome">${auth.server.backend1.home}</property>
                 <property name="serverConfig">standalone-ha.xml</property>
                 <property name="jbossArguments">
+                    -Djboss.as.management.blocking.timeout=${auth.server.jboss.startup.timeout}
                     -Djboss.socket.binding.port-offset=${auth.server.backend1.port.offset}
                     -Djboss.node.name=node1
                     ${adapter.test.props}
@@ -181,6 +183,7 @@
                 <property name="jbossHome">${auth.server.backend2.home}</property>
                 <property name="serverConfig">standalone-ha.xml</property>
                 <property name="jbossArguments">
+                    -Djboss.as.management.blocking.timeout=${auth.server.jboss.startup.timeout}
                     -Djboss.socket.binding.port-offset=${auth.server.backend2.port.offset} 
                     -Djboss.node.name=node2
                     ${adapter.test.props}
@@ -265,6 +268,7 @@
                 <property name="jbossHome">${cache.server.home}</property>
                 <property name="serverConfig">clustered-1.xml</property>
                 <property name="jbossArguments">
+                    -Djboss.as.management.blocking.timeout=${auth.server.jboss.startup.timeout}
                     -Djboss.socket.binding.port-offset=${cache.server.1.port.offset}
                     -Djboss.default.multicast.address=234.56.78.99
                     -Djboss.node.name=cache-server-dc-1
@@ -295,6 +299,7 @@
                 <property name="cleanServerBaseDir">${cache.server.home}/standalone-dc-2</property>
                 <property name="serverConfig">clustered-2.xml</property>
                 <property name="jbossArguments">
+                    -Djboss.as.management.blocking.timeout=${auth.server.jboss.startup.timeout}
                     -Djboss.socket.binding.port-offset=${cache.server.2.port.offset}
                     -Djboss.default.multicast.address=234.56.78.100
                     -Djboss.node.name=cache-server-dc-2
@@ -438,6 +443,7 @@
                 <property name="jbossHome">${auth.server.crossdc01.home}</property>
                 <property name="serverConfig">standalone-ha.xml</property>
                 <property name="jbossArguments">
+                    -Djboss.as.management.blocking.timeout=${auth.server.jboss.startup.timeout}
                     -Djboss.socket.binding.port-offset=${auth.server.crossdc01.port.offset}
                     -Djboss.default.multicast.address=234.56.78.1
                     -Dremote.cache.port=12232
@@ -469,6 +475,7 @@
                 <property name="jbossHome">${auth.server.crossdc02.home}</property>
                 <property name="serverConfig">standalone-ha.xml</property>
                 <property name="jbossArguments">
+                    -Djboss.as.management.blocking.timeout=${auth.server.jboss.startup.timeout}
                     -Djboss.socket.binding.port-offset=${auth.server.crossdc02.port.offset}
                     -Djboss.default.multicast.address=234.56.78.1
                     -Dremote.cache.port=12232
@@ -501,6 +508,7 @@
                 <property name="jbossHome">${auth.server.crossdc11.home}</property>
                 <property name="serverConfig">standalone-ha.xml</property>
                 <property name="jbossArguments">
+                    -Djboss.as.management.blocking.timeout=${auth.server.jboss.startup.timeout}
                     -Djboss.socket.binding.port-offset=${auth.server.crossdc11.port.offset}
                     -Djboss.default.multicast.address=234.56.78.2
                     -Dremote.cache.port=13232
@@ -532,6 +540,7 @@
                 <property name="jbossHome">${auth.server.crossdc12.home}</property>
                 <property name="serverConfig">standalone-ha.xml</property>
                 <property name="jbossArguments">
+                    -Djboss.as.management.blocking.timeout=${auth.server.jboss.startup.timeout}
                     -Djboss.socket.binding.port-offset=${auth.server.crossdc12.port.offset}
                     -Djboss.default.multicast.address=234.56.78.2
                     -Dremote.cache.port=13232
@@ -578,6 +587,7 @@
             <property name="adapterImplClass">org.jboss.as.arquillian.container.managed.ManagedDeployableContainer</property>
             <property name="jbossHome">${keycloak.migration.home}</property>
             <property name="javaVmArguments">
+                -Djboss.as.management.blocking.timeout=${auth.server.jboss.startup.timeout}
                 -Djboss.socket.binding.port-offset=${auth.server.port.offset}
                 ${migration.import.props.previous}
                 ${auth.server.memory.settings}

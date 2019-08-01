@@ -238,8 +238,8 @@ declare namespace Keycloak {
 		nonce?: string;
 		sub?: string;
 		session_state?: string;
-		realm_access?: { roles: string[] };
-		resource_access?: string[];
+		realm_access?: KeycloakRoles;
+		resource_access?: KeycloakResourceAccess;
 	}
 
 	interface KeycloakResourceAccess {

@@ -47,7 +47,7 @@
                                              angular-treeview="true"
                                              tree-model="groupMemberships"
                                              node-id="id"
-                                             node-label="name"
+                                             node-label="path"
                                              node-children="subGroupsMembership" >
                                      </div>
                                  </td>
@@ -71,7 +71,7 @@
                                          </div>
                                          <div class="pull-left">
                                              <div class="input-group">
-                                                 <input type="text" placeholder="{{:: 'search.placeholder' | translate}}" ng-model="searchCriteria" class="form-control search" onkeydown="if (event.keyCode == 13) document.getElementById('groupSearch').click()">
+                                                 <input type="text" placeholder="{{:: 'search.placeholder' | translate}}" ng-model="searchCriteria" class="form-control search" onkeydown="if (event.keyCode == 13) document.getElementById('groupSearch_availablegroups').click()">
                                                  <div class="input-group-addon">
                                                      <i class="fa fa-search" id="groupSearch_availablegroups" ng-click="searchGroup()"></i>
                                                  </div>

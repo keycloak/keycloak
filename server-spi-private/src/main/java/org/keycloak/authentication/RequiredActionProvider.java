@@ -17,7 +17,9 @@
 
 package org.keycloak.authentication;
 
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.provider.Provider;
+import org.keycloak.sessions.AuthenticationSessionModel;
 
 /**
  * RequiredAction provider.  Required actions are one-time actions that a user must perform before they are logged in.
@@ -27,7 +29,29 @@ import org.keycloak.provider.Provider;
  */
 public interface RequiredActionProvider extends Provider {
     /**
-     * Called every time a uesr authenticates.  This checks to see if this required action should be triggered.
+     * Determines what type of support is provided for application-initiated
+     * actions.
+     * 
+     * @return InititatedActionsSupport
+     */
+    default InitiatedActionSupport initiatedActionSupport() {
+        return InitiatedActionSupport.NOT_SUPPORTED;
+    }
+    
+    /**
+     * Callback to let the action know that an application-initiated action
+     * was canceled.
+     * 
+     * @param session The Keycloak session.
+     * @param authSession The authentication session.
+     * 
+     */
+    default void initiatedActionCanceled(KeycloakSession session, AuthenticationSessionModel authSession) {
+        return;
+    }
+    
+    /**
+     * Called every time a user authenticates.  This checks to see if this required action should be triggered.
      * The implementation of this method is responsible for setting the required action on the UserModel.
      *
      * For example, the UpdatePassword required actions checks the password policies to see if the password has expired.

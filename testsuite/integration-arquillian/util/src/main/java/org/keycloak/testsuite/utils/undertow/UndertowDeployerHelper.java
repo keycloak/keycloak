@@ -31,6 +31,7 @@ import org.jboss.shrinkwrap.api.Archive;
 import org.jboss.shrinkwrap.api.ArchivePath;
 import org.jboss.shrinkwrap.api.Node;
 import org.jboss.shrinkwrap.api.asset.ClassAsset;
+import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
@@ -61,13 +62,7 @@ public class UndertowDeployerHelper {
 
     public DeploymentInfo getDeploymentInfo(UndertowContainerConfiguration config, WebArchive archive, DeploymentInfo di) {
         String archiveName = archive.getName();
-
-        String appName = archive.getName().substring(0, archive.getName().lastIndexOf('.'));
-        if (appName.contains(System.getProperty("project.version"))) {
-            appName = archive.getName().substring(0, archive.getName().lastIndexOf("-" + System.getProperty("project.version")));
-        }
-
-        String contextPath = "/" + appName;
+        String contextPath = getContextPath(archive);
         String appContextUrl = "http://" + config.getBindAddress() + ":" + config.getBindHttpPort() + contextPath;
 
         try {
@@ -208,4 +203,12 @@ public class UndertowDeployerHelper {
 
     }
 
+    private String getContextPath(WebArchive archive) {
+        if (archive.contains("/META-INF/context.xml") && (archive.get("/META-INF/context.xml").getAsset() instanceof StringAsset)) {
+            StringAsset asset = (StringAsset) archive.get("/META-INF/context.xml").getAsset();
+            return asset.getSource().split("path=\"")[1].split("\"")[0];
+        } else {
+            return "/".concat(archive.getName().replace(".war", ""));
+        }
+    }
 }

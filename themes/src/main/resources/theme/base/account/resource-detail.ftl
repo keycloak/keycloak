@@ -263,7 +263,7 @@
                         </div>
                         <div class="col-md-12">
                             <br/>
-                            <a href="#" onclick="document.forms['shareForm'].submit()" type="submit" id="share-button" class="btn btn-primary">${msg("Share")}</a>
+                            <a href="#" onclick="document.forms['shareForm'].submit()" type="submit" id="share-button" class="btn btn-primary">${msg("share")}</a>
                         </div>
                     </div>
                 </div>

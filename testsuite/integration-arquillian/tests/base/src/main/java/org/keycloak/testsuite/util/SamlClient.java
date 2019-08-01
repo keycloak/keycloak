@@ -54,11 +54,13 @@ import java.security.PublicKey;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.jboss.logging.Logger;
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.assertThat;
+import static org.keycloak.saml.common.constants.GeneralConstants.RELAY_STATE;
 import static org.keycloak.testsuite.util.Matchers.statusCodeIsHC;
 
 /**
@@ -127,6 +129,14 @@ public class SamlClient {
             }
 
             @Override
+            public String extractRelayState(CloseableHttpResponse response) throws IOException {
+                assertThat(response, statusCodeIsHC(Response.Status.OK));
+                String responsePage = EntityUtils.toString(response.getEntity(), "UTF-8");
+                response.close();
+                return extractSamlRelayStateFromForm(responsePage);
+            }
+
+            @Override
             public HttpPost createSamlSignedRequest(URI samlEndpoint, String relayState, Document samlRequest, String realmPrivateKey, String realmPublicKey) {
                 return createSamlPostMessage(samlEndpoint, relayState, samlRequest, GeneralConstants.SAML_REQUEST_KEY, realmPrivateKey, realmPublicKey);
             }
@@ -160,7 +170,7 @@ public class SamlClient {
                 }
 
                 if (relayState != null) {
-                    parameters.add(new BasicNameValuePair(GeneralConstants.RELAY_STATE, relayState));
+                    parameters.add(new BasicNameValuePair(RELAY_STATE, relayState));
                 }
 
                 UrlEncodedFormEntity formEntity;
@@ -246,6 +256,14 @@ public class SamlClient {
             }
 
             @Override
+            public String extractRelayState(CloseableHttpResponse response) throws IOException {
+                assertThat(response, statusCodeIsHC(Response.Status.FOUND));
+                String location = response.getFirstHeader("Location").getValue();
+                response.close();
+                return extractRelayStateFromRedirect(location);
+            }
+
+            @Override
             public HttpUriRequest createSamlSignedRequest(URI samlEndpoint, String relayState, Document samlRequest, String realmPrivateKey, String realmPublicKey) {
                 throw new UnsupportedOperationException("Not implemented yet.");
             }
@@ -262,6 +280,8 @@ public class SamlClient {
         public abstract HttpUriRequest createSamlUnsignedResponse(URI samlEndpoint, String relayState, Document samlRequest);
 
         public abstract HttpUriRequest createSamlSignedResponse(URI samlEndpoint, String relayState, Document samlRequest, String realmPrivateKey, String realmPublicKey);
+
+        public abstract String extractRelayState(CloseableHttpResponse response) throws IOException;
     }
 
     private static final Logger LOG = Logger.getLogger(SamlClient.class);
@@ -286,6 +306,35 @@ public class SamlClient {
         Element respElement = samlResponses.isEmpty() ? samlRequests.first() : samlResponses.first();
 
         return SAMLRequestParser.parseResponsePostBinding(respElement.val());
+    }
+
+    /**
+     * Extracts and parses value of RelayState input field of a form present in the given page.
+     *
+     * @param responsePage HTML code of the page
+     * @return
+     */
+    public static String extractSamlRelayStateFromForm(String responsePage) {
+        assertThat(responsePage, containsString("form name=\"saml-post-binding\""));
+        org.jsoup.nodes.Document theResponsePage = Jsoup.parse(responsePage);
+        Elements samlRelayStates = theResponsePage.select("input[name=RelayState]");
+
+        if (samlRelayStates.isEmpty()) return null;
+
+        return samlRelayStates.first().val();
+    }
+
+    /**
+     * Extracts and parses value of RelayState query parameter from the given URI.
+     *
+     * @param responseUri
+     * @return
+     */
+    public static String extractRelayStateFromRedirect(String responseUri) {
+        List<NameValuePair> params = URLEncodedUtils.parse(URI.create(responseUri), "UTF-8");
+
+        return params.stream().filter(nameValuePair -> nameValuePair.getName().equals(RELAY_STATE))
+                .findFirst().map(NameValuePair::getValue).orElse(null);
     }
 
     /**

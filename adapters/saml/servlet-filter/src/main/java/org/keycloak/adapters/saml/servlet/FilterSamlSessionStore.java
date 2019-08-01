@@ -18,6 +18,7 @@
 package org.keycloak.adapters.saml.servlet;
 
 import org.jboss.logging.Logger;
+import org.keycloak.adapters.saml.SamlDeployment;
 import org.keycloak.adapters.saml.SamlSession;
 import org.keycloak.adapters.saml.SamlSessionStore;
 import org.keycloak.adapters.saml.SamlUtil;
@@ -41,10 +42,12 @@ import java.util.Set;
 public class FilterSamlSessionStore extends FilterSessionStore implements SamlSessionStore {
     protected static Logger log = Logger.getLogger(SamlSessionStore.class);
     protected final SessionIdMapper idMapper;
+    private final SamlDeployment deployment;
 
-    public FilterSamlSessionStore(HttpServletRequest request, HttpFacade facade, int maxBuffer, SessionIdMapper idMapper) {
+    public FilterSamlSessionStore(HttpServletRequest request, HttpFacade facade, int maxBuffer, SessionIdMapper idMapper, SamlDeployment deployment) {
         super(request, facade, maxBuffer);
         this.idMapper = idMapper;
+        this.deployment = deployment;
     }
 
     @Override
@@ -118,12 +121,11 @@ public class FilterSamlSessionStore extends FilterSessionStore implements SamlSe
     @Override
     public boolean isLoggedIn() {
         HttpSession session = request.getSession(false);
-        if (session == null) return false;
         if (session == null) {
-            log.debug("session was null, returning null");
+            log.debug("session was null, returning false");
             return false;
         }
-        final SamlSession samlSession = (SamlSession)session.getAttribute(SamlSession.class.getName());
+        final SamlSession samlSession = SamlUtil.validateSamlSession(session.getAttribute(SamlSession.class.getName()), deployment);
         if (samlSession == null) {
             log.debug("SamlSession was not in session, returning null");
             return false;
