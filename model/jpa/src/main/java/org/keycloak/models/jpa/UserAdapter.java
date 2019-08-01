@@ -18,6 +18,7 @@
 package org.keycloak.models.jpa;
 
 import org.keycloak.common.util.MultivaluedHashMap;
+import org.keycloak.common.util.Time;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
@@ -441,6 +442,14 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
         em.persist(entity);
         em.flush();
         em.detach(entity);
+
+        UserEntity userEntity = getEntity();
+        if (userEntity.getOpenTimestamp() == null) {
+            userEntity.setOpenTimestamp(Time.currentTimeMillis());
+            em.persist(userEntity);
+            em.flush();
+            em.detach(userEntity);
+        }
     }
 
     @Override

@@ -107,6 +107,12 @@
         <addPrimaryKey columnNames="ID" constraintName="CONSTRAINT_ID" tableName="RESOURCE_ROLE_PERMISSION"/>
     </changeSet>
 
-
+    <changeSet author="wadahiro@gmail.com" id="4.3.0.beta7.uc">
+        <addColumn tableName="USER_ENTITY">
+            <column name="OPEN_TIMESTAMP" type="BIGINT">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+    </changeSet>
 
 </databaseChangeLog>

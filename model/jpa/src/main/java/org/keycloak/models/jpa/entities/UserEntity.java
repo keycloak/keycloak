@@ -128,6 +128,9 @@ public class UserEntity {
     @Column(name = "MODIFY_TIMESTAMP")
     protected Long modifyTimestamp;
 
+    @Column(name = "OPEN_TIMESTAMP")
+    protected Long openTimestamp;
+
     public String getId() {
         return id;
     }
@@ -272,6 +275,14 @@ public class UserEntity {
 
     public void setModifyTimestamp(Long modifyTimestamp) {
         this.modifyTimestamp = modifyTimestamp;
+    }
+
+    public Long getOpenTimestamp() {
+        return openTimestamp;
+    }
+
+    public void setOpenTimestamp(Long openTimestamp) {
+        this.openTimestamp = openTimestamp;
     }
 
     @Override

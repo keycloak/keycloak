@@ -222,7 +222,7 @@ public class UserResource {
         List<String> reqActions = rep.getRequiredActions();
 
         if (rep.getIdcard() != null) user.setIdcard(rep.getIdcard());
-        user.setModifyTimestamp(System.currentTimeMillis());
+        user.setModifyTimestamp(Time.currentTimeMillis());
 
         if (reqActions != null) {
             Set<String> allActions = new HashSet<>();
