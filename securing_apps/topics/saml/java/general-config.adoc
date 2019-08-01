@@ -30,6 +30,9 @@ This is what one might look like:
         <RoleIdentifiers>
             <Attribute name="Role"/>
         </RoleIdentifiers>
+        <RoleMappingsProvider id="properties-based-role-mapper">
+            <Property name="properties.resource.location" value="/WEB-INF/role-mappings.properties"/>
+        </RoleMappingsProvider>
         <IDP entityID="idp"
              signaturesRequired="true">
         <SingleSignOnService requestBinding="POST"
