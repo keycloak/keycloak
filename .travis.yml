@@ -1,7 +1,10 @@
 language: java
 
+before_cache:
+ - rm -f $HOME/.m2/
 cache:
-  cache: false
+ directories:
+ - $HOME/.m2/
 
 env:
   global:
@@ -13,7 +16,8 @@ env:
     - TESTS=server-group2
     - TESTS=server-group3
     - TESTS=server-group4
-    - TESTS=adapter-tests
+    - TESTS=adapter-tests-group1
+    - TESTS=adapter-tests-group2
     - TESTS=crossdc-server
     - TESTS=crossdc-adapter
     - TESTS=broker
@@ -21,7 +25,8 @@ env:
 jdk:
   - openjdk8
 
-install: true
+install: 
+  - "cd testsuite/integration-arquillian; mvn install -B -nsu -Pauth-server-wildfly -DskipTests"
 
 before_install:
   - "export PHANTOMJS_VERSION=2.1.1"
