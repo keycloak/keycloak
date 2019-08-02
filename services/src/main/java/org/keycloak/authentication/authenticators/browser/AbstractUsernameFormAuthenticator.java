@@ -186,11 +186,19 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
     public boolean validatePassword(AuthenticationFlowContext context, UserModel user, MultivaluedMap<String, String> inputData) {
         List<CredentialInput> credentials = new LinkedList<>();
         String password = inputData.getFirst(CredentialRepresentation.PASSWORD);
-        credentials.add(UserCredentialModel.password(password));
+        if (password == null || password.isEmpty()) {
+            context.getEvent().user(user);
+            context.getEvent().error(Errors.INVALID_USER_CREDENTIALS);
+            Response challengeResponse = challenge(context, Messages.INVALID_USER);
+            context.forceChallenge(challengeResponse);
+            context.clearUser();
+            return false;
+        }
 
         if (isTemporarilyDisabledByBruteForce(context, user)) return false;
 
-        if (password != null && !password.isEmpty() && context.getSession().userCredentialManager().isValid(context.getRealm(), user, credentials)) {
+        credentials.add(UserCredentialModel.password(password));
+        if (context.getSession().userCredentialManager().isValid(context.getRealm(), user, credentials)) {
             return true;
         } else {
             context.getEvent().user(user);
