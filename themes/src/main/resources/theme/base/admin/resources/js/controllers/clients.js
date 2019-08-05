@@ -1016,6 +1016,12 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, flows, $ro
         "plain",
         ""
     ];
+    
+    $scope.onOffSwitchOptions = [
+        "ON",
+        "OFF",
+        ""
+    ];
 
     $scope.realm = realm;
     $scope.samlAuthnStatement = false;
@@ -1036,6 +1042,13 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, flows, $ro
     // https://tools.ietf.org/html/draft-ietf-oauth-mtls-08#section-3
     $scope.tlsClientCertificateBoundAccessTokens = false;
 
+    $scope.revokeRefreshToken = client.attributes['revoke.refresh.token'];
+    $scope.refreshTokenMaxReuse = client.attributes['refresh.token.max.reuse'] ? Number(client.attributes['refresh.token.max.reuse']) : 0;
+    $scope.ssoSessionIdleTimeout = TimeUnit2.asUnit(client.attributes['sso.session.idle.timeout']);
+    $scope.ssoSessionMaxLifespan = TimeUnit2.asUnit(client.attributes['sso.session.max.lifespan']);
+    $scope.offlineSessionIdleTimeout = TimeUnit2.asUnit(client.attributes['offline.session.idle.timeout']);
+    $scope.offlineSessionMaxLifespanEnabled = client.attributes['offline.session.max.lifespan.enabled'];
+    $scope.offlineSessionMaxLifespan = client.attributes['offline.session.max.lifespan'] ? TimeUnit2.asUnit(client.attributes['offline.session.max.lifespan']) : TimeUnit2.asUnit(5184000);
     $scope.accessTokenLifespan = TimeUnit2.asUnit(client.attributes['access.token.lifespan']);
 
     if(client.origin) {
@@ -1348,6 +1361,46 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, flows, $ro
             return true;
         }
         return false;
+    }
+
+    $scope.changeRevokeRefreshToken = function() {
+        $scope.clientEdit.attributes['revoke.refresh.token'] = $scope.revokeRefreshToken;
+    };
+
+    $scope.updateRefreshTokenMaxReuse = function() {
+        $scope.clientEdit.attributes['refresh.token.max.reuse'] = $scope.refreshTokenMaxReuse;
+    };
+
+    $scope.updateSsoSessionIdleTimeout = function() {
+        if ($scope.ssoSessionIdleTimeout.time) {
+            $scope.clientEdit.attributes['sso.session.idle.timeout'] = $scope.ssoSessionIdleTimeout.toSeconds();
+        } else {
+            $scope.clientEdit.attributes['sso.session.idle.timeout'] = null;
+        }
+    }
+
+    $scope.updateSsoSessionMaxLifespan = function() {
+        if ($scope.ssoSessionMaxLifespan.time) {
+            $scope.clientEdit.attributes['sso.session.max.lifespan'] = $scope.ssoSessionMaxLifespan.toSeconds();
+        } else {
+            $scope.clientEdit.attributes['sso.session.max.lifespan'] = null;
+        }
+    }
+
+    $scope.updateOfflineSessionIdleTimeout = function() {
+        if ($scope.offlineSessionIdleTimeout.time) {
+            $scope.clientEdit.attributes['offline.session.idle.timeout'] = $scope.offlineSessionIdleTimeout.toSeconds();
+        } else {
+            $scope.clientEdit.attributes['offline.session.idle.timeout'] = null;
+        }
+    }
+
+    $scope.changeOfflineSessionMaxLifespanEnabled = function() {
+        $scope.clientEdit.attributes['offline.session.max.lifespan.enabled'] = $scope.offlineSessionMaxLifespanEnabled;
+    };
+
+    $scope.updateOfflineSessionMaxLifespan = function() {
+        $scope.clientEdit.attributes['offline.session.max.lifespan'] = $scope.offlineSessionMaxLifespan.toSeconds();
     }
 
     $scope.updateTimeouts = function() {

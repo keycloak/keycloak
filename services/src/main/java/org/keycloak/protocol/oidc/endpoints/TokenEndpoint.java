@@ -347,7 +347,7 @@ public class TokenEndpoint {
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, "Client not allowed to exchange code", Response.Status.BAD_REQUEST);
         }
 
-        if (!AuthenticationManager.isSessionValid(realm, userSession)) {
+        if (!AuthenticationManager.isSessionValid(realm, userSession, client)) {
             event.error(Errors.USER_SESSION_NOT_FOUND);
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, "Session not active", Response.Status.BAD_REQUEST);
         }

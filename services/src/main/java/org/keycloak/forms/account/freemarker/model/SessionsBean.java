@@ -18,9 +18,11 @@
 package org.keycloak.forms.account.freemarker.model;
 
 import org.keycloak.common.util.Time;
+import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 
 import java.util.Date;
 import java.util.HashSet;
@@ -72,7 +74,25 @@ public class SessionsBean {
         }
 
         public Date getExpires() {
-            int maxLifespan = session.isRememberMe() && realm.getSsoSessionMaxLifespanRememberMe() > 0 ? realm.getSsoSessionMaxLifespanRememberMe() : realm.getSsoSessionMaxLifespan();
+            int maxLifespan = 0;
+            if (session.isRememberMe() && realm.getSsoSessionMaxLifespanRememberMe() > 0) {
+                maxLifespan = realm.getSsoSessionMaxLifespanRememberMe();
+            } else {
+                for (AuthenticatedClientSessionModel authenticatedClientSession : session.getAuthenticatedClientSessions()
+                    .values()) {
+                    int tmpSsoSessionMaxLifespan = 0;
+                    ClientModel client = authenticatedClientSession.getClient();
+                    String clientSsoSessionMaxLifespan = client.getAttribute(OIDCConfigAttributes.SSO_SESSION_MAX_LIFESPAN);
+                    if (clientSsoSessionMaxLifespan != null && !clientSsoSessionMaxLifespan.trim().isEmpty()) {
+                        tmpSsoSessionMaxLifespan = Integer.parseInt(clientSsoSessionMaxLifespan);
+                    } else {
+                        tmpSsoSessionMaxLifespan = realm.getSsoSessionMaxLifespan();
+                    }
+
+                    maxLifespan = Math.max(maxLifespan, tmpSsoSessionMaxLifespan);
+                }
+            }
+
             int max = session.getStarted() + maxLifespan;
             return Time.toDate(max);
         }

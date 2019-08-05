@@ -35,7 +35,6 @@ import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionContext;
-import org.keycloak.models.TokenManager;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -232,13 +231,13 @@ public class UserInfoEndpoint {
     private UserSessionModel findValidSession(AccessToken token, EventBuilder event, ClientModel client) {
         UserSessionModel userSession = new UserSessionCrossDCManager(session).getUserSessionWithClient(realm, token.getSessionState(), false, client.getId());
         UserSessionModel offlineUserSession = null;
-        if (AuthenticationManager.isSessionValid(realm, userSession)) {
+        if (AuthenticationManager.isSessionValid(realm, userSession, client)) {
             checkTokenIssuedAt(token, userSession, event);
             event.session(userSession);
             return userSession;
         } else {
             offlineUserSession = new UserSessionCrossDCManager(session).getUserSessionWithClient(realm, token.getSessionState(), true, client.getId());
-            if (AuthenticationManager.isOfflineSessionValid(realm, offlineUserSession)) {
+            if (AuthenticationManager.isOfflineSessionValid(realm, offlineUserSession, client)) {
                 checkTokenIssuedAt(token, offlineUserSession, event);
                 event.session(offlineUserSession);
                 return offlineUserSession;

@@ -942,7 +942,8 @@ public class AuthenticationProcessor {
             if (userSession == null) {
                 userSession = session.sessions().createUserSession(authSession.getParentSession().getId(), realm, authSession.getAuthenticatedUser(), username, connection.getRemoteAddr(), authSession.getProtocol()
                         , remember, brokerSessionId, brokerUserId);
-            } else if (userSession.getUser() == null || !AuthenticationManager.isSessionValid(realm, userSession)) {
+            } else if (userSession.getUser() == null
+                || !AuthenticationManager.isSessionValid(realm, userSession, authSession.getClient())) {
                 userSession.restartSession(realm, authSession.getAuthenticatedUser(), username, connection.getRemoteAddr(), authSession.getProtocol()
                         , remember, brokerSessionId, brokerUserId);
             } else {

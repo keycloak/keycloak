@@ -24,6 +24,7 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.common.enums.SslRequired;
@@ -35,10 +36,12 @@ import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.SessionTimeoutHelper;
+import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.RefreshToken;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractAuthTest;
@@ -75,8 +78,10 @@ import static org.hamcrest.Matchers.lessThan;
 import static org.hamcrest.Matchers.lessThanOrEqualTo;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.keycloak.testsuite.Assert.assertExpiration;
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 import static org.keycloak.testsuite.admin.ApiUtil.findUserByUsername;
 import static org.keycloak.testsuite.util.OAuthClient.AUTH_SERVER_ROOT;
@@ -1026,6 +1031,154 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
     @Test
     public void tokenRefreshRequest_ClientPS512_RealmPS256() throws Exception {
         conductTokenRefreshRequest(Algorithm.HS256, Algorithm.PS512, Algorithm.PS256);
+    }
+
+    @Test
+    public void clientRevokeRefreshTokenOverrideWithRefreshTokensRevoked() {
+        ClientResource client = ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app");
+        ClientRepresentation clientRep = client.toRepresentation();
+
+        RealmResource realm = adminClient.realm("test");
+        RealmRepresentation rep = realm.toRepresentation();
+
+        boolean revokeRefreshToken = rep.getRevokeRefreshToken();
+        assertNotEquals(revokeRefreshToken, true);
+        int refreshTokenMaxReuse = rep.getRefreshTokenMaxReuse();
+        assertNotEquals(refreshTokenMaxReuse, 1);
+
+        try {
+            clientRep.getAttributes().put(OIDCConfigAttributes.REVOKE_REFRESH_TOKEN, "ON");
+            clientRep.getAttributes().put(OIDCConfigAttributes.REFRESH_TOKEN_MAX_REUSE, "1");
+            client.update(clientRep);
+
+            oauth.doLogin("test-user@localhost", "password");
+
+            EventRepresentation loginEvent = events.expectLogin().assertEvent();
+
+            String sessionId = loginEvent.getSessionId();
+            String codeId = loginEvent.getDetails().get(Details.CODE_ID);
+            String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+
+            OAuthClient.AccessTokenResponse initialResponse = oauth.doAccessTokenRequest(code, "password");
+            RefreshToken initialRefreshToken = oauth.parseRefreshToken(initialResponse.getRefreshToken());
+
+            events.expectCodeToToken(codeId, sessionId).assertEvent();
+
+            setTimeOffset(2);
+
+            // Single reuse authorized.
+            processExpectedValidRefresh(sessionId, initialRefreshToken, initialResponse.getRefreshToken());
+            processExpectedValidRefresh(sessionId, initialRefreshToken, initialResponse.getRefreshToken());
+
+            OAuthClient.AccessTokenResponse responseReuseExceeded = oauth
+                .doRefreshTokenRequest(initialResponse.getRefreshToken(), "password");
+
+            assertEquals(400, responseReuseExceeded.getStatusCode());
+
+            events.expectRefresh(initialRefreshToken.getId(), sessionId).removeDetail(Details.TOKEN_ID)
+                .removeDetail(Details.UPDATED_REFRESH_TOKEN_ID).error("invalid_token").assertEvent();
+        } finally {
+            setTimeOffset(0);
+            clientRep.getAttributes().put(OIDCConfigAttributes.REVOKE_REFRESH_TOKEN, null);
+            clientRep.getAttributes().put(OIDCConfigAttributes.REFRESH_TOKEN_MAX_REUSE, null);
+            client.update(clientRep);
+        }
+    }
+    
+    @Test
+    public void clientRevokeRefreshTokenOverrideWithoutRefreshTokensRevoked() {
+        ClientResource client = ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app");
+        ClientRepresentation clientRep = client.toRepresentation();
+
+        try {
+            RealmManager.realm(adminClient.realm("test")).revokeRefreshToken(true).refreshTokenMaxReuse(1);
+
+            clientRep.getAttributes().put(OIDCConfigAttributes.REVOKE_REFRESH_TOKEN, "OFF");
+            client.update(clientRep);
+
+            oauth.doLogin("test-user@localhost", "password");
+
+            EventRepresentation loginEvent = events.expectLogin().assertEvent();
+
+            String sessionId = loginEvent.getSessionId();
+            String codeId = loginEvent.getDetails().get(Details.CODE_ID);
+            String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+
+            OAuthClient.AccessTokenResponse initialResponse = oauth.doAccessTokenRequest(code, "password");
+            RefreshToken initialRefreshToken = oauth.parseRefreshToken(initialResponse.getRefreshToken());
+
+            events.expectCodeToToken(codeId, sessionId).assertEvent();
+
+            setTimeOffset(2);
+
+            // Infinite reuse allowed
+            processExpectedValidRefresh(sessionId, initialRefreshToken, initialResponse.getRefreshToken());
+            processExpectedValidRefresh(sessionId, initialRefreshToken, initialResponse.getRefreshToken());
+            processExpectedValidRefresh(sessionId, initialRefreshToken, initialResponse.getRefreshToken());
+        } finally {
+            setTimeOffset(0);
+            RealmManager.realm(adminClient.realm("test")).refreshTokenMaxReuse(0).revokeRefreshToken(false);
+            clientRep.getAttributes().put(OIDCConfigAttributes.REVOKE_REFRESH_TOKEN, null);
+            client.update(clientRep);
+        }
+    }
+
+    @Test
+    public void clientSsoSessionIdleOverride() {
+        ClientResource client = ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app");
+        ClientRepresentation clientRep = client.toRepresentation();
+
+        RealmResource realm = adminClient.realm("test");
+        RealmRepresentation rep = realm.toRepresentation();
+
+        int ssoSessionIdleTimeout = rep.getSsoSessionIdleTimeout();
+        assertNotEquals(ssoSessionIdleTimeout, 500);
+        int ssoSessionMaxLifespan = rep.getSsoSessionMaxLifespan();
+        assertNotEquals(ssoSessionMaxLifespan, 500);
+
+        try {
+            clientRep.getAttributes().put(OIDCConfigAttributes.SSO_SESSION_IDLE_TIMEOUT, "500");
+            client.update(clientRep);
+
+            oauth.doLogin("test-user@localhost", "password");
+            String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+
+            OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
+            assertEquals(200, response.getStatusCode());
+            assertExpiration(response.getRefreshExpiresIn(), 500);
+        } finally {
+            clientRep.getAttributes().put(OIDCConfigAttributes.SSO_SESSION_IDLE_TIMEOUT, null);
+            client.update(clientRep);
+        }
+    }
+
+    @Test
+    public void clientSsoSessionMaxOverride() {
+        ClientResource client = ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app");
+        ClientRepresentation clientRep = client.toRepresentation();
+
+        RealmResource realm = adminClient.realm("test");
+        RealmRepresentation rep = realm.toRepresentation();
+
+        int ssoSessionIdleTimeout = rep.getSsoSessionIdleTimeout();
+        assertNotEquals(ssoSessionIdleTimeout, 500);
+        int ssoSessionMaxLifespan = rep.getSsoSessionMaxLifespan();
+        assertNotEquals(ssoSessionMaxLifespan, 500);
+
+        try {
+            clientRep.getAttributes().put(OIDCConfigAttributes.SSO_SESSION_MAX_LIFESPAN, "500");
+            client.update(clientRep);
+
+            oauth.doLogin("test-user@localhost", "password");
+            String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+
+            OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
+            assertEquals(200, response.getStatusCode());
+            assertExpiration(response.getRefreshExpiresIn(), 500);
+        } finally {
+            clientRep.getAttributes().put(OIDCConfigAttributes.SSO_SESSION_MAX_LIFESPAN, null);
+            client.update(clientRep);
+        }
     }
 
     protected Response executeRefreshToken(WebTarget refreshTarget, String refreshToken) {

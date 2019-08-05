@@ -59,6 +59,7 @@ public final class Constants {
     public static final String VERIFY_EMAIL_CODE = "VERIFY_EMAIL_CODE";
     public static final String EXECUTION = "execution";
     public static final String CLIENT_ID = "client_id";
+    public static final String CLIENT_UUID = "clientUuid";
     public static final String TAB_ID = "tab_id";
     public static final String KEY = "key";
     public static final String KC_ACTION = "kc_action";

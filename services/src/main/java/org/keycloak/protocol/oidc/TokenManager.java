@@ -105,6 +105,8 @@ public class TokenManager {
         UserSessionModel userSession = null;
         boolean offline = TokenUtil.TOKEN_TYPE_OFFLINE.equals(oldToken.getType());
 
+        ClientModel client = session.getContext().getClient();
+
         if (offline) {
 
             UserSessionManager sessionManager = new UserSessionManager(session);
@@ -112,8 +114,8 @@ public class TokenManager {
             if (userSession != null) {
 
                 // Revoke timeouted offline userSession
-                if (!AuthenticationManager.isOfflineSessionValid(realm, userSession)) {
-                    sessionManager.revokeOfflineUserSession(userSession);
+                if (!AuthenticationManager.isOfflineSessionValid(realm, userSession, client)) {
+                    sessionManager.revokeOfflineClientSession(userSession, client);
                     throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Offline session not active", "Offline session not active");
                 }
 
@@ -123,8 +125,9 @@ public class TokenManager {
         } else {
             // Find userSession regularly for online tokens
             userSession = session.sessions().getUserSession(realm, oldToken.getSessionState());
-            if (!AuthenticationManager.isSessionValid(realm, userSession)) {
-                AuthenticationManager.backchannelLogout(session, realm, userSession, uriInfo, connection, headers, true);
+            if (!AuthenticationManager.isSessionValid(realm, userSession, client)) {
+                AuthenticationManager.backchannelClientLogout(session, realm, userSession, uriInfo, connection, headers, true,
+                    client);
                 throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Session not active", "Session not active");
             }
         }
@@ -143,8 +146,6 @@ public class TokenManager {
             throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Refresh toked issued before the user session started");
         }
 
-
-        ClientModel client = session.getContext().getClient();
         AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessionByClient(client.getId());
 
         // Can theoretically happen in cross-dc environment. Try to see if userSession with our client is available in remoteCache
@@ -224,11 +225,11 @@ public class TokenManager {
 
         UserSessionModel userSession = new UserSessionCrossDCManager(session).getUserSessionWithClient(realm, token.getSessionState(), false, client.getId());
 
-        if (AuthenticationManager.isSessionValid(realm, userSession)) {
+        if (AuthenticationManager.isSessionValid(realm, userSession, client)) {
             valid = isUserValid(session, realm, token, userSession);
         } else {
             userSession = new UserSessionCrossDCManager(session).getUserSessionWithClient(realm, token.getSessionState(), true, client.getId());
-            if (AuthenticationManager.isOfflineSessionValid(realm, userSession)) {
+            if (AuthenticationManager.isOfflineSessionValid(realm, userSession, client)) {
                 valid = isUserValid(session, realm, token, userSession);
             }
         }
@@ -274,7 +275,7 @@ public class TokenManager {
             throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Invalid refresh token. Token client and authorized client don't match");
         }
 
-        validateTokenReuse(session, realm, refreshToken, validation);
+        validateTokenReuse(session, realm, refreshToken, validation, authorizedClient);
 
         int currentTime = Time.currentTime();
         clientSession.setTimestamp(currentTime);
@@ -312,8 +313,12 @@ public class TokenManager {
     }
 
     private void validateTokenReuse(KeycloakSession session, RealmModel realm, RefreshToken refreshToken,
-            TokenValidation validation) throws OAuthErrorException {
-        if (realm.isRevokeRefreshToken()) {
+            TokenValidation validation, ClientModel authorizedClient) throws OAuthErrorException {
+        String clientIsRevokeRefreshToken = authorizedClient.getAttribute(OIDCConfigAttributes.REVOKE_REFRESH_TOKEN);
+        boolean isRevokeRefreshToken = "ON".equals(clientIsRevokeRefreshToken)
+            || (!"OFF".equals(clientIsRevokeRefreshToken) && realm.isRevokeRefreshToken());
+
+        if (isRevokeRefreshToken) {
             AuthenticatedClientSessionModel clientSession = validation.clientSessionCtx.getClientSession();
 
             int clusterStartupTime = session.getProvider(ClusterProvider.class).getClusterStartupTime();
@@ -325,14 +330,16 @@ public class TokenManager {
                 throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Stale token");
             }
 
-
             if (!refreshToken.getId().equals(clientSession.getCurrentRefreshToken())) {
                 clientSession.setCurrentRefreshToken(refreshToken.getId());
                 clientSession.setCurrentRefreshTokenUseCount(0);
             }
 
             int currentCount = clientSession.getCurrentRefreshTokenUseCount();
-            if (currentCount > realm.getRefreshTokenMaxReuse()) {
+            int refreshTokenMaxReuse = "ON".equals(clientIsRevokeRefreshToken)
+                ? Integer.parseInt(authorizedClient.getAttribute(OIDCConfigAttributes.REFRESH_TOKEN_MAX_REUSE))
+                : realm.getRefreshTokenMaxReuse();
+            if (currentCount > refreshTokenMaxReuse) {
                 throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Maximum allowed refresh token reuse exceeded",
                         "Maximum allowed refresh token reuse exceeded");
             }
@@ -638,8 +645,16 @@ public class TokenManager {
 
         int expiration;
         if (tokenLifespan == -1) {
-            expiration = userSession.getStarted() + (userSession.isRememberMe() && realm.getSsoSessionMaxLifespanRememberMe() > 0 ?
-                    realm.getSsoSessionMaxLifespanRememberMe() : realm.getSsoSessionMaxLifespan());
+            if (userSession.isRememberMe() && realm.getSsoSessionMaxLifespanRememberMe() > 0) {
+            expiration = userSession.getStarted() + realm.getSsoSessionMaxLifespanRememberMe();
+            } else {
+                String clientSsoSessionMaxLifespan = client.getAttribute(OIDCConfigAttributes.SSO_SESSION_MAX_LIFESPAN);
+                if (clientSsoSessionMaxLifespan != null && !clientSsoSessionMaxLifespan.trim().isEmpty()) {
+                    expiration = userSession.getStarted() + Integer.parseInt(clientSsoSessionMaxLifespan);
+                } else {
+                    expiration = userSession.getStarted() + realm.getSsoSessionMaxLifespan();
+                }
+            }
         } else {
             expiration = Time.currentTime() + tokenLifespan;
         }
@@ -740,10 +755,28 @@ public class TokenManager {
         }
 
         private int getRefreshExpiration() {
-            int sessionExpires = userSession.getStarted() + (userSession.isRememberMe() && realm.getSsoSessionMaxLifespanRememberMe() > 0 ?
-                    realm.getSsoSessionMaxLifespanRememberMe() : realm.getSsoSessionMaxLifespan());
-            int expiration = Time.currentTime() + (userSession.isRememberMe() && realm.getSsoSessionIdleTimeoutRememberMe() > 0 ?
-                    realm.getSsoSessionIdleTimeoutRememberMe() : realm.getSsoSessionIdleTimeout());
+            int ssoSessionMaxLifespan;
+            String clientSsoSessionMaxLifespan = client.getAttribute(OIDCConfigAttributes.SSO_SESSION_MAX_LIFESPAN);
+            if (clientSsoSessionMaxLifespan != null && !clientSsoSessionMaxLifespan.trim().isEmpty()) {
+                ssoSessionMaxLifespan = Integer.parseInt(clientSsoSessionMaxLifespan);
+            } else {
+                ssoSessionMaxLifespan = realm.getSsoSessionMaxLifespan();
+            }
+            int sessionExpires = userSession.getStarted()
+                + (userSession.isRememberMe() && realm.getSsoSessionMaxLifespanRememberMe() > 0
+                    ? realm.getSsoSessionMaxLifespanRememberMe()
+                    : ssoSessionMaxLifespan);
+
+            int ssoSessionIdleTimeout;
+            String clientSsoSessionIdleTimeout = client.getAttribute(OIDCConfigAttributes.SSO_SESSION_IDLE_TIMEOUT);
+            if (clientSsoSessionIdleTimeout != null && !clientSsoSessionIdleTimeout.trim().isEmpty()) {
+                ssoSessionIdleTimeout = Integer.parseInt(clientSsoSessionIdleTimeout);
+            } else {
+                ssoSessionIdleTimeout = realm.getSsoSessionIdleTimeout();
+            }
+            int expiration = Time.currentTime() + (userSession.isRememberMe() && realm.getSsoSessionIdleTimeoutRememberMe() > 0
+                ? realm.getSsoSessionIdleTimeoutRememberMe()
+                : ssoSessionIdleTimeout);
             return expiration <= sessionExpires ? expiration : sessionExpires;
         }
 

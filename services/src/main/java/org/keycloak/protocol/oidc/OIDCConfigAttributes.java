@@ -43,6 +43,20 @@ public final class OIDCConfigAttributes {
 
     public static final String ACCESS_TOKEN_SIGNED_RESPONSE_ALG = "access.token.signed.response.alg";
 
+    public static final String REVOKE_REFRESH_TOKEN = "revoke.refresh.token";
+
+    public static final String REFRESH_TOKEN_MAX_REUSE = "refresh.token.max.reuse";
+
+    public static final String SSO_SESSION_IDLE_TIMEOUT = "sso.session.idle.timeout";
+
+    public static final String SSO_SESSION_MAX_LIFESPAN = "sso.session.max.lifespan";
+
+    public static final String OFFLINE_SESSION_IDLE_TIMEOUT = "offline.session.idle.timeout";
+
+    public static final String OFFLINE_SESSION_MAX_LIFESPAN_ENABLED = "offline.session.max.lifespan.enabled";
+
+    public static final String OFFLINE_SESSION_MAX_LIFESPAN = "offline.session.max.lifespan";
+
     public static final String ACCESS_TOKEN_LIFESPAN = "access.token.lifespan";
 
     public static final String PKCE_CODE_CHALLENGE_METHOD = "pkce.code.challenge.method";

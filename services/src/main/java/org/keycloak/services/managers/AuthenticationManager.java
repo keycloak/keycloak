@@ -63,6 +63,7 @@ import org.keycloak.models.utils.SessionTimeoutHelper;
 import org.keycloak.models.utils.SystemClientUtil;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.LoginProtocol.Error;
+import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.services.ForbiddenException;
@@ -135,36 +136,69 @@ public class AuthenticationManager {
     public static final String IS_AIA_REQUEST = LOGIN_SESSION_NOTE_ADDITIONAL_REQ_PARAMS_PREFIX + Constants.IS_AIA_REQUEST;
     public static final String IS_SILENT_CANCEL = LOGIN_SESSION_NOTE_ADDITIONAL_REQ_PARAMS_PREFIX + Constants.AIA_SILENT_CANCEL;
 
-    public static boolean isSessionValid(RealmModel realm, UserSessionModel userSession) {
+    public static boolean isSessionValid(RealmModel realm, UserSessionModel userSession, ClientModel client) {
         if (userSession == null) {
             logger.debug("No user session");
             return false;
         }
         int currentTime = Time.currentTime();
 
-        // Additional time window is added for the case when session was updated in different DC and the update to current DC was postponed
-        int maxIdle = userSession.isRememberMe() && realm.getSsoSessionIdleTimeoutRememberMe() > 0 ?
-            realm.getSsoSessionIdleTimeoutRememberMe() : realm.getSsoSessionIdleTimeout();
-        int maxLifespan = userSession.isRememberMe() && realm.getSsoSessionMaxLifespanRememberMe() > 0 ?
-                realm.getSsoSessionMaxLifespanRememberMe() : realm.getSsoSessionMaxLifespan();
+        // Additional time window is added for the case when session was updated in different DC and the update to current DC
+        // was postponed
+        int maxIdle = 0;
+        if (userSession.isRememberMe() && realm.getSsoSessionIdleTimeoutRememberMe() > 0) {
+            maxIdle = realm.getSsoSessionIdleTimeoutRememberMe();
+        } else {
+            String clientSsoSessionIdleTimeout = client.getAttribute(OIDCConfigAttributes.SSO_SESSION_IDLE_TIMEOUT);
+            if (clientSsoSessionIdleTimeout != null && !clientSsoSessionIdleTimeout.trim().isEmpty()) {
+                maxIdle = Integer.parseInt(clientSsoSessionIdleTimeout);
+            } else {
+                maxIdle = realm.getSsoSessionIdleTimeout();
+            }
+        }
+
+        int maxLifespan = 0;
+        if (userSession.isRememberMe() && realm.getSsoSessionMaxLifespanRememberMe() > 0) {
+            maxLifespan = realm.getSsoSessionMaxLifespanRememberMe();
+        } else {
+            String clientSsoSessionMaxLifespan = client.getAttribute(OIDCConfigAttributes.SSO_SESSION_MAX_LIFESPAN);
+            if (clientSsoSessionMaxLifespan != null && !clientSsoSessionMaxLifespan.trim().isEmpty()) {
+                maxLifespan = Integer.parseInt(clientSsoSessionMaxLifespan);
+            } else {
+                maxLifespan = realm.getSsoSessionMaxLifespan();
+            }
+        }
 
         boolean sessionIdleOk = maxIdle > currentTime - userSession.getLastSessionRefresh() - SessionTimeoutHelper.IDLE_TIMEOUT_WINDOW_SECONDS;
         boolean sessionMaxOk = maxLifespan > currentTime - userSession.getStarted();
         return sessionIdleOk && sessionMaxOk;
     }
 
-    public static boolean isOfflineSessionValid(RealmModel realm, UserSessionModel userSession) {
+    public static boolean isOfflineSessionValid(RealmModel realm, UserSessionModel userSession, ClientModel client) {
         if (userSession == null) {
             logger.debug("No offline user session");
             return false;
         }
         int currentTime = Time.currentTime();
         // Additional time window is added for the case when session was updated in different DC and the update to current DC was postponed
-        int maxIdle = realm.getOfflineSessionIdleTimeout() + SessionTimeoutHelper.IDLE_TIMEOUT_WINDOW_SECONDS;
+        int maxIdle;
+        String clientOfflineSessionIdleTimeout = client.getAttribute(OIDCConfigAttributes.OFFLINE_SESSION_IDLE_TIMEOUT);
+        if (clientOfflineSessionIdleTimeout != null && !clientOfflineSessionIdleTimeout.trim().isEmpty()) {
+            maxIdle = Integer.parseInt(clientOfflineSessionIdleTimeout) + SessionTimeoutHelper.IDLE_TIMEOUT_WINDOW_SECONDS;
+        } else {
+            maxIdle = realm.getOfflineSessionIdleTimeout() + SessionTimeoutHelper.IDLE_TIMEOUT_WINDOW_SECONDS;
+        }
 
         // KEYCLOAK-7688 Offline Session Max for Offline Token
-        if (realm.isOfflineSessionMaxLifespanEnabled()) {
-            int max = userSession.getStarted() + realm.getOfflineSessionMaxLifespan();
+        String clientIsOfflineSessionMaxLifespanEnabled = client
+            .getAttribute(OIDCConfigAttributes.OFFLINE_SESSION_MAX_LIFESPAN_ENABLED);
+        boolean isOfflineSessionMaxLifespanEnabled = "ON".equals(clientIsOfflineSessionMaxLifespanEnabled)
+            || (!"OFF".equals(clientIsOfflineSessionMaxLifespanEnabled) && realm.isOfflineSessionMaxLifespanEnabled());
+
+        if (isOfflineSessionMaxLifespanEnabled) {
+            int max = userSession.getStarted() + ("ON".equals(clientIsOfflineSessionMaxLifespanEnabled)
+                ? Integer.parseInt(client.getAttribute(OIDCConfigAttributes.OFFLINE_SESSION_MAX_LIFESPAN))
+                : realm.getOfflineSessionMaxLifespan());
             return userSession.getLastSessionRefresh() + maxIdle > currentTime && max > currentTime;
         } else {
             return userSession.getLastSessionRefresh() + maxIdle > currentTime;
@@ -216,6 +250,26 @@ public class AuthenticationManager {
                                          ClientConnection connection, HttpHeaders headers,
                                          boolean logoutBroker) {
         backchannelLogout(session, realm, userSession, uriInfo, connection, headers, logoutBroker, false);
+    }
+
+    public static void backchannelClientLogout(KeycloakSession session, RealmModel realm, UserSessionModel userSession,
+        UriInfo uriInfo, ClientConnection connection, HttpHeaders headers, boolean logoutBroker, ClientModel client) {
+        if (userSession == null)
+            return;
+
+        boolean logsOutUserSession = userSession.getAuthenticatedClientSessions().size() == 1
+            && userSession.getAuthenticatedClientSessions().get(client.getId()) != null;
+
+        if (logsOutUserSession)
+            backchannelLogout(session, realm, userSession, uriInfo, connection, headers, logoutBroker, false);
+        else {
+            final AuthenticationSessionManager asm = new AuthenticationSessionManager(session);
+            AuthenticationSessionModel logoutAuthSession = createOrJoinLogoutSession(session, realm, asm, userSession, false);
+            backchannelLogoutClientSession(session, realm, userSession.getAuthenticatedClientSessionByClient(client.getId()),
+                logoutAuthSession, uriInfo, headers);
+            userSession.setNote(Constants.CLIENT_UUID, client.getId());
+            session.sessions().removeUserSession(realm, userSession);
+        }
     }
 
     /**
@@ -601,8 +655,25 @@ public class AuthenticationManager {
 
         if (session != null && session.isRememberMe() && realm.getSsoSessionMaxLifespanRememberMe() > 0) {
             token.expiration(Time.currentTime() + realm.getSsoSessionMaxLifespanRememberMe());
-        } else if (realm.getSsoSessionMaxLifespan() > 0) {
-            token.expiration(Time.currentTime() + realm.getSsoSessionMaxLifespan());
+        } else {
+            int ssoSessionMaxLifespan = 0;
+            for (AuthenticatedClientSessionModel authenticatedClientSession : session.getAuthenticatedClientSessions()
+                .values()) {
+                int tmpSsoSessionMaxLifespan = 0;
+                ClientModel client = authenticatedClientSession.getClient();
+                String clientSsoSessionMaxLifespan = client.getAttribute(OIDCConfigAttributes.SSO_SESSION_MAX_LIFESPAN);
+
+                if (clientSsoSessionMaxLifespan != null && !clientSsoSessionMaxLifespan.trim().isEmpty()) {
+                    tmpSsoSessionMaxLifespan = Integer.parseInt(clientSsoSessionMaxLifespan);
+                } else {
+                    tmpSsoSessionMaxLifespan = realm.getSsoSessionMaxLifespan();
+                }
+
+                ssoSessionMaxLifespan = Math.max(ssoSessionMaxLifespan, tmpSsoSessionMaxLifespan);
+            }
+            if (ssoSessionMaxLifespan > 0) {
+                token.expiration(Time.currentTime() + ssoSessionMaxLifespan);
+            }
         }
 
         String stateChecker = (String) keycloakSession.getAttribute("state_checker");
@@ -623,7 +694,22 @@ public class AuthenticationManager {
         boolean secureOnly = realm.getSslRequired().isRequired(connection);
         int maxAge = NewCookie.DEFAULT_MAX_AGE;
         if (session != null && session.isRememberMe()) {
-            maxAge = realm.getSsoSessionMaxLifespanRememberMe() > 0 ? realm.getSsoSessionMaxLifespanRememberMe() : realm.getSsoSessionMaxLifespan();
+            if (realm.getSsoSessionMaxLifespanRememberMe() > 0) {
+                maxAge = realm.getSsoSessionMaxLifespanRememberMe();
+            } else {
+                for (AuthenticatedClientSessionModel authenticatedClientSession : session.getAuthenticatedClientSessions()
+                    .values()) {
+                    int tmpMaxAge = 0;
+                    ClientModel client = authenticatedClientSession.getClient();
+                    String clientSsoSessionMaxLifespan = client.getAttribute(OIDCConfigAttributes.SSO_SESSION_MAX_LIFESPAN);
+                    if (clientSsoSessionMaxLifespan != null && !clientSsoSessionMaxLifespan.trim().isEmpty()) {
+                        tmpMaxAge = Integer.parseInt(clientSsoSessionMaxLifespan);
+                    } else {
+                        tmpMaxAge = realm.getSsoSessionMaxLifespan();
+                    }
+                    maxAge = Math.max(maxAge, tmpMaxAge);
+                }
+            }
         }
         logger.debugv("Create login cookie - name: {0}, path: {1}, max-age: {2}", KEYCLOAK_IDENTITY_COOKIE, cookiePath, maxAge);
         CookieHelper.addCookie(KEYCLOAK_IDENTITY_COOKIE, encoded, cookiePath, null, null, maxAge, secureOnly, true);
@@ -635,8 +721,7 @@ public class AuthenticationManager {
         }
         // THIS SHOULD NOT BE A HTTPONLY COOKIE!  It is used for OpenID Connect Iframe Session support!
         // Max age should be set to the max lifespan of the session as it's used to invalidate old-sessions on re-login
-        int sessionCookieMaxAge = session.isRememberMe() && realm.getSsoSessionMaxLifespanRememberMe() > 0 ? realm.getSsoSessionMaxLifespanRememberMe() : realm.getSsoSessionMaxLifespan();
-        CookieHelper.addCookie(KEYCLOAK_SESSION_COOKIE, sessionCookieValue, cookiePath, null, null, sessionCookieMaxAge, secureOnly, false);
+        CookieHelper.addCookie(KEYCLOAK_SESSION_COOKIE, sessionCookieValue, cookiePath, null, null, maxAge, secureOnly, false);
         P3PHelper.addP3PHeader();
     }
 
@@ -1221,11 +1306,13 @@ public class AuthenticationManager {
                 }
             }
 
-            if (!isSessionValid(realm, userSession)) {
+            ClientModel client = realm.getClientByClientId(token.getIssuedFor());
+
+            if (!isSessionValid(realm, userSession, client)) {
                 // Check if accessToken was for the offline session.
                 if (!isCookie) {
                     UserSessionModel offlineUserSession = session.sessions().getOfflineUserSession(realm, token.getSessionState());
-                    if (isOfflineSessionValid(realm, offlineUserSession)) {
+                    if (isOfflineSessionValid(realm, offlineUserSession, client)) {
                         user = offlineUserSession.getUser();
                         return new AuthResult(user, offlineUserSession, token);
                     }

@@ -495,6 +495,7 @@ public class UserSessionProviderOfflineTest extends AbstractTestRealmKeycloakTes
 
                 // Set lastSessionRefresh to currentSession[0] to 0
                 session0.setLastSessionRefresh(Time.currentTime());
+                session0.getAuthenticatedClientSessions().values().iterator().next().setTimestamp(Time.currentTime());
             });
 
 
@@ -512,6 +513,7 @@ public class UserSessionProviderOfflineTest extends AbstractTestRealmKeycloakTes
 
                     UserSessionModel session0 = currentSession.sessions().getOfflineUserSession(realm, origSessions[0].getId());
                     session0.setLastSessionRefresh(Time.currentTime());
+                    session0.getAuthenticatedClientSessions().values().iterator().next().setTimestamp(Time.currentTime());
                 });
             }
 

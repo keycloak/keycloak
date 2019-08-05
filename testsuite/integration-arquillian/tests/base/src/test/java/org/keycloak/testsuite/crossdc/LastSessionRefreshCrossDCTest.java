@@ -229,7 +229,7 @@ public class LastSessionRefreshCrossDCTest extends AbstractAdminCrossDCTest {
         boolean sessionValid = getTestingClientForStartedNodeInDc(1).server("test").fetch((KeycloakSession session) -> {
             RealmModel realm = session.realms().getRealmByName("test");
             UserSessionModel userSession = session.sessions().getUserSession(realm, sessionId);
-            return AuthenticationManager.isSessionValid(realm, userSession);
+            return AuthenticationManager.isSessionValid(realm, userSession, realm.getClientByClientId("test-app"));
         }, Boolean.class);
 
         Assert.assertTrue(sessionValid);
@@ -248,7 +248,7 @@ public class LastSessionRefreshCrossDCTest extends AbstractAdminCrossDCTest {
         sessionValid = getTestingClientForStartedNodeInDc(1).server("test").fetch((KeycloakSession session) -> {
             RealmModel realm = session.realms().getRealmByName("test");
             UserSessionModel userSession = session.sessions().getUserSession(realm, sessionId);
-            return AuthenticationManager.isSessionValid(realm, userSession);
+            return AuthenticationManager.isSessionValid(realm, userSession, realm.getClientByClientId("test-app"));
         }, Boolean.class);
 
         Assert.assertFalse(sessionValid);

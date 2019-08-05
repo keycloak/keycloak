@@ -31,15 +31,14 @@ import org.keycloak.models.session.PersistentUserSessionAdapter;
 import org.keycloak.models.session.PersistentUserSessionModel;
 import org.keycloak.models.session.UserSessionPersisterProvider;
 import org.keycloak.models.utils.SessionTimeoutHelper;
+import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.storage.StorageId;
 
 import javax.persistence.EntityManager;
 import javax.persistence.Query;
 import javax.persistence.TypedQuery;
 
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -217,26 +216,33 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
 
     @Override
     public void removeExpired(RealmModel realm) {
-        int expiredOffline = Time.currentTime() - realm.getOfflineSessionIdleTimeout() - SessionTimeoutHelper.PERIODIC_CLEANER_IDLE_TIMEOUT_WINDOW_SECONDS;
-
         String offlineStr = offlineToString(true);
 
         logger.tracef("Trigger removing expired user sessions for realm '%s'", realm.getName());
 
-        int cs = em.createNamedQuery("deleteExpiredClientSessions")
-                .setParameter("realmId", realm.getId())
-                .setParameter("lastSessionRefresh", expiredOffline)
-                .setParameter("offline", offlineStr)
-                .executeUpdate();
+        for (ClientModel client : realm.getClients()) {
+            int expiredOffline;
+            String clientOfflineSessionIdleTimeout = client.getAttribute(OIDCConfigAttributes.OFFLINE_SESSION_IDLE_TIMEOUT);
+            if (clientOfflineSessionIdleTimeout != null && !clientOfflineSessionIdleTimeout.trim().isEmpty()) {
+                expiredOffline = Time.currentTime() - Integer.parseInt(clientOfflineSessionIdleTimeout)
+                    - SessionTimeoutHelper.PERIODIC_CLEANER_IDLE_TIMEOUT_WINDOW_SECONDS;
+            } else {
+                expiredOffline = Time.currentTime() - realm.getOfflineSessionIdleTimeout()
+                    - SessionTimeoutHelper.PERIODIC_CLEANER_IDLE_TIMEOUT_WINDOW_SECONDS;
+            }
 
-        int us = em.createNamedQuery("deleteExpiredUserSessions")
-                .setParameter("realmId", realm.getId())
-                .setParameter("lastSessionRefresh", expiredOffline)
-                .setParameter("offline", offlineStr)
-                .executeUpdate();
+            List<PersistentClientSessionEntity> clientSessions = em
+                .createNamedQuery("findExpiredClientSessionsByClient", PersistentClientSessionEntity.class)
+                .setParameter("clientId", client.getId()).setParameter("realmId", realm.getId())
+                .setParameter("lastSessionRefresh", expiredOffline).setParameter("offline", offlineStr).getResultList();
 
-        logger.debugf("Removed %d expired user sessions and %d expired client sessions in realm '%s'", us, cs, realm.getName());
+            for (PersistentClientSessionEntity clientSessionEntity : clientSessions) {
+                removeClientSession(clientSessionEntity.getUserSessionId(), client.getId(), true);
+            }
 
+            logger.debugf("Removed %d expired client sessions of client '%s' in realm '%s'", clientSessions.size(),
+                client.getClientId(), realm.getName());
+        }
     }
 
     @Override

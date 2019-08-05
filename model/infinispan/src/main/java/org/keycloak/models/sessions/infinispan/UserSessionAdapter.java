@@ -43,8 +43,6 @@ import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import static org.keycloak.models.sessions.infinispan.changes.sessions.CrossDCLastSessionRefreshListener.IGNORE_REMOTE_CACHE_UPDATE;
-
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
@@ -228,8 +226,10 @@ public class UserSessionAdapter implements UserSessionModel {
 
             @Override
             public CrossDCMessageStatus getCrossDCMessageStatus(SessionEntityWrapper<UserSessionEntity> sessionWrapper) {
-                return new CrossDCLastSessionRefreshChecker(provider.getLastSessionRefreshStore(), provider.getOfflineLastSessionRefreshStore())
-                        .shouldSaveUserSessionToRemoteCache(UserSessionAdapter.this.session, UserSessionAdapter.this.realm, sessionWrapper, offline, lastSessionRefresh);
+                return new CrossDCLastSessionRefreshChecker(provider.getLastSessionRefreshStore(),
+                    provider.getOfflineLastSessionRefreshStore()).shouldSaveUserSessionToRemoteCache(
+                        UserSessionAdapter.this.session, UserSessionAdapter.this.realm, sessionWrapper, offline,
+                        lastSessionRefresh, UserSessionAdapter.this);
             }
 
             @Override

@@ -27,7 +27,7 @@ import org.junit.Test;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.*;
-import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
+import org.keycloak.models.sessions.infinispan.AuthenticatedClientSessionAdapter;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ResetTimeOffsetEvent;
 import org.keycloak.models.utils.SessionTimeoutHelper;
@@ -351,9 +351,11 @@ public class UserSessionProviderTest extends AbstractTestRealmKeycloakTest {
             // create an user session whose last refresh exceeds the max session idle timeout.
             KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession session1) -> {
                 Time.setOffset(-(realm.getSsoSessionIdleTimeout() + SessionTimeoutHelper.PERIODIC_CLEANER_IDLE_TIMEOUT_WINDOW_SECONDS + 1));
-                UserSessionModel s = session1.sessions().createUserSession(realm, session1.users().getUserByUsername("user2", realm), "user2", "127.0.0.1", "form", false, null, null);
+                UserSessionModel userSession = session1.sessions().createUserSession(realm, session1.users().getUserByUsername("user2", realm), "user2", "127.0.0.1", "form", false, null, null);
                 // no need to explicitly set the last refresh time - it is the same as the creation time.
-                expiredUserSessions.add(s.getId());
+                expiredUserSessions.add(userSession.getId());
+                AuthenticatedClientSessionModel clientSession = session1.sessions().createClientSession(realm, client, userSession);
+                assertEquals(userSession, clientSession.getUserSession());
             });
 
             // create an user session and associated client session that conforms to the max lifespan and max idle timeouts.
@@ -361,7 +363,9 @@ public class UserSessionProviderTest extends AbstractTestRealmKeycloakTest {
             KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession session1) -> {
                 UserSessionModel userSession = session1.sessions().createUserSession(realm, session1.users().getUserByUsername("user1", realm), "user1", "127.0.0.1", "form", false, null, null);
                 validUserSessions.add(userSession.getId());
-                validClientSessions.add(session1.sessions().createClientSession(realm, client, userSession).getId());
+                AuthenticatedClientSessionModel clientSession = session1.sessions().createClientSession(realm, client, userSession);
+                validClientSessions.add(clientSession.getClient().getId());
+                assertEquals(userSession, clientSession.getUserSession());
             });
 
             // remove the expired sessions - we expect the first two sessions to have been removed as they either expired the max lifespan or the session idle timeouts.
@@ -375,9 +379,10 @@ public class UserSessionProviderTest extends AbstractTestRealmKeycloakTest {
                 UserSessionModel userSessionLoaded = session.sessions().getUserSession(realm, v);
                 assertNotNull(userSessionLoaded);
                 // the only valid user session should also have a valid client session that hasn't expired.
-                AuthenticatedClientSessionModel clientSessionModel = userSessionLoaded.getAuthenticatedClientSessions().get(client.getId());
+                AuthenticatedClientSessionAdapter clientSessionModel = (AuthenticatedClientSessionAdapter) userSessionLoaded
+                    .getAuthenticatedClientSessions().get(client.getId());
                 assertNotNull(clientSessionModel);
-                assertTrue(validClientSessions.contains(clientSessionModel.getId()));
+                assertTrue(validClientSessions.contains(clientSessionModel.getClient().getId()));
             }
         } finally {
             Time.setOffset(0);

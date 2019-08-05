@@ -24,13 +24,14 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-
 import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserManager;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.AuthenticationManager;
 
@@ -85,7 +86,7 @@ public class SessionTimeoutValidationTest extends AbstractTestRealmKeycloakTest 
 
     @Test
     @ModelTest
-    public  void testIsSessionValid(KeycloakSession session) {
+    public void testIsSessionValid(KeycloakSession session) {
         
         // KEYCLOAK-9833 Large SSO Session Idle/SSO Session Max causes login failure
         RealmModel realm = session.realms().getRealmByName("test");
@@ -100,13 +101,65 @@ public class SessionTimeoutValidationTest extends AbstractTestRealmKeycloakTest 
 
         realm.setSsoSessionIdleTimeout(Integer.MAX_VALUE);
         Assert.assertTrue("Session validataion with large SsoSessionIdleTimeout failed",
-                          AuthenticationManager.isSessionValid(realm, userSessionModel));
-        
+            AuthenticationManager.isSessionValid(realm, userSessionModel, realm.getClientByClientId("test-app")));
+
         realm.setSsoSessionMaxLifespan(Integer.MAX_VALUE);
         Assert.assertTrue("Session validataion with large SsoSessionMaxLifespan failed",
-                          AuthenticationManager.isSessionValid(realm, userSessionModel));
+            AuthenticationManager.isSessionValid(realm, userSessionModel, realm.getClientByClientId("test-app")));
         
         realm.setSsoSessionIdleTimeout(ssoSessionIdleTimeoutOrig);
         realm.setSsoSessionMaxLifespan(ssoSessionMaxLifespanOrig);
+    }
+
+    @Test
+    @ModelTest
+    public void testIsSessionValidClientOverride(KeycloakSession session) {
+        RealmModel realm = session.realms().getRealmByName("test");
+        UserSessionModel userSessionModel = session.sessions().createUserSession(realm,
+            session.users().getUserByUsername("user1", realm), "user1", "127.0.0.1", "form", true, null, null);
+        ClientModel client = realm.getClientByClientId("test-app");
+
+        try {
+            Assert.assertTrue(AuthenticationManager.isSessionValid(realm, userSessionModel, client));
+
+            client.setAttribute(OIDCConfigAttributes.SSO_SESSION_IDLE_TIMEOUT, "-200");
+
+            Assert.assertFalse(AuthenticationManager.isSessionValid(realm, userSessionModel, client));
+
+            client.setAttribute(OIDCConfigAttributes.SSO_SESSION_IDLE_TIMEOUT, null);
+            client.setAttribute(OIDCConfigAttributes.SSO_SESSION_MAX_LIFESPAN, "0");
+
+            Assert.assertFalse(AuthenticationManager.isSessionValid(realm, userSessionModel, client));
+        } finally {
+            client.setAttribute(OIDCConfigAttributes.SSO_SESSION_IDLE_TIMEOUT, null);
+            client.setAttribute(OIDCConfigAttributes.SSO_SESSION_MAX_LIFESPAN, null);
+        }
+    }
+
+    @Test
+    @ModelTest
+    public void testIsOfflineSessionValidClientOverride(KeycloakSession session) {
+        RealmModel realm = session.realms().getRealmByName("test");
+        UserSessionModel userSessionModel = session.sessions().createUserSession(realm,
+            session.users().getUserByUsername("user1", realm), "user1", "127.0.0.1", "form", true, null, null);
+        ClientModel client = realm.getClientByClientId("test-app");
+
+        try {
+            Assert.assertTrue(AuthenticationManager.isOfflineSessionValid(realm, userSessionModel, client));
+
+            client.setAttribute(OIDCConfigAttributes.OFFLINE_SESSION_IDLE_TIMEOUT, "-200");
+
+            Assert.assertFalse(AuthenticationManager.isOfflineSessionValid(realm, userSessionModel, client));
+
+            client.setAttribute(OIDCConfigAttributes.OFFLINE_SESSION_IDLE_TIMEOUT, null);
+            client.setAttribute(OIDCConfigAttributes.OFFLINE_SESSION_MAX_LIFESPAN_ENABLED, "ON");
+            client.setAttribute(OIDCConfigAttributes.OFFLINE_SESSION_MAX_LIFESPAN, "0");
+
+            Assert.assertFalse(AuthenticationManager.isOfflineSessionValid(realm, userSessionModel, client));
+        } finally {
+            client.setAttribute(OIDCConfigAttributes.OFFLINE_SESSION_IDLE_TIMEOUT, null);
+            client.setAttribute(OIDCConfigAttributes.OFFLINE_SESSION_MAX_LIFESPAN_ENABLED, null);
+            client.setAttribute(OIDCConfigAttributes.OFFLINE_SESSION_MAX_LIFESPAN, null);
+        }
     }
 }

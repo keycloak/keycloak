@@ -507,6 +507,109 @@
             <legend collapsed><span class="text">{{:: 'advanced-client-settings' | translate}}</span>  <kc-tooltip>{{:: 'advanced-client-settings.tooltip' | translate}}</kc-tooltip></legend>
 
             <div class="form-group">
+                <label class="col-md-2 control-label" for="revokeRefreshToken">{{:: 'revoke-refresh-token' | translate}}</label>
+                <div class="col-sm-6">
+                    <div>
+                        <select class="form-control" id="revokeRefreshToken"
+                                ng-change="changeRevokeRefreshToken()"
+                                ng-model="revokeRefreshToken"
+                                ng-options="switch for switch in onOffSwitchOptions">
+                        </select>
+                    </div>
+                </div>
+                <kc-tooltip>{{:: 'revoke-refresh-token.tooltip' | translate}}</kc-tooltip>
+            </div>
+
+            <div class="form-group" data-ng-show="revokeRefreshToken == 'ON'">
+                <label class="col-md-2 control-label" for="refreshTokenMaxReuse">{{:: 'refresh-token-max-reuse' | translate}}</label>
+                <div class="col-md-6">
+                    <input class="form-control" type="number" required min="0" 
+                           max="31536000" data-ng-model="refreshTokenMaxReuse" 
+                           id="refreshTokenMaxReuse" name="refreshTokenMaxReuse"
+                           data-ng-change="updateRefreshTokenMaxReuse()"/>
+                </div>
+                <kc-tooltip>{{:: 'refresh-token-max-reuse.tooltip' | translate}}</kc-tooltip>
+            </div>
+
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="ssoSessionIdleTimeout">{{:: 'sso-session-idle' | translate}}</label>
+                <div class="col-md-6 time-selector">
+                    <input class="form-control" type="number" min="1" 
+                           max="31536000" data-ng-model="ssoSessionIdleTimeout.time"
+                           id="ssoSessionIdleTimeout" name="ssoSessionIdleTimeout"
+                           data-ng-change="updateSsoSessionIdleTimeout()"/>
+                    <select class="form-control" name="ssoSessionIdleTimeoutUnit" data-ng-model="ssoSessionIdleTimeout.unit" data-ng-change="updateSsoSessionIdleTimeout()">
+                        <option value="Minutes">{{:: 'minutes' | translate}}</option>
+                        <option value="Hours">{{:: 'hours' | translate}}</option>
+                        <option value="Days">{{:: 'days' | translate}}</option>
+                    </select>
+                </div>
+                <kc-tooltip>{{:: 'sso-session-idle.tooltip' | translate}}</kc-tooltip>
+            </div>
+
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="ssoSessionMaxLifespan">{{:: 'sso-session-max' | translate}}</label>
+                <div class="col-md-6 time-selector">
+                    <input class="form-control" type="number" min="1"
+                           max="31536000" data-ng-model="ssoSessionMaxLifespan.time"
+                           id="ssoSessionMaxLifespan" name="ssoSessionMaxLifespan"
+                           data-ng-change="updateSsoSessionMaxLifespan()"/>
+                    <select class="form-control" name="ssoSessionMaxLifespanUnit" data-ng-model="ssoSessionMaxLifespan.unit" data-ng-change="updateSsoSessionMaxLifespan()">
+                        <option value="Minutes">{{:: 'minutes' | translate}}</option>
+                        <option value="Hours">{{:: 'hours' | translate}}</option>
+                        <option value="Days">{{:: 'days' | translate}}</option>
+                    </select>
+                </div>
+                <kc-tooltip>{{:: 'sso-session-max.tooltip' | translate}}</kc-tooltip>
+            </div>
+
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="offlineSessionIdleTimeout">{{:: 'offline-session-idle' | translate}}</label>
+                <div class="col-md-6 time-selector">
+                    <input class="form-control" type="number" min="1"
+                           max="31536000" data-ng-model="offlineSessionIdleTimeout.time"
+                           id="offlineSessionIdleTimeout" name="offlineSessionIdleTimeout"
+                           data-ng-change="updateOfflineSessionIdleTimeout()"/>
+                    <select class="form-control" name="offlineSessionIdleTimeoutUnit" data-ng-model="offlineSessionIdleTimeout.unit" data-ng-change="updateOfflineSessionIdleTimeout()">
+                        <option value="Minutes">{{:: 'minutes' | translate}}</option>
+                        <option value="Hours">{{:: 'hours' | translate}}</option>
+                        <option value="Days">{{:: 'days' | translate}}</option>
+                    </select>
+                </div>
+                <kc-tooltip>{{:: 'offline-session-idle.tooltip' | translate}}</kc-tooltip>
+            </div>
+
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="offlineSessionMaxLifespanEnabled">{{:: 'offline-session-max-limited' | translate}}</label>
+                <div class="col-sm-6">
+                    <div>
+                        <select class="form-control" id="offlineSessionMaxLifespanEnabled"
+                                ng-change="changeOfflineSessionMaxLifespanEnabled()"
+                                ng-model="offlineSessionMaxLifespanEnabled"
+                                ng-options="switch for switch in onOffSwitchOptions">
+                        </select>
+                    </div>
+                </div>
+                <kc-tooltip>{{:: 'offline-session-max-limited.tooltip' | translate}}</kc-tooltip>
+            </div>
+
+            <div class="form-group" data-ng-show="offlineSessionMaxLifespanEnabled == 'ON'">
+                <label class="col-md-2 control-label" for="offlineSessionMaxLifespan">{{:: 'offline-session-max' | translate}}</label>
+                <div class="col-md-6 time-selector">
+                    <input class="form-control" type="number" required min="1"
+                           max="31536000" data-ng-model="offlineSessionMaxLifespan.time"
+                           id="offlineSessionMaxLifespan" name="offlineSessionMaxLifespan"
+                           data-ng-change="updateOfflineSessionMaxLifespan()"/>
+                    <select class="form-control" name="offlineSessionMaxLifespanUnit" data-ng-model="offlineSessionMaxLifespan.unit" data-ng-change="updateOfflineSessionMaxLifespan()">
+                        <option value="Minutes">{{:: 'minutes' | translate}}</option>
+                        <option value="Hours">{{:: 'hours' | translate}}</option>
+                        <option value="Days">{{:: 'days' | translate}}</option>
+                    </select>
+                </div>
+                <kc-tooltip>{{:: 'offline-session-max.tooltip' | translate}}</kc-tooltip>
+            </div>
+
+            <div class="form-group">
                 <label class="col-md-2 control-label" for="accessTokenLifespan">{{:: 'access-token-lifespan' | translate}}</label>
 
                 <div class="col-md-6 time-selector">

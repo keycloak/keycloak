@@ -123,6 +123,16 @@ public class UserSessionManager {
         persister.removeUserSession(userSession.getId(), true);
     }
 
+    public void revokeOfflineClientSession(UserSessionModel userSession, ClientModel client) {
+        if (logger.isTraceEnabled()) {
+            logger.tracef("Removing offline client session of user session '%s' for user '%s' and client '%s' ",
+                userSession.getId(), userSession.getLoginUsername(), client.getName());
+        }
+        userSession.setNote(Constants.CLIENT_UUID, client.getId());
+        kcSession.sessions().removeOfflineUserSession(userSession.getRealm(), userSession);
+        persister.removeClientSession(userSession.getId(), client.getId(), true);
+    }
+
     public boolean isOfflineTokenAllowed(ClientSessionContext clientSessionCtx) {
         RoleModel offlineAccessRole = clientSessionCtx.getClientSession().getRealm().getRole(Constants.OFFLINE_ACCESS_ROLE);
         if (offlineAccessRole == null) {

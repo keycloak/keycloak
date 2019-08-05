@@ -29,6 +29,7 @@ import org.keycloak.common.util.Time;
 import org.keycloak.device.DeviceActivityManager;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OfflineUserSessionModel;
 import org.keycloak.models.RealmModel;
@@ -52,7 +53,6 @@ import org.keycloak.models.sessions.infinispan.events.RealmRemovedSessionEvent;
 import org.keycloak.models.sessions.infinispan.events.RemoveAllUserLoginFailuresEvent;
 import org.keycloak.models.sessions.infinispan.events.RemoveUserSessionsEvent;
 import org.keycloak.models.sessions.infinispan.events.SessionEventsSenderTransaction;
-import org.keycloak.models.sessions.infinispan.stream.AuthenticatedClientSessionPredicate;
 import org.keycloak.models.sessions.infinispan.stream.Comparators;
 import org.keycloak.models.sessions.infinispan.stream.Mappers;
 import org.keycloak.models.sessions.infinispan.stream.SessionPredicate;
@@ -62,7 +62,6 @@ import org.keycloak.models.sessions.infinispan.util.FuturesHelper;
 import org.keycloak.models.sessions.infinispan.util.InfinispanKeyGenerator;
 import org.keycloak.models.sessions.infinispan.util.InfinispanUtil;
 import org.keycloak.models.utils.SessionTimeoutHelper;
-
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.HashMap;
@@ -87,6 +86,9 @@ import java.util.stream.Stream;
 public class InfinispanUserSessionProvider implements UserSessionProvider {
 
     private static final Logger log = Logger.getLogger(InfinispanUserSessionProvider.class);
+    private static final String SSO_SESSION_IDLE_TIMEOUT = "sso.session.idle.timeout";
+    private static final String SSO_SESSION_MAX_LIFESPAN = "sso.session.max.lifespan";
+    private static final String OFFLINE_SESSION_IDLE_TIMEOUT = "offline.session.idle.timeout";
 
     protected final KeycloakSession session;
 
@@ -456,9 +458,15 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
     @Override
     public void removeUserSession(RealmModel realm, UserSessionModel session) {
         UserSessionEntity entity = getUserSessionEntity(session, false);
-        if (entity != null) {
-            removeUserSession(entity, false);
+        if (entity == null)
+            return;
+
+        if (session.getNote(Constants.CLIENT_UUID) != null) {
+            removeClientSession(realm, session, session.getNote(Constants.CLIENT_UUID), false);
+            return;
         }
+
+        removeUserSession(entity, false);
     }
 
     @Override
@@ -487,135 +495,165 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
     }
 
     private void removeExpiredUserSessions(RealmModel realm) {
-        int expired = Time.currentTime() - realm.getSsoSessionMaxLifespan();
-        int expiredRefresh = Time.currentTime() - realm.getSsoSessionIdleTimeout() - SessionTimeoutHelper.PERIODIC_CLEANER_IDLE_TIMEOUT_WINDOW_SECONDS;
-        int expiredRememberMe = Time.currentTime() - (realm.getSsoSessionMaxLifespanRememberMe() > 0 ? realm.getSsoSessionMaxLifespanRememberMe() : realm.getSsoSessionMaxLifespan());
-        int expiredRefreshRememberMe = Time.currentTime() - (realm.getSsoSessionIdleTimeoutRememberMe() > 0 ? realm.getSsoSessionIdleTimeoutRememberMe() : realm.getSsoSessionIdleTimeout()) -
-                SessionTimeoutHelper.PERIODIC_CLEANER_IDLE_TIMEOUT_WINDOW_SECONDS;
-
         FuturesHelper futures = new FuturesHelper();
-
-        // Each cluster node cleanups just local sessions, which are those owned by itself (+ few more taking l1 cache into account)
-        Cache<String, SessionEntityWrapper<UserSessionEntity>> localCache = CacheDecorators.localCache(sessionCache);
-        Cache<String, SessionEntityWrapper<UserSessionEntity>> localCacheStoreIgnore = CacheDecorators.skipCacheLoaders(localCache);
-
         final AtomicInteger userSessionsSize = new AtomicInteger();
         final AtomicInteger clientSessionsSize = new AtomicInteger();
 
+        // Each cluster node cleanups just local sessions, which are those owned by itself (+ few more taking l1 cache into
+        // account)
+        Cache<String, SessionEntityWrapper<UserSessionEntity>> localCache = CacheDecorators.localCache(sessionCache);
+        Cache<String, SessionEntityWrapper<UserSessionEntity>> localCacheStoreIgnore = CacheDecorators
+            .skipCacheLoaders(localCache);
+
         // Ignore remoteStore for stream iteration. But we will invoke remoteStore for userSession removal propagate
-        localCacheStoreIgnore
-                .entrySet()
-                .stream()
-                .filter(UserSessionPredicate.create(realm.getId()).expired(expired, expiredRefresh, expiredRememberMe, expiredRefreshRememberMe))
-                .map(Mappers.userSessionEntity())
-                .forEach(new Consumer<UserSessionEntity>() {
+        localCacheStoreIgnore.entrySet().stream()
+            .map(Mappers.userSessionEntity()).forEach(new Consumer<UserSessionEntity>() {
 
-                    @Override
-                    public void accept(UserSessionEntity userSessionEntity) {
+                @Override
+                public void accept(UserSessionEntity userSessionEntity) {
+                    final AtomicInteger removedClientCount = new AtomicInteger();
+                    userSessionEntity.getAuthenticatedClientSessions().forEach((clientUUID, clientSessionId) -> {
+                        ClientModel client = realm.getClientById(clientUUID);
+                        String clientSsoSessionMaxLifespan = client == null ? null
+                            : client.getAttribute(SSO_SESSION_MAX_LIFESPAN);
+                        String clientSsoSessionIdleTimeout = client == null ? null
+                            : client.getAttribute(SSO_SESSION_IDLE_TIMEOUT);
+
+                        int expired;
+                        int expiredRememberMe;
+                        if (clientSsoSessionMaxLifespan != null && !clientSsoSessionMaxLifespan.trim().isEmpty()) {
+                            expired = Time.currentTime() - Integer.parseInt(clientSsoSessionMaxLifespan);
+                            expiredRememberMe = Time.currentTime()
+                                - (realm.getSsoSessionMaxLifespanRememberMe() > 0 ? realm.getSsoSessionMaxLifespanRememberMe()
+                                    : Integer.parseInt(clientSsoSessionMaxLifespan));
+                        } else {
+                            expired = Time.currentTime() - realm.getSsoSessionMaxLifespan();
+                            expiredRememberMe = Time.currentTime()
+                                - (realm.getSsoSessionMaxLifespanRememberMe() > 0 ? realm.getSsoSessionMaxLifespanRememberMe()
+                                    : realm.getSsoSessionMaxLifespan());
+                        }
+
+                        int expiredRefresh;
+                        int expiredRefreshRememberMe;
+                        if (clientSsoSessionIdleTimeout != null && !clientSsoSessionIdleTimeout.trim().isEmpty()) {
+                            expiredRefresh = Time.currentTime() - Integer.parseInt(clientSsoSessionIdleTimeout)
+                                - SessionTimeoutHelper.PERIODIC_CLEANER_IDLE_TIMEOUT_WINDOW_SECONDS;
+                            expiredRefreshRememberMe = Time.currentTime()
+                                - (realm.getSsoSessionIdleTimeoutRememberMe() > 0 ? realm.getSsoSessionIdleTimeoutRememberMe()
+                                    : Integer.parseInt(clientSsoSessionIdleTimeout))
+                                - SessionTimeoutHelper.PERIODIC_CLEANER_IDLE_TIMEOUT_WINDOW_SECONDS;
+                        } else {
+                            expiredRefresh = Time.currentTime() - realm.getSsoSessionIdleTimeout()
+                                - SessionTimeoutHelper.PERIODIC_CLEANER_IDLE_TIMEOUT_WINDOW_SECONDS;
+                            expiredRefreshRememberMe = Time.currentTime()
+                                - (realm.getSsoSessionIdleTimeoutRememberMe() > 0 ? realm.getSsoSessionIdleTimeoutRememberMe()
+                                    : realm.getSsoSessionIdleTimeout())
+                                - SessionTimeoutHelper.PERIODIC_CLEANER_IDLE_TIMEOUT_WINDOW_SECONDS;
+                        }
+
+                        AuthenticatedClientSessionEntity authenticatedClientSessionEntity = getClientSessionEntity(
+                            clientSessionId, false);
+
+                        if (userSessionEntity.isRememberMe()) {
+                            if (userSessionEntity.getStarted() <= expiredRememberMe
+                                || userSessionEntity.getLastSessionRefresh() <= expiredRefreshRememberMe) {
+                                checkToRemoveClientSession(futures, clientSessionsSize, removedClientCount, clientSessionId);
+                            } else if (authenticatedClientSessionEntity != null
+                                && authenticatedClientSessionEntity.getTimestamp() <= Math.min(expired, expiredRememberMe)) {
+                                checkToRemoveClientSession(futures, clientSessionsSize, removedClientCount, clientSessionId);
+                            }
+                        } else {
+                            if (userSessionEntity.getStarted() <= expired
+                                || userSessionEntity.getLastSessionRefresh() <= expiredRefresh) {
+                                checkToRemoveClientSession(futures, clientSessionsSize, removedClientCount, clientSessionId);
+                            } else if (authenticatedClientSessionEntity != null
+                                && authenticatedClientSessionEntity.getTimestamp() <= Math.min(expired, expiredRememberMe)) {
+                                checkToRemoveClientSession(futures, clientSessionsSize, removedClientCount, clientSessionId);
+                            }
+                        }
+                    });
+
+                    if (userSessionEntity.getAuthenticatedClientSessions().size() == removedClientCount.get()) {
                         userSessionsSize.incrementAndGet();
-
                         Future future = sessionCache.removeAsync(userSessionEntity.getId());
                         futures.addTask(future);
-
-                        userSessionEntity.getAuthenticatedClientSessions().forEach((clientUUID, clientSessionId) -> {
-                            clientSessionsSize.incrementAndGet();
-                            Future f = clientSessionCache.removeAsync(clientSessionId);
-                            futures.addTask(f);
-                        });
                     }
+                }
 
-                });
-
-        // Removing detached clientSessions. Ignore remoteStore for stream iteration. But we will invoke remoteStore for clientSession removal propagate
-        Cache<UUID, SessionEntityWrapper<AuthenticatedClientSessionEntity>> localClientSessionCache = CacheDecorators.localCache(clientSessionCache);
-        Cache<UUID, SessionEntityWrapper<AuthenticatedClientSessionEntity>> localClientSessionCacheStoreIgnore = CacheDecorators.skipCacheLoaders(localClientSessionCache);
-
-        localClientSessionCacheStoreIgnore
-                .entrySet()
-                .stream()
-                .filter(AuthenticatedClientSessionPredicate.create(realm.getId()).expired(Math.min(expired, expiredRememberMe)))
-                .map(Mappers.clientSessionEntity())
-                .forEach(new Consumer<AuthenticatedClientSessionEntity>() {
-
-                    @Override
-                    public void accept(AuthenticatedClientSessionEntity clientSessionEntity) {
-                        clientSessionsSize.incrementAndGet();
-
-                        Future future = clientSessionCache.removeAsync(clientSessionEntity.getId());
-                        futures.addTask(future);
-                    }
-
-                });
+                private void checkToRemoveClientSession(FuturesHelper futures, final AtomicInteger clientSessionsSize,
+                    final AtomicInteger removedClientCount, UUID clientSessionId) {
+                    clientSessionsSize.incrementAndGet();
+                    removedClientCount.incrementAndGet();
+                    Future f = clientSessionCache.removeAsync(clientSessionId);
+                    futures.addTask(f);
+                }
+            });
 
         futures.waitForAllToFinish();
 
         log.debugf("Removed %d expired user sessions and %d expired client sessions for realm '%s'", userSessionsSize.get(),
-                clientSessionsSize.get(), realm.getName());
+            clientSessionsSize.get(), realm.getName());
     }
 
     private void removeExpiredOfflineUserSessions(RealmModel realm) {
-        int expiredOffline = Time.currentTime() - realm.getOfflineSessionIdleTimeout() - SessionTimeoutHelper.PERIODIC_CLEANER_IDLE_TIMEOUT_WINDOW_SECONDS;
-
-        // Each cluster node cleanups just local sessions, which are those owned by himself (+ few more taking l1 cache into account)
-        Cache<String, SessionEntityWrapper<UserSessionEntity>> localCache = CacheDecorators.localCache(offlineSessionCache);
-
-        UserSessionPredicate predicate = UserSessionPredicate.create(realm.getId()).expired(null, expiredOffline);
-
         FuturesHelper futures = new FuturesHelper();
-
-        Cache<String, SessionEntityWrapper<UserSessionEntity>> localCacheStoreIgnore = CacheDecorators.skipCacheLoaders(localCache);
-
-        final AtomicInteger userSessionsSize = new AtomicInteger();
         final AtomicInteger clientSessionsSize = new AtomicInteger();
+        final AtomicInteger userSessionsSize = new AtomicInteger();
+
+        // Each cluster node cleanups just local sessions, which are those owned by himself (+ few more taking l1 cache into
+        // account)
+        Cache<String, SessionEntityWrapper<UserSessionEntity>> localCache = CacheDecorators.localCache(offlineSessionCache);
+        Cache<String, SessionEntityWrapper<UserSessionEntity>> localCacheStoreIgnore = CacheDecorators
+            .skipCacheLoaders(localCache);
 
         // Ignore remoteStore for stream iteration. But we will invoke remoteStore for userSession removal propagate
-        localCacheStoreIgnore
-                .entrySet()
-                .stream()
-                .filter(predicate)
-                .map(Mappers.userSessionEntity())
-                .forEach(new Consumer<UserSessionEntity>() {
+        localCacheStoreIgnore.entrySet().stream().map(Mappers.userSessionEntity()).forEach(new Consumer<UserSessionEntity>() {
 
-                    @Override
-                    public void accept(UserSessionEntity userSessionEntity) {
-                        userSessionsSize.incrementAndGet();
-
-                        Future future = offlineSessionCache.removeAsync(userSessionEntity.getId());
-                        futures.addTask(future);
-                        userSessionEntity.getAuthenticatedClientSessions().forEach((clientUUID, clientSessionId) -> {
-                            clientSessionsSize.incrementAndGet();
-                            Future f = offlineClientSessionCache.removeAsync(clientSessionId);
-                            futures.addTask(f);
-                        });
-
+            @Override
+            public void accept(UserSessionEntity userSessionEntity) {
+                final AtomicInteger removedClientCount = new AtomicInteger();
+                userSessionEntity.getAuthenticatedClientSessions().forEach((clientUUID, clientSessionId) -> {
+                    ClientModel client = realm.getClientById(clientUUID);
+                    int expiredOffline;
+                    String clientOfflineSessionIdleTimeout = client == null ? null
+                        : client.getAttribute(OFFLINE_SESSION_IDLE_TIMEOUT);
+                    if (clientOfflineSessionIdleTimeout != null && !clientOfflineSessionIdleTimeout.trim().isEmpty()) {
+                        expiredOffline = Time.currentTime() - Integer.parseInt(clientOfflineSessionIdleTimeout)
+                            - SessionTimeoutHelper.PERIODIC_CLEANER_IDLE_TIMEOUT_WINDOW_SECONDS;
+                    } else {
+                        expiredOffline = Time.currentTime() - realm.getOfflineSessionIdleTimeout()
+                            - SessionTimeoutHelper.PERIODIC_CLEANER_IDLE_TIMEOUT_WINDOW_SECONDS;
                     }
-                });
 
-        // Removing detached clientSessions. Ignore remoteStore for stream iteration. But we will invoke remoteStore for clientSession removal propagate
-        Cache<UUID, SessionEntityWrapper<AuthenticatedClientSessionEntity>> localClientSessionCache = CacheDecorators.localCache(offlineClientSessionCache);
-        Cache<UUID, SessionEntityWrapper<AuthenticatedClientSessionEntity>> localClientSessionCacheStoreIgnore = CacheDecorators.skipCacheLoaders(localClientSessionCache);
+                    AuthenticatedClientSessionEntity authenticatedClientSessionEntity = getClientSessionEntity(clientSessionId,
+                        true);
 
-        localClientSessionCacheStoreIgnore
-                .entrySet()
-                .stream()
-                .filter(AuthenticatedClientSessionPredicate.create(realm.getId()).expired(expiredOffline))
-                .map(Mappers.clientSessionEntity())
-                .forEach(new Consumer<AuthenticatedClientSessionEntity>() {
-
-                    @Override
-                    public void accept(AuthenticatedClientSessionEntity clientSessionEntity) {
+                    if (userSessionEntity.getLastSessionRefresh() <= expiredOffline) {
                         clientSessionsSize.incrementAndGet();
-
-                        Future future = offlineClientSessionCache.removeAsync(clientSessionEntity.getId());
-                        futures.addTask(future);
+                        removedClientCount.incrementAndGet();
+                        Future f = offlineClientSessionCache.removeAsync(clientSessionId);
+                        futures.addTask(f);
+                    } else if (authenticatedClientSessionEntity != null
+                        && authenticatedClientSessionEntity.getTimestamp() <= expiredOffline) {
+                        clientSessionsSize.incrementAndGet();
+                        removedClientCount.incrementAndGet();
+                        Future f = offlineClientSessionCache.removeAsync(clientSessionId);
+                        futures.addTask(f);
                     }
-
                 });
+
+                if (userSessionEntity.getAuthenticatedClientSessions().size() == removedClientCount.get()) {
+                    userSessionsSize.incrementAndGet();
+                    Future future = offlineSessionCache.removeAsync(userSessionEntity.getId());
+                    futures.addTask(future);
+                }
+            }
+        });
 
         futures.waitForAllToFinish();
 
         log.debugf("Removed %d expired offline user sessions and %d expired offline client sessions for realm '%s'",
-                userSessionsSize.get(), clientSessionsSize.get(), realm.getName());
+            userSessionsSize.get(), clientSessionsSize.get(), realm.getName());
     }
 
     @Override
@@ -830,12 +868,34 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
     @Override
     public void removeOfflineUserSession(RealmModel realm, UserSessionModel userSession) {
         UserSessionEntity userSessionEntity = getUserSessionEntity(userSession, true);
-        if (userSessionEntity != null) {
-            removeUserSession(userSessionEntity, true);
+        if (userSessionEntity == null)
+            return;
+
+        if (userSession.getNote(Constants.CLIENT_UUID) != null) {
+            removeClientSession(realm, userSession, userSession.getNote(Constants.CLIENT_UUID), true);
+            return;
         }
+
+        removeUserSession(userSessionEntity, true);
     }
 
-
+    private void removeClientSession(RealmModel realm, UserSessionModel userSession, String clientUuid, boolean offline) {
+        UserSessionEntity userSessionEntity = getUserSessionEntity(userSession, true);
+        if (userSessionEntity == null)
+            return;
+        UUID clientSessionId = userSessionEntity.getAuthenticatedClientSessions().get(clientUuid);
+        if (clientSessionId == null)
+            return;
+        boolean removesUserSession = userSessionEntity.getAuthenticatedClientSessions().size() == 1;
+        InfinispanChangelogBasedTransaction<String, UserSessionEntity> userSessionUpdateTx = getTransaction(offline);
+        InfinispanChangelogBasedTransaction<UUID, AuthenticatedClientSessionEntity> clientSessionUpdateTx = getClientSessionTransaction(
+            offline);
+        clientSessionUpdateTx.addTask(clientSessionId, Tasks.removeSync());
+        if (removesUserSession) {
+            SessionUpdateTask<UserSessionEntity> removeTask = Tasks.removeSync();
+            userSessionUpdateTx.addTask(userSessionEntity.getId(), removeTask);
+        }
+    }
 
     @Override
     public AuthenticatedClientSessionModel createOfflineClientSession(AuthenticatedClientSessionModel clientSession, UserSessionModel offlineUserSession) {
@@ -1054,6 +1114,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
         entity.setAuthMethod(clientSession.getProtocol());
 
         entity.setNotes(clientSession.getNotes() == null ? new ConcurrentHashMap<>() : clientSession.getNotes());
+        entity.getNotes().put("clientId", clientSession.getClient().getId());
         entity.setRedirectUri(clientSession.getRedirectUri());
         entity.setTimestamp(clientSession.getTimestamp());
 
