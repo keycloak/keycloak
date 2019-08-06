@@ -2,7 +2,7 @@
 
 function run-server-tests() {
     cd testsuite/integration-arquillian
-    mvn install -B -nsu -Pauth-server-wildfly -DskipTests
+    mvn install -B -nsu -Pauth-server-wildfly -DskipTests -Dmaven.artifact.threads=60
 
     cd tests/base
     mvn test -B -nsu -Pauth-server-wildfly -Dtest=$1 $2 2>&1 | java -cp ../../../utils/target/classes org.keycloak.testsuite.LogTrimmer
@@ -54,7 +54,7 @@ echo Compiling Keycloak
 ( while : ; do echo "Compiling, please wait..." ; sleep 50 ; done ) &
 COMPILING_PID=$!
 TMPFILE=`mktemp`
-if ! mvn install -B -nsu -Pdistribution -DskipTests -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn &> "$TMPFILE"; then
+if ! mvn install -B -nsu -Dmaven.artifact.threads=60 -Pdistribution -DskipTests -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn &> "$TMPFILE"; then
     cat "$TMPFILE"
     exit 1
 fi
