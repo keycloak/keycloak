@@ -25,8 +25,7 @@ env:
 jdk:
   - openjdk8
 
-install: 
-  - "cd testsuite/integration-arquillian; mvn install -B -nsu -Pauth-server-wildfly -DskipTests"
+install: true
 
 before_install:
   - "export PHANTOMJS_VERSION=2.1.1"
