@@ -18,6 +18,7 @@ env:
     - TESTS=server-group4
     - TESTS=adapter-tests-group1
     - TESTS=adapter-tests-group2
+    - TESTS=adapter-tests-group3
     - TESTS=crossdc-server
     - TESTS=crossdc-adapter
     - TESTS=broker

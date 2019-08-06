@@ -88,7 +88,11 @@ if [ $1 == "adapter-tests-group1" ]; then
 fi
 
 if [ $1 == "adapter-tests-group2" ]; then
-    run-server-tests org.keycloak.testsuite.adapter.ex*.**.*Test,org.keycloak.testsuite.adapter.un*.**.*Test
+    run-server-tests org.keycloak.testsuite.adapter.ex*.**.*Test
+fi
+
+if [ $1 == "adapter-tests-group3" ]; then
+    run-server-tests org.keycloak.testsuite.adapter.un*.**.*Test
 fi
 
 if [ $1 == "crossdc-server" ]; then
