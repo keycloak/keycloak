@@ -21,7 +21,7 @@ env:
 jdk:
   - openjdk8
 
-#install: true
+install: true
 
 before_install:
   - "export PHANTOMJS_VERSION=2.1.1"
