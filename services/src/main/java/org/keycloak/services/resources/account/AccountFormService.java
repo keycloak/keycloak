@@ -208,7 +208,7 @@ public class AccountFormService extends AbstractSecuredLocalService {
                     if (forwardedError != null) {
                         try {
                             FormMessage errorMessage = JsonSerialization.readValue(forwardedError, FormMessage.class);
-                            account.setError(Response.Status.INTERNAL_SERVER_ERROR, errorMessage.getMessage(), errorMessage.getParameters());
+                            account.setError(Response.Status.ACCEPTED, errorMessage.getMessage(), errorMessage.getParameters());
                             authSession.removeAuthNote(ACCOUNT_MGMT_FORWARDED_ERROR_NOTE);
                         } catch (IOException ioe) {
                             throw new RuntimeException(ioe);
