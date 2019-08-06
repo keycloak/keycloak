@@ -309,20 +309,22 @@
                 redirectUri: encodeURIComponent(redirectUri)
             };
 
-            if (options && options.prompt) {
+            options = options || {};
+
+            if (options.prompt) {
                 callbackState.prompt = options.prompt;
             }
 
             var baseUrl;
-            if (options && options.action == 'register') {
+            if (options.action === 'register') {
                 baseUrl = kc.endpoints.register();
             } else {
                 baseUrl = kc.endpoints.authorize();
             }
 
             var scope;
-            if (options && options.scope) {
-                if (options.scope.indexOf("openid") != -1) {
+            if (options.scope) {
+                if (options.scope.indexOf("openid") !== -1) {
                     scope = options.scope;
                 } else {
                     scope = "openid " + options.scope;
@@ -342,27 +344,27 @@
                 url = url + '&nonce=' + encodeURIComponent(nonce);
             }
 
-            if (options && options.prompt) {
+            if (options.prompt) {
                 url += '&prompt=' + encodeURIComponent(options.prompt);
             }
 
-            if (options && options.maxAge) {
+            if (options.maxAge) {
                 url += '&max_age=' + encodeURIComponent(options.maxAge);
             }
 
-            if (options && options.loginHint) {
+            if (options.loginHint) {
                 url += '&login_hint=' + encodeURIComponent(options.loginHint);
             }
 
-            if (options && options.idpHint) {
+            if (options.idpHint) {
                 url += '&kc_idp_hint=' + encodeURIComponent(options.idpHint);
             }
 
-            if (options && options.locale) {
+            if (options.locale) {
                 url += '&ui_locales=' + encodeURIComponent(options.locale);
             }
             
-            if (options && options.kcLocale) {
+            if (options.kcLocale) {
                 url += '&kc_locale=' + encodeURIComponent(options.kcLocale);
             }
 
@@ -372,6 +374,12 @@
                 var pkceChallenge = generatePkceChallenge(kc.pkceMethod, codeVerifier);
                 url += '&code_challenge=' + pkceChallenge;
                 url += '&code_challenge_method=' + kc.pkceMethod;
+            }
+
+            if (options.customParameters) {
+                for(customParameter in customParameters) {
+                    url += '&' + customParameter.key+ '=' + encodeURIComponent(customParameter.value)
+                }
             }
 
             callbackStorage.add(callbackState);
