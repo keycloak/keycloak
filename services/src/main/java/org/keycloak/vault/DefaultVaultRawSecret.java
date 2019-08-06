@@ -60,5 +60,6 @@ public class DefaultVaultRawSecret implements VaultRawSecret {
         if (rawSecret.hasArray()) {
             ThreadLocalRandom.current().nextBytes(rawSecret.array());
         }
+        rawSecret.clear();
     }
 }
