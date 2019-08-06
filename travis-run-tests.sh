@@ -5,7 +5,7 @@ function run-server-tests() {
     mvn install -B -nsu -Pauth-server-wildfly -DskipTests
 
     cd tests/base
-    mvn test -B -nsu -Pauth-server-wildfly -Dtest=$1 $2 2>&1 | java -cp ../../../utils/target/classes org.keycloak.testsuite.LogTrimmer
+    mvn test -B -nsu -Pauth-server-wildfly "-Dtest=$1" $2 2>&1 | java -cp ../../../utils/target/classes org.keycloak.testsuite.LogTrimmer
     exit ${PIPESTATUS[0]}
 }
 
@@ -37,6 +37,13 @@ function should-tests-run-crossdc-server() {
 
 function should-tests-run-crossdc-adapter() {
     should-tests-run-crossdc-server
+}
+
+function should-tests-run-adapter-tests-authz() {
+    [ "$TRAVIS_PULL_REQUEST" = "false" ] && return 0
+
+    git diff --name-only HEAD origin/${TRAVIS_BRANCH} |
+        egrep -i 'authz|authorization'
 }
 
 if ! should-tests-run; then
@@ -84,7 +91,11 @@ if [ $1 == "server-group4" ]; then
 fi
 
 if [ $1 == "adapter-tests" ]; then
-    run-server-tests org.keycloak.testsuite.adapter.**.*Test
+    run-server-tests org.keycloak.testsuite.adapter.**.*Test,!org.keycloak.testsuite.adapter.**.authorization**.*Test
+fi
+
+if [ $1 == "adapter-tests-authz" ]; then
+    run-server-tests org.keycloak.testsuite.adapter.**.authorization**.*Test
 fi
 
 if [ $1 == "crossdc-server" ]; then
