@@ -1,9 +1,9 @@
 #!/bin/bash -e
 
-cd testsuite/integration-arquillian
-mvn install -B -nsu -Pauth-server-wildfly -DskipTests
-
 function run-server-tests() {
+    cd testsuite/integration-arquillian
+    mvn install -B -nsu -Pauth-server-wildfly -DskipTests
+
     cd tests/base
     mvn test -B -nsu -Pauth-server-wildfly -Dtest=$1 $2 2>&1 | java -cp ../../../utils/target/classes org.keycloak.testsuite.LogTrimmer
     exit ${PIPESTATUS[0]}
