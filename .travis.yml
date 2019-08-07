@@ -1,7 +1,8 @@
 language: java
 
 cache:
-  cache: false
+  directories:
+    - $HOME/.m2
 
 env:
   global:
@@ -21,7 +22,7 @@ env:
 jdk:
   - openjdk8
 
-install: true
+install: skip
 
 before_install:
   - "export PHANTOMJS_VERSION=2.1.1"
@@ -38,6 +39,9 @@ before_script:
 
 script: 
   - ./travis-run-tests.sh $TESTS
+
+before_cache:
+  - rm -rf $HOME/.m2/repository/org/keycloak
 
 after_success:
   - .travis/docker-hub-master-trigger.sh
