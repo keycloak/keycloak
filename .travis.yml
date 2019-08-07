@@ -4,20 +4,25 @@ cache:
   directories:
     - $HOME/.m2
 
+#env:
+#  global:
+#    - MAVEN_SKIP_RC=true
+#    - MAVEN_OPTS="-Xms512m -Xmx1536m"
+#  matrix:
+#    - TESTS=unit
+#    - TESTS=server-group1
+#    - TESTS=server-group2
+#    - TESTS=server-group3
+#    - TESTS=server-group4
+#    - TESTS=adapter-tests
+#    - TESTS=crossdc-server
+#    - TESTS=crossdc-adapter
+#    - TESTS=broker
+
 env:
   global:
-    - MAVEN_SKIP_RC=true
-    - MAVEN_OPTS="-Xms512m -Xmx1536m"
-  matrix:
-    - TESTS=unit
-    - TESTS=server-group1
-    - TESTS=server-group2
-    - TESTS=server-group3
-    - TESTS=server-group4
-    - TESTS=adapter-tests
-    - TESTS=crossdc-server
-    - TESTS=crossdc-adapter
-    - TESTS=broker
+    # include $HOME/.local/bin for `aws`
+    - PATH=$HOME/.local/bin:$PATH
 
 jdk:
   - openjdk8
@@ -33,70 +38,73 @@ before_install:
   - "if [ $(phantomjs --version) != '$PHANTOMJS_VERSION' ]; then wget https://github.com/Medium/phantomjs/releases/download/v$PHANTOMJS_VERSION/phantomjs-$PHANTOMJS_VERSION-linux-x86_64.tar.bz2 -O $PWD/travis_phantomjs/phantomjs-$PHANTOMJS_VERSION-linux-x86_64.tar.bz2; fi"
   - "if [ $(phantomjs --version) != '$PHANTOMJS_VERSION' ]; then tar -xvf $PWD/travis_phantomjs/phantomjs-$PHANTOMJS_VERSION-linux-x86_64.tar.bz2 -C $PWD/travis_phantomjs; fi"
   - "phantomjs --version"
+  - pip install --user awscli
+  - mkdir -p ~/$TRAVIS_BUILD_NUMBER
+  - aws s3 sync s3://travis-build-stages-shared-storage-test/$TRAVIS_BUILD_NUMBER ~/$TRAVIS_BUILD_NUMBER
 
 before_script:
   - export -f travis_fold
 
-#jobs:
-#  include:
-#    - stage: compile
-#      script: mvn install -B -nsu -Dmaven.artifact.threads=60 -Pdistribution -DskipTests -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
-#    - stage: Unit tests
-#      env:
-#        global:
-#          - MAVEN_SKIP_RC=true
-#          - MAVEN_OPTS="-Xms512m -Xmx1536m"
-#      script: ./travis-run-tests.sh unit
-#    - stage: Server Group 1 tests
-#      env:
-#        global:
-#          - MAVEN_SKIP_RC=true
-#          - MAVEN_OPTS="-Xms512m -Xmx1536m"
-#      script: ./travis-run-tests.sh server-group1
-#    - stage: Server Group 2 tests
-#      env:
-#        global:
-#          - MAVEN_SKIP_RC=true
-#          - MAVEN_OPTS="-Xms512m -Xmx1536m"
-#      script: ./travis-run-tests.sh server-group2
-#    - stage: Server Group 3 tests
-#      env:
-#        global:
-#          - MAVEN_SKIP_RC=true
-#          - MAVEN_OPTS="-Xms512m -Xmx1536m"
-#      script: ./travis-run-tests.sh server-group3
-#    - stage: Server Group 4 tests
-#      env:
-#        global:
-#          - MAVEN_SKIP_RC=true
-#          - MAVEN_OPTS="-Xms512m -Xmx1536m"
-#      script: ./travis-run-tests.sh server-group4
-#    - stage: Adapter tests
-#      env:
-#        global:
-#          - MAVEN_SKIP_RC=true
-#          - MAVEN_OPTS="-Xms512m -Xmx1536m"
-#      script: ./travis-run-tests.sh adapter-tests
-#    - stage: Cross DC Server tests
-#      env:
-#        global:
-#          - MAVEN_SKIP_RC=true
-#          - MAVEN_OPTS="-Xms512m -Xmx1536m"
-#      script: ./travis-run-tests.sh crossdc-server
-#    - stage: Cross DC Adapter tests
-#      env:
-#        global:
-#          - MAVEN_SKIP_RC=true
-#          - MAVEN_OPTS="-Xms512m -Xmx1536m"
-#      script: ./travis-run-tests.sh crossdc-adapter
-#    - stage: Broker tests
-#      env:
-#        global:
-#          - MAVEN_SKIP_RC=true
-#          - MAVEN_OPTS="-Xms512m -Xmx1536m"
-#      script: ./travis-run-tests.sh broker
-script:
-  - ./travis-run-tests.sh $TESTS
+jobs:
+  include:
+    - stage: compile
+      script: mvn install -B -nsu -Dmaven.artifact.threads=60 -Pdistribution -DskipTests -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
+    - stage: Unit tests
+      env:
+        global:
+          - MAVEN_SKIP_RC=true
+          - MAVEN_OPTS="-Xms512m -Xmx1536m"
+      script: ./travis-run-tests.sh unit
+    - stage: Server Group 1 tests
+      env:
+        global:
+          - MAVEN_SKIP_RC=true
+          - MAVEN_OPTS="-Xms512m -Xmx1536m"
+      script: ./travis-run-tests.sh server-group1
+    - stage: Server Group 2 tests
+      env:
+        global:
+          - MAVEN_SKIP_RC=true
+          - MAVEN_OPTS="-Xms512m -Xmx1536m"
+      script: ./travis-run-tests.sh server-group2
+    - stage: Server Group 3 tests
+      env:
+        global:
+          - MAVEN_SKIP_RC=true
+          - MAVEN_OPTS="-Xms512m -Xmx1536m"
+      script: ./travis-run-tests.sh server-group3
+    - stage: Server Group 4 tests
+      env:
+        global:
+          - MAVEN_SKIP_RC=true
+          - MAVEN_OPTS="-Xms512m -Xmx1536m"
+      script: ./travis-run-tests.sh server-group4
+    - stage: Adapter tests
+      env:
+        global:
+          - MAVEN_SKIP_RC=true
+          - MAVEN_OPTS="-Xms512m -Xmx1536m"
+      script: ./travis-run-tests.sh adapter-tests
+    - stage: Cross DC Server tests
+      env:
+        global:
+          - MAVEN_SKIP_RC=true
+          - MAVEN_OPTS="-Xms512m -Xmx1536m"
+      script: ./travis-run-tests.sh crossdc-server
+    - stage: Cross DC Adapter tests
+      env:
+        global:
+          - MAVEN_SKIP_RC=true
+          - MAVEN_OPTS="-Xms512m -Xmx1536m"
+      script: ./travis-run-tests.sh crossdc-adapter
+    - stage: Broker tests
+      env:
+        global:
+          - MAVEN_SKIP_RC=true
+          - MAVEN_OPTS="-Xms512m -Xmx1536m"
+      script: ./travis-run-tests.sh broker
+#script:
+#  - ./travis-run-tests.sh $TESTS
 
 before_cache:
   - rm -rf $HOME/.m2/repository/org/keycloak
