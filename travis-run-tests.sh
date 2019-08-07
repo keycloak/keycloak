@@ -39,13 +39,6 @@ function should-tests-run-crossdc-adapter() {
     should-tests-run-crossdc-server
 }
 
-function should-tests-run-adapter-tests-authz() {
-    [ "$TRAVIS_PULL_REQUEST" = "false" ] && return 0
-
-    git diff --name-only HEAD origin/${TRAVIS_BRANCH} |
-        egrep -i 'authz|authorization'
-}
-
 if ! should-tests-run; then
     echo "Skipping all tests (including group '$1')"
     exit 0
