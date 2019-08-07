@@ -41,23 +41,60 @@ jobs:
   include:
     - stage: compile
       script: mvn install -B -nsu -Dmaven.artifact.threads=60 -Pdistribution -DskipTests -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
-    - stage: test
+    - stage: Unit tests
       env:
         global:
           - MAVEN_SKIP_RC=true
           - MAVEN_OPTS="-Xms512m -Xmx1536m"
-        matrix:
-          - TESTS=unit
-          - TESTS=server-group1
-          - TESTS=server-group2
-          - TESTS=server-group3
-          - TESTS=server-group4
-          - TESTS=adapter-tests
-          - TESTS=crossdc-server
-          - TESTS=crossdc-adapter
-          - TESTS=broker
-      script: ./travis-run-tests.sh $TESTS
-
+      script: ./travis-run-tests.sh unit
+    - stage: Server Group 1 tests
+      env:
+        global:
+          - MAVEN_SKIP_RC=true
+          - MAVEN_OPTS="-Xms512m -Xmx1536m"
+      script: ./travis-run-tests.sh server-group1
+    - stage: Server Group 2 tests
+      env:
+        global:
+          - MAVEN_SKIP_RC=true
+          - MAVEN_OPTS="-Xms512m -Xmx1536m"
+      script: ./travis-run-tests.sh server-group2
+    - stage: Server Group 3 tests
+      env:
+        global:
+          - MAVEN_SKIP_RC=true
+          - MAVEN_OPTS="-Xms512m -Xmx1536m"
+      script: ./travis-run-tests.sh server-group3
+    - stage: Server Group 4 tests
+      env:
+        global:
+          - MAVEN_SKIP_RC=true
+          - MAVEN_OPTS="-Xms512m -Xmx1536m"
+      script: ./travis-run-tests.sh server-group4
+    - stage: Adapter tests
+      env:
+        global:
+          - MAVEN_SKIP_RC=true
+          - MAVEN_OPTS="-Xms512m -Xmx1536m"
+      script: ./travis-run-tests.sh adapter-tests
+    - stage: Cross DC Server tests
+      env:
+        global:
+          - MAVEN_SKIP_RC=true
+          - MAVEN_OPTS="-Xms512m -Xmx1536m"
+      script: ./travis-run-tests.sh crossdc-server
+    - stage: Cross DC Adapter tests
+      env:
+        global:
+          - MAVEN_SKIP_RC=true
+          - MAVEN_OPTS="-Xms512m -Xmx1536m"
+      script: ./travis-run-tests.sh crossdc-adapter
+    - stage: Broker tests
+      env:
+        global:
+          - MAVEN_SKIP_RC=true
+          - MAVEN_OPTS="-Xms512m -Xmx1536m"
+      script: ./travis-run-tests.sh broker
 #script:
 #  - ./travis-run-tests.sh $TESTS
 
