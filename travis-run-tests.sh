@@ -49,17 +49,17 @@ if declare -f "should-tests-run-$1" > /dev/null && ! eval "should-tests-run-$1";
     exit 0
 fi
 
-#travis_fold start compile_keycloak
-#echo Compiling Keycloak
-#( while : ; do echo "Compiling, please wait..." ; sleep 50 ; done ) &
-#COMPILING_PID=$!
-#TMPFILE=`mktemp`
-#if ! mvn install -B -nsu -Dmaven.artifact.threads=60 -Pdistribution -DskipTests -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn &> "$TMPFILE"; then
-#    cat "$TMPFILE"
-#    exit 1
-#fi
-#kill $COMPILING_PID
-#travis_fold end compile_keycloak
+travis_fold start compile_keycloak
+echo Compiling Keycloak
+( while : ; do echo "Compiling, please wait..." ; sleep 50 ; done ) &
+COMPILING_PID=$!
+TMPFILE=`mktemp`
+if ! mvn install -B -nsu -Dmaven.artifact.threads=60 -Pdistribution -DskipTests -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn &> "$TMPFILE"; then
+    cat "$TMPFILE"
+    exit 1
+fi
+kill $COMPILING_PID
+travis_fold end compile_keycloak
 
 if [ $1 == "unit" ]; then
     mvn -B test -DskipTestsuite
