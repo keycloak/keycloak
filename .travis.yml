@@ -4,20 +4,20 @@ cache:
   directories:
     - $HOME/.m2
 
-env:
-  global:
-    - MAVEN_SKIP_RC=true
-    - MAVEN_OPTS="-Xms512m -Xmx1536m"
-  matrix:
-    - TESTS=unit
-    - TESTS=server-group1
-    - TESTS=server-group2
-    - TESTS=server-group3
-    - TESTS=server-group4
-    - TESTS=adapter-tests
-    - TESTS=crossdc-server
-    - TESTS=crossdc-adapter
-    - TESTS=broker
+#env:
+#  global:
+#    - MAVEN_SKIP_RC=true
+#    - MAVEN_OPTS="-Xms512m -Xmx1536m"
+#  matrix:
+#    - TESTS=unit
+#    - TESTS=server-group1
+#    - TESTS=server-group2
+#    - TESTS=server-group3
+#    - TESTS=server-group4
+#    - TESTS=adapter-tests
+#    - TESTS=crossdc-server
+#    - TESTS=crossdc-adapter
+#    - TESTS=broker
 
 jdk:
   - openjdk8
@@ -37,8 +37,29 @@ before_install:
 before_script:
   - export -f travis_fold
 
-script: 
-  - ./travis-run-tests.sh $TESTS
+jobs:
+  include:
+    - stage: compile
+      script: mvn install -B -nsu -Dmaven.artifact.threads=60 -Pdistribution -DskipTests -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
+    - stage: test
+      env:
+        global:
+          - MAVEN_SKIP_RC=true
+          - MAVEN_OPTS="-Xms512m -Xmx1536m"
+        matrix:
+          - TESTS=unit
+          - TESTS=server-group1
+          - TESTS=server-group2
+          - TESTS=server-group3
+          - TESTS=server-group4
+          - TESTS=adapter-tests
+          - TESTS=crossdc-server
+          - TESTS=crossdc-adapter
+          - TESTS=broker
+      script: ./travis-run-tests.sh $TESTS
+
+#script:
+#  - ./travis-run-tests.sh $TESTS
 
 before_cache:
   - rm -rf $HOME/.m2/repository/org/keycloak
