@@ -54,7 +54,7 @@ echo Compiling Keycloak
 ( while : ; do echo "Compiling, please wait..." ; sleep 50 ; done ) &
 COMPILING_PID=$!
 TMPFILE=`mktemp`
-if ! mvn install -B -nsu -Dmaven.artifact.threads=60 -Pdistribution -DskipTests -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn &> "$TMPFILE"; then
+if ! mvn install -B -nsu -T3 -Dmaven.artifact.threads=60 -Pdistribution -DskipTests -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn &> "$TMPFILE"; then
     cat "$TMPFILE"
     exit 1
 fi
