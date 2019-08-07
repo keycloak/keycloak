@@ -1135,6 +1135,10 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
         return redirectToErrorPage(null, status, message, null, parameters);
     }
 
+    private Response redirectToErrorPage(Response.Status status, String message, Throwable throwable, Object ... parameters) {
+        return redirectToErrorPage(null, status, message, throwable, parameters);
+    }
+
     private Response redirectToErrorPage(AuthenticationSessionModel authSession, Response.Status status, String message, Throwable throwable, Object ... parameters) {
         if (message == null) {
             message = Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR;
