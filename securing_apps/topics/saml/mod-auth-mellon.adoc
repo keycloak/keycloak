@@ -66,7 +66,7 @@ Mellon's configuration directives can roughly be broken down into two classes of
 
 Apache configuration directives typically follow a hierarchical tree structure in the URL space, which are known as locations. You need to specify one or more URL locations for Mellon to protect. You have flexibility in how you add the configuration parameters that apply to each location. You can either add all the necessary parameters to the location block or you can add Mellon parameters to a common location high up in the URL location hierarchy that specific protected locations inherit (or some combination of the two). Since it is common for an SP to operate in the same way no matter which location triggers SAML actions, the example configuration used here places common Mellon configuration directives in the root of the hierarchy and then specific locations to be protected by Mellon can be defined with minimal directives. This strategy avoids duplicating the same parameters for each protected location.
 
-This example has just one protected location: \https://$sp_host/protected.
+This example has just one protected location: \https://$sp_host/private.
 
 To configure the Mellon service provider, complete the following steps:
 
