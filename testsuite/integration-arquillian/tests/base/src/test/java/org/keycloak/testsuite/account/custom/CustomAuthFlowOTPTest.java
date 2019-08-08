@@ -340,11 +340,11 @@ public class CustomAuthFlowOTPTest extends AbstractCustomAccountManagementTest {
 
         setConditionalOTPForm(config);
 
-        //create role
+        //create otp group with role included
         GroupRepresentation group = getOrCreateOTPRoleInGroup();
 
         //add group to user
-        testRealmResource().users().get(testUser.getId()).groups().add(group);
+        testRealmResource().users().get(testUser.getId()).joinGroup(group.getId());
 
         //test OTP is required
         testRealmAccountManagementPage.navigateTo();
@@ -374,12 +374,14 @@ public class CustomAuthFlowOTPTest extends AbstractCustomAccountManagementTest {
         try {
             return testRealmResource().groups().groups("otp_group",0,1).get(0);
         } catch (NotFoundException | IndexOutOfBoundsException ex ) {
-            RoleRepresentation role = this.getOrCreateOTPRole();
             GroupRepresentation group = new GroupRepresentation();
             group.setName("otp_group");
-            group.setRealmRoles(Arrays.asList("otp_role"));
-            testRealmResource().groups().add(group);
+            RoleRepresentation role  = getOrCreateOTPRole();
+             testRealmResource().groups().add(group);
             //obtain id
+            GroupRepresentation groupRep = testRealmResource().groups().groups("otp_group",0,1).get(0);
+            testRealmResource().groups().group(groupRep.getId()).roles().realmLevel().add(Arrays.asList(role));
+            //reread
             return testRealmResource().groups().groups("otp_group",0,1).get(0);
         }
     }
