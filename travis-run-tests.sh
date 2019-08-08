@@ -28,11 +28,13 @@ function should-tests-run() {
 ## Its return value determines whether the test group should run.
 
 function should-tests-run-crossdc-server() {
+    echo "It is a travis pull request? $TRAVIS_PULL_REQUEST"
+    echo "It is a travis pull request? $TRAVIS_BRANCH"
     # If this is not a pull request, it is build as a branch update. In that case test everything
     [ "$TRAVIS_PULL_REQUEST" = "false" ] && return 0
 
-    git diff --name-only HEAD origin/${TRAVIS_BRANCH} |
-        egrep -i 'crossdc|infinispan'
+    echo "GIT `git diff --name-only HEAD origin/${TRAVIS_BRANCH} |
+        egrep -i 'crossdc|infinispan'`"
 }
 
 function should-tests-run-crossdc-adapter() {
