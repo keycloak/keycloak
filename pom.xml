@@ -79,8 +79,8 @@
         <jboss.spec.javax.xml.bind.jboss-jaxb-api_2.3_spec.version>1.0.1.Final</jboss.spec.javax.xml.bind.jboss-jaxb-api_2.3_spec.version>
         <jboss.spec.javax.servlet.jsp.jboss-jsp-api_2.3_spec.version>1.0.3.Final</jboss.spec.javax.servlet.jsp.jboss-jsp-api_2.3_spec.version>
         <log4j.version>1.2.17</log4j.version>
-        <resteasy.version>3.6.3.Final</resteasy.version>
-        <resteasy.undertow.version>3.6.3.Final</resteasy.undertow.version>
+        <resteasy.version>4.1.1.Final</resteasy.version>
+        <resteasy.undertow.version>4.1.1.Final</resteasy.undertow.version>
         <owasp.html.sanitizer.version>20180219.1</owasp.html.sanitizer.version>
         <slf4j-api.version>1.7.22</slf4j-api.version>
         <slf4j.version>1.7.22</slf4j.version>
@@ -293,7 +293,7 @@
             </dependency>
             <dependency>
                 <groupId>org.jboss.resteasy</groupId>
-                <artifactId>resteasy-jaxrs</artifactId>
+                <artifactId>resteasy-core</artifactId>
                 <version>${resteasy.version}</version>
                 <exclusions>
                     <exclusion>

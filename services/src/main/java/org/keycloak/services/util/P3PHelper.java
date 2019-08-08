@@ -19,7 +19,7 @@ package org.keycloak.services.util;
 
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.HttpResponse;
-import org.jboss.resteasy.spi.ResteasyProviderFactory;
+import org.jboss.resteasy.core.ResteasyContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.services.validation.Validation;
 import org.keycloak.theme.Theme;
@@ -44,7 +44,7 @@ public class P3PHelper {
             String p3pValue = theme.getMessages(locale).getProperty("p3pPolicy");
 
             if (!Validation.isBlank(p3pValue)) {
-                HttpResponse response = ResteasyProviderFactory.getContextData(HttpResponse.class);
+                HttpResponse response = ResteasyContext.getContextData(HttpResponse.class);
                 response.getOutputHeaders().putSingle("P3P", p3pValue);
             }
         } catch (IOException e) {

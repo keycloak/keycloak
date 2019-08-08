@@ -21,8 +21,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.jboss.dmr.ModelNode;
 import org.jboss.logging.Logger;
-import org.jboss.resteasy.core.Dispatcher;
-import org.jboss.resteasy.spi.ResteasyProviderFactory;
+import org.jboss.resteasy.spi.Dispatcher;
+import org.jboss.resteasy.core.ResteasyContext;
 import org.keycloak.Config;
 import org.keycloak.common.util.SystemEnvProperties;
 import org.keycloak.exportimport.ExportImportManager;
@@ -118,7 +118,7 @@ public class KeycloakApplication extends Application {
             this.sessionFactory = createSessionFactory();
 
             dispatcher.getDefaultContextObjects().put(KeycloakApplication.class, this);
-            ResteasyProviderFactory.pushContext(KeycloakApplication.class, this); // for injection
+            ResteasyContext.pushContext(KeycloakApplication.class, this); // for injection
             context.setAttribute(KeycloakSessionFactory.class.getName(), this.sessionFactory);
 
             singletons.add(new RobotsResource());
@@ -310,14 +310,14 @@ public class KeycloakApplication extends Application {
             throw new RuntimeException("Failed to load config", e);
         }
     }
-    
+
     private static String loadDmrConfig(ServletContext context) {
         String dmrConfig = context.getInitParameter(KEYCLOAK_CONFIG_PARAM_NAME);
         if (dmrConfig == null) return null;
 
         ModelNode dmrConfigNode = ModelNode.fromString(dmrConfig);
         if (dmrConfigNode.asPropertyList().isEmpty()) return null;
-        
+
         // note that we need to resolve expressions BEFORE we convert to JSON
         return dmrConfigNode.resolve().toJSONString(true);
     }

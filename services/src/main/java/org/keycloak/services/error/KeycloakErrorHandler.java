@@ -3,7 +3,7 @@ package org.keycloak.services.error;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.Failure;
 import org.jboss.resteasy.spi.HttpResponse;
-import org.jboss.resteasy.spi.ResteasyProviderFactory;
+import org.jboss.resteasy.core.ResteasyContext;
 import org.keycloak.Config;
 import org.keycloak.forms.login.freemarker.model.UrlBean;
 import org.keycloak.models.KeycloakSession;
@@ -54,7 +54,7 @@ public class KeycloakErrorHandler implements ExceptionMapper<Throwable> {
 
     @Override
     public Response toResponse(Throwable throwable) {
-        KeycloakTransaction tx = ResteasyProviderFactory.getContextData(KeycloakTransaction.class);
+        KeycloakTransaction tx = ResteasyContext.getContextData(KeycloakTransaction.class);
         tx.setRollbackOnly();
 
         int statusCode = getStatusCode(throwable);

@@ -17,7 +17,7 @@
 
 package org.keycloak.services.filters;
 
-import org.jboss.resteasy.spi.ResteasyProviderFactory;
+import org.jboss.resteasy.core.ResteasyContext;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -52,7 +52,7 @@ public class KeycloakSessionServletFilter implements Filter {
 
         KeycloakSessionFactory sessionFactory = (KeycloakSessionFactory) servletRequest.getServletContext().getAttribute(KeycloakSessionFactory.class.getName());
         KeycloakSession session = sessionFactory.create();
-        ResteasyProviderFactory.pushContext(KeycloakSession.class, session);
+        ResteasyContext.pushContext(KeycloakSession.class, session);
         ClientConnection connection = new ClientConnection() {
             @Override
             public String getRemoteAddr() {
@@ -80,10 +80,10 @@ public class KeycloakSessionServletFilter implements Filter {
             }
         };
         session.getContext().setConnection(connection);
-        ResteasyProviderFactory.pushContext(ClientConnection.class, connection);
+        ResteasyContext.pushContext(ClientConnection.class, connection);
 
         KeycloakTransaction tx = session.getTransactionManager();
-        ResteasyProviderFactory.pushContext(KeycloakTransaction.class, tx);
+        ResteasyContext.pushContext(KeycloakTransaction.class, tx);
         tx.begin();
 
         try {
@@ -128,7 +128,7 @@ public class KeycloakSessionServletFilter implements Filter {
         }
 
         session.close();
-        ResteasyProviderFactory.clearContextData();
+        ResteasyContext.clearContextData();
     }
 
     @Override
