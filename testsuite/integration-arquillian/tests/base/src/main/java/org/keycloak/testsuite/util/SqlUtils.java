@@ -67,9 +67,9 @@ public class SqlUtils {
         executer.setUserid(dbUsername);
         executer.setUrl(dbUrl);
 
-        if (dbUrl.contains("mssql") || jdbcDriverClass.contains("mssql")) {
+        if (dbUrl.contains("mssql") || jdbcDriverClass.contains("mssql") || jdbcDriverClass.contains("sqlserver")) {
             log.info("Using alternative delimiter due the MSSQL");
-            executer.setDelimiter("go");
+            executer.setDelimiter("GO");
             SQLExec.DelimiterType dt = new SQLExec.DelimiterType();
             dt.setValue(SQLExec.DelimiterType.ROW);
             executer.setDelimiterType(dt);
