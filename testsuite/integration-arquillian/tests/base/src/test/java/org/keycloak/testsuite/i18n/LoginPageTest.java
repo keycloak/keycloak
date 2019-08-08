@@ -21,7 +21,8 @@ import java.util.Arrays;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.jboss.resteasy.client.jaxrs.ResteasyClient;
 import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
-import org.jboss.resteasy.client.jaxrs.engines.ApacheHttpClient4Engine;
+import org.jboss.resteasy.client.jaxrs.engines.ApacheHttpClient43Engine;
+import org.jboss.resteasy.client.jaxrs.internal.ResteasyClientBuilderImpl;
 import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
@@ -119,8 +120,8 @@ public class LoginPageTest extends AbstractI18NTest {
         ProfileAssume.assumeCommunity();
         
         CloseableHttpClient httpClient = (CloseableHttpClient) new HttpClientBuilder().build();
-        ApacheHttpClient4Engine engine = new ApacheHttpClient4Engine(httpClient);
-        ResteasyClient client = new ResteasyClientBuilder().httpEngine(engine).build();
+        ApacheHttpClient43Engine engine = new ApacheHttpClient43Engine(httpClient);
+        ResteasyClient client = new ResteasyClientBuilderImpl().httpEngine(engine).build();
 
         loginPage.open();
         Response response = client.target(driver.getCurrentUrl()).request().acceptLanguage("de").get();
