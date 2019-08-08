@@ -344,6 +344,19 @@ public class AuthServerTestEnricher {
         } catch (Exception e) {
             // It is expected that server startup fails with migration-mode-manual
             if (e instanceof LifecycleException && handleManualMigration()) {
+                log.info("Set log file checker to end of file.");
+                try {
+                    // this will mitigate possible issues in manual server update tests
+                    // when the auth server started with not updated DB
+                    // e.g. Caused by: org.keycloak.ServerStartupError: Database not up-to-date, please migrate database with
+                    if (suiteContext.getServerLogChecker() == null) {
+                        setServerLogChecker();
+                    }
+                    suiteContext.getServerLogChecker()
+                        .updateLastCheckedPositionsOfAllFilesToEndOfFile();
+                } catch (IOException ioe) {
+                    log.warn("Server log checker failed to update position:", ioe);
+                }
                 log.info("Starting server again after manual DB migration was finished");
                 startContainerEvent.fire(new StartContainer(suiteContext.getAuthServerInfo().getArquillianContainer()));
                 return;
@@ -408,18 +421,24 @@ public class AuthServerTestEnricher {
         }
     }
 
+    private void setServerLogChecker() throws IOException {
+        String jbossHomePath = suiteContext.getAuthServerInfo().getProperties().get("jbossHome");
+        suiteContext.setServerLogChecker(LogChecker.getJBossServerLogsChecker(jbossHomePath));
+    }
+
     public void checkServerLogs(@Observes(precedence = -1) BeforeSuite event) throws IOException, InterruptedException {
         if (! suiteContext.getAuthServerInfo().isJBossBased()) {
             suiteContext.setServerLogChecker(new TextFileChecker());    // checks nothing
             return;
         }
-
-        boolean checkLog = Boolean.parseBoolean(System.getProperty("auth.server.log.check", "true"));
-        String jbossHomePath = suiteContext.getAuthServerInfo().getProperties().get("jbossHome");
-        if (checkLog) {
-            LogChecker.getJBossServerLogsChecker(true, jbossHomePath).checkFiles(AuthServerTestEnricher::failOnRecognizedErrorInLog);
+        if (suiteContext.getServerLogChecker() == null) {
+            setServerLogChecker();
         }
-        suiteContext.setServerLogChecker(LogChecker.getJBossServerLogsChecker(false, jbossHomePath));
+        boolean checkLog = Boolean.parseBoolean(System.getProperty("auth.server.log.check", "true"));
+        if (checkLog) {
+            suiteContext.getServerLogChecker()
+                .checkFiles(true, AuthServerTestEnricher::failOnRecognizedErrorInLog);
+        }
     }
 
     public void initializeTestContext(@Observes(precedence = 2) BeforeClass event) {
@@ -522,7 +541,7 @@ public class AuthServerTestEnricher {
 
     public void afterTest(@Observes(precedence = -1) After event) throws IOException {
         if (event.getTestMethod().getAnnotation(UncaughtServerErrorExpected.class) == null) {
-            suiteContext.getServerLogChecker().checkFiles(this::checkForNoUnexpectedUncaughtError);
+            suiteContext.getServerLogChecker().checkFiles(false, this::checkForNoUnexpectedUncaughtError);
         }
     }
 

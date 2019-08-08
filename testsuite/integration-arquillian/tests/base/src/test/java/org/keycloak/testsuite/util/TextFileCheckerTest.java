@@ -86,7 +86,7 @@ public class TextFileCheckerTest {
 
     public void assertCheckedOutputIs(String... expectedOutput) throws IOException {
         List<String> target = new LinkedList<>();
-        tfc.checkFiles(collector(target));
+        tfc.checkFiles(false, collector(target));
         Assert.assertThat(target,
           expectedOutput == null || expectedOutput.length == 0
             ? Matchers.empty()
