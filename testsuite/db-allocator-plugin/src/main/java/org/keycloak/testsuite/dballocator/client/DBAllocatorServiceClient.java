@@ -5,6 +5,7 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
 import org.jboss.resteasy.client.jaxrs.engines.ApacheHttpClient43Engine;
+import org.jboss.resteasy.client.jaxrs.internal.ResteasyClientBuilderImpl;
 import org.keycloak.testsuite.dballocator.client.data.AllocationResult;
 import org.keycloak.testsuite.dballocator.client.data.ReleaseResult;
 import org.keycloak.testsuite.dballocator.client.exceptions.DBAllocatorException;
@@ -34,7 +35,7 @@ public class DBAllocatorServiceClient {
 
         this.allocatorServletURI = URI.create(allocatorServletURI);
         this.retryPolicy = retryPolicy != null ? retryPolicy : new IncrementalBackoffRetryPolicy();
-        this.restClient = new ResteasyClientBuilder().httpEngine(createEngine()).build();
+        this.restClient = new ResteasyClientBuilderImpl().httpEngine(createEngine()).build();
     }
 
     private final ApacheHttpClient43Engine createEngine() {

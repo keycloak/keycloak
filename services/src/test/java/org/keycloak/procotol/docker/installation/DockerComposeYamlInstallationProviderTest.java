@@ -93,7 +93,7 @@ public class DockerComposeYamlInstallationProviderTest {
 
         assertThat("Could not find docker-compose.yaml file in zip archive response", actualDockerComposeFileContents.isPresent(), equalTo(true));
 
-        List<String> expectedDockerComposeAsStringLines = FileUtils.readLines(new File("src/test/resources/docker-compose-expected.yaml"), Charset.defaultCharset());
+        List<String> expectedDockerComposeAsStringLines = FileUtils.readLines(new File("src/test/resources/docker-compose-expected.yaml"), Charset.defaultCharset().toString());
         String[] actualDockerComposeAsStringLines = actualDockerComposeFileContents.get().split("\n");
 
         String messageIfTestFails = "Invalid docker-compose file contents: \n" + actualDockerComposeFileContents.get();

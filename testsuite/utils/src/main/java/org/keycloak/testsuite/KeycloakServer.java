@@ -24,6 +24,7 @@ import io.undertow.servlet.api.DeploymentInfo;
 import io.undertow.servlet.api.FilterInfo;
 import io.undertow.servlet.api.ServletInfo;
 import org.jboss.logging.Logger;
+import org.jboss.resteasy.core.ResteasyDeploymentImpl;
 import org.jboss.resteasy.plugins.server.servlet.HttpServlet30Dispatcher;
 import org.jboss.resteasy.plugins.server.undertow.UndertowJaxrsServer;
 import org.jboss.resteasy.spi.ResteasyDeployment;
@@ -376,7 +377,7 @@ public class KeycloakServer {
     public void start() throws Throwable {
         long start = System.currentTimeMillis();
 
-        ResteasyDeployment deployment = new ResteasyDeployment();
+        ResteasyDeployment deployment = new ResteasyDeploymentImpl();
         deployment.setApplicationClass(KeycloakApplication.class.getName());
 
         Builder builder = Undertow.builder()

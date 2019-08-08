@@ -20,6 +20,7 @@ package org.keycloak.admin.client;
 import org.jboss.resteasy.client.jaxrs.ResteasyClient;
 import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
 import org.jboss.resteasy.client.jaxrs.ResteasyWebTarget;
+import org.jboss.resteasy.client.jaxrs.internal.ResteasyClientBuilderImpl;
 import org.jboss.resteasy.plugins.providers.jackson.ResteasyJackson2Provider;
 import org.keycloak.admin.client.resource.BearerAuthFilter;
 import org.keycloak.admin.client.resource.RealmResource;
@@ -67,7 +68,7 @@ public class Keycloak implements AutoCloseable {
     }
 
     private static ResteasyClient newRestEasyClient(ResteasyJackson2Provider customJacksonProvider, SSLContext sslContext, boolean disableTrustManager) {
-        ResteasyClientBuilder clientBuilder = new ResteasyClientBuilder()
+        ResteasyClientBuilder clientBuilder = new ResteasyClientBuilderImpl()
               .sslContext(sslContext)
               .connectionPoolSize(10);
 

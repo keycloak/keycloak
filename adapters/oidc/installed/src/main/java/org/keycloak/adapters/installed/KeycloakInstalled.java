@@ -19,6 +19,7 @@ package org.keycloak.adapters.installed;
 
 import org.jboss.resteasy.client.jaxrs.ResteasyClient;
 import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
+import org.jboss.resteasy.client.jaxrs.internal.ResteasyClientBuilderImpl;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.adapters.KeycloakDeployment;
@@ -496,10 +497,10 @@ public class KeycloakInstalled {
     }
 
     protected ResteasyClient createResteasyClient() {
-        return new ResteasyClientBuilder()
+        return new ResteasyClientBuilderImpl()
                 .connectionCheckoutTimeout(1, TimeUnit.HOURS)
                 .connectionTTL(1, TimeUnit.HOURS)
-                .socketTimeout(1, TimeUnit.HOURS)
+                .readTimeout(1, TimeUnit.HOURS)
                 .disableTrustManager().build();
     }
 

@@ -1,6 +1,6 @@
 package org.keycloak.testsuite.util;
 
-import org.jboss.resteasy.client.jaxrs.engines.ApacheHttpClient4Engine;
+import org.jboss.resteasy.client.jaxrs.engines.ApacheHttpClient43Engine;
 
 /**
  * A simple wrapper for the HTTP Client Engine to follow redirects.
@@ -10,7 +10,7 @@ import org.jboss.resteasy.client.jaxrs.engines.ApacheHttpClient4Engine;
  *     Our testsuite doesn't work well with this. This engine solves this problem.
  * </p>
  */
-public class FollowRedirectsEngine extends ApacheHttpClient4Engine {
+public class FollowRedirectsEngine extends ApacheHttpClient43Engine {
     public FollowRedirectsEngine() {
         this.followRedirects = true;
     }
