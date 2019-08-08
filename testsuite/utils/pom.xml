@@ -85,7 +85,7 @@
         </dependency>
         <dependency>
             <groupId>org.jboss.resteasy</groupId>
-            <artifactId>resteasy-jaxrs</artifactId>
+            <artifactId>resteasy-core</artifactId>
             <exclusions>
                 <exclusion>
                     <groupId>log4j</groupId>
