@@ -1,13 +1,19 @@
 <?xml version="1.0"?>
 <project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+<!--    <parent>
+        <artifactId>keycloak-parent</artifactId>
+        <groupId>org.keycloak</groupId>
+        <version>7.0.0-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>-->
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.keycloak</groupId>
   <artifactId>keycloak-server-quarkus</artifactId>
-  <version>0.1-SNAPSHOT</version>
+  <version>7.0.0-SNAPSHOT</version>
   <properties>
     <surefire-plugin.version>2.22.0</surefire-plugin.version>
-    <quarkus.version>0.11.0</quarkus.version>
+    <quarkus.version>0.20.0</quarkus.version>
     <maven.compiler.source>1.8</maven.compiler.source>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <maven.compiler.target>1.8</maven.compiler.target>
@@ -30,9 +36,13 @@
       <artifactId>quarkus-resteasy</artifactId>
     </dependency>
     <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-jdbc-h2</artifactId>
+    </dependency>
+    <dependency>
       <groupId>org.keycloak</groupId>
       <artifactId>keycloak-services</artifactId>
-      <version>5.0.0-SNAPSHOT</version>
+      <version>7.0.0-SNAPSHOT</version>
       <exclusions>
         <exclusion>
           <groupId>*</groupId>
@@ -43,7 +53,7 @@
     <dependency>
       <groupId>org.keycloak</groupId>
       <artifactId>keycloak-js-adapter</artifactId>
-      <version>5.0.0-SNAPSHOT</version>
+      <version>7.0.0-SNAPSHOT</version>
       <exclusions>
         <exclusion>
           <groupId>*</groupId>
@@ -54,7 +64,7 @@
     <dependency>
       <groupId>org.keycloak</groupId>
       <artifactId>keycloak-common</artifactId>
-      <version>5.0.0-SNAPSHOT</version>
+      <version>7.0.0-SNAPSHOT</version>
       <exclusions>
         <exclusion>
           <groupId>*</groupId>
@@ -65,7 +75,7 @@
     <dependency>
       <groupId>org.keycloak</groupId>
       <artifactId>keycloak-core</artifactId>
-      <version>5.0.0-SNAPSHOT</version>
+      <version>7.0.0-SNAPSHOT</version>
       <exclusions>
         <exclusion>
           <groupId>*</groupId>
@@ -76,7 +86,7 @@
     <dependency>
       <groupId>org.keycloak</groupId>
       <artifactId>keycloak-server-spi</artifactId>
-      <version>5.0.0-SNAPSHOT</version>
+      <version>7.0.0-SNAPSHOT</version>
       <exclusions>
         <exclusion>
           <groupId>*</groupId>
@@ -87,7 +97,7 @@
     <dependency>
       <groupId>org.keycloak</groupId>
       <artifactId>keycloak-server-spi-private</artifactId>
-      <version>5.0.0-SNAPSHOT</version>
+      <version>7.0.0-SNAPSHOT</version>
       <exclusions>
         <exclusion>
           <groupId>*</groupId>
@@ -98,7 +108,7 @@
     <dependency>
       <groupId>org.keycloak</groupId>
       <artifactId>keycloak-themes</artifactId>
-      <version>5.0.0-SNAPSHOT</version>
+      <version>7.0.0-SNAPSHOT</version>
       <exclusions>
         <exclusion>
           <groupId>*</groupId>
@@ -136,6 +146,64 @@
         </exclusion>
       </exclusions>
     </dependency>
+
+    <!-- provided -->
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-saml-core-public</artifactId>
+            <version>7.0.0-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-saml-core</artifactId>
+            <version>7.0.0-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-model-jpa</artifactId>
+            <version>7.0.0-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-authz-policy-common</artifactId>
+            <version>7.0.0-SNAPSHOT</version>
+        </dependency>
+<!--        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-authz-policy-drools</artifactId>
+            <version>7.0.0-SNAPSHOT</version>
+        </dependency>-->
+        <dependency>
+            <groupId>org.freemarker</groupId>
+            <artifactId>freemarker</artifactId>
+            <version>2.3.26-incubating</version>
+        </dependency>
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>25.0-jre</version>
+        </dependency>
+        <dependency>
+            <groupId>com.googlecode.owasp-java-html-sanitizer</groupId>
+            <artifactId>owasp-java-html-sanitizer</artifactId>
+            <version>20180219.1</version>
+        </dependency>
+        <dependency>
+            <groupId>org.liquibase</groupId>
+            <artifactId>liquibase-core</artifactId>
+            <version>3.5.5</version>
+        </dependency>
+        <dependency>
+            <groupId>javax.persistence</groupId>
+            <artifactId>javax.persistence-api</artifactId>
+            <version>2.2</version>
+        </dependency>
+        <dependency>
+            <groupId>org.hibernate</groupId>
+            <artifactId>hibernate-core</artifactId>
+            <version>5.3.9.Final</version>
+        </dependency>
+
   </dependencies>
   <build>
     <plugins>
