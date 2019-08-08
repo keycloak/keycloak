@@ -16,7 +16,7 @@
  */
 package org.keycloak.subsystem.as7.logging;
 
-import org.jboss.logging.annotations.MessageBundle;
+import org.jboss.logging.MessageBundle;
 import org.jboss.logging.Messages;
 
 /**

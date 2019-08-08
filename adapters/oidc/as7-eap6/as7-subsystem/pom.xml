@@ -82,7 +82,20 @@
 
         <dependency>
             <groupId>org.jboss.logging</groupId>
-            <artifactId>jboss-logging-annotations</artifactId>
+            <artifactId>jboss-logging</artifactId>
+            <!-- Needed for jboss-logging-processor-->
+            <version>3.3.2.Final</version>
+       </dependency>
+
+        <!-- Do not ever delete this dependency. It's needed for eap6 adapter build in PNC.-->
+        <dependency>
+            <groupId>org.jboss.logging</groupId>
+            <artifactId>jboss-logging-processor</artifactId>
+            <!-- This is a compile-time dependency of this project, but is not needed at compile or runtime by other
+projects that depend on this project.-->
+            <scope>provided</scope>
+            <optional>true</optional>
+            <version>1.0.0.Final</version>
         </dependency>
 
         <dependency>
