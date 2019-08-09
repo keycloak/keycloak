@@ -8,7 +8,7 @@ To create a new user in the `demo` realm, along with a temporary password for th
 
 . On the right side of the empty user list, click *Add User* to open the add user page.
 
-. Enter a name in the `Username` field; this is the only required field. Click *Save* to save the data and open the management page for the new user.
+. Enter a name in the `Username` field; this is the only required field. Flip the *Email Verified* switch from *Off* to *On* and click *Save* to save the data and open the management page for the new user.
 
 . Click the *Credentials* tab to set a temporary password for the new user.
 
