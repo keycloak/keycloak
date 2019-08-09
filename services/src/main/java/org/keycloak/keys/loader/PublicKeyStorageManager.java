@@ -55,13 +55,6 @@ public class PublicKeyStorageManager {
         return keyStorage.getPublicKey(modelKey, kid, loader);
     }
 
-    public static KeyWrapper getClientPublicKeyWrapper(KeycloakSession session, ClientModel client, JWK.Use keyUse) {
-        PublicKeyStorageProvider keyStorage = session.getProvider(PublicKeyStorageProvider.class);
-        String modelKey = PublicKeyStorageUtils.getClientModelCacheKey(client.getRealm().getId(), client.getId(), keyUse);
-        ClientPublicKeyLoader loader = new ClientPublicKeyLoader(session, client, keyUse);
-        return keyStorage.getPublicKey(modelKey, null, loader);
-    }
-
     public static KeyWrapper getClientPublicKeyWrapper(KeycloakSession session, ClientModel client, JWK.Use keyUse, String algAlgorithm) {
         PublicKeyStorageProvider keyStorage = session.getProvider(PublicKeyStorageProvider.class);
         String modelKey = PublicKeyStorageUtils.getClientModelCacheKey(client.getRealm().getId(), client.getId(), keyUse);

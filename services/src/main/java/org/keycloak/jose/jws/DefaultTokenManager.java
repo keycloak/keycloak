@@ -200,13 +200,6 @@ public class DefaultTokenManager implements TokenManager {
         return encryptedToken;
     }
 
-    private KeyWrapper getEncryptionKekWrapper(String algAlgorithm, ClientModel client) {
-        if (algAlgorithm == null) return null;
-        List<String> providerIds = new LinkedList<>(session.listProviderIds(CekManagementProvider.class));
-        if (providerIds.contains(algAlgorithm)) return PublicKeyStorageManager.getClientPublicKeyWrapper(session, client, JWK.Use.ENCRYPTION);
-        return null;
-    }
-
     @Override
     public String cekManagementAlgorithm(TokenCategory category) {
         if (category == null) return null;
