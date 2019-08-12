@@ -1,7 +1,11 @@
 language: java
 
 cache:
-  cache: false
+  directories:
+    - $HOME/.m2
+
+before_cache:
+  - rm -rf $HOME/.m2/repository/org/keycloak
 
 env:
   global:

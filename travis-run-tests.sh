@@ -2,7 +2,7 @@
 
 function run-server-tests() {
     cd testsuite/integration-arquillian
-    mvn install -B -nsu -Pauth-server-wildfly -DskipTests
+    mvn -s $TRAVIS_BUILD_DIR/maven-settings.xml install -B -nsu -Pauth-server-wildfly -DskipTests
 
     cd tests/base
     mvn test -B -nsu -Pauth-server-wildfly "-Dtest=$1" $2 2>&1 | java -cp ../../../utils/target/classes org.keycloak.testsuite.LogTrimmer
@@ -61,7 +61,7 @@ echo Compiling Keycloak
 ( while : ; do echo "Compiling, please wait..." ; sleep 50 ; done ) &
 COMPILING_PID=$!
 TMPFILE=`mktemp`
-if ! mvn install -B -nsu -Pdistribution -DskipTests -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn &> "$TMPFILE"; then
+if ! mvn -s $TRAVIS_BUILD_DIR/maven-settings.xml install -B -nsu -Pdistribution -DskipTests -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn &> "$TMPFILE"; then
     cat "$TMPFILE"
     exit 1
 fi
@@ -100,7 +100,7 @@ fi
 
 if [ $1 == "crossdc-server" ]; then
     cd testsuite/integration-arquillian
-    mvn install -B -nsu -Pauth-servers-crossdc-jboss,auth-server-wildfly,cache-server-infinispan -DskipTests
+    mvn -s $TRAVIS_BUILD_DIR/maven-settings.xml install -B -nsu -Pauth-servers-crossdc-jboss,auth-server-wildfly,cache-server-infinispan -DskipTests
 
     cd tests/base
     mvn clean test -B -nsu -Pcache-server-infinispan,auth-servers-crossdc-jboss,auth-server-wildfly -Dtest=org.keycloak.testsuite.crossdc.**.* 2>&1 |
@@ -110,7 +110,7 @@ fi
 
 if [ $1 == "crossdc-adapter" ]; then
     cd testsuite/integration-arquillian
-    mvn install -B -nsu -Pauth-servers-crossdc-jboss,auth-server-wildfly,cache-server-infinispan,app-server-wildfly -DskipTests
+    mvn -s $TRAVIS_BUILD_DIR/maven-settings.xml install -B -nsu -Pauth-servers-crossdc-jboss,auth-server-wildfly,cache-server-infinispan,app-server-wildfly -DskipTests
 
     cd tests/base
     mvn clean test -B -nsu -Pcache-server-infinispan,auth-servers-crossdc-jboss,auth-server-wildfly,app-server-wildfly -Dtest=org.keycloak.testsuite.adapter.**.crossdc.**.* 2>&1 |
