@@ -197,5 +197,11 @@ class RealmPermissions implements RealmPermissionEvaluator {
         }
     }
 
+    @Override
+    public void requireViewClientAuthenticatorProviders() {
+        if (!(canViewRealm() || root.hasOneAdminRole(AdminRoles.QUERY_CLIENTS, AdminRoles.VIEW_CLIENTS, AdminRoles.MANAGE_CLIENTS))) {
+            throw new ForbiddenException();
+        }
+    }
 
 }

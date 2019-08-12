@@ -764,6 +764,32 @@ public class PermissionsTest extends AbstractKeycloakTest {
                 realm.flows().getFlows();
             }
         }, clients.get(AdminRoles.QUERY_CLIENTS), true);
+        // the same for ClientAuthenticatorProviders and PerClientConfigDescription
+        invoke(new Invocation() {
+            public void invoke(RealmResource realm) {
+                realm.flows().getClientAuthenticatorProviders();
+            }
+        }, clients.get(AdminRoles.QUERY_CLIENTS), true);
+        invoke(new Invocation() {
+            public void invoke(RealmResource realm) {
+                realm.flows().getClientAuthenticatorProviders();
+            }
+        }, clients.get(AdminRoles.VIEW_CLIENTS), true);
+        invoke(new Invocation() {
+            public void invoke(RealmResource realm) {
+                realm.flows().getClientAuthenticatorProviders();
+            }
+        }, clients.get(AdminRoles.MANAGE_CLIENTS), true);
+        invoke(new Invocation() {
+            public void invoke(RealmResource realm) {
+                realm.flows().getClientAuthenticatorProviders();
+            }
+        }, clients.get(AdminRoles.QUERY_USERS), false);
+        invoke(new Invocation() {
+            public void invoke(RealmResource realm) {
+                realm.flows().getPerClientConfigDescription();
+            }
+        }, clients.get(AdminRoles.QUERY_CLIENTS), true);
     }
 
     @Test
