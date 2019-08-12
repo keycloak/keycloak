@@ -1273,43 +1273,6 @@ module.controller('UserGroupMembershipCtrl', function($scope, $q, realm, user, U
 
         	}
      };
-
-
-    var refreshGroups = function (search) {
-            var queryParams = {
-                realm : realm.realm,
-            };
-            var countParams = {
-                realm : realm.realm,
-                top : 'true'
-            };
-
-            if(angular.isDefined(search) && search !== '') {
-                queryParams.search = search;
-                countParams.search = search;
-            }
-            var promiseGetGroups = $q.defer();
-            Groups.query(queryParams, function(entry) {
-                promiseGetGroups.resolve(entry);
-            }, function() {
-                promiseGetGroups.reject('Unable to fetch ' + queryParams);
-            });
-            var promiseGetGroupsChain   = promiseGetGroups.promise.then(function(groups) {
-                console.log('*** group call groups size: ' + groups.length);
-                $scope.groupList = [
-                    {
-                        "id" : "",
-                        "name": "Groups",
-                        "subGroups" : groups
-                    }
-                ];
-            });
-    };
-
-    $scope.searchGroup = function() {
-        refreshGroups($scope.searchTerms);
-    };
-
 });
 
 module.controller('LDAPUserStorageCtrl', function($scope, $location, Notifications, $route, Dialog, realm,
