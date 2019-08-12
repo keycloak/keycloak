@@ -102,16 +102,6 @@ public class GroupsResource {
 
     }
 
-    private List<GroupRepresentation> checkGroupsPermissions(List<GroupRepresentation> list) {
-        return list.stream()
-                .filter(group -> auth.groups().canView(realm.getGroupById(group.getId())))
-                .map(group -> {
-                    group.setSubGroups(checkGroupsPermissions(group.getSubGroups()));
-                    return group;
-                })
-                .collect(Collectors.toList());
-    }
-
     /**
      * Does not expand hierarchy.  Subgroups will not be set.
      *
@@ -140,20 +130,23 @@ public class GroupsResource {
     @Produces(MediaType.APPLICATION_JSON)
     public Map<String, Long> getGroupCount(@QueryParam("search") String search,
                                            @QueryParam("top") @DefaultValue("false") boolean onlyTopGroups) {
-        List<GroupModel> results;
+        Long results;
         Map<String, Long> map = new HashMap<>();
 
-        if (Objects.nonNull(search)) {
-            results = realm.searchForGroupByName(search, null, null);
+        if (auth.users().canView()) {
+            if (Objects.nonNull(search)) {
+                results = realm.getGroupsCountByNameContaining(search);
+            } else {
+                results = realm.getGroupsCount(onlyTopGroups);
+            }
         } else {
-            results = realm.getTopLevelGroups();
+            Set<String> groups = auth.groups().getGroupsWithViewPermission();
+            Stream<String> s = groups.stream();
+            if (search!=null) s=s.filter(group->group.contains(search.trim()));
+            results = s.count();
         }
 
-        Long count = results.stream()
-                .filter(group -> auth.groups().canView(group))
-                .count();
-
-        map.put("count", count);
+        map.put("count", results);
         return map;
     }
 

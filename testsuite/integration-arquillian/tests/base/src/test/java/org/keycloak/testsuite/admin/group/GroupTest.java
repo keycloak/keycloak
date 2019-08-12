@@ -19,22 +19,14 @@ package org.keycloak.testsuite.admin.group;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.keycloak.admin.client.resource.GroupResource;
-import org.keycloak.admin.client.resource.GroupsResource;
-import org.keycloak.admin.client.resource.RealmResource;
-import org.keycloak.admin.client.resource.RoleMappingResource;
-import org.keycloak.admin.client.resource.UsersResource;
+import org.keycloak.admin.client.resource.*;
+import org.keycloak.authorization.client.AuthzClient;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.Constants;
 import org.keycloak.representations.AccessToken;
-import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.representations.idm.CredentialRepresentation;
-import org.keycloak.representations.idm.GroupRepresentation;
-import org.keycloak.representations.idm.MappingsRepresentation;
-import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.representations.idm.RoleRepresentation;
-import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.representations.idm.*;
+import org.keycloak.representations.idm.authorization.*;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.util.AdminEventPaths;
 import org.keycloak.testsuite.util.ClientBuilder;
@@ -48,11 +40,7 @@ import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.net.URI;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 import javax.ws.rs.ClientErrorException;
 import javax.ws.rs.core.Response.Status;
 import static org.hamcrest.Matchers.*;
@@ -548,6 +536,103 @@ public class GroupTest extends AbstractGroupTest {
             userClient.realms().findAll();  // Any admin operation will do
         }
     }
+
+    /**
+     * Verifies that the admin with permissions to manage only some groups can view them, not viewing others.
+     * @link
+     */
+    @Test
+    public void fineGrainedAdminGroupViewManagePermissions() {
+        String userName = "user-" + UUID.randomUUID();
+
+
+        String realmName = "test";
+        RealmResource realm = adminClient.realms().realm(realmName);
+        ClientResource managementClient = adminClient.realm(realmName).clients().get(adminClient.realm(realmName).clients().findByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID).get(0).getId());
+        ClientRepresentation client = managementClient.toRepresentation();
+        client.setAuthorizationServicesEnabled(true);
+        client.setServiceAccountsEnabled(true);
+        managementClient.update(client);
+        assertAdminEvents.assertEvent("test", OperationType.UPDATE, AdminEventPaths.clientResourcePath(client.getId()), ResourceType.CLIENT);
+        assertAdminEvents.assertEvent("test", OperationType.CREATE, AdminEventPaths.clientResourcePath(client.getId()), ResourceType.AUTHORIZATION_RESOURCE_SERVER);
+
+
+
+        // Clean up all test groups
+        for (GroupRepresentation group : realm.groups().groups()) {
+            GroupResource resource = realm.groups().group(group.getId());
+            resource.remove();
+            assertAdminEvents.assertEvent("test", OperationType.DELETE, AdminEventPaths.groupPath(group.getId()), ResourceType.GROUP);
+        }
+
+        AuthorizationResource authorization = managementClient.authorization();
+        //cleanup resources
+        for (ResourceRepresentation r : authorization.resources().resources()) {
+            ResourceResource rr = authorization.resources().resource(r.getId());
+            rr.remove();
+        }
+        //cleanup policies
+        for (PolicyRepresentation p : authorization.policies().policies()) {
+            PolicyResource pr = authorization.policies().policy(p.getId());
+            pr.remove();
+        }
+
+        //create grant policy
+        PolicyRepresentation policy = new PolicyRepresentation();
+        policy.setName("Grant all");
+        policy.setType("js");
+        policy.setLogic(Logic.POSITIVE);
+        Map<String, String> config = new HashMap<>();
+        config.put("code", "$evaluation.grant();");
+        policy.setConfig(config);
+        Response response = managementClient.authorization().policies().create(policy);
+        response.close();
+        policy.setId(authorization.policies().findByName("Grant all").getId());
+
+
+        // Add 20 new groups with known names
+        for (int i=0;i<20;i++) {
+            GroupRepresentation group = new GroupRepresentation();
+            group.setName("group"+i);
+            group = createGroup(realm, group);
+
+            if (i % 5 == 0) {
+                // Only 4 of them the user will have access to
+                realm.groups().group(group.getId()).setPermissions(new ManagementPermissionRepresentation(true));
+                ResourceRepresentation resource = authorization.resources().findByName("group.resource."+group.getId()).get(0);
+                ScopePermissionRepresentation perm = authorization.permissions().scope().findByName("view.permission.group."+group.getId());
+                perm.addPolicy(policy.getId());
+                response = authorization.permissions().scope().update(perm.getId(), perm);
+                perm.setId(ApiUtil.getCreatedId(response));
+            }
+        }
+
+        //add necessary roles for a fine grained admin permission
+        RoleRepresentation viewRealmRole = managementClient.roles().get(AdminRoles.VIEW_REALM).toRepresentation();
+        RoleRepresentation queryUsersRole = managementClient.roles().get(AdminRoles.QUERY_USERS).toRepresentation();
+        RoleRepresentation queryGroupsRole = managementClient.roles().get(AdminRoles.QUERY_GROUPS).toRepresentation();
+        assertThat(viewRealmRole, notNullValue());
+        assertThat(queryUsersRole, notNullValue());
+        assertThat(queryGroupsRole, notNullValue());
+
+        //create user
+        String userId = createUser(realmName, userName, "pwd");
+        assertThat(userId, notNullValue());
+
+        //add the roles
+        RoleMappingResource mappings = realm.users().get(userId).roles();
+        mappings.clientLevel(managementClient.toRepresentation().getId()).add(Arrays.asList(viewRealmRole,queryUsersRole,queryGroupsRole));
+
+        //check if user has access and what groups can query
+        try (Keycloak userClient = Keycloak.getInstance(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth",
+                realmName, userName, "pwd", Constants.ADMIN_CLI_CLIENT_ID, TLSUtils.initializeTLS())) {
+
+            //Assert only four are returned
+            assertThat(userClient.realm(realmName).groups().groups(), hasSize(4));
+            assertThat(userClient.realm(realmName).groups().count(), hasEntry("count",Long.valueOf(4) ));
+        }
+    }
+
 
     /**
      * Verifies that the role assigned to a user is correctly handled by Keycloak Admin endpoint.
