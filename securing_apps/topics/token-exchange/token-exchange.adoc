@@ -381,7 +381,7 @@ fine grain admin permissions.
 
 ==== Making the Request
 
-Make the request as described in other chapters except additionally specify the `request_subject` parameter.  The
+Make the request as described in other chapters except additionally specify the `requested_subject` parameter.  The
 value of this parameter must be a username or user id.
 
 [source,bash]

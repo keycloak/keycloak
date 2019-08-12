@@ -36,8 +36,8 @@ between the new keys where added and the old keys removed will have to re-authen
 This also applies to offline tokens. To make sure they are updated the applications need to refresh the tokens before
 the old keys are removed.
 
-As a guideline it may be a good idea to create new keys every 3-6 months and delete old keys 1-2 months after the new
-keys where created.
+As a guideline, it may be a good idea to create new keys every 3-6 months and delete old keys 1-2 months after the new
+keys were created.
 
 ==== Adding a generated keypair
 
