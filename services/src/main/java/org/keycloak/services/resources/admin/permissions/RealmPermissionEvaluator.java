@@ -62,4 +62,6 @@ public interface RealmPermissionEvaluator {
     void requireViewRequiredActions();
 
     void requireViewAuthenticationFlows();
+
+    void requireViewClientAuthenticatorProviders();
 }
