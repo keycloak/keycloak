@@ -29,9 +29,9 @@ Supported Certificate Identity Sources::
 - X500 Subject's other name from Subject Alternative Name Extension. This is typically UPN (User Principal Name)
 - X500 Subject's Common Name attribute
 - Match IssuerDN using regular expression
-- X500 Issuer's e-mail attribute
-- X500 Issuer's Common Name attribute
 - Certificate Serial Number
+- Certificate Serial Number and IssuerDN
+- SHA-256 Certificate thumbprint
 - Full certificate in PEM format
 
 Regular Expressions::
@@ -46,6 +46,10 @@ Mapping certificate identity to an existing user::
 The certificate identity mapping can be configured to map the extracted user identity to an existing user's username or e-mail or to a custom attribute which value matches the certificate identity. For example, setting the `Identity source` to _Subject's e-mail_ and `User mapping method` to _Username or email_ will have the X.509 client certificate authenticator use the e-mail attribute in the certificate's Subject DN  as a search criteria to look up an existing user by username or by e-mail. 
 
 IMPORTANT: Please notice that if we disable `Login with email` at realm settings, the same rules will be applied to certificate authentication. In other words, users won't be able to log in using e-mail attribute. 
+
+IMPORTANT: Usage of `Certificate Serial Number and IssuerDN` as an identity source requires two custom attributes - one for serial number and the other for IssuerDN.
+
+IMPORTANT: `SHA-256 Certificate thumbprint` is lowercase hexadecimal representation of SHA-256 certificate thumbprint.
 
 IMPORTANT: Usage of `Full certificate in PEM format` as an identity source is limited to custom attributes mapped to external federation sources like LDAP. You must enable `Always Read Value From LDAP` in this case, because certificates cannot be stored in Keycloak database due to a length limitation.
 
@@ -170,6 +174,9 @@ The format is described in detail in the official link:https://docs.oracle.com/j
 This option only affects the two User Identity Sources _Match SubjectDN using regular expression_ and _Match IssuerDN using regular expression_.
 If you setup a new keycloak instance it is recommended to enable this option. Leave this option disabled to remain beckward compatible with existing Keycloak instances.
 
+`Enable Serial Number hexadecimal representation` (optional)::
+An option to use hexadecimal representation of the Serial Number. See link:https://tools.ietf.org/html/rfc5280#section-4.1.2.2[RFC5280, Section-4.1.2.2]. Serial Number with sign bit set to 1 should be left padded with 00 octet. E.g. Serial number with decimal value _161_, or _a1_ in hexadecimal representation according to RFC5280 must be encoded as _00a1_. More details can be found: link:https://tools.ietf.org/html/rfc5280#appendix-B[RFC5280, appendix-B].
+
 `A regular expression` (optional)::
 Defines a regular expression to use as a filter to extract the certificate identity. The regular expression must contain a single group.
 
@@ -177,7 +184,7 @@ Defines a regular expression to use as a filter to extract the certificate ident
 Defines how to match the certificate identity to an existing user. _Username or e-mail_ will search for an existing user by username or e-mail. _Custom Attribute Mapper_ will  search for an existing user with a custom attribute which value matches the certificate identity. The name of the custom attribute is configurable.
 
 `A name of user attribute` (optional)::
-A custom attribute which value will be matched against the certificate identity.
+A custom attribute which value will be matched against the certificate identity. Multiple custom attributes are relevant when attribute mapping is related to multiple values, e.g. 'Certificate Serial Number and IssuerDN'.
 
 `CRL Checking Enabled` (optional)::
 Defines whether to check the revocation status of the certificate using Certificate Revocation List.
