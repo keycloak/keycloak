@@ -90,6 +90,16 @@ public class SAMLArtifactResponseParser extends SAMLStatusResponseTypeParser<Art
                 target.setStatus(SAMLStatusParser.getInstance().parse(xmlEventReader));
                 break;
 
+            case LOGOUT_REQUEST:
+                SAMLSloRequestParser sloRequestParser = SAMLSloRequestParser.getInstance();
+                target.setAny(sloRequestParser.parse(xmlEventReader));
+                break;
+
+            case LOGOUT_RESPONSE:
+                SAMLSloResponseParser sloResponseParser = SAMLSloResponseParser.getInstance();
+                target.setAny(sloResponseParser.parse(xmlEventReader));
+                break;
+
             default:
                 throw LOGGER.parserUnknownTag(StaxParserUtil.getElementName(elementDetail), elementDetail.getLocation());
         }

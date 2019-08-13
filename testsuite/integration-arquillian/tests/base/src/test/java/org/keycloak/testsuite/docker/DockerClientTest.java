@@ -128,7 +128,7 @@ public class DockerClientTest extends AbstractKeycloakTest {
     }
 
     @Override
-    public void afterAbstractKeycloakTest() {
+    public void afterAbstractKeycloakTest() throws Exception {
         super.afterAbstractKeycloakTest();
 
         pause(5000); // wait for the container logs

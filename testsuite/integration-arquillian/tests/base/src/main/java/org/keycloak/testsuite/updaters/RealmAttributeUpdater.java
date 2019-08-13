@@ -42,5 +42,10 @@ public class RealmAttributeUpdater extends ServerResourceUpdater<RealmAttributeU
         rep.setDefaultDefaultClientScopes(defaultClientScopes);
         return this;
     }
+    
+    public RealmAttributeUpdater setAccessCodeLifespan(Integer accessCodeLifespan) {
+        rep.setAccessCodeLifespan(accessCodeLifespan);
+        return this;
+    }
 
 }

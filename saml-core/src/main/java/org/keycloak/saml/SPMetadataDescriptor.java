@@ -51,11 +51,20 @@ import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.PROTOCOL_
 public class SPMetadataDescriptor {
 
     public static String getSPDescriptor(URI binding, URI assertionEndpoint, URI logoutEndpoint,
+                                         boolean wantAuthnRequestsSigned, boolean wantAssertionsSigned, boolean wantAssertionsEncrypted,
+                                         String entityId, String nameIDPolicyFormat, List<Element> signingCerts, List<Element> encryptionCerts)
+            throws XMLStreamException, ProcessingException, ParserConfigurationException
+    {
+        return getSPDescriptor(binding, binding, assertionEndpoint, logoutEndpoint, wantAuthnRequestsSigned,
+                wantAssertionsSigned, wantAssertionsEncrypted, entityId, nameIDPolicyFormat, signingCerts,
+                encryptionCerts);
+    }
+
+    public static String getSPDescriptor(URI loginBinding, URI logoutBinding, URI assertionEndpoint, URI logoutEndpoint,
         boolean wantAuthnRequestsSigned, boolean wantAssertionsSigned, boolean wantAssertionsEncrypted,
         String entityId, String nameIDPolicyFormat, List<Element> signingCerts, List<Element> encryptionCerts) 
         throws XMLStreamException, ProcessingException, ParserConfigurationException
     {
-      
         StringWriter sw = new StringWriter();
         XMLStreamWriter writer = StaxUtil.getXMLStreamWriter(sw);
         SAMLMetadataWriter metadataWriter = new SAMLMetadataWriter(writer);
@@ -67,7 +76,7 @@ public class SPMetadataDescriptor {
         spSSODescriptor.setAuthnRequestsSigned(wantAuthnRequestsSigned);
         spSSODescriptor.setWantAssertionsSigned(wantAssertionsSigned);
         spSSODescriptor.addNameIDFormat(nameIDPolicyFormat);
-        spSSODescriptor.addSingleLogoutService(new EndpointType(binding, logoutEndpoint));
+        spSSODescriptor.addSingleLogoutService(new EndpointType(logoutBinding, logoutEndpoint));
 
         if (wantAuthnRequestsSigned && signingCerts != null) {
             for (Element key: signingCerts)
@@ -89,7 +98,7 @@ public class SPMetadataDescriptor {
             }
         }
 
-        IndexedEndpointType assertionConsumerEndpoint = new IndexedEndpointType(binding, assertionEndpoint);
+        IndexedEndpointType assertionConsumerEndpoint = new IndexedEndpointType(loginBinding, assertionEndpoint);
         assertionConsumerEndpoint.setIsDefault(true);
         assertionConsumerEndpoint.setIndex(1);
         spSSODescriptor.addAssertionConsumerService(assertionConsumerEndpoint);

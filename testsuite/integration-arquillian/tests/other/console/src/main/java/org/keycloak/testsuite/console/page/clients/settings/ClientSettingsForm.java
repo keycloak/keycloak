@@ -148,7 +148,7 @@ public class ClientSettingsForm extends CreateClientForm {
     public void setEnabled(boolean enabled) {
         enabledSwitch.setOn(enabled);
     }
-    
+
     public boolean isAlwaysDisplayInConsole() {
         return alwaysDisplayInConsole.isOn();
     }

@@ -88,7 +88,8 @@ public interface UserSessionModel {
     enum State {
         LOGGED_IN,
         LOGGING_OUT,
-        LOGGED_OUT
+        LOGGED_OUT,
+        LOGGED_OUT_UNCONFIRMED;
     }
 
     /**

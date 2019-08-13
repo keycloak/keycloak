@@ -191,13 +191,13 @@ public abstract class AbstractKeycloakTest {
 
     protected void beforeAbstractKeycloakTestRealmImport() throws Exception {
     }
-    protected void postAfterAbstractKeycloak() {
+    protected void postAfterAbstractKeycloak() throws Exception {
     }
 
     protected void afterAbstractKeycloakTestRealmImport() {}
 
     @After
-    public void afterAbstractKeycloakTest() {
+    public void afterAbstractKeycloakTest() throws Exception {
         if (resetTimeOffset) {
             resetTimeOffset();
         }

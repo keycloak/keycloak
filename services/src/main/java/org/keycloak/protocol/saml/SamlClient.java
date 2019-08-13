@@ -119,6 +119,14 @@ public class SamlClient extends ClientConfigResolver {
         client.setAttribute(SamlConfigAttributes.SAML_FORCE_NAME_ID_FORMAT_ATTRIBUTE, Boolean.toString(val));
     }
 
+    public boolean forceArtifactBinding(){
+        return "true".equals(resolveAttribute(SamlConfigAttributes.SAML_ARTIFACT_BINDING));
+    }
+
+    public void setForceArtifactBinding(boolean val) {
+        client.setAttribute(SamlConfigAttributes.SAML_ARTIFACT_BINDING, Boolean.toString(val));
+    }
+
     public boolean requiresRealmSignature() {
         return "true".equals(resolveAttribute(SamlConfigAttributes.SAML_SERVER_SIGNATURE));
     }
