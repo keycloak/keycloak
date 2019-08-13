@@ -1097,6 +1097,7 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, flows, $ro
     $scope.samlAuthnStatement = false;
     $scope.samlOneTimeUseCondition = false;
     $scope.samlMultiValuedRoles = false;
+    $scope.samlArtifactBinding = false;
     $scope.samlServerSignature = false;
     $scope.samlServerSignatureEnableKeyInfoExtension = false;
     $scope.samlAssertionSignature = false;
@@ -1179,6 +1180,16 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, flows, $ro
         } else if ($scope.client.attributes['saml_name_id_format'] == 'persistent') {
             $scope.nameIdFormat = $scope.nameIdFormats[3];
         }
+
+
+        if ($scope.client.attributes["saml.artifact.binding"]) {
+            if ($scope.client.attributes["saml.artifact.binding"] == "true") {
+                $scope.samlArtifactBinding = true;
+            } else {
+                $scope.samlArtifactBinding = false;
+            }
+        }
+
         if ($scope.client.attributes["saml.server.signature"]) {
             if ($scope.client.attributes["saml.server.signature"] == "true") {
                 $scope.samlServerSignature = true;
@@ -1635,6 +1646,11 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, flows, $ro
         }
         delete $scope.clientEdit.requestUris;
 
+        if ($scope.samlArtifactBinding == true) {
+            $scope.clientEdit.attributes["saml.artifact.binding"] = "true";
+        } else {
+            $scope.clientEdit.attributes["saml.artifact.binding"] = "false";
+        }
         if ($scope.samlServerSignature == true) {
             $scope.clientEdit.attributes["saml.server.signature"] = "true";
         } else {

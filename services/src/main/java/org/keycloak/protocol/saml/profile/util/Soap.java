@@ -15,18 +15,24 @@
  * limitations under the License.
  */
 
-package org.keycloak.protocol.saml.profile.ecp.util;
+package org.keycloak.protocol.saml.profile.util;
 
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.ByteArrayEntity;
+import org.apache.http.entity.ContentType;
 import org.keycloak.saml.processing.core.saml.v2.util.DocumentUtil;
 import org.keycloak.saml.processing.web.util.PostBindingUtil;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import javax.xml.soap.MessageFactory;
 import javax.xml.soap.Name;
 import javax.xml.soap.SOAPBody;
+import javax.xml.soap.SOAPConnection;
+import javax.xml.soap.SOAPConnectionFactory;
 import javax.xml.soap.SOAPEnvelope;
 import javax.xml.soap.SOAPException;
 import javax.xml.soap.SOAPFault;
@@ -34,6 +40,7 @@ import javax.xml.soap.SOAPHeaderElement;
 import javax.xml.soap.SOAPMessage;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
+import java.net.URI;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -54,21 +61,50 @@ public final class Soap {
      *
      * <p>The resulting string is based on the Body of the SOAP message, which should map to a valid SAML message.
      *
-     * @param inputStream the input stream containing a valid SOAP message with a Body that contains a SAML message
+     * @param document the document containing a valid SOAP message with a Body that contains a SAML message
      *
      * @return a string encoded accordingly with the SAML HTTP POST Binding specification
      */
-    public static String toSamlHttpPostMessage(InputStream inputStream) {
+    public static String toSamlHttpPostMessage(Document document) {
+        try {
+            return PostBindingUtil.base64Encode(DocumentUtil.asString(document));
+        } catch (Exception e) {
+            throw new RuntimeException("Error encoding SOAP document to String.", e);
+        }
+    }
+
+    /**
+     * <p>Returns Docuemnt based on the given <code>inputStream</code> which must contain a valid SOAP message.
+     *
+     * <p>The resulting string is based on the Body of the SOAP message, which should map to a valid SAML message.
+     *
+     * @param inputStream an InputStream consisting of a SOAPMessage
+     * @return A document containing the body of the SOAP message
+     */
+    public static Document extractSoapMessage(InputStream inputStream) {
         try {
             MessageFactory messageFactory = MessageFactory.newInstance();
             SOAPMessage soapMessage = messageFactory.createMessage(null, inputStream);
+            return extractSoapMessage(soapMessage);
+        } catch (Exception e) {
+            throw new RuntimeException("Error creating fault message.", e);
+        }
+    }
+
+    /**
+     * <p>Returns Docuemnt based on the given SOAP message.
+     *
+     * <p>The resulting string is based on the Body of the SOAP message, which should map to a valid SAML message.
+     * @param soapMessage a SOAPMessage from which to extract the body
+     * @return A document containing the body of the SOAP message
+     */
+    public static Document extractSoapMessage(SOAPMessage soapMessage) {
+        try {
             SOAPBody soapBody = soapMessage.getSOAPBody();
             Node authnRequestNode = soapBody.getFirstChild();
             Document document = DocumentUtil.createDocument();
-
             document.appendChild(document.importNode(authnRequestNode, true));
-
-            return PostBindingUtil.base64Encode(DocumentUtil.asString(document));
+            return document;
         } catch (Exception e) {
             throw new RuntimeException("Error creating fault message.", e);
         }
@@ -123,11 +159,7 @@ public final class Soap {
             }
         }
 
-        public Response build() {
-            return build(Status.OK);
-        }
-
-        Response build(Status status) {
+        public byte[] getBytes() {
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 
             try {
@@ -135,11 +167,55 @@ public final class Soap {
             } catch (Exception e) {
                 throw new RuntimeException("Error while building SOAP Fault.", e);
             }
-
-            return Response.status(status).entity(outputStream.toByteArray()).build();
+            return outputStream.toByteArray();
         }
 
-        SOAPMessage getMessage() {
+        public Response build() {
+            return build(Status.OK);
+        }
+
+        /**
+         * Standard build method, generates a javax ws rs Response
+         * @param status the status of the response
+         * @return a Response containing the SOAP message
+         */
+        Response build(Status status) {
+            return Response.status(status).entity(getBytes()).type(MediaType.TEXT_XML_TYPE).build();
+        }
+
+        /**
+         * Build method for testing, generates an appache httpcomponents HttpPost
+         * @param uri the URI to which to POST the soap message
+         * @return an HttpPost containing the SOAP message
+         */
+        public HttpPost buildHttpPost(URI uri) {
+            HttpPost post = new HttpPost(uri);
+            post.setEntity(new ByteArrayEntity(getBytes(), ContentType.TEXT_XML));
+            return post;
+        }
+
+        /**
+         * Performs a synchronous call, sending the current message to the given url
+         * @param url a SOAP endpoint url
+         * @return the SOAPMessage returned by the contacted SOAP server
+         * @throws SOAPException Raised if there's a problem performing the SOAP call
+         */
+        public SOAPMessage call(String url) throws SOAPException {
+            SOAPMessage response;
+            SOAPConnection soapConnection = null;
+            try {
+                SOAPConnectionFactory soapConnectionFactory = SOAPConnectionFactory.newInstance();
+                soapConnection = soapConnectionFactory.createConnection();
+                response = soapConnection.call(message, url);
+            } finally {
+                if (soapConnection != null) {
+                    soapConnection.close();
+                }
+            }
+            return response;
+        }
+
+        public SOAPMessage getMessage() {
             return this.message;
         }
     }

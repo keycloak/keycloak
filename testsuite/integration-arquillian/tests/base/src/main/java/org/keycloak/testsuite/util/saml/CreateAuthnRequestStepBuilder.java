@@ -49,6 +49,7 @@ public class CreateAuthnRequestStepBuilder extends SamlDocumentStepBuilder<Authn
     private String signingPublicKeyPem;  // TODO: should not be needed
     private String signingPrivateKeyPem;
     private String signingCertificate;
+    private URI protocolBinding;
     private String authorizationHeader;
 
     private final Document forceLoginRequestDocument;
@@ -86,6 +87,15 @@ public class CreateAuthnRequestStepBuilder extends SamlDocumentStepBuilder<Authn
         return this;
     }
 
+    public CreateAuthnRequestStepBuilder setProtocolBinding(URI protocolBinding) {
+        this.protocolBinding = protocolBinding;
+        return this;
+    }
+
+    public URI getProtocolBinding() {
+        return protocolBinding;
+    }
+
     public CreateAuthnRequestStepBuilder signWith(String signingPrivateKeyPem, String signingPublicKeyPem) {
         return signWith(signingPrivateKeyPem, signingPublicKeyPem, null);
     }
@@ -96,7 +106,7 @@ public class CreateAuthnRequestStepBuilder extends SamlDocumentStepBuilder<Authn
         this.signingCertificate = signingCertificate;
         return this;
     }
-    
+
     public CreateAuthnRequestStepBuilder basicAuthentication(UserRepresentation user) {
         String username = user.getUsername();
         String password = Users.getPasswordOf(user);
@@ -126,7 +136,7 @@ public class CreateAuthnRequestStepBuilder extends SamlDocumentStepBuilder<Authn
         if (authorizationHeader != null) {
             request.addHeader(HttpHeaders.AUTHORIZATION, authorizationHeader);
         }
-        
+
         return request;
     }
 
@@ -137,9 +147,10 @@ public class CreateAuthnRequestStepBuilder extends SamlDocumentStepBuilder<Authn
 
         try {
             SAML2Request samlReq = new SAML2Request();
-            AuthnRequestType loginReq = samlReq.createAuthnRequestType(UUID.randomUUID().toString(),
-                    assertionConsumerURL, this.authServerSamlUrl.toString(), issuer, requestBinding.getBindingUri());
-
+            AuthnRequestType loginReq = samlReq.createAuthnRequestType(UUID.randomUUID().toString(), assertionConsumerURL, this.authServerSamlUrl.toString(), issuer, requestBinding.getBindingUri());
+            if (protocolBinding != null) {
+                loginReq.setProtocolBinding(protocolBinding);
+            }
             return SAML2Request.convert(loginReq);
         } catch (ConfigurationException | ParsingException | ProcessingException ex) {
             throw new RuntimeException(ex);
