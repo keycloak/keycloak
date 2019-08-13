@@ -2,6 +2,8 @@ package org.keycloak.representations.account;
 
 import java.util.List;
 
+import org.keycloak.representations.idm.DeviceRepresentation;
+
 /**
  * Created by st on 29/03/17.
  */
@@ -13,6 +15,7 @@ public class SessionRepresentation {
     private int lastAccess;
     private int expires;
     private List<ClientRepresentation> clients;
+    private DeviceRepresentation deviceInfo;
 
     public String getId() {
         return id;
@@ -60,5 +63,13 @@ public class SessionRepresentation {
 
     public void setClients(List<ClientRepresentation> clients) {
         this.clients = clients;
+    }
+
+    public void setDevice(DeviceRepresentation deviceInfo) {
+        this.deviceInfo = deviceInfo;
+    }
+
+    public DeviceRepresentation getDevice() {
+        return deviceInfo;
     }
 }

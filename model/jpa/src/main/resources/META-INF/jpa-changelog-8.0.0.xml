@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!--
+  ~ Copyright 2019 Red Hat, Inc. and/or its affiliates
+  ~ and other contributors as indicated by the @author tags.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.2.xsd">
+    <changeSet author="psilva@redhat.com" id="8.0.0-KEYCLOAK-7416">
+        <createTable tableName="USER_DEVICE_INFO">
+            <column name="ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="DEVICE" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="USER_ID" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="BROWSER" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="OS" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="OS_VERSION" type="VARCHAR(255)"/>
+            <column name="IP" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="CREATED" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="LAST_ACCESS" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="REALM_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addPrimaryKey columnNames="ID" constraintName="UDI_PK" tableName="USER_DEVICE_INFO"/>
+        <addForeignKeyConstraint baseColumnNames="USER_ID" baseTableName="USER_DEVICE_INFO" constraintName="UDI_USER_FK" referencedColumnNames="ID" referencedTableName="USER_ENTITY"/>
+        <createIndex indexName="IDX_UDI_USER" tableName="USER_DEVICE_INFO">
+            <column name="USER_ID"/>
+        </createIndex>
+        <createIndex indexName="IDX_UDI_REALM" tableName="USER_DEVICE_INFO">
+            <column name="REALM_ID"/>
+        </createIndex>
+
+        <createTable tableName="FED_USER_DEVICE_INFO">
+            <column name="ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="DEVICE" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="USER_ID" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="REALM_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="STORAGE_PROVIDER_ID" type="VARCHAR(36)"/>
+            <column name="BROWSER" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="OS" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="OS_VERSION" type="VARCHAR(255)"/>
+            <column name="IP" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="CREATED" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="LAST_ACCESS" type="INT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <addPrimaryKey columnNames="ID" constraintName="FED_UDI_PK" tableName="FED_USER_DEVICE_INFO"/>
+        <createIndex indexName="IDX_FED_UDI_USER" tableName="FED_USER_DEVICE_INFO">
+            <column name="USER_ID"/>
+        </createIndex>
+        <createIndex indexName="IDX_FED_UDI_REALM" tableName="FED_USER_DEVICE_INFO">
+            <column name="REALM_ID"/>
+        </createIndex>
+        <createIndex indexName="IDX_FED_UDI_STORAGE" tableName="FED_USER_DEVICE_INFO">
+            <column name="STORAGE_PROVIDER_ID"/>
+        </createIndex>
+    </changeSet>
+</databaseChangeLog>

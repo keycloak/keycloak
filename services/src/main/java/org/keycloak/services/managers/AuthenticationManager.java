@@ -40,6 +40,7 @@ import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.Time;
 import org.keycloak.crypto.SignatureProvider;
 import org.keycloak.crypto.SignatureVerifierContext;
+import org.keycloak.device.DeviceActivityManager;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
@@ -519,7 +520,7 @@ public class AuthenticationManager {
             UserModel user = userSession.getUser();
             logger.debugv("Logging out: {0} ({1})", user.getUsername(), userSession.getId());
         }
-        
+
         if (userSession.getState() != UserSessionModel.State.LOGGING_OUT) {
             userSession.setState(UserSessionModel.State.LOGGING_OUT);
         }
@@ -638,6 +639,8 @@ public class AuthenticationManager {
         int sessionCookieMaxAge = session.isRememberMe() && realm.getSsoSessionMaxLifespanRememberMe() > 0 ? realm.getSsoSessionMaxLifespanRememberMe() : realm.getSsoSessionMaxLifespan();
         CookieHelper.addCookie(KEYCLOAK_SESSION_COOKIE, sessionCookieValue, cookiePath, null, null, sessionCookieMaxAge, secureOnly, false);
         P3PHelper.addP3PHeader();
+
+        DeviceActivityManager.createFingerprint(session, keycloakSession);
     }
 
     public static void createRememberMeCookie(RealmModel realm, String username, UriInfo uriInfo, ClientConnection connection) {
@@ -695,7 +698,7 @@ public class AuthenticationManager {
         expireCookie(realm, AuthenticationSessionManager.AUTH_SESSION_ID, oldPath, true, connection);
     }
 
-    protected static String getIdentityCookiePath(RealmModel realm, UriInfo uriInfo) {
+    public static String getIdentityCookiePath(RealmModel realm, UriInfo uriInfo) {
         return getRealmCookiePath(realm, uriInfo);
     }
 
@@ -854,7 +857,7 @@ public class AuthenticationManager {
         String actionTokenKeyToInvalidate = authSession.getAuthNote(INVALIDATE_ACTION_TOKEN);
         if (actionTokenKeyToInvalidate != null) {
             ActionTokenKeyModel actionTokenKey = DefaultActionTokenKey.from(actionTokenKeyToInvalidate);
-            
+
             if (actionTokenKey != null) {
                 ActionTokenStoreProvider actionTokenStore = session.getProvider(ActionTokenStoreProvider.class);
                 actionTokenStore.put(actionTokenKey, null); // Token is invalidated
@@ -1115,7 +1118,7 @@ public class AuthenticationManager {
         Collections.sort(actions, RequiredActionProviderModel.RequiredActionComparator.SINGLETON);
         return actions;
     }
-    
+
     public static void evaluateRequiredActionTriggers(final KeycloakSession session, final AuthenticationSessionModel authSession, final ClientConnection clientConnection, final HttpRequest request, final UriInfo uriInfo, final EventBuilder event, final RealmModel realm, final UserModel user) {
 
         // see if any required actions need triggering, i.e. an expired password
@@ -1146,7 +1149,7 @@ public class AuthenticationManager {
                 public void ignore() {
                     throw new RuntimeException("Not allowed to call ignore() within evaluateTriggers()");
                 }
-                
+
                 @Override
                 public void cancelAIA() {
                     throw new RuntimeException("Not allowed to call cancelAIA() within evaluateTriggers()");
@@ -1157,26 +1160,26 @@ public class AuthenticationManager {
             provider.evaluateTriggers(result);
         }
     }
-    
+
     // Determine if provider is being requested as an Application-Initiated Action
     // If so, add it to the authSession.
     private static void evaluateApplicationInitiatedActionTrigger(final KeycloakSession session,
-                                                                  final RequiredActionProvider provider, 
+                                                                  final RequiredActionProvider provider,
                                                                   final RequiredActionProviderModel model,
                                                                   final AuthenticationSessionModel authSession
                                                                   ) {
         if (provider.initiatedActionSupport() == InitiatedActionSupport.NOT_SUPPORTED) return;
-        
+
         String aia = authSession.getClientNote(AIA_REQUEST);
         if (aia == null) return;
 
         // make sure you are evaluating the action that was requested
         if (!aia.equalsIgnoreCase(model.getProviderId())) return;
-        
+
         if (session.getContext().getClient().getRole(AccountRoles.MANAGE_ACCOUNT) == null) {
             throw new ForbiddenException("Client must have manage-account role to perform application-initiated actions.");
         }
-        
+
         authSession.addRequiredAction(model.getProviderId());
         authSession.removeClientNote(AIA_REQUEST); // keep this from being executed twice
         authSession.setClientNote(IS_AIA_REQUEST, "true");

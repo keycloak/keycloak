@@ -22,9 +22,9 @@ public class ProfileTest {
     @Test
     public void checkDefaults() {
         Assert.assertEquals("community", Profile.getName());
-        assertEquals(Profile.getDisabledFeatures(), Profile.Feature.ACCOUNT2, Profile.Feature.ACCOUNT_API, Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ, Profile.Feature.DOCKER, Profile.Feature.SCRIPTS, Profile.Feature.TOKEN_EXCHANGE, Profile.Feature.AUTHZ_DROOLS_POLICY, Profile.Feature.OPENSHIFT_INTEGRATION);
+        assertEquals(Profile.getDisabledFeatures(), Profile.Feature.ACCOUNT2, Profile.Feature.ACCOUNT_API, Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ, Profile.Feature.DOCKER, Profile.Feature.SCRIPTS, Profile.Feature.TOKEN_EXCHANGE, Profile.Feature.AUTHZ_DROOLS_POLICY, Profile.Feature.OPENSHIFT_INTEGRATION, Profile.Feature.DEVICE_ACTIVITY);
         assertEquals(Profile.getPreviewFeatures(), Profile.Feature.ACCOUNT_API, Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ, Profile.Feature.SCRIPTS, Profile.Feature.TOKEN_EXCHANGE, Profile.Feature.AUTHZ_DROOLS_POLICY, Profile.Feature.OPENSHIFT_INTEGRATION);
-        assertEquals(Profile.getExperimentalFeatures(), Profile.Feature.ACCOUNT2);
+        assertEquals(Profile.getExperimentalFeatures(), Profile.Feature.ACCOUNT2, Profile.Feature.DEVICE_ACTIVITY);
     }
 
     @Test

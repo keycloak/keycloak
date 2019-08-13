@@ -31,6 +31,7 @@ import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.message.BasicNameValuePair;
+import org.jboss.arquillian.drone.webdriver.htmlunit.DroneHtmlUnitDriver;
 import org.junit.Assert;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.TokenVerifier;
@@ -80,6 +81,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import static org.keycloak.testsuite.admin.Users.getPasswordOf;
@@ -116,7 +118,7 @@ public class OAuthClient {
     private String clientId;
 
     private String redirectUri;
-    
+
     private String kcAction;
 
     private StateParamProvider state;
@@ -428,12 +430,21 @@ public class OAuthClient {
         return doGrantAccessTokenRequest(realm, username, password, null, clientId, clientSecret);
     }
 
+    public AccessTokenResponse doBeforeGrantAccessTokenRequest(String clientSecret, String username,  String password, Consumer<HttpPost> beforeTokenRequest) throws Exception {
+        return doGrantAccessTokenRequest(realm, username, password, null, clientId, clientSecret, beforeTokenRequest);
+    }
+
     public AccessTokenResponse doGrantAccessTokenRequest(String clientSecret, String username,  String password, String otp) throws Exception {
         return doGrantAccessTokenRequest(realm, username, password, otp, clientId, clientSecret);
     }
 
     public AccessTokenResponse doGrantAccessTokenRequest(String realm, String username, String password, String totp,
-                                                         String clientId, String clientSecret) throws Exception {
+            String clientId, String clientSecret) throws Exception {
+        return doGrantAccessTokenRequest(realm, username, password, totp, clientId, clientSecret, null);
+    }
+
+    public AccessTokenResponse doGrantAccessTokenRequest(String realm, String username, String password, String totp,
+                                                         String clientId, String clientSecret, Consumer<HttpPost> beforeTokenRequest) throws Exception {
         try (CloseableHttpClient client = httpClient.get()) {
             HttpPost post = new HttpPost(getResourceOwnerPasswordCredentialGrantUrl(realm));
 
@@ -473,6 +484,10 @@ public class OAuthClient {
                 throw new RuntimeException(e);
             }
             post.setEntity(formEntity);
+
+            if (beforeTokenRequest != null) {
+                beforeTokenRequest.accept(post);
+            }
 
             return new AccessTokenResponse(client.execute(post));
         }
@@ -582,7 +597,7 @@ public class OAuthClient {
             post.setEntity(formEntity);
 
             return new AccessTokenResponse(client.execute(post));
-        } 
+        }
     }
 
     // KEYCLOAK-6771 Certificate Bound Token
@@ -774,10 +789,10 @@ public class OAuthClient {
     public String getRedirectUri() {
         return redirectUri;
     }
-    
+
     /**
      * Application-initiated action.
-     * 
+     *
      * @return The action name.
      */
     public String getKcAction() {
@@ -840,7 +855,7 @@ public class OAuthClient {
         }
         if (codeChallengeMethod != null) {
             b.queryParam(OAuth2Constants.CODE_CHALLENGE_METHOD, codeChallengeMethod);
-        }  
+        }
         return b.build(realm).toString();
     }
 
@@ -851,7 +866,7 @@ public class OAuthClient {
                 .param(OAuth2Constants.CLIENT_ID, clientId)
                 .param(OAuth2Constants.REDIRECT_URI, redirectUri)
                 .param(OAuth2Constants.STATE, this.state.getState());
-        
+
         return Entity.form(form);
     }
 
@@ -912,7 +927,7 @@ public class OAuthClient {
         this.redirectUri = redirectUri;
         return this;
     }
-    
+
     public OAuthClient kcAction(String kcAction) {
         this.kcAction = kcAction;
         return this;
@@ -1249,6 +1264,13 @@ public class OAuthClient {
         publicKeys.clear();
     }
 
+    public void setBrowserHeader(String name, String value) {
+        if (driver instanceof DroneHtmlUnitDriver) {
+            DroneHtmlUnitDriver droneDriver = (DroneHtmlUnitDriver) this.driver;
+            droneDriver.getWebClient().removeRequestHeader(name);
+            droneDriver.getWebClient().addRequestHeader(name, value);
+        }
+    }
 
     private interface StateParamProvider {
 

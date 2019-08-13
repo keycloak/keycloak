@@ -27,6 +27,7 @@ import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.common.util.Retry;
 import org.keycloak.common.util.Time;
+import org.keycloak.device.DeviceActivityManager;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
@@ -784,7 +785,17 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
     UserSessionAdapter wrap(RealmModel realm, UserSessionEntity entity, boolean offline) {
         InfinispanChangelogBasedTransaction<String, UserSessionEntity> userSessionUpdateTx = getTransaction(offline);
         InfinispanChangelogBasedTransaction<UUID, AuthenticatedClientSessionEntity> clientSessionUpdateTx = getClientSessionTransaction(offline);
-        return entity != null ? new UserSessionAdapter(session, this, userSessionUpdateTx, clientSessionUpdateTx, realm, entity, offline) : null;
+
+        if (entity != null) {
+            UserSessionAdapter adapter = new UserSessionAdapter(session, this, userSessionUpdateTx,
+                    clientSessionUpdateTx, realm, entity, offline);
+
+            DeviceActivityManager.createOrUpdateDevice(adapter, session);
+
+            return adapter; 
+        }
+
+        return null;
     }
 
     AuthenticatedClientSessionAdapter wrap(UserSessionModel userSession, ClientModel client, AuthenticatedClientSessionEntity entity, boolean offline) {

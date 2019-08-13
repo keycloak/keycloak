@@ -20,10 +20,10 @@ package org.keycloak.models.cache.infinispan;
 import org.jboss.logging.Logger;
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.models.ClientScopeModel;
-import org.keycloak.models.cache.CachedObject;
+import org.keycloak.models.DeviceModel;
+import org.keycloak.models.UserDeviceStore;
 import org.keycloak.models.cache.infinispan.events.InvalidationEvent;
 import org.keycloak.common.constants.ServiceAccountConstants;
-import org.keycloak.common.util.Time;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.FederatedIdentityModel;
@@ -58,7 +58,7 @@ import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.storage.client.ClientStorageProvider;
 
-import java.util.Calendar;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -70,7 +70,7 @@ import java.util.Set;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class UserCacheSession implements UserCache {
+public class UserCacheSession implements UserCache, UserDeviceStore {
     protected static final Logger logger = Logger.getLogger(UserCacheSession.class);
     protected UserCacheManager cache;
     protected KeycloakSession session;
@@ -465,8 +465,8 @@ public class UserCacheSession implements UserCache {
     @Override
     public List<UserModel> getRoleMembers(RealmModel realm, RoleModel role) {
         return getDelegate().getRoleMembers(realm, role);
-    }    
-    
+    }
+
 
     @Override
     public UserModel getServiceAccount(ClientModel client) {
@@ -881,9 +881,58 @@ public class UserCacheSession implements UserCache {
 
     }
 
+    @Override
+    public List<DeviceModel> getDevices(UserModel user) {
+        UserDeviceStore delegate = getDeviceProvider();
+
+        if (delegate != null) {
+            return delegate.getDevices(user);
+        }
+
+        return Collections.emptyList();
+    }
+
+    @Override
+    public void addDevice(RealmModel realm, UserModel user, DeviceModel device) {
+        UserDeviceStore delegate = getDeviceProvider();
+
+        if (delegate != null) {
+            delegate.addDevice(session.getContext().getRealm(), user, device);
+        }
+    }
+
+    @Override
+    public DeviceModel getDeviceById(UserModel userModel, String id) {
+        UserDeviceStore delegate = getDeviceProvider();
+
+        if (delegate != null) {
+            return delegate.getDeviceById(userModel, id);
+        }
+
+        return null;
+    }
+
+    @Override
+    public void removeDevices(RealmModel realm, int olderThan) {
+        UserDeviceStore delegate = getDeviceProvider();
+
+        if (delegate != null) {
+            delegate.removeDevices(realm, olderThan);
+        }
+    }
+
     private void addRealmInvalidation(String realmId) {
         realmInvalidations.add(realmId);
         invalidationEvents.add(UserCacheRealmInvalidationEvent.create(realmId));
     }
 
+    private UserDeviceStore getDeviceProvider() {
+        UserProvider delegate = getDelegate();
+
+        if (delegate instanceof UserDeviceStore) {
+            return (UserDeviceStore) delegate;
+        }
+
+        return null;
+    }
 }

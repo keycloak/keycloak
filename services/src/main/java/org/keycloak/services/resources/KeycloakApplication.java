@@ -49,6 +49,7 @@ import org.keycloak.services.managers.ApplianceBootstrap;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.UserStorageSyncManager;
 import org.keycloak.services.resources.admin.AdminRoot;
+import org.keycloak.services.scheduled.ClearDeviceHistory;
 import org.keycloak.services.scheduled.ClearExpiredClientInitialAccessTokens;
 import org.keycloak.services.scheduled.ClearExpiredEvents;
 import org.keycloak.services.scheduled.ClearExpiredUserSessions;
@@ -310,14 +311,14 @@ public class KeycloakApplication extends Application {
             throw new RuntimeException("Failed to load config", e);
         }
     }
-    
+
     private static String loadDmrConfig(ServletContext context) {
         String dmrConfig = context.getInitParameter(KEYCLOAK_CONFIG_PARAM_NAME);
         if (dmrConfig == null) return null;
 
         ModelNode dmrConfigNode = ModelNode.fromString(dmrConfig);
         if (dmrConfigNode.asPropertyList().isEmpty()) return null;
-        
+
         // note that we need to resolve expressions BEFORE we convert to JSON
         return dmrConfigNode.resolve().toJSONString(true);
     }
@@ -338,6 +339,7 @@ public class KeycloakApplication extends Application {
             timer.schedule(new ClusterAwareScheduledTaskRunner(sessionFactory, new ClearExpiredClientInitialAccessTokens(), interval), interval, "ClearExpiredClientInitialAccessTokens");
             timer.schedule(new ScheduledTaskRunner(sessionFactory, new ClearExpiredUserSessions()), interval, ClearExpiredUserSessions.TASK_NAME);
             new UserStorageSyncManager().bootstrapPeriodic(sessionFactory, timer);
+            timer.schedule(new ClusterAwareScheduledTaskRunner(sessionFactory, new ClearDeviceHistory(), interval), interval, "ClearDeviceHistory");
         } finally {
             session.close();
         }

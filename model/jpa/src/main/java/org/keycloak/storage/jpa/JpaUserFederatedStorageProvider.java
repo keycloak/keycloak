@@ -23,6 +23,7 @@ import org.keycloak.credential.CredentialModel;
 import org.keycloak.credential.UserCredentialStore;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
+import org.keycloak.models.DeviceModel;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
@@ -32,6 +33,7 @@ import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserConsentModel;
+import org.keycloak.models.UserDeviceStore;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.storage.StorageId;
@@ -45,12 +47,14 @@ import org.keycloak.storage.jpa.entity.FederatedUserConsentClientScopeEntity;
 import org.keycloak.storage.jpa.entity.FederatedUserConsentEntity;
 import org.keycloak.storage.jpa.entity.FederatedUserCredentialAttributeEntity;
 import org.keycloak.storage.jpa.entity.FederatedUserCredentialEntity;
+import org.keycloak.storage.jpa.entity.FederatedUserDeviceInfoEntity;
 import org.keycloak.storage.jpa.entity.FederatedUserGroupMembershipEntity;
 import org.keycloak.storage.jpa.entity.FederatedUserRequiredActionEntity;
 import org.keycloak.storage.jpa.entity.FederatedUserRequiredActionEntity.Key;
 import org.keycloak.storage.jpa.entity.FederatedUserRoleMappingEntity;
 
 import javax.persistence.EntityManager;
+import javax.persistence.Query;
 import javax.persistence.TypedQuery;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -59,6 +63,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -66,7 +71,8 @@ import java.util.Set;
  */
 public class JpaUserFederatedStorageProvider implements
         UserFederatedStorageProvider,
-        UserCredentialStore {
+        UserCredentialStore,
+        UserDeviceStore {
 
     private final KeycloakSession session;
     protected EntityManager em;
@@ -775,6 +781,116 @@ public class JpaUserFederatedStorageProvider implements
     }
 
     @Override
+    public DeviceModel getDeviceById(UserModel user, String id) {
+        FederatedUserDeviceInfoEntity entity = em.find(FederatedUserDeviceInfoEntity.class, id);
+
+        if (entity == null) {
+            return null;
+        }
+
+        return toModel(entity);
+    }
+
+    @Override
+    public void removeDevices(RealmModel realm, int olderThan) {
+        Query query = em.createNamedQuery("deleteUserFederatedDevicesByLastAccessedTime");
+
+        query.setParameter("lastAccess", olderThan);
+
+        query.executeUpdate();
+    }
+
+    @Override
+    public List<DeviceModel> getDevices(UserModel user) {
+        Query query = em.createNamedQuery("findDevicesByUser");
+
+        query.setParameter("userId", user.getId());
+
+        return ((List<FederatedUserDeviceInfoEntity>) query.getResultList()).stream().map(this::toModel).collect(Collectors.toList());
+    }
+
+    @Override
+    public void addDevice(RealmModel realm, UserModel user, DeviceModel device) {
+        FederatedUserDeviceInfoEntity entity = new FederatedUserDeviceInfoEntity();
+
+        entity.setId(KeycloakModelUtils.generateId());
+
+        entity.setUserId(user.getId());
+        entity.setIp(device.getIp());
+        entity.setOs(device.getOs());
+        entity.setOsVersion(device.getOsVersion());
+        entity.setDevice(device.getDevice());
+        entity.setBrowser(device.getBrowser());
+        entity.setCreated(device.getCreated());
+        entity.setLastAccess(device.getLastAccess());
+        entity.setRealmId(realm.getId());
+
+        em.persist(entity);
+        em.flush();
+
+        device.setId(entity.getId());
+    }
+
+    private DeviceModel toModel(FederatedUserDeviceInfoEntity entity) {
+        return new DeviceModel() {
+            @Override
+            public String getId() {
+                return entity.getId();
+            }
+
+            @Override
+            public String getIp() {
+                return entity.getIp();
+            }
+
+            @Override
+            public int getCreated() {
+                return entity.getCreated();
+            }
+
+            @Override
+            public String getOs() {
+                return entity.getOs();
+            }
+
+            @Override
+            public int getLastAccess() {
+                return entity.getLastAccess();
+            }
+
+            @Override
+            public String getOsVersion() {
+                return entity.getOsVersion();
+            }
+
+            @Override
+            public String getBrowser() {
+                return entity.getBrowser();
+            }
+
+            @Override
+            public String getDevice() {
+                return entity.getDevice();
+            }
+
+            @Override
+            public void setIp(String ip) {
+                entity.setIp(ip);
+            }
+
+            @Override
+            public void setBrowser(String browser) {
+                entity.setBrowser(browser);
+            }
+
+            @Override
+            public void setLastAccess(int lastAccess) {
+                entity.setLastAccess(lastAccess);
+            }
+        };
+    }
+
+    @Override
     public void preRemove(RealmModel realm) {
         int num = em.createNamedQuery("deleteFederatedUserConsentClientScopesByRealm")
                 .setParameter("realmId", realm.getId()).executeUpdate();
@@ -793,6 +909,8 @@ public class JpaUserFederatedStorageProvider implements
         num = em.createNamedQuery("deleteUserFederatedAttributesByRealm")
                 .setParameter("realmId", realm.getId()).executeUpdate();
         num = em.createNamedQuery("deleteFederatedUserGroupMembershipByRealm")
+                .setParameter("realmId", realm.getId()).executeUpdate();
+        num = em.createNamedQuery("deleteUserFederatedDevicesByRealm")
                 .setParameter("realmId", realm.getId()).executeUpdate();
         num = em.createNamedQuery("deleteFederatedUsersByRealm")
                 .setParameter("realmId", realm.getId()).executeUpdate();
@@ -877,6 +995,10 @@ public class JpaUserFederatedStorageProvider implements
                 .setParameter("userId", user.getId())
                 .setParameter("realmId", realm.getId())
                 .executeUpdate();
+        em.createNamedQuery("deleteUserFederatedDevicesByUser")
+                .setParameter("userId", user.getId())
+                .setParameter("realmId", realm.getId())
+                .executeUpdate();
         em.createNamedQuery("deleteFederatedUserByUser")
                 .setParameter("userId", user.getId())
                 .setParameter("realmId", realm.getId())
@@ -913,6 +1035,9 @@ public class JpaUserFederatedStorageProvider implements
                     .setParameter("storageProviderId", model.getId())
                     .executeUpdate();
             em.createNamedQuery("deleteFederatedUserRoleMappingsByStorageProvider")
+                    .setParameter("storageProviderId", model.getId())
+                    .executeUpdate();
+            em.createNamedQuery("deleteFederatedDevicesByStorageProvider")
                     .setParameter("storageProviderId", model.getId())
                     .executeUpdate();
             em.createNamedQuery("deleteFederatedUsersByStorageProvider")

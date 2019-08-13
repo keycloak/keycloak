@@ -60,6 +60,8 @@
         <class>org.keycloak.models.jpa.entities.ClientScopeClientMappingEntity</class>
         <class>org.keycloak.models.jpa.entities.DefaultClientScopeRealmMappingEntity</class>
         <class>org.keycloak.models.jpa.entities.ClientInitialAccessEntity</class>
+        <class>org.keycloak.models.jpa.entities.UserDeviceInfoEntity</class>
+        <class>org.keycloak.storage.jpa.entity.FederatedUserDeviceInfoEntity</class>
 
         <!-- JpaAuditProviders -->
         <class>org.keycloak.events.jpa.EventEntity</class>

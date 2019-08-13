@@ -25,6 +25,7 @@ import org.keycloak.credential.CredentialModel;
 import org.keycloak.credential.UserCredentialStore;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
+import org.keycloak.models.DeviceModel;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
@@ -35,6 +36,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserConsentModel;
+import org.keycloak.models.UserDeviceStore;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
 import org.keycloak.models.jpa.entities.CredentialAttributeEntity;
@@ -42,6 +44,7 @@ import org.keycloak.models.jpa.entities.CredentialEntity;
 import org.keycloak.models.jpa.entities.FederatedIdentityEntity;
 import org.keycloak.models.jpa.entities.UserConsentClientScopeEntity;
 import org.keycloak.models.jpa.entities.UserConsentEntity;
+import org.keycloak.models.jpa.entities.UserDeviceInfoEntity;
 import org.keycloak.models.jpa.entities.UserEntity;
 import org.keycloak.models.jpa.entities.UserGroupMembershipEntity;
 import org.keycloak.models.utils.DefaultRoles;
@@ -51,6 +54,7 @@ import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.client.ClientStorageProvider;
 
 import javax.persistence.EntityManager;
+import javax.persistence.Query;
 import javax.persistence.TypedQuery;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
@@ -67,13 +71,12 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import javax.persistence.criteria.Expression;
-import javax.persistence.criteria.Path;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class JpaUserProvider implements UserProvider, UserCredentialStore {
+public class JpaUserProvider implements UserProvider, UserCredentialStore, UserDeviceStore {
 
     private static final String EMAIL = "email";
     private static final String USERNAME = "username";
@@ -388,6 +391,10 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
                 .setParameter("realmId", realm.getId()).executeUpdate();
         num = em.createNamedQuery("deleteUserGroupMembershipByRealm")
                 .setParameter("realmId", realm.getId()).executeUpdate();
+        num = em.createNamedQuery("deleteUserDeviceInfoByRealm")
+                .setParameter("realmId", realm.getId()).executeUpdate();
+        num = em.createNamedQuery("deleteUsersByRealm")
+                .setParameter("realmId", realm.getId()).executeUpdate();
         num = em.createNamedQuery("deleteUsersByRealm")
                 .setParameter("realmId", realm.getId()).executeUpdate();
     }
@@ -427,6 +434,10 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
                 .setParameter("link", storageProviderId)
                 .executeUpdate();
         num = em.createNamedQuery("deleteUserConsentsByRealmAndLink")
+                .setParameter("realmId", realm.getId())
+                .setParameter("link", storageProviderId)
+                .executeUpdate();
+        num = em.createNamedQuery("deleteUserDeviceInfoByRealmAndLink")
                 .setParameter("realmId", realm.getId())
                 .setParameter("link", storageProviderId)
                 .executeUpdate();
@@ -496,7 +507,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
         }
         return users;
     }
-    
+
     @Override
     public List<UserModel> getRoleMembers(RealmModel realm, RoleModel role) {
         TypedQuery<UserEntity> query = em.createNamedQuery("usersInRole", UserEntity.class);
@@ -540,11 +551,11 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
         query.setParameter("email", email.toLowerCase());
         query.setParameter("realmId", realm.getId());
         List<UserEntity> results = query.getResultList();
-        
+
         if (results.isEmpty()) return null;
-        
+
         ensureEmailConstraint(results, realm);
-        
+
         return new UserAdapter(session, realm, em, results.get(0));
     }
 
@@ -657,7 +668,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
         }
         return users;
     }
-    
+
     @Override
     public List<UserModel> getRoleMembers(RealmModel realm, RoleModel role, int firstResult, int maxResults) {
         TypedQuery<UserEntity> query = em.createNamedQuery("usersInRole", UserEntity.class);
@@ -754,7 +765,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
             Root from1 = subquery1.from(ResourceEntity.class);
 
             List<Predicate> subs = new ArrayList<>();
-            
+
             Expression<String> groupId = from.get("groupId");
             subs.add(builder.like(from1.get("name"), builder.concat("group.resource.", groupId)));
 
@@ -1038,26 +1049,80 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
         return toModel(results.get(0));
     }
 
+    @Override
+    public List<DeviceModel> getDevices(UserModel user) {
+        Query query = em.createQuery("select d from UserDeviceInfoEntity d where d.user = :user");
+
+        query.setParameter("user", em.getReference(UserEntity.class, user.getId()));
+
+        List<UserDeviceInfoEntity> resultList = query.getResultList();
+        return resultList.stream().map(DeviceAdapter::new).collect(Collectors.toList());
+    }
+
+    @Override
+    public void addDevice(RealmModel realm, UserModel user, DeviceModel device) {
+        UserDeviceInfoEntity entity = new UserDeviceInfoEntity();
+
+        entity.setId(KeycloakModelUtils.generateId());
+
+        UserEntity userEntity = em.getReference(UserEntity.class, user.getId());
+
+        entity.setUser(userEntity);
+        entity.setIp(device.getIp());
+        entity.setOs(device.getOs());
+        entity.setOsVersion(device.getOsVersion());
+        entity.setDevice(device.getDevice());
+        entity.setBrowser(device.getBrowser());
+        entity.setCreated(device.getCreated());
+        entity.setLastAccess(device.getLastAccess());
+        entity.setRealm(userEntity.getRealmId());
+
+        em.persist(entity);
+        em.flush();
+
+        device.setId(entity.getId());
+    }
+
+    @Override
+    public DeviceModel getDeviceById(UserModel user, String id) {
+        UserDeviceInfoEntity entity = em.find(UserDeviceInfoEntity.class, id);
+
+        if (entity == null) {
+            return null;
+        }
+
+        return new DeviceAdapter(entity);
+    }
+
+    @Override
+    public void removeDevices(RealmModel realm, int olderThan) {
+        Query query = em.createNamedQuery("deleteDevicesByLastAccessedTime");
+
+        query.setParameter("lastAccess", olderThan);
+
+        query.executeUpdate();
+    }
+
     // Could override this to provide a custom behavior.
     protected void ensureEmailConstraint(List<UserEntity> users, RealmModel realm) {
         UserEntity user = users.get(0);
-        
+
         if (users.size() > 1) {
             // Realm settings have been changed from allowing duplicate emails to not allowing them
             // but duplicates haven't been removed.
             throw new ModelDuplicateException("Multiple users with email '" + user.getEmail() + "' exist in Keycloak.");
         }
-        
+
         if (realm.isDuplicateEmailsAllowed()) {
             return;
         }
-     
+
         if (user.getEmail() != null && !user.getEmail().equals(user.getEmailConstraint())) {
             // Realm settings have been changed from allowing duplicate emails to not allowing them.
             // We need to update the email constraint to reflect this change in the user entities.
             user.setEmailConstraint(user.getEmail());
             em.persist(user);
-        }  
+        }
     }
 
     private UserEntity userInEntityManagerContext(String id) {

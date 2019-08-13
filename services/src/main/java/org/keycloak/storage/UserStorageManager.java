@@ -23,6 +23,7 @@ import org.keycloak.component.ComponentFactory;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
+import org.keycloak.models.DeviceModel;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
@@ -32,6 +33,7 @@ import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserConsentModel;
+import org.keycloak.models.UserDeviceStore;
 import org.keycloak.models.UserManager;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
@@ -49,6 +51,7 @@ import org.keycloak.storage.user.UserLookupProvider;
 import org.keycloak.storage.user.UserQueryProvider;
 import org.keycloak.storage.user.UserRegistrationProvider;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -63,7 +66,7 @@ import static org.keycloak.models.utils.KeycloakModelUtils.runJobInTransaction;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class UserStorageManager implements UserProvider, OnUserCache, OnCreateComponent, OnUpdateComponent {
+public class UserStorageManager implements UserProvider, OnUserCache, OnCreateComponent, OnUpdateComponent, UserDeviceStore {
 
     private static final Logger logger = Logger.getLogger(UserStorageManager.class);
 
@@ -379,12 +382,12 @@ public class UserStorageManager implements UserProvider, OnUserCache, OnCreateCo
     public List<UserModel> getGroupMembers(RealmModel realm, GroupModel group) {
         return getGroupMembers(realm, group, -1, -1);
     }
-    
+
     @Override
     public List<UserModel> getRoleMembers(RealmModel realm, RoleModel role) {
         return getRoleMembers(realm, role, -1, -1);
     }
-    
+
     @Override
     public UserModel getUserByUsername(String username, RealmModel realm) {
         UserModel user = localStorage().getUserByUsername(username, realm);
@@ -643,7 +646,7 @@ public class UserStorageManager implements UserProvider, OnUserCache, OnCreateCo
         List<UserModel> results = query((provider, first, max) -> {
             if (provider instanceof UserQueryProvider) {
                 return ((UserQueryProvider)provider).getRoleMembers(realm, role, first, max);
-            } 
+            }
             return Collections.EMPTY_LIST;
         }, realm, firstResult, maxResults);
         return importValidation(realm, results);
@@ -765,5 +768,69 @@ public class UserStorageManager implements UserProvider, OnUserCache, OnCreateCo
 
     }
 
+    @Override
+    public List<DeviceModel> getDevices(UserModel user) {
+        UserDeviceStore deviceProvider = getDeviceProvider(user);
 
+        if (deviceProvider != null) {
+            return deviceProvider.getDevices(user);
+        }
+
+        return Collections.emptyList();
+    }
+
+    @Override
+    public void addDevice(RealmModel realm, UserModel user, DeviceModel device) {
+        UserDeviceStore deviceProvider = getDeviceProvider(user);
+
+        if (deviceProvider != null) {
+            deviceProvider.addDevice(session.getContext().getRealm(), user, device);
+        }
+    }
+
+    @Override
+    public DeviceModel getDeviceById(UserModel user, String id) {
+        UserDeviceStore deviceProvider = getDeviceProvider(user);
+
+        if (deviceProvider != null) {
+            return deviceProvider.getDeviceById(user, id);
+        }
+
+        return null;
+    }
+
+    @Override
+    public void removeDevices(RealmModel realm, int olderThan) {
+        List<UserDeviceStore> deviceStores = new ArrayList<>();
+
+        if (localStorage() instanceof UserDeviceStore) {
+            deviceStores.add((UserDeviceStore) localStorage());
+        }
+
+        if (getFederatedStorage() instanceof UserDeviceStore) {
+            deviceStores.add((UserDeviceStore) getFederatedStorage());
+        }
+
+        for (UserDeviceStore deviceStore : deviceStores) {
+            deviceStore.removeDevices(realm, olderThan);
+        }
+    }
+
+    private UserDeviceStore getDeviceProvider(UserModel user) {
+        if (StorageId.isLocalStorage(user)) {
+            UserProvider userProvider = localStorage();
+
+            if (userProvider instanceof UserDeviceStore) {
+                return (UserDeviceStore) userProvider;
+            }
+        } else {
+            UserFederatedStorageProvider storage = getFederatedStorage();
+
+            if (storage instanceof UserDeviceStore) {
+                return (UserDeviceStore) storage;
+            }
+        }
+
+        return null;
+    }
 }

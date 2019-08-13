@@ -28,13 +28,9 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.UserSessionModel;
-import org.keycloak.representations.account.ClientRepresentation;
-import org.keycloak.representations.account.SessionRepresentation;
 import org.keycloak.representations.account.UserRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.managers.Auth;
-import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.Cors;
 import org.keycloak.services.resources.account.resources.ResourcesService;
@@ -45,7 +41,6 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import org.keycloak.common.Profile;
@@ -67,7 +62,7 @@ public class AccountRestService {
     private final EventBuilder event;
     private EventStoreProvider eventStore;
     private Auth auth;
-    
+
     private final RealmModel realm;
     private final UserModel user;
 
@@ -79,7 +74,7 @@ public class AccountRestService {
         this.client = client;
         this.event = event;
     }
-    
+
     public void init() {
         eventStore = session.getProvider(EventStoreProvider.class);
     }
@@ -203,84 +198,10 @@ public class AccountRestService {
      * @return
      */
     @Path("/sessions")
-    @GET
-    @Produces(MediaType.APPLICATION_JSON)
-    @NoCache
-    public Response sessions() {
+    public SessionResource sessions() {
         checkAccountApiEnabled();
         auth.requireOneOf(AccountRoles.MANAGE_ACCOUNT, AccountRoles.VIEW_PROFILE);
-        
-        List<SessionRepresentation> reps = new LinkedList<>();
-
-        List<UserSessionModel> sessions = session.sessions().getUserSessions(realm, user);
-        for (UserSessionModel s : sessions) {
-            SessionRepresentation rep = new SessionRepresentation();
-            rep.setId(s.getId());
-            rep.setIpAddress(s.getIpAddress());
-            rep.setStarted(s.getStarted());
-            rep.setLastAccess(s.getLastSessionRefresh());
-            rep.setExpires(s.getStarted() + realm.getSsoSessionMaxLifespan());
-            rep.setClients(new LinkedList());
-
-            for (String clientUUID : s.getAuthenticatedClientSessions().keySet()) {
-                ClientModel client = realm.getClientById(clientUUID);
-                ClientRepresentation clientRep = new ClientRepresentation();
-                clientRep.setClientId(client.getClientId());
-                clientRep.setClientName(client.getName());
-                rep.getClients().add(clientRep);
-            }
-
-            reps.add(rep);
-        }
-
-        return Cors.add(request, Response.ok(reps)).auth().allowedOrigins(auth.getToken()).build();
-    }
-
-    /**
-     * Remove sessions
-     *
-     * @param removeCurrent remove current session (default is false)
-     * @return
-     */
-    @Path("/sessions")
-    @DELETE
-    @Produces(MediaType.APPLICATION_JSON)
-    @NoCache
-    public Response sessionsLogout(@QueryParam("current") boolean removeCurrent) {
-        checkAccountApiEnabled();
-        auth.require(AccountRoles.MANAGE_ACCOUNT);
-        
-        UserSessionModel userSession = auth.getSession();
-
-        List<UserSessionModel> userSessions = session.sessions().getUserSessions(realm, user);
-        for (UserSessionModel s : userSessions) {
-            if (removeCurrent || !s.getId().equals(userSession.getId())) {
-                AuthenticationManager.backchannelLogout(session, s, true);
-            }
-        }
-
-        return Cors.add(request, Response.ok()).auth().allowedOrigins(auth.getToken()).build();
-    }
-
-    /**
-     * Remove a specific session
-     *
-     * @param id a specific session to remove
-     * @return
-     */
-    @Path("/session")
-    @DELETE
-    @Produces(MediaType.APPLICATION_JSON)
-    @NoCache
-    public Response sessionLogout(@QueryParam("id") String id) {
-        checkAccountApiEnabled();
-        auth.require(AccountRoles.MANAGE_ACCOUNT);
-        
-        UserSessionModel userSession = session.sessions().getUserSession(realm, id);
-        if (userSession != null && userSession.getUser().equals(user)) {
-            AuthenticationManager.backchannelLogout(session, userSession, true);
-        }
-        return Cors.add(request, Response.ok()).auth().allowedOrigins(auth.getToken()).build();
+        return new SessionResource(session, auth, request);
     }
 
     @Path("/credentials")
@@ -299,7 +220,7 @@ public class AccountRestService {
    // TODO Federated identities
     // TODO Applications
     // TODO Logs
-    
+
     private static void checkAccountApiEnabled() {
         if (!Profile.isFeatureEnabled(Profile.Feature.ACCOUNT_API)) {
             throw new NotFoundException();

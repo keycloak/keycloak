@@ -43,6 +43,7 @@ public class Profile {
 
     public enum Feature {
         ACCOUNT2(Type.EXPERIMENTAL),
+        DEVICE_ACTIVITY(Type.EXPERIMENTAL),
         ACCOUNT_API(Type.PREVIEW),
         ADMIN_FINE_GRAINED_AUTHZ(Type.PREVIEW),
         DOCKER(Type.DISABLED_BY_DEFAULT),

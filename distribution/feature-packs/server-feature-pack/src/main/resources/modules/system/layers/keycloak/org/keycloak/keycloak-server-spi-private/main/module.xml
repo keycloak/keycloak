@@ -39,5 +39,6 @@
         <module name="com.fasterxml.jackson.core.jackson-databind"/>
         <module name="com.fasterxml.jackson.core.jackson-core"/>
         <module name="com.google.guava"/>
+        <module name="com.github.ua-parser" export="true"/>
     </dependencies>
 </module>
