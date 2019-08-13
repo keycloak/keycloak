@@ -45,11 +45,13 @@ import org.keycloak.admin.client.Keycloak;
 import org.keycloak.common.util.StringPropertyReplacer;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.error.KeycloakErrorHandler;
+import org.keycloak.testsuite.arquillian.annotation.SetDefaultProvider;
 import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
 import org.keycloak.testsuite.arquillian.annotation.EnableVault;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
 import org.keycloak.testsuite.util.LogChecker;
 import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.SpiProvidersSwitchingUtils;
 import org.keycloak.testsuite.util.SqlUtils;
 import org.keycloak.testsuite.util.SystemInfoHelper;
 import org.keycloak.testsuite.util.VaultUtils;
@@ -350,6 +352,19 @@ public class AuthServerTestEnricher {
         }
     }
 
+    public static void executeCli(String... commands) throws Exception {
+        OnlineManagementClient client = AuthServerTestEnricher.getManagementClient();
+        Administration administration = new Administration(client);
+
+        for (String c : commands) {
+            client.execute(c).assertSuccess();
+        }
+
+        administration.reload();
+
+        client.close();
+    }
+
     private ContainerInfo updateWithAuthServerInfo(ContainerInfo authServerInfo) {
         return updateWithAuthServerInfo(authServerInfo, 0);
     }
@@ -531,10 +546,22 @@ public class AuthServerTestEnricher {
         TestContext testContext = new TestContext(suiteContext, event.getTestClass().getJavaClass());
         testContextProducer.set(testContext);
 
-        if (!isAuthServerRemote() && !isAuthServerQuarkus() && event.getTestClass().isAnnotationPresent(EnableVault.class)) {
-            VaultUtils.enableVault(suiteContext, event.getTestClass().getAnnotation(EnableVault.class).providerId());
-            restartAuthServer();
-            testContext.reconnectAdminClient();
+        if (!isAuthServerRemote() && !isAuthServerQuarkus()) {
+            boolean wasUpdated = false;
+
+            if (event.getTestClass().isAnnotationPresent(EnableVault.class)) {
+                VaultUtils.enableVault(suiteContext, event.getTestClass().getAnnotation(EnableVault.class).providerId());
+                wasUpdated = true;
+            }
+            if (event.getTestClass().isAnnotationPresent(SetDefaultProvider.class)) {
+                SpiProvidersSwitchingUtils.addProviderDefaultValue(suiteContext, event.getTestClass().getAnnotation(SetDefaultProvider.class));
+                wasUpdated = true;
+            }
+
+            if (wasUpdated) {
+                restartAuthServer();
+                testContext.reconnectAdminClient();
+            }
         }
     }
 
@@ -851,10 +878,23 @@ public class AuthServerTestEnricher {
 
         removeTestRealms(testContext, adminClient);
 
-        if (!isAuthServerRemote() && event.getTestClass().isAnnotationPresent(EnableVault.class)) {
-            VaultUtils.disableVault(suiteContext, event.getTestClass().getAnnotation(EnableVault.class).providerId());
-            restartAuthServer();
-            testContext.reconnectAdminClient();
+        if (!isAuthServerRemote() && !isAuthServerQuarkus()) {
+            
+            boolean wasUpdated = false;
+            if (event.getTestClass().isAnnotationPresent(EnableVault.class)) {
+                VaultUtils.disableVault(suiteContext, event.getTestClass().getAnnotation(EnableVault.class).providerId());
+                wasUpdated = true;
+            }
+
+            if (event.getTestClass().isAnnotationPresent(SetDefaultProvider.class)) {
+                SpiProvidersSwitchingUtils.removeProvider(suiteContext, event.getTestClass().getAnnotation(SetDefaultProvider.class));
+                wasUpdated = true;
+            }
+
+            if (wasUpdated) {
+                restartAuthServer();
+                testContext.reconnectAdminClient();
+            }
         }
 
         if (adminClient != null) {

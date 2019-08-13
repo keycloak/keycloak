@@ -138,6 +138,7 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
                     int maxPooledPerRoute = config.getInt("max-pooled-per-route", 64);
                     int connectionPoolSize = config.getInt("connection-pool-size", 128);
                     long connectionTTL = config.getLong("connection-ttl-millis", -1L);
+                    boolean reuseConnections = config.getBoolean("reuse-connections", true);
                     long maxConnectionIdleTime = config.getLong("max-connection-idle-time-millis", 900000L);
                     boolean disableCookies = config.getBoolean("disable-cookies", true);
                     String clientKeystore = config.get("client-keystore");
@@ -152,6 +153,7 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
                             .establishConnectionTimeout(establishConnectionTimeout, TimeUnit.MILLISECONDS)
                             .maxPooledPerRoute(maxPooledPerRoute)
                             .connectionPoolSize(connectionPoolSize)
+                            .reuseConnections(reuseConnections)
                             .connectionTTL(connectionTTL, TimeUnit.MILLISECONDS)
                             .maxConnectionIdleTime(maxConnectionIdleTime, TimeUnit.MILLISECONDS)
                             .disableCookies(disableCookies)

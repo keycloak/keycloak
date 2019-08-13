@@ -57,7 +57,6 @@
             <groupId>org.wildfly.core</groupId>
             <artifactId>wildfly-controller</artifactId>
         </dependency>
-
     </dependencies>
 
     <build>

@@ -24,6 +24,7 @@ import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.conn.ssl.SSLContexts;
 import org.apache.http.conn.ssl.StrictHostnameVerifier;
 import org.apache.http.conn.ssl.X509HostnameVerifier;
+import org.apache.http.impl.NoConnectionReuseStrategy;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 
@@ -95,6 +96,7 @@ public class HttpClientBuilder {
     protected int connectionPoolSize = 128;
     protected int maxPooledPerRoute = 64;
     protected long connectionTTL = -1;
+    protected boolean reuseConnections = true;
     protected TimeUnit connectionTTLUnit = TimeUnit.MILLISECONDS;
     protected long maxConnectionIdleTime = 900000;
     protected TimeUnit maxConnectionIdleTimeUnit = TimeUnit.MILLISECONDS;
@@ -137,6 +139,11 @@ public class HttpClientBuilder {
     public HttpClientBuilder connectionTTL(long ttl, TimeUnit unit) {
         this.connectionTTL = ttl;
         this.connectionTTLUnit = unit;
+        return this;
+    }
+
+    public HttpClientBuilder reuseConnections(boolean reuseConnections) {
+        this.reuseConnections = reuseConnections;
         return this;
     }
 
@@ -289,6 +296,9 @@ public class HttpClientBuilder {
                     .setMaxConnPerRoute(maxPooledPerRoute)
                     .setConnectionTimeToLive(connectionTTL, connectionTTLUnit);
 
+            if (!reuseConnections) {
+                builder.setConnectionReuseStrategy(new NoConnectionReuseStrategy());
+            }
 
             if (proxyMappings != null && !proxyMappings.isEmpty()) {
                 builder.setRoutePlanner(new ProxyMappingsAwareRoutePlanner(proxyMappings));

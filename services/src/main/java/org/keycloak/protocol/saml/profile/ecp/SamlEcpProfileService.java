@@ -29,7 +29,7 @@ import org.keycloak.protocol.saml.JaxrsSAML2BindingBuilder;
 import org.keycloak.protocol.saml.SamlConfigAttributes;
 import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.protocol.saml.SamlService;
-import org.keycloak.protocol.saml.profile.ecp.util.Soap;
+import org.keycloak.protocol.saml.profile.util.Soap;
 import org.keycloak.saml.SAML2LogoutResponseBuilder;
 import org.keycloak.saml.common.constants.JBossSAMLConstants;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
@@ -61,6 +61,10 @@ public class SamlEcpProfileService extends SamlService {
     }
 
     public Response authenticate(InputStream inputStream) {
+        return authenticate(Soap.extractSoapMessage(inputStream));
+    }
+
+    public Response authenticate(Document soapMessage) {
         try {
             return new PostBindingProtocol() {
                 @Override
@@ -80,7 +84,7 @@ public class SamlEcpProfileService extends SamlService {
                     requestAbstractType.setDestination(session.getContext().getUri().getAbsolutePath());
                     return super.loginRequest(relayState, requestAbstractType, client);
                 }
-            }.execute(Soap.toSamlHttpPostMessage(inputStream), null, null);
+            }.execute(Soap.toSamlHttpPostMessage(soapMessage), null, null, null);
         } catch (Exception e) {
             String reason = "Some error occurred while processing the AuthnRequest.";
             String detail = e.getMessage();
