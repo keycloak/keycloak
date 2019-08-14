@@ -23,24 +23,8 @@ import io.undertow.servlet.api.DeploymentInfo;
 import io.undertow.servlet.api.DeploymentManager;
 import io.undertow.servlet.api.ServletContainer;
 import io.undertow.servlet.api.ServletInfo;
-
-import java.io.File;
-import java.io.IOException;
-import java.lang.reflect.Field;
-import java.nio.charset.Charset;
-import java.util.Collection;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
-import javax.servlet.ServletException;
-import javax.ws.rs.Path;
-import javax.ws.rs.core.Application;
-
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
-import org.arquillian.undertow.UndertowContainerConfiguration;
 import org.jboss.arquillian.container.spi.client.container.DeployableContainer;
 import org.jboss.arquillian.container.spi.client.container.DeploymentException;
 import org.jboss.arquillian.container.spi.client.container.LifecycleException;
@@ -59,8 +43,23 @@ import org.jboss.shrinkwrap.descriptor.api.Descriptor;
 import org.jboss.shrinkwrap.undertow.api.UndertowWebArchive;
 import org.keycloak.common.util.reflections.Reflections;
 import org.keycloak.testsuite.arquillian.undertow.saml.util.RestSamlApplicationConfig;
+import org.keycloak.testsuite.utils.tls.TLSUtils;
 import org.keycloak.testsuite.utils.undertow.UndertowDeployerHelper;
 import org.keycloak.testsuite.utils.undertow.UndertowWarClassLoader;
+
+import javax.servlet.ServletException;
+import javax.ws.rs.Path;
+import javax.ws.rs.core.Application;
+import java.io.File;
+import java.io.IOException;
+import java.lang.reflect.Field;
+import java.nio.charset.Charset;
+import java.util.Collection;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:vramik@redhat.com">Vlasta Ramik</a>
@@ -69,7 +68,7 @@ public class UndertowAppServer implements DeployableContainer<UndertowAppServerC
 
     private static final Logger log = Logger.getLogger(UndertowAppServer.class);
 
-    private UndertowContainerConfiguration configuration;
+    private UndertowAppServerConfiguration configuration;
     private UndertowJaxrsServer undertow;
     Map<String, String> deployedArchivesToContextPath = new ConcurrentHashMap<>();
 
@@ -88,8 +87,10 @@ public class UndertowAppServer implements DeployableContainer<UndertowAppServerC
         long start = System.currentTimeMillis();
 
         undertow = new UndertowJaxrsServer();
-        undertow.start(Undertow.builder()
-            .addHttpListener(configuration.getBindHttpPort(), configuration.getBindAddress()));
+        Undertow.Builder builder = Undertow.builder()
+                .addHttpListener(configuration.getBindHttpPort(), configuration.getBindAddress())
+                .addHttpsListener(configuration.getBindHttpsPort(), configuration.getBindAddress(), TLSUtils.initializeTLS());
+        undertow.start(builder);
         log.infof("App server started in %dms on http://%s:%d/", (System.currentTimeMillis() - start), configuration.getBindAddress(), configuration.getBindHttpPort());
     }
 

@@ -104,7 +104,7 @@
         <app.server.memory.Xms>64m</app.server.memory.Xms>
         <app.server.memory.Xmx>512m</app.server.memory.Xmx>
         <app.server.memory.settings>-Xms${app.server.memory.Xms} -Xmx${app.server.memory.Xmx} -XX:MetaspaceSize=${surefire.memory.metaspace} -XX:MaxMetaspaceSize=${surefire.memory.metaspace.max}</app.server.memory.settings>
-        <app.server.ssl.required>false</app.server.ssl.required>
+        <app.server.ssl.required>true</app.server.ssl.required>
         <app.server.jvm.args.extra/>
 
         <cache.server>undefined</cache.server>
@@ -137,8 +137,8 @@
             -Dapp.server.base.url=http://localhost:${app.server.http.port}
             -Dauth.server.base.url=http://localhost:${auth.server.http.port}
             -Dapp.server.ssl.base.url=https://localhost:${app.server.https.port}
-            -Dapp.server.ssl.required=${app.server.ssl.required}
             -Dauth.server.ssl.base.url=https://localhost:${auth.server.https.port}
+            -Dapp.server.ssl.required=${app.server.ssl.required}
             -Dauth.server.ssl.required=${auth.server.ssl.required}
             -Dmy.host.name=localhost
             -Djava.security.krb5.conf=${project.build.directory}/dependency/kerberos/test-krb5.conf
@@ -451,6 +451,7 @@
                             <app.server.https.port>${app.server.https.port}</app.server.https.port>
                             <app.server.management.protocol>${app.server.management.protocol}</app.server.management.protocol>
                             <app.server.management.port>${app.server.management.port}</app.server.management.port>
+                            <app.server.ssl.required>${app.server.ssl.required}</app.server.ssl.required>
                             <app.server.startup.timeout>${app.server.startup.timeout}</app.server.startup.timeout>
                             <app.server.reverse-proxy.port.offset>${app.server.reverse-proxy.port.offset}</app.server.reverse-proxy.port.offset>
                             <app.server.1.port.offset>${app.server.1.port.offset}</app.server.1.port.offset>

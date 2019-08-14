@@ -18,7 +18,6 @@
 package org.keycloak.testsuite.adapter.servlet;
 
 import org.keycloak.KeycloakSecurityContext;
-import org.keycloak.common.util.UriUtils;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -56,7 +55,7 @@ public class CustomerServlet extends HttpServlet {
             String urlBase = ServletTestUtils.getUrlBase(req);
 
             URL url = new URL(urlBase + "/customer-db/");
-            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            HttpURLConnection conn = ServletTestUtils.createConnectionWithTLS(url);
             conn.setRequestMethod("DELETE");
             conn.setRequestProperty(HttpHeaders.AUTHORIZATION, "Bearer " + context.getTokenString());
             BufferedReader rd = new BufferedReader(new InputStreamReader(conn.getInputStream()));
@@ -110,7 +109,7 @@ public class CustomerServlet extends HttpServlet {
         StringBuilder result = new StringBuilder();
 
         URL url = new URL(serviceUrl);
-        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+        HttpURLConnection conn = ServletTestUtils.createConnectionWithTLS(url);
         conn.setRequestMethod("GET");
         conn.setRequestProperty(HttpHeaders.AUTHORIZATION, "Bearer " + context.getTokenString());
 

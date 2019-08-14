@@ -24,6 +24,7 @@ import org.eclipse.jetty.deploy.DeploymentManager;
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.HttpConfiguration;
 import org.eclipse.jetty.server.HttpConnectionFactory;
+import org.eclipse.jetty.server.SecureRequestCustomizer;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.SslConnectionFactory;
@@ -125,6 +126,7 @@ public class JettyAppServer implements DeployableContainer<JettyAppServerConfigu
         ServerConnector connector = new ServerConnector(server);
         connector.setPort(configuration.getBindHttpPort());
         HttpConfiguration https = new HttpConfiguration();
+        https.addCustomizer(new SecureRequestCustomizer());
         ServerConnector sslConnector = new ServerConnector(server,
                 new SslConnectionFactory(sslContextFactory, "http/1.1"),
                 new HttpConnectionFactory(https));

@@ -26,6 +26,14 @@ public class UndertowAppServerConfiguration extends UndertowContainerConfigurati
     protected static final Logger log = Logger.getLogger(UndertowAppServerConfiguration.class);
 
     private int bindHttpPortOffset = 0;
+    private int bindHttpsPortOffset = 0;
+    private int bindHttpsPort = 8643;
+
+    @Override
+    public void validate() throws ConfigurationException {
+        setBindHttpPort(getBindHttpPort() + bindHttpPortOffset);
+        setBindHttpsPort(bindHttpsPort + bindHttpsPortOffset);
+    }
 
     public int getBindHttpPortOffset() {
         return bindHttpPortOffset;
@@ -35,14 +43,19 @@ public class UndertowAppServerConfiguration extends UndertowContainerConfigurati
         this.bindHttpPortOffset = bindHttpPortOffset;
     }
 
-    @Override
-    public void validate() throws ConfigurationException {
-        super.validate();
-
-        int basePort = getBindHttpPort();
-        int newPort = basePort + bindHttpPortOffset;
-        setBindHttpPort(newPort);
-        log.info("App server undertow will listen on port: " + newPort);
+    public int getBindHttpsPortOffset() {
+        return bindHttpsPortOffset;
     }
 
+    public void setBindHttpsPortOffset(int bindHttpsPortOffset) {
+        this.bindHttpsPortOffset = bindHttpsPortOffset;
+    }
+
+    public int getBindHttpsPort() {
+        return bindHttpsPort;
+    }
+
+    public void setBindHttpsPort(int bindHttpsPort) {
+        this.bindHttpsPort = bindHttpsPort;
+    }
 }

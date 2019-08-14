@@ -65,7 +65,7 @@ public class CustomerServletNoConf extends HttpServlet {
         }
 
         URL url = new URL(urlBase + "/customer-db/");
-        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+        HttpURLConnection conn = ServletTestUtils.createConnectionWithTLS(url);
         conn.setRequestMethod("GET");
         conn.setRequestProperty(HttpHeaders.AUTHORIZATION, "Bearer " + context.getTokenString());
         BufferedReader rd = new BufferedReader(new InputStreamReader(conn.getInputStream()));

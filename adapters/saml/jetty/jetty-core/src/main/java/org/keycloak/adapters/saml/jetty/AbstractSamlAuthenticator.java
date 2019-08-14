@@ -251,7 +251,8 @@ public abstract class AbstractSamlAuthenticator extends LoginAuthenticator {
         }
 
         if (configResolver != null) {
-            //deploymentContext = new AdapterDeploymentContext(configResolver);
+            //Jetty case
+            deploymentContext = new SamlDeploymentContext(configResolver);
         } else if (theServletContext != null) {
             InputStream configInputStream = getConfigInputStream(theServletContext);
             if (configInputStream != null) {

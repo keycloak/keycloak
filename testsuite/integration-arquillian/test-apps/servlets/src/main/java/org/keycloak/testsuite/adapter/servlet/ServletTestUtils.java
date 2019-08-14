@@ -17,9 +17,16 @@
 
 package org.keycloak.testsuite.adapter.servlet;
 
-import javax.servlet.http.HttpServletRequest;
-
 import org.keycloak.common.util.UriUtils;
+
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManagerFactory;
+import javax.servlet.http.HttpServletRequest;
+import java.io.IOException;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.security.KeyStore;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -52,5 +59,26 @@ public class ServletTestUtils {
         }
 
         return System.getProperty("auth.server.base.url", "http://localhost:8180");
+    }
+
+    public static HttpURLConnection createConnectionWithTLS(URL url) {
+        try {
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+
+            if (conn instanceof HttpsURLConnection) {
+                KeyStore truststore = KeyStore.getInstance("jks");
+                truststore.load(ServletTestUtils.class.getResourceAsStream("/keycloak.truststore"), "secret".toCharArray());
+                TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+                trustManagerFactory.init(truststore);
+                SSLContext sslContext = SSLContext.getInstance("TLS");
+                sslContext.init(null, trustManagerFactory.getTrustManagers(), null);
+                ((HttpsURLConnection)conn).setSSLSocketFactory(sslContext.getSocketFactory());
+            }
+            return conn;
+        } catch (IOException e) {
+            throw new IllegalStateException("Could not initialize Truststore, check if the file exists", e);
+        } catch (Exception e) {
+            throw new IllegalStateException("Could not initialize Truststore, check if JKS is generated correctly", e);
+        }
     }
 }
