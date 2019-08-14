@@ -57,6 +57,10 @@ public class ProfileAssume {
         Assume.assumeTrue("Ignoring test as feature " + feature.name() + " is not enabled", isFeatureEnabled(feature));
     }
 
+    public static void assumeFeatureDisabled(Profile.Feature feature) {
+        Assume.assumeTrue("Ignoring test as feature " + feature.name() + " is disabled", !isFeatureEnabled(feature));
+    }
+
     public static void assumePreview() {
         updateProfile();
         Assume.assumeTrue("Ignoring test as community/preview profile is not enabled", !profile.equals("product"));

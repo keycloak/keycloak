@@ -18,7 +18,6 @@ package org.keycloak.testsuite.authz;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -35,6 +34,7 @@ import org.keycloak.authorization.client.resource.AuthorizationResource;
 import org.keycloak.authorization.client.resource.PolicyResource;
 import org.keycloak.authorization.client.resource.ProtectionResource;
 import org.keycloak.authorization.client.util.HttpResponseException;
+import org.keycloak.common.Profile;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.authorization.AuthorizationRequest;
@@ -46,6 +46,7 @@ import org.keycloak.representations.idm.authorization.PermissionTicketRepresenta
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.UmaPermissionRepresentation;
+import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.GroupBuilder;
 import org.keycloak.testsuite.util.RealmBuilder;
@@ -114,7 +115,11 @@ public class UserManagedPermissionServiceTest extends AbstractResourceServerTest
         newPermission.addRole("role_a", "role_b", "role_c", "role_d");
         newPermission.addGroup("/group_a", "/group_a/group_b", "/group_c");
         newPermission.addClient("client-a", "resource-server-test");
-        newPermission.setCondition("$evaluation.grant()");
+        
+        if (Profile.isFeatureEnabled(Profile.Feature.UPLOAD_SCRIPTS)) {
+            newPermission.setCondition("$evaluation.grant()");
+        }
+
         newPermission.addUser("kolo");
 
         ProtectionResource protection = getAuthzClient().protection("marta", "password");
@@ -134,6 +139,12 @@ public class UserManagedPermissionServiceTest extends AbstractResourceServerTest
         assertEquals(newPermission.getCondition(), permission.getCondition());
         assertNotNull(permission.getUsers());
         assertTrue(permission.getUsers().containsAll(newPermission.getUsers()));
+    }
+
+    @Test
+    public void testCreateDeprecatedFeaturesEnabled() {
+        ProfileAssume.assumeFeatureEnabled(Profile.Feature.UPLOAD_SCRIPTS);
+        testCreate();
     }
 
     @Test
@@ -236,18 +247,23 @@ public class UserManagedPermissionServiceTest extends AbstractResourceServerTest
 
         assertTrue(permission.getClients().containsAll(updated.getClients()));
 
-        permission.setCondition("$evaluation.grant()");
+        if (Profile.isFeatureEnabled(Profile.Feature.UPLOAD_SCRIPTS)) {
+            permission.setCondition("$evaluation.grant()");
 
-        protection.policy(resource.getId()).update(permission);
-        assertEquals(4, getAssociatedPolicies(permission).size());
-        updated = protection.policy(resource.getId()).findById(permission.getId());
+            protection.policy(resource.getId()).update(permission);
+            assertEquals(4, getAssociatedPolicies(permission).size());
+            updated = protection.policy(resource.getId()).findById(permission.getId());
 
-        assertEquals(permission.getCondition(), updated.getCondition());
+            assertEquals(permission.getCondition(), updated.getCondition());
+        }
 
         permission.addUser("alice");
 
         protection.policy(resource.getId()).update(permission);
-        assertEquals(5, getAssociatedPolicies(permission).size());
+        
+        int expectedPolicies = Profile.isFeatureEnabled(Profile.Feature.UPLOAD_SCRIPTS) ? 5 : 4;
+        
+        assertEquals(expectedPolicies, getAssociatedPolicies(permission).size());
         updated = protection.policy(resource.getId()).findById(permission.getId());
         assertEquals(1, updated.getUsers().size());
         assertEquals(permission.getUsers(), updated.getUsers());
@@ -255,7 +271,7 @@ public class UserManagedPermissionServiceTest extends AbstractResourceServerTest
         permission.addUser("kolo");
 
         protection.policy(resource.getId()).update(permission);
-        assertEquals(5, getAssociatedPolicies(permission).size());
+        assertEquals(expectedPolicies, getAssociatedPolicies(permission).size());
         updated = protection.policy(resource.getId()).findById(permission.getId());
         assertEquals(2, updated.getUsers().size());
         assertEquals(permission.getUsers(), updated.getUsers());
@@ -263,7 +279,7 @@ public class UserManagedPermissionServiceTest extends AbstractResourceServerTest
         permission.removeUser("alice");
 
         protection.policy(resource.getId()).update(permission);
-        assertEquals(5, getAssociatedPolicies(permission).size());
+        assertEquals(expectedPolicies, getAssociatedPolicies(permission).size());
         updated = protection.policy(resource.getId()).findById(permission.getId());
         assertEquals(1, updated.getUsers().size());
         assertEquals(permission.getUsers(), updated.getUsers());
@@ -271,23 +287,25 @@ public class UserManagedPermissionServiceTest extends AbstractResourceServerTest
         permission.setUsers(null);
 
         protection.policy(resource.getId()).update(permission);
-        assertEquals(4, getAssociatedPolicies(permission).size());
+        assertEquals(--expectedPolicies, getAssociatedPolicies(permission).size());
         updated = protection.policy(resource.getId()).findById(permission.getId());
 
         assertEquals(permission.getUsers(), updated.getUsers());
 
-        permission.setCondition(null);
+        if (Profile.isFeatureEnabled(Profile.Feature.UPLOAD_SCRIPTS)) {
+            permission.setCondition(null);
 
-        protection.policy(resource.getId()).update(permission);
-        assertEquals(3, getAssociatedPolicies(permission).size());
-        updated = protection.policy(resource.getId()).findById(permission.getId());
+            protection.policy(resource.getId()).update(permission);
+            assertEquals(--expectedPolicies, getAssociatedPolicies(permission).size());
+            updated = protection.policy(resource.getId()).findById(permission.getId());
 
-        assertEquals(permission.getCondition(), updated.getCondition());
+            assertEquals(permission.getCondition(), updated.getCondition());
+        };
 
         permission.setRoles(null);
 
         protection.policy(resource.getId()).update(permission);
-        assertEquals(2, getAssociatedPolicies(permission).size());
+        assertEquals(--expectedPolicies, getAssociatedPolicies(permission).size());
         updated = protection.policy(resource.getId()).findById(permission.getId());
 
         assertEquals(permission.getRoles(), updated.getRoles());
@@ -295,7 +313,7 @@ public class UserManagedPermissionServiceTest extends AbstractResourceServerTest
         permission.setClients(null);
 
         protection.policy(resource.getId()).update(permission);
-        assertEquals(1, getAssociatedPolicies(permission).size());
+        assertEquals(--expectedPolicies, getAssociatedPolicies(permission).size());
         updated = protection.policy(resource.getId()).findById(permission.getId());
 
         assertEquals(permission.getClients(), updated.getClients());
@@ -310,6 +328,53 @@ public class UserManagedPermissionServiceTest extends AbstractResourceServerTest
 
         } catch (Exception e) {
             fail("Expected not found");
+        }
+    }
+    
+    @Test
+    public void testUpdateDeprecatedFeaturesEnabled() {
+        ProfileAssume.assumeFeatureEnabled(Profile.Feature.UPLOAD_SCRIPTS);
+        testUpdate();
+    }
+    
+    @Test
+    public void testUploadScriptDisabled() {
+        ProfileAssume.assumeFeatureDisabled(Profile.Feature.UPLOAD_SCRIPTS);
+        ResourceRepresentation resource = new ResourceRepresentation();
+
+        resource.setName("Resource A");
+        resource.setOwnerManagedAccess(true);
+        resource.setOwner("marta");
+        resource.addScope("Scope A", "Scope B", "Scope C");
+
+        resource = getAuthzClient().protection().resource().create(resource);
+
+        UmaPermissionRepresentation newPermission = new UmaPermissionRepresentation();
+
+        newPermission.setName("Custom User-Managed Permission");
+        newPermission.setDescription("Users from specific roles are allowed to access");
+        newPermission.setCondition("$evaluation.grant()");
+
+        ProtectionResource protection = getAuthzClient().protection("marta", "password");
+
+        try {
+            protection.policy(resource.getId()).create(newPermission);
+            fail("Should fail because upload scripts is disabled");
+        } catch (Exception ignore) {
+            
+        }
+        
+        newPermission.setCondition(null);
+
+        UmaPermissionRepresentation representation = protection.policy(resource.getId()).create(newPermission);
+        
+        representation.setCondition("$evaluation.grant();");
+
+        try {
+            protection.policy(resource.getId()).update(newPermission);
+            fail("Should fail because upload scripts is disabled");
+        } catch (Exception ignore) {
+
         }
     }
 
