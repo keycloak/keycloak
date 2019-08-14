@@ -29,7 +29,7 @@ function should-tests-run() {
 
 function should-tests-run-crossdc-server() {
     # If this is not a pull request, it is build as a branch update. In that case test everything
-    [ "$TRAVIS_PULL_REQUEST" = "false" ] && return 0
+    [ "$TRAVIS_EVENT_TYPE" = "cron" ] && return 0
 
     git diff --name-only HEAD origin/${TRAVIS_BRANCH} |
         egrep -i 'crossdc|infinispan'
