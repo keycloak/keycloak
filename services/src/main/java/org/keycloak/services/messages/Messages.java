@@ -230,4 +230,8 @@ public class Messages {
     public static final String DELEGATION_FAILED = "delegationFailedMessage";
     public static final String DELEGATION_FAILED_HEADER = "delegationFailedHeader";
 
+    public static final String DELETE_ACCOUNT_ERROR = "errorDeletingAccount";
+
+    public static final String DELETE_ACCOUNT_LACK_PRIVILEDGES = "deletingAccountForbidden";
+
 }

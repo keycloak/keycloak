@@ -38,13 +38,13 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.services.resources.account.AccountFormService;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
 import org.keycloak.testsuite.drone.Different;
 import org.keycloak.testsuite.pages.AccountApplicationsPage;
+import org.keycloak.testsuite.pages.AccountDeletePage;
 import org.keycloak.testsuite.pages.AccountFederatedIdentityPage;
 import org.keycloak.testsuite.pages.AccountLogPage;
 import org.keycloak.testsuite.pages.AccountPasswordPage;
@@ -63,8 +63,6 @@ import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.UIUtils;
 import org.keycloak.testsuite.util.UserBuilder;
-import java.io.Closeable;
-import java.io.IOException;
 import java.util.Collections;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
@@ -75,6 +73,8 @@ import java.util.Map;
 
 import org.hamcrest.Matchers;
 import org.junit.Assume;
+import org.openqa.selenium.WebElement;
+
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasItems;
@@ -82,8 +82,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
-
-import javax.ws.rs.core.UriBuilder;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -182,6 +180,9 @@ public class AccountFormServiceTest extends AbstractTestRealmKeycloakTest {
     protected AccountFederatedIdentityPage federatedIdentityPage;
 
     @Page
+    protected AccountDeletePage accountDeletePage;
+
+    @Page
     protected ErrorPage errorPage;
 
     private TimeBasedOTP totp = new TimeBasedOTP();
@@ -194,6 +195,7 @@ public class AccountFormServiceTest extends AbstractTestRealmKeycloakTest {
         // Revert any password policy and user password changes
         setPasswordPolicy("");
         ApiUtil.resetUserPassword(testRealm().users().get(userId), "password", false);
+        disableDeleteOwnAccountForRealmLevel();
     }
 
     @Test
@@ -1273,5 +1275,84 @@ public class AccountFormServiceTest extends AbstractTestRealmKeycloakTest {
         Assert.assertNull(profilePage.getBackToApplicationLinkText());
 
         events.clear();
+    }
+
+    @Test
+    public void deleteOwnAccountPageNotVisibleWithoutActivation() {
+        accountDeletePage.open();
+        loginPage.login("test-user@localhost", "password");
+        Assert.assertTrue(profilePage.isCurrent());
+        driver.navigate().to(accountDeletePage.getPath());
+        Assert.assertTrue(profilePage.isCurrent());
+        List<WebElement> errorAlerts = driver.findElements(By.className("alert-error"));
+        Assert.assertThat(errorAlerts, Matchers.hasSize(1));
+        Assert.assertEquals(errorAlerts.get(0).getText(), "Access not allowed");
+    }
+
+    @Test
+    public void deleteOwnAccountPageVisibleAfterActivatingRealmOption() {
+        enableDeleteOwnAccountForRealmLevel();
+        accountDeletePage.open();
+        loginPage.login("test-user@localhost", "password");
+        Assert.assertTrue(accountDeletePage.isCurrent());
+    }
+
+    private void enableDeleteOwnAccountForRealmLevel() {
+        RealmRepresentation testRealm = testRealm().toRepresentation();
+        testRealm.setUserDeleteOwnAccountAllowed(true);
+        testRealm().update(testRealm);
+    }
+
+    private void disableDeleteOwnAccountForRealmLevel() {
+        RealmRepresentation testRealm = testRealm().toRepresentation();
+        testRealm.setUserDeleteOwnAccountAllowed(false);
+        testRealm().update(testRealm);
+    }
+
+    @Test
+    public void deleteOwnAccountForbiddenWithoutRealmAndClientRole() {
+        enableDeleteOwnAccountForRealmLevel();
+        accountDeletePage.open();
+        loginPage.login("test-user@localhost", "password");
+        accountDeletePage.getDeleteAccountButton().click();
+        Assert.assertTrue(accountDeletePage.getErrorMessage().isDisplayed());
+        Assert.assertEquals(accountDeletePage.getErrorMessage().getText(), "You do not have enough permissions to delete your own account, contact admin.");
+    }
+
+    @Test
+    public void deleteOwnAccountSucceeds() {
+        int initialUserCount = testRealm().users().count();
+        String userId = createUserToBeDeleted("test-user-to-be-deleted@localhost", "password");
+        int userCountAfterAddingUser = testRealm().users().count();
+        Assert.assertEquals(initialUserCount + 1, userCountAfterAddingUser);
+        enableDeleteOwnAccountForRealmLevel();
+        accountDeletePage.open();
+        loginPage.login("test-user-to-be-deleted@localhost", "password");
+        Assert.assertTrue(accountDeletePage.isCurrent());
+        //adding realm role
+        ApiUtil.assignRealmRoles(testRealm(), userId, AccountRoles.DELETE_ACCOUNT);
+        accountDeletePage.getDeleteAccountButton().click();
+        //still does not have enough permissions
+        Assert.assertTrue(accountDeletePage.getErrorMessage().isDisplayed());
+        Assert.assertEquals(accountDeletePage.getErrorMessage().getText(), "You do not have enough permissions to delete your own account, contact admin.");
+        //both client and realm roles are needed
+        ApiUtil.assignClientRoles(testRealm(), userId, "account", AccountRoles.DELETE_ACCOUNT);
+        accountDeletePage.getDeleteAccountButton().click();
+        events.expectAccount(EventType.DELETE_ACCOUNT);
+        Assert.assertTrue(loginPage.isCurrent());
+        int userCountAfterDeletingAccount = testRealm().users().count();
+        Assert.assertEquals(userCountAfterDeletingAccount, initialUserCount);
+    }
+
+    public String createUserToBeDeleted(String username, String password) {
+        UserRepresentation userToBeDeleted = UserBuilder.create()
+            .enabled(true)
+            .username(username)
+            .email(username)
+            .password(password)
+            .build();
+
+        testRealm().users().create(userToBeDeleted);
+        return testRealm().users().search(username).get(0).getId();
     }
 }

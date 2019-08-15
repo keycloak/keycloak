@@ -95,4 +95,8 @@ public class UrlBean {
         return uri.getPath() + "/" + theme.getType().toString().toLowerCase() +"/" + theme.getName();
     }
 
+    public String getDeleteAccountUrl() {
+        return Urls.deleteAccountPage(baseQueryURI, realm).toString();
+    }
+
 }

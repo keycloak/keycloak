@@ -275,6 +275,16 @@ public class PlainTextVaultProviderFactoryTest {
         }
 
         @Override
+        public boolean isUserDeleteOwnAccountAllowed() {
+            return false;
+        }
+
+        @Override
+        public void setUserDeleteOwnAccountAllowed(boolean userDeleteOwnAccountAllowed) {
+
+        }
+
+        @Override
         public void setAttribute(String name, String value) {
           
         }
