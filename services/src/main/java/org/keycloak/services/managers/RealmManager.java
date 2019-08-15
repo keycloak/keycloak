@@ -16,6 +16,7 @@
  */
 package org.keycloak.services.managers;
 
+import java.util.Objects;
 import org.keycloak.Config;
 import org.keycloak.common.enums.SslRequired;
 import org.keycloak.migration.MigrationModelManager;
@@ -124,6 +125,7 @@ public class RealmManager {
         createDefaultClientScopes(realm);
         setupAuthorizationServices(realm);
         setupClientRegistrations(realm);
+        setupDeleteOwnAccountRole(realm);
 
         fireRealmPostCreate(realm);
 
@@ -427,6 +429,8 @@ public class RealmManager {
             manageAccountLinks.setDescription("${role_" + AccountRoles.MANAGE_ACCOUNT_LINKS + "}");
             RoleModel manageAccount = client.getRole(AccountRoles.MANAGE_ACCOUNT);
             manageAccount.addCompositeRole(manageAccountLinks);
+            RoleModel deleteOwnAccount = client.addRole(AccountRoles.DELETE_ACCOUNT);
+            deleteOwnAccount.setDescription("${"+AccountRoles.DELETE_ACCOUNT+"}");
         }
     }
 
@@ -565,6 +569,8 @@ public class RealmManager {
             MigrationModelManager.migrateImport(session, realm, rep, skipUserDependent);
         }
 
+        setupDeleteOwnAccountRole(realm);
+
         fireRealmPostCreate(realm);
 
         return realm;
@@ -679,6 +685,14 @@ public class RealmManager {
 
     private void setupClientRegistrations(RealmModel realm) {
         DefaultClientRegistrationPolicies.addDefaultPolicies(realm);
+    }
+
+
+    private void setupDeleteOwnAccountRole(RealmModel realm) {
+        if (!realm.getRoles().stream().filter(role -> Objects.equals(role.getName(), AccountRoles.DELETE_ACCOUNT)).findFirst().isPresent() ){
+            RoleModel model = realm.addRole(AccountRoles.DELETE_ACCOUNT);
+            model.setDescription("${delete-own-account}");
+        }
     }
 
     private void fireRealmPostCreate(RealmModel realm) {

@@ -24,6 +24,7 @@ import org.keycloak.forms.account.freemarker.model.AccountBean;
 import org.keycloak.forms.account.freemarker.model.AccountFederatedIdentityBean;
 import org.keycloak.forms.account.freemarker.model.ApplicationsBean;
 import org.keycloak.forms.account.freemarker.model.AuthorizationBean;
+import org.keycloak.forms.account.freemarker.model.DeleteAccountBean;
 import org.keycloak.forms.account.freemarker.model.FeaturesBean;
 import org.keycloak.forms.account.freemarker.model.LogBean;
 import org.keycloak.forms.account.freemarker.model.PasswordBean;
@@ -181,6 +182,9 @@ public class FreeMarkerAccountProvider implements AccountProvider {
                 break;
             case PASSWORD:
                 attributes.put("password", new PasswordBean(passwordSet));
+                break;
+            case DELETE_ACCOUNT:
+                attributes.put("deleteAccount", new DeleteAccountBean());
                 break;
             case RESOURCES:
                 if (!realm.isUserManagedAccessAllowed()) {
