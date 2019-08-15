@@ -14,15 +14,18 @@
  * limitations under the License.
  */
 import * as React from 'react';
-import { ActionGroup, Button, Form, FormGroup, TextInput } from '@patternfly/react-core';
+import { ActionGroup, Button, Form, FormGroup, TextInput, Grid, GridItem, Expandable} from '@patternfly/react-core';
 
-import { HttpResponse, AccountServiceClient } from '../../account-service/account.service';
+import { HttpResponse } from '../../account-service/account.service';
 import { AccountServiceContext } from '../../account-service/AccountServiceContext';
 import { Features } from '../../widgets/features';
 import { Msg } from '../../widgets/Msg';
 import { ContentPage } from '../ContentPage';
 import { ContentAlert } from '../ContentAlert';
 import { LocaleSelector } from '../../widgets/LocaleSelectors';
+import { KeycloakContext } from '../../keycloak-service/KeycloakContext';
+import { KeycloakService } from '../../keycloak-service/keycloak.service';
+import { AIACommand } from '../../util/AIACommand';
 
 declare const features: Features;
 declare const locale: string;
@@ -51,6 +54,7 @@ export class AccountPage extends React.Component<AccountPageProps, AccountPageSt
     context: React.ContextType<typeof AccountServiceContext>;
     private isRegistrationEmailAsUsername: boolean = features.isRegistrationEmailAsUsername;
     private isEditUserNameAllowed: boolean = features.isEditUserNameAllowed;
+    private isDeleteAccountAllowed: boolean = features.deleteAccountAllowed;
     private readonly DEFAULT_STATE: AccountPageState = {
         errors: {
             username: '',
@@ -128,6 +132,10 @@ export class AccountPage extends React.Component<AccountPageProps, AccountPageSt
             });
         }
 
+    }
+
+    private handleDelete = (keycloak: KeycloakService): void => {
+        new AIACommand(keycloak, "delete_account").execute();
     }
 
     public render(): React.ReactNode {
@@ -236,6 +244,29 @@ export class AccountPage extends React.Component<AccountPageProps, AccountPageSt
                         </Button>
                     </ActionGroup>
                 </Form>
+
+           { this.isDeleteAccountAllowed && 
+            <div id="delete-account" style={{marginTop:"30px"}}>
+             <Expandable toggleText="Delete Account">
+                 <Grid gutter={"sm"}>
+                        <GridItem span={6}>
+                             <p>
+                                <Msg msgKey="deleteAccountWarning" />
+                             </p>
+                        </GridItem>
+                        <GridItem span={4}>
+                            <KeycloakContext.Consumer>
+                                { (keycloak: KeycloakService) => (
+                                        <Button id="delete-account-btn" variant="danger" onClick={() => this.handleDelete(keycloak)} className="delete-button"><Msg msgKey="doDelete" /></Button>
+                                )}
+                            </KeycloakContext.Consumer>
+                        </GridItem>
+                        <GridItem span={2}>
+                        </GridItem>
+                    </Grid>
+                                
+              </Expandable> 
+              </div>}
             </ContentPage>
         );
     }
