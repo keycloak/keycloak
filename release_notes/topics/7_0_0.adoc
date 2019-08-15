@@ -13,6 +13,10 @@ Java adapter for Apache Tomcat 8 and Apache Tomcat 9 was unified and now it serv
 A lot of work has been done on the new Account Console and Account REST API. It's not quite ready yet, but it's getting
 there and hopefully will be fully done for Keycloak 8.
 
+== Signed and Encrypted ID Token Support
+
+{project_name} can support the signed and encrypted ID token according to Json Web Encryption (JWE) specification.
+
 == Testing and release automation
 
 The Keycloak team has spent a significant amount of time on automation around testing and releases both for Keycloak and
