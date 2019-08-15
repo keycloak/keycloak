@@ -285,6 +285,19 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         testUserLocaleActionAdded(migrationRealm);
     }
 
+    protected void testMigrationTo12_0_0() {
+        testAccountConsoleClientHasDeleteUserRole(masterRealm);
+        testAccountConsoleClientHasDeleteUserRole(migrationRealm);
+    }
+
+    private void testAccountConsoleClientHasDeleteUserRole(RealmResource realm) {
+        ClientRepresentation accountClient = realm.clients().findByClientId(ACCOUNT_MANAGEMENT_CLIENT_ID).get(0);
+
+        ClientResource accountResource = realm.clients().get(accountClient.getId());
+        RoleRepresentation deleteUserRole = accountResource.roles().get(AccountRoles.DELETE_ACCOUNT).toRepresentation();
+        assertNotNull(deleteUserRole);
+    }
+
     private void testAccountClient(RealmResource realm) {
         ClientRepresentation accountClient = realm.clients().findByClientId(ACCOUNT_MANAGEMENT_CLIENT_ID).get(0);
 
@@ -888,6 +901,10 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
     }
     protected void testMigrationTo9_x() {
         testMigrationTo9_0_0();
+    }
+
+    protected void testMigrationTo12_x() {
+        testMigrationTo12_0_0();
     }
 
     protected void testMigrationTo7_x(boolean supportedAuthzServices) {
