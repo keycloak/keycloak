@@ -177,8 +177,6 @@ public class CorsExampleAdapterTest extends AbstractExampleAdapterTest {
         jsDriverAngularCorsProductPage.navigateTo();
         waitForPageToLoad();
 
-        jsDriverAngularCorsProductPage.loadVersion();
-        waitUntilElement(jsDriverAngularCorsProductPage.getOutput()).text().contains("Keycloak version: " + serverVersion);
     }
 
     @Nullable
