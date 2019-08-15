@@ -1456,6 +1456,7 @@
                     <configuration>
                         <forkMode>once</forkMode>
                         <argLine>-Djava.awt.headless=true ${surefire.memory.settings}</argLine>
+                        <runOrder>alphabetical</runOrder>
                     </configuration>
                 </plugin>
                 <plugin>
