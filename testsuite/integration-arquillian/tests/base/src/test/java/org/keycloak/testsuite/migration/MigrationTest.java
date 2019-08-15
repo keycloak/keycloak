@@ -58,6 +58,12 @@ public class MigrationTest extends AbstractMigrationTest {
     }
 
     @Test
+    @Migration(versionFrom = "12.")
+    public void migration12_xTest() {
+        testMigrationTo12_x();
+    }
+
+    @Test
     @Migration(versionFrom = "9.")
     public void migration9_xTest() throws Exception {
         testMigratedData(false);
