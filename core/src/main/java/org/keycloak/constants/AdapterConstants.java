@@ -25,7 +25,6 @@ public interface AdapterConstants {
 
     // URL endpoints
     public static final String K_LOGOUT = "k_logout";
-    public static final String K_VERSION = "k_version";
     public static final String K_PUSH_NOT_BEFORE = "k_push_not_before";
     public static final String K_TEST_AVAILABLE = "k_test_available";
     public static final String K_QUERY_BEARER_TOKEN = "k_query_bearer_token";

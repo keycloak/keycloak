@@ -98,16 +98,6 @@ public class KeycloakCsrfRequestMatcherTest {
         assertFalse(matcher.matches(request));
     }
 
-    @Test
-    public void testMatchesKeycloakVersion() throws Exception {
-
-        prepareRequest(HttpMethod.POST, ROOT_CONTEXT_PATH, AdapterConstants.K_VERSION);
-        assertFalse(matcher.matches(request));
-
-        prepareRequest(HttpMethod.POST, SUB_CONTEXT_PATH, AdapterConstants.K_VERSION);
-        assertFalse(matcher.matches(request));
-    }
-
     private void prepareRequest(HttpMethod method, String contextPath, String uri) {
         request.setMethod(method.name());
         request.setContextPath(contextPath);
