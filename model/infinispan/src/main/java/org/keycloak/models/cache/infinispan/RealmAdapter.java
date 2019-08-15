@@ -155,6 +155,18 @@ public class RealmAdapter implements CachedRealmModel {
     }
 
     @Override
+    public boolean isUserDeleteOwnAccountAllowed() {
+        if (isUpdated())return updated.isUserDeleteOwnAccountAllowed();
+        return cached.isUserDeleteOwnAccountAllowed();
+    }
+
+    @Override
+    public void setUserDeleteOwnAccountAllowed(boolean userDeleteOwnAccountAllowed) {
+        getDelegateForUpdate();
+        updated.setUserDeleteOwnAccountAllowed(userDeleteOwnAccountAllowed);
+    }
+
+    @Override
     public SslRequired getSslRequired() {
         if (isUpdated()) return updated.getSslRequired();
         return cached.getSslRequired();

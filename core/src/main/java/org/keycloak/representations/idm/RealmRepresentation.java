@@ -67,6 +67,7 @@ public class RealmRepresentation {
     protected Boolean duplicateEmailsAllowed;
     protected Boolean resetPasswordAllowed;
     protected Boolean editUsernameAllowed;
+    protected Boolean userDeleteOwnAccountAllowed;
 
     @Deprecated
     protected Boolean userCacheEnabled;
@@ -544,6 +545,14 @@ public class RealmRepresentation {
 
     public void setEditUsernameAllowed(Boolean editUsernameAllowed) {
         this.editUsernameAllowed = editUsernameAllowed;
+    }
+
+    public Boolean isUserDeleteOwnAccountAllowed() {
+        return userDeleteOwnAccountAllowed;
+    }
+
+    public void setUserDeleteOwnAccountAllowed(Boolean userDeleteOwnAccountAllowed) {
+        this.userDeleteOwnAccountAllowed = userDeleteOwnAccountAllowed;
     }
 
     @Deprecated

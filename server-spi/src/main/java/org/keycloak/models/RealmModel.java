@@ -116,6 +116,10 @@ public interface RealmModel extends RoleContainerModel {
 
     void setUserManagedAccessAllowed(boolean userManagedAccessAllowed);
 
+    boolean isUserDeleteOwnAccountAllowed();
+
+    void setUserDeleteOwnAccountAllowed(boolean userDeleteOwnAccountAllowed);
+
     void setAttribute(String name, String value);
     void setAttribute(String name, Boolean value);
     void setAttribute(String name, Integer value);
