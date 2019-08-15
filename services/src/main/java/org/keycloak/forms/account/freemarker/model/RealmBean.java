@@ -73,4 +73,8 @@ public class RealmBean {
     public boolean isUserManagedAccessAllowed() {
         return realm.isUserManagedAccessAllowed();
     }
+
+    public boolean isUserDeleteOwnAccountAllowed() {
+        return realm.isUserDeleteOwnAccountAllowed();
+    }
 }

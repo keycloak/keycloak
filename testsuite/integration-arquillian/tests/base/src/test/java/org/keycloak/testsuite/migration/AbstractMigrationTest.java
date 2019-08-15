@@ -120,7 +120,7 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
     }
 
     protected void testMigratedMigrationData(boolean supportsAuthzService) {
-        assertNames(migrationRealm.roles().list(), "offline_access", "uma_authorization", "migration-test-realm-role");
+        assertNames(migrationRealm.roles().list(), "offline_access", "uma_authorization", "migration-test-realm-role", "delete-own-account");
         List<String> expectedClientIds = new ArrayList<>(Arrays.asList("account", "account-console", "admin-cli", "broker", "migration-test-client", "realm-management", "security-admin-console"));
 
         if (supportsAuthzService) {

@@ -16,6 +16,7 @@
  */
 package org.keycloak.services.managers;
 
+import java.util.Objects;
 import org.keycloak.Config;
 import org.keycloak.common.enums.SslRequired;
 import org.keycloak.migration.MigrationModelManager;
@@ -123,6 +124,8 @@ public class RealmManager {
         createDefaultClientScopes(realm);
         setupAuthorizationServices(realm);
         setupClientRegistrations(realm);
+        setupDeleteOwnAccountRole(realm);
+        addDeleteOwnAccountAttribute(realm);
 
         fireRealmPostCreate(realm);
 
@@ -443,6 +446,9 @@ public class RealmManager {
             manageConsentRole.setDescription("${role_" + AccountRoles.MANAGE_CONSENT + "}");
             manageConsentRole.addCompositeRole(viewConsentRole);
 
+            RoleModel deleteOwnAccount = accountClient.addRole(AccountRoles.DELETE_ACCOUNT);
+            deleteOwnAccount.setDescription("${"+AccountRoles.DELETE_ACCOUNT+"}");
+
             ClientModel accountConsoleClient = realm.getClientByClientId(Constants.ACCOUNT_CONSOLE_CLIENT_ID);
             if (accountConsoleClient == null) {
                 accountConsoleClient = KeycloakModelUtils.createClient(realm, Constants.ACCOUNT_CONSOLE_CLIENT_ID);
@@ -592,6 +598,9 @@ public class RealmManager {
             MigrationModelManager.migrateImport(session, realm, rep, skipUserDependent);
         }
 
+        setupDeleteOwnAccountRole(realm);
+        addDeleteOwnAccountAttribute(realm);
+
         fireRealmPostCreate(realm);
 
         return realm;
@@ -706,6 +715,18 @@ public class RealmManager {
 
     private void setupClientRegistrations(RealmModel realm) {
         DefaultClientRegistrationPolicies.addDefaultPolicies(realm);
+    }
+
+
+    private void setupDeleteOwnAccountRole(RealmModel realm) {
+        if (!realm.getRoles().stream().filter(role -> Objects.equals(role.getName(), AccountRoles.DELETE_ACCOUNT)).findFirst().isPresent() ){
+            RoleModel model = realm.addRole(AccountRoles.DELETE_ACCOUNT);
+            model.setDescription("${delete-own-account}");
+        }
+    }
+
+    private void addDeleteOwnAccountAttribute(RealmModel realm) {
+        realm.setAttribute(Constants.ALLOW_DELETE_OWN_ACCOUNT_ATTRIBUTE, false);
     }
 
     private void fireRealmPostCreate(RealmModel realm) {

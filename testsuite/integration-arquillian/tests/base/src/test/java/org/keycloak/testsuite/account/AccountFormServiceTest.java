@@ -50,6 +50,7 @@ import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.drone.Different;
 import org.keycloak.testsuite.pages.AccountApplicationsPage;
+import org.keycloak.testsuite.pages.AccountDeletePage;
 import org.keycloak.testsuite.pages.AccountFederatedIdentityPage;
 import org.keycloak.testsuite.pages.AccountLogPage;
 import org.keycloak.testsuite.pages.AccountPasswordPage;
@@ -196,6 +197,9 @@ public class AccountFormServiceTest extends AbstractTestRealmKeycloakTest {
     protected AccountFederatedIdentityPage federatedIdentityPage;
 
     @Page
+    protected AccountDeletePage accountDeletePage;
+
+    @Page
     protected ErrorPage errorPage;
 
     private TimeBasedOTP totp = new TimeBasedOTP();
@@ -213,6 +217,7 @@ public class AccountFormServiceTest extends AbstractTestRealmKeycloakTest {
         // Revert any password policy and user password changes
         setPasswordPolicy("");
         ApiUtil.resetUserPassword(testRealm().users().get(userId), "password", false);
+        disableDeleteOwnAccountForRealmLevel();
     }
 
     @Test
@@ -1414,5 +1419,84 @@ public class AccountFormServiceTest extends AbstractTestRealmKeycloakTest {
         }
         // None of PK credential ID, label, and AAGUID can be present on Edit Account screen
         assertEquals(3, noSuchElementExceptionCount);
+    }
+
+    @Test
+    public void deleteOwnAccountPageNotVisibleWithoutActivation() {
+        accountDeletePage.open();
+        loginPage.login("test-user@localhost", "password");
+        Assert.assertTrue(profilePage.isCurrent());
+        driver.navigate().to(accountDeletePage.getPath());
+        Assert.assertTrue(profilePage.isCurrent());
+        List<WebElement> errorAlerts = driver.findElements(By.className("alert-error"));
+        Assert.assertThat(errorAlerts, Matchers.hasSize(1));
+        Assert.assertEquals(errorAlerts.get(0).getText(), "Access not allowed");
+    }
+
+    @Test
+    public void deleteOwnAccountPageVisibleAfterActivatingRealmOption() {
+        enableDeleteOwnAccountForRealmLevel();
+        accountDeletePage.open();
+        loginPage.login("test-user@localhost", "password");
+        Assert.assertTrue(accountDeletePage.isCurrent());
+    }
+
+    private void enableDeleteOwnAccountForRealmLevel() {
+        RealmRepresentation testRealm = testRealm().toRepresentation();
+        testRealm.setUserDeleteOwnAccountAllowed(true);
+        testRealm().update(testRealm);
+    }
+
+    private void disableDeleteOwnAccountForRealmLevel() {
+        RealmRepresentation testRealm = testRealm().toRepresentation();
+        testRealm.setUserDeleteOwnAccountAllowed(false);
+        testRealm().update(testRealm);
+    }
+
+    @Test
+    public void deleteOwnAccountForbiddenWithoutRealmAndClientRole() {
+        enableDeleteOwnAccountForRealmLevel();
+        accountDeletePage.open();
+        loginPage.login("test-user@localhost", "password");
+        accountDeletePage.getDeleteAccountButton().click();
+        Assert.assertTrue(accountDeletePage.getErrorMessage().isDisplayed());
+        Assert.assertEquals(accountDeletePage.getErrorMessage().getText(), "You do not have enough permissions to delete your own account, contact admin.");
+    }
+
+    @Test
+    public void deleteOwnAccountSucceeds() {
+        int initialUserCount = testRealm().users().count();
+        String userId = createUserToBeDeleted("test-user-to-be-deleted@localhost", "password");
+        int userCountAfterAddingUser = testRealm().users().count();
+        Assert.assertEquals(initialUserCount + 1, userCountAfterAddingUser);
+        enableDeleteOwnAccountForRealmLevel();
+        accountDeletePage.open();
+        loginPage.login("test-user-to-be-deleted@localhost", "password");
+        Assert.assertTrue(accountDeletePage.isCurrent());
+        //adding realm role
+        ApiUtil.assignRealmRoles(testRealm(), userId, AccountRoles.DELETE_ACCOUNT);
+        accountDeletePage.getDeleteAccountButton().click();
+        //still does not have enough permissions
+        Assert.assertTrue(accountDeletePage.getErrorMessage().isDisplayed());
+        Assert.assertEquals(accountDeletePage.getErrorMessage().getText(), "You do not have enough permissions to delete your own account, contact admin.");
+        //both client and realm roles are needed
+        ApiUtil.assignClientRoles(testRealm(), userId, "account", AccountRoles.DELETE_ACCOUNT);
+        accountDeletePage.getDeleteAccountButton().click();
+        events.expectAccount(EventType.DELETE_ACCOUNT);
+        Assert.assertTrue(loginPage.isCurrent());
+        int userCountAfterDeletingAccount = testRealm().users().count();
+        Assert.assertEquals(userCountAfterDeletingAccount, initialUserCount);
+    }
+
+    public String createUserToBeDeleted(String username, String password) {
+        UserRepresentation userToBeDeleted = UserBuilder.create()
+            .enabled(true)
+            .username(username)
+            .email(username)
+            .password(password)
+            .build();
+
+        testRealm().users().create(userToBeDeleted);
+        return testRealm().users().search(username).get(0).getId();
     }
 }
