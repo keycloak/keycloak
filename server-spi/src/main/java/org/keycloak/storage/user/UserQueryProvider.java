@@ -24,6 +24,8 @@ import org.keycloak.models.UserModel;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Optional capability interface implemented by UserStorageProviders.
@@ -42,6 +44,99 @@ public interface UserQueryProvider {
      * @return the number of users
      */
     int getUsersCount(RealmModel realm);
+
+    /**
+     * Returns the number of users that are in at least one of the groups
+     * given.
+     *
+     * @param realm    the realm
+     * @param groupIds set of groups id to check for
+     * @return the number of users that are in at least one of the groups
+     */
+    default int getUsersCount(RealmModel realm, Set<String> groupIds) {
+        if (groupIds == null || groupIds.isEmpty()) {
+            return 0;
+        }
+
+        return countUsersInGroups(getUsers(realm), groupIds);
+    }
+
+    /**
+     * Returns the number of users that match the given criteria.
+     *
+     * @param search search criteria
+     * @param realm  the realm
+     * @return number of users that match the search
+     */
+    default int getUsersCount(String search, RealmModel realm) {
+        return searchForUser(search, realm).size();
+    }
+
+    /**
+     * Returns the number of users that match the given criteria and are in
+     * at least one of the groups given.
+     *
+     * @param search   search criteria
+     * @param realm    the realm
+     * @param groupIds set of groups to check for
+     * @return number of users that match the search and given groups
+     */
+    default int getUsersCount(String search, RealmModel realm, Set<String> groupIds) {
+        if (groupIds == null || groupIds.isEmpty()) {
+            return 0;
+        }
+
+        List<UserModel> users = searchForUser(search, realm);
+        return countUsersInGroups(users, groupIds);
+    }
+
+    /**
+     * Returns the number of users that match the given filter parameters.
+     *
+     * @param params filter parameters
+     * @param realm  the realm
+     * @return number of users that match the given filters
+     */
+    default int getUsersCount(Map<String, String> params, RealmModel realm) {
+        return searchForUser(params, realm).size();
+    }
+
+    /**
+     * Returns the number of users that match the given filter parameters and is in
+     * at least one of the given groups.
+     *
+     * @param params   filter parameters
+     * @param realm    the realm
+     * @param groupIds set if groups to check for
+     * @return number of users that match the given filters and groups
+     */
+    default int getUsersCount(Map<String, String> params, RealmModel realm, Set<String> groupIds) {
+        if (groupIds == null || groupIds.isEmpty()) {
+            return 0;
+        }
+
+        List<UserModel> users = searchForUser(params, realm);
+        return countUsersInGroups(users, groupIds);
+    }
+
+    /**
+     * Returns the number of users from the given list of users that are in at
+     * least one of the groups given in the groups set.
+     *
+     * @param users    list of users to check
+     * @param groupIds id of groups that should be checked for
+     * @return number of users that are in at least one of the groups
+     */
+    static int countUsersInGroups(List<UserModel> users, Set<String> groupIds) {
+        return (int) users.stream().filter(u -> {
+            for (GroupModel group : u.getGroups()) {
+                if (groupIds.contains(group.getId())) {
+                    return true;
+                }
+            }
+            return false;
+        }).count();
+    }
 
     /**
      * Returns the number of users.
@@ -138,7 +233,7 @@ public interface UserQueryProvider {
 
     /**
      * Get users that belong to a specific role.
-     * 
+     *
      *
      *
      * @param realm
@@ -152,7 +247,7 @@ public interface UserQueryProvider {
 
     /**
      * Search for users that have a specific role with a specific roleId.
-     * 
+     *
      *
      *
      * @param firstResult

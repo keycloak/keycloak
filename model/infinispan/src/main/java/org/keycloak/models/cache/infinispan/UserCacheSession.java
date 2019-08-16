@@ -551,6 +551,31 @@ public class UserCacheSession implements UserCache {
     }
 
     @Override
+    public int getUsersCount(RealmModel realm, Set<String> groupIds) {
+        return getDelegate().getUsersCount(realm, groupIds);
+    }
+
+    @Override
+    public int getUsersCount(String search, RealmModel realm) {
+        return getDelegate().getUsersCount(search, realm);
+    }
+
+    @Override
+    public int getUsersCount(String search, RealmModel realm, Set<String> groupIds) {
+        return getDelegate().getUsersCount(search, realm, groupIds);
+    }
+
+    @Override
+    public int getUsersCount(Map<String, String> params, RealmModel realm) {
+        return getDelegate().getUsersCount(params, realm);
+    }
+
+    @Override
+    public int getUsersCount(Map<String, String> params, RealmModel realm, Set<String> groupIds) {
+        return getDelegate().getUsersCount(params, realm, groupIds);
+    }
+
+    @Override
     public List<UserModel> getUsers(RealmModel realm, int firstResult, int maxResults, boolean includeServiceAccounts) {
         return getDelegate().getUsers(realm, firstResult, maxResults, includeServiceAccounts);
     }
