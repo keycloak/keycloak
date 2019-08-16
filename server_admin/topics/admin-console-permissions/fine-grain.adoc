@@ -57,7 +57,7 @@ IMPORTANT: If you turn the `Permissions Enabled` switch to off, it will delete a
 .Client Permissions Tab
 image:{project_images}/fine-grain-client-permissions-tab-on.png[]
 
-When you witch `Permissions Enabled` to on, it initializes various permission objects behind the scenes
+When you switch `Permissions Enabled` to on, it initializes various permission objects behind the scenes
 using link:{authorizationguide_link}[Authorization Services].  For this example, we're
 interested in the `manage` permission for the client.  Clicking on that will redirect you
 to the permission that handles the `manage` permission for the client.  All authorization
