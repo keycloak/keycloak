@@ -60,6 +60,35 @@ can pass `login-required` or `check-sso` to the init function. `login-required` 
 or display the login page if not. `check-sso` will only authenticate the client if the user is already logged-in, if the user is not logged-in the browser will be
 redirected back to the application and remain unauthenticated.
 
+You can configure a _silent_ `check-sso` option.
+With this feature enabled, your browser won't do a full redirect to the {project_name} server and back to your application, but this action will be performed in a hidden iframe, so your application resources only need to be loaded and parsed once by the browser when the app is initialized and not again after the redirect back from {project_name} to your app.
+This is particular useful in case of SPAs (Single Page Applications).
+
+To enable the _silent_ `check-sso`, you have to provide a `silentCheckSsoRedirectUri` attribute in the init method.
+This URI needs to be a valid endpoint in the application (and of course it must be configured as a valid redirect for the client in the {project_name} Administration Console):
+
+[source,javascript]
+----
+keycloak.init({ onLoad: 'check-sso', silentCheckSsoRedirectUri: window.location.origin + '/silent-check-sso.html'})
+----
+
+The page at the silent check-sso redirect uri is loaded in the iframe after successfully checking your authentication state and retrieving the tokens from the {project_name} server.
+It has no other task than sending the received tokens to the main application and should only look like this:
+
+[source,html]
+----
+<html>
+<body>
+  <script>
+    parent.postMessage(location.href, location.origin)
+  </script>
+</body>
+</html>
+----
+
+Please keep in mind that this page at the specified location must be provided by the application itself and is _not_ part of the JavaScript adapter!
+
+
 To enable `login-required` set `onLoad` to `login-required` and pass to the init method:
 
 [source,javascript]
@@ -303,6 +332,7 @@ Called to initialize the adapter.
 Options is an Object, where:
 
 * onLoad - Specifies an action to do on load. Supported values are 'login-required' or 'check-sso'.
+* silentCheckSsoRedirectUri - Set the redirect uri for silent authentication check if onLoad is set to 'check-sso'.
 * token - Set an initial value for the token.
 * refreshToken - Set an initial value for the refresh token.
 * idToken - Set an initial value for the id token (only together with token or refreshToken).
