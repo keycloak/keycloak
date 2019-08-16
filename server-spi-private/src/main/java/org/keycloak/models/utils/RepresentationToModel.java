@@ -32,6 +32,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.jboss.logging.Logger;
+import org.keycloak.Config;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.AuthorizationProviderFactory;
@@ -2634,7 +2635,8 @@ public class RepresentationToModel {
     }
 
     public static ResourceServer createResourceServer(ClientModel client, KeycloakSession session, boolean addDefaultRoles) {
-        if (client.isBearerOnly() || client.isPublicClient()) {
+        if ((client.isBearerOnly() || client.isPublicClient())
+                && !(client.getClientId().equals(Config.getAdminRealm() + "-realm") || client.getClientId().equals(Constants.REALM_MANAGEMENT_CLIENT_ID))) {
             throw new RuntimeException("Only confidential clients are allowed to set authorization settings");
         }
         AuthorizationProvider authorization = session.getProvider(AuthorizationProvider.class);
