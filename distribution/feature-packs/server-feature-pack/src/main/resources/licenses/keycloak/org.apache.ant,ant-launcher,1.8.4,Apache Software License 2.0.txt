@@ -202,7 +202,7 @@
  *   limitations under the License.
  */
 
-W3Cï¿½ SOFTWARE NOTICE AND LICENSE
+W3C® SOFTWARE NOTICE AND LICENSE
 http://www.w3.org/Consortium/Legal/2002/copyright-software-20021231
 
 This work (and included software, documentation such as READMEs, or other

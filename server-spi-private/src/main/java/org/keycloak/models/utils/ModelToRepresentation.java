@@ -788,6 +788,7 @@ public class ModelToRepresentation {
         server.setName(client.getClientId());
         server.setAllowRemoteResourceManagement(model.isAllowRemoteResourceManagement());
         server.setPolicyEnforcementMode(model.getPolicyEnforcementMode());
+        server.setDecisionStrategy(model.getDecisionStrategy());
 
         return server;
     }

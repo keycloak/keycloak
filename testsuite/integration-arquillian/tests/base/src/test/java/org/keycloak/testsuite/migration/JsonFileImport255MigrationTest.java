@@ -68,6 +68,7 @@ public class JsonFileImport255MigrationTest extends AbstractJsonFileImportMigrat
         testMigrationTo4_x(true, false);
         testMigrationTo5_x();
         testMigrationTo6_x();
+        testMigrationTo7_x(true);
     }
 
 }

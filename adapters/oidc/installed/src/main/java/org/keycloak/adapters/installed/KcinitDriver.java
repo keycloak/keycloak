@@ -163,7 +163,7 @@ public class KcinitDriver {
         JWE jwe = new JWE();
         final SecretKey aesSecret = new SecretKeySpec(aesKey, "AES");
         jwe.getKeyStorage()
-                .setEncryptionKey(aesSecret);
+                .setDecryptionKey(aesSecret);
         return jwe;
     }
 

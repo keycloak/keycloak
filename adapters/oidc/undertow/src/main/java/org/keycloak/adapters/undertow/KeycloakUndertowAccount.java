@@ -89,6 +89,26 @@ public class KeycloakUndertowAccount implements Account, Serializable, OidcKeycl
         return true;
     }
 
+    @Override
+    public boolean equals(Object other) {
+        if (this == other)
+            return true;
 
+        if (!(other instanceof KeycloakUndertowAccount))
+            return false;
 
+        KeycloakUndertowAccount otherAccount = (KeycloakUndertowAccount) other;
+
+        return (this.principal != null ? this.principal.equals(otherAccount.principal) : otherAccount.principal == null) &&
+                (this.accountRoles != null ? this.accountRoles.equals(otherAccount.accountRoles) : otherAccount.accountRoles == null);
+    }
+
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + (this.principal == null ? 0 : this.principal.hashCode());
+        result = prime * result + (this.accountRoles == null ? 0 : this.accountRoles.hashCode());
+        return result;
+    }
 }

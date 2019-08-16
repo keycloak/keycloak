@@ -46,9 +46,13 @@ import java.io.StringWriter;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.zip.GZIPInputStream;
 import org.apache.http.client.methods.HttpDelete;
 
@@ -316,7 +320,24 @@ public class SimpleHttp {
 
         public String getFirstHeader(String name) throws IOException {
             readResponse();
-            return response.getHeaders(name)[0].getValue();
+            Header[] headers = response.getHeaders(name);
+            
+            if (headers != null && headers.length > 0) {
+                return headers[0].getValue();       
+            }
+            
+            return null;
+        }
+
+        public List<String> getHeader(String name) throws IOException {
+            readResponse();
+            Header[] headers = response.getHeaders(name);
+
+            if (headers != null && headers.length > 0) {
+                return Stream.of(headers).map(Header::getValue).collect(Collectors.toList());
+            }
+
+            return null;
         }
 
         public void close() throws IOException {

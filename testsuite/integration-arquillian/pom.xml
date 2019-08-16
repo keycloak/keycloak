@@ -24,7 +24,7 @@
     <parent>
         <groupId>org.keycloak</groupId>
         <artifactId>keycloak-testsuite-pom</artifactId>
-        <version>7.0.0-SNAPSHOT</version>
+        <version>8.0.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     
@@ -42,8 +42,8 @@
         <app.server>undertow</app.server>
 
         <!-- Wildfly deprecated versions -->
-        <wildfly.deprecated.version>15.0.1.Final</wildfly.deprecated.version>
-        <wildfly.deprecated.wildfly.core.version>7.0.0.Final</wildfly.deprecated.wildfly.core.version>
+        <wildfly.deprecated.version>16.0.0.Final</wildfly.deprecated.version>
+        <wildfly.deprecated.wildfly.core.version>8.0.0.Final</wildfly.deprecated.wildfly.core.version>
         <wildfly.deprecated.arquillian.wildfly.container>2.1.1.Final</wildfly.deprecated.arquillian.wildfly.container>
 
         <!--component versions-->
@@ -89,11 +89,6 @@
         <jdbc.mvn.artifactId>h2</jdbc.mvn.artifactId>
         <jdbc.mvn.version>${h2.version}</jdbc.mvn.version>
 
-        <keycloak.connectionsJpa.driver>org.h2.Driver</keycloak.connectionsJpa.driver>
-        <keycloak.connectionsJpa.database>keycloak</keycloak.connectionsJpa.database>
-        <keycloak.connectionsJpa.user>sa</keycloak.connectionsJpa.user>
-        <keycloak.connectionsJpa.password></keycloak.connectionsJpa.password>
-        <keycloak.connectionsJpa.url>jdbc:h2:mem:test;MVCC=TRUE;DB_CLOSE_DELAY=-1</keycloak.connectionsJpa.url>
         <keycloak.connectionsJpa.schema>DEFAULT</keycloak.connectionsJpa.schema>
 
         <dballocator.skip>true</dballocator.skip>
@@ -393,6 +388,23 @@
                 </pluginManagement>
             </build>
         </profile>
+        <!-- Specifies default DB properties, which are used for test with embedded H2. Those are overriden when testing with any docker container
+             profile like "db-mysql" or any dballocator profile. Also those can be manually overriden when running the test from CMD -->
+        <profile>
+            <id>db-default-properties</id>
+            <activation>
+                <property>
+                    <name>!dballocator.uri</name>
+                </property>
+            </activation>
+            <properties>
+                <keycloak.connectionsJpa.driver>org.h2.Driver</keycloak.connectionsJpa.driver>
+                <keycloak.connectionsJpa.database>keycloak</keycloak.connectionsJpa.database>
+                <keycloak.connectionsJpa.user>sa</keycloak.connectionsJpa.user>
+                <keycloak.connectionsJpa.password></keycloak.connectionsJpa.password>
+                <keycloak.connectionsJpa.url>jdbc:h2:mem:test;MVCC=TRUE;DB_CLOSE_DELAY=-1</keycloak.connectionsJpa.url>
+            </properties>
+        </profile>
         <profile>
             <id>db-mysql</id>
             <properties>
@@ -442,7 +454,7 @@
                 <jdbc.mvn.groupId>org.postgresql</jdbc.mvn.groupId>
                 <jdbc.mvn.artifactId>postgresql</jdbc.mvn.artifactId>
                 <jdbc.mvn.version>${postgresql.version}</jdbc.mvn.version>
-                <docker.database.image>postgres:9.6.11</docker.database.image>
+                <docker.database.image>postgres:10.1</docker.database.image>
                 <docker.database.port>5432</docker.database.port>
                 <docker.database.skip>false</docker.database.skip>
                 <docker.database.cmd>postgres</docker.database.cmd>
@@ -459,6 +471,20 @@
                 <jdbc.mvn.artifactId>postgresql</jdbc.mvn.artifactId>
                 <jdbc.mvn.version>${postgresql.version}</jdbc.mvn.version>
                 <dballocator.type>postgresql96</dballocator.type>
+                <dballocator.skip>false</dballocator.skip>
+            </properties>
+        </profile>
+        <profile>
+            <id>db-allocator-db-postgresplus</id>
+            <properties>
+                <!-- JDBC properties point to "default" JDBC driver for the particular DB -->
+                <!-- For EAP testing, it is recommended to override those with system properties pointing to GAV of more appropriate JDBC driver -->
+                <!-- for the particular EAP version -->
+                <!-- For EDB, the JDBC driver will need to be downloaded and manually added to local maven repository -->
+                <jdbc.mvn.groupId>com.edb.Driver</jdbc.mvn.groupId>
+                <jdbc.mvn.artifactId>edb-jdbc</jdbc.mvn.artifactId>
+                <jdbc.mvn.version>18</jdbc.mvn.version>
+                <dballocator.type>postgresplus101</dballocator.type>
                 <dballocator.skip>false</dballocator.skip>
             </properties>
         </profile>

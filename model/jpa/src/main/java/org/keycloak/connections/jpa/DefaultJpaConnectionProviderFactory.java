@@ -326,45 +326,35 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
     }
 
     protected void update(Connection connection, String schema, KeycloakSession session, JpaUpdaterProvider updater) {
-        DBLockProvider dbLock = new DBLockManager(session).getDBLock();
-        if (dbLock.hasLock()) {
-            updater.update(connection, schema);
-        } else {
-            KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), new KeycloakSessionTask() {
-                @Override
-                public void run(KeycloakSession lockSession) {
-                    DBLockManager dbLockManager = new DBLockManager(lockSession);
-                    DBLockProvider dbLock2 = dbLockManager.getDBLock();
-                    dbLock2.waitForLock();
-                    try {
-                        updater.update(connection, schema);
-                    } finally {
-                        dbLock2.releaseLock();
-                    }
+        KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), new KeycloakSessionTask() {
+            @Override
+            public void run(KeycloakSession lockSession) {
+                DBLockManager dbLockManager = new DBLockManager(lockSession);
+                DBLockProvider dbLock2 = dbLockManager.getDBLock();
+                dbLock2.waitForLock(DBLockProvider.Namespace.DATABASE);
+                try {
+                    updater.update(connection, schema);
+                } finally {
+                    dbLock2.releaseLock();
                 }
-            });
-        }
+            }
+        });
     }
 
     protected void export(Connection connection, String schema, File databaseUpdateFile, KeycloakSession session, JpaUpdaterProvider updater) {
-        DBLockProvider dbLock = new DBLockManager(session).getDBLock();
-        if (dbLock.hasLock()) {
-            updater.export(connection, schema, databaseUpdateFile);
-        } else {
-            KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), new KeycloakSessionTask() {
-                @Override
-                public void run(KeycloakSession lockSession) {
-                    DBLockManager dbLockManager = new DBLockManager(lockSession);
-                    DBLockProvider dbLock2 = dbLockManager.getDBLock();
-                    dbLock2.waitForLock();
-                    try {
-                        updater.export(connection, schema, databaseUpdateFile);
-                    } finally {
-                        dbLock2.releaseLock();
-                    }
+        KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), new KeycloakSessionTask() {
+            @Override
+            public void run(KeycloakSession lockSession) {
+                DBLockManager dbLockManager = new DBLockManager(lockSession);
+                DBLockProvider dbLock2 = dbLockManager.getDBLock();
+                dbLock2.waitForLock(DBLockProvider.Namespace.DATABASE);
+                try {
+                    updater.export(connection, schema, databaseUpdateFile);
+                } finally {
+                    dbLock2.releaseLock();
                 }
-            });
-        }
+            }
+        });
     }
 
     @Override

@@ -412,10 +412,12 @@ public class AccountFormService extends AbstractSecuredLocalService {
 
         String clientId = formData.getFirst("clientId");
         if (clientId == null) {
+            setReferrerOnPage();
             return account.setError(Response.Status.BAD_REQUEST, Messages.CLIENT_NOT_FOUND).createResponse(AccountPages.APPLICATIONS);
         }
         ClientModel client = realm.getClientById(clientId);
         if (client == null) {
+            setReferrerOnPage();
             return account.setError(Response.Status.BAD_REQUEST, Messages.CLIENT_NOT_FOUND).createResponse(AccountPages.APPLICATIONS);
         }
 
@@ -714,6 +716,12 @@ public class AccountFormService extends AbstractSecuredLocalService {
     }
 
     @Path("resource/{resource_id}/grant")
+    @GET
+    public Response resourceDetailPageAfterGrant(@PathParam("resource_id") String resourceId) {
+        return resourceDetailPage(resourceId);
+    }
+
+    @Path("resource/{resource_id}/grant")
     @POST
     public Response grantPermission(@PathParam("resource_id") String resourceId, @FormParam("action") String action, @FormParam("permission_id") String[] permissionId, @FormParam("requester") String requester) {
         AuthorizationProvider authorization = session.getProvider(AuthorizationProvider.class);
@@ -822,6 +830,12 @@ public class AccountFormService extends AbstractSecuredLocalService {
     }
 
     @Path("resource/{resource_id}/share")
+    @GET
+    public Response resourceDetailPageAfterShare(@PathParam("resource_id") String resourceId) {
+        return resourceDetailPage(resourceId);
+    }
+
+    @Path("resource/{resource_id}/share")
     @POST
     public Response shareResource(@PathParam("resource_id") String resourceId, @FormParam("user_id") String[] userIds, @FormParam("scope_id") String[] scopes) {
         AuthorizationProvider authorization = session.getProvider(AuthorizationProvider.class);
@@ -833,6 +847,7 @@ public class AccountFormService extends AbstractSecuredLocalService {
         }
 
         if (userIds == null || userIds.length == 0) {
+            setReferrerOnPage();
             return account.setError(Status.BAD_REQUEST, Messages.MISSING_PASSWORD).createResponse(AccountPages.PASSWORD);
         }
 
@@ -848,6 +863,7 @@ public class AccountFormService extends AbstractSecuredLocalService {
             }
 
             if (user == null) {
+                setReferrerOnPage();
                 return account.setError(Status.BAD_REQUEST, Messages.INVALID_USER).createResponse(AccountPages.RESOURCE_DETAIL);
             }
 
@@ -959,7 +975,7 @@ public class AccountFormService extends AbstractSecuredLocalService {
             if (referrerUri != null) {
                 referrerUri = RedirectUtils.verifyRedirectUri(session.getContext().getUri(), referrerUri, realm, referrerClient);
             } else {
-                referrerUri = ResolveRelative.resolveRelativeUri(session.getContext().getUri().getRequestUri(), client.getRootUrl(), referrerClient.getBaseUrl());
+                referrerUri = ResolveRelative.resolveRelativeUri(session.getContext().getUri().getRequestUri(), referrerClient.getRootUrl(), referrerClient.getBaseUrl());
             }
 
             if (referrerUri != null) {
@@ -970,9 +986,8 @@ public class AccountFormService extends AbstractSecuredLocalService {
                 return new String[]{referrerName, referrerUri};
             }
         } else if (referrerUri != null) {
-            referrerClient = realm.getClientByClientId(referrer);
             if (client != null) {
-                referrerUri = RedirectUtils.verifyRedirectUri(session.getContext().getUri(), referrerUri, realm, referrerClient);
+                referrerUri = RedirectUtils.verifyRedirectUri(session.getContext().getUri(), referrerUri, realm, client);
 
                 if (referrerUri != null) {
                     return new String[]{referrer, referrerUri};

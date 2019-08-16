@@ -492,6 +492,11 @@ public final class AuthorizationProvider implements Provider {
             }
 
             @Override
+            public List<Resource> findByOwner(String ownerId, String resourceServerId, int first, int max) {
+                return delegate.findByOwner(ownerId, resourceServerId, first, max);
+            }
+
+            @Override
             public List<Resource> findByUri(String uri, String resourceServerId) {
                 return delegate.findByUri(uri, resourceServerId);
             }

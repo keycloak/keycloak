@@ -24,7 +24,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian</artifactId>
-        <version>7.0.0-SNAPSHOT</version>
+        <version>8.0.0-SNAPSHOT</version>
     </parent>
 
     <packaging>pom</packaging>
@@ -643,7 +643,7 @@
                 <auth.server.undertow>false</auth.server.undertow>
                 <auth.server.config.property.value>standalone.xml</auth.server.config.property.value>
                 <auth.server.config.dir>${auth.server.home}/standalone/configuration</auth.server.config.dir>
-                <h2.version>1.3.173</h2.version>
+                <h2.version>1.4.193</h2.version>
                 <surefire.memory.Xmx>1024m</surefire.memory.Xmx>
             </properties>
             <dependencies>
@@ -668,7 +668,7 @@
                 <auth.server.undertow>false</auth.server.undertow>
                 <auth.server.config.property.value>standalone.xml</auth.server.config.property.value>
                 <auth.server.config.dir>${auth.server.home}/standalone/configuration</auth.server.config.dir>
-                <h2.version>1.3.173</h2.version>
+                <h2.version>1.4.193</h2.version>
                 <surefire.memory.Xmx>1024m</surefire.memory.Xmx>
             </properties>
             <dependencies>

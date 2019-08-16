@@ -16,6 +16,7 @@
  */
 package org.keycloak.testsuite.arquillian.annotation;
 
+import org.keycloak.common.Profile;
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -51,4 +52,9 @@ public @interface RestartContainer {
      * @return Wait time in milliseconds after database initialization.
      */
     long intializeDatabaseWait() default 0;
+
+    /**
+     * @return Array of features, which should be enabled.
+     */
+    Profile.Feature[] enableFeatures() default {};
 }

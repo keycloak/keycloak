@@ -58,6 +58,8 @@ public class CRLRule extends ExternalResource {
         PathHandler pathHandler = new PathHandler();
         pathHandler.addExactPath(AbstractX509AuthenticationTest.EMPTY_CRL_PATH, new CRLHandler(AbstractX509AuthenticationTest.EMPTY_CRL_PATH));
         pathHandler.addExactPath(AbstractX509AuthenticationTest.INTERMEDIATE_CA_CRL_PATH, new CRLHandler(AbstractX509AuthenticationTest.INTERMEDIATE_CA_CRL_PATH));
+        pathHandler.addExactPath(AbstractX509AuthenticationTest.INTERMEDIATE_CA_INVALID_SIGNATURE_CRL_PATH, new CRLHandler(AbstractX509AuthenticationTest.INTERMEDIATE_CA_INVALID_SIGNATURE_CRL_PATH));
+        pathHandler.addExactPath(AbstractX509AuthenticationTest.INTERMEDIATE_CA_3_CRL_PATH, new CRLHandler(AbstractX509AuthenticationTest.INTERMEDIATE_CA_3_CRL_PATH));
 
         crlResponder = Undertow.builder().addHttpListener(CRL_RESPONDER_PORT, CRL_RESPONDER_HOST)
                 .setHandler(

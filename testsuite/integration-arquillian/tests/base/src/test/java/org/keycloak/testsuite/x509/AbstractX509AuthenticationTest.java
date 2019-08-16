@@ -49,6 +49,7 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
 import org.keycloak.testsuite.pages.AbstractPage;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
@@ -91,6 +92,8 @@ public abstract class AbstractX509AuthenticationTest extends AbstractTestRealmKe
 
     public static final String EMPTY_CRL_PATH = "empty.crl";
     public static final String INTERMEDIATE_CA_CRL_PATH = "intermediate-ca.crl";
+    public static final String INTERMEDIATE_CA_INVALID_SIGNATURE_CRL_PATH = "intermediate-ca-invalid-signature.crl";
+    public static final String INTERMEDIATE_CA_3_CRL_PATH = "intermediate-ca-3.crl";
     protected final Logger log = Logger.getLogger(this.getClass());
 
     static final String REQUIRED = "REQUIRED";
@@ -187,7 +190,7 @@ public abstract class AbstractX509AuthenticationTest extends AbstractTestRealmKe
      * @return server home directory. This directory is supposed to contain client key, certificate and CRLs used in the tests
      */
     protected static String getAuthServerHome() {
-        String authServerHome = System.getProperty("auth.server.home");
+        String authServerHome = System.getProperty(AuthServerTestEnricher.AUTH_SERVER_HOME_PROPERTY);
         if (authServerHome == null) {
             return null;
         }

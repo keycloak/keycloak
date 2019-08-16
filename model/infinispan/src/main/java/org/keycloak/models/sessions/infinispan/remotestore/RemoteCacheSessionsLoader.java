@@ -94,7 +94,7 @@ public class RemoteCacheSessionsLoader implements SessionLoader<RemoteCacheSessi
 
 
     @Override
-    public WorkerContext computeWorkerContext(RemoteCacheSessionsLoaderContext loaderCtx, int segment, int workerId, List<WorkerResult> previousResults) {
+    public WorkerContext computeWorkerContext(RemoteCacheSessionsLoaderContext loaderCtx, int segment, int workerId, WorkerResult previousResult) {
         return new WorkerContext(segment, workerId);
     }
 

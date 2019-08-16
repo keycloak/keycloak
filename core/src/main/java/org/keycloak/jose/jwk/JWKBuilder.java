@@ -22,6 +22,7 @@ import org.keycloak.common.util.KeyUtils;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.KeyType;
+import org.keycloak.crypto.KeyUse;
 
 import java.math.BigInteger;
 import java.security.Key;
@@ -64,7 +65,7 @@ public class JWKBuilder {
     }
 
     public JWK rsa(Key key) {
-    	return rsa(key, null);
+        return rsa(key, (X509Certificate)null);
     }
     
     public JWK rsa(Key key, X509Certificate certificate) {
@@ -84,6 +85,14 @@ public class JWKBuilder {
             k.setX509CertificateChain(new String [] {PemUtils.encodeCertificate(certificate)});
         }
 
+        return k;
+    }
+
+    public JWK rsa(Key key, KeyUse keyUse) {
+        JWK k = rsa(key);
+        String keyUseString = keyUse == null ? DEFAULT_PUBLIC_KEY_USE : keyUse.getSpecName();
+        if (KeyUse.ENC == keyUse) keyUseString = "enc";
+        k.setPublicKeyUse(keyUseString);
         return k;
     }
 

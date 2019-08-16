@@ -36,6 +36,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.util.List;
 
+import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsNull.notNullValue;
@@ -75,7 +76,7 @@ public class AddUserTest extends AbstractKeycloakTest {
                 new TypeReference<List<RealmRepresentation>>() {
                 });
 
-        assertThat("File 'keycloak-add-user.json' is empty.", realms.size() > 0, is(true));
+        assertThat("File 'keycloak-add-user.json' is empty.", realms, not(empty()));
 
         //-----------------Get-Indexes-------------------//
         int realmIndex = getRealmIndex(realmName, realms);

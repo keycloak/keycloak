@@ -417,6 +417,10 @@
     "client" : {
       "test-app" : [
         {
+          "name": "manage-account",
+          "description": "Allows application-initiated actions."
+        },
+        {
           "name": "customer-user",
           "description": "Have Customer User privileges"
         },

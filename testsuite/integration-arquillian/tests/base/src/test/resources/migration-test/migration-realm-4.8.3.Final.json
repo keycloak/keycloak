@@ -400,7 +400,8 @@
     "fullScopeAllowed" : true,
     "nodeReRegistrationTimeout" : -1,
     "defaultClientScopes" : [ "web-origins", "role_list", "profile", "roles", "email" ],
-    "optionalClientScopes" : [ "address", "phone", "offline_access" ]
+    "optionalClientScopes" : [ "address", "phone", "offline_access" ],
+    "authorizationServicesEnabled": true
   }, {
     "id" : "08b72946-628a-48a2-994f-6ccbbf2f5f8e",
     "clientId" : "broker",

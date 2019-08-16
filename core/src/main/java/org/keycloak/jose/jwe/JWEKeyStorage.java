@@ -29,6 +29,7 @@ import org.keycloak.jose.jwe.enc.JWEEncryptionProvider;
 public class JWEKeyStorage {
 
     private Key encryptionKey;
+    private Key decryptionKey;
 
     private byte[] cekBytes;
 
@@ -46,6 +47,14 @@ public class JWEKeyStorage {
         return this;
     }
 
+    public Key getDecryptionKey() {
+        return decryptionKey;
+    }
+
+    public JWEKeyStorage setDecryptionKey(Key decryptionKey) {
+        this.decryptionKey = decryptionKey;
+        return this;
+    }
 
     public void setCEKBytes(byte[] cekBytes) {
         this.cekBytes = cekBytes;
@@ -100,4 +109,5 @@ public class JWEKeyStorage {
         ENCRYPTION,
         SIGNATURE
     }
+
 }

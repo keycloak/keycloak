@@ -235,7 +235,7 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> ext
                 task.runUpdate(session);
             } else {
                 if (logger.isTraceEnabled()) {
-                    logger.tracef("Replace SUCCESS for entity: %s . old version: %d, new version: %d", key, oldVersionEntity.getVersion(), newVersionEntity.getVersion());
+                    logger.tracef("Replace SUCCESS for entity: %s . old version: %s, new version: %s", key, oldVersionEntity.getVersion(), newVersionEntity.getVersion());
                 }
             }
         }

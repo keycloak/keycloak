@@ -202,20 +202,20 @@
                                 </a>
                             </td>
                             <td>
-                                <a href="${resource.resourceServer.redirectUri}">${resource.resourceServer.name}</a>
+                                <a href="${resource.resourceServer.baseUri}">${resource.resourceServer.name}</a>
                             </td>
                             <td>
                                 <#if resource.shares?size != 0>
                                     <a href="${url.getResourceDetailUrl(resource.id)}">${resource.shares?size} <i class="fa fa-users"></i></a>
                                 <#else>
-                                    This resource is not being shared.
+                                    ${msg("notBeingShared")}
                                 </#if>
                             </td>
                         </tr>
                     </#list>
                 <#else>
                     <tr>
-                        <td colspan="4">You don't have any resource</td>
+                        <td colspan="4">${msg("notHaveAnyResource")}</td>
                     </tr>
                 </#if>
                 </tbody>
@@ -259,7 +259,7 @@
                                         <#if resource.owner.email??>${resource.owner.email}<#else>${resource.owner.username}</#if>
                                     </td>
                                     <td>
-                                        <a href="${resource.resourceServer.redirectUri}">${resource.resourceServer.name}</a>
+                                        <a href="${resource.resourceServer.baseUri}">${resource.resourceServer.name}</a>
                                     </td>
                                     <td>
                                         <#if resource.permissions?size != 0>
@@ -291,7 +291,7 @@
                             </#list>
                         <#else>
                             <tr>
-                                <td colspan="6">There are no resources shared with you</td>
+                                <td colspan="6">${msg("noResourcesSharedWithYou")}</td>
                             </tr>
                         </#if>
                     </tbody>
@@ -316,11 +316,8 @@
         </div>
         <div class="row">
             <div class="col-md-12">
-                <#if authorization.resourcesWaitingOthersApproval?size != 0>
-                    <i class="pficon pficon-info"></i> You have ${authorization.resourcesWaitingOthersApproval?size} permission request(s) <a href="#" onclick="document.getElementById('waitingApproval').style.display=''">waiting</a> for approval.
-                <#else>
-                    You have no permission requests waiting for approval.
-                </#if>
+                <i class="pficon pficon-info"></i> ${msg("havePermissionRequestsWaitingForApproval",authorization.resourcesWaitingOthersApproval?size)}
+                <a href="#" onclick="document.getElementById('waitingApproval').style.display=''">${msg("clickHereForDetails")}</a>
                 <div class="row">
                     <div class="col-md-12"></div>
                 </div>

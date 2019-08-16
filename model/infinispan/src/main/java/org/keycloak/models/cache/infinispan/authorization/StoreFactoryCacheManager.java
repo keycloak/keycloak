@@ -148,6 +148,7 @@ public class StoreFactoryCacheManager extends CacheManager {
         invalidations.add(StoreFactoryCacheSession.getPermissionTicketByGranted(requester, serverId));
         invalidations.add(StoreFactoryCacheSession.getPermissionTicketByGranted(requester, null));
         invalidations.add(StoreFactoryCacheSession.getPermissionTicketByResourceNameAndGranted(resourceName, requester, serverId));
+        invalidations.add(StoreFactoryCacheSession.getPermissionTicketByResourceNameAndGranted(resourceName, requester, null));
         if (scope != null) {
             invalidations.add(StoreFactoryCacheSession.getPermissionTicketByScope(scope, serverId));
         }

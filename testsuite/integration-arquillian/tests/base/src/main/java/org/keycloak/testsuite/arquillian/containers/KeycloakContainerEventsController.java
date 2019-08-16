@@ -47,7 +47,10 @@ import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.exporter.ZipExporter;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
+import org.keycloak.common.Profile;
 import org.keycloak.helpers.DropAllServlet;
+import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
+import org.keycloak.testsuite.arquillian.ContainerInfo;
 import org.keycloak.testsuite.arquillian.annotation.RestartContainer;
 import org.wildfly.extras.creaper.commands.deployments.Deploy;
 import org.wildfly.extras.creaper.commands.deployments.Undeploy;
@@ -58,7 +61,15 @@ import org.wildfly.extras.creaper.core.online.OnlineOptions;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.nio.file.FileAlreadyExistsException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
+import java.util.Properties;
 
 /**
  * Changes behaviour of original ContainerEventController to stop manual containers 
@@ -68,11 +79,9 @@ import java.util.List;
  * 
  * @author vramik
  * @author pskopek
+ * @author mabartos
  */
 public class KeycloakContainerEventsController extends ContainerEventController {
-
-    public static final String WITHOUT_KEYCLOAK_ADD_USER_FILE = "restart-without-keycloak-add-user-file";
-    public static final String NO_CHANGE = "restart-no-change";
 
     protected static final Logger log = Logger.getLogger(KeycloakContainerEventsController.class);
 
@@ -86,7 +95,7 @@ public class KeycloakContainerEventsController extends ContainerEventController 
     }
 
     @Override
-    public void execute(@Observes(precedence = 3) AfterClass event) {
+    public void execute(@Observes(precedence = 0) AfterClass event) {
         try {
             container.fire(new UnDeployManagedDeployments());
         } finally {
@@ -133,6 +142,14 @@ public class KeycloakContainerEventsController extends ContainerEventController 
         if (restartContainer.withoutKeycloakAddUserFile()) {
             copyKeycloakAddUserFile();
         }
+
+        if (restartContainer.enableFeatures().length != 0) {
+            changeStateOfFeatures(restartContainer, false);
+            // Auth-server has to be restarted again. If not, the features will not to be disabled.
+            container.fire(new StopManualContainers());
+            container.fire(new StopSuiteContainers());
+            container.fire(new StartSuiteContainers());
+        }
     }
 
     /**
@@ -142,6 +159,10 @@ public class KeycloakContainerEventsController extends ContainerEventController 
     protected void beforeNewContainerStart(RestartContainer restartContainer) {
         if (restartContainer.withoutKeycloakAddUserFile()) {
             removeKeycloakAddUserFile();
+        }
+
+        if (restartContainer.enableFeatures().length != 0) {
+            changeStateOfFeatures(restartContainer, true);
         }
     }
 
@@ -241,6 +262,83 @@ public class KeycloakContainerEventsController extends ContainerEventController 
                     log.tracef("File %s exists=%s", adminUserJsonFile.getAbsolutePath(), adminUserJsonFile.exists());
                 }
                 adminUserJsonFile.delete();
+            }
+        }
+    }
+
+    /**
+     * Change state of features, which are contained in {@code enableFeatures} param.
+     * This method either enable or disable features.
+     * If auth-server is JBossBased, then the features are either enabled or disabled via {@code profile.properties}.
+     *
+     * @param restartContainer to pass more information from test annotation.
+     * @param enableFeatures   if the features will be enabled or disabled.
+     */
+    private void changeStateOfFeatures(RestartContainer restartContainer, boolean enableFeatures) {
+        Optional<Container> authServerOptional = containerRegistry.get().getContainers().stream()
+                .filter(f -> f.getName().startsWith("auth-server-")).findFirst();
+
+        if (authServerOptional.isPresent()) {
+            Container authServer = authServerOptional.get();
+            boolean isJbossBased = new ContainerInfo(authServer).isJBossBased();
+
+            if (isJbossBased) {
+                ContainerDef conf = authServer.getContainerConfiguration();
+                String jbossHome = conf.getContainerProperty("jbossHome");
+                Path fileProps = null;
+                if (jbossHome != null) {
+                    try {
+                        Path dir = Paths.get(jbossHome + "/standalone/configuration");
+                        fileProps = dir.resolve("profile.properties");
+
+                        if (enableFeatures) {
+                            Path file = Files.createFile(fileProps);
+                            Properties props = new Properties();
+                            Arrays.stream(restartContainer.enableFeatures()).forEach(f -> props.setProperty("feature." + f.toString().toLowerCase(), "enabled"));
+                            PrintWriter pw = new PrintWriter(file.toFile());
+                            props.list(pw);
+                            pw.close();
+                        } else {
+                            Files.deleteIfExists(fileProps);
+                        }
+                    } catch (FileAlreadyExistsException ex) {
+                        changeFeaturesInExistingProps(restartContainer, fileProps, true);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+            } else {
+                if (enableFeatures) {
+                    Arrays.stream(restartContainer.enableFeatures())
+                            .forEach(f -> System.setProperty("keycloak.profile.feature." + f.toString().toLowerCase(), "enabled"));
+                } else {
+                    Arrays.stream(restartContainer.enableFeatures())
+                            .forEach(f -> System.getProperties().remove("keycloak.profile.feature." + f.toString().toLowerCase()));
+                }
+            }
+            Profile.init();
+        }
+    }
+
+    /**
+     * If exists {@code profile.properties} file, then another properties are only appended to the file.
+     *
+     * @param restartContainer to pass more information from test annotation
+     * @param file             path to profile.properties
+     * @param enableFeatures   if features will be enabled or disabled
+     */
+    private void changeFeaturesInExistingProps(RestartContainer restartContainer, Path file, boolean enableFeatures) {
+        Profile.Feature[] features = restartContainer.enableFeatures();
+        String state = enableFeatures ? "enabled" : "disabled";
+
+        if (features.length != 0) {
+            Properties props = new Properties();
+            try {
+                props.load(Files.newBufferedReader(file));
+                Arrays.stream(features).forEach(f -> props.setProperty("feature." + f.toString().toLowerCase(), state));
+                props.store(Files.newBufferedWriter(file), "");
+            } catch (IOException e) {
+                e.printStackTrace();
             }
         }
     }

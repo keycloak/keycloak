@@ -31,6 +31,8 @@ import org.junit.Rule;
 import org.junit.rules.ExpectedException;
 import org.keycloak.saml.common.exceptions.ParsingException;
 import java.io.IOException;
+import java.util.concurrent.TimeUnit;
+
 import org.hamcrest.Matchers;
 
 /**
@@ -39,7 +41,7 @@ import org.hamcrest.Matchers;
  */
 public class KeycloakSamlAdapterXMLParserTest {
 
-    private static final String CURRENT_XSD_LOCATION = "/schema/keycloak_saml_adapter_1_10.xsd";
+    private static final String CURRENT_XSD_LOCATION = "/schema/keycloak_saml_adapter_1_11.xsd";
 
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
@@ -70,6 +72,11 @@ public class KeycloakSamlAdapterXMLParserTest {
     @Test
     public void testValidationWithMetadataUrl() throws Exception {
         testValidationValid("keycloak-saml-with-metadata-url.xml");
+    }
+
+    @Test
+    public void testValidationWithAllowedClockSkew() throws Exception {
+        testValidationValid("keycloak-saml-with-allowed-clock-skew-with-unit.xml");
     }
 
     @Test
@@ -258,4 +265,26 @@ public class KeycloakSamlAdapterXMLParserTest {
         IDP idp = sp.getIdp();
         assertThat(idp.getMetadataUrl(), is("https:///example.com/metadata.xml"));
     }
+
+    @Test
+    public void testAllowedClockSkewDefaultUnit() throws Exception {
+        KeycloakSamlAdapter config = parseKeycloakSamlAdapterConfig("keycloak-saml-with-allowed-clock-skew-default-unit.xml", KeycloakSamlAdapter.class);
+        assertNotNull(config);
+        assertThat(config.getSps(), Matchers.contains(instanceOf(SP.class)));
+        SP sp = config.getSps().get(0);
+        IDP idp = sp.getIdp();
+        assertThat(idp.getAllowedClockSkew(), is(3));
+        assertThat(idp.getAllowedClockSkewUnit(), is(TimeUnit.SECONDS));
+    }
+    @Test
+    public void testAllowedClockSkewWithUnit() throws Exception {
+        KeycloakSamlAdapter config = parseKeycloakSamlAdapterConfig("keycloak-saml-with-allowed-clock-skew-with-unit.xml", KeycloakSamlAdapter.class);
+        assertNotNull(config);
+        assertThat(config.getSps(), Matchers.contains(instanceOf(SP.class)));
+        SP sp = config.getSps().get(0);
+        IDP idp = sp.getIdp();
+        assertThat(idp.getAllowedClockSkew(), is(3500));
+        assertThat(idp.getAllowedClockSkewUnit(), is (TimeUnit.MILLISECONDS));
+    }
+
 }

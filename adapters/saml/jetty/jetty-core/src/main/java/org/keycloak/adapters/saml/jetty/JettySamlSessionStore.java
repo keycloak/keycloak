@@ -132,14 +132,12 @@ public class JettySamlSessionStore implements SamlSessionStore {
     @Override
     public boolean isLoggedIn() {
         HttpSession session = request.getSession(false);
-        if (session == null) return false;
         if (session == null) {
-            log.debug("session was null, returning null");
+            log.debug("session was null, returning false");
             return false;
         }
-        SamlSession samlSession = (SamlSession)session.getAttribute(SamlSession.class.getName());
+        SamlSession samlSession = SamlUtil.validateSamlSession(session.getAttribute(SamlSession.class.getName()), deployment);
         if (samlSession == null) {
-            log.debug("SamlSession was not in session, returning null");
             return false;
         }
 

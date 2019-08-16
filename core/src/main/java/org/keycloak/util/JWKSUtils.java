@@ -55,7 +55,7 @@ public class JWKSUtils {
                 keyWrapper.setAlgorithm(jwk.getAlgorithm());
                 keyWrapper.setType(jwk.getKeyType());
                 keyWrapper.setUse(getKeyUse(jwk.getPublicKeyUse()));
-                keyWrapper.setVerifyKey(parser.toPublicKey());
+                keyWrapper.setPublicKey(parser.toPublicKey());
                 result.put(keyWrapper.getKid(), keyWrapper);
             }
         }

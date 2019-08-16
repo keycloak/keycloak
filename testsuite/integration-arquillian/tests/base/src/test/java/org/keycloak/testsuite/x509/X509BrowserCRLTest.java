@@ -30,6 +30,7 @@ import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.util.ContainerAssume;
 import org.keycloak.testsuite.util.PhantomJSBrowser;
+import org.keycloak.testsuite.util.WaitUtils;
 import org.openqa.selenium.WebDriver;
 
 import static org.hamcrest.Matchers.containsString;
@@ -122,6 +123,42 @@ public class X509BrowserCRLTest extends AbstractX509AuthenticationTest {
 
 
     @Test
+    public void loginFailedWithInvalidSignatureCRL() {
+        X509AuthenticatorConfigModel config =
+                new X509AuthenticatorConfigModel()
+                        .setCRLEnabled(true)
+                        .setCRLRelativePath(CRLRule.CRL_RESPONDER_ORIGIN + "/" + INTERMEDIATE_CA_INVALID_SIGNATURE_CRL_PATH)
+                        .setConfirmationPageAllowed(true)
+                        .setMappingSourceType(SUBJECTDN_EMAIL)
+                        .setUserIdentityMapperType(USERNAME_EMAIL);
+        AuthenticatorConfigRepresentation cfg = newConfig("x509-browser-config", config.getConfig());
+        String cfgId = createConfig(browserExecution.getId(), cfg);
+        Assert.assertNotNull(cfgId);
+
+        // Verify there is an error message because of invalid CRL signature
+        assertLoginFailedWithExpectedX509Error("Certificate validation's failed.\nSignature length not correct");
+    }
+
+
+    @Test
+    public void loginSuccessWithCRLSignedWithIntermediateCA3FromTruststore() {
+        X509AuthenticatorConfigModel config =
+                new X509AuthenticatorConfigModel()
+                        .setCRLEnabled(true)
+                        .setCRLRelativePath(CRLRule.CRL_RESPONDER_ORIGIN + "/" + INTERMEDIATE_CA_3_CRL_PATH)
+                        .setConfirmationPageAllowed(true)
+                        .setMappingSourceType(SUBJECTDN_EMAIL)
+                        .setUserIdentityMapperType(USERNAME_EMAIL);
+        AuthenticatorConfigRepresentation cfg = newConfig("x509-browser-config", config.getConfig());
+        String cfgId = createConfig(browserExecution.getId(), cfg);
+        Assert.assertNotNull(cfgId);
+
+        // Verify there is an error message because of invalid CRL signature
+        x509BrowserLogin(config, userId, "test-user@localhost", "test-user@localhost");
+    }
+
+
+    @Test
     public void loginWithMultipleRevocationLists() {
         X509AuthenticatorConfigModel config =
                 new X509AuthenticatorConfigModel()
@@ -157,13 +194,17 @@ public class X509BrowserCRLTest extends AbstractX509AuthenticationTest {
 
 
     private void assertLoginFailedDueRevokedCertificate() {
+        assertLoginFailedWithExpectedX509Error("Certificate validation's failed.\nCertificate has been revoked, certificate's subject:");
+    }
+
+    private void assertLoginFailedWithExpectedX509Error(String expectedError) {
         loginConfirmationPage.open();
         loginPage.assertCurrent();
 
         // Verify there is an error message
         Assert.assertNotNull(loginPage.getError());
 
-        Assert.assertThat(loginPage.getError(), containsString("Certificate validation's failed.\nCertificate has been revoked, certificate's subject:"));
+        Assert.assertThat(loginPage.getError(), containsString(expectedError));
 
         // Continue with form based login
         loginPage.login("test-user@localhost", "password");
@@ -177,5 +218,4 @@ public class X509BrowserCRLTest extends AbstractX509AuthenticationTest {
                 .removeDetail(Details.REDIRECT_URI)
                 .assertEvent();
     }
-
 }

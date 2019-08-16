@@ -57,7 +57,9 @@
       <div id="kc-content">
         <div id="kc-content-wrapper">
 
-          <#if displayMessage && message?has_content>
+          <#-- App-initiated actions should not see warning messages about the need to complete the action -->
+          <#-- during login.                                                                               -->
+          <#if displayMessage && message?has_content && (message.type != 'warning' || !isAppInitiatedAction??)>
               <div class="alert alert-${message.type}">
                   <#if message.type = 'success'><span class="${properties.kcFeedbackSuccessIcon!}"></span></#if>
                   <#if message.type = 'warning'><span class="${properties.kcFeedbackWarningIcon!}"></span></#if>

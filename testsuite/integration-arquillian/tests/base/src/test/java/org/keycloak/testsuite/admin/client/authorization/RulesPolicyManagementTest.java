@@ -16,14 +16,7 @@
  */
 package org.keycloak.testsuite.admin.client.authorization;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
-
-import java.util.Collections;
-
-import javax.ws.rs.NotFoundException;
-import javax.ws.rs.core.Response;
-
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.AuthorizationResource;
 import org.keycloak.admin.client.resource.RulePoliciesResource;
@@ -33,21 +26,33 @@ import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.representations.idm.authorization.Logic;
 import org.keycloak.representations.idm.authorization.RulePolicyRepresentation;
 import org.keycloak.testsuite.ProfileAssume;
+import org.keycloak.testsuite.arquillian.annotation.RestartContainer;
+
+import javax.ws.rs.NotFoundException;
+import javax.ws.rs.core.Response;
+import java.util.Collections;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
+@RestartContainer(enableFeatures = Profile.Feature.AUTHZ_DROOLS_POLICY)
 public class RulesPolicyManagementTest extends AbstractPolicyManagementTest {
+
+    @BeforeClass
+    public static void verifyEnvironment() {
+        ProfileAssume.assumeFeatureEnabled(Profile.Feature.AUTHZ_DROOLS_POLICY);
+    }
 
     @Test
     public void testCreate() {
-        ProfileAssume.assumeFeatureEnabled(Profile.Feature.AUTHZ_DROOLS_POLICY);
         assertCreated(getClient().authorization(), createDefaultRepresentation("Rule Policy"));
     }
 
     @Test
     public void testUpdate() {
-        ProfileAssume.assumeFeatureEnabled(Profile.Feature.AUTHZ_DROOLS_POLICY);
         AuthorizationResource authorization = getClient().authorization();
         RulePolicyRepresentation representation = createDefaultRepresentation("Update Rule Policy");
 
@@ -72,7 +77,6 @@ public class RulesPolicyManagementTest extends AbstractPolicyManagementTest {
 
     @Test
     public void testDelete() {
-        ProfileAssume.assumeFeatureEnabled(Profile.Feature.AUTHZ_DROOLS_POLICY);
         AuthorizationResource authorization = getClient().authorization();
         RulePolicyRepresentation representation = createDefaultRepresentation("Delete Rule Policy");
 
@@ -124,7 +128,7 @@ public class RulesPolicyManagementTest extends AbstractPolicyManagementTest {
 
     private void assertRepresentation(RulePolicyRepresentation expected, RulePolicyResource policy) {
         RulePolicyRepresentation actual = policy.toRepresentation();
-        assertRepresentation(expected, actual, () -> policy.resources(), () -> Collections.emptyList(), () -> policy.associatedPolicies());
+        assertRepresentation(expected, actual, policy::resources, Collections::emptyList, policy::associatedPolicies);
         assertEquals(expected.getName(), actual.getName());
         assertEquals(expected.getDescription(), actual.getDescription());
         assertEquals(expected.getLogic(), actual.getLogic());

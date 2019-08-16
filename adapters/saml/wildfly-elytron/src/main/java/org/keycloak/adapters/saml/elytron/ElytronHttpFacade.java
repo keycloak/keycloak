@@ -181,7 +181,22 @@ class ElytronHttpFacade implements HttpFacade {
 
             @Override
             public String getQueryParamValue(String param) {
-                return request.getFirstParameterValue(param);
+                URI requestURI = request.getRequestURI();
+                String query = requestURI.getQuery();
+                if (query != null) {
+                    String[] parameters = query.split("&");
+                    for (String parameter : parameters) {
+                        String[] keyValue = parameter.split("=", 2);
+                        if (keyValue[0].equals(param)) {
+                            try {
+                                return URLDecoder.decode(keyValue[1], "UTF-8");
+                            } catch (IOException e) {
+                                throw new RuntimeException("Failed to decode request URI", e);
+                            }
+                        }
+                    }
+                }
+                return null;
             }
 
             @Override

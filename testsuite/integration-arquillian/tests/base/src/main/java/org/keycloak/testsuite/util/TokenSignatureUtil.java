@@ -75,6 +75,20 @@ public class TokenSignatureUtil {
         clientResource.update(clientRep);
     }
 
+    public static void changeClientIdTokenEncryptionAlgProvider(ClientResource clientResource, String toAlgName) {
+        ClientRepresentation clientRep = clientResource.toRepresentation();
+        log.tracef("change client %s id token encryption alg algorithm from %s to %s", clientRep.getClientId(), clientRep.getAttributes().get(OIDCConfigAttributes.ID_TOKEN_ENCRYPTED_RESPONSE_ALG), toAlgName);
+        clientRep.getAttributes().put(OIDCConfigAttributes.ID_TOKEN_ENCRYPTED_RESPONSE_ALG, toAlgName);
+        clientResource.update(clientRep);
+    }
+
+    public static void changeClientIdTokenEncryptionEncProvider(ClientResource clientResource, String toEncName) {
+        ClientRepresentation clientRep = clientResource.toRepresentation();
+        log.tracef("change client %s id token encryption enc algorithm from %s to %s", clientRep.getClientId(), clientRep.getAttributes().get(OIDCConfigAttributes.ID_TOKEN_ENCRYPTED_RESPONSE_ENC), toEncName);
+        clientRep.getAttributes().put(OIDCConfigAttributes.ID_TOKEN_ENCRYPTED_RESPONSE_ENC, toEncName);
+        clientResource.update(clientRep);
+    }
+
     public static boolean verifySignature(String sigAlgName, String token, Keycloak adminClient) throws Exception {
         PublicKey publicKey = getRealmPublicKey(TEST_REALM_NAME, sigAlgName, adminClient);
         JWSInput jws = new JWSInput(token);

@@ -108,7 +108,7 @@ public class WebBrowserSsoAuthenticationHandler extends AbstractSamlAuthenticati
                 .assertionExpiration(30)
                 .issuer(deployment.getEntityID())
                 .sessionIndex(account.getSessionIndex())
-                .userPrincipal(account.getPrincipal().getSamlSubject(), account.getPrincipal().getNameIDFormat())
+                .nameId(account.getPrincipal().getNameID())
                 .destination(deployment.getIDP().getSingleLogoutService().getRequestBindingUrl());
         BaseSAML2BindingBuilder binding = new BaseSAML2BindingBuilder();
         if (deployment.getIDP().getSingleLogoutService().signRequest()) {

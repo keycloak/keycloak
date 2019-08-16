@@ -37,7 +37,7 @@ class InCondition extends NamedParameterCondition {
         filter.append("(&(");
 
         for (int i = 0; i< valuesToCompare.length; i++) {
-            Object value = valuesToCompare[i];
+            Object value = new OctetStringEncoder().encode(valuesToCompare[i], isBinary());
 
             filter.append("(").append(getParameterName()).append(LDAPConstants.EQUAL).append(value).append(")");
         }

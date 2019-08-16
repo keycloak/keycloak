@@ -396,7 +396,7 @@ public final class OCSPUtils {
                 }
                 try {
                     List<String> purposes = signingCert.getExtendedKeyUsage();
-                    if (purposes != null && !purposes.contains(KeyPurposeId.id_kp_OCSPSigning.getId())) {
+                    if (purposes == null || !purposes.contains(KeyPurposeId.id_kp_OCSPSigning.getId())) {
                         logger.log(Level.INFO, "OCSPSigning extended usage is not set");
                         throw new CertPathValidatorException("Responder\'s certificate not valid for signing OCSP responses");
                     }

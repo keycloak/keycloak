@@ -769,7 +769,7 @@
              './icons/parachute-box-icon.js': '@empty',
              './icons/paragraph-icon.js': '@empty',
              './icons/parking-icon.js': '@empty',
-             './icons/passport-icon.js': '@empty',
+             //'./icons/passport-icon.js': '@empty',
              './icons/pastafarianism-icon.js': '@empty',
              './icons/paste-icon.js': '@empty',
              './icons/pause-icon.js': '@empty',
