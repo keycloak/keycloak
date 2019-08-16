@@ -235,14 +235,73 @@ public class UsersResource {
         return toRepresentation(realm, userPermissionEvaluator, briefRepresentation, userModels);
     }
 
+    /**
+     * Returns the number of users that match the given criteria.
+     * It can be called in three different ways.
+     * 1. Don't specify any criteria and pass {@code null}. The number of all
+     * users within that realm will be returned.
+     * <p>
+     * 2. If {@code search} is specified other criteria such as {@code last} will
+     * be ignored even though you set them. The {@code search} string will be
+     * matched against the first and last name, the username and the email of a
+     * user.
+     * <p>
+     * 3. If {@code search} is unspecified but any of {@code last}, {@code first},
+     * {@code email} or {@code username} those criteria are matched against their
+     * respective fields on a user entity. Combined with a logical and.
+     *
+     * @param search   arbitrary search string for all the fields below
+     * @param last     last name filter
+     * @param first    first name filter
+     * @param email    email filter
+     * @param username username filter
+     * @return the number of users that match the given criteria
+     */
     @Path("count")
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
-    public Integer getUsersCount() {
-        auth.users().requireView();
+    public Integer getUsersCount(@QueryParam("search") String search,
+                                 @QueryParam("lastName") String last,
+                                 @QueryParam("firstName") String first,
+                                 @QueryParam("email") String email,
+                                 @QueryParam("username") String username) {
+        UserPermissionEvaluator userPermissionEvaluator = auth.users();
+        userPermissionEvaluator.requireQuery();
 
-        return session.users().getUsersCount(realm);
+        if (search != null) {
+            if (search.startsWith(SEARCH_ID_PARAMETER)) {
+                UserModel userModel = session.users().getUserById(search.substring(SEARCH_ID_PARAMETER.length()).trim(), realm);
+                return userModel != null && userPermissionEvaluator.canView(userModel) ? 1 : 0;
+            } else if (userPermissionEvaluator.canView()) {
+                return session.users().getUsersCount(search.trim(), realm);
+            } else {
+                return session.users().getUsersCount(search.trim(), realm, auth.groups().getGroupsWithViewPermission());
+            }
+        } else if (last != null || first != null || email != null || username != null) {
+            Map<String, String> parameters = new HashMap<>();
+            if (last != null) {
+                parameters.put(UserModel.LAST_NAME, last);
+            }
+            if (first != null) {
+                parameters.put(UserModel.FIRST_NAME, first);
+            }
+            if (email != null) {
+                parameters.put(UserModel.EMAIL, email);
+            }
+            if (username != null) {
+                parameters.put(UserModel.USERNAME, username);
+            }
+            if (userPermissionEvaluator.canView()) {
+                return session.users().getUsersCount(parameters, realm);
+            } else {
+                return session.users().getUsersCount(parameters, realm, auth.groups().getGroupsWithViewPermission());
+            }
+        } else if (userPermissionEvaluator.canView()) {
+            return session.users().getUsersCount(realm);
+        } else {
+            return session.users().getUsersCount(realm, auth.groups().getGroupsWithViewPermission());
+        }
     }
 
     private List<UserRepresentation> searchForUser(Map<String, String> attributes, RealmModel realm, UserPermissionEvaluator usersEvaluator, Boolean briefRepresentation, Integer firstResult, Integer maxResults, Boolean includeServiceAccounts) {
