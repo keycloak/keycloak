@@ -26,6 +26,9 @@ public interface AccountRoles {
     String MANAGE_ACCOUNT = "manage-account";
     String INITIATE_ACTION = "initiate-action";
     String MANAGE_ACCOUNT_LINKS = "manage-account-links";
+    String VIEW_APPLICATIONS = "view-applications";
+    String VIEW_CONSENT = "view-consent";
+    String MANAGE_CONSENT = "manage-consent";
 
     String[] ALL = {VIEW_PROFILE, MANAGE_ACCOUNT};
 

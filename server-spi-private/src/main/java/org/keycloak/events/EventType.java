@@ -67,6 +67,10 @@ public enum EventType {
     REMOVE_TOTP(true),
     REMOVE_TOTP_ERROR(true),
 
+    GRANT_CONSENT(true),
+    GRANT_CONSENT_ERROR(true),
+    UPDATE_CONSENT(true),
+    UPDATE_CONSENT_ERROR(true),
     REVOKE_GRANT(true),
     REVOKE_GRANT_ERROR(true),
 

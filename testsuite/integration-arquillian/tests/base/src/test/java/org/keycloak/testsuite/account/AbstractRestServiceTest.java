@@ -87,6 +87,9 @@ public abstract class AbstractRestServiceTest extends AbstractTestRealmKeycloakT
     public void configureTestRealm(RealmRepresentation testRealm) {
         testRealm.getUsers().add(UserBuilder.create().username("no-account-access").password("password").build());
         testRealm.getUsers().add(UserBuilder.create().username("view-account-access").role("account", "view-profile").password("password").build());
+        testRealm.getUsers().add(UserBuilder.create().username("view-applications-access").role("account", "view-applications").password("password").build());
+        testRealm.getUsers().add(UserBuilder.create().username("view-consent-access").role("account", "view-consent").password("password").build());
+        testRealm.getUsers().add(UserBuilder.create().username("manage-consent-access").role("account", "manage-consent").password("password").build());
     }
 
     protected String getAccountUrl(String resource) {
