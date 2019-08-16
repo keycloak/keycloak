@@ -614,7 +614,7 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
     //KEYCLOAK-518
     @Test
     public void testNullBearerToken() {
-        Client client = new ResteasyClientBuilder().httpEngine(new FollowRedirectsEngine()).build();
+        Client client = ((ResteasyClientBuilder) ClientBuilder.newBuilder()).httpEngine(new FollowRedirectsEngine()).build();
         WebTarget target = client.target(customerDb.toString());
         Response response = target.request().get();
         assertEquals(401, response.getStatus());
@@ -628,7 +628,7 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
     //KEYCLOAK-1368
     @Test
     public void testNullBearerTokenCustomErrorPage() {
-        Client client = new ResteasyClientBuilder().httpEngine(new FollowRedirectsEngine()).build();
+        Client client = ((ResteasyClientBuilder) ClientBuilder.newBuilder()).httpEngine(new FollowRedirectsEngine()).build();
         WebTarget target = client.target(customerDbErrorPage.toString());
 
         Response response = target.request().get();
@@ -1165,7 +1165,7 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
     @Test
     public void testBasicAuthErrorHandling() {
         int numberOfConnections = 10;
-        Client client = new ResteasyClientBuilder().connectionPoolSize(numberOfConnections).httpEngine(new FollowRedirectsEngine()).build();
+        Client client = ((ResteasyClientBuilder) ClientBuilder.newBuilder()).connectionPoolSize(numberOfConnections).httpEngine(new FollowRedirectsEngine()).build();
         WebTarget target = client.target(customerDb.getInjectedUrl().toString());
         Response response = target.request().get();
         Assert.assertEquals(401, response.getStatus());
@@ -1185,7 +1185,7 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
     // KEYCLOAK-1733
     @Test
     public void testNullQueryParameterAccessToken() {
-        Client client = new ResteasyClientBuilder().httpEngine(new FollowRedirectsEngine()).build();
+        Client client = ((ResteasyClientBuilder) ClientBuilder.newBuilder()).httpEngine(new FollowRedirectsEngine()).build();
         
         WebTarget target = client.target(customerDb.getInjectedUrl().toString());
         Response response = target.request().get();
@@ -1204,7 +1204,7 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
     @Test
     public void testRestCallWithAccessTokenAsQueryParameter() {
 
-        Client client = new ResteasyClientBuilder().httpEngine(new FollowRedirectsEngine()).build();
+        Client client = ((ResteasyClientBuilder) ClientBuilder.newBuilder()).httpEngine(new FollowRedirectsEngine()).build();
         try {
             WebTarget webTarget = client.target(testRealmPage.toString() + "/protocol/openid-connect/token");
 

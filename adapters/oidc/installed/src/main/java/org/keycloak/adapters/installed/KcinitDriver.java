@@ -34,6 +34,7 @@ import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
 import javax.ws.rs.client.Client;
+import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Form;
@@ -622,7 +623,7 @@ public class KcinitDriver {
     }
 
     public Client getHttpClient() {
-        return new ResteasyClientBuilder().disableTrustManager().build();
+        return ((ResteasyClientBuilder) ClientBuilder.newBuilder()).disableTrustManager().build();
     }
 
     public void login() throws Exception {

@@ -12,6 +12,7 @@ import org.keycloak.testsuite.dballocator.client.exceptions.DBAllocatorException
 import org.keycloak.testsuite.dballocator.client.retry.IncrementalBackoffRetryPolicy;
 
 import javax.ws.rs.client.Client;
+import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Invocation;
 import javax.ws.rs.core.Response;
 import java.io.ByteArrayInputStream;
@@ -35,7 +36,7 @@ public class DBAllocatorServiceClient {
 
         this.allocatorServletURI = URI.create(allocatorServletURI);
         this.retryPolicy = retryPolicy != null ? retryPolicy : new IncrementalBackoffRetryPolicy();
-        this.restClient = new ResteasyClientBuilder().httpEngine(createEngine()).build();
+        this.restClient = ((ResteasyClientBuilder) ClientBuilder.newBuilder()).httpEngine(createEngine()).build();
     }
 
     private final ApacheHttpClient43Engine createEngine() {

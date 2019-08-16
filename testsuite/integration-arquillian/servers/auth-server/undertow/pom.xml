@@ -52,11 +52,6 @@
         </dependency>
         <dependency>
             <groupId>org.jboss.resteasy</groupId>
-            <artifactId>resteasy-jaxrs</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.jboss.resteasy</groupId>
             <artifactId>resteasy-undertow</artifactId>
             <scope>compile</scope>
         </dependency>

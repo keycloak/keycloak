@@ -30,6 +30,7 @@ import org.keycloak.admin.client.token.TokenManager;
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSession;
+import javax.ws.rs.client.ClientBuilder;
 
 import java.net.URI;
 
@@ -67,7 +68,7 @@ public class Keycloak implements AutoCloseable {
     }
 
     private static ResteasyClient newRestEasyClient(ResteasyJackson2Provider customJacksonProvider, SSLContext sslContext, boolean disableTrustManager) {
-        ResteasyClientBuilder clientBuilder = new ResteasyClientBuilder()
+        ResteasyClientBuilder clientBuilder = ((ResteasyClientBuilder) ClientBuilder.newBuilder())
               .sslContext(sslContext)
               .connectionPoolSize(10);
 

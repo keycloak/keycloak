@@ -33,6 +33,7 @@ import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.IDToken;
 
+import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.Form;
 import javax.ws.rs.core.HttpHeaders;
@@ -518,10 +519,10 @@ public class KeycloakInstalled {
     }
 
     protected ResteasyClient createResteasyClient() {
-        return new ResteasyClientBuilder()
+        return ((ResteasyClientBuilder) ClientBuilder.newBuilder())
                 .connectionCheckoutTimeout(1, TimeUnit.HOURS)
                 .connectionTTL(1, TimeUnit.HOURS)
-                .socketTimeout(1, TimeUnit.HOURS)
+                .readTimeout(1, TimeUnit.HOURS)
                 .disableTrustManager().build();
     }
 

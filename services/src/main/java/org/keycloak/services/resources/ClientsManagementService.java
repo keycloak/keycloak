@@ -19,7 +19,7 @@ package org.keycloak.services.resources;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.BadRequestException;
 import org.jboss.resteasy.spi.HttpRequest;
-import org.jboss.resteasy.spi.UnauthorizedException;
+import javax.ws.rs.NotAuthorizedException;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.util.Time;
@@ -111,7 +111,7 @@ public class ClientsManagementService {
 
         if (!realm.isEnabled()) {
             event.error(Errors.REALM_DISABLED);
-            throw new UnauthorizedException("Realm not enabled");
+            throw new NotAuthorizedException("Realm not enabled");
         }
 
         ClientModel client = authorizeClient();
@@ -152,7 +152,7 @@ public class ClientsManagementService {
 
         if (!realm.isEnabled()) {
             event.error(Errors.REALM_DISABLED);
-            throw new UnauthorizedException("Realm not enabled");
+            throw new NotAuthorizedException("Realm not enabled");
         }
 
         ClientModel client = authorizeClient();

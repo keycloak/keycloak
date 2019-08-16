@@ -21,7 +21,8 @@ import java.util.Arrays;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.jboss.resteasy.client.jaxrs.ResteasyClient;
 import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
-import org.jboss.resteasy.client.jaxrs.engines.ApacheHttpClient4Engine;
+import org.jboss.resteasy.client.jaxrs.engines.ApacheHttpClient43Engine;
+
 import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
@@ -35,6 +36,7 @@ import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LanguageComboboxAwarePage;
 import org.keycloak.testsuite.pages.LoginPage;
 
+import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.core.Response;
 import org.jboss.arquillian.graphene.page.Page;
 import org.keycloak.testsuite.ProfileAssume;
@@ -119,8 +121,8 @@ public class LoginPageTest extends AbstractI18NTest {
         ProfileAssume.assumeCommunity();
         
         CloseableHttpClient httpClient = (CloseableHttpClient) new HttpClientBuilder().build();
-        ApacheHttpClient4Engine engine = new ApacheHttpClient4Engine(httpClient);
-        ResteasyClient client = new ResteasyClientBuilder().httpEngine(engine).build();
+        ApacheHttpClient43Engine engine = new ApacheHttpClient43Engine(httpClient);
+        ResteasyClient client = ((ResteasyClientBuilder) ClientBuilder.newBuilder()).httpEngine(engine).build();
 
         loginPage.open();
         Response response = client.target(driver.getCurrentUrl()).request().acceptLanguage("de").get();

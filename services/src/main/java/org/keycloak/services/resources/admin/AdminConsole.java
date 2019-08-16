@@ -21,7 +21,7 @@ import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.HttpResponse;
-import org.jboss.resteasy.spi.NotFoundException;
+import javax.ws.rs.NotFoundException;
 import org.keycloak.Config;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.Version;

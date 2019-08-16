@@ -19,6 +19,7 @@ package org.keycloak.testsuite.client;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLSession;
+import javax.ws.rs.client.ClientBuilder;
 
 import org.jboss.resteasy.client.jaxrs.ResteasyClient;
 import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
@@ -43,7 +44,7 @@ public class KeycloakTestingClient implements AutoCloseable {
         if (resteasyClient != null) {
             client = resteasyClient;
         } else {
-            ResteasyClientBuilder resteasyClientBuilder = new ResteasyClientBuilder();
+            ResteasyClientBuilder resteasyClientBuilder = ((ResteasyClientBuilder) ClientBuilder.newBuilder());
             resteasyClientBuilder.connectionPoolSize(10);
             if (serverUrl.startsWith("https")) {
                 // Disable PKIX path validation errors when running tests using SSL

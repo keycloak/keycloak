@@ -86,6 +86,7 @@ import javax.xml.crypto.KeySelector;
 import javax.xml.crypto.KeySelectorException;
 import javax.xml.crypto.KeySelectorResult;
 import javax.xml.crypto.XMLCryptoContext;
+import javax.xml.crypto.XMLStructure;
 import javax.xml.crypto.dsig.keyinfo.KeyName;
 import org.keycloak.rotation.KeyLocator;
 import org.keycloak.saml.common.util.SecurityActions;
@@ -740,7 +741,7 @@ public class XMLSignatureUtil {
     private static KeyInfo createKeyInfo(String keyName, PublicKey publicKey, X509Certificate x509Certificate) throws KeyException {
         KeyInfoFactory keyInfoFactory = fac.getKeyInfoFactory();
 
-        List<Object> items = new LinkedList<>();
+        List<XMLStructure> items = new LinkedList<>();
 
         if (keyName != null) {
             items.add(keyInfoFactory.newKeyName(keyName));

@@ -21,7 +21,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.jboss.dmr.ModelNode;
 import org.jboss.logging.Logger;
-import org.jboss.resteasy.core.Dispatcher;
+import org.jboss.resteasy.core.ResteasyContext;
+import org.jboss.resteasy.spi.Dispatcher;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.Config;
 import org.keycloak.common.util.SystemEnvProperties;
@@ -118,7 +119,7 @@ public class KeycloakApplication extends Application {
             this.sessionFactory = createSessionFactory();
 
             dispatcher.getDefaultContextObjects().put(KeycloakApplication.class, this);
-            ResteasyProviderFactory.pushContext(KeycloakApplication.class, this); // for injection
+            ResteasyContext.pushContext(KeycloakApplication.class, this); // for injection
             context.setAttribute(KeycloakSessionFactory.class.getName(), this.sessionFactory);
 
             singletons.add(new RobotsResource());

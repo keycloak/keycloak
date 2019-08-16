@@ -25,6 +25,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
 
 import javax.net.ssl.SSLContext;
+import javax.ws.rs.client.ClientBuilder;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -35,8 +36,9 @@ import org.apache.http.conn.HttpClientConnectionManager;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.ssl.SSLContexts;
 import org.jboss.resteasy.client.jaxrs.ClientHttpEngine;
-import org.jboss.resteasy.client.jaxrs.ClientHttpEngineBuilder43;
+import org.jboss.resteasy.client.jaxrs.ClientHttpEngineBuilder;
 import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
+import org.jboss.resteasy.client.jaxrs.engines.ClientHttpEngineBuilder43;
 import org.jboss.resteasy.plugins.providers.jackson.ResteasyJackson2Provider;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.KeycloakBuilder;
@@ -59,7 +61,7 @@ public class AdminClientUtil {
     }
 
     public static Keycloak createAdminClient(boolean ignoreUnknownProperties, String authServerContextRoot, String realmName, String username, String password, String clientId, String clientSecret) throws CertificateException, NoSuchAlgorithmException, KeyStoreException, IOException, KeyManagementException {
-        ResteasyClientBuilder resteasyClientBuilder = new ResteasyClientBuilder();
+        ResteasyClientBuilder resteasyClientBuilder = ((ResteasyClientBuilder) ClientBuilder.newBuilder());
 
         if ("true".equals(System.getProperty("auth.server.ssl.required"))) {
             File trustore = new File(PROJECT_BUILD_DIRECTORY, "dependency/keystore/keycloak.truststore");

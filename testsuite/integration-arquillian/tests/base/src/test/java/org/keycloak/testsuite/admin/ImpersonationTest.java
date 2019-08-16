@@ -231,7 +231,7 @@ public class ImpersonationTest extends AbstractKeycloakTest {
 
     // Return the SSO cookie from the impersonated session
     protected Cookie testSuccessfulImpersonation(String admin, String adminRealm) {
-        ResteasyClientBuilder resteasyClientBuilder = new ResteasyClientBuilder();
+        ResteasyClientBuilder resteasyClientBuilder = ((ResteasyClientBuilder) javax.ws.rs.client.ClientBuilder.newBuilder());
         resteasyClientBuilder.connectionPoolSize(10);
         resteasyClientBuilder.httpEngine(AdminClientUtil.getCustomClientHttpEngine(resteasyClientBuilder, 10));
         ResteasyClient resteasyClient = resteasyClientBuilder.build();
