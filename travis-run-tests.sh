@@ -95,7 +95,7 @@ if [ $1 == "adapter-tests" ]; then
 fi
 
 if [ $1 == "adapter-tests-authz" ]; then
-    run-server-tests org.keycloak.testsuite.adapter.**.authorization**.*Test
+    travis_wait 20 run-server-tests org.keycloak.testsuite.adapter.**.authorization**.*Test
 fi
 
 if [ $1 == "crossdc-server" ]; then
