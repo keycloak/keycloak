@@ -1522,6 +1522,27 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, flows, $ro
     $scope.cancel = function() {
         $location.url("/realms/" + realm.realm + "/clients");
     };
+
+    $scope.addAttribute = function () {
+        if ($scope.newAttribute != undefined && $scope.newAttribute != null) {
+            $scope.clientEdit.attributes[$scope.newAttribute.key] = $scope.newAttribute.value;
+            delete $scope.newAttribute;
+        }
+    };
+
+    $scope.removeAttribute = function (key) {
+        $scope.clientEdit.attributes[key] = null;
+    };
+    $scope.showAttribute = function (key, value) {
+        return !(value == null
+            || key.indexOf('saml', 0) > -1
+            || key === 'user.info.response.signature.alg'
+            || key === 'request.object.signature.alg'
+            || key === 'exclude.session.state.from.auth.response'
+            || key === 'display.on.consent.screen'
+            || key === 'tls.client.certificate.bound.access.tokens'
+            || key === 'login_theme');
+    }
 });
 
 module.controller('CreateClientCtrl', function($scope, realm, client, $route, serverInfo, Client, ClientDescriptionConverter, $location, $modal, Dialog, Notifications) {
