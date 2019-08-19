@@ -188,7 +188,6 @@ public class PhotozClientAuthzTestApp extends AbstractPageWithInjectedUrl {
 
     public void accountPage() {
         testExecutor.openAccountPage(null);
-        waitForPageToLoad();
     }
 
     public void accountMyResources() {
@@ -196,7 +195,6 @@ public class PhotozClientAuthzTestApp extends AbstractPageWithInjectedUrl {
         WebElement myResources = driver.findElement(By.xpath("//a[text() = 'My Resources']"));
         waitUntilElement(myResources).is().clickable();
         myResources.click();
-        waitForPageToLoad();
     }
 
     public void accountMyResource(String name) {
@@ -204,7 +202,6 @@ public class PhotozClientAuthzTestApp extends AbstractPageWithInjectedUrl {
         WebElement myResource = driver.findElement(By.id("detail-" + name));
         waitUntilElement(myResource).is().clickable();
         myResource.click();
-        waitForPageToLoad();
     }
 
     public void accountGrantResource(String name, String requester) {
@@ -212,7 +209,6 @@ public class PhotozClientAuthzTestApp extends AbstractPageWithInjectedUrl {
         WebElement grantResource = driver.findElement(By.id("grant-" + name + "-" + requester));
         waitUntilElement(grantResource).is().clickable();
         grantResource.click();
-        waitForPageToLoad();
     }
 
     public void accountGrantRemoveScope(String name, String requester, String scope) {
@@ -220,7 +216,6 @@ public class PhotozClientAuthzTestApp extends AbstractPageWithInjectedUrl {
         WebElement grantRemoveScope = driver.findElement(By.id("grant-remove-scope-" + name + "-" + requester + "-" + scope));
         waitUntilElement(grantRemoveScope).is().clickable();
         grantRemoveScope.click();
-        waitForPageToLoad();
     }
 
     public void accountRevokeResource(String name, String requester) {
@@ -228,7 +223,6 @@ public class PhotozClientAuthzTestApp extends AbstractPageWithInjectedUrl {
         WebElement revokeResource = driver.findElement(By.id("revoke-" + name + "-" + requester));
         waitUntilElement(revokeResource).is().clickable();
         revokeResource.click();
-        waitForPageToLoad();
     }
 
     public void accountShareResource(String name, String user) {
@@ -241,7 +235,6 @@ public class PhotozClientAuthzTestApp extends AbstractPageWithInjectedUrl {
         WebElement shareButton = driver.findElement(By.id("share-button"));
         waitUntilElement(shareButton).is().clickable();
         shareButton.click();
-        waitForPageToLoad();
     }
 
     public void accountShareRemoveScope(String name, String user, String scope) {
@@ -255,13 +248,10 @@ public class PhotozClientAuthzTestApp extends AbstractPageWithInjectedUrl {
         WebElement shareRemoveScope = driver.findElement(By.id("share-remove-scope-" + name + "-" + scope));
         waitUntilElement(shareRemoveScope).is().clickable();
         shareRemoveScope.click();
-        waitForPageToLoad();
-        
+
         WebElement shareButton = driver.findElement(By.id("share-button"));
         waitUntilElement(shareButton).is().clickable();
         shareButton.click();
-        
-        waitForPageToLoad();
     }
 
     public void accountDenyResource(String name) {
