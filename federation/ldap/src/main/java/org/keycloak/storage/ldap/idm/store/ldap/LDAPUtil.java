@@ -89,7 +89,7 @@ public class LDAPUtil {
      * <p>The returned string is useful to perform queries on AD based on the <code>objectGUID</code> value. Eg.:</p>
      *
      * <p>
-     * String filter = "(&(objectClass=*)(objectGUID" + EQUAL + convertObjectGUIToByteString(objectGUID) + "))";
+     * String filter = "(&(objectClass=*)(objectGUID" + EQUAL + convertObjectGUIDToByteString(objectGUID) + "))";
      * </p>
      *
      * @param objectGUID A raw byte array representing the value of the <code>objectGUID</code> attribute retrieved from
@@ -97,7 +97,7 @@ public class LDAPUtil {
      *
      * @return A byte-based String representation in the form of \[0]\[1]\[2]\[3]\[4]\[5]\[6]\[7]\[8]\[9]\[10]\[11]\[12]\[13]\[14]\[15]
      */
-    public static String convertObjectGUIToByteString(byte[] objectGUID) {
+    public static String convertObjectGUIDToByteString(byte[] objectGUID) {
         StringBuilder result = new StringBuilder();
 
         for (int i = 0; i < objectGUID.length; i++) {
@@ -129,24 +129,35 @@ public class LDAPUtil {
     public static String decodeObjectGUID(byte[] objectGUID) {
         StringBuilder displayStr = new StringBuilder();
 
-        displayStr.append(convertToDashedString(objectGUID));
+        byte[] withLittleEndian = new byte[] { objectGUID[3], objectGUID[2], objectGUID[1], objectGUID[0],
+            objectGUID[5], objectGUID[4],
+            objectGUID[7], objectGUID[6],
+            objectGUID[8], objectGUID[9], objectGUID[10], objectGUID[11], objectGUID[12], objectGUID[13], objectGUID[14], objectGUID[15]
+        };
+        displayStr.append(convertToDashedString(withLittleEndian));
 
+        return displayStr.toString();
+    }
+
+    public static String decodeGuid(byte[] guid) {
+        StringBuilder displayStr = new StringBuilder();
+        displayStr.append(convertToDashedString(guid));
         return displayStr.toString();
     }
 
     private static String convertToDashedString(byte[] objectGUID) {
         StringBuilder displayStr = new StringBuilder();
 
-        displayStr.append(prefixZeros((int) objectGUID[3] & 0xFF));
-        displayStr.append(prefixZeros((int) objectGUID[2] & 0xFF));
-        displayStr.append(prefixZeros((int) objectGUID[1] & 0xFF));
         displayStr.append(prefixZeros((int) objectGUID[0] & 0xFF));
+        displayStr.append(prefixZeros((int) objectGUID[1] & 0xFF));
+        displayStr.append(prefixZeros((int) objectGUID[2] & 0xFF));
+        displayStr.append(prefixZeros((int) objectGUID[3] & 0xFF));
         displayStr.append("-");
-        displayStr.append(prefixZeros((int) objectGUID[5] & 0xFF));
         displayStr.append(prefixZeros((int) objectGUID[4] & 0xFF));
+        displayStr.append(prefixZeros((int) objectGUID[5] & 0xFF));
         displayStr.append("-");
-        displayStr.append(prefixZeros((int) objectGUID[7] & 0xFF));
         displayStr.append(prefixZeros((int) objectGUID[6] & 0xFF));
+        displayStr.append(prefixZeros((int) objectGUID[7] & 0xFF));
         displayStr.append("-");
         displayStr.append(prefixZeros((int) objectGUID[8] & 0xFF));
         displayStr.append(prefixZeros((int) objectGUID[9] & 0xFF));

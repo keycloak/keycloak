@@ -388,7 +388,7 @@ public class LDAPOperationManager {
 
                 byte[] objectGUID = (byte[]) attributes.get(LDAPConstants.OBJECT_GUID).get();
 
-                filter = "(&(objectClass=*)(" + getUuidAttributeName() + LDAPConstants.EQUAL + LDAPUtil.convertObjectGUIToByteString(objectGUID) + "))";
+                filter = "(&(objectClass=*)(" + getUuidAttributeName() + LDAPConstants.EQUAL + LDAPUtil.convertObjectGUIDToByteString(objectGUID) + "))";
             } catch (NamingException ne) {
                 filter = null;
             }
@@ -659,13 +659,15 @@ public class LDAPOperationManager {
 
     public String decodeEntryUUID(final Object entryUUID) {
         String id;
-        if (this.config.isObjectGUID() && entryUUID instanceof byte[]) {
-            id = LDAPUtil.decodeObjectGUID((byte[]) entryUUID);
-        } else {
-            id = entryUUID.toString();
+        if (entryUUID instanceof byte[]) {
+            if (this.config.isObjectGUID()) {
+                return LDAPUtil.decodeObjectGUID((byte[]) entryUUID);
+            }
+            if (this.config.isEdirectory() && this.config.isEdirectoryGUID()) {
+                return LDAPUtil.decodeGuid((byte[]) entryUUID);
+            }
         }
-
-        return id;
+        return entryUUID.toString();
     }
 
     private <R> R execute(LdapOperation<R> operation) throws NamingException {

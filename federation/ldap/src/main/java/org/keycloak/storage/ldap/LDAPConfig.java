@@ -179,6 +179,10 @@ public class LDAPConfig {
         return getUuidLDAPAttributeName().equalsIgnoreCase(LDAPConstants.OBJECT_GUID);
     }
 
+    public boolean isEdirectoryGUID() {
+        return isEdirectory() && getUuidLDAPAttributeName().equalsIgnoreCase(LDAPConstants.NOVELL_EDIRECTORY_GUID);
+    }
+
     public boolean isPagination() {
         String pagination = config.getFirst(LDAPConstants.PAGINATION);
         return Boolean.parseBoolean(pagination);
@@ -257,6 +261,10 @@ public class LDAPConfig {
         return true;
     }
 
+    public boolean isEdirectory() {
+        return LDAPConstants.VENDOR_NOVELL_EDIRECTORY.equalsIgnoreCase(getVendor());
+    }
+
     @Override
     public int hashCode() {
         return config.hashCode() * 13 + binaryAttributeNames.hashCode();
@@ -270,4 +278,5 @@ public class LDAPConfig {
                 .append(", binaryAttributes: ").append(binaryAttributeNames)
                 .toString();
     }
+
 }
