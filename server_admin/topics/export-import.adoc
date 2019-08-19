@@ -33,7 +33,6 @@ To export into unencrypted directory you can use:
 bin/standalone.sh -Dkeycloak.migration.action=export
 -Dkeycloak.migration.provider=dir -Dkeycloak.migration.dir=<DIR TO EXPORT TO>
 ----
-And similarly for import just use `-Dkeycloak.migration.action=import` instead of `export` .
 To export into single JSON file you can use:
 
 [source]
@@ -41,6 +40,7 @@ To export into single JSON file you can use:
 bin/standalone.sh -Dkeycloak.migration.action=export
 -Dkeycloak.migration.provider=singleFile -Dkeycloak.migration.file=<FILE TO EXPORT TO>
 ----
+And similarly for import just use `-Dkeycloak.migration.action=import` instead of `export` .
 Here's an example of importing:
 
 [source]
@@ -90,13 +90,13 @@ Examples:
 Import of most resources can be performed from the admin console as well as export of most resources.
 Export of users is not supported.
 
-Note: Attributes containing secrets or private information will be masked in export file. Export files obtained via Admin Console
+NOTE: Attributes containing secrets or private information will be masked in export file. Export files obtained via Admin Console
 are thus not appropriate for backups or data transfer between servers. Only boot-time exports are appropriate for that.
 
 The files created during a "startup" export can also be used to import from the admin UI.
 This way, you can export from one realm and import to another realm. Or, you can export from one server and import to another.
-Note: The admin console export/import allows just one realm per file.
 
+NOTE: The admin console export/import allows just one realm per file.
 
 WARNING: The admin console import allows you to "overwrite" resources if you choose.
 Use this feature with caution, especially on a production system. Export .json files from Admin Console Export operation
