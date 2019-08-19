@@ -122,6 +122,7 @@ public class LDAPConstants {
     public static final String CUSTOM_ATTRIBUTE_EXPIRY_DATE = "expiryDate";
     public static final String ENTRY_UUID = "entryUUID";
     public static final String OBJECT_GUID = "objectGUID";
+    public static final String NOVELL_EDIRECTORY_GUID = "guid";
     public static final String CREATE_TIMESTAMP = "createTimestamp";
     public static final String MODIFY_TIMESTAMP = "modifyTimestamp";
 
