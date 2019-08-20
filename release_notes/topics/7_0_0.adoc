@@ -15,7 +15,7 @@ there and hopefully will be fully done for Keycloak 8.
 
 == Signed and Encrypted ID Token Support
 
-{project_name} can support the signed and encrypted ID token according to the Json Web Encryption (JWE) specification.
+{project_name} can support the signed and encrypted ID token according to the Json Web Encryption (JWE) specification. Thanks to https://github.com/tnorimat[tnorimat].
 
 == Testing and release automation
 
