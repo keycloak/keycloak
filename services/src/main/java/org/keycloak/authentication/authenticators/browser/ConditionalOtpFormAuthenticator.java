@@ -77,6 +77,8 @@ import static org.keycloak.models.utils.KeycloakModelUtils.getRoleFromString;
  * <p>
  * <h2>Configured Default</h2>
  * A default fall-though behaviour can be specified to handle cases where all previous conditions did not lead to a conclusion.
+ * The fallback can be "skip" to always skip OTP, "force" to always force OTP or "optional" which will enforce OTP if the user has configured it (voluntary OTP).
+ *
  * An OTP authentication is required in case no default is configured.
  * </p>
  *
@@ -85,6 +87,8 @@ import static org.keycloak.models.utils.KeycloakModelUtils.getRoleFromString;
 public class ConditionalOtpFormAuthenticator extends OTPFormAuthenticator {
 
     public static final String SKIP = "skip";
+
+    public static final String OPTIONAL = "optional";
 
     public static final String FORCE = "force";
 
@@ -121,14 +125,14 @@ public class ConditionalOtpFormAuthenticator extends OTPFormAuthenticator {
             return;
         }
 
-        if (tryConcludeBasedOn(voteForDefaultFallback(config), context)) {
+        if (tryConcludeBasedOn(voteForDefaultFallback(config, context.getSession(), context.getRealm(), context.getUser()), context)) {
             return;
         }
 
         showOtpForm(context);
     }
 
-    private OtpDecision voteForDefaultFallback(Map<String, String> config) {
+    private OtpDecision voteForDefaultFallback(Map<String, String> config, KeycloakSession session, RealmModel realm, UserModel user) {
 
         if (!config.containsKey(DEFAULT_OTP_OUTCOME)) {
             return ABSTAIN;
@@ -139,6 +143,8 @@ public class ConditionalOtpFormAuthenticator extends OTPFormAuthenticator {
                 return SKIP_OTP;
             case FORCE:
                 return SHOW_OTP;
+            case OPTIONAL:
+                return session.userCredentialManager().isConfiguredFor(realm, user, realm.getOTPPolicy().getType()) ? SHOW_OTP : SKIP_OTP;
             default:
                 return ABSTAIN;
         }
@@ -300,12 +306,12 @@ public class ConditionalOtpFormAuthenticator extends OTPFormAuthenticator {
                     && configModel.getConfig().size() <= 1) {
                 return true;
             }
+            final OtpDecision fallbackVote = voteForDefaultFallback(configModel.getConfig(), session, realm, user);
             if (containsConditionalOtpConfig(configModel.getConfig())
                 && voteForUserOtpControlAttribute(user, configModel.getConfig()) == ABSTAIN
                 && voteForUserRole(realm, user, configModel.getConfig()) == ABSTAIN
                 && voteForHttpHeaderMatchesPattern(requestHeaders, configModel.getConfig()) == ABSTAIN
-                && (voteForDefaultFallback(configModel.getConfig()) == SHOW_OTP
-                    || voteForDefaultFallback(configModel.getConfig()) == ABSTAIN)) {
+                && (fallbackVote == SHOW_OTP || fallbackVote == ABSTAIN)) {
                 return true;
             }
         }
