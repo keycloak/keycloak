@@ -19,7 +19,7 @@ public class SecretContains extends TypeSafeMatcher<VaultRawSecret> {
 
     @Override
     protected boolean matchesSafely(VaultRawSecret secret) {
-        String convertedSecret = StandardCharsets.UTF_8.decode(secret.getRawSecret().get()).toString();
+        String convertedSecret = StandardCharsets.UTF_8.decode(secret.get().get()).toString();
         return thisVaultAsString.equals(convertedSecret);
     }
 

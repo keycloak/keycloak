@@ -206,6 +206,25 @@
                                     </resources>
                                 </configuration>
                             </execution>
+                            <execution>
+                                <id>copy-vault</id>
+                                <phase>process-resources</phase>
+                                <goals>
+                                    <goal>copy-resources</goal>
+                                </goals>
+                                <configuration>
+                                    <outputDirectory>${auth.server.home}/standalone/configuration/vault</outputDirectory>
+                                    <resources>
+                                        <resource>
+                                            <directory>${common.resources}/vault</directory>
+                                            <includes>
+                                                <include>master_smtp__key</include>
+                                                <include>test_smtp__key</include>
+                                            </includes>
+                                        </resource>
+                                    </resources>
+                                </configuration>
+                            </execution>
                         </executions>
                     </plugin>
                     <plugin>

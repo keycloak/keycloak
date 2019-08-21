@@ -28,7 +28,7 @@ public interface VaultProvider extends Provider {
      * Retrieves a secret from vault. The implementation should respect
      * at least the realm ID to separate the secrets within the vault.
      * If the secret is retrieved successfully, it is returned;
-     * otherwise this method results into an empty {@link VaultRawSecret#getRawSecret()}.
+     * otherwise this method results into an empty {@link VaultRawSecret#get()}.
      *
      * This method is intended to be used within a try-with-resources block so that
      * the secret is destroyed immediately after use.
@@ -42,7 +42,7 @@ public interface VaultProvider extends Provider {
      *
      * @return Always a non-{@code null} value with the raw secret.
      *         Within the returned value, the secret or {@code null} is stored in the
-     *         {@link VaultRawSecret#getRawSecret()} return value if the secret was successfully
+     *         {@link VaultRawSecret#get()} return value if the secret was successfully
      *         resolved, or an empty {@link java.util.Optional} if the secret has not been found in the vault.
      */
     VaultRawSecret obtainSecret(String vaultSecretId);

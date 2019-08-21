@@ -28,7 +28,12 @@ public class DefaultVaultRawSecret implements VaultRawSecret {
 
     private static final VaultRawSecret EMPTY_VAULT_SECRET = new VaultRawSecret() {
         @Override
-        public Optional<ByteBuffer> getRawSecret() {
+        public Optional<ByteBuffer> get() {
+            return Optional.empty();
+        }
+
+        @Override
+        public Optional<byte[]> getAsArray() {
             return Optional.empty();
         }
 
@@ -38,6 +43,8 @@ public class DefaultVaultRawSecret implements VaultRawSecret {
     };
 
     private final ByteBuffer rawSecret;
+
+    private byte[] secretArray;
 
     public static VaultRawSecret forBuffer(Optional<ByteBuffer> buffer) {
         if (buffer == null || ! buffer.isPresent()) {
@@ -51,14 +58,30 @@ public class DefaultVaultRawSecret implements VaultRawSecret {
     }
 
     @Override
-    public Optional<ByteBuffer> getRawSecret() {
+    public Optional<ByteBuffer> get() {
         return Optional.of(this.rawSecret);
+    }
+
+    @Override
+    public Optional<byte[]> getAsArray() {
+        if (this.secretArray == null) {
+            // initialize internal array on demand.
+            if (this.rawSecret.hasArray()) {
+                this.secretArray = this.rawSecret.array();
+            } else {
+                secretArray = new byte[this.rawSecret.capacity()];
+                this.rawSecret.get(secretArray);
+            }
+        }
+        return Optional.of(this.secretArray);
     }
 
     @Override
     public void close() {
         if (rawSecret.hasArray()) {
             ThreadLocalRandom.current().nextBytes(rawSecret.array());
+        } else if (this.secretArray != null) {
+            ThreadLocalRandom.current().nextBytes(this.secretArray);
         }
         rawSecret.clear();
     }
