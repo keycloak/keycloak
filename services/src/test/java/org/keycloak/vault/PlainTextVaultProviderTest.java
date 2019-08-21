@@ -29,7 +29,7 @@ public class PlainTextVaultProviderTest {
 
         //then
         assertNotNull(secret1);
-        assertNotNull(secret1.getRawSecret().get());
+        assertNotNull(secret1.get().get());
         assertThat(secret1, secretContains("secret1"));
     }
 
@@ -43,7 +43,7 @@ public class PlainTextVaultProviderTest {
 
         //then
         assertNotNull(secret1);
-        assertNotNull(secret1.getRawSecret().get());
+        assertNotNull(secret1.get().get());
         assertThat(secret1, secretContains("underscore_secret1"));
     }
 
@@ -57,7 +57,7 @@ public class PlainTextVaultProviderTest {
 
         //then
         assertNotNull(secret);
-        assertFalse(secret.getRawSecret().isPresent());
+        assertFalse(secret.get().isPresent());
     }
 
     @Test
@@ -70,7 +70,7 @@ public class PlainTextVaultProviderTest {
 
         //then
         assertNotNull(secret);
-        assertFalse(secret.getRawSecret().isPresent());
+        assertFalse(secret.get().isPresent());
     }
 
     @Test
@@ -93,12 +93,12 @@ public class PlainTextVaultProviderTest {
 
         Files.write(temporarySecretFile, "secret1".getBytes());
         try (VaultRawSecret secret1 = provider.obtainSecret(secretName)) {
-            secret1AsString = StandardCharsets.UTF_8.decode(secret1.getRawSecret().get()).toString();
+            secret1AsString = StandardCharsets.UTF_8.decode(secret1.get().get()).toString();
         }
 
         Files.write(temporarySecretFile, "secret2".getBytes());
         try (VaultRawSecret secret2 = provider.obtainSecret(secretName)) {
-            secret2AsString = StandardCharsets.UTF_8.decode(secret2.getRawSecret().get()).toString();
+            secret2AsString = StandardCharsets.UTF_8.decode(secret2.get().get()).toString();
         }
 
         //then
