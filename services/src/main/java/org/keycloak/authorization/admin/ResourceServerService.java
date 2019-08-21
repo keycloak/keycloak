@@ -205,6 +205,8 @@ public class ResourceServerService {
         defaultPolicyConfig.put("code", "// by default, grants any permission associated with this policy\n$evaluation.grant();\n");
 
         defaultPolicy.setConfig(defaultPolicyConfig);
+        
+        session.setAttribute("ALLOW_CREATE_POLICY", true);
 
         getPolicyResource().create(defaultPolicy);
 

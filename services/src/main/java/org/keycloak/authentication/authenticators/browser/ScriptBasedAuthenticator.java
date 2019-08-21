@@ -20,6 +20,7 @@ import org.jboss.logging.Logger;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.Authenticator;
+import org.keycloak.models.AuthenticatorConfigModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.ScriptModel;
@@ -132,15 +133,21 @@ public class ScriptBasedAuthenticator implements Authenticator {
     }
 
     private boolean hasAuthenticatorConfig(AuthenticationFlowContext context) {
-        return context != null
-                && context.getAuthenticatorConfig() != null
-                && context.getAuthenticatorConfig().getConfig() != null
-                && !context.getAuthenticatorConfig().getConfig().isEmpty();
+        if (context == null)
+            return false;
+        AuthenticatorConfigModel config = getAuthenticatorConfig(context);
+        return config != null
+                && config.getConfig() != null
+                && !config.getConfig().isEmpty();
+    }
+
+    protected AuthenticatorConfigModel getAuthenticatorConfig(AuthenticationFlowContext context) {
+        return context.getAuthenticatorConfig();
     }
 
     private InvocableScriptAdapter getInvocableScriptAdapter(AuthenticationFlowContext context) {
 
-        Map<String, String> config = context.getAuthenticatorConfig().getConfig();
+        Map<String, String> config = getAuthenticatorConfig(context).getConfig();
 
         String scriptName = config.get(SCRIPT_NAME);
         String scriptCode = config.get(SCRIPT_CODE);

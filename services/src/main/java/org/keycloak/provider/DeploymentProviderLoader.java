@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2019 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,28 +14,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.representations.idm.authorization;
+
+package org.keycloak.provider;
+
+import java.util.Collections;
+import java.util.List;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-public class JSPolicyRepresentation extends AbstractPolicyRepresentation {
+final class DeploymentProviderLoader implements ProviderLoader {
 
-    private String code;
+    private final KeycloakDeploymentInfo info;
+
+    DeploymentProviderLoader(KeycloakDeploymentInfo info) {
+        this.info = info;
+    }
 
     @Override
-    public String getType() {
-        if (super.getType() == null) {
-            return "js";
-        }
-        return super.getType();
+    public List<Spi> loadSpis() {
+        return Collections.emptyList();
     }
 
-    public String getCode() {
-        return code;
-    }
-
-    public void setCode(String code) {
-        this.code = code;
+    @Override
+    public List<ProviderFactory> load(Spi spi) {
+        return info.getProviders().getOrDefault(spi.getClass(), Collections.emptyList());
     }
 }

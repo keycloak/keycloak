@@ -24,10 +24,12 @@ import java.util.Collections;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response;
 
+import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.AuthorizationResource;
 import org.keycloak.admin.client.resource.JSPoliciesResource;
 import org.keycloak.admin.client.resource.JSPolicyResource;
+import org.keycloak.common.Profile;
 import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.representations.idm.authorization.JSPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.Logic;
@@ -37,6 +39,11 @@ import org.keycloak.representations.idm.authorization.Logic;
  */
 public class JSPolicyManagementTest extends AbstractPolicyManagementTest {
 
+    @Before
+    public void onBefore() {
+        enableFeature(Profile.Feature.UPLOAD_SCRIPTS);
+    }
+    
     @Test
     public void testCreate() {
         AuthorizationResource authorization = getClient().authorization();

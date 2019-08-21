@@ -19,6 +19,7 @@ package org.keycloak.testsuite.console.authorization;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.keycloak.common.Profile.Feature.UPLOAD_SCRIPTS;
 
 import java.util.UUID;
 
@@ -52,6 +53,11 @@ import org.keycloak.testsuite.util.UserBuilder;
  */
 public class AggregatePolicyManagementTest extends AbstractAuthorizationSettingsTest {
 
+    @Before
+    public void onBefore() {
+        enableFeature(UPLOAD_SCRIPTS);
+    }
+    
     @Before
     public void configureTest() {
         super.configureTest();

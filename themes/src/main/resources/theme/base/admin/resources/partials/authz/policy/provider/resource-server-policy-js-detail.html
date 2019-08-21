@@ -23,14 +23,14 @@
             <div class="form-group">
                 <label class="col-md-2 control-label" for="name">{{:: 'name' | translate}} <span class="required">*</span></label>
                 <div class="col-sm-6">
-                    <input class="form-control" type="text" id="name" name="name" data-ng-model="policy.name" autofocus required data-ng-blur="checkNewNameAvailability()">
+                    <input class="form-control" type="text" id="name" name="name" data-ng-model="policy.name" autofocus required data-ng-blur="checkNewNameAvailability()" data-ng-disabled="readOnly">
                 </div>
                 <kc-tooltip>{{:: 'authz-policy-name.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group">
                 <label class="col-md-2 control-label" for="description">{{:: 'description' | translate}} </label>
                 <div class="col-sm-6">
-                    <input class="form-control" type="text" id="description" name="description" data-ng-model="policy.description">
+                    <input class="form-control" type="text" id="description" name="description" data-ng-model="policy.description" data-ng-disabled="readOnly">
                 </div>
                 <kc-tooltip>{{:: 'authz-policy-description.tooltip' | translate}}</kc-tooltip>
             </div>
@@ -46,7 +46,7 @@
 
                 <div class="col-sm-1">
                     <select class="form-control" id="logic"
-                            data-ng-model="policy.logic">
+                            data-ng-model="policy.logic" data-ng-disabled="readOnly">
                         <option value="POSITIVE">{{:: 'authz-policy-logic-positive' | translate}}</option>
                         <option value="NEGATIVE">{{:: 'authz-policy-logic-negative' | translate}}</option>
                     </select>
