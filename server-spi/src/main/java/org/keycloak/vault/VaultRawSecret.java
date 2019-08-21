@@ -32,7 +32,15 @@ public interface VaultRawSecret extends AutoCloseable {
      *         an {@link Optional} containing the value returned by the vault
      *         (a valid value can be {@code null}), or an empty {@link Optional}
      */
-    Optional<ByteBuffer> getRawSecret();
+    Optional<ByteBuffer> get();
+
+    /**
+     * Returns the raw secret bytes in {@code byte[]} form.
+     * @return If the secret was successfully resolved by vault, returns
+     *         an {@link Optional} containing the value returned by the vault
+     *         (a valid value can be {@code null}), or an empty {@link Optional}
+     */
+    Optional<byte[]> getAsArray();
 
     /**
      *  Destroys the secret in memory by e.g. overwriting it with random garbage.
