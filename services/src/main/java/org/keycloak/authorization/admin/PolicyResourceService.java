@@ -109,7 +109,9 @@ public class PolicyResourceService {
         PolicyStore policyStore = storeFactory.getPolicyStore();
         PolicyProviderFactory resource = getProviderFactory(policy.getType());
 
-        resource.onRemove(policy, authorization);
+        if (resource != null) {
+            resource.onRemove(policy, authorization);
+        }
 
         policyStore.delete(policy.getId());
 

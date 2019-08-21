@@ -28,6 +28,7 @@ import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.Test;
+import org.keycloak.common.Profile;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.adapter.AbstractExampleAdapterTest;
 import org.keycloak.testsuite.adapter.page.AngularCorsProductTestApp;
@@ -108,6 +109,7 @@ public class CorsExampleAdapterTest extends AbstractExampleAdapterTest {
 
     @Override
     public void addAdapterTestRealms(List<RealmRepresentation> testRealms) {
+        enableFeature(Profile.Feature.UPLOAD_SCRIPTS);
         testRealms.add(
                 loadRealm(new File(TEST_APPS_HOME_DIR + "/cors/cors-realm.json")));
     }

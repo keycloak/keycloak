@@ -110,6 +110,11 @@ public class Profile {
                         disabledFeatures.add(f);
                     } else if (DEPRECATED.equals(f.getType())) {
                         logger.warnf("Deprecated feature enabled: " + f.name().toLowerCase());
+                        if (Feature.UPLOAD_SCRIPTS.equals(f)) {
+                            previewFeatures.add(Feature.SCRIPTS);
+                            disabledFeatures.remove(Feature.SCRIPTS);
+                            logger.warnf("Preview feature enabled: " + Feature.SCRIPTS.name().toLowerCase());
+                        }
                     }
                     break;
                 case PREVIEW:

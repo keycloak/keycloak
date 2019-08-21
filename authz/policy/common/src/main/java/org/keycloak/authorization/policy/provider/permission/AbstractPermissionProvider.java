@@ -48,6 +48,11 @@ public abstract class AbstractPermissionProvider implements PolicyProvider {
 
             if (effect == null) {
                 PolicyProvider policyProvider = authorization.getProvider(associatedPolicy.getType());
+                
+                if (policyProvider == null) {
+                    throw new RuntimeException("No policy provider found for policy [" + associatedPolicy.getType() + "]");
+                }
+                
                 policyProvider.evaluate(defaultEvaluation);
                 evaluation.denyIfNoEffect();
                 decisions.put(permission, defaultEvaluation.getEffect());

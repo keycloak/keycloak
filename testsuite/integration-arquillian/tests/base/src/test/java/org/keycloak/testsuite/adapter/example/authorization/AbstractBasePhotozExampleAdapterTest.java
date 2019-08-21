@@ -19,6 +19,7 @@ package org.keycloak.testsuite.adapter.example.authorization;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.keycloak.common.Profile.Feature.UPLOAD_SCRIPTS;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
 import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 import static org.keycloak.testsuite.utils.io.IOUtil.loadJson;
@@ -160,6 +161,7 @@ public abstract class AbstractBasePhotozExampleAdapterTest extends AbstractPhoto
 
     @Override
     public void addAdapterTestRealms(List<RealmRepresentation> testRealms) {
+        enableFeature(UPLOAD_SCRIPTS);
         RealmRepresentation realm = loadRealm(new File(TEST_APPS_HOME_DIR + "/photoz/photoz-realm.json"));
 
         realm.setAccessTokenLifespan(30 + TOKEN_LIFESPAN_LEEWAY); // seconds
