@@ -50,6 +50,7 @@ import org.keycloak.representations.idm.RequiredActionProviderSimpleRepresentati
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
+import org.keycloak.representations.idm.authorization.ResourcePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
@@ -957,13 +958,10 @@ public class PermissionsTest extends AbstractKeycloakTest {
         invoke(new InvocationWithResponse() {
             public void invoke(RealmResource realm, AtomicReference<Response> response) {
                 AuthorizationResource authorization = realm.clients().get(foo.getId()).authorization();
-                PolicyRepresentation representation = new PolicyRepresentation();
+                ResourcePermissionRepresentation representation = new ResourcePermissionRepresentation();
                 representation.setName("Test PermissionsTest");
-                representation.setType("js");
-                HashMap<String, String> config = new HashMap<>();
-                config.put("code", "");
-                representation.setConfig(config);
-                response.set(authorization.policies().create(representation));
+                representation.addResource("Default Resource");
+                response.set(authorization.permissions().resource().create(representation));
             }
         }, AUTHORIZATION, true);
         invoke(new Invocation() {

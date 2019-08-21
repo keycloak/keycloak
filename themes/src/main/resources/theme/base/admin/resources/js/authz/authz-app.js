@@ -354,6 +354,9 @@ module.config(['$routeProvider', function ($routeProvider) {
             },
             client : function(ClientLoader) {
                 return ClientLoader();
+            },
+            serverInfo : function(ServerInfoLoader) {
+                return ServerInfoLoader();
             }
         },
         controller: 'ResourceServerPolicyJSDetailCtrl'
@@ -365,6 +368,9 @@ module.config(['$routeProvider', function ($routeProvider) {
             },
             client : function(ClientLoader) {
                 return ClientLoader();
+            },
+            serverInfo : function(ServerInfoLoader) {
+                return ServerInfoLoader();
             }
         },
         controller: 'ResourceServerPolicyJSDetailCtrl'

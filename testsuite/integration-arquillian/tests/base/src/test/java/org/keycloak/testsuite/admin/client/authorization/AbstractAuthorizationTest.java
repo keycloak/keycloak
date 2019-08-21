@@ -18,6 +18,7 @@
 package org.keycloak.testsuite.admin.client.authorization;
 
 import org.junit.After;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.keycloak.admin.client.resource.AuthorizationResource;
 import org.keycloak.admin.client.resource.ClientResource;
@@ -36,6 +37,7 @@ import org.keycloak.testsuite.util.UserBuilder;
 import javax.ws.rs.core.Response;
 
 import static org.junit.Assert.assertEquals;
+import static org.keycloak.common.Profile.Feature.UPLOAD_SCRIPTS;
 
 import java.util.List;
 
@@ -46,6 +48,11 @@ public abstract class AbstractAuthorizationTest extends AbstractClientTest {
 
     protected static final String RESOURCE_SERVER_CLIENT_ID = "resource-server-test";
 
+    @Before
+    public void onBefore() {
+        enableFeature(UPLOAD_SCRIPTS);
+    }
+    
     @Override
     public void setDefaultPageUriParameters() {
         super.setDefaultPageUriParameters();

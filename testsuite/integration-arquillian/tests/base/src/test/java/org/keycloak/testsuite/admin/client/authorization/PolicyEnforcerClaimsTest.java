@@ -35,6 +35,7 @@ import java.util.stream.Collectors;
 
 import javax.security.cert.X509Certificate;
 
+import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.AuthorizationContext;
 import org.keycloak.KeycloakSecurityContext;
@@ -51,6 +52,7 @@ import org.keycloak.adapters.spi.LogoutError;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.authorization.client.AuthzClient;
+import org.keycloak.common.Profile;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.representations.AccessToken;
@@ -106,6 +108,11 @@ public class PolicyEnforcerClaimsTest extends AbstractKeycloakTest {
                         .redirectUris("http://localhost:8180/auth/realms/master/app/auth/*", "https://localhost:8543/auth/realms/master/app/auth/*")
                         .directAccessGrants())
                 .build());
+    }
+    
+    @Before
+    public void onBefore() {
+        enableFeature(Profile.Feature.UPLOAD_SCRIPTS);
     }
 
     @Test

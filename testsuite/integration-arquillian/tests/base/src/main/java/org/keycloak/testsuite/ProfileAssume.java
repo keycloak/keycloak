@@ -77,6 +77,7 @@ public class ProfileAssume {
     }
 
     private static boolean isFeatureEnabled(Profile.Feature feature) {
+        updateProfile();
         return !disabledFeatures.contains(feature.name());
     }
 }

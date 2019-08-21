@@ -20,6 +20,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.keycloak.common.Profile.Feature.UPLOAD_SCRIPTS;
 
 import javax.security.cert.X509Certificate;
 import javax.ws.rs.HttpMethod;
@@ -126,6 +127,7 @@ public class PolicyEnforcerTest extends AbstractKeycloakTest {
 
     @Before
     public void onBefore() {
+        enableFeature(UPLOAD_SCRIPTS);
         initAuthorizationSettings(getClientResource(RESOURCE_SERVER_CLIENT_ID));
     }
 
