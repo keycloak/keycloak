@@ -21,6 +21,7 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.WebAuthnConstants;
@@ -56,6 +57,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+@Ignore("not completed yet")
 public class RegisterAndLoginTest extends AbstractTestRealmKeycloakTest {
 
     @Rule

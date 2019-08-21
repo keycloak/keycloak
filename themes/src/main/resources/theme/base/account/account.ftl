@@ -63,7 +63,7 @@
             </div>
 
             <div class="col-sm-10 col-md-10">
-                <input type="text" class="form-control" id="publicKeyCredentialId" name="publicKeyCredentialId" disabled="disabled" value="${(account.attributes.public_key_credential_id!'')}"/>
+                <input type="text" class="form-control" id="user.attributes.public_key_credential_id" name="user.attributes.public_key_credential_id" disabled="disabled" value="${(account.attributes.public_key_credential_id!'')}"/>
             </div>
         </div>
 
@@ -73,7 +73,7 @@
             </div>
 
             <div class="col-sm-10 col-md-10">
-                <input type="text" class="form-control" id="publicKeyCredentialLabel" name="publicKeyCredentialLabel" value="${(account.attributes.public_key_credential_label!'')}"/>
+                <input type="text" class="form-control" id="user.attributes.public_key_credential_label" name="user.attributes.public_key_credential_label" value="${(account.attributes.public_key_credential_label!'')}"/>
             </div>
         </div>
 
@@ -83,7 +83,7 @@
             </div>
 
             <div class="col-sm-10 col-md-10">
-                <input type="text" class="form-control" id="publicKeyCredentialAaguid" name="publicKeyCredentialAaguid" disabled="disabled" value="${(account.attributes.public_key_credential_aaguid!'')}"/>
+                <input type="text" class="form-control" id="user.attributes.public_key_credential_aaguid" name="user.attributes.public_key_credential_aaguid" disabled="disabled" value="${(account.attributes.public_key_credential_aaguid!'')}"/>
             </div>
         </div>
 
