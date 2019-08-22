@@ -27,6 +27,7 @@ import org.keycloak.representations.idm.authorization.Logic;
 import org.keycloak.representations.idm.authorization.RulePolicyRepresentation;
 import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.arquillian.annotation.RestartContainer;
+import org.keycloak.testsuite.util.ContainerAssume;
 
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response;
@@ -43,6 +44,7 @@ public class RulesPolicyManagementTest extends AbstractPolicyManagementTest {
 
     @BeforeClass
     public static void verifyEnvironment() {
+        ContainerAssume.assumeNotAuthServerUndertow();
         ProfileAssume.assumeFeatureEnabled(Profile.Feature.AUTHZ_DROOLS_POLICY);
     }
 
