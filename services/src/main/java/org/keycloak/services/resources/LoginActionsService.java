@@ -868,13 +868,13 @@ public class LoginActionsService {
 
         for (String clientScopeId : authSession.getClientScopes()) {
             ClientScopeModel clientScope = KeycloakModelUtils.findClientScopeById(realm, client, clientScopeId);
-            if (clientScope != null && clientScope.isDisplayOnConsentScreen()) {
-                if (!grantedConsent.isClientScopeGranted(clientScope)) {
+            if (clientScope != null) {
+                if (!grantedConsent.isClientScopeGranted(clientScope) && clientScope.isDisplayOnConsentScreen()) {
                     grantedConsent.addGrantedClientScope(clientScope);
                     updateConsentRequired = true;
                 }
             } else {
-                logger.warnf("Client scope with ID '%s' not found", clientScopeId);
+                logger.warnf("Client scope or client with ID '%s' not found", clientScopeId);
             }
         }
 
