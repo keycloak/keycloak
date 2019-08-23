@@ -11,6 +11,7 @@ Here is the explanation of the SP element attributes:
     nameIDPolicyFormat="format"
     forceAuthentication="true"
     isPassive="false"
+    keepDOMAssertion="true"
     autodetectBearerOnly="false">
 ...
 </SP>
@@ -62,3 +63,10 @@ logoutPage::
   the user is redirected after logout to that page using the HTTP `302` status code. If a link without scheme part is specified,
   such as `/logout.jsp`, the page is displayed after logout, _regardless of whether it lies in a protected area according
   to `security-constraint` declarations in web.xml_, and the page is resolved relative to the deployment context root.
+
+keepDOMAssertion::
+  This attribute should be set to __true__ to make the adapter store the DOM representation of the assertion in its
+  original form inside the `SamlPrincipal` associated to the request. The assertion document can be retrieved using
+  the method `getAssertionDocument` inside the principal. This is specially useful when re-playing a signed assertion.
+  The returned document is the one that was generated parsing the SAML response received by the {project_name} server.
+  This setting is _OPTIONAL_ and its default value is __false__ (the document is not saved inside the principal).
