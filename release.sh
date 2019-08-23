@@ -16,7 +16,8 @@ echo "--------------------------------------------------------------------------
 echo "Deploying:"
 echo ""
 
-mvn -Pjboss-release,nexus-staging -DretryFailedDeploymentCount=10 -DskipTests -DskipTestsuite -DskipExamples -DautoReleaseAfterClose=true -DskipLocalStaging=true -DstagingProfileId=2161b7b8da0080 deploy
+mvn -Pjboss-release,nexus-staging -DretryFailedDeploymentCount=10 -DskipTests -DskipTestsuite -DskipExamples -DautoReleaseAfterClose=true -DskipLocalStaging=true deploy
+#mvn -Pjboss-release,nexus-staging -DretryFailedDeploymentCount=10 -DskipTests -DskipTestsuite -DskipExamples -DautoReleaseAfterClose=true -DskipLocalStaging=true -DstagingProfileId=2161b7b8da0080 deploy
 #mvn -Pjboss-release -DretryFailedDeploymentCount=10 -DskipTests -DskipTestsuite -DskipExamples deploy
 
 echo "------------------------------------------------------------------------------------------------------------"
