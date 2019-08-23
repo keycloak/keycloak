@@ -28,6 +28,7 @@ import org.keycloak.WebAuthnConstants;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.Authenticator;
+import org.keycloak.authentication.requiredactions.WebAuthnRegisterFactory;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.UriUtils;
 import org.keycloak.credential.WebAuthnCredentialModel;
@@ -70,7 +71,7 @@ public class WebAuthnAuthenticator implements Authenticator {
             // in 2 Factor Scenario where the user has already been identified
             WebAuthnAuthenticatorsBean authenticators = new WebAuthnAuthenticatorsBean(user);
             if (authenticators.getAuthenticators().isEmpty()) {
-                setErrorResponse(context, ERR_NO_AUTHENTICATORS_REGISTERED, null);
+                // require the user to register webauthn authenticator
                 return;
             }
             isUserIdentified = true;
@@ -181,15 +182,18 @@ public class WebAuthnAuthenticator implements Authenticator {
     }
 
     public boolean requiresUser() {
-        return false;
-    }
-
-    public boolean configuredFor(KeycloakSession session, RealmModel realm, UserModel user) {
         return true;
     }
 
+    public boolean configuredFor(KeycloakSession session, RealmModel realm, UserModel user) {
+        return session.userCredentialManager().isConfiguredFor(realm, user, WebAuthnCredentialModel.WEBAUTHN_CREDENTIAL_TYPE);
+    }
+
     public void setRequiredActions(KeycloakSession session, RealmModel realm, UserModel user) {
-        // NOP
+        // ask the user to do required action to register webauthn authenticator
+        if (!user.getRequiredActions().contains(WebAuthnRegisterFactory.PROVIDER_ID)) {
+            user.addRequiredAction(WebAuthnRegisterFactory.PROVIDER_ID);
+        }
     }
 
     public void close() {
