@@ -3,6 +3,7 @@ package org.keycloak.representations.docker;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.List;
+import java.util.Objects;
 
 /**
  * JSON Representation of a Docker Error in the following format:
@@ -61,8 +62,8 @@ public class DockerError {
         final DockerError that = (DockerError) o;
 
         if (errorCode != that.errorCode) return false;
-        if (message != null ? !message.equals(that.message) : that.message != null) return false;
-        return dockerErrorDetails != null ? dockerErrorDetails.equals(that.dockerErrorDetails) : that.dockerErrorDetails == null;
+        if (!Objects.equals(message, that.message)) return false;
+        return Objects.equals(dockerErrorDetails, that.dockerErrorDetails);
     }
 
     @Override

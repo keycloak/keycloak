@@ -350,7 +350,7 @@ public class RealmRepresentation {
     public ScopeMappingRepresentation clientScopeMapping(String clientName) {
         ScopeMappingRepresentation mapping = new ScopeMappingRepresentation();
         mapping.setClient(clientName);
-        if (scopeMappings == null) scopeMappings = new ArrayList<ScopeMappingRepresentation>();
+        if (scopeMappings == null) scopeMappings = new ArrayList<>();
         scopeMappings.add(mapping);
         return mapping;
     }
@@ -358,7 +358,7 @@ public class RealmRepresentation {
     public ScopeMappingRepresentation clientScopeScopeMapping(String clientScopeName) {
         ScopeMappingRepresentation mapping = new ScopeMappingRepresentation();
         mapping.setClientScope(clientScopeName);
-        if (scopeMappings == null) scopeMappings = new ArrayList<ScopeMappingRepresentation>();
+        if (scopeMappings == null) scopeMappings = new ArrayList<>();
         scopeMappings.add(mapping);
         return mapping;
     }
@@ -784,7 +784,7 @@ public class RealmRepresentation {
     }
 
     public void addProtocolMapper(ProtocolMapperRepresentation rep) {
-        if (protocolMappers == null) protocolMappers = new LinkedList<ProtocolMapperRepresentation>();
+        if (protocolMappers == null) protocolMappers = new LinkedList<>();
         protocolMappers.add(rep);
     }
 

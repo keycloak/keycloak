@@ -3,6 +3,7 @@ package org.keycloak.representations.docker;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.List;
+import java.util.Objects;
 
 public class DockerErrorResponseToken {
 
@@ -21,7 +22,7 @@ public class DockerErrorResponseToken {
 
         final DockerErrorResponseToken that = (DockerErrorResponseToken) o;
 
-        return errorList != null ? errorList.equals(that.errorList) : that.errorList == null;
+        return Objects.equals(errorList, that.errorList);
     }
 
     @Override

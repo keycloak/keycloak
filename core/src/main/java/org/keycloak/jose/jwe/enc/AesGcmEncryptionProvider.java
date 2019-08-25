@@ -17,10 +17,9 @@
 
 package org.keycloak.jose.jwe.enc;
 
+import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
-import java.security.InvalidKeyException;
 import java.security.Key;
-import java.security.NoSuchAlgorithmException;
 
 import javax.crypto.Cipher;
 import javax.crypto.spec.GCMParameterSpec;
@@ -53,11 +52,11 @@ public abstract class AesGcmEncryptionProvider implements JWEEncryptionProvider 
 
         int expectedAesKeyLength = getExpectedAesKeyLength();
         if (expectedAesKeyLength != aesKey.getEncoded().length) {
-            throw new IllegalStateException("Length of aes key should be " + expectedAesKeyLength +", but was " + aesKey.getEncoded().length);
+            throw new IllegalStateException("Length of aes key should be " + expectedAesKeyLength + ", but was " + aesKey.getEncoded().length);
         }
 
         // https://tools.ietf.org/html/rfc7516#appendix-A.1.5
-        byte[] aad = jwe.getBase64Header().getBytes("UTF-8");
+        byte[] aad = jwe.getBase64Header().getBytes(StandardCharsets.UTF_8);
 
         byte[] cipherBytes = encryptBytes(contentBytes, initializationVector, aesKey, aad);
         byte[] authenticationTag = getAuthenticationTag(cipherBytes);
@@ -79,7 +78,7 @@ public abstract class AesGcmEncryptionProvider implements JWEEncryptionProvider 
         }
 
         // https://tools.ietf.org/html/rfc7516#appendix-A.1.5
-        byte[] aad = jwe.getBase64Header().getBytes("UTF-8");
+        byte[] aad = jwe.getBase64Header().getBytes(StandardCharsets.UTF_8);
         byte[] decryptedTargetContent = getAeadDecryptedTargetContent(jwe);
         byte[] contentBytes = decryptBytes(decryptedTargetContent, jwe.getInitializationVector(), aesKey, aad);
 
@@ -114,7 +113,7 @@ public abstract class AesGcmEncryptionProvider implements JWEEncryptionProvider 
         return authenticationTag;
     }
 
-    private byte[] getEncryptedContent(byte[] cipherBytes) throws NoSuchAlgorithmException, InvalidKeyException {
+    private byte[] getEncryptedContent(byte[] cipherBytes) {
         // AES GCM cipher text consists of a cipher text an authentication tag.
         // The cipher text be encoded as an individual term in JWE.
         // So extract it from the AES GCM cipher text.
@@ -140,8 +139,7 @@ public abstract class AesGcmEncryptionProvider implements JWEEncryptionProvider 
         if (aesKey == null) {
             throw new IllegalArgumentException("AES CEK key not present");
         }
-        byte[] aesBytes = aesKey.getEncoded();
-        return aesBytes;
+        return aesKey.getEncoded();
     }
 
     @Override

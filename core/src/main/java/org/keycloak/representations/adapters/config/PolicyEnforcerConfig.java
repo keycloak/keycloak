@@ -255,7 +255,7 @@ public class PolicyEnforcerConfig {
 
         @JsonIgnore
         public boolean hasPattern() {
-            return getPath().indexOf("{") != -1;
+            return getPath().contains( "{" );
         }
 
         @JsonIgnore

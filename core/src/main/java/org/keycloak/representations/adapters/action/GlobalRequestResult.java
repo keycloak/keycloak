@@ -32,37 +32,37 @@ public class GlobalRequestResult {
 
     public void addSuccessRequest(String reqUri) {
         if (successRequests == null) {
-            successRequests = new ArrayList<String>();
+            successRequests = new ArrayList<>();
         }
         successRequests.add(reqUri);
     }
 
     public void addFailedRequest(String reqUri) {
         if (failedRequests == null) {
-            failedRequests = new ArrayList<String>();
+            failedRequests = new ArrayList<>();
         }
         failedRequests.add(reqUri);
     }
 
     public void addAllSuccessRequests(List<String> reqUris) {
         if (successRequests == null) {
-            successRequests = new ArrayList<String>();
+            successRequests = new ArrayList<>();
         }
         successRequests.addAll(reqUris);
     }
 
     public void addAllFailedRequests(List<String> reqUris) {
         if (failedRequests == null) {
-            failedRequests = new ArrayList<String>();
+            failedRequests = new ArrayList<>();
         }
         failedRequests.addAll(reqUris);
     }
 
     public void addAll(GlobalRequestResult merged) {
-        if (merged.getSuccessRequests() != null && merged.getSuccessRequests().size() > 0) {
+        if (merged.getSuccessRequests() != null && !merged.getSuccessRequests().isEmpty()) {
             addAllSuccessRequests(merged.getSuccessRequests());
         }
-        if (merged.getFailedRequests() != null && merged.getFailedRequests().size() > 0) {
+        if (merged.getFailedRequests() != null && !merged.getFailedRequests().isEmpty()) {
             addAllFailedRequests(merged.getFailedRequests());
         }
     }

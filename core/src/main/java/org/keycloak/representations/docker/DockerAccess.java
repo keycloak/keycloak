@@ -6,6 +6,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
 
 /**
@@ -93,9 +94,9 @@ public class DockerAccess {
 
         final DockerAccess that = (DockerAccess) o;
 
-        if (type != null ? !type.equals(that.type) : that.type != null) return false;
-        if (name != null ? !name.equals(that.name) : that.name != null) return false;
-        return actions != null ? actions.equals(that.actions) : that.actions == null;
+        if (!Objects.equals(type, that.type)) return false;
+        if (!Objects.equals(name, that.name)) return false;
+        return Objects.equals(actions, that.actions);
 
     }
 

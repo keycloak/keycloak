@@ -17,6 +17,8 @@
 
 package org.keycloak.representations.idm;
 
+import java.util.Objects;
+
 import org.keycloak.common.util.MultivaluedHashMap;
 
 /**
@@ -185,71 +187,47 @@ public class CredentialRepresentation {
         if (getClass() != obj.getClass())
             return false;
         CredentialRepresentation other = (CredentialRepresentation) obj;
-        if (algorithm == null) {
-            if (other.algorithm != null)
-                return false;
-        } else if (!algorithm.equals(other.algorithm))
+
+        if (!Objects.equals(algorithm, other.algorithm)) {
             return false;
-        if (config == null) {
-            if (other.config != null)
-                return false;
-        } else if (!config.equals(other.config))
+        }
+        if (!Objects.equals(config, other.config)) {
             return false;
-        if (counter == null) {
-            if (other.counter != null)
-                return false;
-        } else if (!counter.equals(other.counter))
+        }
+        if (!Objects.equals(counter, other.counter)) {
             return false;
-        if (createdDate == null) {
-            if (other.createdDate != null)
-                return false;
-        } else if (!createdDate.equals(other.createdDate))
+        }
+        if (!Objects.equals(createdDate, other.createdDate)) {
             return false;
-        if (device == null) {
-            if (other.device != null)
-                return false;
-        } else if (!device.equals(other.device))
+        }
+        if (!Objects.equals(device, other.device)) {
             return false;
-        if (digits == null) {
-            if (other.digits != null)
-                return false;
-        } else if (!digits.equals(other.digits))
+        }
+        if (!Objects.equals(digits, other.digits)) {
             return false;
-        if (hashIterations == null) {
-            if (other.hashIterations != null)
-                return false;
-        } else if (!hashIterations.equals(other.hashIterations))
+        }
+        if (!Objects.equals(hashIterations, other.hashIterations)) {
             return false;
-        if (hashedSaltedValue == null) {
-            if (other.hashedSaltedValue != null)
-                return false;
-        } else if (!hashedSaltedValue.equals(other.hashedSaltedValue))
+        }
+        if (!Objects.equals(hashedSaltedValue, other.hashedSaltedValue)) {
             return false;
-        if (period == null) {
-            if (other.period != null)
-                return false;
-        } else if (!period.equals(other.period))
+        }
+        if (!Objects.equals(period, other.period)) {
             return false;
-        if (salt == null) {
-            if (other.salt != null)
-                return false;
-        } else if (!salt.equals(other.salt))
+        }
+        if (!Objects.equals(salt, other.salt)) {
             return false;
-        if (temporary == null) {
-            if (other.temporary != null)
-                return false;
-        } else if (!temporary.equals(other.temporary))
+        }
+        if (!Objects.equals(temporary, other.temporary)) {
             return false;
-        if (type == null) {
-            if (other.type != null)
-                return false;
-        } else if (!type.equals(other.type))
+        }
+        if (!Objects.equals(type, other.type)) {
             return false;
-        if (value == null) {
-            if (other.value != null)
-                return false;
-        } else if (!value.equals(other.value))
+        }
+        if (!Objects.equals(value, other.value)) {
             return false;
+        }
+
         return true;
     }
 }

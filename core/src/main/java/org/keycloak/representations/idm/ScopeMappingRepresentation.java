@@ -71,7 +71,7 @@ public class ScopeMappingRepresentation {
     }
 
     public ScopeMappingRepresentation role(String role) {
-        if (this.roles == null) this.roles = new HashSet<String>();
+        if (this.roles == null) this.roles = new HashSet<>();
         this.roles.add(role);
         return this;
     }

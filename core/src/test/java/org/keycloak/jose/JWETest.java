@@ -18,10 +18,10 @@
 package org.keycloak.jose;
 
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.security.KeyPair;
 
-import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
@@ -32,11 +32,8 @@ import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.jose.jwe.*;
 import org.keycloak.jose.jwe.alg.JWEAlgorithmProvider;
-import org.keycloak.jose.jwe.alg.KeyEncryptionJWEAlgorithmProvider;
 import org.keycloak.jose.jwe.alg.RsaKeyEncryptionJWEAlgorithmProvider;
-import org.keycloak.jose.jwe.enc.AesCbcHmacShaEncryptionProvider;
 import org.keycloak.jose.jwe.enc.AesCbcHmacShaJWEEncryptionProvider;
-import org.keycloak.jose.jwe.enc.AesGcmEncryptionProvider;
 import org.keycloak.jose.jwe.enc.AesGcmJWEEncryptionProvider;
 import org.keycloak.jose.jwe.enc.JWEEncryptionProvider;
 
@@ -75,7 +72,7 @@ public class JWETest {
         JWEHeader jweHeader = new JWEHeader(JWEConstants.DIR, encAlgorithm, null);
         JWE jwe = new JWE()
                 .header(jweHeader)
-                .content(payload.getBytes("UTF-8"));
+                .content(payload.getBytes(StandardCharsets.UTF_8));
 
         jwe.getKeyStorage()
                 .setCEKKey(aesKey, JWEKeyStorage.KeyUse.ENCRYPTION)
@@ -95,7 +92,7 @@ public class JWETest {
 
         jwe.verifyAndDecodeJwe(encodedContent);
 
-        String decodedContent = new String(jwe.getContent(), "UTF-8");
+        String decodedContent = new String(jwe.getContent(), StandardCharsets.UTF_8);
 
         Assert.assertEquals(payload, decodedContent);
     }
@@ -126,7 +123,7 @@ public class JWETest {
     }
 
     @Test
-    public void testPassword() throws Exception {
+    public void testPassword() {
         byte[] salt = JWEUtils.generateSecret(8);
         String encodedSalt = Base64.encodeBytes(salt);
         String jwe = JWE.encryptUTF8("geheim", encodedSalt, PAYLOAD);
@@ -147,7 +144,7 @@ public class JWETest {
         JWEHeader jweHeader = new JWEHeader(JWEConstants.A128KW, JWEConstants.A128CBC_HS256, null);
         JWE jwe = new JWE()
                 .header(jweHeader)
-                .content(PAYLOAD.getBytes("UTF-8"));
+                .content(PAYLOAD.getBytes(StandardCharsets.UTF_8));
 
         jwe.getKeyStorage()
                 .setEncryptionKey(aesKey);
@@ -163,7 +160,7 @@ public class JWETest {
 
         jwe.verifyAndDecodeJwe(encodedContent);
 
-        String decodedContent = new String(jwe.getContent(), "UTF-8");
+        String decodedContent = new String(jwe.getContent(), StandardCharsets.UTF_8);
 
         Assert.assertEquals(PAYLOAD, decodedContent);
     }
@@ -173,13 +170,13 @@ public class JWETest {
         byte[] random = JWEUtils.generateSecret(8);
         System.out.print("new byte[] = {");
         for (byte b : random) {
-            System.out.print(""+Byte.toString(b)+",");
+            System.out.print(""+ b +",");
         }
     }
 
 
     @Test
-    public void externalJweAes128CbcHmacSha256Test() throws UnsupportedEncodingException, JWEException {
+    public void externalJweAes128CbcHmacSha256Test() throws JWEException {
         String externalJwe = "eyJlbmMiOiJBMTI4Q0JDLUhTMjU2IiwiYWxnIjoiZGlyIn0..qysUrI1iVtiG4Z4jyr7XXg.apdNSQhR7WDMg6IHf5aLVI0gGp6JuOHYmIUtflns4WHmyxOOnh_GShLI6DWaK_SiywTV5gZvZYtl8H8Iv5fTfLkc4tiDDjbdtmsOP7tqyRxVh069gU5UvEAgmCXbIKALutgYXcYe2WM4E6BIHPTSt8jXdkktFcm7XHiD7mpakZyjXsG8p3XVkQJ72WbJI_t6.Ks6gHeko7BRTZ4CFs5ijRA";
         System.out.println("External encoded content length: " + externalJwe.length());
 
@@ -193,7 +190,7 @@ public class JWETest {
 
         jwe.verifyAndDecodeJwe(externalJwe);
 
-        String decodedContent = new String(jwe.getContent(), "UTF-8");
+        String decodedContent = new String(jwe.getContent(), StandardCharsets.UTF_8);
 
         Assert.assertEquals(PAYLOAD, decodedContent);
     }
@@ -201,7 +198,7 @@ public class JWETest {
 
     // Works just on OpenJDK 8. Other JDKs (IBM, Oracle) have restrictions on maximum key size of AES to be 128
     // @Test
-    public void externalJweAes256CbcHmacSha512Test() throws UnsupportedEncodingException, JWEException {
+    public void externalJweAes256CbcHmacSha512Test() throws JWEException {
         String externalJwe = "eyJlbmMiOiJBMjU2Q0JDLUhTNTEyIiwiYWxnIjoiZGlyIn0..xUPndQ5U69CYaWMKr4nyeg.AzSzba6OdNsvTIoNpub8d2TmYnkY7W8Sd-1S33DjJwJsSaNcfvfXBq5bqXAGVAnLHrLZJKWoEYsmOrYHz3Nao-kpLtUpc4XZI8yiYUqkHTjmxZnfD02R6hz31a5KBCnDTtUEv23VSxm8yUyQKoUTpVHbJ3b2VQvycg2XFUXPsA6oaSSEpz-uwe1Vmun2hUBB.Qal4rMYn1RrXQ9AQ9ONUjUXvlS2ow8np-T8QWMBR0ns";
         System.out.println("External encoded content length: " + externalJwe.length());
 
@@ -215,7 +212,7 @@ public class JWETest {
 
         jwe.verifyAndDecodeJwe(externalJwe);
 
-        String decodedContent = new String(jwe.getContent(), "UTF-8");
+        String decodedContent = new String(jwe.getContent(), StandardCharsets.UTF_8);
 
         Assert.assertEquals(PAYLOAD, decodedContent);
     }
@@ -235,7 +232,7 @@ public class JWETest {
 
         jwe.verifyAndDecodeJwe(externalJwe);
 
-        String decodedContent = new String(jwe.getContent(), "UTF-8");
+        String decodedContent = new String(jwe.getContent(), StandardCharsets.UTF_8);
 
         Assert.assertEquals("Live long and prosper.", decodedContent);
 
@@ -270,7 +267,7 @@ public class JWETest {
         JWEHeader jweHeader = new JWEHeader(jweAlgorithmName, jweEncryptionName, null);
         JWE jwe = new JWE()
                 .header(jweHeader)
-                .content(PAYLOAD.getBytes("UTF-8"));
+                .content(PAYLOAD.getBytes(StandardCharsets.UTF_8));
 
         jwe.getKeyStorage()
                 .setEncryptionKey(keyPair.getPublic());
@@ -283,7 +280,7 @@ public class JWETest {
         jwe.getKeyStorage()
                 .setDecryptionKey(keyPair.getPrivate());
         jwe.verifyAndDecodeJwe(encodedContent, jweAlgorithmProvider, jweEncryptionProvider);
-        String decodedContent = new String(jwe.getContent(), "UTF-8");
+        String decodedContent = new String(jwe.getContent(), StandardCharsets.UTF_8);
         System.out.println("Decoded content: " + decodedContent);
         System.out.println("Decoded content length: " + decodedContent.length());
 
@@ -303,7 +300,7 @@ public class JWETest {
         JWEHeader jweHeader = new JWEHeader(jweAlgorithmName, jweEncryptionName, null);
         JWE jwe = new JWE()
                 .header(jweHeader)
-                .content(PAYLOAD.getBytes("UTF-8"));
+                .content(PAYLOAD.getBytes(StandardCharsets.UTF_8));
 
         jwe.getKeyStorage()
                 .setEncryptionKey(keyPair.getPublic());
@@ -323,7 +320,7 @@ public class JWETest {
             .setCEKKey(aesKey, JWEKeyStorage.KeyUse.ENCRYPTION)
             .setCEKKey(hmacKey, JWEKeyStorage.KeyUse.SIGNATURE);
         jwe.verifyAndDecodeJwe(encodedContent, jweAlgorithmProvider, jweEncryptionProvider);
-        String decodedContent = new String(jwe.getContent(), "UTF-8");
+        String decodedContent = new String(jwe.getContent(), StandardCharsets.UTF_8);
         System.out.println("Decoded content: " + decodedContent);
         System.out.println("Decoded content length: " + decodedContent.length());
 

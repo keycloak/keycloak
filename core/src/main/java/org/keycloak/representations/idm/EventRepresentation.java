@@ -17,9 +17,9 @@
 package org.keycloak.representations.idm;
 
 import java.util.Map;
+import java.util.Objects;
 
 /**
- *
  * @author Stan Silvert ssilvert@redhat.com (C) 2016 Red Hat Inc.
  */
 public class EventRepresentation {
@@ -114,14 +114,14 @@ public class EventRepresentation {
         EventRepresentation that = (EventRepresentation) o;
 
         if (time != that.time) return false;
-        if (type != null ? !type.equals(that.type) : that.type != null) return false;
-        if (realmId != null ? !realmId.equals(that.realmId) : that.realmId != null) return false;
-        if (clientId != null ? !clientId.equals(that.clientId) : that.clientId != null) return false;
-        if (userId != null ? !userId.equals(that.userId) : that.userId != null) return false;
-        if (sessionId != null ? !sessionId.equals(that.sessionId) : that.sessionId != null) return false;
-        if (ipAddress != null ? !ipAddress.equals(that.ipAddress) : that.ipAddress != null) return false;
-        if (error != null ? !error.equals(that.error) : that.error != null) return false;
-        return !(details != null ? !details.equals(that.details) : that.details != null);
+        if (!Objects.equals(type, that.type)) return false;
+        if (!Objects.equals(realmId, that.realmId)) return false;
+        if (!Objects.equals(clientId, that.clientId)) return false;
+        if (!Objects.equals(userId, that.userId)) return false;
+        if (!Objects.equals(sessionId, that.sessionId)) return false;
+        if (!Objects.equals(ipAddress, that.ipAddress)) return false;
+        if (!Objects.equals(error, that.error)) return false;
+        return Objects.equals(details, that.details);
 
     }
 

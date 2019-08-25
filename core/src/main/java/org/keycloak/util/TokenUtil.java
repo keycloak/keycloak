@@ -187,8 +187,7 @@ public class TokenUtil {
                 .content(contentBytes);
         jwe.getKeyStorage()
                 .setEncryptionKey(encryptionKEK);
-        String encodedContent = jwe.encodeJwe(jweAlgorithmProvider, jweEncryptionProvider);
-        return encodedContent;
+        return jwe.encodeJwe(jweAlgorithmProvider, jweEncryptionProvider);
     }
 
     public static byte[] jweKeyEncryptionVerifyAndDecode(Key decryptionKEK, String encodedContent) throws JWEException {

@@ -24,7 +24,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Iterator;
 
 public class StringOrArrayDeserializer extends JsonDeserializer<Object> {
 
@@ -33,9 +32,8 @@ public class StringOrArrayDeserializer extends JsonDeserializer<Object> {
         JsonNode jsonNode = jsonParser.readValueAsTree();
         if (jsonNode.isArray()) {
             ArrayList<String> a = new ArrayList<>(1);
-            Iterator<JsonNode> itr = jsonNode.iterator();
-            while (itr.hasNext()) {
-                a.add(itr.next().textValue());
+            for (JsonNode node : jsonNode) {
+                a.add( node.textValue());
             }
             return a.toArray(new String[a.size()]);
         } else {
