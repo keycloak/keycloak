@@ -17,6 +17,7 @@
 package org.keycloak.broker.oidc;
 
 import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 
 /**
  * @author Pedro Igor
@@ -27,6 +28,7 @@ public class OIDCIdentityProviderConfig extends OAuth2IdentityProviderConfig {
 
     public static final String USE_JWKS_URL = "useJwksUrl";
     public static final String VALIDATE_SIGNATURE = "validateSignature";
+    public static final String CLIENT_AUTH = "client_auth";
 
 
     public OIDCIdentityProviderConfig(IdentityProviderModel identityProviderModel) {
@@ -91,6 +93,14 @@ public class OIDCIdentityProviderConfig extends OAuth2IdentityProviderConfig {
 
     public void setJwksUrl(String jwksUrl) {
         getConfig().put(JWKS_URL, jwksUrl);
+    }
+
+    public String getClientAuth() {
+        return getConfig().getOrDefault(CLIENT_AUTH, OIDCLoginProtocol.CLIENT_SECRET_POST);
+    }
+
+    public void setClientAuth(String clientAuth) {
+        getConfig().put(CLIENT_AUTH, clientAuth);
     }
 
     public boolean isBackchannelSupported() {
