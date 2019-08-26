@@ -173,10 +173,17 @@
                 </div>
                 <kc-tooltip>{{:: 'identity-provider.client-id.tooltip' | translate}}</kc-tooltip>
             </div>
+            <div class="form-group">
+                <label class="col-sm-2 control-label" for="jwtAuthentication">{{:: 'jwtAuthentication' | translate}}</label>
+                <div class="col-sm-4">
+                    <input ng-model="identityProvider.config.jwtAuthentication" id="jwtAuthentication" onoffswitchvalue on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" />
+                </div>
+                <kc-tooltip>{{:: 'jwtAuthentication.tooltip' | translate}}</kc-tooltip>
+            </div>
             <div class="form-group clearfix">
-                <label class="col-md-2 control-label" for="clientSecret"><span class="required">*</span> {{:: 'client-secret' | translate}}</label>
+                <label class="col-md-2 control-label" for="clientSecret"><span data-ng-show="identityProvider.config.jwtAuthentication == 'false'" class="required">*</span> {{:: 'client-secret' | translate}}</label>
                 <div class="col-md-6">
-                    <input class="form-control" id="clientSecret" kc-password ng-model="identityProvider.config.clientSecret" required>
+                    <input class="form-control" id="clientSecret" kc-password ng-model="identityProvider.config.clientSecret" ng-required="identityProvider.config.jwtAuthentication == 'false'">
                 </div>
                 <kc-tooltip>{{:: 'client-secret.tooltip' | translate}}</kc-tooltip>
             </div>

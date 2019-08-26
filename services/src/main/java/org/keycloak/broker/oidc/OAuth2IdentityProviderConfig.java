@@ -82,6 +82,10 @@ public class OAuth2IdentityProviderConfig extends IdentityProviderModel {
     public void setLoginHint(boolean loginHint) {
         getConfig().put("loginHint", String.valueOf(loginHint));
     }
+    
+    public boolean isJWTAuthentication() {
+    	return Boolean.valueOf(getConfig().get("jwtAuthentication"));
+    }
 
     public boolean isUiLocales() {
         return Boolean.valueOf(getConfig().get("uiLocales"));

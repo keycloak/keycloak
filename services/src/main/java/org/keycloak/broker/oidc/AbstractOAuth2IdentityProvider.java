@@ -30,10 +30,20 @@ import org.keycloak.broker.provider.ExchangeTokenToIdentityProviderToken;
 import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.common.ClientConnection;
+import org.keycloak.common.util.Base64;
+import org.keycloak.common.util.Time;
+import org.keycloak.crypto.Algorithm;
+import org.keycloak.crypto.JavaAlgorithm;
+import org.keycloak.crypto.KeyWrapper;
+import org.keycloak.crypto.MacSignatureSignerContext;
+import org.keycloak.crypto.SignatureProvider;
+import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
+import org.keycloak.jose.jws.DefaultTokenManager;
+import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.KeycloakSession;
@@ -41,13 +51,17 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.representations.AccessTokenResponse;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.endpoints.AuthorizationEndpoint;
+import org.keycloak.representations.JsonWebToken;
 import org.keycloak.services.ErrorPage;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.sessions.AuthenticationSessionModel;
 
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
 import javax.ws.rs.GET;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.WebApplicationException;
@@ -442,13 +456,51 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
         }
 
         public SimpleHttp generateTokenRequest(String authorizationCode) {
-            return SimpleHttp.doPost(getConfig().getTokenUrl(), session)
+        	SimpleHttp tokenRequest = SimpleHttp.doPost(getConfig().getTokenUrl(), session)
                     .param(OAUTH2_PARAMETER_CODE, authorizationCode)
-                    .param(OAUTH2_PARAMETER_CLIENT_ID, getConfig().getClientId())
-                    .param(OAUTH2_PARAMETER_CLIENT_SECRET, getConfig().getClientSecret())
                     .param(OAUTH2_PARAMETER_REDIRECT_URI, session.getContext().getUri().getAbsolutePath().toString())
                     .param(OAUTH2_PARAMETER_GRANT_TYPE, OAUTH2_GRANT_TYPE_AUTHORIZATION_CODE);
+        	if (getConfig().isJWTAuthentication()) {
+        		String jws = new JWSBuilder().type(OAuth2Constants.JWT).jsonContent(generateToken()).sign(getSignatureContext());
+        		return tokenRequest
+        				.param(OAuth2Constants.CLIENT_ASSERTION_TYPE, OAuth2Constants.CLIENT_ASSERTION_TYPE_JWT)
+        				.param(OAuth2Constants.CLIENT_ASSERTION, jws);
+        	} else {
+        		return tokenRequest
+        				.param(OAUTH2_PARAMETER_CLIENT_ID, getConfig().getClientId())
+        				.param(OAUTH2_PARAMETER_CLIENT_SECRET, getConfig().getClientSecret());
+        	}
         }
+        
+        protected JsonWebToken generateToken() {
+        	JsonWebToken jwt = new JsonWebToken();
+        	jwt.id(KeycloakModelUtils.generateId());
+        	jwt.type(OAuth2Constants.JWT);
+        	jwt.issuer(getConfig().getClientId());
+        	jwt.subject(getConfig().getClientId());
+        	jwt.audience(getConfig().getTokenUrl());
+        	jwt.issuedNow();
+        	jwt.expiration(Time.currentTime() + realm.getAccessCodeLifespan());
+        	return jwt;
+        }
+        
+        protected SignatureSignerContext getSignatureContext() {
+        	try {
+	        	if (getConfig().getClientSecret() != null && !getConfig().getClientSecret().trim().isEmpty()) {
+	        		KeyWrapper key = new KeyWrapper();
+	        		key.setAlgorithm(JavaAlgorithm.HS256);
+	        		byte[] decodedSecret = Base64.decode(getConfig().getClientSecret());
+	        		SecretKey secret = new SecretKeySpec(decodedSecret, 0, decodedSecret.length, Algorithm.HS256);
+	        		key.setSecretKey(secret);
+	        		return new MacSignatureSignerContext(key);
+	        	}
+        	} catch (IOException io) {
+        		logger.warn("Problem with decoding client secret", io);
+        	}
+            SignatureProvider signatureProvider = session.getProvider(SignatureProvider.class, Algorithm.HS256);
+            return signatureProvider.signer();
+        }
+        
     }
 
     protected String getProfileEndpointForValidation(EventBuilder event) {
