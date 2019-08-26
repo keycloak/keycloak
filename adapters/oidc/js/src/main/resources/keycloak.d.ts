@@ -134,6 +134,12 @@ declare namespace Keycloak {
 		 * If not configured, PKCE will not be used.
 		 */
 		pkceMethod?: KeycloakPkceMethod;
+
+		/**
+		 * Disables any information from being logged to the console.
+		 * @default false
+		 */
+		disableLogging?: boolean
 	}
 
 	interface KeycloakLoginOptions {
