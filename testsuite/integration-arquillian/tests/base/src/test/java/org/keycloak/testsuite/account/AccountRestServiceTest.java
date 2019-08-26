@@ -19,7 +19,7 @@ package org.keycloak.testsuite.account;
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.junit.Test;
 import org.keycloak.broker.provider.util.SimpleHttp;
-import org.keycloak.representations.account.ClientRepresentation;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.account.ConsentRepresentation;
 import org.keycloak.representations.account.ConsentScopeRepresentation;
 import org.keycloak.representations.account.SessionRepresentation;

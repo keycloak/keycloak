@@ -30,7 +30,8 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.representations.account.ClientRepresentation;
+import org.keycloak.models.utils.ModelToRepresentation;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.account.ConsentRepresentation;
 import org.keycloak.representations.account.ConsentScopeRepresentation;
 import org.keycloak.representations.account.UserRepresentation;
@@ -257,7 +258,7 @@ public class AccountRestService {
         List<ClientModel> clients = realm.getClients();
 
         List<ClientRepresentation> clientRepresentations = clients.stream()
-                .map(this::modelToRepresentation)
+                .map(client -> modelToRepresentation(client))
                 .collect(Collectors.toList());
 
         return Cors.add(request, Response.ok(clientRepresentations)).build();
@@ -283,11 +284,9 @@ public class AccountRestService {
         return Cors.add(request, Response.ok(modelToRepresentation(client))).build();
     }
 
-    private ClientRepresentation modelToRepresentation(ClientModel model) {
-        ClientRepresentation representation = new ClientRepresentation();
-        representation.setClientId(model.getClientId());
-        representation.setClientName(getTranslationOrDefault(model.getName()));
-        return representation;
+    private ClientRepresentation modelToRepresentation(ClientModel client){
+        client.setName(getTranslationOrDefault(client.getName()));
+        return ModelToRepresentation.toRepresentation(client, session);
     }
 
     private ConsentRepresentation modelToRepresentation(UserConsentModel model) {
@@ -464,6 +463,8 @@ public class AccountRestService {
         return consent;
     }
 
+   // TODO Federated identities
+    // TODO Applications
     // TODO Logs
     
     private static void checkAccountApiEnabled() {
