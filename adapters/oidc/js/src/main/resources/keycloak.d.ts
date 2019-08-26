@@ -39,7 +39,9 @@ declare namespace Keycloak {
 
 	interface KeycloakInitOptions {
 		/**
-		 * @private Undocumented.
+		 * Adds a [cryptographic nonce](https://en.wikipedia.org/wiki/Cryptographic_nonce)
+		 * to verify that the authentication response matches the request.
+		 * @default true
 		 */
 		useNonce?: boolean;
 
