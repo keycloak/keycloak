@@ -986,14 +986,6 @@
             return uuid;
         }
 
-        kc.callback_id = 0;
-
-        function createCallbackId() {
-            var id = '<id: ' + (kc.callback_id++) + (Math.random()) + '>';
-            return id;
-
-        }
-
         function parseCallback(url) {
             var oauth = parseCallbackUrl(url);
             if (!oauth) {
