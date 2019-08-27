@@ -331,6 +331,7 @@ Called to initialize the adapter.
 
 Options is an Object, where:
 
+* useNonce - Adds a cryptographic nonce to verify that the authentication response matches the request (default is true).
 * onLoad - Specifies an action to do on load. Supported values are 'login-required' or 'check-sso'.
 * silentCheckSsoRedirectUri - Set the redirect uri for silent authentication check if onLoad is set to 'check-sso'.
 * token - Set an initial value for the token.
