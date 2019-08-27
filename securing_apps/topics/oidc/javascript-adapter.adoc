@@ -343,6 +343,7 @@ Options is an Object, where:
 * responseMode - Set the OpenID Connect response mode send to {project_name} server at login request. Valid values are query or fragment. Default value is fragment, which means that after successful authentication will {project_name} redirect to JavaScript application with OpenID Connect parameters added in URL fragment. This is generally safer and recommended over query.
 * flow - Set the OpenID Connect flow. Valid values are standard, implicit or hybrid.
 * promiseType - If set to `native` all methods returning a promise will return a native JavaScript promise. If not set will return Keycloak specific promise objects.
+* enableLogging - Enables logging messages from Keycloak to the console (default is false).
 
 Returns promise to set functions to be invoked on success or error.
 
