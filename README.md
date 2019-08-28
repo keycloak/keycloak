@@ -70,3 +70,7 @@ Before contributing to Keycloak please read our [contributing guidelines](CONTRI
 ## License
 
 * [Apache License, Version 2.0](https://www.apache.org/licenses/LICENSE-2.0)
+
+## Security 
+
+[![DepShield Badge](https://depshield.sonatype.org/badges/owner/repository/depshield.svg)](https://depshield.github.io)
