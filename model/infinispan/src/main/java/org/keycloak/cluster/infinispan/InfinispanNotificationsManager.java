@@ -230,10 +230,18 @@ public class InfinispanNotificationsManager {
             // TODO: Look at CacheEventConverter stuff to possibly include value in the event and avoid additional remoteCache request
             try {
                 listenersExecutor.submit(() -> {
+                    Retry.executeWithBackoff((int iteration) -> {
+                        Object value = remoteCache.get(key);
+                        if(value == null) {
+                            if (logger.isDebugEnabled()) {
+                                logger.debugf("Remote cache key '%s' is no value. iteration '%s' Will try to retry the task", key, iteration);
+                            }
+                            throw new NullPointerException();
+                        }
 
-                    Object value = remoteCache.get(key);
-                    eventReceived(key, (Serializable) value);
+                        eventReceived(key, (Serializable) value);
 
+                    }, 10, 10);
                 });
             } catch (RejectedExecutionException ree) {
                 logger.errorf("Rejected submitting of the event for key: %s. Value: %s, Server going to shutdown or pool exhausted. Pool: %s", key, workCache.get(key), listenersExecutor.toString());
