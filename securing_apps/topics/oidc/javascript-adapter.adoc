@@ -62,7 +62,7 @@ redirected back to the application and remain unauthenticated.
 
 You can configure a _silent_ `check-sso` option.
 With this feature enabled, your browser won't do a full redirect to the {project_name} server and back to your application, but this action will be performed in a hidden iframe, so your application resources only need to be loaded and parsed once by the browser when the app is initialized and not again after the redirect back from {project_name} to your app.
-This is particular useful in case of SPAs (Single Page Applications).
+This is particularly useful in case of SPAs (Single Page Applications).
 
 To enable the _silent_ `check-sso`, you have to provide a `silentCheckSsoRedirectUri` attribute in the init method.
 This URI needs to be a valid endpoint in the application (and of course it must be configured as a valid redirect for the client in the {project_name} Administration Console):
