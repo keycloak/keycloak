@@ -277,6 +277,16 @@
         <groupId>io.quarkus</groupId>
         <artifactId>quarkus-maven-plugin</artifactId>
         <version>${quarkus.version}</version>
+          <configuration>
+            <uberJar>true</uberJar>
+              <ignoredEntries>
+                  <ignoredEntry>META-INF/BC2048KE.DSA</ignoredEntry>
+                  <ignoredEntry>META-INF/BC2048KE.SF</ignoredEntry>
+                  <ignoredEntry>META-INF/BC1024KE.DSA</ignoredEntry>
+                  <ignoredEntry>META-INF/BC1024KE.SF</ignoredEntry>
+                  <ignoredEntry>META-INF/versions/9/module-info.class</ignoredEntry>
+              </ignoredEntries>
+          </configuration>
         <executions>
           <execution>
             <goals>
