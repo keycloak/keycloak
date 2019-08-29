@@ -21,13 +21,20 @@
   </properties>
     <dependencyManagement>
         <dependencies>
-      <dependency>
-        <groupId>io.quarkus</groupId>
-        <artifactId>quarkus-bom</artifactId>
-        <version>${quarkus.version}</version>
-        <type>pom</type>
-        <scope>import</scope>
-      </dependency>
+            <dependency>
+              <groupId>io.quarkus</groupId>
+              <artifactId>quarkus-bom</artifactId>
+              <version>${quarkus.version}</version>
+              <type>pom</type>
+              <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.keycloak</groupId>
+                <artifactId>drools-bom</artifactId>
+                <type>pom</type>
+                <version>${project.version}</version>
+                <scope>import</scope>
+            </dependency>
         </dependencies>
     </dependencyManagement>
   <dependencies>
@@ -185,11 +192,14 @@
               <groupId>org.keycloak</groupId>
               <artifactId>keycloak-ldap-federation</artifactId>
           </dependency>
-<!--        <dependency>
+        <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-authz-policy-drools</artifactId>
-            <version>7.0.0-SNAPSHOT</version>
-        </dependency>-->
+        </dependency>
+        <dependency>
+            <groupId>org.drools</groupId>
+            <artifactId>drools-core</artifactId>
+        </dependency>
         <dependency>
             <groupId>org.freemarker</groupId>
             <artifactId>freemarker</artifactId>
