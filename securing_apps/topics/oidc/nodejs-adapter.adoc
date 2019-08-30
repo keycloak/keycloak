@@ -116,6 +116,24 @@ Once instantiated, install the middleware into your connect-capable app:
     app.use( keycloak.middleware() );
 ----
 
+==== Configuration for Proxies
+
+If the application is running behind a proxy that terminates an SSL connection
+Express must be configured per the link:https://expressjs.com/en/guide/behind-proxies.html[express behind proxies] guide.
+Using an incorrect proxy configuration can result in invalid redirect URIs
+being generated.
+
+Example configuration:
+
+[source,javascript]
+----
+    var app = express();
+
+    app.set( 'trust proxy', true );
+
+    app.use( keycloak.middleware() );
+----
+
 ==== Checking Authentication
 
 To check that a user is authenticated before accessing a resource,
