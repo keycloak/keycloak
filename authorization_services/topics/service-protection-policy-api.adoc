@@ -127,25 +127,25 @@ curl -X DELETE \
 To query the permissions associated with a resource, send an HTTP GET request as follows:
 
 ```bash
-http://${host}:${post}/auth/realms/${realm}/authz/protection/uma-policy?resource={resource_id}
+http://${host}:${port}/auth/realms/${realm}/authz/protection/uma-policy?resource={resource_id}
 ```
 
 To query the permissions given its name, send an HTTP GET request as follows:
 
 ```bash
-http://${host}:${post}/auth/realms/${realm}/authz/protection/uma-policy?name=Any people manager
+http://${host}:${port}/auth/realms/${realm}/authz/protection/uma-policy?name=Any people manager
 ```
 
 To query the permissions associated with a specific scope, send an HTTP GET request as follows:
 
 ```bash
-http://${host}:${post}/auth/realms/${realm}/authz/protection/uma-policy?scope=read
+http://${host}:${port}/auth/realms/${realm}/authz/protection/uma-policy?scope=read
 ```
 
 To query all permissions, send an HTTP GET request as follows:
 
 ```bash
-http://${host}:${post}/auth/realms/${realm}/authz/protection/uma-policy
+http://${host}:${port}/auth/realms/${realm}/authz/protection/uma-policy
 ```
 
 When querying the server for permissions use parameters `first` and `max` results to limit the result.

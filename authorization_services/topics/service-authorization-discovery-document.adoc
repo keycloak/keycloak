@@ -22,11 +22,11 @@ As a result, you should get a response as follows:
     // some claims are expected here
 
     // these are the main claims in the discovery document about Authorization Services endpoints location
-    "token_endpoint": "http://${host}:${post}/auth/realms/${realm}/protocol/openid-connect/token",
-    "token_introspection_endpoint": "http://${host}:${post}/auth/realms/${realm}/protocol/openid-connect/token/introspect",
-    "resource_registration_endpoint": "http://${host}:${post}/auth/realms/${realm}/authz/protection/resource_set",
-    "permission_endpoint": "http://${host}:${post}/auth/realms/${realm}/authz/protection/permission",
-    "policy_endpoint": "http://${host}:${post}/auth/realms/${realm}/authz/protection/uma-policy"
+    "token_endpoint": "http://${host}:${port}/auth/realms/${realm}/protocol/openid-connect/token",
+    "token_introspection_endpoint": "http://${host}:${port}/auth/realms/${realm}/protocol/openid-connect/token/introspect",
+    "resource_registration_endpoint": "http://${host}:${port}/auth/realms/${realm}/authz/protection/resource_set",
+    "permission_endpoint": "http://${host}:${port}/auth/realms/${realm}/authz/protection/permission",
+    "policy_endpoint": "http://${host}:${port}/auth/realms/${realm}/authz/protection/uma-policy"
 }
 ```
 
