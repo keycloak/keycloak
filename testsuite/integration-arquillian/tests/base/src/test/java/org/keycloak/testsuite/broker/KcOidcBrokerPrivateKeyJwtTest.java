@@ -16,9 +16,16 @@
  */
 package org.keycloak.testsuite.broker;
 
+import org.keycloak.authentication.authenticators.client.JWTClientAuthenticator;
+import org.keycloak.crypto.Algorithm;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
+import org.keycloak.representations.idm.KeysMetadataRepresentation.KeyMetadataRepresentation;
 import org.keycloak.testsuite.arquillian.SuiteContext;
+import org.keycloak.testsuite.util.KeyUtils;
 
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_ALIAS;
@@ -29,12 +36,27 @@ public class KcOidcBrokerPrivateKeyJwtTest extends KcOidcBrokerTest {
 
 	@Override
     protected BrokerConfiguration getBrokerConfiguration() {
-        return new KcOidcBrokerConfigurationWithJWTAuthentication();
+		return new KcOidcBrokerConfigurationWithJWTAuthentication();
     }
 
     private class KcOidcBrokerConfigurationWithJWTAuthentication extends KcOidcBrokerConfiguration {
 
-        @Override
+		@Override
+		public List<ClientRepresentation> createProviderClients(SuiteContext suiteContext) {
+			List<ClientRepresentation> clientsRepList = super.createProviderClients(suiteContext);
+			log.info("Update provider clients to accept JWT authentication");
+			KeyMetadataRepresentation keyRep = KeyUtils.getActiveKey(adminClient.realm(consumerRealmName()).keys().getKeyMetadata(), Algorithm.RS256);
+			for (ClientRepresentation client: clientsRepList) {
+				client.setClientAuthenticatorType(JWTClientAuthenticator.PROVIDER_ID);
+				if (client.getAttributes() == null) {
+					client.setAttributes(new HashMap<String, String>());
+				}
+				client.getAttributes().put(JWTClientAuthenticator.CERTIFICATE_ATTR, keyRep.getCertificate());
+			}
+			return clientsRepList;
+		}
+
+		@Override
         public IdentityProviderRepresentation setUpIdentityProvider(SuiteContext suiteContext) {
             IdentityProviderRepresentation idp = createIdentityProvider(IDP_OIDC_ALIAS, IDP_OIDC_PROVIDER_ID);
             Map<String, String> config = idp.getConfig();
@@ -43,5 +65,7 @@ public class KcOidcBrokerPrivateKeyJwtTest extends KcOidcBrokerTest {
             config.put("jwtAuthentication", "true");
             return idp;
         }
+
     }
+
 }

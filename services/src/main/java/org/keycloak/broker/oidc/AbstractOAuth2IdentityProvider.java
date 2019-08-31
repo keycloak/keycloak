@@ -18,6 +18,7 @@ package org.keycloak.broker.oidc;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
 import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
@@ -30,19 +31,16 @@ import org.keycloak.broker.provider.ExchangeTokenToIdentityProviderToken;
 import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.common.ClientConnection;
-import org.keycloak.common.util.Base64;
 import org.keycloak.common.util.Time;
 import org.keycloak.crypto.Algorithm;
-import org.keycloak.crypto.JavaAlgorithm;
+import org.keycloak.crypto.AsymmetricSignatureProvider;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.crypto.MacSignatureSignerContext;
-import org.keycloak.crypto.SignatureProvider;
 import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
-import org.keycloak.jose.jws.DefaultTokenManager;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.FederatedIdentityModel;
@@ -461,7 +459,8 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
                     .param(OAUTH2_PARAMETER_REDIRECT_URI, session.getContext().getUri().getAbsolutePath().toString())
                     .param(OAUTH2_PARAMETER_GRANT_TYPE, OAUTH2_GRANT_TYPE_AUTHORIZATION_CODE);
         	if (getConfig().isJWTAuthentication()) {
-        		String jws = new JWSBuilder().type(OAuth2Constants.JWT).jsonContent(generateToken()).sign(getSignatureContext());
+				SignatureSignerContext signContext = getSignatureContext();
+				String jws = new JWSBuilder().type(OAuth2Constants.JWT).jsonContent(generateToken()).sign(signContext);
         		return tokenRequest
         				.param(OAuth2Constants.CLIENT_ASSERTION_TYPE, OAuth2Constants.CLIENT_ASSERTION_TYPE_JWT)
         				.param(OAuth2Constants.CLIENT_ASSERTION, jws);
@@ -485,20 +484,15 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
         }
         
         protected SignatureSignerContext getSignatureContext() {
-        	try {
-	        	if (getConfig().getClientSecret() != null && !getConfig().getClientSecret().trim().isEmpty()) {
-	        		KeyWrapper key = new KeyWrapper();
-	        		key.setAlgorithm(JavaAlgorithm.HS256);
-	        		byte[] decodedSecret = Base64.decode(getConfig().getClientSecret());
-	        		SecretKey secret = new SecretKeySpec(decodedSecret, 0, decodedSecret.length, Algorithm.HS256);
-	        		key.setSecretKey(secret);
-	        		return new MacSignatureSignerContext(key);
-	        	}
-        	} catch (IOException io) {
-        		logger.warn("Problem with decoding client secret", io);
+			if (getConfig().getClientSecret() != null && !getConfig().getClientSecret().trim().isEmpty()) {
+				KeyWrapper key = new KeyWrapper();
+				key.setAlgorithm(Algorithm.HS256);
+				byte[] decodedSecret = getConfig().getClientSecret().getBytes();
+				SecretKey secret = new SecretKeySpec(decodedSecret, 0, decodedSecret.length, Algorithm.HS256);
+				key.setSecretKey(secret);
+				return new MacSignatureSignerContext(key);
         	}
-            SignatureProvider signatureProvider = session.getProvider(SignatureProvider.class, Algorithm.HS256);
-            return signatureProvider.signer();
+            return new AsymmetricSignatureProvider(session, Algorithm.RS256).signer();
         }
         
     }

@@ -162,7 +162,7 @@ public class IdentityProviderTest extends AbstractAdminTest {
         assertEquals("oidc", representation.getProviderId());
         assertEquals("clientId", representation.getConfig().get("clientId"));
         assertNull(representation.getConfig().get("clientSecret"));
-        assertEquals("jwtAuthentication", representation.getConfig().get("jwtAuthentication"));
+        assertTrue(Boolean.valueOf(representation.getConfig().get("jwtAuthentication")));
         assertTrue(representation.isEnabled());
         assertFalse(representation.isStoreToken());
         assertFalse(representation.isTrustEmail());
