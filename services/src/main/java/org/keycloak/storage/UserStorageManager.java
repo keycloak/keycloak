@@ -344,8 +344,10 @@ public class UserStorageManager implements UserProvider, OnUserCache, OnCreateCo
                 RealmModel realmModel = session.realms().getRealm(realm.getId());
                 if (realmModel == null) return;
                 UserModel deletedUser = session.userLocalStorage().getUserById(userId, realmModel);
-                new UserManager(session).removeUser(realmModel, deletedUser, session.userLocalStorage());
-                logger.debugf("Removed invalid user '%s'", userName);
+                if (deletedUser != null) {
+                    new UserManager(session).removeUser(realmModel, deletedUser, session.userLocalStorage());
+                    logger.debugf("Removed invalid user '%s'", userName);
+                }
             }
 
         });

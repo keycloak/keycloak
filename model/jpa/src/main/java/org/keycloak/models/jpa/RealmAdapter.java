@@ -34,6 +34,7 @@ import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+import javax.persistence.LockModeType;
 import static java.util.Objects.nonNull;
 
 /**
@@ -1505,7 +1506,7 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
         if (KeycloakModelUtils.isFlowUsed(this, model)) {
             throw new ModelException("Cannot remove authentication flow, it is currently in use");
         }
-        AuthenticationFlowEntity entity = em.find(AuthenticationFlowEntity.class, model.getId());
+        AuthenticationFlowEntity entity = em.find(AuthenticationFlowEntity.class, model.getId(), LockModeType.PESSIMISTIC_WRITE);
 
         em.remove(entity);
         em.flush();
@@ -1608,7 +1609,7 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
 
     @Override
     public void removeAuthenticatorExecution(AuthenticationExecutionModel model) {
-        AuthenticationExecutionEntity entity = em.find(AuthenticationExecutionEntity.class, model.getId());
+        AuthenticationExecutionEntity entity = em.find(AuthenticationExecutionEntity.class, model.getId(), LockModeType.PESSIMISTIC_WRITE);
         if (entity == null) return;
         em.remove(entity);
         em.flush();
@@ -1631,7 +1632,7 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
 
     @Override
     public void removeAuthenticatorConfig(AuthenticatorConfigModel model) {
-        AuthenticatorConfigEntity entity = em.find(AuthenticatorConfigEntity.class, model.getId());
+        AuthenticatorConfigEntity entity = em.find(AuthenticatorConfigEntity.class, model.getId(), LockModeType.PESSIMISTIC_WRITE);
         if (entity == null) return;
         em.remove(entity);
         em.flush();
@@ -1705,7 +1706,7 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
 
     @Override
     public void removeRequiredActionProvider(RequiredActionProviderModel model) {
-        RequiredActionProviderEntity entity = em.find(RequiredActionProviderEntity.class, model.getId());
+        RequiredActionProviderEntity entity = em.find(RequiredActionProviderEntity.class, model.getId(), LockModeType.PESSIMISTIC_WRITE);
         if (entity == null) return;
         em.remove(entity);
         em.flush();

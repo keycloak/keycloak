@@ -76,7 +76,11 @@ public class UserAdapter implements CachedUserModel {
 
     @Override
     public void invalidate() {
-        getDelegateForUpdate();
+        try {
+            getDelegateForUpdate();
+        } catch (IllegalStateException ex) {    // Not found in database, thus "invalidated" in the underlying model by definition
+            // ignore
+        }
     }
 
     @Override

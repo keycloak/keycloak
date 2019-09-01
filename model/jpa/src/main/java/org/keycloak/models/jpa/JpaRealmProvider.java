@@ -43,6 +43,7 @@ import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
 import java.util.*;
 import java.util.stream.Collectors;
+import javax.persistence.LockModeType;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -135,7 +136,7 @@ public class JpaRealmProvider implements RealmProvider {
 
     @Override
     public boolean removeRealm(String id) {
-        RealmEntity realm = em.find(RealmEntity.class, id);
+        RealmEntity realm = em.find(RealmEntity.class, id, LockModeType.PESSIMISTIC_WRITE);
         if (realm == null) {
             return false;
         }
@@ -467,7 +468,7 @@ public class JpaRealmProvider implements RealmProvider {
         for (GroupModel subGroup : group.getSubGroups()) {
             session.realms().removeGroup(realm, subGroup);
         }
-        GroupEntity groupEntity = em.find(GroupEntity.class, group.getId());
+        GroupEntity groupEntity = em.find(GroupEntity.class, group.getId(), LockModeType.PESSIMISTIC_WRITE);
         if ((groupEntity == null) || (!groupEntity.getRealm().getId().equals(realm.getId()))) {
             return false;
         }
@@ -590,7 +591,7 @@ public class JpaRealmProvider implements RealmProvider {
             removeRole(realm, role);
         }
 
-        ClientEntity clientEntity = ((ClientAdapter)client).getEntity();
+        ClientEntity clientEntity = em.find(ClientEntity.class, id, LockModeType.PESSIMISTIC_WRITE);
 
         session.getKeycloakSessionFactory().publish(new RealmModel.ClientRemovedEvent() {
             @Override
@@ -686,7 +687,7 @@ public class JpaRealmProvider implements RealmProvider {
 
     @Override
     public void removeClientInitialAccessModel(RealmModel realm, String id) {
-        ClientInitialAccessEntity entity = em.find(ClientInitialAccessEntity.class, id);
+        ClientInitialAccessEntity entity = em.find(ClientInitialAccessEntity.class, id, LockModeType.PESSIMISTIC_WRITE);
         if (entity != null) {
             em.remove(entity);
             em.flush();
