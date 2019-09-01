@@ -17,7 +17,6 @@
 package org.keycloak.testsuite.federation;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import org.keycloak.Config;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
@@ -27,6 +26,9 @@ import org.keycloak.storage.UserStorageProviderFactory;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -46,7 +48,8 @@ public class UserMapStorageFactory implements UserStorageProviderFactory<UserMap
         configProperties.add(attr);
     }
 
-    protected Map<String, String> userPasswords = new HashMap<>();
+    protected Map<String, String> userPasswords = new ConcurrentHashMap<>();
+    protected ConcurrentMap<String, Set<String>> userGroups = new ConcurrentHashMap<>();
 
     @Override
     public List<ProviderConfigProperty> getConfigProperties() {
@@ -55,7 +58,7 @@ public class UserMapStorageFactory implements UserStorageProviderFactory<UserMap
 
     @Override
     public UserMapStorage create(KeycloakSession session, ComponentModel model) {
-        return new UserMapStorage(session, model, userPasswords);
+        return new UserMapStorage(session, model, userPasswords, userGroups);
     }
 
     @Override

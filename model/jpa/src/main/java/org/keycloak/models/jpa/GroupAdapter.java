@@ -37,6 +37,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import javax.persistence.LockModeType;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -286,6 +287,7 @@ public class GroupAdapter implements GroupModel , JpaModel<GroupEntity> {
         if (group == null || role == null) return;
 
         TypedQuery<GroupRoleMappingEntity> query = getGroupRoleMappingEntityTypedQuery(role);
+        query.setLockMode(LockModeType.PESSIMISTIC_WRITE);
         List<GroupRoleMappingEntity> results = query.getResultList();
         if (results.size() == 0) return;
         for (GroupRoleMappingEntity entity : results) {

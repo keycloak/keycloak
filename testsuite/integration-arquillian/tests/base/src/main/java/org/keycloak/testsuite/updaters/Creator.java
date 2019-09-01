@@ -17,15 +17,20 @@
 package org.keycloak.testsuite.updaters;
 
 import org.keycloak.admin.client.Keycloak;
+import org.keycloak.admin.client.resource.ComponentResource;
+import org.keycloak.admin.client.resource.ComponentsResource;
 import org.keycloak.admin.client.resource.GroupResource;
 import org.keycloak.admin.client.resource.GroupsResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.admin.client.resource.UsersResource;
+import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import java.util.concurrent.atomic.AtomicBoolean;
 import javax.ws.rs.core.Response;
+import org.jboss.logging.Logger;
 import static org.keycloak.testsuite.admin.ApiUtil.getCreatedId;
 
 /**
@@ -33,10 +38,13 @@ import static org.keycloak.testsuite.admin.ApiUtil.getCreatedId;
  */
 public class Creator<T> implements AutoCloseable {
 
+    private final static Logger LOG = Logger.getLogger(Creator.class);
+
     public static Creator<RealmResource> create(Keycloak adminClient, RealmRepresentation rep) {
         adminClient.realms().create(rep);
         final RealmResource r = adminClient.realm(rep.getRealm());
-        return new Creator(r, r::remove);
+        LOG.debugf("Created realm %s", rep.getRealm());
+        return new Creator(rep.getRealm(), r, r::remove);
     }
 
     public static Creator<GroupResource> create(RealmResource realmResource, GroupRepresentation rep) {
@@ -44,7 +52,8 @@ public class Creator<T> implements AutoCloseable {
         try (Response response = groups.add(rep)) {
             String createdId = getCreatedId(response);
             final GroupResource r = groups.group(createdId);
-            return new Creator(r, r::remove);
+            LOG.debugf("Created group ID %s", createdId);
+            return new Creator(createdId, r, r::remove);
         }
     }
 
@@ -53,16 +62,34 @@ public class Creator<T> implements AutoCloseable {
         try (Response response = users.create(rep)) {
             String createdId = getCreatedId(response);
             final UserResource r = users.get(createdId);
-            return new Creator(r, r::remove);
+            LOG.debugf("Created user ID %s", createdId);
+            return new Creator(createdId, r, r::remove);
         }
     }
 
+    public static Creator<ComponentResource> create(RealmResource realmResource, ComponentRepresentation rep) {
+        final ComponentsResource components = realmResource.components();
+        try (Response response = components.add(rep)) {
+            String createdId = getCreatedId(response);
+            final ComponentResource r = components.component(createdId);
+            LOG.debugf("Created component ID %s", createdId);
+            return new Creator(createdId, r, r::remove);
+        }
+    }
+
+    private final String id;
     private final T resource;
     private final Runnable closer;
+    private final AtomicBoolean closerRan = new AtomicBoolean(false);
 
-    private Creator(T resource, Runnable closer) {
+    private Creator(String id, T resource, Runnable closer) {
+        this.id = id;
         this.resource = resource;
         this.closer = closer;
+    }
+
+    public String id() {
+        return this.id;
     }
 
     public T resource() {
@@ -71,7 +98,16 @@ public class Creator<T> implements AutoCloseable {
 
     @Override
     public void close() {
-        closer.run();
+        if (this.closerRan.compareAndSet(false, true)) {
+            LOG.debugf("Removing resource ID %s", id);
+            try {
+                closer.run();
+            } catch (javax.ws.rs.NotFoundException ex) {
+                LOG.debugf("Resource with ID %s perhaps removed in meantime.", id);
+            }
+        } else {
+            LOG.debugf("Already removed resource ID %s", id);
+        }
     }
 
 }

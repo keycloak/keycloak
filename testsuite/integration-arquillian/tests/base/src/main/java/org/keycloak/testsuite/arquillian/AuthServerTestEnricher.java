@@ -405,7 +405,7 @@ public class AuthServerTestEnricher {
     }
 
 
-    private static final Pattern RECOGNIZED_ERRORS = Pattern.compile("ERROR|SEVERE|Exception ");
+    private static final Pattern RECOGNIZED_ERRORS = Pattern.compile("ERROR \\[|SEVERE \\[|Exception ");
     private static final Pattern IGNORED = Pattern.compile("Jetty ALPN support not found|org.keycloak.events");
 
     private static final boolean isRecognizedErrorLog(String logText) {

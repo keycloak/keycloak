@@ -43,6 +43,7 @@ import org.keycloak.authorization.store.PolicyStore;
 import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.authorization.AbstractPolicyRepresentation;
+import javax.persistence.LockModeType;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -78,7 +79,7 @@ public class JPAPolicyStore implements PolicyStore {
 
     @Override
     public void delete(String id) {
-        PolicyEntity policy = entityManager.find(PolicyEntity.class, id);
+        PolicyEntity policy = entityManager.find(PolicyEntity.class, id, LockModeType.PESSIMISTIC_WRITE);
         if (policy != null) {
             this.entityManager.remove(policy);
         }

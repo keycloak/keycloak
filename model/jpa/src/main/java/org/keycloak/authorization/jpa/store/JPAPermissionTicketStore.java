@@ -41,6 +41,7 @@ import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.store.PermissionTicketStore;
 import org.keycloak.authorization.store.ResourceStore;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import javax.persistence.LockModeType;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -79,7 +80,7 @@ public class JPAPermissionTicketStore implements PermissionTicketStore {
 
     @Override
     public void delete(String id) {
-        PermissionTicketEntity policy = entityManager.find(PermissionTicketEntity.class, id);
+        PermissionTicketEntity policy = entityManager.find(PermissionTicketEntity.class, id, LockModeType.PESSIMISTIC_WRITE);
         if (policy != null) {
             this.entityManager.remove(policy);
         }
