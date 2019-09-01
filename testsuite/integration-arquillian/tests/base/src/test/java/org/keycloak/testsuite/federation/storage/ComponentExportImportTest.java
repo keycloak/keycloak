@@ -30,6 +30,7 @@ import org.keycloak.testsuite.client.KeycloakTestingClient;
 import org.keycloak.testsuite.federation.UserMapStorageFactory;
 import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
 import org.keycloak.testsuite.util.RealmBuilder;
+import static org.keycloak.storage.UserStorageProviderModel.IMPORT_ENABLED;
 
 /**
  *
@@ -110,6 +111,7 @@ public class ComponentExportImportTest extends AbstractAuthTest {
         parentComponent.setConfig(new MultivaluedHashMap<>());
         parentComponent.getConfig().putSingle("priority", Integer.toString(0));
         parentComponent.getConfig().putSingle("attr", "value");
+        parentComponent.getConfig().putSingle(IMPORT_ENABLED, Boolean.toString(false));
         String parentComponentId = addComponent(parentComponent);
 
         ComponentRepresentation subcomponent = new ComponentRepresentation();
@@ -121,6 +123,7 @@ public class ComponentExportImportTest extends AbstractAuthTest {
         subcomponent.setConfig(new MultivaluedHashMap<>());
         subcomponent.getConfig().putSingle("priority", Integer.toString(0));
         subcomponent.getConfig().putSingle("attr", "value2");
+        subcomponent.getConfig().putSingle(IMPORT_ENABLED, Boolean.toString(false));
         String subcomponentId = addComponent(subcomponent);
 
         final String exportFilePath = exportFile.getAbsolutePath();

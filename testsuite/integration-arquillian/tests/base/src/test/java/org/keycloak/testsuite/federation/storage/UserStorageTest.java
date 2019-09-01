@@ -31,7 +31,6 @@ import org.junit.Test;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.common.util.MultivaluedHashMap;
-import org.keycloak.component.ComponentModel;
 import org.keycloak.credential.CredentialAuthentication;
 import org.keycloak.credential.UserCredentialStoreManager;
 import org.keycloak.models.KeycloakSession;
@@ -69,6 +68,7 @@ import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Rule;
 import org.keycloak.testsuite.util.TestCleanup;
 
+import static org.keycloak.storage.UserStorageProviderModel.IMPORT_ENABLED;
 import static org.keycloak.testsuite.actions.RequiredActionEmailVerificationTest.getPasswordResetEmailLink;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlDoesntStartWith;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
@@ -105,6 +105,7 @@ public class UserStorageTest extends AbstractAuthTest {
         memProvider.setProviderType(UserStorageProvider.class.getName());
         memProvider.setConfig(new MultivaluedHashMap<>());
         memProvider.getConfig().putSingle("priority", Integer.toString(0));
+        memProvider.getConfig().putSingle(IMPORT_ENABLED, Boolean.toString(false));
 
         memProviderId = addComponent(memProvider);
 

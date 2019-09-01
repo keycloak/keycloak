@@ -32,6 +32,7 @@ import javax.persistence.TypedQuery;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import javax.persistence.LockModeType;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -140,7 +141,7 @@ public class JpaUserCredentialStore implements UserCredentialStore {
 
     @Override
     public boolean removeStoredCredential(RealmModel realm, UserModel user, String id) {
-        CredentialEntity entity = em.find(CredentialEntity.class, id);
+        CredentialEntity entity = em.find(CredentialEntity.class, id, LockModeType.PESSIMISTIC_WRITE);
         if (entity == null) return false;
         em.remove(entity);
         return true;

@@ -59,6 +59,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+import javax.persistence.LockModeType;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -251,7 +252,7 @@ public class JpaUserFederatedStorageProvider implements
         createIndex(realm, userId);
         String clientId = consent.getClient().getId();
 
-        FederatedUserConsentEntity consentEntity = getGrantedConsentEntity(userId, clientId);
+        FederatedUserConsentEntity consentEntity = getGrantedConsentEntity(userId, clientId, LockModeType.NONE);
         if (consentEntity != null) {
             throw new ModelDuplicateException("Consent already exists for client [" + clientId + "] and user [" + userId + "]");
         }
@@ -280,7 +281,7 @@ public class JpaUserFederatedStorageProvider implements
 
     @Override
     public UserConsentModel getConsentByClient(RealmModel realm, String userId, String clientInternalId) {
-        FederatedUserConsentEntity entity = getGrantedConsentEntity(userId, clientInternalId);
+        FederatedUserConsentEntity entity = getGrantedConsentEntity(userId, clientInternalId, LockModeType.NONE);
         return toConsentModel(realm, entity);
     }
 
@@ -303,7 +304,7 @@ public class JpaUserFederatedStorageProvider implements
         createIndex(realm, userId);
         String clientId = consent.getClient().getId();
 
-        FederatedUserConsentEntity consentEntity = getGrantedConsentEntity(userId, clientId);
+        FederatedUserConsentEntity consentEntity = getGrantedConsentEntity(userId, clientId, LockModeType.PESSIMISTIC_WRITE);
         if (consentEntity == null) {
             throw new ModelException("Consent not found for client [" + clientId + "] and user [" + userId + "]");
         }
@@ -314,7 +315,7 @@ public class JpaUserFederatedStorageProvider implements
 
     @Override
     public boolean revokeConsentForClient(RealmModel realm, String userId, String clientInternalId) {
-        FederatedUserConsentEntity consentEntity = getGrantedConsentEntity(userId, clientInternalId);
+        FederatedUserConsentEntity consentEntity = getGrantedConsentEntity(userId, clientInternalId, LockModeType.PESSIMISTIC_WRITE);
         if (consentEntity == null) return false;
 
         em.remove(consentEntity);
@@ -322,10 +323,11 @@ public class JpaUserFederatedStorageProvider implements
         return true;
     }
 
-    private FederatedUserConsentEntity getGrantedConsentEntity(String userId, String clientId) {
+    private FederatedUserConsentEntity getGrantedConsentEntity(String userId, String clientId, LockModeType lockMode) {
         StorageId clientStorageId = new StorageId(clientId);
         String queryName = clientStorageId.isLocal() ?  "userFederatedConsentByUserAndClient" : "userFederatedConsentByUserAndExternalClient";
         TypedQuery<FederatedUserConsentEntity> query = em.createNamedQuery(queryName, FederatedUserConsentEntity.class);
+        query.setLockMode(lockMode);
         query.setParameter("userId", userId);
         if (clientStorageId.isLocal()) {
             query.setParameter("clientId", clientId);
@@ -455,6 +457,7 @@ public class JpaUserFederatedStorageProvider implements
         query1.setParameter("userId", userId);
         query1.setParameter("groupId", group.getId());
         TypedQuery<FederatedUserGroupMembershipEntity> query = query1;
+        query.setLockMode(LockModeType.PESSIMISTIC_WRITE);
         List<FederatedUserGroupMembershipEntity> results = query.getResultList();
         if (results.size() == 0) return;
         for (FederatedUserGroupMembershipEntity entity : results) {
@@ -477,7 +480,7 @@ public class JpaUserFederatedStorageProvider implements
     @Override
     public Set<String> getRequiredActions(RealmModel realm, String userId) {
         Set<String> set = new HashSet<>();
-        List<FederatedUserRequiredActionEntity> values = getRequiredActionEntities(realm, userId);
+        List<FederatedUserRequiredActionEntity> values = getRequiredActionEntities(realm, userId, LockModeType.NONE);
         for (FederatedUserRequiredActionEntity entity : values) {
             set.add(entity.getAction());
         }
@@ -486,10 +489,11 @@ public class JpaUserFederatedStorageProvider implements
 
     }
 
-    private List<FederatedUserRequiredActionEntity> getRequiredActionEntities(RealmModel realm, String userId) {
+    private List<FederatedUserRequiredActionEntity> getRequiredActionEntities(RealmModel realm, String userId, LockModeType lockMode) {
         TypedQuery<FederatedUserRequiredActionEntity> query = em.createNamedQuery("getFederatedUserRequiredActionsByUser", FederatedUserRequiredActionEntity.class)
                 .setParameter("userId", userId)
                 .setParameter("realmId", realm.getId());
+        query.setLockMode(lockMode);
         return query.getResultList();
     }
 
@@ -509,7 +513,7 @@ public class JpaUserFederatedStorageProvider implements
 
     @Override
     public void removeRequiredAction(RealmModel realm, String userId, String action) {
-        List<FederatedUserRequiredActionEntity> values = getRequiredActionEntities(realm, userId);
+        List<FederatedUserRequiredActionEntity> values = getRequiredActionEntities(realm, userId, LockModeType.PESSIMISTIC_WRITE);
         for (FederatedUserRequiredActionEntity entity : values) {
             if (action.equals(entity.getAction())) em.remove(entity);
         }
@@ -548,6 +552,7 @@ public class JpaUserFederatedStorageProvider implements
         TypedQuery<FederatedUserRoleMappingEntity> query = em.createNamedQuery("feduserRoleMappings", FederatedUserRoleMappingEntity.class);
         query.setParameter("userId", userId);
         List<FederatedUserRoleMappingEntity> results = query.getResultList();
+        query.setLockMode(LockModeType.PESSIMISTIC_WRITE);
         for (FederatedUserRoleMappingEntity entity : results) {
             if (entity.getRoleId().equals(role.getId())) em.remove(entity);
 
@@ -651,7 +656,7 @@ public class JpaUserFederatedStorageProvider implements
 
     @Override
     public boolean removeStoredCredential(RealmModel realm, String userId, String id) {
-        FederatedUserCredentialEntity entity = em.find(FederatedUserCredentialEntity.class, id);
+        FederatedUserCredentialEntity entity = em.find(FederatedUserCredentialEntity.class, id, LockModeType.PESSIMISTIC_WRITE);
         if (entity == null) return false;
         em.remove(entity);
         return true;
