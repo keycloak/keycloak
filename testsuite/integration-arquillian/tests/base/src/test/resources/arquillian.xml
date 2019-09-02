@@ -566,8 +566,8 @@
             </configuration>
         </container>
     </group>
-    
-    <container qualifier="auth-server-remote" mode="suite" >
+
+    <container qualifier="auth-server-remote" mode="manual" >
         <configuration>
             <property name="enabled">${auth.server.remote}</property>
             <property name="adapterImplClass">org.jboss.as.arquillian.container.remote.RemoteDeployableContainer</property>
@@ -578,9 +578,9 @@
             <property name="password">admin</property>
         </configuration>
     </container>
-    
+
     <!-- PREVIOUS VERSION OF KEYCLOAK FOR MIGRATION TESTS -->
-    
+
     <container qualifier="auth-server-jboss-migration" mode="manual" >
         <configuration>
             <property name="enabled">${auth.server.jboss.migration}</property>

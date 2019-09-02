@@ -30,6 +30,11 @@ public class ContainerAssume {
                 AuthServerTestEnricher.AUTH_SERVER_CONTAINER.equals(AuthServerTestEnricher.AUTH_SERVER_CONTAINER_DEFAULT));
     }
 
+    public static void assumeNotAuthServerRemote() {
+        Assume.assumeFalse("Doesn't work on auth-server-remote", 
+                AuthServerTestEnricher.AUTH_SERVER_CONTAINER.equals("auth-server-remote"));
+    }
+
     public static void assumeClusteredContainer() {
         Assume.assumeTrue(
               String.format("Ignoring test since %s is set to false",
