@@ -46,6 +46,7 @@ public class RulesPolicyManagementTest extends AbstractPolicyManagementTest {
     public static void verifyEnvironment() {
         ContainerAssume.assumeNotAuthServerUndertow();
         ProfileAssume.assumeFeatureEnabled(Profile.Feature.AUTHZ_DROOLS_POLICY);
+        ContainerAssume.assumeNotAuthServerRemote();
     }
 
     @Test

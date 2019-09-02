@@ -62,6 +62,7 @@ import org.keycloak.testsuite.pages.ConsentPage;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
+import org.keycloak.testsuite.util.ContainerAssume;
 import org.keycloak.testsuite.util.OAuthClient;
 
 /**
@@ -144,11 +145,15 @@ public final class OpenshiftClientStorageTest extends AbstractTestRealmKeycloakT
 
     @AfterClass
     public static void onAfterClass() {
-        OPENSHIFT_API_SERVER.stop();
+        if (OPENSHIFT_API_SERVER != null) {
+            OPENSHIFT_API_SERVER.stop();
+        }
     }
 
     @Before
     public void onBefore() {
+        ContainerAssume.assumeNotAuthServerRemote();
+
         assumeFeatureEnabled(OPENSHIFT_INTEGRATION);
         ComponentRepresentation provider = new ComponentRepresentation();
 
