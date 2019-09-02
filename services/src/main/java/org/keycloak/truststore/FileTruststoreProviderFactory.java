@@ -22,6 +22,7 @@ import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 
+import javax.security.auth.x500.X500Principal;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -38,10 +39,7 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.Enumeration;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-
-import javax.security.auth.x500.X500Principal;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
@@ -63,15 +61,9 @@ public class FileTruststoreProviderFactory implements TruststoreProviderFactory 
         String storepath = config.get("file");
         String pass = config.get("password");
         String policy = config.get("hostname-verification-policy");
-        Boolean disabled = config.getBoolean("disabled", null);
 
         // if "truststore" . "file" is not configured then it is disabled
-        if (storepath == null && pass == null && policy == null && disabled == null) {
-            return;
-        }
-
-        // if explicitly disabled
-        if (disabled != null && disabled) {
+        if (storepath == null && pass == null && policy == null) {
             return;
         }
 

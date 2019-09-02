@@ -560,4 +560,12 @@ if (outcome == failed) of /profile=$standaloneProfile/subsystem=infinispan/cache
     echo
 end-if
 
+if (result == "true") of /subsystem=keycloak-server/spi=truststore/provider=file:map-get(name=properties, key=disabled)
+    echo Disabling Truststore Provider
+    /subsystem=keycloak-server/spi=truststore/provider=file:write-attribute(name=enabled, value=false)
+    echo Removing deprecated option
+    /subsystem=keycloak-server/spi=truststore/provider=file:map-remove(name=properties, key=disabled)
+    echo
+end-if
+
 echo *** End Migration of /profile=$standaloneProfile ***
