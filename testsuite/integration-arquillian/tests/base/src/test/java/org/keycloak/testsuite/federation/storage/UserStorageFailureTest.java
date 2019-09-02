@@ -64,6 +64,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import org.keycloak.testsuite.util.ContainerAssume;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -158,6 +159,9 @@ public class UserStorageFailureTest extends AbstractTestRealmKeycloakTest {
      */
     @Test
     public void testKeycloak5350() throws Exception {
+
+        ContainerAssume.assumeNotAuthServerRemote();
+
         oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
         oauth.clientId("offline-client");
         oauth.redirectUri(OAuthClient.AUTH_SERVER_ROOT + "/offline-client");

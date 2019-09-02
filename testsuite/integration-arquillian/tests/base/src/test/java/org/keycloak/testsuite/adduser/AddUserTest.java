@@ -56,6 +56,9 @@ public class AddUserTest extends AbstractKeycloakTest {
     public static void enabled() {
         // don't run with auth-server-undertow for now
         ContainerAssume.assumeNotAuthServerUndertow();
+
+        // container auth-server-remote cannot be restarted
+        ContainerAssume.assumeNotAuthServerRemote();
     }
 
     @Test

@@ -17,7 +17,6 @@
 package org.keycloak.testsuite.arquillian.containers;
 
 import org.jboss.arquillian.container.impl.client.ContainerDeploymentContextHandler;
-import org.jboss.arquillian.container.impl.client.container.ContainerDeployController;
 import org.jboss.arquillian.container.impl.client.container.ContainerLifecycleController;
 import org.jboss.arquillian.container.impl.client.container.DeploymentExceptionHandler;
 import org.jboss.arquillian.container.impl.client.deployment.ArchiveDeploymentExporter;
@@ -48,7 +47,6 @@ public class MultipleContainersExtension implements LoadableExtension {
         builder.observer(RegistryCreator.class)
                 .observer(ContainerDeploymentContextHandler.class)
                 .observer(ContainerLifecycleController.class)
-                .observer(ContainerDeployController.class)
                 .observer(ArchiveDeploymentExporter.class)
                 .observer(DeploymentExceptionHandler.class);
     }

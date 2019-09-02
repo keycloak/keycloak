@@ -1548,12 +1548,6 @@
                 </dependency>
 
                 <dependency>
-                    <groupId>org.jboss.arquillian.container</groupId>
-                    <artifactId>undertow-embedded</artifactId>
-                    <version>${undertow-embedded.version}</version>
-                </dependency>
-
-                <dependency>
                     <groupId>org.jboss.resteasy</groupId>
                     <artifactId>resteasy-client</artifactId>
                 </dependency>

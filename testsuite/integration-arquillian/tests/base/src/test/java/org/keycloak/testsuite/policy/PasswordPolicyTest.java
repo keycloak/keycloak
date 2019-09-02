@@ -29,6 +29,7 @@ import org.keycloak.policy.PasswordPolicyManagerProvider;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
+import org.keycloak.testsuite.util.ContainerAssume;
 import org.keycloak.testsuite.util.RealmBuilder;
 
 import java.util.List;
@@ -146,6 +147,8 @@ public class PasswordPolicyTest extends AbstractKeycloakTest {
      */
     @Test
     public void testBlacklistPasswordPolicyWithTestBlacklist() throws Exception {
+
+        ContainerAssume.assumeNotAuthServerRemote();
 
         testingClient.server("passwordPolicy").run(session -> {
 
