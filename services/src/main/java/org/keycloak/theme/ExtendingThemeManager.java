@@ -257,6 +257,10 @@ public class ExtendingThemeManager implements ThemeProvider {
                     messages.putAll(getMessages(baseBundlename, Locale.ENGLISH));
                 }
 
+                for (ThemeResourceProvider t : themeResourceProviders ){
+                    messages.putAll(t.getMessages(baseBundlename, locale));
+                }
+
                 ListIterator<Theme> itr = themes.listIterator(themes.size());
                 while (itr.hasPrevious()) {
                     Properties m = itr.previous().getMessages(baseBundlename, locale);
@@ -264,7 +268,7 @@ public class ExtendingThemeManager implements ThemeProvider {
                         messages.putAll(m);
                     }
                 }
-
+                
                 this.messages.putIfAbsent(baseBundlename, new ConcurrentHashMap<Locale, Properties>());
                 this.messages.get(baseBundlename).putIfAbsent(locale, messages);
 
