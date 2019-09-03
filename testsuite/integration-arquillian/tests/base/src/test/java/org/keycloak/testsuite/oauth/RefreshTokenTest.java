@@ -16,7 +16,9 @@
  */
 package org.keycloak.testsuite.oauth;
 
+import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.graphene.page.Page;
+import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
@@ -30,6 +32,8 @@ import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.SessionTimeoutHelper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
@@ -37,10 +41,13 @@ import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testsuite.AbstractAuthTest;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.federation.storage.ComponentExportImportTest;
 import org.keycloak.testsuite.pages.LoginPage;
+import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
 import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RealmBuilder;
@@ -78,6 +85,13 @@ import static org.keycloak.testsuite.util.OAuthClient.AUTH_SERVER_ROOT;
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class RefreshTokenTest extends AbstractKeycloakTest {
+
+    @Deployment
+    public static WebArchive deploy() {
+        return RunOnServerDeployment.create(RefreshTokenTest.class, AbstractAuthTest.class, RealmResource.class)
+                .addPackages(true, "org.keycloak.testsuite");
+    }
+
 
     @Page
     protected LoginPage loginPage;
@@ -606,32 +620,41 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
 
     @Test
     public void refreshTokenAfterUserAdminLogoutEndpointAndLoginAgain() {
-        String refreshToken1 = loginAndForceNewLoginPage();
+        try {
+            String refreshToken1 = loginAndForceNewLoginPage();
 
-        RefreshToken refreshTokenParsed1 = oauth.parseRefreshToken(refreshToken1);
-        String userId = refreshTokenParsed1.getSubject();
-        UserResource user = adminClient.realm("test").users().get(userId);
-        user.logout();
+            RefreshToken refreshTokenParsed1 = oauth.parseRefreshToken(refreshToken1);
+            String userId = refreshTokenParsed1.getSubject();
+            UserResource user = adminClient.realm("test").users().get(userId);
+            user.logout();
 
-        // Set time offset to 2 (Just to simulate to be more close to real situation)
-        setTimeOffset(2);
+            // Set time offset to 2 (Just to simulate to be more close to real situation)
+            setTimeOffset(2);
 
-        // Continue with login
-        oauth.fillLoginForm("test-user@localhost", "password");
+            // Continue with login
+            oauth.fillLoginForm("test-user@localhost", "password");
 
-        assertFalse(loginPage.isCurrent());
+            assertFalse(loginPage.isCurrent());
 
-        OAuthClient.AccessTokenResponse tokenResponse2 = null;
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-        tokenResponse2 = oauth.doAccessTokenRequest(code, "password");
+            OAuthClient.AccessTokenResponse tokenResponse2 = null;
+            String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+            tokenResponse2 = oauth.doAccessTokenRequest(code, "password");
 
-        // Now try refresh with the original refreshToken1 created in logged-out userSession. It should fail
-        OAuthClient.AccessTokenResponse responseReuseExceeded = oauth.doRefreshTokenRequest(refreshToken1, "password");
-        assertEquals(400, responseReuseExceeded.getStatusCode());
+            // Now try refresh with the original refreshToken1 created in logged-out userSession. It should fail
+            OAuthClient.AccessTokenResponse responseReuseExceeded = oauth.doRefreshTokenRequest(refreshToken1, "password");
+            assertEquals(400, responseReuseExceeded.getStatusCode());
 
-        // Finally try with valid refresh token
-        responseReuseExceeded = oauth.doRefreshTokenRequest(tokenResponse2.getRefreshToken(), "password");
-        assertEquals(200, responseReuseExceeded.getStatusCode());
+            // Finally try with valid refresh token
+            responseReuseExceeded = oauth.doRefreshTokenRequest(tokenResponse2.getRefreshToken(), "password");
+            assertEquals(200, responseReuseExceeded.getStatusCode());
+        } finally {
+            // Need to reset not-before of user, which was updated during user.logout()
+            testingClient.server().run(session -> {
+                RealmModel realm = session.realms().getRealmByName("test");
+                UserModel user = session.users().getUserByUsername("test-user@localhost", realm);
+                session.users().setNotBeforeForUser(realm, user, 0);
+            });
+        }
     }
 
     @Test
@@ -1080,6 +1103,10 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
         setTimeOffset(2);
 
         OAuthClient.AccessTokenResponse response = oauth.doRefreshTokenRequest(refreshTokenString, "password");
+        if (response.getError() != null || response.getErrorDescription() != null) {
+            log.debugf("Refresh token error: %s, error description: %s", response.getError(), response.getErrorDescription());
+        }
+
         AccessToken refreshedToken = oauth.verifyToken(response.getAccessToken());
         RefreshToken refreshedRefreshToken = oauth.parseRefreshToken(response.getRefreshToken());
 
