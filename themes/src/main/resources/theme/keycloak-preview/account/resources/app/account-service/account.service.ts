@@ -46,6 +46,11 @@ export class AccountServiceClient {
                 config?: AxiosRequestConfig): Promise<AxiosResponse> {
         return this.doRequest(endpoint, {...config, method: 'get'});
     }
+
+    public doDelete(endpoint: string, 
+            config?: AxiosRequestConfig): Promise<AxiosResponse> {
+        return this.doRequest(endpoint, {...config, method: 'delete'});
+    }
     
     public doPut(endpoint: string, 
                 config?: AxiosRequestConfig): Promise<AxiosResponse> {
