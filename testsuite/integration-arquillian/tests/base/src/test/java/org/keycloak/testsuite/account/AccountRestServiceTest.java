@@ -196,21 +196,6 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         TokenUtil noaccessToken = new TokenUtil("no-account-access", "password");
         TokenUtil viewToken = new TokenUtil("view-account-access", "password");
         
-        // Read sessions with no access
-        assertEquals(403, SimpleHttp.doGet(getAccountUrl("sessions"), httpClient).header("Accept", "application/json").auth(noaccessToken.getToken()).asStatus());
-        
-        // Delete all sessions with no access
-        assertEquals(403, SimpleHttp.doDelete(getAccountUrl("sessions"), httpClient).header("Accept", "application/json").auth(noaccessToken.getToken()).asStatus());
-        
-        // Delete all sessions with read only
-        assertEquals(403, SimpleHttp.doDelete(getAccountUrl("sessions"), httpClient).header("Accept", "application/json").auth(viewToken.getToken()).asStatus());
-        
-        // Delete single session with no access
-        assertEquals(403, SimpleHttp.doDelete(getAccountUrl("session?id=bogusId"), httpClient).header("Accept", "application/json").auth(noaccessToken.getToken()).asStatus());
-        
-        // Delete single session with read only
-        assertEquals(403, SimpleHttp.doDelete(getAccountUrl("session?id=bogusId"), httpClient).header("Accept", "application/json").auth(viewToken.getToken()).asStatus());
-        
         // Read password details with no access
         assertEquals(403, SimpleHttp.doGet(getAccountUrl("credentials/password"), httpClient).header("Accept", "application/json").auth(noaccessToken.getToken()).asStatus());
         
@@ -230,15 +215,6 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         TokenUtil viewToken = new TokenUtil("view-account-access", "password");
         status = SimpleHttp.doGet(getAccountUrl(null), httpClient).header("Accept", "application/json").auth(viewToken.getToken()).asStatus();
         assertEquals(200, status);
-    }
-
-    @Test
-    public void testGetSessions() throws IOException {
-        assumeFeatureEnabled(ACCOUNT_API);
-        
-        List<SessionRepresentation> sessions = SimpleHttp.doGet(getAccountUrl("sessions"), httpClient).auth(tokenUtil.getToken()).asJson(new TypeReference<List<SessionRepresentation>>() {});
-
-        assertEquals(1, sessions.size());
     }
 
     @Test
@@ -313,28 +289,6 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         int status = SimpleHttp.doDelete(getAccountUrl("sessions?current=false"), httpClient).acceptJson().auth(viewToken.getToken()).asStatus();
         assertEquals(200, status);
         sessions = SimpleHttp.doGet(getAccountUrl("sessions"), httpClient).auth(viewToken.getToken()).asJson(new TypeReference<List<SessionRepresentation>>() {});
-        assertEquals(1, sessions.size());
-    }
-
-    @Test
-    public void testDeleteSession() throws IOException {
-        assumeFeatureEnabled(ACCOUNT_API);
-        
-        TokenUtil viewToken = new TokenUtil("view-account-access", "password");
-        String sessionId = oauth.doLogin("view-account-access", "password").getSessionState();
-        List<SessionRepresentation> sessions = SimpleHttp.doGet(getAccountUrl("sessions"), httpClient).auth(viewToken.getToken()).asJson(new TypeReference<List<SessionRepresentation>>() {});
-        assertEquals(2, sessions.size());
-
-        // With `ViewToken` you can only read
-        int status = SimpleHttp.doDelete(getAccountUrl("session?id=" + sessionId), httpClient).acceptJson().auth(viewToken.getToken()).asStatus();
-        assertEquals(403, status);
-        sessions = SimpleHttp.doGet(getAccountUrl("sessions"), httpClient).auth(viewToken.getToken()).asJson(new TypeReference<List<SessionRepresentation>>() {});
-        assertEquals(2, sessions.size());
-
-        // Here you can delete the session
-        status = SimpleHttp.doDelete(getAccountUrl("session?id=" + sessionId), httpClient).acceptJson().auth(tokenUtil.getToken()).asStatus();
-        assertEquals(200, status);
-        sessions = SimpleHttp.doGet(getAccountUrl("sessions"), httpClient).auth(tokenUtil.getToken()).asJson(new TypeReference<List<SessionRepresentation>>() {});
         assertEquals(1, sessions.size());
     }
 
