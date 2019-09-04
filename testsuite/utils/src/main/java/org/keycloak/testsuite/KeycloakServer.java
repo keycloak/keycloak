@@ -411,7 +411,7 @@ public class KeycloakServer {
 
             di.addServlet(restEasyDispatcher);
 
-            FilterInfo filter = Servlets.filter("SessionFilter", KeycloakSessionServletFilter.class);
+            FilterInfo filter = Servlets.filter("SessionFilter", TestKeycloakSessionServletFilter.class);
 
             filter.setAsyncSupported(true);
 

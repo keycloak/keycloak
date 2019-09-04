@@ -31,6 +31,7 @@ import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.message.BasicNameValuePair;
+import org.jboss.arquillian.drone.webdriver.htmlunit.DroneHtmlUnitDriver;
 import org.junit.Assert;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.TokenVerifier;
@@ -1249,6 +1250,17 @@ public class OAuthClient {
         publicKeys.clear();
     }
 
+    public void setBrowserHeader(String name, String value) {
+        if (driver instanceof DroneHtmlUnitDriver) {
+            DroneHtmlUnitDriver droneDriver = (DroneHtmlUnitDriver) this.driver;
+            droneDriver.getWebClient().removeRequestHeader(name);
+            droneDriver.getWebClient().addRequestHeader(name, value);
+        }
+    }
+
+    public WebDriver getDriver() {
+        return driver;
+    }
 
     private interface StateParamProvider {
 

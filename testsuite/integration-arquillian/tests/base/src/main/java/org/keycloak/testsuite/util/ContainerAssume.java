@@ -29,6 +29,11 @@ public class ContainerAssume {
         Assume.assumeFalse("Doesn't work on auth-server-undertow", 
                 AuthServerTestEnricher.AUTH_SERVER_CONTAINER.equals(AuthServerTestEnricher.AUTH_SERVER_CONTAINER_DEFAULT));
     }
+    public static void assumeAuthServerUndertow() {
+        Assume.assumeTrue("Only works on auth-server-undertow",
+                AuthServerTestEnricher.AUTH_SERVER_CONTAINER.equals(AuthServerTestEnricher.AUTH_SERVER_CONTAINER_DEFAULT));
+    }
+    
 
     public static void assumeClusteredContainer() {
         Assume.assumeTrue(
