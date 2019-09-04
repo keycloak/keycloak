@@ -54,15 +54,16 @@ public interface UserRolesRetrieveStrategy {
 
         @Override
         public List<LDAPObject> getLDAPRoleMappings(CommonLDAPGroupMapper roleOrGroupMapper, LDAPObject ldapUser, LDAPConfig ldapConfig) {
-            LDAPQuery ldapQuery = roleOrGroupMapper.createLDAPGroupQuery();
-            String membershipAttr = roleOrGroupMapper.getConfig().getMembershipLdapAttribute();
+            try (LDAPQuery ldapQuery = roleOrGroupMapper.createLDAPGroupQuery()) {
+                String membershipAttr = roleOrGroupMapper.getConfig().getMembershipLdapAttribute();
 
-            String membershipUserAttrName = roleOrGroupMapper.getConfig().getMembershipUserLdapAttribute(ldapConfig);
-            String userMembership = LDAPUtils.getMemberValueOfChildObject(ldapUser, roleOrGroupMapper.getConfig().getMembershipTypeLdapAttribute(), membershipUserAttrName);
+                String membershipUserAttrName = roleOrGroupMapper.getConfig().getMembershipUserLdapAttribute(ldapConfig);
+                String userMembership = LDAPUtils.getMemberValueOfChildObject(ldapUser, roleOrGroupMapper.getConfig().getMembershipTypeLdapAttribute(), membershipUserAttrName);
 
-            Condition membershipCondition = getMembershipCondition(membershipAttr, userMembership);
-            ldapQuery.addWhereCondition(membershipCondition);
-            return ldapQuery.getResultList();
+                Condition membershipCondition = getMembershipCondition(membershipAttr, userMembership);
+                ldapQuery.addWhereCondition(membershipCondition);
+                return ldapQuery.getResultList();
+            }
         }
 
         @Override

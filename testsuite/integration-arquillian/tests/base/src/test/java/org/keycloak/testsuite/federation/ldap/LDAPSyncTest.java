@@ -114,7 +114,7 @@ public class LDAPSyncTest extends AbstractLDAPTest {
     @Test
     public void test01LDAPSync() {
         // wait a bit
-        WaitUtils.pause(ldapRule.getSleepTime());
+        WaitUtils.pause(getLDAPRule().getSleepTime());
 
         // Sync 5 users from LDAP
         testingClient.server().run(session -> {
@@ -151,7 +151,7 @@ public class LDAPSyncTest extends AbstractLDAPTest {
         });
 
         // wait a bit
-        WaitUtils.pause(ldapRule.getSleepTime());
+        WaitUtils.pause(getLDAPRule().getSleepTime());
 
         testingClient.server().run(session -> {
             LDAPTestContext ctx = LDAPTestContext.init(session);

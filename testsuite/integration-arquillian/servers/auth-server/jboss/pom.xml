@@ -222,6 +222,8 @@
                                                 <include>test_smtp__key</include>
                                                 <include>consumer_oidc__idp</include>
                                                 <include>master_smtp__password</include>
+                                                <include>master_ldap__bindCredential</include>
+                                                <include>test_ldap__bindCredential</include>
                                             </includes>
                                         </resource>
                                     </resources>
