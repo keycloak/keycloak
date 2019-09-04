@@ -26,7 +26,7 @@ import org.openqa.selenium.support.FindBy;
 
 import static org.keycloak.testsuite.util.UIUtils.clickLink;
 
-public class LoginPage extends LanguageComboboxAwarePage {
+public class WebAuthnLoginPage extends LanguageComboboxAwarePage {
 
     @ArquillianResource
     protected OAuthClient oauth;

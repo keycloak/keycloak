@@ -38,10 +38,11 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.AbstractAdminTest;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
-import org.keycloak.testsuite.pages.webauthn.LoginPage;
-import org.keycloak.testsuite.pages.webauthn.RegisterPage;
-import org.keycloak.testsuite.pages.webauthn.AppPage;
-import org.keycloak.testsuite.pages.webauthn.AppPage.RequestType;
+import org.keycloak.testsuite.pages.webauthn.WebAuthnLoginPage;
+import org.keycloak.testsuite.pages.webauthn.WebAuthnRegisterPage;
+import org.keycloak.testsuite.pages.AppPage.RequestType;
+import org.keycloak.testsuite.pages.webauthn.WebAuthnAppPage;
+
 
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
@@ -58,19 +59,19 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 @Ignore("not completed yet")
-public class RegisterAndLoginTest extends AbstractTestRealmKeycloakTest {
+public class WebAuthnRegisterAndLoginTest extends AbstractTestRealmKeycloakTest {
 
     @Rule
     public AssertEvents events = new AssertEvents(this);
 
     @Page
-    protected AppPage appPage;
+    protected WebAuthnAppPage appPage;
 
     @Page
-    protected LoginPage loginPage;
+    protected WebAuthnLoginPage loginPage;
 
     @Page
-    protected RegisterPage registerPage;
+    protected WebAuthnRegisterPage registerPage;
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
