@@ -288,9 +288,10 @@ public class LDAPUtils {
     public static void fillRangedAttribute(LDAPStorageProvider ldapProvider, LDAPObject ldapObject, String name) {
         LDAPObject newObject = ldapObject;
         while (!newObject.isRangeComplete(name)) {
-            LDAPQuery q = createLdapQueryForRangeAttribute(ldapProvider, ldapObject, name);
-            newObject = q.getFirstResult();
-            ldapObject.populateRangedAttribute(newObject, name);
+            try (LDAPQuery q = createLdapQueryForRangeAttribute(ldapProvider, ldapObject, name)) {
+                newObject = q.getFirstResult();
+                ldapObject.populateRangedAttribute(newObject, name);
+            }
         }
     }
 }

@@ -52,6 +52,7 @@ public class PlainTextVaultProvider implements VaultProvider {
     public VaultRawSecret obtainSecret(String vaultSecretId) {
         Path secretPath = resolveSecretPath(vaultSecretId);
         if (!Files.exists(secretPath)) {
+            logger.warnf("Cannot find secret %s in %s", vaultSecretId, secretPath);
             return DefaultVaultRawSecret.forBuffer(Optional.empty());
         }
 

@@ -223,30 +223,30 @@ public class LDAPStorageProvider implements UserStorageProvider,
 
     @Override
     public List<UserModel> searchForUserByUserAttribute(String attrName, String attrValue, RealmModel realm) {
-    	 LDAPQuery ldapQuery = LDAPUtils.createQueryForUserSearch(this, realm);
-         LDAPQueryConditionsBuilder conditionsBuilder = new LDAPQueryConditionsBuilder();
+    	 try (LDAPQuery ldapQuery = LDAPUtils.createQueryForUserSearch(this, realm)) {
+             LDAPQueryConditionsBuilder conditionsBuilder = new LDAPQueryConditionsBuilder();
 
-         Condition attrCondition = conditionsBuilder.equal(attrName, attrValue, EscapeStrategy.DEFAULT);
-         ldapQuery.addWhereCondition(attrCondition);
+             Condition attrCondition = conditionsBuilder.equal(attrName, attrValue, EscapeStrategy.DEFAULT);
+             ldapQuery.addWhereCondition(attrCondition);
 
-         List<LDAPObject> ldapObjects = ldapQuery.getResultList();
-         
-         if (ldapObjects == null || ldapObjects.isEmpty()) {
-        	 return Collections.emptyList();
-         }
-         
-         List<UserModel> searchResults =new LinkedList<UserModel>();
-         
-         for (LDAPObject ldapUser : ldapObjects) {
-             String ldapUsername = LDAPUtils.getUsername(ldapUser, this.ldapIdentityStore.getConfig());
-             if (session.userLocalStorage().getUserByUsername(ldapUsername, realm) == null) {
-                 UserModel imported = importUserFromLDAP(session, realm, ldapUser);
-                 searchResults.add(imported);
+             List<LDAPObject> ldapObjects = ldapQuery.getResultList();
+
+             if (ldapObjects == null || ldapObjects.isEmpty()) {
+                 return Collections.emptyList();
              }
-         }
 
-         return searchResults;
-         
+             List<UserModel> searchResults = new LinkedList<UserModel>();
+
+             for (LDAPObject ldapUser : ldapObjects) {
+                 String ldapUsername = LDAPUtils.getUsername(ldapUser, this.ldapIdentityStore.getConfig());
+                 if (session.userLocalStorage().getUserByUsername(ldapUsername, realm) == null) {
+                     UserModel imported = importUserFromLDAP(session, realm, ldapUser);
+                     searchResults.add(imported);
+                 }
+             }
+
+             return searchResults;
+         }
     }
 
     public boolean synchronizeRegistrations() {
@@ -417,43 +417,46 @@ public class LDAPStorageProvider implements UserStorageProvider,
 
         List<LDAPObject> results = new ArrayList<LDAPObject>();
         if (attributes.containsKey(UserModel.USERNAME)) {
-            LDAPQuery ldapQuery = LDAPUtils.createQueryForUserSearch(this, realm);
-            LDAPQueryConditionsBuilder conditionsBuilder = new LDAPQueryConditionsBuilder();
+            try (LDAPQuery ldapQuery = LDAPUtils.createQueryForUserSearch(this, realm)) {
+                LDAPQueryConditionsBuilder conditionsBuilder = new LDAPQueryConditionsBuilder();
 
-            // Mapper should replace "username" in parameter name with correct LDAP mapped attribute
-            Condition usernameCondition = conditionsBuilder.equal(UserModel.USERNAME, attributes.get(UserModel.USERNAME), EscapeStrategy.NON_ASCII_CHARS_ONLY);
-            ldapQuery.addWhereCondition(usernameCondition);
+                // Mapper should replace "username" in parameter name with correct LDAP mapped attribute
+                Condition usernameCondition = conditionsBuilder.equal(UserModel.USERNAME, attributes.get(UserModel.USERNAME), EscapeStrategy.NON_ASCII_CHARS_ONLY);
+                ldapQuery.addWhereCondition(usernameCondition);
 
-            List<LDAPObject> ldapObjects = ldapQuery.getResultList();
-            results.addAll(ldapObjects);
+                List<LDAPObject> ldapObjects = ldapQuery.getResultList();
+                results.addAll(ldapObjects);
+            }
         }
 
         if (attributes.containsKey(UserModel.EMAIL)) {
-            LDAPQuery ldapQuery = LDAPUtils.createQueryForUserSearch(this, realm);
-            LDAPQueryConditionsBuilder conditionsBuilder = new LDAPQueryConditionsBuilder();
+            try (LDAPQuery ldapQuery = LDAPUtils.createQueryForUserSearch(this, realm)) {
+                LDAPQueryConditionsBuilder conditionsBuilder = new LDAPQueryConditionsBuilder();
 
-            // Mapper should replace "email" in parameter name with correct LDAP mapped attribute
-            Condition emailCondition = conditionsBuilder.equal(UserModel.EMAIL, attributes.get(UserModel.EMAIL), EscapeStrategy.NON_ASCII_CHARS_ONLY);
-            ldapQuery.addWhereCondition(emailCondition);
+                // Mapper should replace "email" in parameter name with correct LDAP mapped attribute
+                Condition emailCondition = conditionsBuilder.equal(UserModel.EMAIL, attributes.get(UserModel.EMAIL), EscapeStrategy.NON_ASCII_CHARS_ONLY);
+                ldapQuery.addWhereCondition(emailCondition);
 
-            List<LDAPObject> ldapObjects = ldapQuery.getResultList();
-            results.addAll(ldapObjects);
+                List<LDAPObject> ldapObjects = ldapQuery.getResultList();
+                results.addAll(ldapObjects);
+            }
         }
 
         if (attributes.containsKey(UserModel.FIRST_NAME) || attributes.containsKey(UserModel.LAST_NAME)) {
-            LDAPQuery ldapQuery = LDAPUtils.createQueryForUserSearch(this, realm);
-            LDAPQueryConditionsBuilder conditionsBuilder = new LDAPQueryConditionsBuilder();
+            try (LDAPQuery ldapQuery = LDAPUtils.createQueryForUserSearch(this, realm)) {
+                LDAPQueryConditionsBuilder conditionsBuilder = new LDAPQueryConditionsBuilder();
 
-            // Mapper should replace parameter with correct LDAP mapped attributes
-            if (attributes.containsKey(UserModel.FIRST_NAME)) {
-                ldapQuery.addWhereCondition(conditionsBuilder.equal(UserModel.FIRST_NAME, attributes.get(UserModel.FIRST_NAME), EscapeStrategy.NON_ASCII_CHARS_ONLY));
-            }
-            if (attributes.containsKey(UserModel.LAST_NAME)) {
-                ldapQuery.addWhereCondition(conditionsBuilder.equal(UserModel.LAST_NAME, attributes.get(UserModel.LAST_NAME), EscapeStrategy.NON_ASCII_CHARS_ONLY));
-            }
+                // Mapper should replace parameter with correct LDAP mapped attributes
+                if (attributes.containsKey(UserModel.FIRST_NAME)) {
+                    ldapQuery.addWhereCondition(conditionsBuilder.equal(UserModel.FIRST_NAME, attributes.get(UserModel.FIRST_NAME), EscapeStrategy.NON_ASCII_CHARS_ONLY));
+                }
+                if (attributes.containsKey(UserModel.LAST_NAME)) {
+                    ldapQuery.addWhereCondition(conditionsBuilder.equal(UserModel.LAST_NAME, attributes.get(UserModel.LAST_NAME), EscapeStrategy.NON_ASCII_CHARS_ONLY));
+                }
 
-            List<LDAPObject> ldapObjects = ldapQuery.getResultList();
-            results.addAll(ldapObjects);
+                List<LDAPObject> ldapObjects = ldapQuery.getResultList();
+                results.addAll(ldapObjects);
+            }
         }
 
         return results;
@@ -530,14 +533,15 @@ public class LDAPStorageProvider implements UserStorageProvider,
     }
 
     protected LDAPObject queryByEmail(RealmModel realm, String email) {
-        LDAPQuery ldapQuery = LDAPUtils.createQueryForUserSearch(this, realm);
-        LDAPQueryConditionsBuilder conditionsBuilder = new LDAPQueryConditionsBuilder();
+        try (LDAPQuery ldapQuery = LDAPUtils.createQueryForUserSearch(this, realm)) {
+            LDAPQueryConditionsBuilder conditionsBuilder = new LDAPQueryConditionsBuilder();
 
-        // Mapper should replace "email" in parameter name with correct LDAP mapped attribute
-        Condition emailCondition = conditionsBuilder.equal(UserModel.EMAIL, email, EscapeStrategy.DEFAULT);
-        ldapQuery.addWhereCondition(emailCondition);
+            // Mapper should replace "email" in parameter name with correct LDAP mapped attribute
+            Condition emailCondition = conditionsBuilder.equal(UserModel.EMAIL, email, EscapeStrategy.DEFAULT);
+            ldapQuery.addWhereCondition(emailCondition);
 
-        return ldapQuery.getFirstResult();
+            return ldapQuery.getFirstResult();
+        }
     }
 
 
@@ -761,19 +765,20 @@ public class LDAPStorageProvider implements UserStorageProvider,
     }
 
     public LDAPObject loadLDAPUserByUsername(RealmModel realm, String username) {
-        LDAPQuery ldapQuery = LDAPUtils.createQueryForUserSearch(this, realm);
-        LDAPQueryConditionsBuilder conditionsBuilder = new LDAPQueryConditionsBuilder();
+        try (LDAPQuery ldapQuery = LDAPUtils.createQueryForUserSearch(this, realm)) {
+            LDAPQueryConditionsBuilder conditionsBuilder = new LDAPQueryConditionsBuilder();
 
-        String usernameMappedAttribute = this.ldapIdentityStore.getConfig().getUsernameLdapAttribute();
-        Condition usernameCondition = conditionsBuilder.equal(usernameMappedAttribute, username, EscapeStrategy.DEFAULT);
-        ldapQuery.addWhereCondition(usernameCondition);
+            String usernameMappedAttribute = this.ldapIdentityStore.getConfig().getUsernameLdapAttribute();
+            Condition usernameCondition = conditionsBuilder.equal(usernameMappedAttribute, username, EscapeStrategy.DEFAULT);
+            ldapQuery.addWhereCondition(usernameCondition);
 
-        LDAPObject ldapUser = ldapQuery.getFirstResult();
-        if (ldapUser == null) {
-            return null;
+            LDAPObject ldapUser = ldapQuery.getFirstResult();
+            if (ldapUser == null) {
+                return null;
+            }
+
+            return ldapUser;
         }
-
-        return ldapUser;
     }
 
 
