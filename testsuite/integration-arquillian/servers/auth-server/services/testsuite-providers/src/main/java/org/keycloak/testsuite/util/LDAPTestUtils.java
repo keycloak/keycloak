@@ -229,23 +229,25 @@ public class LDAPTestUtils {
 
     public static void removeAllLDAPUsers(LDAPStorageProvider ldapProvider, RealmModel realm) {
         LDAPIdentityStore ldapStore = ldapProvider.getLdapIdentityStore();
-        LDAPQuery ldapQuery = LDAPUtils.createQueryForUserSearch(ldapProvider, realm);
-        List<LDAPObject> allUsers = ldapQuery.getResultList();
+        try (LDAPQuery ldapQuery = LDAPUtils.createQueryForUserSearch(ldapProvider, realm)) {
+            List<LDAPObject> allUsers = ldapQuery.getResultList();
 
-        for (LDAPObject ldapUser : allUsers) {
-            ldapStore.remove(ldapUser);
+            for (LDAPObject ldapUser : allUsers) {
+                ldapStore.remove(ldapUser);
+            }
         }
     }
     
     public static void removeLDAPUserByUsername(LDAPStorageProvider ldapProvider, RealmModel realm, LDAPConfig config, String username) {
         LDAPIdentityStore ldapStore = ldapProvider.getLdapIdentityStore();
-        LDAPQuery ldapQuery = LDAPUtils.createQueryForUserSearch(ldapProvider, realm);
-        List<LDAPObject> allUsers = ldapQuery.getResultList();
-        
-        // This is ugly, we are iterating over the entire set of ldap users and deleting the one where the username matches.  TODO: Find a better way!
-        for (LDAPObject ldapUser : allUsers) {
-            if (username.equals(LDAPUtils.getUsername(ldapUser, config))) {
-            	ldapStore.remove(ldapUser);
+        try (LDAPQuery ldapQuery = LDAPUtils.createQueryForUserSearch(ldapProvider, realm)) {
+            List<LDAPObject> allUsers = ldapQuery.getResultList();
+
+            // This is ugly, we are iterating over the entire set of ldap users and deleting the one where the username matches.  TODO: Find a better way!
+            for (LDAPObject ldapUser : allUsers) {
+                if (username.equals(LDAPUtils.getUsername(ldapUser, config))) {
+                    ldapStore.remove(ldapUser);
+                }
             }
         }
     }
@@ -253,20 +255,22 @@ public class LDAPTestUtils {
     public static void removeAllLDAPRoles(KeycloakSession session, RealmModel appRealm, ComponentModel ldapModel, String mapperName) {
         ComponentModel mapperModel = getSubcomponentByName(appRealm, ldapModel, mapperName);
         LDAPStorageProvider ldapProvider = LDAPTestUtils.getLdapProvider(session, ldapModel);
-        LDAPQuery roleQuery = getRoleMapper(mapperModel, ldapProvider, appRealm).createRoleQuery(false);
-        List<LDAPObject> ldapRoles = roleQuery.getResultList();
-        for (LDAPObject ldapRole : ldapRoles) {
-            ldapProvider.getLdapIdentityStore().remove(ldapRole);
+        try (LDAPQuery roleQuery = getRoleMapper(mapperModel, ldapProvider, appRealm).createRoleQuery(false)) {
+            List<LDAPObject> ldapRoles = roleQuery.getResultList();
+            for (LDAPObject ldapRole : ldapRoles) {
+                ldapProvider.getLdapIdentityStore().remove(ldapRole);
+            }
         }
     }
 
     public static void removeAllLDAPGroups(KeycloakSession session, RealmModel appRealm, ComponentModel ldapModel, String mapperName) {
         ComponentModel mapperModel = getSubcomponentByName(appRealm, ldapModel, mapperName);
         LDAPStorageProvider ldapProvider = LDAPTestUtils.getLdapProvider(session, ldapModel);
-        LDAPQuery roleQuery = getGroupMapper(mapperModel, ldapProvider, appRealm).createGroupQuery(false);
-        List<LDAPObject> ldapRoles = roleQuery.getResultList();
-        for (LDAPObject ldapRole : ldapRoles) {
-            ldapProvider.getLdapIdentityStore().remove(ldapRole);
+        try (LDAPQuery roleQuery = getGroupMapper(mapperModel, ldapProvider, appRealm).createGroupQuery(false)) {
+            List<LDAPObject> ldapRoles = roleQuery.getResultList();
+            for (LDAPObject ldapRole : ldapRoles) {
+                ldapProvider.getLdapIdentityStore().remove(ldapRole);
+            }
         }
     }
 

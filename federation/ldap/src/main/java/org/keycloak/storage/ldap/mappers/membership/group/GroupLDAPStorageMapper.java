@@ -87,7 +87,7 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
 
 
     // LDAP Group CRUD operations
-
+    // !! This function must be always called from try-with-resources block, otherwise vault secret may be leaked !!
     public LDAPQuery createGroupQuery(boolean includeMemberAttribute) {
         LDAPQuery ldapQuery = new LDAPQuery(ldapProvider);
 
@@ -129,10 +129,11 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
     }
 
     public LDAPObject loadLDAPGroupByName(String groupName) {
-        LDAPQuery ldapQuery = createGroupQuery(true);
-        Condition roleNameCondition = new LDAPQueryConditionsBuilder().equal(config.getGroupNameLdapAttribute(), groupName);
-        ldapQuery.addWhereCondition(roleNameCondition);
-        return ldapQuery.getFirstResult();
+        try (LDAPQuery ldapQuery = createGroupQuery(true)) {
+            Condition roleNameCondition = new LDAPQueryConditionsBuilder().equal(config.getGroupNameLdapAttribute(), groupName);
+            ldapQuery.addWhereCondition(roleNameCondition);
+            return ldapQuery.getFirstResult();
+        }
     }
 
     protected Set<LDAPDn> getLDAPSubgroups(LDAPObject ldapGroup) {
@@ -376,41 +377,43 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
         logger.debugf("Syncing groups from Keycloak into LDAP. Mapper is [%s], LDAP provider is [%s]", mapperModel.getName(), ldapProvider.getModel().getName());
 
         // Query existing LDAP groups
-        LDAPQuery ldapQuery = createGroupQuery(config.isPreserveGroupsInheritance());
-        List<LDAPObject> ldapGroups = ldapQuery.getResultList();
+        try (LDAPQuery ldapQuery = createGroupQuery(config.isPreserveGroupsInheritance())) {
+            List<LDAPObject> ldapGroups = ldapQuery.getResultList();
 
-        // Convert them to Map<String, LDAPObject>
-        Map<String, LDAPObject> ldapGroupsMap = new HashMap<>();
-        String groupsRdnAttr = config.getGroupNameLdapAttribute();
-        for (LDAPObject ldapGroup : ldapGroups) {
-            String groupName = ldapGroup.getAttributeAsString(groupsRdnAttr);
-            ldapGroupsMap.put(groupName, ldapGroup);
-        }
+            // Convert them to Map<String, LDAPObject>
+            Map<String, LDAPObject> ldapGroupsMap = new HashMap<>();
+            String groupsRdnAttr = config.getGroupNameLdapAttribute();
+            for (LDAPObject ldapGroup : ldapGroups) {
+                String groupName = ldapGroup.getAttributeAsString(groupsRdnAttr);
+                ldapGroupsMap.put(groupName, ldapGroup);
+            }
 
-        // Map to track all LDAP groups also exists in Keycloak
-        Set<String> ldapGroupNames = new HashSet<>();
 
-        // Create or update KC groups to LDAP including their attributes
-        for (GroupModel kcGroup : realm.getTopLevelGroups()) {
-            processKeycloakGroupSyncToLDAP(kcGroup, ldapGroupsMap, ldapGroupNames, syncResult);
-        }
+            // Map to track all LDAP groups also exists in Keycloak
+            Set<String> ldapGroupNames = new HashSet<>();
 
-        // If dropNonExisting, then drop all groups, which doesn't exist in KC from LDAP as well
-        if (config.isDropNonExistingGroupsDuringSync()) {
-            Set<String> copy = new HashSet<>(ldapGroupsMap.keySet());
-            for (String groupName : copy) {
-                if (!ldapGroupNames.contains(groupName)) {
-                    LDAPObject ldapGroup = ldapGroupsMap.remove(groupName);
-                    ldapProvider.getLdapIdentityStore().remove(ldapGroup);
-                    syncResult.increaseRemoved();
+            // Create or update KC groups to LDAP including their attributes
+            for (GroupModel kcGroup : realm.getTopLevelGroups()) {
+                processKeycloakGroupSyncToLDAP(kcGroup, ldapGroupsMap, ldapGroupNames, syncResult);
+            }
+
+            // If dropNonExisting, then drop all groups, which doesn't exist in KC from LDAP as well
+            if (config.isDropNonExistingGroupsDuringSync()) {
+                Set<String> copy = new HashSet<>(ldapGroupsMap.keySet());
+                for (String groupName : copy) {
+                    if (!ldapGroupNames.contains(groupName)) {
+                        LDAPObject ldapGroup = ldapGroupsMap.remove(groupName);
+                        ldapProvider.getLdapIdentityStore().remove(ldapGroup);
+                        syncResult.increaseRemoved();
+                    }
                 }
             }
-        }
 
-        // Finally process memberships,
-        if (config.isPreserveGroupsInheritance()) {
-            for (GroupModel kcGroup : realm.getTopLevelGroups()) {
-                processKeycloakGroupMembershipsSyncToLDAP(kcGroup, ldapGroupsMap);
+            // Finally process memberships,
+            if (config.isPreserveGroupsInheritance()) {
+                for (GroupModel kcGroup : realm.getTopLevelGroups()) {
+                    processKeycloakGroupMembershipsSyncToLDAP(kcGroup, ldapGroupsMap);
+                }
             }
         }
 
@@ -662,30 +665,31 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
 
         @Override
         public void leaveGroup(GroupModel group) {
-            LDAPQuery ldapQuery = createGroupQuery(true);
-            LDAPQueryConditionsBuilder conditionsBuilder = new LDAPQueryConditionsBuilder();
-            Condition roleNameCondition = conditionsBuilder.equal(config.getGroupNameLdapAttribute(), group.getName());
+            try (LDAPQuery ldapQuery = createGroupQuery(true)) {
+                LDAPQueryConditionsBuilder conditionsBuilder = new LDAPQueryConditionsBuilder();
+                Condition roleNameCondition = conditionsBuilder.equal(config.getGroupNameLdapAttribute(), group.getName());
 
-            String membershipUserLdapAttrName = getMembershipUserLdapAttribute();
-            String membershipUserAttr = LDAPUtils.getMemberValueOfChildObject(ldapUser, config.getMembershipTypeLdapAttribute(), membershipUserLdapAttrName);
-            Condition membershipCondition = conditionsBuilder.equal(config.getMembershipLdapAttribute(), membershipUserAttr);
+                String membershipUserLdapAttrName = getMembershipUserLdapAttribute();
+                String membershipUserAttr = LDAPUtils.getMemberValueOfChildObject(ldapUser, config.getMembershipTypeLdapAttribute(), membershipUserLdapAttrName);
+                Condition membershipCondition = conditionsBuilder.equal(config.getMembershipLdapAttribute(), membershipUserAttr);
 
-            ldapQuery.addWhereCondition(roleNameCondition).addWhereCondition(membershipCondition);
-            LDAPObject ldapGroup = ldapQuery.getFirstResult();
+                ldapQuery.addWhereCondition(roleNameCondition).addWhereCondition(membershipCondition);
+                LDAPObject ldapGroup = ldapQuery.getFirstResult();
 
-            if (ldapGroup == null) {
-                // Group mapping doesn't exist in LDAP. For LDAP_ONLY mode, we don't need to do anything. For READ_ONLY, delete it in local DB.
-                if (config.getMode() == LDAPGroupMapperMode.READ_ONLY) {
-                    super.leaveGroup(group);
-                }
-            } else {
-                // Group mappings exists in LDAP. For LDAP_ONLY mode, we can just delete it in LDAP. For READ_ONLY we can't delete it -> throw error
-                if (config.getMode() == LDAPGroupMapperMode.READ_ONLY) {
-                    throw new ModelException("Not possible to delete LDAP group mappings as mapper mode is READ_ONLY");
+                if (ldapGroup == null) {
+                    // Group mapping doesn't exist in LDAP. For LDAP_ONLY mode, we don't need to do anything. For READ_ONLY, delete it in local DB.
+                    if (config.getMode() == LDAPGroupMapperMode.READ_ONLY) {
+                        super.leaveGroup(group);
+                    }
                 } else {
-                    // Delete ldap role mappings
-                    cachedLDAPGroupMappings = null;
-                    deleteGroupMappingInLDAP(ldapUser, ldapGroup);
+                    // Group mappings exists in LDAP. For LDAP_ONLY mode, we can just delete it in LDAP. For READ_ONLY we can't delete it -> throw error
+                    if (config.getMode() == LDAPGroupMapperMode.READ_ONLY) {
+                        throw new ModelException("Not possible to delete LDAP group mappings as mapper mode is READ_ONLY");
+                    } else {
+                        // Delete ldap role mappings
+                        cachedLDAPGroupMappings = null;
+                        deleteGroupMappingInLDAP(ldapUser, ldapGroup);
+                    }
                 }
             }
         }
