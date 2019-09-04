@@ -352,6 +352,11 @@ public class SamlService extends AuthorizationEndpointBase {
 
                 }
             }
+
+            if (null != requestAbstractType.isForceAuthn()
+                && requestAbstractType.isForceAuthn()) {
+                authSession.setAuthNote(SamlProtocol.SAML_LOGIN_REQUEST_FORCEAUTHN, SamlProtocol.SAML_FORCEAUTHN_REQUIREMENT);
+            }
             //If unset we fall back to default "false"
             final boolean isPassive = (null == requestAbstractType.isIsPassive() ?
                     false : requestAbstractType.isIsPassive().booleanValue());

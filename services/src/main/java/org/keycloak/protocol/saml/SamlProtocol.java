@@ -118,6 +118,8 @@ public class SamlProtocol implements LoginProtocol {
     public static final String SAML_PERSISTENT_NAME_ID_FOR = "saml.persistent.name.id.for";
     public static final String SAML_IDP_INITIATED_SSO_RELAY_STATE = "saml_idp_initiated_sso_relay_state";
     public static final String SAML_IDP_INITIATED_SSO_URL_NAME = "saml_idp_initiated_sso_url_name";
+    public static final String SAML_LOGIN_REQUEST_FORCEAUTHN = "SAML_LOGIN_REQUEST_FORCEAUTHN";
+    public static final String SAML_FORCEAUTHN_REQUIREMENT = "true";
 
     protected KeycloakSession session;
 
@@ -726,8 +728,8 @@ public class SamlProtocol implements LoginProtocol {
 
     @Override
     public boolean requireReauthentication(UserSessionModel userSession, AuthenticationSessionModel authSession) {
-        // Not yet supported
-        return false;
+        String requireReauthentication = authSession.getAuthNote(SamlProtocol.SAML_LOGIN_REQUEST_FORCEAUTHN);
+        return Objects.equals(SamlProtocol.SAML_FORCEAUTHN_REQUIREMENT, requireReauthentication);
     }
 
     private JaxrsSAML2BindingBuilder createBindingBuilder(SamlClient samlClient) {
