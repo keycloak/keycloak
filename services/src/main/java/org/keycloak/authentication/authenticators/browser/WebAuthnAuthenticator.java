@@ -84,8 +84,11 @@ public class WebAuthnAuthenticator implements Authenticator {
 
         // read options from authenticator config
         AuthenticatorConfigModel config = context.getAuthenticatorConfig();
-        String userVerificationRequirement = config.getConfig().get(WebAuthnAuthenticatorFactory.USER_VERIFICATION_REQUIREMENT);
-        if (WebAuthnConstants.OPTION_NOT_SPECIFIED.equals(userVerificationRequirement)) userVerificationRequirement = Constants.DEFAULT_WEBAUTHN_POLICY_NOT_SPECIFIED;
+        String userVerificationRequirement = Constants.DEFAULT_WEBAUTHN_POLICY_NOT_SPECIFIED;
+        if (config != null) {
+            userVerificationRequirement = config.getConfig().get(WebAuthnAuthenticatorFactory.USER_VERIFICATION_REQUIREMENT);
+            if (WebAuthnConstants.OPTION_NOT_SPECIFIED.equals(userVerificationRequirement)) userVerificationRequirement = Constants.DEFAULT_WEBAUTHN_POLICY_NOT_SPECIFIED;
+        }
         form.setAttribute(WebAuthnConstants.USER_VERIFICATION, userVerificationRequirement);
 
         context.challenge(form.createForm("webauthn-authenticate.ftl"));
