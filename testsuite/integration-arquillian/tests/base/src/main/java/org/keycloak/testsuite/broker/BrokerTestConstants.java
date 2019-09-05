@@ -13,6 +13,7 @@ class BrokerTestConstants {
 
     final static String CLIENT_ID = "brokerapp";
     final static String CLIENT_SECRET = "secret";
+    final static String VAULT_CLIENT_SECRET = "${vault.oidc_idp}";
 
     final static String USER_LOGIN = "testuser";
     final static String USER_EMAIL = "user@localhost.com";
