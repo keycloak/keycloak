@@ -6,6 +6,7 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
 import org.jboss.resteasy.client.jaxrs.engines.ApacheHttpClient43Engine;
 import org.keycloak.testsuite.dballocator.client.data.AllocationResult;
+import org.keycloak.testsuite.dballocator.client.data.EraseResult;
 import org.keycloak.testsuite.dballocator.client.data.ReleaseResult;
 import org.keycloak.testsuite.dballocator.client.exceptions.DBAllocatorException;
 import org.keycloak.testsuite.dballocator.client.retry.IncrementalBackoffRetryPolicy;
@@ -83,6 +84,21 @@ public class DBAllocatorServiceClient {
         }
     }
 
+    public EraseResult erase(AllocationResult allocationResult) throws DBAllocatorException {
+        Objects.requireNonNull(allocationResult, "Previous allocation result must not be null");
+        Objects.requireNonNull(allocationResult.getUUID(), "UUID must not be null");
+
+        Invocation.Builder target = restClient
+                .target(allocatorServletURI)
+                .queryParam("operation", "erase")
+                .queryParam("uuid", allocationResult.getUUID())
+                .request();
+
+        try (Response response = retryPolicy.retryTillHttpOk(() -> target.get())) {
+            return EraseResult.successful(allocationResult.getUUID());
+        }
+    }
+
     public ReleaseResult release(AllocationResult allocationResult) throws DBAllocatorException {
         Objects.requireNonNull(allocationResult, "Previous allocation result must not be null");
         Objects.requireNonNull(allocationResult.getUUID(), "UUID must not be null");
@@ -93,8 +109,8 @@ public class DBAllocatorServiceClient {
                 .queryParam("uuid", allocationResult.getUUID())
                 .request();
 
-        retryPolicy.retryTillHttpOk(() -> target.get());
-
-        return ReleaseResult.successful(allocationResult.getUUID());
+        try (Response response = retryPolicy.retryTillHttpOk(() -> target.get())) {
+            return ReleaseResult.successful(allocationResult.getUUID());
+        }
     }
 }

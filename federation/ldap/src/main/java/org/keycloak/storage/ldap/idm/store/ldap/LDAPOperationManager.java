@@ -45,6 +45,8 @@ import javax.naming.ldap.LdapContext;
 import javax.naming.ldap.LdapName;
 import javax.naming.ldap.PagedResultsControl;
 import javax.naming.ldap.PagedResultsResponseControl;
+import javax.naming.ldap.StartTlsRequest;
+import javax.naming.ldap.StartTlsResponse;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -490,7 +492,7 @@ public class LDAPOperationManager {
      *
      */
     public void authenticate(String dn, String password) throws AuthenticationException {
-        InitialContext authCtx = null;
+        InitialLdapContext authCtx = null;
 
         try {
             if (password == null || password.isEmpty()) {
@@ -499,14 +501,17 @@ public class LDAPOperationManager {
 
             Hashtable<String, Object> env = new Hashtable<String, Object>(this.connectionProperties);
 
-            env.put(Context.SECURITY_AUTHENTICATION, LDAPConstants.AUTH_TYPE_SIMPLE);
-            env.put(Context.SECURITY_PRINCIPAL, dn);
-            env.put(Context.SECURITY_CREDENTIALS, password);
-
             // Never use connection pool to prevent password caching
             env.put("com.sun.jndi.ldap.connect.pool", "false");
 
+            if(!this.config.isStartTls()) {
+                env.put(Context.SECURITY_AUTHENTICATION, this.config.getAuthType());
+                env.put(Context.SECURITY_PRINCIPAL, dn);
+                env.put(Context.SECURITY_CREDENTIALS, password);
+            }
+
             authCtx = new InitialLdapContext(env, null);
+            startTLS(authCtx, this.config.getAuthType(), dn, password);
 
         } catch (AuthenticationException ae) {
             if (logger.isDebugEnabled()) {
@@ -525,6 +530,31 @@ public class LDAPOperationManager {
 
                 }
             }
+        }
+    }
+
+    private void startTLS(LdapContext ldapContext, String authType, String bindDN, String bindCredentials) throws NamingException {
+        if(this.config.isStartTls()) {
+            try {
+                StartTlsResponse tls = (StartTlsResponse) ldapContext.extendedOperation(new StartTlsRequest());
+                tls.negotiate();
+
+                char[] bindCredential = null;
+
+                ldapContext.addToEnvironment(Context.SECURITY_AUTHENTICATION, authType);
+
+                if (bindCredentials != null) {
+                    bindCredential = bindCredentials.toCharArray();
+                }
+
+                if (!LDAPConstants.AUTH_TYPE_NONE.equals(authType)) {
+                    ldapContext.addToEnvironment(Context.SECURITY_PRINCIPAL, bindDN);
+                    ldapContext.addToEnvironment(Context.SECURITY_CREDENTIALS, bindCredential);
+                }
+            } catch (Exception e) {
+                logger.error("Could not negotiate TLS", e);
+            }
+            ldapContext.lookup("");
         }
     }
 
@@ -652,29 +682,38 @@ public class LDAPOperationManager {
     }
 
     private LdapContext createLdapContext() throws NamingException {
-        return new InitialLdapContext(new Hashtable<Object, Object>(this.connectionProperties), null);
+        if(!config.isStartTls()) {
+            return new InitialLdapContext(new Hashtable<Object, Object>(this.connectionProperties), null);
+        } else {
+            LdapContext ldapContext = new InitialLdapContext(new Hashtable<Object, Object>(this.connectionProperties), null);
+            startTLS(ldapContext, this.config.getAuthType(), this.config.getBindDN(), this.config.getBindCredential());
+            return ldapContext;
+        }
     }
 
     private Map<String, Object> createConnectionProperties() {
         HashMap<String, Object> env = new HashMap<String, Object>();
 
-        String authType = this.config.getAuthType();
         env.put(Context.INITIAL_CONTEXT_FACTORY, this.config.getFactoryName());
-        env.put(Context.SECURITY_AUTHENTICATION, authType);
 
-        String bindDN = this.config.getBindDN();
+        if(!this.config.isStartTls()) {
+            String authType = this.config.getAuthType();
 
-        char[] bindCredential = null;
+            env.put(Context.SECURITY_AUTHENTICATION, authType);
 
-        if (this.config.getBindCredential() != null) {
-            bindCredential = this.config.getBindCredential().toCharArray();
+            String bindDN = this.config.getBindDN();
+
+            char[] bindCredential = null;
+
+            if (this.config.getBindCredential() != null) {
+                bindCredential = this.config.getBindCredential().toCharArray();
+            }
+
+            if (!LDAPConstants.AUTH_TYPE_NONE.equals(authType)) {
+                env.put(Context.SECURITY_PRINCIPAL, bindDN);
+                env.put(Context.SECURITY_CREDENTIALS, bindCredential);
+            }
         }
-
-        if (!LDAPConstants.AUTH_TYPE_NONE.equals(authType)) {
-            env.put(Context.SECURITY_PRINCIPAL, bindDN);
-            env.put(Context.SECURITY_CREDENTIALS, bindCredential);
-        }
-
         String url = this.config.getConnectionUrl();
 
         if (url != null) {

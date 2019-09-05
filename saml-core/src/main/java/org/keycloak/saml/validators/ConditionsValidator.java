@@ -174,7 +174,8 @@ public class ConditionsValidator {
         XMLGregorianCalendar updatedNotBefore = XMLTimeUtil.subtract(notBefore, clockSkewInMillis);
         XMLGregorianCalendar updatedOnOrAfter = XMLTimeUtil.add(notOnOrAfter, clockSkewInMillis);
 
-        LOG.debugf("Evaluating Conditions of Assertion %s. notBefore=%s, notOnOrAfter=%s", assertionId, notBefore, notOnOrAfter);
+        LOG.debugf("Evaluating Conditions of Assertion %s. notBefore=%s, notOnOrAfter=%s, updatedNotBefore: %s, updatedOnOrAfter=%s, now: %s", 
+                assertionId, notBefore, notOnOrAfter, updatedNotBefore, updatedOnOrAfter, now);
         boolean valid = XMLTimeUtil.isValid(now, updatedNotBefore, updatedOnOrAfter);
         if (! valid) {
             LOG.infof("Assertion %s expired.", assertionId);

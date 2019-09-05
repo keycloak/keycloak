@@ -87,6 +87,9 @@ public class StoreFactoryCacheManager extends CacheManager {
 
         if (type != null) {
             invalidations.add(StoreFactoryCacheSession.getResourceByTypeCacheKey(type, serverId));
+            invalidations.add(StoreFactoryCacheSession.getResourceByTypeCacheKey(type, owner, serverId));
+            invalidations.add(StoreFactoryCacheSession.getResourceByTypeCacheKey(type, null, serverId));
+            invalidations.add(StoreFactoryCacheSession.getResourceByTypeInstanceCacheKey(type, serverId));
             addInvalidations(InResourcePredicate.create().resource(type), invalidations);
         }
 
@@ -143,7 +146,9 @@ public class StoreFactoryCacheManager extends CacheManager {
         invalidations.add(StoreFactoryCacheSession.getPermissionTicketByOwner(owner, serverId));
         invalidations.add(StoreFactoryCacheSession.getPermissionTicketByResource(resource, serverId));
         invalidations.add(StoreFactoryCacheSession.getPermissionTicketByGranted(requester, serverId));
+        invalidations.add(StoreFactoryCacheSession.getPermissionTicketByGranted(requester, null));
         invalidations.add(StoreFactoryCacheSession.getPermissionTicketByResourceNameAndGranted(resourceName, requester, serverId));
+        invalidations.add(StoreFactoryCacheSession.getPermissionTicketByResourceNameAndGranted(resourceName, requester, null));
         if (scope != null) {
             invalidations.add(StoreFactoryCacheSession.getPermissionTicketByScope(scope, serverId));
         }

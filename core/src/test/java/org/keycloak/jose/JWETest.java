@@ -19,18 +19,26 @@ package org.keycloak.jose;
 
 import java.io.UnsupportedEncodingException;
 import java.security.Key;
-import java.security.spec.KeySpec;
+import java.security.KeyPair;
 
+import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
-import javax.crypto.SecretKeyFactory;
-import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
 
 import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.common.util.Base64;
 import org.keycloak.common.util.Base64Url;
+import org.keycloak.common.util.KeyUtils;
 import org.keycloak.jose.jwe.*;
+import org.keycloak.jose.jwe.alg.JWEAlgorithmProvider;
+import org.keycloak.jose.jwe.alg.KeyEncryptionJWEAlgorithmProvider;
+import org.keycloak.jose.jwe.alg.RsaKeyEncryptionJWEAlgorithmProvider;
+import org.keycloak.jose.jwe.enc.AesCbcHmacShaEncryptionProvider;
+import org.keycloak.jose.jwe.enc.AesCbcHmacShaJWEEncryptionProvider;
+import org.keycloak.jose.jwe.enc.AesGcmEncryptionProvider;
+import org.keycloak.jose.jwe.enc.AesGcmJWEEncryptionProvider;
+import org.keycloak.jose.jwe.enc.JWEEncryptionProvider;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -151,7 +159,7 @@ public class JWETest {
 
         jwe = new JWE();
         jwe.getKeyStorage()
-                .setEncryptionKey(aesKey);
+                .setDecryptionKey(aesKey);
 
         jwe.verifyAndDecodeJwe(encodedContent);
 
@@ -223,7 +231,7 @@ public class JWETest {
 
         JWE jwe = new JWE();
         jwe.getKeyStorage()
-                .setEncryptionKey(aesKeySpec);
+                .setDecryptionKey(aesKeySpec);
 
         jwe.verifyAndDecodeJwe(externalJwe);
 
@@ -233,4 +241,102 @@ public class JWETest {
 
     }
 
+    @Test
+    public void testRSA1_5_A128GCM() throws Exception {
+        testKeyEncryption_ContentEncryptionAesGcm(JWEConstants.RSA1_5, JWEConstants.A128GCM);
+    }
+
+    @Test
+    public void testRSAOAEP_A128GCM() throws Exception {
+        testKeyEncryption_ContentEncryptionAesGcm(JWEConstants.RSA_OAEP, JWEConstants.A128GCM);
+    }
+
+    @Test
+    public void testRSA1_5_A128CBCHS256() throws Exception {
+        testKeyEncryption_ContentEncryptionAesHmacSha(JWEConstants.RSA1_5, JWEConstants.A128CBC_HS256);
+    }
+
+    @Test
+    public void testRSAOAEP_A128CBCHS256() throws Exception {
+        testKeyEncryption_ContentEncryptionAesHmacSha(JWEConstants.RSA_OAEP, JWEConstants.A128CBC_HS256);
+    }
+ 
+    private void testKeyEncryption_ContentEncryptionAesGcm(String jweAlgorithmName, String jweEncryptionName) throws Exception {
+        // generate key pair for KEK
+        KeyPair keyPair = KeyUtils.generateRsaKeyPair(2048);
+        JWEAlgorithmProvider jweAlgorithmProvider = new RsaKeyEncryptionJWEAlgorithmProvider(getJcaAlgorithmName(jweAlgorithmName));
+        JWEEncryptionProvider jweEncryptionProvider = new AesGcmJWEEncryptionProvider(jweEncryptionName);
+
+        JWEHeader jweHeader = new JWEHeader(jweAlgorithmName, jweEncryptionName, null);
+        JWE jwe = new JWE()
+                .header(jweHeader)
+                .content(PAYLOAD.getBytes("UTF-8"));
+
+        jwe.getKeyStorage()
+                .setEncryptionKey(keyPair.getPublic());
+
+        String encodedContent = jwe.encodeJwe(jweAlgorithmProvider, jweEncryptionProvider);
+        System.out.println("Encoded content: " + encodedContent);
+        System.out.println("Encoded content length: " + encodedContent.length());
+
+        jwe = new JWE();
+        jwe.getKeyStorage()
+                .setDecryptionKey(keyPair.getPrivate());
+        jwe.verifyAndDecodeJwe(encodedContent, jweAlgorithmProvider, jweEncryptionProvider);
+        String decodedContent = new String(jwe.getContent(), "UTF-8");
+        System.out.println("Decoded content: " + decodedContent);
+        System.out.println("Decoded content length: " + decodedContent.length());
+
+        Assert.assertEquals(PAYLOAD, decodedContent);
+    }
+
+    private void testKeyEncryption_ContentEncryptionAesHmacSha(String jweAlgorithmName, String jweEncryptionName) throws Exception {
+        // generate key pair for KEK
+        KeyPair keyPair = KeyUtils.generateRsaKeyPair(2048);
+        // generate CEK
+        final SecretKey aesKey = new SecretKeySpec(AES_128_KEY, "AES");
+        final SecretKey hmacKey = new SecretKeySpec(HMAC_SHA256_KEY, "HMACSHA2");
+
+        JWEAlgorithmProvider jweAlgorithmProvider = new RsaKeyEncryptionJWEAlgorithmProvider(getJcaAlgorithmName(jweAlgorithmName));
+        JWEEncryptionProvider jweEncryptionProvider = new AesCbcHmacShaJWEEncryptionProvider(jweEncryptionName);
+
+        JWEHeader jweHeader = new JWEHeader(jweAlgorithmName, jweEncryptionName, null);
+        JWE jwe = new JWE()
+                .header(jweHeader)
+                .content(PAYLOAD.getBytes("UTF-8"));
+
+        jwe.getKeyStorage()
+                .setEncryptionKey(keyPair.getPublic());
+
+        jwe.getKeyStorage()
+                .setCEKKey(aesKey, JWEKeyStorage.KeyUse.ENCRYPTION)
+                .setCEKKey(hmacKey, JWEKeyStorage.KeyUse.SIGNATURE);
+
+        String encodedContent = jwe.encodeJwe(jweAlgorithmProvider, jweEncryptionProvider);
+        System.out.println("Encoded content: " + encodedContent);
+        System.out.println("Encoded content length: " + encodedContent.length());
+
+        jwe = new JWE();
+        jwe.getKeyStorage()
+            .setDecryptionKey(keyPair.getPrivate());
+        jwe.getKeyStorage()
+            .setCEKKey(aesKey, JWEKeyStorage.KeyUse.ENCRYPTION)
+            .setCEKKey(hmacKey, JWEKeyStorage.KeyUse.SIGNATURE);
+        jwe.verifyAndDecodeJwe(encodedContent, jweAlgorithmProvider, jweEncryptionProvider);
+        String decodedContent = new String(jwe.getContent(), "UTF-8");
+        System.out.println("Decoded content: " + decodedContent);
+        System.out.println("Decoded content length: " + decodedContent.length());
+
+        Assert.assertEquals(PAYLOAD, decodedContent);
+    }
+
+    private String getJcaAlgorithmName(String jweAlgorithmName) {
+        String jcaAlgorithmName = null;
+        if (JWEConstants.RSA1_5.equals(jweAlgorithmName)) {
+            jcaAlgorithmName = "RSA/ECB/PKCS1Padding";
+        } else if (JWEConstants.RSA_OAEP.equals(jweAlgorithmName)) {
+            jcaAlgorithmName = "RSA/ECB/OAEPWithSHA-1AndMGF1Padding";
+        }
+        return jcaAlgorithmName;
+    }
 }

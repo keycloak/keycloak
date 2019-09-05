@@ -128,10 +128,19 @@ public class InfinispanPublicKeyStorageProvider implements PublicKeyStorageProvi
 
     @Override
     public KeyWrapper getPublicKey(String modelKey, String kid, PublicKeyLoader loader) {
+        return getPublicKey(modelKey, kid, null, loader);
+    }
+
+    @Override
+    public KeyWrapper getFirstPublicKey(String modelKey, String algorithm, PublicKeyLoader loader) {
+        return getPublicKey(modelKey, null, algorithm, loader);
+    }
+
+    private KeyWrapper getPublicKey(String modelKey, String kid, String algorithm, PublicKeyLoader loader) {
         // Check if key is in cache
         PublicKeysEntry entry = keys.get(modelKey);
         if (entry != null) {
-            KeyWrapper publicKey = getPublicKey(entry.getCurrentKeys(), kid);
+            KeyWrapper publicKey = algorithm != null ? getPublicKeyByAlg(entry.getCurrentKeys(), algorithm) : getPublicKey(entry.getCurrentKeys(), kid);
             if (publicKey != null) {
                 return publicKey;
             }
@@ -157,7 +166,7 @@ public class InfinispanPublicKeyStorageProvider implements PublicKeyStorageProvi
                 entry = task.get();
 
                 // Computation finished. Let's see if key is available
-                KeyWrapper publicKey = getPublicKey(entry.getCurrentKeys(), kid);
+                KeyWrapper publicKey = algorithm != null ? getPublicKeyByAlg(entry.getCurrentKeys(), algorithm) : getPublicKey(entry.getCurrentKeys(), kid);
                 if (publicKey != null) {
                     return publicKey;
                 }
@@ -191,12 +200,17 @@ public class InfinispanPublicKeyStorageProvider implements PublicKeyStorageProvi
         }
     }
 
+    private KeyWrapper getPublicKeyByAlg(Map<String, KeyWrapper> publicKeys, String algorithm) {
+        if (algorithm == null) return null;
+        for(KeyWrapper keyWrapper : publicKeys.values())
+            if (algorithm.equals(keyWrapper.getAlgorithm())) return keyWrapper;
+        return null;
+    }
 
     @Override
     public void close() {
 
     }
-
 
     private class WrapperCallable implements Callable<PublicKeysEntry> {
 

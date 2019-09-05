@@ -16,6 +16,7 @@ List of organization names below is based on information collected using Keycloa
 * Capgemini
 * Chassi
 * CloudNative Inc.
+* Conciso GmbH
 * Copenhagen Optimization
 * Curecomp GmbH
 * Cybertech
@@ -25,6 +26,7 @@ List of organization names below is based on information collected using Keycloa
 * DukeCon
 * European Synchrotron Radiation Facility
 * Fluance AG
+* Genchi Genbutsu SRL
 * Hewlett-Packard Enterprise
 * Hitachi
 * INEAT

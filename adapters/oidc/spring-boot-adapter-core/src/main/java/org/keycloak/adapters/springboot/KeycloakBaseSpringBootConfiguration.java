@@ -50,9 +50,9 @@ public class KeycloakBaseSpringBootConfiguration {
     protected KeycloakSpringBootProperties keycloakProperties;
 
     @Autowired
-    public void setKeycloakSpringBootProperties(KeycloakSpringBootProperties keycloakProperties) {
+    public void setKeycloakSpringBootProperties(KeycloakSpringBootProperties keycloakProperties, KeycloakSpringBootConfigResolver resolver) {
         this.keycloakProperties = keycloakProperties;
-        KeycloakSpringBootConfigResolver.setAdapterConfig(keycloakProperties);
+        resolver.setAdapterConfig(keycloakProperties);
     }
 
     @Autowired

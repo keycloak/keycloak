@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian-servers-auth-server</artifactId>
-        <version>7.0.0-SNAPSHOT</version>
+        <version>8.0.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -187,11 +187,11 @@
                                                 <include>keycloak.jks</include>
                                                 <include>keycloak.truststore</include>
                                                 <include>client.jks</include>
+                                                <include>client-ca.jks</include>
                                                 <include>ca.crt</include>
                                                 <include>client.crt</include>
                                                 <include>client.key</include>
-                                                <include>intermediate-ca.crl</include>
-                                                <include>empty.crl</include>
+                                                <include>*.crl</include>
                                                 <!-- KEYCLOAK-6771 Certificate Bound Token -->
                                                 <include>other_client.jks</include>
                                             </includes>
@@ -201,6 +201,25 @@
                                             <includes>
                                                 <include>certs/clients/test-user-san@localhost.cert.pem</include>
                                                 <include>certs/clients/test-user@localhost.key.pem</include>
+                                            </includes>
+                                        </resource>
+                                    </resources>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>copy-vault</id>
+                                <phase>process-resources</phase>
+                                <goals>
+                                    <goal>copy-resources</goal>
+                                </goals>
+                                <configuration>
+                                    <outputDirectory>${auth.server.home}/standalone/configuration/vault</outputDirectory>
+                                    <resources>
+                                        <resource>
+                                            <directory>${common.resources}/vault</directory>
+                                            <includes>
+                                                <include>master_smtp__key</include>
+                                                <include>test_smtp__key</include>
                                             </includes>
                                         </resource>
                                     </resources>
@@ -242,7 +261,12 @@
                                 </goals>
                                 <configuration>
                                     <target>
-                                        <ant antfile="${common.resources}/ant/configure.xml" target="apply-cli-scripts" />
+                                        <ant antfile="${common.resources}/ant/configure.xml" target="apply-cli-scripts">
+                                            <!-- See the comment above. In this case "auth.server.home" can contain
+                                                 "product.unpacked.folder.name" which is set at runtime and therefore
+                                                  not resolved. -->
+                                            <property name="auth.server.home">${auth.server.home}</property>
+                                        </ant>
                                     </target>
                                 </configuration>
                             </execution>
@@ -419,7 +443,14 @@
                                     </goals>
                                     <configuration>
                                         <target>
-                                            <ant antfile="${common.resources}/ant/configure.xml" target="configure-server-jpa" />
+                                            <ant antfile="${common.resources}/ant/configure.xml" target="configure-server-jpa" >
+                                                <!-- These properties become equivalent to properties defined on the command line. -->
+                                                <!-- Without specifying those the default values would be used regardless what is -->
+                                                <!-- defined via -Dproperty=value when executing maven command -->
+                                                <property name="jdbc.mvn.groupId">${jdbc.mvn.groupId}</property>
+                                                <property name="jdbc.mvn.artifactId">${jdbc.mvn.artifactId}</property>
+                                                <property name="jdbc.mvn.version">${jdbc.mvn.version}</property>
+                                            </ant>
                                         </target>
                                     </configuration>
                                 </execution>

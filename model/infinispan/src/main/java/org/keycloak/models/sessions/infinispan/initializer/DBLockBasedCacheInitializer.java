@@ -66,7 +66,7 @@ public class DBLockBasedCacheInitializer extends CacheInitializer {
         DBLockManager dbLockManager = new DBLockManager(session);
         dbLockManager.checkForcedUnlock();
         DBLockProvider dbLock = dbLockManager.getDBLock();
-        dbLock.waitForLock();
+        dbLock.waitForLock(DBLockProvider.Namespace.OFFLINE_SESSIONS);
         try {
 
             if (isFinished()) {

@@ -199,12 +199,12 @@ public class OIDCLoginProtocolService {
     public Response certs() {
         List<JWK> keys = new LinkedList<>();
         for (KeyWrapper k : session.keys().getKeys(realm)) {
-            if (k.getStatus().isEnabled() && k.getUse().equals(KeyUse.SIG) && k.getVerifyKey() != null) {
+            if (k.getStatus().isEnabled() && k.getUse().equals(KeyUse.SIG) && k.getPublicKey() != null) {
                 JWKBuilder b = JWKBuilder.create().kid(k.getKid()).algorithm(k.getAlgorithm());
                 if (k.getType().equals(KeyType.RSA)) {
-                    keys.add(b.rsa(k.getVerifyKey(), k.getCertificate()));
+                    keys.add(b.rsa(k.getPublicKey(), k.getCertificate()));
                 } else if (k.getType().equals(KeyType.EC)) {
-                    keys.add(b.ec(k.getVerifyKey()));
+                    keys.add(b.ec(k.getPublicKey()));
                 }
             }
         }

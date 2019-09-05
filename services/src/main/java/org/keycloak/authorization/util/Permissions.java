@@ -155,11 +155,9 @@ public final class Permissions {
         StoreFactory storeFactory = authorization.getStoreFactory();
         ResourceStore resourceStore = storeFactory.getResourceStore();
         resourceStore.findByType(type, resourceServer.getId(), resource1 -> {
-            if (resource1.getOwner().equals(resourceServer.getId())) {
-                for (Scope typeScope : resource1.getScopes()) {
-                    if (!scopes.contains(typeScope)) {
-                        scopes.add(typeScope);
-                    }
+            for (Scope typeScope : resource1.getScopes()) {
+                if (!scopes.contains(typeScope)) {
+                    scopes.add(typeScope);
                 }
             }
         });

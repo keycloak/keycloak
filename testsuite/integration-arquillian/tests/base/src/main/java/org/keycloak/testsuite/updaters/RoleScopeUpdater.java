@@ -18,6 +18,7 @@ package org.keycloak.testsuite.updaters;
 
 import org.keycloak.admin.client.resource.RoleScopeResource;
 import org.keycloak.representations.idm.RoleRepresentation;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -39,7 +40,18 @@ public class RoleScopeUpdater extends ServerResourceUpdater<RoleScopeUpdater, Ro
     }
 
     public RoleScopeUpdater remove(RoleRepresentation representation) {
-        rep.add(representation);
+        rep.remove(representation);
+        return this;
+    }
+
+    public RoleScopeUpdater removeByName(String name) {
+        for (Iterator<RoleRepresentation> it = rep.iterator(); it.hasNext();) {
+            RoleRepresentation mapper = it.next();
+            if (name.equals(mapper.getName())) {
+                it.remove();
+                break;
+            }
+        }
         return this;
     }
 

@@ -51,13 +51,13 @@ public class KeycloakRole implements GrantedAuthority {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof KeycloakRole)) {
+        if (!(o instanceof GrantedAuthority)) {
             return false;
         }
 
-        KeycloakRole that = (KeycloakRole) o;
+        GrantedAuthority that = (GrantedAuthority) o;
 
-        if (!role.equals(that.role)) {
+        if (!role.equals(that.getAuthority())) {
             return false;
         }
 

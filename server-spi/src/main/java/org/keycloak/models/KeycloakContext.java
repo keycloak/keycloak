@@ -18,9 +18,9 @@
 package org.keycloak.models;
 
 import org.keycloak.common.ClientConnection;
+import org.keycloak.sessions.AuthenticationSessionModel;
 
 import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.UriInfo;
 import java.net.URI;
 import java.util.Locale;
 
@@ -52,5 +52,13 @@ public interface KeycloakContext {
     void setConnection(ClientConnection connection);
 
     Locale resolveLocale(UserModel user);
-
+    
+    /**
+     * Get current AuthenticationSessionModel, can be null out of the AuthenticationSession context.
+     * 
+     * @return current AuthenticationSessionModel or null
+     */
+    AuthenticationSessionModel getAuthenticationSession(); 
+    
+    void setAuthenticationSession(AuthenticationSessionModel authenticationSession);
 }

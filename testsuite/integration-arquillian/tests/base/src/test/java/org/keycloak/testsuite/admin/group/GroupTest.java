@@ -23,10 +23,13 @@ import org.keycloak.admin.client.resource.GroupResource;
 import org.keycloak.admin.client.resource.GroupsResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.RoleMappingResource;
+import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.Constants;
+import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
@@ -722,5 +725,41 @@ public class GroupTest extends AbstractGroupTest {
 
         assertEquals(new Long(allGroups.size()), realm.groups().count(true).get("count"));
         assertEquals(new Long(allGroups.size() + 1), realm.groups().count(false).get("count"));
+    }
+
+    @Test
+    public void testBriefRepresentationOnGroupMembers() {
+        RealmResource realm = adminClient.realms().realm("test");
+        String groupName = "brief-grouptest-group";
+        String userName = "brief-grouptest-user";
+
+        GroupsResource groups = realm.groups();
+        try (Response response = groups.add(GroupBuilder.create().name(groupName).build())) {
+            String groupId = ApiUtil.getCreatedId(response);
+
+            GroupResource group = groups.group(groupId);
+
+            UsersResource users = realm.users();
+
+            UserRepresentation userRepresentation = UserBuilder.create()
+                    .username(userName)
+                    .addAttribute("myattribute", "myvalue")
+                    .build();
+
+            Response r = users.create(userRepresentation);
+            UserResource user = users.get(ApiUtil.getCreatedId(r));
+            user.joinGroup(groupId);
+
+            UserRepresentation defaultRepresentation = group.members(null, null).get(0);
+            UserRepresentation fullRepresentation = group.members(null, null, false).get(0);
+            UserRepresentation briefRepresentation = group.members(null, null, true).get(0);
+
+            assertEquals("full group member representation includes attributes", fullRepresentation.getAttributes(), userRepresentation.getAttributes());
+            assertEquals("default group member representation is full", defaultRepresentation.getAttributes(), userRepresentation.getAttributes());
+            assertNull("brief group member representation omits attributes", briefRepresentation.getAttributes());
+
+            group.remove();
+            user.remove();
+        }
     }
 }

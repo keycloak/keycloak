@@ -61,4 +61,12 @@ public interface MigrationProvider extends Provider {
      */
     ClientScopeModel addOIDCWebOriginsClientScope(RealmModel realm);
 
+    /**
+     * Adds the {@code microprofile-jwt} optional client scope to the realm and returns the created scope. If the scope
+     * already exists in the realm then the existing scope is returned.
+     *
+     * @param realm the realm to which the scope is to be added.
+     * @return a reference to the {@code microprofile-jwt} client scope that was either created or already exists in the realm.
+     */
+    ClientScopeModel addOIDCMicroprofileJWTClientScope(RealmModel realm);
 }

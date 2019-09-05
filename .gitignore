@@ -1,3 +1,7 @@
+# OS stuff
+###################
+.DS_Store
+
 # Intellij
 ###################
 .idea
@@ -8,9 +12,9 @@
 .project
 .settings
 .classpath
-# reverting this as e.g. /distribution/feature-packs/server-feature-pack/src/main/resources/content/bin/ 
+# reverting this as e.g. /distribution/feature-packs/server-feature-pack/src/main/resources/content/bin/
 # should not be ignored
-#bin/ 
+#bin/
 .factorypath
 
 

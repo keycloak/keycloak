@@ -76,12 +76,22 @@ public class Retry {
      * @return Index of the first successful invocation, starting from 0.
      */
     public static int executeWithBackoff(AdvancedRunnable runnable, int attemptsCount, int intervalBaseMillis) {
+        return executeWithBackoff(runnable, null, attemptsCount, intervalBaseMillis);
+    }
+
+
+    public static int executeWithBackoff(AdvancedRunnable runnable, ThrowableCallback throwableCallback, int attemptsCount, int intervalBaseMillis) {
         int iteration = 0;
         while (true) {
             try {
                 runnable.run(iteration);
                 return iteration;
             } catch (RuntimeException | AssertionError e) {
+
+                if (throwableCallback != null) {
+                    throwableCallback.handleThrowable(iteration, e);
+                }
+
                 attemptsCount--;
                 iteration++;
                 if (attemptsCount > 0) {
@@ -147,6 +157,17 @@ public class Retry {
     public interface AdvancedRunnable {
 
         void run(int iteration);
+
+    }
+
+    /**
+     * Needed here because:
+     * - java.util.function.BiConsumer defined from Java 8
+     * - Adds some additional info (current iteration and called throwable
+     */
+    public interface ThrowableCallback {
+
+        void handleThrowable(int iteration, Throwable t);
 
     }
 

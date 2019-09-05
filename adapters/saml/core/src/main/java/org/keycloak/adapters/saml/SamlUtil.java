@@ -17,13 +17,17 @@
 
 package org.keycloak.adapters.saml;
 
+import org.jboss.logging.Logger;
 import org.keycloak.adapters.spi.HttpFacade;
 import org.keycloak.saml.BaseSAML2BindingBuilder;
 import org.keycloak.saml.common.constants.GeneralConstants;
 import org.keycloak.saml.common.exceptions.ConfigurationException;
 import org.keycloak.saml.common.exceptions.ProcessingException;
+import org.keycloak.saml.processing.core.saml.v2.util.XMLTimeUtil;
 import org.w3c.dom.Document;
 
+import javax.xml.datatype.DatatypeConstants;
+import javax.xml.datatype.XMLGregorianCalendar;
 import java.io.IOException;
 
 /**
@@ -31,6 +35,9 @@ import java.io.IOException;
  * @version $Revision: 1 $
  */
 public class SamlUtil {
+
+    protected static Logger log = Logger.getLogger(SamlUtil.class);
+
     public static void sendSaml(boolean asRequest, HttpFacade httpFacade, String actionUrl,
                             BaseSAML2BindingBuilder binding, Document document,
                             SamlDeployment.Binding samlBinding) throws ProcessingException, ConfigurationException, IOException {
@@ -86,5 +93,32 @@ public class SamlUtil {
         if (baseUri.endsWith("/")) baseUri = baseUri.substring(0, baseUri.length() - 1);
         redirectTo = baseUri + "/" + redirectTo;
         return redirectTo;
+    }
+
+    public static SamlSession validateSamlSession(Object potentialSamlSession, SamlDeployment deployment) {
+        if (potentialSamlSession == null) {
+            log.debug("SamlSession was not found in the session");
+            return null;
+        }
+
+        if (!(potentialSamlSession instanceof SamlSession)) {
+            log.debug("Provided samlSession was not SamlSession type");
+            return null;
+        }
+
+        SamlSession samlSession = (SamlSession) potentialSamlSession;
+
+        XMLGregorianCalendar sessionNotOnOrAfter = samlSession.getSessionNotOnOrAfter();
+        if (sessionNotOnOrAfter != null) {
+            XMLGregorianCalendar now = XMLTimeUtil.getIssueInstant();
+
+            XMLTimeUtil.add(sessionNotOnOrAfter, deployment.getIDP().getAllowedClockSkew()); // add clockSkew
+
+            if (now.compare(sessionNotOnOrAfter) != DatatypeConstants.LESSER) {
+                return null;
+            }
+        }
+
+        return samlSession;
     }
 }

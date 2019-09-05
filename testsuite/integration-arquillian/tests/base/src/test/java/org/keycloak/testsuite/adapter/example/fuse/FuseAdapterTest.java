@@ -23,7 +23,6 @@ import static org.keycloak.testsuite.auth.page.AuthRealm.DEMO;
 import static org.keycloak.testsuite.utils.fuse.FuseUtils.assertCommand;
 import static org.keycloak.testsuite.utils.fuse.FuseUtils.getCommandOutput;
 import static org.keycloak.testsuite.utils.io.IOUtil.loadRealm;
-import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlDoesntStartWith;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWithLoginUrlOf;
 
@@ -46,6 +45,7 @@ import javax.management.remote.JMXServiceURL;
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -57,6 +57,7 @@ import org.keycloak.testsuite.adapter.page.fuse.CustomerListing;
 import org.keycloak.testsuite.adapter.page.fuse.CustomerPortalFuseExample;
 import org.keycloak.testsuite.adapter.page.fuse.ProductPortalFuseExample;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
+import org.keycloak.testsuite.auth.page.AuthRealm;
 import org.keycloak.testsuite.auth.page.account.Account;
 import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
 import org.keycloak.testsuite.auth.page.login.OIDCLogin;
@@ -86,6 +87,9 @@ public class FuseAdapterTest extends AbstractExampleAdapterTest {
     private OIDCLogin testRealmLoginPageFuse;
     @Page
     @JavascriptBrowser
+    private AuthRealm loginPageFuse;
+    @Page
+    @JavascriptBrowser
     protected CustomerPortalFuseExample customerPortal;
     @Page
     @JavascriptBrowser
@@ -99,7 +103,7 @@ public class FuseAdapterTest extends AbstractExampleAdapterTest {
     @Page
     @JavascriptBrowser
     protected Account testRealmAccount;
-    
+
     @Override
     public void addAdapterTestRealms(List<RealmRepresentation> testRealms) {
         RealmRepresentation fuseRealm = loadRealm(new File(TEST_APPS_HOME_DIR + "/fuse/demorealm.json"));
@@ -113,6 +117,7 @@ public class FuseAdapterTest extends AbstractExampleAdapterTest {
         testRealmPage.setAuthRealm(DEMO);
         testRealmLoginPage.setAuthRealm(DEMO);
         testRealmAccount.setAuthRealm(DEMO);
+        loginPageFuse.setAuthRealm(DEMO);
     }
 
     @Before
@@ -130,12 +135,12 @@ public class FuseAdapterTest extends AbstractExampleAdapterTest {
     public void hawtio1LoginTest() throws Exception {
         hawtioPage.navigateTo();
         WaitUtils.waitForPageToLoad();
-        assertCurrentUrlDoesntStartWith(hawtioPage);
+        assertCurrentUrlStartsWith(loginPageFuse);
         testRealmLoginPageFuse.form().login("user", "invalid-password");
-        assertCurrentUrlDoesntStartWith(hawtioPage);
+        assertCurrentUrlStartsWith(loginPageFuse);
 
         testRealmLoginPageFuse.form().login("invalid-user", "password");
-        assertCurrentUrlDoesntStartWith(hawtioPage);
+        assertCurrentUrlStartsWith(loginPageFuse);
 
         testRealmLoginPageFuse.form().login("root", "password");
         assertCurrentUrlStartsWith(hawtioPage.toString() + "/welcome");
@@ -157,21 +162,28 @@ public class FuseAdapterTest extends AbstractExampleAdapterTest {
     @Test
     @AppServerContainer(value = ContainerConstants.APP_SERVER_FUSE63, skip = true)
     public void hawtio2LoginTest() throws Exception {
+
+        Assume.assumeTrue("This test doesn't work with phantomjs", !"phantomjs".equals(System.getProperty("js.browser")));
+
         hawtio2Page.navigateTo();
         WaitUtils.waitForPageToLoad();
 
-        assertCurrentUrlDoesntStartWith(hawtio2Page);
+        assertCurrentUrlStartsWith(loginPageFuse);
         testRealmLoginPageFuse.form().login("user", "invalid-password");
-        assertCurrentUrlDoesntStartWith(hawtio2Page);
+        assertCurrentUrlStartsWith(loginPageFuse);
 
         testRealmLoginPageFuse.form().login("invalid-user", "password");
-        assertCurrentUrlDoesntStartWith(hawtio2Page);
+        assertCurrentUrlStartsWith(loginPageFuse);
 
+        log.debug("logging in as root");
         testRealmLoginPageFuse.form().login("root", "password");
         assertCurrentUrlStartsWith(hawtio2Page.toString());
-        WaitUtils.waitForPageToLoad();
-        WaitUtils.waitUntilElement(By.xpath("//img[@alt='Red Hat Fuse Management Console'] | //img[@ng-src='img/fuse-logo.svg']")).is().present();
-        assertThat(DroneUtils.getCurrentDriver().getPageSource(), containsString("OSGi"));
+        
+        assertHawtio2Page("camel", true);
+        assertHawtio2Page("jmx", true);
+        assertHawtio2Page("osgi", true);
+        assertHawtio2Page("logs", true);
+
         hawtio2Page.logout();
         WaitUtils.waitForPageToLoad();
 
@@ -184,11 +196,23 @@ public class FuseAdapterTest extends AbstractExampleAdapterTest {
         testRealmLoginPageFuse.form().login("mary", "password");
         log.debug("Current URL: " + DroneUtils.getCurrentDriver().getCurrentUrl());
         assertCurrentUrlStartsWith(hawtio2Page.toString());
+        
+        assertHawtio2Page("camel", false);
+        assertHawtio2Page("jmx", false);
+        assertHawtio2Page("osgi", false);
+        assertHawtio2Page("logs", false);
+    }
+
+    private void assertHawtio2Page(String urlFragment, boolean expectedSuccess) {
+        DroneUtils.getCurrentDriver().navigate().to(hawtio2Page.getUrl() + "/" + urlFragment);
         WaitUtils.waitForPageToLoad();
         WaitUtils.waitUntilElement(By.xpath("//img[@alt='Red Hat Fuse Management Console'] | //img[@ng-src='img/fuse-logo.svg']")).is().present();
-        assertThat(DroneUtils.getCurrentDriver().getPageSource(), containsString("OSGi"));
-        assertThat(DroneUtils.getCurrentDriver().getPageSource(), not(containsString("Camel")));
-    }    
+        if (expectedSuccess) {
+            assertCurrentUrlStartsWith(hawtio2Page.getUrl() + "/" + urlFragment);
+        } else {
+            assertCurrentUrlStartsWith(hawtio2Page.getUrl() + "/jvm");
+        }
+    }
 
     @Test
     @AppServerContainer(value = ContainerConstants.APP_SERVER_FUSE7X, skip = true)

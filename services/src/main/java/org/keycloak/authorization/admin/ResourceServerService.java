@@ -86,9 +86,8 @@ public class ResourceServerService {
         if (this.resourceServer == null) {
             this.resourceServer = RepresentationToModel.createResourceServer(client, session, true);
             createDefaultPermission(createDefaultResource(), createDefaultPolicy());
+            audit(OperationType.CREATE, session.getContext().getUri(), newClient);
         }
-
-        audit(OperationType.CREATE, session.getContext().getUri(), newClient);
 
         return resourceServer;
     }
@@ -100,6 +99,7 @@ public class ResourceServerService {
         this.auth.realm().requireManageAuthorization();
         this.resourceServer.setAllowRemoteResourceManagement(server.isAllowRemoteResourceManagement());
         this.resourceServer.setPolicyEnforcementMode(server.getPolicyEnforcementMode());
+        this.resourceServer.setDecisionStrategy(server.getDecisionStrategy());
         audit(OperationType.UPDATE, session.getContext().getUri(), false);
         return Response.noContent().build();
     }

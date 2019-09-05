@@ -70,4 +70,7 @@ public interface Details {
 
     String EXISTING_USER = "previous_user";
 
+    String X509_CERTIFICATE_SERIAL_NUMBER = "x509_cert_serial_number";
+    String X509_CERTIFICATE_SUBJECT_DISTINGUISHED_NAME = "x509_cert_subject_distinguished_name";
+    String X509_CERTIFICATE_ISSUER_DISTINGUISHED_NAME = "x509_cert_issuer_distinguished_name";
 }

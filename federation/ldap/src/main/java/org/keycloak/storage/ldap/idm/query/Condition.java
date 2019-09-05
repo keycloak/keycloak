@@ -39,4 +39,8 @@ public interface Condition {
 
     void applyCondition(StringBuilder filter);
 
+    void setBinary(boolean binary);
+
+    boolean isBinary();
+
 }

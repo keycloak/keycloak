@@ -142,9 +142,13 @@ public final class PemUtils {
         }
     }
 
-    private static byte[] pemToDer(String pem) throws IOException {
-        pem = removeBeginEnd(pem);
-        return Base64.decode(pem);
+    public static byte[] pemToDer(String pem) {
+        try {
+            pem = removeBeginEnd(pem);
+            return Base64.decode(pem);
+        } catch (IOException ioe) {
+            throw new PemException(ioe);
+        }
     }
 
     public static String removeBeginEnd(String pem) {
@@ -155,11 +159,11 @@ public final class PemUtils {
         return pem.trim();
     }
 
-    public static String generateThumbprint(String[] certChain, String encoding) throws NoSuchAlgorithmException, IOException {
+    public static String generateThumbprint(String[] certChain, String encoding) throws NoSuchAlgorithmException {
         return Base64Url.encode(generateThumbprintBytes(certChain, encoding));
     }
 
-    static byte[] generateThumbprintBytes(String[] certChain, String encoding) throws NoSuchAlgorithmException, IOException {
+    static byte[] generateThumbprintBytes(String[] certChain, String encoding) throws NoSuchAlgorithmException {
         return MessageDigest.getInstance(encoding).digest(pemToDer(certChain[0]));
     }
 

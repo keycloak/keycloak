@@ -105,7 +105,7 @@ In order to use the DB Allocator Service, you must use the `jpa` profile with on
 run JPA with Auth Server Wildfly and MSSQL 2016:
 
 ```
-mvn -f testsuite/integration-arquillian/pom.xml \
+mvn -f testsuite/integration-arquillian/pom.xml clean verify \
     -Pjpa,auth-server-wildfly,db-allocator-db-mssql2016 \
     -Ddballocator.uri=<<db-allocator-servlet-url>> \
     -Ddballocator.user=<<db-allocator-user>> \
@@ -115,7 +115,11 @@ mvn -f testsuite/integration-arquillian/pom.xml \
 Using `-Dmaven.test.failure.ignore=true` is not strictly required but highly recommended. After running the tests,
 the DB Allocator Plugin should release the allocated database.
 
+**NOTE**: If you killed the maven surefire test preliminary (for example with CTRL-C or `kill -9` command), it will be
+good to manually release the allocated database. Please check `dballocator.uri` and add `?operation=report` to the end of the URL.
+Find your DB in the GUI and release it manually.
+
 Below is a just a sample of implemented profiles. In order to get a full list, please invoke (`mvn help:all-profiles -pl testsuite/integration-arquillian | grep -- db-allocator-db-`):
 
-* `db-allocator-db-postgres` - dor testing with Postgres 9.6.x
-* `db-allocator-db-mysql` - dor testing with MySQL 5.7
+* `db-allocator-db-postgres` - for testing with Postgres 9.6.x
+* `db-allocator-db-mysql` - for testing with MySQL 5.7

@@ -267,15 +267,7 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
 
         addRolesClientScope(newRealm);
         addWebOriginsClientScope(newRealm);
-
-        ClientScopeModel microprofileScope = newRealm.addClientScope(MICROPROFILE_JWT_SCOPE);
-        microprofileScope.setDescription("Microprofile - JWT built-in scope");
-        microprofileScope.setDisplayOnConsentScreen(false);
-        microprofileScope.setIncludeInTokenScope(true);
-        microprofileScope.setProtocol(getId());
-        microprofileScope.addProtocolMapper(builtins.get(UPN));
-        microprofileScope.addProtocolMapper(builtins.get(GROUPS));
-        newRealm.addDefaultClientScope(microprofileScope, false);
+        addMicroprofileJWTClientScope(newRealm);
     }
 
 
@@ -320,6 +312,31 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
         }
 
         return originsScope;
+    }
+
+    /**
+     * Adds the {@code microprofile-jwt} optional client scope to the specified realm. If a {@code microprofile-jwt} client scope
+     * already exists in the realm then the existing scope is returned. Otherwise, a new scope is created and returned.
+     *
+     * @param newRealm the realm to which the {@code microprofile-jwt} scope is to be added.
+     * @return a reference to the {@code microprofile-jwt} client scope that was either created or already exists in the realm.
+     */
+    public static ClientScopeModel addMicroprofileJWTClientScope(RealmModel newRealm) {
+        ClientScopeModel microprofileScope = KeycloakModelUtils.getClientScopeByName(newRealm, MICROPROFILE_JWT_SCOPE);
+        if (microprofileScope == null) {
+            microprofileScope = newRealm.addClientScope(MICROPROFILE_JWT_SCOPE);
+            microprofileScope.setDescription("Microprofile - JWT built-in scope");
+            microprofileScope.setDisplayOnConsentScreen(false);
+            microprofileScope.setIncludeInTokenScope(true);
+            microprofileScope.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+            microprofileScope.addProtocolMapper(builtins.get(UPN));
+            microprofileScope.addProtocolMapper(builtins.get(GROUPS));
+            newRealm.addDefaultClientScope(microprofileScope, false);
+        } else {
+            logger.debugf("Client scope '%s' already exists in realm '%s'. Skip creating it.", MICROPROFILE_JWT_SCOPE, newRealm.getName());
+        }
+
+        return microprofileScope;
     }
 
     @Override

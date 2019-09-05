@@ -151,7 +151,7 @@ public class FluentTestsHelper {
      * @return <code>this</code>
      */
     public FluentTestsHelper init() {
-        keycloak = getKeycloakInstance(DEFAULT_KEYCLOAK_URL, adminRealm, adminUserName, adminPassword, adminClient);
+        keycloak = getKeycloakInstance(keycloakBaseUrl, adminRealm, adminUserName, adminPassword, adminClient);
         accessToken = generateInitialAccessToken();
         isInitialized = true;
         return this;

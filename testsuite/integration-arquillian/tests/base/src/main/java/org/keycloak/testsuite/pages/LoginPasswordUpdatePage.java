@@ -38,12 +38,19 @@ public class LoginPasswordUpdatePage extends LanguageComboboxAwarePage {
 
     @FindBy(xpath = "//span[@class='kc-feedback-text']")
     private WebElement feedbackMessage;
+    
+    @FindBy(name = "cancel-aia")
+    private WebElement cancelAIAButton;
 
     public void changePassword(String newPassword, String passwordConfirm) {
         newPasswordInput.sendKeys(newPassword);
         passwordConfirmInput.sendKeys(passwordConfirm);
 
         submitButton.click();
+    }
+    
+    public void cancel() {
+        cancelAIAButton.click();
     }
 
     public boolean isCurrent() {

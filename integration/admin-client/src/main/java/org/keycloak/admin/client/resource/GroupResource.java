@@ -117,6 +117,7 @@ public interface GroupResource {
     @Path("/members")
     @Produces(MediaType.APPLICATION_JSON)
     public List<UserRepresentation> members();
+
     /**
      * Get users
      * <p/>
@@ -132,4 +133,24 @@ public interface GroupResource {
     @Produces(MediaType.APPLICATION_JSON)
     public List<UserRepresentation> members(@QueryParam("first") Integer firstResult,
                                             @QueryParam("max") Integer maxResults);
+
+    /**
+     * Get users
+     * <p/>
+     * Returns a list of users, filtered according to query parameters
+     *
+     * @param firstResult Pagination offset
+     * @param maxResults  Pagination size
+     * @param briefRepresentation Only return basic information (only guaranteed to return id, username, created, first and last name,
+     *      email, enabled state, email verification state, federation link, and access.
+     *      Note that it means that namely user attributes, required actions, and not before are not returned.)
+     * @return
+     */
+    @GET
+    @NoCache
+    @Path("/members")
+    @Produces(MediaType.APPLICATION_JSON)
+    public List<UserRepresentation> members(@QueryParam("first") Integer firstResult,
+                                            @QueryParam("max") Integer maxResults,
+                                            @QueryParam("briefRepresentation") Boolean briefRepresentation);
 }

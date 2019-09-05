@@ -8,7 +8,9 @@ Here is what you need to know in order to do development on the new console.
 
 Building
 --------
-First, you must install node and npm.  Then run install.
+First, you must install node and npm.  The recommended version of npm is 6.9.0 or higher.
+
+Then run install.
 
 `npm install`
 
@@ -48,3 +50,11 @@ You should run the Keycloak server with the following system properties:
 Log in to the admin console.  Go to Realm Settings --> Themes.  Then set account theme to "keycloak-preview".
 
 Now when you go to account management you should see the new React/PF4 version.
+
+Errors Using PatternFly 4 Components
+--------
+If you start using a new PatternFly 4 component or icon and the component is not found, it is probably because it is not activated in `systemjs.config.js`.  To avoid downloading unused components and icons, we declare them as @empty in the config file.
+
+So to fix the problem, edit `system.config.js` and follow the instructions in the file for components and icons.  
+
+Note that you will also need to fix this problem for any components and icons used by the parent component.  Unfortunately, this may require looking at the source code for patternfly-react.  See https://github.com/patternfly/patternfly-react/tree/master/packages/patternfly-4/react-core/src/components

@@ -36,8 +36,6 @@ import org.keycloak.scripting.EvaluatableScriptAdapter;
 import org.keycloak.scripting.ScriptCompilationException;
 import org.keycloak.scripting.ScriptingProvider;
 
-import javax.script.ScriptEngine;
-import javax.script.ScriptEngineManager;
 import java.util.List;
 
 /**
@@ -77,7 +75,7 @@ public class ScriptBasedOIDCProtocolMapper extends AbstractOIDCProtocolMapper im
         " * realm - the current realm\n" + //
         " * token - the current token\n" + //
         " * userSession - the current userSession\n" + //
-        " * keycloakSession - the current userSession\n" + //
+        " * keycloakSession - the current keycloakSession\n" + //
         " */\n\n\n//insert your code here..." //
       )
       .add()

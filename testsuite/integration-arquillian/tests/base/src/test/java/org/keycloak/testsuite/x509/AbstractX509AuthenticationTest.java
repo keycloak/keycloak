@@ -18,6 +18,8 @@
 
 package org.keycloak.testsuite.x509;
 
+import org.hamcrest.CoreMatchers;
+import org.hamcrest.Matchers;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.logging.Logger;
 import org.junit.AfterClass;
@@ -47,6 +49,7 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
 import org.keycloak.testsuite.pages.AbstractPage;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
@@ -73,7 +76,6 @@ import java.util.Map;
 import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel.IdentityMapperType.USERNAME_EMAIL;
 import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel.IdentityMapperType.USER_ATTRIBUTE;
 import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel.MappingSourceType.ISSUERDN;
-import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel.MappingSourceType.ISSUERDN_CN;
 import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel.MappingSourceType.SUBJECTALTNAME_EMAIL;
 import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel.MappingSourceType.SUBJECTALTNAME_OTHERNAME;
 import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel.MappingSourceType.SUBJECTDN;
@@ -89,6 +91,8 @@ public abstract class AbstractX509AuthenticationTest extends AbstractTestRealmKe
 
     public static final String EMPTY_CRL_PATH = "empty.crl";
     public static final String INTERMEDIATE_CA_CRL_PATH = "intermediate-ca.crl";
+    public static final String INTERMEDIATE_CA_INVALID_SIGNATURE_CRL_PATH = "intermediate-ca-invalid-signature.crl";
+    public static final String INTERMEDIATE_CA_3_CRL_PATH = "intermediate-ca-3.crl";
     protected final Logger log = Logger.getLogger(this.getClass());
 
     static final String REQUIRED = "REQUIRED";
@@ -185,7 +189,7 @@ public abstract class AbstractX509AuthenticationTest extends AbstractTestRealmKe
      * @return server home directory. This directory is supposed to contain client key, certificate and CRLs used in the tests
      */
     protected static String getAuthServerHome() {
-        String authServerHome = System.getProperty("auth.server.home");
+        String authServerHome = System.getProperty(AuthServerTestEnricher.AUTH_SERVER_HOME_PROPERTY);
         if (authServerHome == null) {
             return null;
         }
@@ -434,12 +438,12 @@ public abstract class AbstractX509AuthenticationTest extends AbstractTestRealmKe
                 .setUserIdentityMapperType(USERNAME_EMAIL);
     }
 
-    protected static X509AuthenticatorConfigModel createLoginIssuerCNToCustomAttributeConfig() {
+    protected static X509AuthenticatorConfigModel createLoginWithSpecifiedSourceTypeToCustomAttributeConfig(X509AuthenticatorConfigModel.MappingSourceType sourceType, String userAttributeName) {
         return new X509AuthenticatorConfigModel()
                 .setConfirmationPageAllowed(true)
-                .setMappingSourceType(ISSUERDN_CN)
+                .setMappingSourceType(sourceType)
                 .setUserIdentityMapperType(USER_ATTRIBUTE)
-                .setCustomAttributeName("x509_issuer_identity");
+                .setCustomAttributeName(userAttributeName);
     }
 
     protected static X509AuthenticatorConfigModel createLoginIssuerDN_OU2CustomAttributeConfig() {
@@ -524,10 +528,20 @@ public abstract class AbstractX509AuthenticationTest extends AbstractTestRealmKe
         Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
 
-        events.expectLogin()
+        AssertEvents.ExpectedEvent expectedEvent = events.expectLogin()
                 .user(userId)
                 .detail(Details.USERNAME, attemptedUsername)
-                .removeDetail(Details.REDIRECT_URI)
+                .removeDetail(Details.REDIRECT_URI);
+
+        addX509CertificateDetails(expectedEvent)
                 .assertEvent();
+    }
+
+
+    protected AssertEvents.ExpectedEvent addX509CertificateDetails(AssertEvents.ExpectedEvent expectedEvent) {
+        return expectedEvent
+                .detail(Details.X509_CERTIFICATE_SERIAL_NUMBER, Matchers.not(Matchers.isEmptyOrNullString()))
+                .detail(Details.X509_CERTIFICATE_SUBJECT_DISTINGUISHED_NAME, Matchers.startsWith("EMAILADDRESS=test-user@localhost"))
+                .detail(Details.X509_CERTIFICATE_ISSUER_DISTINGUISHED_NAME, Matchers.startsWith("EMAILADDRESS=contact@keycloak.org"));
     }
 }

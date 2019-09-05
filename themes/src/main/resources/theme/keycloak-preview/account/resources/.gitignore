@@ -18,3 +18,4 @@ node
 !systemjs.config.js
 !.eslintrc.js
 !WelcomePageScripts.js
+!content.js

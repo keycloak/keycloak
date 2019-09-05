@@ -680,6 +680,7 @@ public class ExportImportUtil {
           OAuth2Constants.OFFLINE_ACCESS,
           OIDCLoginProtocolFactory.ROLES_SCOPE,
           OIDCLoginProtocolFactory.WEB_ORIGINS_SCOPE,
+          OIDCLoginProtocolFactory.MICROPROFILE_JWT_SCOPE,
           SamlProtocolFactory.SCOPE_ROLE_LIST
         ));
 
@@ -708,7 +709,8 @@ public class ExportImportUtil {
         assertThat(optionalClientScopes, Matchers.hasItems(
           OAuth2Constants.SCOPE_ADDRESS,
           OAuth2Constants.SCOPE_PHONE,
-          OAuth2Constants.OFFLINE_ACCESS
+          OAuth2Constants.OFFLINE_ACCESS,
+          OIDCLoginProtocolFactory.MICROPROFILE_JWT_SCOPE
         ));
     }
 }

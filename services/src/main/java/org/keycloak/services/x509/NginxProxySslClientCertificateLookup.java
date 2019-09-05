@@ -3,26 +3,20 @@ package org.keycloak.services.x509;
 import java.io.UnsupportedEncodingException;
 import java.security.GeneralSecurityException;
 import java.security.InvalidAlgorithmParameterException;
-import java.security.InvalidKeyException;
 import java.security.KeyStore;
-import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
-import java.security.PublicKey;
-import java.security.SignatureException;
 import java.security.cert.CertPath;
 import java.security.cert.CertPathBuilder;
 import java.security.cert.CertPathBuilderException;
 import java.security.cert.CertStore;
 import java.security.cert.Certificate;
-import java.security.cert.CertificateException;
 import java.security.cert.CollectionCertStoreParameters;
 import java.security.cert.PKIXBuilderParameters;
 import java.security.cert.TrustAnchor;
 import java.security.cert.X509CertSelector;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
-import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -253,7 +247,8 @@ public class NginxProxySslClientCertificateLookup extends AbstractClientCertific
 	        
 	        if ( provider != null && provider.getTruststore() != null ) {
 	        	truststore = provider.getTruststore();
-	        	readTruststore();
+                trustedRootCerts = new HashSet<>(provider.getRootCertificates().values());
+                intermediateCerts = new HashSet<>(provider.getIntermediateCertificates().values());
 				log.debug("Keycloak truststore loaded for NGINX x509cert-lookup provider.");
 	
 	        	isTruststoreLoaded = true;
@@ -262,71 +257,5 @@ public class NginxProxySslClientCertificateLookup extends AbstractClientCertific
 
 		return isTruststoreLoaded;
 	}
-
-	/**
-	 * Get all certificates from Keycloak Truststore, and classify them in two lists : root CAs and intermediates CAs
-	 */
-	private void readTruststore() {
-		
-    	//Reading truststore aliases & certificates
-    	Enumeration enumeration;
-    	
-    	trustedRootCerts  = new HashSet<X509Certificate>();
-    	intermediateCerts = new HashSet<X509Certificate>();
-    	
-		try {
-
-			enumeration = truststore.aliases();
-			log.trace("Checking " + truststore.size() + " entries from the truststore.");
-            while(enumeration.hasMoreElements()) {
-
-                String alias = (String)enumeration.nextElement();
-                Certificate certificate = truststore.getCertificate(alias);
-
-                if (certificate instanceof X509Certificate) {
-                	X509Certificate cax509cert = (X509Certificate) certificate;
-                	if (isSelfSigned(cax509cert)) {
-                        trustedRootCerts.add(cax509cert);
-                        log.debug("Trusted root CA found in trustore : alias : "+alias + " | Subject DN : " + ((X509Certificate) certificate).getSubjectDN() );
-                    } else {
-                        intermediateCerts.add(cax509cert);
-                        log.debug("Intermediate CA found in trustore : alias : "+alias + " | Subject DN : " + ((X509Certificate) certificate).getSubjectDN() );
-                    }
-                } else
-                	log.info("Skipping certificate with alias ["+ alias + "] from truststore, because it's not an X509Certificate");
-                
-            }
-		} catch (KeyStoreException e) {
-			log.error("Error while reading Keycloak truststore "+e.getMessage(),e);
-		} catch (CertificateException e) {
-			log.error("Error while reading Keycloak truststore "+e.getMessage(),e);
-		} catch (NoSuchAlgorithmException e) {
-			log.error("Error while reading Keycloak truststore "+e.getMessage(),e);
-		} catch (NoSuchProviderException e) {
-			log.error("Error while reading Keycloak truststore "+e.getMessage(),e);
-		}
-	}
-	
-	/**
-     * Checks whether given X.509 certificate is self-signed.
-     */
-    public boolean isSelfSigned(X509Certificate cert)
-            throws CertificateException, NoSuchAlgorithmException,
-            NoSuchProviderException {
-        try {
-            // Try to verify certificate signature with its own public key
-            PublicKey key = cert.getPublicKey();
-            cert.verify(key);
-        	log.trace("certificate " + cert.getSubjectDN() + " detected as root CA");
-            return true;
-        } catch (SignatureException sigEx) {
-            // Invalid signature --> not self-signed
-        	log.trace("certificate " + cert.getSubjectDN() + " detected as intermediate CA");
-        } catch (InvalidKeyException keyEx) {
-            // Invalid key --> not self-signed
-        	log.trace("certificate " + cert.getSubjectDN() + " detected as intermediate CA");
-        }
-        return false;
-    }
 
 }

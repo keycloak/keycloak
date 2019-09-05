@@ -153,13 +153,13 @@
         </div>
         <div class="pf-c-page__header-tools">
             <#if referrer?has_content && referrer_uri?has_content>
-            <div class="pf-c-page__header-tools-group pf-m-icons pf-screen-reader">
+            <div class="pf-c-page__header-tools-group pf-m-icons">
               <a href="${referrer_uri}" id="referrer" tabindex="0"><span class="pf-icon pf-icon-arrow"></span>${msg("backTo",referrerName)}</a>
             </div>
             </#if>
             
             <#if realm.internationalizationEnabled  && supportedLocales?size gt 1>
-            <div class="pf-c-page__header-tools-group pf-screen-reader pf-m-icons">
+            <div class="pf-c-page__header-tools-group pf-m-icons">
               <div id="landing-locale-dropdown" class="pf-c-dropdown">
                 <button onclick="toggleLocaleDropdown();" class="pf-c-dropdown__toggle pf-m-plain" id="landing-locale-dropdown-button" aria-expanded="false" aria-haspopup="true">
                     <span class="pf-c-dropdown__toggle-text">
@@ -180,7 +180,7 @@
             </div>
             </#if>
             
-            <div class="pf-c-page__header-tools-group pf-m-icons pf-screen-reader">
+            <div class="pf-c-page__header-tools-group pf-m-icons">
               <button id="signInButton" tabindex="0" style="display:none" onclick="keycloak.login();" class="pf-c-button pf-m-primary" type="button">${msg("doLogIn")}</button>
               <button id="signOutButton" tabindex="0" style="display:none" onclick="keycloak.logout();" class="pf-c-button pf-m-primary" type="button">${msg("doSignOut")}</button>
             </div>
@@ -240,7 +240,7 @@
                     <h6>${msg("personalInfoIntroMessage")}</h6>
                 </div>
                 <div class="pf-c-card__body pf-c-content">
-                    <h5 id="personalInfoLink"><a href="#/app/account">${msg("personalInfoHtmlTitle")}</a></h5>
+                    <h5 id="personalInfoLink"><a href="#/app/personal-info">${msg("personalInfoHtmlTitle")}</a></h5>
                 </div>
               </div>
             </div>
@@ -251,10 +251,10 @@
                     <h6>${msg("accountSecurityIntroMessage")}</h6>
                 </div>
                 <div class="pf-c-card__body pf-c-content">
-                    <h5 id="changePasswordLink"><a href="#/app/password">${msg("changePasswordHtmlTitle")}</a></h5>
-                    <h5 id="authenticatorLink"><a href="#/app/authenticator">${msg("authenticatorTitle")}</a></h5>
-                    <h5 id="deviceActivityLink"><a href="#/app/device-activity">${msg("deviceActivityHtmlTitle")}</a></h5>
-                    <h5 id="linkedAccountsLink" style="display:none"><a href="#/app/linked-accounts">${msg("linkedAccountsHtmlTitle")}</a></h5>
+                    <h5 id="changePasswordLink"><a href="#/app/security/password">${msg("changePasswordHtmlTitle")}</a></h5>
+                    <h5 id="authenticatorLink"><a href="#/app/security/authenticator">${msg("authenticatorTitle")}</a></h5>
+                    <h5 id="deviceActivityLink"><a href="#/app/security/device-activity">${msg("deviceActivityHtmlTitle")}</a></h5>
+                    <h5 id="linkedAccountsLink" style="display:none"><a href="#/app/security/linked-accounts">${msg("linkedAccountsHtmlTitle")}</a></h5>
                 </div>
               </div>
             </div>

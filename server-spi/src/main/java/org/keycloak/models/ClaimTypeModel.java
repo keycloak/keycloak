@@ -26,7 +26,8 @@ public class ClaimTypeModel {
     public static enum ValueType {
         BOOLEAN,
         INT,
-        STRING
+        STRING,
+        JSON
     }
 
     private String id;

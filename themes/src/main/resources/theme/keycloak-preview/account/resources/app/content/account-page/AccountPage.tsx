@@ -16,10 +16,13 @@
 
 import * as React from 'react';
 import {AxiosResponse} from 'axios';
+import {ActionGroup, Button, Form, FormGroup, TextInput} from '@patternfly/react-core';
 
 import {AccountServiceClient} from '../../account-service/account.service';
 import {Features} from '../../widgets/features';
 import {Msg} from '../../widgets/Msg';
+import {ContentPage} from '../ContentPage';
+import {ContentAlert} from '../ContentAlert';
 
 declare const features: Features;
  
@@ -56,16 +59,23 @@ export class AccountPage extends React.Component<AccountPageProps, AccountPageSt
     
     public constructor(props: AccountPageProps) {
         super(props);
+        this.fetchPersonalInfo();
+    }
+    
+    private fetchPersonalInfo(): void {
         AccountServiceClient.Instance.doGet("/")
             .then((response: AxiosResponse<FormFields>) => {
                 this.setState({formFields: response.data});
                 console.log({response});
             });
     }
+    
+    private handleCancel = (): void => {
+        this.fetchPersonalInfo();
+    }
 
-    private handleChange = (event: React.ChangeEvent<HTMLInputElement>): void => {
-        const target: HTMLInputElement = event.target;
-        const value: string = target.value;
+    private handleChange = (value: string, event: React.FormEvent<HTMLInputElement>) => {
+        const target: HTMLInputElement = event.currentTarget;
         const name: string = target.name;
         this.setState({
             canSubmit: this.requiredFieldsHaveData(name, value),
@@ -73,19 +83,23 @@ export class AccountPage extends React.Component<AccountPageProps, AccountPageSt
         });
     }
     
-    private handleSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
-        event.preventDefault();
+    private handleSubmit = (): void => {
+        if (!this.requiredFieldsHaveData()) return;
         const reqData: FormFields = {...this.state.formFields};
         AccountServiceClient.Instance.doPost("/", {data: reqData})
-            .then((response: AxiosResponse<FormFields>) => {
+            .then(() => { // to use response, say ((response: AxiosResponse<FormFields>) => {
                 this.setState({canSubmit: false});
-                alert('Data posted:' + response.statusText);
+                ContentAlert.success('accountUpdatedMessage');
             });
     }
     
-    private requiredFieldsHaveData(fieldName: string, newValue: string): boolean { 
+    private requiredFieldsHaveData(fieldName?: string, newValue?: string): boolean { 
         const fields: FormFields = {...this.state.formFields};
-        fields[fieldName] = newValue;
+        
+        if (fieldName && newValue) {
+            fields[fieldName] = newValue;
+        }
+        
         for (const field of Object.keys(fields)) {
             if (!fields[field]) return false;
         }
@@ -96,72 +110,108 @@ export class AccountPage extends React.Component<AccountPageProps, AccountPageSt
     public render(): React.ReactNode {
         const fields: FormFields = this.state.formFields;
         return (
-<span>
-<div className="pf-c-content">
-    <h1 id="pageTitle"><Msg msgKey="personalInfoHtmlTitle"/></h1>
-</div>
-
-<div className="col-sm-12 card-pf">
-  <div className="card-pf-body row">
-      <div className="col-sm-4 col-md-4">
-          <div className="card-pf-subtitle" id="personalSubTitle">
-              <Msg msgKey="personalSubTitle"/>
-          </div>
-          <div className="introMessage" id="personalSubMessage">
-            <p><Msg msgKey="personalSubMessage"/></p>
-          </div>
-          <div className="subtitle" id="requiredFieldMessage"><span className="required">*</span> <Msg msgKey="requiredFields"/></div>
-      </div>
-      
-      <div className="col-sm-6 col-md-6">
-        <form onSubmit={this.handleSubmit} className="form-horizontal">
-
-          { !this.isRegistrationEmailAsUsername &&
-            <div className="form-group ">
-                <label htmlFor="username" className="control-label"><Msg msgKey="username" /></label>{this.isEditUserNameAllowed && <span className="required">*</span>}
-                {this.isEditUserNameAllowed && <this.UsernameInput/>}
-                {!this.isEditUserNameAllowed && <this.RestrictedUsernameInput/>}
-            </div>
-          }
-
-          <div className="form-group ">
-            <label htmlFor="email" className="control-label"><Msg msgKey="email"/></label> <span className="required">*</span>
-            <input type="email" className="form-control" id="email" name="email" required autoFocus onChange={this.handleChange} value={fields.email}/>
-          </div>
-
-          <div className="form-group ">
-            <label htmlFor="firstName" className="control-label"><Msg msgKey="firstName"/></label> <span className="required">*</span>
-            <input className="form-control" id="firstName" required name="firstName" type="text" onChange={this.handleChange} value={fields.firstName}/>
-          </div>
-
-          <div className="form-group ">
-            <label htmlFor="lastName" className="control-label"><Msg msgKey="lastName"/></label> <span className="required">*</span>
-            <input className="form-control" id="lastName" required name="lastName" type="text" onChange={this.handleChange} value={fields.lastName}/>
-          </div>
-
-          <div className="form-group">
-            <div id="kc-form-buttons" className="submit">
-              <div className="">
-                <button disabled={!this.state.canSubmit} 
-                        type="submit" className="btn btn-primary btn-lg" 
-                        name="submitAction"><Msg msgKey="doSave"/></button>
-              </div>
-            </div>
-          </div>
-        </form>
-      </div>
-    </div>
-  </div>
-</span>
+            <ContentPage title="personalInfoHtmlTitle" 
+                     introMessage="personalSubMessage">
+                <Form isHorizontal>
+                    {!this.isRegistrationEmailAsUsername && 
+                        <FormGroup
+                            label={Msg.localize('username')}
+                            isRequired
+                            fieldId="user-name"
+                        >
+                            {this.isEditUserNameAllowed && <this.UsernameInput/>}
+                            {!this.isEditUserNameAllowed && <this.RestrictedUsernameInput/>}
+                        </FormGroup>
+                    }
+                    <FormGroup
+                        label={Msg.localize('email')}
+                        isRequired
+                        fieldId="email-address"
+                    >
+                        <TextInput
+                            isRequired
+                            type="email"
+                            id="email-address"
+                            name="email"
+                            value={fields.email}
+                            onChange={this.handleChange}
+                            isValid={fields.email !== ''}
+                            >
+                        </TextInput>
+                    </FormGroup>
+                    <FormGroup
+                        label={Msg.localize('firstName')}
+                        isRequired
+                        fieldId="first-name"
+                    >
+                        <TextInput
+                            isRequired
+                            type="text"
+                            id="first-name"
+                            name="firstName"
+                            value={fields.firstName}
+                            onChange={this.handleChange}
+                            isValid={fields.firstName !== ''}
+                            >
+                        </TextInput>
+                    </FormGroup>
+                    <FormGroup
+                        label={Msg.localize('lastName')}
+                        isRequired
+                        fieldId="last-name"
+                    >
+                        <TextInput
+                            isRequired
+                            type="text"
+                            id="last-name"
+                            name="lastName"
+                            value={fields.lastName}
+                            onChange={this.handleChange}
+                            isValid={fields.lastName !== ''}
+                            >
+                        </TextInput>
+                    </FormGroup>
+                    <ActionGroup>
+                        <Button 
+                            variant="primary"
+                            isDisabled={!this.state.canSubmit && this.requiredFieldsHaveData()}
+                            onClick={this.handleSubmit}
+                        >
+                            <Msg msgKey="doSave"/>                          
+                        </Button>
+                        <Button 
+                            variant="secondary"
+                            onClick={this.handleCancel}
+                        >
+                            <Msg msgKey="doCancel"/>
+                        </Button>
+                    </ActionGroup>
+                </Form>
+            </ContentPage>
         );
     }
     
     private UsernameInput = () => (
-        <input type="text" className="form-control" required id="username" name="username" onChange={this.handleChange} value={this.state.formFields.username} />
+        <TextInput
+            isRequired
+            type="text"
+            id="user-name"
+            name="username"
+            value={this.state.formFields.username}
+            onChange={this.handleChange}
+            isValid={this.state.formFields.username !== ''}
+            >
+        </TextInput>
     );
     
     private RestrictedUsernameInput = () => (
-        <div className="non-edit" id="username">{this.state.formFields.username}</div>
+        <TextInput
+            isDisabled
+            type="text"
+            id="user-name"
+            name="username"
+            value={this.state.formFields.username}
+            >
+        </TextInput>
     );
-    
 };

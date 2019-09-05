@@ -66,6 +66,9 @@ public class X509ClientCertificateAuthenticator extends AbstractX509ClientCertif
                 return;
             }
 
+            saveX509CertificateAuditDataToAuthSession(context, certs[0]);
+            recordX509CertificateAuditDataViaContextEvent(context);
+
             X509AuthenticatorConfigModel config = null;
             if (context.getAuthenticatorConfig() != null && context.getAuthenticatorConfig().getConfig() != null) {
                 config = new X509AuthenticatorConfigModel(context.getAuthenticatorConfig());
@@ -79,7 +82,7 @@ public class X509ClientCertificateAuthenticator extends AbstractX509ClientCertif
 
             // Validate X509 client certificate
             try {
-                CertificateValidator.CertificateValidatorBuilder builder = certificateValidationParameters(config);
+                CertificateValidator.CertificateValidatorBuilder builder = certificateValidationParameters(context.getSession(), config);
                 CertificateValidator validator = builder.build(certs);
                 validator.checkRevocationStatus()
                          .validateKeyUsage()
@@ -261,6 +264,7 @@ public class X509ClientCertificateAuthenticator extends AbstractX509ClientCertif
             return;
         }
         if (context.getUser() != null) {
+            recordX509CertificateAuditDataViaContextEvent(context);
             context.success();
             return;
         }

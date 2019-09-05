@@ -115,7 +115,6 @@ public class CorsExampleAdapterTest extends AbstractExampleAdapterTest {
     @Before
     public void onBefore() {
         DroneUtils.addWebDriver(jsDriver);
-        Assume.assumeFalse(System.getProperty("os.name").startsWith("Windows"));
         deployer.deploy(CorsDatabaseServiceTestApp.DEPLOYMENT_NAME);
         deployer.deploy(AngularCorsProductTestApp.DEPLOYMENT_NAME);
     }

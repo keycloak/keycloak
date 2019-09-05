@@ -18,6 +18,7 @@
 //import {KeycloakNotificationService} from '../notification/keycloak-notification.service';
 import {KeycloakService} from '../keycloak-service/keycloak.service';
 import Axios, {AxiosRequestConfig, AxiosResponse} from 'axios';
+import {ContentAlert} from '../content/ContentAlert';
 
 //import {NotificationType} from 'patternfly-ng/notification';*/
  
@@ -86,6 +87,7 @@ export class AccountServiceClient {
     
     private handleError(error: Error): void {
         console.log(error);
+        ContentAlert.danger(error.name + ': ' + error.message);
     }
     
     private makeConfig(endpoint: string, config: AxiosRequestConfig = {}): Promise<AxiosRequestConfig> {

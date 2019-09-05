@@ -23,6 +23,10 @@ import org.keycloak.services.ServicesLogger;
 import javax.naming.Context;
 import javax.naming.NamingException;
 import javax.naming.ldap.InitialLdapContext;
+import javax.naming.ldap.StartTlsRequest;
+import javax.naming.ldap.StartTlsResponse;
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.SSLSession;
 import java.util.Hashtable;
 
 /**
@@ -35,13 +39,13 @@ public class LDAPConnectionTestManager {
     public static final String TEST_CONNECTION = "testConnection";
     public static final String TEST_AUTHENTICATION = "testAuthentication";
 
-    public boolean testLDAP(String action, String connectionUrl, String bindDn, String bindCredential, String useTruststoreSpi, String connectionTimeout) {
+    public boolean testLDAP(String action, String connectionUrl, String bindDn, String bindCredential, String useTruststoreSpi, String connectionTimeout, String tls) {
         if (!TEST_CONNECTION.equals(action) && !TEST_AUTHENTICATION.equals(action)) {
             ServicesLogger.LOGGER.unknownAction(action);
             return false;
         }
 
-        Context ldapContext = null;
+        InitialLdapContext ldapContext = null;
         try {
             Hashtable<String, Object> env = new Hashtable<String, Object>();
             env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
@@ -52,29 +56,56 @@ public class LDAPConnectionTestManager {
             }
             env.put(Context.PROVIDER_URL, connectionUrl);
 
-            if (TEST_AUTHENTICATION.equals(action)) {
-                env.put(Context.SECURITY_AUTHENTICATION, "simple");
-
-                if (bindDn == null) {
-                    logger.error("Unknown bind DN");
-                    return false;
-                }
-                env.put(Context.SECURITY_PRINCIPAL, bindDn);
-
-                char[] bindCredentialChar = null;
-                if (bindCredential != null) {
-                    bindCredentialChar = bindCredential.toCharArray();
-                }
-                env.put(Context.SECURITY_CREDENTIALS, bindCredentialChar);
-            }
-
             LDAPConstants.setTruststoreSpiIfNeeded(useTruststoreSpi, connectionUrl, env);
 
             if (connectionTimeout != null && !connectionTimeout.isEmpty()) {
                 env.put("com.sun.jndi.ldap.connect.timeout", connectionTimeout);
             }
 
-            ldapContext = new InitialLdapContext(env, null);
+            if(tls != null && Boolean.parseBoolean(tls)) {
+                ldapContext = new InitialLdapContext(env, null);
+                try {
+                    StartTlsResponse tlsResponse = (StartTlsResponse) ldapContext.extendedOperation(new StartTlsRequest());
+                    tlsResponse.negotiate();
+                } catch (Exception e) {
+                    logger.error("Could not negotiate TLS", e);
+                }
+
+                if (TEST_AUTHENTICATION.equals(action)) {
+                    ldapContext.addToEnvironment(Context.SECURITY_AUTHENTICATION, "simple");
+
+                    if (bindDn == null) {
+                        logger.error("Unknown bind DN");
+                        return false;
+                    }
+                    ldapContext.addToEnvironment(Context.SECURITY_PRINCIPAL, bindDn);
+
+                    char[] bindCredentialChar = null;
+                    if (bindCredential != null) {
+                        bindCredentialChar = bindCredential.toCharArray();
+                    }
+                    ldapContext.addToEnvironment(Context.SECURITY_CREDENTIALS, bindCredentialChar);
+                    ldapContext.lookup("");
+                }
+            } else {
+                if (TEST_AUTHENTICATION.equals(action)) {
+                    env.put(Context.SECURITY_AUTHENTICATION, "simple");
+
+                    if (bindDn == null) {
+                        logger.error("Unknown bind DN");
+                        return false;
+                    }
+                    env.put(Context.SECURITY_PRINCIPAL, bindDn);
+
+                    char[] bindCredentialChar = null;
+                    if (bindCredential != null) {
+                        bindCredentialChar = bindCredential.toCharArray();
+                    }
+                    env.put(Context.SECURITY_CREDENTIALS, bindCredentialChar);
+                }
+                ldapContext = new InitialLdapContext(env, null);
+            }
+
             return true;
         } catch (Exception ne) {
             String errorMessage = (TEST_AUTHENTICATION.equals(action)) ? "Error when authenticating to LDAP: " : "Error when connecting to LDAP: ";

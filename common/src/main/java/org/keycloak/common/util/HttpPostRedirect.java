@@ -24,7 +24,9 @@ import java.util.Map;
  *
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
+ * @deprecated Class is deprecated and may be removed in the future. Use org.keycloak.saml.BaseSAML2BindingBuilder#buildHtml instead
  */
+@Deprecated
 public class HttpPostRedirect {
 
     /**

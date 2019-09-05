@@ -70,7 +70,7 @@ public class KeyResource {
             r.setStatus(key.getStatus() != null ? key.getStatus().name() : null);
             r.setType(key.getType());
             r.setAlgorithm(key.getAlgorithm());
-            r.setPublicKey(key.getVerifyKey() != null ? PemUtils.encodeKey(key.getVerifyKey()) : null);
+            r.setPublicKey(key.getPublicKey() != null ? PemUtils.encodeKey(key.getPublicKey()) : null);
             r.setCertificate(key.getCertificate() != null ? PemUtils.encodeCertificate(key.getCertificate()) : null);
             keys.getKeys().add(r);
 

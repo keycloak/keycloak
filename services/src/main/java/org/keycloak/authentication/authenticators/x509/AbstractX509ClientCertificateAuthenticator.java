@@ -29,14 +29,21 @@ import javax.ws.rs.core.Response;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x500.style.BCStyle;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateHolder;
+import org.bouncycastle.util.encoders.Hex;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.Authenticator;
+import org.keycloak.events.Details;
 import org.keycloak.forms.login.LoginFormsProvider;
+import org.keycloak.jose.jws.crypto.HashUtils;
+import org.keycloak.crypto.HashException;
+import org.keycloak.crypto.JavaAlgorithm;
+import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.x509.X509ClientCertificateLookup;
+
 
 /**
  * @author <a href="mailto:pnalyvayko@agi.com">Peter Nalyvayko</a>
@@ -54,6 +61,7 @@ public abstract class AbstractX509ClientCertificateAuthenticator implements Auth
     public static final String ENABLE_OCSP = "x509-cert-auth.ocsp-checking-enabled";
     public static final String ENABLE_CRLDP = "x509-cert-auth.crldp-checking-enabled";
     public static final String CANONICAL_DN = "x509-cert-auth.canonical-dn-enabled";
+    public static final String SERIALNUMBER_HEX = "x509-cert-auth.serialnumber-hex-enabled";
     public static final String CRL_RELATIVE_PATH = "x509-cert-auth.crl-relative-path";
     public static final String OCSPRESPONDER_URI = "x509-cert-auth.ocsp-responder-uri";
     public static final String OCSPRESPONDER_CERTIFICATE = "x509-cert-auth.ocsp-responder-certificate";
@@ -64,9 +72,10 @@ public abstract class AbstractX509ClientCertificateAuthenticator implements Auth
     public static final String MAPPING_SOURCE_CERT_SUBJECTALTNAME_OTHERNAME = "Subject's Alternative Name otherName (UPN)";
     public static final String MAPPING_SOURCE_CERT_SUBJECTDN_CN = "Subject's Common Name";
     public static final String MAPPING_SOURCE_CERT_ISSUERDN = "Match IssuerDN using regular expression";
-    public static final String MAPPING_SOURCE_CERT_ISSUERDN_EMAIL = "Issuer's e-mail";
-    public static final String MAPPING_SOURCE_CERT_ISSUERDN_CN = "Issuer's Common Name";
     public static final String MAPPING_SOURCE_CERT_SERIALNUMBER = "Certificate Serial Number";
+    public static final String MAPPING_SOURCE_CERT_SHA256_THUMBPRINT = "SHA-256 Thumbprint";
+    public static final String MAPPING_SOURCE_CERT_SERIALNUMBER_ISSUERDN = "Certificate Serial Number and IssuerDN";
+    public static final String MAPPING_SOURCE_CERT_CERTIFICATE_PEM = "Full Certificate in PEM format";
     public static final String USER_MAPPER_SELECTION = "x509-cert-auth.mapper-selection";
     public static final String USER_ATTRIBUTE_MAPPER = "Custom Attribute Mapper";
     public static final String USERNAME_EMAIL_MAPPER = "Username or Email";
@@ -84,10 +93,11 @@ public abstract class AbstractX509ClientCertificateAuthenticator implements Auth
 
     protected static class CertificateValidatorConfigBuilder {
 
-        static CertificateValidator.CertificateValidatorBuilder fromConfig(X509AuthenticatorConfigModel config) throws Exception {
+        static CertificateValidator.CertificateValidatorBuilder fromConfig(KeycloakSession session, X509AuthenticatorConfigModel config) throws Exception {
 
             CertificateValidator.CertificateValidatorBuilder builder = new CertificateValidator.CertificateValidatorBuilder();
             return builder
+                    .session(session)
                     .keyUsage()
                         .parse(config.getKeyUsage())
                     .extendedKeyUsage()
@@ -103,8 +113,8 @@ public abstract class AbstractX509ClientCertificateAuthenticator implements Auth
     }
 
     // The method is purely for purposes of facilitating the unit testing
-    public CertificateValidator.CertificateValidatorBuilder certificateValidationParameters(X509AuthenticatorConfigModel config) throws Exception {
-        return CertificateValidatorConfigBuilder.fromConfig(config);
+    public CertificateValidator.CertificateValidatorBuilder certificateValidationParameters(KeycloakSession session, X509AuthenticatorConfigModel config) throws Exception {
+        return CertificateValidatorConfigBuilder.fromConfig(session, config);
     }
 
     protected static class UserIdentityExtractorBuilder {
@@ -126,6 +136,18 @@ public abstract class AbstractX509ClientCertificateAuthenticator implements Auth
             }
             return null;
         };
+        
+        private static final Function<X509Certificate[], String> getSerialnumberFunc(X509AuthenticatorConfigModel config) {
+            return config.isSerialnumberHex() ? 
+                    certs -> Hex.toHexString(certs[0].getSerialNumber().toByteArray()) : 
+                    certs -> certs[0].getSerialNumber().toString();
+        }
+        
+        private static final Function<X509Certificate[], String> getIssuerDNFunc(X509AuthenticatorConfigModel config) {
+            return config.isCanonicalDnEnabled() ? 
+                    certs -> certs[0].getIssuerX500Principal().getName(X500Principal.CANONICAL) : 
+                    certs -> certs[0].getIssuerDN().getName();
+        }
 
         static UserIdentityExtractor fromConfig(X509AuthenticatorConfigModel config) {
 
@@ -143,13 +165,24 @@ public abstract class AbstractX509ClientCertificateAuthenticator implements Auth
                     extractor = UserIdentityExtractor.getPatternIdentityExtractor(pattern, func);
                     break;
                 case ISSUERDN:
-                    func = config.isCanonicalDnEnabled() ?
-                        certs -> certs[0].getIssuerX500Principal().getName(X500Principal.CANONICAL) :
-                        certs -> certs[0].getIssuerDN().getName();
-                    extractor = UserIdentityExtractor.getPatternIdentityExtractor(pattern, func);
+                    extractor = UserIdentityExtractor.getPatternIdentityExtractor(pattern, getIssuerDNFunc(config));
                     break;
                 case SERIALNUMBER:
-                    extractor = UserIdentityExtractor.getPatternIdentityExtractor(DEFAULT_MATCH_ALL_EXPRESSION, certs -> certs[0].getSerialNumber().toString());
+                    extractor = UserIdentityExtractor.getPatternIdentityExtractor(DEFAULT_MATCH_ALL_EXPRESSION, getSerialnumberFunc(config));
+                    break;
+                case SHA256_THUMBPRINT:
+                    extractor = UserIdentityExtractor.getPatternIdentityExtractor(DEFAULT_MATCH_ALL_EXPRESSION, certs -> {
+                        try {
+                            return Hex.toHexString(HashUtils.hash(JavaAlgorithm.SHA256, certs[0].getEncoded()));
+                        } catch (CertificateEncodingException | HashException e) {
+                            logger.warn("Unable to get certificate's thumbprint", e);
+                        }
+                        return null;
+                    });
+                    break;
+                case SERIALNUMBER_ISSUERDN:
+                    func = certs -> getSerialnumberFunc(config).apply(certs) + Constants.CFG_DELIMITER + getIssuerDNFunc(config).apply(certs);
+                    extractor = UserIdentityExtractor.getPatternIdentityExtractor(DEFAULT_MATCH_ALL_EXPRESSION, func);
                     break;
                 case SUBJECTDN_CN:
                     extractor = UserIdentityExtractor.getX500NameExtractor(BCStyle.CN, subject);
@@ -165,13 +198,8 @@ public abstract class AbstractX509ClientCertificateAuthenticator implements Auth
                 case SUBJECTALTNAME_OTHERNAME:
                     extractor = UserIdentityExtractor.getSubjectAltNameExtractor(0);
                     break;
-                case ISSUERDN_CN:
-                    extractor = UserIdentityExtractor.getX500NameExtractor(BCStyle.CN, issuer);
-                    break;
-                case ISSUERDN_EMAIL:
-                    extractor = UserIdentityExtractor
-                            .either(UserIdentityExtractor.getX500NameExtractor(BCStyle.EmailAddress, issuer))
-                            .or(UserIdentityExtractor.getX500NameExtractor(BCStyle.E, issuer));
+                case CERTIFICATE_PEM:
+                    extractor = UserIdentityExtractor.getCertificatePemIdentityExtractor(config);
                     break;
                 default:
                     logger.warnf("[UserIdentityExtractorBuilder:fromConfig] Unknown or unsupported user identity source: \"%s\"", userIdentitySource.getName());
@@ -233,6 +261,29 @@ public abstract class AbstractX509ClientCertificateAuthenticator implements Auth
         }
         return null;
     }
+
+
+    // Saving some notes for audit to authSession as the event may not be necessarily triggered in this HTTP request where the certificate was parsed
+    // For example if there is confirmation page enabled, it will be in the additional request
+    protected void saveX509CertificateAuditDataToAuthSession(AuthenticationFlowContext context,
+                                                             X509Certificate cert) {
+        context.getAuthenticationSession().setAuthNote(Details.X509_CERTIFICATE_SERIAL_NUMBER, cert.getSerialNumber().toString());
+        context.getAuthenticationSession().setAuthNote(Details.X509_CERTIFICATE_SUBJECT_DISTINGUISHED_NAME, cert.getSubjectDN().toString());
+        context.getAuthenticationSession().setAuthNote(Details.X509_CERTIFICATE_ISSUER_DISTINGUISHED_NAME, cert.getIssuerDN().toString());
+    }
+
+    protected void recordX509CertificateAuditDataViaContextEvent(AuthenticationFlowContext context) {
+        recordX509DetailFromAuthSessionToEvent(context, Details.X509_CERTIFICATE_SERIAL_NUMBER);
+        recordX509DetailFromAuthSessionToEvent(context, Details.X509_CERTIFICATE_SUBJECT_DISTINGUISHED_NAME);
+        recordX509DetailFromAuthSessionToEvent(context, Details.X509_CERTIFICATE_ISSUER_DISTINGUISHED_NAME);
+    }
+
+    private void recordX509DetailFromAuthSessionToEvent(AuthenticationFlowContext context, String detailName) {
+        String detailValue = context.getAuthenticationSession().getAuthNote(detailName);
+        context.getEvent().detail(detailName, detailValue);
+    }
+
+
     // Purely for unit testing
     public UserIdentityExtractor getUserIdentityExtractor(X509AuthenticatorConfigModel config) {
         return UserIdentityExtractorBuilder.fromConfig(config);

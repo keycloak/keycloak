@@ -27,7 +27,6 @@ import org.junit.Test;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.models.KeycloakSessionTask;
 import org.keycloak.models.dblock.DBLockManager;
 import org.keycloak.models.dblock.DBLockProvider;
 import org.keycloak.models.dblock.DBLockProviderFactory;
@@ -61,7 +60,10 @@ public class DBLockTest extends AbstractTestRealmKeycloakTest {
 
     private static final int SLEEP_TIME_MILLIS = 10;
     private static final int THREADS_COUNT = 20;
+    private static final int THREADS_COUNT_MEDIUM = 12;
     private static final int ITERATIONS_PER_THREAD = 2;
+    private static final int ITERATIONS_PER_THREAD_MEDIUM = 4;
+    private static final int ITERATIONS_PER_THREAD_LONG = 20;
 
     private static final int LOCK_TIMEOUT_MILLIS = 240000; // Rather bigger to handle slow DB connections in testing env
     private static final int LOCK_RECHECK_MILLIS = 10;
@@ -83,60 +85,215 @@ public class DBLockTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     @ModelTest
-    public void testLockConcurrently(KeycloakSession session) throws Exception {
-
+    public void simpleLockTest(KeycloakSession session) throws Exception {
         KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession sessionLC) -> {
-            long startupTime = System.currentTimeMillis();
-
-            final Semaphore semaphore = new Semaphore();
-            final KeycloakSessionFactory sessionFactory = sessionLC.getKeycloakSessionFactory();
-
-            List<Thread> threads = new LinkedList<>();
-
-            for (int i = 0; i < THREADS_COUNT; i++) {
-                Thread thread = new Thread(() -> {
-                    for (int j = 0; j < ITERATIONS_PER_THREAD; j++) {
-                        try {
-                            KeycloakModelUtils.runJobInTransaction(sessionFactory, session1 ->
-                                    lock(session1, semaphore));
-                        } catch (RuntimeException e) {
-                            semaphore.setException(e);
-                            throw e;
-                        }
-                    }
-                });
-
-                threads.add(thread);
+            DBLockProvider dbLock = new DBLockManager(sessionLC).getDBLock();
+            dbLock.waitForLock(DBLockProvider.Namespace.DATABASE);
+            try {
+                Assert.assertEquals(DBLockProvider.Namespace.DATABASE, dbLock.getCurrentLock());
+            } finally {
+                dbLock.releaseLock();
             }
-
-            for (Thread thread : threads) {
-                thread.start();
-            }
-            for (Thread thread : threads) {
-                try {
-                    thread.join();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-
-            long took = (System.currentTimeMillis() - startupTime);
-            log.infof("DBLockTest executed in %d ms with total counter %d. THREADS_COUNT=%d, ITERATIONS_PER_THREAD=%d", took, semaphore.getTotal(), THREADS_COUNT, ITERATIONS_PER_THREAD);
-
-            Assert.assertEquals(semaphore.getTotal(), THREADS_COUNT * ITERATIONS_PER_THREAD);
-            Assert.assertNull(semaphore.getException());
+            Assert.assertNull(dbLock.getCurrentLock());
         });
     }
 
-    private void lock(KeycloakSession session, Semaphore semaphore) {
+    @Test
+    @ModelTest
+    public void simpleNestedLockTest(KeycloakSession session) throws Exception {
+        KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession sessionLC) -> {
+            // first session lock DATABASE
+            DBLockProvider dbLock1 = new DBLockManager(sessionLC).getDBLock();
+            dbLock1.waitForLock(DBLockProvider.Namespace.DATABASE);
+            try {
+                Assert.assertEquals(DBLockProvider.Namespace.DATABASE, dbLock1.getCurrentLock());
+                KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession sessionLC2) -> {
+                    // a second session/dblock-provider can lock another namespace OFFLINE_SESSIONS
+                    DBLockProvider dbLock2 = new DBLockManager(sessionLC2).getDBLock();
+                    dbLock2.waitForLock(DBLockProvider.Namespace.OFFLINE_SESSIONS);
+                    try {
+                        // getCurrentLock is local, each provider instance has one
+                        Assert.assertEquals(DBLockProvider.Namespace.OFFLINE_SESSIONS, dbLock2.getCurrentLock());
+                    } finally {
+                        dbLock2.releaseLock();
+                    }
+                    Assert.assertNull(dbLock2.getCurrentLock());
+                });
+            } finally {
+                dbLock1.releaseLock();
+            }
+            Assert.assertNull(dbLock1.getCurrentLock());
+        });
+    }
+
+    @Test
+    @ModelTest
+    public void testLockConcurrentlyGeneral(KeycloakSession session) throws Exception {
+        KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession sessionLC) -> {
+            testLockConcurrentlyInternal(sessionLC, DBLockProvider.Namespace.DATABASE);
+        });
+    }
+
+    @Test
+    @ModelTest
+    public void testLockConcurrentlyOffline(KeycloakSession session) throws Exception {
+        KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession sessionLC) -> {
+            testLockConcurrentlyInternal(sessionLC, DBLockProvider.Namespace.OFFLINE_SESSIONS);
+        });
+    }
+
+    @Test
+    @ModelTest
+    public void testTwoLocksCurrently(KeycloakSession session) throws Exception {
+        KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession sessionLC) -> {
+            testTwoLocksCurrentlyInternal(sessionLC, DBLockProvider.Namespace.DATABASE, DBLockProvider.Namespace.OFFLINE_SESSIONS);
+        });
+    }
+
+    @Test
+    @ModelTest
+    public void testTwoNestedLocksCurrently(KeycloakSession session) throws Exception {
+        KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession sessionLC) -> {
+            testTwoNestedLocksCurrentlyInternal(sessionLC, DBLockProvider.Namespace.KEYCLOAK_BOOT, DBLockProvider.Namespace.DATABASE);
+        });
+    }
+
+    private void testTwoLocksCurrentlyInternal(KeycloakSession sessionLC, DBLockProvider.Namespace lock1, DBLockProvider.Namespace lock2) {
+        final Semaphore semaphore = new Semaphore();
+        final KeycloakSessionFactory sessionFactory = sessionLC.getKeycloakSessionFactory();
+        List<Thread> threads = new LinkedList<>();
+        // launch two threads and expect an error because the locks are different
+        for (int i = 0; i < 2; i++) {
+            final DBLockProvider.Namespace lock = (i % 2 == 0)? lock1 : lock2;
+            Thread thread = new Thread(() -> {
+                for (int j = 0; j < ITERATIONS_PER_THREAD_LONG; j++) {
+                    try {
+                        KeycloakModelUtils.runJobInTransaction(sessionFactory, session1 -> lock(session1, lock, semaphore));
+                    } catch (RuntimeException e) {
+                        semaphore.setException(e);
+                    }
+                }
+            });
+            threads.add(thread);
+        }
+        for (Thread thread : threads) {
+            thread.start();
+        }
+        for (Thread thread : threads) {
+            try {
+                thread.join();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+        // interference is needed because different namespaces can interfere
+        Assert.assertNotNull(semaphore.getException());
+    }
+
+    private void testTwoNestedLocksCurrentlyInternal(KeycloakSession sessionLC, DBLockProvider.Namespace lockTop, DBLockProvider.Namespace lockInner) {
+        final Semaphore semaphore = new Semaphore();
+        final KeycloakSessionFactory sessionFactory = sessionLC.getKeycloakSessionFactory();
+        List<Thread> threads = new LinkedList<>();
+        // launch two threads and expect an error because the locks are different
+        for (int i = 0; i < THREADS_COUNT_MEDIUM; i++) {
+            final boolean nested = i % 2 == 0;
+            Thread thread = new Thread(() -> {
+                for (int j = 0; j < ITERATIONS_PER_THREAD_MEDIUM; j++) {
+                    try {
+                        if (nested) {
+                            // half the threads run two level lock top-inner
+                            KeycloakModelUtils.runJobInTransaction(sessionFactory,
+                                    session1 -> nestedTwoLevelLock(session1, lockTop, lockInner, semaphore));
+                        } else {
+                            // the other half only run a lock in the top namespace
+                            KeycloakModelUtils.runJobInTransaction(sessionFactory,
+                                    session1 -> lock(session1, lockTop, semaphore));
+                        }
+                    } catch (RuntimeException e) {
+                        semaphore.setException(e);
+                    }
+                }
+            });
+            threads.add(thread);
+        }
+        for (Thread thread : threads) {
+            thread.start();
+        }
+        for (Thread thread : threads) {
+            try {
+                thread.join();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+        Assert.assertEquals(THREADS_COUNT_MEDIUM * ITERATIONS_PER_THREAD_MEDIUM, semaphore.getTotal());
+        Assert.assertNull(semaphore.getException());
+    }
+
+    private void testLockConcurrentlyInternal(KeycloakSession sessionLC, DBLockProvider.Namespace lock) {
+        long startupTime = System.currentTimeMillis();
+
+        final Semaphore semaphore = new Semaphore();
+        final KeycloakSessionFactory sessionFactory = sessionLC.getKeycloakSessionFactory();
+
+        List<Thread> threads = new LinkedList<>();
+
+        for (int i = 0; i < THREADS_COUNT; i++) {
+            Thread thread = new Thread(() -> {
+                for (int j = 0; j < ITERATIONS_PER_THREAD; j++) {
+                    try {
+                        KeycloakModelUtils.runJobInTransaction(sessionFactory, session1 ->
+                                lock(session1, lock, semaphore));
+                    } catch (RuntimeException e) {
+                        semaphore.setException(e);
+                        throw e;
+                    }
+                }
+            });
+
+            threads.add(thread);
+        }
+
+        for (Thread thread : threads) {
+            thread.start();
+        }
+        for (Thread thread : threads) {
+            try {
+                thread.join();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+
+        long took = (System.currentTimeMillis() - startupTime);
+        log.infof("DBLockTest executed in %d ms with total counter %d. THREADS_COUNT=%d, ITERATIONS_PER_THREAD=%d", took, semaphore.getTotal(), THREADS_COUNT, ITERATIONS_PER_THREAD);
+
+        Assert.assertEquals(THREADS_COUNT * ITERATIONS_PER_THREAD, semaphore.getTotal());
+        Assert.assertNull(semaphore.getException());
+    }
+
+    private void lock(KeycloakSession session, DBLockProvider.Namespace lock, Semaphore semaphore) {
         DBLockProvider dbLock = new DBLockManager(session).getDBLock();
-        dbLock.waitForLock();
+        dbLock.waitForLock(lock);
         try {
             semaphore.increase();
             Thread.sleep(SLEEP_TIME_MILLIS);
             semaphore.decrease();
         } catch (InterruptedException ie) {
             throw new RuntimeException(ie);
+        } finally {
+            dbLock.releaseLock();
+        }
+    }
+
+    private void nestedTwoLevelLock(KeycloakSession session, DBLockProvider.Namespace lockTop,
+            DBLockProvider.Namespace lockInner, Semaphore semaphore) {
+        DBLockProvider dbLock = new DBLockManager(session).getDBLock();
+        dbLock.waitForLock(lockTop);
+        try {
+            // create a new session to call the lock method with the inner namespace
+            KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(),
+                    sessionInner -> lock(sessionInner, lockInner, semaphore));
         } finally {
             dbLock.releaseLock();
         }

@@ -90,7 +90,7 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
                     .forceAuthn(getConfig().isForceAuthn())
                     .protocolBinding(protocolBinding)
                     .nameIdPolicy(SAML2NameIDPolicyBuilder.format(nameIDPolicyFormat));
-            JaxrsSAML2BindingBuilder binding = new JaxrsSAML2BindingBuilder()
+            JaxrsSAML2BindingBuilder binding = new JaxrsSAML2BindingBuilder(session)
                     .relayState(request.getState().getEncoded());
             boolean postBinding = getConfig().isPostBindingAuthnRequest();
 
@@ -129,8 +129,7 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
         SubjectType subject = assertion.getSubject();
         SubjectType.STSubType subType = subject.getSubType();
         NameIDType subjectNameID = (NameIDType) subType.getBaseID();
-        authSession.setUserSessionNote(SAMLEndpoint.SAML_FEDERATED_SUBJECT, subjectNameID.getValue());
-        if (subjectNameID.getFormat() != null) authSession.setUserSessionNote(SAMLEndpoint.SAML_FEDERATED_SUBJECT_NAMEFORMAT, subjectNameID.getFormat().toString());
+        authSession.setUserSessionNote(SAMLEndpoint.SAML_FEDERATED_SUBJECT_NAMEID, subjectNameID.serializeAsString());
         AuthnStatementType authn =  (AuthnStatementType)context.getContextData().get(SAMLEndpoint.SAML_AUTHN_STATEMENT);
         if (authn != null && authn.getSessionIndex() != null) {
             authSession.setUserSessionNote(SAMLEndpoint.SAML_FEDERATED_SESSION_INDEX, authn.getSessionIndex());
@@ -191,13 +190,13 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
                 .assertionExpiration(realm.getAccessCodeLifespan())
                 .issuer(getEntityId(uriInfo, realm))
                 .sessionIndex(userSession.getNote(SAMLEndpoint.SAML_FEDERATED_SESSION_INDEX))
-                .userPrincipal(userSession.getNote(SAMLEndpoint.SAML_FEDERATED_SUBJECT), userSession.getNote(SAMLEndpoint.SAML_FEDERATED_SUBJECT_NAMEFORMAT))
+                .nameId(NameIDType.deserializeFromString(userSession.getNote(SAMLEndpoint.SAML_FEDERATED_SUBJECT_NAMEID)))
                 .destination(singleLogoutServiceUrl);
         return logoutBuilder;
     }
 
     private JaxrsSAML2BindingBuilder buildLogoutBinding(KeycloakSession session, UserSessionModel userSession, RealmModel realm) {
-        JaxrsSAML2BindingBuilder binding = new JaxrsSAML2BindingBuilder()
+        JaxrsSAML2BindingBuilder binding = new JaxrsSAML2BindingBuilder(session)
                 .relayState(userSession.getId());
         if (getConfig().isWantAuthnRequestsSigned()) {
             KeyManager.ActiveRsaKey keys = session.keys().getActiveRsaKey(realm);

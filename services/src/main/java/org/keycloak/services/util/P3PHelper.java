@@ -17,15 +17,8 @@
 
 package org.keycloak.services.util;
 
-import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.HttpResponse;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.services.validation.Validation;
-import org.keycloak.theme.Theme;
-
-import java.io.IOException;
-import java.util.Locale;
 
 /**
  * IE requires P3P header to allow loading cookies from iframes when domain differs from main page (see KEYCLOAK-2828 for more details)
@@ -34,23 +27,9 @@ import java.util.Locale;
  */
 public class P3PHelper {
 
-    private static final Logger logger = Logger.getLogger(P3PHelper.class);
-
-    public static void addP3PHeader(KeycloakSession session) {
-        try {
-            Theme theme = session.theme().getTheme(Theme.Type.LOGIN);
-
-            Locale locale = session.getContext().resolveLocale(null);
-            String p3pValue = theme.getMessages(locale).getProperty("p3pPolicy");
-
-            if (!Validation.isBlank(p3pValue)) {
-                HttpResponse response = ResteasyProviderFactory.getContextData(HttpResponse.class);
-                response.getOutputHeaders().putSingle("P3P", p3pValue);
-            }
-        } catch (IOException e) {
-            logger.error("Failed to set P3P header", e);
-            return;
-        }
+    public static void addP3PHeader() {
+        HttpResponse response = ResteasyProviderFactory.getContextData(HttpResponse.class);
+        response.getOutputHeaders().putSingle("P3P", "CP=\"This is not a P3P policy!\"");
     }
 
 }

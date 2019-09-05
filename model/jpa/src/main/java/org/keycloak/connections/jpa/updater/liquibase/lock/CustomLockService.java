@@ -19,6 +19,7 @@ package org.keycloak.connections.jpa.updater.liquibase.lock;
 
 import liquibase.database.core.DerbyDatabase;
 import liquibase.exception.DatabaseException;
+import liquibase.exception.UnexpectedLiquibaseException;
 import liquibase.executor.Executor;
 import liquibase.executor.ExecutorService;
 import liquibase.lockservice.StandardLockService;
@@ -30,8 +31,15 @@ import liquibase.statement.core.RawSqlStatement;
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.Time;
 import org.keycloak.common.util.reflections.Reflections;
+import org.keycloak.models.dblock.DBLockProvider;
 
 import java.lang.reflect.Field;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+import liquibase.statement.SqlStatement;
 
 /**
  * Liquibase lock service, which has some bugfixes and assumes timeouts to be configured in milliseconds
@@ -44,7 +52,6 @@ public class CustomLockService extends StandardLockService {
 
     @Override
     public void init() throws DatabaseException {
-        boolean createdTable = false;
         Executor executor = ExecutorService.getInstance().getExecutor(database);
 
         if (!hasDatabaseChangeLogLockTable()) {
@@ -73,29 +80,27 @@ public class CustomLockService extends StandardLockService {
             } catch (IllegalAccessException iae) {
                 throw new RuntimeException(iae);
             }
-
-            createdTable = true;
         }
 
-
-        if (!isDatabaseChangeLogLockTableInitialized(createdTable)) {
-            try {
+        try {
+            Set<Integer> currentIds = currentIdsInDatabaseChangeLogLockTable();
+            if (!currentIds.containsAll(Arrays.asList(DBLockProvider.Namespace.values()))) {
                 if (log.isTraceEnabled()) {
-                    log.trace("Initialize Database Lock Table");
+                    log.tracef("Initialize Database Lock Table, current locks %s", currentIds);
                 }
-                executor.execute(new InitializeDatabaseChangeLogLockTableStatement());
+                executor.execute(new CustomInitializeDatabaseChangeLogLockTableStatement(currentIds));
                 database.commit();
 
-            } catch (DatabaseException de) {
-                log.warn("Failed to insert first record to the lock table. Maybe other transaction inserted in the meantime. Retrying...");
-                if (log.isTraceEnabled()) {
-                    log.trace(de.getMessage(), de); // Log details at trace level
-                }
-                database.rollback();
-                throw new LockRetryException(de);
+                log.debug("Initialized record in the database lock table");
             }
 
-            log.debug("Initialized record in the database lock table");
+        } catch (DatabaseException de) {
+            log.warn("Failed to insert first record to the lock table. Maybe other transaction inserted in the meantime. Retrying...");
+            if (log.isTraceEnabled()) {
+                log.trace(de.getMessage(), de); // Log details at trace level
+            }
+            database.rollback();
+            throw new LockRetryException(de);
         }
 
 
@@ -112,15 +117,63 @@ public class CustomLockService extends StandardLockService {
 
     }
 
+    private Set<Integer> currentIdsInDatabaseChangeLogLockTable() throws DatabaseException {
+        try {
+            Executor executor = ExecutorService.getInstance().getExecutor(database);
+            String idColumnName = database.escapeColumnName(database.getLiquibaseCatalogName(),
+                    database.getLiquibaseSchemaName(),
+                    database.getDatabaseChangeLogLockTableName(),
+                    "ID");
+            String lockTableName = database.escapeTableName(database.getLiquibaseCatalogName(),
+                    database.getLiquibaseSchemaName(),
+                    database.getDatabaseChangeLogLockTableName());
+            SqlStatement sqlStatement = new RawSqlStatement("SELECT " + idColumnName + " FROM " + lockTableName);
+            List<Map<String, ?>> rows = executor.queryForList(sqlStatement);
+            Set<Integer> ids = rows.stream().map(columnMap -> ((Number) columnMap.get("ID")).intValue()).collect(Collectors.toSet());
+            database.commit();
+            return ids;
+        } catch (UnexpectedLiquibaseException ulie) {
+            // It can happen with MariaDB Galera 10.1 that UnexpectedLiquibaseException is rethrown due the DB lock.
+            // It is sufficient to just rollback transaction and retry in that case.
+            if (ulie.getCause() != null && ulie.getCause() instanceof DatabaseException) {
+                throw (DatabaseException) ulie.getCause();
+            } else {
+                throw ulie;
+            }
+        }
+    }
+
+    @Override
+    public boolean isDatabaseChangeLogLockTableInitialized(boolean tableJustCreated) throws DatabaseException {
+        try {
+            return super.isDatabaseChangeLogLockTableInitialized(tableJustCreated);
+        } catch (UnexpectedLiquibaseException ulie) {
+            // It can happen with MariaDB Galera 10.1 that UnexpectedLiquibaseException is rethrown due the DB lock. It is sufficient to just rollback transaction and retry in that case.
+            if (ulie.getCause() != null && ulie.getCause() instanceof DatabaseException) {
+                throw (DatabaseException) ulie.getCause();
+            } else {
+                throw ulie;
+            }
+        }
+    }
+
     @Override
     public void waitForLock() {
+        waitForLock(new LockDatabaseChangeLogStatement());
+    }
+
+    public void waitForLock(DBLockProvider.Namespace lock) {
+        waitForLock(new CustomLockDatabaseChangeLogStatement(lock.getId()));
+    }
+
+    private void waitForLock(LockDatabaseChangeLogStatement lockStmt) {
         boolean locked = false;
         long startTime = Time.toMillis(Time.currentTime());
         long timeToGiveUp = startTime + (getChangeLogLockWaitTime());
         boolean nextAttempt = true;
 
         while (nextAttempt) {
-            locked = acquireLock();
+            locked = acquireLock(lockStmt);
             if (!locked) {
                 int remainingTime = ((int)(timeToGiveUp / 1000)) - Time.currentTime();
                 if (remainingTime > 0) {
@@ -141,6 +194,10 @@ public class CustomLockService extends StandardLockService {
 
     @Override
     public boolean acquireLock() {
+        return acquireLock(new LockDatabaseChangeLogStatement());
+    }
+
+    private boolean acquireLock(LockDatabaseChangeLogStatement lockStmt) {
         if (hasChangeLogLock) {
             // We already have a lock
             return true;
@@ -159,7 +216,7 @@ public class CustomLockService extends StandardLockService {
 
         try {
             log.debug("Trying to lock database");
-            executor.execute(new LockDatabaseChangeLogStatement());
+            executor.execute(lockStmt);
             log.debug("Successfully acquired database lock");
 
             hasChangeLogLock = true;

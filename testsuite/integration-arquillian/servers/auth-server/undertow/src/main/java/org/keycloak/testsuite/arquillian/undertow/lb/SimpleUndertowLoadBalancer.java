@@ -42,6 +42,10 @@ import org.keycloak.common.util.reflections.Reflections;
 import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.testsuite.utils.tls.TLSUtils;
 
+import io.undertow.server.handlers.proxy.RouteIteratorFactory;
+import io.undertow.server.handlers.proxy.RouteIteratorFactory.ParsingCompatibility;
+import io.undertow.server.handlers.proxy.RouteParsingStrategy;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.StringTokenizer;
 
@@ -217,22 +221,37 @@ public class SimpleUndertowLoadBalancer {
             return host;
         }
 
+        private Host getRoute(String routeId) {
+            // There's no way to get the route from the super class, we have to use reflection
+            Field f = Reflections.findDeclaredField(LoadBalancingProxyClient.class, "routes");
+            f.setAccessible(true);
+            Map<String, Host> routes = Reflections.getFieldValue(f, this, Map.class);
+            return routes == null ? null : routes.get(routeId);
+        }
 
         @Override
-        protected Host findStickyHost(HttpServerExchange exchange) {
-            Host stickyHost = super.findStickyHost(exchange);
-
+        protected Iterator<CharSequence> parseRoutes(HttpServerExchange exchange) {
+            Iterator<CharSequence> stickyHostsIt = super.parseRoutes(exchange);
+            
+            if (stickyHostsIt == null) {
+                return null;
+            }
+            
+            List<CharSequence> stickyHosts = new LinkedList<>();
+            stickyHostsIt.forEachRemaining(stickyHosts::add);
+            CharSequence stickyHostName = stickyHosts.isEmpty() ? null : stickyHosts.iterator().next();
+            Host stickyHost = stickyHostName == null ? null: getRoute(stickyHostName.toString());
             if (stickyHost != null) {
 
                 if (!stickyHost.isAvailable()) {
                     log.debugf("Sticky host %s not available. Trying different hosts", stickyHost.getUri());
-                    return null;
+                    return new RouteIteratorFactory(RouteParsingStrategy.SINGLE, ParsingCompatibility.MOD_JK, null).iterator(null);
                 } else {
                     log.debugf("Sticky host %s found and looks available", stickyHost.getUri());
                 }
             }
 
-            return stickyHost;
+            return stickyHosts.iterator();
         }
 
 

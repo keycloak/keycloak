@@ -152,9 +152,8 @@ public class CatalinaSamlSessionStore implements SamlSessionStore {
             log.debug("session was null, returning null");
             return false;
         }
-        final SamlSession samlSession = (SamlSession)session.getSession().getAttribute(SamlSession.class.getName());
+        final SamlSession samlSession = SamlUtil.validateSamlSession(session.getSession().getAttribute(SamlSession.class.getName()), deployment);
         if (samlSession == null) {
-            log.debug("SamlSession was not in session, returning null");
             return false;
         }
 

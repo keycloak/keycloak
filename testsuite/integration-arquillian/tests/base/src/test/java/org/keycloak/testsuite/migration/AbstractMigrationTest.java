@@ -42,8 +42,9 @@ import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
-import org.keycloak.representations.idm.authorization.PolicyRepresentation;
+import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
+import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
@@ -230,6 +231,20 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
 
         // NOTE: Fact that 'roles' and 'web-origins' scope were added was tested in testMigrationTo4_0_0 already
         testRolesAndWebOriginsScopesAddedToClient();
+    }
+
+    protected void testMigrationTo6_0_0() {
+        // check that all expected scopes exist in the migrated realm.
+        testRealmDefaultClientScopes(migrationRealm);
+        // check that the 'microprofile-jwt' scope was added to the migrated clients.
+        testMicroprofileJWTScopeAddedToClient();
+    }
+
+    private void testDecisionStrategySetOnResourceServer() {
+        ClientsResource clients = migrationRealm.clients();
+        ClientRepresentation clientRepresentation = clients.findByClientId("authz-servlet").get(0);
+        ResourceServerRepresentation settings = clients.get(clientRepresentation.getId()).authorization().getSettings();
+        assertEquals(DecisionStrategy.UNANIMOUS, settings.getDecisionStrategy());
     }
 
     private void testGroupPolicyTypeFineGrainedAdminPermission() {
@@ -519,6 +534,23 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
 
     }
 
+    /**
+     * Checks if the {@code microprofile-jwt} optional client scope has been added to the clients.
+     */
+    private void testMicroprofileJWTScopeAddedToClient() {
+        log.infof("Testing microprofile-jwt optional scope present in realm %s for client migration-test-client", migrationRealm.toRepresentation().getRealm());
+
+        List<ClientScopeRepresentation> optionalClientScopes = ApiUtil.findClientByClientId(this.migrationRealm, "migration-test-client").getOptionalClientScopes();
+
+        Set<String> defaultClientScopeNames = optionalClientScopes.stream()
+                .map(ClientScopeRepresentation::getName)
+                .collect(Collectors.toSet());
+
+        if (!defaultClientScopeNames.contains(OIDCLoginProtocolFactory.MICROPROFILE_JWT_SCOPE)) {
+            Assert.fail("Client scope 'microprofile-jwt' not found as optional scope of client migration-test-client");
+        }
+    }
+
     private void testRequiredActionsPriority(RealmResource... realms) {
         log.info("testing required action's priority");
         for (RealmResource realm : realms) {
@@ -571,5 +603,15 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
 
     protected void testMigrationTo5_x() {
         // so far nothing
+    }
+
+    protected void testMigrationTo6_x() {
+        testMigrationTo6_0_0();
+    }
+
+    protected void testMigrationTo7_x(boolean supportedAuthzServices) {
+        if (supportedAuthzServices) {
+            testDecisionStrategySetOnResourceServer();
+        }
     }
 }

@@ -38,6 +38,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
+import org.apache.http.HttpStatus;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.OAuthErrorException;
@@ -99,39 +100,64 @@ public class AuthorizationTokenService {
     private static final String RESPONSE_MODE_DECISION = "decision";
     private static final String RESPONSE_MODE_PERMISSIONS = "permissions";
     private static final String RESPONSE_MODE_DECISION_RESULT = "result";
-    private static Map<String, BiFunction<AuthorizationRequest, AuthorizationProvider, EvaluationContext>> SUPPORTED_CLAIM_TOKEN_FORMATS;
+    private static Map<String, BiFunction<KeycloakAuthorizationRequest, AuthorizationProvider, EvaluationContext>> SUPPORTED_CLAIM_TOKEN_FORMATS;
 
     static {
         SUPPORTED_CLAIM_TOKEN_FORMATS = new HashMap<>();
-        SUPPORTED_CLAIM_TOKEN_FORMATS.put("urn:ietf:params:oauth:token-type:jwt", (authorizationRequest, authorization) -> {
-            String claimToken = authorizationRequest.getClaimToken();
+        SUPPORTED_CLAIM_TOKEN_FORMATS.put("urn:ietf:params:oauth:token-type:jwt", (request, authorization) -> {
+            String claimToken = request.getClaimToken();
 
             if (claimToken != null) {
+                Map claims;
+                
                 try {
-                    Map claims = JsonSerialization.readValue(Base64Url.decode(authorizationRequest.getClaimToken()), Map.class);
-                    authorizationRequest.setClaims(claims);
-                    return new DefaultEvaluationContext(new KeycloakIdentity(authorization.getKeycloakSession(), Tokens.getAccessToken(authorizationRequest.getSubjectToken(), authorization.getKeycloakSession())), claims, authorization.getKeycloakSession());
-                } catch (IOException cause) {
-                    throw new RuntimeException("Failed to map claims from claim token [" + claimToken + "]", cause);
+                    claims = JsonSerialization.readValue(Base64Url.decode(request.getClaimToken()), Map.class);
+                    request.setClaims(claims);
+                } catch (Exception cause) {
+                    throw new CorsErrorResponseException(request.getCors(), "invalid_request", "Invalid claims",
+                            Status.BAD_REQUEST);
                 }
+
+                KeycloakIdentity identity;
+                
+                try {
+                    identity = new KeycloakIdentity(authorization.getKeycloakSession(),
+                            Tokens.getAccessToken(request.getSubjectToken(), authorization.getKeycloakSession()));
+                } catch (Exception cause) {
+                    throw new CorsErrorResponseException(request.getCors(), "unauthorized_client", "Invalid identity", Status.BAD_REQUEST);
+                }
+
+                return new DefaultEvaluationContext(identity, claims, authorization.getKeycloakSession());
             }
 
-            throw new RuntimeException("Claim token can not be null");
+            throw new CorsErrorResponseException(request.getCors(), "invalid_request", "Claim token can not be null", Status.BAD_REQUEST);
         });
-        SUPPORTED_CLAIM_TOKEN_FORMATS.put(CLAIM_TOKEN_FORMAT_ID_TOKEN, (authorizationRequest, authorization) -> {
-            try {
-                KeycloakSession keycloakSession = authorization.getKeycloakSession();
-                String accessToken = authorizationRequest.getSubjectToken();
+        SUPPORTED_CLAIM_TOKEN_FORMATS.put(CLAIM_TOKEN_FORMAT_ID_TOKEN, (request, authorization) -> {
+            KeycloakSession keycloakSession = authorization.getKeycloakSession();
+            String subjectToken = request.getSubjectToken();
 
-                if (accessToken == null) {
-                    throw new RuntimeException("Claim token can not be null and must be a valid IDToken");
-                }
-
-                IDToken idToken = new TokenManager().verifyIDTokenSignature(keycloakSession, accessToken);
-                return new DefaultEvaluationContext(new KeycloakIdentity(keycloakSession, idToken), authorizationRequest.getClaims(), keycloakSession);
-            } catch (OAuthErrorException cause) {
-                throw new RuntimeException("Failed to verify ID token", cause);
+            if (subjectToken == null) {
+                throw new CorsErrorResponseException(request.getCors(), "invalid_request", "Subject token can not be null and must be a valid ID or Access Token",
+                        Status.BAD_REQUEST);
             }
+
+            IDToken idToken;
+
+            try {
+                idToken = new TokenManager().verifyIDTokenSignature(keycloakSession, subjectToken);
+            } catch (Exception cause) {
+                throw new CorsErrorResponseException(request.getCors(), "unauthorized_client", "Invalid signature", Status.BAD_REQUEST);
+            }
+
+            KeycloakIdentity identity;
+            
+            try {
+                identity = new KeycloakIdentity(keycloakSession, idToken);
+            } catch (Exception cause) {
+                throw new CorsErrorResponseException(request.getCors(), "unauthorized_client", "Invalid identity", Status.BAD_REQUEST);
+            }
+
+            return new DefaultEvaluationContext(identity, request.getClaims(), keycloakSession);
         });
     }
 
@@ -370,7 +396,7 @@ public class AuthorizationTokenService {
             claimTokenFormat = CLAIM_TOKEN_FORMAT_ID_TOKEN;
         }
 
-        BiFunction<AuthorizationRequest, AuthorizationProvider, EvaluationContext> evaluationContextProvider = SUPPORTED_CLAIM_TOKEN_FORMATS.get(claimTokenFormat);
+        BiFunction<KeycloakAuthorizationRequest, AuthorizationProvider, EvaluationContext> evaluationContextProvider = SUPPORTED_CLAIM_TOKEN_FORMATS.get(claimTokenFormat);
 
         if (evaluationContextProvider == null) {
             throw new CorsErrorResponseException(request.getCors(), OAuthErrorException.INVALID_REQUEST, "Claim token format [" + claimTokenFormat + "] not supported", Status.BAD_REQUEST);
@@ -410,6 +436,22 @@ public class AuthorizationTokenService {
 
                 if (resource != null) {
                     requestedResources.add(resource);
+                } else if (resourceId.startsWith("resource-type:")) {
+                    // only resource types, no resource instances. resource types are owned by the resource server
+                    String resourceType = resourceId.substring("resource-type:".length());
+                    resourceStore.findByType(resourceType, resourceServer.getId(), resourceServer.getId(), requestedResources::add);
+                } else if (resourceId.startsWith("resource-type-any:")) {
+                    // any resource with a given type
+                    String resourceType = resourceId.substring("resource-type-any:".length());
+                    resourceStore.findByType(resourceType, null, resourceServer.getId(), requestedResources::add);
+                } else if (resourceId.startsWith("resource-type-instance:")) {
+                    // only resource instances with a given type
+                    String resourceType = resourceId.substring("resource-type-instance:".length());
+                    resourceStore.findByTypeInstance(resourceType, resourceServer.getId(), requestedResources::add);
+                } else if (resourceId.startsWith("resource-type-owner:")) {
+                    // only resources where the current identity is the owner
+                    String resourceType = resourceId.substring("resource-type-owner:".length());
+                    resourceStore.findByType(resourceType, identity.getId(), resourceServer.getId(), requestedResources::add);
                 } else {
                     String resourceName = resourceId;
                     Resource ownerResource = resourceStore.findByName(resourceName, identity.getId(), resourceServer.getId());

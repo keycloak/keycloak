@@ -77,7 +77,20 @@ So for example using `-Dkeycloak.logging.level=debug` will enable debug logging 
 
 For more fine-tuning of individual categories, you can look at log4j.properties file and temporarily enable/disable them here.
 
-TODO: Add info about Wildfly logging
+### Wildfly server logging
+
+When using Keycloak on Wildfly/EAP, there is INFO logging level enabled by default for most of the java packages.
+You can use those system properties to enable DEBUG logging for particular packages:
+
+
+* `-Dinfinispan.logging.level=DEBUG` - for package `org.infinispan`
+* `-Dorg.keycloak.services.scheduled=DEBUG` - for package `org.keycloak.services.scheduled`
+
+You can use value `TRACE` if you want to enable even TRACE logging.
+
+There is no support for more packages ATM, you need to edit the file `testsuite/integration-arquillian/servers/auth-server/jboss/common/jboss-cli/add-log-level.cli`
+and add packages manually.
+
 
 ## Run adapter tests
 
@@ -269,7 +282,7 @@ This test will:
  - Do some test that data are correct
  
 
-1) Prepare MySQL DB and ensure that MySQL DB is empty. See [../../misc/DatabaseTesting.md](../../misc/DatabaseTesting.md) for some hints for locally prepare Docker MySQL image.
+1) Prepare MySQL DB and ensure that MySQL DB is empty. See [../../docs/tests-db.md](../../docs/tests-db.md) for some hints for locally prepare Docker MySQL image.
 
 2) Run the test (Update according to your DB connection, versions etc):
 
@@ -299,44 +312,13 @@ The profile "test-7X-migration" indicates from which version you want to test mi
       
 Same test as above, but it uses manual migration mode. During startup of the new Keycloak server, Liquibase won't automatically perform DB update, but it 
 just exports the needed SQL into the script. This SQL script then needs to be manually executed against the DB.
+Then there is another startup of the new Keycloak server against the DB, which already has SQL changes applied and
+the same test as in `auto` mode (MigrationTest) is executed to test that data are correct.
 
-1) Prepare MySQL DB (Same as above)
+The test is executed in same way as the "auto" DB migration test with the only difference
+that you need to use property `migration.mode` with the value `manual` .
 
-2) Run the test (Update according to your DB connection, versions etc). This step will end with failure, but that's expected:
-
-    mvn -f testsuite/integration-arquillian/pom.xml \
-      clean install \
-      -Pauth-server-wildfly,jpa,clean-jpa,auth-server-migration,test-70-migration \
-      -Dtest=MigrationTest \
-      -Dmigration.mode=manual \
-      -Djdbc.mvn.groupId=mysql \
-      -Djdbc.mvn.artifactId=mysql-connector-java \
-      -Djdbc.mvn.version=8.0.12 \
-      -Djdbc.mvn.version.legacy=5.1.38 \
-      -Dkeycloak.connectionsJpa.url=jdbc:mysql://$DB_HOST/keycloak \
-      -Dkeycloak.connectionsJpa.user=keycloak \
-      -Dkeycloak.connectionsJpa.password=keycloak
-      
-3) Manually execute the SQL script against your DB. With Mysql, you can use this command (KEYCLOAK_SRC points to the directory with the Keycloak codebase):
-       
-    mysql -h $DB_HOST -u keycloak -pkeycloak < $KEYCLOAK_SRC/testsuite/integration-arquillian/tests/base/target/containers/auth-server-wildfly/keycloak-database-update.sql       
-
-4) Finally run the migration test, which will verify that DB migration was successful. This should end with success:
- 
-    mvn -f testsuite/integration-arquillian/tests/base/pom.xml \
-      clean install \
-      -Pauth-server-wildfly,test-70-migration \
-      -Dskip.add.user.json=true \
-      -Dtest=MigrationTest
-
-### JSON export/import migration test
-This will start latest Keycloak and import the realm JSON file, which was previously exported from Keycloak 1.9.8.Final
-  
-
-    mvn -f testsuite/integration-arquillian/pom.xml \
-      clean install \
-      -Pauth-server-wildfly \
-      -Dtest=JsonFileImport*MigrationTest
+    -Dmigration.mode=manual
 
 
 ## Server configuration migration test
@@ -369,9 +351,7 @@ To run tests execute following command. Default version of Spring Boot is 1.5.x,
 ```
 mvn -f testsuite/integration-arquillian/tests/other/springboot-tests/pom.xml \
     clean test \
-    -Ptest-springboot \
-    -Dauth.server.ssl.required=false \
-    -Dadapter.container=[tomcat|undertow|jetty92|jetty93|jetty94]
+    -Dadapter.container=[tomcat|undertow|jetty92|jetty93|jetty94] \
     [-Pspringboot21]
 ```
 

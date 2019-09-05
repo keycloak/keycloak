@@ -64,7 +64,7 @@ export class PageToolbar extends React.Component<PageToolbarProps, PageToolbarSt
             <Toolbar>
                 {this.hasReferrer &&
                     <ToolbarGroup key='referrerGroup'>
-                        <ToolbarItem className="pf-m-icons pf-screen-reader" key='referrer'>
+                        <ToolbarItem className="pf-m-icons" key='referrer'>
                             <ReferrerLink/>
                         </ToolbarItem>
                     </ToolbarGroup>
@@ -72,12 +72,12 @@ export class PageToolbar extends React.Component<PageToolbarProps, PageToolbarSt
                     
                 <ToolbarGroup key='secondGroup'>
                     {features.isInternationalizationEnabled &&
-                        <ToolbarItem className="pf-m-icons pf-screen-reader" key='locale'>
+                        <ToolbarItem className="pf-m-icons" key='locale'>
                             <LocaleDropdown/>
                         </ToolbarItem>
                     }
                     
-                    <ToolbarItem className="pf-m-icons pf-screen-reader" key='logout'>
+                    <ToolbarItem className="pf-m-icons" key='logout'>
                         <LogoutButton/>
                     </ToolbarItem>
                     

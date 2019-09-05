@@ -176,5 +176,10 @@ public enum ResourceType {
     /**
      *
      */
-    , AUTHORIZATION_POLICY;
+    , AUTHORIZATION_POLICY
+
+    /**
+     *
+     */
+    , CUSTOM;
 }

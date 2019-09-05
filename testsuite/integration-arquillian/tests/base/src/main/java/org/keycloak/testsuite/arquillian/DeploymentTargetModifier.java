@@ -20,6 +20,7 @@ package org.keycloak.testsuite.arquillian;
 import java.util.ArrayList;
 import java.util.Objects;
 import java.util.List;
+import java.util.Set;
 import org.jboss.arquillian.container.spi.client.deployment.DeploymentDescription;
 import org.jboss.arquillian.container.spi.client.deployment.TargetDescription;
 import org.jboss.arquillian.core.api.Instance;
@@ -60,8 +61,8 @@ public class DeploymentTargetModifier extends AnnotationDeploymentScenarioGenera
         List<DeploymentDescription> deployments = super.generate(testClass);
 
         checkTestDeployments(deployments, testClass, context.isAdapterTest());
-        List<String> appServerQualifiers = getAppServerQualifiers(testClass.getJavaClass());
-        if (appServerQualifiers == null) return deployments; // no adapter test
+        Set<String> appServerQualifiers = getAppServerQualifiers(testClass.getJavaClass());
+        if (appServerQualifiers.isEmpty()) return deployments; // no adapter test
 
         String appServerQualifier = appServerQualifiers.stream()
                 .filter(q -> q.contains(AppServerTestEnricher.CURRENT_APP_SERVER))

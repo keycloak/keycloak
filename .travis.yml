@@ -1,7 +1,11 @@
 language: java
 
 cache:
-  cache: false
+  directories:
+    - $HOME/.m2
+
+before_cache:
+  - rm -rf $HOME/.m2/repository/org/keycloak
 
 env:
   global:
@@ -14,12 +18,13 @@ env:
     - TESTS=server-group3
     - TESTS=server-group4
     - TESTS=adapter-tests
+    - TESTS=adapter-tests-authz
     - TESTS=crossdc-server
     - TESTS=crossdc-adapter
     - TESTS=broker
 
 jdk:
-  - oraclejdk8
+  - openjdk8
 
 install: true
 
@@ -32,6 +37,9 @@ before_install:
   - "if [ $(phantomjs --version) != '$PHANTOMJS_VERSION' ]; then wget https://github.com/Medium/phantomjs/releases/download/v$PHANTOMJS_VERSION/phantomjs-$PHANTOMJS_VERSION-linux-x86_64.tar.bz2 -O $PWD/travis_phantomjs/phantomjs-$PHANTOMJS_VERSION-linux-x86_64.tar.bz2; fi"
   - "if [ $(phantomjs --version) != '$PHANTOMJS_VERSION' ]; then tar -xvf $PWD/travis_phantomjs/phantomjs-$PHANTOMJS_VERSION-linux-x86_64.tar.bz2 -C $PWD/travis_phantomjs; fi"
   - "phantomjs --version"
+
+before_script:
+  - export -f travis_fold
 
 script: 
   - ./travis-run-tests.sh $TESTS

@@ -402,12 +402,12 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
                                      @QueryParam(AbstractOAuth2IdentityProvider.OAUTH2_PARAMETER_CODE) String authorizationCode,
                                      @QueryParam(OAuth2Constants.ERROR) String error) {
             if (error != null) {
-                //logger.error("Failed " + getConfig().getAlias() + " broker login: " + error);
+                logger.error(error + " for broker login " + getConfig().getProviderId());
                 if (error.equals(ACCESS_DENIED)) {
-                    logger.error(ACCESS_DENIED + " for broker login " + getConfig().getProviderId());
                     return callback.cancelled(state);
+                } else if (error.equals(OAuthErrorException.LOGIN_REQUIRED) || error.equals(OAuthErrorException.INTERACTION_REQUIRED)) {
+                    return callback.error(state, error);
                 } else {
-                    logger.error(error + " for broker login " + getConfig().getProviderId());
                     return callback.error(state, Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR);
                 }
             }

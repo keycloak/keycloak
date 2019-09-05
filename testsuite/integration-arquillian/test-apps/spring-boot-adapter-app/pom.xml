@@ -5,7 +5,7 @@
     <parent>
         <artifactId>integration-arquillian-test-apps</artifactId>
         <groupId>org.keycloak.testsuite</groupId>
-        <version>7.0.0-SNAPSHOT</version>
+        <version>8.0.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -18,7 +18,7 @@
         <jetty.version>${jetty94.version}</jetty.version>
 
         <spring-boot-adapter-jetty>false</spring-boot-adapter-jetty>
-        <spring.boot.tomcat.adapter.artifactId>keycloak-tomcat8-adapter</spring.boot.tomcat.adapter.artifactId>
+        <spring.boot.tomcat.adapter.artifactId>keycloak-tomcat-adapter</spring.boot.tomcat.adapter.artifactId>
 
         <jetty.version/>
 

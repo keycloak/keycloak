@@ -141,7 +141,7 @@ public class KeycloakApplication extends Application {
                     DBLockManager dbLockManager = new DBLockManager(lockSession);
                     dbLockManager.checkForcedUnlock();
                     DBLockProvider dbLock = dbLockManager.getDBLock();
-                    dbLock.waitForLock();
+                    dbLock.waitForLock(DBLockProvider.Namespace.KEYCLOAK_BOOT);
                     try {
                         exportImportManager[0] = migrateAndBootstrap();
                     } finally {

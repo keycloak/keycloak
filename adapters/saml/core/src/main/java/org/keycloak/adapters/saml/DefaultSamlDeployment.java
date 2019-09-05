@@ -205,6 +205,7 @@ public class DefaultSamlDeployment implements SamlDeployment {
         private SingleLogoutService singleLogoutService;
         private final List<PublicKey> signatureValidationKeys = new LinkedList<>();
         private int minTimeBetweenDescriptorRequests;
+        private int allowedClockSkew;
         private HttpClient client;
         private String metadataUrl;
 
@@ -283,6 +284,16 @@ public class DefaultSamlDeployment implements SamlDeployment {
 
         public void setMetadataUrl(String metadataUrl) {
             this.metadataUrl = metadataUrl;
+        }
+
+        @Override
+        public int getAllowedClockSkew() {
+            return allowedClockSkew;
+        }
+
+
+        public void setAllowedClockSkew(int allowedClockSkew) {
+            this.allowedClockSkew = allowedClockSkew;
         }
     }
 

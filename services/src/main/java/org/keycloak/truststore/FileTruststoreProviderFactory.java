@@ -26,7 +26,22 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.security.InvalidKeyException;
 import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
+import java.security.PublicKey;
+import java.security.SignatureException;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+
+import javax.security.auth.x500.X500Principal;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
@@ -85,7 +100,8 @@ public class FileTruststoreProviderFactory implements TruststoreProviderFactory 
             }
         }
 
-        provider = new FileTruststoreProvider(truststore, verificationPolicy);
+        TruststoreCertificatesLoader certsLoader = new TruststoreCertificatesLoader(truststore);
+        provider = new FileTruststoreProvider(truststore, verificationPolicy, certsLoader.trustedRootCerts, certsLoader.intermediateCerts);
         TruststoreProviderSingleton.set(provider);
         log.debug("File trustore provider initialized: " + new File(storepath).getAbsolutePath());
     }
@@ -115,5 +131,83 @@ public class FileTruststoreProviderFactory implements TruststoreProviderFactory 
     @Override
     public String getId() {
         return "file";
+    }
+
+
+
+    private class TruststoreCertificatesLoader {
+
+        private Map<X500Principal, X509Certificate> trustedRootCerts = new HashMap<>();
+        private Map<X500Principal, X509Certificate> intermediateCerts = new HashMap<>();
+
+
+        public TruststoreCertificatesLoader(KeyStore truststore) {
+            readTruststore(truststore);
+        }
+
+        /**
+         * Get all certificates from Keycloak Truststore, and classify them in two lists : root CAs and intermediates CAs
+         */
+        private void readTruststore(KeyStore truststore) {
+
+            //Reading truststore aliases & certificates
+            Enumeration enumeration;
+
+            try {
+
+                enumeration = truststore.aliases();
+                log.trace("Checking " + truststore.size() + " entries from the truststore.");
+                while(enumeration.hasMoreElements()) {
+
+                    String alias = (String)enumeration.nextElement();
+                    Certificate certificate = truststore.getCertificate(alias);
+
+                    if (certificate instanceof X509Certificate) {
+                        X509Certificate cax509cert = (X509Certificate) certificate;
+                        if (isSelfSigned(cax509cert)) {
+                            X500Principal principal = cax509cert.getSubjectX500Principal();
+                            trustedRootCerts.put(principal, cax509cert);
+                            log.debug("Trusted root CA found in trustore : alias : "+alias + " | Subject DN : " + principal);
+                        } else {
+                            X500Principal principal = cax509cert.getSubjectX500Principal();
+                            intermediateCerts.put(principal, cax509cert);
+                            log.debug("Intermediate CA found in trustore : alias : "+alias + " | Subject DN : " + principal);
+                        }
+                    } else
+                        log.info("Skipping certificate with alias ["+ alias + "] from truststore, because it's not an X509Certificate");
+
+                }
+            } catch (KeyStoreException e) {
+                log.error("Error while reading Keycloak truststore "+e.getMessage(),e);
+            } catch (CertificateException e) {
+                log.error("Error while reading Keycloak truststore "+e.getMessage(),e);
+            } catch (NoSuchAlgorithmException e) {
+                log.error("Error while reading Keycloak truststore "+e.getMessage(),e);
+            } catch (NoSuchProviderException e) {
+                log.error("Error while reading Keycloak truststore "+e.getMessage(),e);
+            }
+        }
+
+        /**
+         * Checks whether given X.509 certificate is self-signed.
+         */
+        private boolean isSelfSigned(X509Certificate cert)
+                throws CertificateException, NoSuchAlgorithmException,
+                NoSuchProviderException {
+            try {
+                // Try to verify certificate signature with its own public key
+                PublicKey key = cert.getPublicKey();
+                cert.verify(key);
+                log.trace("certificate " + cert.getSubjectDN() + " detected as root CA");
+                return true;
+            } catch (SignatureException sigEx) {
+                // Invalid signature --> not self-signed
+                log.trace("certificate " + cert.getSubjectDN() + " detected as intermediate CA");
+            } catch (InvalidKeyException keyEx) {
+                // Invalid key --> not self-signed
+                log.trace("certificate " + cert.getSubjectDN() + " detected as intermediate CA");
+            }
+            return false;
+        }
     }
 }

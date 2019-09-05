@@ -32,6 +32,9 @@ public class LoginConfigTotpPage extends AbstractPage {
 
     @FindBy(css = "input[type=\"submit\"]")
     private WebElement submitButton;
+    
+    @FindBy(name = "cancel-aia")
+    private WebElement cancelAIAButton;
 
     @FindBy(id = "mode-barcode")
     private WebElement barcodeLink;
@@ -49,6 +52,10 @@ public class LoginConfigTotpPage extends AbstractPage {
 
     public void submit() {
         submitButton.click();
+    }
+    
+    public void cancel() {
+        cancelAIAButton.click();
     }
 
     public String getTotpSecret() {

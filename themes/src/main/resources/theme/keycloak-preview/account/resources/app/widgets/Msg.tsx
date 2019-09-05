@@ -39,7 +39,7 @@ export class Msg extends React.Component<MsgProps> {
         let message: string = l18nMsg[msgKey];
         if (message === undefined) message = msgKey;
         
-        if (params !== undefined) {
+        if ((params !== undefined) && (params.length > 0)) {
             params.forEach((value: string, index: number) => {
                 value = this.processParam(value);
                 message = message.replace('{{param_'+ index + '}}', value);

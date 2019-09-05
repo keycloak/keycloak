@@ -69,6 +69,19 @@ public class JSObjectBuilder {
     }
 
 
+    public JSObjectBuilder pkceS256() {
+        return pkceMethod("S256");
+    }
+
+    private JSObjectBuilder pkceMethod(String method) {
+        arguments.put("pkceMethod", method);
+        return this;
+    }
+
+    private boolean skipQuotes(Object o) {
+        return (o instanceof Integer || o instanceof Boolean);
+    }
+
     public String build() {
         StringBuilder argument = new StringBuilder("{");
         String comma = "";
@@ -77,11 +90,11 @@ public class JSObjectBuilder {
                     .append(option.getKey())
                     .append(" : ");
 
-            if (!(option.getValue() instanceof Integer)) argument.append("\"");
+            if (!skipQuotes(option.getValue())) argument.append("\"");
 
             argument.append(option.getValue());
 
-            if (!(option.getValue() instanceof Integer)) argument.append("\"");
+            if (!skipQuotes(option.getValue())) argument.append("\"");
             comma = ",";
         }
 

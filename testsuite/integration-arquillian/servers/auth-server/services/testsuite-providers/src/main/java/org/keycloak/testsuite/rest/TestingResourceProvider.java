@@ -533,7 +533,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
         event.setError(rep.getError());
         event.setOperationType(OperationType.valueOf(rep.getOperationType()));
         if (rep.getResourceType() != null) {
-            event.setResourceType(ResourceType.valueOf(rep.getResourceType()));
+            event.setResourceTypeAsString(rep.getResourceType());
         }
         event.setRealmId(rep.getRealmId());
         event.setRepresentation(rep.getRepresentation());
@@ -835,27 +835,19 @@ public class TestingResourceProvider implements RealmResourceProvider {
     @Path("/enable-feature/{feature}")
     @Consumes(MediaType.APPLICATION_JSON)
     public Response enableFeature(@PathParam("feature") String feature) {
+        Profile.Feature featureProfile;
 
-        Profile.Feature featureProfile = Profile.Feature.valueOf(feature);
-
-        if (featureProfile == null)
+        try {
+            featureProfile = Profile.Feature.valueOf(feature);
+        } catch (IllegalArgumentException e) {
+            System.err.printf("Feature '%s' doesn't exist!!\n", feature);
             return Response.status(Response.Status.NOT_FOUND).build();
+        }
 
         if (Profile.isFeatureEnabled(featureProfile))
             return Response.ok().build();
 
-        System.setProperty("keycloak.profile.feature." + feature.toLowerCase(), "enabled");
-
-        switch (featureProfile.getType()) {
-            case PREVIEW:
-                Profile.getPreviewFeatures().add(featureProfile);
-                break;
-            case EXPERIMENTAL:
-                Profile.getExperimentalFeatures().add(featureProfile);
-                break;
-        }
-
-        Profile.getDisabledFeatures().remove(featureProfile);
+        System.setProperty("keycloak.profile.feature." + featureProfile.toString().toLowerCase(), "enabled");
         Profile.init();
 
         if (Profile.isFeatureEnabled(featureProfile))
@@ -868,17 +860,19 @@ public class TestingResourceProvider implements RealmResourceProvider {
     @Path("/disable-feature/{feature}")
     @Consumes(MediaType.APPLICATION_JSON)
     public Response disableFeature(@PathParam("feature") String feature) {
+        Profile.Feature featureProfile;
 
-        Profile.Feature featureProfile = Profile.Feature.valueOf(feature);
-
-        if (featureProfile == null)
+        try {
+            featureProfile = Profile.Feature.valueOf(feature);
+        } catch (IllegalArgumentException e) {
+            System.err.printf("Feature '%s' doesn't exist!!\n", feature);
             return Response.status(Response.Status.NOT_FOUND).build();
+        }
 
         if (!Profile.isFeatureEnabled(featureProfile))
             return Response.ok().build();
 
-        System.getProperties().remove("keycloak.profile.feature." + feature.toLowerCase());
-        Profile.getDisabledFeatures().add(featureProfile);
+        System.getProperties().remove("keycloak.profile.feature." + featureProfile.toString().toLowerCase());
         Profile.init();
 
         if (!Profile.isFeatureEnabled(featureProfile))

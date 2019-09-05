@@ -364,47 +364,13 @@ public class TokenEndpoint {
         if (authUsername == null) {
             authUsername = "unknown";
         }
-        if (codeChallenge != null && codeVerifier == null) {
-            logger.warnf("PKCE code verifier not specified, authUserId = %s, authUsername = %s", authUserId, authUsername);
-            event.error(Errors.CODE_VERIFIER_MISSING);
-            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, "PKCE code verifier not specified", Response.Status.BAD_REQUEST);
+
+        if (codeChallengeMethod != null && !codeChallengeMethod.isEmpty()) {
+            checkParamsForPkceEnforcedClient(codeVerifier, codeChallenge, codeChallengeMethod, authUserId, authUsername);
+        } else {
+            // PKCE Activation is OFF, execute the codes implemented in KEYCLOAK-2604
+            checkParamsForPkceNotEnforcedClient(codeVerifier, codeChallenge, codeChallengeMethod, authUserId, authUsername);
         }
-
-        if (codeChallenge != null) {
-            // based on whether code_challenge has been stored at corresponding authorization code request previously
-            // decide whether this client(RP) supports PKCE
-            if (!isValidPkceCodeVerifier(codeVerifier)) {
-                logger.infof("PKCE invalid code verifier");
-                event.error(Errors.INVALID_CODE_VERIFIER);
-                throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, "PKCE invalid code verifier", Response.Status.BAD_REQUEST);
-            }
-
-            logger.debugf("PKCE supporting Client, codeVerifier = %s", codeVerifier);
-            String codeVerifierEncoded = codeVerifier;
-            try {
-                // https://tools.ietf.org/html/rfc7636#section-4.2
-                // plain or S256
-                if (codeChallengeMethod != null && codeChallengeMethod.equals(OAuth2Constants.PKCE_METHOD_S256)) {
-                    logger.debugf("PKCE codeChallengeMethod = %s", codeChallengeMethod);
-                    codeVerifierEncoded = generateS256CodeChallenge(codeVerifier);
-                } else {
-                    logger.debug("PKCE codeChallengeMethod is plain");
-                    codeVerifierEncoded = codeVerifier;
-                }
-            } catch (Exception nae) {
-                logger.infof("PKCE code verification failed, not supported algorithm specified");
-                event.error(Errors.PKCE_VERIFICATION_FAILED);
-                throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, "PKCE code verification failed, not supported algorithm specified", Response.Status.BAD_REQUEST);
-            }
-            if (!codeChallenge.equals(codeVerifierEncoded)) {
-                logger.warnf("PKCE verification failed. authUserId = %s, authUsername = %s", authUserId, authUsername);
-                event.error(Errors.PKCE_VERIFICATION_FAILED);
-                throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, "PKCE verification failed", Response.Status.BAD_REQUEST);
-            } else {
-                logger.debugf("PKCE verification success. codeVerifierEncoded = %s, codeChallenge = %s", codeVerifierEncoded, codeChallenge);
-            }
-        }
-
 
         updateClientSession(clientSession);
         updateUserSessionFromClientAuth(userSession);
@@ -445,12 +411,78 @@ public class TokenEndpoint {
         if (TokenUtil.isOIDCRequest(scopeParam)) {
             responseBuilder.generateIDToken();
         }
-
-        AccessTokenResponse res = responseBuilder.build();
-
+        
+        AccessTokenResponse res = null;
+        try {
+            res = responseBuilder.build();
+        } catch (RuntimeException re) {
+            if ("can not get encryption KEK".equals(re.getMessage())) {
+                throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "can not get encryption KEK", Response.Status.BAD_REQUEST);
+            } else {
+                throw re;
+            }
+        }
+        
         event.success();
 
         return cors.builder(Response.ok(res).type(MediaType.APPLICATION_JSON_TYPE)).build();
+    }
+
+    private void checkParamsForPkceEnforcedClient(String codeVerifier, String codeChallenge, String codeChallengeMethod, String authUserId, String authUsername) {
+        // check whether code verifier is specified
+        if (codeVerifier == null) {
+            logger.warnf("PKCE code verifier not specified, authUserId = %s, authUsername = %s", authUserId, authUsername);
+            event.error(Errors.CODE_VERIFIER_MISSING);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, "PKCE code verifier not specified", Response.Status.BAD_REQUEST); 
+        }
+        verifyCodeVerifier(codeVerifier, codeChallenge, codeChallengeMethod, authUserId, authUsername);
+    }
+
+    private void checkParamsForPkceNotEnforcedClient(String codeVerifier, String codeChallenge, String codeChallengeMethod, String authUserId, String authUsername) {
+        if (codeChallenge != null && codeVerifier == null) {
+            logger.warnf("PKCE code verifier not specified, authUserId = %s, authUsername = %s", authUserId, authUsername);
+            event.error(Errors.CODE_VERIFIER_MISSING);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, "PKCE code verifier not specified", Response.Status.BAD_REQUEST);
+        }
+
+        if (codeChallenge != null) {
+            verifyCodeVerifier(codeVerifier, codeChallenge, codeChallengeMethod, authUserId, authUsername);
+        }
+    }
+
+    private void verifyCodeVerifier(String codeVerifier, String codeChallenge, String codeChallengeMethod, String authUserId, String authUsername) {
+        // check whether code verifier is formatted along with the PKCE specification
+
+        if (!isValidPkceCodeVerifier(codeVerifier)) {
+            logger.infof("PKCE invalid code verifier");
+            event.error(Errors.INVALID_CODE_VERIFIER);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, "PKCE invalid code verifier", Response.Status.BAD_REQUEST);
+        }
+
+        logger.debugf("PKCE supporting Client, codeVerifier = %s", codeVerifier);
+        String codeVerifierEncoded = codeVerifier;
+        try {
+            // https://tools.ietf.org/html/rfc7636#section-4.2
+            // plain or S256
+            if (codeChallengeMethod != null && codeChallengeMethod.equals(OAuth2Constants.PKCE_METHOD_S256)) {
+                logger.debugf("PKCE codeChallengeMethod = %s", codeChallengeMethod);
+                codeVerifierEncoded = generateS256CodeChallenge(codeVerifier);
+            } else {
+                logger.debug("PKCE codeChallengeMethod is plain");
+                codeVerifierEncoded = codeVerifier;
+            }
+        } catch (Exception nae) {
+            logger.infof("PKCE code verification failed, not supported algorithm specified");
+            event.error(Errors.PKCE_VERIFICATION_FAILED);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, "PKCE code verification failed, not supported algorithm specified", Response.Status.BAD_REQUEST);
+        }
+        if (!codeChallenge.equals(codeVerifierEncoded)) {
+            logger.warnf("PKCE verification failed. authUserId = %s, authUsername = %s", authUserId, authUsername);
+            event.error(Errors.PKCE_VERIFICATION_FAILED);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, "PKCE verification failed", Response.Status.BAD_REQUEST);
+        } else {
+            logger.debugf("PKCE verification success. codeVerifierEncoded = %s, codeChallenge = %s", codeVerifierEncoded, codeChallenge);
+        }
     }
 
     public Response refreshTokenGrant() {
@@ -582,6 +614,7 @@ public class TokenEndpoint {
             responseBuilder.generateIDToken();
         }
 
+        // TODO : do the same as codeToToken()
         AccessTokenResponse res = responseBuilder.build();
 
 
@@ -655,6 +688,7 @@ public class TokenEndpoint {
             responseBuilder.generateIDToken();
         }
 
+        // TODO : do the same as codeToToken()
         AccessTokenResponse res = responseBuilder.build();
 
         event.success();

@@ -42,6 +42,7 @@
         <subsystem supplement="standalone-wildfly">elytron.xml</subsystem>
         <subsystem>security.xml</subsystem>
         <subsystem>transactions.xml</subsystem>
+        <subsystem>weld.xml</subsystem>
         <subsystem>microprofile-config-smallrye.xml</subsystem>
         <subsystem>microprofile-health-smallrye.xml</subsystem>
         <subsystem>microprofile-metrics-smallrye.xml</subsystem>

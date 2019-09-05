@@ -27,6 +27,7 @@ import org.keycloak.client.registration.ClientRegistrationException;
 import org.keycloak.client.registration.HttpErrorException;
 import org.keycloak.common.util.CollectionUtil;
 import org.keycloak.events.Errors;
+import org.keycloak.jose.jwe.JWEConstants;
 import org.keycloak.jose.jws.Algorithm;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -303,6 +304,47 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
         config = OIDCAdvancedConfigWrapper.fromClientRepresentation(kcClient);
         assertTrue(!config.isUseMtlsHokToken());
 
+    }
+
+    @Test
+    public void testIdTokenEncryptedResponse() throws Exception {
+        OIDCClientRepresentation response = null;
+        OIDCClientRepresentation updated = null;
+        try {
+             // create (no specification)
+             OIDCClientRepresentation clientRep = createRep();
+
+             response = reg.oidc().create(clientRep);
+             Assert.assertEquals(Boolean.FALSE, response.getTlsClientCertificateBoundAccessTokens());
+             Assert.assertNotNull(response.getClientSecret());
+
+             // Test Keycloak representation
+             ClientRepresentation kcClient = getClient(response.getClientId());
+             OIDCAdvancedConfigWrapper config = OIDCAdvancedConfigWrapper.fromClientRepresentation(kcClient);
+             Assert.assertNull(config.getIdTokenEncryptedResponseAlg());
+             Assert.assertNull(config.getIdTokenEncryptedResponseEnc());
+
+             // update (alg RSA1_5, enc A128CBC-HS256)
+             reg.auth(Auth.token(response));
+             response.setIdTokenEncryptedResponseAlg(JWEConstants.RSA1_5);
+             response.setIdTokenEncryptedResponseEnc(JWEConstants.A128CBC_HS256);
+             updated = reg.oidc().update(response);
+             Assert.assertEquals(JWEConstants.RSA1_5, updated.getIdTokenEncryptedResponseAlg());
+             Assert.assertEquals(JWEConstants.A128CBC_HS256, updated.getIdTokenEncryptedResponseEnc());
+
+             // Test Keycloak representation
+             kcClient = getClient(updated.getClientId());
+             config = OIDCAdvancedConfigWrapper.fromClientRepresentation(kcClient);
+             Assert.assertEquals(JWEConstants.RSA1_5, config.getIdTokenEncryptedResponseAlg());
+             Assert.assertEquals(JWEConstants.A128CBC_HS256, config.getIdTokenEncryptedResponseEnc());
+
+        } finally {
+            // revert
+            reg.auth(Auth.token(updated));
+            updated.setIdTokenEncryptedResponseAlg(null);
+            updated.setIdTokenEncryptedResponseEnc(null);
+            reg.oidc().update(updated);
+        }
     }
 
     @Test

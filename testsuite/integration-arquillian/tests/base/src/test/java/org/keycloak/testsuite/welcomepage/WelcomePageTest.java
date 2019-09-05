@@ -43,7 +43,6 @@ import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
 
-import static org.keycloak.testsuite.arquillian.containers.KeycloakContainerEventsController.WITHOUT_KEYCLOAK_ADD_USER_FILE;
 import static org.keycloak.testsuite.util.URLUtils.navigateToUri;
 
 /**

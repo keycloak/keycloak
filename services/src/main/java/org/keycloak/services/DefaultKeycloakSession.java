@@ -42,6 +42,9 @@ import org.keycloak.storage.ClientStorageManager;
 import org.keycloak.storage.UserStorageManager;
 import org.keycloak.storage.federated.UserFederatedStorageProvider;
 import org.keycloak.theme.DefaultThemeManager;
+import org.keycloak.vault.DefaultVaultTranscriber;
+import org.keycloak.vault.VaultProvider;
+import org.keycloak.vault.VaultTranscriber;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -71,6 +74,7 @@ public class DefaultKeycloakSession implements KeycloakSession {
     private KeyManager keyManager;
     private ThemeManager themeManager;
     private TokenManager tokenManager;
+    private VaultTranscriber vaultTranscriber;
 
     public DefaultKeycloakSession(DefaultKeycloakSessionFactory factory) {
         this.factory = factory;
@@ -300,6 +304,14 @@ public class DefaultKeycloakSession implements KeycloakSession {
             tokenManager = new DefaultTokenManager(this);
         }
         return tokenManager;
+    }
+
+    @Override
+    public VaultTranscriber vault() {
+        if (this.vaultTranscriber == null) {
+            this.vaultTranscriber = new DefaultVaultTranscriber(this.getProvider(VaultProvider.class));
+        }
+        return this.vaultTranscriber;
     }
 
     public void close() {

@@ -56,4 +56,13 @@ class OrCondition implements Condition {
 
         filter.append(")");
     }
+
+    @Override
+    public void setBinary(boolean binary) {
+    }
+
+    @Override
+    public boolean isBinary() {
+        return false;
+    }
 }

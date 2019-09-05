@@ -30,6 +30,7 @@ import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.AuthorizationEndpointBase;
+import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequest;
 import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequestParserProcessor;
@@ -297,6 +298,60 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
         // Namely, flows using authorization code.
         if (parsedResponseType.isImplicitFlow()) return null;
 
+        String pkceCodeChallengeMethod = OIDCAdvancedConfigWrapper.fromClientModel(client).getPkceCodeChallengeMethod();
+        Response response = null;
+        if (pkceCodeChallengeMethod != null && !pkceCodeChallengeMethod.isEmpty()) {
+            response = checkParamsForPkceEnforcedClient(codeChallengeMethod, pkceCodeChallengeMethod, codeChallenge);
+        } else {
+            // if PKCE Activation is OFF, execute the codes implemented in KEYCLOAK-2604
+            response = checkParamsForPkceNotEnforcedClient(codeChallengeMethod, pkceCodeChallengeMethod, codeChallenge);
+        }
+        return response;
+    }
+
+    // https://tools.ietf.org/html/rfc7636#section-4
+    private boolean isValidPkceCodeChallenge(String codeChallenge) {
+        if (codeChallenge.length() < OIDCLoginProtocol.PKCE_CODE_CHALLENGE_MIN_LENGTH) {
+            logger.debugf("PKCE codeChallenge length under lower limit , codeChallenge = %s", codeChallenge);
+            return false;
+        }
+        if (codeChallenge.length() > OIDCLoginProtocol.PKCE_CODE_CHALLENGE_MAX_LENGTH) {
+            logger.debugf("PKCE codeChallenge length over upper limit , codeChallenge = %s", codeChallenge);
+            return false;
+        }
+        Matcher m = VALID_CODE_CHALLENGE_PATTERN.matcher(codeChallenge);
+        return m.matches() ? true : false;
+    }
+
+    private Response checkParamsForPkceEnforcedClient(String codeChallengeMethod, String pkceCodeChallengeMethod, String codeChallenge) {
+        // check whether code challenge method is specified
+        if (codeChallengeMethod == null) {
+            logger.info("PKCE enforced Client without code challenge method.");
+            event.error(Errors.INVALID_REQUEST);
+            return redirectErrorToClient(parsedResponseMode, OAuthErrorException.INVALID_REQUEST, "Missing parameter: code_challenge_method");
+        }
+        // check whether specified code challenge method is configured one in advance
+        if (!codeChallengeMethod.equals(pkceCodeChallengeMethod)) {
+            logger.info("PKCE enforced Client code challenge method is not configured one.");
+            event.error(Errors.INVALID_REQUEST);
+            return redirectErrorToClient(parsedResponseMode, OAuthErrorException.INVALID_REQUEST, "Invalid parameter: code challenge method is not configured one");
+        }
+        // check whether code challenge is specified
+        if (codeChallenge == null) {
+            logger.info("PKCE supporting Client without code challenge");
+            event.error(Errors.INVALID_REQUEST);
+            return redirectErrorToClient(parsedResponseMode, OAuthErrorException.INVALID_REQUEST, "Missing parameter: code_challenge");
+        }
+        // check whether code challenge is formatted along with the PKCE specification
+        if (!isValidPkceCodeChallenge(codeChallenge)) {
+            logger.infof("PKCE supporting Client with invalid code challenge specified in PKCE, codeChallenge = %s", codeChallenge);
+            event.error(Errors.INVALID_REQUEST);
+            return redirectErrorToClient(parsedResponseMode, OAuthErrorException.INVALID_REQUEST, "Invalid parameter: code_challenge");
+        }
+        return null;
+    }
+
+    private Response checkParamsForPkceNotEnforcedClient(String codeChallengeMethod, String pkceCodeChallengeMethod, String codeChallenge) {
         if (codeChallenge == null && codeChallengeMethod != null) {
             logger.info("PKCE supporting Client without code challenge");
             event.error(Errors.INVALID_REQUEST);
@@ -310,17 +365,17 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
         }
 
         if (codeChallengeMethod != null) {
-        	// https://tools.ietf.org/html/rfc7636#section-4.2
-        	// plain or S256
+            // https://tools.ietf.org/html/rfc7636#section-4.2
+            // plain or S256
             if (!codeChallengeMethod.equals(OIDCLoginProtocol.PKCE_METHOD_S256) && !codeChallengeMethod.equals(OIDCLoginProtocol.PKCE_METHOD_PLAIN)) {
                 logger.infof("PKCE supporting Client with invalid code challenge method not specified in PKCE, codeChallengeMethod = %s", codeChallengeMethod);
                 event.error(Errors.INVALID_REQUEST);
                 return redirectErrorToClient(parsedResponseMode, OAuthErrorException.INVALID_REQUEST, "Invalid parameter: code_challenge_method");
             }
         } else {
-        	// https://tools.ietf.org/html/rfc7636#section-4.3
-        	// default code_challenge_method is plane
-        	codeChallengeMethod = OIDCLoginProtocol.PKCE_METHOD_PLAIN;
+            // https://tools.ietf.org/html/rfc7636#section-4.3
+            // default code_challenge_method is plane
+            codeChallengeMethod = OIDCLoginProtocol.PKCE_METHOD_PLAIN;
         }
 
         if (!isValidPkceCodeChallenge(codeChallenge)) {
@@ -330,20 +385,6 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
         }
 
         return null;
-    }
-
-    // https://tools.ietf.org/html/rfc7636#section-4
-    private boolean isValidPkceCodeChallenge(String codeChallenge) {
-        if (codeChallenge.length() < OIDCLoginProtocol.PKCE_CODE_CHALLENGE_MIN_LENGTH) {
-           logger.debugf("PKCE codeChallenge length under lower limit , codeChallenge = %s", codeChallenge);
-           return false;
-       }
-       if (codeChallenge.length() > OIDCLoginProtocol.PKCE_CODE_CHALLENGE_MAX_LENGTH) {
-           logger.debugf("PKCE codeChallenge length over upper limit , codeChallenge = %s", codeChallenge);
-           return false;
-       }
-       Matcher m = VALID_CODE_CHALLENGE_PATTERN.matcher(codeChallenge);
-       return m.matches() ? true : false;
     }
 
     private Response redirectErrorToClient(OIDCResponseMode responseMode, String error, String errorDescription) {
@@ -398,11 +439,7 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
 
         // https://tools.ietf.org/html/rfc7636#section-4
         if (request.getCodeChallenge() != null) authenticationSession.setClientNote(OIDCLoginProtocol.CODE_CHALLENGE_PARAM, request.getCodeChallenge());
-        if (request.getCodeChallengeMethod() != null) {
-            authenticationSession.setClientNote(OIDCLoginProtocol.CODE_CHALLENGE_METHOD_PARAM, request.getCodeChallengeMethod());
-        } else {
-            authenticationSession.setClientNote(OIDCLoginProtocol.CODE_CHALLENGE_METHOD_PARAM, OIDCLoginProtocol.PKCE_METHOD_PLAIN);
-        }
+        if (request.getCodeChallengeMethod() != null) authenticationSession.setClientNote(OIDCLoginProtocol.CODE_CHALLENGE_METHOD_PARAM, request.getCodeChallengeMethod());
 
         if (request.getAdditionalReqParams() != null) {
             for (String paramName : request.getAdditionalReqParams().keySet()) {

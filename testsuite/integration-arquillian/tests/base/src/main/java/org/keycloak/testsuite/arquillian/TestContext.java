@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
@@ -28,6 +29,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import static org.keycloak.testsuite.arquillian.AppServerTestEnricher.getAppServerQualifiers;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
 import org.keycloak.testsuite.util.TestCleanup;
+import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
 
 /**
  *
@@ -91,20 +93,19 @@ public final class TestContext {
     }
 
     public boolean isAdapterTest() {
-        return getAppServerQualifiers(testClass) != null;
+        return !getAppServerQualifiers(testClass).isEmpty();
     }
 
     public boolean isAdapterContainerEnabled() {
         if (!isAdapterTest()) return false; //no adapter test
-        if (appServerInfo == null) return false;
-        return getAppServerQualifiers(testClass).contains(appServerInfo.getQualifier());
+        return getAppServerQualifiers(testClass).contains(ContainerConstants.APP_SERVER_PREFIX + AppServerTestEnricher.CURRENT_APP_SERVER);
     }
 
     public boolean isAdapterContainerEnabledCluster() {
         if (!isAdapterTest()) return false; //no adapter test
         if (appServerBackendsInfo.isEmpty()) return false; //no adapter clustered test
         
-        List<String> appServerQualifiers = getAppServerQualifiers(testClass);
+        Set<String> appServerQualifiers = getAppServerQualifiers(testClass);
         
         String qualifier = appServerBackendsInfo.stream()
                 .map(ContainerInfo::getQualifier)

@@ -21,15 +21,20 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.ClientResource;
+import org.keycloak.admin.client.resource.RoleResource;
 import org.keycloak.admin.client.resource.RolesResource;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.representations.idm.RoleRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.util.AdminEventPaths;
 
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
@@ -37,7 +42,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 /**
- *
  * @author Stan Silvert ssilvert@redhat.com (C) 2016 Red Hat Inc.
  */
 public class ClientRolesTest extends AbstractClientTest {
@@ -131,5 +135,49 @@ public class ClientRolesTest extends AbstractClientTest {
 
         assertFalse(rolesRsc.get("role-a").toRepresentation().isComposite());
         assertEquals(0, rolesRsc.get("role-a").getRoleComposites().size());
+    }
+
+    @Test
+    public void usersInRole() {
+        String clientID = clientRsc.toRepresentation().getId();
+
+        // create test role on client
+        String roleName = "test-role";
+        RoleRepresentation role = makeRole(roleName);
+        rolesRsc.create(role);
+        assertTrue(hasRole(rolesRsc, roleName));
+        List<RoleRepresentation> roleToAdd = Collections.singletonList(rolesRsc.get(roleName).toRepresentation());
+
+        //create users and assign test role
+        Set<UserRepresentation> users = new HashSet<>();
+        for (int i = 0; i < 10; i++) {
+            String userName = "user" + i;
+            UserRepresentation user = new UserRepresentation();
+            user.setUsername(userName);
+            testRealmResource().users().create(user);
+            user = getFullUserRep(userName);
+            testRealmResource().users().get(user.getId()).roles().clientLevel(clientID).add(roleToAdd);
+            users.add(user);
+        }
+
+        // check if users have test role assigned
+        RoleResource roleResource = rolesRsc.get(roleName);
+        Set<UserRepresentation> usersInRole = roleResource.getRoleUserMembers();
+        assertEquals(users.size(), usersInRole.size());
+        for (UserRepresentation user : users) {
+            Optional<UserRepresentation> result = usersInRole.stream().filter(u -> user.getUsername().equals(u.getUsername())).findAny();
+            assertTrue(result.isPresent());
+        }
+
+        // pagination
+        Set<UserRepresentation> usersInRole1 = roleResource.getRoleUserMembers(0, 5);
+        assertEquals(5, usersInRole1.size());
+        Set<UserRepresentation> usersInRole2 = roleResource.getRoleUserMembers(5, 10);
+        assertEquals(5, usersInRole2.size());
+        for (UserRepresentation user : users) {
+            Optional<UserRepresentation> result1 = usersInRole1.stream().filter(u -> user.getUsername().equals(u.getUsername())).findAny();
+            Optional<UserRepresentation> result2 = usersInRole2.stream().filter(u -> user.getUsername().equals(u.getUsername())).findAny();
+            assertTrue((result1.isPresent() || result2.isPresent()) && !(result1.isPresent() && result2.isPresent()));
+        }
     }
 }
