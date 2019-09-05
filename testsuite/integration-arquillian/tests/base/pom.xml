@@ -187,6 +187,7 @@
                                         <include>arquillian.xml</include>
                                         <include>password-blacklists/**</include>
                                         <include>log4j.properties</include>
+                                        <include>vault/**</include>
                                     </includes>
                                     <!--<filtering>true</filtering>-->
                                 </resource>
