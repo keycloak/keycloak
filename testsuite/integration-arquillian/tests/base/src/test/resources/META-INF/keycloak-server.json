@@ -189,7 +189,7 @@
     "vault": {
         "provider": "${keycloak.vault.provider:plaintext}",
         "plaintext": {
-            "dir": "src/test/resources/vault",
+            "dir": "target/dependency/vault",
             "disabled": false
         }
     }
