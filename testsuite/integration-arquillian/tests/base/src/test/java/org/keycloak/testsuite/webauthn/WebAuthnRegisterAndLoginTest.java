@@ -25,13 +25,10 @@ import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.WebAuthnConstants;
-import org.keycloak.authentication.authenticators.browser.WebAuthnAuthenticatorFactory;
 import org.keycloak.authentication.requiredactions.WebAuthnRegisterFactory;
 import org.keycloak.common.util.RandomString;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
-import org.keycloak.representations.idm.AuthenticationExecutionInfoRepresentation;
-import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -55,7 +52,6 @@ import static org.junit.Assert.assertEquals;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 @Ignore("not completed yet")
@@ -81,10 +77,6 @@ public class WebAuthnRegisterAndLoginTest extends AbstractTestRealmKeycloakTest 
     protected WebDriverWait waitN;
 
     private static final String ALL_ZERO_AAGUID = "00000000-0000-0000-0000-000000000000";
-    private static final String AUTHN_FLOW_EXEC_ALIAS = "Copy of browser forms";
-    private static final String AUTHN_CONFIG_ALIAS = "webauthn-2FA";
-
-    private String authnConfigId;
 
     private List<String> signatureAlgorithms;
     private String attestationConveyancePreference;
@@ -97,8 +89,6 @@ public class WebAuthnRegisterAndLoginTest extends AbstractTestRealmKeycloakTest 
     private boolean avoidSameAuthenticatorRegister;
     private List<String> acceptableAaguids;
 
-    private String userVerificationRequirementOnAuthentication;
-    
     @BeforeClass
     public static void setupClassTest(){
         WebDriverManager.chromedriver().setup();
@@ -116,8 +106,6 @@ public class WebAuthnRegisterAndLoginTest extends AbstractTestRealmKeycloakTest 
         loginPage.setDriver(driverN);
         registerPage.setDriver(driverN);
         oauth.setDriver(driverN);
-
-        authnConfigId = getAuthenticatorConfigId();
     }
 
     @After
@@ -145,11 +133,8 @@ public class WebAuthnRegisterAndLoginTest extends AbstractTestRealmKeycloakTest 
             rep.setWebAuthnPolicyRequireResidentKey("No");
             rep.setWebAuthnPolicyRpId(null);
             rep.setWebAuthnPolicyUserVerificationRequirement("preferred");
-            rep.setWebAuthnPolicyAcceptableAaguids(Arrays.asList(this.ALL_ZERO_AAGUID));
+            rep.setWebAuthnPolicyAcceptableAaguids(Arrays.asList(ALL_ZERO_AAGUID));
             testRealm().update(rep);
-
-            setUserVerificationRequirementOnAuthentication("preferred");
-
 
             loginPage.open();
             loginPage.clickRegister();
@@ -232,24 +217,6 @@ public class WebAuthnRegisterAndLoginTest extends AbstractTestRealmKeycloakTest 
         return testRealm().users().get(userId).toRepresentation();
     }
 
-    private String getAuthenticatorConfigId() {
-        for (AuthenticationExecutionInfoRepresentation aeir : testRealm().flows().getExecutions(AUTHN_FLOW_EXEC_ALIAS))
-            if (AUTHN_CONFIG_ALIAS.equals(aeir.getAlias())) return aeir.getAuthenticationConfig();
-        return null;
-    }
-
-    private String getUserVerificationRequirementOnAuthentication() {
-        return testRealm().flows().getAuthenticatorConfig(authnConfigId).getConfig().get(WebAuthnAuthenticatorFactory.USER_VERIFICATION_REQUIREMENT);
-    }
-
-    private void setUserVerificationRequirementOnAuthentication(String userVerificationRequirementOnAuthentication) {
-        AuthenticatorConfigRepresentation conf = testRealm().flows().getAuthenticatorConfig(authnConfigId);
-        Map<String, String> config = conf.getConfig();
-        config.put(WebAuthnAuthenticatorFactory.USER_VERIFICATION_REQUIREMENT, userVerificationRequirementOnAuthentication);
-        conf.setConfig(config);
-        testRealm().flows().updateAuthenticatorConfig(authnConfigId, conf);
-    }
-
     private RealmRepresentation backupWebAuthnRealmSettings() {
         RealmRepresentation rep = testRealm().toRepresentation();
         signatureAlgorithms = rep.getWebAuthnPolicySignatureAlgorithms();
@@ -262,9 +229,6 @@ public class WebAuthnRegisterAndLoginTest extends AbstractTestRealmKeycloakTest 
         createTimeout = rep.getWebAuthnPolicyCreateTimeout();
         avoidSameAuthenticatorRegister = rep.isWebAuthnPolicyAvoidSameAuthenticatorRegister();
         acceptableAaguids = rep.getWebAuthnPolicyAcceptableAaguids();
-
-        userVerificationRequirementOnAuthentication = getUserVerificationRequirementOnAuthentication();
-
         return rep;
     }
 
@@ -281,8 +245,6 @@ public class WebAuthnRegisterAndLoginTest extends AbstractTestRealmKeycloakTest 
         rep.setWebAuthnPolicyAvoidSameAuthenticatorRegister(avoidSameAuthenticatorRegister);
         rep.setWebAuthnPolicyAcceptableAaguids(acceptableAaguids);
         testRealm().update(rep);
-
-        setUserVerificationRequirementOnAuthentication(userVerificationRequirementOnAuthentication);
     }
 
 }

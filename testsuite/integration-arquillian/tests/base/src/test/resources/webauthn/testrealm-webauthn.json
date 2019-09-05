@@ -632,7 +632,6 @@
           "autheticatorFlow": false
         },
         {
-          "authenticatorConfig": "webauthn-2FA",
           "authenticator": "webauthn-authenticator",
           "requirement": "REQUIRED",
           "priority": 21,
@@ -1025,13 +1024,6 @@
       "alias": "review profile config",
       "config": {
         "update.profile.on.first.login": "missing"
-      }
-    },
-    {
-      "id": "34482ee1-b10a-4fbd-94cc-4df9297eea62",
-      "alias": "webauthn-2FA",
-      "config": {
-        "webauthn.user.verification.requirement": "preferred"
       }
     }
   ],

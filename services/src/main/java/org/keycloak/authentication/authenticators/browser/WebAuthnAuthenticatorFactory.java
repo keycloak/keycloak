@@ -51,7 +51,7 @@ public class WebAuthnAuthenticatorFactory implements AuthenticatorFactory {
 
     @Override
     public boolean isConfigurable() {
-        return true;
+        return false;
     }
 
     @Override
@@ -69,20 +69,10 @@ public class WebAuthnAuthenticatorFactory implements AuthenticatorFactory {
         return "Authenticator for WebAuthn";
     }
 
-    public static final String USER_VERIFICATION_REQUIREMENT = "webauthn.user.verification.requirement";
-
    
     @Override
     public List<ProviderConfigProperty> getConfigProperties() {
-        ProviderConfigProperty property = new ProviderConfigProperty();
-        property.setName(USER_VERIFICATION_REQUIREMENT);
-        property.setLabel("User Verification Requirement");
-        property.setType(ProviderConfigProperty.LIST_TYPE);
-        List<String> verificationRequrementValues = Arrays.asList(WebAuthnConstants.OPTION_NOT_SPECIFIED, WebAuthnConstants.OPTION_REQUIRED, WebAuthnConstants.OPTION_PREFERED, WebAuthnConstants.OPTION_DISCOURAGED);
-        property.setOptions(verificationRequrementValues);
-        property.setDefaultValue(WebAuthnConstants.OPTION_PREFERED);
-        property.setHelpText("It tells an authenticator confirm actually verifying a user.");
-        return Collections.singletonList(property);
+        return null;
     }
 
     @Override

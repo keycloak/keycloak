@@ -40,6 +40,7 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.WebAuthnPolicy;
 
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
@@ -82,13 +83,8 @@ public class WebAuthnAuthenticator implements Authenticator {
         }
         form.setAttribute(WebAuthnConstants.IS_USER_IDENTIFIED, Boolean.toString(isUserIdentified));
 
-        // read options from authenticator config
-        AuthenticatorConfigModel config = context.getAuthenticatorConfig();
-        String userVerificationRequirement = Constants.DEFAULT_WEBAUTHN_POLICY_NOT_SPECIFIED;
-        if (config != null) {
-            userVerificationRequirement = config.getConfig().get(WebAuthnAuthenticatorFactory.USER_VERIFICATION_REQUIREMENT);
-            if (WebAuthnConstants.OPTION_NOT_SPECIFIED.equals(userVerificationRequirement)) userVerificationRequirement = Constants.DEFAULT_WEBAUTHN_POLICY_NOT_SPECIFIED;
-        }
+        // read options from policy
+        String userVerificationRequirement = context.getRealm().getWebAuthnPolicy().getUserVerificationRequirement();
         form.setAttribute(WebAuthnConstants.USER_VERIFICATION, userVerificationRequirement);
 
         context.challenge(form.createForm("webauthn-authenticate.ftl"));
@@ -118,8 +114,7 @@ public class WebAuthnAuthenticator implements Authenticator {
 
         String userId = params.getFirst(WebAuthnConstants.USER_HANDLE);
         boolean isUVFlagChecked = false;
-        AuthenticatorConfigModel config = context.getAuthenticatorConfig();
-        String userVerificationRequirement = config.getConfig().get(WebAuthnAuthenticatorFactory.USER_VERIFICATION_REQUIREMENT);
+        String userVerificationRequirement = context.getRealm().getWebAuthnPolicy().getUserVerificationRequirement();
         if (WebAuthnConstants.OPTION_REQUIRED.equals(userVerificationRequirement)) isUVFlagChecked = true;
 
         // existing User Handle means that the authenticator used Resident Key supported public key credential
