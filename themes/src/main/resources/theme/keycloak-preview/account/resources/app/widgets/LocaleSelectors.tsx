@@ -108,6 +108,8 @@ class LocaleDropdownComponent extends React.Component<LocaleDropdownComponentPro
                         {availableLocale.label}
                     </DropdownItem> );
         });
+
+        if (localeDropdownItems.length < 2) return (<React.Fragment/>);
         
         return (
             <Dropdown

@@ -369,7 +369,7 @@
              './icons/car-crash-icon.js': '@empty',
              './icons/car-icon.js': '@empty',
              './icons/car-side-icon.js': '@empty',
-             './icons/caret-down-icon.js': '@empty',
+             //'./icons/caret-down-icon.js': '@empty',
              './icons/caret-left-icon.js': '@empty',
              './icons/caret-right-icon.js': '@empty',
              './icons/caret-square-down-icon.js': '@empty',

@@ -276,7 +276,7 @@
                     <h6>${msg("resourceIntroMessage")}</h6>
                 </div>
                 <div class="pf-c-card__body pf-c-content">
-                    <h5 id="myResourcesLink"><a href="#/app/my-resources">${msg("myResources")}</a></h5>
+                    <h5 id="myResourcesLink"><a href="#/app/resources">${msg("myResources")}</a></h5>
                 </div>
               </div>
             </div>
