@@ -47,6 +47,7 @@ import org.keycloak.services.ErrorPage;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.sessions.AuthenticationSessionModel;
+import org.keycloak.vault.VaultStringSecret;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.QueryParam;
@@ -442,12 +443,14 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
         }
 
         public SimpleHttp generateTokenRequest(String authorizationCode) {
-            return SimpleHttp.doPost(getConfig().getTokenUrl(), session)
-                    .param(OAUTH2_PARAMETER_CODE, authorizationCode)
-                    .param(OAUTH2_PARAMETER_CLIENT_ID, getConfig().getClientId())
-                    .param(OAUTH2_PARAMETER_CLIENT_SECRET, getConfig().getClientSecret())
-                    .param(OAUTH2_PARAMETER_REDIRECT_URI, session.getContext().getUri().getAbsolutePath().toString())
-                    .param(OAUTH2_PARAMETER_GRANT_TYPE, OAUTH2_GRANT_TYPE_AUTHORIZATION_CODE);
+            try (VaultStringSecret vaultStringSecret = session.vault().getStringSecret(getConfig().getClientSecret())) {
+                return SimpleHttp.doPost(getConfig().getTokenUrl(), session)
+                        .param(OAUTH2_PARAMETER_CODE, authorizationCode)
+                        .param(OAUTH2_PARAMETER_CLIENT_ID, getConfig().getClientId())
+                        .param(OAUTH2_PARAMETER_CLIENT_SECRET, vaultStringSecret.get().orElse(getConfig().getClientSecret()))
+                        .param(OAUTH2_PARAMETER_REDIRECT_URI, session.getContext().getUri().getAbsolutePath().toString())
+                        .param(OAUTH2_PARAMETER_GRANT_TYPE, OAUTH2_GRANT_TYPE_AUTHORIZATION_CODE);
+            }
         }
     }
 

@@ -42,6 +42,7 @@ import org.keycloak.services.ErrorPage;
 import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.sessions.AuthenticationSessionModel;
+import org.keycloak.vault.VaultStringSecret;
 import twitter4j.Twitter;
 import twitter4j.TwitterFactory;
 import twitter4j.auth.AccessToken;
@@ -83,9 +84,9 @@ public class TwitterIdentityProvider extends AbstractIdentityProvider<OAuth2Iden
 
     @Override
     public Response performLogin(AuthenticationRequest request) {
-        try {
+        try (VaultStringSecret vaultStringSecret = session.vault().getStringSecret(getConfig().getClientSecret())) {
             Twitter twitter = new TwitterFactory().getInstance();
-            twitter.setOAuthConsumer(getConfig().getClientId(), getConfig().getClientSecret());
+            twitter.setOAuthConsumer(getConfig().getClientId(), vaultStringSecret.get().orElse(getConfig().getClientSecret()));
 
             URI uri = new URI(request.getRedirectUri() + "?state=" + request.getState().getEncoded());
 
@@ -188,10 +189,10 @@ public class TwitterIdentityProvider extends AbstractIdentityProvider<OAuth2Iden
             }
 
             AuthenticationSessionModel authSession = null;
-            try {
+            try (VaultStringSecret vaultStringSecret = session.vault().getStringSecret(getConfig().getClientSecret())) {
                 Twitter twitter = new TwitterFactory().getInstance();
 
-                twitter.setOAuthConsumer(getConfig().getClientId(), getConfig().getClientSecret());
+                twitter.setOAuthConsumer(getConfig().getClientId(), vaultStringSecret.get().orElse(getConfig().getClientSecret()));
 
                 IdentityBrokerState idpState = IdentityBrokerState.encoded(state);
                 String clientId = idpState.getClientId();
