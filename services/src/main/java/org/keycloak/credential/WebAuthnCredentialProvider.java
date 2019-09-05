@@ -31,11 +31,10 @@ import org.keycloak.common.util.Time;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.jpa.converter.AttestationStatementConverter;
-import org.keycloak.models.jpa.converter.CredentialPublicKeyConverter;
 
 import com.webauthn4j.authenticator.Authenticator;
 import com.webauthn4j.authenticator.AuthenticatorImpl;
+import com.webauthn4j.converter.util.CborConverter;
 import com.webauthn4j.data.attestation.authenticator.AAGUID;
 import com.webauthn4j.data.attestation.authenticator.AttestedCredentialData;
 import com.webauthn4j.data.attestation.authenticator.CredentialPublicKey;
@@ -55,8 +54,15 @@ public class WebAuthnCredentialProvider implements CredentialProvider, Credentia
 
     private KeycloakSession session;
 
-    public WebAuthnCredentialProvider(KeycloakSession session) {
+    private CredentialPublicKeyConverter credentialPublicKeyConverter;
+    private AttestationStatementConverter attestationStatementConverter;
+
+    public WebAuthnCredentialProvider(KeycloakSession session, CborConverter converter) {
         this.session = session;
+        if (credentialPublicKeyConverter == null)
+            credentialPublicKeyConverter = new CredentialPublicKeyConverter(converter);
+        if (attestationStatementConverter == null)
+            attestationStatementConverter = new AttestationStatementConverter(converter);
     }
 
     @Override
@@ -78,15 +84,13 @@ public class WebAuthnCredentialProvider implements CredentialProvider, Credentia
 
         MultivaluedHashMap<String, String> credential = new MultivaluedHashMap<>();
 
-        AttestationStatementConverter attConv = new AttestationStatementConverter();
-        credential.add(ATTESTATION_STATEMENT, attConv.convertToDatabaseColumn(webAuthnModel.getAttestationStatement()));
+        credential.add(ATTESTATION_STATEMENT, attestationStatementConverter.convertToDatabaseColumn(webAuthnModel.getAttestationStatement()));
 
         credential.add(AAGUID, webAuthnModel.getAttestedCredentialData().getAaguid().toString());
 
         credential.add(CREDENTIAL_ID, Base64.encodeBytes(webAuthnModel.getAttestedCredentialData().getCredentialId()));
 
-        CredentialPublicKeyConverter credConv = new CredentialPublicKeyConverter();
-        credential.add(CREDENTIAL_PUBLIC_KEY, credConv.convertToDatabaseColumn(webAuthnModel.getAttestedCredentialData().getCredentialPublicKey()));
+        credential.add(CREDENTIAL_PUBLIC_KEY, credentialPublicKeyConverter.convertToDatabaseColumn(webAuthnModel.getAttestedCredentialData().getCredentialPublicKey()));
 
         model.setId(webAuthnModel.getAuthenticatorId());
 
@@ -190,8 +194,7 @@ public class WebAuthnCredentialProvider implements CredentialProvider, Credentia
             WebAuthnCredentialModel auth = new WebAuthnCredentialModel();
             MultivaluedHashMap<String, String> attributes = credential.getConfig();
 
-            AttestationStatementConverter attConv = new AttestationStatementConverter();
-            AttestationStatement attrStatement = attConv.convertToEntityAttribute(attributes.getFirst(ATTESTATION_STATEMENT));
+            AttestationStatement attrStatement = attestationStatementConverter.convertToEntityAttribute(attributes.getFirst(ATTESTATION_STATEMENT));
             auth.setAttestationStatement(attrStatement);
 
             AAGUID aaguid = new AAGUID(attributes.getFirst(AAGUID));
@@ -203,8 +206,7 @@ public class WebAuthnCredentialProvider implements CredentialProvider, Credentia
                 // NOP
             }
 
-            CredentialPublicKeyConverter credConv = new CredentialPublicKeyConverter();
-            CredentialPublicKey pubKey = credConv.convertToEntityAttribute(attributes.getFirst(CREDENTIAL_PUBLIC_KEY));
+            CredentialPublicKey pubKey = credentialPublicKeyConverter.convertToEntityAttribute(attributes.getFirst(CREDENTIAL_PUBLIC_KEY));
 
             AttestedCredentialData attrCredData = new AttestedCredentialData(aaguid, credentialId, pubKey);
 

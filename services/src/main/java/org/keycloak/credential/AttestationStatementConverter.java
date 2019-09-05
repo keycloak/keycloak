@@ -22,7 +22,11 @@ import com.webauthn4j.util.Base64UrlUtil;
 
 public class AttestationStatementConverter {
 
-    private CborConverter converter = new CborConverter();
+    private CborConverter converter;
+
+    public AttestationStatementConverter(CborConverter converter) {
+        this.converter = converter;
+    }
 
     public String convertToDatabaseColumn(AttestationStatement attribute) {
         return Base64UrlUtil.encodeToString(converter.writeValueAsBytes(attribute));

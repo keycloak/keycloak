@@ -22,7 +22,11 @@ import com.webauthn4j.util.Base64UrlUtil;
 
 public class CredentialPublicKeyConverter {
 
-    private CborConverter converter = new CborConverter();
+    private CborConverter converter;
+
+    public CredentialPublicKeyConverter(CborConverter converter) {
+        this.converter = converter;
+    }
 
     public String convertToDatabaseColumn(CredentialPublicKey credentialPublicKey) {
         return Base64UrlUtil.encodeToString(converter.writeValueAsBytes(credentialPublicKey));
