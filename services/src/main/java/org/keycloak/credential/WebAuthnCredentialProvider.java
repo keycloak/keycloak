@@ -36,7 +36,6 @@ import org.keycloak.models.jpa.converter.CredentialPublicKeyConverter;
 
 import com.webauthn4j.authenticator.Authenticator;
 import com.webauthn4j.authenticator.AuthenticatorImpl;
-import com.webauthn4j.data.WebAuthnAuthenticationContext;
 import com.webauthn4j.data.attestation.authenticator.AAGUID;
 import com.webauthn4j.data.attestation.authenticator.AttestedCredentialData;
 import com.webauthn4j.data.attestation.authenticator.CredentialPublicKey;
@@ -96,8 +95,10 @@ public class WebAuthnCredentialProvider implements CredentialProvider, Credentia
         // authenticator's counter
         model.setValue(String.valueOf(webAuthnModel.getCount()));
 
-        dumpCredentialModel(model);
-        dumpWebAuthnCredentialModel(webAuthnModel);
+        if(logger.isDebugEnabled()) {
+            dumpCredentialModel(model);
+            dumpWebAuthnCredentialModel(webAuthnModel);
+        }
 
         return model;
     }
@@ -105,7 +106,7 @@ public class WebAuthnCredentialProvider implements CredentialProvider, Credentia
     @Override
     public void disableCredentialType(RealmModel realm, UserModel user, String credentialType) {
         if (!supportsCredentialType(credentialType)) return;
-        // detele webauthn authenticator's credential itself
+        // delete webauthn authenticator's credential itself
         for (CredentialModel credential : session.userCredentialManager().getStoredCredentialsByType(realm, user, credentialType)) {
             logger.infov("Delete public key credential. username = {0}, credentialType = {1}", user.getUsername(), credentialType);
             dumpCredentialModel(credential);
@@ -167,8 +168,10 @@ public class WebAuthnCredentialProvider implements CredentialProvider, Credentia
                     CredentialModel cred = createCredentialModel(auth);
                     session.userCredentialManager().updateCredential(realm, user, cred);
 
-                    dumpCredentialModel(cred);
-                    dumpWebAuthnCredentialModel(auth);
+                    if(logger.isDebugEnabled()) {
+                        dumpCredentialModel(cred);
+                        dumpWebAuthnCredentialModel(auth);
+                    }
 
                     return true;
                 }
@@ -229,29 +232,8 @@ public class WebAuthnCredentialProvider implements CredentialProvider, Credentia
     }
 
     private void dumpWebAuthnCredentialModel(WebAuthnCredentialModel auth) {
-        logger.debugv("  Context Credential Info::");
-        String id = auth.getAuthenticatorId();
-        AttestationStatement attrStatement = auth.getAttestationStatement();
-        AttestedCredentialData attrCredData = auth.getAttestedCredentialData();
-        WebAuthnAuthenticationContext context = auth.getAuthenticationContext();
-        if (id != null) 
-            logger.debugv("    Authenticator Id = {0}", id);
-        if (attrStatement != null)
-            logger.debugv("    Attestation Statement Format = {0}", attrStatement.getFormat());
-        if (attrCredData != null) {
-            CredentialPublicKey credPubKey = attrCredData.getCredentialPublicKey();
-            byte[] keyId = credPubKey.getKeyId();
-            logger.debugv("    AAGUID = {0}", attrCredData.getAaguid().toString());
-            logger.debugv("    CREDENTIAL_ID = {0}", Base64.encodeBytes(attrCredData.getCredentialId()));
-            if (keyId != null)
-                logger.debugv("    CREDENTIAL_PUBLIC_KEY.key_id = {0}", Base64.encodeBytes(keyId));
-            logger.debugv("    CREDENTIAL_PUBLIC_KEY.algorithm = {0}", credPubKey.getAlgorithm().name());
-            logger.debugv("    CREDENTIAL_PUBLIC_KEY.key_type = {0}", credPubKey.getKeyType().name());
-        }
-        if (context != null) {
-            // only set on Authentication
-            logger.infov("    Credential Id = {0}", Base64.encodeBytes(context.getCredentialId()));
-        }
+        logger.debug("  Context Credential Info::");
+        logger.debug(auth);
     }
 
 }

@@ -158,9 +158,11 @@ public class WebAuthnRegister implements RequiredActionProvider {
                 .detail("public_key_credential_aaguid", aaguid);
             context.success();
         } catch (WebAuthnException wae) {
+            if (logger.isDebugEnabled()) logger.debug(wae.getMessage(), wae);
             setErrorResponse(context, ERR_WEBAUTHN_API_CREATE, wae.getMessage());
             return;
         } catch (Exception e) {
+            if (logger.isDebugEnabled()) logger.debug(e.getMessage(), e);
             setErrorResponse(context, ERR_WEBAUTHN_API_CREATE, e.getMessage());
             return;
         }

@@ -16,8 +16,11 @@
 
 package org.keycloak.credential;
 
+import org.keycloak.common.util.Base64;
+
 import com.webauthn4j.data.WebAuthnAuthenticationContext;
 import com.webauthn4j.data.attestation.authenticator.AttestedCredentialData;
+import com.webauthn4j.data.attestation.authenticator.CredentialPublicKey;
 import com.webauthn4j.data.attestation.statement.AttestationStatement;
 
 public class WebAuthnCredentialModel implements CredentialInput {
@@ -76,5 +79,46 @@ public class WebAuthnCredentialModel implements CredentialInput {
 
     public void setAuthenticatorId(String authenticatorId) {
         this.authenticatorId = authenticatorId;
+    }
+
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        if (authenticatorId != null)
+            sb.append("Authenticator Id = ")
+              .append(authenticatorId)
+              .append(",");
+        if (attestationStatement != null)
+            sb.append("Attestation Statement Format = ")
+              .append(attestationStatement.getFormat())
+              .append(",");
+        if (attestedCredentialData != null) {
+            sb.append("AAGUID = ")
+              .append(attestedCredentialData.getAaguid().toString())
+              .append(",");
+            sb.append("CREDENTIAL_ID = ")
+              .append(Base64.encodeBytes(attestedCredentialData.getCredentialId()))
+              .append(",");
+            CredentialPublicKey credPubKey = attestedCredentialData.getCredentialPublicKey();
+            byte[] keyId = credPubKey.getKeyId();
+            if (keyId != null)
+                sb.append("CREDENTIAL_PUBLIC_KEY.key_id = ")
+                  .append(Base64.encodeBytes(keyId))
+                  .append(",");
+            sb.append("CREDENTIAL_PUBLIC_KEY.algorithm = ")
+              .append(credPubKey.getAlgorithm().name())
+              .append(",");
+            sb.append("CREDENTIAL_PUBLIC_KEY.key_type = ")
+              .append(credPubKey.getKeyType().name())
+              .append(",");
+        }
+        if (authenticationContext != null) {
+            // only set on Authentication
+            sb.append("Credential Id = ")
+              .append(Base64.encodeBytes(authenticationContext.getCredentialId()))
+              .append(",");
+        }
+        if (sb.length() > 0)
+            sb.deleteCharAt(sb.lastIndexOf(","));
+        return sb.toString();
     }
 }
