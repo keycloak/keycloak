@@ -190,10 +190,6 @@
             <groupId>com.webauthn4j</groupId>
             <artifactId>webauthn4j-core</artifactId>
         </dependency>
-        <dependency>
-            <groupId>javax.persistence</groupId>
-            <artifactId>javax.persistence-api</artifactId>
-        </dependency>
     </dependencies>
     <build>
         <plugins>
