@@ -1,0 +1,10 @@
+= Highlights
+
+== Vault
+
+Several configuration fields can obtain their value from
+a vault instead of entering the value directly: LDAP bind password,
+SMTP password, and identity provider secrets.
+
+Furthermore, new vault SPI has been introduced to enable development
+of extensions to access secrets from custom vaults.

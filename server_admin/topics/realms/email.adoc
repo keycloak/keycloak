@@ -36,5 +36,5 @@ As emails are used for recovering usernames and passwords it's recommended to us
 To enable SSL click on `Enable SSL` or to enable TLS click on `Enable TLS`.
 You will most likely also need to change the `Port` (the default port for SSL/TLS is 465).
 
-If your SMTP server requires authentication click on `Enable Authentication` and insert the `Username` and `Password`.
+If your SMTP server requires authentication click on `Enable Authentication` and insert the `Username` and `Password`. The value of the `Password` field can refer a value from an external <<_vault-administration,vault>>.
 

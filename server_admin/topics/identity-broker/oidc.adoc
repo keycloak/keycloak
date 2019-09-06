@@ -1,4 +1,4 @@
-
+[[_identity_broker_oidc]]
 === OpenID Connect v1.0 Identity Providers
 
 {project_name} can broker identity providers based on the OpenID Connect protocol.  These IDPs must support the <<_oidc, Authorization Code Flow>>
@@ -38,7 +38,7 @@ You must define the OpenID Connect configuration options as well.  They basicall
  to interact with the external IDP.
 
 |Client Secret
-|This realm will need a client secret to use when using the Authorization Code Flow.
+|This realm will need a client secret to use when using the Authorization Code Flow. The value of this field can refer a value from an external <<_vault-administration,vault>>.
 
 |Issuer
 |Responses from the IDP may contain an issuer claim.  This config value is optional.  If specified, this claim will be validated against the value you provide.
