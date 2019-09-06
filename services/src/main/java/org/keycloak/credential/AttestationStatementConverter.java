@@ -16,9 +16,10 @@
 
 package org.keycloak.credential;
 
+import org.keycloak.common.util.Base64Url;
+
 import com.webauthn4j.converter.util.CborConverter;
 import com.webauthn4j.data.attestation.statement.AttestationStatement;
-import com.webauthn4j.util.Base64UrlUtil;
 
 public class AttestationStatementConverter {
 
@@ -29,10 +30,10 @@ public class AttestationStatementConverter {
     }
 
     public String convertToDatabaseColumn(AttestationStatement attribute) {
-        return Base64UrlUtil.encodeToString(converter.writeValueAsBytes(attribute));
+        return Base64Url.encode(converter.writeValueAsBytes(attribute));
     }
 
     public AttestationStatement convertToEntityAttribute(String dbData) {
-        return converter.readValue(Base64UrlUtil.decode(dbData), AttestationStatement.class);
+        return converter.readValue(Base64Url.decode(dbData), AttestationStatement.class);
     }
 }

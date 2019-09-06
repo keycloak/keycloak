@@ -16,9 +16,10 @@
 
 package org.keycloak.credential;
 
+import org.keycloak.common.util.Base64Url;
+
 import com.webauthn4j.converter.util.CborConverter;
 import com.webauthn4j.data.attestation.authenticator.CredentialPublicKey;
-import com.webauthn4j.util.Base64UrlUtil;
 
 public class CredentialPublicKeyConverter {
 
@@ -29,10 +30,10 @@ public class CredentialPublicKeyConverter {
     }
 
     public String convertToDatabaseColumn(CredentialPublicKey credentialPublicKey) {
-        return Base64UrlUtil.encodeToString(converter.writeValueAsBytes(credentialPublicKey));
+        return Base64Url.encode(converter.writeValueAsBytes(credentialPublicKey));
     }
 
     public CredentialPublicKey convertToEntityAttribute(String s) {
-        return converter.readValue(Base64UrlUtil.decode(s), CredentialPublicKey.class);
+        return converter.readValue(Base64Url.decode(s), CredentialPublicKey.class);
     }
 }
