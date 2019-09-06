@@ -221,6 +221,7 @@
                                                 <include>master_smtp__key</include>
                                                 <include>test_smtp__key</include>
                                                 <include>consumer_oidc__idp</include>
+                                                <include>master_smtp__password</include>
                                             </includes>
                                         </resource>
                                     </resources>
