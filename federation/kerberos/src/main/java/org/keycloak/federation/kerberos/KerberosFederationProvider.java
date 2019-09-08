@@ -184,7 +184,7 @@ public class KerberosFederationProvider implements UserStorageProvider,
     }
 
     @Override
-    public CredentialValidationOutput authenticate(RealmModel realm, CredentialInput input) {
+    public CredentialValidationOutput authenticate(RealmModel realm, CredentialInput input, CredentialValidationOutput prevAttempt) {
         if (!(input instanceof UserCredentialModel)) return null;
         UserCredentialModel credential = (UserCredentialModel)input;
         if (credential.getType().equals(UserCredentialModel.KERBEROS)) {

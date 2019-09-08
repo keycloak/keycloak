@@ -91,5 +91,12 @@ public class KerberosConstants {
      * Display name for the above in admin console and consent screens
      */
     public static final String GSS_DELEGATION_CREDENTIAL_DISPLAY_NAME = "gss delegation credential";
+    
+    /**
+     * Internal attribute used in "state" map. Contains authenticated user to be used to continue LDAP access.
+     * KEYCLOAK-6225 - Support for provider fallback during authentication flow.
+     */
+    public static final String SPNEGO_AUTHENTICATED_USER = "SpnegoAuthenticatedUser";
+    
 
 }

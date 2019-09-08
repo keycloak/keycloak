@@ -17,10 +17,7 @@
 package org.keycloak.credential;
 
 import org.keycloak.models.CredentialValidationOutput;
-import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-
-import java.util.Set;
 
 /**
  * Single purpose method that knows how to authenticate a user based on a credential type.  This is used when the user
@@ -31,5 +28,5 @@ import java.util.Set;
  */
 public interface CredentialAuthentication {
     boolean supportsCredentialAuthenticationFor(String type);
-    CredentialValidationOutput authenticate(RealmModel realm, CredentialInput input);
+    CredentialValidationOutput authenticate(RealmModel realm, CredentialInput input, CredentialValidationOutput prevAttempt);
 }

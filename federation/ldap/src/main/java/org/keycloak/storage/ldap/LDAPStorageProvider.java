@@ -681,7 +681,7 @@ public class LDAPStorageProvider implements UserStorageProvider,
     }
 
     @Override
-    public CredentialValidationOutput authenticate(RealmModel realm, CredentialInput cred) {
+    public CredentialValidationOutput authenticate(RealmModel realm, CredentialInput cred, CredentialValidationOutput prevAttempt) {
         if (!(cred instanceof UserCredentialModel)) CredentialValidationOutput.failed();
         UserCredentialModel credential = (UserCredentialModel)cred;
         if (credential.getType().equals(UserCredentialModel.KERBEROS)) {
@@ -689,19 +689,22 @@ public class LDAPStorageProvider implements UserStorageProvider,
                 String spnegoToken = credential.getValue();
                 SPNEGOAuthenticator spnegoAuthenticator = factory.createSPNEGOAuthenticator(spnegoToken, kerberosConfig);
 
-                spnegoAuthenticator.authenticate();
+                if (!isKerberosUsernameExists(prevAttempt)) { 
+                    spnegoAuthenticator.authenticate();
+                } 
 
                 Map<String, String> state = new HashMap<String, String>();
-                if (spnegoAuthenticator.isAuthenticated()) {
+                if (spnegoAuthenticator.isAuthenticated() || isKerberosUsernameExists(prevAttempt)) {
 
                     // TODO: This assumes that LDAP "uid" is equal to kerberos principal name. Like uid "hnelson" and kerberos principal "hnelson@KEYCLOAK.ORG".
                     // Check if it's correct or if LDAP attribute for mapping kerberos principal should be available (For ApacheDS it seems to be attribute "krb5PrincipalName" but on MSAD it's likely different)
-                    String username = spnegoAuthenticator.getAuthenticatedUsername();
+                    String username = isKerberosUsernameExists(prevAttempt) ? prevAttempt.getState().get(KerberosConstants.SPNEGO_AUTHENTICATED_USER) :spnegoAuthenticator.getAuthenticatedUsername();
                     UserModel user = findOrCreateAuthenticatedUser(realm, username);
 
                     if (user == null) {
                         logger.warnf("Kerberos/SPNEGO authentication succeeded with username [%s], but couldn't find or create user with federation provider [%s]", username, model.getName());
-                        return CredentialValidationOutput.failed();
+                        state.put(KerberosConstants.SPNEGO_AUTHENTICATED_USER, username);
+                        return new CredentialValidationOutput(null, CredentialValidationOutput.Status.CONTINUE, state);
                     } else {
                         String delegationCredential = spnegoAuthenticator.getSerializedDelegationCredential();
                         if (delegationCredential != null) {
@@ -720,6 +723,10 @@ public class LDAPStorageProvider implements UserStorageProvider,
         return CredentialValidationOutput.failed();
     }
 
+    public static boolean isKerberosUsernameExists(CredentialValidationOutput prevAttempt) {
+    	return prevAttempt != null && prevAttempt.getState().containsKey(KerberosConstants.SPNEGO_AUTHENTICATED_USER);
+    }
+    
     @Override
     public void close() {
     }
