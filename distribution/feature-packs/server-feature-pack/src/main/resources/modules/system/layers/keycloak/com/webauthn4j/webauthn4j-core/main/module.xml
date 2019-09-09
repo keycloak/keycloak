@@ -22,7 +22,6 @@
 
     <dependencies>
         <module name="org.slf4j"/>
-        <module name="org.apache.kerby.kerby-asn1"/>
         <module name="com.fasterxml.jackson.core.jackson-core"/>
         <module name="com.fasterxml.jackson.core.jackson-databind"/>
         <module name="com.fasterxml.jackson.core.jackson-annotations"/>

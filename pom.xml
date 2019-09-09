@@ -163,7 +163,6 @@
 
         <!-- webauthn support -->
         <webauthn4j.version>0.9.7.RELEASE</webauthn4j.version>
-        <org.apache.kerby.kerby-asn1.version>1.1.1</org.apache.kerby.kerby-asn1.version>
 
     </properties>
 
@@ -1421,11 +1420,6 @@
                 <groupId>com.webauthn4j</groupId>
                 <artifactId>webauthn4j-util</artifactId>
                 <version>${webauthn4j.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.kerby</groupId>
-                <artifactId>kerby-asn1</artifactId>
-                <version>${org.apache.kerby.kerby-asn1.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.fasterxml.jackson.dataformat</groupId>

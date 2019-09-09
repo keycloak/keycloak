@@ -563,17 +563,6 @@
       </licenses>
     </dependency>
     <dependency>
-      <groupId>org.apache.kerby</groupId>
-      <artifactId>kerby-asn1</artifactId>
-      <version>1.1.1</version>
-      <licenses>
-        <license>
-          <name>Apache Software License 2.0</name>
-          <url>https://github.com/apache/directory-kerby/blob/kerby-all-1.1.1/LICENSE</url>
-        </license>
-      </licenses>
-    </dependency>
-    <dependency>
       <groupId>com.fasterxml.jackson.dataformat</groupId>
       <artifactId>jackson-dataformat-cbor</artifactId>
       <version>2.9.8</version>
