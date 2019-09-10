@@ -124,6 +124,9 @@ public class MigrationModelManager {
         ModelVersion stored = null;
         if (rep.getKeycloakVersion() != null) {
             stored = convertRHSSOVersionToKeycloakVersion(rep.getKeycloakVersion());
+            if (stored == null) {
+                stored = new ModelVersion(rep.getKeycloakVersion());
+            }
         }
         if (stored == null) {
             stored = migrations[0].getVersion();
