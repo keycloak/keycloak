@@ -58,6 +58,10 @@
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-saml-core-public</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpclient</artifactId>
+        </dependency>
     </dependencies>
 
 </project>
