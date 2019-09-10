@@ -224,6 +224,7 @@
                                                 <include>master_smtp__password</include>
                                                 <include>master_ldap__bindCredential</include>
                                                 <include>test_ldap__bindCredential</include>
+                                                <include>admin-client-test_ldap__bindCredential</include>
                                             </includes>
                                         </resource>
                                     </resources>
