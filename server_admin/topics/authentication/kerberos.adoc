@@ -119,7 +119,7 @@ User profile information like first name, last name, and email are not provision
 
 Clients need to install kerberos client and setup krb5.conf as described above.
 Additionally they need to enable SPNEGO login support in their browser.
-See link:http://www.microhowto.info/howto/configure_firefox_to_authenticate_using_spnego_and_kerberos.html[configuring Firefox for Kerberos] if you are using that browser.
+See link:https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/system-level_authentication_guide/configuring_applications_for_sso[configuring Firefox for Kerberos] if you are using that browser.
 URI `.mydomain.org` must be allowed in the `network.negotiate-auth.trusted-uris` config option.
 
 In a Windows domain, clients usually don't need to configure anything special as IE is already able to participate in SPNEGO authentication for the Windows domain.
@@ -186,7 +186,7 @@ Note that you also need to configure `forwardable` kerberos tickets in `krb5.con
 
 WARNING: Credential delegation has some security implications so only use it if you really need it.
          It's highly recommended to use it together with HTTPS.
-         See for example http://www.microhowto.info/howto/configure_firefox_to_authenticate_using_spnego_and_kerberos.html[this article] for more details.
+         See for example https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/system-level_authentication_guide/configuring_applications_for_sso[this article] for more details.
 
 ==== Cross-realm trust
 
