@@ -20,7 +20,6 @@ import org.jboss.arquillian.graphene.page.Page;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
@@ -37,22 +36,13 @@ import org.keycloak.testsuite.admin.AbstractAdminTest;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.pages.webauthn.WebAuthnLoginPage;
 import org.keycloak.testsuite.pages.webauthn.WebAuthnRegisterPage;
+import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
-import org.keycloak.testsuite.pages.webauthn.WebAuthnAppPage;
-
-
-import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.chrome.ChromeDriver;
-import org.openqa.selenium.chrome.ChromeOptions;
-import org.openqa.selenium.support.ui.WebDriverWait;
-
-import io.github.bonigarcia.wdm.WebDriverManager;
 
 import static org.junit.Assert.assertEquals;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 @Ignore("not completed yet")
 public class WebAuthnRegisterAndLoginTest extends AbstractTestRealmKeycloakTest {
@@ -61,7 +51,7 @@ public class WebAuthnRegisterAndLoginTest extends AbstractTestRealmKeycloakTest 
     public AssertEvents events = new AssertEvents(this);
 
     @Page
-    protected WebAuthnAppPage appPage;
+    protected AppPage appPage;
 
     @Page
     protected WebAuthnLoginPage loginPage;
@@ -72,9 +62,6 @@ public class WebAuthnRegisterAndLoginTest extends AbstractTestRealmKeycloakTest 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
     }
-
-    protected WebDriver driverN;
-    protected WebDriverWait waitN;
 
     private static final String ALL_ZERO_AAGUID = "00000000-0000-0000-0000-000000000000";
 
@@ -89,28 +76,12 @@ public class WebAuthnRegisterAndLoginTest extends AbstractTestRealmKeycloakTest 
     private boolean avoidSameAuthenticatorRegister;
     private List<String> acceptableAaguids;
 
-    @BeforeClass
-    public static void setupClassTest(){
-        WebDriverManager.chromedriver().setup();
-    }
-
     @Before
     public void setupTest() {
-        ChromeOptions chromeOptions = new ChromeOptions();
-        chromeOptions.addArguments("--enable-web-authentication-testing-api");
-        chromeOptions.setHeadless(true);
-        driverN = new ChromeDriver(chromeOptions);
-        waitN = new WebDriverWait(driverN, 5);
-        driverN.manage().timeouts().implicitlyWait(10, TimeUnit.SECONDS);
-        appPage.setDriver(driverN);
-        loginPage.setDriver(driverN);
-        registerPage.setDriver(driverN);
-        oauth.setDriver(driverN);
     }
 
     @After
     public void teardown() {
-        if (driverN != null) driverN.quit();
     }
 
     @Override
