@@ -34,29 +34,29 @@ import static org.keycloak.testsuite.broker.BrokerTestTools.createIdentityProvid
 
 public class KcOidcBrokerPrivateKeyJwtTest extends KcOidcBrokerTest {
 
-	@Override
+    @Override
     protected BrokerConfiguration getBrokerConfiguration() {
-		return new KcOidcBrokerConfigurationWithJWTAuthentication();
+        return new KcOidcBrokerConfigurationWithJWTAuthentication();
     }
 
     private class KcOidcBrokerConfigurationWithJWTAuthentication extends KcOidcBrokerConfiguration {
 
-		@Override
-		public List<ClientRepresentation> createProviderClients(SuiteContext suiteContext) {
-			List<ClientRepresentation> clientsRepList = super.createProviderClients(suiteContext);
-			log.info("Update provider clients to accept JWT authentication");
-			KeyMetadataRepresentation keyRep = KeyUtils.getActiveKey(adminClient.realm(consumerRealmName()).keys().getKeyMetadata(), Algorithm.RS256);
-			for (ClientRepresentation client: clientsRepList) {
-				client.setClientAuthenticatorType(JWTClientAuthenticator.PROVIDER_ID);
-				if (client.getAttributes() == null) {
-					client.setAttributes(new HashMap<String, String>());
-				}
-				client.getAttributes().put(JWTClientAuthenticator.CERTIFICATE_ATTR, keyRep.getCertificate());
-			}
-			return clientsRepList;
-		}
+        @Override
+        public List<ClientRepresentation> createProviderClients(SuiteContext suiteContext) {
+            List<ClientRepresentation> clientsRepList = super.createProviderClients(suiteContext);
+            log.info("Update provider clients to accept JWT authentication");
+            KeyMetadataRepresentation keyRep = KeyUtils.getActiveKey(adminClient.realm(consumerRealmName()).keys().getKeyMetadata(), Algorithm.RS256);
+            for (ClientRepresentation client: clientsRepList) {
+                client.setClientAuthenticatorType(JWTClientAuthenticator.PROVIDER_ID);
+                if (client.getAttributes() == null) {
+                    client.setAttributes(new HashMap<String, String>());
+                }
+                client.getAttributes().put(JWTClientAuthenticator.CERTIFICATE_ATTR, keyRep.getCertificate());
+            }
+            return clientsRepList;
+        }
 
-		@Override
+        @Override
         public IdentityProviderRepresentation setUpIdentityProvider(SuiteContext suiteContext) {
             IdentityProviderRepresentation idp = createIdentityProvider(IDP_OIDC_ALIAS, IDP_OIDC_PROVIDER_ID);
             Map<String, String> config = idp.getConfig();

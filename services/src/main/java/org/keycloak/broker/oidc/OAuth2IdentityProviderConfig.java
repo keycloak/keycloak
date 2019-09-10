@@ -84,7 +84,7 @@ public class OAuth2IdentityProviderConfig extends IdentityProviderModel {
     }
     
     public boolean isJWTAuthentication() {
-    	return Boolean.valueOf(getConfig().get("jwtAuthentication"));
+        return Boolean.valueOf(getConfig().get("jwtAuthentication"));
     }
 
     public boolean isUiLocales() {

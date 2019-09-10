@@ -18,7 +18,6 @@ package org.keycloak.broker.oidc;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
 import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
@@ -138,20 +137,20 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
     }
 
     protected String extractTokenFromResponse(String response, String tokenName) {
-    	  if(response == null)
-    	  	return null;
-    	  
+        if(response == null)
+            return null;
+
         if (response.startsWith("{")) {
             try {
-            		JsonNode node = mapper.readTree(response);
-            		if(node.has(tokenName)){
-            			String s = node.get(tokenName).textValue();
-            			if(s == null || s.trim().isEmpty())
-            				return null;
-                  return s;
-            		} else {
-            			return null;
-            		}
+                JsonNode node = mapper.readTree(response);
+                if(node.has(tokenName)){
+                    String s = node.get(tokenName).textValue();
+                    if(s == null || s.trim().isEmpty())
+                        return null;
+                    return s;
+                } else {
+                    return null;
+                }
             } catch (IOException e) {
                 throw new IdentityBrokerException("Could not extract token [" + tokenName + "] from response [" + response + "] due: " + e.getMessage(), e);
             }
@@ -367,11 +366,11 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
      */
     public String getJsonProperty(JsonNode jsonNode, String name) {
         if (jsonNode.has(name) && !jsonNode.get(name).isNull()) {
-        	  String s = jsonNode.get(name).asText();
-        	  if(s != null && !s.isEmpty())
-        	  		return s;
-        	  else
-      	  			return null;
+            String s = jsonNode.get(name).asText();
+            if(s != null && !s.isEmpty())
+                return s;
+            else
+                return null;
         }
 
         return null;
@@ -454,44 +453,44 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
         }
 
         public SimpleHttp generateTokenRequest(String authorizationCode) {
-        	SimpleHttp tokenRequest = SimpleHttp.doPost(getConfig().getTokenUrl(), session)
+            SimpleHttp tokenRequest = SimpleHttp.doPost(getConfig().getTokenUrl(), session)
                     .param(OAUTH2_PARAMETER_CODE, authorizationCode)
                     .param(OAUTH2_PARAMETER_REDIRECT_URI, session.getContext().getUri().getAbsolutePath().toString())
                     .param(OAUTH2_PARAMETER_GRANT_TYPE, OAUTH2_GRANT_TYPE_AUTHORIZATION_CODE);
-        	if (getConfig().isJWTAuthentication()) {
-				SignatureSignerContext signContext = getSignatureContext();
-				String jws = new JWSBuilder().type(OAuth2Constants.JWT).jsonContent(generateToken()).sign(signContext);
-        		return tokenRequest
-        				.param(OAuth2Constants.CLIENT_ASSERTION_TYPE, OAuth2Constants.CLIENT_ASSERTION_TYPE_JWT)
-        				.param(OAuth2Constants.CLIENT_ASSERTION, jws);
-        	} else {
-        		return tokenRequest
-        				.param(OAUTH2_PARAMETER_CLIENT_ID, getConfig().getClientId())
-        				.param(OAUTH2_PARAMETER_CLIENT_SECRET, getConfig().getClientSecret());
-        	}
+            if (getConfig().isJWTAuthentication()) {
+                SignatureSignerContext signContext = getSignatureContext();
+                String jws = new JWSBuilder().type(OAuth2Constants.JWT).jsonContent(generateToken()).sign(signContext);
+                return tokenRequest
+                        .param(OAuth2Constants.CLIENT_ASSERTION_TYPE, OAuth2Constants.CLIENT_ASSERTION_TYPE_JWT)
+                        .param(OAuth2Constants.CLIENT_ASSERTION, jws);
+            } else {
+                return tokenRequest
+                        .param(OAUTH2_PARAMETER_CLIENT_ID, getConfig().getClientId())
+                        .param(OAUTH2_PARAMETER_CLIENT_SECRET, getConfig().getClientSecret());
+            }
         }
         
         protected JsonWebToken generateToken() {
-        	JsonWebToken jwt = new JsonWebToken();
-        	jwt.id(KeycloakModelUtils.generateId());
-        	jwt.type(OAuth2Constants.JWT);
-        	jwt.issuer(getConfig().getClientId());
-        	jwt.subject(getConfig().getClientId());
-        	jwt.audience(getConfig().getTokenUrl());
-        	jwt.issuedNow();
-        	jwt.expiration(Time.currentTime() + realm.getAccessCodeLifespan());
-        	return jwt;
+            JsonWebToken jwt = new JsonWebToken();
+            jwt.id(KeycloakModelUtils.generateId());
+            jwt.type(OAuth2Constants.JWT);
+            jwt.issuer(getConfig().getClientId());
+            jwt.subject(getConfig().getClientId());
+            jwt.audience(getConfig().getTokenUrl());
+            jwt.issuedNow();
+            jwt.expiration(Time.currentTime() + realm.getAccessCodeLifespan());
+            return jwt;
         }
         
         protected SignatureSignerContext getSignatureContext() {
-			if (getConfig().getClientSecret() != null && !getConfig().getClientSecret().trim().isEmpty()) {
-				KeyWrapper key = new KeyWrapper();
-				key.setAlgorithm(Algorithm.HS256);
-				byte[] decodedSecret = getConfig().getClientSecret().getBytes();
-				SecretKey secret = new SecretKeySpec(decodedSecret, 0, decodedSecret.length, Algorithm.HS256);
-				key.setSecretKey(secret);
-				return new MacSignatureSignerContext(key);
-        	}
+            if (getConfig().getClientSecret() != null && !getConfig().getClientSecret().trim().isEmpty()) {
+                KeyWrapper key = new KeyWrapper();
+                key.setAlgorithm(Algorithm.HS256);
+                byte[] decodedSecret = getConfig().getClientSecret().getBytes();
+                SecretKey secret = new SecretKeySpec(decodedSecret, 0, decodedSecret.length, Algorithm.HS256);
+                key.setSecretKey(secret);
+                return new MacSignatureSignerContext(key);
+            }
             return new AsymmetricSignatureProvider(session, Algorithm.RS256).signer();
         }
         
