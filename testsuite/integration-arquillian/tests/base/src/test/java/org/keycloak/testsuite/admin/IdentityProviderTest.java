@@ -29,6 +29,7 @@ import org.keycloak.dom.saml.v2.metadata.SPSSODescriptorType;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.utils.StripSecretsUtils;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.idm.AdminEventRepresentation;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
@@ -68,6 +69,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
@@ -137,6 +139,34 @@ public class IdentityProviderTest extends AbstractAdminTest {
 
         IdentityProviderRepresentation rep = realm.identityProviders().findAll().stream().filter(i -> i.getAlias().equals("new-identity-provider")).findFirst().get();
         assertEquals(ComponentRepresentation.SECRET_VALUE, rep.getConfig().get("clientSecret"));
+    }
+
+    @Test
+    public void testCreateWithJWT() {
+        IdentityProviderRepresentation newIdentityProvider = createRep("new-identity-provider", "oidc");
+
+        newIdentityProvider.getConfig().put("clientId", "clientId");
+        newIdentityProvider.getConfig().put("clientAuthMethod", OIDCLoginProtocol.PRIVATE_KEY_JWT);
+
+        create(newIdentityProvider);
+
+        IdentityProviderResource identityProviderResource = realm.identityProviders().get("new-identity-provider");
+
+        assertNotNull(identityProviderResource);
+
+        IdentityProviderRepresentation representation = identityProviderResource.toRepresentation();
+
+        assertNotNull(representation);
+
+        assertNotNull(representation.getInternalId());
+        assertEquals("new-identity-provider", representation.getAlias());
+        assertEquals("oidc", representation.getProviderId());
+        assertEquals("clientId", representation.getConfig().get("clientId"));
+        assertNull(representation.getConfig().get("clientSecret"));
+        assertEquals(OIDCLoginProtocol.PRIVATE_KEY_JWT, representation.getConfig().get("clientAuthMethod"));
+        assertTrue(representation.isEnabled());
+        assertFalse(representation.isStoreToken());
+        assertFalse(representation.isTrustEmail());
     }
 
     @Test
