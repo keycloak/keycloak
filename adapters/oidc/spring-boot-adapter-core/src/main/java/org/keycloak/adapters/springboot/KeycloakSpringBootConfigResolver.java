@@ -21,12 +21,14 @@ import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.KeycloakDeploymentBuilder;
 import org.keycloak.adapters.OIDCHttpFacade;
 import org.keycloak.representations.adapters.config.AdapterConfig;
+import org.springframework.context.annotation.Configuration;
 
+@Configuration
 public class KeycloakSpringBootConfigResolver implements org.keycloak.adapters.KeycloakConfigResolver {
 
     private KeycloakDeployment keycloakDeployment;
 
-    private static AdapterConfig adapterConfig;
+    private AdapterConfig adapterConfig;
 
     @Override
     public KeycloakDeployment resolve(OIDCHttpFacade.Request request) {
@@ -34,12 +36,12 @@ public class KeycloakSpringBootConfigResolver implements org.keycloak.adapters.K
             return keycloakDeployment;
         }
 
-        keycloakDeployment = KeycloakDeploymentBuilder.build(KeycloakSpringBootConfigResolver.adapterConfig);
+        keycloakDeployment = KeycloakDeploymentBuilder.build(adapterConfig);
 
         return keycloakDeployment;
     }
 
-    static void setAdapterConfig(AdapterConfig adapterConfig) {
-        KeycloakSpringBootConfigResolver.adapterConfig = adapterConfig;
+    void setAdapterConfig(AdapterConfig adapterConfig) {
+        this.adapterConfig = adapterConfig;
     }
 }

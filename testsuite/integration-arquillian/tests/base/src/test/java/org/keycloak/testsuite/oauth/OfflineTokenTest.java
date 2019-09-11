@@ -30,6 +30,7 @@ import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.RoleResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.common.constants.ServiceAccountConstants;
+import org.keycloak.crypto.Algorithm;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.jose.jws.JWSHeader;
@@ -695,6 +696,28 @@ public class OfflineTokenTest extends AbstractKeycloakTest {
         testOfflineSessionExpiration(IDLE_LIFESPAN, MAX_LIFESPAN, IDLE_LIFESPAN + SessionTimeoutHelper.IDLE_TIMEOUT_WINDOW_SECONDS + 60);
     }
 
+    @Test
+    public void offlineTokenRequest_ClientES256_RealmPS256() throws Exception {
+        conductOfflineTokenRequest(Algorithm.HS256, Algorithm.ES256, Algorithm.PS256);
+    }
+
+    @Test
+    public void offlineTokenRequest_ClientPS256_RealmES256() throws Exception {
+        conductOfflineTokenRequest(Algorithm.HS256, Algorithm.PS256, Algorithm.ES256);
+    }
+
+    private void conductOfflineTokenRequest(String expectedRefreshAlg, String expectedAccessAlg, String expectedIdTokenAlg) throws Exception {
+        try {
+            /// Realm Setting is used for ID Token Signature Algorithm
+            TokenSignatureUtil.changeRealmTokenSignatureProvider(adminClient, expectedIdTokenAlg);
+            TokenSignatureUtil.changeClientAccessTokenSignatureProvider(ApiUtil.findClientByClientId(adminClient.realm("test"), "offline-client"), expectedAccessAlg);
+            offlineTokenRequest(expectedRefreshAlg, expectedAccessAlg, expectedIdTokenAlg);
+        } finally {
+            TokenSignatureUtil.changeRealmTokenSignatureProvider(adminClient, Algorithm.RS256);
+            TokenSignatureUtil.changeClientAccessTokenSignatureProvider(ApiUtil.findClientByClientId(adminClient.realm("test"), "offline-client"), Algorithm.RS256);
+        }
+    }
+
     private void testOfflineSessionExpiration(int idleTime, int maxLifespan, int offset) {
         int prev[] = null;
         try {
@@ -821,15 +844,4 @@ public class OfflineTokenTest extends AbstractKeycloakTest {
 
     }
 
-    @Test
-    public void offlineTokenRequest_RealmRS512_ClientRS384() throws Exception {
-        try {
-            TokenSignatureUtil.changeRealmTokenSignatureProvider(adminClient, "RS512");
-            TokenSignatureUtil.changeClientAccessTokenSignatureProvider(ApiUtil.findClientByClientId(adminClient.realm("test"), "offline-client"), "RS384");
-            offlineTokenRequest("HS256","RS384", "RS512");
-        } finally {
-            TokenSignatureUtil.changeRealmTokenSignatureProvider(adminClient, "RS256");
-            TokenSignatureUtil.changeClientAccessTokenSignatureProvider(ApiUtil.findClientByClientId(adminClient.realm("test"), "offline-client"), "RS256");
-        }
-    }
 }

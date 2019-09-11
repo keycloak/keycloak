@@ -7,6 +7,9 @@
 #
 
 DIRNAME=`dirname "$0"`
+GREP="grep"
+
+ . "$DIRNAME/common.sh"
 
 # OS specific support (must be 'true' or 'false').
 cygwin=false;
@@ -46,6 +49,10 @@ if [ "x$JAVA" = "x" ]; then
         JAVA="java"
     fi
 fi
+
+# Set default modular JVM options
+setDefaultModularJvmOptions $JAVA_OPTS
+JAVA_OPTS="$JAVA_OPTS $DEFAULT_MODULAR_JVM_OPTIONS"
 
 if [ "x$JBOSS_MODULEPATH" = "x" ]; then
     JBOSS_MODULEPATH="$JBOSS_HOME/modules"

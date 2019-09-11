@@ -225,8 +225,8 @@ public class ModelToRepresentation {
             rep.setAuthDetails(toRepresentation(adminEvent.getAuthDetails()));
         }
         rep.setOperationType(adminEvent.getOperationType().toString());
-        if (adminEvent.getResourceType() != null) {
-            rep.setResourceType(adminEvent.getResourceType().toString());
+        if (adminEvent.getResourceTypeAsString() != null) {
+            rep.setResourceType(adminEvent.getResourceTypeAsString());
         }
         rep.setResourcePath(adminEvent.getResourcePath());
         rep.setRepresentation(adminEvent.getRepresentation());
@@ -788,6 +788,7 @@ public class ModelToRepresentation {
         server.setName(client.getClientId());
         server.setAllowRemoteResourceManagement(model.isAllowRemoteResourceManagement());
         server.setPolicyEnforcementMode(model.getPolicyEnforcementMode());
+        server.setDecisionStrategy(model.getDecisionStrategy());
 
         return server;
     }

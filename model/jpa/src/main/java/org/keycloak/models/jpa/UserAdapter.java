@@ -51,6 +51,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.Objects;
+import javax.persistence.LockModeType;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -392,6 +393,7 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
         if (user == null || group == null) return;
 
         TypedQuery<UserGroupMembershipEntity> query = getUserGroupMappingQuery(group);
+        query.setLockMode(LockModeType.PESSIMISTIC_WRITE);
         List<UserGroupMembershipEntity> results = query.getResultList();
         if (results.size() == 0) return;
         for (UserGroupMembershipEntity entity : results) {
@@ -480,6 +482,7 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
         if (user == null || role == null) return;
 
         TypedQuery<UserRoleMappingEntity> query = getUserRoleMappingEntityTypedQuery(role);
+        query.setLockMode(LockModeType.PESSIMISTIC_WRITE);
         List<UserRoleMappingEntity> results = query.getResultList();
         if (results.size() == 0) return;
         for (UserRoleMappingEntity entity : results) {

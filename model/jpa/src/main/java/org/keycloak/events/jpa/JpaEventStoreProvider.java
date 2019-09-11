@@ -28,7 +28,6 @@ import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.events.admin.AdminEventQuery;
 import org.keycloak.events.admin.AuthDetails;
 import org.keycloak.events.admin.OperationType;
-import org.keycloak.events.admin.ResourceType;
 
 import javax.persistence.EntityManager;
 import java.io.IOException;
@@ -151,8 +150,8 @@ public class JpaEventStoreProvider implements EventStoreProvider {
         setAuthDetails(adminEventEntity, adminEvent.getAuthDetails());
         adminEventEntity.setOperationType(adminEvent.getOperationType().toString());
 
-        if (adminEvent.getResourceType() != null) {
-            adminEventEntity.setResourceType(adminEvent.getResourceType().toString());
+        if (adminEvent.getResourceTypeAsString() != null) {
+            adminEventEntity.setResourceType(adminEvent.getResourceTypeAsString());
         }
 
         adminEventEntity.setResourcePath(adminEvent.getResourcePath());
@@ -172,7 +171,7 @@ public class JpaEventStoreProvider implements EventStoreProvider {
         adminEvent.setOperationType(OperationType.valueOf(adminEventEntity.getOperationType()));
 
         if (adminEventEntity.getResourceType() != null) {
-            adminEvent.setResourceType(ResourceType.valueOf(adminEventEntity.getResourceType()));
+            adminEvent.setResourceTypeAsString(adminEventEntity.getResourceType());
         }
 
         adminEvent.setResourcePath(adminEventEntity.getResourcePath());

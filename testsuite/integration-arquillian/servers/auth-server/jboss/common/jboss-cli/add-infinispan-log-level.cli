@@ -1,4 +1,0 @@
-
-echo *** Adding infinispan logger ***
-/subsystem=logging/logger=org.infinispan:add(level=@INFINISPAN_LOG_LEVEL@)
-/subsystem=logging/console-handler=CONSOLE:change-log-level(level=@INFINISPAN_LOG_LEVEL@)

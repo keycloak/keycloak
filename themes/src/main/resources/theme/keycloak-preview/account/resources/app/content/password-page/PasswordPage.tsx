@@ -31,14 +31,14 @@ interface FormFields {
 }
 
 interface PasswordPageState {
-    readonly canSubmit: boolean,
+    readonly canSubmit: boolean;
     readonly registered: boolean;
     readonly lastUpdate: number;
     readonly formFields: FormFields;
 }
 
 export class PasswordPage extends React.Component<PasswordPageProps, PasswordPageState> {
-    state: PasswordPageState = {
+    public state: PasswordPageState = {
         canSubmit: false,
         registered: false,
         lastUpdate: -1,
@@ -47,7 +47,7 @@ export class PasswordPage extends React.Component<PasswordPageProps, PasswordPag
                      confirmation: ''}
     }
     
-    constructor(props: PasswordPageProps) {
+    public constructor(props: PasswordPageProps) {
         super(props);
         
         AccountServiceClient.Instance.doGet("/credentials/password")
@@ -75,7 +75,7 @@ export class PasswordPage extends React.Component<PasswordPageProps, PasswordPag
         AccountServiceClient.Instance.doPost("/credentials/password", {data: reqData})
             .then((response: AxiosResponse<FormFields>) => {
                 this.setState({canSubmit: false});
-                alert('Data posted');
+                alert('Data posted:' + response.statusText);
             });
     }
     
@@ -89,7 +89,7 @@ export class PasswordPage extends React.Component<PasswordPageProps, PasswordPag
         return true;
     }
 
-    render() {
+    public render(): React.ReactNode {
         const displayNone = {display: 'none'};
         
         return (

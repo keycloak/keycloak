@@ -50,12 +50,13 @@ import org.keycloak.testsuite.adapter.AbstractServletsAdapterTest;
 import org.keycloak.testsuite.adapter.page.ProductPortal;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
-import org.keycloak.testsuite.arquillian.containers.ContainerConstants;
+import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
 import org.keycloak.testsuite.auth.page.login.PageWithLoginUrl;
 import org.keycloak.testsuite.federation.UserMapStorageFactory;
 import org.keycloak.testsuite.pages.ConsentPage;
 import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
 
+import static org.keycloak.storage.UserStorageProviderModel.IMPORT_ENABLED;
 import static org.keycloak.testsuite.arquillian.DeploymentTargetModifier.AUTH_SERVER_CURRENT;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlEquals;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWithLoginUrlOf;
@@ -101,6 +102,7 @@ public class UserStorageConsentTest extends AbstractServletsAdapterTest {
         memProvider.setProviderType(UserStorageProvider.class.getName());
         memProvider.setConfig(new MultivaluedHashMap<>());
         memProvider.getConfig().putSingle("priority", Integer.toString(0));
+        memProvider.getConfig().putSingle(IMPORT_ENABLED, Boolean.toString(false));
 
         addComponent(memProvider);
     }

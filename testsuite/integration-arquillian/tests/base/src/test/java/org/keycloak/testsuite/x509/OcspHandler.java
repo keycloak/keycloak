@@ -78,7 +78,7 @@ final class OcspHandler implements HttpHandler {
 
     // add any certificates that the OCSP responder needs to know about in the tests here
     private static final Map<BigInteger, CertificateStatus> REVOKED_CERTIFICATES_STATUS = ImmutableMap
-            .of(BigInteger.valueOf(4096), new RevokedStatus(new Date(1472169600000L), CRLReason.unspecified));
+            .of(BigInteger.valueOf(4105), new RevokedStatus(new Date(1472169600000L), CRLReason.unspecified));
 
     private final SubjectPublicKeyInfo subjectPublicKeyInfo;
 

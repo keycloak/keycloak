@@ -17,6 +17,9 @@
 
 package org.keycloak.migration;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.regex.Pattern;
 import org.jboss.logging.Logger;
 import org.keycloak.migration.migrators.MigrateTo1_2_0;
 import org.keycloak.migration.migrators.MigrateTo1_3_0;
@@ -41,6 +44,7 @@ import org.keycloak.migration.migrators.MigrateTo3_4_2;
 import org.keycloak.migration.migrators.MigrateTo4_0_0;
 import org.keycloak.migration.migrators.MigrateTo4_2_0;
 import org.keycloak.migration.migrators.MigrateTo4_6_0;
+import org.keycloak.migration.migrators.MigrateTo6_0_0;
 import org.keycloak.migration.migrators.Migration;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -76,7 +80,8 @@ public class MigrationModelManager {
             new MigrateTo3_4_2(),
             new MigrateTo4_0_0(),
             new MigrateTo4_2_0(),
-            new MigrateTo4_6_0()
+            new MigrateTo4_6_0(),
+            new MigrateTo6_0_0()
     };
 
     public static void migrate(KeycloakSession session) {
@@ -103,33 +108,25 @@ public class MigrationModelManager {
     }
 
     public static final ModelVersion RHSSO_VERSION_7_0_KEYCLOAK_VERSION = new ModelVersion("1.9.8");
-    public static final ModelVersion RHSSO_VERSION_7_1_KEYCLOAK_VERSION = new ModelVersion("2.5.0");
-    public static final ModelVersion RHSSO_VERSION_7_2_KEYCLOAK_VERSION = new ModelVersion("3.4.2");
+    public static final ModelVersion RHSSO_VERSION_7_1_KEYCLOAK_VERSION = new ModelVersion("2.5.5");
+    public static final ModelVersion RHSSO_VERSION_7_2_KEYCLOAK_VERSION = new ModelVersion("3.4.3");
+    public static final ModelVersion RHSSO_VERSION_7_3_KEYCLOAK_VERSION = new ModelVersion("4.8.3");
 
+    private static final Map<Pattern, ModelVersion> PATTERN_MATCHER = new LinkedHashMap<>();
+    static {
+        PATTERN_MATCHER.put(Pattern.compile("^7\\.0\\.\\d+\\.GA$"), RHSSO_VERSION_7_0_KEYCLOAK_VERSION);
+        PATTERN_MATCHER.put(Pattern.compile("^7\\.1\\.\\d+\\.GA$"), RHSSO_VERSION_7_1_KEYCLOAK_VERSION);
+        PATTERN_MATCHER.put(Pattern.compile("^7\\.2\\.\\d+\\.GA$"), RHSSO_VERSION_7_2_KEYCLOAK_VERSION);
+        PATTERN_MATCHER.put(Pattern.compile("^7\\.3\\.\\d+\\.GA$"), RHSSO_VERSION_7_3_KEYCLOAK_VERSION);
+    }
 
     public static void migrateImport(KeycloakSession session, RealmModel realm, RealmRepresentation rep, boolean skipUserDependent) {
-        ModelVersion latest = migrations[migrations.length-1].getVersion();
-        ModelVersion stored = migrations[0].getVersion();
+        ModelVersion stored = null;
         if (rep.getKeycloakVersion() != null) {
-            stored = new ModelVersion(rep.getKeycloakVersion());
-            // hack for importing RH-SSO json export
-            // NOTE!!!!! We need to do something once we reach community version 7.  If community version is 7 or higher, look for the GA qualifier to identify it as RH SSO
-            if (latest.getMajor() < 7 || (stored.getMajor() == 7 && stored.getQualifier().equals("GA"))) {
-                if (stored.getMajor() == 7) {
-                    if (stored.getMinor() == 0) {
-                        stored = RHSSO_VERSION_7_0_KEYCLOAK_VERSION;
-                    } else if (stored.getMinor() == 1) {
-                        stored = RHSSO_VERSION_7_1_KEYCLOAK_VERSION;
-                    } else if (stored.getMinor() == 2) {
-                        stored = RHSSO_VERSION_7_2_KEYCLOAK_VERSION;
-                    }
-                }
-            }
-            // strip out qualifier
-            stored = new ModelVersion(stored.major, stored.minor, stored.micro);
-            if (latest.equals(stored) || latest.lessThan(stored)) {
-                return;
-            }
+            stored = convertRHSSOVersionToKeycloakVersion(rep.getKeycloakVersion());
+        }
+        if (stored == null) {
+            stored = migrations[0].getVersion();
         }
 
         for (Migration m : migrations) {
@@ -144,5 +141,19 @@ public class MigrationModelManager {
                 }
             }
         }
+    }
+
+    public static ModelVersion convertRHSSOVersionToKeycloakVersion(String version) {
+        // look for the keycloakVersion pattern to identify it as RH SSO
+        for (Pattern pattern : PATTERN_MATCHER.keySet()) {
+            if (pattern.matcher(version).find()) {
+                return PATTERN_MATCHER.get(pattern);
+            }
+        }
+        // chceck if the version is in format for CD releases, e.g.: "keycloakVersion": "6"
+        if (Pattern.compile("^[0-9]*$").matcher(version).find()) {
+            return new ModelVersion(Integer.parseInt(version), 0, 0);
+        }
+        return null;
     }
 }

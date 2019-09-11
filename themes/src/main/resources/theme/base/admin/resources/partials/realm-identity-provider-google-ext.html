@@ -12,3 +12,10 @@
     </div>
     <kc-tooltip>{{:: 'identity-provider.google-userIp.tooltip' | translate}}</kc-tooltip>
 </div>
+<div class="form-group">
+    <label class="col-md-2 control-label" for="offlineAccess">{{:: 'offlineAccess' | translate}}</label>
+    <div class="col-md-6">
+        <input ng-model="identityProvider.config.offlineAccess" id="offlineAccess" onoffswitchvalue on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" />
+    </div>
+    <kc-tooltip>{{:: 'identity-provider.google-offlineAccess.tooltip' | translate}}</kc-tooltip>
+</div>

@@ -31,8 +31,12 @@ import org.keycloak.adapters.saml.SamlUtil;
 import org.keycloak.adapters.spi.SessionIdMapper;
 import org.keycloak.adapters.spi.SessionIdMapperUpdater;
 import org.keycloak.common.util.KeycloakUriBuilder;
+import org.keycloak.saml.processing.core.saml.v2.util.XMLTimeUtil;
 import org.wildfly.security.http.HttpScope;
 import org.wildfly.security.http.Scope;
+
+import javax.xml.datatype.DatatypeConstants;
+import javax.xml.datatype.XMLGregorianCalendar;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -150,9 +154,8 @@ public class ElytronSamlSessionStore implements SamlSessionStore, ElytronTokeSto
             return false;
         }
 
-        final SamlSession samlSession = (SamlSession)session.getAttachment(SamlSession.class.getName());
+        final SamlSession samlSession = SamlUtil.validateSamlSession(session.getAttachment(SamlSession.class.getName()), deployment);
         if (samlSession == null) {
-            log.debug("SamlSession was not in session, returning null");
             return false;
         }
 

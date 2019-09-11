@@ -152,7 +152,6 @@ public class ClientResource {
         try {
             updateClientFromRep(rep, client, session);
             adminEvent.operation(OperationType.UPDATE).resourcePath(session.getContext().getUri()).representation(rep).success();
-            updateAuthorizationSettings(rep);
             return Response.noContent().build();
         } catch (ModelDuplicateException e) {
             return ErrorResponse.exists("Client " + rep.getClientId() + " already exists");
@@ -685,7 +684,12 @@ public class ClientResource {
             auth.clients().requireManage(client);
         }
 
+        if ((rep.isBearerOnly() != null && rep.isBearerOnly()) || (rep.isPublicClient() != null && rep.isPublicClient())) {
+            rep.setAuthorizationServicesEnabled(false);
+        }
+
         RepresentationToModel.updateClient(rep, client);
+        updateAuthorizationSettings(rep);
     }
 
     private void updateAuthorizationSettings(ClientRepresentation rep) {

@@ -5,7 +5,7 @@
     <parent>
         <artifactId>integration-arquillian</artifactId>
         <groupId>org.keycloak.testsuite</groupId>
-        <version>6.0.0-SNAPSHOT</version>
+        <version>8.0.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -24,9 +24,7 @@
         <module>app-profile-jee</module>
         <module>cors</module>
         <module>fuse</module>
-        <module>spring-boot-adapter</module>
-        <module>spring-boot-2-adapter</module>
-        <module>spring-boot-21-adapter</module>
+        <module>spring-boot-adapter-app</module>
     </modules>
 
     <properties>

@@ -77,7 +77,20 @@ So for example using `-Dkeycloak.logging.level=debug` will enable debug logging 
 
 For more fine-tuning of individual categories, you can look at log4j.properties file and temporarily enable/disable them here.
 
-TODO: Add info about Wildfly logging
+### Wildfly server logging
+
+When using Keycloak on Wildfly/EAP, there is INFO logging level enabled by default for most of the java packages.
+You can use those system properties to enable DEBUG logging for particular packages:
+
+
+* `-Dinfinispan.logging.level=DEBUG` - for package `org.infinispan`
+* `-Dorg.keycloak.services.scheduled=DEBUG` - for package `org.keycloak.services.scheduled`
+
+You can use value `TRACE` if you want to enable even TRACE logging.
+
+There is no support for more packages ATM, you need to edit the file `testsuite/integration-arquillian/servers/auth-server/jboss/common/jboss-cli/add-log-level.cli`
+and add packages manually.
+
 
 ## Run adapter tests
 
@@ -87,10 +100,9 @@ TODO: Add info about Wildfly logging
 
 ### Jetty
 
-At the moment we can run the testsuite with Jetty `9.1`, `9.2` and `9.4`. 
+At the moment we can run the testsuite with Jetty `9.2` and `9.4`.
 Each version has its corresponding profile:
 
-* Jetty `9.1`: `app-server-jetty91`
 * Jetty `9.2`: `app-server-jetty92`
 * Jetty `9.4`: `app-server-jetty94`
 
@@ -150,7 +162,6 @@ Assumed you downloaded `jboss-fuse-karaf-6.3.0.redhat-229.zip`
 
 2) Install to your local maven repository and change the properties according to your env (This step can be likely avoided if you somehow configure your local maven settings to point directly to Fuse repo):
 
-
     mvn install:install-file \
       -DgroupId=org.jboss.fuse \
       -DartifactId=jboss-fuse-karaf \
@@ -166,24 +177,22 @@ Assumed you downloaded `jboss-fuse-karaf-6.3.0.redhat-229.zip`
     mvn -f testsuite/integration-arquillian/servers/pom.xml \
       clean install \
       -Papp-server-fuse63 \
-      -Dfuse63.version=6.3.0.redhat-229 \
-      -Dapp.server.karaf.update.config=true \
-      -Dmaven.local.settings=$HOME/.m2/settings.xml \
-      -Drepositories=,http://REPO-SERVER/brewroot/repos/sso-7.1-build/latest/maven/ \
-      -Dmaven.repo.local=$HOME/.m2/repository
+      -Dfuse63.version=6.3.0.redhat-229
  
     # Run the Fuse adapter tests
     mvn -f testsuite/integration-arquillian/tests/base/pom.xml \
       clean install \
       -Pauth-server-wildfly \
       -Papp-server-fuse63 \
-      -Dtest=Fuse*AdapterTest
+      -Dauth.server.ssl.required=false \
+      -Dadditional.fuse.repos=,$REPO \
+      -Dtest=*.fuse.*
 
 
 ### JBoss Fuse 7.X
 
-1) Download JBoss Fuse 7 to your filesystem. It can be downloaded from http://origin-repository.jboss.org/nexus/content/groups/m2-proxy/org/jboss/fuse/fuse-karaf  (Fuse 7.1 or higher is required)
-Assumed you downloaded `fuse-karaf-7.1.0.fuse-710029.zip`
+1) Download JBoss Fuse 7 to your filesystem. It can be downloaded from http://origin-repository.jboss.org/nexus/content/groups/m2-proxy/org/jboss/fuse/fuse-karaf  (Fuse 7.3 or higher is required)
+Assumed you downloaded `fuse-karaf-7.3.0.fuse-730065-redhat-00002.zip`
 
 2) Install to your local maven repository and change the properties according to your env (This step can be likely avoided if you somehow configure your local maven settings to point directly to Fuse repo):
 
@@ -191,9 +200,9 @@ Assumed you downloaded `fuse-karaf-7.1.0.fuse-710029.zip`
     mvn install:install-file \
       -DgroupId=org.jboss.fuse \
       -DartifactId=fuse-karaf \
-      -Dversion=7.1.0.fuse-710029 \
+      -Dversion=7.3.0.fuse-730065-redhat-00002 \
       -Dpackaging=zip \
-      -Dfile=/mydownloads/fuse-karaf-7.1.0.fuse-710029.zip
+      -Dfile=/mydownloads/fuse-karaf-7.3.0.fuse-730065-redhat-00002.zip
 
 
 3) Prepare Fuse and run the tests (change props according to your environment, versions etc):
@@ -203,17 +212,15 @@ Assumed you downloaded `fuse-karaf-7.1.0.fuse-710029.zip`
     mvn -f testsuite/integration-arquillian/servers/pom.xml \
       clean install \
       -Papp-server-fuse7x \
-      -Dfuse7x.version=7.1.0.fuse-710029 \
-      -Dapp.server.karaf.update.config=true \
-      -Dmaven.local.settings=$HOME/.m2/settings.xml \
-      -Drepositories=,http://REPO-SERVER/brewroot/repos/sso-7.1-build/latest/maven/ \
-      -Dmaven.repo.local=$HOME/.m2/repository
+      -Dfuse7x.version=7.3.0.fuse-730065-redhat-00002
  
     # Run the Fuse adapter tests
     mvn -f testsuite/integration-arquillian/tests/base/pom.xml \
       clean test \
       -Papp-server-fuse7x \
-      -Dtest=Fuse*AdapterTest
+      -Dauth.server.ssl.required=false \
+      -Dadditional.fuse.repos=,$REPO \
+      -Dtest=*.fuse.*
 
 
 ### EAP6 with Hawtio
@@ -275,7 +282,7 @@ This test will:
  - Do some test that data are correct
  
 
-1) Prepare MySQL DB and ensure that MySQL DB is empty. See [../../misc/DatabaseTesting.md](../../misc/DatabaseTesting.md) for some hints for locally prepare Docker MySQL image.
+1) Prepare MySQL DB and ensure that MySQL DB is empty. See [../../docs/tests-db.md](../../docs/tests-db.md) for some hints for locally prepare Docker MySQL image.
 
 2) Run the test (Update according to your DB connection, versions etc):
 
@@ -305,44 +312,13 @@ The profile "test-7X-migration" indicates from which version you want to test mi
       
 Same test as above, but it uses manual migration mode. During startup of the new Keycloak server, Liquibase won't automatically perform DB update, but it 
 just exports the needed SQL into the script. This SQL script then needs to be manually executed against the DB.
+Then there is another startup of the new Keycloak server against the DB, which already has SQL changes applied and
+the same test as in `auto` mode (MigrationTest) is executed to test that data are correct.
 
-1) Prepare MySQL DB (Same as above)
+The test is executed in same way as the "auto" DB migration test with the only difference
+that you need to use property `migration.mode` with the value `manual` .
 
-2) Run the test (Update according to your DB connection, versions etc). This step will end with failure, but that's expected:
-
-    mvn -f testsuite/integration-arquillian/pom.xml \
-      clean install \
-      -Pauth-server-wildfly,jpa,clean-jpa,auth-server-migration,test-70-migration \
-      -Dtest=MigrationTest \
-      -Dmigration.mode=manual \
-      -Djdbc.mvn.groupId=mysql \
-      -Djdbc.mvn.artifactId=mysql-connector-java \
-      -Djdbc.mvn.version=8.0.12 \
-      -Djdbc.mvn.version.legacy=5.1.38 \
-      -Dkeycloak.connectionsJpa.url=jdbc:mysql://$DB_HOST/keycloak \
-      -Dkeycloak.connectionsJpa.user=keycloak \
-      -Dkeycloak.connectionsJpa.password=keycloak
-      
-3) Manually execute the SQL script against your DB. With Mysql, you can use this command (KEYCLOAK_SRC points to the directory with the Keycloak codebase):
-       
-    mysql -h $DB_HOST -u keycloak -pkeycloak < $KEYCLOAK_SRC/testsuite/integration-arquillian/tests/base/target/containers/auth-server-wildfly/keycloak-database-update.sql       
-
-4) Finally run the migration test, which will verify that DB migration was successful. This should end with success:
- 
-    mvn -f testsuite/integration-arquillian/tests/base/pom.xml \
-      clean install \
-      -Pauth-server-wildfly,test-70-migration \
-      -Dskip.add.user.json=true \
-      -Dtest=MigrationTest
-
-### JSON export/import migration test
-This will start latest Keycloak and import the realm JSON file, which was previously exported from Keycloak 1.9.8.Final
-  
-
-    mvn -f testsuite/integration-arquillian/pom.xml \
-      clean install \
-      -Pauth-server-wildfly \
-      -Dtest=JsonFileImport*MigrationTest
+    -Dmigration.mode=manual
 
 
 ## Server configuration migration test
@@ -365,6 +341,22 @@ The tests also use some constants placed in [test-constants.properties](tests/ba
 
 In case a custom `settings.xml` is used for Maven, you need to specify it also in `-Dkie.maven.settings.custom=path/to/settings.xml`.
 
+
+## Spring Boot adapter tests
+
+Currently we are testing Spring Boot with three different containers `Tomcat 8`, `Undertow` and `Jetty [9.2, 9.3, 9.4]`. We are testing two versions of Spring Boot 1.5.x and 2.1.x. All versions are specified in [root pom.xml](../../pom.xml) (see properties `spring-boot15.version` and `spring-boot21.version`).
+
+To run tests execute following command. Default version of Spring Boot is 1.5.x, to run tests with version 2.1.x add profile `-Pspringboot21`
+
+```
+mvn -f testsuite/integration-arquillian/tests/other/springboot-tests/pom.xml \
+    clean test \
+    -Dadapter.container=[tomcat|undertow|jetty92|jetty93|jetty94] \
+    [-Pspringboot21]
+```
+
+Note: Spring Boot 21 doesn't work with jetty92 and jetty93, only jetty94 is tested.
+
 #### Execution example
 ```
 mvn -f testsuite/integration-arquillian/tests/other/console/pom.xml \
@@ -383,21 +375,6 @@ mvn -f testsuite/integration-arquillian/tests/other/base-ui/pom.xml \
     -Pandroid \
     -Dappium.avd=Nexus_5X_API_27
 ```
-
-## Welcome Page tests
-The Welcome Page tests need to be run on WildFly/EAP. So that they are disabled by default and are meant to be run separately.
-
-
-    # Prepare servers
-    mvn -f testsuite/integration-arquillian/servers/pom.xml \
-        clean install \
-        -Pauth-server-wildfly
-
-    # Run tests
-    mvn -f testsuite/integration-arquillian/tests/other/welcome-page/pom.xml \
-        clean test \
-        -Pauth-server-wildfly
-
 
 ## Social Login
 The social login tests require setup of all social networks including an example social user. These details can't be 
@@ -716,6 +693,7 @@ The exact steps to configure Docker depend on the operating system.
 
 By default, the test will run against Undertow based embedded Keycloak Server, thus no distribution build is required beforehand.
 The exact command line arguments depend on the operating system.
+
 
 ### General guidelines
 

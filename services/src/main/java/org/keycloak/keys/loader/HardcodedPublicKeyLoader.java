@@ -53,7 +53,7 @@ public class HardcodedPublicKeyLoader implements PublicKeyLoader {
             keyWrapper.setType(KeyType.RSA);
             keyWrapper.setAlgorithm(Algorithm.RS256);
             keyWrapper.setUse(KeyUse.SIG);
-            keyWrapper.setVerifyKey(PemUtils.decodePublicKey(pem));
+            keyWrapper.setPublicKey(PemUtils.decodePublicKey(pem));
         }
         return keyWrapper;
     }

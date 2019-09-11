@@ -6,7 +6,7 @@ import java.util.HashMap;
 import java.util.List;
 
 /**
- *
+ * Updater for realm attributes. See {@link ServerResourceUpdater} for further details.
  * @author hmlnarik
  */
 public class RealmAttributeUpdater extends ServerResourceUpdater<ServerResourceUpdater, RealmResource, RealmRepresentation> {

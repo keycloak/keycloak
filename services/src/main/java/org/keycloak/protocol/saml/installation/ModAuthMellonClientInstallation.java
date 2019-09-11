@@ -26,6 +26,7 @@ import org.keycloak.protocol.ClientInstallationProvider;
 import org.keycloak.protocol.saml.SamlClient;
 import org.keycloak.protocol.saml.SamlProtocol;
 
+import org.keycloak.protocol.saml.SamlService;
 import javax.ws.rs.core.Response;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -43,7 +44,7 @@ public class ModAuthMellonClientInstallation implements ClientInstallationProvid
         SamlClient samlClient = new SamlClient(client);
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         ZipOutputStream zip = new ZipOutputStream(baos);
-        String idpDescriptor = SamlIDPDescriptorClientInstallation.getIDPDescriptorForClient(session, realm, client, serverBaseUri);
+        String idpDescriptor = SamlService.getIDPMetadataDescriptor(session.getContext().getUri(), session, realm);
         String spDescriptor = SamlSPDescriptorClientInstallation.getSPDescriptorForClient(client);
         String clientDirName = client.getClientId()
                 .replace('/', '_')

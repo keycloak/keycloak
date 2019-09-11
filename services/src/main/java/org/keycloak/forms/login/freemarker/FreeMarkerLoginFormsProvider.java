@@ -33,6 +33,7 @@ import org.keycloak.forms.login.freemarker.model.ProfileBean;
 import org.keycloak.forms.login.freemarker.model.RealmBean;
 import org.keycloak.forms.login.freemarker.model.RegisterBean;
 import org.keycloak.forms.login.freemarker.model.RequiredActionUrlFormatterMethod;
+import org.keycloak.forms.login.freemarker.model.SAMLPostFormBean;
 import org.keycloak.forms.login.freemarker.model.TotpBean;
 import org.keycloak.forms.login.freemarker.model.UrlBean;
 import org.keycloak.forms.login.freemarker.model.X509ConfirmBean;
@@ -65,6 +66,7 @@ import java.util.*;
 
 
 import static org.keycloak.models.UserModel.RequiredAction.UPDATE_PASSWORD;
+import static org.keycloak.services.managers.AuthenticationManager.IS_AIA_REQUEST;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -177,7 +179,11 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
         if (status != null) {
             attributes.put("statusCode", status.getStatusCode());
         }
-
+        
+        if (authenticationSession != null && authenticationSession.getClientNote(IS_AIA_REQUEST) != null) {
+            attributes.put("isAppInitiatedAction", true);
+        }
+        
         switch (page) {
             case LOGIN_CONFIG_TOTP:
                 attributes.put("totp", new TotpBean(session, realm, user, uriInfo.getRequestUriBuilder()));
@@ -209,11 +215,14 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
             case X509_CONFIRM:
                 attributes.put("x509", new X509ConfirmBean(formData));
                 break;
+            case SAML_POST_FORM:
+                attributes.put("samlPost", new SAMLPostFormBean(formData));
+                break;
         }
 
         return processTemplate(theme, Templates.getTemplate(page), locale);
     }
-
+    
     @Override
     public Response createForm(String form) {
         Theme theme;
@@ -519,6 +528,11 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
     @Override
     public Response createX509ConfirmPage() {
         return createResponse(LoginFormsPages.X509_CONFIRM);
+    }
+
+    @Override
+    public Response createSamlPostForm() {
+        return createResponse(LoginFormsPages.SAML_POST_FORM);
     }
 
     protected void setMessage(MessageType type, String message, Object... parameters) {

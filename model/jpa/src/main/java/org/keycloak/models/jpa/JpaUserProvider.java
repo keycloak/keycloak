@@ -66,6 +66,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import javax.persistence.LockModeType;
 import javax.persistence.criteria.Expression;
 import javax.persistence.criteria.Path;
 
@@ -146,7 +147,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
         // not sure why i have to do a clear() here.  I was getting some messed up errors that Hibernate couldn't
         // un-delete the UserEntity.
         em.clear();
-        user = em.find(UserEntity.class, id);
+        user = em.find(UserEntity.class, id, LockModeType.PESSIMISTIC_WRITE);
         if (user != null) {
             em.remove(user);
         }
@@ -170,7 +171,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
 
     @Override
     public void updateFederatedIdentity(RealmModel realm, UserModel federatedUser, FederatedIdentityModel federatedIdentityModel) {
-        FederatedIdentityEntity federatedIdentity = findFederatedIdentity(federatedUser, federatedIdentityModel.getIdentityProvider());
+        FederatedIdentityEntity federatedIdentity = findFederatedIdentity(federatedUser, federatedIdentityModel.getIdentityProvider(), LockModeType.PESSIMISTIC_WRITE);
 
         federatedIdentity.setToken(federatedIdentityModel.getToken());
 
@@ -180,7 +181,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
 
     @Override
     public boolean removeFederatedIdentity(RealmModel realm, UserModel user, String identityProvider) {
-        FederatedIdentityEntity entity = findFederatedIdentity(user, identityProvider);
+        FederatedIdentityEntity entity = findFederatedIdentity(user, identityProvider, LockModeType.PESSIMISTIC_WRITE);
         if (entity != null) {
             em.remove(entity);
             em.flush();
@@ -194,7 +195,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
     public void addConsent(RealmModel realm, String userId, UserConsentModel consent) {
         String clientId = consent.getClient().getId();
 
-        UserConsentEntity consentEntity = getGrantedConsentEntity(userId, clientId);
+        UserConsentEntity consentEntity = getGrantedConsentEntity(userId, clientId, LockModeType.NONE);
         if (consentEntity != null) {
             throw new ModelDuplicateException("Consent already exists for client [" + clientId + "] and user [" + userId + "]");
         }
@@ -222,7 +223,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
 
     @Override
     public UserConsentModel getConsentByClient(RealmModel realm, String userId, String clientId) {
-        UserConsentEntity entity = getGrantedConsentEntity(userId, clientId);
+        UserConsentEntity entity = getGrantedConsentEntity(userId, clientId, LockModeType.NONE);
         return toConsentModel(realm, entity);
     }
 
@@ -244,7 +245,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
     public void updateConsent(RealmModel realm, String userId, UserConsentModel consent) {
         String clientId = consent.getClient().getId();
 
-        UserConsentEntity consentEntity = getGrantedConsentEntity(userId, clientId);
+        UserConsentEntity consentEntity = getGrantedConsentEntity(userId, clientId, LockModeType.PESSIMISTIC_WRITE);
         if (consentEntity == null) {
             throw new ModelException("Consent not found for client [" + clientId + "] and user [" + userId + "]");
         }
@@ -253,7 +254,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
     }
 
     public boolean revokeConsentForClient(RealmModel realm, String userId, String clientId) {
-        UserConsentEntity consentEntity = getGrantedConsentEntity(userId, clientId);
+        UserConsentEntity consentEntity = getGrantedConsentEntity(userId, clientId, LockModeType.PESSIMISTIC_WRITE);
         if (consentEntity == null) return false;
 
         em.remove(consentEntity);
@@ -262,7 +263,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
     }
 
 
-    private UserConsentEntity getGrantedConsentEntity(String userId, String clientId) {
+    private UserConsentEntity getGrantedConsentEntity(String userId, String clientId, LockModeType lockMode) {
         StorageId clientStorageId = new StorageId(clientId);
         String queryName = clientStorageId.isLocal() ?  "userConsentByUserAndClient" : "userConsentByUserAndExternalClient";
         TypedQuery<UserConsentEntity> query = em.createNamedQuery(queryName, UserConsentEntity.class);
@@ -273,6 +274,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
             query.setParameter("clientStorageProvider", clientStorageId.getProviderId());
             query.setParameter("externalClientId", clientStorageId.getExternalId());
         }
+        query.setLockMode(lockMode);
         List<UserConsentEntity> results = query.getResultList();
         if (results.size() > 1) {
             throw new ModelException("More results found for user [" + userId + "] and client [" + clientId + "]");
@@ -804,11 +806,12 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
         return users;
     }
 
-    private FederatedIdentityEntity findFederatedIdentity(UserModel user, String identityProvider) {
+    private FederatedIdentityEntity findFederatedIdentity(UserModel user, String identityProvider, LockModeType lockMode) {
         TypedQuery<FederatedIdentityEntity> query = em.createNamedQuery("findFederatedIdentityByUserAndProvider", FederatedIdentityEntity.class);
         UserEntity userEntity = em.getReference(UserEntity.class, user.getId());
         query.setParameter("user", userEntity);
         query.setParameter("identityProvider", identityProvider);
+        query.setLockMode(lockMode);
         List<FederatedIdentityEntity> results = query.getResultList();
         return results.size() > 0 ? results.get(0) : null;
     }
@@ -829,7 +832,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
 
     @Override
     public FederatedIdentityModel getFederatedIdentity(UserModel user, String identityProvider, RealmModel realm) {
-        FederatedIdentityEntity entity = findFederatedIdentity(user, identityProvider);
+        FederatedIdentityEntity entity = findFederatedIdentity(user, identityProvider, LockModeType.NONE);
         return (entity != null) ? new FederatedIdentityModel(entity.getIdentityProvider(), entity.getUserId(), entity.getUserName(), entity.getToken()) : null;
     }
 
@@ -952,7 +955,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
 
     @Override
     public boolean removeStoredCredential(RealmModel realm, UserModel user, String id) {
-        CredentialEntity entity = em.find(CredentialEntity.class, id);
+        CredentialEntity entity = em.find(CredentialEntity.class, id, LockModeType.PESSIMISTIC_WRITE);
         if (entity == null) return false;
         em.remove(entity);
         UserEntity userEntity = userInEntityManagerContext(user.getId());

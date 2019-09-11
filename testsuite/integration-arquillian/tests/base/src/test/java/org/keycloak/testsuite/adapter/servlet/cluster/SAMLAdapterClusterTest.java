@@ -24,7 +24,7 @@ import org.keycloak.testsuite.adapter.AbstractSAMLAdapterClusteredTest;
 import org.keycloak.testsuite.adapter.page.EmployeeServletDistributable;
 import org.keycloak.testsuite.adapter.servlet.SendUsernameServlet;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
-import org.keycloak.testsuite.arquillian.containers.ContainerConstants;
+import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
 
 /**
  *

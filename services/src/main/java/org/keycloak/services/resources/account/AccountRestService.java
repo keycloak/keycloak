@@ -25,29 +25,45 @@ import org.keycloak.events.EventStoreProvider;
 import org.keycloak.events.EventType;
 import org.keycloak.models.AccountRoles;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.UserSessionModel;
 import org.keycloak.representations.account.ClientRepresentation;
-import org.keycloak.representations.account.SessionRepresentation;
+import org.keycloak.representations.account.ConsentRepresentation;
+import org.keycloak.representations.account.ConsentScopeRepresentation;
 import org.keycloak.representations.account.UserRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.managers.Auth;
-import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.Cors;
+import org.keycloak.services.resources.account.resources.ResourcesService;
 import org.keycloak.storage.ReadOnlyException;
 
-import javax.ws.rs.*;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.GET;
+import javax.ws.rs.NotFoundException;
+import javax.ws.rs.OPTIONS;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import java.util.LinkedList;
+import java.io.IOException;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Properties;
+import java.util.stream.Collectors;
+
 import org.keycloak.common.Profile;
+import org.keycloak.theme.Theme;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -69,6 +85,7 @@ public class AccountRestService {
     
     private final RealmModel realm;
     private final UserModel user;
+    private final Locale locale;
 
     public AccountRestService(KeycloakSession session, Auth auth, ClientModel client, EventBuilder event) {
         this.session = session;
@@ -77,6 +94,7 @@ public class AccountRestService {
         this.user = auth.getUser();
         this.client = client;
         this.event = event;
+        this.locale = session.getContext().resolveLocale(user);
     }
     
     public void init() {
@@ -202,84 +220,10 @@ public class AccountRestService {
      * @return
      */
     @Path("/sessions")
-    @GET
-    @Produces(MediaType.APPLICATION_JSON)
-    @NoCache
-    public Response sessions() {
+    public SessionResource sessions() {
         checkAccountApiEnabled();
         auth.requireOneOf(AccountRoles.MANAGE_ACCOUNT, AccountRoles.VIEW_PROFILE);
-        
-        List<SessionRepresentation> reps = new LinkedList<>();
-
-        List<UserSessionModel> sessions = session.sessions().getUserSessions(realm, user);
-        for (UserSessionModel s : sessions) {
-            SessionRepresentation rep = new SessionRepresentation();
-            rep.setId(s.getId());
-            rep.setIpAddress(s.getIpAddress());
-            rep.setStarted(s.getStarted());
-            rep.setLastAccess(s.getLastSessionRefresh());
-            rep.setExpires(s.getStarted() + realm.getSsoSessionMaxLifespan());
-            rep.setClients(new LinkedList());
-
-            for (String clientUUID : s.getAuthenticatedClientSessions().keySet()) {
-                ClientModel client = realm.getClientById(clientUUID);
-                ClientRepresentation clientRep = new ClientRepresentation();
-                clientRep.setClientId(client.getClientId());
-                clientRep.setClientName(client.getName());
-                rep.getClients().add(clientRep);
-            }
-
-            reps.add(rep);
-        }
-
-        return Cors.add(request, Response.ok(reps)).auth().allowedOrigins(auth.getToken()).build();
-    }
-
-    /**
-     * Remove sessions
-     *
-     * @param removeCurrent remove current session (default is false)
-     * @return
-     */
-    @Path("/sessions")
-    @DELETE
-    @Produces(MediaType.APPLICATION_JSON)
-    @NoCache
-    public Response sessionsLogout(@QueryParam("current") boolean removeCurrent) {
-        checkAccountApiEnabled();
-        auth.require(AccountRoles.MANAGE_ACCOUNT);
-        
-        UserSessionModel userSession = auth.getSession();
-
-        List<UserSessionModel> userSessions = session.sessions().getUserSessions(realm, user);
-        for (UserSessionModel s : userSessions) {
-            if (removeCurrent || !s.getId().equals(userSession.getId())) {
-                AuthenticationManager.backchannelLogout(session, s, true);
-            }
-        }
-
-        return Cors.add(request, Response.ok()).auth().allowedOrigins(auth.getToken()).build();
-    }
-
-    /**
-     * Remove a specific session
-     *
-     * @param id a specific session to remove
-     * @return
-     */
-    @Path("/session")
-    @DELETE
-    @Produces(MediaType.APPLICATION_JSON)
-    @NoCache
-    public Response sessionLogout(@QueryParam("id") String id) {
-        checkAccountApiEnabled();
-        auth.require(AccountRoles.MANAGE_ACCOUNT);
-        
-        UserSessionModel userSession = session.sessions().getUserSession(realm, id);
-        if (userSession != null && userSession.getUser().equals(user)) {
-            AuthenticationManager.backchannelLogout(session, userSession, true);
-        }
-        return Cors.add(request, Response.ok()).auth().allowedOrigins(auth.getToken()).build();
+        return new SessionResource(session, auth, request);
     }
 
     @Path("/credentials")
@@ -288,8 +232,238 @@ public class AccountRestService {
         return new AccountCredentialResource(session, event, user, auth);
     }
 
-   // TODO Federated identities
-    // TODO Applications
+    @Path("/resources")
+    public ResourcesService resources() {
+        checkAccountApiEnabled();
+        auth.requireOneOf(AccountRoles.MANAGE_ACCOUNT, AccountRoles.VIEW_PROFILE);
+        return new ResourcesService(session, user, auth, request);
+    }
+
+    // TODO Federated identities
+
+    /**
+     * Returns the list of available applications in the specified
+     * realm.
+     *
+     * @return list of applications in that realm
+     */
+    @Path("/applications")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getApplications() {
+        checkAccountApiEnabled();
+        auth.require(AccountRoles.VIEW_APPLICATIONS);
+
+        List<ClientModel> clients = realm.getClients();
+
+        List<ClientRepresentation> clientRepresentations = clients.stream()
+                .map(this::modelToRepresentation)
+                .collect(Collectors.toList());
+
+        return Cors.add(request, Response.ok(clientRepresentations)).build();
+    }
+
+    /**
+     * Returns the applications with the given id in the specified realm.
+     *
+     * @param clientId client id to search for
+     * @return application with the provided id
+     */
+    @Path("/applications/{clientId}")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getApplication(final @PathParam("clientId") String clientId) {
+        checkAccountApiEnabled();
+        auth.require(AccountRoles.VIEW_APPLICATIONS);
+        ClientModel client = realm.getClientByClientId(clientId);
+        if (client == null) {
+            return Cors.add(request, Response.status(Response.Status.NOT_FOUND).entity("No client with clientId: " + clientId + " found.")).build();
+        }
+
+        return Cors.add(request, Response.ok(modelToRepresentation(client))).build();
+    }
+
+    private ClientRepresentation modelToRepresentation(ClientModel model) {
+        ClientRepresentation representation = new ClientRepresentation();
+        representation.setClientId(model.getClientId());
+        representation.setClientName(getTranslationOrDefault(model.getName()));
+        return representation;
+    }
+
+    private ConsentRepresentation modelToRepresentation(UserConsentModel model) {
+        List<ConsentScopeRepresentation> scopes = model.getGrantedClientScopes().stream()
+                .map(m -> new ConsentScopeRepresentation(m.getId(), m.getName(), getTranslationOrDefault(m.getConsentScreenText())))
+                .collect(Collectors.toList());
+        return new ConsentRepresentation(scopes, model.getCreatedDate(), model.getLastUpdatedDate());
+    }
+
+    private String getTranslationOrDefault(String key) {
+        if (key == null) {
+            return null;
+        }
+        String defaultValue = key;
+        if (key.startsWith("${")) {
+            key = key.substring(2, key.length() - 1);
+        }
+        try {
+            Properties messages = session.theme().getTheme(Theme.Type.ACCOUNT).getMessages(locale);
+            return messages.getProperty(key, defaultValue);
+        } catch (IOException e) {
+            return key;
+        }
+    }
+
+    /**
+     * Returns the consent for the client with the given client id.
+     *
+     * @param clientId client id to return the consent for
+     * @return consent of the client
+     */
+    @Path("/applications/{clientId}/consent")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getConsent(final @PathParam("clientId") String clientId) {
+        checkAccountApiEnabled();
+        auth.requireOneOf(AccountRoles.VIEW_CONSENT, AccountRoles.MANAGE_CONSENT);
+
+        ClientModel client = realm.getClientByClientId(clientId);
+        if (client == null) {
+            return Cors.add(request, Response.status(Response.Status.NOT_FOUND).entity("No client with clientId: " + clientId + " found.")).build();
+        }
+
+        UserConsentModel consent = session.users().getConsentByClient(realm, user.getId(), client.getId());
+        if (consent == null) {
+            return Cors.add(request, Response.noContent()).build();
+        }
+
+        return Cors.add(request, Response.ok(modelToRepresentation(consent))).build();
+    }
+
+    /**
+     * Deletes the consent for the client with the given client id.
+     *
+     * @param clientId client id to delete a consent for
+     * @return returns 202 if deleted
+     */
+    @Path("/applications/{clientId}/consent")
+    @DELETE
+    public Response revokeConsent(final @PathParam("clientId") String clientId) {
+        checkAccountApiEnabled();
+        auth.require(AccountRoles.MANAGE_CONSENT);
+
+        event.event(EventType.REVOKE_GRANT);
+        ClientModel client = realm.getClientByClientId(clientId);
+        if (client == null) {
+            event.event(EventType.REVOKE_GRANT_ERROR);
+            String msg = String.format("No client with clientId: %s found.", clientId);
+            event.error(msg);
+            return Cors.add(request, Response.status(Response.Status.NOT_FOUND).entity(msg)).build();
+        }
+
+        session.users().revokeConsentForClient(realm, user.getId(), client.getId());
+        event.success();
+
+        return Cors.add(request, Response.accepted()).build();
+    }
+
+    /**
+     * Creates or updates the consent of the given, requested consent for
+     * the client with the given client id. Returns the appropriate REST response.
+     *
+     * @param clientId client id to set a consent for
+     * @param consent  requested consent for the client
+     * @return the created or updated consent
+     */
+    @Path("/applications/{clientId}/consent")
+    @POST
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response grantConsent(final @PathParam("clientId") String clientId,
+                                 final ConsentRepresentation consent) {
+        return upsert(clientId, consent);
+    }
+
+    /**
+     * Creates or updates the consent of the given, requested consent for
+     * the client with the given client id. Returns the appropriate REST response.
+     *
+     * @param clientId client id to set a consent for
+     * @param consent  requested consent for the client
+     * @return the created or updated consent
+     */
+    @Path("/applications/{clientId}/consent")
+    @PUT
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response updateConsent(final @PathParam("clientId") String clientId,
+                                  final ConsentRepresentation consent) {
+        return upsert(clientId, consent);
+    }
+
+    /**
+     * Creates or updates the consent of the given, requested consent for
+     * the client with the given client id. Returns the appropriate REST response.
+     *
+     * @param clientId client id to set a consent for
+     * @param consent  requested consent for the client
+     * @return response to return to the caller
+     */
+    private Response upsert(String clientId, ConsentRepresentation consent) {
+        checkAccountApiEnabled();
+        auth.require(AccountRoles.MANAGE_CONSENT);
+
+        event.event(EventType.GRANT_CONSENT);
+        ClientModel client = realm.getClientByClientId(clientId);
+        if (client == null) {
+            event.event(EventType.GRANT_CONSENT_ERROR);
+            String msg = String.format("No client with clientId: %s found.", clientId);
+            event.error(msg);
+            return Cors.add(request, Response.status(Response.Status.NOT_FOUND).entity(msg)).build();
+        }
+
+        try {
+            UserConsentModel grantedConsent = createConsent(client, consent);
+            if (session.users().getConsentByClient(realm, user.getId(), client.getId()) == null) {
+                session.users().addConsent(realm, user.getId(), grantedConsent);
+            } else {
+                session.users().updateConsent(realm, user.getId(), grantedConsent);
+            }
+            event.success();
+            grantedConsent = session.users().getConsentByClient(realm, user.getId(), client.getId());
+            return Cors.add(request, Response.ok(modelToRepresentation(grantedConsent))).build();
+        } catch (IllegalArgumentException e) {
+            return Cors.add(request, Response.status(Response.Status.BAD_REQUEST).entity(e.getMessage())).build();
+        }
+    }
+
+    /**
+     * Create a new consent model object from the requested consent object
+     * for the given client model.
+     *
+     * @param client    client to create a consent for
+     * @param requested list of client scopes that the new consent should contain
+     * @return newly created consent model
+     * @throws IllegalArgumentException throws an exception if the scope id is not available
+     */
+    private UserConsentModel createConsent(ClientModel client, ConsentRepresentation requested) throws IllegalArgumentException {
+        UserConsentModel consent = new UserConsentModel(client);
+        Map<String, ClientScopeModel> availableGrants = realm.getClientScopes().stream().collect(Collectors.toMap(ClientScopeModel::getId, s -> s));
+
+        if (client.isConsentRequired()) {
+            availableGrants.put(client.getId(), client);
+        }
+
+        for (ConsentScopeRepresentation scopeRepresentation : requested.getScopes()) {
+            ClientScopeModel scopeModel = availableGrants.get(scopeRepresentation.getId());
+            if (scopeModel == null) {
+                String msg = String.format("Scope id %s does not exist for client %s.", scopeRepresentation, consent.getClient().getName());
+                event.error(msg);
+                throw new IllegalArgumentException(msg);
+            } else {
+                consent.addGrantedClientScope(scopeModel);
+            }
+        }
+        return consent;
+    }
+
     // TODO Logs
     
     private static void checkAccountApiEnabled() {

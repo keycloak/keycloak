@@ -30,21 +30,27 @@ import java.util.Properties;
 public class LocaleBean {
 
     private String current;
+    private String currentLanguageTag;
     private List<Locale> supported;
 
     public LocaleBean(RealmModel realm, java.util.Locale current, UriBuilder uriBuilder, Properties messages) {
-        this.current = messages.getProperty("locale_" + current.toLanguageTag(), current.toLanguageTag());
+        this.currentLanguageTag = current.toLanguageTag();
+        this.current = messages.getProperty("locale_" + this.currentLanguageTag, this.currentLanguageTag);
 
         supported = new LinkedList<>();
         for (String l : realm.getSupportedLocales()) {
             String label = messages.getProperty("locale_" + l, l);
             String url = uriBuilder.replaceQueryParam("kc_locale", l).build().toString();
-            supported.add(new Locale(label, url));
+            supported.add(new Locale(l, label, url));
         }
     }
 
     public String getCurrent() {
         return current;
+    }
+
+    public String getCurrentLanguageTag() {
+        return currentLanguageTag;
     }
 
     public List<Locale> getSupported() {
@@ -53,12 +59,18 @@ public class LocaleBean {
 
     public static class Locale {
 
+        private String languageTag;
         private String label;
         private String url;
 
-        public Locale(String label, String url) {
+        public Locale(String languageTag, String label, String url) {
+            this.languageTag = languageTag;
             this.label = label;
             this.url = url;
+        }
+
+        public String getLanguageTag() {
+            return languageTag;
         }
 
         public String getUrl() {

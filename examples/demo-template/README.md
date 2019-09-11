@@ -18,8 +18,6 @@ machine on the network or Internet.
 * **admin-access-app** A WAR application that does remote REST login to admin console to obtain a list of realm roles from Admin REST API
 * **angular-product-app** An Angular JS pure HTML5/Javascript application.
 * **database-service** JAX-RS services authenticated by bearer tokens only. The customer and product app invoke on it to get data
-* **third-party** Simple WAR that obtain a bearer token using OAuth2 using browser redirects to the auth-server.
-* **third-party-cdi** Simple CDI/JSF WAR that obtain a bearer token using OAuth2 using browser redirects to the auth-server.
 
 The UI of each of these applications is very crude and exists just to show our OAuth2 implementation in action.
 
@@ -160,17 +158,7 @@ If you click on the logout link of either of the product or customer app, you'll
 The example also shows different methods of client authentication. The customer-portal example is using traditional authentication with client_id and client_secret, 
 but the product-portal example is using client authentication with JWT signed by client private key, which is retrieved from the keystore file inside the product-portal WAR.
 
-Step 6: Traditional OAuth2 Example
-----------------------------------
-The customer and product apps are logins.  The third-party app is the traditional OAuth2 usecase of a client wanting
-to get permission to access a user's data. To run this example open
-
-[http://localhost:8080/oauth-client](http://localhost:8080/oauth-client)
-
-If you are already logged in, you will not be asked for a username and password, but you will be redirected to
-an oauth grant page.  This page asks you if you want to grant certain permissions to the third-part app.
-
-Step 7: Try the CLI Example
+Step 6: Try the CLI Example
 ---------------------------
 To try the CLI example run the following commands:
 
@@ -183,7 +171,7 @@ The CLI example has two alternative methods for login. When a browser is availab
 temporary web server on a free port. If a browser is not available the URL to login is displayed on the CLI. The user can copy this URL to another computer that has a browser available. The code
 is displayed to the user after login and the user has to copy this code back to the application.
 
-Step 8: Admin REST API
+Step 7: Admin REST API
 ----------------------------------
 Keycloak has a Admin REST API.  This example shows an application making a remote direct login to Keycloak to obtain a token
 then using that token to access the Admin REST API.
@@ -193,7 +181,7 @@ then using that token to access the Admin REST API.
 If you are already logged in, you will not be asked for a username and password, but you will be redirected to
 an oauth grant page.  This page asks you if you want to grant certain permissions to the third-part app.
 
-Step 9: Angular JS Example
+Step 8: Angular JS Example
 ----------------------------------
 An Angular JS example using Keycloak to secure it.
 
@@ -202,7 +190,7 @@ An Angular JS example using Keycloak to secure it.
 If you are already logged in, you will not be asked for a username and password, but you will be redirected to
 an oauth grant page.  This page asks you if you want to grant certain permissions to the third-part app.
 
-Step 10: Pure HTML5/Javascript Example
+Step 9: Pure HTML5/Javascript Example
 ----------------------------------
 An pure HTML5/Javascript example using Keycloak to secure it.
 
@@ -211,7 +199,7 @@ An pure HTML5/Javascript example using Keycloak to secure it.
 If you are already logged in, you will not be asked for a username and password, but you will be redirected to
 an oauth grant page.  This page asks you if you want to grant certain permissions to the third-part app.
 
-Step 11: Service Account Example
+Step 10: Service Account Example
 ================================
 An example for retrieve service account dedicated to the Client Application itself (not to any user). 
 
@@ -219,7 +207,7 @@ An example for retrieve service account dedicated to the Client Application itse
 
 Client authentication is done with OAuth2 Client Credentials Grant in out-of-bound request (Not Keycloak login screen displayed) .
 
-Step 12: Offline Access Example
+Step 11: Offline Access Example
 ===============================
 An example for retrieve offline token, which is then saved to the database and can be used by application anytime later. Offline token
 is valid even if user is already logged out from SSO. Server restart also won't invalidate offline token. Offline token can be revoked by the user in 

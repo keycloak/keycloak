@@ -21,9 +21,8 @@ import java.io.IOException;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.keycloak.testsuite.adapter.page.PhotozClientAuthzTestApp;
-import org.keycloak.testsuite.arquillian.AppServerTestEnricher;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
-import org.keycloak.testsuite.arquillian.containers.ContainerConstants;
+import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>

@@ -18,12 +18,12 @@
 package org.keycloak.testsuite.adapter.servlet;
 
 import static javax.ws.rs.core.Response.Status.OK;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.*;
 import static org.keycloak.OAuth2Constants.PASSWORD;
-import static org.keycloak.testsuite.admin.ApiUtil.createUserAndResetPasswordWithAdminClient;
+import static org.keycloak.testsuite.admin.Users.getPasswordOf;
 import static org.keycloak.testsuite.admin.Users.setPasswordFor;
-import static org.keycloak.testsuite.AbstractAuthTest.createUserRepresentation;
-import static org.keycloak.testsuite.adapter.AbstractServletsAdapterTest.samlServletDeployment;
+import static org.keycloak.testsuite.auth.page.AuthRealm.DEMO;
 import static org.keycloak.testsuite.auth.page.AuthRealm.SAMLSERVLETDEMO;
 import static org.keycloak.testsuite.saml.AbstractSamlTest.REALM_PRIVATE_KEY;
 import static org.keycloak.testsuite.saml.AbstractSamlTest.REALM_PUBLIC_KEY;
@@ -133,11 +133,10 @@ import org.keycloak.saml.common.util.XmlKeyInfoKeyNameTransformer;
 import org.keycloak.saml.processing.core.parsers.saml.SAMLParser;
 import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
 import org.keycloak.services.resources.RealmsResource;
-import org.keycloak.testsuite.adapter.AbstractServletsAdapterTest;
 import org.keycloak.testsuite.adapter.page.*;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
-import org.keycloak.testsuite.arquillian.containers.ContainerConstants;
+import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
 import org.keycloak.testsuite.auth.page.login.Login;
 import org.keycloak.testsuite.auth.page.login.SAMLIDPInitiatedLogin;
 import org.keycloak.testsuite.auth.page.login.SAMLPostLoginTenant1;
@@ -145,7 +144,8 @@ import org.keycloak.testsuite.auth.page.login.SAMLPostLoginTenant2;
 import org.keycloak.testsuite.page.AbstractPage;
 import org.keycloak.testsuite.saml.AbstractSamlTest;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
-import org.keycloak.testsuite.util.ProtocolMapperUtil;
+import org.keycloak.testsuite.updaters.Creator;
+import org.keycloak.testsuite.updaters.UserAttributeUpdater;
 import org.keycloak.testsuite.util.SamlClient;
 import org.keycloak.testsuite.util.SamlClient.Binding;
 import org.keycloak.testsuite.util.SamlClientBuilder;
@@ -162,6 +162,7 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 import org.xml.sax.SAXException;
+import static org.keycloak.testsuite.admin.ApiUtil.getCreatedId;
 
 /**
  * @author mhajas
@@ -175,7 +176,7 @@ import org.xml.sax.SAXException;
 @AppServerContainer(ContainerConstants.APP_SERVER_TOMCAT7)
 @AppServerContainer(ContainerConstants.APP_SERVER_TOMCAT8)
 @AppServerContainer(ContainerConstants.APP_SERVER_TOMCAT9)
-public class SAMLServletAdapterTest extends AbstractServletsAdapterTest {
+public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
     @Page
     protected BadClientSalesPostSigServlet badClientSalesPostSigServletPage;
 
@@ -202,6 +203,9 @@ public class SAMLServletAdapterTest extends AbstractServletsAdapterTest {
 
     @Page
     protected EmployeeSigFrontServlet employeeSigFrontServletPage;
+
+    @Page
+    protected EmployeeRoleMappingServlet employeeRoleMappingPage;
 
     @Page
     protected SalesMetadataServlet salesMetadataServletPage;
@@ -328,6 +332,11 @@ public class SAMLServletAdapterTest extends AbstractServletsAdapterTest {
         return samlServletDeployment(EmployeeSigFrontServlet.DEPLOYMENT_NAME, SendUsernameServlet.class);
     }
 
+    @Deployment(name = EmployeeRoleMappingServlet.DEPLOYMENT_NAME)
+    protected static WebArchive employeeRoleMapping() {
+        return samlServletDeployment(EmployeeRoleMappingServlet.DEPLOYMENT_NAME, "employee-role-mapping/WEB-INF/web.xml", SendUsernameServlet.class);
+    }
+
     @Deployment(name = SalesMetadataServlet.DEPLOYMENT_NAME)
     protected static WebArchive salesMetadata() {
         return samlServletDeployment(SalesMetadataServlet.DEPLOYMENT_NAME, SendUsernameServlet.class);
@@ -433,18 +442,8 @@ public class SAMLServletAdapterTest extends AbstractServletsAdapterTest {
     }
 
     @Override
-    public void addAdapterTestRealms(List<RealmRepresentation> testRealms) {
-        testRealms.add(IOUtil.loadRealm("/adapter-test/keycloak-saml/testsaml.json"));
-        testRealms.add(IOUtil.loadRealm("/adapter-test/keycloak-saml/tenant1-realm.json"));
-        testRealms.add(IOUtil.loadRealm("/adapter-test/keycloak-saml/tenant2-realm.json"));
-    }
-
-    @Override
-    public void setDefaultPageUriParameters() {
-        super.setDefaultPageUriParameters();
-        testRealmPage.setAuthRealm(SAMLSERVLETDEMO);
-        testRealmSAMLRedirectLoginPage.setAuthRealm(SAMLSERVLETDEMO);
-        testRealmSAMLPostLoginPage.setAuthRealm(SAMLSERVLETDEMO);
+    protected boolean isImportAfterEachMethod() {
+        return false;
     }
 
     private void assertForbidden(AbstractPage page, String expectedNotContains) {
@@ -915,20 +914,22 @@ public class SAMLServletAdapterTest extends AbstractServletsAdapterTest {
           .edit(createUserRepresentation(username, "xyz@redhat.com", "ěščřžýáí", "RoàåéèíñòøöùüßÅÄÖÜ", true))
           .addPassword(PASSWORD)
           .build();
-        String userId = createUserAndResetPasswordWithAdminClient(testRealmResource(), user, PASSWORD);
-        final RoleScopeResource realmRoleRes = testRealmResource().users().get(userId).roles().realmLevel();
-        List<RoleRepresentation> availableRoles = realmRoleRes.listAvailable();
-        realmRoleRes.add(availableRoles.stream().filter(r -> r.getName().equalsIgnoreCase("manager")).collect(Collectors.toList()));
 
-        UserRepresentation storedUser = testRealmResource().users().get(userId).toRepresentation();
+        try (Creator<UserResource> u = Creator.create(testRealmResource(), user)) {
+            final RoleScopeResource realmRoleRes = u.resource().roles().realmLevel();
+            List<RoleRepresentation> availableRoles = realmRoleRes.listAvailable();
+            realmRoleRes.add(availableRoles.stream().filter(r -> r.getName().equalsIgnoreCase("manager")).collect(Collectors.toList()));
 
-        Assert.assertThat(storedUser, notNullValue());
-        Assert.assertThat("Database seems to be unable to store Unicode for username. Refer to KEYCLOAK-3439 and related issues.", storedUser.getUsername(), equalToIgnoringCase(username));
+            UserRepresentation storedUser = u.resource().toRepresentation();
 
-        assertSuccessfulLogin(salesPostSigServletPage, user, testRealmSAMLPostLoginPage, "principal=" + storedUser.getUsername());
+            Assert.assertThat(storedUser, notNullValue());
+            Assert.assertThat("Database seems to be unable to store Unicode for username. Refer to KEYCLOAK-3439 and related issues.", storedUser.getUsername(), equalToIgnoringCase(username));
 
-        salesPostSigServletPage.logout();
-        checkLoggedOut(salesPostSigServletPage, testRealmSAMLPostLoginPage);
+            assertSuccessfulLogin(salesPostSigServletPage, user, testRealmSAMLPostLoginPage, "principal=" + storedUser.getUsername());
+
+            salesPostSigServletPage.logout();
+            checkLoggedOut(salesPostSigServletPage, testRealmSAMLPostLoginPage);
+        }
     }
 
     @Test
@@ -939,20 +940,21 @@ public class SAMLServletAdapterTest extends AbstractServletsAdapterTest {
           .edit(createUserRepresentation(username, "xyz@redhat.com", "ěščřžýáí", "RoàåéèíñòøöùüßÅÄÖÜ", true))
           .addPassword(PASSWORD)
           .build();
-        String userId = createUserAndResetPasswordWithAdminClient(testRealmResource(), user, PASSWORD);
-        final RoleScopeResource realmRoleRes = testRealmResource().users().get(userId).roles().realmLevel();
-        List<RoleRepresentation> availableRoles = realmRoleRes.listAvailable();
-        realmRoleRes.add(availableRoles.stream().filter(r -> r.getName().equalsIgnoreCase("manager")).collect(Collectors.toList()));
+        try (Creator<UserResource> u = Creator.create(testRealmResource(), user)) {
+            final RoleScopeResource realmRoleRes = u.resource().roles().realmLevel();
+            List<RoleRepresentation> availableRoles = realmRoleRes.listAvailable();
+            realmRoleRes.add(availableRoles.stream().filter(r -> r.getName().equalsIgnoreCase("manager")).collect(Collectors.toList()));
 
-        UserRepresentation storedUser = testRealmResource().users().get(userId).toRepresentation();
+            UserRepresentation storedUser = u.resource().toRepresentation();
 
-        Assert.assertThat(storedUser, notNullValue());
-        Assert.assertThat("Database seems to be unable to store Unicode for username. Refer to KEYCLOAK-3439 and related issues.", storedUser.getUsername(), equalToIgnoringCase(username));
+            Assert.assertThat(storedUser, notNullValue());
+            Assert.assertThat("Database seems to be unable to store Unicode for username. Refer to KEYCLOAK-3439 and related issues.", storedUser.getUsername(), equalToIgnoringCase(username));
 
-        assertSuccessfulLogin(employeeSigServletPage, user, testRealmSAMLRedirectLoginPage, "principal=" + storedUser.getUsername());
+            assertSuccessfulLogin(employeeSigServletPage, user, testRealmSAMLRedirectLoginPage, "principal=" + storedUser.getUsername());
 
-        employeeSigServletPage.logout();
-        checkLoggedOut(employeeSigServletPage, testRealmSAMLRedirectLoginPage);
+            employeeSigServletPage.logout();
+            checkLoggedOut(employeeSigServletPage, testRealmSAMLRedirectLoginPage);
+        }
     }
 
     @Test
@@ -971,14 +973,14 @@ public class SAMLServletAdapterTest extends AbstractServletsAdapterTest {
           .login().user(user).build()
           .processSamlResponse(Binding.POST)
             .transformString(s -> {
-                Assert.assertThat(s, org.hamcrest.Matchers.containsString(">bburke@redhat.com.additional.domain<"));
+                Assert.assertThat(s, containsString(">bburke@redhat.com.additional.domain<"));
                 s = s.replaceAll("bburke@redhat.com.additional.domain", "bburke@redhat.com<!-- comment -->.additional.domain");
                 return s;
             })
             .build()
           .executeAndTransform(resp -> EntityUtils.toString(resp.getEntity()));
 
-        Assert.assertThat(resultPage, org.hamcrest.Matchers.containsString("principal=bburke@redhat.com.additional.domain"));
+        Assert.assertThat(resultPage, containsString("principal=bburke@redhat.com.additional.domain"));
     }
 
     @Test
@@ -992,14 +994,17 @@ public class SAMLServletAdapterTest extends AbstractServletsAdapterTest {
           .login().user(user).build()
           .processSamlResponse(Binding.POST)
             .transformString(s -> {
-                Assert.assertThat(s, org.hamcrest.Matchers.containsString(">bburke@redhat.com.additional.domain<"));
+                Assert.assertThat(s, containsString(">bburke@redhat.com.additional.domain<"));
                 s = s.replaceAll("bburke@redhat.com.additional.domain", "bburke@redhat.com");
                 return s;
             })
             .build()
           .executeAndTransform(resp -> EntityUtils.toString(resp.getEntity()));
 
-        Assert.assertThat(resultPage, org.hamcrest.Matchers.containsString("INVALID_SIGNATURE"));
+        Assert.assertThat(resultPage, anyOf(
+                containsString("INVALID_SIGNATURE"),
+                containsString("Error 403: SRVE0295E: Error reported: 403") //WAS
+        ));
     }
 
     @Test
@@ -1193,18 +1198,10 @@ public class SAMLServletAdapterTest extends AbstractServletsAdapterTest {
 
     @Test
     public void testUserAttributeStatementMapperUserGroupsAggregate() throws Exception {
-        UserResource userResource = ApiUtil.findUserByUsernameId(testRealmResource(), "bburke");
-        UserRepresentation user = userResource.toRepresentation();
-        user.setAttributes(new HashMap<>());
-        user.getAttributes().put("group-value", Arrays.asList("user-value1"));
-        userResource.update(user);
         GroupRepresentation group1 = new GroupRepresentation();
         group1.setName("group1");
         group1.setAttributes(new HashMap<>());
         group1.getAttributes().put("group-value", Arrays.asList("value1", "value2"));
-        testRealmResource().groups().add(group1);
-        group1 = testRealmResource().getGroupByPath("/group1");
-        userResource.joinGroup(group1.getId());
 
         ClientResource clientResource = ApiUtil.findClientResourceByClientId(testRealmResource(), AbstractSamlTest.SAML_CLIENT_ID_EMPLOYEE_2);
         ProtocolMappersResource protocolMappersResource = clientResource.getProtocolMappers();
@@ -1214,9 +1211,14 @@ public class SAMLServletAdapterTest extends AbstractServletsAdapterTest {
         config.put("user.attribute", "group-value");
         config.put("attribute.name", "group-attribute");
         config.put("aggregate.attrs", "true");
-        createProtocolMapper(protocolMappersResource, "group-value", "saml", "saml-user-attribute-mapper", config);
 
-        try {
+        try (
+          AutoCloseable g1 = Creator.create(testRealmResource(), group1);
+          AutoCloseable uau = UserAttributeUpdater.forUserByUsername(testRealmResource(), "bburke")
+            .setAttribute("group-value", "user-value1")
+            .setGroups("/group1")
+            .update();
+          AutoCloseable c = createProtocolMapper(protocolMappersResource, "group-value", "saml", "saml-user-attribute-mapper", config)) {
             employee2ServletPage.navigateTo();
             assertCurrentUrlStartsWith(testRealmSAMLPostLoginPage);
             testRealmSAMLPostLoginPage.form().login("bburke", "password");
@@ -1233,31 +1235,15 @@ public class SAMLServletAdapterTest extends AbstractServletsAdapterTest {
 
             employee2ServletPage.logout();
             checkLoggedOut(employee2ServletPage, testRealmSAMLPostLoginPage);
-        } finally {
-            // revert
-            user.getAttributes().remove("group-value");
-            userResource.update(user);
-            userResource.leaveGroup(group1.getId());
-            testRealmResource().groups().group(group1.getId()).remove();
-            ProtocolMapperRepresentation mapper = ProtocolMapperUtil.getMapperByNameAndProtocol(protocolMappersResource, "saml", "group-value");
-            protocolMappersResource.delete(mapper.getId());
         }
     }
 
     @Test
     public void testUserAttributeStatementMapperUserGroupsNoAggregate() throws Exception {
-        UserResource userResource = ApiUtil.findUserByUsernameId(testRealmResource(), "bburke");
-        UserRepresentation user = userResource.toRepresentation();
-        user.setAttributes(new HashMap<>());
-        user.getAttributes().put("group-value", Arrays.asList("user-value1"));
-        userResource.update(user);
         GroupRepresentation group1 = new GroupRepresentation();
         group1.setName("group1");
         group1.setAttributes(new HashMap<>());
         group1.getAttributes().put("group-value", Arrays.asList("value1", "value2"));
-        testRealmResource().groups().add(group1);
-        group1 = testRealmResource().getGroupByPath("/group1");
-        userResource.joinGroup(group1.getId());
 
         ClientResource clientResource = ApiUtil.findClientResourceByClientId(testRealmResource(), AbstractSamlTest.SAML_CLIENT_ID_EMPLOYEE_2);
         ProtocolMappersResource protocolMappersResource = clientResource.getProtocolMappers();
@@ -1266,9 +1252,14 @@ public class SAMLServletAdapterTest extends AbstractServletsAdapterTest {
         config.put("attribute.nameformat", "Basic");
         config.put("user.attribute", "group-value");
         config.put("attribute.name", "group-attribute");
-        createProtocolMapper(protocolMappersResource, "group-value", "saml", "saml-user-attribute-mapper", config);
 
-        try {
+        try (
+          AutoCloseable g1 = Creator.create(testRealmResource(), group1);
+          AutoCloseable uau = UserAttributeUpdater.forUserByUsername(testRealmResource(), "bburke")
+            .setAttribute("group-value", "user-value1")
+            .setGroups("/group1")
+            .update();
+          AutoCloseable c = createProtocolMapper(protocolMappersResource, "group-value", "saml", "saml-user-attribute-mapper", config)) {
             employee2ServletPage.navigateTo();
             assertCurrentUrlStartsWith(testRealmSAMLPostLoginPage);
             testRealmSAMLPostLoginPage.form().login("bburke", "password");
@@ -1283,34 +1274,20 @@ public class SAMLServletAdapterTest extends AbstractServletsAdapterTest {
 
             employee2ServletPage.logout();
             checkLoggedOut(employee2ServletPage, testRealmSAMLPostLoginPage);
-        } finally {
-            // revert
-            user.getAttributes().remove("group-value");
-            userResource.update(user);
-            userResource.leaveGroup(group1.getId());
-            testRealmResource().groups().group(group1.getId()).remove();
-            ProtocolMapperRepresentation mapper = ProtocolMapperUtil.getMapperByNameAndProtocol(protocolMappersResource, "saml", "group-value");
-            protocolMappersResource.delete(mapper.getId());
         }
     }
 
     @Test
     public void testUserAttributeStatementMapperGroupsAggregate() throws Exception {
-        UserResource userResource = ApiUtil.findUserByUsernameId(testRealmResource(), "bburke");
         GroupRepresentation group1 = new GroupRepresentation();
         group1.setName("group1");
         group1.setAttributes(new HashMap<>());
         group1.getAttributes().put("group-value", Arrays.asList("value1", "value2"));
-        testRealmResource().groups().add(group1);
-        group1 = testRealmResource().getGroupByPath("/group1");
-        userResource.joinGroup(group1.getId());
+
         GroupRepresentation group2 = new GroupRepresentation();
         group2.setName("group2");
         group2.setAttributes(new HashMap<>());
         group2.getAttributes().put("group-value", Arrays.asList("value2", "value3"));
-        testRealmResource().groups().add(group2);
-        group2 = testRealmResource().getGroupByPath("/group2");
-        userResource.joinGroup(group2.getId());
 
         ClientResource clientResource = ApiUtil.findClientResourceByClientId(testRealmResource(), AbstractSamlTest.SAML_CLIENT_ID_EMPLOYEE_2);
         ProtocolMappersResource protocolMappersResource = clientResource.getProtocolMappers();
@@ -1320,9 +1297,14 @@ public class SAMLServletAdapterTest extends AbstractServletsAdapterTest {
         config.put("user.attribute", "group-value");
         config.put("attribute.name", "group-attribute");
         config.put("aggregate.attrs", "true");
-        createProtocolMapper(protocolMappersResource, "group-value", "saml", "saml-user-attribute-mapper", config);
 
-        try {
+        try (
+          AutoCloseable g1 = Creator.create(testRealmResource(), group1);
+          AutoCloseable g2 = Creator.create(testRealmResource(), group2);
+          AutoCloseable uau = UserAttributeUpdater.forUserByUsername(testRealmResource(), "bburke")
+            .setGroups("/group1", "/group2")
+            .update();
+          AutoCloseable c = createProtocolMapper(protocolMappersResource, "group-value", "saml", "saml-user-attribute-mapper", config)) {
             employee2ServletPage.navigateTo();
             assertCurrentUrlStartsWith(testRealmSAMLPostLoginPage);
             testRealmSAMLPostLoginPage.form().login("bburke", "password");
@@ -1339,34 +1321,20 @@ public class SAMLServletAdapterTest extends AbstractServletsAdapterTest {
 
             employee2ServletPage.logout();
             checkLoggedOut(employee2ServletPage, testRealmSAMLPostLoginPage);
-        } finally {
-            // revert
-            userResource.leaveGroup(group1.getId());
-            testRealmResource().groups().group(group1.getId()).remove();
-            userResource.leaveGroup(group2.getId());
-            testRealmResource().groups().group(group2.getId()).remove();
-            ProtocolMapperRepresentation mapper = ProtocolMapperUtil.getMapperByNameAndProtocol(protocolMappersResource, "saml", "group-value");
-            protocolMappersResource.delete(mapper.getId());
         }
     }
 
     @Test
     public void testUserAttributeStatementMapperGroupsNoAggregate() throws Exception {
-        UserResource userResource = ApiUtil.findUserByUsernameId(testRealmResource(), "bburke");
         GroupRepresentation group1 = new GroupRepresentation();
         group1.setName("group1");
         group1.setAttributes(new HashMap<>());
         group1.getAttributes().put("group-value", Arrays.asList("value1", "value2"));
-        testRealmResource().groups().add(group1);
-        group1 = testRealmResource().getGroupByPath("/group1");
-        userResource.joinGroup(group1.getId());
+
         GroupRepresentation group2 = new GroupRepresentation();
         group2.setName("group2");
         group2.setAttributes(new HashMap<>());
         group2.getAttributes().put("group-value", Arrays.asList("value2", "value3"));
-        testRealmResource().groups().add(group2);
-        group2 = testRealmResource().getGroupByPath("/group2");
-        userResource.joinGroup(group2.getId());
 
         ClientResource clientResource = ApiUtil.findClientResourceByClientId(testRealmResource(), AbstractSamlTest.SAML_CLIENT_ID_EMPLOYEE_2);
         ProtocolMappersResource protocolMappersResource = clientResource.getProtocolMappers();
@@ -1375,9 +1343,14 @@ public class SAMLServletAdapterTest extends AbstractServletsAdapterTest {
         config.put("attribute.nameformat", "Basic");
         config.put("user.attribute", "group-value");
         config.put("attribute.name", "group-attribute");
-        createProtocolMapper(protocolMappersResource, "group-value", "saml", "saml-user-attribute-mapper", config);
 
-        try {
+        try (
+          AutoCloseable g1 = Creator.create(testRealmResource(), group1);
+          AutoCloseable g2 = Creator.create(testRealmResource(), group2);
+          AutoCloseable uau = UserAttributeUpdater.forUserByUsername(testRealmResource(), "bburke")
+            .setGroups("/group1", "/group2")
+            .update();
+          AutoCloseable c = createProtocolMapper(protocolMappersResource, "group-value", "saml", "saml-user-attribute-mapper", config)) {
             employee2ServletPage.navigateTo();
             assertCurrentUrlStartsWith(testRealmSAMLPostLoginPage);
             testRealmSAMLPostLoginPage.form().login("bburke", "password");
@@ -1393,14 +1366,6 @@ public class SAMLServletAdapterTest extends AbstractServletsAdapterTest {
 
             employee2ServletPage.logout();
             checkLoggedOut(employee2ServletPage, testRealmSAMLPostLoginPage);
-        } finally {
-            // revert
-            userResource.leaveGroup(group1.getId());
-            testRealmResource().groups().group(group1.getId()).remove();
-            userResource.leaveGroup(group2.getId());
-            testRealmResource().groups().group(group2.getId()).remove();
-            ProtocolMapperRepresentation mapper = ProtocolMapperUtil.getMapperByNameAndProtocol(protocolMappersResource, "saml", "group-value");
-            protocolMappersResource.delete(mapper.getId());
         }
     }
 
@@ -1413,19 +1378,19 @@ public class SAMLServletAdapterTest extends AbstractServletsAdapterTest {
         config.put("attribute.nameformat", "Basic");
         config.put("user.attribute", "topAttribute");
         config.put("attribute.name", "topAttribute");
-        createProtocolMapper(protocolMappersResource, "topAttribute", "saml", "saml-user-attribute-mapper", config);
+        getCleanup().addCleanup(createProtocolMapper(protocolMappersResource, "topAttribute", "saml", "saml-user-attribute-mapper", config));
 
         config = new LinkedHashMap<>();
         config.put("attribute.nameformat", "Basic");
         config.put("user.attribute", "level2Attribute");
         config.put("attribute.name", "level2Attribute");
-        createProtocolMapper(protocolMappersResource, "level2Attribute", "saml", "saml-user-attribute-mapper", config);
+        getCleanup().addCleanup(createProtocolMapper(protocolMappersResource, "level2Attribute", "saml", "saml-user-attribute-mapper", config));
 
         config = new LinkedHashMap<>();
         config.put("attribute.nameformat", "Basic");
         config.put("single", "true");
         config.put("attribute.name", "group");
-        createProtocolMapper(protocolMappersResource, "groups", "saml", "saml-group-membership-mapper", config);
+        getCleanup().addCleanup(createProtocolMapper(protocolMappersResource, "groups", "saml", "saml-group-membership-mapper", config));
 
         setRolesToCheck("manager,user");
 
@@ -1463,25 +1428,34 @@ public class SAMLServletAdapterTest extends AbstractServletsAdapterTest {
         config.put("attribute.value", "hard");
         config.put("attribute.nameformat", "Basic");
         config.put("attribute.name", "hardcoded-attribute");
-        createProtocolMapper(protocolMappersResource, "hardcoded-attribute", "saml", "saml-hardcode-attribute-mapper", config);
+        getCleanup().addCleanup(createProtocolMapper(protocolMappersResource, "hardcoded-attribute", "saml", "saml-hardcode-attribute-mapper", config));
 
         config = new LinkedHashMap<>();
         config.put("role", "hardcoded-role");
-        createProtocolMapper(protocolMappersResource, "hardcoded-role", "saml", "saml-hardcode-role-mapper", config);
+        getCleanup().addCleanup(createProtocolMapper(protocolMappersResource, "hardcoded-role", "saml", "saml-hardcode-role-mapper", config));
 
         config = new LinkedHashMap<>();
         config.put("new.role.name", "pee-on");
         config.put("role", "http://localhost:8280/employee/.employee");
-        createProtocolMapper(protocolMappersResource, "renamed-employee-role", "saml", "saml-role-name-mapper", config);
+        getCleanup().addCleanup(createProtocolMapper(protocolMappersResource, "renamed-employee-role", "saml", "saml-role-name-mapper", config));
 
         for (ProtocolMapperRepresentation mapper : clientResource.toRepresentation().getProtocolMappers()) {
             if (mapper.getName().equals("role-list")) {
                 protocolMappersResource.delete(mapper.getId());
+                Map<String, String> origConfig = new HashMap<>(mapper.getConfig());
 
                 mapper.setId(null);
                 mapper.getConfig().put(RoleListMapper.SINGLE_ROLE_ATTRIBUTE, "true");
                 mapper.getConfig().put(AttributeStatementHelper.SAML_ATTRIBUTE_NAME, "memberOf");
-                protocolMappersResource.createMapper(mapper);
+
+                try (Response response = protocolMappersResource.createMapper(mapper)) {
+                    String createdId = getCreatedId(response);
+                    getCleanup().addCleanup((Runnable) () -> {
+                        protocolMappersResource.delete(createdId);
+                        mapper.setConfig(origConfig);
+                        protocolMappersResource.createMapper(mapper).close();
+                    });
+                }
             }
         }
 
@@ -1490,7 +1464,7 @@ public class SAMLServletAdapterTest extends AbstractServletsAdapterTest {
         config = new LinkedHashMap<>();
         config.put("new.role.name", "el-jefe");
         config.put("role", "user");
-        createProtocolMapper(protocolMappersResource, "renamed-role", "saml", "saml-role-name-mapper", config);
+        getCleanup().addCleanup(createProtocolMapper(protocolMappersResource, "renamed-role", "saml", "saml-role-name-mapper", config));
 
         employee2ServletPage.navigateTo();
         assertCurrentUrlStartsWith(testRealmSAMLPostLoginPage);
@@ -1580,7 +1554,7 @@ public class SAMLServletAdapterTest extends AbstractServletsAdapterTest {
 
           .execute(r -> {
               Assert.assertThat(r, statusCodeIsHC(Response.Status.OK));
-              Assert.assertThat(r, bodyHC(allOf(containsString("principal="), not(containsString("500")))));
+              Assert.assertThat(r, bodyHC(containsString("principal=")));
           });
     }
 
@@ -1830,6 +1804,44 @@ public class SAMLServletAdapterTest extends AbstractServletsAdapterTest {
         Assert.assertThat(statusCode.getStatusCode().getValue().toString(), is(not(JBossSAMLURIConstants.STATUS_SUCCESS.get())));
     }
 
+    /**
+     * Tests that the adapter is using the configured role mappings provider to map the roles extracted from the assertion
+     * into roles that exist in the application domain. For this test a {@link org.keycloak.adapters.saml.PropertiesBasedRoleMapper}
+     * has been setup in the adapter, performing the mappings as specified in the {@code role-mappings.properties} file.
+     *
+     * @throws Exception if an error occurs while running the test.
+     */
+    @Test
+    public void testAdapterRoleMappings() throws Exception {
+        // bburke user is missing required coordinator role, which is only available via mapping of the supervisor role.
+        assertForbiddenLogin(employeeRoleMappingPage, bburkeUser.getUsername(), getPasswordOf(bburkeUser),
+                testRealmSAMLPostLoginPage, "bburke@redhat.com");
+        employeeRoleMappingPage.logout();
+        checkLoggedOut(employeeRoleMappingPage, testRealmSAMLPostLoginPage);
+
+        // assign the supervisor role to user bburke - it should be mapped to coordinator next time he logs in.
+        UserRepresentation bburke = adminClient.realm(DEMO).users().search("bburke", 0, 1).get(0);
+        ClientRepresentation clientRepresentation = adminClient.realm(DEMO)
+                .clients().findByClientId("http://localhost:8280/employee-role-mapping/").get(0);
+        RoleRepresentation role = adminClient.realm(DEMO).clients().get(clientRepresentation.getId())
+                .roles().get("supervisor").toRepresentation();
+
+        adminClient.realm(DEMO).users().get(bburke.getId()).roles()
+                .clientLevel(clientRepresentation.getId()).add(Collections.singletonList(role));
+
+        // now check for the set of expected mapped roles: supervisor should have been mapped to coordinator, team-lead should
+        // have been added to bburke, and user should have been discarded; manager and employed unchanged from mappings.
+        assertSuccessfulLogin(employeeRoleMappingPage, bburkeUser, testRealmSAMLPostLoginPage, "bburke@redhat.com");
+        assertThat(employeeRoleMappingPage.rolesList())
+                .contains("manager", "coordinator", "team-lead", "employee")
+                .doesNotContain("supervisor", "user");
+        employeeRoleMappingPage.logout();
+        checkLoggedOut(employeeRoleMappingPage, testRealmSAMLPostLoginPage);
+
+        adminClient.realm(DEMO).users().get(bburke.getId()).roles().clientLevel(clientRepresentation.getId()).remove(Collections.singletonList(role));
+
+    }
+
     public static void printDocument(Source doc, OutputStream out) throws IOException, TransformerException {
         TransformerFactory tf = TransformerFactory.newInstance();
         Transformer transformer = tf.newTransformer();
@@ -1871,20 +1883,24 @@ public class SAMLServletAdapterTest extends AbstractServletsAdapterTest {
         }
     }
 
-    private void createProtocolMapper(ProtocolMappersResource resource, String name, String protocol, String protocolMapper, Map<String, String> config) {
+    private AutoCloseable createProtocolMapper(ProtocolMappersResource resource, String name, String protocol, String protocolMapper, Map<String, String> config) {
         ProtocolMapperRepresentation representation = new ProtocolMapperRepresentation();
         representation.setName(name);
         representation.setProtocol(protocol);
         representation.setProtocolMapper(protocolMapper);
         representation.setConfig(config);
-        resource.createMapper(representation);
+        try (Response response = resource.createMapper(representation)) {
+            String createdId = getCreatedId(response);
+            return () -> resource.delete(createdId);
+        }
     }
 
-    private void setRolesToCheck(String roles) {
+    private void setRolesToCheck(String roles) throws Exception {
         employee2ServletPage.navigateTo();
         assertCurrentUrlStartsWith(testRealmSAMLPostLoginPage);
         testRealmSAMLPostLoginPage.form().login(bburkeUser);
-        driver.navigate().to(employee2ServletPage.toString() + "/setCheckRoles?roles=" + roles);
+        driver.navigate().to(employee2ServletPage.getUriBuilder().clone().path("setCheckRoles").queryParam("roles", roles).build().toURL());
+        WaitUtils.waitUntilElement(By.tagName("body")).text().contains("These roles will be checked:");
         employee2ServletPage.logout();
     }
 

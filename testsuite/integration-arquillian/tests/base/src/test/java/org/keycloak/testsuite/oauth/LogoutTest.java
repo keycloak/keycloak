@@ -25,16 +25,19 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.common.util.Time;
 import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
+import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.util.*;
 
 import java.util.List;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response.Status;
+import javax.ws.rs.core.UriBuilder;
+
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -101,6 +104,47 @@ public class LogoutTest extends AbstractKeycloakTest {
 
         // Logout should succeed with expired refresh token, see KEYCLOAK-3302
         try (CloseableHttpResponse response = oauth.doLogout(refreshTokenString, "password")) {
+            assertThat(response, Matchers.statusCodeIsHC(Status.NO_CONTENT));
+
+            assertNotNull(testingClient.testApp().getAdminLogoutAction());
+        }
+    }
+
+    @Test
+    public void postLogoutWithRefreshTokenAfterUserSessionLogoutAndLoginAgain() throws Exception {
+        // Login
+        OAuthClient.AccessTokenResponse accessTokenResponse = loginAndForceNewLoginPage();
+        String refreshToken1 = accessTokenResponse.getRefreshToken();
+
+        oauth.doLogout(refreshToken1, "password");
+
+        setTimeOffset(2);
+
+        oauth.fillLoginForm("test-user@localhost", "password");
+
+        Assert.assertFalse(loginPage.isCurrent());
+
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        OAuthClient.AccessTokenResponse tokenResponse2 = oauth.doAccessTokenRequest(code, "password");
+
+        // POST logout with token should fail
+        try (CloseableHttpResponse response = oauth.doLogout(refreshToken1, "password")) {
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatusLine().getStatusCode());
+        }
+
+        String logoutUrl = oauth.getLogoutUrl()
+                .idTokenHint(accessTokenResponse.getIdToken())
+                .postLogoutRedirectUri(oauth.APP_AUTH_ROOT)
+                .build();
+
+        // GET logout with ID token should fail as well
+        try (CloseableHttpClient c = HttpClientBuilder.create().disableRedirectHandling().build();
+             CloseableHttpResponse response = c.execute(new HttpGet(logoutUrl))) {
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatusLine().getStatusCode());
+        }
+
+        // finally POST logout with VALID token should succeed
+        try (CloseableHttpResponse response = oauth.doLogout(tokenResponse2.getRefreshToken(), "password")) {
             assertThat(response, Matchers.statusCodeIsHC(Status.NO_CONTENT));
 
             assertNotNull(testingClient.testApp().getAdminLogoutAction());
@@ -248,4 +292,23 @@ public class LogoutTest extends AbstractKeycloakTest {
         }
     }
 
+    private OAuthClient.AccessTokenResponse loginAndForceNewLoginPage() {
+        oauth.doLogin("test-user@localhost", "password");
+
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        oauth.clientSessionState("client-session");
+
+        OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
+
+        setTimeOffset(1);
+
+        String loginFormUri = UriBuilder.fromUri(oauth.getLoginFormUrl())
+                .queryParam(OIDCLoginProtocol.PROMPT_PARAM, OIDCLoginProtocol.PROMPT_VALUE_LOGIN)
+                .build().toString();
+        driver.navigate().to(loginFormUri);
+
+        loginPage.assertCurrent();
+
+        return tokenResponse;
+    }
 }

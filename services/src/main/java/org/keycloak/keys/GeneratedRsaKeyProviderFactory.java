@@ -59,7 +59,7 @@ public class GeneratedRsaKeyProviderFactory extends AbstractRsaKeyProviderFactor
 
     @Override
     public boolean createFallbackKeys(KeycloakSession session, KeyUse keyUse, String algorithm) {
-        if (keyUse.equals(KeyUse.SIG) && (algorithm.equals(Algorithm.RS256) || algorithm.equals(Algorithm.RS384) || algorithm.equals(Algorithm.RS512))) {
+        if (keyUse.equals(KeyUse.SIG) && isSupportedRsaAlgorithm(algorithm)) {
             RealmModel realm = session.getContext().getRealm();
 
             ComponentModel generated = new ComponentModel();
@@ -79,6 +79,15 @@ public class GeneratedRsaKeyProviderFactory extends AbstractRsaKeyProviderFactor
         } else {
             return false;
         }
+    }
+
+    private boolean isSupportedRsaAlgorithm(String algorithm) {
+        return algorithm.equals(Algorithm.RS256) 
+            || algorithm.equals(Algorithm.PS256) 
+            || algorithm.equals(Algorithm.RS384)
+            || algorithm.equals(Algorithm.PS384) 
+            || algorithm.equals(Algorithm.RS512) 
+            || algorithm.equals(Algorithm.PS512);
     }
 
     @Override

@@ -16,27 +16,21 @@
 
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
+import {System} from 'systemjs';
 
 import {HashRouter} from 'react-router-dom';
 
 import {App} from './app/App';
+import {ContentItem, ModulePageDef, flattenContent, initGroupAndItemIds, isExpansion, isModulePageDef} from './app/ContentPages';
 
-const e = React.createElement;
-
-export interface MainProps {
-}
-
-//declare function loadjs(url,loadListener?);
- 
-//loadjs('/js/MyExtension.js');
-
+export interface MainProps {}
 export class Main extends React.Component<MainProps> {
     
-    constructor(props: MainProps) {
+    public constructor(props: MainProps) {
         super(props);
     }
 
-    render() {
+    public render(): React.ReactNode {
         return (
             <HashRouter>
                 <App/>
@@ -45,5 +39,54 @@ export class Main extends React.Component<MainProps> {
     }
 };
 
-const domContainer = document.querySelector('#main_react_container');
-ReactDOM.render(e(Main), domContainer);
+declare const resourceUrl: string;
+declare let content: ContentItem[];
+const e = React.createElement;
+
+function removeHidden(items: ContentItem[]): ContentItem[] {
+    const visible: ContentItem[] = [];
+
+    for (let item of items) {
+        if (item.hidden) continue;
+        
+        if (isExpansion(item)) {
+            visible.push(item);
+            item.content = removeHidden(item.content);
+            if (item.content.length === 0) {
+                visible.pop(); // remove empty expansion
+            }
+        } else {
+            visible.push(item);
+        }
+    }
+
+    return visible;
+}
+
+content = removeHidden(content);
+initGroupAndItemIds();
+
+function loadModule(modulePage: ModulePageDef): Promise<ModulePageDef> {
+    return new Promise ((resolve, reject) => {
+        System.import(resourceUrl + modulePage.modulePath).then( (module: React.Component) => {
+            modulePage.module = module;
+            resolve(modulePage);
+        }).catch((error: Error) => {
+            console.warn('Unable to load ' + modulePage.label + ' because ' + error.message);
+            reject(modulePage);
+        });
+    });
+};
+
+const moduleLoaders: Promise<ModulePageDef>[] = [];
+flattenContent(content).forEach((item: ContentItem) => {
+    if (isModulePageDef(item)) {
+        moduleLoaders.push(loadModule(item));
+    }
+});
+
+// load content modules and start
+Promise.all(moduleLoaders).then(() => {
+    const domContainer = document.querySelector('#main_react_container');
+    ReactDOM.render(e(Main), domContainer);
+});

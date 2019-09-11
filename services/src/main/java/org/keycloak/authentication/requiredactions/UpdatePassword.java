@@ -48,6 +48,12 @@ import java.util.concurrent.TimeUnit;
  */
 public class UpdatePassword implements RequiredActionProvider, RequiredActionFactory, DisplayTypeRequiredActionFactory {
     private static final Logger logger = Logger.getLogger(UpdatePassword.class);
+    
+    @Override
+    public InitiatedActionSupport initiatedActionSupport() {
+        return InitiatedActionSupport.SUPPORTED;
+    }
+    
     @Override
     public void evaluateTriggers(RequiredActionContext context) {
         int daysToExpirePassword = context.getRealm().getPasswordPolicy().getDaysToExpirePassword();

@@ -47,6 +47,7 @@ import org.keycloak.services.ErrorPage;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.sessions.AuthenticationSessionModel;
+import org.keycloak.vault.VaultStringSecret;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.QueryParam;
@@ -402,12 +403,12 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
                                      @QueryParam(AbstractOAuth2IdentityProvider.OAUTH2_PARAMETER_CODE) String authorizationCode,
                                      @QueryParam(OAuth2Constants.ERROR) String error) {
             if (error != null) {
-                //logger.error("Failed " + getConfig().getAlias() + " broker login: " + error);
+                logger.error(error + " for broker login " + getConfig().getProviderId());
                 if (error.equals(ACCESS_DENIED)) {
-                    logger.error(ACCESS_DENIED + " for broker login " + getConfig().getProviderId());
                     return callback.cancelled(state);
+                } else if (error.equals(OAuthErrorException.LOGIN_REQUIRED) || error.equals(OAuthErrorException.INTERACTION_REQUIRED)) {
+                    return callback.error(state, error);
                 } else {
-                    logger.error(error + " for broker login " + getConfig().getProviderId());
                     return callback.error(state, Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR);
                 }
             }
@@ -442,12 +443,14 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
         }
 
         public SimpleHttp generateTokenRequest(String authorizationCode) {
-            return SimpleHttp.doPost(getConfig().getTokenUrl(), session)
-                    .param(OAUTH2_PARAMETER_CODE, authorizationCode)
-                    .param(OAUTH2_PARAMETER_CLIENT_ID, getConfig().getClientId())
-                    .param(OAUTH2_PARAMETER_CLIENT_SECRET, getConfig().getClientSecret())
-                    .param(OAUTH2_PARAMETER_REDIRECT_URI, session.getContext().getUri().getAbsolutePath().toString())
-                    .param(OAUTH2_PARAMETER_GRANT_TYPE, OAUTH2_GRANT_TYPE_AUTHORIZATION_CODE);
+            try (VaultStringSecret vaultStringSecret = session.vault().getStringSecret(getConfig().getClientSecret())) {
+                return SimpleHttp.doPost(getConfig().getTokenUrl(), session)
+                        .param(OAUTH2_PARAMETER_CODE, authorizationCode)
+                        .param(OAUTH2_PARAMETER_CLIENT_ID, getConfig().getClientId())
+                        .param(OAUTH2_PARAMETER_CLIENT_SECRET, vaultStringSecret.get().orElse(getConfig().getClientSecret()))
+                        .param(OAUTH2_PARAMETER_REDIRECT_URI, session.getContext().getUri().getAbsolutePath().toString())
+                        .param(OAUTH2_PARAMETER_GRANT_TYPE, OAUTH2_GRANT_TYPE_AUTHORIZATION_CODE);
+            }
         }
     }
 

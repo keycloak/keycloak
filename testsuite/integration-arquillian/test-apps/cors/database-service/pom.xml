@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian-test-apps-cors-parent</artifactId>
-        <version>6.0.0-SNAPSHOT</version>
+        <version>8.0.0-SNAPSHOT</version>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
@@ -30,14 +30,6 @@
     <name>JAX-RS Database Service Using OAuth Bearer Tokens</name>
     <description/>
     <url>http://maven.apache.org</url>
-
-    <repositories>
-        <repository>
-            <id>jboss</id>
-            <name>jboss repo</name>
-            <url>http://repository.jboss.org/nexus/content/groups/public/</url>
-        </repository>
-    </repositories>
 
     <dependencies>
         <dependency>

@@ -17,10 +17,11 @@
 
 package org.keycloak.testsuite.arquillian.jetty;
 
+import org.jboss.arquillian.container.jetty.embedded_9.JettyEmbeddedConfiguration;
 import org.jboss.arquillian.container.spi.ConfigurationException;
 import org.jboss.arquillian.container.spi.client.container.ContainerConfiguration;
 
-public class JettyAppServerConfiguration implements ContainerConfiguration {
+public class JettyAppServerConfiguration extends JettyEmbeddedConfiguration {
 
     private int bindHttpPortOffset = 0;
     private int bindHttpsPortOffset = 0;

@@ -24,7 +24,7 @@
     <parent>
         <groupId>org.keycloak</groupId>
         <artifactId>keycloak-testsuite-pom</artifactId>
-        <version>6.0.0-SNAPSHOT</version>
+        <version>8.0.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     
@@ -42,8 +42,8 @@
         <app.server>undertow</app.server>
 
         <!-- Wildfly deprecated versions -->
-        <wildfly.deprecated.version>15.0.1.Final</wildfly.deprecated.version>
-        <wildfly.deprecated.wildfly.core.version>7.0.0.Final</wildfly.deprecated.wildfly.core.version>
+        <wildfly.deprecated.version>16.0.0.Final</wildfly.deprecated.version>
+        <wildfly.deprecated.wildfly.core.version>8.0.0.Final</wildfly.deprecated.wildfly.core.version>
         <wildfly.deprecated.arquillian.wildfly.container>2.1.1.Final</wildfly.deprecated.arquillian.wildfly.container>
 
         <!--component versions-->
@@ -82,18 +82,16 @@
         <docker.database.skip>true</docker.database.skip>
         <docker.database.postStart>/bin/true</docker.database.postStart>
         <docker.database.wait-for-log-regex>NEVER-MATCHING-REGEX</docker.database.wait-for-log-regex>
+        <docker.database.cmd>NEVER-USED-CMD</docker.database.cmd>
         <docker.database.shmsize>67108864</docker.database.shmsize>
 
         <jdbc.mvn.groupId>com.h2database</jdbc.mvn.groupId>
         <jdbc.mvn.artifactId>h2</jdbc.mvn.artifactId>
         <jdbc.mvn.version>${h2.version}</jdbc.mvn.version>
 
-        <keycloak.connectionsJpa.driver>org.h2.Driver</keycloak.connectionsJpa.driver>
-        <keycloak.connectionsJpa.database>keycloak</keycloak.connectionsJpa.database>
-        <keycloak.connectionsJpa.user>sa</keycloak.connectionsJpa.user>
-        <keycloak.connectionsJpa.password></keycloak.connectionsJpa.password>
-        <keycloak.connectionsJpa.url>jdbc:h2:mem:test;MVCC=TRUE;DB_CLOSE_DELAY=-1</keycloak.connectionsJpa.url>
         <keycloak.connectionsJpa.schema>DEFAULT</keycloak.connectionsJpa.schema>
+
+        <dballocator.skip>true</dballocator.skip>
     </properties>
 
     <dependencyManagement>
@@ -245,8 +243,19 @@
         <pluginManagement>
             <plugins>
                 <plugin>
+                    <groupId>org.keycloak</groupId>
+                    <artifactId>db-allocator-plugin</artifactId>
+                    <version>${project.version}</version>
+                    <configuration>
+                        <propertyDatabase>keycloak.connectionsJpa.database</propertyDatabase>
+                        <propertyDriver>keycloak.connectionsJpa.driver</propertyDriver>
+                        <propertyURL>keycloak.connectionsJpa.url</propertyURL>
+                        <propertyUser>keycloak.connectionsJpa.user</propertyUser>
+                        <propertyPassword>keycloak.connectionsJpa.password</propertyPassword>
+                    </configuration>
+                </plugin>
+                <plugin>
                     <artifactId>maven-surefire-plugin</artifactId>
-                    <version>2.19.1</version>
                     <configuration>
                         <failIfNoTests>false</failIfNoTests>
                     </configuration>
@@ -272,6 +281,23 @@
                 </plugin>
             </plugins>
         </pluginManagement>
+
+        <!-- Just allocate the DB now. It will be released after the tests, so the "release" is declared in the base-tests module -->
+        <plugins>
+            <plugin>
+                <groupId>org.keycloak</groupId>
+                <artifactId>db-allocator-plugin</artifactId>
+                <inherited>false</inherited>
+                <executions>
+                    <execution>
+                        <id>allocate-db</id>
+                        <goals>
+                            <goal>allocate</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
     </build>
     
     <modules>
@@ -362,6 +388,23 @@
                 </pluginManagement>
             </build>
         </profile>
+        <!-- Specifies default DB properties, which are used for test with embedded H2. Those are overriden when testing with any docker container
+             profile like "db-mysql" or any dballocator profile. Also those can be manually overriden when running the test from CMD -->
+        <profile>
+            <id>db-default-properties</id>
+            <activation>
+                <property>
+                    <name>!dballocator.uri</name>
+                </property>
+            </activation>
+            <properties>
+                <keycloak.connectionsJpa.driver>org.h2.Driver</keycloak.connectionsJpa.driver>
+                <keycloak.connectionsJpa.database>keycloak</keycloak.connectionsJpa.database>
+                <keycloak.connectionsJpa.user>sa</keycloak.connectionsJpa.user>
+                <keycloak.connectionsJpa.password></keycloak.connectionsJpa.password>
+                <keycloak.connectionsJpa.url>jdbc:h2:mem:test;MVCC=TRUE;DB_CLOSE_DELAY=-1</keycloak.connectionsJpa.url>
+            </properties>
+        </profile>
         <profile>
             <id>db-mysql</id>
             <properties>
@@ -369,14 +412,32 @@
                 <keycloak.connectionsJpa.database>keycloak</keycloak.connectionsJpa.database>
                 <keycloak.connectionsJpa.user>keycloak</keycloak.connectionsJpa.user>
                 <keycloak.connectionsJpa.password>keycloak</keycloak.connectionsJpa.password>
-                <keycloak.connectionsJpa.url>jdbc:mysql://${auth.server.db.host}/${keycloak.connectionsJpa.database}</keycloak.connectionsJpa.url>
+                <!-- Disable SSL is needed when using newer JDBC drivers like mysql 8.0.12 to avoid warnings in the log -->
+                <keycloak.connectionsJpa.url>jdbc:mysql://${auth.server.db.host}/${keycloak.connectionsJpa.database}?useSSL=false</keycloak.connectionsJpa.url>
+                <!-- JDBC properties point to "default" JDBC driver for the particular DB -->
+                <!-- For EAP testing, it is recommended to override those with system properties pointing to GAV of more appropriate JDBC driver -->
+                <!-- for the particular EAP version -->
                 <jdbc.mvn.groupId>mysql</jdbc.mvn.groupId>
                 <jdbc.mvn.artifactId>mysql-connector-java</jdbc.mvn.artifactId>
                 <jdbc.mvn.version>${mysql.version}</jdbc.mvn.version>
                 <docker.database.image>mysql:5.7.25</docker.database.image>
                 <docker.database.port>3306</docker.database.port>
                 <docker.database.skip>false</docker.database.skip>
+                <docker.database.cmd>mysqld</docker.database.cmd>
                 <docker.database.wait-for-log-regex>(?si)Ready for start up.*ready [^\n]{0,30}connections</docker.database.wait-for-log-regex>
+            </properties>
+        </profile>
+        <profile>
+            <id>db-allocator-db-mysql</id>
+            <properties>
+                <!-- JDBC properties point to "default" JDBC driver for the particular DB -->
+                <!-- For EAP testing, it is recommended to override those with system properties pointing to GAV of more appropriate JDBC driver -->
+                <!-- for the particular EAP version -->
+                <jdbc.mvn.groupId>mysql</jdbc.mvn.groupId>
+                <jdbc.mvn.artifactId>mysql-connector-java</jdbc.mvn.artifactId>
+                <jdbc.mvn.version>${mysql.version}</jdbc.mvn.version>
+                <dballocator.type>mysql57</dballocator.type>
+                <dballocator.skip>false</dballocator.skip>
             </properties>
         </profile>
         <profile>
@@ -387,13 +448,44 @@
                 <keycloak.connectionsJpa.user>keycloak</keycloak.connectionsJpa.user>
                 <keycloak.connectionsJpa.password>keycloak</keycloak.connectionsJpa.password>
                 <keycloak.connectionsJpa.url>jdbc:postgresql://${auth.server.db.host}/${keycloak.connectionsJpa.database}</keycloak.connectionsJpa.url>
+                <!-- JDBC properties point to "default" JDBC driver for the particular DB -->
+                <!-- For EAP testing, it is recommended to override those with system properties pointing to GAV of more appropriate JDBC driver -->
+                <!-- for the particular EAP version -->
                 <jdbc.mvn.groupId>org.postgresql</jdbc.mvn.groupId>
                 <jdbc.mvn.artifactId>postgresql</jdbc.mvn.artifactId>
                 <jdbc.mvn.version>${postgresql.version}</jdbc.mvn.version>
-                <docker.database.image>postgres:9.6.11</docker.database.image>
+                <docker.database.image>postgres:10.1</docker.database.image>
                 <docker.database.port>5432</docker.database.port>
                 <docker.database.skip>false</docker.database.skip>
+                <docker.database.cmd>postgres</docker.database.cmd>
                 <docker.database.wait-for-log-regex>(?si)Ready for start up.*ready [^\n]{0,30}connections</docker.database.wait-for-log-regex>
+            </properties>
+        </profile>
+        <profile>
+            <id>db-allocator-db-postgres</id>
+            <properties>
+                <!-- JDBC properties point to "default" JDBC driver for the particular DB -->
+                <!-- For EAP testing, it is recommended to override those with system properties pointing to GAV of more appropriate JDBC driver -->
+                <!-- for the particular EAP version -->
+                <jdbc.mvn.groupId>org.postgresql</jdbc.mvn.groupId>
+                <jdbc.mvn.artifactId>postgresql</jdbc.mvn.artifactId>
+                <jdbc.mvn.version>${postgresql.version}</jdbc.mvn.version>
+                <dballocator.type>postgresql96</dballocator.type>
+                <dballocator.skip>false</dballocator.skip>
+            </properties>
+        </profile>
+        <profile>
+            <id>db-allocator-db-postgresplus</id>
+            <properties>
+                <!-- JDBC properties point to "default" JDBC driver for the particular DB -->
+                <!-- For EAP testing, it is recommended to override those with system properties pointing to GAV of more appropriate JDBC driver -->
+                <!-- for the particular EAP version -->
+                <!-- For EDB, the JDBC driver will need to be downloaded and manually added to local maven repository -->
+                <jdbc.mvn.groupId>com.edb.Driver</jdbc.mvn.groupId>
+                <jdbc.mvn.artifactId>edb-jdbc</jdbc.mvn.artifactId>
+                <jdbc.mvn.version>18</jdbc.mvn.version>
+                <dballocator.type>postgresplus101</dballocator.type>
+                <dballocator.skip>false</dballocator.skip>
             </properties>
         </profile>
         <profile>
@@ -404,13 +496,31 @@
                 <keycloak.connectionsJpa.user>keycloak</keycloak.connectionsJpa.user>
                 <keycloak.connectionsJpa.password>keycloak</keycloak.connectionsJpa.password>
                 <keycloak.connectionsJpa.url>jdbc:mariadb://${auth.server.db.host}/${keycloak.connectionsJpa.database}</keycloak.connectionsJpa.url>
+                <!-- JDBC properties point to "default" JDBC driver for the particular DB -->
+                <!-- For EAP testing, it is recommended to override those with system properties pointing to GAV of more appropriate JDBC driver -->
+                <!-- for the particular EAP version -->
                 <jdbc.mvn.groupId>org.mariadb.jdbc</jdbc.mvn.groupId>
                 <jdbc.mvn.artifactId>mariadb-java-client</jdbc.mvn.artifactId>
                 <jdbc.mvn.version>${mariadb.version}</jdbc.mvn.version>
-                <docker.database.image>mariadb:10.2.21</docker.database.image>
+                <docker.database.image>mariadb:10.1.19</docker.database.image>
                 <docker.database.port>3306</docker.database.port>
                 <docker.database.skip>false</docker.database.skip>
+                <!-- Need to explicitly enable utf8 as it is not the default settings in the mariadb docker image -->
+                <docker.database.cmd>--character-set-server=utf8 --collation-server=utf8_unicode_ci</docker.database.cmd>
                 <docker.database.wait-for-log-regex>(?si)Ready for start up.*ready [^\n]{0,30}connections</docker.database.wait-for-log-regex>
+            </properties>
+        </profile>
+        <profile>
+            <id>db-allocator-db-mariadb</id>
+            <properties>
+                <!-- JDBC properties point to "default" JDBC driver for the particular DB -->
+                <!-- For EAP testing, it is recommended to override those with system properties pointing to GAV of more appropriate JDBC driver -->
+                <!-- for the particular EAP version -->
+                <jdbc.mvn.groupId>org.mariadb.jdbc</jdbc.mvn.groupId>
+                <jdbc.mvn.artifactId>mariadb-java-client</jdbc.mvn.artifactId>
+                <jdbc.mvn.version>${mariadb.version}</jdbc.mvn.version>
+                <dballocator.type>mariadb_galera_101</dballocator.type>
+                <dballocator.skip>false</dballocator.skip>
             </properties>
         </profile>
         <profile>
@@ -420,15 +530,32 @@
                 <docker.database.port>1433</docker.database.port>
                 <docker.database.skip>false</docker.database.skip>
                 <docker.database.postStart>/opt/mssql-tools/bin/sqlcmd -e -U sa -P vEry5tron9Pwd -d master -Q CREATE\ DATABASE\ ${keycloak.connectionsJpa.database}</docker.database.postStart>
+                <docker.database.cmd>/bin/sh -c /opt/mssql/bin/sqlservr</docker.database.cmd>
                 <docker.database.wait-for-log-regex>(?si)SQL Server is now ready for client connections.*Service Broker manager has started</docker.database.wait-for-log-regex>
                 <keycloak.connectionsJpa.driver>com.microsoft.sqlserver.jdbc.SQLServerDriver</keycloak.connectionsJpa.driver>
                 <keycloak.connectionsJpa.database>keycloak</keycloak.connectionsJpa.database>
                 <keycloak.connectionsJpa.user>sa</keycloak.connectionsJpa.user>
                 <keycloak.connectionsJpa.password>vEry5tron9Pwd</keycloak.connectionsJpa.password>
                 <keycloak.connectionsJpa.url>jdbc:sqlserver://${auth.server.db.host}:${docker.database.port};databaseName=${keycloak.connectionsJpa.database}</keycloak.connectionsJpa.url>
+                <!-- JDBC properties point to "default" JDBC driver for the particular DB -->
+                <!-- For EAP testing, it is recommended to override those with system properties pointing to GAV of more appropriate JDBC driver -->
+                <!-- for the particular EAP version -->
                 <jdbc.mvn.groupId>com.microsoft.sqlserver</jdbc.mvn.groupId>
                 <jdbc.mvn.artifactId>mssql-jdbc</jdbc.mvn.artifactId>
                 <jdbc.mvn.version>${mssql.version}</jdbc.mvn.version>
+            </properties>
+        </profile>
+        <profile>
+            <id>db-allocator-db-mssql2016</id>
+            <properties>
+                <!-- JDBC properties point to "default" JDBC driver for the particular DB -->
+                <!-- For EAP testing, it is recommended to override those with system properties pointing to GAV of more appropriate JDBC driver -->
+                <!-- for the particular EAP version -->
+                <jdbc.mvn.groupId>com.microsoft.sqlserver</jdbc.mvn.groupId>
+                <jdbc.mvn.artifactId>mssql-jdbc</jdbc.mvn.artifactId>
+                <jdbc.mvn.version>${mssql.version}</jdbc.mvn.version>
+                <dballocator.type>mssql2016</dballocator.type>
+                <dballocator.skip>false</dballocator.skip>
             </properties>
         </profile>
         <profile>
@@ -438,6 +565,7 @@
                 <docker.database.port>1521</docker.database.port>
                 <docker.database.shmsize>1073741824</docker.database.shmsize>
                 <docker.database.skip>false</docker.database.skip>
+                <docker.database.cmd>/bin/sh -c exec\ $ORACLE_BASE/$RUN_FILE</docker.database.cmd>
                 <docker.database.wait-for-log-regex>(?si)DATABASE IS READY TO USE</docker.database.wait-for-log-regex>
                 <keycloak.connectionsJpa.driver>oracle.jdbc.OracleDriver</keycloak.connectionsJpa.driver>
                 <keycloak.connectionsJpa.database>XE</keycloak.connectionsJpa.database>
@@ -445,9 +573,25 @@
                 <keycloak.connectionsJpa.password>keycloak</keycloak.connectionsJpa.password>
                 <keycloak.connectionsJpa.url>jdbc:oracle:thin:@${auth.server.db.host}:${docker.database.port}:${keycloak.connectionsJpa.database}</keycloak.connectionsJpa.url>
                 <docker.database.postStart>bash -c while\ !\ sqlplus\ -L\ SYS/sa@localhost/XE\ AS\ SYSDBA\ &lt;&lt;&lt;\ $'CREATE\ USER\ ${keycloak.connectionsJpa.user}\ IDENTIFIED\ BY\ ${keycloak.connectionsJpa.password};\n\ GRANT\ CONNECT,\ RESOURCE,\ DBA,\ GRANT\ ANY\ PRIVILEGE,\ UNLIMITED\ TABLESPACE\ TO\ ${keycloak.connectionsJpa.user};\n';\ do\ sleep\ 5;\ done</docker.database.postStart>
+                <!-- JDBC properties point to "default" JDBC driver for the particular DB -->
+                <!-- For EAP testing, it is recommended to override those with system properties pointing to GAV of more appropriate JDBC driver -->
+                <!-- for the particular EAP version -->
                 <jdbc.mvn.groupId>com.oracle</jdbc.mvn.groupId>
                 <jdbc.mvn.artifactId>ojdbc7</jdbc.mvn.artifactId>
                 <jdbc.mvn.version>12.1.0</jdbc.mvn.version>
+            </properties>
+        </profile>
+        <profile>
+            <id>db-allocator-db-oracle12cR1RAC</id>
+            <properties>
+                <!-- JDBC properties point to "default" JDBC driver for the particular DB -->
+                <!-- For EAP testing, it is recommended to override those with system properties pointing to GAV of more appropriate JDBC driver -->
+                <!-- for the particular EAP version -->
+                <jdbc.mvn.groupId>com.oracle</jdbc.mvn.groupId>
+                <jdbc.mvn.artifactId>ojdbc8</jdbc.mvn.artifactId>
+                <jdbc.mvn.version>12.2.0.1</jdbc.mvn.version>
+                <dballocator.type>oracle12cR1RAC</dballocator.type>
+                <dballocator.skip>false</dballocator.skip>
             </properties>
         </profile>
     </profiles>

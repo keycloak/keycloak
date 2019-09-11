@@ -33,6 +33,7 @@ import org.keycloak.models.KeycloakSessionTask;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.UserProvider;
 import org.keycloak.models.dblock.DBLockManager;
 import org.keycloak.models.dblock.DBLockProvider;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -140,7 +141,7 @@ public class KeycloakApplication extends Application {
                     DBLockManager dbLockManager = new DBLockManager(lockSession);
                     dbLockManager.checkForcedUnlock();
                     DBLockProvider dbLock = dbLockManager.getDBLock();
-                    dbLock.waitForLock();
+                    dbLock.waitForLock(DBLockProvider.Namespace.KEYCLOAK_BOOT);
                     try {
                         exportImportManager[0] = migrateAndBootstrap();
                     } finally {
@@ -427,21 +428,28 @@ public class KeycloakApplication extends Application {
                 for (RealmRepresentation realmRep : realms) {
                     for (UserRepresentation userRep : realmRep.getUsers()) {
                         KeycloakSession session = sessionFactory.create();
+
                         try {
                             session.getTransactionManager().begin();
-
                             RealmModel realm = session.realms().getRealmByName(realmRep.getRealm());
+
                             if (realm == null) {
                                 ServicesLogger.LOGGER.addUserFailedRealmNotFound(userRep.getUsername(), realmRep.getRealm());
+                            }
+
+                            UserProvider users = session.users();
+
+                            if (users.getUserByUsername(userRep.getUsername(), realm) != null) {
+                                ServicesLogger.LOGGER.notCreatingExistingUser(userRep.getUsername());
                             } else {
-                                UserModel user = session.users().addUser(realm, userRep.getUsername());
+                                UserModel user = users.addUser(realm, userRep.getUsername());
                                 user.setEnabled(userRep.isEnabled());
                                 RepresentationToModel.createCredentials(userRep, session, realm, user, false);
                                 RepresentationToModel.createRoleMappings(userRep, user, realm);
+                                ServicesLogger.LOGGER.addUserSuccess(userRep.getUsername(), realmRep.getRealm());
                             }
 
                             session.getTransactionManager().commit();
-                            ServicesLogger.LOGGER.addUserSuccess(userRep.getUsername(), realmRep.getRealm());
                         } catch (ModelDuplicateException e) {
                             session.getTransactionManager().rollback();
                             ServicesLogger.LOGGER.addUserFailedUserExists(userRep.getUsername(), realmRep.getRealm());

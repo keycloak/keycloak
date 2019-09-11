@@ -44,6 +44,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.keycloak.models.ModelException;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -88,12 +89,11 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
 
     @Override
     public void onImportUserFromLDAP(LDAPObject ldapUser, UserModel user, RealmModel realm, boolean isCreate) {
-        String userModelAttrName = mapperModel.getConfig().getFirst(USER_MODEL_ATTRIBUTE);
-        String ldapAttrName = mapperModel.getConfig().getFirst(LDAP_ATTRIBUTE);
+        String userModelAttrName = getUserModelAttribute();
+        String ldapAttrName = getLdapAttributeName();
 
         // We won't update binary attributes to Keycloak DB. They might be too big
-        boolean isBinaryAttribute = mapperModel.get(IS_BINARY_ATTRIBUTE, false);
-        if (isBinaryAttribute) {
+        if (isBinaryAttribute()) {
             return;
         }
 
@@ -121,8 +121,8 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
 
     @Override
     public void onRegisterUserToLDAP(LDAPObject ldapUser, UserModel localUser, RealmModel realm) {
-        String userModelAttrName = mapperModel.getConfig().getFirst(USER_MODEL_ATTRIBUTE);
-        String ldapAttrName = mapperModel.getConfig().getFirst(LDAP_ATTRIBUTE);
+        String userModelAttrName = getUserModelAttribute();
+        String ldapAttrName = getLdapAttributeName();
         boolean isMandatoryInLdap = parseBooleanParameter(mapperModel, IS_MANDATORY_IN_LDAP);
 
         Property<Object> userModelProperty = userModelProperties.get(userModelAttrName.toLowerCase());
@@ -178,10 +178,30 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
         }
     }
 
+    protected void checkDuplicateUsername(String userModelAttrName, String username, RealmModel realm, KeycloakSession session, UserModel user) {
+        // only if working in USERNAME attribute
+        if (UserModel.USERNAME.equalsIgnoreCase(userModelAttrName)) {
+            if (username == null || username.isEmpty()) {
+                throw new ModelException("Cannot set an empty username");
+            }
+            boolean usernameChanged = !username.equals(user.getUsername());
+            if (realm.isEditUsernameAllowed() && usernameChanged) {
+                UserModel that = session.users().getUserByUsername(username, realm);
+                if (that != null && !that.getId().equals(user.getId())) {
+                    throw new ModelDuplicateException(
+                            String.format("Cannot change the username to '%s' because the username already exists in keycloak", username),
+                            UserModel.USERNAME);
+                }
+            } else if (usernameChanged) {
+                throw new ModelException("Cannot change username if the realm is not configured to allow edit the usernames");
+            }
+        }
+    }
+
     @Override
     public UserModel proxy(final LDAPObject ldapUser, UserModel delegate, RealmModel realm) {
-        final String userModelAttrName = mapperModel.getConfig().getFirst(USER_MODEL_ATTRIBUTE);
-        final String ldapAttrName = mapperModel.getConfig().getFirst(LDAP_ATTRIBUTE);
+        final String userModelAttrName = getUserModelAttribute();
+        final String ldapAttrName = getLdapAttributeName();
         boolean isAlwaysReadValueFromLDAP = parseBooleanParameter(mapperModel, ALWAYS_READ_VALUE_FROM_LDAP);
         final boolean isMandatoryInLdap = parseBooleanParameter(mapperModel, IS_MANDATORY_IN_LDAP);
         final boolean isBinaryAttribute = parseBooleanParameter(mapperModel, IS_BINARY_ATTRIBUTE);
@@ -210,6 +230,13 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
                     if ( setLDAPAttribute(name, null)) {
                         super.removeAttribute(name);
                     }
+                }
+
+                @Override
+                public void setUsername(String username) {
+                    checkDuplicateUsername(userModelAttrName, username, realm, ldapProvider.getSession(), this);
+                    setLDAPAttribute(UserModel.USERNAME, username);
+                    super.setUsername(username);
                 }
 
                 @Override
@@ -388,8 +415,8 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
 
     @Override
     public void beforeLDAPQuery(LDAPQuery query) {
-        String userModelAttrName = mapperModel.getConfig().getFirst(USER_MODEL_ATTRIBUTE);
-        String ldapAttrName = mapperModel.getConfig().getFirst(LDAP_ATTRIBUTE);
+        String userModelAttrName = getUserModelAttribute();
+        String ldapAttrName = getLdapAttributeName();
 
         // Add mapped attribute to returning ldap attributes
         query.addReturningLdapAttribute(ldapAttrName);
@@ -400,7 +427,23 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
         // Change conditions and use ldapAttribute instead of userModel
         for (Condition condition : query.getConditions()) {
             condition.updateParameterName(userModelAttrName, ldapAttrName);
+            String parameterName = condition.getParameterName();
+            if (parameterName != null && (parameterName.equalsIgnoreCase(userModelAttrName) || parameterName.equalsIgnoreCase(ldapAttrName))) {
+                condition.setBinary(isBinaryAttribute());
+            }
         }
+    }
+
+    private String getUserModelAttribute() {
+        return mapperModel.getConfig().getFirst(USER_MODEL_ATTRIBUTE);
+    }
+
+    String getLdapAttributeName() {
+        return mapperModel.getConfig().getFirst(LDAP_ATTRIBUTE);
+    }
+
+    private boolean isBinaryAttribute() {
+        return mapperModel.get(IS_BINARY_ATTRIBUTE, false);
     }
 
     private boolean isReadOnly() {

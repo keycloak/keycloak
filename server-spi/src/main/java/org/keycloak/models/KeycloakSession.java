@@ -22,6 +22,7 @@ import org.keycloak.models.cache.UserCache;
 import org.keycloak.provider.Provider;
 import org.keycloak.sessions.AuthenticationSessionProvider;
 import org.keycloak.storage.federated.UserFederatedStorageProvider;
+import org.keycloak.vault.VaultTranscriber;
 
 import java.util.Set;
 
@@ -196,4 +197,8 @@ public interface KeycloakSession {
      */
     TokenManager tokens();
 
+    /**
+     * Vault transcriber
+     */
+    VaultTranscriber vault();
 }

@@ -77,6 +77,7 @@ import java.security.Signature;
 import java.security.SignatureException;
 import java.util.*;
 
+import javax.xml.datatype.XMLGregorianCalendar;
 import javax.xml.namespace.QName;
 
 import org.keycloak.dom.saml.v2.SAML2Object;
@@ -345,6 +346,7 @@ public abstract class AbstractSamlAuthenticationHandler implements SamlAuthentic
             assertion = AssertionUtil.getAssertion(responseHolder, responseType, deployment.getDecryptionKey());
             ConditionsValidator.Builder cvb = new ConditionsValidator.Builder(assertion.getID(), assertion.getConditions(), destinationValidator);
             try {
+                cvb.clockSkewInMillis(deployment.getIDP().getAllowedClockSkew());
                 cvb.addAllowedAudience(URI.create(deployment.getEntityID()));
                 // getDestination has been validated to match request URL already so it matches SAML endpoint
                 cvb.addAllowedAudience(URI.create(responseType.getDestination()));
@@ -421,7 +423,7 @@ public abstract class AbstractSamlAuthenticationHandler implements SamlAuthentic
         NameIDType subjectNameID = subType == null ? null : (NameIDType) subType.getBaseID();
         String principalName = subjectNameID == null ? null : subjectNameID.getValue();
 
-        final Set<String> roles = new HashSet<>();
+        Set<String> roles = new HashSet<>();
         MultivaluedHashMap<String, String> attributes = new MultivaluedHashMap<>();
         MultivaluedHashMap<String, String> friendlyAttributes = new MultivaluedHashMap<>();
 
@@ -460,10 +462,6 @@ public abstract class AbstractSamlAuthenticationHandler implements SamlAuthentic
             }
         }
 
-        // roles should also be there as regular attributes
-        // this mainly required for elytron and its ABAC nature
-        attributes.put(DEFAULT_ROLE_ATTRIBUTE_NAME, new ArrayList<>(roles));
-
         if (deployment.getPrincipalNamePolicy() == SamlDeployment.PrincipalNamePolicy.FROM_ATTRIBUTE) {
             if (deployment.getPrincipalAttributeName() != null) {
                 String attribute = attributes.getFirst(deployment.getPrincipalAttributeName());
@@ -474,6 +472,15 @@ public abstract class AbstractSamlAuthenticationHandler implements SamlAuthentic
                 }
             }
         }
+
+        // use the configured role mappings provider to map roles if necessary.
+        if (deployment.getRoleMappingsProvider() != null)  {
+            roles = deployment.getRoleMappingsProvider().map(principalName, roles);
+        }
+
+        // roles should also be there as regular attributes
+        // this mainly required for elytron and its ABAC nature
+        attributes.put(DEFAULT_ROLE_ATTRIBUTE_NAME, new ArrayList<>(roles));
 
         AuthnStatementType authn = null;
         for (Object statement : assertion.getStatements()) {
@@ -487,9 +494,9 @@ public abstract class AbstractSamlAuthenticationHandler implements SamlAuthentic
         URI nameFormat = subjectNameID == null ? null : subjectNameID.getFormat();
         String nameFormatString = nameFormat == null ? JBossSAMLURIConstants.NAMEID_FORMAT_UNSPECIFIED.get() : nameFormat.toString();
         final SamlPrincipal principal = new SamlPrincipal(assertion, principalName, principalName, nameFormatString, attributes, friendlyAttributes);
-        String index = authn == null ? null : authn.getSessionIndex();
-        final String sessionIndex = index;
-        SamlSession account = new SamlSession(principal, roles, sessionIndex);
+        final String sessionIndex = authn == null ? null : authn.getSessionIndex();
+        final XMLGregorianCalendar sessionNotOnOrAfter = authn == null ? null : authn.getSessionNotOnOrAfter();
+        SamlSession account = new SamlSession(principal, roles, sessionIndex, sessionNotOnOrAfter);
         sessionStore.saveAccount(account);
         onCreateSession.onSessionCreated(account);
 

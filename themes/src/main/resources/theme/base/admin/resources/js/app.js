@@ -976,6 +976,21 @@ module.config([ '$routeProvider', function($routeProvider) {
             },
             controller : 'ClientRoleDetailCtrl'
         })
+        .when('/realms/:realm/clients/:client/roles/:role/users', {
+            templateUrl : resourceUrl + '/partials/client-role-users.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                client : function(ClientLoader) {
+                    return ClientLoader();
+                },
+                role : function(ClientRoleLoader) {
+                    return ClientRoleLoader();
+                }
+            },
+            controller : 'ClientRoleMembersCtrl'
+        })
         .when('/realms/:realm/clients/:client/mappers', {
             templateUrl : resourceUrl + '/partials/client-mappers.html',
             resolve : {
@@ -2721,6 +2736,8 @@ module.controller('ProviderConfigCtrl', function ($modal, $scope, ComponentUtils
             }
         })
     }
+
+    ComponentUtils.convertAllMultivaluedStringValuesToList($scope.properties, $scope.config);
 
     ComponentUtils.addLastEmptyValueToMultivaluedLists($scope.properties, $scope.config);
 

@@ -33,7 +33,7 @@ import org.keycloak.testsuite.adapter.AbstractExampleAdapterTest;
 import org.keycloak.testsuite.adapter.page.AngularCorsProductTestApp;
 import org.keycloak.testsuite.adapter.page.CorsDatabaseServiceTestApp;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
-import org.keycloak.testsuite.arquillian.containers.ContainerConstants;
+import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
 import org.keycloak.testsuite.auth.page.account.Account;
 import org.keycloak.testsuite.auth.page.login.OIDCLogin;
 import org.keycloak.testsuite.util.JavascriptBrowser;
@@ -115,7 +115,6 @@ public class CorsExampleAdapterTest extends AbstractExampleAdapterTest {
     @Before
     public void onBefore() {
         DroneUtils.addWebDriver(jsDriver);
-        Assume.assumeFalse(System.getProperty("os.name").startsWith("Windows"));
         deployer.deploy(CorsDatabaseServiceTestApp.DEPLOYMENT_NAME);
         deployer.deploy(AngularCorsProductTestApp.DEPLOYMENT_NAME);
     }

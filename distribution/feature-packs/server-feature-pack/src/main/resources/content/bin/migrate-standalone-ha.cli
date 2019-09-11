@@ -297,8 +297,13 @@ if (outcome == failed) of /subsystem=elytron/:read-resource
 end-if
 
 if (outcome == failed) of /subsystem=ejb3/service=remote/channel-creation-options=READ_TIMEOUT/:read-resource
-    echo Adding channel-creation-options READ_TIMEOUT and MAX_OUTBOUND_MESSAGES to ejb3 remote
+    echo Adding channel-creation-options READ_TIMEOUT to ejb3 remote
     /subsystem=ejb3/service=remote/channel-creation-options=READ_TIMEOUT/:add(value="${prop.remoting-connector.read.timeout:20}",type=xnio)
+    echo
+end-if
+
+if (outcome == failed) of /subsystem=ejb3/service=remote/channel-creation-options=MAX_OUTBOUND_MESSAGES/:read-resource
+    echo Adding channel-creation-options MAX_OUTBOUND_MESSAGES to ejb3 remote
     /subsystem=ejb3/service=remote/channel-creation-options=MAX_OUTBOUND_MESSAGES/:add(value=1234,type=remoting)
     echo
 end-if
@@ -617,6 +622,18 @@ if (result == false) of /subsystem=webservices/:read-attribute(name=statistics-e
     echo
 end-if
 
+if (outcome == failed) of /extension=org.jboss.as.weld/:read-resource
+    echo Adding weld extension
+    /extension=org.jboss.as.weld/:add
+    echo
+end-if
+
+if (outcome == failed) of /subsystem=weld/:read-resource
+    echo Adding weld subsystem
+    /subsystem=weld/:add
+    echo
+end-if
+
 if (outcome == failed) of /extension=org.wildfly.extension.microprofile.config-smallrye/:read-resource
     echo Adding microprofile.config-smallrye extension...
     /extension=org.wildfly.extension.microprofile.config-smallrye/:add(module=org.wildfly.extension.microprofile.config-smallrye)
@@ -654,6 +671,51 @@ if (outcome == failed) of /subsystem=microprofile-metrics-smallrye/:read-resourc
     /subsystem=microprofile-metrics-smallrye/:write-attribute(name=security-enabled,value=false)
     /subsystem=microprofile-metrics-smallrye/:write-attribute(name=exposed-subsystems,value=[*])
     /subsystem=microprofile-metrics-smallrye/:write-attribute(name=prefix,value=${wildfly.metrics.prefix:wildfly})
+    echo
+end-if
+
+# Migrate from 6.0.1 to 7.0.0
+if (outcome == success) of /subsystem=ejb3/service=remote/channel-creation-options=READ_TIMEOUT/:read-resource
+    echo Removing READ_TIMEOUT option from remote service from ejb3 subsystem
+    /subsystem=ejb3/service=remote/channel-creation-options=READ_TIMEOUT/:remove
+    echo
+end-if
+
+if (outcome == failed) of /subsystem=infinispan/cache-container=web/distributed-cache=routing:read-resource
+    echo Adding distributed cache routing to web cache container to infinispan subsystem
+    /subsystem=infinispan/cache-container=web/distributed-cache=routing/:add
+    echo
+end-if
+
+if (outcome == failed) of /subsystem=infinispan/cache-container=web/replicated-cache=sso:read-resource
+    echo Adding replicated cache sso to web cache container to infinispan subsystem
+    /subsystem=infinispan/cache-container=web/replicated-cache=sso/:add
+    /subsystem=infinispan/cache-container=web/replicated-cache=sso/component=locking/:add(isolation=REPEATABLE_READ)
+    /subsystem=infinispan/cache-container=web/replicated-cache=sso/component=transaction/:add(mode=BATCH)
+    echo
+end-if
+
+if (outcome == failed) of /socket-binding-group=standard-sockets/socket-binding=jgroups-tcp-fd/:read-resource
+    echo Adding jgroups-tcp-fd socket binding to socket binding group
+    /socket-binding-group=standard-sockets/socket-binding=jgroups-tcp-fd/:add(interface=private,port=57600)
+    echo
+end-if
+
+if (outcome == failed) of /socket-binding-group=standard-sockets/socket-binding=jgroups-udp-fd/:read-resource
+    echo Adding jgroups-udp-fd socket binding to socket binding group
+    /socket-binding-group=standard-sockets/socket-binding=jgroups-udp-fd/:add(interface=private,port=54200)
+    echo
+end-if
+
+if (result == undefined) of /subsystem=jgroups/stack=tcp/protocol=FD_SOCK/:read-attribute(name=socket-binding)
+    echo Adding socket-binding for FD_SOCK protocol for tcp stack in jgroups subsystem
+    /subsystem=jgroups/stack=tcp/protocol=FD_SOCK/:write-attribute(name=socket-binding,value=jgroups-tcp-fd)
+    echo
+end-if
+
+if (result == undefined) of /subsystem=jgroups/stack=udp/protocol=FD_SOCK/:read-attribute(name=socket-binding)
+    echo Adding socket-binding for FD_SOCK protocol for udp stack in jgroups subsystem
+    /subsystem=jgroups/stack=udp/protocol=FD_SOCK/:write-attribute(name=socket-binding,value=jgroups-udp-fd)
     echo
 end-if
 

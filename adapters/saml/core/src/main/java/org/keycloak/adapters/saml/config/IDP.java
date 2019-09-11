@@ -19,6 +19,8 @@ package org.keycloak.adapters.saml.config;
 
 import java.io.Serializable;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
+
 import org.keycloak.adapters.cloned.AdapterHttpClientConfig;
 
 /**
@@ -269,6 +271,9 @@ public class IDP implements Serializable {
     private List<Key> keys;
     private AdapterHttpClientConfig httpClientConfig = new HttpClientConfig();
     private boolean signaturesRequired = false;
+    private String metadataUrl;
+    private Integer allowedClockSkew;
+    private TimeUnit allowedClockSkewUnit;
 
     public String getEntityID() {
         return entityID;
@@ -340,4 +345,27 @@ public class IDP implements Serializable {
         this.signaturesRequired = signaturesRequired;
     }
 
+    public String getMetadataUrl() {
+        return metadataUrl;
+    }
+
+    public void setMetadataUrl(String metadataUrl) {
+        this.metadataUrl = metadataUrl;
+    }
+
+    public Integer getAllowedClockSkew() {
+        return allowedClockSkew;
+    }
+
+    public void setAllowedClockSkew(Integer allowedClockSkew) {
+        this.allowedClockSkew = allowedClockSkew;
+    }
+
+    public TimeUnit getAllowedClockSkewUnit() {
+        return allowedClockSkewUnit;
+    }
+
+    public void setAllowedClockSkewUnit(TimeUnit allowedClockSkewUnit) {
+        this.allowedClockSkewUnit = allowedClockSkewUnit;
+    }
 }

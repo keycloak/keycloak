@@ -20,6 +20,7 @@ package org.keycloak.authentication.authenticators.browser;
 import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.AuthenticationFlowContext;
+import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.authentication.Authenticator;
 import org.keycloak.constants.AdapterConstants;
 import org.keycloak.models.IdentityProviderModel;
@@ -41,6 +42,8 @@ import java.util.List;
 public class IdentityProviderAuthenticator implements Authenticator {
 
     private static final Logger LOG = Logger.getLogger(IdentityProviderAuthenticator.class);
+
+    protected static final String ACCEPTS_PROMPT_NONE = "acceptsPromptNoneForwardFromClient";
 
     @Override
     public void authenticate(AuthenticationFlowContext context) {
@@ -76,7 +79,11 @@ public class IdentityProviderAuthenticator implements Authenticator {
                 }
                 Response response = Response.seeOther(location)
                         .build();
-
+                // will forward the request to the IDP with prompt=none if the IDP accepts forwards with prompt=none.
+                if ("none".equals(context.getAuthenticationSession().getClientNote(OIDCLoginProtocol.PROMPT_PARAM)) &&
+                        Boolean.valueOf(identityProvider.getConfig().get(ACCEPTS_PROMPT_NONE))) {
+                    context.getAuthenticationSession().setAuthNote(AuthenticationProcessor.FORWARDED_PASSIVE_LOGIN, "true");
+                }
                 LOG.debugf("Redirecting to %s", providerId);
                 context.forceChallenge(response);
                 return;

@@ -194,7 +194,25 @@ module.factory('Notifications', function($rootScope, $timeout) {
 
 module.factory('ComponentUtils', function() {
 
+    function sortGroups(prop, arr) {
+        // sort current elements
+        arr.sort(function (a, b) {
+            if (a[prop] < b[prop]) { return -1; }
+            if (a[prop] > b[prop]) { return 1; }
+            return 0;
+        });
+        // check sub groups
+        arr.forEach(function (item, index) {
+            if (!!item.subGroups) {
+                sortGroups(prop, item.subGroups);
+            }
+        });
+        return arr;
+    };
+
     var utils = {};
+
+    utils.sortGroups = sortGroups;
 
     utils.findIndexById = function(array, id) {
         for (var i = 0; i < array.length; i++) {
@@ -202,7 +220,59 @@ module.factory('ComponentUtils', function() {
         }
         return -1;
     }
-    
+
+    utils.convertAllMultivaluedStringValuesToList = function(properties, config) {
+        if (!properties) {
+            return;
+        }
+
+        for (var i=0 ; i<properties.length ; i++) {
+            var prop = properties[i];
+            if (prop.type === 'MultivaluedString') {
+                var configProperty = config[prop.name];
+
+                if (configProperty == null) {
+                    configProperty = [];
+                    config[prop.name] = configProperty;
+                }
+
+                if (typeof configProperty === "string") {
+                    configProperty = configProperty.split("##");
+                    config[prop.name] = configProperty;
+                }
+            }
+        }
+    }
+
+    utils.convertAllListValuesToMultivaluedString = function(properties, config) {
+        if (!properties) {
+            return;
+        }
+
+        for (var i=0 ; i<properties.length ; i++) {
+            var prop = properties[i];
+            if (prop.type === 'MultivaluedString') {
+                var configVal = config[prop.name];
+
+                if (configVal != null) {
+                    if (configVal.length > 0) {
+                        var lastVal = configVal[configVal.length - 1];
+                        if (lastVal === '') {
+                            console.log('Remove empty value from config property: ' + prop.name);
+                            configVal.splice(configVal.length - 1, 1);
+                        }
+                    }
+
+                    var attrVals = configVal.join("##");
+                    config[prop.name] = attrVals;
+
+                }
+            }
+        }
+    }
+
+
+
     utils.addLastEmptyValueToMultivaluedLists = function(properties, config) {
         if (!properties) {
             return;
@@ -239,24 +309,24 @@ module.factory('ComponentUtils', function() {
             }
         }
     }
-    
+
     // Allows you to use ui-select2 with <input> tag.
     // In HTML you will then use property.mvOptions like this:
     // <input ui-select2="prop.mvOptions" ng-model="...
     utils.addMvOptionsToMultivaluedLists = function(properties) {
         if (!properties) return;
-        
+
         for (var i=0 ; i<properties.length ; i++) {
             var prop = properties[i];
             if (prop.type !== 'MultivaluedList') continue;
-            
+
             prop.mvOptions = {
                 'multiple' : true,
                 'simple_tags' : true,
                 'tags' : angular.copy(prop.options)
             }
         }
-        
+
     }
 
     return utils;
@@ -856,7 +926,7 @@ function roleControl($scope, realm, role, roles, clients,
             Notifications.success("Role added to composite.");
         });
     };
-    
+
     $scope.deleteRealmRole = function() {
         $scope.compositeSwitchDisabled=true;
         $scope.selectedRealmMappingsToRemove = JSON.parse('[' + $scope.selectedRealmMappings + ']');
@@ -1843,6 +1913,13 @@ module.factory('RoleMembership', function($resource) {
     });
 });
 
+module.factory('ClientRoleMembership', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/clients/:client/roles/:role/users', {
+        realm : '@realm',
+        client : '@client',
+        role : '@role'
+    });
+});
 
 module.factory('UserGroupMembership', function($resource) {
     return $resource(authUrl + '/admin/realms/:realm/users/:userId/groups', {
@@ -1974,4 +2051,3 @@ module.factory('UserGroupMembershipCount', function($resource) {
             }
         });
 });
-

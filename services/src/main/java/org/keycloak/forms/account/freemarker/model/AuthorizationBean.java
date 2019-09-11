@@ -42,6 +42,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
+import org.keycloak.services.util.ResolveRelative;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -379,6 +380,10 @@ public class AuthorizationBean {
             }
 
             return redirectUris.iterator().next();
+        }
+
+        public String getBaseUri() {
+            return ResolveRelative.resolveRelativeUri(null, clientModel.getRootUrl(), clientModel.getBaseUrl());
         }
     }
 

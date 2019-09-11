@@ -27,16 +27,16 @@ import org.junit.Assert;
 import org.keycloak.testsuite.auth.page.login.PageWithLoginUrl;
 import org.keycloak.testsuite.page.AbstractPage;
 import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.WebDriverWait;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.StringWriter;
 import java.net.URI;
-import java.net.URL;
 import java.nio.charset.Charset;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.util.URLUtils.currentUrlDoesntStartWith;
 import static org.keycloak.testsuite.util.URLUtils.currentUrlEquals;
@@ -67,7 +67,7 @@ public class URLAssert {
     }
 
     public static void assertCurrentUrlEquals(final String url) {
-        assertTrue("Expected URL: " + url + "; actual: " + DroneUtils.getCurrentDriver().getCurrentUrl(),
+        assertTrue("Expected URL: " + url + " ; actual: " + DroneUtils.getCurrentDriver().getCurrentUrl(),
                 currentUrlEquals(url));
     }
 
@@ -86,10 +86,13 @@ public class URLAssert {
    }
 
     public static void assertCurrentUrlStartsWith(final String url){
-        assertTrue("URL expected to begin with:" + url + "; actual URL: " + DroneUtils.getCurrentDriver().getCurrentUrl(),
+        assertTrue("URL expected to begin with: " + url + " ; actual URL: " + DroneUtils.getCurrentDriver().getCurrentUrl(),
         currentUrlStartsWith(url));
     }
 
+    public static void waitUntilUrlStartsWith(String url, int timeOutInSeconds) {
+        new WebDriverWait(DroneUtils.getCurrentDriver(), timeOutInSeconds).until(ExpectedConditions.urlMatches("^" + url));
+    }
 
     public static void assertCurrentUrlDoesntStartWith(final AbstractPage page, WebDriver driver) {
         assertCurrentUrlDoesntStartWith(page.toString(), driver);
@@ -106,7 +109,7 @@ public class URLAssert {
     }
 
     public static void assertCurrentUrlDoesntStartWith(final String url) {
-        assertTrue("URL expected NOT to begin with:" + url + "; actual URL: " + DroneUtils.getCurrentDriver().getCurrentUrl(),
+        assertTrue("URL expected NOT to begin with: " + url + " ; actual URL: " + DroneUtils.getCurrentDriver().getCurrentUrl(),
                 currentUrlDoesntStartWith(url));
     }
 
@@ -171,7 +174,7 @@ public class URLAssert {
             char [] buf = new char[8192];
             StringWriter out = new StringWriter();
             Reader in = new InputStreamReader(entity.getContent(), Charset.forName("utf-8"));
-            int rc = 0;
+            int rc;
             try {
                 while ((rc = in.read(buf)) != -1) {
                     out.write(buf, 0, rc);

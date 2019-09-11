@@ -29,8 +29,6 @@ public class JettyAppServerArquillianExtension implements LoadableExtension {
         builder
                 .service(DeployableContainer.class, JettyAppServer.class)
                 .service(ApplicationArchiveProcessor.class, JettyDeploymentArchiveProcessor.class);
-
     }
-
 
 }

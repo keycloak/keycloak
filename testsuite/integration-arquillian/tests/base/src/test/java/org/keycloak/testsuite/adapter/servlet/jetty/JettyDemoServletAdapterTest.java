@@ -3,7 +3,7 @@ package org.keycloak.testsuite.adapter.servlet.jetty;
 import org.junit.Ignore;
 import org.keycloak.testsuite.adapter.servlet.DemoServletsAdapterTest;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
-import org.keycloak.testsuite.arquillian.containers.ContainerConstants;
+import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
 
 @AppServerContainer(ContainerConstants.APP_SERVER_JETTY94)
 @AppServerContainer(ContainerConstants.APP_SERVER_JETTY93)

@@ -21,7 +21,6 @@ import com.google.common.collect.ImmutableMap;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.container.test.api.TargetsContainer;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
-import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.UserResource;
@@ -34,10 +33,17 @@ import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.arquillian.annotation.ModelTest;
 import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
+import org.keycloak.testsuite.util.RealmBuilder;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertNotNull;
 import static org.keycloak.testsuite.arquillian.DeploymentTargetModifier.AUTH_SERVER_CURRENT;
 
@@ -56,44 +62,25 @@ public class UserModelTest extends AbstractTestRealmKeycloakTest {
                         "com.google.common");
     }
 
-    @After
-    public void after() {
-        testingClient.server().run(session -> {
+    @Override
+    public void addTestRealms(List<RealmRepresentation> testRealms) {
+        testRealms.add(RealmBuilder.create().name("original").build());
+        testRealms.add(RealmBuilder.create().name("other").build());
+        testRealms.add(RealmBuilder.create().name("realm1").build());
+        testRealms.add(RealmBuilder.create().name("realm2").build());
+    }
 
-            RealmModel realm = session.realms().getRealmByName("original");
-
-            if (realm != null) {
-                session.sessions().removeUserSessions(realm);
-                UserModel user = session.users().getUserByUsername("user", realm);
-                UserModel user1 = session.users().getUserByUsername("user1", realm);
-                UserModel user2 = session.users().getUserByUsername("user2", realm);
-                UserModel user3 = session.users().getUserByUsername("user3", realm);
-
-                UserManager um = new UserManager(session);
-                if (user != null) {
-                    um.removeUser(realm, user);
-                }
-                if (user1 != null) {
-                    um.removeUser(realm, user1);
-                }
-                if (user2 != null) {
-                    um.removeUser(realm, user2);
-                }
-                if (user3 != null) {
-                    um.removeUser(realm, user3);
-                }
-                session.realms().removeRealm(realm.getId());
-            }
-        });
+    @Override
+    protected boolean isImportAfterEachMethod() {
+        return true;
     }
 
     @Test
     @ModelTest
     public void persistUser(KeycloakSession session) {
-
         KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession sesPersistUser) -> {
             KeycloakSession currentSession = sesPersistUser;
-            RealmModel realm = currentSession.realms().createRealm("original");
+            RealmModel realm = currentSession.realms().getRealmByName("original");
 
             UserModel user = currentSession.users().addUser(realm, "user");
             user.setFirstName("first-name");
@@ -109,30 +96,30 @@ public class UserModelTest extends AbstractTestRealmKeycloakTest {
             RealmModel searchRealm = currentSession.realms().getRealm(realm.getId());
             UserModel persisted = currentSession.users().getUserByUsername("user", searchRealm);
 
-            assertEquals(user, persisted);
+            assertUserModel(user, persisted);
 
             searchRealm = currentSession.realms().getRealm(realm.getId());
             UserModel persisted2 = currentSession.users().getUserById(user.getId(), searchRealm);
-            assertEquals(user, persisted2);
+            assertUserModel(user, persisted2);
 
             Map<String, String> attributes = new HashMap<>();
             attributes.put(UserModel.LAST_NAME, "last-name");
             List<UserModel> search = currentSession.users().searchForUser(attributes, realm);
-            Assert.assertEquals(search.size(), 1);
-            Assert.assertEquals(search.get(0).getUsername(), "user");
+            Assert.assertThat(search, hasSize(1));
+            Assert.assertThat(search.get(0).getUsername(), equalTo("user"));
 
             attributes.clear();
             attributes.put(UserModel.EMAIL, "email");
             search = currentSession.users().searchForUser(attributes, realm);
-            Assert.assertEquals(search.size(), 1);
-            Assert.assertEquals(search.get(0).getUsername(), "user");
+            Assert.assertThat(search, hasSize(1));
+            Assert.assertThat(search.get(0).getUsername(), equalTo("user"));
 
             attributes.clear();
             attributes.put(UserModel.LAST_NAME, "last-name");
             attributes.put(UserModel.EMAIL, "email");
             search = currentSession.users().searchForUser(attributes, realm);
-            Assert.assertEquals(search.size(), 1);
-            Assert.assertEquals(search.get(0).getUsername(), "user");
+            Assert.assertThat(search, hasSize(1));
+            Assert.assertThat(search.get(0).getUsername(), equalTo("user"));
         });
     }
 
@@ -142,39 +129,39 @@ public class UserModelTest extends AbstractTestRealmKeycloakTest {
 
         KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession sesWebOrigin) -> {
             KeycloakSession currentSession = sesWebOrigin;
-            RealmModel realm = currentSession.realms().createRealm("original");
+            RealmModel realm = currentSession.realms().getRealmByName("original");
 
             ClientModel client = realm.addClient("user");
 
-            Assert.assertTrue(client.getWebOrigins().isEmpty());
+            Assert.assertThat(client.getWebOrigins(), empty());
 
             client.addWebOrigin("origin-1");
-            Assert.assertEquals(1, client.getWebOrigins().size());
+            Assert.assertThat(client.getWebOrigins(), hasSize(1));
 
             client.addWebOrigin("origin-2");
-            Assert.assertEquals(2, client.getWebOrigins().size());
+            Assert.assertThat(client.getWebOrigins(), hasSize(2));
 
             client.removeWebOrigin("origin-2");
-            Assert.assertEquals(1, client.getWebOrigins().size());
+            Assert.assertThat(client.getWebOrigins(), hasSize(1));
 
             client.removeWebOrigin("origin-1");
-            Assert.assertTrue(client.getWebOrigins().isEmpty());
+            Assert.assertThat(client.getWebOrigins(), empty());
 
             client = realm.addClient("oauthclient2");
 
-            Assert.assertTrue(client.getWebOrigins().isEmpty());
+            Assert.assertThat(client.getWebOrigins(), empty());
 
             client.addWebOrigin("origin-1");
-            Assert.assertEquals(1, client.getWebOrigins().size());
+            Assert.assertThat(client.getWebOrigins(), hasSize(1));
 
             client.addWebOrigin("origin-2");
-            Assert.assertEquals(2, client.getWebOrigins().size());
+            Assert.assertThat(client.getWebOrigins(), hasSize(2));
 
             client.removeWebOrigin("origin-2");
-            Assert.assertEquals(1, client.getWebOrigins().size());
+            Assert.assertThat(client.getWebOrigins(), hasSize(1));
 
             client.removeWebOrigin("origin-1");
-            Assert.assertTrue(client.getWebOrigins().isEmpty());
+            Assert.assertThat(client.getWebOrigins(), empty());
         });
     }
 
@@ -184,11 +171,11 @@ public class UserModelTest extends AbstractTestRealmKeycloakTest {
 
         KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession sesUserReqActions) -> {
             KeycloakSession currentSession = sesUserReqActions;
-            RealmModel realm = currentSession.realms().createRealm("original");
+            RealmModel realm = currentSession.realms().getRealmByName("original");
 
             UserModel user = currentSession.users().addUser(realm, "user");
 
-            Assert.assertTrue(user.getRequiredActions().isEmpty());
+            Assert.assertThat(user.getRequiredActions(), empty());
 
             user.addRequiredAction(RequiredAction.CONFIGURE_TOTP);
             String id = realm.getId();
@@ -196,32 +183,34 @@ public class UserModelTest extends AbstractTestRealmKeycloakTest {
             realm = currentSession.realms().getRealm(id);
             user = currentSession.users().getUserByUsername("user", realm);
 
-            Assert.assertEquals(1, user.getRequiredActions().size());
-            Assert.assertTrue(user.getRequiredActions().contains(RequiredAction.CONFIGURE_TOTP.name()));
-
+            Assert.assertThat(user.getRequiredActions(), hasSize(1));
+            Assert.assertThat(user.getRequiredActions(), contains(RequiredAction.CONFIGURE_TOTP.name()));
+            
             user.addRequiredAction(RequiredAction.CONFIGURE_TOTP);
             user = currentSession.users().getUserByUsername("user", realm);
 
-            Assert.assertEquals(1, user.getRequiredActions().size());
-            Assert.assertTrue(user.getRequiredActions().contains(RequiredAction.CONFIGURE_TOTP.name()));
+            Assert.assertThat(user.getRequiredActions(), hasSize(1));
+            Assert.assertThat(user.getRequiredActions(), contains(RequiredAction.CONFIGURE_TOTP.name()));
 
             user.addRequiredAction(RequiredAction.VERIFY_EMAIL.name());
             user = currentSession.users().getUserByUsername("user", realm);
 
-            Assert.assertEquals(2, user.getRequiredActions().size());
-            Assert.assertTrue(user.getRequiredActions().contains(RequiredAction.CONFIGURE_TOTP.name()));
-            Assert.assertTrue(user.getRequiredActions().contains(RequiredAction.VERIFY_EMAIL.name()));
+            Assert.assertThat(user.getRequiredActions(), hasSize(2));
+            Assert.assertThat(user.getRequiredActions(), containsInAnyOrder(
+                    RequiredAction.CONFIGURE_TOTP.name(), 
+                    RequiredAction.VERIFY_EMAIL.name())
+            );
 
             user.removeRequiredAction(RequiredAction.CONFIGURE_TOTP.name());
             user = currentSession.users().getUserByUsername("user", realm);
 
-            Assert.assertEquals(1, user.getRequiredActions().size());
-            Assert.assertTrue(user.getRequiredActions().contains(RequiredAction.VERIFY_EMAIL.name()));
+            Assert.assertThat(user.getRequiredActions(), hasSize(1));
+            Assert.assertThat(user.getRequiredActions(), contains(RequiredAction.VERIFY_EMAIL.name()));
 
             user.removeRequiredAction(RequiredAction.VERIFY_EMAIL.name());
             user = currentSession.users().getUserByUsername("user", realm);
 
-            Assert.assertTrue(user.getRequiredActions().isEmpty());
+            Assert.assertThat(user.getRequiredActions(), empty());
         });
     }
 
@@ -232,7 +221,7 @@ public class UserModelTest extends AbstractTestRealmKeycloakTest {
 
         KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession sesMultipleAtr1) -> {
             KeycloakSession currentSession = sesMultipleAtr1;
-            RealmModel realm = currentSession.realms().createRealm("original");
+            RealmModel realm = currentSession.realms().getRealmByName("original");
 
             UserModel user = currentSession.users().addUser(realm, "user");
             currentSession.users().addUser(realm, "user-noattrs");
@@ -252,26 +241,23 @@ public class UserModelTest extends AbstractTestRealmKeycloakTest {
             // Test read attributes
             UserModel user = currentSession.users().getUserByUsername("user", realm);
 
-            List<String> attrVals = attrValsAtomic.get();
-
-            attrVals = user.getAttribute("key1");
-            Assert.assertEquals(1, attrVals.size());
-            Assert.assertEquals("value1", attrVals.get(0));
-            Assert.assertEquals("value1", user.getFirstAttribute("key1"));
+            List<String> attrVals = user.getAttribute("key1");
+            Assert.assertThat(attrVals, hasSize(1));
+            Assert.assertThat(attrVals.get(0), equalTo("value1"));
+            Assert.assertThat(user.getFirstAttribute("key1"), equalTo("value1"));
 
             attrVals = user.getAttribute("key2");
-            Assert.assertEquals(2, attrVals.size());
-            Assert.assertTrue(attrVals.contains("val21"));
-            Assert.assertTrue(attrVals.contains("val22"));
+            Assert.assertThat(attrVals, hasSize(2));
+            Assert.assertThat(attrVals, containsInAnyOrder("val21", "val22"));
 
             attrVals = user.getAttribute("key3");
-            Assert.assertTrue(attrVals.isEmpty());
-            Assert.assertNull(user.getFirstAttribute("key3"));
+            Assert.assertThat(attrVals, empty());
+            Assert.assertThat(user.getFirstAttribute("key3"), nullValue());
 
             Map<String, List<String>> allAttrVals = user.getAttributes();
-            Assert.assertEquals(2, allAttrVals.size());
-            Assert.assertEquals(allAttrVals.get("key1"), user.getAttribute("key1"));
-            Assert.assertEquals(allAttrVals.get("key2"), user.getAttribute("key2"));
+            Assert.assertThat(allAttrVals.keySet(), hasSize(2));
+            Assert.assertThat(allAttrVals.get("key1"), equalTo(user.getAttribute("key1")));
+            Assert.assertThat(allAttrVals.get("key2"), equalTo(user.getAttribute("key2")));
 
             // Test remove and rewrite attribute
             user.removeAttribute("key1");
@@ -283,14 +269,12 @@ public class UserModelTest extends AbstractTestRealmKeycloakTest {
             RealmModel realm = currentSession.realms().getRealmByName("original");
 
             UserModel user = currentSession.users().getUserByUsername("user", realm);
-            Assert.assertNull(user.getFirstAttribute("key1"));
+            Assert.assertThat(user.getFirstAttribute("key1"), nullValue());
 
-            List<String> attrVals = attrValsAtomic.get();
-            attrVals = user.getAttribute("key2");
+            List<String> attrVals = user.getAttribute("key2");
 
-            Assert.assertEquals(1, attrVals.size());
-            Assert.assertEquals("val23", attrVals.get(0));
-
+            Assert.assertThat(attrVals, hasSize(1));
+            Assert.assertThat(attrVals.get(0), equalTo("val23"));
         });
     }
 
@@ -301,7 +285,7 @@ public class UserModelTest extends AbstractTestRealmKeycloakTest {
 
         KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession sesUpdateAtr1) -> {
             KeycloakSession currentSession = sesUpdateAtr1;
-            RealmModel realm = currentSession.realms().createRealm("original");
+            RealmModel realm = currentSession.realms().getRealmByName("original");
 
             UserModel user = currentSession.users().addUser(realm, "user");
 
@@ -320,8 +304,8 @@ public class UserModelTest extends AbstractTestRealmKeycloakTest {
             Map<String, List<String>> allAttrVals = user.getAttributes();
 
             // Ensure same transaction is able to see updated value
-            Assert.assertEquals(1, allAttrVals.size());
-            Assert.assertEquals(allAttrVals.get("key1"), Arrays.asList("val2"));
+            Assert.assertThat(allAttrVals.keySet(), hasSize(1));
+            Assert.assertThat(allAttrVals.get("key1"), contains("val2"));
 
         });
     }
@@ -335,7 +319,7 @@ public class UserModelTest extends AbstractTestRealmKeycloakTest {
 
         KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession sesUpdateUserSingleAtr) -> {
             KeycloakSession currentSession = sesUpdateUserSingleAtr;
-            RealmModel realm = currentSession.realms().createRealm("original");
+            RealmModel realm = currentSession.realms().getRealmByName("original");
 
 
             Map<String, List<String>> expected = ImmutableMap.of(
@@ -351,7 +335,7 @@ public class UserModelTest extends AbstractTestRealmKeycloakTest {
             // Overwrite the first attribute
             user.setSingleAttribute("key1", "value3");
 
-            Assert.assertEquals(expected, user.getAttributes());
+            Assert.assertThat(user.getAttributes(), equalTo(expected));
         });
 
         KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession sesUpdateUserSingleAtr2) -> {
@@ -359,8 +343,7 @@ public class UserModelTest extends AbstractTestRealmKeycloakTest {
             RealmModel realm = currentSession.realms().getRealmByName("original");
 
             Map<String, List<String>> expected = expectedAtomic.get();
-            Assert.assertEquals(expected, currentSession.users().getUserByUsername("user", realm).getAttributes());
-
+            Assert.assertThat(currentSession.users().getUserByUsername("user", realm).getAttributes(), equalTo(expected));
         });
     }
 
@@ -370,7 +353,7 @@ public class UserModelTest extends AbstractTestRealmKeycloakTest {
 
         KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession sesSearchString1) -> {
             KeycloakSession currentSession = sesSearchString1;
-            RealmModel realm = currentSession.realms().createRealm("original");
+            RealmModel realm = currentSession.realms().getRealmByName("original");
 
             currentSession.users().addUser(realm, "user1");
         });
@@ -382,7 +365,8 @@ public class UserModelTest extends AbstractTestRealmKeycloakTest {
             UserModel user1 = currentSession.users().getUserByUsername("user1", realm);
 
             List<UserModel> users = currentSession.users().searchForUser("user", realm, 0, 7);
-            Assert.assertTrue(users.contains(user1));
+            Assert.assertThat(users, hasSize(1));
+            Assert.assertThat(users, contains(user1));
         });
     }
 
@@ -392,12 +376,12 @@ public class UserModelTest extends AbstractTestRealmKeycloakTest {
 
         KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession sesSearchAtr1) -> {
             KeycloakSession currentSession = sesSearchAtr1;
-            RealmModel realm = currentSession.realms().createRealm("original");
+            RealmModel realm = currentSession.realms().getRealmByName("original");
 
             UserModel user1 = currentSession.users().addUser(realm, "user1");
             UserModel user2 = currentSession.users().addUser(realm, "user2");
             UserModel user3 = currentSession.users().addUser(realm, "user3");
-            RealmModel otherRealm = currentSession.realms().createRealm("other");
+            RealmModel otherRealm = currentSession.realms().getRealmByName("other");
             UserModel otherRealmUser = currentSession.users().addUser(otherRealm, "user1");
 
             user1.setSingleAttribute("key1", "value1");
@@ -420,21 +404,19 @@ public class UserModelTest extends AbstractTestRealmKeycloakTest {
             UserModel user3 = currentSession.users().getUserByUsername("user3", realm);
 
             List<UserModel> users = currentSession.users().searchForUserByUserAttribute("key1", "value1", realm);
-            Assert.assertEquals(2, users.size());
-            Assert.assertTrue(users.contains(user1));
-            Assert.assertTrue(users.contains(user2));
+            Assert.assertThat(users, hasSize(2));
+            Assert.assertThat(users, containsInAnyOrder(user1, user2));
 
             users = currentSession.users().searchForUserByUserAttribute("key2", "value21", realm);
-            Assert.assertEquals(2, users.size());
-            Assert.assertTrue(users.contains(user1));
-            Assert.assertTrue(users.contains(user3));
+            Assert.assertThat(users, hasSize(2));
+            Assert.assertThat(users, containsInAnyOrder(user1, user3));
 
             users = currentSession.users().searchForUserByUserAttribute("key2", "value22", realm);
-            Assert.assertEquals(1, users.size());
-            Assert.assertTrue(users.contains(user2));
+            Assert.assertThat(users, hasSize(1));
+            Assert.assertThat(users, contains(user2));
 
             users = currentSession.users().searchForUserByUserAttribute("key3", "value3", realm);
-            Assert.assertEquals(0, users.size());
+            Assert.assertThat(users, empty());
         });
     }
 
@@ -444,7 +426,7 @@ public class UserModelTest extends AbstractTestRealmKeycloakTest {
 
         KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession sesServiceLink1) -> {
             KeycloakSession currentSession = sesServiceLink1;
-            RealmModel realm = currentSession.realms().createRealm("original");
+            RealmModel realm = currentSession.realms().getRealmByName("original");
 
             ClientModel client = realm.addClient("foo");
 
@@ -457,11 +439,10 @@ public class UserModelTest extends AbstractTestRealmKeycloakTest {
             user2.setLastName("Doe");
 
             // Search
-            Assert.assertNull(currentSession.users().getServiceAccount(client));
+            Assert.assertThat(currentSession.users().getServiceAccount(client), nullValue());
             List<UserModel> users = currentSession.users().searchForUser("John Doe", realm);
-            Assert.assertEquals(2, users.size());
-            Assert.assertTrue(users.contains(user1));
-            Assert.assertTrue(users.contains(user2));
+            Assert.assertThat(users, hasSize(2));
+            Assert.assertThat(users, containsInAnyOrder(user1, user2));
 
             // Link service account
             user1.setServiceAccountClientLink(client.getId());
@@ -477,24 +458,21 @@ public class UserModelTest extends AbstractTestRealmKeycloakTest {
             // Search and assert service account user not found
             ClientModel client = realm.getClientByClientId("foo");
             UserModel searched = currentSession.users().getServiceAccount(client);
-            Assert.assertEquals(searched, user1);
+            Assert.assertThat(searched, equalTo(user1));
             List<UserModel> users = currentSession.users().searchForUser("John Doe", realm);
-            Assert.assertEquals(1, users.size());
-            Assert.assertFalse(users.contains(user1));
-            Assert.assertTrue(users.contains(user2));
+            Assert.assertThat(users, hasSize(1));
+            Assert.assertThat(users, contains(user2));
 
             users = currentSession.users().getUsers(realm, false);
-            Assert.assertEquals(1, users.size());
-            Assert.assertFalse(users.contains(user1));
-            Assert.assertTrue(users.contains(user2));
+            Assert.assertThat(users, hasSize(1));
+            Assert.assertThat(users, contains(user2));
 
             users = currentSession.users().getUsers(realm, true);
-            Assert.assertEquals(2, users.size());
-            Assert.assertTrue(users.contains(user1));
-            Assert.assertTrue(users.contains(user2));
+            Assert.assertThat(users, hasSize(2));
+            Assert.assertThat(users, containsInAnyOrder(user1, user2));
 
-            Assert.assertEquals(2, currentSession.users().getUsersCount(realm, true));
-            Assert.assertEquals(1, currentSession.users().getUsersCount(realm, false));
+            Assert.assertThat(currentSession.users().getUsersCount(realm, true), equalTo(2));
+            Assert.assertThat(currentSession.users().getUsersCount(realm, false), equalTo(1));
 
             // Remove client
             RealmManager realmMgr = new RealmManager(currentSession);
@@ -507,30 +485,24 @@ public class UserModelTest extends AbstractTestRealmKeycloakTest {
             KeycloakSession currentSession = sesServiceLink3;
             RealmModel realm = currentSession.realms().getRealmByName("original");
             // Assert service account removed as well
-            Assert.assertNull(currentSession.users().getUserByUsername("user1", realm));
+            Assert.assertThat(currentSession.users().getUserByUsername("user1", realm), nullValue());
         });
     }
 
     @Test
     @ModelTest
-    public void testGrantToAll(KeycloakSession session) {
+    public void testGrantToAll(KeycloakSession session) throws Exception {
 
         KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession sesGrantToAll1) -> {
             KeycloakSession currentSession = sesGrantToAll1;
 
-            if (currentSession.realms().getRealm("realm1") != null)
-                currentSession.realms().removeRealm("realm1");
-
-            RealmModel realm1 = currentSession.realms().createRealm("realm1");
+            RealmModel realm1 = currentSession.realms().getRealmByName("realm1");
 
             realm1.addRole("role1");
             currentSession.users().addUser(realm1, "user1");
             currentSession.users().addUser(realm1, "user2");
 
-            if (currentSession.realms().getRealm("realm2") != null)
-                currentSession.realms().removeRealm("realm2");
-
-            RealmModel realm2 = currentSession.realms().createRealm("realm2");
+            RealmModel realm2 = currentSession.realms().getRealmByName("realm2");
             currentSession.users().addUser(realm2, "user1");
         });
 
@@ -567,7 +539,7 @@ public class UserModelTest extends AbstractTestRealmKeycloakTest {
 
         KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession sesUserNotBefore1) -> {
             KeycloakSession currentSession = sesUserNotBefore1;
-            RealmModel realm = currentSession.realms().createRealm("original");
+            RealmModel realm = currentSession.realms().getRealmByName("original");
 
             UserModel user1 = currentSession.users().addUser(realm, "user1");
             currentSession.users().setNotBeforeForUser(realm, user1, 10);
@@ -579,7 +551,7 @@ public class UserModelTest extends AbstractTestRealmKeycloakTest {
 
             UserModel user1 = currentSession.users().getUserByUsername("user1", realm);
             int notBefore = currentSession.users().getNotBeforeOfUser(realm, user1);
-            Assert.assertEquals(10, notBefore);
+            Assert.assertThat(notBefore, equalTo(10));
 
             // Try to update
             currentSession.users().setNotBeforeForUser(realm, user1, 20);
@@ -591,22 +563,16 @@ public class UserModelTest extends AbstractTestRealmKeycloakTest {
 
             UserModel user1 = currentSession.users().getUserByUsername("user1", realm);
             int notBefore = currentSession.users().getNotBeforeOfUser(realm, user1);
-            Assert.assertEquals(20, notBefore);
+            Assert.assertThat(notBefore, equalTo(20));
         });
     }
 
-    public static void assertEquals(UserModel expected, UserModel actual) {
-        Assert.assertEquals(expected.getUsername(), actual.getUsername());
-        Assert.assertEquals(expected.getCreatedTimestamp(), actual.getCreatedTimestamp());
-        Assert.assertEquals(expected.getFirstName(), actual.getFirstName());
-        Assert.assertEquals(expected.getLastName(), actual.getLastName());
-
-        String[] expectedRequiredActions = expected.getRequiredActions().toArray(new String[expected.getRequiredActions().size()]);
-        Arrays.sort(expectedRequiredActions);
-        String[] actualRequiredActions = actual.getRequiredActions().toArray(new String[actual.getRequiredActions().size()]);
-        Arrays.sort(actualRequiredActions);
-
-        Assert.assertArrayEquals(expectedRequiredActions, actualRequiredActions);
+    private static void assertUserModel(UserModel expected, UserModel actual) {
+        Assert.assertThat(actual.getUsername(), equalTo(expected.getUsername()));
+        Assert.assertThat(actual.getCreatedTimestamp(), equalTo(expected.getCreatedTimestamp()));
+        Assert.assertThat(actual.getFirstName(), equalTo(expected.getFirstName()));
+        Assert.assertThat(actual.getLastName(), equalTo(expected.getLastName()));
+        Assert.assertThat(actual.getRequiredActions(), containsInAnyOrder(expected.getRequiredActions().toArray()));
     }
 
     @Override

@@ -42,6 +42,11 @@ import java.util.List;
  */
 public class UpdateProfile implements RequiredActionProvider, RequiredActionFactory, DisplayTypeRequiredActionFactory {
     @Override
+    public InitiatedActionSupport initiatedActionSupport() {
+        return InitiatedActionSupport.SUPPORTED;
+    }
+    
+    @Override
     public void evaluateTriggers(RequiredActionContext context) {
     }
 

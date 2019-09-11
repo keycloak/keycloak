@@ -38,6 +38,7 @@ import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.store.ScopeStore;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import javax.persistence.LockModeType;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -78,7 +79,7 @@ public class JPAScopeStore implements ScopeStore {
 
     @Override
     public void delete(String id) {
-        ScopeEntity scope = entityManager.find(ScopeEntity.class, id);
+        ScopeEntity scope = entityManager.find(ScopeEntity.class, id, LockModeType.PESSIMISTIC_WRITE);
 
         if (scope != null) {
             this.entityManager.remove(scope);

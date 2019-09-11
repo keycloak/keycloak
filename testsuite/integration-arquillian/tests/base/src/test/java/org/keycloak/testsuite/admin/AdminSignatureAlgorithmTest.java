@@ -47,7 +47,6 @@ public class AdminSignatureAlgorithmTest extends AbstractKeycloakTest {
 
     @Test
     public void changeRealmTokenAlgorithm() throws Exception {
-        TokenSignatureUtil.registerKeyProvider("master", "P-256", adminClient, testContext);
         TokenSignatureUtil.changeRealmTokenSignatureProvider("master", adminClient, Algorithm.ES256);
 
         try (Keycloak adminClient = AdminClientUtil.createAdminClient(suiteContext.isAdapterCompatTesting(), suiteContext.getAuthServerInfo().getContextRoot().toString())) {
@@ -56,7 +55,7 @@ public class AdminSignatureAlgorithmTest extends AbstractKeycloakTest {
             assertEquals(Algorithm.ES256, verifier.getHeader().getAlgorithm().name());
 
             assertNotNull(adminClient.realms().findAll());
-        
+
             String whoAmiUrl = suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth/admin/master/console/whoami";
 
             JsonNode jsonNode = SimpleHttp.doGet(whoAmiUrl, client).auth(accessToken.getToken()).asJson();

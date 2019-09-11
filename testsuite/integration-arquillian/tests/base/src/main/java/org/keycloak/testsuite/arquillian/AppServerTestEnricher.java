@@ -30,19 +30,23 @@ import org.jboss.logging.Logger;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainers;
 import org.keycloak.testsuite.arquillian.containers.SelfManagedAppContainerLifecycle;
+import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
+import org.keycloak.testsuite.utils.fuse.FuseUtils;
 import org.wildfly.extras.creaper.core.ManagementClient;
 import org.wildfly.extras.creaper.core.online.ManagementProtocol;
 import org.wildfly.extras.creaper.core.online.OnlineManagementClient;
 import org.wildfly.extras.creaper.core.online.OnlineOptions;
 
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.keycloak.testsuite.arquillian.AuthServerTestEnricher.getAuthServerContextRoot;
@@ -61,17 +65,32 @@ public class AppServerTestEnricher {
     @Inject private Instance<TestContext> testContextInstance;
     private TestContext testContext;
 
-    public static List<String> getAppServerQualifiers(Class testClass) {
+    public static Set<String> getAppServerQualifiers(Class testClass) {
+        Set<String> appServerQualifiers = new HashSet<>();
+
         Class<?> annotatedClass = getNearestSuperclassWithAppServerAnnotation(testClass);
 
-        if (annotatedClass == null) return null; // no @AppServerContainer annotation --> no adapter test
+        if (annotatedClass != null) {
 
-        AppServerContainer[] appServerContainers = annotatedClass.getAnnotationsByType(AppServerContainer.class);
+            AppServerContainer[] appServerContainers = annotatedClass.getAnnotationsByType(AppServerContainer.class);
 
-        List<String> appServerQualifiers = new ArrayList<>();
-        for (AppServerContainer appServerContainer : appServerContainers) {
-            appServerQualifiers.add(appServerContainer.value());
+            for (AppServerContainer appServerContainer : appServerContainers) {
+                appServerQualifiers.add(appServerContainer.value());
+            }
+
         }
+
+        for (Method method : testClass.getDeclaredMethods()) {
+            if (method.isAnnotationPresent(AppServerContainers.class)) {
+                for (AppServerContainer appServerContainer : method.getAnnotation(AppServerContainers.class).value()) {
+                    appServerQualifiers.add(appServerContainer.value());
+                }
+            }
+            if (method.isAnnotationPresent(AppServerContainer.class)) {
+                appServerQualifiers.add(method.getAnnotation(AppServerContainer.class).value());
+            }
+        }
+
         return appServerQualifiers;
     }
 
@@ -113,8 +132,8 @@ public class AppServerTestEnricher {
     public void updateTestContextWithAppServerInfo(@Observes(precedence = 1) BeforeClass event) {
         testContext = testContextInstance.get();
 
-        List<String> appServerQualifiers = getAppServerQualifiers(testContext.getTestClass());
-        if (appServerQualifiers == null) { // no adapter test
+        Set<String> appServerQualifiers = getAppServerQualifiers(testContext.getTestClass());
+        if (appServerQualifiers.isEmpty()) { // no adapter test
             log.info("\n\n" + testContext);
             return;
         }
@@ -194,10 +213,17 @@ public class AppServerTestEnricher {
                 log.info("Starting app server: " + testContext.getAppServerInfo().getQualifier());
                 controller.start(testContext.getAppServerInfo().getQualifier());
             }
+            if (isFuseAppServer()) {
+                FuseUtils.setUpFuse(ContainerConstants.APP_SERVER_PREFIX + CURRENT_APP_SERVER);
+            }
         }
     }
 
-    public void stopAppServer(@Observes(precedence = 1) AfterClass event) {
+    /*
+     * For Fuse: precedence = 2 - app server has to be stopped 
+     * before AuthServerTestEnricher.afterClass is executed
+     */
+    public void stopAppServer(@Observes(precedence = 2) AfterClass event) {
         if (testContext.getAppServerInfo() == null) {
             return; // no adapter test
         }
@@ -286,8 +312,8 @@ public class AppServerTestEnricher {
         return CURRENT_APP_SERVER.equals("wls");
     }
 
-    public static boolean isOSGiAppServer() {
-        return CURRENT_APP_SERVER.contains("karaf") || CURRENT_APP_SERVER.contains("fuse");
+    public static boolean isFuseAppServer() {
+        return CURRENT_APP_SERVER.contains("fuse");
     }
 
     private boolean isJBossBased() {

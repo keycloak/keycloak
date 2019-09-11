@@ -101,9 +101,9 @@ public abstract class AbstractClientTest extends AbstractAuthTest {
         return createClient(clientRep);
     }
 
-    protected String createOidcBearerOnlyClientWithAuthz(String name) {
+    protected String createOidcConfidentialClientWithAuthz(String name) {
         ClientRepresentation clientRep = createOidcClientRep(name);
-        clientRep.setBearerOnly(Boolean.TRUE);
+        clientRep.setBearerOnly(Boolean.FALSE);
         clientRep.setPublicClient(Boolean.FALSE);
         clientRep.setAuthorizationServicesEnabled(Boolean.TRUE);
         clientRep.setServiceAccountsEnabled(Boolean.TRUE);
@@ -126,7 +126,6 @@ public abstract class AbstractClientTest extends AbstractAuthTest {
         clientRep.setClientId(name);
         clientRep.setName(name);
         clientRep.setProtocol("saml");
-        clientRep.setAdminUrl("samlEndpoint");
         return createClient(clientRep);
     }
 

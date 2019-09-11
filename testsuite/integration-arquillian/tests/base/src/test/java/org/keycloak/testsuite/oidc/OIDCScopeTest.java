@@ -19,6 +19,7 @@ package org.keycloak.testsuite.oidc;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response;
@@ -187,6 +188,9 @@ public class OIDCScopeTest extends AbstractOIDCScopeTest {
         assertEmail(idToken, true);
         assertAddress(idToken, false);
         assertPhone(idToken, false);
+        // check both idtoken and access token for microprofile claims.
+        assertMicroprofile(idToken, false);
+        assertMicroprofile(tokens.accessToken, false);
 
         // Logout
         oauth.doLogout(tokens.refreshToken, "password");
@@ -196,18 +200,20 @@ public class OIDCScopeTest extends AbstractOIDCScopeTest {
                 .removeDetail(Details.REDIRECT_URI).assertEvent();
 
         // Login with optional scopes. Assert that everything is there
-        oauth.scope("openid address phone");
+        oauth.scope("openid address phone microprofile-jwt");
         oauth.doLogin("john", "password");
         loginEvent = events.expectLogin()
                 .user(userId)
                 .assertEvent();
-        tokens = sendTokenRequest(loginEvent, userId,"openid email profile address phone", "test-app");
+        tokens = sendTokenRequest(loginEvent, userId,"openid email profile address phone microprofile-jwt", "test-app");
         idToken = tokens.idToken;
 
         assertProfile(idToken, true);
         assertEmail(idToken, true);
         assertAddress(idToken, true);
         assertPhone(idToken, true);
+        assertMicroprofile(idToken, true);
+        assertMicroprofile(tokens.accessToken, true);
     }
 
 
@@ -255,6 +261,21 @@ public class OIDCScopeTest extends AbstractOIDCScopeTest {
         } else {
             Assert.assertNull(idToken.getPhoneNumber());
             Assert.assertNull(idToken.getPhoneNumberVerified());
+        }
+    }
+
+
+    private void assertMicroprofile(IDToken idToken, boolean claimsIn) {
+        if (claimsIn) {
+            Assert.assertTrue(idToken.getOtherClaims().containsKey("upn"));
+            Assert.assertEquals("john", idToken.getOtherClaims().get("upn"));
+            Assert.assertTrue(idToken.getOtherClaims().containsKey("groups"));
+            List<String> groups = (List<String>) idToken.getOtherClaims().get("groups");
+            Assert.assertNotNull(groups);
+            Assert.assertTrue(groups.containsAll(Arrays.asList("role-1", "role-2")));
+        } else {
+            Assert.assertFalse(idToken.getOtherClaims().containsKey("upn"));
+            Assert.assertFalse(idToken.getOtherClaims().containsKey("groups"));
         }
     }
 

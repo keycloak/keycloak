@@ -27,7 +27,6 @@ import org.junit.rules.ExpectedException;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.RealmResource;
-import org.keycloak.admin.client.resource.ServerInfoResource;
 import org.keycloak.common.util.Time;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
@@ -52,7 +51,6 @@ import org.keycloak.testsuite.auth.page.AuthRealm;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
 import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
 import org.keycloak.testsuite.runonserver.RunHelpers;
-import org.keycloak.testsuite.updaters.RealmCreator;
 import org.keycloak.testsuite.util.AdminEventPaths;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.CredentialBuilder;
@@ -64,7 +62,6 @@ import org.keycloak.util.JsonSerialization;
 
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response;
-import java.io.Closeable;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
@@ -80,6 +77,7 @@ import org.keycloak.events.EventType;
 import org.keycloak.events.log.JBossLoggingEventListenerProviderFactory;
 import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
 import org.keycloak.testsuite.events.EventsListenerProviderFactory;
+import org.keycloak.testsuite.updaters.Creator;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -242,10 +240,10 @@ public class RealmTest extends AbstractAdminTest {
     
     //KEYCLOAK-6146
     @Test
-    public void createRealmWithPasswordPolicyFromJsonWithValidPasswords() throws IOException {
+    public void createRealmWithPasswordPolicyFromJsonWithValidPasswords() {
         RealmRepresentation rep = loadJson(getClass().getResourceAsStream("/import/testrealm-keycloak-6146.json"), RealmRepresentation.class);
-        try (RealmCreator c = new RealmCreator(adminClient, rep)) {
-            RealmRepresentation created = c.realm().toRepresentation();
+        try (Creator<RealmResource> c = Creator.create(adminClient, rep)) {
+            RealmRepresentation created = c.resource().toRepresentation();
             assertRealm(rep, created);
         }
     }

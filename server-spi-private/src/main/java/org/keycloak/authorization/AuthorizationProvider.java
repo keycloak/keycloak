@@ -492,6 +492,11 @@ public final class AuthorizationProvider implements Provider {
             }
 
             @Override
+            public List<Resource> findByOwner(String ownerId, String resourceServerId, int first, int max) {
+                return delegate.findByOwner(ownerId, resourceServerId, first, max);
+            }
+
+            @Override
             public List<Resource> findByUri(String uri, String resourceServerId) {
                 return delegate.findByUri(uri, resourceServerId);
             }
@@ -534,6 +539,26 @@ public final class AuthorizationProvider implements Provider {
             @Override
             public void findByType(String type, String resourceServerId, Consumer<Resource> consumer) {
                 delegate.findByType(type, resourceServerId, consumer);
+            }
+
+            @Override
+            public void findByType(String type, String owner, String resourceServerId, Consumer<Resource> consumer) {
+                delegate.findByType(type, owner, resourceServerId, consumer);
+            }
+
+            @Override
+            public List<Resource> findByType(String type, String owner, String resourceServerId) {
+                return delegate.findByType(type, resourceServerId);
+            }
+
+            @Override
+            public List<Resource> findByTypeInstance(String type, String resourceServerId) {
+                return delegate.findByTypeInstance(type, resourceServerId);
+            }
+
+            @Override
+            public void findByTypeInstance(String type, String resourceServerId, Consumer<Resource> consumer) {
+                delegate.findByTypeInstance(type, resourceServerId, consumer);
             }
         };
     }

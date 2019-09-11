@@ -98,15 +98,15 @@ public interface TestingResource {
      *
      * Returns all events, or filters them based on URL query parameters listed here
      *
-     * @param realmId The realm
-     * @param types The types of events to return
-     * @param client App or oauth client name
-     * @param user User id
-     * @param dateFrom From date
-     * @param dateTo To date
-     * @param ipAddress IP address
+     * @param realmId     The realm
+     * @param types       The types of events to return
+     * @param client      App or oauth client name
+     * @param user        User id
+     * @param dateFrom    From date
+     * @param dateTo      To date
+     * @param ipAddress   IP address
      * @param firstResult Paging offset
-     * @param maxResults Paging size
+     * @param maxResults  Paging size
      * @return
      */
     @Path("query-events")
@@ -140,7 +140,7 @@ public interface TestingResource {
 
     /**
      * Get admin events
-     *
+     * <p>
      * Returns all admin events, or filters events based on URL query parameters listed here
      *
      * @param realmId
@@ -211,7 +211,7 @@ public interface TestingResource {
     @Path("/update-pass-through-auth-state")
     @Produces(MediaType.APPLICATION_JSON)
     AuthenticatorState updateAuthenticator(AuthenticatorState state);
-    
+
     @GET
     @Path("/valid-credentials")
     @Produces(MediaType.APPLICATION_JSON)
@@ -312,4 +312,13 @@ public interface TestingResource {
     @Produces(MediaType.TEXT_HTML_UTF_8)
     String getJavascriptTestingEnvironment();
 
+    @POST
+    @Path("/enable-feature/{feature}")
+    @Consumes(MediaType.APPLICATION_JSON)
+    Response enableFeature(@PathParam("feature") String feature);
+
+    @POST
+    @Path("/disable-feature/{feature}")
+    @Consumes(MediaType.APPLICATION_JSON)
+    Response disableFeature(@PathParam("feature") String feature);
 }

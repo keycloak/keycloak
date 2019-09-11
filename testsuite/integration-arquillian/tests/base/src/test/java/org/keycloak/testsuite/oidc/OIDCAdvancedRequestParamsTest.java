@@ -796,7 +796,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         assertEquals("Invalid Request", errorPage.getError());
 
         // Generate keypair for client
-        String clientPublicKeyPem = oidcClientEndpointsResource.generateKeys(null).get(TestingOIDCEndpointsApplicationResource.PUBLIC_KEY);
+        String clientPublicKeyPem = oidcClientEndpointsResource.generateKeys("RS256").get(TestingOIDCEndpointsApplicationResource.PUBLIC_KEY);
 
         // Verify signed request_uri will fail due to failed signature validation
         oidcClientEndpointsResource.setOIDCRequest("test", "test-app", validRedirectUri, "10", Algorithm.RS256.toString());
@@ -928,6 +928,24 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
     public void requestUriParamSignedExpectedRS512ActualRS512() throws Exception {
         // will success
         requestUriParamSignedIn(Algorithm.RS512, Algorithm.RS512);
+    }
+
+    @Test
+    public void requestUriParamSignedExpectedPS256ActualPS256() throws Exception {
+        // will success
+        requestUriParamSignedIn(Algorithm.PS256, Algorithm.PS256);
+    }
+
+    @Test
+    public void requestUriParamSignedExpectedPS384ActualPS384() throws Exception {
+        // will success
+        requestUriParamSignedIn(Algorithm.PS384, Algorithm.PS384);
+    }
+
+    @Test
+    public void requestUriParamSignedExpectedPS512ActualPS512() throws Exception {
+        // will success
+        requestUriParamSignedIn(Algorithm.PS512, Algorithm.PS512);
     }
 
     @Test

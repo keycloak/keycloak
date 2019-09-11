@@ -21,7 +21,7 @@
     <parent>
         <artifactId>keycloak-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>6.0.0-SNAPSHOT</version>
+        <version>8.0.0-SNAPSHOT</version>
         <relativePath>../../../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
@@ -32,7 +32,6 @@
 
     <properties>
         <fuse7.version>7.0.1-SNAPSHOT</fuse7.version>
-        <tomcat.version>${tomcat8.version}</tomcat.version>
         <jetty9.version>9.4.2.v20170220</jetty9.version>
     </properties>
 

@@ -21,6 +21,7 @@ import static org.hamcrest.CoreMatchers.containsString;
 import static org.junit.Assert.assertThat;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlEquals;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
+import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 
 import java.net.URI;
 import java.net.URL;
@@ -35,15 +36,18 @@ import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.common.util.Retry;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.adapter.AbstractAdapterClusteredTest;
 import org.keycloak.testsuite.adapter.page.SessionPortalDistributable;
 import org.keycloak.testsuite.adapter.servlet.SessionServlet;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
-import org.keycloak.testsuite.arquillian.containers.ContainerConstants;
+import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
 import org.keycloak.testsuite.auth.page.AuthRealm;
 import org.keycloak.testsuite.auth.page.login.OIDCLogin;
+import org.keycloak.testsuite.util.DroneUtils;
+import org.openqa.selenium.support.ui.WebDriverWait;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -114,8 +118,10 @@ public class OIDCAdapterClusterTest extends AbstractAdapterClusteredTest {
         String logoutUri = OIDCLoginProtocolService.logoutUrl(authServerPage.createUriBuilder())
                 .queryParam(OAuth2Constants.REDIRECT_URI, proxiedUrl).build(AuthRealm.DEMO).toString();
         driver.navigate().to(logoutUri);
-        driver.navigate().to(proxiedUrl);
-        assertCurrentUrlStartsWith(loginPage);
+        Retry.execute(() -> {
+            driver.navigate().to(proxiedUrl);
+            assertCurrentUrlStartsWith(loginPage);
+        }, 10, 300);
     }
 
     @Test
@@ -132,13 +138,32 @@ public class OIDCAdapterClusterTest extends AbstractAdapterClusteredTest {
 
         String logoutUri = proxiedUrl + "/logout";
         driver.navigate().to(logoutUri);
-        driver.navigate().to(proxiedUrl);
-        assertCurrentUrlStartsWith(loginPage);
+        Retry.execute(() -> {
+            driver.navigate().to(proxiedUrl);
+            assertCurrentUrlStartsWith(loginPage);
+        }, 10, 300);
+    }
+
+    private void waitForCacheReplication(String appUrl, int expectedCount) {
+        new WebDriverWait(DroneUtils.getCurrentDriver(), 5) // Check every 500ms of 5 seconds
+                .until((driver) -> {
+                    driver.navigate().to(appUrl + "/donotincrease");
+                    waitForPageToLoad();
+
+                    return driver.getPageSource().contains("Counter=" + expectedCount);
+                });
     }
 
     private void assertSessionCounter(String hostToPointToName, URI hostToPointToUri, URI hostToRemove, String appUrl, int expectedCount) {
         updateProxy(hostToPointToName, hostToPointToUri, hostToRemove);
+
+        // Wait for cache replication, this is necessary due to https://access.redhat.com/solutions/20861
+        waitForCacheReplication(appUrl, expectedCount - 1); // Not increased yet therefore -1
+
         driver.navigate().to(appUrl);
+        waitForPageToLoad();
+
         assertThat(driver.getPageSource(), containsString("Counter=" + expectedCount));
+        assertThat(driver.getPageSource(), containsString("Node name=" + hostToPointToName));
     }
 }

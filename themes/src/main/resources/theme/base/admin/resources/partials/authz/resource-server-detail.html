@@ -43,6 +43,20 @@
                 </div>
                 <kc-tooltip>{{:: 'authz-policy-enforcement-mode.tooltip' | translate}}</kc-tooltip>
             </div>
+            <div class="form-group clearfix">
+                <label class="col-md-2 control-label" for="server.decisionStrategy">{{:: 'authz-policy-decision-strategy' | translate}}</label>
+
+                <div class="col-sm-2">
+                    <select class="form-control" id="server.decisionStrategy"
+                            data-ng-model="server.decisionStrategy"
+                            ng-change="selectDecisionStrategy()">
+                        <option value="UNANIMOUS">{{:: 'authz-policy-decision-strategy-unanimous' | translate}}</option>
+                        <option value="AFFIRMATIVE">{{:: 'authz-policy-decision-strategy-affirmative' | translate}}</option>
+                    </select>
+                </div>
+
+                <kc-tooltip>{{:: 'authz-server-decision-strategy.tooltip' | translate}}</kc-tooltip>
+            </div>
             <div class="form-group">
                 <label class="col-md-2 control-label" for="server.allowRemoteResourceManagement">{{:: 'authz-remote-resource-management' | translate}}</label>
                 <div class="col-md-6">

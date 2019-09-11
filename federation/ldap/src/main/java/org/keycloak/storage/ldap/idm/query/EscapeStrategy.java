@@ -84,11 +84,32 @@ public enum EscapeStrategy {
             }
         }
 
+    },
+
+    // Escaping value as Octet-String
+    OCTET_STRING {
+        @Override
+        public String escape(String input) {
+            byte[] bytes;
+            try {
+                bytes = input.getBytes("UTF-8");
+            } catch (UnsupportedEncodingException e) {
+                throw new RuntimeException(e);
+            }
+            return escapeHex(bytes);
+        }
+
     };
 
+    public static String escapeHex(byte[] bytes) {
+        StringBuilder sb = new StringBuilder();
+        for (byte b : bytes) {
+            sb.append(String.format("\\%02x", b));
+        }
+        return sb.toString();
+    }
 
     public abstract String escape(String input);
-
 
     protected void appendByte(byte b, StringBuilder output) {
         if (b >= 0) {

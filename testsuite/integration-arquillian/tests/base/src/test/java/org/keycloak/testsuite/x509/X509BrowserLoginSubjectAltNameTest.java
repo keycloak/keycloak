@@ -18,18 +18,9 @@
 package org.keycloak.testsuite.x509;
 
 import org.jboss.arquillian.drone.api.annotation.Drone;
-import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.keycloak.OAuth2Constants;
-import org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel;
-import org.keycloak.events.Details;
-import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
-import org.keycloak.testsuite.pages.AppPage;
-import org.keycloak.testsuite.pages.LoginPage;
-import org.keycloak.testsuite.pages.x509.X509IdentityConfirmationPage;
 import org.keycloak.testsuite.util.PhantomJSBrowser;
 import org.openqa.selenium.WebDriver;
 
@@ -40,18 +31,6 @@ import org.openqa.selenium.WebDriver;
  */
 
 public class X509BrowserLoginSubjectAltNameTest extends AbstractX509AuthenticationTest {
-
-    @Page
-    @PhantomJSBrowser
-    protected AppPage appPage;
-
-    @Page
-    @PhantomJSBrowser
-    protected X509IdentityConfirmationPage loginConfirmationPage;
-
-    @Page
-    @PhantomJSBrowser
-    protected LoginPage loginPage;
 
     @Drone
     @PhantomJSBrowser
@@ -68,36 +47,13 @@ public class X509BrowserLoginSubjectAltNameTest extends AbstractX509Authenticati
                 "/certs/clients/test-user@localhost.key.pem", "password");
     }
 
-    private void login(X509AuthenticatorConfigModel config, String userId, String username, String attemptedUsername) {
-
-        AuthenticatorConfigRepresentation cfg = newConfig("x509-browser-config", config.getConfig());
-        String cfgId = createConfig(browserExecution.getId(), cfg);
-        Assert.assertNotNull(cfgId);
-
-        loginConfirmationPage.open();
-
-        Assert.assertEquals("EMAILADDRESS=test-user@localhost, CN=test-user, OU=Keycloak, O=Red Hat, L=Boston, ST=MA, C=US", loginConfirmationPage.getSubjectDistinguishedNameText());
-        Assert.assertEquals(username, loginConfirmationPage.getUsernameText());
-
-        loginConfirmationPage.confirm();
-
-        Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
-
-        events.expectLogin()
-                .user(userId)
-                .detail(Details.USERNAME, attemptedUsername)
-                .removeDetail(Details.REDIRECT_URI)
-                .assertEvent();
-    }
-
     @Test
     public void loginAsUserFromCertSANEmail() {
-        login(createLoginSubjectAltNameEmail2UserAttributeConfig(), userId, "test-user@localhost", "test-user-altmail@localhost");
+        x509BrowserLogin(createLoginSubjectAltNameEmail2UserAttributeConfig(), userId, "test-user@localhost", "test-user-altmail@localhost");
     }
 
     @Test
     public void loginAsUserFromCertSANUpn() {
-        login(createLoginSubjectAltNameOtherName2UserAttributeConfig(), userId, "test-user@localhost", "test_upn_name@localhost");
+        x509BrowserLogin(createLoginSubjectAltNameOtherName2UserAttributeConfig(), userId, "test-user@localhost", "test_upn_name@localhost");
     }
 }

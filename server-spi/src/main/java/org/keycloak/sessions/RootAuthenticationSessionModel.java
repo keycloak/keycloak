@@ -58,6 +58,12 @@ public interface RootAuthenticationSessionModel {
      */
     AuthenticationSessionModel createAuthenticationSession(ClientModel client);
 
+    /**
+     * Removes authentication session from root authentication session.
+     * If there's no child authentication session left in the root authentication session, it's removed as well.
+     * @param tabId String
+     */
+    void removeAuthenticationSessionByTabId(String tabId);
 
     /**
      * Will completely restart whole state of authentication session. It will just keep same ID. It will setup it with provided realm.

@@ -33,6 +33,7 @@ import org.keycloak.representations.adapters.config.AdapterConfig;
 import java.io.IOException;
 import java.net.URI;
 import java.util.Map;
+import java.util.concurrent.Callable;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -469,7 +470,7 @@ public class AdapterDeploymentContext {
         }
 
         @Override
-        public void setPolicyEnforcer(PolicyEnforcer policyEnforcer) {
+        public void setPolicyEnforcer(Callable<PolicyEnforcer> policyEnforcer) {
             delegate.setPolicyEnforcer(policyEnforcer);
         }
 

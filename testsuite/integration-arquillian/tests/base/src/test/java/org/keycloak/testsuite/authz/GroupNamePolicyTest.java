@@ -100,7 +100,8 @@ public class GroupNamePolicyTest extends AbstractAuthzTest {
                     .redirectUris("http://localhost/resource-server-test")
                     .defaultRoles("uma_protection")
                     .directAccessGrants()
-                    .protocolMapper(groupProtocolMapper))
+                    .protocolMapper(groupProtocolMapper)
+                    .serviceAccountsEnabled(true))
                 .build());
     }
 
@@ -149,6 +150,13 @@ public class GroupNamePolicyTest extends AbstractAuthzTest {
         try {
             authzClient.authorization("alice", "password").authorize(new AuthorizationRequest(ticket));
             fail("Should fail because user is not granted with expected group");
+        } catch (AuthorizationDeniedException ignore) {
+
+        }
+
+        try {
+            authzClient.authorization(authzClient.obtainAccessToken().getToken()).authorize(new AuthorizationRequest(ticket));
+            fail("Should fail because service account is not granted with expected group");
         } catch (AuthorizationDeniedException ignore) {
 
         }

@@ -17,6 +17,7 @@
 package org.keycloak.testsuite.console.authorization;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
@@ -27,18 +28,17 @@ import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.AuthorizationResource;
 import org.keycloak.admin.client.resource.PoliciesResource;
+import org.keycloak.admin.client.resource.ResourcePermissionsResource;
 import org.keycloak.admin.client.resource.ResourcesResource;
 import org.keycloak.admin.client.resource.RolePoliciesResource;
 import org.keycloak.admin.client.resource.RolesResource;
 import org.keycloak.representations.idm.RoleRepresentation;
-import org.keycloak.representations.idm.authorization.AggregatePolicyRepresentation;
 import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.representations.idm.authorization.ResourcePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.RolePolicyRepresentation;
 import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
 import org.keycloak.testsuite.console.page.clients.authorization.permission.ResourcePermission;
-import org.keycloak.testsuite.console.page.clients.authorization.policy.AggregatePolicy;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -173,6 +173,27 @@ public class ResourcePermissionManagementTest extends AbstractAuthorizationSetti
         ResourcePermission actual = authorizationPage.authorizationTabs().permissions().name(expected.getName());
 
         assertPolicy(expected, actual);
+        
+        expected.setResourceType(null);
+        expected.addResource("Resource A");
+
+        authorizationPage.navigateTo();
+        authorizationPage.authorizationTabs().permissions().update(expected.getName(), expected);
+        assertAlertSuccess();
+
+        ResourcePermissionsResource resourcePermission = testRealmResource().clients().get(newClient.getId()).authorization()
+                .permissions().resource();
+        ResourcePermissionRepresentation permission = resourcePermission.findByName(expected.getName());
+        
+        assertFalse(resourcePermission.findById(permission.getId()).resources().isEmpty());
+
+        expected.setResourceType("test");
+
+        authorizationPage.navigateTo();
+        authorizationPage.authorizationTabs().permissions().update(expected.getName(), expected);
+        assertAlertSuccess();
+
+        assertTrue(resourcePermission.findById(permission.getId()).resources().isEmpty());
     }
 
     @Test

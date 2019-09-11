@@ -119,17 +119,24 @@ public class InfinispanCacheInitializer extends BaseCacheInitializer {
         ExecutorService executorService = distributed ? new DefaultExecutorService(workCache, localExecutor) : localExecutor;
 
         int errors = 0;
+        int segmentToLoad = 0;
 
         try {
-            List<SessionLoader.WorkerResult> previousResults = new LinkedList<>();
+            SessionLoader.WorkerResult previousResult = null;
+            SessionLoader.WorkerResult nextResult = null;
+            int distributedWorkersCount = 0;
+            boolean firstTryForSegment = true;
 
-            while (!state.isFinished()) {
-                int nodesCount = transport==null ? 1 : transport.getMembers().size();
-                int distributedWorkersCount = processors * nodesCount;
+            while (segmentToLoad < state.getSegmentsCount()) {
+                if (firstTryForSegment) {
+                    // do not change the node count if it's not the first try
+                    int nodesCount = transport==null ? 1 : transport.getMembers().size();
+                    distributedWorkersCount = processors * nodesCount;
+                }
 
                 log.debugf("Starting next iteration with %d workers", distributedWorkersCount);
 
-                List<Integer> segments = state.getUnfinishedSegments(distributedWorkersCount);
+                List<Integer> segments = state.getSegmentsToLoad(segmentToLoad, distributedWorkersCount);
 
                 if (log.isTraceEnabled()) {
                     log.trace("unfinished segments for this iteration: " + segments);
@@ -137,9 +144,8 @@ public class InfinispanCacheInitializer extends BaseCacheInitializer {
 
                 List<Future<SessionLoader.WorkerResult>> futures = new LinkedList<>();
 
-                int workerId = 0;
                 for (Integer segment : segments) {
-                    SessionLoader.WorkerContext workerCtx = sessionLoader.computeWorkerContext(loaderCtx, segment, workerId, previousResults);
+                    SessionLoader.WorkerContext workerCtx = sessionLoader.computeWorkerContext(loaderCtx, segment, segment - segmentToLoad, previousResult);
 
                     SessionInitializerWorker worker = new SessionInitializerWorker();
                     worker.setWorkerEnvironment(loaderCtx, workerCtx, sessionLoader);
@@ -150,17 +156,19 @@ public class InfinispanCacheInitializer extends BaseCacheInitializer {
 
                     Future<SessionLoader.WorkerResult> future = executorService.submit(worker);
                     futures.add(future);
-
-                    workerId++;
                 }
 
                 boolean anyFailure = false;
                 for (Future<SessionLoader.WorkerResult> future : futures) {
                     try {
                         SessionLoader.WorkerResult result = future.get();
-                        previousResults.add(result);
-
-                        if (!result.isSuccess()) {
+                        if (result.isSuccess()) {
+                            state.markSegmentFinished(result.getSegment());
+                            if (result.getSegment() == segmentToLoad + distributedWorkersCount - 1) {
+                                // last result for next iteration when complete
+                                nextResult = result;
+                            }
+                        } else {
                             if (log.isTraceEnabled()) {
                                 log.tracef("Segment %d failed to compute", result.getSegment());
                             }
@@ -181,13 +189,18 @@ public class InfinispanCacheInitializer extends BaseCacheInitializer {
                     throw new RuntimeException("Maximum count of worker errors occured. Limit was " + maxErrors + ". See server.log for details");
                 }
 
-                // Save just if no error happened. Otherwise re-compute
                 if (!anyFailure) {
-                    for (SessionLoader.WorkerResult result : previousResults) {
-                        state.markSegmentFinished(result.getSegment());
+                    // everything is OK, prepare the new row
+                    segmentToLoad += distributedWorkersCount;
+                    firstTryForSegment = true;
+                    previousResult = nextResult;
+                    nextResult = null;
+                    if (log.isTraceEnabled()) {
+                        log.debugf("New initializer state is: %s", state);
                     }
-
-                    log.debugf("New initializer state is: %s", state);
+                } else {
+                    // some segments failed, try to load unloaded segments
+                    firstTryForSegment = false;
                 }
             }
 

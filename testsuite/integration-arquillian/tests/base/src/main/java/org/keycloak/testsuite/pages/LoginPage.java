@@ -18,10 +18,13 @@
 package org.keycloak.testsuite.pages;
 
 import org.jboss.arquillian.test.api.ArquillianResource;
+import org.keycloak.testsuite.util.DroneUtils;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
+
+import static org.keycloak.testsuite.util.UIUtils.clickLink;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -143,7 +146,7 @@ public class LoginPage extends LanguageComboboxAwarePage {
     }
 
     public boolean isCurrent(String realm) {
-        return driver.getTitle().equals("Log in to " + realm) || driver.getTitle().equals("Anmeldung bei " + realm);
+        return DroneUtils.getCurrentDriver().getTitle().equals("Log in to " + realm) || DroneUtils.getCurrentDriver().getTitle().equals("Anmeldung bei " + realm);
     }
 
     public void clickRegister() {
@@ -152,12 +155,12 @@ public class LoginPage extends LanguageComboboxAwarePage {
 
     public void clickSocial(String providerId) {
         WebElement socialButton = findSocialButton(providerId);
-        socialButton.click();
+        clickLink(socialButton);
     }
 
     public WebElement findSocialButton(String providerId) {
         String id = "zocial-" + providerId;
-        return this.driver.findElement(By.id(id));
+        return DroneUtils.getCurrentDriver().findElement(By.id(id));
     }
 
     public void resetPassword() {

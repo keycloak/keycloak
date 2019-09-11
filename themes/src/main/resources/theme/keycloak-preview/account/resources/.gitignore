@@ -14,6 +14,8 @@ node
 
 # Don't ignore these
 !keycloak.js
-!systemjs-angular-loader.js
 !systemjs.config.extras.js
 !systemjs.config.js
+!.eslintrc.js
+!WelcomePageScripts.js
+!content.js

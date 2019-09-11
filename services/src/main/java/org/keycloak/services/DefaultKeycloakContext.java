@@ -27,6 +27,7 @@ import org.keycloak.models.KeycloakUriInfo;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.services.resources.KeycloakApplication;
+import org.keycloak.sessions.AuthenticationSessionModel;
 
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.UriInfo;
@@ -47,6 +48,8 @@ public class DefaultKeycloakContext implements KeycloakContext {
     private KeycloakSession session;
 
     private KeycloakUriInfo uriInfo;
+    
+    private AuthenticationSessionModel authenticationSession;
 
     public DefaultKeycloakContext(KeycloakSession session) {
         this.session = session;
@@ -118,5 +121,15 @@ public class DefaultKeycloakContext implements KeycloakContext {
     @Override
     public Locale resolveLocale(UserModel user) {
         return session.getProvider(LocaleSelectorProvider.class).resolveLocale(realm, user);
+    }
+    
+    @Override
+    public AuthenticationSessionModel getAuthenticationSession() {
+        return authenticationSession;
+    }
+    
+    @Override
+    public void setAuthenticationSession(AuthenticationSessionModel authenticationSession) {
+        this.authenticationSession = authenticationSession;
     }
 }

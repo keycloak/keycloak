@@ -18,7 +18,6 @@ package org.keycloak.testsuite.oauth;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 import org.junit.Rule;
 import org.junit.Test;
@@ -27,6 +26,8 @@ import org.keycloak.OAuthErrorException;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.events.Errors;
 import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.representations.RefreshToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
@@ -41,10 +42,12 @@ import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.oidc.OIDCScopeTest;
 import org.keycloak.testsuite.oidc.AbstractOIDCScopeTest;
 import org.keycloak.testsuite.util.KeycloakModelUtils;
+import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.OAuthClient.AccessTokenResponse;
 import org.keycloak.testsuite.util.TokenSignatureUtil;
 import org.keycloak.util.JsonSerialization;
 
+import javax.ws.rs.core.UriBuilder;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -181,6 +184,36 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
+    public void testIntrospectRefreshTokenAfterUserSessionLogoutAndLoginAgain() throws Exception {
+        AccessTokenResponse accessTokenResponse = loginAndForceNewLoginPage();
+        String refreshToken1 = accessTokenResponse.getRefreshToken();
+
+        oauth.doLogout(refreshToken1, "password");
+        events.clear();
+
+        setTimeOffset(2);
+
+        oauth.fillLoginForm("test-user@localhost", "password");
+        events.expectLogin().assertEvent();
+
+        Assert.assertFalse(loginPage.isCurrent());
+
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        OAuthClient.AccessTokenResponse tokenResponse2 = oauth.doAccessTokenRequest(code, "password");
+
+        String introspectResponse = oauth.introspectRefreshTokenWithClientCredential("confidential-cli", "secret1", tokenResponse2.getRefreshToken());
+
+        ObjectMapper objectMapper = new ObjectMapper();
+        JsonNode jsonNode = objectMapper.readTree(introspectResponse);
+        assertTrue(jsonNode.get("active").asBoolean());
+
+        introspectResponse = oauth.introspectRefreshTokenWithClientCredential("confidential-cli", "secret1", refreshToken1);
+
+        jsonNode = objectMapper.readTree(introspectResponse);
+        assertFalse(jsonNode.get("active").asBoolean());
+    }
+
+    @Test
     public void testPublicClientCredentialsNotAllowed() throws Exception {
         oauth.doLogin("test-user@localhost", "password");
 
@@ -249,16 +282,24 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void testIntrospectAccessTokenES256() throws Exception {
+        testIntrospectAccessToken(Algorithm.ES256);
+    }
+
+    @Test
+    public void testIntrospectAccessTokenPS256() throws Exception {
+        testIntrospectAccessToken(Algorithm.PS256);
+    }
+
+    private void testIntrospectAccessToken(String jwaAlgorithm) throws Exception {
         try {
-            TokenSignatureUtil.registerKeyProvider("P-256", adminClient, testContext);
-            TokenSignatureUtil.changeClientAccessTokenSignatureProvider(ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), Algorithm.ES256);
+            TokenSignatureUtil.changeClientAccessTokenSignatureProvider(ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), jwaAlgorithm);
 
             oauth.doLogin("test-user@localhost", "password");
             String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
             EventRepresentation loginEvent = events.expectLogin().assertEvent();
             AccessTokenResponse accessTokenResponse = oauth.doAccessTokenRequest(code, "password");
 
-            assertEquals("ES256", new JWSInput(accessTokenResponse.getAccessToken()).getHeader().getAlgorithm().name());
+            assertEquals(jwaAlgorithm, new JWSInput(accessTokenResponse.getAccessToken()).getHeader().getAlgorithm().name());
 
             String tokenResponse = oauth.introspectAccessTokenWithClientCredential("confidential-cli", "secret1", accessTokenResponse.getAccessToken());
 
@@ -381,5 +422,25 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
 
         assertEquals(Errors.INVALID_CLIENT, rep.getOtherClaims().get("error"));
         assertNull(rep.getSubject());
+    }
+
+    private OAuthClient.AccessTokenResponse loginAndForceNewLoginPage() {
+        oauth.doLogin("test-user@localhost", "password");
+
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        oauth.clientSessionState("client-session");
+
+        OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
+
+        setTimeOffset(1);
+
+        String loginFormUri = UriBuilder.fromUri(oauth.getLoginFormUrl())
+                .queryParam(OIDCLoginProtocol.PROMPT_PARAM, OIDCLoginProtocol.PROMPT_VALUE_LOGIN)
+                .build().toString();
+        driver.navigate().to(loginFormUri);
+
+        loginPage.assertCurrent();
+
+        return tokenResponse;
     }
 }

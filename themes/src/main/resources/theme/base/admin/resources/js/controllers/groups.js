@@ -1,4 +1,4 @@
-module.controller('GroupListCtrl', function($scope, $route, $q, realm, Groups, GroupsCount, Group, GroupChildren, Notifications, $location, Dialog) {
+module.controller('GroupListCtrl', function($scope, $route, $q, realm, Groups, GroupsCount, Group, GroupChildren, Notifications, $location, Dialog, ComponentUtils) {
     $scope.realm = realm;
     $scope.groupList = [
         {
@@ -17,6 +17,7 @@ module.controller('GroupListCtrl', function($scope, $route, $q, realm, Groups, G
 
     var refreshGroups = function (search) {
         console.log('refreshGroups');
+        $scope.currentPageInput = $scope.currentPage;
 
         var first = ($scope.currentPage * $scope.pageSize) - $scope.pageSize;
         console.log('first:' + first);
@@ -46,9 +47,19 @@ module.controller('GroupListCtrl', function($scope, $route, $q, realm, Groups, G
                 {
                     "id" : "realm",
                     "name": "Groups",
-                    "subGroups" : groups
+                    "subGroups": ComponentUtils.sortGroups('name', groups)
                 }
             ];
+            if (angular.isDefined(search) && search !== '') {
+                // Add highlight for concrete text match
+                setTimeout(function () {
+                    document.querySelectorAll('span').forEach(function (element) {
+                        if (element.textContent.indexOf(search) != -1) {
+                            angular.element(element).addClass('highlight');
+                        }
+                    });
+                }, 500);
+            }
         }, function (failed) {
             Notifications.error(failed);
         });
@@ -73,20 +84,26 @@ module.controller('GroupListCtrl', function($scope, $route, $q, realm, Groups, G
     refreshGroups();
 
     $scope.$watch('currentPage', function(newValue, oldValue) {
-        if(newValue !== oldValue) {
+        if(parseInt(newValue, 10) !== oldValue) {
             refreshGroups($scope.searchCriteria);
         }
     });
 
     $scope.clearSearch = function() {
         $scope.searchCriteria = '';
-        $scope.currentPage = 1;
-        refreshGroups();
+        if (parseInt($scope.currentPage, 10) === 1) {
+            refreshGroups();
+        } else {
+            $scope.currentPage = 1;
+        }
     };
 
     $scope.searchGroup = function() {
-        $scope.currentPage = 1;
-        refreshGroups($scope.searchCriteria);
+        if (parseInt($scope.currentPage, 10) === 1) {
+            refreshGroups($scope.searchCriteria);
+        } else {
+            $scope.currentPage = 1;
+        }
     };
 
     $scope.edit = function(selected) {
@@ -475,6 +492,7 @@ module.controller('DefaultGroupsCtrl', function($scope, $q, realm, Groups, Group
 
     var refreshAvailableGroups = function (search) {
         var first = ($scope.currentPage * $scope.pageSize) - $scope.pageSize;
+        $scope.currentPageInput = $scope.currentPage;
         var queryParams = {
             realm : realm.realm,
             first : first,
@@ -520,20 +538,26 @@ module.controller('DefaultGroupsCtrl', function($scope, $q, realm, Groups, Group
     refreshAvailableGroups();
 
     $scope.$watch('currentPage', function(newValue, oldValue) {
-        if(newValue !== oldValue) {
+        if(parseInt(newValue, 10) !== parseInt(oldValue, 10)) {
             refreshAvailableGroups($scope.searchCriteria);
         }
     });
 
     $scope.clearSearch = function() {
         $scope.searchCriteria = '';
-        $scope.currentPage = 1;
-        refreshAvailableGroups();
+        if (parseInt($scope.currentPage, 10) === 1) {
+            refreshAvailableGroups();
+        } else {
+            $scope.currentPage = 1;
+        }
     };
 
     $scope.searchGroup = function() {
-        $scope.currentPage = 1;
-        refreshAvailableGroups($scope.searchCriteria);
+        if (parseInt($scope.currentPage, 10) === 1) {
+            refreshAvailableGroups($scope.searchCriteria);
+        } else {
+            $scope.currentPage = 1;
+        }
     };
 
     refreshDefaultGroups();
@@ -586,4 +610,3 @@ module.controller('DefaultGroupsCtrl', function($scope, $q, realm, Groups, Group
     }
 
 });
-

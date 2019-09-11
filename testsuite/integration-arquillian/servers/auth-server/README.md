@@ -20,8 +20,9 @@ Common configurations of Keycloak server on JBoss-based container (Wildfly/EAP).
  - Activated by __`-Pauth-server-eap`__
  - Requires access to product repo.
  - Requires additional properties:
-  - `product.version`
-  - `product.unpacked.folder.name`
+   - `product.version`
+   - `product.unpacked.folder.name` (optional; the default value is based on the POM versions)
+   - `product` to activate the product profile; NOT required if `product.unpacked.folder.name` is specified
 
 ### Server dist vs overlay
 

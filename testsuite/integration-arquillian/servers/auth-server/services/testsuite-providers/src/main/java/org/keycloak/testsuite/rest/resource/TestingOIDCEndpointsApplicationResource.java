@@ -22,14 +22,16 @@ import org.jboss.resteasy.spi.BadRequestException;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.common.util.PemUtils;
+import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.AsymmetricSignatureSignerContext;
 import org.keycloak.crypto.KeyType;
+import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.crypto.SignatureSignerContext;
+import org.keycloak.jose.jwe.JWEConstants;
 import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.JWKBuilder;
-import org.keycloak.jose.jws.Algorithm;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.testsuite.rest.TestApplicationResourceProviderFactory;
@@ -73,35 +75,47 @@ public class TestingOIDCEndpointsApplicationResource {
     public Map<String, String> generateKeys(@QueryParam("jwaAlgorithm") String jwaAlgorithm) {
         try {
             KeyPair keyPair = null;
-            if (jwaAlgorithm == null) jwaAlgorithm = org.keycloak.crypto.Algorithm.RS256;
+            KeyUse keyUse = KeyUse.SIG;
+            if (jwaAlgorithm == null) jwaAlgorithm = Algorithm.RS256;
             String keyType = null;
 
             switch (jwaAlgorithm) {
-                case org.keycloak.crypto.Algorithm.RS256:
-                case org.keycloak.crypto.Algorithm.RS384:
-                case org.keycloak.crypto.Algorithm.RS512:
+                case Algorithm.RS256:
+                case Algorithm.RS384:
+                case Algorithm.RS512:
+                case Algorithm.PS256:
+                case Algorithm.PS384:
+                case Algorithm.PS512:
                     keyType = KeyType.RSA;
                     keyPair = KeyUtils.generateRsaKeyPair(2048);
                     break;
-                case org.keycloak.crypto.Algorithm.ES256:
+                case Algorithm.ES256:
                     keyType = KeyType.EC;
                     keyPair = generateEcdsaKey("secp256r1");
                     break;
-                case org.keycloak.crypto.Algorithm.ES384:
+                case Algorithm.ES384:
                     keyType = KeyType.EC;
                     keyPair = generateEcdsaKey("secp384r1");
                     break;
-                case org.keycloak.crypto.Algorithm.ES512:
+                case Algorithm.ES512:
                     keyType = KeyType.EC;
                     keyPair = generateEcdsaKey("secp521r1");
+                    break;
+                case JWEConstants.RSA1_5:
+                case JWEConstants.RSA_OAEP:
+                    // for JWE KEK Key Encryption
+                    keyType = KeyType.RSA;
+                    keyUse = KeyUse.ENC;
+                    keyPair = KeyUtils.generateRsaKeyPair(2048);
                     break;
                 default :
                     throw new RuntimeException("Unsupported signature algorithm");
             }
 
-            clientData.setSigningKeyPair(keyPair);
-            clientData.setSigningKeyType(keyType);
-            clientData.setSigningKeyAlgorithm(jwaAlgorithm);
+            clientData.setKeyPair(keyPair);
+            clientData.setKeyType(keyType);
+            clientData.setKeyAlgorithm(jwaAlgorithm);
+            clientData.setKeyUse(keyUse);
         } catch (Exception e) {
             throw new BadRequestException("Error generating signing keypair", e);
         }
@@ -137,21 +151,23 @@ public class TestingOIDCEndpointsApplicationResource {
     @NoCache
     public JSONWebKeySet getJwks() {
         JSONWebKeySet keySet = new JSONWebKeySet();
-        KeyPair signingKeyPair = clientData.getSigningKeyPair();
-        String signingKeyAlgorithm = clientData.getSigningKeyAlgorithm();
-        String signingKeyType = clientData.getSigningKeyType();
+        KeyPair keyPair = clientData.getKeyPair();
+        String keyAlgorithm = clientData.getKeyAlgorithm();
+        String keyType = clientData.getKeyType();
+        KeyUse keyUse = clientData.getKeyUse();
 
-        if (signingKeyPair == null || !isSupportedSigningAlgorithm(signingKeyAlgorithm)) {
+        if (keyPair == null || !isSupportedAlgorithm(keyAlgorithm)) {
             keySet.setKeys(new JWK[] {});
-        } else if (KeyType.RSA.equals(signingKeyType)) {
-            keySet.setKeys(new JWK[] { JWKBuilder.create().algorithm(signingKeyAlgorithm).rsa(signingKeyPair.getPublic()) });
-        } else if (KeyType.EC.equals(signingKeyType)) {
-            keySet.setKeys(new JWK[] { JWKBuilder.create().algorithm(signingKeyAlgorithm).ec(signingKeyPair.getPublic()) });
+        } else if (KeyType.RSA.equals(keyType)) {
+            keySet.setKeys(new JWK[] { JWKBuilder.create().algorithm(keyAlgorithm).rsa(keyPair.getPublic(), keyUse) });
+        } else if (KeyType.EC.equals(keyType)) {
+            keySet.setKeys(new JWK[] { JWKBuilder.create().algorithm(keyAlgorithm).ec(keyPair.getPublic()) });
         } else {
             keySet.setKeys(new JWK[] {});
         }
 
         return keySet;
+        
     }
 
 
@@ -171,7 +187,7 @@ public class TestingOIDCEndpointsApplicationResource {
             oidcRequest.put(OIDCLoginProtocol.MAX_AGE_PARAM, Integer.parseInt(maxAge));
         }
 
-        if (!isSupportedSigningAlgorithm(jwaAlgorithm)) throw new BadRequestException("Unknown argument: " + jwaAlgorithm);
+        if (!isSupportedAlgorithm(jwaAlgorithm)) throw new BadRequestException("Unknown argument: " + jwaAlgorithm);
 
         if ("none".equals(jwaAlgorithm)) {
             clientData.setOidcRequest(new JWSBuilder().jsonContent(oidcRequest).none());
@@ -183,22 +199,28 @@ public class TestingOIDCEndpointsApplicationResource {
             KeyWrapper keyWrapper = new KeyWrapper();
             keyWrapper.setAlgorithm(clientData.getSigningKeyAlgorithm());
             keyWrapper.setKid(kid);
-            keyWrapper.setSignKey(privateKey);
+            keyWrapper.setPrivateKey(privateKey);
             SignatureSignerContext signer = new AsymmetricSignatureSignerContext(keyWrapper);
             clientData.setOidcRequest(new JWSBuilder().kid(kid).jsonContent(oidcRequest).sign(signer));
         }
     }
-    
-    private boolean isSupportedSigningAlgorithm(String signingAlgorithm) {
+
+    private boolean isSupportedAlgorithm(String signingAlgorithm) {
+        if (signingAlgorithm == null) return false;
         boolean ret = false;
         switch (signingAlgorithm) {
             case "none":
-            case org.keycloak.crypto.Algorithm.RS256:
-            case org.keycloak.crypto.Algorithm.RS384:
-            case org.keycloak.crypto.Algorithm.RS512:
-            case org.keycloak.crypto.Algorithm.ES256:
-            case org.keycloak.crypto.Algorithm.ES384:
-            case org.keycloak.crypto.Algorithm.ES512:
+            case Algorithm.RS256:
+            case Algorithm.RS384:
+            case Algorithm.RS512:
+            case Algorithm.PS256:
+            case Algorithm.PS384:
+            case Algorithm.PS512:
+            case Algorithm.ES256:
+            case Algorithm.ES384:
+            case Algorithm.ES512:
+            case JWEConstants.RSA1_5:
+            case JWEConstants.RSA_OAEP:
                 ret = true;
         }
         return ret;

@@ -38,16 +38,28 @@ public class SessionServlet extends HttpServlet {
             req.logout();
             return;
         }
-        String counter = increaseAndGetCounter(req);
+
+        String counter;
+        if (req.getRequestURI().endsWith("/donotincrease")) {
+            counter = getCounter(req);
+        } else {
+            counter = increaseAndGetCounter(req);
+        }
 
         resp.setContentType("text/html");
         PrintWriter pw = resp.getWriter();
         pw.printf("<html><head><title>%s</title></head><body>", "Session Test");
         pw.printf("Counter=%s", counter);
+        pw.printf("Node name=%s", System.getProperty("jboss.node.name", "property not specified"));
         pw.print("</body></html>");
         pw.flush();
 
 
+    }
+
+    private String getCounter(HttpServletRequest req) {
+        HttpSession session = req.getSession();
+        return String.valueOf(session.getAttribute("counter"));
     }
 
     private String increaseAndGetCounter(HttpServletRequest req) {

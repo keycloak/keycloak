@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian-tests</artifactId>
-        <version>6.0.0-SNAPSHOT</version>
+        <version>8.0.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -95,22 +95,6 @@
             <artifactId>greenmail</artifactId>
             <scope>compile</scope>
         </dependency>
-        <!--<dependency>-->
-            <!--<groupId>com.spotify</groupId>-->
-            <!--<artifactId>docker-client</artifactId>-->
-            <!--<version>8.3.2</version>-->
-            <!--<scope>test</scope>-->
-            <!--<exclusions>-->
-                <!--<exclusion>-->
-                    <!--<groupId>javax.ws.rs</groupId>-->
-                    <!--<artifactId>javax.ws.rs-api</artifactId>-->
-                <!--</exclusion>-->
-                <!--<exclusion>-->
-                    <!--<groupId>com.github.jnr</groupId>-->
-                    <!--<artifactId>jnr-unixsocket</artifactId>-->
-                <!--</exclusion>-->
-            <!--</exclusions>-->
-        <!--</dependency>-->
         <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>testcontainers</artifactId>
@@ -131,10 +115,6 @@
             <artifactId>integration-arquillian-servers-app-server-undertow</artifactId>
             <version>${project.version}</version>
             <scope>runtime</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.wildfly.arquillian</groupId>
-            <artifactId>wildfly-arquillian-container-managed</artifactId>
         </dependency>
         <dependency>
             <groupId>org.keycloak.testsuite</groupId>
@@ -207,6 +187,7 @@
                                         <include>arquillian.xml</include>
                                         <include>password-blacklists/**</include>
                                         <include>log4j.properties</include>
+                                        <include>vault/**</include>
                                     </includes>
                                     <!--<filtering>true</filtering>-->
                                 </resource>
@@ -360,6 +341,7 @@
                                             <ORACLE_SID>${keycloak.connectionsJpa.database}</ORACLE_SID>
                                             <ORACLE_PWD>sa</ORACLE_PWD>
                                         </env>
+                                        <cmd>${docker.database.cmd}</cmd>
                                         <wait>
                                             <!-- Do not use waiting for port since that is unreliable, sometimes port is listening before DB is ready to serve -->
                                             <log>${docker.database.wait-for-log-regex}</log>
@@ -378,6 +360,21 @@
                         <phase>test</phase>
                         <goals>
                             <goal>stop</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- DB will be released after the test -->
+            <plugin>
+                <groupId>org.keycloak</groupId>
+                <artifactId>db-allocator-plugin</artifactId>
+                <inherited>false</inherited>
+                <executions>
+                    <execution>
+                        <id>release-db</id>
+                        <goals>
+                            <goal>release</goal>
                         </goals>
                     </execution>
                 </executions>
@@ -709,7 +706,7 @@
                 <app.server.http.port>8181</app.server.http.port>
 
                 <app.server.management.user>admin</app.server.management.user>
-                <app.server.management.password>admin</app.server.management.password>
+                <app.server.management.password>password</app.server.management.password>
                 <app.server.karaf.jvm.debug.args>-agentlib:jdwp=transport=dt_socket,server=y,suspend=${app.server.debug.suspend},address=localhost:${app.server.debug.port}</app.server.karaf.jvm.debug.args>
             </properties>
             <dependencies>
@@ -733,6 +730,20 @@
             </dependencies>
             <build>
                 <plugins>
+                    <plugin>
+                        <artifactId>maven-enforcer-plugin</artifactId>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <requireProperty>	
+                                    <message>When running fuse tests 'additional.fuse.repos' is expected to be set.</message>	
+                                    <property>additional.fuse.repos</property>	
+                                </requireProperty>
+                            </rules>
+                        </configuration>
+                    </plugin>
                     <plugin>
                         <groupId>org.commonjava.maven.plugins</groupId>
                         <artifactId>directory-maven-plugin</artifactId>
@@ -770,7 +781,7 @@
                 <app.server.http.port>8181</app.server.http.port>
 
                 <app.server.management.user>admin</app.server.management.user>
-                <app.server.management.password>admin</app.server.management.password>
+                <app.server.management.password>password</app.server.management.password>
                 <app.server.karaf.jvm.debug.args>-agentlib:jdwp=transport=dt_socket,server=y,suspend=${app.server.debug.suspend},address=localhost:${app.server.debug.port}</app.server.karaf.jvm.debug.args>
             </properties>
             <dependencies>
@@ -794,6 +805,20 @@
             </dependencies>
             <build>
                 <plugins>
+                    <plugin>
+                        <artifactId>maven-enforcer-plugin</artifactId>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <requireProperty>	
+                                    <message>When running fuse tests 'additional.fuse.repos' is expected to be set.</message>	
+                                    <property>additional.fuse.repos</property>	
+                                </requireProperty>
+                            </rules>
+                        </configuration>
+                    </plugin>
                     <plugin>
                         <groupId>org.commonjava.maven.plugins</groupId>
                         <artifactId>directory-maven-plugin</artifactId>
@@ -915,7 +940,7 @@
             <properties>
                 <skip.clean.second.cache>false</skip.clean.second.cache>
                 <exclude.crossdc>-</exclude.crossdc>
-                <surefire.memory.settings>-Xms512m -Xmx1024m -XX:MetaspaceSize=96m -XX:MaxMetaspaceSize=256m</surefire.memory.settings>
+                <surefire.memory.Xmx>1024m</surefire.memory.Xmx>
             </properties>
         </profile>
         <profile>
@@ -924,7 +949,7 @@
                 <skip.clean.second.cache>false</skip.clean.second.cache>
                 <skip.copy.auth.crossdc.nodes>false</skip.copy.auth.crossdc.nodes>
                 <exclude.crossdc>-</exclude.crossdc>
-                <surefire.memory.settings>-Xms512m -Xmx1024m -XX:MetaspaceSize=96m -XX:MaxMetaspaceSize=256m</surefire.memory.settings>
+                <surefire.memory.Xmx>1024m</surefire.memory.Xmx>
             </properties>
         </profile>
     </profiles>

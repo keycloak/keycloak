@@ -83,9 +83,13 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
     public static final String CLIENT_ROLES = "client roles";
     public static final String AUDIENCE_RESOLVE = "audience resolve";
     public static final String ALLOWED_WEB_ORIGINS = "allowed web origins";
+    // microprofile-jwt claims
+    public static final String UPN = "upn";
+    public static final String GROUPS = "groups";
 
     public static final String ROLES_SCOPE = "roles";
     public static final String WEB_ORIGINS_SCOPE = "web-origins";
+    public static final String MICROPROFILE_JWT_SCOPE = "microprofile-jwt";
 
     public static final String PROFILE_SCOPE_CONSENT_TEXT = "${profileScopeConsentText}";
     public static final String EMAIL_SCOPE_CONSENT_TEXT = "${emailScopeConsentText}";
@@ -179,6 +183,14 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
 
         builtins.put(IMPERSONATOR_ID.getDisplayName(), UserSessionNoteMapper.createUserSessionNoteMapper(IMPERSONATOR_ID));
         builtins.put(IMPERSONATOR_USERNAME.getDisplayName(), UserSessionNoteMapper.createUserSessionNoteMapper(IMPERSONATOR_USERNAME));
+
+        model = UserPropertyMapper.createClaimMapper(UPN, "username",
+                "upn", "String",
+                true, true);
+        builtins.put(UPN, model);
+
+        model = UserRealmRoleMappingMapper.create(null, GROUPS, GROUPS, true, true, true);
+        builtins.put(GROUPS, model);
     }
 
     private static void createUserAttributeMapper(String name, String attrName, String claimName, String type) {
@@ -255,6 +267,7 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
 
         addRolesClientScope(newRealm);
         addWebOriginsClientScope(newRealm);
+        addMicroprofileJWTClientScope(newRealm);
     }
 
 
@@ -301,6 +314,30 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
         return originsScope;
     }
 
+    /**
+     * Adds the {@code microprofile-jwt} optional client scope to the specified realm. If a {@code microprofile-jwt} client scope
+     * already exists in the realm then the existing scope is returned. Otherwise, a new scope is created and returned.
+     *
+     * @param newRealm the realm to which the {@code microprofile-jwt} scope is to be added.
+     * @return a reference to the {@code microprofile-jwt} client scope that was either created or already exists in the realm.
+     */
+    public static ClientScopeModel addMicroprofileJWTClientScope(RealmModel newRealm) {
+        ClientScopeModel microprofileScope = KeycloakModelUtils.getClientScopeByName(newRealm, MICROPROFILE_JWT_SCOPE);
+        if (microprofileScope == null) {
+            microprofileScope = newRealm.addClientScope(MICROPROFILE_JWT_SCOPE);
+            microprofileScope.setDescription("Microprofile - JWT built-in scope");
+            microprofileScope.setDisplayOnConsentScreen(false);
+            microprofileScope.setIncludeInTokenScope(true);
+            microprofileScope.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+            microprofileScope.addProtocolMapper(builtins.get(UPN));
+            microprofileScope.addProtocolMapper(builtins.get(GROUPS));
+            newRealm.addDefaultClientScope(microprofileScope, false);
+        } else {
+            logger.debugf("Client scope '%s' already exists in realm '%s'. Skip creating it.", MICROPROFILE_JWT_SCOPE, newRealm.getName());
+        }
+
+        return microprofileScope;
+    }
 
     @Override
     protected void addDefaults(ClientModel client) {

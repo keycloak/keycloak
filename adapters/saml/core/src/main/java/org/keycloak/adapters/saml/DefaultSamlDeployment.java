@@ -205,7 +205,9 @@ public class DefaultSamlDeployment implements SamlDeployment {
         private SingleLogoutService singleLogoutService;
         private final List<PublicKey> signatureValidationKeys = new LinkedList<>();
         private int minTimeBetweenDescriptorRequests;
+        private int allowedClockSkew;
         private HttpClient client;
+        private String metadataUrl;
 
         @Override
         public String getEntityID() {
@@ -259,11 +261,10 @@ public class DefaultSamlDeployment implements SamlDeployment {
             if (! this.signatureValidationKeys.isEmpty()) {
                 this.signatureValidationKeyLocator.add(new HardcodedKeyLocator(this.signatureValidationKeys));
             } else if (this.singleSignOnService != null) {
-                String samlDescriptorUrl = singleSignOnService.getRequestBindingUrl() + "/descriptor";
                 HttpClient httpClient = getClient();
                 SamlDescriptorPublicKeyLocator samlDescriptorPublicKeyLocator =
                   new SamlDescriptorPublicKeyLocator(
-                    samlDescriptorUrl, this.minTimeBetweenDescriptorRequests, DEFAULT_CACHE_TTL, httpClient);
+                    getMetadataUrl(), this.minTimeBetweenDescriptorRequests, DEFAULT_CACHE_TTL, httpClient);
                 this.signatureValidationKeyLocator.add(samlDescriptorPublicKeyLocator);
             }
         }
@@ -275,6 +276,24 @@ public class DefaultSamlDeployment implements SamlDeployment {
 
         public void setClient(HttpClient client) {
             this.client = client;
+        }
+
+        public String getMetadataUrl() {
+            return metadataUrl == null ? singleSignOnService.getRequestBindingUrl() + "/descriptor" : metadataUrl;
+        }
+
+        public void setMetadataUrl(String metadataUrl) {
+            this.metadataUrl = metadataUrl;
+        }
+
+        @Override
+        public int getAllowedClockSkew() {
+            return allowedClockSkew;
+        }
+
+
+        public void setAllowedClockSkew(int allowedClockSkew) {
+            this.allowedClockSkew = allowedClockSkew;
         }
     }
 
@@ -289,6 +308,7 @@ public class DefaultSamlDeployment implements SamlDeployment {
     private PrivateKey decryptionKey;
     private KeyPair signingKeyPair;
     private Set<String> roleAttributeNames;
+    private RoleMappingsProvider roleMappingsProvider;
     private PrincipalNamePolicy principalNamePolicy = PrincipalNamePolicy.FROM_NAME_ID;
     private String principalAttributeName;
     private String logoutPage;
@@ -357,6 +377,11 @@ public class DefaultSamlDeployment implements SamlDeployment {
     }
 
     @Override
+    public RoleMappingsProvider getRoleMappingsProvider() {
+        return this.roleMappingsProvider;
+    }
+
+    @Override
     public PrincipalNamePolicy getPrincipalNamePolicy() {
         return principalNamePolicy;
     }
@@ -404,6 +429,10 @@ public class DefaultSamlDeployment implements SamlDeployment {
 
     public void setRoleAttributeNames(Set<String> roleAttributeNames) {
         this.roleAttributeNames = roleAttributeNames;
+    }
+
+    public void setRoleMappingsProvider(final RoleMappingsProvider provider) {
+        this.roleMappingsProvider = provider;
     }
 
     public void setPrincipalNamePolicy(PrincipalNamePolicy principalNamePolicy) {

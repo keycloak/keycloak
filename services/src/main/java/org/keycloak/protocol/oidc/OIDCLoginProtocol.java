@@ -269,9 +269,18 @@ public class OIDCLoginProtocol implements LoginProtocol {
 
         String redirect = authSession.getRedirectUri();
         String state = authSession.getClientNote(OIDCLoginProtocol.STATE_PARAM);
-        OIDCRedirectUriBuilder redirectUri = OIDCRedirectUriBuilder.fromUri(redirect, responseMode).addParam(OAuth2Constants.ERROR, translateError(error));
-        if (state != null)
+        OIDCRedirectUriBuilder redirectUri = OIDCRedirectUriBuilder.fromUri(redirect, responseMode);
+        
+        if (error != Error.CANCELLED_AIA_SILENT) {
+            redirectUri.addParam(OAuth2Constants.ERROR, translateError(error));
+        }
+        if (error == Error.CANCELLED_AIA) {
+            redirectUri.addParam(OAuth2Constants.ERROR_DESCRIPTION, "User cancelled aplication-initiated action.");
+        }
+        if (state != null) {
             redirectUri.addParam(OAuth2Constants.STATE, state);
+        }
+        
         new AuthenticationSessionManager(session).removeAuthenticationSession(realm, authSession, true);
         return redirectUri.build();
     }
@@ -279,6 +288,8 @@ public class OIDCLoginProtocol implements LoginProtocol {
     private String translateError(Error error) {
         switch (error) {
             case CANCELLED_BY_USER:
+            case CANCELLED_AIA:
+                return OAuthErrorException.INTERACTION_REQUIRED;
             case CONSENT_DENIED:
                 return OAuthErrorException.ACCESS_DENIED;
             case PASSIVE_INTERACTION_REQUIRED:

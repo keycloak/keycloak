@@ -21,21 +21,21 @@
     <parent>
         <artifactId>integration-arquillian-test-apps-fuse-parent</artifactId>
         <groupId>org.keycloak.testsuite</groupId>
-        <version>6.0.0-SNAPSHOT</version>
+        <version>8.0.0-SNAPSHOT</version>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
     <artifactId>fuse-example-product-portal-fuse7-undertow</artifactId>
     <packaging>bundle</packaging>
-    <name>Product Portal - Secured in Karaf/Fuse 7.0 on Undertow</name>
+    <name>Product Portal - Secured in Karaf/Fuse 7 on Undertow</name>
 
     <properties>
         <keycloak.osgi.export>
         </keycloak.osgi.export>
         <keycloak.osgi.import>
             javax.wsdl,
-            javax.xml.bind,
-            javax.xml.bind.annotation,
+            javax.xml.bind;version="[2.2,3)",
+            javax.xml.bind.annotation;version="[2.2,3)",
             javax.xml.namespace,
             javax.xml.ws,
             META-INF.cxf;version="[2.7,3.3)",

@@ -34,7 +34,7 @@ import org.keycloak.testsuite.adapter.page.SessionPortal;
 import org.keycloak.testsuite.auth.page.account.Sessions;
 import org.keycloak.testsuite.auth.page.login.Login;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
-import org.keycloak.testsuite.arquillian.containers.ContainerConstants;
+import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
 import org.keycloak.testsuite.util.SecondBrowser;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;

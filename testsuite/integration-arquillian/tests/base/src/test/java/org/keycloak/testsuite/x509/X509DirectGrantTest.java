@@ -31,6 +31,8 @@ import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.util.ContainerAssume;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.PhantomJSBrowser;
 import org.openqa.selenium.WebDriver;
@@ -172,14 +174,16 @@ public class X509DirectGrantTest extends AbstractX509AuthenticationTest {
 
         assertEquals(401, response.getStatusCode());
 
-        events.expectLogin()
+        AssertEvents.ExpectedEvent expectedEvent = events.expectLogin()
                 .user((String) null)
                 .session((String) null)
                 .error("invalid_user_credentials")
                 .client("resource-owner")
                 .removeDetail(Details.CODE_ID)
                 .removeDetail(Details.CONSENT)
-                .removeDetail(Details.REDIRECT_URI)
+                .removeDetail(Details.REDIRECT_URI);
+
+        addX509CertificateDetails(expectedEvent)
                 .assertEvent();
     }
 
@@ -217,10 +221,13 @@ public class X509DirectGrantTest extends AbstractX509AuthenticationTest {
 
     @Test
     public void loginCertificateRevoked() throws Exception {
+        // Not possible to test file CRL on undertow at this moment - jboss config dir doesn't exists
+        ContainerAssume.assumeNotAuthServerUndertow();
+
         X509AuthenticatorConfigModel config =
                 new X509AuthenticatorConfigModel()
                         .setCRLEnabled(true)
-                        .setCRLRelativePath(CLIENT_CRL_PATH)
+                        .setCRLRelativePath(INTERMEDIATE_CA_CRL_PATH)
                         .setConfirmationPageAllowed(true)
                         .setMappingSourceType(SUBJECTDN_EMAIL)
                         .setUserIdentityMapperType(USERNAME_EMAIL);
@@ -304,7 +311,7 @@ public class X509DirectGrantTest extends AbstractX509AuthenticationTest {
         AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
         RefreshToken refreshToken = oauth.parseRefreshToken(response.getRefreshToken());
 
-        events.expectLogin()
+        AssertEvents.ExpectedEvent expectedEvent = events.expectLogin()
                 .client(clientId)
                 .user(userId)
                 .session(accessToken.getSessionState())
@@ -314,7 +321,9 @@ public class X509DirectGrantTest extends AbstractX509AuthenticationTest {
                 .detail(Details.USERNAME, login)
                 .removeDetail(Details.CODE_ID)
                 .removeDetail(Details.REDIRECT_URI)
-                .removeDetail(Details.CONSENT)
+                .removeDetail(Details.CONSENT);
+
+        addX509CertificateDetails(expectedEvent)
                 .assertEvent();
     }
 

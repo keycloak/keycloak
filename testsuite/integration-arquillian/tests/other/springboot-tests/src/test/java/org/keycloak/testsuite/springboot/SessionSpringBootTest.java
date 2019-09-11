@@ -3,7 +3,6 @@ package org.keycloak.testsuite.springboot;
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.ClientResource;
@@ -13,10 +12,17 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.auth.page.account.Sessions;
+import org.keycloak.testsuite.auth.page.login.OIDCLogin;
+import org.keycloak.testsuite.util.DroneUtils;
 import org.keycloak.testsuite.util.SecondBrowser;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
+import static org.keycloak.testsuite.util.WaitUtils.pause;
+import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 
 public class SessionSpringBootTest extends AbstractSpringBootTest {
 
@@ -29,9 +35,17 @@ public class SessionSpringBootTest extends AbstractSpringBootTest {
     @Page
     private SessionPage sessionPage;
 
+    @Page
+    @SecondBrowser
+    private SessionPage secondBrowserSessionPage;
+
     @Drone
     @SecondBrowser
     private WebDriver driver2;
+
+    @Page
+    @SecondBrowser
+    private OIDCLogin secondTestRealmLoginPage;
 
     @Page
     private Sessions realmSessions;
@@ -40,23 +54,24 @@ public class SessionSpringBootTest extends AbstractSpringBootTest {
     public void setDefaultPageUriParameters() {
         super.setDefaultPageUriParameters();
         realmSessions.setAuthRealm(REALM_NAME);
+        testRealmLoginPage.setAuthRealm(REALM_NAME);
+        secondTestRealmLoginPage.setAuthRealm(REALM_NAME);
     }
 
     private void loginAndCheckSession() {
         driver.navigate().to(SERVLET_URL);
-        Assert.assertTrue("Must be on login page", loginPage.isCurrent());
-        loginPage.login(USER_LOGIN, USER_PASSWORD);
-        WaitUtils.waitUntilElement(By.tagName("body")).is().visible();
-        Assert.assertTrue("Must be on servlet page", sessionPage.isCurrent());
-        Assert.assertEquals("Counter must be 0", 0, sessionPage.getCounter());
+        waitForPageToLoad();
+
+        assertCurrentUrlStartsWith(testRealmLoginPage, driver);
+        testRealmLoginPage.form().login(USER_LOGIN, USER_PASSWORD);
+
+        sessionPage.assertIsCurrent();
+        assertThat(sessionPage.getCounter()).isEqualTo(0);
 
         driver.navigate().to(SERVLET_URL);
-        Assert.assertEquals("Counter now must be 1", 1, sessionPage.getCounter());
-    }
+        waitForPageToLoad();
 
-    private boolean checkCounterInSource(WebDriver driver, int counter) {
-        return driver.getPageSource().replaceAll("\\s", "")
-                .contains("<spanid=\"counter\">" + counter + "</span>");
+        assertThat(sessionPage.getCounter()).isEqualTo(1);
     }
 
     @Before
@@ -74,37 +89,52 @@ public class SessionSpringBootTest extends AbstractSpringBootTest {
 
     @Test
     public void testSingleSessionInvalidated() {
-
         loginAndCheckSession();
 
-        // cannot pass to loginAndCheckSession becayse loginPage is not working together with driver2, therefore copypasta
+        DroneUtils.addWebDriver(driver2);
+
         driver2.navigate().to(SERVLET_URL);
+        waitForPageToLoad(); // driver2 will be used because of DroneUtils.addWebDriver()
+
         log.info("current title is " + driver2.getTitle());
-        Assert.assertTrue("Must be on login page", driver2.getTitle().toLowerCase().startsWith("log in to"));
-        driver2.findElement(By.id("username")).sendKeys(USER_LOGIN);
-        driver2.findElement(By.id("password")).sendKeys(USER_PASSWORD);
-        driver2.findElement(By.id("password")).submit();
-        Assert.assertTrue("Must be on session page", driver2.getTitle().equals(SessionPage.PAGE_TITLE));
-        Assert.assertTrue("Counter must be 0", checkCounterInSource(driver2, 0));
+        assertCurrentUrlStartsWith(secondTestRealmLoginPage, driver2);
+        secondTestRealmLoginPage.form().login(USER_LOGIN, USER_PASSWORD);
+
+        secondBrowserSessionPage.assertIsCurrent();
+
+        assertThat(secondBrowserSessionPage.getCounter()).isEqualTo(0);
+
         // Counter increased now
         driver2.navigate().to(SERVLET_URL);
-        Assert.assertTrue("Counter must be 1", checkCounterInSource(driver2, 1));
+        waitForPageToLoad(); // driver2 will be used because of DroneUtils.addWebDriver()
+
+        assertThat(secondBrowserSessionPage.getCounter()).isEqualTo(1);
+
+        DroneUtils.removeWebDriver(); // From now driver will be used instead of driver2
 
         // Logout in browser1
         driver.navigate().to(logoutPage(SERVLET_URL));
+        waitForPageToLoad();
 
         // Assert that I am logged out in browser1
         driver.navigate().to(SERVLET_URL);
-        Assert.assertTrue("Must be on login page", loginPage.isCurrent());
+        waitForPageToLoad();
+
+        assertCurrentUrlStartsWith(testRealmLoginPage, driver);
 
         // Assert that I am still logged in browser2 and same session is still preserved
+        DroneUtils.addWebDriver(driver2);
         driver2.navigate().to(SERVLET_URL);
-        Assert.assertTrue("Must be on session page", driver2.getTitle().equals(SessionPage.PAGE_TITLE));
-        Assert.assertTrue("Counter must be 2", checkCounterInSource(driver2, 2));
+        waitForPageToLoad();
+
+        secondBrowserSessionPage.assertIsCurrent();
+        assertThat(secondBrowserSessionPage.getCounter()).isEqualTo(2);
 
         driver2.navigate().to(logoutPage(SERVLET_URL));
-        Assert.assertTrue("Must be on login page", driver2.getTitle().toLowerCase().startsWith("log in to"));
+        waitForPageToLoad();
+        assertCurrentUrlStartsWith(secondTestRealmLoginPage, driver2);
 
+        DroneUtils.removeWebDriver();
     }
 
     @Test
@@ -117,7 +147,9 @@ public class SessionSpringBootTest extends AbstractSpringBootTest {
                 clientResource = realmResource.clients().get(clientRep.getId());
             }
         }
-        Assert.assertNotNull(clientResource);
+
+        assertThat(clientResource).isNotNull();
+
         clientResource.toRepresentation().setAdminUrl("");
         int origTokenLifespan = realmRep.getAccessCodeLifespan();
         realmRep.setAccessCodeLifespan(1);
@@ -129,17 +161,24 @@ public class SessionSpringBootTest extends AbstractSpringBootTest {
         // Logout
         String logoutUri = logoutPage(SERVLET_URL);
         driver.navigate().to(logoutUri);
+        waitForPageToLoad();
 
         // Assert that http session was invalidated
         driver.navigate().to(SERVLET_URL);
-        Assert.assertTrue("Must be on login page", loginPage.isCurrent());
-        loginPage.login(USER_LOGIN, USER_PASSWORD);
-        Assert.assertTrue("Must be on session page", sessionPage.isCurrent());
-        Assert.assertEquals("Counter must be 0", 0, sessionPage.getCounter());
+        waitForPageToLoad();
+
+        assertCurrentUrlStartsWith(testRealmLoginPage, driver);
+        testRealmLoginPage.form().login(USER_LOGIN, USER_PASSWORD);
+
+        sessionPage.assertIsCurrent();
+        assertThat(sessionPage.getCounter()).isEqualTo(0);
 
         clientResource.toRepresentation().setAdminUrl(BASE_URL);
         realmRep.setAccessCodeLifespan(origTokenLifespan);
         realmResource.update(realmRep);
+
+        driver.navigate().to(logoutUri);
+        waitForPageToLoad();
     }
 
     @Test
@@ -153,17 +192,26 @@ public class SessionSpringBootTest extends AbstractSpringBootTest {
 
         // user1 should be still logged with original httpSession in our browser window
         driver.navigate().to(SERVLET_URL);
-        Assert.assertTrue("Must be on session page", sessionPage.isCurrent());
-        Assert.assertEquals("Counter must be 2", 2, sessionPage.getCounter());
+        waitForPageToLoad();
+
+        sessionPage.assertIsCurrent();
+        assertThat(sessionPage.getCounter()).isEqualTo(2);
+
         driver.navigate().to(logoutPage(SERVLET_URL));
+        waitForPageToLoad();
     }
 
     @Test
     public void testAccountManagementSessionsLogout() {
         loginAndCheckSession();
+
         realmSessions.navigateTo();
         realmSessions.logoutAll();
+
         // Assert I need to login again (logout was propagated to the app)
         loginAndCheckSession();
+
+        driver.navigate().to(logoutPage(SERVLET_URL));
+        waitForPageToLoad();
     }
 }

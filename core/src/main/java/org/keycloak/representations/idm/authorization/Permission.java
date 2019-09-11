@@ -41,7 +41,7 @@ public class Permission {
     private Set<String> scopes;
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    private final Map<String, Set<String>> claims;
+    private Map<String, Set<String>> claims;
 
     public Permission() {
         this(null, null, null, null);

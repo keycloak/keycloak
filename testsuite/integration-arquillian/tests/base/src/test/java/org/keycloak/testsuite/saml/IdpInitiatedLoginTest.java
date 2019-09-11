@@ -39,13 +39,17 @@ import java.util.stream.Collectors;
 import org.junit.Test;
 
 import javax.ws.rs.core.Response;
+import static org.hamcrest.Matchers.allOf;
 
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.hasSize;
 import static org.junit.Assert.assertThat;
+import org.keycloak.broker.saml.SAMLIdentityProviderConfig;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
+import org.keycloak.testsuite.updaters.IdentityProviderCreator;
+import org.keycloak.testsuite.util.IdentityProviderBuilder;
 import static org.keycloak.testsuite.util.Matchers.bodyHC;
 import static org.keycloak.testsuite.util.Matchers.statusCodeIsHC;
 
@@ -183,5 +187,43 @@ public class IdpInitiatedLoginTest extends AbstractSamlTest {
 
         adminClient.realm(REALM_NAME).clients().get(clientRep.getId()).update(ClientBuilder.edit(clientRep)
                 .protocol(SamlProtocol.LOGIN_PROTOCOL).build());
+    }
+
+    @Test
+    public void testSamlPostBindingPageLogin() {
+        new SamlClientBuilder()
+                .idpInitiatedLogin(getAuthServerSamlEndpoint(REALM_NAME), "sales-post").build()
+                .login().user(bburkeUser).build()
+                .execute(r -> {
+                    Assert.assertThat(r, statusCodeIsHC(Response.Status.OK));
+                    Assert.assertThat(r, bodyHC(allOf(
+                            containsString("Redirecting, please wait."),
+                            containsString("<input type=\"hidden\" name=\"SAMLResponse\""), 
+                            containsString("<h1 id=\"kc-page-title\">")
+                    )));
+                });
+    }
+
+    @Test
+    public void testSamlPostBindingPageIdP() throws Exception {
+        try (IdentityProviderCreator idp = new IdentityProviderCreator(adminClient.realm(REALM_NAME), 
+                IdentityProviderBuilder.create()
+                    .alias("saml-idp")
+                    .providerId("saml")
+                    .setAttribute(SAMLIdentityProviderConfig.SINGLE_SIGN_ON_SERVICE_URL, "http://saml-idp-sso-service/")
+                    .setAttribute(SAMLIdentityProviderConfig.POST_BINDING_AUTHN_REQUEST, "true")
+                    .build())) {
+            new SamlClientBuilder()
+                .idpInitiatedLogin(getAuthServerSamlEndpoint(REALM_NAME), "sales-post").build()
+                .login().idp("saml-idp").build()
+                .execute(r -> {
+                    Assert.assertThat(r, statusCodeIsHC(Response.Status.OK));
+                    Assert.assertThat(r, bodyHC(allOf(
+                            containsString("Redirecting, please wait."),
+                            containsString("<input type=\"hidden\" name=\"SAMLRequest\""), 
+                            containsString("<h1 id=\"kc-page-title\">")
+                    )));
+                });
+        }
     }
 }
