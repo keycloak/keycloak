@@ -62,8 +62,23 @@
             </div>
             </#if>
 
-            <#if recaptchaRequired??>
-                <input type="hidden" id="g-recaptcha-response" name="g-recaptcha-response">
+            <#if recaptchaRequired?? && recaptchaSiteVersion == 'v2'>
+                <div class="form-group">
+                    <div class="${properties.kcInputWrapperClass!}">
+                        <div class="g-recaptcha" data-size="compact" data-sitekey="${recaptchaSiteKey}"></div>
+                    </div>
+                </div>
+            </#if>
+
+            <#if recaptchaRequired?? && recaptchaSiteVersion == 'v3'>
+                <input type="hidden" id="g-recaptcha-response" name="g-recaptcha-response">         
+                <script>
+                    var onRecaptchaLoaded = function() {
+                        grecaptcha.execute('${recaptchaSiteKey}', { action:'${recaptchaActionName}' }).then(function(token) {
+                            document.getElementById('g-recaptcha-response').value = token;
+                        });
+                    };
+                </script>
             </#if>
 
             <div class="${properties.kcFormGroupClass!}">
@@ -78,16 +93,6 @@
                 </div>
             </div>
         </form>
-    </#if>
-
-   <#if recaptchaRequired??>
-        <script>
-            var onRecaptchaLoaded = function() {
-                 grecaptcha.execute('${recaptchaSiteKey}', { action:'${recaptchaActionName}' }).then(function(token) {
-                     document.getElementById('g-recaptcha-response').value = token;
-                 });
-            };
-         </script>
     </#if>
 
 

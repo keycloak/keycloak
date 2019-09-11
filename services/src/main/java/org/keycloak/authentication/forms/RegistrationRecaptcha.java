@@ -50,6 +50,7 @@ import org.keycloak.util.JsonSerialization;
 import javax.ws.rs.core.MultivaluedMap;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -68,6 +69,7 @@ public class RegistrationRecaptcha implements FormAction, FormActionFactory, Con
     public static final String SITE_KEY = "site.key";
     public static final String SITE_SECRET = "secret";
     public static final String SITE_SCORE = "site.score";
+    public static final String SITE_VERSION = "site.version";
     public static final String SITE_ACTION = "recaptcha.action";
     private static final Logger logger = Logger.getLogger(RegistrationRecaptcha.class);
 
@@ -103,18 +105,28 @@ public class RegistrationRecaptcha implements FormAction, FormActionFactory, Con
         if (captchaConfig == null || captchaConfig.getConfig() == null
                 || captchaConfig.getConfig().get(SITE_KEY) == null
                 || captchaConfig.getConfig().get(SITE_SECRET) == null
-                || captchaConfig.getConfig().get(SITE_SCORE) == null
-                || captchaConfig.getConfig().get(SITE_ACTION) == null
                 ) {
             form.addError(new FormMessage(null, Messages.RECAPTCHA_NOT_CONFIGURED));
             return;
         }
+        // For Backward Compatibility / Previous Captcha users
+        if(captchaConfig.getConfig().get(SITE_VERSION) == null || captchaConfig.getConfig().get(SITE_VERSION) == ""){
+            Map<String, String> versionDefaultMap = new HashMap<String, String>();
+            versionDefaultMap.put(SITE_VERSION, "v2");
+            captchaConfig.setConfig(versionDefaultMap);
+        }
         String siteKey = captchaConfig.getConfig().get(SITE_KEY);
         String siteActionName = captchaConfig.getConfig().get(SITE_ACTION);
+        String siteVersion = captchaConfig.getConfig().get(SITE_VERSION);
         form.setAttribute("recaptchaRequired", true);
         form.setAttribute("recaptchaSiteKey", siteKey);
+        form.setAttribute("recaptchaSiteVersion", siteVersion);
         form.setAttribute("recaptchaActionName", siteActionName);
-        form.addScript("https://www.google.com/recaptcha/api.js?hl=" + userLanguageTag + "&render=" + siteKey + "&onload=onRecaptchaLoaded");
+        if(siteVersion.equals("v3")){
+            form.addScript("https://www.google.com/recaptcha/api.js?hl=" + userLanguageTag + "&render=" + siteKey + "&onload=onRecaptchaLoaded");
+        } else {
+            form.addScript("https://www.google.com/recaptcha/api.js?hl=" + userLanguageTag );
+        }
     }
 
     @Override
@@ -160,15 +172,20 @@ public class RegistrationRecaptcha implements FormAction, FormActionFactory, Con
             try {
                 Map json = JsonSerialization.readValue(content, Map.class);
                 Object val = json.get("success");
-                Double userScore = Double.parseDouble(json.get("score").toString());
                 AuthenticatorConfigModel captchaConfig = context.getAuthenticatorConfig();
-                Double configScore = Double.parseDouble(captchaConfig.getConfig().get(SITE_SCORE));
-                if(userScore > configScore){
-                    success = true;
+                String siteVersion = captchaConfig.getConfig().get(SITE_VERSION);
+                System.out.println(siteVersion);
+                if(siteVersion.equals("v2")){
+                    success = Boolean.TRUE.equals(val);
                 } else {
-                    success = false;
+                    Double userScore = Double.parseDouble(json.get("score").toString());
+                    Double configScore = Double.parseDouble(captchaConfig.getConfig().get(SITE_SCORE));
+                    if(userScore > configScore){
+                        success = true;
+                    } else {
+                        success = false;
+                    }
                 }
-
             } finally {
                 content.close();
             }
@@ -239,32 +256,42 @@ public class RegistrationRecaptcha implements FormAction, FormActionFactory, Con
     static {
         ProviderConfigProperty property;
         property = new ProviderConfigProperty();
+        property.setName(SITE_VERSION);
+        property.setLabel("reCAPTCHA Version");
+        property.setType(ProviderConfigProperty.LIST_TYPE);
+        List<String> list = new ArrayList<>();
+        list.add("v2");
+        list.add("v3");
+        property.setOptions(list);
+        property.setDefaultValue("v2");
+        property.setHelpText("Google reCAPTCHA v2 or reCAPTCHA v3");
+        CONFIG_PROPERTIES.add(property);
+        property = new ProviderConfigProperty();
         property.setName(SITE_KEY);
-        property.setLabel("reCAPTCHAv3 Site Key");
+        property.setLabel("reCAPTCHA Site Key");
         property.setType(ProviderConfigProperty.STRING_TYPE);
-        property.setHelpText("Google reCAPTCHAv3 Site Key");
+        property.setHelpText("Google reCAPTCHA Site Key");
         CONFIG_PROPERTIES.add(property);
         property = new ProviderConfigProperty();
         property.setName(SITE_SECRET);
-        property.setLabel("reCAPTCHAv3 Secret");
+        property.setLabel("reCAPTCHA Secret Key");
         property.setType(ProviderConfigProperty.STRING_TYPE);
-        property.setHelpText("Google reCAPTCHAv3 Site Secret Key");
+        property.setHelpText("Google reCAPTCHA Site Secret Key");
         CONFIG_PROPERTIES.add(property);
         property = new ProviderConfigProperty();
         property.setName(SITE_SCORE);
-        property.setLabel("reCAPTCHAv3 Score");
+        property.setLabel("reCAPTCHA Score");
         property.setDefaultValue(0.5);
         property.setType(ProviderConfigProperty.STRING_TYPE);
-        property.setHelpText("Google reCAPTCHAv3 Score (0.1 - 1.0)");
+        property.setHelpText("Google reCAPTCHA Score (0.1 - 1.0) - Applicable only for reCAPTCHA v3");
         CONFIG_PROPERTIES.add(property);
         property = new ProviderConfigProperty();
         property.setName(SITE_ACTION);
         property.setLabel("reCAPTCHAv3 Action");
         property.setDefaultValue("kc_registration_page");
         property.setType(ProviderConfigProperty.STRING_TYPE);
-        property.setHelpText("Google reCAPTCHAv3 Action Name");
+        property.setHelpText("Google reCAPTCHAv3 Action Name - Applicable only for reCAPTCHA v3");
         CONFIG_PROPERTIES.add(property);
-
     }
 
 
