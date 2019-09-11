@@ -8,3 +8,7 @@ SMTP password, and identity provider secrets.
 
 Furthermore, new vault SPI has been introduced to enable development
 of extensions to access secrets from custom vaults.
+
+== Messages in theme resources
+
+Message bundles in theme resources enables internationalization of custom providers such as authenticators. They are also shared between all theme types, making it possible to for example share messages between the login and account console. Thanks to [micedre](https://github.com/micedre).
