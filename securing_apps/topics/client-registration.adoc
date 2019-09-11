@@ -64,7 +64,7 @@ The registration access token is included with the request in the same way as a 
 Registration access tokens are only valid once, when it's used the response will include a new token. 
 
 If a client was created outside of the Client Registration Service it won't have a registration access token associated with it.
-You can create one through the admin console. This can also be useful if you loose the token for a particular client.
+You can create one through the admin console. This can also be useful if you lose the token for a particular client.
 To create a new token find the client in the admin console and click on `Credentials`. Then click on `Generate registration access token`.
 
 === {project_name} Representations
