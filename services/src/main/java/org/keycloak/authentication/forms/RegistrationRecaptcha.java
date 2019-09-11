@@ -287,7 +287,7 @@ public class RegistrationRecaptcha implements FormAction, FormActionFactory, Con
         CONFIG_PROPERTIES.add(property);
         property = new ProviderConfigProperty();
         property.setName(SITE_ACTION);
-        property.setLabel("reCAPTCHAv3 Action");
+        property.setLabel("reCAPTCHA Action");
         property.setDefaultValue("kc_registration_page");
         property.setType(ProviderConfigProperty.STRING_TYPE);
         property.setHelpText("Google reCAPTCHAv3 Action Name - Applicable only for reCAPTCHA v3");
