@@ -156,10 +156,6 @@ public class UserResource {
         auth.users().requireManage(user);
 
         if (rep.getIdcard() != null) {
-            if (!IdcardUtil.validateCard(rep.getIdcard())) {
-                return ErrorResponse.exists("User idcard is not validate ");
-            }
-
             UserModel userModel = session.users().getUserByIdcard(rep.getIdcard(), realm);
             if (userModel != null && !userModel.getId().equals(rep.getId())) {
                 return ErrorResponse.exists("User exists with same idcard ");
