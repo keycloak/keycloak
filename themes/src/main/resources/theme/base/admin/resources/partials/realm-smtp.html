@@ -80,6 +80,7 @@
             <div class="col-md-6">
                 <input class="form-control" id="smtpPas" kc-password ng-model="realm.smtpServer.password" placeholder="{{:: 'login-password' | translate}}" ng-disabled="!realm.smtpServer.auth" ng-required="realm.smtpServer.auth">
             </div>
+            <kc-tooltip>{{:: 'smtp-password.tooltip' | translate}}</kc-tooltip>
         </div>
 
         <div class="form-group" data-ng-show="access.manageRealm">
