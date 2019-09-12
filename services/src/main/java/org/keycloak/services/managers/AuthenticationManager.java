@@ -149,7 +149,9 @@ public class AuthenticationManager {
         if (userSession.isRememberMe() && realm.getSsoSessionIdleTimeoutRememberMe() > 0) {
             maxIdle = realm.getSsoSessionIdleTimeoutRememberMe();
         } else {
-            String clientSsoSessionIdleTimeout = client.getAttribute(OIDCConfigAttributes.SSO_SESSION_IDLE_TIMEOUT);
+            String clientSsoSessionIdleTimeout = client != null
+                ? client.getAttribute(OIDCConfigAttributes.SSO_SESSION_IDLE_TIMEOUT)
+                : null;
             if (clientSsoSessionIdleTimeout != null && !clientSsoSessionIdleTimeout.trim().isEmpty()) {
                 maxIdle = Integer.parseInt(clientSsoSessionIdleTimeout);
             } else {
@@ -161,7 +163,9 @@ public class AuthenticationManager {
         if (userSession.isRememberMe() && realm.getSsoSessionMaxLifespanRememberMe() > 0) {
             maxLifespan = realm.getSsoSessionMaxLifespanRememberMe();
         } else {
-            String clientSsoSessionMaxLifespan = client.getAttribute(OIDCConfigAttributes.SSO_SESSION_MAX_LIFESPAN);
+            String clientSsoSessionMaxLifespan = client != null
+                ? client.getAttribute(OIDCConfigAttributes.SSO_SESSION_MAX_LIFESPAN)
+                : null;
             if (clientSsoSessionMaxLifespan != null && !clientSsoSessionMaxLifespan.trim().isEmpty()) {
                 maxLifespan = Integer.parseInt(clientSsoSessionMaxLifespan);
             } else {
@@ -182,7 +186,9 @@ public class AuthenticationManager {
         int currentTime = Time.currentTime();
         // Additional time window is added for the case when session was updated in different DC and the update to current DC was postponed
         int maxIdle;
-        String clientOfflineSessionIdleTimeout = client.getAttribute(OIDCConfigAttributes.OFFLINE_SESSION_IDLE_TIMEOUT);
+        String clientOfflineSessionIdleTimeout = client != null
+            ? client.getAttribute(OIDCConfigAttributes.OFFLINE_SESSION_IDLE_TIMEOUT)
+            : null;
         if (clientOfflineSessionIdleTimeout != null && !clientOfflineSessionIdleTimeout.trim().isEmpty()) {
             maxIdle = Integer.parseInt(clientOfflineSessionIdleTimeout) + SessionTimeoutHelper.IDLE_TIMEOUT_WINDOW_SECONDS;
         } else {
@@ -190,8 +196,9 @@ public class AuthenticationManager {
         }
 
         // KEYCLOAK-7688 Offline Session Max for Offline Token
-        String clientIsOfflineSessionMaxLifespanEnabled = client
-            .getAttribute(OIDCConfigAttributes.OFFLINE_SESSION_MAX_LIFESPAN_ENABLED);
+        String clientIsOfflineSessionMaxLifespanEnabled = client != null
+            ? client.getAttribute(OIDCConfigAttributes.OFFLINE_SESSION_MAX_LIFESPAN_ENABLED)
+            : null;
         boolean isOfflineSessionMaxLifespanEnabled = "ON".equals(clientIsOfflineSessionMaxLifespanEnabled)
             || (!"OFF".equals(clientIsOfflineSessionMaxLifespanEnabled) && realm.isOfflineSessionMaxLifespanEnabled());
 
