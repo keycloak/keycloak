@@ -18,10 +18,10 @@ endif::[]
 
 ifeval::[{project_product_cd}==true]
 :project_name_full: Red Hat Single Sign-On Continuous Delivery
-:project_version: 6
-:project_versionDoc: 6
+:project_version: 8
+:project_versionDoc: 8
 :project_templates_version: sso-cd
-:project_latest_image_tag: 6
+:project_latest_image_tag: 8
 :project_doc_base_url: https://access.redhat.com/documentation/en-us/red_hat_single_sign-on_continuous_delivery/{project_versionDoc}/html-single
 :maven_repository: https://maven.repository.redhat.com/earlyaccess/
 endif::[]

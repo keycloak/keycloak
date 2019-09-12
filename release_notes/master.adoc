@@ -18,6 +18,10 @@ endif::[]
 
 ifeval::[{project_product_cd}==true]
 
+== {project_name_full} 8
+
+include::topics/8_0_0.adoc[leveloffset=2]
+
 == {project_name_full} 7
 
 include::topics/7_0_0.adoc[leveloffset=2]
