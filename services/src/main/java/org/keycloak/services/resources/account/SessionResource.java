@@ -39,6 +39,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.representations.account.ClientRepresentation;
 import org.keycloak.representations.account.DeviceRepresentation;
 import org.keycloak.representations.account.SessionRepresentation;
@@ -175,15 +176,27 @@ public class SessionResource {
             sessionRep.setCurrent(true);
         }
 
-        sessionRep.setClients(new LinkedList());
+        sessionRep.setClients(new LinkedList<>());
 
+        int ssoSessionMaxLifespan = 0;
         for (String clientUUID : s.getAuthenticatedClientSessions().keySet()) {
             ClientModel client = realm.getClientById(clientUUID);
             ClientRepresentation clientRep = new ClientRepresentation();
             clientRep.setClientId(client.getClientId());
             clientRep.setClientName(client.getName());
             sessionRep.getClients().add(clientRep);
+
+            int tmpSsoSessionMaxLifespan = 0;
+            String clientSsoSessionMaxLifespan = client.getAttribute(OIDCConfigAttributes.SSO_SESSION_MAX_LIFESPAN);
+            if (clientSsoSessionMaxLifespan != null && !clientSsoSessionMaxLifespan.trim().isEmpty()) {
+                tmpSsoSessionMaxLifespan = Integer.parseInt(clientSsoSessionMaxLifespan);
+            } else {
+                tmpSsoSessionMaxLifespan = realm.getSsoSessionMaxLifespan();
+            }
+            ssoSessionMaxLifespan = Math.max(ssoSessionMaxLifespan, tmpSsoSessionMaxLifespan);
         }
+        sessionRep.setExpires(s.getStarted() + ssoSessionMaxLifespan);
+
         return sessionRep;
     }
 
