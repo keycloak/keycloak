@@ -1313,7 +1313,7 @@ public class AuthenticationManager {
                 }
             }
 
-            ClientModel client = realm.getClientByClientId(token.getIssuedFor());
+            ClientModel client = token.getIssuedFor() != null ? realm.getClientByClientId(token.getIssuedFor()) : null;
 
             if (!isSessionValid(realm, userSession, client)) {
                 // Check if accessToken was for the offline session.
