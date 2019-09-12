@@ -45,6 +45,8 @@ import org.keycloak.storage.ldap.mappers.membership.MembershipType;
 import org.keycloak.storage.ldap.mappers.membership.UserRolesRetrieveStrategy;
 import org.keycloak.storage.user.SynchronizationResult;
 
+import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -213,21 +215,68 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
                         // due to the realm cache being bloated with huge amount of (temporary) realm entities
                         RealmModel currentRealm = session.realms().getRealm(realm.getId());
 
+                        // List of top-level groups known to the whole transaction
+                        ArrayList<GroupModel> transactionTopLevelGroups = new ArrayList<GroupModel>(currentRealm.getTopLevelGroups());
+                        String[] transactionBinarySearchTopLevelGroupsArray = transactionTopLevelGroups.parallelStream().map(g -> g.getName()).toArray(String[]::new);
+
                         for (Map.Entry<String, LDAPObject> groupEntry : groupsInTransaction.entrySet()) {
 
                             String groupName = groupEntry.getKey();
-                            GroupModel kcExistingGroup = KeycloakModelUtils.findGroupByPath(currentRealm, "/" + groupName);
+
+                            // Binary search the list of top-level groups known to the outer transaction for presence of the currently processed group
+                            int transactionBinarySearchResult = Arrays.binarySearch(transactionBinarySearchTopLevelGroupsArray, groupName);
+                            GroupModel kcExistingGroup = (transactionBinarySearchResult > 0) ? transactionTopLevelGroups.get(transactionBinarySearchResult) : null;
 
                             if (kcExistingGroup != null) {
-                                updateAttributesOfKCGroup(kcExistingGroup, groupEntry.getValue());
-                                syncResult.increaseUpdated();
-                                visitedGroupIds.add(kcExistingGroup.getId());
+
+                                try {
+
+                                    // Update each existing group to be synced in its own inner transaction to prevent race condition when
+                                    // the groups intended to be updated was already deleted via other channel in the meantime
+                                    KeycloakModelUtils.runJobInTransaction(ldapProvider.getSession().getKeycloakSessionFactory(), new KeycloakSessionTask() {
+
+                                        @Override
+                                        public void run(KeycloakSession session) {
+
+                                            updateAttributesOfKCGroup(kcExistingGroup, groupEntry.getValue());
+                                            syncResult.increaseUpdated();
+                                            visitedGroupIds.add(kcExistingGroup.getId());
+
+                                        }
+
+                                    });
+
+                                } catch (ModelException me) {
+                                    logger.error(String.format("Failed to update attributes of LDAP group %s: ", groupName), me);
+                                    syncResult.increaseFailed();
+                                }
+
                             } else {
-                                GroupModel kcGroup = currentRealm.createGroup(groupName);
-                                updateAttributesOfKCGroup(kcGroup, groupEntry.getValue());
-                                currentRealm.moveGroup(kcGroup, null);
-                                syncResult.increaseAdded();
-                                visitedGroupIds.add(kcGroup.getId());
+
+                                try {
+
+                                    // Create each non-existing group to be synced in its own inner transaction to prevent race condition when
+                                    // the roup intended to be created was already created via other channel in the meantime
+                                    KeycloakModelUtils.runJobInTransaction(ldapProvider.getSession().getKeycloakSessionFactory(), new KeycloakSessionTask() {
+
+                                        @Override
+                                        public void run(KeycloakSession session) {
+
+                                            RealmModel innerTransactionRealm = session.realms().getRealm(realm.getId());
+                                            GroupModel kcGroup = innerTransactionRealm.createGroup(groupName);
+                                            updateAttributesOfKCGroup(kcGroup, groupEntry.getValue());
+                                            innerTransactionRealm.moveGroup(kcGroup, null);
+                                            syncResult.increaseAdded();
+                                            visitedGroupIds.add(kcGroup.getId());
+
+                                        }
+
+                                    });
+
+                                } catch (ModelException me) {
+                                    logger.error(String.format("Failed to sync group %s from LDAP: ", groupName), me);
+                                    syncResult.increaseFailed();
+                                }
                             }
                         }
                     }
