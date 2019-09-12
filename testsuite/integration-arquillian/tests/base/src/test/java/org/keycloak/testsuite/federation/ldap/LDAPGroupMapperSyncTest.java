@@ -422,9 +422,9 @@ public class LDAPGroupMapperSyncTest extends AbstractLDAPTest {
                     LDAPTestUtils.createLDAPGroup(session,
                                                   appRealm,
                                                   ctx.getLdapModel(),
-                                                  String.format("group-%s", i),
+                                                  String.format("group-%s", j),
                                                   descriptionAttrName,
-                                                  String.format("Testing group-%s, created at: %s", i, new Date().toString())
+                                                  String.format("Testing group-%s, created at: %s", j, new Date().toString())
                     );
                 }
                 logger.debugf("Done creating %s LDAP groups!", groupsPerIteration);
