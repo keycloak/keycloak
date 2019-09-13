@@ -1,9 +1,13 @@
 package org.keycloak.testsuite.federation.ldap;
 
+import org.jboss.arquillian.container.test.api.ContainerController;
+import org.jboss.arquillian.test.api.ArquillianResource;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.ClassRule;
-import org.keycloak.models.LDAPConstants;
 import org.keycloak.testsuite.util.LDAPRule;
 import org.keycloak.testsuite.util.LDAPTestConfiguration;
+import org.keycloak.testsuite.util.VaultUtils;
 
 import java.util.Map;
 
@@ -15,6 +19,25 @@ import static org.keycloak.models.LDAPConstants.BIND_CREDENTIAL;
 public class LDAPVaultCredentialsTest extends LDAPSyncTest {
 
     private static final String VAULT_EXPRESSION = "${vault.ldap_bindCredential}";
+
+    @ArquillianResource
+    protected ContainerController controller;
+
+    @Override
+    @Before
+    public void beforeAbstractKeycloakTest() throws Exception {
+        VaultUtils.enableVault(suiteContext, controller);
+        reconnectAdminClient();
+
+        super.beforeAbstractKeycloakTest();
+    }
+
+    @After
+    public void afterLDAPVaultTest() throws Exception {
+        VaultUtils.disableVault(suiteContext, controller);
+
+        reconnectAdminClient();
+    }
 
     @ClassRule
     public static LDAPRule ldapRule = new LDAPRule() {
