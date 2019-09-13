@@ -22,14 +22,13 @@ public class PlainTextVaultProviderFactory implements VaultProviderFactory {
     public static final String PROVIDER_ID = "plaintext";
 
     private String vaultDirectory;
-    private boolean disabled;
     private Path vaultPath;
 
     @Override
     public VaultProvider create(KeycloakSession session) {
-        if (disabled || vaultDirectory == null) {
-            //init method not called?
-            throw new IllegalStateException("Can not create a vault since it's disabled or not initialized correctly");
+        if (vaultDirectory == null) {
+            logger.debug("Can not create a vault since it's disabled or not initialized correctly");
+            return null;
         }
         return new PlainTextVaultProvider(vaultPath, session.getContext().getRealm().getName());
     }
@@ -37,19 +36,6 @@ public class PlainTextVaultProviderFactory implements VaultProviderFactory {
     @Override
     public void init(Config.Scope config) {
         vaultDirectory = config.get("dir");
-
-        Boolean disabledFromConfig = config.getBoolean("disabled");
-        if (disabledFromConfig == null) {
-            disabled = false;
-        } else {
-            disabled = disabledFromConfig.booleanValue();
-        }
-
-        if (disabled) {
-            logger.debug("PlainTextVaultProviderFactory disabled");
-            return;
-        }
-
         if (vaultDirectory == null) {
             logger.debug("PlainTextVaultProviderFactory not configured");
             return;

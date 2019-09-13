@@ -17,19 +17,23 @@
 
 package org.keycloak.testsuite.vault;
 
-import java.lang.ref.WeakReference;
 import java.util.List;
 import java.util.Optional;
 
+import org.jboss.arquillian.container.test.api.ContainerController;
 import org.jboss.arquillian.container.test.api.Deployment;
+import org.jboss.arquillian.test.api.ArquillianResource;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.runonserver.RunOnServer;
 import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
+import org.keycloak.testsuite.util.VaultUtils;
 import org.keycloak.testsuite.utils.io.IOUtil;
 import org.keycloak.vault.VaultStringSecret;
 import org.keycloak.vault.VaultTranscriber;
@@ -50,6 +54,21 @@ public class KeycloakVaultTest extends AbstractKeycloakTest {
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
         testRealms.add(IOUtil.loadRealm("/testrealm.json"));
+    }
+
+    @ArquillianResource
+    protected ContainerController controller;
+
+    @Before
+    public void beforeKeycloakVaultTest() throws Exception {
+        VaultUtils.enableVault(suiteContext, controller);
+        reconnectAdminClient();
+    }
+
+    @After
+    public void afterLDAPVaultTest() throws Exception {
+        VaultUtils.disableVault(suiteContext, controller);
+        reconnectAdminClient();
     }
 
     @Test

@@ -12,10 +12,6 @@ echo ** Adding login-protocol spi **
 /subsystem=keycloak-server/spi=login-protocol/:add
 /subsystem=keycloak-server/spi=login-protocol/provider=saml/:add(enabled=true,properties={knownProtocols => "[\"http=${auth.server.http.port}\",\"https=${auth.server.https.port}\"]"})
 
-echo ** Adding vault spi **
-/subsystem=keycloak-server/spi=vault/:add
-/subsystem=keycloak-server/spi=vault/provider=plaintext/:add(enabled=true,properties={dir => "${jboss.home.dir}/standalone/configuration/vault"})
-
 echo ** Adding theme modules **
 /subsystem=keycloak-server/theme=defaults/:write-attribute(name=modules,value=[org.keycloak.testsuite.integration-arquillian-testsuite-providers])
 
