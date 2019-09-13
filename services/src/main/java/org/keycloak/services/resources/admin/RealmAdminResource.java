@@ -1123,7 +1123,10 @@ public class RealmAdminResource {
             auth.clients().requireView();
         }
 
-        ExportOptions options = new ExportOptions(false, clientsExported, groupsAndRolesExported);
+        // service accounts are exported if the clients are exported
+        // this means that if clients is true but groups/roles is false the service account is exported without roles
+        // the other option is just include service accounts if clientsExported && groupsAndRolesExported
+        ExportOptions options = new ExportOptions(false, clientsExported, groupsAndRolesExported, clientsExported);
         RealmRepresentation rep = ExportUtils.exportRealm(session, realm, options, false);
         return stripForExport(session, rep);
     }
