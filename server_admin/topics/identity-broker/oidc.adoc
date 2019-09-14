@@ -33,6 +33,11 @@ You must define the OpenID Connect configuration options as well.  They basicall
 |User Info URL
 |User Info URL endpoint defined by the OIDC protocol.  This is an endpoint from which user profile information can be downloaded.
 
+|Client Authentication
+|Switch to define the Client Authentication method to be used with the Authorization Code Flow.  In the case of JWT signed with private key, the realm private key
+ is used.  In the other cases, a client secret has to be defined.
+ For more details, see the https://openid.net/specs/openid-connect-core-1_0.html#ClientAuthentication[Client Authentication specifications].
+
 |Client ID
 |This realm will act as an OIDC client to the external IDP.  Your realm will need an OIDC client ID when using the Authorization Code Flow
  to interact with the external IDP.
