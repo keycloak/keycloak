@@ -26,7 +26,7 @@ import org.keycloak.models.KeycloakSessionFactory;
  */
 public class LengthPasswordPolicyProviderFactory implements PasswordPolicyProviderFactory {
 
-    static final String ID = "length";
+    public static final String ID = "length";
 
     @Override
     public String getId() {
