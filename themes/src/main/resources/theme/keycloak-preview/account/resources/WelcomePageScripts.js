@@ -22,8 +22,10 @@ var toggleReact = function () {
     if (!isWelcomePage()) {
         document.getElementById("welcomeScreen").style.display = 'none';
         document.getElementById("main_react_container").style.display = 'block';
+        document.getElementById("main_react_container").style.height = '100%';
     } else {
         document.getElementById("welcomeScreen").style.display = 'block';
+        document.getElementById("welcomeScreen").style.height = '100%';
         document.getElementById("main_react_container").style.display = 'none';
     }
 };

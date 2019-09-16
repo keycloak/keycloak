@@ -22,7 +22,6 @@ import {KeycloakService} from './keycloak-service/keycloak.service';
 
 import {PageNav} from './PageNav';
 import {PageToolbar} from './PageToolbar';
-import {Background} from './Background';
 import {makeRoutes} from './ContentPages';
 
 import {
@@ -74,16 +73,17 @@ export class App extends React.Component<AppProps> {
         );
 
         const Sidebar = <PageSidebar nav={<PageNav/>} />;
-
+        
+        const fullHeight = { height: '100%'};
+        
         return (
-            <React.Fragment>
-                <Background/>
+            <span style={fullHeight}>
                 <Page header={Header} sidebar={Sidebar} isManagedSidebar>
                     <PageSection>
                         {makeRoutes()}
                     </PageSection>
                 </Page>
-            </React.Fragment>
+            </span>
         );
     }
 };
