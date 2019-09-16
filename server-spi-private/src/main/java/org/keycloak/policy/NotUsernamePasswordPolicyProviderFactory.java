@@ -26,7 +26,7 @@ import org.keycloak.models.KeycloakSessionFactory;
  */
 public class NotUsernamePasswordPolicyProviderFactory implements PasswordPolicyProviderFactory {
 
-    static final String ID = "notUsername";
+    public static final String ID = "notUsername";
 
     @Override
     public String getId() {
