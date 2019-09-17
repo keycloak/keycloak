@@ -19,19 +19,13 @@ package org.keycloak.storage;
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.reflections.Types;
 import org.keycloak.component.ComponentModel;
-import org.keycloak.models.ClientModel;
-import org.keycloak.models.ClientProvider;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.ModelException;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.RoleModel;
+import org.keycloak.models.*;
 import org.keycloak.storage.client.ClientLookupProvider;
 import org.keycloak.storage.client.ClientStorageProvider;
 import org.keycloak.storage.client.ClientStorageProviderFactory;
 import org.keycloak.storage.client.ClientStorageProviderModel;
 
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
@@ -151,6 +145,18 @@ public class ClientStorageManager implements ClientProvider {
         return null;
     }
 
+    @Override
+    public List<ClientModel> searchClientsByClientId(String clientId, Integer firstResult, Integer maxResults, RealmModel realm) {
+        List<ClientModel> clients = session.clientLocalStorage().searchClientsByClientId(clientId,  firstResult, maxResults, realm);
+        if (clients != null) {
+            return clients;
+        }
+        for (ClientLookupProvider provider : getEnabledStorageProviders(session, realm, ClientLookupProvider.class)) {
+            clients = provider.searchClientsByClientId(clientId, firstResult, maxResults, realm);
+            if (clients != null) return clients;
+        }
+        return null;
+    }
 
     @Override
     public ClientModel addClient(RealmModel realm, String clientId) {
@@ -166,8 +172,8 @@ public class ClientStorageManager implements ClientProvider {
 
 
     @Override
-    public List<ClientModel> getClients(RealmModel realm) {
-       return session.clientLocalStorage().getClients(realm);
+    public List<ClientModel> getClients(RealmModel realm, Integer firstResult, Integer maxResults) {
+       return session.clientLocalStorage().getClients(realm, firstResult, maxResults);
     }
 
     @Override

@@ -692,8 +692,7 @@ public class RealmAdapter implements CachedRealmModel {
 
     @Override
     public List<ClientModel> getClients() {
-        return cacheSession.getClients(this);
-
+        return cacheSession.getClients(this, 0, cacheSession.getClientsCount(this).intValue());
     }
 
     @Override
@@ -720,6 +719,21 @@ public class RealmAdapter implements CachedRealmModel {
     @Override
     public ClientModel getClientByClientId(String clientId) {
         return cacheSession.getClientByClientId(clientId, this);
+    }
+
+    @Override
+    public List<ClientModel> searchClientByClientId(String clientId, Integer firstResult, Integer maxResults) {
+        return cacheSession.searchClientsByClientId(clientId, firstResult, maxResults, this);
+    }
+
+    @Override
+    public List<ClientModel> getClients(Integer firstResult, Integer maxResults) {
+        return cacheSession.getClients(this, firstResult, maxResults);
+    }
+
+    @Override
+    public Long getClientsCount() {
+        return cacheSession.getClientsCount(this);
     }
 
     @Override

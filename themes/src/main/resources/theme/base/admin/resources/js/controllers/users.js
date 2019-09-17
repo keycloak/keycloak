@@ -1,4 +1,4 @@
-module.controller('UserRoleMappingCtrl', function($scope, $http, realm, user, clients, client, Notifications, RealmRoleMapping,
+module.controller('UserRoleMappingCtrl', function($scope, $http, $route, realm, user, client, Client, Notifications, RealmRoleMapping,
                                                   ClientRoleMapping, AvailableRealmRoleMapping, AvailableClientRoleMapping,
                                                   CompositeRealmRoleMapping, CompositeClientRoleMapping) {
     $scope.realm = realm;
@@ -6,7 +6,6 @@ module.controller('UserRoleMappingCtrl', function($scope, $http, realm, user, cl
     $scope.selectedRealmRoles = [];
     $scope.selectedRealmMappings = [];
     $scope.realmMappings = [];
-    $scope.clients = clients;
     $scope.client = client;
     $scope.clientRoles = [];
     $scope.clientComposite = [];
@@ -14,6 +13,8 @@ module.controller('UserRoleMappingCtrl', function($scope, $http, realm, user, cl
     $scope.selectedClientMappings = [];
     $scope.clientMappings = [];
     $scope.dummymodel = [];
+    $scope.selectedClient = null;
+    
 
     $scope.realmMappings = RealmRoleMapping.query({realm : realm.realm, userId : user.id});
     $scope.realmRoles = AvailableRealmRoleMapping.query({realm : realm.realm, userId : user.id});
@@ -29,11 +30,11 @@ module.controller('UserRoleMappingCtrl', function($scope, $http, realm, user, cl
                 $scope.realmComposite = CompositeRealmRoleMapping.query({realm : realm.realm, userId : user.id});
                 $scope.selectedRealmMappings = [];
                 $scope.selectRealmRoles = [];
-                if ($scope.targetClient) {
+                if ($scope.selectedClient) {
                     console.log('load available');
-                    $scope.clientComposite = CompositeClientRoleMapping.query({realm : realm.realm, userId : user.id, client : $scope.targetClient.id});
-                    $scope.clientRoles = AvailableClientRoleMapping.query({realm : realm.realm, userId : user.id, client : $scope.targetClient.id});
-                    $scope.clientMappings = ClientRoleMapping.query({realm : realm.realm, userId : user.id, client : $scope.targetClient.id});
+                    $scope.clientComposite = CompositeClientRoleMapping.query({realm : realm.realm, userId : user.id, client : $scope.selectedClient.id});
+                    $scope.clientRoles = AvailableClientRoleMapping.query({realm : realm.realm, userId : user.id, client : $scope.selectedClient.id});
+                    $scope.clientMappings = ClientRoleMapping.query({realm : realm.realm, userId : user.id, client : $scope.selectedClient.id});
                     $scope.selectedClientRoles = [];
                     $scope.selectedClientMappings = [];
                 }
@@ -51,11 +52,11 @@ module.controller('UserRoleMappingCtrl', function($scope, $http, realm, user, cl
                 $scope.realmComposite = CompositeRealmRoleMapping.query({realm : realm.realm, userId : user.id});
                 $scope.selectedRealmMappings = [];
                 $scope.selectRealmRoles = [];
-                if ($scope.targetClient) {
+                if ($scope.selectedClient) {
                     console.log('load available');
-                    $scope.clientComposite = CompositeClientRoleMapping.query({realm : realm.realm, userId : user.id, client : $scope.targetClient.id});
-                    $scope.clientRoles = AvailableClientRoleMapping.query({realm : realm.realm, userId : user.id, client : $scope.targetClient.id});
-                    $scope.clientMappings = ClientRoleMapping.query({realm : realm.realm, userId : user.id, client : $scope.targetClient.id});
+                    $scope.clientComposite = CompositeClientRoleMapping.query({realm : realm.realm, userId : user.id, client : $scope.selectedClient.id});
+                    $scope.clientRoles = AvailableClientRoleMapping.query({realm : realm.realm, userId : user.id, client : $scope.selectedClient.id});
+                    $scope.clientMappings = ClientRoleMapping.query({realm : realm.realm, userId : user.id, client : $scope.selectedClient.id});
                     $scope.selectedClientRoles = [];
                     $scope.selectedClientMappings = [];
                 }
@@ -65,11 +66,11 @@ module.controller('UserRoleMappingCtrl', function($scope, $http, realm, user, cl
 
     $scope.addClientRole = function() {
         $scope.clientRolesToAdd = JSON.parse('[' + $scope.selectedClientRoles + ']');
-        $http.post(authUrl + '/admin/realms/' + realm.realm + '/users/' + user.id + '/role-mappings/clients/' + $scope.targetClient.id,
+        $http.post(authUrl + '/admin/realms/' + realm.realm + '/users/' + user.id + '/role-mappings/clients/' + $scope.selectedClient.id,
                 $scope.clientRolesToAdd).then(function() {
-                $scope.clientMappings = ClientRoleMapping.query({realm : realm.realm, userId : user.id, client : $scope.targetClient.id});
-                $scope.clientRoles = AvailableClientRoleMapping.query({realm : realm.realm, userId : user.id, client : $scope.targetClient.id});
-                $scope.clientComposite = CompositeClientRoleMapping.query({realm : realm.realm, userId : user.id, client : $scope.targetClient.id});
+                $scope.clientMappings = ClientRoleMapping.query({realm : realm.realm, userId : user.id, client : $scope.selectedClient.id});
+                $scope.clientRoles = AvailableClientRoleMapping.query({realm : realm.realm, userId : user.id, client : $scope.selectedClient.id});
+                $scope.clientComposite = CompositeClientRoleMapping.query({realm : realm.realm, userId : user.id, client : $scope.selectedClient.id});
                 $scope.selectedClientRoles = [];
                 $scope.selectedClientMappings = [];
                 $scope.realmComposite = CompositeRealmRoleMapping.query({realm : realm.realm, userId : user.id});
@@ -80,11 +81,11 @@ module.controller('UserRoleMappingCtrl', function($scope, $http, realm, user, cl
 
     $scope.deleteClientRole = function() {
         $scope.clientRolesToRemove = JSON.parse('[' + $scope.selectedClientMappings + ']');
-        $http.delete(authUrl + '/admin/realms/' + realm.realm + '/users/' + user.id + '/role-mappings/clients/' + $scope.targetClient.id,
+        $http.delete(authUrl + '/admin/realms/' + realm.realm + '/users/' + user.id + '/role-mappings/clients/' + $scope.selectedClient.id,
             {data : $scope.clientRolesToRemove, headers : {"content-type" : "application/json"}}).then(function() {
-                $scope.clientMappings = ClientRoleMapping.query({realm : realm.realm, userId : user.id, client : $scope.targetClient.id});
-                $scope.clientRoles = AvailableClientRoleMapping.query({realm : realm.realm, userId : user.id, client : $scope.targetClient.id});
-                $scope.clientComposite = CompositeClientRoleMapping.query({realm : realm.realm, userId : user.id, client : $scope.targetClient.id});
+                $scope.clientMappings = ClientRoleMapping.query({realm : realm.realm, userId : user.id, client : $scope.selectedClient.id});
+                $scope.clientRoles = AvailableClientRoleMapping.query({realm : realm.realm, userId : user.id, client : $scope.selectedClient.id});
+                $scope.clientComposite = CompositeClientRoleMapping.query({realm : realm.realm, userId : user.id, client : $scope.selectedClient.id});
                 $scope.selectedClientRoles = [];
                 $scope.selectedClientMappings = [];
                 $scope.realmComposite = CompositeRealmRoleMapping.query({realm : realm.realm, userId : user.id});
@@ -93,14 +94,19 @@ module.controller('UserRoleMappingCtrl', function($scope, $http, realm, user, cl
             });
     };
 
-
-    $scope.changeClient = function() {
-        console.log('changeClient');
-        if ($scope.targetClient) {
+    $scope.changeClient = function(client) {
+        console.log("selected client: ", client);
+        if (!client || !client.id) {
+            $scope.selectedClient = null;
+            return;
+        } else {
+            $scope.selectedClient = client;
+        }
+        if ($scope.selectedClient) {
             console.log('load available');
-            $scope.clientComposite = CompositeClientRoleMapping.query({realm : realm.realm, userId : user.id, client : $scope.targetClient.id});
-            $scope.clientRoles = AvailableClientRoleMapping.query({realm : realm.realm, userId : user.id, client : $scope.targetClient.id});
-            $scope.clientMappings = ClientRoleMapping.query({realm : realm.realm, userId : user.id, client : $scope.targetClient.id});
+            $scope.clientComposite = CompositeClientRoleMapping.query({realm : realm.realm, userId : user.id, client : $scope.selectedClient.id});
+            $scope.clientRoles = AvailableClientRoleMapping.query({realm : realm.realm, userId : user.id, client : $scope.selectedClient.id});
+            $scope.clientMappings = ClientRoleMapping.query({realm : realm.realm, userId : user.id, client : $scope.selectedClient.id});
         } else {
             $scope.clientRoles = null;
             $scope.clientMappings = null;
@@ -110,8 +116,7 @@ module.controller('UserRoleMappingCtrl', function($scope, $http, realm, user, cl
         $scope.selectedClientMappings = [];
     };
 
-
-
+    clientSelectControl($scope, $route.current.params.realm, Client);
 });
 
 module.controller('UserSessionsCtrl', function($scope, realm, user, sessions, UserSessions, UserLogout, UserSessionLogout, Notifications) {

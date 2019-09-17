@@ -104,6 +104,7 @@ public class LogoutEndpoint {
                            @QueryParam("initiating_idp") String initiatingIdp) {
         String redirect = postLogoutRedirectUri != null ? postLogoutRedirectUri : redirectUri;
 
+        // TODO evaluate importance of removing this: major performance boost observed
         if (redirect != null) {
             String validatedUri = RedirectUtils.verifyRealmRedirectUri(session.getContext().getUri(), redirect, realm);
             if (validatedUri == null) {

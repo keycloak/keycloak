@@ -327,7 +327,9 @@ module.factory('ClientLoader', function(Loader, Client, $route, $q) {
 module.factory('ClientListLoader', function(Loader, Client, $route, $q) {
     return Loader.query(Client, function() {
         return {
-            realm : $route.current.params.realm
+            realm : $route.current.params.realm,
+            first: 0,
+            max: 20
         }
     });
 });

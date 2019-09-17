@@ -507,9 +507,6 @@ module.config([ '$routeProvider', function($routeProvider) {
                 realm : function(RealmLoader) {
                     return RealmLoader();
                 },
-                clients : function(ClientListLoader) {
-                    return ClientListLoader();
-                },
                 roles : function(RoleListLoader) {
                     return RoleListLoader();
                 }
@@ -2692,7 +2689,7 @@ module.controller('RoleSelectorModalCtrl', function($scope, realm, config, confi
     }
 
     $scope.selectClientRole = function() {
-        config[configName] = $scope.client.selected.clientId + "." + $scope.selectedClientRole.role.name;
+        config[configName] = $scope.selectedClient.clientId + "." + $scope.selectedClientRole.role.name;
         $modalInstance.close();
     }
 
@@ -2700,9 +2697,18 @@ module.controller('RoleSelectorModalCtrl', function($scope, realm, config, confi
         $modalInstance.dismiss();
     }
 
-    $scope.changeClient = function() {
-        if ($scope.client.selected) {
-            ClientRole.query({realm: realm.realm, client: $scope.client.selected.id}, function (data) {
+    clientSelectControl($scope, realm.realm, Client);
+    
+    $scope.selectedClient = null;
+
+    $scope.changeClient = function(client) {
+        $scope.selectedClient = client;
+        if (!client || !client.id) {
+            $scope.selectedClient = null;
+            return;
+        }
+        if ($scope.selectedClient) {
+            ClientRole.query({realm: realm.realm, client: $scope.selectedClient.id}, function (data) {
                 $scope.clientRoles = data;
              });
         } else {
@@ -2710,16 +2716,11 @@ module.controller('RoleSelectorModalCtrl', function($scope, realm, config, confi
             $scope.clientRoles = null;
         }
 
+        $scope.selectedClient = client;
     }
+
     RealmRoles.query({realm: realm.realm}, function(data) {
         $scope.realmRoles = data;
-    })
-    Client.query({realm: realm.realm}, function(data) {
-        $scope.clients = data;
-        if (data.length > 0) {
-            $scope.client.selected = data[0];
-            $scope.changeClient();
-        }
     })
 });
 

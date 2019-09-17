@@ -16,8 +16,6 @@
  */
 package org.keycloak.storage.openshift;
 
-import java.util.regex.Matcher;
-
 import com.openshift.restclient.IClient;
 import com.openshift.restclient.NotFoundException;
 import com.openshift.restclient.model.IResource;
@@ -27,6 +25,10 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.storage.StorageId;
 import org.keycloak.storage.client.ClientStorageProvider;
 import org.keycloak.storage.client.ClientStorageProviderModel;
+
+import java.util.Collections;
+import java.util.List;
+import java.util.regex.Matcher;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -71,6 +73,12 @@ public class OpenshiftClientStorageProvider implements ClientStorageProvider {
         }
 
         return new OpenshiftSAClientAdapter(clientId, resource, client, session, realm, providerModel);
+    }
+
+    @Override
+    public List<ClientModel> searchClientsByClientId(String clientId, Integer firstResult, Integer maxResults, RealmModel realm) {
+        // TODO not sure about this, but I don't see this implementation using the search now
+        return Collections.singletonList(getClientByClientId(clientId, realm));
     }
 
     @Override
