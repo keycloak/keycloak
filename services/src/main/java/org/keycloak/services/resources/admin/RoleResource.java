@@ -81,6 +81,7 @@ public abstract class RoleResource {
                 throw new NotFoundException("Could not find composite role");
             }
             auth.roles().requireMapComposite(composite);
+            composite.addParentRole(role);
             role.addCompositeRole(composite);
         }
 

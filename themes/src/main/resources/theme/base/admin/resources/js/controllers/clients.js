@@ -769,7 +769,8 @@ module.controller('ClientRoleMembersCtrl', function($scope, realm, client, role,
         role: role.name,
         client: client.id,
         max : 5,
-        first : 0
+        first : 0,
+        composite: false
     }
 
     $scope.firstPage = function() {
@@ -787,6 +788,19 @@ module.controller('ClientRoleMembersCtrl', function($scope, realm, client, role,
 
     $scope.nextPage = function() {
         $scope.query.first += parseInt($scope.query.max);
+        $scope.searchQuery();
+    }
+
+    $scope.deepSearch = function() {
+        $scope.query.first = 0;
+
+        if($scope.query.composite == false) {
+            $scope.query.max = 5;
+        } else {
+            $scope.query.first = 0;
+            $scope.query.max = -1;
+        }
+
         $scope.searchQuery();
     }
 

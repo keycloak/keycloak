@@ -25,6 +25,7 @@ import org.keycloak.representations.idm.UserRepresentation;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
@@ -127,6 +128,23 @@ public interface RoleResource {
     @Produces(MediaType.APPLICATION_JSON)
     Set<UserRepresentation> getRoleUserMembers(@QueryParam("first") Integer firstResult,
                                                @QueryParam("max") Integer maxResults);
+    
+    /**
+     * Get role members
+     * <p/>
+     * Returns users that have the given role, paginated according to the query parameters
+     *
+     * @param firstResult Pagination offset
+     * @param maxResults  Pagination size
+     * @param composite   if true, will process a deep search through effectives roles and subgroups to get all the users who have the role directly or indirectly
+     * @return a list of users with the given role
+     */
+    @GET
+    @Path("users")
+    @Produces(MediaType.APPLICATION_JSON)
+    Set<UserRepresentation> getRoleUserMembers(@QueryParam("first") Integer firstResult,
+                                               @QueryParam("max") Integer maxResults,
+                                               @QueryParam("composite") @DefaultValue("false") boolean composite);
     
     /**
      * Get role groups

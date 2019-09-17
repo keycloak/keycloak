@@ -12,6 +12,12 @@
         <caption data-ng-show="users" class="hidden">{{:: 'table-of-role-members' | translate}}</caption>
         <thead>
         <tr>
+        <tr>
+            <td colspan="5">
+                <input data-ng-click="deepSearch()" ng-model="query.composite" type="checkbox" class="form-check-input" id="include-composite">
+                <label class="form-check-label" for="include-composite">Deep search in effectives roles ( can be slow )</label>
+            </td>
+        </tr>
         <tr data-ng-show="searchLoaded && users.length > 0">
             <th>{{:: 'username' | translate}}</th>
             <th>{{:: 'last-name' | translate}}</th>
@@ -21,7 +27,7 @@
         </tr>
         </tr>
         </thead>
-        <tfoot data-ng-show="users && (users.length >= query.max || query.first > 0)">
+        <tfoot data-ng-show="users && query.max != -1 && (users.length >= query.max || query.first > 0)">
         <tr>
             <td colspan="7">
                 <div class="table-nav">

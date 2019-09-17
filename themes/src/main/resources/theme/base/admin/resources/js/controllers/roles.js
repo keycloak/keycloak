@@ -7,7 +7,8 @@ module.controller('RoleMembersCtrl', function($scope, realm, role, RoleMembershi
         realm: realm.realm,
         role: role.name,
         max : 5,
-        first : 0
+        first : 0,
+        composite: false
     }
 
     $scope.remove = function() {
@@ -29,6 +30,19 @@ module.controller('RoleMembersCtrl', function($scope, realm, role, RoleMembershi
 
     $scope.nextPage = function() {
         $scope.query.first += parseInt($scope.query.max);
+        $scope.searchQuery();
+    }
+
+    $scope.deepSearch = function() {
+        $scope.query.first = 0;
+
+        if($scope.query.composite == false) {
+            $scope.query.max = 5;
+        } else {
+            $scope.query.first = 0;
+            $scope.query.max = -1;
+        }
+
         $scope.searchQuery();
     }
 
