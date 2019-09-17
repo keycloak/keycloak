@@ -52,8 +52,14 @@ public interface ClientsResource {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
+    List<ClientRepresentation> findAll(@QueryParam("clientId") String clientId,
+                                                 @QueryParam("viewableOnly") Boolean viewableOnly,
+                                                 @QueryParam("search") Boolean search,
+                                                 @QueryParam("first") Integer firstResult,
+                                                 @QueryParam("max") Integer maxResults);
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
     List<ClientRepresentation> findByClientId(@QueryParam("clientId") String clientId);
-
-
 
 }
