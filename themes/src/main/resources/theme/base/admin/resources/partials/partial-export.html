@@ -14,14 +14,18 @@
                     <input ng-model="exportGroupsAndRoles" name="exportGroupsAndRoles" id="exportGroupsAndRoles" onoffswitch on-text="{{:: 'onText'| translate}}" off-text="{{:: 'offText'| translate}}"/>
                 </div>
             </div>
-            
             <div class="form-group">
                 <label class="col-md-2 control-label" for="exportClients">{{:: 'export-clients' | translate}}</label>
                 <div class="col-sm-6">
                     <input ng-model="exportClients" name="exportClients" id="exportClients" onoffswitch on-text="{{:: 'onText'| translate}}" off-text="{{:: 'offText'| translate}}"/>
                 </div>
             </div>
-
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="exportUsers">{{:: 'export-users' | translate}}</label>
+                <div class="col-sm-6">
+                    <input ng-model="exportUsers" name="exportUsers" id="exportUsers" onoffswitch on-text="{{:: 'onText'| translate}}" off-text="{{:: 'offText'| translate}}"/>
+                </div>
+            </div>
             <div class="col-sm-12">
                 <button class="btn btn-primary" data-ng-click="export()" type="submit">{{:: 'export' | translate}}</button>
             </div>

@@ -446,6 +446,7 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
         UserEntity userEntity = getEntity();
         if (userEntity.getOpenTimestamp() == null) {
             userEntity.setOpenTimestamp(Time.currentTimeMillis());
+            userEntity.setEnabled(true);
             em.persist(userEntity);
             em.flush();
         }

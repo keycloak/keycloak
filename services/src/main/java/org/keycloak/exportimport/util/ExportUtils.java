@@ -76,7 +76,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 public class ExportUtils {
 
     public static RealmRepresentation exportRealm(KeycloakSession session, RealmModel realm, boolean includeUsers, boolean internal) {
-        ExportOptions opts = new ExportOptions(false, true, true);
+        ExportOptions opts = new ExportOptions(true, true, true);
         if (includeUsers) {
             opts.setUsersIncluded(true);
         }

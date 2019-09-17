@@ -2905,7 +2905,7 @@ module.controller('RealmExportCtrl', function($scope, realm, $http,
     $scope.page = 0;
 
     $scope.export = function() {
-        if ($scope.exportGroupsAndRoles || $scope.exportClients) {
+        if ($scope.exportGroupsAndRoles || $scope.exportClients || $scope.exportUsers) {
             Dialog.confirm('Export', 'This operation may make server unresponsive for a while.\n\nAre you sure you want to proceed?', download);
         } else {
             download();
@@ -2920,6 +2920,9 @@ module.controller('RealmExportCtrl', function($scope, realm, $http,
         }
         if ($scope.exportClients) {
             params['exportClients'] = true;
+        }
+        if ($scope.exportUsers) {
+            params['exportUsers'] = true;
         }
         if (Object.keys(params).length > 0) {
             exportUrl += '?' + $httpParamSerializer(params);
