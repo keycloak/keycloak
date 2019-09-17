@@ -111,10 +111,6 @@ public class UsersResource {
             return ErrorResponse.exists("User exists with same email");
         }
 
-        if (rep.getIdcard() != null && !IdcardUtil.validateCard(rep.getIdcard())) {
-            return ErrorResponse.exists("User idcard is not validate ");
-        }
-
         if (rep.getIdcard() != null && session.users().getUserByIdcard(rep.getIdcard(), realm) != null) {
             return ErrorResponse.exists("User exists with same idcard ");
         }
