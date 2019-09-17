@@ -26,7 +26,7 @@ export = Keycloak;
  * Creates a new Keycloak client instance.
  * @param config Path to a JSON config file or a plain config object.
  */
-declare function Keycloak<TPromise extends Keycloak.PromiseType = undefined>(config?: string|{}): Keycloak.KeycloakInstance<TPromise>;
+declare function Keycloak<TPromise extends Keycloak.KeycloakPromiseType = 'legacy'>(config?: string|{}): Keycloak.KeycloakInstance<TPromise>;
 
 declare namespace Keycloak {
 	type KeycloakAdapterName = 'cordova' | 'cordova-native' |'default' | any;
@@ -34,7 +34,7 @@ declare namespace Keycloak {
 	type KeycloakResponseMode = 'query'|'fragment';
 	type KeycloakResponseType = 'code'|'id_token token'|'code id_token token';
 	type KeycloakFlow = 'standard'|'implicit'|'hybrid';
-	type KeycloakPromiseType = 'native';
+	type KeycloakPromiseType = 'legacy' | 'native';
 	type KeycloakPkceMethod = 'S256';
 
 	interface KeycloakInitOptions {
@@ -122,9 +122,17 @@ declare namespace Keycloak {
 		flow?: KeycloakFlow;
 
 		/**
-		 * Set the promise type. If set to `'native'` all methods returning a promise
-		 * will return a native JavaScript promise. If not set will return
-		 * Keycloak specific promise objects.
+		 * Set the promise type. If set to `native` all methods returning a promise
+		 * will return a native JavaScript promise. If not not specified then
+		 * Keycloak specific legacy promise objects will be returned instead.
+		 *
+		 * Since native promises have become the industry standard it is highly
+		 * recommended that you always specify `native` as the promise type.
+		 *
+		 * Note that in upcoming versions of Keycloak the default will be changed
+		 * to `native`, and support for legacy promises will eventually be removed.
+		 *
+		 * @default legacy
 		 */
 		promiseType?: KeycloakPromiseType;
 
@@ -271,15 +279,14 @@ declare namespace Keycloak {
 	 * Conditional CompatPromise type in order to support
 	 * both legacy promises and native promises as return types.
 	 */
-	type PromiseType = KeycloakPromiseType | undefined;
-	type CompatPromise<TPromiseType extends PromiseType, TSuccess, TError> = 
-		TPromiseType extends KeycloakPromiseType ? Promise<TSuccess> : KeycloakPromise<TSuccess, TError>;
+	type CompatPromise<TPromiseType extends KeycloakPromiseType, TSuccess, TError> =
+		TPromiseType extends 'native' ? Promise<TSuccess> : KeycloakPromise<TSuccess, TError>;
 
 	/**
 	 * A client for the Keycloak authentication server.
 	 * @see {@link https://keycloak.gitbooks.io/securing-client-applications-guide/content/topics/oidc/javascript-adapter.html|Keycloak JS adapter documentation}
 	 */
-	interface KeycloakInstance<TPromise extends PromiseType = undefined> {
+	interface KeycloakInstance<TPromise extends KeycloakPromiseType = 'legacy'> {
 		/**
 		 * Is true if the user is authenticated, false otherwise.
 		 */
