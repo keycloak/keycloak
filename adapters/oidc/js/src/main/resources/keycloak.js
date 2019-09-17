@@ -110,8 +110,9 @@
                 }
 
                 if (initOptions.promiseType === 'native') {
-                    kc.useNativePromise = typeof Promise === "function";
+                    kc.useNativePromise = true;
                 } else {
+                    console.warn('[KEYCLOAK] Using legacy promises is deprecated and will be removed in future versions. You can opt in to using native promises by setting `promiseType` to \'native\' when initializing Keycloak.');
                     kc.useNativePromise = false;
                 }
 
