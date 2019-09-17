@@ -1518,29 +1518,7 @@ module.controller('ResourceServerPolicyClientDetailCtrl', function($scope, $rout
         },
 
         onInit : function() {
-            $scope.clientsUiSelect = {
-                minimumInputLength: 1,
-                delay: 500,
-                allowClear: true,
-                query: function (query) {
-                    var data = {results: []};
-                    if ('' == query.term.trim()) {
-                        query.callback(data);
-                        return;
-                    }
-                    Client.query({realm: $route.current.params.realm, search: query.term.trim(), max: 20}, function(response) {
-                        for (i = 0; i < response.length; i++) {
-                            if (response[i].clientId.indexOf(query.term) != -1) {
-                                data.results.push(response[i]);
-                            }
-                        }
-                        query.callback(data);
-                    });
-                },
-                formatResult: function(object, container, query) {
-                    return object.clientId;
-                }
-            };
+            clientSelectControl($scope, $route.current.params.realm, Client);
 
             $scope.selectedClients = [];
 

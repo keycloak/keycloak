@@ -208,16 +208,14 @@
         </div>
 
         <div class="form-group" data-ng-show="rolesShown()">
-            <label class="col-md-2 control-label" class="control-label">
-                <span>{{:: 'client-roles' | translate}}</span>
-                <select class="form-control" id="clients" name="clients" ng-change="changeClient()" ng-model="targetClient" ng-options="a.clientId for a in clients | orderBy:'clientId'" ng-disabled="false"></select>
-            </label>
+            <label class="col-md-2 control-label" for="clients">{{:: 'client-roles' | translate}}</label>
+            <div class="col-md-6">
+                <input type="hidden" ui-select2="clientsUiSelect" id="clients" data-ng-model="selectedClient" data-ng-change="selectClient(selectedClient);" data-placeholder="{{:: 'authz-select-client' | translate}}...">
+                </input>
+            </div>
 
-            <div class="col-md-10">
-                <div class="row" data-ng-hide="targetClient">
-                    <div class="col-md-4"><span class="text-muted">{{:: 'select-client-roles.tooltip' | translate}}</span></div>
-                </div>
-                <div class="row" data-ng-show="targetClient">
+            <div class="col-md-10 col-md-offset-2">
+                <div class="row" data-ng-show="selectedClient">
                     <div class="col-md-4">
                         <label class="control-label" for="available-client">{{:: 'client-scopes.evaluate.not-granted-roles' | translate}}</label>
                         <kc-tooltip>{{:: 'client-scopes.evaluate.not-granted-roles.tooltip' | translate}}</kc-tooltip>

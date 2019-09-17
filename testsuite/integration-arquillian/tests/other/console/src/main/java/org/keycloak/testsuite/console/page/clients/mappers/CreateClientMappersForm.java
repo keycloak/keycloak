@@ -1,6 +1,7 @@
 package org.keycloak.testsuite.console.page.clients.mappers;
 
 import org.jboss.arquillian.drone.api.annotation.Drone;
+import org.keycloak.testsuite.console.page.clients.authorization.policy.ClientSelectModal;
 import org.keycloak.testsuite.console.page.fragment.OnOffSwitch;
 import org.keycloak.testsuite.page.Form;
 import org.keycloak.testsuite.util.UIUtils;
@@ -102,7 +103,10 @@ public class CreateClientMappersForm extends Form {
         private WebElement selectClientRoleButton;
         @FindBy(xpath = ".//button[@class='close']")
         private WebElement closeButton;
-        
+
+        @FindBy(id = "s2id_clients")
+        private ClientSelectModal clientsInput;
+
         public void closeRoleSelectorModalDialog() {
             closeButton.click();
         }
@@ -117,13 +121,17 @@ public class CreateClientMappersForm extends Form {
         }
         
         public void selectClientRole(String clientName, String roleName) {
+            WaitUtils.pause(100);
             if (roleName != null || clientName != null) {
-                clientSelect.selectByVisibleText(clientName);
                 clientAvailable.selectByVisibleText(roleName);
             }
             WaitUtils.pause(1000);
             selectClientRoleButton.click();
             WaitUtils.waitForModalFadeOut();
+        }
+
+        public void selectClient(String clientName) {
+            clientsInput.select(clientName);
         }
     }
     
@@ -134,6 +142,7 @@ public class CreateClientMappersForm extends Form {
                 roleSelectorModalDialog.selectRealmRole(roleName);
                 break;
             case CLIENT_ROLE:
+                roleSelectorModalDialog.selectClient(clientName);
                 roleSelectorModalDialog.selectClientRole(clientName, roleName);
                 break;
             default:

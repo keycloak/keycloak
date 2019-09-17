@@ -507,9 +507,6 @@ module.config([ '$routeProvider', function($routeProvider) {
                 realm : function(RealmLoader) {
                     return RealmLoader();
                 },
-                clients : function(ClientListLoader) {
-                    return ClientListLoader();
-                },
                 roles : function(RoleListLoader) {
                     return RoleListLoader();
                 }
@@ -2692,7 +2689,7 @@ module.controller('RoleSelectorModalCtrl', function($scope, realm, config, confi
     }
 
     $scope.selectClientRole = function() {
-        config[configName] = $scope.client.selected.clientId + "." + $scope.selectedClientRole.role.name;
+        config[configName] = $scope.selectedClient.clientId + "." + $scope.selectedClientRole.role.name;
         $modalInstance.close();
     }
 
@@ -2700,9 +2697,18 @@ module.controller('RoleSelectorModalCtrl', function($scope, realm, config, confi
         $modalInstance.dismiss();
     }
 
-    $scope.changeClient = function() {
-        if ($scope.client.selected) {
-            ClientRole.query({realm: realm.realm, client: $scope.client.selected.id}, function (data) {
+    clientSelectControl($scope, realm.realm, Client);
+    
+    $scope.selectedClient = null;
+
+    $scope.changeClient = function(client) {
+        $scope.selectedClient = client;
+        if (!client || !client.id) {
+            $scope.selectedClient = null;
+            return;
+        }
+        if ($scope.selectedClient) {
+            ClientRole.query({realm: realm.realm, client: $scope.selectedClient.id}, function (data) {
                 $scope.clientRoles = data;
              });
         } else {
@@ -2710,26 +2716,34 @@ module.controller('RoleSelectorModalCtrl', function($scope, realm, config, confi
             $scope.clientRoles = null;
         }
 
+        $scope.selectedClient = client;
     }
+
     RealmRoles.query({realm: realm.realm}, function(data) {
         $scope.realmRoles = data;
     })
-    Client.query({realm: realm.realm}, function(data) {
-        $scope.clients = data;
-        if (data.length > 0) {
-            $scope.client.selected = data[0];
-            $scope.changeClient();
-        }
-    })
 });
 
-module.controller('ProviderConfigCtrl', function ($modal, $scope, ComponentUtils) {
+module.controller('ProviderConfigCtrl', function ($modal, $scope, $route, ComponentUtils, Client) {
+    clientSelectControl($scope, $route.current.params.realm, Client);
     $scope.fileNames = {};
 
     // KEYCLOAK-4463
     $scope.initEditor = function(editor){
         editor.$blockScrolling = Infinity; // suppress warning message
     };
+
+    $scope.initSelectedClient = function(configName, config) {
+        if(config[configName]) {
+            $scope.selectedClient = null;
+            Client.query({realm: $route.current.params.realm, search: false, clientId: config[configName], max: 1}, function(data) {
+                if(data.length > 0) {
+                    $scope.selectedClient = angular.copy(data[0]);
+                    $scope.selectedClient.text = $scope.selectedClient.clientId;
+                }
+            });
+        }   
+    }
 
     $scope.openRoleSelector = function (configName, config) {
         $modal.open({
@@ -2748,6 +2762,16 @@ module.controller('ProviderConfigCtrl', function ($modal, $scope, ComponentUtils
             }
         })
     }
+
+    $scope.changeClient = function(configName, config, client) {
+        if (!client || !client.id) {
+            config[configName] = null;
+            $scope.selectedClient = null;
+            return;
+        }
+        $scope.selectedClient = client;
+        config[configName] = client.clientId;
+    };
 
     ComponentUtils.convertAllMultivaluedStringValuesToList($scope.properties, $scope.config);
 
@@ -2844,7 +2868,31 @@ module.controller('ComponentRoleSelectorModalCtrl', function($scope, realm, conf
     })
 });
 
-module.controller('ComponentConfigCtrl', function ($modal, $scope) {
+module.controller('ComponentConfigCtrl', function ($modal, $scope, $route, Client) {
+
+    $scope.initSelectedClient = function(configName, config) {
+        if(config[configName]) {
+            $scope.selectedClient = null;
+            Client.query({realm: $route.current.params.realm, search: false, clientId: config[configName], max: 1}, function(data) {
+                if(data.length > 0) {
+                    $scope.selectedClient = angular.copy(data[0]);
+                    $scope.selectedClient.text = $scope.selectedClient.clientId;
+                }
+            });
+        }   
+    }
+
+    $scope.changeClient = function(configName, config, client) {
+        if (!client || !client.id) {
+            config[configName] = null;
+            $scope.selectedClient = null;
+            return;
+        }
+        $scope.selectedClient = client;
+        config[configName] = client.clientId;
+    };
+
+
     $scope.openRoleSelector = function (configName, config) {
         $modal.open({
             templateUrl: resourceUrl + '/partials/modal/component-role-selector.html',

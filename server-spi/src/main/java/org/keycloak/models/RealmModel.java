@@ -252,6 +252,8 @@ public interface RealmModel extends RoleContainerModel {
     void removeDefaultGroup(GroupModel group);
 
     List<ClientModel> getClients();
+    List<ClientModel> getClients(Integer firstResult, Integer maxResults);
+    Long getClientsCount();
 
     ClientModel addClient(String name);
 
@@ -261,7 +263,8 @@ public interface RealmModel extends RoleContainerModel {
 
     ClientModel getClientById(String id);
     ClientModel getClientByClientId(String clientId);
-
+    List<ClientModel> searchClientByClientId(String clientId, Integer firstResult, Integer maxResults);
+    
     void updateRequiredCredentials(Set<String> creds);
 
     Map<String, String> getBrowserSecurityHeaders();

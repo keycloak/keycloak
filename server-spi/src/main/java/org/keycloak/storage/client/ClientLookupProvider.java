@@ -19,6 +19,8 @@ package org.keycloak.storage.client;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
 
+import java.util.List;
+
 /**
  * Abstraction interface for lookoup of clients by id and clientId.  These methods required for participating in login flows.
  *
@@ -28,4 +30,5 @@ import org.keycloak.models.RealmModel;
 public interface ClientLookupProvider {
     ClientModel getClientById(String id, RealmModel realm);
     ClientModel getClientByClientId(String clientId, RealmModel realm);
+    List<ClientModel> searchClientsByClientId(String clientId, Integer firstResult, Integer maxResults, RealmModel realm);
 }

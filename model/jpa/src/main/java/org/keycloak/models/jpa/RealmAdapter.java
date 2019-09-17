@@ -28,13 +28,12 @@ import org.keycloak.models.utils.ComponentUtil;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
 import javax.persistence.EntityManager;
+import javax.persistence.LockModeType;
 import javax.persistence.TypedQuery;
-
 import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-import javax.persistence.LockModeType;
 import static java.util.Objects.nonNull;
 
 /**
@@ -46,6 +45,12 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
     protected RealmEntity realm;
     protected EntityManager em;
     protected KeycloakSession session;
+
+    @Override
+    public Long getClientsCount() {
+        return session.realms().getClientsCount(this);
+    }
+
     private PasswordPolicy passwordPolicy;
     private OTPPolicy otpPolicy;
 
@@ -782,10 +787,14 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
         }
 
     }
-
     @Override
     public List<ClientModel> getClients() {
         return session.realms().getClients(this);
+    }
+
+    @Override
+    public List<ClientModel> getClients(Integer firstResult, Integer maxResults) {
+        return session.realms().getClients(this, firstResult, maxResults);
     }
 
     @Override
@@ -814,6 +823,11 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
     @Override
     public ClientModel getClientByClientId(String clientId) {
         return session.realms().getClientByClientId(clientId, this);
+    }
+
+    @Override
+    public List<ClientModel> searchClientByClientId(String clientId, Integer firstResult, Integer maxResults) {
+        return session.realms().searchClientsByClientId(clientId, firstResult, maxResults, this);
     }
 
     private static final String BROWSER_HEADER_PREFIX = "_browser_header.";
