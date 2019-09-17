@@ -658,7 +658,6 @@ public class LDAPOperationManager {
     }
 
     public String decodeEntryUUID(final Object entryUUID) {
-        String id;
         if (entryUUID instanceof byte[]) {
             if (this.config.isObjectGUID()) {
                 return LDAPUtil.decodeObjectGUID((byte[]) entryUUID);
