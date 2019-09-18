@@ -157,7 +157,7 @@ The administrator can select the following three options:
 
 *Proof Key for Code Exchange Code Challenge Method*
 
-* (blank) : {project_name} does not apply PKCE unless the client sends PKCE's parameters appropriately to keycloak's authorization endpoint. It is the default setting.
+* (blank) : {project_name} does not apply PKCE unless the client sends PKCE's parameters appropriately to {project_name}'s authorization endpoint. It is the default setting.
 * S256 : {project_name} applies to the client PKCE whose code challenge method is S256.
 * plain : {project_name} applies to the client PKCE whose code challenge method is plain.
 

@@ -172,7 +172,7 @@ Defines how to extract the user identity from a client certificate.
 Defines whether to use the canonical format to determine a distinguished name.
 The format is described in detail in the official link:https://docs.oracle.com/javase/8/docs/api/javax/security/auth/x500/X500Principal.html#getName-java.lang.String-[Java API documentation] .
 This option only affects the two User Identity Sources _Match SubjectDN using regular expression_ and _Match IssuerDN using regular expression_.
-If you setup a new keycloak instance it is recommended to enable this option. Leave this option disabled to remain beckward compatible with existing Keycloak instances.
+If you setup a new {project_name} instance it is recommended to enable this option. Leave this option disabled to remain beckward compatible with existing {project_name} instances.
 
 `Enable Serial Number hexadecimal representation` (optional)::
 An option to use hexadecimal representation of the Serial Number. See link:https://tools.ietf.org/html/rfc5280#section-4.1.2.2[RFC5280, Section-4.1.2.2]. Serial Number with sign bit set to 1 should be left padded with 00 octet. E.g. Serial number with decimal value _161_, or _a1_ in hexadecimal representation according to RFC5280 must be encoded as _00a1_. More details can be found: link:https://tools.ietf.org/html/rfc5280#appendix-B[RFC5280, appendix-B].

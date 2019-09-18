@@ -33,7 +33,7 @@ Install the {appserver_name} 7 adapters for OIDC using the following command at 
 $ sudo yum install eap7-keycloak-adapter-sso7_3
 ----
 
-or use following one for Red Hat Red Hat Enterprise Linux 8:
+or use following one for Red Hat Enterprise Linux 8:
 
 ----
 $ sudo dnf install eap7-keycloak-adapter-sso7_3

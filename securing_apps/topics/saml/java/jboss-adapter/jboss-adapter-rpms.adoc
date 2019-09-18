@@ -33,7 +33,7 @@ Install the EAP 7 adapters for SAML using the following command:
 $ sudo yum install eap7-keycloak-saml-adapter-sso7_3
 ----
 
-or use following one for Red Hat Red Hat Enterprise Linux 8:
+or use following one for Red Hat Enterprise Linux 8:
 
 ----
 $ sudo dnf install eap7-keycloak-adapter-sso7_3
