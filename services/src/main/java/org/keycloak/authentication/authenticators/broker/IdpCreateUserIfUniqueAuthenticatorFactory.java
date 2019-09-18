@@ -37,6 +37,7 @@ public class IdpCreateUserIfUniqueAuthenticatorFactory implements AuthenticatorF
     static IdpCreateUserIfUniqueAuthenticator SINGLETON = new IdpCreateUserIfUniqueAuthenticator();
 
     public static final String REQUIRE_PASSWORD_UPDATE_AFTER_REGISTRATION = "require.password.update.after.registration";
+    public static final String DISABLE_USER_CREATION = "disable.user.creation";
 
     @Override
     public Authenticator create(KeycloakSession session) {
@@ -101,15 +102,22 @@ public class IdpCreateUserIfUniqueAuthenticatorFactory implements AuthenticatorF
     private static final List<ProviderConfigProperty> configProperties = new ArrayList<ProviderConfigProperty>();
 
     static {
-        ProviderConfigProperty property;
-        property = new ProviderConfigProperty();
-        property.setName(REQUIRE_PASSWORD_UPDATE_AFTER_REGISTRATION);
-        property.setLabel("Require Password Update After Registration");
-        property.setType(ProviderConfigProperty.BOOLEAN_TYPE);
-        property.setHelpText("If this option is true and new user is successfully imported from Identity Provider to Keycloak (there is no duplicated email or username detected in Keycloak DB), then this user is required to update his password");
-        configProperties.add(property);
-    }
+        ProviderConfigProperty requirePasswordProperty = new ProviderConfigProperty();
+        requirePasswordProperty.setName(REQUIRE_PASSWORD_UPDATE_AFTER_REGISTRATION);
+        requirePasswordProperty.setLabel("Require Password Update After Registration");
+        requirePasswordProperty.setType(ProviderConfigProperty.BOOLEAN_TYPE);
+        requirePasswordProperty.setHelpText("If this option is true and new user is successfully imported from Identity Provider to Keycloak (there is no duplicated email or username detected in Keycloak DB), then this user is required to update his password");
+        configProperties.add(requirePasswordProperty);
 
+        ProviderConfigProperty disableUserCreationProperty = new ProviderConfigProperty();
+        disableUserCreationProperty.setName(DISABLE_USER_CREATION);
+        disableUserCreationProperty.setLabel("{{:: 'disable-user-creation' | translate}}");
+        disableUserCreationProperty.setType(ProviderConfigProperty.BOOLEAN_TYPE);
+        disableUserCreationProperty.setHelpText("(False by default) If this option is true and there is no user matching id provided by the Identity Provider in Keycloak, a user will not be created.");
+        disableUserCreationProperty.setDefaultValue(false);
+
+        configProperties.add(disableUserCreationProperty);
+    }
 
     @Override
     public List<ProviderConfigProperty> getConfigProperties() {

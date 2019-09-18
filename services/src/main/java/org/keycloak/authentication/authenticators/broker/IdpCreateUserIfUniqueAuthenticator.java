@@ -69,30 +69,36 @@ public class IdpCreateUserIfUniqueAuthenticator extends AbstractIdpAuthenticator
         ExistingUserInfo duplication = checkExistingUser(context, username, serializedCtx, brokerContext);
 
         if (duplication == null) {
-            logger.debugf("No duplication detected. Creating account for user '%s' and linking with identity provider '%s' .",
-                    username, brokerContext.getIdpConfig().getAlias());
-
-            UserModel federatedUser = session.users().addUser(realm, username);
-            federatedUser.setEnabled(true);
-            federatedUser.setEmail(brokerContext.getEmail());
-            federatedUser.setFirstName(brokerContext.getFirstName());
-            federatedUser.setLastName(brokerContext.getLastName());
-
-            for (Map.Entry<String, List<String>> attr : serializedCtx.getAttributes().entrySet()) {
-                federatedUser.setAttribute(attr.getKey(), attr.getValue());
-            }
-
             AuthenticatorConfigModel config = context.getAuthenticatorConfig();
-            if (config != null && Boolean.parseBoolean(config.getConfig().get(IdpCreateUserIfUniqueAuthenticatorFactory.REQUIRE_PASSWORD_UPDATE_AFTER_REGISTRATION))) {
-                logger.debugf("User '%s' required to update password", federatedUser.getUsername());
-                federatedUser.addRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
+            
+            if (isUserCreationDisabled(config)) {
+                logger.debugf("No duplication detected. User creation is disabled. User '%s' and linking with identity provider '%s' is absent of keycloak realm %s .",
+                username, brokerContext.getIdpConfig().getAlias(), realm.getName());
+            } else {
+                logger.debugf("No duplication detected. Creating account for user '%s' and linking with identity provider '%s' .",
+                        username, brokerContext.getIdpConfig().getAlias());
+
+                UserModel federatedUser = session.users().addUser(realm, username);
+                federatedUser.setEnabled(true);
+                federatedUser.setEmail(brokerContext.getEmail());
+                federatedUser.setFirstName(brokerContext.getFirstName());
+                federatedUser.setLastName(brokerContext.getLastName());
+
+                for (Map.Entry<String, List<String>> attr : serializedCtx.getAttributes().entrySet()) {
+                    federatedUser.setAttribute(attr.getKey(), attr.getValue());
+                }
+
+                if (config != null && Boolean.parseBoolean(config.getConfig().get(IdpCreateUserIfUniqueAuthenticatorFactory.REQUIRE_PASSWORD_UPDATE_AFTER_REGISTRATION))) {
+                    logger.debugf("User '%s' required to update password", federatedUser.getUsername());
+                    federatedUser.addRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
+                }
+
+                userRegisteredSuccess(context, federatedUser, serializedCtx, brokerContext);
+
+                context.setUser(federatedUser);
+                context.getAuthenticationSession().setAuthNote(BROKER_REGISTERED_NEW_USER, "true");
+                context.success();
             }
-
-            userRegisteredSuccess(context, federatedUser, serializedCtx, brokerContext);
-
-            context.setUser(federatedUser);
-            context.getAuthenticationSession().setAuthNote(BROKER_REGISTERED_NEW_USER, "true");
-            context.success();
         } else {
             logger.debugf("Duplication detected. There is already existing user with %s '%s' .",
                     duplication.getDuplicateAttributeName(), duplication.getDuplicateAttributeValue());
@@ -114,6 +120,10 @@ public class IdpCreateUserIfUniqueAuthenticator extends AbstractIdpAuthenticator
                         .error(Errors.FEDERATED_IDENTITY_EXISTS);
             }
         }
+    }
+
+    private boolean isUserCreationDisabled(AuthenticatorConfigModel config) {
+        return Boolean.parseBoolean(config.getConfig().get(IdpCreateUserIfUniqueAuthenticatorFactory.DISABLE_USER_CREATION));
     }
 
     // Could be overriden to detect duplication based on other criterias (firstName, lastName, ...)
