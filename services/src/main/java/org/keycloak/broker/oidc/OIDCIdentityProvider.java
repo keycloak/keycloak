@@ -250,7 +250,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
     }
 
     protected SimpleHttp getRefreshTokenRequest(KeycloakSession session, String refreshToken, String clientId, String clientSecret) {
-        if (OIDCLoginProtocol.CLIENT_SECRET_BASIC.equals(getConfig().getClientAuth())) {
+        if (OIDCLoginProtocol.CLIENT_SECRET_BASIC.equals(getConfig().getClientAuthMethod())) {
             return SimpleHttp.doPost(getConfig().getTokenUrl(), session)
                     .param("refresh_token", refreshToken)
                     .param(OAUTH2_PARAMETER_GRANT_TYPE, OAUTH2_GRANT_TYPE_REFRESH_TOKEN)
@@ -347,24 +347,6 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
                 return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.SESSION_NOT_ACTIVE);
             }
             return AuthenticationManager.finishBrowserLogout(session, realm, userSession, session.getContext().getUri(), clientConnection, headers);
-        }
-
-
-        @Override
-        public SimpleHttp generateTokenRequest(String authorizationCode) {
-            if (OIDCLoginProtocol.CLIENT_SECRET_BASIC.equals(getConfig().getClientAuth())) {
-                return SimpleHttp.doPost(getConfig().getTokenUrl(), session)
-                        .param(OAUTH2_PARAMETER_CODE, authorizationCode)
-                        .param(OAUTH2_PARAMETER_REDIRECT_URI, session.getContext().getUri().getAbsolutePath().toString())
-                        .param(OAUTH2_PARAMETER_GRANT_TYPE, OAUTH2_GRANT_TYPE_AUTHORIZATION_CODE)
-                        .authBasic(getConfig().getClientId(), getConfig().getClientSecret());
-            }
-            return SimpleHttp.doPost(getConfig().getTokenUrl(), session)
-                    .param(OAUTH2_PARAMETER_CODE, authorizationCode)
-                    .param(OAUTH2_PARAMETER_CLIENT_ID, getConfig().getClientId())
-                    .param(OAUTH2_PARAMETER_CLIENT_SECRET, getConfig().getClientSecret())
-                    .param(OAUTH2_PARAMETER_REDIRECT_URI, session.getContext().getUri().getAbsolutePath().toString())
-                    .param(OAUTH2_PARAMETER_GRANT_TYPE, OAUTH2_GRANT_TYPE_AUTHORIZATION_CODE);
         }
     }
 

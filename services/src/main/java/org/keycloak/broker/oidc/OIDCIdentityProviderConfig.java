@@ -95,14 +95,6 @@ public class OIDCIdentityProviderConfig extends OAuth2IdentityProviderConfig {
         getConfig().put(JWKS_URL, jwksUrl);
     }
 
-    public String getClientAuth() {
-        return getConfig().getOrDefault(CLIENT_AUTH, OIDCLoginProtocol.CLIENT_SECRET_POST);
-    }
-
-    public void setClientAuth(String clientAuth) {
-        getConfig().put(CLIENT_AUTH, clientAuth);
-    }
-
     public boolean isBackchannelSupported() {
         return Boolean.valueOf(getConfig().get("backchannelSupported"));
     }
