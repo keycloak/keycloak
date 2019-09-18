@@ -19,8 +19,7 @@ package org.keycloak.authentication.authenticators.broker;
 
 import org.jboss.logging.Logger;
 import org.keycloak.authentication.AuthenticationFlowContext;
-
-import org.keycloak.authentication.authenticators.broker.util.ExistingUserInfo;
+import static org.keycloak.authentication.authenticators.broker.AbstractIdpAuthenticator.getExistingUser;
 import org.keycloak.authentication.authenticators.broker.util.SerializedBrokeredIdentityContext;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.models.KeycloakSession;
@@ -41,20 +40,6 @@ public class IdpAutoLinkAuthenticator extends AbstractIdpAuthenticator {
         RealmModel realm = context.getRealm();
         AuthenticationSessionModel authSession = context.getAuthenticationSession();
 
-        if (!isExistingUserInfoRegistered(authSession)) {
-            String username = getUsername(context, serializedCtx, brokerContext);
-            if (username != null) {
-                ExistingUserInfo duplication = checkExistingUser(context,username, serializedCtx, brokerContext);
-
-                if (duplication != null) {
-                    logger.debugf("Duplication detected. There is already existing user with %s '%s' .",
-                        duplication.getDuplicateAttributeName(), duplication.getDuplicateAttributeValue());
-
-                    // Set duplicated user, so next authenticators can deal with it
-                    context.getAuthenticationSession().setAuthNote(EXISTING_USER_INFO, duplication.serialize());
-                }
-            }
-        }
         UserModel existingUser = getExistingUser(session, realm, authSession);
 
         logger.debugf("User '%s' will auto link with identity provider '%s' . Identity provider username is '%s' ", existingUser.getUsername(),
@@ -62,11 +47,6 @@ public class IdpAutoLinkAuthenticator extends AbstractIdpAuthenticator {
 
         context.setUser(existingUser);
         context.success();
-    }
-
-    private boolean isExistingUserInfoRegistered(AuthenticationSessionModel authSession) {
-        String existingUserId = authSession.getAuthNote(EXISTING_USER_INFO);
-        return existingUserId != null;
     }
 
     @Override

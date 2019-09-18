@@ -116,6 +116,30 @@ public class IdpCreateUserIfUniqueAuthenticator extends AbstractIdpAuthenticator
         }
     }
 
+    // Could be overriden to detect duplication based on other criterias (firstName, lastName, ...)
+    protected ExistingUserInfo checkExistingUser(AuthenticationFlowContext context, String username, SerializedBrokeredIdentityContext serializedCtx, BrokeredIdentityContext brokerContext) {
+
+        if (brokerContext.getEmail() != null && !context.getRealm().isDuplicateEmailsAllowed()) {
+            UserModel existingUser = context.getSession().users().getUserByEmail(brokerContext.getEmail(), context.getRealm());
+            if (existingUser != null) {
+                return new ExistingUserInfo(existingUser.getId(), UserModel.EMAIL, existingUser.getEmail());
+            }
+        }
+
+        UserModel existingUser = context.getSession().users().getUserByUsername(username, context.getRealm());
+        if (existingUser != null) {
+            return new ExistingUserInfo(existingUser.getId(), UserModel.USERNAME, existingUser.getUsername());
+        }
+
+        return null;
+    }
+
+    protected String getUsername(AuthenticationFlowContext context, SerializedBrokeredIdentityContext serializedCtx, BrokeredIdentityContext brokerContext) {
+        RealmModel realm = context.getRealm();
+        return realm.isRegistrationEmailAsUsername() ? brokerContext.getEmail() : brokerContext.getModelUsername();
+    }
+
+
     // Empty method by default. This exists, so subclass can override and add callback after new user is registered through social
     protected void userRegisteredSuccess(AuthenticationFlowContext context, UserModel registeredUser, SerializedBrokeredIdentityContext serializedCtx, BrokeredIdentityContext brokerContext) {
 
