@@ -18,7 +18,7 @@
 package org.keycloak.testsuite.adapter.servlet;
 
 import static javax.ws.rs.core.Response.Status.OK;
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 import static org.keycloak.OAuth2Constants.PASSWORD;
 import static org.keycloak.testsuite.admin.Users.getPasswordOf;
@@ -1867,9 +1867,9 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
         // now check for the set of expected mapped roles: supervisor should have been mapped to coordinator, team-lead should
         // have been added to bburke, and user should have been discarded; manager and employed unchanged from mappings.
         assertSuccessfulLogin(employeeRoleMappingPage, bburkeUser, testRealmSAMLPostLoginPage, "bburke@redhat.com");
-        assertThat(employeeRoleMappingPage.rolesList())
-                .contains("manager", "coordinator", "team-lead", "employee")
-                .doesNotContain("supervisor", "user");
+        assertThat(employeeRoleMappingPage.rolesList(), hasItems("manager", "coordinator", "team-lead", "employee"));
+        assertThat(employeeRoleMappingPage.rolesList(), not(hasItems("supervisor", "user")));
+
         employeeRoleMappingPage.logout();
         checkLoggedOut(employeeRoleMappingPage, testRealmSAMLPostLoginPage);
 

@@ -24,7 +24,13 @@ import org.openqa.selenium.By;
 import javax.ws.rs.core.UriBuilder;
 import java.util.List;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.core.IsEqual.equalTo;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
 import static org.keycloak.testsuite.util.WaitUtils.pause;
 import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
@@ -59,8 +65,8 @@ public class OfflineTokenSpringBootTest extends AbstractSpringBootTest {
 
         tokenPage.assertIsCurrent();
 
-        assertThat(tokenPage.getRefreshToken().getType()).isEqualTo(TokenUtil.TOKEN_TYPE_OFFLINE);
-        assertThat(tokenPage.getRefreshToken().getExpiration()).isEqualTo(0);
+        assertThat(tokenPage.getRefreshToken().getType(), is(equalTo(TokenUtil.TOKEN_TYPE_OFFLINE)));
+        assertThat(tokenPage.getRefreshToken().getExpiration(), is(equalTo(0)));
 
         String accessTokenId = tokenPage.getAccessToken().getId();
         String refreshTokenId = tokenPage.getRefreshToken().getId();
@@ -71,8 +77,8 @@ public class OfflineTokenSpringBootTest extends AbstractSpringBootTest {
         waitForPageToLoad();
 
         tokenPage.assertIsCurrent();
-        assertThat(tokenPage.getRefreshToken().getId()).isNotEqualTo(refreshTokenId);
-        assertThat(tokenPage.getAccessToken().getId()).isNotEqualTo(accessTokenId);
+        assertThat(tokenPage.getRefreshToken().getId(), is(not(equalTo(refreshTokenId))));
+        assertThat(tokenPage.getAccessToken().getId(), is(not(equalTo(accessTokenId))));
 
         setAdapterAndServerTimeOffset(0, SERVLET_URL);
 
@@ -95,7 +101,7 @@ public class OfflineTokenSpringBootTest extends AbstractSpringBootTest {
         testRealmLoginPage.form().login(USER_LOGIN, USER_PASSWORD);
         tokenPage.assertIsCurrent();
 
-        assertThat(tokenPage.getRefreshToken().getType()).isEqualTo(TokenUtil.TOKEN_TYPE_OFFLINE);
+        assertThat(tokenPage.getRefreshToken().getType(), is(equalTo(TokenUtil.TOKEN_TYPE_OFFLINE)));
 
         // Assert refresh works with increased time
         setAdapterAndServerTimeOffset(9999, SERVLET_URL);
@@ -113,17 +119,16 @@ public class OfflineTokenSpringBootTest extends AbstractSpringBootTest {
         waitForPageToLoad();
 
         List<String> additionalGrants = accountAppPage.getApplications().get(CLIENT_ID).getAdditionalGrants();
-        assertThat(additionalGrants)
-                .hasSize(1)
-                .contains("Offline Token");
+        assertThat(additionalGrants, hasSize(1));
+        assertThat(additionalGrants, hasItem("Offline Token"));
 
         accountAppPage.revokeGrant(CLIENT_ID);
 
-        assertThat(accountAppPage.getApplications().get(CLIENT_ID).getAdditionalGrants()).hasSize(0);
+        assertThat(accountAppPage.getApplications().get(CLIENT_ID).getAdditionalGrants(), hasSize(0));
 
         UserRepresentation userRepresentation =
                ApiUtil.findUserByUsername(realmsResouce().realm(REALM_NAME), USER_LOGIN);
-        assertThat(userRepresentation).isNotNull();
+        assertThat(userRepresentation, is(notNullValue()));
 
         events.expect(EventType.REVOKE_GRANT).realm(REALM_ID).user(userRepresentation.getId())
                 .client("account").detail(Details.REVOKED_CLIENT, CLIENT_ID).assertEvent();
@@ -159,7 +164,7 @@ public class OfflineTokenSpringBootTest extends AbstractSpringBootTest {
         oauthGrantPage.accept();
 
         tokenPage.assertIsCurrent();
-        assertThat(tokenPage.getRefreshToken().getType()).isEqualTo(TokenUtil.TOKEN_TYPE_OFFLINE);
+        assertThat(tokenPage.getRefreshToken().getType(), is(equalTo(TokenUtil.TOKEN_TYPE_OFFLINE)));
 
         String accountAppPageUrl =
             Urls.accountApplicationsPage(getAuthServerRoot(), REALM_NAME).toString();
@@ -167,8 +172,8 @@ public class OfflineTokenSpringBootTest extends AbstractSpringBootTest {
         waitForPageToLoad();
 
         AccountApplicationsPage.AppEntry offlineClient = accountAppPage.getApplications().get(CLIENT_ID);
-        assertThat(offlineClient.getClientScopesGranted()).contains(OAuthGrantPage.OFFLINE_ACCESS_CONSENT_TEXT);
-        assertThat(offlineClient.getAdditionalGrants()).contains("Offline Token");
+        assertThat(offlineClient.getClientScopesGranted(), hasItem(OAuthGrantPage.OFFLINE_ACCESS_CONSENT_TEXT));
+        assertThat(offlineClient.getAdditionalGrants(), hasItem("Offline Token"));
 
         //This was necessary to be introduced, otherwise other testcases will fail
         driver.navigate().to(logoutPage(SERVLET_URL));
