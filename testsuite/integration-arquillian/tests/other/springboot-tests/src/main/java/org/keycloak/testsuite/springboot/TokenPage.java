@@ -2,10 +2,11 @@ package org.keycloak.testsuite.springboot;
 
 import java.net.URL;
 
-import org.jboss.arquillian.test.api.ArquillianResource;
 import org.keycloak.testsuite.adapter.page.AbstractShowTokensPage;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
 
 public class TokenPage extends AbstractShowTokensPage {
 
@@ -13,11 +14,11 @@ public class TokenPage extends AbstractShowTokensPage {
 
 	@Override
 	public boolean isCurrent() {
-		return driver.getTitle().equalsIgnoreCase(PAGE_TITLE);
+		return driver.getTitle().equalsIgnoreCase(PAGE_TITLE.toLowerCase());
 	}
 
 	public void assertIsCurrent() {
-		assertThat(driver.getTitle()).isEqualToIgnoringCase(PAGE_TITLE);
+		assertThat(driver.getTitle().toLowerCase(), is(equalTo(PAGE_TITLE)));
 	}
 
 	@Override

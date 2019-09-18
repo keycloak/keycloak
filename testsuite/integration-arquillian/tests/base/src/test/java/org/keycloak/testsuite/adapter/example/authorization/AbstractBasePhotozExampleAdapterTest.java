@@ -16,7 +16,9 @@
  */
 package org.keycloak.testsuite.adapter.example.authorization;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
@@ -75,6 +77,7 @@ import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
 import org.keycloak.testsuite.auth.page.login.OAuthGrant;
 import org.keycloak.testsuite.util.DroneUtils;
 import org.keycloak.testsuite.util.JavascriptBrowser;
+import org.keycloak.testsuite.util.Matchers;
 import org.keycloak.testsuite.util.javascript.JavascriptTestExecutorWithAuthorization;
 import org.keycloak.util.JsonSerialization;
 import org.openqa.selenium.JavascriptExecutor;
@@ -195,11 +198,11 @@ public abstract class AbstractBasePhotozExampleAdapterTest extends AbstractPhoto
     }
 
     protected void assertWasDenied(Map<String, Object> response) {
-        assertThat(response.get("status")).isEqualTo(401L);
+        assertThat(response.get("status"), is(equalTo(401L)));
     }
 
     protected void assertWasNotDenied(Map<String, Object> response) {
-        assertThat(response.get("status")).isEqualTo(200L);
+        assertThat(response.get("status"), is(equalTo(200L)));
     }
     
     private void importResourceServerSettings() throws FileNotFoundException {
