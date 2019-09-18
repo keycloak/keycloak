@@ -16,7 +16,13 @@
  */
 package org.keycloak.testsuite.adapter.example.authorization;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.anyOf;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -55,11 +61,11 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractBasePhoto
 
         clientPage.createAlbum(ALICE_ALBUM_NAME);
         log.debug("Check if alice has resources stored");
-        assertThat(getResourcesOfUser("alice")).isNotEmpty();
+        assertThat(getResourcesOfUser("alice"), is(not(empty())));
 
         clientPage.deleteAlbum(ALICE_ALBUM_NAME, this::assertWasNotDenied);
         log.debug("Check if alice has resources deleted");
-        assertThat(getResourcesOfUser("alice")).isEmpty();
+        assertThat(getResourcesOfUser("alice"), is(empty()));
     }
 
     @Test
@@ -68,8 +74,8 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractBasePhoto
         loginToClientPage(aliceUser);
 
         clientPage.createAlbumWithInvalidUser(ALICE_ALBUM_NAME, response -> {
-            assertThat(response.get("status")).isEqualTo(500L);
-            assertThat(response.get("res")).isEqualTo("Could not register protected resource.");
+            assertThat(response.get("status"), is(equalTo(500L)));
+            assertThat(response.get("res"), is(equalTo("Could not register protected resource.")));
         });
     }
 
@@ -82,7 +88,7 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractBasePhoto
         clientPage.navigateToAdminAlbum(this::assertWasNotDenied);
 
         log.debug("Check if alice has resources stored");
-        assertThat(getResourcesOfUser("alice")).isNotEmpty();
+        assertThat(getResourcesOfUser("alice"), is(not(empty())));
 
         log.debug("Adding applyPolicies \"Only Owner Policy\" to \"Delete Album Permission\" policies.");
         for (PolicyRepresentation policy : getAuthorizationResource().policies().policies()) {
@@ -99,7 +105,7 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractBasePhoto
         clientPage.deleteAlbum(ALICE_ALBUM_NAME, this::assertWasDenied);
         
         log.debug("Check if alice has resources stored");
-        assertThat(getResourcesOfUser("alice")).isNotEmpty();
+        assertThat(getResourcesOfUser("alice"), is(not(empty())));
 
         log.debug("Adding applyPolicies \"Only Owner and Administrators Policy\" to \"Delete Album Permission\" policies.");
         for (PolicyRepresentation policy : getAuthorizationResource().policies().policies()) {
@@ -114,7 +120,7 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractBasePhoto
         clientPage.deleteAlbum(ALICE_ALBUM_NAME, this::assertWasNotDenied);
         
         log.debug("Check if alice has resources deleted");
-        assertThat(getResourcesOfUser("alice")).isEmpty();
+        assertThat(getResourcesOfUser("alice"), is(empty()));
     }
  
     
@@ -196,7 +202,7 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractBasePhoto
 
         clientPage.viewAlbum(ALICE_ALBUM_NAME, this::assertWasNotDenied);
         clientPage.deleteAlbum(ALICE_ALBUM_NAME, this::assertWasNotDenied);
-        assertThat(getResourcesOfUser("alice")).isEmpty();
+        assertThat(getResourcesOfUser("alice"), is(empty()));
     }
 
     @Test
@@ -209,7 +215,7 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractBasePhoto
         clientPage.viewAlbum(ALICE_ALBUM_NAME, this::assertWasNotDenied);
 
         clientPage.deleteAlbum(ALICE_ALBUM_NAME, this::assertWasNotDenied);
-        assertThat(getResourcesOfUser("alice")).isEmpty();
+        assertThat(getResourcesOfUser("alice"), is(empty()));
 
         PoliciesResource policiesResource = getAuthorizationResource().policies();
         List<PolicyRepresentation> policies = policiesResource.policies();
@@ -226,7 +232,7 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractBasePhoto
 
         loginToClientPage(adminUser);
         clientPage.viewAlbum(ALICE_ALBUM_NAME, this::assertWasNotDenied);
-        assertThat(getResourcesOfUser("alice")).isNotEmpty();
+        assertThat(getResourcesOfUser("alice"), is(not(empty())));
 
         clientPage.deleteAlbum(ALICE_ALBUM_NAME, this::assertWasDenied);
 
@@ -241,7 +247,7 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractBasePhoto
         loginToClientPage(adminUser); // Clear cache
 
         clientPage.deleteAlbum(ALICE_ALBUM_NAME, this::assertWasNotDenied);
-        assertThat(getResourcesOfUser("alice")).isEmpty();
+        assertThat(getResourcesOfUser("alice"), is(empty()));
     }
 
     @Test
@@ -375,7 +381,7 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractBasePhoto
 
         loginToClientPage(aliceUser);
         clientPage.deleteAlbum(resourceName, this::assertWasNotDenied);
-        assertThat(getResourcesOfUser("alice")).isEmpty();
+        assertThat(getResourcesOfUser("alice"), is(empty()));
     }
 
     @Test
@@ -448,13 +454,14 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractBasePhoto
     public void testEntitlementRequest() throws Exception {
         loginToClientPage(adminUser);
 
-        clientPage.requestEntitlements((driver1, output, events) -> assertThat((String) output).contains("admin:manage"));
+        clientPage.requestEntitlements((driver1, output, events) -> assertThat((String) output, containsString("admin:manage")));
 
         loginToClientPage(adminUser);
-        clientPage.requestEntitlement((driver1, output, events) -> assertThat((String) output)
-                .doesNotContain("admin:manage")
-                .contains("album:view")
-                .contains("album:delete")
+        clientPage.requestEntitlement((driver1, output, events) -> {
+                assertThat((String) output, not(containsString("admin:manage")));
+                assertThat((String) output, containsString("album:view"));
+                assertThat((String) output, containsString("album:delete"));
+            }
         );
     }
 
@@ -464,7 +471,7 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractBasePhoto
 
         clientPage.requestResourceProtectedAllScope(this::assertWasDenied);
         clientPage.requestResourceProtectedAnyScope(response -> {
-            assertThat(response.get("status")).isIn(404L, 0L); // PhantomJS returns 0 and chrome 404
+            assertThat(response.get("status"), anyOf(is(equalTo(404L)), is(equalTo(0L)))); // PhantomJS returns 0 and chrome 404
         });
     }
 }
