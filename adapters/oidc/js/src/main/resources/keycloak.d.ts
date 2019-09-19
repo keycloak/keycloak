@@ -136,10 +136,10 @@ declare namespace Keycloak {
 		pkceMethod?: KeycloakPkceMethod;
 
 		/**
-		 * Disables any information from being logged to the console.
+		 * Enables logging messages from Keycloak to the console.
 		 * @default false
 		 */
-		disableLogging?: boolean
+		enableLogging?: boolean
 	}
 
 	interface KeycloakLoginOptions {
