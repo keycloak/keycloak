@@ -100,6 +100,10 @@ public class OAuth2IdentityProviderConfig extends IdentityProviderModel {
         return false;
     }
 
+    public boolean isBasicAuthentication(){
+        return getClientAuthMethod().equals(OIDCLoginProtocol.CLIENT_SECRET_BASIC);
+    }
+
     public boolean isUiLocales() {
         return Boolean.valueOf(getConfig().get("uiLocales"));
     }
