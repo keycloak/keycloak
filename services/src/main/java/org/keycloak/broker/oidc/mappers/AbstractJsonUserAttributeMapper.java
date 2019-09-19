@@ -94,7 +94,7 @@ public abstract class AbstractJsonUserAttributeMapper extends AbstractIdentityPr
 	public static void storeUserProfileForMapper(BrokeredIdentityContext user, JsonNode profile, String provider) {
 		user.getContextData().put(AbstractJsonUserAttributeMapper.CONTEXT_JSON_NODE, profile);
 		if (LOGGER_DUMP_USER_PROFILE.isDebugEnabled())
-			LOGGER_DUMP_USER_PROFILE.debug("User Profile JSON Data for provider "+provider+": "+profile);
+			LOGGER_DUMP_USER_PROFILE.debug("User Profile JSON Data for provider "+provider+": " + profile);
 	}
 
 	@Override
