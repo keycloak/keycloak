@@ -163,8 +163,10 @@
                     kc.pkceMethod = initOptions.pkceMethod;
                 }
 
-                if (typeof initOptions.disableLogging === 'boolean') {
-                    kc.disableLogging = initOptions.disableLogging;
+                if (typeof initOptions.enableLogging === 'boolean') {
+                    kc.enableLogging = initOptions.enableLogging;
+                } else {
+                    kc.enableLogging = false;
                 }
             }
 
@@ -1683,7 +1685,7 @@
 
         function createLogger(fn) {
             return function() {
-                if (!kc.disableLogging) {
+                if (kc.enableLogging) {
                     fn.apply(console, Array.prototype.slice.call(arguments));
                 }
             };
