@@ -81,6 +81,7 @@ import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
+import org.openqa.selenium.support.ui.WebDriverWait;
 import org.wildfly.extras.creaper.core.online.CliException;
 import org.wildfly.extras.creaper.core.online.OnlineManagementClient;
 import org.wildfly.extras.creaper.core.online.operations.admin.Administration;
@@ -237,6 +238,8 @@ public abstract class AbstractBasePhotozExampleAdapterTest extends AbstractPhoto
                 .login(this::assertOnLoginPage)
                 .loginFormWithScopesWithPossibleConsentPage(user, this::assertOnTestAppUrl, oAuthGrantPage, scopes)
                 .init(defaultArguments(), this::assertSuccessfullyLoggedIn);
+
+        new WebDriverWait(jsDriver, 10).until(this::isLoaded);
     }
 
     public boolean isLoaded(WebDriver w) {
