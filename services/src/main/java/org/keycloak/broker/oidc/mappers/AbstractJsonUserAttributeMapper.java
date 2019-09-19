@@ -84,16 +84,17 @@ public abstract class AbstractJsonUserAttributeMapper extends AbstractIdentityPr
 	/**
 	 * Store used profile JsonNode into user context for later use by this mapper. Profile data are dumped into special logger if enabled also to allow investigation of the structure.
 	 *
-	 * @param user     context to store profile data into
-	 * @param profile  to store into context
+	 * @param user context to store profile data into
+	 * @param profile to store into context
 	 * @param provider identification of social provider to be used in log dump
+	 *
 	 * @see #preprocessFederatedIdentity(KeycloakSession, RealmModel, IdentityProviderMapperModel, BrokeredIdentityContext)
 	 * @see BrokeredIdentityContext#getContextData()
 	 */
 	public static void storeUserProfileForMapper(BrokeredIdentityContext user, JsonNode profile, String provider) {
 		user.getContextData().put(AbstractJsonUserAttributeMapper.CONTEXT_JSON_NODE, profile);
 		if (LOGGER_DUMP_USER_PROFILE.isDebugEnabled())
-			LOGGER_DUMP_USER_PROFILE.debug("User Profile JSON Data for provider " + provider + ": " + profile);
+			LOGGER_DUMP_USER_PROFILE.debug("User Profile JSON Data for provider "+provider+": "+profile);
 	}
 
 	@Override
