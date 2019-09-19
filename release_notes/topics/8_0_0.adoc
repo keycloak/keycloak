@@ -47,6 +47,12 @@ It is now possible to use system properties and environment variables within the
 
 Thanks to https://github.com/tnorimat[tnorimat], we support more signing algorithms for client authentication with signed JWT.
 
+==  Configurable client authentication method for OIDC Identity providers
+
+In this release, possibility to authenticate OIDC providers with signed JWT or basic authentication was added. So all the client
+authentication methods mentioned in the https://openid.net/specs/openid-connect-core-1_0.html#ClientAuthentication[OIDC specification]
+are supported now. Thanks to https://github.com/madgaet[madgaet] and https://github.com/rradillen[rradillen] for contributions.
+
 == Support enable/disable logging into the JavaScript adapter
 
 Thanks to https://github.com/jonkoops[jonkoops] now it's possible to enable or disable logging for the JS adapter.
