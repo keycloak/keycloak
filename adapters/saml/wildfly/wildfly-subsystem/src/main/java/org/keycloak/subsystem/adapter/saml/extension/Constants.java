@@ -74,6 +74,10 @@ public class Constants {
 
         static final String ROLE_MAPPINGS_PROVIDER_ID = "roleMappingsProviderId";
         static final String ROLE_MAPPINGS_PROVIDER_CONFIG = "roleMappingsProviderConfig";
+
+        static final String ALLOWED_CLOCK_SKEW = "AllowedClockSkew";
+        static final String ALLOWED_CLOCK_SKEW_UNIT = "unit";
+        static final String ALLOWED_CLOCK_SKEW_VALUE = "value";
     }
 
 
@@ -136,6 +140,9 @@ public class Constants {
         static final String VALUE = "value";
         static final String PROPERTY = "Property";
         static final String ROLE_MAPPINGS_PROVIDER = "RoleMappingsProvider";
+
+        static final String ALLOWED_CLOCK_SKEW = "AllowedClockSkew";
+        static final String ALLOWED_CLOCK_SKEW_UNIT = "unit";
     }
 }
 
