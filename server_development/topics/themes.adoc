@@ -114,6 +114,25 @@ file in the corresponding type of the keycloak theme (`themes/keycloak/<THEME TY
 
 You can also add your own custom properties and use them from custom templates.
 
+When doing so, you can substitute system properties or environment variables by using these formats:
+
+* `${some.system.property}` - for system properties
+* `${env.ENV_VAR}` - for environment variables.
+
+A default value can also be provided in case the system property or the environment variable is not found with `${foo:defaultValue}`.
+
+NOTE: If no default value is provided and there's no corresponding system property or environment variable, then nothing is replaced and you end up with the format in your template.
+
+Here's an example of what is possible:
+
+[source,properties]
+----
+javaVersion=${java.version}
+
+unixHome=${env.HOME:Unix home not found}
+windowsHome=${env.HOMEPATH:Windows home not found}
+----
+
 ==== Stylesheets
 
 A theme can have one or more stylesheets. To add a stylesheet create a file in the `<THEME TYPE>/resources/css` directory of your theme. Then add it to the `styles`
