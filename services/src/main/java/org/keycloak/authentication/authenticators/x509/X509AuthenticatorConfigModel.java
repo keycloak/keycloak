@@ -253,6 +253,15 @@ public class X509AuthenticatorConfigModel extends AuthenticatorConfigModel {
         getConfig().put(CANONICAL_DN, Boolean.toString(value));
         return this;
     }
+
+    public boolean isCertValidationEnabled() {
+        return Boolean.parseBoolean(getConfig().get(TIMESTAMP_VALIDATION));
+    }
+
+    public X509AuthenticatorConfigModel setCertValidationEnabled(boolean value) {
+        getConfig().put(TIMESTAMP_VALIDATION, Boolean.toString(value));
+        return this;
+    }
     
     public boolean isSerialnumberHex() {
         return Boolean.parseBoolean(getConfig().get(SERIALNUMBER_HEX));

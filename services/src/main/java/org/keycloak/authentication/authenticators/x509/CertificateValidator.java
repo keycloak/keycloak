@@ -46,6 +46,7 @@ import java.security.cert.X509CRL;
 import java.security.cert.X509Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CRLException;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -465,6 +466,24 @@ public class CertificateValidator {
     }
     public CertificateValidator validateExtendedKeyUsage() throws GeneralSecurityException {
         validateExtendedKeyUsage(_certChain, _extendedKeyUsage);
+        return this;
+    }
+
+    public CertificateValidator validateTimestamps(boolean isValidationEnabled) throws GeneralSecurityException {
+        if (!isValidationEnabled) {
+            return this;
+        }
+        X509Certificate x509Certificate = _certChain[_certChain.length - 1];
+        // this might create time-offset issues but those will probably be negligible for certificates should
+        // be renewed and exchanged in due time
+        if (x509Certificate.getNotBefore().getTime() > Instant.now().toEpochMilli()) {
+            String message = "certificate is not valid yet: " + x509Certificate.getNotBefore().toInstant().toString();
+            throw new GeneralSecurityException(message);
+        }
+        if (x509Certificate.getNotAfter().getTime() < Instant.now().toEpochMilli()) {
+            String message = "certificate has expired on: " + x509Certificate.getNotAfter().toInstant().toString();
+            throw new GeneralSecurityException(message);
+        }
         return this;
     }
 
