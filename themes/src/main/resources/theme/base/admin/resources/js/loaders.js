@@ -304,17 +304,6 @@ module.factory('ClientOptionalClientScopesLoader', function(Loader, ClientOption
     });
 });
 
-module.factory('ClientRoleListLoader', function(Loader, ClientRole, $route, $q) {
-    return Loader.query(ClientRole, function() {
-        return {
-            realm : $route.current.params.realm,
-            client : $route.current.params.client
-        }
-    });
-});
-
-
-
 module.factory('ClientLoader', function(Loader, Client, $route, $q) {
     return Loader.get(Client, function() {
         return {

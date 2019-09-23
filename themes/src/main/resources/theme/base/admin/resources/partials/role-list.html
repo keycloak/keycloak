@@ -6,20 +6,20 @@
         <li><a href="#/realms/{{realm.realm}}/default-roles">{{:: 'default-roles' | translate}}</a></li>
     </ul>
 
-    <table class="datatable table table-striped table-bordered dataTable no-footer">
+    <table class="table table-striped table-bordered">
         <thead>
             <tr>
                 <th class="kc-table-actions" colspan="5">
                     <div class="form-inline">
                         <div class="form-group">
                             <div class="input-group">
-                                <input type="text" placeholder="{{:: 'search.placeholder' | translate}}" data-ng-model="searchQuery" class="form-control search" onkeyup="if (event.keyCode === 13){$(this).next('I').click(); }">
+                                <input type="text" placeholder="{{:: 'search.placeholder' | translate}}" data-ng-model="query.search" ng-model-options="{debounce: 500}" class="form-control search">
                                 <div class="input-group-addon">
-                                    <i class="fa fa-search" type="submit"></i>
+                                    <i class="fa fa-search" type="submit" data-ng-click="firstPage()"></i>
                                 </div>
                             </div>
                         </div>
-
+                        <button id="viewAllRoles" class="btn btn-default" ng-click="query.search = null; firstPage()">{{:: 'view-all-roles' | translate}}</button>
                         <div class="pull-right" data-ng-show="access.manageRealm">
                             <a id="createRole" class="btn btn-default" href="#/create/role/{{realm.realm}}">{{:: 'add-role' | translate}}</a>
                         </div>
@@ -34,20 +34,30 @@
             </tr>
         </thead>
         <tbody>
-            <tr ng-repeat="role in roles| filter:{name: searchQuery} | orderBy:'name'| startFrom:(currentPage - 1) * pageSize | limitTo:pageSize">
+            <tr ng-repeat="role in roles">
                 <td><a href="#/realms/{{realm.realm}}/roles/{{role.id}}">{{role.name}}</a></td>
                 <td translate="{{role.composite}}"></td>
                 <td>{{role.description}}</td>
                 <td class="kc-action-cell" kc-open="/realms/{{realm.realm}}/roles/{{role.id}}">{{:: 'edit' | translate}}</td>
                 <td class="kc-action-cell" data-ng-click="removeRole(role)">{{:: 'delete' | translate}}</td>
             </tr>
-            <tr data-ng-show="(roles | filter:{name: searchQuery}).length == 0">
-                <td class="text-muted" colspan="4" data-ng-show="searchQuery">{{:: 'no-results' | translate}}</td>
-                <td class="text-muted" colspan="4" data-ng-hide="searchQuery">{{:: 'no-realm-roles-available' | translate}}</td>
+            <tr data-ng-show="(roles | filter:{name: query.search}).length == 0">
+                <td class="text-muted" colspan="4" data-ng-show="searchLoaded && roles.length == 0 && lastSearch != null">{{:: 'no-results' | translate}}</td>
+                <td class="text-muted" colspan="4" data-ng-show="searchLoaded && roles.length == 0 && lastSearch == null">{{:: 'no-realm-roles-available' | translate}}</td>
             </tr>
         </tbody>
+        <tfoot data-ng-show="roles && (roles.length >= query.max || query.first > 0)">
+            <tr>
+                <td colspan="5">
+                    <div class="table-nav">
+                        <button data-ng-click="firstPage()" class="first" ng-disabled="query.first == 0">{{:: 'first-page' | translate}}</button>
+                        <button data-ng-click="previousPage()" class="prev" ng-disabled="query.first == 0">{{:: 'previous-page' | translate}}</button>
+                        <button data-ng-click="nextPage()" class="next" ng-disabled="roles.length < query.max">{{:: 'next-page' | translate}}</button>
+                    </div>
+                </td>
+            </tr>
+        </tfoot>   
     </table>
-    <kc-paging current-page='currentPage' number-of-pages='numberOfPages' current-page-input='currentPageInput'></kc-paging>
 </div>
 
 <kc-menu></kc-menu>
