@@ -2002,10 +2002,23 @@ module.factory('GroupMembership', function($resource) {
     });
 });
 
+module.factory('RoleList', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/roles', {
+        realm : '@realm'
+    });
+});
+
 module.factory('RoleMembership', function($resource) {
     return $resource(authUrl + '/admin/realms/:realm/roles/:role/users', {
         realm : '@realm',
         role : '@role'
+    });
+});
+
+module.factory('ClientRoleList', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/clients/:client/roles', {
+        realm : '@realm',
+        client : '@client'
     });
 });
 

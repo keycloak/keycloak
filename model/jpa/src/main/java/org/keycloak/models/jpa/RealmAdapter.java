@@ -895,6 +895,16 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
     public Set<RoleModel> getRoles() {
         return session.realms().getRealmRoles(this);
     }
+    
+    @Override
+    public Set<RoleModel> getRoles(Integer first, Integer max) {
+        return session.realms().getRealmRoles(this, first, max);
+    }
+    
+    @Override
+    public Set<RoleModel> searchForRoles(String search, Integer first, Integer max) {
+        return session.realms().searchForRoles(this, search, first, max);
+    }
 
     @Override
     public RoleModel getRoleById(String id) {
@@ -2259,5 +2269,4 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
         if (c == null) return null;
         return entityToModel(c);
     }
-
 }

@@ -973,8 +973,17 @@ public class RealmAdapter implements CachedRealmModel {
     public Set<RoleModel> getRoles() {
         return cacheSession.getRealmRoles(this);
     }
+    
+    @Override
+    public Set<RoleModel> getRoles(Integer first, Integer max) {
+        return cacheSession.getRealmRoles(this, first, max);
+    }
 
-
+    @Override
+    public Set<RoleModel> searchForRoles(String search, Integer first, Integer max) {
+        return cacheSession.searchForRoles(this, search, first, max);
+    }
+    
     @Override
     public RoleModel addRole(String name) {
         return cacheSession.addRealmRole(this, name);

@@ -668,6 +668,27 @@ public class RealmCacheSession implements CacheRealmProvider {
         }
         return list;
     }
+    
+    @Override
+    public Set<RoleModel> getRealmRoles(RealmModel realm, Integer first, Integer max) {
+        return getRealmDelegate().getRealmRoles(realm, first, max);
+    }
+
+    @Override
+    public Set<RoleModel> getClientRoles(RealmModel realm, ClientModel client, Integer first, Integer max) {
+        return getRealmDelegate().getClientRoles(realm, client, first, max);
+    }
+    
+    @Override
+    public Set<RoleModel> searchForClientRoles(RealmModel realm, ClientModel client, String search, Integer first,
+            Integer max) {
+        return getRealmDelegate().searchForClientRoles(realm, client, search, first, max);
+    }
+
+    @Override
+    public Set<RoleModel> searchForRoles(RealmModel realm, String search, Integer first, Integer max) {
+        return getRealmDelegate().searchForRoles(realm, search, first, max);
+    }
 
     @Override
     public RoleModel addClientRole(RealmModel realm, ClientModel client, String name) {
@@ -1196,4 +1217,5 @@ public class RealmCacheSession implements CacheRealmProvider {
     public void decreaseRemainingCount(RealmModel realm, ClientInitialAccessModel clientInitialAccess) {
         getRealmDelegate().decreaseRemainingCount(realm, clientInitialAccess);
     }
+
 }
