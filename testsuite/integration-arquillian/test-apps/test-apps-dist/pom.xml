@@ -78,7 +78,6 @@
                         </configuration>
                     </execution>
                 </executions>
-                <version>2.5.5</version>
             </plugin>
         </plugins>
     </build>
