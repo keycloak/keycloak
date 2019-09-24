@@ -54,6 +54,13 @@ public class HttpMethodAuthenticator<R> {
         this.method.params.put("password", Arrays.asList(password));
         return this.method;
     }
+    
+    public HttpMethod<R> fromRefreshToken(String refreshToken) {
+        client();
+        this.method.params.put(OAuth2Constants.GRANT_TYPE, Arrays.asList(OAuth2Constants.REFRESH_TOKEN));
+        this.method.params.put(OAuth2Constants.REFRESH_TOKEN, Arrays.asList(refreshToken));
+        return this.method;
+    }
 
     public HttpMethod<R> uma() {
         // if there is an authorization bearer header authenticate using bearer token

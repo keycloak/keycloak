@@ -209,7 +209,21 @@ public class AuthzClient {
                     .json(AccessTokenResponse.class)
                 .execute();
     }
-
+    
+    /**
+     * Obtains an access token using the refresh token.
+     *
+     * @return an {@link AccessTokenResponse}
+     */
+    public AccessTokenResponse obtainAccessToken(String refreshToken) {
+        return this.http.<AccessTokenResponse>post(this.serverConfiguration.getTokenEndpoint())
+                .authentication()
+                    .fromRefreshToken(refreshToken)
+                .response()
+                    .json(AccessTokenResponse.class)
+                .execute();
+    }
+    
     /**
      * Returns the configuration obtained from the server at the UMA Discovery Endpoint.
      *
