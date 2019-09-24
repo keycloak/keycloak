@@ -155,13 +155,16 @@
         <github.username/>
         <github.secretToken/>
         <ieDriverArch>Win32</ieDriverArch>
+        <ieDriverVersion/>
         <js.browser>phantomjs</js.browser>
         <js.chromeArguments>--headless</js.chromeArguments>
         <htmlUnitBrowserVersion>chrome</htmlUnitBrowserVersion>
         <firefox_binary/> <!-- the path is set automatically based on the OS -->
         <firefoxLegacyDriver>false</firefoxLegacyDriver>
+        <firefoxDriverVersion/>
         <chromeBinary/>
         <chromeArguments/>
+        <chromeDriverVersion/>
 
         <appium.platformName/>
         <appium.deviceName/>
@@ -486,12 +489,15 @@
                             <github.username>${github.username}</github.username>
                             <github.secretToken>${github.secretToken}</github.secretToken>
                             <ieDriverArch>${ieDriverArch}</ieDriverArch>
+                            <ieDriverVersion>${ieDriverVersion}</ieDriverVersion>
 
                             <firefox_binary>${firefox_binary}</firefox_binary>
                             <chromeBinary>${chromeBinary}</chromeBinary>
                             <chromeArguments>${chromeArguments}</chromeArguments>
+                            <chromeDriverVersion>${chromeDriverVersion}</chromeDriverVersion>
 
                             <firefoxLegacyDriver>${firefoxLegacyDriver}</firefoxLegacyDriver>
+                            <firefoxDriverVersion>${firefoxDriverVersion}</firefoxDriverVersion>
 
                             <appium.platformName>${appium.platformName}</appium.platformName>
                             <appium.deviceName>${appium.deviceName}</appium.deviceName>
