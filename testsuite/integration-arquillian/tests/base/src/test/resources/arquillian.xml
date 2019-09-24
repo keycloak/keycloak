@@ -36,13 +36,16 @@
         <property name="firefoxBinary">${firefox_binary}</property> <!-- we need to use 'firefoxBinary' instead of 'firefox_binary' due to some weird conflict with Appium -->
         <property name="firefoxLogLevel">OFF</property>
         <property name="firefoxLegacy">${firefoxLegacyDriver}</property>
+        <property name="firefoxDriverVersion">${firefoxDriverVersion}</property>
 
         <!-- chrome -->
         <property name="chromeBinary">${chromeBinary}</property>
         <property name="chromeArguments">${chromeArguments}</property>
+        <property name="chromeDriverVersion">${chromeDriverVersion}</property>
 
         <!-- internet explorer -->
         <property name="ieDriverArch">${ieDriverArch}</property>
+        <property name="ieDriverVersion">${ieDriverVersion}</property>
 
         <!-- appium -->
         <property name="appium.platformName">${appium.platformName}</property>
@@ -72,6 +75,7 @@
         <property name="githubUsername">${github.username}</property>
         <property name="githubToken">${github.secretToken}</property>
         <property name="ieDriverArch">${ieDriverArch}</property>
+        <property name="ieDriverVersion">${ieDriverVersion}</property>
 
         <!-- htmlunit -->
         <property name="htmlUnit.version">${htmlUnitBrowserVersion}</property>
@@ -81,10 +85,12 @@
         <property name="firefoxBinary">${firefox_binary}</property>
         <property name="firefoxLogLevel">OFF</property>
         <property name="firefoxLegacy">${firefoxLegacyDriver}</property>
+        <property name="firefoxDriverVersion">${firefoxDriverVersion}</property>
 
         <!-- chrome -->
         <property name="chromeBinary">${chromeBinary}</property>
         <property name="chromeArguments">${js.chromeArguments}</property>
+        <property name="chromeDriverVersion">${chromeDriverVersion}</property>
     </extension>
 
     <extension qualifier="webdriver-phantomjsbrowser">
