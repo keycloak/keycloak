@@ -2725,6 +2725,10 @@ module.controller('RoleSelectorModalCtrl', function($scope, realm, config, confi
 
 module.controller('ProviderConfigCtrl', function ($modal, $scope, ComponentUtils) {
     $scope.fileNames = {};
+    $scope.newMapEntries = {};
+    var cachedMaps = {};
+    var cachedParsedMaps = {};
+    var focusMapValueId = null;
 
     // KEYCLOAK-4463
     $scope.initEditor = function(editor){
@@ -2777,6 +2781,70 @@ module.controller('ProviderConfigCtrl', function ($modal, $scope, ComponentUtils
         };
         reader.readAsText($files[0]);
         $scope.fileNames[optionName] = $files[0].name;
+    }
+
+    $scope.addMapEntry = function(optionName) {
+        $scope.removeMapEntry(optionName, $scope.newMapEntries[optionName].key)
+
+        var parsedMap = JSON.parse($scope.config[optionName]);
+        parsedMap.push($scope.newMapEntries[optionName]);
+        $scope.config[optionName] = JSON.stringify(parsedMap);
+
+        delete $scope.newMapEntries[optionName];
+    }
+
+    $scope.removeMapEntry = function(optionName, key) {
+        var parsedMap = JSON.parse($scope.config[optionName]);
+
+        for(var i = parsedMap.length - 1; i >= 0; i--) {
+            if(parsedMap[i]['key'] === key) {
+                parsedMap.splice(i, 1);
+            }
+        }
+
+        $scope.config[optionName] = JSON.stringify(parsedMap);
+    }
+
+    $scope.updateMapEntry = function(optionName, key, value) {
+        var parsedMap = JSON.parse($scope.config[optionName]);
+
+        for(var i = parsedMap.length - 1; i >= 0; i--) {
+            if(parsedMap[i]['key'] === key) {
+                parsedMap[i]['value'] = value;
+            }
+        }
+        $scope.config[optionName] = JSON.stringify(parsedMap);
+
+        focusMapValueId = "mapValue-" + optionName + "-" + key;
+    }
+
+    $scope.jsonParseMap = function(optionName) {
+
+        if(cachedParsedMaps[optionName] === undefined) {
+            cachedMaps[optionName] = "[]";
+            cachedParsedMaps[optionName] = [];
+
+            if(!$scope.config.hasOwnProperty(optionName)){
+                $scope.config[optionName]=cachedMaps[optionName];
+            } else {
+                cachedMaps[optionName] = $scope.config[optionName];
+                cachedParsedMaps[optionName] = JSON.parse(cachedMaps[optionName]);
+            }
+        }
+
+        var mapChanged = $scope.config[optionName] !== cachedMaps[optionName];
+
+        if(mapChanged){
+            cachedMaps[optionName] = $scope.config[optionName];
+            cachedParsedMaps[optionName] = JSON.parse(cachedMaps[optionName]);
+        }
+
+        if(!mapChanged && focusMapValueId !== null){
+            document.getElementById(focusMapValueId).focus();
+            focusMapValueId = null;
+        }
+
+        return cachedParsedMaps[optionName];
     }
 });
 

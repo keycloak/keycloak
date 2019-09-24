@@ -32,7 +32,6 @@ public abstract class AbstractUserAttributeMapperTest extends AbstractBaseBroker
 
     protected static final String MAPPED_ATTRIBUTE_NAME = "mapped-user-attribute";
     protected static final String MAPPED_ATTRIBUTE_FRIENDLY_NAME = "mapped-user-attribute-friendly";
-    protected static final String ATTRIBUTE_TO_MAP_NAME = "user-attribute";
     protected static final String ATTRIBUTE_TO_MAP_FRIENDLY_NAME = "user-attribute-friendly";
 
     private static final Set<String> PROTECTED_NAMES = ImmutableSet.<String>builder().add("email").add("lastName").add("firstName").build();
@@ -40,7 +39,7 @@ public abstract class AbstractUserAttributeMapperTest extends AbstractBaseBroker
       .put("dotted.email", "dotted.email")
       .put("nested.email", "nested.email")
       .put(ATTRIBUTE_TO_MAP_FRIENDLY_NAME, MAPPED_ATTRIBUTE_FRIENDLY_NAME)
-      .put(ATTRIBUTE_TO_MAP_NAME, MAPPED_ATTRIBUTE_NAME)
+      .put(KcOidcBrokerConfiguration.ATTRIBUTE_TO_MAP_NAME, MAPPED_ATTRIBUTE_NAME)
       .build();
 
     protected abstract Iterable<IdentityProviderMapperRepresentation> createIdentityProviderMappers();
@@ -188,10 +187,10 @@ public abstract class AbstractUserAttributeMapperTest extends AbstractBaseBroker
     @Test
     public void testBasicMappingSingleValue() {
         testValueMapping(ImmutableMap.<String, List<String>>builder()
-          .put(ATTRIBUTE_TO_MAP_NAME, ImmutableList.<String>builder().add("value 1").build())
+          .put(KcOidcBrokerConfiguration.ATTRIBUTE_TO_MAP_NAME, ImmutableList.<String>builder().add("value 1").build())
           .build(),
           ImmutableMap.<String, List<String>>builder()
-          .put(ATTRIBUTE_TO_MAP_NAME, ImmutableList.<String>builder().add("second value").build())
+          .put(KcOidcBrokerConfiguration.ATTRIBUTE_TO_MAP_NAME, ImmutableList.<String>builder().add("second value").build())
           .build()
         );
     }
@@ -214,10 +213,10 @@ public abstract class AbstractUserAttributeMapperTest extends AbstractBaseBroker
     @Test
     public void testBasicMappingClearValue() {
         testValueMapping(ImmutableMap.<String, List<String>>builder()
-          .put(ATTRIBUTE_TO_MAP_NAME, ImmutableList.<String>builder().add("value 1").build())
+          .put(KcOidcBrokerConfiguration.ATTRIBUTE_TO_MAP_NAME, ImmutableList.<String>builder().add("value 1").build())
           .build(),
           ImmutableMap.<String, List<String>>builder()
-          .put(ATTRIBUTE_TO_MAP_NAME, ImmutableList.<String>builder().build())
+          .put(KcOidcBrokerConfiguration.ATTRIBUTE_TO_MAP_NAME, ImmutableList.<String>builder().build())
           .build()
         );
     }
@@ -225,7 +224,7 @@ public abstract class AbstractUserAttributeMapperTest extends AbstractBaseBroker
     @Test
     public void testBasicMappingRemoveValue() {
         testValueMapping(ImmutableMap.<String, List<String>>builder()
-          .put(ATTRIBUTE_TO_MAP_NAME, ImmutableList.<String>builder().add("value 1").build())
+          .put(KcOidcBrokerConfiguration.ATTRIBUTE_TO_MAP_NAME, ImmutableList.<String>builder().add("value 1").build())
           .build(),
           ImmutableMap.<String, List<String>>builder()
           .build()
@@ -235,10 +234,10 @@ public abstract class AbstractUserAttributeMapperTest extends AbstractBaseBroker
     @Test
     public void testBasicMappingMultipleValues() {
         testValueMapping(ImmutableMap.<String, List<String>>builder()
-          .put(ATTRIBUTE_TO_MAP_NAME, ImmutableList.<String>builder().add("value 1").add("value 2").build())
+          .put(KcOidcBrokerConfiguration.ATTRIBUTE_TO_MAP_NAME, ImmutableList.<String>builder().add("value 1").add("value 2").build())
           .build(),
           ImmutableMap.<String, List<String>>builder()
-          .put(ATTRIBUTE_TO_MAP_NAME, ImmutableList.<String>builder().add("second value").add("second value 2").build())
+          .put(KcOidcBrokerConfiguration.ATTRIBUTE_TO_MAP_NAME, ImmutableList.<String>builder().add("second value").add("second value 2").build())
           .build()
         );
     }
@@ -248,7 +247,7 @@ public abstract class AbstractUserAttributeMapperTest extends AbstractBaseBroker
         testValueMapping(ImmutableMap.<String, List<String>>builder()
           .build(),
           ImmutableMap.<String, List<String>>builder()
-          .put(ATTRIBUTE_TO_MAP_NAME, ImmutableList.<String>builder().add("second value").add("second value 2").build())
+          .put(KcOidcBrokerConfiguration.ATTRIBUTE_TO_MAP_NAME, ImmutableList.<String>builder().add("second value").add("second value 2").build())
           .build()
         );
     }
@@ -256,7 +255,7 @@ public abstract class AbstractUserAttributeMapperTest extends AbstractBaseBroker
     @Test
     public void testDeleteBasicMappingMultipleValues() {
         testValueMapping(ImmutableMap.<String, List<String>>builder()
-          .put(ATTRIBUTE_TO_MAP_NAME, ImmutableList.<String>builder().add("second value").add("second value 2").build())
+          .put(KcOidcBrokerConfiguration.ATTRIBUTE_TO_MAP_NAME, ImmutableList.<String>builder().add("second value").add("second value 2").build())
           .build(),
           ImmutableMap.<String, List<String>>builder()
           .build()
