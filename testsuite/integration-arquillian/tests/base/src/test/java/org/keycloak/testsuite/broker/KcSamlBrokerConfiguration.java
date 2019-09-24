@@ -124,8 +124,8 @@ public class KcSamlBrokerConfiguration implements BrokerConfiguration {
         userAttrMapper.setProtocolMapper(UserAttributeStatementMapper.PROVIDER_ID);
 
         Map<String, String> userAttrMapperConfig = userAttrMapper.getConfig();
-        userAttrMapperConfig.put(ProtocolMapperUtils.USER_ATTRIBUTE, AbstractUserAttributeMapperTest.ATTRIBUTE_TO_MAP_NAME);
-        userAttrMapperConfig.put(AttributeStatementHelper.SAML_ATTRIBUTE_NAME, AbstractUserAttributeMapperTest.ATTRIBUTE_TO_MAP_NAME);
+        userAttrMapperConfig.put(ProtocolMapperUtils.USER_ATTRIBUTE, KcOidcBrokerConfiguration.ATTRIBUTE_TO_MAP_NAME);
+        userAttrMapperConfig.put(AttributeStatementHelper.SAML_ATTRIBUTE_NAME, KcOidcBrokerConfiguration.ATTRIBUTE_TO_MAP_NAME);
         userAttrMapperConfig.put(AttributeStatementHelper.SAML_ATTRIBUTE_NAMEFORMAT, AttributeStatementHelper.BASIC);
         userAttrMapperConfig.put(AttributeStatementHelper.FRIENDLY_NAME, "");
 

@@ -19,6 +19,7 @@ org.keycloak.broker.provider.HardcodedRoleMapper
 org.keycloak.broker.provider.HardcodedAttributeMapper
 org.keycloak.broker.provider.HardcodedUserSessionAttributeMapper
 org.keycloak.broker.oidc.mappers.ClaimToRoleMapper
+org.keycloak.broker.oidc.mappers.AdvancedClaimToRoleMapper
 org.keycloak.broker.oidc.mappers.ExternalKeycloakRoleToRoleMapper
 org.keycloak.broker.oidc.mappers.UserAttributeMapper
 org.keycloak.broker.oidc.mappers.UsernameTemplateMapper
