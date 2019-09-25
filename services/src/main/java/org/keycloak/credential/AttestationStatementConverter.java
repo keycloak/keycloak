@@ -30,13 +30,10 @@ public class AttestationStatementConverter {
     }
 
     public String convertToDatabaseColumn(AttestationStatement attribute) {
-        AttestationStatementSerializationContainer container = new AttestationStatementSerializationContainer(attribute);
-        return Base64Url.encode(converter.writeValueAsBytes(container));
+        return Base64Url.encode(converter.writeValueAsBytes(attribute));
     }
 
     public AttestationStatement convertToEntityAttribute(String dbData) {
-        byte[] data = Base64Url.decode(dbData);
-        AttestationStatementSerializationContainer container = converter.readValue(data, AttestationStatementSerializationContainer.class);
-        return container.getAttestationStatement();
+        return converter.readValue(Base64Url.decode(dbData), AttestationStatement.class);
     }
 }
