@@ -214,7 +214,7 @@ public class WebAuthnRegister implements RequiredActionProvider {
     private void showInfoAfterWebAuthnApiCreate(WebAuthnRegistrationContextValidationResponse response) {
         AttestedCredentialData attestedCredentialData = response.getAttestationObject().getAuthenticatorData().getAttestedCredentialData();
         AttestationStatement attestationStatement = response.getAttestationObject().getAttestationStatement();
-        logger.debugv("createad key's algorithm = {0}", attestedCredentialData.getCredentialPublicKey().getAlgorithm());
+        logger.debugv("createad key's algorithm = {0}", String.valueOf(attestedCredentialData.getCOSEKey().getAlgorithm().getValue()));
         logger.debugv("aaguid = {0}", attestedCredentialData.getAaguid().toString());
         logger.debugv("attestation format = {0}", attestationStatement.getFormat());
     }

@@ -162,7 +162,7 @@
         <spring-boot21.version>2.1.3.RELEASE</spring-boot21.version>
 
         <!-- webauthn support -->
-        <webauthn4j.version>0.9.7.RELEASE</webauthn4j.version>
+        <webauthn4j.version>0.9.12.RELEASE</webauthn4j.version>
 
     </properties>
 
