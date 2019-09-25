@@ -565,11 +565,11 @@
     <dependency>
       <groupId>com.fasterxml.jackson.dataformat</groupId>
       <artifactId>jackson-dataformat-cbor</artifactId>
-      <version>2.9.8</version>
+      <version>2.9.10</version>
       <licenses>
         <license>
           <name>Apache Software License 2.0</name>
-          <url>https://github.com/FasterXML/jackson-dataformats-binary/wiki</url>
+          <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url> <!-- Source repo contains no license file -->
         </license>
       </licenses>
     </dependency>

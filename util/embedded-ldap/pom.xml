@@ -30,7 +30,6 @@
     <name>Keycloak Util Embedded LDAP</name>
     <description/>
 
-
     <dependencies>
         <dependency>
             <groupId>org.keycloak</groupId>
