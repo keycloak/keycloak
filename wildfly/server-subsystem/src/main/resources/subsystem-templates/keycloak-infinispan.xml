@@ -19,7 +19,7 @@
 <!--  See src/resources/configuration/ReadMe.txt for how the configuration assembly works -->
 <config default-supplement="default">
     <extension-module>org.jboss.as.clustering.infinispan</extension-module>
-    <subsystem xmlns="urn:jboss:domain:infinispan:8.0">
+    <subsystem xmlns="urn:jboss:domain:infinispan:9.0">
         <?CACHE-CONTAINERS?>
     </subsystem>
     <supplement name="default">

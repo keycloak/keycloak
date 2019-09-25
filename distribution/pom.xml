@@ -45,6 +45,18 @@
         <module>server-overlay</module>
     </modules>
 
+    <repositories>
+        <!-- Needed for org.picketlink:picketlink-api -->
+        <repository>
+            <id>jboss-enterprise-maven-repository</id>
+            <name>JBoss Enterprise Maven Repository</name>
+            <url>https://maven.repository.redhat.com/ga/</url>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>
+    </repositories>
+
     <profiles>
         <profile>
             <id>distribution-downloads</id>
