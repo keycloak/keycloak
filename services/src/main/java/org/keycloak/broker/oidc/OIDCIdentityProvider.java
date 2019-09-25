@@ -250,17 +250,10 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
     }
 
     protected SimpleHttp getRefreshTokenRequest(KeycloakSession session, String refreshToken, String clientId, String clientSecret) {
-        if (OIDCLoginProtocol.CLIENT_SECRET_BASIC.equals(getConfig().getClientAuthMethod())) {
-            return SimpleHttp.doPost(getConfig().getTokenUrl(), session)
-                    .param("refresh_token", refreshToken)
-                    .param(OAUTH2_PARAMETER_GRANT_TYPE, OAUTH2_GRANT_TYPE_REFRESH_TOKEN)
-                    .authBasic(clientId, clientSecret);
-        }
-        return SimpleHttp.doPost(getConfig().getTokenUrl(), session)
-                .param("refresh_token", refreshToken)
-                .param(OAUTH2_PARAMETER_GRANT_TYPE, OAUTH2_GRANT_TYPE_REFRESH_TOKEN)
-                .param(OAUTH2_PARAMETER_CLIENT_ID, clientId)
-                .param(OAUTH2_PARAMETER_CLIENT_SECRET, clientSecret);
+        SimpleHttp refreshTokenRequest = SimpleHttp.doPost(getConfig().getTokenUrl(), session)
+                .param(OAUTH2_GRANT_TYPE_REFRESH_TOKEN, refreshToken)
+                .param(OAUTH2_PARAMETER_GRANT_TYPE, OAUTH2_GRANT_TYPE_REFRESH_TOKEN);
+        return authenticateTokenRequest(refreshTokenRequest);
     }
 
     @Override
