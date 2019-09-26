@@ -266,11 +266,17 @@ public class JPAPermissionTicketStore implements PermissionTicketStore {
     }
 
     @Override
-    public List<Resource> findGrantedResources(String requester, int first, int max) {
-        TypedQuery<String> query = entityManager.createNamedQuery("findGrantedResources", String.class);
+    public List<Resource> findGrantedResources(String requester, String name, int first, int max) {
+        TypedQuery<String> query = name == null ? 
+                entityManager.createNamedQuery("findGrantedResources", String.class) :
+                entityManager.createNamedQuery("findGrantedResourcesByName", String.class);
 
         query.setFlushMode(FlushModeType.COMMIT);
         query.setParameter("requester", requester);
+        
+        if (name != null) {
+            query.setParameter("resourceName", "%" + name.toLowerCase() + "%");
+        }
         
         if (first > -1 && max > -1) {
             query.setFirstResult(first);

@@ -1136,8 +1136,8 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
         }
 
         @Override
-        public List<Resource> findGrantedResources(String requester, int first, int max) {
-            return getPermissionTicketStoreDelegate().findGrantedResources(requester, first, max);
+        public List<Resource> findGrantedResources(String requester, String name, int first, int max) {
+            return getPermissionTicketStoreDelegate().findGrantedResources(requester, name, first, max);
         }
 
         @Override
