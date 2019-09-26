@@ -109,15 +109,46 @@ projects that depend on this project.-->
         </dependency>
 
         <dependency>
-            <groupId>org.jboss.as</groupId>
-            <artifactId>jboss-as-subsystem-test</artifactId>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>
+
+    <profiles>
+        <profile>
+            <id>community</id>
+            <activation>
+                <property>
+                    <name>!product</name>
+                </property>
+            </activation>
+            <dependencies>
+                <!-- Upstream version 7.2.0.Final is type jar see KEYCLOAK-11527 -->
+                <dependency>
+                    <groupId>org.jboss.as</groupId>
+                    <artifactId>jboss-as-subsystem-test</artifactId>
+                    <scope>test</scope>
+                </dependency>
+            </dependencies>
+        </profile>
+
+        <profile>
+            <id>product</id>
+            <activation>
+                <property>
+                    <name>product</name>
+                </property>
+            </activation>
+            <dependencies>
+                <!-- Downstream version 7.5.*.Final is type pom see KEYCLOAK-11527 -->
+                <dependency>
+                    <groupId>org.jboss.as</groupId>
+                    <artifactId>jboss-as-subsystem-test</artifactId>
+                    <type>pom</type>
+                    <scope>test</scope>
+                </dependency>
+            </dependencies>
+        </profile>
+    </profiles>
 </project>
