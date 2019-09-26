@@ -3111,6 +3111,18 @@ module.controller('PagingCtrl', function ($scope) {
     };
 });
 
+// Provides a component for injection with utility methods for manipulating strings
+module.factory('KcStrings', function () {
+    var instance = {};
+    
+    // some IE versions do not support string.endsWith method, this method should be used as an alternative for cross-browser compatibility
+    instance.endsWith = function(source, suffix) {
+        return source.indexOf(suffix, source.length - suffix.length) !== -1;
+    };
+    
+    return instance;
+});
+
 module.directive('kcPaging', function () {
     return {
         scope: {

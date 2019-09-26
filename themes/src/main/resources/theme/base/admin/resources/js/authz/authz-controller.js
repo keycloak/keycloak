@@ -682,7 +682,7 @@ module.controller('ResourceServerScopeDetailCtrl', function($scope, $http, $rout
     }
 });
 
-module.controller('ResourceServerPolicyCtrl', function($scope, $http, $route, $location, realm, ResourceServer, ResourceServerPolicy, PolicyProvider, client, AuthzDialog, Notifications) {
+module.controller('ResourceServerPolicyCtrl', function($scope, $http, $route, $location, realm, ResourceServer, ResourceServerPolicy, PolicyProvider, client, AuthzDialog, Notifications, KcStrings) {
     $scope.realm = realm;
     $scope.client = client;
     $scope.policyProviders = [];
@@ -717,7 +717,7 @@ module.controller('ResourceServerPolicyCtrl', function($scope, $http, $route, $l
     });
 
     $scope.addPolicy = function(policyType) {
-        if (policyType.type.endsWith('.js')) {
+        if (KcStrings.endsWith(policyType.type, '.js')) {
             ResourceServerPolicy.save({realm : realm.realm, client : client.id, type: policyType.type}, {name: policyType.name, type: policyType.type}, function(data) {
                 $location.url("/realms/" + realm.realm + "/clients/" + client.id + "/authz/resource-server/policy/");
                 Notifications.success("The policy has been created.");
@@ -2983,5 +2983,3 @@ module.controller('GroupPermissionsCtrl', function($scope, $http, $route, $locat
         }, true);
     });
 });
-
-
