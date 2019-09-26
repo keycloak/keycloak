@@ -55,7 +55,7 @@
     </dependency>
     <dependency>
       <groupId>org.keycloak</groupId>
-      <artifactId>spring-boot-container-bundle</artifactId>
+      <artifactId>spring-boot-legacy-container-bundle</artifactId>
       <version>${project.version}</version>
       <optional>true</optional>
       <scope>compile</scope>
