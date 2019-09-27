@@ -455,6 +455,9 @@
                                                 <property name="jdbc.mvn.groupId">${jdbc.mvn.groupId}</property>
                                                 <property name="jdbc.mvn.artifactId">${jdbc.mvn.artifactId}</property>
                                                 <property name="jdbc.mvn.version">${jdbc.mvn.version}</property>
+                                                <property name="keycloak.connectionsJpa.url">${keycloak.connectionsJpa.url}</property>
+                                                <property name="keycloak.connectionsJpa.user">${keycloak.connectionsJpa.user}</property>
+                                                <property name="keycloak.connectionsJpa.password">${keycloak.connectionsJpa.password}</property>
                                             </ant>
                                         </target>
                                     </configuration>
