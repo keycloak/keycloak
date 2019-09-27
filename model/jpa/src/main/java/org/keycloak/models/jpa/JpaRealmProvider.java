@@ -40,7 +40,6 @@ import org.keycloak.models.jpa.entities.RoleEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
 import javax.persistence.EntityManager;
-import javax.persistence.FlushModeType;
 import javax.persistence.TypedQuery;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -499,11 +498,7 @@ public class JpaRealmProvider implements RealmProvider {
         RealmEntity realmEntity = em.getReference(RealmEntity.class, realm.getId());
         groupEntity.setRealm(realmEntity);
         em.persist(groupEntity);
-        // KEYCLOAK-8253 - Skip / postpone the EM flush if there's an active WIP transaction and EM flush mode is set to AUTO (the default)
-        // This improves the time performance of LDAP groups sync and EM flush in that case is performed anyway as part of the TX commit
-        if (!session.getTransactionManager().isActive() || em.getFlushMode() != FlushModeType.AUTO) {
-            em.flush();
-        }
+        em.flush();
         realmEntity.getGroups().add(groupEntity);
 
         GroupAdapter adapter = new GroupAdapter(realm, em, groupEntity);
