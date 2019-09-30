@@ -34,6 +34,7 @@
         <js-adapter.version>${project.version}</js-adapter.version>
         <js-adapter.file.path>${project.basedir}/target/classes/javascript</js-adapter.file.path>
         <js-adapter.auth-server-url>https://localhost:8543/auth</js-adapter.auth-server-url>
+        <auth.server.dist.version>${project.version}</auth.server.dist.version>
     </properties>
 
     <dependencies>

@@ -17,7 +17,7 @@
 
 <module xmlns="urn:jboss:module:1.5" name="org.keycloak.testsuite.integration-arquillian-testsuite-providers">
     <resources>
-        <resource-root path="integration-arquillian-testsuite-providers-${project.version}.jar"/>
+        <resource-root path="integration-arquillian-testsuite-providers-${auth.server.dist.version}.jar"/>
     </resources>
     <dependencies>
         <module name="javax.api"/>
