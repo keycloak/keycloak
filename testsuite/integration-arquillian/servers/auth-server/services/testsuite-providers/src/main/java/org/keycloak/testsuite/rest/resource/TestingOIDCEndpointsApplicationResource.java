@@ -18,7 +18,7 @@
 package org.keycloak.testsuite.rest.resource;
 
 import org.jboss.resteasy.annotations.cache.NoCache;
-import org.jboss.resteasy.spi.BadRequestException;
+import javax.ws.rs.BadRequestException;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.common.util.PemUtils;

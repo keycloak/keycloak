@@ -18,7 +18,7 @@
 package org.keycloak.testsuite.rest;
 
 import org.jboss.resteasy.annotations.cache.NoCache;
-import org.jboss.resteasy.spi.BadRequestException;
+import javax.ws.rs.BadRequestException;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.Time;
