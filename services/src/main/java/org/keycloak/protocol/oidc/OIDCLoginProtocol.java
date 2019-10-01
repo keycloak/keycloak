@@ -98,6 +98,7 @@ public class OIDCLoginProtocol implements LoginProtocol {
     public static final String CLIENT_SECRET_POST = "client_secret_post";
     public static final String CLIENT_SECRET_JWT = "client_secret_jwt";
     public static final String PRIVATE_KEY_JWT = "private_key_jwt";
+    public static final String TLS_CLIENT_AUTH = "tls_client_auth";
 
     // https://tools.ietf.org/html/rfc7636#section-4.3
     public static final String CODE_CHALLENGE_PARAM = "code_challenge";

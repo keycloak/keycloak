@@ -161,6 +161,7 @@ public class X509ClientAuthenticator extends AbstractClientAuthenticator {
     public Set<String> getProtocolAuthenticatorMethods(String loginProtocol) {
         if (loginProtocol.equals(OIDCLoginProtocol.LOGIN_PROTOCOL)) {
             Set<String> results = new HashSet<>();
+            results.add(OIDCLoginProtocol.TLS_CLIENT_AUTH);
             return results;
         } else {
             return Collections.emptySet();
