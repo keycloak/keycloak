@@ -21,6 +21,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.WebAuthnPolicy;
 import org.keycloak.services.DefaultKeycloakSession;
 import org.keycloak.services.DefaultKeycloakSessionFactory;
 
@@ -624,6 +625,16 @@ public class PlainTextVaultProviderFactoryTest {
 
         @Override
         public void setOTPPolicy(OTPPolicy policy) {
+          
+        }
+
+        @Override
+        public WebAuthnPolicy getWebAuthnPolicy() {
+            return null;
+        }
+
+        @Override
+        public void setWebAuthnPolicy(WebAuthnPolicy policy) {
           
         }
 

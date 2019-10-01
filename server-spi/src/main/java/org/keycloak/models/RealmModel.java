@@ -240,6 +240,9 @@ public interface RealmModel extends RoleContainerModel {
     OTPPolicy getOTPPolicy();
     void setOTPPolicy(OTPPolicy policy);
 
+    WebAuthnPolicy getWebAuthnPolicy();
+    void setWebAuthnPolicy(WebAuthnPolicy policy);
+
     RoleModel getRoleById(String id);
 
     List<GroupModel> getDefaultGroups();

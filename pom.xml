@@ -162,6 +162,9 @@
         <spring-boot15.version>1.5.20.RELEASE</spring-boot15.version>
         <spring-boot21.version>2.1.3.RELEASE</spring-boot21.version>
 
+        <!-- webauthn support -->
+        <webauthn4j.version>0.9.7.RELEASE</webauthn4j.version>
+
     </properties>
 
     <url>http://keycloak.org</url>
@@ -1412,6 +1415,22 @@
                 <artifactId>kcinit-dist</artifactId>
                 <version>${project.version}</version>
                 <type>zip</type>
+            </dependency>
+            <!-- webauthn support -->
+            <dependency>
+                <groupId>com.webauthn4j</groupId>
+                <artifactId>webauthn4j-core</artifactId>
+                <version>${webauthn4j.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.webauthn4j</groupId>
+                <artifactId>webauthn4j-util</artifactId>
+                <version>${webauthn4j.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.dataformat</groupId>
+                <artifactId>jackson-dataformat-cbor</artifactId>
+                <version>${jackson.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
