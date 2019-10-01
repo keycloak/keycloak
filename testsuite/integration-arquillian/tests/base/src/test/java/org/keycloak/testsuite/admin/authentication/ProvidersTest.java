@@ -194,6 +194,7 @@ public class ProvidersTest extends AbstractAuthenticationTest {
                 "Testsuite Dummy authenticator.  Just passes through and is hardcoded to a specific user");
         addProviderInfo(result, "testsuite-username", "Testsuite Username Only",
                 "Testsuite Username authenticator.  Username parameter sets username");
+        addProviderInfo(result, "webauthn-authenticator", "WebAuthn Authenticator", "Authenticator for WebAuthn");
 
         return result;
     }
