@@ -27,7 +27,7 @@ public class VaultUtils {
             Administration administration = new Administration(client);
 
             client.execute("/subsystem=keycloak-server/spi=vault/:add");
-            client.execute("/subsystem=keycloak-server/spi=vault/provider=plaintext/:add(enabled=true,properties={dir => \"${jboss.home.dir}/standalone/configuration/vault\"})");
+            client.execute("/subsystem=keycloak-server/spi=vault/provider=files-plaintext/:add(enabled=true,properties={dir => \"${jboss.home.dir}/standalone/configuration/vault\"})");
 
             administration.reload();
 

@@ -29,7 +29,7 @@ import java.util.Optional;
  *
  * @author Sebastian Łaskawiec
  */
-public class PlainTextVaultProvider implements VaultProvider {
+public class FilesPlainTextVaultProvider implements VaultProvider {
 
     private static final Logger logger = Logger.getLogger(MethodHandles.lookup().lookupClass());
 
@@ -37,12 +37,12 @@ public class PlainTextVaultProvider implements VaultProvider {
     private final String realmName;
 
     /**
-     * Creates a new {@link PlainTextVaultProvider}.
+     * Creates a new {@link FilesPlainTextVaultProvider}.
      *
      * @param path A path to a vault. Can not be null.
      * @param realmName A realm name. Can not be null.
      */
-    public PlainTextVaultProvider(@Nonnull Path path, @Nonnull String realmName) {
+    public FilesPlainTextVaultProvider(@Nonnull Path path, @Nonnull String realmName) {
         this.vaultPath = path;
         this.realmName = realmName;
         logger.debugf("PlainTextVaultProvider will operate in %s directory", vaultPath.toAbsolutePath());
