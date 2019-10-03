@@ -33,7 +33,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
 /**
- * Tests for {@link PlainTextVaultProviderFactory}.
+ * Tests for {@link FilesPlainTextVaultProviderFactory}.
  *
  * @author Sebastian Łaskawiec
  */
@@ -46,7 +46,7 @@ public class PlainTextVaultProviderFactoryTest {
     public void shouldInitializeVaultCorrectly() {
         //given
         VaultConfig config = new VaultConfig(Scenario.EXISTING.getAbsolutePathAsString());
-        PlainTextVaultProviderFactory factory = new PlainTextVaultProviderFactory();
+        FilesPlainTextVaultProviderFactory factory = new FilesPlainTextVaultProviderFactory();
 
         KeycloakSession session = new DefaultKeycloakSession(new DefaultKeycloakSessionFactory());
         session.getContext().setRealm(new VaultRealmModel());
@@ -63,7 +63,7 @@ public class PlainTextVaultProviderFactoryTest {
     public void shouldThrowAnExceptionWhenUsingNonExistingDirectory() {
         //given
         VaultConfig config = new VaultConfig(Scenario.NON_EXISTING.getAbsolutePathAsString());
-        PlainTextVaultProviderFactory factory = new PlainTextVaultProviderFactory();
+        FilesPlainTextVaultProviderFactory factory = new FilesPlainTextVaultProviderFactory();
 
         expectedException.expect(VaultNotFoundException.class);
 
@@ -77,7 +77,7 @@ public class PlainTextVaultProviderFactoryTest {
     public void shouldReturnNullWhenWithNullDirectory() {
         //given
         VaultConfig config = new VaultConfig(null);
-        PlainTextVaultProviderFactory factory = new PlainTextVaultProviderFactory();
+        FilesPlainTextVaultProviderFactory factory = new FilesPlainTextVaultProviderFactory();
 
         //when
         factory.init(config);
@@ -89,7 +89,7 @@ public class PlainTextVaultProviderFactoryTest {
 
     /**
      * A whitebox implementation of the Realm model, which is needed to extract realm name.
-     * Please use only for testing {@link PlainTextVaultProviderFactory}.
+     * Please use only for testing {@link FilesPlainTextVaultProviderFactory}.
      */
     private static class VaultRealmModel implements RealmModel {
 
@@ -1245,7 +1245,7 @@ public class PlainTextVaultProviderFactoryTest {
     }
 
     /**
-     * A whitebox implementation of the config. Please use only for testing {@link PlainTextVaultProviderFactory}.
+     * A whitebox implementation of the config. Please use only for testing {@link FilesPlainTextVaultProviderFactory}.
      */
     private static class VaultConfig implements Config.Scope {
 
