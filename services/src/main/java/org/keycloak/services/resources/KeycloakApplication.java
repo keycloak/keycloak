@@ -22,8 +22,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.jboss.dmr.ModelNode;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.core.Dispatcher;
-import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.Config;
+import org.keycloak.common.util.Resteasy;
 import org.keycloak.common.util.SystemEnvProperties;
 import org.keycloak.exportimport.ExportImportManager;
 import org.keycloak.migration.MigrationModelManager;
@@ -106,19 +106,21 @@ public class KeycloakApplication extends Application {
     protected KeycloakSessionFactory sessionFactory;
     protected String contextPath;
 
-    public KeycloakApplication(@Context ServletContext context, @Context Dispatcher dispatcher) {
+    public KeycloakApplication() {
         try {
+            ServletContext context = Resteasy.getContextData(ServletContext.class);
+
             if ("true".equals(context.getInitParameter(KEYCLOAK_EMBEDDED))) {
                 embedded = true;
             }
-
+            
             loadConfig(context);
 
             this.contextPath = context.getContextPath();
             this.sessionFactory = createSessionFactory();
 
-            dispatcher.getDefaultContextObjects().put(KeycloakApplication.class, this);
-            ResteasyProviderFactory.pushContext(KeycloakApplication.class, this); // for injection
+            Resteasy.pushDefaultContextObject(KeycloakApplication.class, this);
+            Resteasy.pushContext(KeycloakApplication.class, this); // for injection
             context.setAttribute(KeycloakSessionFactory.class.getName(), this.sessionFactory);
 
             singletons.add(new RobotsResource());

@@ -16,7 +16,6 @@
  */
 package org.keycloak.social.google;
 
-import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.broker.oidc.OIDCIdentityProvider;
 import org.keycloak.broker.oidc.OIDCIdentityProviderConfig;
@@ -26,6 +25,7 @@ import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.broker.social.SocialIdentityProvider;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.util.KeycloakUriBuilder;
+import org.keycloak.common.util.Resteasy;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.representations.JsonWebToken;
@@ -63,7 +63,7 @@ public class GoogleIdentityProvider extends OIDCIdentityProvider implements Soci
     protected String getUserInfoUrl() {
         String uri = super.getUserInfoUrl();
         if (((GoogleIdentityProviderConfig)getConfig()).isUserIp()) {
-            ClientConnection connection = ResteasyProviderFactory.getContextData(ClientConnection.class);
+            ClientConnection connection = Resteasy.getContextData(ClientConnection.class);
             if (connection != null) {
                 uri = KeycloakUriBuilder.fromUri(super.getUserInfoUrl()).queryParam("userIp", connection.getRemoteAddr()).build().toString();
             }

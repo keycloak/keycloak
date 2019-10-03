@@ -97,7 +97,7 @@ public class SecretQuestionAuthenticator implements Authenticator {
     }
 
     public static void addCookie(String name, String value, String path, String domain, String comment, int maxAge, boolean secure, boolean httpOnly) {
-        HttpResponse response = ResteasyProviderFactory.getContextData(HttpResponse.class);
+        HttpResponse response = Resteasy.getContextData(HttpResponse.class);
         StringBuffer cookieBuf = new StringBuffer();
         ServerCookie.appendCookieValue(cookieBuf, 1, name, value, path, domain, comment, maxAge, secure, httpOnly);
         String cookie = cookieBuf.toString();
