@@ -140,7 +140,7 @@ public class OIDCWellKnownProviderTest extends AbstractKeycloakTest {
             Assert.assertNames(oidcConfig.getTokenEndpointAuthSigningAlgValuesSupported(), Algorithm.RS256);
 
             // Claims
-            assertContains(oidcConfig.getClaimsSupported(), IDToken.NAME, IDToken.EMAIL, IDToken.PREFERRED_USERNAME, IDToken.FAMILY_NAME);
+            assertContains(oidcConfig.getClaimsSupported(), IDToken.NAME, IDToken.EMAIL, IDToken.PREFERRED_USERNAME, IDToken.FAMILY_NAME, IDToken.ACR);
             Assert.assertNames(oidcConfig.getClaimTypesSupported(), "normal");
             Assert.assertFalse(oidcConfig.getClaimsParameterSupported());
 
