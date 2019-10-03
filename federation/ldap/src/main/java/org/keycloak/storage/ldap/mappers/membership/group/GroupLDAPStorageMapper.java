@@ -450,43 +450,42 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
         logger.debugf("Syncing groups from Keycloak into LDAP. Mapper is [%s], LDAP provider is [%s]", mapperModel.getName(), ldapProvider.getModel().getName());
 
         // Query existing LDAP groups
-        try (LDAPQuery ldapQuery = createGroupQuery(config.isPreserveGroupsInheritance())) {
-            List<LDAPObject> ldapGroups = ldapQuery.getResultList();
 
-            // Convert them to Map<String, LDAPObject>
-            Map<String, LDAPObject> ldapGroupsMap = new HashMap<>();
-            String groupsRdnAttr = config.getGroupNameLdapAttribute();
-            for (LDAPObject ldapGroup : ldapGroups) {
-                String groupName = ldapGroup.getAttributeAsString(groupsRdnAttr);
-                ldapGroupsMap.put(groupName, ldapGroup);
+        List<LDAPObject> ldapGroups = getAllLDAPGroups(config.isPreserveGroupsInheritance());
+
+        // Convert them to Map<String, LDAPObject>
+        Map<String, LDAPObject> ldapGroupsMap = new HashMap<>();
+        String groupsRdnAttr = config.getGroupNameLdapAttribute();
+        for (LDAPObject ldapGroup : ldapGroups) {
+            String groupName = ldapGroup.getAttributeAsString(groupsRdnAttr);
+            ldapGroupsMap.put(groupName, ldapGroup);
+        }
+
+
+        // Map to track all LDAP groups also exists in Keycloak
+        Set<String> ldapGroupNames = new HashSet<>();
+
+        // Create or update KC groups to LDAP including their attributes
+        for (GroupModel kcGroup : realm.getTopLevelGroups()) {
+            processKeycloakGroupSyncToLDAP(kcGroup, ldapGroupsMap, ldapGroupNames, syncResult);
+        }
+
+        // If dropNonExisting, then drop all groups, which doesn't exist in KC from LDAP as well
+        if (config.isDropNonExistingGroupsDuringSync()) {
+            Set<String> copy = new HashSet<>(ldapGroupsMap.keySet());
+            for (String groupName : copy) {
+                if (!ldapGroupNames.contains(groupName)) {
+                    LDAPObject ldapGroup = ldapGroupsMap.remove(groupName);
+                    ldapProvider.getLdapIdentityStore().remove(ldapGroup);
+                    syncResult.increaseRemoved();
+                }
             }
+        }
 
-
-            // Map to track all LDAP groups also exists in Keycloak
-            Set<String> ldapGroupNames = new HashSet<>();
-
-            // Create or update KC groups to LDAP including their attributes
+        // Finally process memberships,
+        if (config.isPreserveGroupsInheritance()) {
             for (GroupModel kcGroup : realm.getTopLevelGroups()) {
-                processKeycloakGroupSyncToLDAP(kcGroup, ldapGroupsMap, ldapGroupNames, syncResult);
-            }
-
-            // If dropNonExisting, then drop all groups, which doesn't exist in KC from LDAP as well
-            if (config.isDropNonExistingGroupsDuringSync()) {
-                Set<String> copy = new HashSet<>(ldapGroupsMap.keySet());
-                for (String groupName : copy) {
-                    if (!ldapGroupNames.contains(groupName)) {
-                        LDAPObject ldapGroup = ldapGroupsMap.remove(groupName);
-                        ldapProvider.getLdapIdentityStore().remove(ldapGroup);
-                        syncResult.increaseRemoved();
-                    }
-                }
-            }
-
-            // Finally process memberships,
-            if (config.isPreserveGroupsInheritance()) {
-                for (GroupModel kcGroup : realm.getTopLevelGroups()) {
-                    processKeycloakGroupMembershipsSyncToLDAP(kcGroup, ldapGroupsMap);
-                }
+                processKeycloakGroupMembershipsSyncToLDAP(kcGroup, ldapGroupsMap);
             }
         }
 
