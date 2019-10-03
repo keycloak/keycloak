@@ -20,7 +20,7 @@
 
 package org.keycloak.services.filters;
 
-import org.jboss.resteasy.spi.ResteasyProviderFactory;
+import org.keycloak.common.util.Resteasy;
 import org.keycloak.models.KeycloakTransaction;
 
 import javax.ws.rs.container.ContainerRequestContext;
@@ -35,7 +35,7 @@ public class KeycloakTransactionCommitter implements ContainerResponseFilter {
 
     @Override
     public void filter(ContainerRequestContext containerRequestContext, ContainerResponseContext containerResponseContext) throws IOException {
-        KeycloakTransaction tx = ResteasyProviderFactory.getContextData(KeycloakTransaction.class);
+        KeycloakTransaction tx = Resteasy.getContextData(KeycloakTransaction.class);
         if (tx != null && tx.isActive()) {
             if (tx.getRollbackOnly()) {
                 tx.rollback();

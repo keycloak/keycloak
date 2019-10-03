@@ -25,7 +25,7 @@ import java.util.stream.Collectors;
 
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.HttpResponse;
-import org.jboss.resteasy.spi.ResteasyProviderFactory;
+import org.keycloak.common.util.Resteasy;
 import org.keycloak.common.util.ServerCookie;
 
 import javax.ws.rs.core.Cookie;
@@ -53,7 +53,7 @@ public class CookieHelper {
      * @param httpOnly
      */
     public static void addCookie(String name, String value, String path, String domain, String comment, int maxAge, boolean secure, boolean httpOnly) {
-        HttpResponse response = ResteasyProviderFactory.getContextData(HttpResponse.class);
+        HttpResponse response = Resteasy.getContextData(HttpResponse.class);
         StringBuffer cookieBuf = new StringBuffer();
         ServerCookie.appendCookieValue(cookieBuf, 1, name, value, path, domain, comment, maxAge, secure, httpOnly);
         String cookie = cookieBuf.toString();
@@ -62,7 +62,7 @@ public class CookieHelper {
 
 
     public static Set<String> getCookieValue(String name) {
-        HttpHeaders headers = ResteasyProviderFactory.getContextData(HttpHeaders.class);
+        HttpHeaders headers = Resteasy.getContextData(HttpHeaders.class);
 
         Set<String> cookiesVal = new HashSet<>();
 
