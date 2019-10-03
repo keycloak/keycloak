@@ -133,7 +133,7 @@ public class TestApplicationResourceProvider implements RealmResourceProvider {
         sb.append("<html><head><title>" + title + "</title></head><body>");
 
         sb.append("<b>Form parameters: </b><br>");
-        HttpRequest request = ResteasyProviderFactory.getContextData(HttpRequest.class);
+        HttpRequest request = session.getContext().getContextObject(HttpRequest.class);
         MultivaluedMap<String, String> formParams = request.getDecodedFormParameters();
         for (String paramName : formParams.keySet()) {
             sb.append(paramName).append(": ").append("<span id=\"")
