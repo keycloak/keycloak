@@ -17,8 +17,8 @@
 
 package org.keycloak.services;
 
-import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.common.ClientConnection;
+import org.keycloak.common.util.Resteasy;
 import org.keycloak.locale.LocaleSelectorProvider;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakContext;
@@ -84,7 +84,7 @@ public class DefaultKeycloakContext implements KeycloakContext {
 
     @Override
     public <T> T getContextObject(Class<T> clazz) {
-        return ResteasyProviderFactory.getContextData(clazz);
+        return Resteasy.getContextData(clazz);
     }
 
     @Override
