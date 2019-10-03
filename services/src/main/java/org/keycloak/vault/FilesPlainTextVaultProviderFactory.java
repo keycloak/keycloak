@@ -11,15 +11,15 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 /**
- * Creates and configures {@link PlainTextVaultProvider}.
+ * Creates and configures {@link FilesPlainTextVaultProvider}.
  *
  * @author Sebastian Łaskawiec
  */
-public class PlainTextVaultProviderFactory implements VaultProviderFactory {
+public class FilesPlainTextVaultProviderFactory implements VaultProviderFactory {
 
     private static final Logger logger = Logger.getLogger(MethodHandles.lookup().lookupClass());
 
-    public static final String PROVIDER_ID = "plaintext";
+    public static final String PROVIDER_ID = "files-plaintext";
 
     private String vaultDirectory;
     private Path vaultPath;
@@ -30,7 +30,7 @@ public class PlainTextVaultProviderFactory implements VaultProviderFactory {
             logger.debug("Can not create a vault since it's disabled or not initialized correctly");
             return null;
         }
-        return new PlainTextVaultProvider(vaultPath, session.getContext().getRealm().getName());
+        return new FilesPlainTextVaultProvider(vaultPath, session.getContext().getRealm().getName());
     }
 
     @Override

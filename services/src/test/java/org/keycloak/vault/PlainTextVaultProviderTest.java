@@ -13,7 +13,7 @@ import static org.junit.Assert.assertThat;
 import static org.keycloak.vault.SecretContains.secretContains;
 
 /**
- * Tests for {@link PlainTextVaultProvider}.
+ * Tests for {@link FilesPlainTextVaultProvider}.
  *
  * @author Sebastian Łaskawiec
  */
@@ -22,7 +22,7 @@ public class PlainTextVaultProviderTest {
     @Test
     public void shouldObtainSecret() throws Exception {
         //given
-        PlainTextVaultProvider provider = new PlainTextVaultProvider(Scenario.EXISTING.getPath(), "test");
+        FilesPlainTextVaultProvider provider = new FilesPlainTextVaultProvider(Scenario.EXISTING.getPath(), "test");
 
         //when
         VaultRawSecret secret1 = provider.obtainSecret("key1");
@@ -36,7 +36,7 @@ public class PlainTextVaultProviderTest {
     @Test
     public void shouldReplaceUnderscoreWithTwoUnderscores() throws Exception {
         //given
-        PlainTextVaultProvider provider = new PlainTextVaultProvider(Scenario.EXISTING.getPath(), "test_realm");
+        FilesPlainTextVaultProvider provider = new FilesPlainTextVaultProvider(Scenario.EXISTING.getPath(), "test_realm");
 
         //when
         VaultRawSecret secret1 = provider.obtainSecret("underscore_key1");
@@ -50,7 +50,7 @@ public class PlainTextVaultProviderTest {
     @Test
     public void shouldReturnEmptyOptionalOnMissingSecret() throws Exception {
         //given
-        PlainTextVaultProvider provider = new PlainTextVaultProvider(Scenario.EXISTING.getPath(), "test");
+        FilesPlainTextVaultProvider provider = new FilesPlainTextVaultProvider(Scenario.EXISTING.getPath(), "test");
 
         //when
         VaultRawSecret secret = provider.obtainSecret("non-existing-key");
@@ -63,7 +63,7 @@ public class PlainTextVaultProviderTest {
     @Test
     public void shouldOperateOnNonExistingVaultDirectory() throws Exception {
         //given
-        PlainTextVaultProvider provider = new PlainTextVaultProvider(Scenario.NON_EXISTING.getPath(), "test");
+        FilesPlainTextVaultProvider provider = new FilesPlainTextVaultProvider(Scenario.NON_EXISTING.getPath(), "test");
 
         //when
         VaultRawSecret secret = provider.obtainSecret("non-existing-key");
@@ -80,7 +80,7 @@ public class PlainTextVaultProviderTest {
         Path vaultDirectory = temporarySecretFile.getParent();
         String secretName = temporarySecretFile.getFileName().toString();
 
-        PlainTextVaultProvider provider = new PlainTextVaultProvider(vaultDirectory, "ignored") {
+        FilesPlainTextVaultProvider provider = new FilesPlainTextVaultProvider(vaultDirectory, "ignored") {
             @Override
             protected Path resolveSecretPath(String vaultSecretId) {
                 return vaultDirectory.resolve(vaultSecretId);
@@ -113,7 +113,7 @@ public class PlainTextVaultProviderTest {
         Path vaultDirectory = temporarySecretFile.getParent();
         String secretName = temporarySecretFile.getFileName().toString();
 
-        PlainTextVaultProvider provider = new PlainTextVaultProvider(vaultDirectory, "ignored") {
+        FilesPlainTextVaultProvider provider = new FilesPlainTextVaultProvider(vaultDirectory, "ignored") {
             @Override
             protected Path resolveSecretPath(String vaultSecretId) {
                 return vaultDirectory.resolve(vaultSecretId);
