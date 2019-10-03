@@ -24,21 +24,21 @@ To use a vault, a vault provider must be registered within {project_name}.
 It is possible to either use a built-in provider described below or
 implement your own provider. See the link:{developerguide_link}[{developerguide_name}] for more information.
 
-=== Kubernetes / OpenShift plaintext vault provider
+=== Kubernetes / OpenShift files plaintext vault provider
 
 {project_name} supports vault implementation for https://kubernetes.io/docs/concepts/configuration/secret/[Kubernetes secrets]. These secrets
 can be mounted as data volumes, and they appear as a directory with a flat file structure, where each secret is represented by a file whose name is the secret name, and contents of that file is the secret value.
 
 The files within this directory have to be named as secret name prefixed by realm name and an underscore. All underscores within the secret name or the realm name have to be doubled in the file name. For example, for a field within a realm called `sso_realm`, a reference to a secret with name `secret-name` would be written as `${vault.secret-name}`, and the file name looked up would be `sso+++__+++realm+++_+++secret-name` (note the underscore doubled in realm name).
 
-To use this type of secret store, you have to declare the `plaintext` vault provider in standalone.xml, and set its parameter for the directory that contains the mounted volume. The following example shows the `plaintext`
+To use this type of secret store, you have to declare the `files-plaintext` vault provider in standalone.xml, and set its parameter for the directory that contains the mounted volume. The following example shows the `files-plaintext`
 provider with the directory where vault files are searched for set to `standalone/configuration/vault` relative to {project_name} base directory:
 
 [source, xml]
 ----
 <spi name="vault">
-    <default-provider>plaintext</default-provider>
-    <provider name="plaintext" enabled="true">
+    <default-provider>files-plaintext</default-provider>
+    <provider name="files-plaintext" enabled="true">
         <properties>
             <property name="dir" value="${jboss.home.dir}/standalone/configuration/vault/" />
         </properties>
@@ -51,7 +51,7 @@ Here is the equivalent configuration using CLI commands:
 [source,bash]
 ----
 /subsystem=keycloak-server/spi=vault/:add
-/subsystem=keycloak-server/spi=vault/provider=plaintext/:add(enabled=true,properties={dir => "${jboss.home.dir}/standalone/configuration/vault"})
+/subsystem=keycloak-server/spi=vault/provider=files-plaintext/:add(enabled=true,properties={dir => "${jboss.home.dir}/standalone/configuration/vault"})
 ----
 
 NOTE: There is at most one vault provider active per {project_name} instance
