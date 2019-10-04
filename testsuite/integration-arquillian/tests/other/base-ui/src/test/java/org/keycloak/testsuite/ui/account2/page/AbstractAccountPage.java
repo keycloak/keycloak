@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 Red Hat, Inc. and/or its affiliates
+ * Copyright 2019 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,11 +15,9 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.auth.page.account2;
+package org.keycloak.testsuite.ui.account2.page;
 
-import org.jboss.arquillian.graphene.page.Page;
 import org.keycloak.testsuite.auth.page.AuthRealm;
-import org.keycloak.testsuite.page.PatternFlyClosableAlert;
 
 import javax.ws.rs.core.UriBuilder;
 import java.util.List;
@@ -28,33 +26,25 @@ import java.util.List;
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
 public abstract class AbstractAccountPage extends AuthRealm {
-    @Page
-    private PatternFlyClosableAlert alert;
+
+    /**
+     * Account Console is based on hash routing, e.g. [server_root]/auth/realms/test/account/#/password.
+     * All page objects for Account Console need to specify their "hash path" by adding items to this property.
+     */
+    protected List<String> hashPath = null;
 
     public AbstractAccountPage() {
         setAuthRealm(TEST);
     }
 
-    /**
-     * Account Console is based on hash routing, e.g. [server_root]/auth/realms/test/account/#/password.
-     * All page objects for Account Console need to specify their "hash path" using this method.
-     *
-     * @return the hash path
-     */
-    protected abstract List<String> createHashPath();
-
     @Override
     public UriBuilder createUriBuilder() {
         String fragment = null;
-        final List<String> hashPath = createHashPath();
         if (hashPath != null) {
+            hashPath.add(0, "app"); // TODO remove this once KEYCLOAK-11268 is resolved
             fragment = "/" + String.join("/", hashPath);
         }
 
         return super.createUriBuilder().path("account/").fragment(fragment);
-    }
-
-    public PatternFlyClosableAlert alert() {
-        return alert;
     }
 }

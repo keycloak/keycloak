@@ -18,6 +18,7 @@
 package org.keycloak.testsuite.ui;
 
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractAuthTest;
@@ -27,12 +28,23 @@ import java.util.HashMap;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static org.junit.Assume.assumeFalse;
+
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
 public abstract class AbstractUiTest extends AbstractAuthTest {
     public static final String LOCALIZED_THEME = "localized-theme";
+    public static final String CUSTOM_LOCALE = "test";
     public static final String CUSTOM_LOCALE_NAME = "Přísný jazyk";
+    public static final String DEFAULT_LOCALE="en";
+    public static final String DEFAULT_LOCALE_NAME = "English";
+
+    @BeforeClass
+    public static void assumeSupportedBrowser() {
+        assumeFalse("Browser must not be htmlunit", System.getProperty("browser").equals("htmlUnit"));
+        assumeFalse("Browser must not be PhantomJS", System.getProperty("browser").equals("phantomjs"));
+    }
 
     @Before
     public void addTestUser() {

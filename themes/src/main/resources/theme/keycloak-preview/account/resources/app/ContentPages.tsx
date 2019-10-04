@@ -21,6 +21,7 @@ import {Msg} from './widgets/Msg';
 import {PageNotFound} from './content/page-not-found/PageNotFound';
 
 export interface ContentItem {
+    id?: string;
     label: string;
     labelParams?: string[];
     hidden?: boolean;
@@ -77,8 +78,10 @@ function createNavItems(activePage: PageDef, contentParam: ContentItem[], groupN
     if (typeof content === 'undefined') return (<React.Fragment/>);
 
     const links: React.ReactElement[] = contentParam.map((item: ContentItem) => {
+        const navLinkId: string = `nav-link-${item.id}`;
         if (isExpansion(item)) {
-            return <NavExpandable groupId={item.groupId} 
+            return <NavExpandable id={navLinkId}
+                                  groupId={item.groupId}
                                   key={item.groupId}
                                   title={Msg.localize(item.label, item.labelParams)}
                                   isExpanded={isChildOf(item, activePage)}>
@@ -86,7 +89,8 @@ function createNavItems(activePage: PageDef, contentParam: ContentItem[], groupN
                     </NavExpandable>
         } else {
             const page: PageDef = item as PageDef;
-            return <NavItem groupId={item.groupId} 
+            return <NavItem id={navLinkId}
+                            groupId={item.groupId}
                             itemId={item.itemId} 
                             key={item.itemId} 
                             to={'#/app/' + page.path} 

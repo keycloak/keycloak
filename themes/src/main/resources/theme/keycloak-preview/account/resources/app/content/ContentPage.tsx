@@ -41,7 +41,7 @@ export class ContentPage extends React.Component<ContentPageProps> {
         return (
             <React.Fragment>
                 <ContentAlert/>
-                <section className="pf-c-page__main-section pf-m-light">
+                <section id="page-heading" className="pf-c-page__main-section pf-m-light">
                     <Grid>
                         <GridItem span={11}><Title headingLevel='h1' size='3xl'><strong><Msg msgKey={this.props.title}/></strong></Title></GridItem>
                         {this.props.onRefresh && 
