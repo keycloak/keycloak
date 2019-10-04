@@ -17,6 +17,8 @@
 
 package org.keycloak.models.jpa.session;
 
+import org.hibernate.Session;
+import org.hibernate.jdbc.Work;
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.AuthenticatedClientSessionModel;
@@ -34,9 +36,12 @@ import org.keycloak.models.utils.SessionTimeoutHelper;
 import org.keycloak.storage.StorageId;
 
 import javax.persistence.EntityManager;
+import javax.persistence.LockModeType;
+import javax.persistence.NoResultException;
 import javax.persistence.Query;
 import javax.persistence.TypedQuery;
 
+import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
@@ -47,7 +52,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import javax.persistence.LockModeType;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -222,6 +226,23 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
         String offlineStr = offlineToString(true);
 
         logger.tracef("Trigger removing expired user sessions for realm '%s'", realm.getName());
+
+        // change isolation level of this transaction in order to decrease the potential for deadlock
+        Session session = em.unwrap(Session.class);
+        session.doWork(connection -> connection.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED));
+
+        // check if expired user sessions exist to avoid issuing unnecessary delete in order to decrease the potential for deadlock
+        TypedQuery<PersistentUserSessionEntity> query = em.createNamedQuery("findExpiredUserSessions", PersistentUserSessionEntity.class);
+        query.setParameter("realmId", realm.getId());
+        query.setParameter("lastSessionRefresh", expiredOffline);
+        query.setParameter("offline", offlineStr);
+        query.setMaxResults(1);
+        try {
+            query.getSingleResult();
+        } catch (NoResultException e) {
+            logger.tracef("Expired user sessions for realm '%s' don't exist", realm.getName());
+            return;
+        }
 
         int cs = em.createNamedQuery("deleteExpiredClientSessions")
                 .setParameter("realmId", realm.getId())
