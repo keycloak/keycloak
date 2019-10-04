@@ -22,6 +22,7 @@ import org.keycloak.models.LDAPConstants;
 import org.keycloak.storage.UserStorageProvider;
 
 import javax.naming.directory.SearchControls;
+
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
@@ -108,6 +109,11 @@ public class LDAPConfig {
     public boolean isValidatePasswordPolicy() {
         String validatePPolicy = config.getFirst(LDAPConstants.VALIDATE_PASSWORD_POLICY);
         return Boolean.parseBoolean(validatePPolicy);
+    }
+
+    public boolean isTrustEmail(){
+        String trustEmail = config.getFirst(LDAPConstants.TRUST_EMAIL);
+        return Boolean.parseBoolean(trustEmail);
     }
 
     public String getConnectionPooling() {

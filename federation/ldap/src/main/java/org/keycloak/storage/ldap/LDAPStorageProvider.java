@@ -524,8 +524,9 @@ public class LDAPStorageProvider implements UserStorageProvider,
         if (model.isImportEnabled()) imported.setFederationLink(model.getId());
         imported.setSingleAttribute(LDAPConstants.LDAP_ID, ldapUser.getUuid());
         imported.setSingleAttribute(LDAPConstants.LDAP_ENTRY_DN, userDN);
-
-
+        if(getLdapIdentityStore().getConfig().isTrustEmail()){
+            imported.setEmailVerified(true);
+        }
         logger.debugf("Imported new user from LDAP to Keycloak DB. Username: [%s], Email: [%s], LDAP_ID: [%s], LDAP Entry DN: [%s]", imported.getUsername(), imported.getEmail(),
                 ldapUser.getUuid(), userDN);
         UserModel proxy = proxy(realm, imported, ldapUser);
