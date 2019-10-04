@@ -23,19 +23,20 @@ import org.junit.Test;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.auth.page.account2.AbstractLoggedInPage;
-import org.keycloak.testsuite.auth.page.account2.PersonalInfoPage;
+import org.keycloak.testsuite.ui.account2.page.AbstractLoggedInPage;
+import org.keycloak.testsuite.ui.account2.page.PersonalInfoPage;
 
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.keycloak.testsuite.util.UIUtils.refreshPageAndWaitForLoad;
 
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
 public class PersonalInfoTest extends BaseAccountPageTest {
-    private UserRepresentation testUser2;
     @Page
     private PersonalInfoPage personalInfoPage;
+
+    private UserRepresentation testUser2;
 
     @Before
     public void setTestUser() {
@@ -56,27 +57,28 @@ public class PersonalInfoTest extends BaseAccountPageTest {
     public void updateUserInfo() {
         setEditUsernameAllowed(true);
 
-        assertTrue(personalInfoPage.personalInfo().valuesEqual(testUser));
-        assertFalse(personalInfoPage.personalInfo().isUsernameDisabled());
-        assertTrue(personalInfoPage.personalInfo().isSaveDisabled());
+        assertTrue(personalInfoPage.valuesEqual(testUser));
+        personalInfoPage.assertUsernameDisabled(false);
+        personalInfoPage.assertSaveDisabled(true);
 
-        personalInfoPage.personalInfo().setValues(testUser2);
-        assertTrue(personalInfoPage.personalInfo().valuesEqual(testUser2));
-        assertFalse(personalInfoPage.personalInfo().isSaveDisabled());
-        personalInfoPage.personalInfo().clickSave();
+        personalInfoPage.setValues(testUser2, true);
+        assertTrue(personalInfoPage.valuesEqual(testUser2));
+        personalInfoPage.assertSaveDisabled(false);
+        personalInfoPage.clickSave();
         personalInfoPage.alert().assertSuccess();
+        personalInfoPage.assertSaveDisabled(true);
 
         personalInfoPage.navigateTo();
-        personalInfoPage.personalInfo().valuesEqual(testUser2);
+        personalInfoPage.valuesEqual(testUser2);
 
         // change just first and last name
         testUser2.setFirstName("Another");
         testUser2.setLastName("Name");
-        personalInfoPage.personalInfo().setValues(testUser2);
-        personalInfoPage.personalInfo().clickSave();
+        personalInfoPage.setValues(testUser2, true);
+        personalInfoPage.clickSave();
         personalInfoPage.alert().assertSuccess();
         personalInfoPage.navigateTo();
-        personalInfoPage.personalInfo().valuesEqual(testUser2);
+        personalInfoPage.valuesEqual(testUser2);
     }
 
     @Test
@@ -84,65 +86,67 @@ public class PersonalInfoTest extends BaseAccountPageTest {
         setEditUsernameAllowed(true);
         
         // clear username
-        personalInfoPage.personalInfo().setUsername("");
-        assertTrue(personalInfoPage.personalInfo().isSaveDisabled());
-        personalInfoPage.personalInfo().setUsername("abc");
-        assertFalse(personalInfoPage.personalInfo().isSaveDisabled());
+        personalInfoPage.setUsername("");
+        personalInfoPage.assertSaveDisabled(false);
+        personalInfoPage.assertUsernameValid(false);
+        personalInfoPage.setUsername("hsimpson");
+        personalInfoPage.assertUsernameValid(true);
 
         // clear email
-        personalInfoPage.personalInfo().setEmail("");
-        assertTrue(personalInfoPage.personalInfo().isSaveDisabled());
-        personalInfoPage.personalInfo().setEmail("vmuzikar@redhat.com");
-        assertFalse(personalInfoPage.personalInfo().isSaveDisabled());
-
+        personalInfoPage.setEmail("");
+        personalInfoPage.assertEmailValid(false);
+        personalInfoPage.setEmail("hsimpson@springfield.com");
+        personalInfoPage.assertEmailValid(true);
         // TODO test email validation (blocked by KEYCLOAK-8098)
 
         // clear first name
-        personalInfoPage.personalInfo().setFirstName("");
-        assertTrue(personalInfoPage.personalInfo().isSaveDisabled());
-        personalInfoPage.personalInfo().setFirstName("abc");
-        assertFalse(personalInfoPage.personalInfo().isSaveDisabled());
+        personalInfoPage.setFirstName("");
+        personalInfoPage.assertFirstNameValid(false);
+        personalInfoPage.setFirstName("Homer");
+        personalInfoPage.assertFirstNameValid(true);
 
         // clear last name
-        personalInfoPage.personalInfo().setLastName("");
-        assertTrue(personalInfoPage.personalInfo().isSaveDisabled());
-        personalInfoPage.personalInfo().setLastName("abc");
-        assertFalse(personalInfoPage.personalInfo().isSaveDisabled());
+        personalInfoPage.setLastName("");
+        personalInfoPage.assertLastNameValid(false);
+        personalInfoPage.setLastName("Simpson");
+        personalInfoPage.assertLastNameValid(true);
 
         // duplicity tests
         ApiUtil.createUserWithAdminClient(testRealmResource(), testUser2);
         // duplicate username
-        personalInfoPage.personalInfo().setUsername(testUser2.getUsername());
-        personalInfoPage.personalInfo().clickSave();
-        personalInfoPage.alert().assertDanger("Username already exists.");
-        personalInfoPage.personalInfo().setUsername(testUser.getUsername());
+        personalInfoPage.setUsername(testUser2.getUsername());
+        personalInfoPage.clickSave();
+        personalInfoPage.alert().assertDanger();
+        // TODO assert actual error message and that the field is marked as invalid (KEYCLOAK-12102)
+        personalInfoPage.setUsername(testUser.getUsername());
         // duplicate email
-        personalInfoPage.personalInfo().setEmail(testUser2.getEmail());
-        personalInfoPage.personalInfo().clickSave();
-        personalInfoPage.alert().assertDanger("Email already exists.");
+        personalInfoPage.setEmail(testUser2.getEmail());
+        personalInfoPage.clickSave();
+        personalInfoPage.alert().assertDanger();
+        // TODO assert actual error message and that the field is marked as invalid (KEYCLOAK-12102)
         // check no changes were saved
         personalInfoPage.navigateTo();
-        personalInfoPage.personalInfo().valuesEqual(testUser);
+        personalInfoPage.valuesEqual(testUser);
     }
 
     @Test
     public void disabledEditUsername() {
         setEditUsernameAllowed(false);
 
-        assertTrue(personalInfoPage.personalInfo().isUsernameDisabled());
-        personalInfoPage.personalInfo().setValues(testUser2);
-        personalInfoPage.personalInfo().clickSave();
+        personalInfoPage.assertUsernameDisabled(true);
+        personalInfoPage.setValues(testUser2, false);
+        personalInfoPage.clickSave();
         personalInfoPage.alert().assertSuccess();
 
         testUser2.setUsername(testUser.getUsername()); // the username should remain the same
         personalInfoPage.navigateTo();
-        personalInfoPage.personalInfo().valuesEqual(testUser2);
+        personalInfoPage.valuesEqual(testUser2);
     }
 
     private void setEditUsernameAllowed(boolean value) {
         RealmRepresentation realm = testRealmResource().toRepresentation();
         realm.setEditUsernameAllowed(value);
         testRealmResource().update(realm);
-        personalInfoPage.navigateTo();
+        refreshPageAndWaitForLoad();
     }
 }

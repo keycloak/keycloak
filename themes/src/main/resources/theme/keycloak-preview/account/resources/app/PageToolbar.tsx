@@ -85,7 +85,7 @@ export class PageToolbar extends React.Component<PageToolbarProps, PageToolbarSt
                         <Dropdown
                             isPlain
                             position="right"
-                            toggle={<KebabToggle onToggle={this.onKebabDropdownToggle} />}
+                            toggle={<KebabToggle id="mobileKebab" onToggle={this.onKebabDropdownToggle} />}
                             isOpen={this.state.isKebabDropdownOpen}
                             dropdownItems={kebabDropdownItems}
                         />

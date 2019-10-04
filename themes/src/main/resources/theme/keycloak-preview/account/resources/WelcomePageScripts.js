@@ -42,9 +42,9 @@ var toggleLocaleDropdown = function () {
 };
 
 var toggleMobileDropdown = function () {
-    var mobileDropdown = document.getElementById("mobileDropdown");
-    var mobileKebab = document.getElementById("mobileKebab");
-    var mobileKebabButton = document.getElementById("mobileKebabButton");
+    var mobileDropdown = document.getElementById("landingMobileDropdown");
+    var mobileKebab = document.getElementById("landingMobileKebab");
+    var mobileKebabButton = document.getElementById("landingMobileKebabButton");
     if (mobileDropdown.style.display === 'none') {
         mobileDropdown.style.display = 'block';
         mobileKebab.classList.add("pf-m-expanded");
@@ -57,23 +57,23 @@ var toggleMobileDropdown = function () {
 };
 
 var toggleMobileChooseLocale = function() {
-    var mobileLocaleSelectedIcon = document.getElementById("mobileLocaleSelectedIcon");
+    var mobileLocaleSelectedIcon = document.getElementById("landingMobileLocaleSelectedIcon");
     var isDropdownClosed = mobileLocaleSelectedIcon.classList.contains("fa-angle-right");
-    var mobileLocaleSeperator = document.getElementById("mobileLocaleSeperator");
+    var mobileLocaleSeparator = document.getElementById("landingMobileLocaleSeparator");
     
     if (isDropdownClosed) {
         mobileLocaleSelectedIcon.classList.remove("fa-angle-right");
         mobileLocaleSelectedIcon.classList.add("fa-angle-down");
-        mobileLocaleSeperator.style.display = 'block';
+        mobileLocaleSeparator.style.display = 'block';
     } else {
         mobileLocaleSelectedIcon.classList.add("fa-angle-right");
         mobileLocaleSelectedIcon.classList.remove("fa-angle-down");
-        mobileLocaleSeperator.style.display = 'none';
+        mobileLocaleSeparator.style.display = 'none';
     }
     
     for (var i=0; i < availableLocales.length; i++) {
         if (locale === availableLocales[i].locale) continue; // don't unhide current locale
-        var mobileLocaleSelection = document.getElementById("mobile-locale-" + availableLocales[i].locale);
+        var mobileLocaleSelection = document.getElementById("landing-mobile-locale-" + availableLocales[i].locale);
         if (isDropdownClosed) {
             mobileLocaleSelection.style.display= 'inline';
         } else {

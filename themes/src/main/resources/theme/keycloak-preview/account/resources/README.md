@@ -58,3 +58,15 @@ If you start using a new PatternFly 4 component or icon and the component is not
 So to fix the problem, edit `system.config.js` and follow the instructions in the file for components and icons.  
 
 Note that you will also need to fix this problem for any components and icons used by the parent component.  Unfortunately, this may require looking at the source code for patternfly-react.  See https://github.com/patternfly/patternfly-react/tree/master/packages/patternfly-4/react-core/src/components
+
+Running tests
+-------------
+1. Build New Account Console as stated in the "Building" chapter above
+1. Build the project (no need to build the whole distribution).
+1. Run:
+```
+mvn clean verify -f testsuite/integration-arquillian/tests/other/base-ui -Dtest=**.account2.**  -Dkeycloak.profile.feature.account2=enabled -Dkeycloak.profile.feature.account_api=enabled -Dbrowser=chrome
+```
+Use `chrome` or `firefox` as the browser, other browsers are currently broken for the testsuite.
+
+**You need to rebuild the `themes` module prior to running tests every time you make a change to the Account Console**

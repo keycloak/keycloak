@@ -41,7 +41,6 @@ import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.common.util.Retry;
-import org.keycloak.testsuite.auth.page.account2.ChangePasswordPage;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
 import org.keycloak.testsuite.pages.AccountApplicationsPage;
 import org.keycloak.testsuite.pages.AccountFederatedIdentityPage;
@@ -127,9 +126,6 @@ public abstract class AbstractBaseBrokerTest extends AbstractKeycloakTest {
 
     @Page
     protected OAuthGrantPage grantPage;
-
-    @Page
-    protected ChangePasswordPage changePasswordPage;
 
     protected TimeBasedOTP totp = new TimeBasedOTP();
 

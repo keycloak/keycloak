@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 Red Hat, Inc. and/or its affiliates
+ * Copyright 2019 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,17 +15,23 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.auth.page.account2.fragment;
+package org.keycloak.testsuite.ui.account2;
 
-import org.jboss.arquillian.drone.api.annotation.Drone;
-import org.openqa.selenium.WebDriver;
+import org.jboss.arquillian.graphene.page.Page;
+import org.keycloak.testsuite.ui.account2.page.AbstractLoggedInPage;
+import org.keycloak.testsuite.ui.account2.page.DeviceActivityPage;
 
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
-public abstract class Card {
-    @Drone
-    private WebDriver driver;
+public class DeviceActivityTest extends BaseAccountPageTest {
+    @Page
+    private DeviceActivityPage deviceActivityPage;
 
-    public abstract boolean isVisible();
+    @Override
+    protected AbstractLoggedInPage getAccountPage() {
+        return deviceActivityPage;
+    }
+
+    // TODO implement this! (KEYCLOAK-12106)
 }

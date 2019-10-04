@@ -172,14 +172,16 @@ export class AccountPage extends React.Component<AccountPageProps, AccountPageSt
                         </TextInput>
                     </FormGroup>
                     <ActionGroup>
-                        <Button 
+                        <Button
+                            id="save-btn"
                             variant="primary"
                             isDisabled={!this.state.canSubmit && this.requiredFieldsHaveData()}
                             onClick={this.handleSubmit}
                         >
                             <Msg msgKey="doSave"/>                          
                         </Button>
-                        <Button 
+                        <Button
+                            id="cancel-btn"
                             variant="secondary"
                             onClick={this.handleCancel}
                         >

@@ -31,7 +31,7 @@ interface LogoutProps {}
 export class LogoutButton extends React.Component<LogoutProps> {
     public render(): React.ReactNode {
         return (
-            <Button onClick={handleLogout}><Msg msgKey="doSignOut"/></Button>
+            <Button id="signOutButton" onClick={handleLogout}><Msg msgKey="doSignOut"/></Button>
         );
     }
 }
@@ -40,7 +40,7 @@ interface LogoutDropdownItemProps {}
 export class LogoutDropdownItem extends React.Component<LogoutDropdownItemProps> {
     public render(): React.ReactNode {
         return (
-            <DropdownItem key="logout" onClick={handleLogout}>
+            <DropdownItem id="signOutLink" key="logout" onClick={handleLogout}>
                 {Msg.localize('doSignOut')}
             </DropdownItem>
         );

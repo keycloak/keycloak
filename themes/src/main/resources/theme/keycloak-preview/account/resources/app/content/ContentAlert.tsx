@@ -84,11 +84,12 @@ export class ContentAlert extends React.Component<ContentAlertProps, ContentAler
             { this.state.isVisible &&
                 <section className="pf-c-page__main-section pf-m-light">
                     <Alert
+                      id="content-alert"
                       title=''
                       variant={this.state.variant}
                       variantLabel=''
                       aria-label=''
-                      action={<AlertActionCloseButton onClose={this.hideAlert} />}
+                      action={<AlertActionCloseButton id="content-alert-close" onClose={this.hideAlert} />}
                     >
                         {this.state.message}
                     </Alert>
