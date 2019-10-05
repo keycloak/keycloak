@@ -27,10 +27,10 @@ The following example shows how to initialize the JavaScript adapter:
 <head>
     <script src="keycloak.js"></script>
     <script>
-        var keycloak = Keycloak();
-        keycloak.init().success(function(authenticated) {
+        var keycloak = new Keycloak();
+        keycloak.init({ promiseType: 'native' }).then(function(authenticated) {
             alert(authenticated ? 'authenticated' : 'not authenticated');
-        }).error(function() {
+        }).catch(function() {
             alert('failed to initialize');
         });
     </script>
@@ -41,14 +41,14 @@ If the `keycloak.json` file is in a different location you can specify it:
 
 [source,javascript]
 ----
-var keycloak = Keycloak('http://localhost:8080/myapp/keycloak.json');
+var keycloak = new Keycloak('http://localhost:8080/myapp/keycloak.json');
 ----
 
 Alternatively, you can pass in a JavaScript object with the required configuration instead:
 
 [source,javascript]
 ----
-var keycloak = Keycloak({
+var keycloak = new Keycloak({
     url: 'http://keycloak-server/auth',
     realm: 'myrealm',
     clientId: 'myapp'
@@ -69,7 +69,11 @@ This URI needs to be a valid endpoint in the application (and of course it must 
 
 [source,javascript]
 ----
-keycloak.init({ onLoad: 'check-sso', silentCheckSsoRedirectUri: window.location.origin + '/silent-check-sso.html'})
+keycloak.init({
+    onLoad: 'check-sso',
+    silentCheckSsoRedirectUri: window.location.origin + '/silent-check-sso.html',
+    promiseType: 'native',
+})
 ----
 
 The page at the silent check-sso redirect uri is loaded in the iframe after successfully checking your authentication state and retrieving the tokens from the {project_name} server.
@@ -93,7 +97,10 @@ To enable `login-required` set `onLoad` to `login-required` and pass to the init
 
 [source,javascript]
 ----
-keycloak.init({ onLoad: 'login-required' })
+keycloak.init({
+    onLoad: 'login-required',
+    promiseType: 'native',
+})
 ----
 
 After the user is authenticated the application can make requests to RESTful services secured by {project_name} by including the bearer token in the
@@ -126,14 +133,14 @@ var loadData = function () {
 ----
 
 One thing to keep in mind is that the access token by default has a short life expiration so you may need to refresh the access token prior to sending the
-request. You can do this by the `updateToken` method. The `updateToken` method returns a promise object which makes it easy to invoke the service only if the
-token was successfully refreshed and for example display an error to the user if it wasn't. For example:
+request. You can do this by the `updateToken` method. The `updateToken` method returns a promise which makes it easy to invoke the service only if the
+token was successfully refreshed and display an error to the user if it wasn't. For example:
 
 [source,javascript]
 ----
-keycloak.updateToken(30).success(function() {
+keycloak.updateToken(30).then(function() {
     loadData();
-}).error(function() {
+}).catch(function() {
     alert('Failed to refresh token');
 });
 ----
@@ -167,7 +174,10 @@ You also need to pass the parameter `flow` with value `implicit` to `init` metho
 
 [source,javascript]
 ----
-keycloak.init({ flow: 'implicit' })
+keycloak.init({
+    flow: 'implicit',
+    promiseType: 'native',
+})
 ----
 
 One thing to note is that only an access token is provided and there is no refresh token. This means that once the access token has expired the application
@@ -187,7 +197,10 @@ For the Hybrid flow, you need to pass the parameter `flow` with value `hybrid` t
 
 [source,javascript]
 ----
-keycloak.init({ flow: 'hybrid' })
+keycloak.init({
+    flow: 'hybrid',
+    promiseType: 'native',
+})
 ----
 
 [#hybrid-apps-with-cordova]
@@ -215,7 +228,10 @@ You can activate the native mode by passing the adapter type `cordova-native` to
 
 [source,javascript]
 ----
-keycloak.init({ adapter: 'cordova-native' })
+keycloak.init({
+    adapter: 'cordova-native',
+    promiseType: 'native',
+})
 ----
 
 This adapter required two additional plugins:
@@ -253,6 +269,27 @@ Example polyfill libraries:
 * Base64 - https://github.com/davidchambers/Base64.js
 * HTML5 History - https://github.com/devote/HTML5-History-API
 * Promise - https://github.com/stefanpenner/es6-promise
+
+==== A note about `promiseType`
+
+Throughout the examples in the documentation you will find `promiseType: 'native'` specified wherever {project_name} is initialized.
+Historically {project_name} has used its own implementation of promises that is not compatible with native promises as provided by the browser.
+By default {project_name}'s own promise implementation (also known as `promiseType: 'legacy'`) will be used if no promise type is specified.
+
+In future versions of {project_name} the default promise type will change from `legacy` to `native`. Eventually, support for legacy promises will be removed entirely. It is therefore highly recommended that you always specify `promiseType: 'native'` to future-proof your code.
+
+==== Native promises and TypeScript
+
+If you want to use native promises and get correct type information when using TypeScript you will have to specify the `promiseType` when constructing a new instance of Keycloak.
+
+[source,javascript]
+----
+// Typescript assumes this is a 'legacy' promise, all methods return .success() and .error()
+const keycloak = new Keycloak();
+
+// Typescript assumes this is a native promise, all methods return standard promises
+const keycloak = new Keycloak<'native'>();
+----
 
 ==== JavaScript Adapter Reference
 
@@ -345,7 +382,7 @@ Options is an Object, where:
 * promiseType - If set to `native` all methods returning a promise will return a native JavaScript promise. If not set will return Keycloak specific promise objects.
 * enableLogging - Enables logging messages from Keycloak to the console (default is false).
 
-Returns promise to set functions to be invoked on success or error.
+Returns a promise that resolves when initialization completes.
 
 ====== login(options)
 
@@ -424,18 +461,17 @@ Returns true if the token has the given role for the resource (resource is optio
 
 Loads the users profile.
 
-Returns promise to set functions to be invoked if the profile was loaded successfully, or if the profile could not be
-loaded.
+Returns a promise that resolves with the profile.
 
 For example:
 
 [source,javascript]
 ----
-keycloak.loadUserProfile().success(function(profile) {
-        alert(JSON.stringify(profile, null, "  "));
-    }).error(function() {
-        alert('Failed to load user profile');
-    });
+keycloak.loadUserProfile().then(function(profile) {
+    alert(JSON.stringify(profile, null, "  "));
+}).catch(function() {
+    alert('Failed to load user profile');
+});
 ----
 
 ====== isTokenExpired(minValidity)
@@ -447,20 +483,21 @@ Returns true if the token has less than minValidity seconds left before it expir
 If the token expires within minValidity seconds (minValidity is optional, if not specified 5 is used) the token is refreshed.
 If the session status iframe is enabled, the session status is also checked.
 
-Returns promise to set functions that can be invoked if the token is still valid, or if the token is no longer valid.
+Returns a promise that resolves with a boolean indicating whether or not the token has been refreshed.
+
 For example:
 
 [source,javascript]
 ----
-keycloak.updateToken(5).success(function(refreshed) {
-        if (refreshed) {
-            alert('Token was successfully refreshed');
-        } else {
-            alert('Token is still valid');
-        }
-    }).error(function() {
-        alert('Failed to refresh the token, or the session has expired');
-    });
+keycloak.updateToken(5).then(function(refreshed) {
+    if (refreshed) {
+        alert('Token was successfully refreshed');
+    } else {
+        alert('Token is still valid');
+    }
+}).catch(function() {
+    alert('Failed to refresh the token, or the session has expired');
+});
 ----
 
 ====== clearToken()
