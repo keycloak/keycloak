@@ -10,6 +10,7 @@ List of organization names below is based on information collected using Keycloa
 * Actinver
 * Akvo Foundation
 * Appier
+* Associazione Rousseau
 * BISPRO
 * Bluestem Brands, Inc
 * Bundesversicherungsamt
