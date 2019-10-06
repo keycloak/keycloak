@@ -12,7 +12,7 @@
             <select id="available" class="form-control" size="5"
                     ng-dblclick="selectRealmRole()"
                     ng-model="selectedRealmRole.role"
-                    ng-options="r.name for r in realmRoles | orderBy:'toString()'">
+                    ng-options="r.name for r in realmRoles | orderBy:'name'">
                 <option style="display:none" value="">{{:: 'select-a-role' | translate}}</option>
             </select>
             <button class="btn btn-default" type="submit" data-ng-disabled="!selectedRealmRole.role" ng-click="selectRealmRole()" tooltip-trigger="mouseover mouseout" tooltip="Select realm role" tooltip-placement="right">
@@ -23,13 +23,13 @@
             <label class="control-label">
                 <span>{{:: 'client-roles' | translate}}</span>
                 <kc-tooltip>{{:: 'client-roles.tooltip' | translate}}</kc-tooltip>
-                <select class="form-control" id="clients" name="clients" ng-change="changeClient()" ng-model="client.selected" ng-options="a.clientId for a in clients" ng-disabled="false">
+                <select class="form-control" id="clients" name="clients" ng-change="changeClient()" ng-model="client.selected" ng-options="a.clientId for a in clients | orderBy:'clientId'" ng-disabled="false">
                 </select>
             </label>
             <select id="available-client" class="form-control" size="5"
                     ng-dblclick="selectClientRole()"
                     ng-model="selectedClientRole.role"
-                    ng-options="r.name for r in clientRoles | orderBy:'toString()'">
+                    ng-options="r.name for r in clientRoles | orderBy:'name'">
                 <option style="display:none" value="">{{:: 'select-a-role' | translate}}</option>
             </select>
             <button class="btn btn-default" type="submit" data-ng-disabled="!selectedClientRole.role" ng-click="selectClientRole()" tooltip-trigger="mouseover mouseout" tooltip="Select client role" tooltip-placement="right">
