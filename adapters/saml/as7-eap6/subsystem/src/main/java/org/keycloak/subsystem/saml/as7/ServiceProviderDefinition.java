@@ -60,6 +60,11 @@ public class ServiceProviderDefinition extends SimpleResourceDefinition {
                     .setXmlName(Constants.XML.FORCE_AUTHENTICATION)
                     .build();
 
+    static final SimpleAttributeDefinition KEEP_DOM_ASSERTION =
+            new SimpleAttributeDefinitionBuilder(Constants.Model.KEEP_DOM_ASSERTION, ModelType.BOOLEAN, true)
+                    .setXmlName(Constants.XML.KEEP_DOM_ASSERTION)
+                    .build();
+
     static final SimpleAttributeDefinition IS_PASSIVE =
             new SimpleAttributeDefinitionBuilder(Constants.Model.IS_PASSIVE, ModelType.BOOLEAN, true)
                     .setXmlName(Constants.XML.IS_PASSIVE)
@@ -96,7 +101,7 @@ public class ServiceProviderDefinition extends SimpleResourceDefinition {
                     .build();
 
     static final SimpleAttributeDefinition[] ATTRIBUTES = {SSL_POLICY, NAME_ID_POLICY_FORMAT, LOGOUT_PAGE, FORCE_AUTHENTICATION,
-            IS_PASSIVE, TURN_OFF_CHANGE_SESSSION_ID_ON_LOGIN};
+            IS_PASSIVE, TURN_OFF_CHANGE_SESSSION_ID_ON_LOGIN, KEEP_DOM_ASSERTION};
     static final AttributeDefinition[] ELEMENTS = {PRINCIPAL_NAME_MAPPING_POLICY, PRINCIPAL_NAME_MAPPING_ATTRIBUTE_NAME, ROLE_ATTRIBUTES,
             ROLE_MAPPINGS_PROVIDER_ID, ROLE_MAPPINGS_PROVIDER_CONFIG};
 

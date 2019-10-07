@@ -187,10 +187,9 @@
     },
 
     "vault": {
-        "provider": "${keycloak.vault.provider:plaintext}",
         "plaintext": {
             "dir": "target/dependency/vault",
-            "disabled": false
+            "enabled": "${keycloak.vault.plaintext.provider.enabled:false}"
         }
     }
 }

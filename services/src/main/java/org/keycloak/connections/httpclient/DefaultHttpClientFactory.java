@@ -144,15 +144,8 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
                     String clientKeystorePassword = config.get("client-keystore-password");
                     String clientPrivateKeyPassword = config.get("client-key-password");
                     String[] proxyMappings = config.getArray("proxy-mappings");
-
-                    TruststoreProvider truststoreProvider = session.getProvider(TruststoreProvider.class);
-                    boolean disableTrustManager = truststoreProvider == null || truststoreProvider.getTruststore() == null;
-                    if (disableTrustManager) {
-                        logger.warn("Truststore is disabled");
-                    }
-                    HttpClientBuilder.HostnameVerificationPolicy hostnamePolicy = disableTrustManager ? null
-                            : HttpClientBuilder.HostnameVerificationPolicy.valueOf(truststoreProvider.getPolicy().name());
-
+                    boolean disableTrustManager = config.getBoolean("disable-trust-manager", false);
+                    
                     HttpClientBuilder builder = new HttpClientBuilder();
 
                     builder.socketTimeout(socketTimeout, TimeUnit.MILLISECONDS)
@@ -164,11 +157,13 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
                             .disableCookies(disableCookies)
                             .proxyMappings(ProxyMappings.valueOf(proxyMappings));
 
-                    if (disableTrustManager) {
-                        // TODO: is it ok to do away with disabling trust manager?
-                        //builder.disableTrustManager();
+                    TruststoreProvider truststoreProvider = session.getProvider(TruststoreProvider.class);
+                    boolean disableTruststoreProvider = truststoreProvider == null || truststoreProvider.getTruststore() == null;
+                    
+                    if (disableTruststoreProvider) {
+                    	logger.warn("TruststoreProvider is disabled");
                     } else {
-                        builder.hostnameVerification(hostnamePolicy);
+                        builder.hostnameVerification(HttpClientBuilder.HostnameVerificationPolicy.valueOf(truststoreProvider.getPolicy().name()));
                         try {
                             builder.trustStore(truststoreProvider.getTruststore());
                         } catch (Exception e) {
@@ -176,6 +171,11 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
                         }
                     }
 
+                    if (disableTrustManager) {
+                    	logger.warn("TrustManager is disabled");
+                    	builder.disableTrustManager();
+                    }
+                    
                     if (clientKeystore != null) {
                         clientKeystore = EnvUtil.replace(clientKeystore);
                         try {

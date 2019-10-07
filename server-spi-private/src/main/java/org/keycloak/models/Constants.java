@@ -18,6 +18,7 @@
 package org.keycloak.models;
 
 import org.keycloak.OAuth2Constants;
+import org.keycloak.crypto.Algorithm;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -54,6 +55,11 @@ public final class Constants {
     // KEYCLOAK-7688 Offline Session Max for Offline Token
     // 60 days
     public static final int DEFAULT_OFFLINE_SESSION_MAX_LIFESPAN = 5184000;
+
+    public static final String DEFAULT_WEBAUTHN_POLICY_SIGNATURE_ALGORITHMS = Algorithm.ES256;
+    public static final String DEFAULT_WEBAUTHN_POLICY_RP_ENTITY_NAME = "keycloak";
+    // it stands for optional parameter not specified in WebAuthn
+    public static final String DEFAULT_WEBAUTHN_POLICY_NOT_SPECIFIED = "not specified";
 
     public static final String VERIFY_EMAIL_KEY = "VERIFY_EMAIL_KEY";
     public static final String VERIFY_EMAIL_CODE = "VERIFY_EMAIL_CODE";

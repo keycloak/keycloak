@@ -26,7 +26,7 @@ import org.keycloak.models.KeycloakSessionFactory;
  */
 public class DigitsPasswordPolicyProviderFactory implements PasswordPolicyProviderFactory {
 
-    static final String ID = "digits";
+    public static final String ID = "digits";
 
     @Override
     public String getId() {

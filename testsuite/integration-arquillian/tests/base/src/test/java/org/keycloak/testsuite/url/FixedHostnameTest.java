@@ -4,9 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.jboss.arquillian.container.test.api.ContainerController;
 import org.jboss.arquillian.test.api.ArquillianResource;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Ignore;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.client.registration.Auth;
@@ -24,11 +22,11 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
 import org.keycloak.testsuite.util.AdminClientUtil;
+import org.keycloak.testsuite.util.ContainerAssume;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.wildfly.extras.creaper.core.online.OnlineManagementClient;
 import org.wildfly.extras.creaper.core.online.operations.admin.Administration;
 
-import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.List;
 
@@ -55,6 +53,11 @@ public class FixedHostnameTest extends AbstractKeycloakTest {
         customHostname.getAttributes().put("hostname", "custom-domain.127.0.0.1.nip.io");
 
         testRealms.add(customHostname);
+    }
+
+    @BeforeClass
+    public static void enabled() {
+        ContainerAssume.assumeNotAuthServerRemote();
     }
 
     @Test

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <!--
-  ~ Copyright 2016 Red Hat, Inc. and/or its affiliates
+  ~ Copyright 2019 Red Hat, Inc. and/or its affiliates
   ~ and other contributors as indicated by the @author tags.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
@@ -84,6 +84,11 @@
                 <xs:documentation>Redirected unauthenticated request to a login page</xs:documentation>
             </xs:annotation>
         </xs:attribute>
+        <xs:attribute name="keepDOMAssertion" type="xs:boolean" use="optional">
+                <xs:annotation>
+                    <xs:documentation>Attribute to inject the DOM representation of the assertion into the SamlPrincipal (respecting the original syntax). Default value is false</xs:documentation>
+                </xs:annotation>
+        </xs:attribute>
         <xs:attribute name="isPassive" type="xs:boolean" use="optional">
             <xs:annotation>
                 <xs:documentation>If user isn't logged in just return with an error.  Used to check if a user is already logged in or not</xs:documentation>
@@ -100,6 +105,11 @@
             <xs:element name="SingleSignOnService" minOccurs="1" maxOccurs="1" type="single-signon-type"/>
             <xs:element name="SingleLogoutService" minOccurs="0" maxOccurs="1" type="single-logout-type"/>
             <xs:element name="Keys" minOccurs="0" maxOccurs="1" type="keys-type"/>
+            <xs:element name="AllowedClockSkew" type="allowed-clock-skew-type" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>This defines the allowed clock skew between IDP and SP in milliseconds. The default value is 0.</xs:documentation>
+                </xs:annotation>
+            </xs:element>
         </xs:all>
         <xs:attribute name="entityID" type="xs:string" use="required">
             <xs:annotation>
@@ -331,4 +341,28 @@
             </xs:annotation>
         </xs:attribute>
     </xs:complexType>
+
+    <xs:complexType name="allowed-clock-skew-type">
+        <xs:annotation>
+            <xs:documentation>The value is the allowed clock skew between the IDP and the SP.</xs:documentation>
+        </xs:annotation>
+        <xs:simpleContent>
+            <xs:extension base="xs:positiveInteger">
+                <xs:attribute name="unit" type="clock-skew-unit-type"/>
+            </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
+    <xs:simpleType name="clock-skew-unit-type">
+        <xs:annotation>
+            <xs:documentation>Time unit for the value of the clock skew.</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="MINUTES" />
+            <xs:enumeration value="SECONDS" />
+            <xs:enumeration value="MILLISECONDS" />
+            <xs:enumeration value="MICROSECONDS" />
+            <xs:enumeration value="NANOSECONDS" />
+        </xs:restriction>
+    </xs:simpleType>
+
 </xs:schema>

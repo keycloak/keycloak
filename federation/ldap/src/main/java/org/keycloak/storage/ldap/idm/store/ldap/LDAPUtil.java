@@ -89,7 +89,7 @@ public class LDAPUtil {
      * <p>The returned string is useful to perform queries on AD based on the <code>objectGUID</code> value. Eg.:</p>
      *
      * <p>
-     * String filter = "(&(objectClass=*)(objectGUID" + EQUAL + convertObjectGUIToByteString(objectGUID) + "))";
+     * String filter = "(&(objectClass=*)(objectGUID" + EQUAL + convertObjectGUIDToByteString(objectGUID) + "))";
      * </p>
      *
      * @param objectGUID A raw byte array representing the value of the <code>objectGUID</code> attribute retrieved from
@@ -97,7 +97,7 @@ public class LDAPUtil {
      *
      * @return A byte-based String representation in the form of \[0]\[1]\[2]\[3]\[4]\[5]\[6]\[7]\[8]\[9]\[10]\[11]\[12]\[13]\[14]\[15]
      */
-    public static String convertObjectGUIToByteString(byte[] objectGUID) {
+    public static String convertObjectGUIDToByteString(byte[] objectGUID) {
         StringBuilder result = new StringBuilder();
 
         for (int i = 0; i < objectGUID.length; i++) {
@@ -132,6 +132,24 @@ public class LDAPUtil {
         displayStr.append(convertToDashedString(objectGUID));
 
         return displayStr.toString();
+    }
+
+    /**
+     * <p>Decode a raw byte array representing the value of the <code>guid</code> attribute retrieved from Novell
+     * eDirectory.</p>
+     *
+     * @param guid A raw byte array representing the value of the <code>guid</code> attribute retrieved from
+     * Novell eDirectory.
+     *
+     * @return A string representing the decoded value in the form of [0][1][2][3]-[4][5]-[6][7]-[8][9]-[10][11][12][13][14][15].
+     */
+    public static String decodeGuid(byte[] guid) {
+        byte[] withBigEndian = new byte[] { guid[3], guid[2], guid[1], guid[0],
+            guid[5], guid[4],
+            guid[7], guid[6],
+            guid[8], guid[9], guid[10], guid[11], guid[12], guid[13], guid[14], guid[15]
+        };
+        return convertToDashedString(withBigEndian);
     }
 
     private static String convertToDashedString(byte[] objectGUID) {

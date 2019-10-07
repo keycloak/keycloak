@@ -17,11 +17,16 @@
 
 package org.keycloak.testsuite.admin;
 
+import org.jboss.arquillian.container.test.api.ContainerController;
+import org.jboss.arquillian.test.api.ArquillianResource;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.keycloak.services.managers.LDAPConnectionTestManager;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.util.LDAPRule;
+import org.keycloak.testsuite.util.VaultUtils;
 
 import javax.ws.rs.core.Response;
 
@@ -32,6 +37,26 @@ public class UserFederationLdapConnectionTest extends AbstractAdminTest {
 
     @ClassRule
     public static LDAPRule ldapRule = new LDAPRule();
+
+    @ArquillianResource
+    protected ContainerController controller;
+
+    @Before
+    public void beforeUserFederationLdapConnectionTest() throws Exception {
+        VaultUtils.enableVault(suiteContext, controller);
+        reconnectAdminClient();
+
+        super.setRealm();
+    }
+
+    @Override
+    public void setRealm() {}
+
+    @After
+    public void afterLDAPVaultTest() throws Exception {
+        VaultUtils.disableVault(suiteContext, controller);
+        reconnectAdminClient();
+    }
 
     @Test
     public void testLdapConnections1() {

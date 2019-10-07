@@ -176,6 +176,9 @@ public final class LDAPContextManager implements AutoCloseable {
         if (ldapConfig.isObjectGUID()) {
             binaryAttrsBuilder.append(LDAPConstants.OBJECT_GUID).append(" ");
         }
+        if (ldapConfig.isEdirectory()) {
+            binaryAttrsBuilder.append(LDAPConstants.NOVELL_EDIRECTORY_GUID).append(" ");
+        }
         for (String attrName : ldapConfig.getBinaryAttributeNames()) {
             binaryAttrsBuilder.append(attrName).append(" ");
         }

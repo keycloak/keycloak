@@ -21,6 +21,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.WebAuthnPolicy;
 import org.keycloak.services.DefaultKeycloakSession;
 import org.keycloak.services.DefaultKeycloakSessionFactory;
 
@@ -29,6 +30,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 
 /**
  * Tests for {@link PlainTextVaultProviderFactory}.
@@ -43,7 +45,7 @@ public class PlainTextVaultProviderFactoryTest {
     @Test
     public void shouldInitializeVaultCorrectly() {
         //given
-        VaultConfig config = new VaultConfig(Scenario.EXISTING.getAbsolutePathAsString(), Boolean.FALSE);
+        VaultConfig config = new VaultConfig(Scenario.EXISTING.getAbsolutePathAsString());
         PlainTextVaultProviderFactory factory = new PlainTextVaultProviderFactory();
 
         KeycloakSession session = new DefaultKeycloakSession(new DefaultKeycloakSessionFactory());
@@ -55,44 +57,12 @@ public class PlainTextVaultProviderFactoryTest {
 
         //then
         assertNotNull(provider);
-    }
-
-    @Test
-    public void shouldInitializeCorrectlyWithNullDisabledFlag() {
-        //given
-        VaultConfig config = new VaultConfig(Scenario.EXISTING.getAbsolutePathAsString(), null);
-        PlainTextVaultProviderFactory factory = new PlainTextVaultProviderFactory();
-
-        KeycloakSession session = new DefaultKeycloakSession(new DefaultKeycloakSessionFactory());
-        session.getContext().setRealm(new VaultRealmModel());
-
-        //when
-        factory.init(config);
-        VaultProvider provider = factory.create(session);
-
-        //then
-        assertNotNull(provider);
-    }
-
-    @Test
-    public void shouldThrowAnExceptionWhenTryingToCreateProviderOnDisabledFactory() {
-        //given
-        VaultConfig config = new VaultConfig(Scenario.EXISTING.getAbsolutePathAsString(), Boolean.TRUE);
-        PlainTextVaultProviderFactory factory = new PlainTextVaultProviderFactory();
-
-        expectedException.expect(IllegalStateException.class);
-
-        //when
-        factory.init(config);
-        factory.create(null);
-
-        //then - verified by the ExpectedException rule
     }
 
     @Test
     public void shouldThrowAnExceptionWhenUsingNonExistingDirectory() {
         //given
-        VaultConfig config = new VaultConfig(Scenario.NON_EXISTING.getAbsolutePathAsString(), Boolean.FALSE);
+        VaultConfig config = new VaultConfig(Scenario.NON_EXISTING.getAbsolutePathAsString());
         PlainTextVaultProviderFactory factory = new PlainTextVaultProviderFactory();
 
         expectedException.expect(VaultNotFoundException.class);
@@ -104,18 +74,17 @@ public class PlainTextVaultProviderFactoryTest {
     }
 
     @Test
-    public void shouldThrowAnExceptionWhenWithNullDirectory() {
+    public void shouldReturnNullWhenWithNullDirectory() {
         //given
-        VaultConfig config = new VaultConfig(null, Boolean.FALSE);
+        VaultConfig config = new VaultConfig(null);
         PlainTextVaultProviderFactory factory = new PlainTextVaultProviderFactory();
-
-        expectedException.expect(IllegalStateException.class);
 
         //when
         factory.init(config);
-        factory.create(null);
+        VaultProvider provider = factory.create(null);
 
-        //then - verified by the ExpectedException rule
+        //then
+        assertNull(provider);
     }
 
     /**
@@ -656,6 +625,16 @@ public class PlainTextVaultProviderFactoryTest {
 
         @Override
         public void setOTPPolicy(OTPPolicy policy) {
+          
+        }
+
+        @Override
+        public WebAuthnPolicy getWebAuthnPolicy() {
+            return null;
+        }
+
+        @Override
+        public void setWebAuthnPolicy(WebAuthnPolicy policy) {
           
         }
 
@@ -1271,11 +1250,9 @@ public class PlainTextVaultProviderFactoryTest {
     private static class VaultConfig implements Config.Scope {
 
         private String vaultDirectory;
-        private Boolean disabled;
 
-        public VaultConfig(String vaultDirectory, Boolean disabled) {
+        public VaultConfig(String vaultDirectory) {
             this.vaultDirectory = vaultDirectory;
-            this.disabled = disabled;
         }
 
         @Override
@@ -1315,7 +1292,7 @@ public class PlainTextVaultProviderFactoryTest {
 
         @Override
         public Boolean getBoolean(String key) {
-            return disabled;
+            throw new UnsupportedOperationException("not implemented");
         }
 
         @Override

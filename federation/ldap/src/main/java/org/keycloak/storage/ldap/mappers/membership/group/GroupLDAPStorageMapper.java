@@ -20,6 +20,8 @@ package org.keycloak.storage.ldap.mappers.membership.group;
 import org.jboss.logging.Logger;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.GroupModel;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionTask;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
@@ -43,6 +45,8 @@ import org.keycloak.storage.ldap.mappers.membership.MembershipType;
 import org.keycloak.storage.ldap.mappers.membership.UserRolesRetrieveStrategy;
 import org.keycloak.storage.user.SynchronizationResult;
 
+import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -193,21 +197,90 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
             Set<String> visitedGroupIds = new HashSet<>();
 
             // Just add flat structure of groups with all groups at top-level
-            for (Map.Entry<String, LDAPObject> groupEntry : ldapGroupsMap.entrySet()) {
-                String groupName = groupEntry.getKey();
-                GroupModel kcExistingGroup = KeycloakModelUtils.findGroupByPath(realm, "/" + groupName);
+            LDAPConfig ldapConfig = ldapProvider.getLdapIdentityStore().getConfig();
+            final int GROUPS_PER_TRANSACTION = ldapConfig.getBatchSizeForSync();
+            for (int processedGroups = 0; processedGroups < ldapGroupsMap.size(); processedGroups += GROUPS_PER_TRANSACTION) {
 
-                if (kcExistingGroup != null) {
-                    updateAttributesOfKCGroup(kcExistingGroup, groupEntry.getValue());
-                    syncResult.increaseUpdated();
-                    visitedGroupIds.add(kcExistingGroup.getId());
-                } else {
-                    GroupModel kcGroup = realm.createGroup(groupName);
-                    updateAttributesOfKCGroup(kcGroup, groupEntry.getValue());
-                    realm.moveGroup(kcGroup, null);
-                    syncResult.increaseAdded();
-                    visitedGroupIds.add(kcGroup.getId());
-                }
+                Map<String, LDAPObject> groupsInTransaction = new HashMap<>();
+                ldapGroupsMap.entrySet().stream().skip(processedGroups).limit(GROUPS_PER_TRANSACTION).forEach(entry -> groupsInTransaction.put(entry.getKey(), entry.getValue()));
+
+                KeycloakModelUtils.runJobInTransaction(ldapProvider.getSession().getKeycloakSessionFactory(), new KeycloakSessionTask() {
+
+                    @Override
+                    public void run(KeycloakSession session) {
+
+                        // KEYCLOAK-8253 The retrieval of the current realm to operate at, was intentionally left
+                        // outside the following for loop! This prevents the scenario, when LDAP group sync time
+                        // initially improves, but during the time (after ~20K groups are synced) degrades again
+                        // due to the realm cache being bloated with huge amount of (temporary) realm entities
+                        RealmModel currentRealm = session.realms().getRealm(realm.getId());
+
+                        // List of top-level groups known to the whole transaction
+                        ArrayList<GroupModel> transactionTopLevelGroups = new ArrayList<GroupModel>(currentRealm.getTopLevelGroups());
+                        String[] transactionBinarySearchTopLevelGroupsArray = transactionTopLevelGroups.parallelStream().map(g -> g.getName()).toArray(String[]::new);
+
+                        for (Map.Entry<String, LDAPObject> groupEntry : groupsInTransaction.entrySet()) {
+
+                            String groupName = groupEntry.getKey();
+
+                            // Binary search the list of top-level groups known to the outer transaction for presence of the currently processed group
+                            int transactionBinarySearchResult = Arrays.binarySearch(transactionBinarySearchTopLevelGroupsArray, groupName);
+                            GroupModel kcExistingGroup = (transactionBinarySearchResult > 0) ? transactionTopLevelGroups.get(transactionBinarySearchResult) : null;
+
+                            if (kcExistingGroup != null) {
+
+                                try {
+
+                                    // Update each existing group to be synced in its own inner transaction to prevent race condition when
+                                    // the groups intended to be updated was already deleted via other channel in the meantime
+                                    KeycloakModelUtils.runJobInTransaction(ldapProvider.getSession().getKeycloakSessionFactory(), new KeycloakSessionTask() {
+
+                                        @Override
+                                        public void run(KeycloakSession session) {
+
+                                            updateAttributesOfKCGroup(kcExistingGroup, groupEntry.getValue());
+                                            syncResult.increaseUpdated();
+                                            visitedGroupIds.add(kcExistingGroup.getId());
+
+                                        }
+
+                                    });
+
+                                } catch (ModelException me) {
+                                    logger.error(String.format("Failed to update attributes of LDAP group %s: ", groupName), me);
+                                    syncResult.increaseFailed();
+                                }
+
+                            } else {
+
+                                try {
+
+                                    // Create each non-existing group to be synced in its own inner transaction to prevent race condition when
+                                    // the roup intended to be created was already created via other channel in the meantime
+                                    KeycloakModelUtils.runJobInTransaction(ldapProvider.getSession().getKeycloakSessionFactory(), new KeycloakSessionTask() {
+
+                                        @Override
+                                        public void run(KeycloakSession session) {
+
+                                            RealmModel innerTransactionRealm = session.realms().getRealm(realm.getId());
+                                            GroupModel kcGroup = innerTransactionRealm.createGroup(groupName);
+                                            updateAttributesOfKCGroup(kcGroup, groupEntry.getValue());
+                                            innerTransactionRealm.moveGroup(kcGroup, null);
+                                            syncResult.increaseAdded();
+                                            visitedGroupIds.add(kcGroup.getId());
+
+                                        }
+
+                                    });
+
+                                } catch (ModelException me) {
+                                    logger.error(String.format("Failed to sync group %s from LDAP: ", groupName), me);
+                                    syncResult.increaseFailed();
+                                }
+                            }
+                        }
+                    }
+                });
             }
 
             // Possibly remove keycloak groups, which doesn't exists in LDAP
@@ -377,43 +450,42 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
         logger.debugf("Syncing groups from Keycloak into LDAP. Mapper is [%s], LDAP provider is [%s]", mapperModel.getName(), ldapProvider.getModel().getName());
 
         // Query existing LDAP groups
-        try (LDAPQuery ldapQuery = createGroupQuery(config.isPreserveGroupsInheritance())) {
-            List<LDAPObject> ldapGroups = ldapQuery.getResultList();
 
-            // Convert them to Map<String, LDAPObject>
-            Map<String, LDAPObject> ldapGroupsMap = new HashMap<>();
-            String groupsRdnAttr = config.getGroupNameLdapAttribute();
-            for (LDAPObject ldapGroup : ldapGroups) {
-                String groupName = ldapGroup.getAttributeAsString(groupsRdnAttr);
-                ldapGroupsMap.put(groupName, ldapGroup);
+        List<LDAPObject> ldapGroups = getAllLDAPGroups(config.isPreserveGroupsInheritance());
+
+        // Convert them to Map<String, LDAPObject>
+        Map<String, LDAPObject> ldapGroupsMap = new HashMap<>();
+        String groupsRdnAttr = config.getGroupNameLdapAttribute();
+        for (LDAPObject ldapGroup : ldapGroups) {
+            String groupName = ldapGroup.getAttributeAsString(groupsRdnAttr);
+            ldapGroupsMap.put(groupName, ldapGroup);
+        }
+
+
+        // Map to track all LDAP groups also exists in Keycloak
+        Set<String> ldapGroupNames = new HashSet<>();
+
+        // Create or update KC groups to LDAP including their attributes
+        for (GroupModel kcGroup : realm.getTopLevelGroups()) {
+            processKeycloakGroupSyncToLDAP(kcGroup, ldapGroupsMap, ldapGroupNames, syncResult);
+        }
+
+        // If dropNonExisting, then drop all groups, which doesn't exist in KC from LDAP as well
+        if (config.isDropNonExistingGroupsDuringSync()) {
+            Set<String> copy = new HashSet<>(ldapGroupsMap.keySet());
+            for (String groupName : copy) {
+                if (!ldapGroupNames.contains(groupName)) {
+                    LDAPObject ldapGroup = ldapGroupsMap.remove(groupName);
+                    ldapProvider.getLdapIdentityStore().remove(ldapGroup);
+                    syncResult.increaseRemoved();
+                }
             }
+        }
 
-
-            // Map to track all LDAP groups also exists in Keycloak
-            Set<String> ldapGroupNames = new HashSet<>();
-
-            // Create or update KC groups to LDAP including their attributes
+        // Finally process memberships,
+        if (config.isPreserveGroupsInheritance()) {
             for (GroupModel kcGroup : realm.getTopLevelGroups()) {
-                processKeycloakGroupSyncToLDAP(kcGroup, ldapGroupsMap, ldapGroupNames, syncResult);
-            }
-
-            // If dropNonExisting, then drop all groups, which doesn't exist in KC from LDAP as well
-            if (config.isDropNonExistingGroupsDuringSync()) {
-                Set<String> copy = new HashSet<>(ldapGroupsMap.keySet());
-                for (String groupName : copy) {
-                    if (!ldapGroupNames.contains(groupName)) {
-                        LDAPObject ldapGroup = ldapGroupsMap.remove(groupName);
-                        ldapProvider.getLdapIdentityStore().remove(ldapGroup);
-                        syncResult.increaseRemoved();
-                    }
-                }
-            }
-
-            // Finally process memberships,
-            if (config.isPreserveGroupsInheritance()) {
-                for (GroupModel kcGroup : realm.getTopLevelGroups()) {
-                    processKeycloakGroupMembershipsSyncToLDAP(kcGroup, ldapGroupsMap);
-                }
+                processKeycloakGroupMembershipsSyncToLDAP(kcGroup, ldapGroupsMap);
             }
         }
 

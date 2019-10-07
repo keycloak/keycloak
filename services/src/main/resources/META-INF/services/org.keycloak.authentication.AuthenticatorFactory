@@ -43,3 +43,4 @@ org.keycloak.authentication.authenticators.console.ConsoleUsernamePasswordAuthen
 org.keycloak.authentication.authenticators.challenge.BasicAuthAuthenticatorFactory
 org.keycloak.authentication.authenticators.challenge.BasicAuthOTPAuthenticatorFactory
 org.keycloak.authentication.authenticators.challenge.NoCookieFlowRedirectAuthenticatorFactory
+org.keycloak.authentication.authenticators.browser.WebAuthnAuthenticatorFactory

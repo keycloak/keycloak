@@ -26,7 +26,7 @@ import org.keycloak.models.KeycloakSessionFactory;
  */
 public class RegexPatternsPasswordPolicyProviderFactory implements PasswordPolicyProviderFactory {
 
-    static final String ID = "regexPattern";
+    public static final String ID = "regexPattern";
 
     @Override
     public String getId() {
