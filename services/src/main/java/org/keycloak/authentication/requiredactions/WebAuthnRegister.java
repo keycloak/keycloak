@@ -16,6 +16,7 @@
 
 package org.keycloak.authentication.requiredactions;
 
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.List;
 
@@ -35,6 +36,8 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.WebAuthnPolicy;
 
+import com.webauthn4j.converter.util.CborConverter;
+import com.webauthn4j.converter.util.JsonConverter;
 import com.webauthn4j.data.WebAuthnRegistrationContext;
 import com.webauthn4j.data.attestation.authenticator.AttestedCredentialData;
 import com.webauthn4j.data.attestation.statement.AttestationStatement;
@@ -46,14 +49,31 @@ import com.webauthn4j.server.ServerProperty;
 import com.webauthn4j.util.exception.WebAuthnException;
 import com.webauthn4j.validator.WebAuthnRegistrationContextValidationResponse;
 import com.webauthn4j.validator.WebAuthnRegistrationContextValidator;
+import com.webauthn4j.validator.attestation.statement.androidkey.AndroidKeyAttestationStatementValidator;
+import com.webauthn4j.validator.attestation.statement.androidsafetynet.AndroidSafetyNetAttestationStatementValidator;
+import com.webauthn4j.validator.attestation.statement.none.NoneAttestationStatementValidator;
+import com.webauthn4j.validator.attestation.statement.packed.PackedAttestationStatementValidator;
+import com.webauthn4j.validator.attestation.statement.tpm.TPMAttestationStatementValidator;
+import com.webauthn4j.validator.attestation.statement.u2f.FIDOU2FAttestationStatementValidator;
+import com.webauthn4j.validator.attestation.trustworthiness.certpath.CertPathTrustworthinessValidator;
+import com.webauthn4j.validator.attestation.trustworthiness.certpath.NullCertPathTrustworthinessValidator;
+import com.webauthn4j.validator.attestation.trustworthiness.ecdaa.DefaultECDAATrustworthinessValidator;
+import com.webauthn4j.validator.attestation.trustworthiness.self.DefaultSelfAttestationTrustworthinessValidator;
 
 public class WebAuthnRegister implements RequiredActionProvider {
 
     private static final Logger logger = Logger.getLogger(WebAuthnRegister.class);
     private KeycloakSession session;
+    private CertPathTrustworthinessValidator certPathtrustValidator;
 
     public WebAuthnRegister(KeycloakSession session) {
         this.session = session;
+        this.certPathtrustValidator = new NullCertPathTrustworthinessValidator();
+    }
+
+    public WebAuthnRegister(KeycloakSession session, CertPathTrustworthinessValidator certPathtrustValidator) {
+        this.session = session;
+        this.certPathtrustValidator = certPathtrustValidator;
     }
 
     @Override
@@ -129,8 +149,7 @@ public class WebAuthnRegister implements RequiredActionProvider {
 
         try {
             WebAuthnRegistrationContext registrationContext = new WebAuthnRegistrationContext(clientDataJSON, attestationObject, serverProperty, isUserVerificationRequired);
-            // NOTE: not yet verify Attestation Statement based on certificates
-            WebAuthnRegistrationContextValidator webAuthnRegistrationContextValidator = WebAuthnRegistrationContextValidator.createNonStrictRegistrationContextValidator();
+            WebAuthnRegistrationContextValidator webAuthnRegistrationContextValidator = createWebAuthnRegistrationContextValidator();
             WebAuthnRegistrationContextValidationResponse response = webAuthnRegistrationContextValidator.validate(registrationContext);
 
             showInfoAfterWebAuthnApiCreate(response);
@@ -140,7 +159,6 @@ public class WebAuthnRegister implements RequiredActionProvider {
             WebAuthnCredentialModel credential = new WebAuthnCredentialModel();
 
             credential.setAttestedCredentialData(response.getAttestationObject().getAuthenticatorData().getAttestedCredentialData());
-            credential.setAttestationStatement(response.getAttestationObject().getAttestationStatement());
             credential.setCount(response.getAttestationObject().getAuthenticatorData().getSignCount());
 
             this.session.userCredentialManager().updateCredential(context.getRealm(), context.getUser(), credential);
@@ -166,6 +184,22 @@ public class WebAuthnRegister implements RequiredActionProvider {
             setErrorResponse(context, ERR_WEBAUTHN_API_CREATE, e.getMessage());
             return;
         }
+    }
+
+    private WebAuthnRegistrationContextValidator createWebAuthnRegistrationContextValidator() {
+        return new WebAuthnRegistrationContextValidator(
+                Arrays.asList(
+                        new NoneAttestationStatementValidator(),
+                        new PackedAttestationStatementValidator(),
+                        new TPMAttestationStatementValidator(),
+                        new AndroidKeyAttestationStatementValidator(),
+                        new AndroidSafetyNetAttestationStatementValidator(),
+                        new FIDOU2FAttestationStatementValidator()
+                ), this.certPathtrustValidator,
+                new DefaultECDAATrustworthinessValidator(),
+                new DefaultSelfAttestationTrustworthinessValidator(),
+                new JsonConverter(),
+                new CborConverter());
     }
 
     private String stringifySignatureAlgorithms(List<String> signatureAlgorithmsList) {

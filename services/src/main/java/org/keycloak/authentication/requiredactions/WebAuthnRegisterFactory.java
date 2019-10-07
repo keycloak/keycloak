@@ -23,13 +23,31 @@ import org.keycloak.authentication.RequiredActionFactory;
 import org.keycloak.authentication.RequiredActionProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.truststore.TruststoreProvider;
+
+import com.webauthn4j.anchor.KeyStoreTrustAnchorsProvider;
+import com.webauthn4j.anchor.TrustAnchorsResolverImpl;
+import com.webauthn4j.validator.attestation.trustworthiness.certpath.NullCertPathTrustworthinessValidator;
+import com.webauthn4j.validator.attestation.trustworthiness.certpath.TrustAnchorCertPathTrustworthinessValidator;
 
 public class WebAuthnRegisterFactory implements RequiredActionFactory, DisplayTypeRequiredActionFactory {
+
     public static final String PROVIDER_ID = "webauthn-register";
 
     @Override
     public RequiredActionProvider create(KeycloakSession session) {
-        return new WebAuthnRegister(session);
+        WebAuthnRegister webAuthnRegister = null;
+        TruststoreProvider truststoreProvider = session.getProvider(TruststoreProvider.class);
+        if (truststoreProvider == null || truststoreProvider.getTruststore() == null) {
+            webAuthnRegister = new WebAuthnRegister(session, new NullCertPathTrustworthinessValidator());
+        } else {
+            KeyStoreTrustAnchorsProvider trustAnchorsProvider = new KeyStoreTrustAnchorsProvider();
+            trustAnchorsProvider.setKeyStore(truststoreProvider.getTruststore());
+            TrustAnchorsResolverImpl resolverImpl = new TrustAnchorsResolverImpl(trustAnchorsProvider);
+            TrustAnchorCertPathTrustworthinessValidator trustValidator = new TrustAnchorCertPathTrustworthinessValidator(resolverImpl);
+            webAuthnRegister = new WebAuthnRegister(session, trustValidator);
+        }
+        return webAuthnRegister;
     }
 
     @Override
