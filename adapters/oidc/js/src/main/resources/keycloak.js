@@ -82,10 +82,14 @@
             kc.authenticated = false;
 
             callbackStorage = createCallbackStorage();
-            var adapters = ['default', 'cordova', 'cordova-native'];
+            var adapters = ['default', 'iframe', 'cordova', 'cordova-native'];
 
             if (initOptions && adapters.indexOf(initOptions.adapter) > -1) {
-                adapter = loadAdapter(initOptions.adapter);
+                if (initOptions.adapter == 'iframe' && ! initOptions.iframe ) {
+                    adapter = loadAdapter();
+                } else {
+                    adapter = loadAdapter(initOptions.adapter, initOptions);
+                }
             } else if (initOptions && typeof initOptions.adapter === "object") {
                 adapter = initOptions.adapter;
             } else {
@@ -1292,7 +1296,7 @@
             return promise.promise;
         }
 
-        function loadAdapter(type) {
+        function loadAdapter(type, initOptions) {
             if (!type || type == 'default') {
                 return {
                     login: function(options) {
@@ -1325,6 +1329,48 @@
                             encodeHash = true;
                         }
 
+                        if (options && options.redirectUri) {
+                            return options.redirectUri;
+                        } else if (kc.redirectUri) {
+                            return kc.redirectUri;
+                        } else {
+                            return location.href;
+                        }
+                    }
+                };
+            }
+
+            if (type == 'iframe') {
+                loginIframe.enable = true;
+                iframe = initOptions.iframe;
+                return {
+                    login: function(options) {
+                        var promise = createPromise(false);
+
+                        console.log("login: ", options);
+                        console.log("iframe: ", iframe);
+                        iframe.addEventListener('load', function(event) {
+                            if (iframe.contentDocument) {
+                                var callback = parseCallback(iframe.contentDocument.location.href);
+                                processCallback(callback, promise);
+                            }
+                        }, false);
+                        iframe.contentDocument.location.replace(kc.createLoginUrl(options));
+                        return promise.promise;
+                    },
+                    logout: function(options) {
+                        return iframe.contentDocument.location.replace(kc.createLogoutUrl(options));
+                    },
+                    register: function(options) {
+                        return iframe.contentDocument.location.replace(kc.createRegisterUrl(options));
+                    },
+                    accountManagement: function(options) {
+                        return iframe.contentDocument.location.replace(kc.createAccountUrl(options));
+                    },
+                    redirectUri: function(options, encodeHash) {
+                        if (arguments.length == 1) {
+                            encodeHash = true;
+                        }
                         if (options && options.redirectUri) {
                             return options.redirectUri;
                         } else if (kc.redirectUri) {
