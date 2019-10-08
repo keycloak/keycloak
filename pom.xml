@@ -48,6 +48,7 @@
         <wildfly.core.version>9.0.2.Final</wildfly.core.version>
 
         <jboss.as.version>7.2.0.Final</jboss.as.version>
+        <jboss.as.subsystem.test.version>7.5.22.Final-redhat-1</jboss.as.subsystem.test.version>
 
         <!-- Versions used mostly for Undertow server, aligned with WildFly -->
         <jboss.aesh.version>0.66.19</jboss.aesh.version>
