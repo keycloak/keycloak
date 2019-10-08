@@ -3158,9 +3158,24 @@ module.directive('kcPassword', function ($compile, Notifications) {
     return {
         restrict: 'A',
         link: function ($scope, elem, attr, ctrl) {
+            function toggleMask(evt) {
+                elem.toggleClass("password-conceal");
+                var t = $(this);
+                t.find('span').toggleClass("fa-eye fa-eye-slash");
+            }
+
             elem.addClass("password-conceal");
             elem.attr("type","text");
             elem.attr("autocomplete", "off");
+            var p = elem.parent();
+
+            var inputGroup = $('<div class="input-group"></div>');
+            var eye = $('<span class="input-group-addon btn btn-default"><span class="fa fa-eye"></span></span>')
+                        .on('click', toggleMask);
+
+            elem.detach().appendTo(inputGroup);
+            inputGroup.append(eye);
+            p.append(inputGroup);
         }
     }
 });

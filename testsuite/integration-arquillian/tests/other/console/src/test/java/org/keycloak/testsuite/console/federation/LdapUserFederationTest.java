@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Properties;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -94,6 +95,13 @@ public class LdapUserFederationTest extends AbstractConsoleTest {
         createLdapUserProvider.form().setLdapBindDnInput("uid=admin,ou=system");
         createLdapUserProvider.form().setLdapUserDnInput("ou=People,dc=keycloak,dc=org");
         createLdapUserProvider.form().setLdapBindCredentialInput("secret");
+
+        assertTrue("Password is masked", createLdapUserProvider.form().isLdapBindCredentialInputPasswordMasked());
+        createLdapUserProvider.form().toggleLdapBindCredentialInputPasswordMasked();
+        assertFalse("Password is not masked", createLdapUserProvider.form().isLdapBindCredentialInputPasswordMasked());
+        createLdapUserProvider.form().toggleLdapBindCredentialInputPasswordMasked();
+        assertTrue("Password is masked", createLdapUserProvider.form().isLdapBindCredentialInputPasswordMasked());
+
         createLdapUserProvider.form().save();
         assertAlertDanger();
         createLdapUserProvider.form().setLdapUserDnInput("");
