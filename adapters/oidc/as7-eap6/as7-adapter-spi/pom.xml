@@ -30,6 +30,17 @@
     <name>Keycloak AS7 SPI</name>
     <description/>
 
+    <repositories>
+        <!-- for org.jboss.web:jbossweb -->
+        <repository>
+            <id>jboss</id>
+            <url>https://repository.jboss.org/nexus/content/groups/public/</url>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>
+    </repositories>
+
     <dependencies>
         <dependency>
             <groupId>org.keycloak</groupId>
