@@ -140,11 +140,21 @@ projects that depend on this project.-->
                     <name>product</name>
                 </property>
             </activation>
+            <repositories>
+                <repository>
+                    <id>redhat-ga</id>
+                    <url>https://maven.repository.redhat.com/ga/</url>
+                    <snapshots>
+                        <enabled>false</enabled>
+                    </snapshots>
+                </repository>
+            </repositories>
             <dependencies>
                 <!-- Downstream version 7.5.*.Final is type pom see KEYCLOAK-11527 -->
                 <dependency>
                     <groupId>org.jboss.as</groupId>
                     <artifactId>jboss-as-subsystem-test</artifactId>
+                    <version>${jboss.as.subsystem.test.version}</version>
                     <type>pom</type>
                     <scope>test</scope>
                 </dependency>
