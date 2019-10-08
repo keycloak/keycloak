@@ -4,11 +4,13 @@ import org.jboss.arquillian.container.test.api.ContainerController;
 import org.jboss.arquillian.test.api.ArquillianResource;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.keycloak.testsuite.util.VaultUtils;
 
 /**
  * @author Martin Kanis <mkanis@redhat.com>
  */
+@Ignore
 public class KcOidcBrokerVaultTest extends KcOidcBrokerTest {
 
     @ArquillianResource
