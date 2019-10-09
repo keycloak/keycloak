@@ -9,7 +9,7 @@ import org.keycloak.testsuite.util.VaultUtils;
 /**
  * @author Martin Kanis <mkanis@redhat.com>
  */
-public class KcOidcBrokerVaultTest extends KcOidcBrokerTest {
+public class KcOidcBrokerVaultTest extends AbstractBrokerTest {
 
     @ArquillianResource
     protected ContainerController controller;
@@ -25,7 +25,7 @@ public class KcOidcBrokerVaultTest extends KcOidcBrokerTest {
     public void beforeBrokerTest() {}
 
     @After
-    public void afterLDAPVaultTest() throws Exception {
+    public void afterKcOidcBrokerVaultTest() throws Exception {
         VaultUtils.disableVault(suiteContext, controller);
         reconnectAdminClient();
     }

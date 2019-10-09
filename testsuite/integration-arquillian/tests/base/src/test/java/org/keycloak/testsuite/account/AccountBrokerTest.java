@@ -51,9 +51,6 @@ import static org.keycloak.testsuite.admin.ApiUtil.resetUserPassword;
 public class AccountBrokerTest extends AbstractBaseBrokerTest {
 
     @Page
-    protected LoginPage loginPage;
-
-    @Page
     protected AccountFederatedIdentityPage identityPage;
 
     @Override

@@ -14,7 +14,7 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.testsuite.arquillian.SuiteContext;
 
-public class KcOidcBrokerClientSecretJwtTest extends KcOidcBrokerTest {
+public class KcOidcBrokerClientSecretJwtTest extends AbstractBrokerTest {
 
     @Override
     protected BrokerConfiguration getBrokerConfiguration() {

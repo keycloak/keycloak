@@ -22,7 +22,7 @@ import static org.keycloak.testsuite.broker.BrokerTestConstants.USER_EMAIL;
 import static org.keycloak.testsuite.broker.BrokerTestConstants.USER_LOGIN;
 import static org.keycloak.testsuite.broker.BrokerTestConstants.USER_PASSWORD;
 
-public class KcSamlBrokerSessionNotOnOrAfterTest extends AbstractSamlBrokerTest {
+public class KcSamlBrokerSessionNotOnOrAfterTest extends AbstractBrokerTest {
 
     @Override
     protected BrokerConfiguration getBrokerConfiguration() {

@@ -17,7 +17,12 @@
 
 package org.keycloak.testsuite.broker;
 
+import java.net.URI;
+import java.util.Collections;
 import java.util.List;
+
+import javax.ws.rs.core.UriBuilder;
+import javax.ws.rs.core.UriBuilderException;
 
 import org.hamcrest.Matchers;
 import org.apache.commons.lang.StringUtils;
@@ -26,9 +31,13 @@ import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.After;
 import org.junit.Before;
+import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.models.utils.TimeBasedOTP;
+import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.common.util.Retry;
@@ -51,9 +60,14 @@ import org.keycloak.testsuite.pages.UpdateAccountInformationPage;
 import org.keycloak.testsuite.pages.VerifyEmailPage;
 import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
 import org.keycloak.testsuite.util.MailServer;
+import org.keycloak.testsuite.util.UserBuilder;
 import org.openqa.selenium.TimeoutException;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
+import static org.keycloak.testsuite.admin.ApiUtil.createUserWithAdminClient;
+import static org.keycloak.testsuite.admin.ApiUtil.resetUserPassword;
+import static org.keycloak.testsuite.broker.BrokerTestConstants.USER_EMAIL;
 import static org.keycloak.testsuite.broker.BrokerTestTools.encodeUrl;
 import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
 
@@ -67,9 +81,8 @@ public abstract class AbstractBaseBrokerTest extends AbstractKeycloakTest {
     @Page
     protected AccountUpdateProfilePage accountUpdateProfilePage;
 
-    // TODO: Rename this to loginPage
     @Page
-    protected LoginPage accountLoginPage;
+    protected LoginPage loginPage;
 
     @Page
     protected UpdateAccountInformationPage updateAccountInformationPage;
@@ -133,6 +146,23 @@ public abstract class AbstractBaseBrokerTest extends AbstractKeycloakTest {
 
     }
 
+
+    protected void configureSMTPServer() {
+        MailServer.start();
+        MailServer.createEmailAccount(USER_EMAIL, "password");
+        RealmResource realm = adminClient.realm(bc.consumerRealmName());
+        RealmRepresentation master = realm.toRepresentation();
+        master.setSmtpServer(suiteContext.getSmtpServer());
+        realm.update(master);
+    }
+
+
+    protected void removeSMTPConfiguration(RealmResource consumerRealm) {
+        RealmRepresentation master = consumerRealm.toRepresentation();
+        master.setSmtpServer(Collections.emptyMap());
+        consumerRealm.update(master);
+    }
+
     @Before
     public void beforeBrokerTest() {
         importRealm(bc.createConsumerRealm());
@@ -146,6 +176,19 @@ public abstract class AbstractBaseBrokerTest extends AbstractKeycloakTest {
         MailServer.stop();
     }
 
+
+    protected String createUser(String username) {
+        UserRepresentation newUser = UserBuilder.create().username(username).email(USER_EMAIL).enabled(true).build();
+        String userId = createUserWithAdminClient(adminClient.realm(bc.consumerRealmName()), newUser);
+        resetUserPassword(adminClient.realm(bc.consumerRealmName()).users().get(userId), "password", false);
+        return userId;
+    }
+
+
+    protected void assertNumFederatedIdentities(String userId, int expected) {
+        assertEquals(expected, adminClient.realm(bc.consumerRealmName()).users().get(userId).getFederatedIdentity().size());
+    }
+
     @Deployment
     public static WebArchive deploy() {
         return RunOnServerDeployment.create(BrokerRunOnServerUtil.class);
@@ -155,7 +198,7 @@ public abstract class AbstractBaseBrokerTest extends AbstractKeycloakTest {
         driver.navigate().to(getAccountUrl(bc.consumerRealmName()));
 
         log.debug("Clicking social " + bc.getIDPAlias());
-        accountLoginPage.clickSocial(bc.getIDPAlias());
+        loginPage.clickSocial(bc.getIDPAlias());
 
         waitForPage(driver, "log in to", true);
 
@@ -163,7 +206,7 @@ public abstract class AbstractBaseBrokerTest extends AbstractKeycloakTest {
                 driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"));
 
         log.debug("Logging in");
-        accountLoginPage.login(bc.getUserLogin(), bc.getUserPassword());
+        loginPage.login(bc.getUserLogin(), bc.getUserPassword());
     }
 
 
@@ -249,6 +292,13 @@ public abstract class AbstractBaseBrokerTest extends AbstractKeycloakTest {
     protected void assertErrorPage(String expectedError) {
         errorPage.assertCurrent();
         Assert.assertEquals(expectedError, errorPage.getError());
+    }
+
+
+    protected URI getAuthServerSamlEndpoint(String realm) throws IllegalArgumentException, UriBuilderException {
+        return RealmsResource
+                .protocolUrl(UriBuilder.fromUri(getAuthServerRoot()))
+                .build(realm, SamlProtocol.LOGIN_PROTOCOL);
     }
 
 

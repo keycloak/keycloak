@@ -18,7 +18,7 @@ import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_PROVIDE
 import static org.keycloak.testsuite.broker.BrokerTestTools.createIdentityProvider;
 import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
 
-public class KcOidcBrokerUiLocalesDisabledTest extends KcOidcBrokerTest {
+public class KcOidcBrokerUiLocalesDisabledTest extends AbstractBrokerTest {
 
     @Override
     protected BrokerConfiguration getBrokerConfiguration() {
@@ -45,7 +45,7 @@ public class KcOidcBrokerUiLocalesDisabledTest extends KcOidcBrokerTest {
 
 
         log.debug("Clicking social " + bc.getIDPAlias());
-        accountLoginPage.clickSocial(bc.getIDPAlias());
+        loginPage.clickSocial(bc.getIDPAlias());
 
         waitForPage(driver, "log in to", true);
 
@@ -55,7 +55,7 @@ public class KcOidcBrokerUiLocalesDisabledTest extends KcOidcBrokerTest {
         Assert.assertThat(UI_LOCALES_PARAM + "=" + ENGLISH.toLanguageTag() + " should be part of the url",
                 driver.getCurrentUrl(), not(containsString(UI_LOCALES_PARAM + "=" + ENGLISH.toLanguageTag())));
 
-        accountLoginPage.login(bc.getUserLogin(), bc.getUserPassword());
+        loginPage.login(bc.getUserLogin(), bc.getUserPassword());
         waitForPage(driver, "update account information", false);
 
         updateAccountInformationPage.assertCurrent();

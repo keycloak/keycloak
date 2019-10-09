@@ -1,9 +1,6 @@
 package org.keycloak.testsuite.broker;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.admin.ApiUtil.removeUserByUsername;
-import static org.keycloak.testsuite.broker.BrokerRunOnServerUtil.configureAutoLinkFlow;
 import static org.keycloak.testsuite.broker.BrokerRunOnServerUtil.configurePostBrokerLoginWithOTP;
 import static org.keycloak.testsuite.broker.BrokerTestConstants.REALM_PROV_NAME;
 import static org.keycloak.testsuite.broker.BrokerTestTools.getAuthRoot;
@@ -29,9 +26,11 @@ import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.Assert;
-import org.openqa.selenium.NoSuchElementException;
 
-public class KcOidcBrokerTest extends AbstractBrokerTest {
+/**
+ * Final class as it's not intended to be overriden. Feel free to remove "final" if you really know what you are doing.
+ */
+public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
 
     @Override
     protected BrokerConfiguration getBrokerConfiguration() {
@@ -144,112 +143,6 @@ public class KcOidcBrokerTest extends AbstractBrokerTest {
     }
 
     /**
-     * Tests that duplication is detected and user wants to link federatedIdentity with existing account. He will confirm link by reauthentication
-     * with different broker already linked to his account
-     */
-    @Test
-    public void testLinkAccountByReauthenticationWithDifferentBroker() {
-        KcSamlBrokerConfiguration samlBrokerConfig = KcSamlBrokerConfiguration.INSTANCE;
-        ClientRepresentation samlClient = samlBrokerConfig.createProviderClients(suiteContext).get(0);
-        IdentityProviderRepresentation samlBroker = samlBrokerConfig.setUpIdentityProvider(suiteContext);
-        RealmResource consumerRealm = adminClient.realm(bc.consumerRealmName());
-
-        try {
-            updateExecutions(AbstractBrokerTest::disableUpdateProfileOnFirstLogin);
-            adminClient.realm(bc.providerRealmName()).clients().create(samlClient);
-            consumerRealm.identityProviders().create(samlBroker);
-
-            driver.navigate().to(getAccountUrl(bc.consumerRealmName()));
-
-            logInWithBroker(samlBrokerConfig);
-            waitForPage(driver, "keycloak account management", true);
-            accountUpdateProfilePage.assertCurrent();
-            logoutFromRealm(bc.consumerRealmName());
-
-            logInWithBroker(bc);
-
-            waitForPage(driver, "account already exists", false);
-            assertTrue(idpConfirmLinkPage.isCurrent());
-            assertEquals("User with email user@localhost.com already exists. How do you want to continue?", idpConfirmLinkPage.getMessage());
-            idpConfirmLinkPage.clickLinkAccount();
-
-            assertEquals("Authenticate as testuser to link your account with " + bc.getIDPAlias(), loginPage.feedbackMessage().getText());
-
-            try {
-                this.accountLoginPage.findSocialButton(bc.getIDPAlias());
-                org.junit.Assert.fail("Not expected to see social button with " + samlBrokerConfig.getIDPAlias());
-            } catch (NoSuchElementException expected) {
-            }
-
-            log.debug("Clicking social " + samlBrokerConfig.getIDPAlias());
-            accountLoginPage.clickSocial(samlBrokerConfig.getIDPAlias());
-            waitForPage(driver, "keycloak account management", true);
-            accountUpdateProfilePage.assertCurrent();
-
-            assertNumFederatedIdentities(consumerRealm.users().search(samlBrokerConfig.getUserLogin()).get(0).getId(), 2);
-        } finally {
-            updateExecutions(AbstractBrokerTest::setUpMissingUpdateProfileOnFirstLogin);
-            removeUserByUsername(consumerRealm, "consumer");
-        }
-    }
-
-    /**
-     * Tests that user can link federated identity with existing brokered
-     * account without prompt (KEYCLOAK-7270).
-     */
-    @Test
-    public void testAutoLinkAccountWithBroker() {
-        testingClient.server(bc.consumerRealmName()).run(configureAutoLinkFlow(bc.getIDPAlias()));
-
-        driver.navigate().to(getAccountUrl(bc.consumerRealmName()));
-        logInWithBroker(bc);
-
-        RealmResource realm = adminClient.realm(bc.consumerRealmName());
-
-        assertNumFederatedIdentities(realm.users().search(bc.getUserLogin()).get(0).getId(), 1);
-    }
-
-    /**
-     * Refers to in old test suite: OIDCFirstBrokerLoginTest#testMoreIdpAndBackButtonWhenLinkingAccount
-     */
-    @Test
-    public void testLoginWithDifferentBrokerWhenUpdatingProfile() {
-        KcSamlBrokerConfiguration samlBrokerConfig = KcSamlBrokerConfiguration.INSTANCE;
-        ClientRepresentation samlClient = samlBrokerConfig.createProviderClients(suiteContext).get(0);
-        IdentityProviderRepresentation samlBroker = samlBrokerConfig.setUpIdentityProvider(suiteContext);
-        RealmResource consumerRealm = adminClient.realm(bc.consumerRealmName());
-
-        try {
-            updateExecutions(AbstractBrokerTest::enableUpdateProfileOnFirstLogin);
-            adminClient.realm(bc.providerRealmName()).clients().create(samlClient);
-            consumerRealm.identityProviders().create(samlBroker);
-
-            driver.navigate().to(getAccountUrl(bc.consumerRealmName()));
-            logInWithBroker(samlBrokerConfig);
-            waitForPage(driver, "update account information", false);
-            updateAccountInformationPage.updateAccountInformation("FirstName", "LastName");
-            logoutFromRealm(bc.consumerRealmName());
-
-            logInWithBroker(bc);
-
-            // User doesn't want to continue linking account. He rather wants to revert and try the other broker. Click browser "back" 3 times now
-            driver.navigate().back();
-            driver.navigate().back();
-
-            // User is federated after log in with the original broker
-            log.debug("Clicking social " + samlBrokerConfig.getIDPAlias());
-            accountLoginPage.clickSocial(samlBrokerConfig.getIDPAlias());
-            waitForPage(driver, "keycloak account management", true);
-            accountUpdateProfilePage.assertCurrent();
-
-            assertNumFederatedIdentities(consumerRealm.users().search(samlBrokerConfig.getUserLogin()).get(0).getId(), 1);
-        } finally {
-            updateExecutions(AbstractBrokerTest::setUpMissingUpdateProfileOnFirstLogin);
-            removeUserByUsername(consumerRealm, "consumer");
-        }
-    }
-
-    /**
      * Refers to in old test suite: PostBrokerFlowTest#testBrokerReauthentication_samlBrokerWithOTPRequired
      */
     @Test
@@ -279,7 +172,7 @@ public class KcOidcBrokerTest extends AbstractBrokerTest {
             idpConfirmLinkPage.assertCurrent();
             idpConfirmLinkPage.clickLinkAccount();
 
-            accountLoginPage.clickSocial(samlBrokerConfig.getIDPAlias());
+            loginPage.clickSocial(samlBrokerConfig.getIDPAlias());
             waitForPage(driver, "log in to", true);
             log.debug("Logging in");
             loginTotpPage.login(totp.generateTOTP(totpSecret));

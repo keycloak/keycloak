@@ -33,7 +33,7 @@ import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_ALIAS;
 import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_PROVIDER_ID;
 import static org.keycloak.testsuite.broker.BrokerTestTools.createIdentityProvider;
 
-public class KcOidcBrokerPrivateKeyJwtTest extends KcOidcBrokerTest {
+public class KcOidcBrokerPrivateKeyJwtTest extends AbstractBrokerTest {
 
     @Override
     protected BrokerConfiguration getBrokerConfiguration() {
