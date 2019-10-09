@@ -1,10 +1,6 @@
 package org.keycloak.testsuite.broker;
 
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Lists;
 import org.keycloak.admin.client.resource.UsersResource;
-import org.keycloak.broker.oidc.mappers.ExternalKeycloakRoleToRoleMapper;
-import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.Assert;
 
@@ -23,34 +19,13 @@ public class KcOidcBrokerAcrParameterTest extends AbstractBrokerTest {
     }
 
     @Override
-    protected Iterable<IdentityProviderMapperRepresentation> createIdentityProviderMappers() {
-        IdentityProviderMapperRepresentation attrMapper1 = new IdentityProviderMapperRepresentation();
-        attrMapper1.setName("manager-role-mapper");
-        attrMapper1.setIdentityProviderMapper(ExternalKeycloakRoleToRoleMapper.PROVIDER_ID);
-        attrMapper1.setConfig(ImmutableMap.<String,String>builder()
-                .put("external.role", "manager")
-                .put("role", "manager")
-                .build());
-
-        IdentityProviderMapperRepresentation attrMapper2 = new IdentityProviderMapperRepresentation();
-        attrMapper2.setName("user-role-mapper");
-        attrMapper2.setIdentityProviderMapper(ExternalKeycloakRoleToRoleMapper.PROVIDER_ID);
-        attrMapper2.setConfig(ImmutableMap.<String,String>builder()
-                .put("external.role", "user")
-                .put("role", "user")
-                .build());
-
-        return Lists.newArrayList(attrMapper1, attrMapper2);
-    }
-
-    @Override
     protected void loginUser() {
         driver.navigate().to(getAccountUrl(bc.consumerRealmName()));
 
         driver.navigate().to(driver.getCurrentUrl() + "&" + ACR_VALUES + "=" + ACR_3);
 
         log.debug("Clicking social " + bc.getIDPAlias());
-        accountLoginPage.clickSocial(bc.getIDPAlias());
+        loginPage.clickSocial(bc.getIDPAlias());
 
         waitForPage(driver, "log in to", true);
 
@@ -61,7 +36,7 @@ public class KcOidcBrokerAcrParameterTest extends AbstractBrokerTest {
                 driver.getCurrentUrl().contains(ACR_VALUES + "=" + ACR_3));
 
         log.debug("Logging in");
-        accountLoginPage.login(bc.getUserLogin(), bc.getUserPassword());
+        loginPage.login(bc.getUserLogin(), bc.getUserPassword());
 
         waitForPage(driver, "update account information", false);
 

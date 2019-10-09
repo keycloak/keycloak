@@ -1,18 +1,17 @@
 package org.keycloak.testsuite.broker;
 
-import org.keycloak.authentication.authenticators.client.JWTClientSecretAuthenticator;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
-import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.testsuite.arquillian.SuiteContext;
 
-import java.util.List;
 import java.util.Map;
 
-import static org.keycloak.testsuite.broker.BrokerTestConstants.*;
+
+import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_ALIAS;
+import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_PROVIDER_ID;
 import static org.keycloak.testsuite.broker.BrokerTestTools.createIdentityProvider;
 
-public class KcOidcBrokerClientSecretBasicAuthTest extends KcOidcBrokerTest {
+public class KcOidcBrokerClientSecretBasicAuthTest extends AbstractBrokerTest {
 
     @Override
     protected BrokerConfiguration getBrokerConfiguration() {
