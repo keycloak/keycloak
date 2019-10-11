@@ -196,17 +196,14 @@
         <dependency>
             <groupId>org.jboss.resteasy</groupId>
             <artifactId>resteasy-jaxb-provider</artifactId>
-            <version>${resteasy4.version}</version>
         </dependency>
         <dependency>
             <groupId>org.jboss.resteasy</groupId>
             <artifactId>resteasy-jackson2-provider</artifactId>
-            <version>${resteasy4.version}</version>
         </dependency>
         <dependency>
             <groupId>org.jboss.resteasy</groupId>
             <artifactId>resteasy-core-spi</artifactId>
-            <version>${resteasy4.version}</version>
         </dependency>
         <dependency>
             <groupId>org.wildfly.common</groupId>

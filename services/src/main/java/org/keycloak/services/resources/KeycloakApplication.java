@@ -108,6 +108,8 @@ public class KeycloakApplication extends Application {
 
     public KeycloakApplication() {
         try {
+            logger.debugv("RestEasy provider: {0}", Resteasy.getProvider().getClass().getName());
+
             ServletContext context = Resteasy.getContextData(ServletContext.class);
 
             if ("true".equals(context.getInitParameter(KEYCLOAK_EMBEDDED))) {
