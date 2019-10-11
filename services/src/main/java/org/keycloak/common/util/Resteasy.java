@@ -17,9 +17,7 @@
 
 package org.keycloak.common.util;
 
-import org.jboss.resteasy.core.Dispatcher;
-import org.jboss.resteasy.core.ResteasyContext;
-import org.jboss.resteasy.spi.ResteasyProviderFactory;
+import java.util.ServiceLoader;
 
 /**
  * <p>Provides a layer of indirection to abstract invocations to Resteasy internal APIs. Making also possible to use different
@@ -34,65 +32,14 @@ import org.jboss.resteasy.spi.ResteasyProviderFactory;
  */
 public final class Resteasy {
 
-    private static final BiConsumer<Class, Object> PUSH_CONTEXT;
-    private static final BiConsumer<Class, Object> PUSH_DEFAULT_OBJECT;
-    private static final Function<Class, Object> PULL_CONTEXT;
-    private static final Runnable CLEAR_CONTEXT;
+    private static ResteasyProvider provider;
 
     static {
-        if (isRestEasy4()) {
-            PUSH_CONTEXT = new BiConsumer<Class, Object>() {
-                @Override
-                public void accept(Class p1, Object p2) {
-                    ResteasyContext.pushContext(p1, p2);
-                }
-            };
-            PUSH_DEFAULT_OBJECT = new BiConsumer<Class, Object>() {
-                @Override
-                public void accept(Class p1, Object p2) {
-                    ResteasyContext.getContextData(org.jboss.resteasy.spi.Dispatcher.class).getDefaultContextObjects()
-                            .put(p1, p2);
-                }
-            };
-            PULL_CONTEXT = new Function<Class, Object>() {
-                @Override
-                public Object apply(Class p1) {
-                    return ResteasyContext.getContextData(p1);
-                }
-            };
-            CLEAR_CONTEXT = new Runnable() {
-                @Override
-                public void run() {
-                    ResteasyContext.clearContextData();
-                }
-            };
-        } else {
-            PUSH_CONTEXT = new BiConsumer<Class, Object>() {
-                @Override
-                public void accept(Class p1, Object p2) {
-                    ResteasyProviderFactory.getInstance().pushContext(p1, p2);
-                }
-            };
-            PUSH_DEFAULT_OBJECT = new BiConsumer<Class, Object>() {
-                @Override
-                public void accept(Class p1, Object p2) {
-                    ResteasyProviderFactory.getInstance().getContextData(Dispatcher.class).getDefaultContextObjects()
-                            .put(p1, p2);
-                }
-            };
-            PULL_CONTEXT = new Function<Class, Object>() {
-                @Override
-                public Object apply(Class p1) {
-                    return ResteasyProviderFactory.getInstance().getContextData(p1);
-                }
-            };
-            CLEAR_CONTEXT = new Runnable() {
-                @Override
-                public void run() {
-                    ResteasyProviderFactory.getInstance().clearContextData();
-                }
-            };
-        }
+        provider = ServiceLoader.load(ResteasyProvider.class, Resteasy.class.getClassLoader()).iterator().next();
+    }
+
+    public static ResteasyProvider getProvider() {
+        return provider;
     }
 
     /**
@@ -102,7 +49,7 @@ public final class Resteasy {
      * @param instance the instance
      */
     public static void pushContext(Class type, Object instance) {
-        PUSH_CONTEXT.accept(type, instance);
+        provider.pushContext(type, instance);
     }
 
     /**
@@ -112,14 +59,14 @@ public final class Resteasy {
      * @return the instance associated with the given {@code type} or null if non-existent.                
      */
     public static <R> R getContextData(Class<R> type) {
-        return (R) PULL_CONTEXT.apply(type);
+        return provider.getContextData(type);
     }
 
     /**
      * Clear the Resteasy context associated with the current thread.
      */
     public static void clearContextData() {
-        CLEAR_CONTEXT.run();
+        provider.clearContextData();
     }
 
     /**
@@ -129,28 +76,7 @@ public final class Resteasy {
      * @param instance the instance
      */
     public static void pushDefaultContextObject(Class type, Object instance) {
-        PUSH_DEFAULT_OBJECT.accept(type, instance);
+        provider.pushDefaultContextObject(type, instance);
     }
 
-    private static boolean isRestEasy4() {
-        try {
-            return Class.forName("org.jboss.resteasy.core.ResteasyContext") != null;
-        } catch (ClassNotFoundException ignore) {
-            return false;
-        }
-    }
-
-    /**
-     * Only necessary because keycloak-common is constrained to JDK 1.7.
-     */
-    private interface BiConsumer<T, S> {
-        void accept(T p1, S p2);
-    }
-
-    /**
-     * Only necessary because keycloak-common is constrained to JDK 1.7.
-     */
-    private interface Function<T, R> {
-        R apply(T p1);
-    }
 }
