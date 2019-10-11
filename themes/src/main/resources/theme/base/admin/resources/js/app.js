@@ -58,7 +58,7 @@ angular.element(document).ready(function () {
         location.reload();
     }
 
-    keycloakAuth.init({ onLoad: 'login-required' }).success(function () {
+    keycloakAuth.init({ onLoad: 'login-required', promiseType: 'native' }).then(function () {
         auth.authz = keycloakAuth;
 
         if (auth.authz.idTokenParsed.locale) {
@@ -91,7 +91,7 @@ angular.element(document).ready(function () {
                 });
             });
         });
-    }).error(function () {
+    }).catch(function () {
         window.location.reload();
     });
 });
@@ -102,12 +102,12 @@ module.factory('authInterceptor', function($q, Auth) {
             if (!config.url.match(/.html$/)) {
                 var deferred = $q.defer();
                 if (Auth.authz.token) {
-                    Auth.authz.updateToken(5).success(function () {
+                    Auth.authz.updateToken(5).then(function () {
                         config.headers = config.headers || {};
                         config.headers.Authorization = 'Bearer ' + Auth.authz.token;
 
                         deferred.resolve(config);
-                    }).error(function () {
+                    }).catch(function () {
                         location.reload();
                     });
                 }
