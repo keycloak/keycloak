@@ -31,8 +31,11 @@
     <packaging>pom</packaging>
 
     <properties>
-        <surefire-plugin.version>2.22.0</surefire-plugin.version>
         <quarkus.version>0.23.2</quarkus.version>
+        <resteasy.version>4.3.0.Final</resteasy.version>
+
+        <surefire-plugin.version>2.22.0</surefire-plugin.version>
+
         <wildfly.common.formmat.version>1.5.0.Final-format-001</wildfly.common.formmat.version>
         <maven.compiler.source>1.8</maven.compiler.source>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
