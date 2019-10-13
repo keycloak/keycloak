@@ -43,7 +43,7 @@ public class InitialFlowsTest extends AbstractAuthenticationTest {
 
     {
         expectedConfigs.put("idp-review-profile", newConfig("review profile config", new String[]{"update.profile.on.first.login", "missing"}));
-        expectedConfigs.put("idp-create-user-if-unique", newConfig("create unique user config", new String[]{"require.password.update.after.registration", "false"}));
+        expectedConfigs.put("idp-create-user-if-unique", newConfig("create unique user config", new String[]{"require.password.update.after.registration", "false", "disable.user.creation", "false"}));
     }
 
     @Test

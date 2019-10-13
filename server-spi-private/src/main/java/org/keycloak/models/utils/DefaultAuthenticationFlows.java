@@ -437,6 +437,7 @@ public class DefaultAuthenticationFlows {
         createUserIfUniqueConfig.setAlias(IDP_CREATE_UNIQUE_USER_CONFIG_ALIAS);
         config = new HashMap<>();
         config.put("require.password.update.after.registration", "false");
+        config.put("disable.user.creation", "false");
         createUserIfUniqueConfig.setConfig(config);
         createUserIfUniqueConfig = realm.addAuthenticatorConfig(createUserIfUniqueConfig);
 

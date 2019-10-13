@@ -124,6 +124,9 @@ public class ProvidersTest extends AbstractAuthenticationTest {
         Assert.assertProviderConfigProperty(infoRep.getProperties().get(0), "require.password.update.after.registration", "Require Password Update After Registration",
                 null, "If this option is true and new user is successfully imported from Identity Provider to Keycloak (there is no duplicated email or username detected in Keycloak DB), then this user is required to update his password",
                 "boolean");
+        Assert.assertProviderConfigProperty(infoRep.getProperties().get(1), "disable.user.creation", "{{:: 'disable-user-creation' | translate}}",
+                null, "(False by default) If this option is true and there is no user matching id provided by the Identity Provider in Keycloak, a user will not be created.",
+                "boolean");
     }
 
 
