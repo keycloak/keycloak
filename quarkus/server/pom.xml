@@ -10,6 +10,7 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
+    <name>Keycloak Quarkus Server</name>
     <artifactId>keycloak-quarkus-server</artifactId>
 
     <dependencies>
@@ -34,16 +35,6 @@
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-jdbc-mariadb</artifactId>
         </dependency>
-        <dependency>
-            <groupId>io.quarkus</groupId>
-            <artifactId>quarkus-junit5</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.rest-assured</groupId>
-            <artifactId>rest-assured</artifactId>
-            <scope>test</scope>
-        </dependency>
         
         <!-- Keycloak -->
         <dependency>
@@ -55,16 +46,8 @@
             <artifactId>keycloak-services</artifactId>
             <exclusions>
                 <exclusion>
-                    <groupId>org.jboss.resteasy</groupId>
-                    <artifactId>resteasy-jaxrs</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.jboss.resteasy</groupId>
-                    <artifactId>resteasy-multipart-provider</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.jboss.resteasy</groupId>
-                    <artifactId>resteasy-jackson2-provider</artifactId>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
@@ -81,73 +64,206 @@
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-common</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-core</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-server-spi</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-server-spi-private</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-themes</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-saml-core-public</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-saml-core</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-model-jpa</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-model-infinispan</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-authz-policy-common</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-kerberos-federation</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-sssd-federation</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-ldap-federation</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <!-- Keycloak Dependencies-->
         <dependency>
+            <groupId>com.webauthn4j</groupId>
+            <artifactId>webauthn4j-core</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>com.webauthn4j</groupId>
+            <artifactId>webauthn4j-util</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.dataformat</groupId>
+            <artifactId>jackson-dataformat-cbor</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
             <groupId>org.freemarker</groupId>
             <artifactId>freemarker</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>com.googlecode.owasp-java-html-sanitizer</groupId>
             <artifactId>owasp-java-html-sanitizer</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.liquibase</groupId>
             <artifactId>liquibase-core</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
+        <!--TODO Should come from Hibernate extension -->
         <dependency>
             <groupId>javax.persistence</groupId>
             <artifactId>javax.persistence-api</artifactId>
@@ -159,15 +275,44 @@
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpcore</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpclient</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.bouncycastle</groupId>
             <artifactId>bcpkix-jdk15on</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcprov-jdk15on</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <!--TODO Should come from Infinispan extension -->
         <dependency>
             <groupId>org.infinispan</groupId>
             <artifactId>infinispan-core</artifactId>
@@ -177,38 +322,87 @@
             <groupId>org.infinispan</groupId>
             <artifactId>infinispan-commons</artifactId>
             <version>${infinispan.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.infinispan</groupId>
             <artifactId>infinispan-client-hotrod</artifactId>
             <version>${infinispan.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.jboss.resteasy</groupId>
-            <artifactId>resteasy-core</artifactId>
             <exclusions>
                 <exclusion>
-                    <groupId>org.jboss.resteasy</groupId>
-                    <artifactId>resteasy-core-spi</artifactId>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
         <dependency>
-            <groupId>org.jboss.resteasy</groupId>
-            <artifactId>resteasy-jaxb-provider</artifactId>
+            <groupId>org.infinispan</groupId>
+            <artifactId>infinispan-cachestore-remote</artifactId>
+            <version>${infinispan.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
-            <groupId>org.jboss.resteasy</groupId>
-            <artifactId>resteasy-jackson2-provider</artifactId>
+            <groupId>com.github.ua-parser</groupId>
+            <artifactId>uap-java</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
-            <groupId>org.jboss.resteasy</groupId>
-            <artifactId>resteasy-core-spi</artifactId>
+            <groupId>org.yaml</groupId>
+            <artifactId>snakeyaml</artifactId>
+            <version>1.20</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
+        <dependency>
+            <groupId>com.google.zxing</groupId>
+            <artifactId>core</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>com.google.zxing</groupId>
+            <artifactId>javase</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <!--TODO Why is this needed? -->
         <dependency>
             <groupId>org.wildfly.common</groupId>
             <artifactId>wildfly-common</artifactId>
             <version>${wildfly.common.formmat.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
     </dependencies>
 

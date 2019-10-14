@@ -10,6 +10,7 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
+    <name>Keycloak Quarkus Extensions</name>
     <artifactId>keycloak-quarkus-extensions</artifactId>
 
     <dependencies>
