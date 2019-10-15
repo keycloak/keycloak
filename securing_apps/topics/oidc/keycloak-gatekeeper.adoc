@@ -38,7 +38,7 @@ client-id: <CLIENT_ID>
 # the secret associated to the 'client' application
 client-secret: <CLIENT_SECRET>
 # the interface definition you wish the proxy to listen, all interfaces is specified as ':<port>', unix sockets as unix://<REL_PATH>|</ABS PATH>
-listen: 127.0.0.1:3000
+listen: :3000
 # whether to enable refresh tokens
 enable-refresh-tokens: true
 # the location of a certificate you wish the proxy to use for TLS support
@@ -96,7 +96,7 @@ client-secret: <CLIENT_SECRET> # require for access_type: confidential
 discovery-url: https://keycloak.example.com/auth/realms/<REALM_NAME>
 enable-default-deny: true
 encryption_key: AgXa7xRcoClDEU0ZDSH4X0XhL5Qy2Z2j
-listen: 127.0.0.1:3000
+listen: :3000
 redirection-url: http://127.0.0.1:3000
 upstream-url: http://127.0.0.1:80
 resources:
