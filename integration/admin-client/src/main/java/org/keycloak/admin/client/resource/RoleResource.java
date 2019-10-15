@@ -17,6 +17,7 @@
 
 package org.keycloak.admin.client.resource;
 
+import org.jboss.resteasy.annotations.cache.NoCache;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.ManagementPermissionReference;
 import org.keycloak.representations.idm.ManagementPermissionRepresentation;
@@ -25,6 +26,7 @@ import org.keycloak.representations.idm.UserRepresentation;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
@@ -90,6 +92,16 @@ public interface RoleResource {
     @Path("composites/clients/{appName}")
     @Produces(MediaType.APPLICATION_JSON)
     Set<RoleRepresentation> getClientRoleComposites(@PathParam("appName") String appName);
+    
+    @GET
+    @Path("parents")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Set<RoleRepresentation> getParentsRoles();
+    
+    @GET
+    @Path("parents")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Set<RoleRepresentation> getParentsRoles(@QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation);
 
     @POST
     @Path("composites")

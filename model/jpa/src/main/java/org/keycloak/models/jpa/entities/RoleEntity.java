@@ -38,6 +38,7 @@ import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -101,7 +102,10 @@ public class RoleEntity {
 
     @ManyToMany(fetch = FetchType.LAZY, cascade = {})
     @JoinTable(name = "COMPOSITE_ROLE", joinColumns = @JoinColumn(name = "COMPOSITE"), inverseJoinColumns = @JoinColumn(name = "CHILD_ROLE"))
-    private Set<RoleEntity> compositeRoles;
+    private Set<RoleEntity> compositeRoles = new HashSet<>();
+    
+    @ManyToMany(fetch = FetchType.LAZY, cascade = {}, mappedBy = "compositeRoles")
+    private Set<RoleEntity> parentRoles = new HashSet<>();
 
     @OneToMany(cascade = CascadeType.REMOVE, orphanRemoval = true, mappedBy="role")
     @Fetch(FetchMode.SELECT)
@@ -160,6 +164,14 @@ public class RoleEntity {
 
     public void setCompositeRoles(Set<RoleEntity> compositeRoles) {
         this.compositeRoles = compositeRoles;
+    }
+    
+    public Set<RoleEntity> getParentRoles() {
+        return parentRoles;
+    }
+
+    public void setParentRoles(Set<RoleEntity> parentRoles) {
+        this.parentRoles = parentRoles;
     }
 
     public boolean isClientRole() {

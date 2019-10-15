@@ -64,4 +64,8 @@ public interface RoleModel {
     List<String> getAttribute(String name);
 
     Map<String, List<String>> getAttributes();
+
+    Set<RoleModel> getParents();
+
+    void addParentRole(RoleModel role);
 }

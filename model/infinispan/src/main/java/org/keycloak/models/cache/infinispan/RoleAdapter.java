@@ -44,6 +44,7 @@ public class RoleAdapter implements RoleModel {
     protected RealmCacheSession cacheSession;
     protected RealmModel realm;
     protected Set<RoleModel> composites;
+    protected Set<RoleModel> parents;
     private final Supplier<RoleModel> modelSupplier;
 
     public RoleAdapter(CachedRole cached, RealmCacheSession session, RealmModel realm) {
@@ -56,8 +57,16 @@ public class RoleAdapter implements RoleModel {
     protected void getDelegateForUpdate() {
         if (updated == null) {
             cacheSession.registerRoleInvalidation(cached.getId(), cached.getName(), getContainerId());
+            
             updated = modelSupplier.get();
             if (updated == null) throw new IllegalStateException("Not found in database");
+        }
+    }
+    
+    protected void invalidateComposites() {
+        for (String roleId : cached.getComposites()) {
+            RoleModel role = realm.getRoleById(roleId);
+            cacheSession.registerRoleInvalidation(role.getId(), role.getName(), role.getContainerId());
         }
     }
 
@@ -121,10 +130,11 @@ public class RoleAdapter implements RoleModel {
     @Override
     public void removeCompositeRole(RoleModel role) {
         getDelegateForUpdate();
+        invalidateComposites();
         updated.removeCompositeRole(role);
     }
 
-    @Override
+    @Override 
     public Set<RoleModel> getComposites() {
         if (isUpdated()) return updated.getComposites();
 
@@ -140,6 +150,30 @@ public class RoleAdapter implements RoleModel {
         }
 
         return composites;
+    }
+    
+    @Override
+    public void addParentRole(RoleModel role) {
+        getDelegateForUpdate();
+        updated.addParentRole(role);
+    }
+    
+    @Override
+    public Set<RoleModel> getParents() {
+        if (isUpdated()) return updated.getParents();
+
+        if (parents == null) {
+            parents = new HashSet<RoleModel>();
+            for (String parentId : cached.getParents()) {
+                RoleModel role = realm.getRoleById(parentId);
+                if (role == null) {
+                    throw new IllegalStateException("Could not find parents in role " + getName() + ": " + parentId);
+                }
+                parents.add(role);
+            }
+        }
+
+        return parents;
     }
 
     @Override

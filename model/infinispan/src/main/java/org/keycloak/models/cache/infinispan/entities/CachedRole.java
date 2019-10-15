@@ -37,7 +37,8 @@ public class CachedRole extends AbstractRevisioned implements InRealm {
     final protected String realm;
     final protected String description;
     final protected boolean composite;
-    final protected Set<String> composites = new HashSet<>();
+    final protected Set<String> composites = new HashSet<String>();
+    final protected Set<String> parents = new HashSet<String>();
     private final LazyLoader<RoleModel, MultivaluedHashMap<String, String>> attributes;
 
     public CachedRole(Long revision, RoleModel model, RealmModel realm) {
@@ -51,6 +52,11 @@ public class CachedRole extends AbstractRevisioned implements InRealm {
                 composites.add(child.getId());
             }
         }
+        
+        for (RoleModel parent : model.getParents()) {
+            parents.add(parent.getId());
+        }
+        
         attributes = new DefaultLazyLoader<>(roleModel -> new MultivaluedHashMap<>(roleModel.getAttributes()), MultivaluedHashMap::new);
     }
 
@@ -72,6 +78,10 @@ public class CachedRole extends AbstractRevisioned implements InRealm {
 
     public Set<String> getComposites() {
         return composites;
+    }
+    
+    public Set<String> getParents() {
+        return parents;
     }
 
     public MultivaluedHashMap<String, String> getAttributes(Supplier<RoleModel> roleModel) {
