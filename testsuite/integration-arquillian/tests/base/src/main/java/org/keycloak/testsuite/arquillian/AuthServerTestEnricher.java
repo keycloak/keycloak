@@ -40,11 +40,13 @@ import org.keycloak.common.util.StringPropertyReplacer;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.error.KeycloakErrorHandler;
 import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
+import org.keycloak.testsuite.arquillian.annotation.EnableVault;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
 import org.keycloak.testsuite.util.LogChecker;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.SqlUtils;
 import org.keycloak.testsuite.util.SystemInfoHelper;
+import org.keycloak.testsuite.util.VaultUtils;
 import org.wildfly.extras.creaper.commands.undertow.AddUndertowListener;
 import org.wildfly.extras.creaper.commands.undertow.RemoveUndertowListener;
 import org.wildfly.extras.creaper.commands.undertow.SslVerifyClient;
@@ -441,9 +443,27 @@ public class AuthServerTestEnricher {
         }
     }
 
-    public void initializeTestContext(@Observes(precedence = 2) BeforeClass event) {
+    public void restartAuthServer() throws Exception {
+        if (AuthServerTestEnricher.AUTH_SERVER_CONTAINER.equals("auth-server-remote")) {
+            OnlineManagementClient client = getManagementClient();
+            Administration administration = new Administration(client);
+            administration.reload();
+            client.close();
+        } else {
+            stopContainerEvent.fire(new StopContainer(suiteContext.getAuthServerInfo().getArquillianContainer()));
+            startContainerEvent.fire(new StartContainer(suiteContext.getAuthServerInfo().getArquillianContainer()));
+        }
+    }
+
+    public void initializeTestContext(@Observes(precedence = 2) BeforeClass event) throws Exception {
         TestContext testContext = new TestContext(suiteContext, event.getTestClass().getJavaClass());
         testContextProducer.set(testContext);
+
+        if (event.getTestClass().isAnnotationPresent(EnableVault.class)) {
+            VaultUtils.enableVault(suiteContext);
+            restartAuthServer();
+            testContext.reconnectAdminClient();
+        }
     }
 
     public void initializeTLS(@Observes(precedence = 3) BeforeClass event) throws Exception {
@@ -545,7 +565,7 @@ public class AuthServerTestEnricher {
         }
     }
 
-    public void afterClass(@Observes(precedence = 1) AfterClass event) {
+    public void afterClass(@Observes(precedence = 1) AfterClass event) throws Exception {
         //check if a test accidentally left the auth-server not running
         ContainerController controller = containerConroller.get();
         if (!controller.isStarted(suiteContext.getAuthServerInfo().getQualifier())) {
@@ -559,6 +579,12 @@ public class AuthServerTestEnricher {
         KeycloakTestingClient testingClient = testContext.getTestingClient();
 
         removeTestRealms(testContext, adminClient);
+
+        if (event.getTestClass().isAnnotationPresent(EnableVault.class)) {
+            VaultUtils.disableVault(suiteContext);
+            restartAuthServer();
+            testContext.reconnectAdminClient();
+        }
 
         if (adminClient != null) {
             adminClient.close();

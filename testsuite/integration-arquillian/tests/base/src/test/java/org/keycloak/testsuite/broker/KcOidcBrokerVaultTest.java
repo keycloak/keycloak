@@ -1,34 +1,12 @@
 package org.keycloak.testsuite.broker;
 
-import org.jboss.arquillian.container.test.api.ContainerController;
-import org.jboss.arquillian.test.api.ArquillianResource;
-import org.junit.After;
-import org.junit.Before;
-import org.keycloak.testsuite.util.VaultUtils;
+import org.keycloak.testsuite.arquillian.annotation.EnableVault;
 
 /**
  * @author Martin Kanis <mkanis@redhat.com>
  */
+@EnableVault
 public class KcOidcBrokerVaultTest extends AbstractBrokerTest {
-
-    @ArquillianResource
-    protected ContainerController controller;
-
-    @Before
-    public void beforeKcOidcBrokerVaultTest() throws Exception {
-        VaultUtils.enableVault(suiteContext, controller);
-        reconnectAdminClient();
-        super.beforeBrokerTest();
-    }
-
-    @Override
-    public void beforeBrokerTest() {}
-
-    @After
-    public void afterKcOidcBrokerVaultTest() throws Exception {
-        VaultUtils.disableVault(suiteContext, controller);
-        reconnectAdminClient();
-    }
 
     @Override
     protected BrokerConfiguration getBrokerConfiguration() {
