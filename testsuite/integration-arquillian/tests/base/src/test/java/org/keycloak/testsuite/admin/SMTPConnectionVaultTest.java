@@ -1,36 +1,12 @@
 package org.keycloak.testsuite.admin;
 
-import org.jboss.arquillian.container.test.api.ContainerController;
-import org.jboss.arquillian.test.api.ArquillianResource;
-import org.junit.After;
-import org.junit.Before;
-import org.keycloak.testsuite.util.VaultUtils;
+import org.keycloak.testsuite.arquillian.annotation.EnableVault;
 
 /**
  * @author Martin Kanis <mkanis@redhat.com>
  */
+@EnableVault
 public class SMTPConnectionVaultTest extends SMTPConnectionTest {
-
-    @ArquillianResource
-    protected ContainerController controller;
-
-    @Before
-    public void beforeSMTPConnectionVaultTest() throws Exception {
-        VaultUtils.enableVault(suiteContext, controller);
-        reconnectAdminClient();
-
-        super.before();
-    }
-
-    @Override
-    public void before() {
-    }
-
-    @After
-    public void afterLDAPVaultTest() throws Exception {
-        VaultUtils.disableVault(suiteContext, controller);
-        reconnectAdminClient();
-    }
 
     @Override
     public String setSmtpPassword() {
