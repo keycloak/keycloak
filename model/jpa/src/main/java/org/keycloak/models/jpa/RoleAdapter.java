@@ -118,6 +118,25 @@ public class RoleAdapter implements RoleModel, JpaModel<RoleEntity> {
         }
         return set;
     }
+    
+    @Override
+    public void addParentRole(RoleModel role) {
+        RoleEntity entity = RoleAdapter.toRoleEntity(role, em);
+        for (RoleEntity parent : getEntity().getParentRoles()) {
+            if (parent.equals(entity)) return;
+        }
+        getEntity().getParentRoles().add(entity);
+    }
+    
+    @Override
+    public Set<RoleModel> getParents() {
+        Set<RoleModel> set = new HashSet<RoleModel>();
+
+        for (RoleEntity parent : getEntity().getParentRoles()) {
+            set.add(new RoleAdapter(session, realm, em, parent));
+        }
+        return set;
+    }
 
     @Override
     public boolean hasRole(RoleModel role) {

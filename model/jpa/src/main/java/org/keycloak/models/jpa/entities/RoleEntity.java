@@ -38,6 +38,7 @@ import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -94,13 +95,20 @@ public class RoleEntity {
     @Column(name="CLIENT")
     private String clientId;
 
+    @ManyToOne(fetch = FetchType.LAZY, optional=false)
+    @JoinColumn(name = "CLIENT", insertable=false, updatable=false)
+    private ClientEntity client;
+
     // Hack to ensure that either name+client or name+realm are unique. Needed due to MS-SQL as it don't allow multiple NULL values in the column, which is part of constraint
     @Column(name="CLIENT_REALM_CONSTRAINT", length = 36)
     private String clientRealmConstraint;
 
     @ManyToMany(fetch = FetchType.LAZY, cascade = {})
     @JoinTable(name = "COMPOSITE_ROLE", joinColumns = @JoinColumn(name = "COMPOSITE"), inverseJoinColumns = @JoinColumn(name = "CHILD_ROLE"))
-    private Set<RoleEntity> compositeRoles;
+    private Set<RoleEntity> compositeRoles = new HashSet<>();
+    
+    @ManyToMany(fetch = FetchType.LAZY, cascade = {}, mappedBy = "compositeRoles")
+    private Set<RoleEntity> parentRoles = new HashSet<>();
 
     @OneToMany(cascade = CascadeType.REMOVE, orphanRemoval = true, mappedBy="role")
     @Fetch(FetchMode.SELECT)
@@ -160,6 +168,14 @@ public class RoleEntity {
     public void setCompositeRoles(Set<RoleEntity> compositeRoles) {
         this.compositeRoles = compositeRoles;
     }
+    
+    public Set<RoleEntity> getParentRoles() {
+        return parentRoles;
+    }
+
+    public void setParentRoles(Set<RoleEntity> parentRoles) {
+        this.parentRoles = parentRoles;
+    }
 
     public boolean isClientRole() {
         return clientRole;
@@ -185,6 +201,17 @@ public class RoleEntity {
     public void setClientId(String clientId) {
         this.clientId = clientId;
         this.clientRealmConstraint = clientId;
+    }
+
+    public ClientEntity getClient() {
+        return client;
+    }
+
+    public void setClient(ClientEntity client) {
+        this.client = client;
+        if (client != null) {
+            this.clientRealmConstraint = client.getId();
+        }
     }
 
     public String getClientRealmConstraint() {

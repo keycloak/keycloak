@@ -246,13 +246,24 @@ public class RealmCacheSession implements CacheRealmProvider {
         }
     }
 
-
+    private void invalidateRoleAndComposite(String id) {
+        invalidations.add(id);
+        RoleAdapter adapter = managedRoles.get(id);
+        
+        if (adapter != null) {
+            adapter.invalidate();
+            adapter.invalidateComposites();
+        }
+    }
 
 
     private void invalidateRole(String id) {
         invalidations.add(id);
         RoleAdapter adapter = managedRoles.get(id);
-        if (adapter != null) adapter.invalidate();
+        
+        if (adapter != null) {
+            adapter.invalidate();
+        }
     }
 
     private void addedRole(String roleId, String roleContainerId) {
@@ -784,7 +795,7 @@ public class RealmCacheSession implements CacheRealmProvider {
     public boolean removeRole(RoleModel role) {
         listInvalidations.add(role.getContainer().getId());
 
-        invalidateRole(role.getId());
+        invalidateRoleAndComposite(role.getId());
         invalidationEvents.add(RoleRemovedEvent.create(role.getId(), role.getName(), role.getContainer().getId()));
         roleRemovalInvalidations(role.getId(), role.getName(), role.getContainer().getId());
 

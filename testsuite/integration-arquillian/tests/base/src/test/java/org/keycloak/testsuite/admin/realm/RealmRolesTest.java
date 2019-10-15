@@ -340,17 +340,17 @@ public class RealmRolesTest extends AbstractAdminTest {
         }
 
         RoleResource roleResource = adminClient.realm(REALM_NAME).roles().get(role.toRepresentation().getName());
-        Set<UserRepresentation> roleUserMembers = roleResource.getRoleUserMembers(0, 1);
+        Set<UserRepresentation> roleUserMembers = roleResource.getRoleUserMembers(0, 1, false);
 
         Set<String> expectedMembers = new HashSet<>();
         assertThat(roleUserMembers, hasSize(1));
         expectedMembers.add(roleUserMembers.iterator().next().getUsername());
 
-        roleUserMembers = roleResource.getRoleUserMembers(1, 1);
+        roleUserMembers = roleResource.getRoleUserMembers(1, 1, false);
         assertThat(roleUserMembers, hasSize(1));
         expectedMembers.add(roleUserMembers.iterator().next().getUsername());
 
-        roleUserMembers = roleResource.getRoleUserMembers(2, 1);
+        roleUserMembers = roleResource.getRoleUserMembers(2, 1, false);
         assertThat(roleUserMembers, is(empty()));
 
         assertThat(expectedMembers, containsInAnyOrder("test-role-member", "test-role-member2"));
