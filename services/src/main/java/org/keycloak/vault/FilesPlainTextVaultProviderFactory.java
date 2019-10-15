@@ -30,7 +30,7 @@ public class FilesPlainTextVaultProviderFactory implements VaultProviderFactory 
             logger.debug("Can not create a vault since it's disabled or not initialized correctly");
             return null;
         }
-        return new FilesPlainTextVaultProvider(vaultPath, session.getContext().getRealm().getName());
+        return new FilesPlainTextVaultProvider(vaultPath, getRealmName(session));
     }
 
     @Override
@@ -59,5 +59,9 @@ public class FilesPlainTextVaultProviderFactory implements VaultProviderFactory 
     @Override
     public String getId() {
         return PROVIDER_ID;
+    }
+
+    protected String getRealmName(KeycloakSession session) {
+        return session.getContext().getRealm().getName();
     }
 }
