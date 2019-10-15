@@ -52,4 +52,4 @@ Here's an example:
 </web-app>
 ----        
 
-If the `keycloak-saml.xml` does not explicitly set `assertionConsumerServiceUrl`, the SAML adapter will implicitly listen for SAML assertions at the location `/my-context-path/saml`. This has to match `Master SAML Processing URL` in the IDP realm/client settings, e.g. `http://sp.domain.com/my-context-path/saml`. If not, Tomcat will probably redirect infinitely to the IDP login service, as it does not receive the SAML assertion after the user logged in.
+If the `keycloak-saml.xml` does not explicitly set `assertionConsumerServiceUrl`, the SAML adapter will implicitly listen for SAML assertions at the location `/my-context-path/saml`. This has to match `Master SAML Processing URL` in the IDP realm/client settings, e.g. `\http://sp.domain.com/my-context-path/saml`. If not, Tomcat will probably redirect infinitely to the IDP login service, as it does not receive the SAML assertion after the user logged in.
