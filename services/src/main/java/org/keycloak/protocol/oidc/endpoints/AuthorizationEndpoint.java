@@ -410,7 +410,7 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
         event.detail(Details.REDIRECT_URI, redirectUriParam);
 
         // redirect_uri parameter is required per OpenID Connect, but optional per OAuth2
-        redirectUri = RedirectUtils.verifyRedirectUri(session.getContext().getUri(), redirectUriParam, realm, client, isOIDCRequest);
+        redirectUri = RedirectUtils.verifyRedirectUri(session, redirectUriParam, client, isOIDCRequest);
         if (redirectUri == null) {
             event.error(Errors.INVALID_REDIRECT_URI);
             throw new ErrorPageException(session, authenticationSession, Response.Status.BAD_REQUEST, Messages.INVALID_PARAMETER, OIDCLoginProtocol.REDIRECT_URI_PARAM);

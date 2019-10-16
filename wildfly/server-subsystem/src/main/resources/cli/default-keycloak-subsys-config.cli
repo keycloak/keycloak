@@ -1,7 +1,7 @@
 /subsystem=keycloak-server:add(web-context=auth,master-realm-name=master,scheduled-task-interval=900)
 /subsystem=keycloak-server/theme=defaults/:add(dir=${jboss.home.dir}/themes,staticMaxAge=2592000,cacheTemplates=true,cacheThemes=true)
-/subsystem=keycloak-server/spi=hostname/:add(default-provider=request)
-/subsystem=keycloak-server/spi=hostname/provider=fixed/:add(properties={hostname => "localhost",httpPort => "-1",httpsPort => "-1"},enabled=true)
+/subsystem=keycloak-server/spi=hostname/:add(default-provider=default)
+/subsystem=keycloak-server/spi=hostname/provider=default/:add(properties={frontendUrl => "${keycloak.frontendUrl:}",forceBackendUrlToFrontendUrl => "false"},enabled=true)
 /subsystem=keycloak-server/spi=eventsStore/:add
 /subsystem=keycloak-server/spi=eventsStore/provider=jpa/:add(properties={exclude-events => "[\"REFRESH_TOKEN\"]"},enabled=true)
 /subsystem=keycloak-server/spi=userCache/:add

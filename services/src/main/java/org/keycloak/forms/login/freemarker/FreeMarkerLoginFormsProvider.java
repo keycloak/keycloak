@@ -378,7 +378,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
         URI baseUriWithCodeAndClientId = baseUriBuilder.build();
 
         if (client != null) {
-            attributes.put("client", new ClientBean(client, baseUri));
+            attributes.put("client", new ClientBean(session, client));
         }
 
         if (realm != null) {

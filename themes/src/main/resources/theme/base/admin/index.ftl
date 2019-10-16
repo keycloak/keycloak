@@ -16,6 +16,7 @@
     </#if>
 
     <script type="text/javascript">
+        var authServerUrl = '${authServerUrl}';
         var authUrl = '${authUrl}';
         var consoleBaseUrl = '${consoleBaseUrl}';
         var resourceUrl = '${resourceUrl}';

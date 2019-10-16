@@ -105,7 +105,7 @@ public class LogoutEndpoint {
         String redirect = postLogoutRedirectUri != null ? postLogoutRedirectUri : redirectUri;
 
         if (redirect != null) {
-            String validatedUri = RedirectUtils.verifyRealmRedirectUri(session.getContext().getUri(), redirect, realm);
+            String validatedUri = RedirectUtils.verifyRealmRedirectUri(session, redirect);
             if (validatedUri == null) {
                 event.event(EventType.LOGOUT);
                 event.detail(Details.REDIRECT_URI, redirect);
@@ -216,7 +216,7 @@ public class LogoutEndpoint {
             }
         }
 
-        return Cors.add(request, Response.noContent()).auth().allowedOrigins(session.getContext().getUri(), client).allowedMethods("POST").exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS).build();
+        return Cors.add(request, Response.noContent()).auth().allowedOrigins(session, client).allowedMethods("POST").exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS).build();
     }
 
     private void logout(UserSessionModel userSession, boolean offline) {

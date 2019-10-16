@@ -3221,3 +3221,13 @@ module.directive('kcPassword', function ($compile, Notifications) {
         }
     }
 });
+
+
+module.filter('resolveClientRootUrl', function() {
+    return function(input) {
+        if (!input) {
+            return;
+        }
+        return input.replace("${authBaseUrl}", authServerUrl).replace("${authAdminUrl}", authUrl);
+    };
+});

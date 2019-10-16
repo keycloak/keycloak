@@ -354,6 +354,7 @@ This test will:
       -Djdbc.mvn.artifactId=mysql-connector-java \
       -Djdbc.mvn.version=8.0.12 \
       -Djdbc.mvn.version.legacy=5.1.38 \
+      -Dkeycloak.connectionsJpa.driver=com.mysql.jdbc.Driver \
       -Dkeycloak.connectionsJpa.url=jdbc:mysql://$DB_HOST/keycloak \
       -Dkeycloak.connectionsJpa.user=keycloak \
       -Dkeycloak.connectionsJpa.password=keycloak

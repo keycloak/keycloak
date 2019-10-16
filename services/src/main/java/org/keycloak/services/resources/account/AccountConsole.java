@@ -24,6 +24,7 @@ import org.keycloak.theme.FreeMarkerException;
 import org.keycloak.theme.FreeMarkerUtil;
 import org.keycloak.theme.Theme;
 import org.keycloak.theme.beans.MessageFormatterMethod;
+import org.keycloak.urls.UrlType;
 import org.keycloak.utils.MediaType;
 
 import javax.json.Json;
@@ -77,7 +78,7 @@ public class AccountConsole {
 
     @GET
     @NoCache
-    public Response getMainPage() throws URISyntaxException, IOException, FreeMarkerException {
+    public Response getMainPage() throws IOException, FreeMarkerException {
         if (!session.getContext().getUri().getRequestUri().getPath().endsWith("/")) {
             return Response.status(302).location(session.getContext().getUri().getRequestUriBuilder().path("/").build()).build();
         } else {
@@ -85,8 +86,8 @@ public class AccountConsole {
 
             URI baseUri = session.getContext().getUri().getBaseUri();
 
-            map.put("authUrl", session.getContext().getContextPath());
-            map.put("baseUrl", session.getContext().getContextPath() + "/realms/" + realm.getName() + "/account");
+            map.put("authUrl", session.getContext().getUri(UrlType.FRONTEND).getBaseUri().toString());
+            map.put("baseUrl", session.getContext().getUri(UrlType.FRONTEND).getBaseUriBuilder().replacePath("/realms/" + realm.getName() + "/account").build().toString());
             map.put("realm", realm);
             map.put("resourceUrl", Urls.themeRoot(baseUri).getPath() + "/account/" + theme.getName());
             map.put("resourceVersion", Version.RESOURCES_VERSION);
@@ -195,9 +196,9 @@ public class AccountConsole {
         ClientModel referrerClient = realm.getClientByClientId(referrer);
         if (referrerClient != null) {
             if (referrerUri != null) {
-                referrerUri = RedirectUtils.verifyRedirectUri(session.getContext().getUri(), referrerUri, realm, referrerClient);
+                referrerUri = RedirectUtils.verifyRedirectUri(session, referrerUri, referrerClient);
             } else {
-                referrerUri = ResolveRelative.resolveRelativeUri(session.getContext().getUri().getRequestUri(), client.getRootUrl(), referrerClient.getBaseUrl());
+                referrerUri = ResolveRelative.resolveRelativeUri(session, client.getRootUrl(), referrerClient.getBaseUrl());
             }
             
             if (referrerUri != null) {
@@ -210,7 +211,7 @@ public class AccountConsole {
         } else if (referrerUri != null) {
             referrerClient = realm.getClientByClientId(referrer);
             if (client != null) {
-                referrerUri = RedirectUtils.verifyRedirectUri(session.getContext().getUri(), referrerUri, realm, referrerClient);
+                referrerUri = RedirectUtils.verifyRedirectUri(session, referrerUri, referrerClient);
 
                 if (referrerUri != null) {
                     return new String[]{referrer, referrer, referrerUri};

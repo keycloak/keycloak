@@ -1,13 +1,19 @@
 {
 
     "hostname": {
-        "provider": "${keycloak.hostname.provider:request}",
+        "provider": "${keycloak.hostname.provider:default}",
 
         "fixed": {
             "hostname": "${keycloak.hostname.fixed.hostname:localhost}",
             "httpPort": "${keycloak.hostname.fixed.httpPort:-1}",
             "httpsPort": "${keycloak.hostname.fixed.httpsPort:-1}",
             "alwaysHttps": "${keycloak.hostname.fixed.alwaysHttps:false}"
+        },
+
+        "default": {
+            "frontendUrl": "${keycloak.frontendUrl:}",
+            "adminUrl": "${keycloak.adminUrl:}",
+            "forceBackendUrlToFrontendUrl": "${keycloak.hostname.default.forceBackendUrlToFrontendUrl:false}"
         }
     },
 

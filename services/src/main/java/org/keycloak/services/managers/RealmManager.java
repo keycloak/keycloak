@@ -67,15 +67,6 @@ public class RealmManager {
 
     protected KeycloakSession session;
     protected RealmProvider model;
-    protected String contextPath = "";
-
-    public String getContextPath() {
-        return contextPath;
-    }
-
-    public void setContextPath(String contextPath) {
-        this.contextPath = contextPath;
-    }
 
     public RealmManager(KeycloakSession session) {
         this.session = session;
@@ -165,11 +156,15 @@ public class RealmManager {
         ClientModel adminConsole = realm.getClientByClientId(Constants.ADMIN_CONSOLE_CLIENT_ID);
         if (adminConsole == null) adminConsole = KeycloakModelUtils.createClient(realm, Constants.ADMIN_CONSOLE_CLIENT_ID);
         adminConsole.setName("${client_" + Constants.ADMIN_CONSOLE_CLIENT_ID + "}");
-        String baseUrl = contextPath + "/admin/" + realm.getName() + "/console";
-        adminConsole.setBaseUrl(baseUrl + "/index.html");
+
+        adminConsole.setRootUrl(Constants.AUTH_ADMIN_URL_PROP);
+        String baseUrl = "/admin/" + realm.getName() + "/console/";
+        adminConsole.setBaseUrl(baseUrl);
+        adminConsole.addRedirectUri(baseUrl + "*");
+        adminConsole.setWebOrigins(Collections.singleton("+"));
+
         adminConsole.setEnabled(true);
         adminConsole.setPublicClient(true);
-        adminConsole.addRedirectUri(baseUrl + "/*");
         adminConsole.setFullScopeAllowed(false);
         adminConsole.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
     }
@@ -412,10 +407,12 @@ public class RealmManager {
             client.setName("${client_" + Constants.ACCOUNT_MANAGEMENT_CLIENT_ID + "}");
             client.setEnabled(true);
             client.setFullScopeAllowed(false);
-            String base = contextPath + "/realms/" + realm.getName() + "/account";
-            String redirectUri = base + "/*";
-            client.addRedirectUri(redirectUri);
-            client.setBaseUrl(base);
+
+            client.setRootUrl(Constants.AUTH_BASE_URL_PROP);
+            String baseUrl = "/realms/" + realm.getName() + "/account/";
+            client.setBaseUrl(baseUrl);
+            client.addRedirectUri(baseUrl + "*");
+
             client.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
 
             for (String role : AccountRoles.ALL) {

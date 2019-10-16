@@ -546,7 +546,7 @@ public class SamlProtocol implements LoginProtocol {
         roleListMapper.mapper.mapRoles(existingAttributeStatement, roleListMapper.model, session, userSession, clientSessionCtx);
     }
 
-    public static String getLogoutServiceUrl(UriInfo uriInfo, ClientModel client, String bindingType) {
+    public static String getLogoutServiceUrl(KeycloakSession session, ClientModel client, String bindingType) {
         String logoutServiceUrl = null;
         if (SAML_POST_BINDING.equals(bindingType)) {
             logoutServiceUrl = client.getAttribute(SAML_SINGLE_LOGOUT_SERVICE_URL_POST_ATTRIBUTE);
@@ -557,7 +557,7 @@ public class SamlProtocol implements LoginProtocol {
             logoutServiceUrl = client.getManagementUrl();
         if (logoutServiceUrl == null || logoutServiceUrl.trim().equals(""))
             return null;
-        return ResourceAdminManager.resolveUri(uriInfo.getRequestUri(), client.getRootUrl(), logoutServiceUrl);
+        return ResourceAdminManager.resolveUri(session, client.getRootUrl(), logoutServiceUrl);
 
     }
 
@@ -567,7 +567,7 @@ public class SamlProtocol implements LoginProtocol {
         SamlClient samlClient = new SamlClient(client);
         try {
             boolean postBinding = isLogoutPostBindingForClient(clientSession);
-            String bindingUri = getLogoutServiceUrl(uriInfo, client, postBinding ? SAML_POST_BINDING : SAML_REDIRECT_BINDING);
+            String bindingUri = getLogoutServiceUrl(session, client, postBinding ? SAML_POST_BINDING : SAML_REDIRECT_BINDING);
             if (bindingUri == null) {
                 logger.warnf("Failed to logout client %s, skipping this client.  Please configure the logout service url in the admin console for your client applications.", client.getClientId());
                 return null;
@@ -672,7 +672,7 @@ public class SamlProtocol implements LoginProtocol {
     public void backchannelLogout(UserSessionModel userSession, AuthenticatedClientSessionModel clientSession) {
         ClientModel client = clientSession.getClient();
         SamlClient samlClient = new SamlClient(client);
-        String logoutUrl = getLogoutServiceUrl(uriInfo, client, SAML_POST_BINDING);
+        String logoutUrl = getLogoutServiceUrl(session, client, SAML_POST_BINDING);
         if (logoutUrl == null) {
             logger.warnf("Can't do backchannel logout. No SingleLogoutService POST Binding registered for client: %s", client.getClientId());
             return;

@@ -17,6 +17,8 @@
 package org.keycloak.testsuite.updaters;
 
 import org.keycloak.admin.client.Keycloak;
+import org.keycloak.admin.client.resource.ClientResource;
+import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.admin.client.resource.ComponentResource;
 import org.keycloak.admin.client.resource.ComponentsResource;
 import org.keycloak.admin.client.resource.GroupResource;
@@ -24,6 +26,7 @@ import org.keycloak.admin.client.resource.GroupsResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.admin.client.resource.UsersResource;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -53,6 +56,16 @@ public class Creator<T> implements AutoCloseable {
             String createdId = getCreatedId(response);
             final GroupResource r = groups.group(createdId);
             LOG.debugf("Created group ID %s", createdId);
+            return new Creator(createdId, r, r::remove);
+        }
+    }
+
+    public static Creator<ClientResource> create(RealmResource realmResource, ClientRepresentation rep) {
+        final ClientsResource clients = realmResource.clients();
+        try (Response response = clients.create(rep)) {
+            String createdId = getCreatedId(response);
+            final ClientResource r = clients.get(createdId);
+            LOG.debugf("Created client ID %s", createdId);
             return new Creator(createdId, r, r::remove);
         }
     }

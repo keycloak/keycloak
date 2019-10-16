@@ -299,7 +299,7 @@ public class SamlService extends AuthorizationEndpointBase {
             String redirect;
             URI redirectUri = requestAbstractType.getAssertionConsumerServiceURL();
             if (redirectUri != null && ! "null".equals(redirectUri.toString())) { // "null" is for testing purposes
-                redirect = RedirectUtils.verifyRedirectUri(session.getContext().getUri(), redirectUri.toString(), realm, client);
+                redirect = RedirectUtils.verifyRedirectUri(session, redirectUri.toString(), client);
             } else {
                 if (bindingType.equals(SamlProtocol.SAML_POST_BINDING)) {
                     redirect = client.getAttribute(SamlProtocol.SAML_ASSERTION_CONSUMER_URL_POST_ATTRIBUTE);
@@ -413,12 +413,12 @@ public class SamlService extends AuthorizationEndpointBase {
             AuthenticationManager.AuthResult authResult = authManager.authenticateIdentityCookie(session, realm, false);
             if (authResult != null) {
                 String logoutBinding = getBindingType();
-                String postBindingUri = SamlProtocol.getLogoutServiceUrl(session.getContext().getUri(), client, SamlProtocol.SAML_POST_BINDING);
+                String postBindingUri = SamlProtocol.getLogoutServiceUrl(session, client, SamlProtocol.SAML_POST_BINDING);
                 if (samlClient.forcePostBinding() && postBindingUri != null && ! postBindingUri.trim().isEmpty())
                     logoutBinding = SamlProtocol.SAML_POST_BINDING;
                 boolean postBinding = Objects.equals(SamlProtocol.SAML_POST_BINDING, logoutBinding);
 
-                String bindingUri = SamlProtocol.getLogoutServiceUrl(session.getContext().getUri(), client, logoutBinding);
+                String bindingUri = SamlProtocol.getLogoutServiceUrl(session, client, logoutBinding);
                 UserSessionModel userSession = authResult.getSession();
                 userSession.setNote(SamlProtocol.SAML_LOGOUT_BINDING_URI, bindingUri);
                 if (samlClient.requiresRealmSignature()) {
@@ -474,7 +474,7 @@ public class SamlService extends AuthorizationEndpointBase {
             // default
 
             String logoutBinding = getBindingType();
-            String logoutBindingUri = SamlProtocol.getLogoutServiceUrl(session.getContext().getUri(), client, logoutBinding);
+            String logoutBindingUri = SamlProtocol.getLogoutServiceUrl(session, client, logoutBinding);
             String logoutRelayState = relayState;
             SAML2LogoutResponseBuilder builder = new SAML2LogoutResponseBuilder();
             builder.logoutRequestID(logoutRequest.getID());
