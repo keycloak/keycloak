@@ -1,5 +1,5 @@
 
-=== Logging in to the Admin Console
+=== Log in to the Admin Console
 
 After you create the initial admin account, use the following steps to log in to the admin console:
 
