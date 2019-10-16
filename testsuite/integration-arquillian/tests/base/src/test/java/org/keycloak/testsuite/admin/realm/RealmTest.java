@@ -131,12 +131,14 @@ public class RealmTest extends AbstractAdminTest {
             Assert.assertEquals(1, adminClient.realm("master").clients().findByClientId("new-realm").size());
 
             ClientRepresentation adminConsoleClient = adminClient.realm("new").clients().findByClientId(Constants.ADMIN_CONSOLE_CLIENT_ID).get(0);
-            assertEquals("/auth/admin/new/console/index.html", adminConsoleClient.getBaseUrl());
-            assertEquals("/auth/admin/new/console/*", adminConsoleClient.getRedirectUris().get(0));
+            assertEquals(Constants.AUTH_ADMIN_URL_PROP, adminConsoleClient.getRootUrl());
+            assertEquals("/admin/new/console/", adminConsoleClient.getBaseUrl());
+            assertEquals("/admin/new/console/*", adminConsoleClient.getRedirectUris().get(0));
 
             ClientRepresentation accountClient = adminClient.realm("new").clients().findByClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID).get(0);
-            assertEquals("/auth/realms/new/account", accountClient.getBaseUrl());
-            assertEquals("/auth/realms/new/account/*", accountClient.getRedirectUris().get(0));
+            assertEquals(Constants.AUTH_BASE_URL_PROP, accountClient.getRootUrl());
+            assertEquals("/realms/new/account/", accountClient.getBaseUrl());
+            assertEquals("/realms/new/account/*", accountClient.getRedirectUris().get(0));
         } finally {
             adminClient.realms().realm(rep.getRealm()).remove();
         }

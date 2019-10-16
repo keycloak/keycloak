@@ -107,7 +107,6 @@ public class KeycloakApplication extends Application {
     protected Set<Class<?>> classes = new HashSet<Class<?>>();
 
     protected KeycloakSessionFactory sessionFactory;
-    protected String contextPath;
 
     public KeycloakApplication() {
 
@@ -123,7 +122,6 @@ public class KeycloakApplication extends Application {
 
             loadConfig(context);
 
-            this.contextPath = context.getContextPath();
             this.sessionFactory = createSessionFactory();
 
             Resteasy.pushDefaultContextObject(KeycloakApplication.class, this);
@@ -243,7 +241,7 @@ public class KeycloakApplication extends Application {
             }
 
             if (createMasterRealm) {
-                applianceBootstrap.createMasterRealm(contextPath);
+                applianceBootstrap.createMasterRealm();
             }
             session.getTransactionManager().commit();
         } catch (RuntimeException re) {
@@ -279,20 +277,6 @@ public class KeycloakApplication extends Application {
         } finally {
             session.close();
         }
-    }
-
-    public String getContextPath() {
-        return contextPath;
-    }
-
-    /**
-     * Get base URI of WAR distribution, not JAX-RS
-     *
-     * @param uriInfo
-     * @return
-     */
-    public URI getBaseUri(UriInfo uriInfo) {
-        return uriInfo.getBaseUriBuilder().replacePath(getContextPath()).build();
     }
 
     public static void loadConfig(ServletContext context) {
@@ -410,7 +394,6 @@ public class KeycloakApplication extends Application {
 
             try {
                 RealmManager manager = new RealmManager(session);
-                manager.setContextPath(getContextPath());
 
                 if (rep.getId() != null && manager.getRealm(rep.getId()) != null) {
                     ServicesLogger.LOGGER.realmExists(rep.getRealm(), from);

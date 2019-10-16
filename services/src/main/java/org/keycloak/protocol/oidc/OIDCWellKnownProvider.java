@@ -37,6 +37,7 @@ import org.keycloak.services.Urls;
 import org.keycloak.services.clientregistration.ClientRegistrationService;
 import org.keycloak.services.clientregistration.oidc.OIDCClientRegistrationProviderFactory;
 import org.keycloak.services.resources.RealmsResource;
+import org.keycloak.urls.UrlType;
 import org.keycloak.wellknown.WellKnownProvider;
 
 import javax.ws.rs.core.UriBuilder;
@@ -75,21 +76,24 @@ public class OIDCWellKnownProvider implements WellKnownProvider {
 
     @Override
     public Object getConfig() {
-        UriInfo uriInfo = session.getContext().getUri();
+        UriInfo frontendUriInfo = session.getContext().getUri(UrlType.FRONTEND);
+        UriInfo backendUriInfo = session.getContext().getUri(UrlType.BACKEND);
+
         RealmModel realm = session.getContext().getRealm();
 
-        UriBuilder uriBuilder = RealmsResource.protocolUrl(uriInfo);
+        UriBuilder frontendUriBuilder = RealmsResource.protocolUrl(frontendUriInfo);
+        UriBuilder backendUriBuilder = RealmsResource.protocolUrl(backendUriInfo);
 
         OIDCConfigurationRepresentation config = new OIDCConfigurationRepresentation();
-        config.setIssuer(Urls.realmIssuer(uriInfo.getBaseUri(), realm.getName()));
-        config.setAuthorizationEndpoint(uriBuilder.clone().path(OIDCLoginProtocolService.class, "auth").build(realm.getName(), OIDCLoginProtocol.LOGIN_PROTOCOL).toString());
-        config.setTokenEndpoint(uriBuilder.clone().path(OIDCLoginProtocolService.class, "token").build(realm.getName(), OIDCLoginProtocol.LOGIN_PROTOCOL).toString());
-        config.setTokenIntrospectionEndpoint(uriBuilder.clone().path(OIDCLoginProtocolService.class, "token").path(TokenEndpoint.class, "introspect").build(realm.getName(), OIDCLoginProtocol.LOGIN_PROTOCOL).toString());
-        config.setUserinfoEndpoint(uriBuilder.clone().path(OIDCLoginProtocolService.class, "issueUserInfo").build(realm.getName(), OIDCLoginProtocol.LOGIN_PROTOCOL).toString());
-        config.setLogoutEndpoint(uriBuilder.clone().path(OIDCLoginProtocolService.class, "logout").build(realm.getName(), OIDCLoginProtocol.LOGIN_PROTOCOL).toString());
-        config.setJwksUri(uriBuilder.clone().path(OIDCLoginProtocolService.class, "certs").build(realm.getName(), OIDCLoginProtocol.LOGIN_PROTOCOL).toString());
-        config.setCheckSessionIframe(uriBuilder.clone().path(OIDCLoginProtocolService.class, "getLoginStatusIframe").build(realm.getName(), OIDCLoginProtocol.LOGIN_PROTOCOL).toString());
-        config.setRegistrationEndpoint(RealmsResource.clientRegistrationUrl(uriInfo).path(ClientRegistrationService.class, "provider").build(realm.getName(), OIDCClientRegistrationProviderFactory.ID).toString());
+        config.setIssuer(Urls.realmIssuer(frontendUriInfo.getBaseUri(), realm.getName()));
+        config.setAuthorizationEndpoint(frontendUriBuilder.clone().path(OIDCLoginProtocolService.class, "auth").build(realm.getName(), OIDCLoginProtocol.LOGIN_PROTOCOL).toString());
+        config.setTokenEndpoint(backendUriBuilder.clone().path(OIDCLoginProtocolService.class, "token").build(realm.getName(), OIDCLoginProtocol.LOGIN_PROTOCOL).toString());
+        config.setTokenIntrospectionEndpoint(backendUriBuilder.clone().path(OIDCLoginProtocolService.class, "token").path(TokenEndpoint.class, "introspect").build(realm.getName(), OIDCLoginProtocol.LOGIN_PROTOCOL).toString());
+        config.setUserinfoEndpoint(backendUriBuilder.clone().path(OIDCLoginProtocolService.class, "issueUserInfo").build(realm.getName(), OIDCLoginProtocol.LOGIN_PROTOCOL).toString());
+        config.setLogoutEndpoint(frontendUriBuilder.clone().path(OIDCLoginProtocolService.class, "logout").build(realm.getName(), OIDCLoginProtocol.LOGIN_PROTOCOL).toString());
+        config.setJwksUri(backendUriBuilder.clone().path(OIDCLoginProtocolService.class, "certs").build(realm.getName(), OIDCLoginProtocol.LOGIN_PROTOCOL).toString());
+        config.setCheckSessionIframe(frontendUriBuilder.clone().path(OIDCLoginProtocolService.class, "getLoginStatusIframe").build(realm.getName(), OIDCLoginProtocol.LOGIN_PROTOCOL).toString());
+        config.setRegistrationEndpoint(RealmsResource.clientRegistrationUrl(backendUriInfo).path(ClientRegistrationService.class, "provider").build(realm.getName(), OIDCClientRegistrationProviderFactory.ID).toString());
 
         config.setIdTokenSigningAlgValuesSupported(getSupportedSigningAlgorithms(false));
         config.setIdTokenEncryptionAlgValuesSupported(getSupportedIdTokenEncryptionAlg(false));

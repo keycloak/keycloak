@@ -996,9 +996,9 @@ public class AccountFormService extends AbstractSecuredLocalService {
         ClientModel referrerClient = realm.getClientByClientId(referrer);
         if (referrerClient != null) {
             if (referrerUri != null) {
-                referrerUri = RedirectUtils.verifyRedirectUri(session.getContext().getUri(), referrerUri, realm, referrerClient);
+                referrerUri = RedirectUtils.verifyRedirectUri(session, referrerUri, referrerClient);
             } else {
-                referrerUri = ResolveRelative.resolveRelativeUri(session.getContext().getUri().getRequestUri(), referrerClient.getRootUrl(), referrerClient.getBaseUrl());
+                referrerUri = ResolveRelative.resolveRelativeUri(session, referrerClient.getRootUrl(), referrerClient.getBaseUrl());
             }
 
             if (referrerUri != null) {
@@ -1010,7 +1010,7 @@ public class AccountFormService extends AbstractSecuredLocalService {
             }
         } else if (referrerUri != null) {
             if (client != null) {
-                referrerUri = RedirectUtils.verifyRedirectUri(session.getContext().getUri(), referrerUri, realm, client);
+                referrerUri = RedirectUtils.verifyRedirectUri(session, referrerUri, client);
 
                 if (referrerUri != null) {
                     return new String[]{referrer, referrerUri};

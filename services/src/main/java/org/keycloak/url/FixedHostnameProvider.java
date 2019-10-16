@@ -6,6 +6,7 @@ import org.keycloak.urls.HostnameProvider;
 
 import javax.ws.rs.core.UriInfo;
 
+@Deprecated
 public class FixedHostnameProvider implements HostnameProvider {
 
     private final KeycloakSession session;

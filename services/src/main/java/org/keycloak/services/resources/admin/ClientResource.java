@@ -195,7 +195,7 @@ public class ClientResource {
 
         ClientInstallationProvider provider = session.getProvider(ClientInstallationProvider.class, providerId);
         if (provider == null) throw new NotFoundException("Unknown Provider");
-        return provider.generateInstallation(session, realm, client, keycloak.getBaseUri(session.getContext().getUri()));
+        return provider.generateInstallation(session, realm, client, session.getContext().getUri().getBaseUri());
     }
 
     /**
@@ -424,7 +424,7 @@ public class ClientResource {
         auth.clients().requireConfigure(client);
 
         adminEvent.operation(OperationType.ACTION).resourcePath(session.getContext().getUri()).resource(ResourceType.CLIENT).success();
-        return new ResourceAdminManager(session).pushClientRevocationPolicy(session.getContext().getUri().getRequestUri(), realm, client);
+        return new ResourceAdminManager(session).pushClientRevocationPolicy(realm, client);
 
     }
 
@@ -598,7 +598,7 @@ public class ClientResource {
         auth.clients().requireConfigure(client);
 
         logger.debug("Test availability of cluster nodes");
-        GlobalRequestResult result = new ResourceAdminManager(session).testNodesAvailability(session.getContext().getUri().getRequestUri(), realm, client);
+        GlobalRequestResult result = new ResourceAdminManager(session).testNodesAvailability(realm, client);
         adminEvent.operation(OperationType.ACTION).resource(ResourceType.CLUSTER_NODE).resourcePath(session.getContext().getUri()).representation(result).success();
         return result;
     }

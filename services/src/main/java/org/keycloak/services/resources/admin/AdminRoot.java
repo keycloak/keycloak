@@ -38,6 +38,7 @@ import org.keycloak.services.resources.Cors;
 import org.keycloak.services.resources.admin.info.ServerInfoAdminResource;
 import org.keycloak.services.resources.admin.permissions.AdminPermissions;
 import org.keycloak.theme.Theme;
+import org.keycloak.urls.UrlType;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.HttpMethod;
@@ -100,7 +101,7 @@ public class AdminRoot {
     public Response masterRealmAdminConsoleRedirect() {
         RealmModel master = new RealmManager(session).getKeycloakAdminstrationRealm();
         return Response.status(302).location(
-                session.getContext().getUri().getBaseUriBuilder().path(AdminRoot.class).path(AdminRoot.class, "getAdminConsole").path("/").build(master.getName())
+                session.getContext().getUri(UrlType.ADMIN).getBaseUriBuilder().path(AdminRoot.class).path(AdminRoot.class, "getAdminConsole").path("/").build(master.getName())
         ).build();
     }
 

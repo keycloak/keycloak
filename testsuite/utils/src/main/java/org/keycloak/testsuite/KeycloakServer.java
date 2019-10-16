@@ -346,7 +346,6 @@ public class KeycloakServer {
                 info("Not importing realm " + rep.getRealm() + " realm already exists");
                 return;
             }
-            manager.setContextPath("/auth");
             RealmModel realm = manager.importRealm(rep);
 
             info("Imported realm " + realm.getName());

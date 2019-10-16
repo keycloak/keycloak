@@ -33,6 +33,7 @@ import org.keycloak.services.util.CookieHelper;
 import org.keycloak.theme.BrowserSecurityHeaderSetup;
 import org.keycloak.theme.FreeMarkerUtil;
 import org.keycloak.theme.Theme;
+import org.keycloak.urls.UrlType;
 import org.keycloak.utils.MediaType;
 
 import javax.ws.rs.Consumes;
@@ -182,10 +183,9 @@ public class WelcomeResource {
             map.put("productNameFull", Version.NAME_FULL);
 
             map.put("properties", theme.getProperties());
+            map.put("adminUrl", session.getContext().getUri(UrlType.ADMIN).getBaseUriBuilder().path("/admin/").build());
 
-            URI uri = Urls.themeRoot(session.getContext().getUri().getBaseUri());
-            String resourcesPath = uri.getPath() + "/" + theme.getType().toString().toLowerCase() + "/" + theme.getName();
-            map.put("resourcesPath", resourcesPath);
+            map.put("resourcesPath", "resources/" + Version.RESOURCES_VERSION + "/" + theme.getType().toString().toLowerCase() +"/" + theme.getName());
 
             boolean bootstrap = shouldBootstrap();
             map.put("bootstrap", bootstrap);
@@ -210,7 +210,7 @@ public class WelcomeResource {
             ResponseBuilder rb = Response.status(errorMessage == null ? Status.OK : Status.BAD_REQUEST)
                     .entity(result)
                     .cacheControl(CacheControlUtil.noCache());
-            BrowserSecurityHeaderSetup.headers(rb, BrowserSecurityHeaders.defaultHeaders);
+            BrowserSecurityHeaderSetup.headers(rb);
             return rb.build();
         } catch (Exception e) {
             throw new WebApplicationException(Response.Status.INTERNAL_SERVER_ERROR);

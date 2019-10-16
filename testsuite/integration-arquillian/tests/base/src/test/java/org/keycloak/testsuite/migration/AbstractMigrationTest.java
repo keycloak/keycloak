@@ -26,8 +26,10 @@ import org.keycloak.component.PrioritizedComponentModel;
 import org.keycloak.keys.KeyProvider;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.AuthenticationExecutionModel;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.LDAPConstants;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
@@ -55,6 +57,7 @@ import org.keycloak.testsuite.util.OAuthClient;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -238,6 +241,35 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         testRealmDefaultClientScopes(migrationRealm);
         // check that the 'microprofile-jwt' scope was added to the migrated clients.
         testMicroprofileJWTScopeAddedToClient();
+    }
+
+    protected void testMigrationTo8_0_0() {
+        testAdminClientUrls(masterRealm);
+        testAdminClientUrls(migrationRealm);
+        testAccountClientUrls(masterRealm);
+        testAccountClientUrls(migrationRealm);
+    }
+
+    private void testAdminClientUrls(RealmResource realm) {
+        ClientRepresentation adminConsoleClient = realm.clients().findByClientId(Constants.ADMIN_CONSOLE_CLIENT_ID).get(0);
+
+        assertEquals(Constants.AUTH_ADMIN_URL_PROP, adminConsoleClient.getRootUrl());
+        String baseUrl = "/admin/" + realm.toRepresentation().getRealm() + "/console/";
+        assertEquals(baseUrl, adminConsoleClient.getBaseUrl());
+        assertEquals(baseUrl + "*", adminConsoleClient.getRedirectUris().iterator().next());
+        assertEquals(1, adminConsoleClient.getRedirectUris().size());
+        assertEquals("+", adminConsoleClient.getWebOrigins().iterator().next());
+        assertEquals(1, adminConsoleClient.getWebOrigins().size());
+    }
+
+    private void testAccountClientUrls(RealmResource realm) {
+        ClientRepresentation accountConsoleClient = realm.clients().findByClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID).get(0);
+
+        assertEquals(Constants.AUTH_BASE_URL_PROP, accountConsoleClient.getRootUrl());
+        String baseUrl = "/realms/" + realm.toRepresentation().getRealm() + "/account/";
+        assertEquals(baseUrl, accountConsoleClient.getBaseUrl());
+        assertEquals(baseUrl + "*", accountConsoleClient.getRedirectUris().iterator().next());
+        assertEquals(1, accountConsoleClient.getRedirectUris().size());
     }
 
     private void testDecisionStrategySetOnResourceServer() {
@@ -607,6 +639,10 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
 
     protected void testMigrationTo6_x() {
         testMigrationTo6_0_0();
+    }
+
+    protected void testMigrationTo8_x() {
+        testMigrationTo8_0_0();
     }
 
     protected void testMigrationTo7_x(boolean supportedAuthzServices) {

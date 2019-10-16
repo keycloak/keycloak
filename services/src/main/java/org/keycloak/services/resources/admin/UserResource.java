@@ -699,7 +699,7 @@ public class UserResource {
 
         String redirect;
         if (redirectUri != null) {
-            redirect = RedirectUtils.verifyRedirectUri(session.getContext().getUri(), redirectUri, realm, client);
+            redirect = RedirectUtils.verifyRedirectUri(session, redirectUri, client);
             if (redirect == null) {
                 throw new WebApplicationException(
                     ErrorResponse.error("Invalid redirect uri.", Status.BAD_REQUEST));

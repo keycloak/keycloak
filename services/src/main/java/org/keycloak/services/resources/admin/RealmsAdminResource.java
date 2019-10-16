@@ -131,7 +131,6 @@ public class RealmsAdminResource {
     @Consumes(MediaType.APPLICATION_JSON)
     public Response importRealm(final RealmRepresentation rep) {
         RealmManager realmManager = new RealmManager(session);
-        realmManager.setContextPath(keycloak.getContextPath());
         AdminPermissions.realms(session, auth).requireCreateRealm();
 
         logger.debugv("importRealm: {0}", rep.getRealm());

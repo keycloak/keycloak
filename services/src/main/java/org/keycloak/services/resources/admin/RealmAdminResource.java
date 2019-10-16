@@ -551,7 +551,7 @@ public class RealmAdminResource {
     public GlobalRequestResult pushRevocation() {
         auth.realm().requireManageRealm();
 
-        GlobalRequestResult result = new ResourceAdminManager(session).pushRealmRevocationPolicy(session.getContext().getUri().getRequestUri(), realm);
+        GlobalRequestResult result = new ResourceAdminManager(session).pushRealmRevocationPolicy(realm);
         adminEvent.operation(OperationType.ACTION).resourcePath(session.getContext().getUri()).representation(result).success();
         return result;
     }
@@ -567,7 +567,7 @@ public class RealmAdminResource {
         auth.users().requireManage();
 
         session.sessions().removeUserSessions(realm);
-        GlobalRequestResult result = new ResourceAdminManager(session).logoutAll(session.getContext().getUri().getRequestUri(), realm);
+        GlobalRequestResult result = new ResourceAdminManager(session).logoutAll(realm);
         adminEvent.operation(OperationType.ACTION).resourcePath(session.getContext().getUri()).representation(result).success();
         return result;
     }

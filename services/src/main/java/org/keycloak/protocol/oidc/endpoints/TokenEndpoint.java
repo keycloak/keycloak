@@ -233,7 +233,7 @@ public class TokenEndpoint {
         client = clientAuth.getClient();
         clientAuthAttributes = clientAuth.getClientAuthAttributes();
 
-        cors.allowedOrigins(session.getContext().getUri(), client);
+        cors.allowedOrigins(session, client);
 
         if (client.isBearerOnly()) {
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_CLIENT, "Bearer-only not allowed", Response.Status.BAD_REQUEST);
@@ -1093,7 +1093,7 @@ public class TokenEndpoint {
 
             session.getContext().setClient(client);
 
-            cors.allowedOrigins(session.getContext().getUri(), client);
+            cors.allowedOrigins(session, client);
         }
 
         String claimToken = null;

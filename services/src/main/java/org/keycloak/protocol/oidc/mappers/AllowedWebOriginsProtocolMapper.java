@@ -75,11 +75,10 @@ public class AllowedWebOriginsProtocolMapper extends AbstractOIDCProtocolMapper 
     public AccessToken transformAccessToken(AccessToken token, ProtocolMapperModel mappingModel, KeycloakSession session,
                                             UserSessionModel userSession, ClientSessionContext clientSessionCtx) {
         ClientModel client = clientSessionCtx.getClientSession().getClient();
-        UriInfo uriInfo = session.getContext().getUri();
 
         Set<String> allowedOrigins = client.getWebOrigins();
         if (allowedOrigins != null && !allowedOrigins.isEmpty()) {
-            token.setAllowedOrigins(WebOriginsUtils.resolveValidWebOrigins(uriInfo, client));
+            token.setAllowedOrigins(WebOriginsUtils.resolveValidWebOrigins(session, client));
         }
 
         return token;

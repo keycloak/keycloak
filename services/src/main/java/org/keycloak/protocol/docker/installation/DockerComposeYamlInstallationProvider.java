@@ -58,7 +58,7 @@ public class DockerComposeYamlInstallationProvider implements ClientInstallation
         final ZipOutputStream zipOutput = new ZipOutputStream(byteStream);
 
         try {
-            return generateInstallation(zipOutput, byteStream, session.keys().getActiveRsaKey(realm).getCertificate(), session.getContext().getAuthServerUrl().toURL(), realm.getName(), client.getClientId());
+            return generateInstallation(zipOutput, byteStream, session.keys().getActiveRsaKey(realm).getCertificate(), session.getContext().getUri().getBaseUri().toURL(), realm.getName(), client.getClientId());
         } catch (final IOException e) {
             try {
                 zipOutput.close();

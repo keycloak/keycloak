@@ -373,7 +373,7 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
         waitForPage(driver, "sorry", false);
         errorPage.assertCurrent();
         String link = errorPage.getBackToApplicationLink();
-        Assert.assertTrue(link.endsWith("/auth/realms/consumer/account"));
+        Assert.assertTrue(link.endsWith("/auth/realms/consumer/account/"));
     }
 
     /**

@@ -213,7 +213,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
         this.event.event(EventType.CLIENT_INITIATED_ACCOUNT_LINKING);
         checkRealm();
         ClientModel client = checkClient(clientId);
-        redirectUri = RedirectUtils.verifyRedirectUri(session.getContext().getUri(), redirectUri, realmModel, client);
+        redirectUri = RedirectUtils.verifyRedirectUri(session, redirectUri, client);
         if (redirectUri == null) {
             event.error(Errors.INVALID_REDIRECT_URI);
             throw new ErrorPageException(session, Response.Status.BAD_REQUEST, Messages.INVALID_REQUEST);
@@ -1258,7 +1258,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
     }
 
     private Response corsResponse(Response response, ClientModel clientModel) {
-        return Cors.add(this.request, Response.fromResponse(response)).auth().allowedOrigins(session.getContext().getUri(), clientModel).build();
+        return Cors.add(this.request, Response.fromResponse(response)).auth().allowedOrigins(session, clientModel).build();
     }
 
     private void fireErrorEvent(String message, Throwable throwable) {

@@ -1165,7 +1165,7 @@ public class AccountFormServiceTest extends AbstractTestRealmKeycloakTest {
           "Offline access"
         ));
         Assert.assertThat(accountEntry.getClientScopesGranted(), containsInAnyOrder("Full Access"));
-        Assert.assertEquals(oauth.AUTH_SERVER_ROOT + "/realms/test/account", accountEntry.getHref());
+        Assert.assertEquals(oauth.AUTH_SERVER_ROOT + "/realms/test/account/", accountEntry.getHref());
 
         AccountApplicationsPage.AppEntry testAppEntry = apps.get("test-app");
         Assert.assertEquals(6, testAppEntry.getRolesAvailable().size());

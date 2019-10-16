@@ -676,4 +676,23 @@ if ((result.time == 100L) && (result.unit == MILLISECONDS)) of /profile=$cluster
     echo
 end-if
 
+if (outcome == failed) of /profile=$clusteredProfile/subsystem=keycloak-server/spi=hostname/provider=default/:read-resource
+    echo Adding default hostname provider
+    /profile=$clusteredProfile/subsystem=keycloak-server/spi=hostname/provider=default/:add(properties={frontendUrl => "${keycloak.frontendUrl:}",forceBackendUrlToFrontendUrl => "false"},enabled=true)
+end-if
+
+if (result == request) of /profile=$clusteredProfile/subsystem=keycloak-server/spi=hostname/:read-attribute(name=default-provider)
+    echo Switching from request to default hostname provider
+
+    /profile=$clusteredProfile/subsystem=keycloak-server/spi=hostname/:write-attribute(name=default-provider,value=default)
+end-if
+
+if (result != fixed) of /profile=$clusteredProfile/subsystem=keycloak-server/spi=hostname/:read-attribute(name=default-provider)
+    try
+        /profile=$clusteredProfile/subsystem=keycloak-server/spi=hostname/provider=fixed:remove
+        echo Removed config for unused fixed hostname provider
+    catch
+    end-try
+end-if
+
 echo *** End Migration of /profile=$clusteredProfile ***

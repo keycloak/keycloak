@@ -200,7 +200,7 @@ public class LDAPMultipleAttributesTest extends AbstractLDAPTest {
     public void ldapPortalEndToEndTest() {
         // Login as bwilson
         oauth.clientId("ldap-portal");
-        oauth.redirectUri("/ldap-portal");
+        oauth.redirectUri(suiteContext.getAuthServerInfo().getContextRoot().toString() + "/ldap-portal");
 
         loginPage.open();
         loginPage.login("bwilson", "Password1");
