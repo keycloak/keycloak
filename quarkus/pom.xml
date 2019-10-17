@@ -31,12 +31,12 @@
     <packaging>pom</packaging>
 
     <properties>
-        <quarkus.version>0.23.2</quarkus.version>
-        <resteasy.version>4.3.0.Final</resteasy.version>
+        <quarkus.version>0.25.0</quarkus.version>
+        <resteasy.version>4.3.1.Final</resteasy.version>
 
         <surefire-plugin.version>2.22.0</surefire-plugin.version>
 
-        <wildfly.common.formmat.version>1.5.0.Final-format-001</wildfly.common.formmat.version>
+        <wildfly.common.format.version>1.5.0.Final-format-001</wildfly.common.format.version>
         <maven.compiler.source>1.8</maven.compiler.source>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.target>1.8</maven.compiler.target>
@@ -57,6 +57,22 @@
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-quarkus-extensions</artifactId>
                 <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wildfly.common</groupId>
+                <artifactId>wildfly-common</artifactId>
+                <version>${wildfly.common.format.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>*</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.yaml</groupId>
+                <artifactId>snakeyaml</artifactId>
+                <version>1.20</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
