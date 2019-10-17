@@ -264,10 +264,11 @@
             if (features.isLinkedAccountsEnabled) {
                 document.getElementById("linkedAccountsLink").style.display='block';
             };
-                
-            if (features.isMyResourcesEnabled) {
-                document.getElementById("myResourcesCard").style.display='block';
-            };
+
+            // Hidden until feature is complete.  
+            //if (features.isMyResourcesEnabled) {
+            //    document.getElementById("myResourcesCard").style.display='block';
+            //};
         </script>
 
     </body>

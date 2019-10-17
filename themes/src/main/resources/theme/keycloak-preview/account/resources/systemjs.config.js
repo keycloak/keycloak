@@ -1,4 +1,3 @@
-
 (function (global) {
   System.config({
     paths: {
@@ -37,6 +36,14 @@
       'axios': 'npm:axios/dist/axios.min.js',
 
       'history': 'npm:history/umd/history.min.js',
+
+      // libraries required for parse-link-header to work
+      'parse-link-header': 'npm:parse-link-header/index.js',
+      'xtend': 'npm:xtend/index.js',
+      'querystring': 'npm:querystring/index.js',
+      'url': 'npm:url/url.js',
+      'punycode': 'npm:punycode/punycode.js',
+      'object-keys': 'npm:object-keys/index.js',
     },
 
     bundles: {
@@ -89,7 +96,7 @@
               './Card/CardHeader': '@empty',
               './Card/CardFooter': '@empty',
               './Checkbox': '@empty', //'./Checkbox/index.js',
-              './ChipGroup': '@empty', //'./ChipGroup/index.js',
+              './ChipGroup': './ChipGroup/index.js',
               './ClipboardCopy': '@empty', //'./ClipboardCopy/index.js,
               './ContextSelector': '@empty', //'./ContextSelector/index.js',
               './DataList': './DataList/index.js',
@@ -122,9 +129,9 @@
               './Tooltip': './Tooltip/index.js',
               './Wizard': '@empty', //'./Wizard/index.js',
               './Bullseye': '@empty', //'./Bullseye/index.js',
-              './Gallery': '@empty', //'./Gallery/index.js',
+              './Gallery': './Gallery/index.js',
               './Grid': '@empty', //'./Grid/index.js',
-              './Level': '@empty', //'./Level/index.js',
+              './Level': './Level/index.js',
               './Split': '@empty', //'./Split/index.js',
               './Stack': './Stack/index.js',
               './Toolbar': '@empty', //'./Toolbar/index.js',
@@ -144,6 +151,22 @@
           defaultExtension: 'js',
       },
 
+      'npm:querystring': {
+        defaultExtension: 'js',
+      },
+
+      'npm:url': {
+        defaultExtension: 'js',
+      },
+
+      'npm:xtend': {
+        defaultExtension: 'js',
+      },
+
+      'npm:object-keys': {
+        defaultExtension: 'js',
+      },
+
       // Layouts that map to @empty will not be loaded.
       // To load a layout, replace @empty with its commented path.
       'npm:@patternfly/react-core/dist/umd/layouts': {
@@ -151,7 +174,7 @@
           defaultExtension: 'js',
           map: {
               './Bullseye': './Bullseye/index.js',
-              './Gallery': '@empty', //'./Gallery/index.js',
+              './Gallery': './Gallery/index.js',
               './Level': './Level/index.js',
               './Grid': './Grid/index.js',
               './Stack': './Stack/index.js',
@@ -592,7 +615,7 @@
              './icons/earlybirds-icon.js': '@empty',
              './icons/ebay-icon.js': '@empty',
              //'./icons/edge-icon.js': '@empty',
-             './icons/edit-alt-icon.js': '@empty',
+             //'./icons/edit-alt-icon.js': '@empty',
              './icons/edit-icon.js': '@empty',
              './icons/egg-icon.js': '@empty',
              './icons/eject-icon.js': '@empty',
@@ -1374,7 +1397,7 @@
              './icons/regions-icon.js': '@empty',
              './icons/registered-icon.js': '@empty',
              './icons/registry-icon.js': '@empty',
-             './icons/remove2-icon.js': '@empty',
+             //'./icons/remove2-icon.js': '@empty',
              './icons/renren-icon.js': '@empty',
              './icons/replicator-icon.js': '@empty',
              './icons/reply-all-icon.js': '@empty',
@@ -1442,7 +1465,7 @@
              './icons/services-icon.js': '@empty',
              './icons/servicestack-icon.js': '@empty',
              './icons/shapes-icon.js': '@empty',
-             './icons/share-alt-icon.js': '@empty',
+             //'./icons/share-alt-icon.js': '@empty',
              './icons/share-alt-square-icon.js': '@empty',
              './icons/share-icon.js': '@empty',
              './icons/share-square-icon.js': '@empty',
@@ -1621,7 +1644,7 @@
              './icons/thumbs-up-icon.js': '@empty',
              './icons/thumbtack-icon.js': '@empty',
              './icons/ticket-alt-icon.js': '@empty',
-             './icons/times-circle-icon.js': '@empty',
+             //'./icons/times-circle-icon.js': '@empty',
              //'./icons/times-icon.js': '@empty',
              './icons/tint-icon.js': '@empty',
              './icons/tint-slash-icon.js': '@empty',
@@ -1692,7 +1715,7 @@
              './icons/user-alt-icon.js': '@empty',
              './icons/user-alt-slash-icon.js': '@empty',
              './icons/user-astronaut-icon.js': '@empty',
-             './icons/user-check-icon.js': '@empty',
+             //'./icons/user-check-icon.js': '@empty',
              './icons/user-circle-icon.js': '@empty',
              './icons/user-clock-icon.js': '@empty',
              './icons/user-cog-icon.js': '@empty',

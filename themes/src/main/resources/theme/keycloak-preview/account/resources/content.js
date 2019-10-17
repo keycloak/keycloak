@@ -49,6 +49,6 @@ var content = [
         label: 'resources',
         modulePath: '/app/content/my-resources-page/MyResourcesPage',
         componentName: 'MyResourcesPage',
-        hidden: !features.isMyResourcesEnabled
+        hidden: true //!features.isMyResourcesEnabled
     }
 ];
