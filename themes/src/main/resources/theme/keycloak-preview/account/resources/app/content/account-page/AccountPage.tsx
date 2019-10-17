@@ -95,12 +95,12 @@ export class AccountPage extends React.Component<AccountPageProps, AccountPageSt
     
     private requiredFieldsHaveData(fieldName?: string, newValue?: string): boolean { 
         const fields: FormFields = {...this.state.formFields};
-        
         if (fieldName && newValue) {
             fields[fieldName] = newValue;
         }
         
         for (const field of Object.keys(fields)) {
+            if (field === 'emailVerified') continue;
             if (!fields[field]) return false;
         }
         

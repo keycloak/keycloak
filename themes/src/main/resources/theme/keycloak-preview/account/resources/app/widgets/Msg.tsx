@@ -46,7 +46,7 @@ export class Msg extends React.Component<MsgProps> {
             })
         }
         
-        return message;
+        return unescape(message);
     }
 
     // if the message key has Freemarker syntax, remove it

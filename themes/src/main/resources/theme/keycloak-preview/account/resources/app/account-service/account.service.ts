@@ -54,7 +54,11 @@ export class AccountServiceClient {
     
     public doPut(endpoint: string, 
                 config?: AxiosRequestConfig): Promise<AxiosResponse> {
-        return this.doRequest(endpoint, {...config, method: 'put'});
+        return this.doRequest(endpoint, {...config, 
+                                         method: 'put', 
+                                         headers: {'Content-Type': 'application/json'}
+                                        }
+        );
     }
     
     public doPost(endpoint: string, 
