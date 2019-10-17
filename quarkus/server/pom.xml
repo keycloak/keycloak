@@ -17,6 +17,10 @@
         <!-- Quarkus -->
         <dependency>
             <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-undertow</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.quarkus</groupId>
             <artifactId>quarkus-resteasy</artifactId>
         </dependency>
         <dependency>
@@ -35,7 +39,7 @@
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-jdbc-mariadb</artifactId>
         </dependency>
-        
+
         <!-- Keycloak -->
         <dependency>
             <groupId>org.keycloak</groupId>
@@ -392,11 +396,11 @@
                 </exclusion>
             </exclusions>
         </dependency>
-        <!--TODO Why is this needed? -->
+        <!-- Quarkus logging system requires patched wildfly-common with printf support -->
         <dependency>
             <groupId>org.wildfly.common</groupId>
             <artifactId>wildfly-common</artifactId>
-            <version>${wildfly.common.formmat.version}</version>
+            <version>${wildfly.common.format.version}</version>
             <exclusions>
                 <exclusion>
                     <groupId>*</groupId>
