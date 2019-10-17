@@ -48,6 +48,8 @@ public class TokenUtil {
 
     public static final String TOKEN_TYPE_OFFLINE = "Offline";
 
+    public static final String TOKEN_RESPONSE_EXTRA_CLAIMS = "TokenResponseExtraClaims";
+
 
     public static String attachOIDCScope(String scopeParam) {
         if (scopeParam == null || scopeParam.isEmpty()) {

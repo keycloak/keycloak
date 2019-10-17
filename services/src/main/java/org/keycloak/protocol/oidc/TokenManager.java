@@ -846,6 +846,13 @@ public class TokenManager {
             res.setScope(responseScope);
             event.detail(Details.SCOPE, responseScope);
 
+            Map<?,?> map = clientSessionCtx.getAttribute(TokenUtil.TOKEN_RESPONSE_EXTRA_CLAIMS, Map.class);
+            if (map!=null) {
+                for (Map.Entry<?,?> entry: map.entrySet()) {
+                    res.setOtherClaims((String) entry.getKey(), entry.getValue());
+                }
+            }
+
             return res;
         }
 
