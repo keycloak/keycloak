@@ -17,6 +17,10 @@
         <!-- Quarkus -->
         <dependency>
             <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-undertow</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.quarkus</groupId>
             <artifactId>quarkus-resteasy</artifactId>
         </dependency>
         <dependency>
@@ -35,7 +39,7 @@
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-jdbc-mariadb</artifactId>
         </dependency>
-        
+
         <!-- Keycloak -->
         <dependency>
             <groupId>org.keycloak</groupId>
@@ -364,7 +368,6 @@
         <dependency>
             <groupId>org.yaml</groupId>
             <artifactId>snakeyaml</artifactId>
-            <version>1.20</version>
             <exclusions>
                 <exclusion>
                     <groupId>*</groupId>
@@ -385,18 +388,6 @@
         <dependency>
             <groupId>com.google.zxing</groupId>
             <artifactId>javase</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>*</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <!--TODO Why is this needed? -->
-        <dependency>
-            <groupId>org.wildfly.common</groupId>
-            <artifactId>wildfly-common</artifactId>
-            <version>${wildfly.common.formmat.version}</version>
             <exclusions>
                 <exclusion>
                     <groupId>*</groupId>
