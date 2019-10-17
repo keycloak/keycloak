@@ -25,3 +25,9 @@ file was also provided.
 Notice that when {project_name} acts as the IDP we can use the built-in role mappers to perform any necessary mappings
 before setting the roles into the assertion, so this SPI will probably be redundant in this case. The `RoleMappingsProvider`
 SPI was designed for situations when the IDP offer no way to map roles before adding them to the assertion.
+
+= Other Improvements
+
+== System properties and environment variables support in theme.properties
+
+It is now possible to use system properties and environment variables within theme.properties file. Thanks to https://github.com/Opa-[Opa-]
