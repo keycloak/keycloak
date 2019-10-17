@@ -68,7 +68,7 @@ public class WelcomeResource {
 
     private static final String KEYCLOAK_STATE_CHECKER = "WELCOME_STATE_CHECKER";
 
-    private boolean bootstrap;
+    private boolean bootstrap = true;
 
     @Context
     protected HttpHeaders headers;
@@ -76,8 +76,10 @@ public class WelcomeResource {
     @Context
     private KeycloakSession session;
 
-    public WelcomeResource(boolean bootstrap) {
-        this.bootstrap = bootstrap;
+    @Context
+    private KeycloakApplication application;
+
+    public WelcomeResource() {
     }
 
     /**
@@ -228,7 +230,7 @@ public class WelcomeResource {
     }
 
     private void checkBootstrap() {
-        if (bootstrap) {
+        if (bootstrap && application.isBootstrap()) {
             bootstrap  = new ApplianceBootstrap(session).isNoMasterUser();
         }
     }
