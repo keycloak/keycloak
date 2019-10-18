@@ -17,10 +17,8 @@
 package org.keycloak.testsuite.webauthn;
 
 import org.jboss.arquillian.graphene.page.Page;
-import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.WebAuthnConstants;
@@ -36,6 +34,7 @@ import org.keycloak.testsuite.admin.AbstractAdminTest;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.pages.webauthn.WebAuthnLoginPage;
 import org.keycloak.testsuite.pages.webauthn.WebAuthnRegisterPage;
+import org.keycloak.testsuite.WebAuthnAssume;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
 
@@ -44,7 +43,6 @@ import static org.junit.Assert.assertEquals;
 import java.util.Arrays;
 import java.util.List;
 
-@Ignore("not completed yet")
 public class WebAuthnRegisterAndLoginTest extends AbstractTestRealmKeycloakTest {
 
     @Rule
@@ -77,11 +75,8 @@ public class WebAuthnRegisterAndLoginTest extends AbstractTestRealmKeycloakTest 
     private List<String> acceptableAaguids;
 
     @Before
-    public void setupTest() {
-    }
-
-    @After
-    public void teardown() {
+    public void verifyEnvironment() {
+        WebAuthnAssume.assumeChrome(driver);
     }
 
     @Override

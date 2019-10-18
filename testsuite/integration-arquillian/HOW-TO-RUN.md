@@ -376,6 +376,29 @@ mvn -f testsuite/integration-arquillian/tests/other/base-ui/pom.xml \
     -Dappium.avd=Nexus_5X_API_27
 ```
 
+## WebAuthN tests
+The WebAuthN tests, in Keycloak, can be only executed with Chrome browser, because the Chrome has feature _WebAuthenticationTestingApi_,
+which simulate hardware authentication device. For automated WebAuthN testing, this approach seems like the best choice so far.
+To enabling the feature you have to add flag to _chromeArguments_. In each WebAuthN test should be method with ``@Before`` annotation
+to verify the browser properties.
+
+#### Example of verifying the browser properties
+```
+@Before
+void verifyEnvironment(WebDriver driver) {
+    WebAuthnAssume.assumeChrome(driver);
+}
+```
+
+#### Run all WebAuthN tests
+```
+mvn -f testsuite/integration-arquillian/tests/base/pom.xml \
+    clean test \
+    -Dtest=org.keycloak.testsuite.webauthn.**.*Test \
+    -Dbrowser=chrome \
+    -DchromeArguments=--enable-web-authentication-testing-api
+```
+
 ## Social Login
 The social login tests require setup of all social networks including an example social user. These details can't be 
 shared as it would result in the clients and users eventually being blocked. By default these tests are skipped.
