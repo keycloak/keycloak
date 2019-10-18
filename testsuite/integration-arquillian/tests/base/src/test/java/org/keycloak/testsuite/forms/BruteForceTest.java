@@ -363,6 +363,14 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
+    public void testBrowserMissingPassword() throws Exception {
+        loginSuccess();
+        loginMissingPassword();
+        loginMissingPassword();
+        loginSuccess();
+    }
+
+    @Test
     public void testBrowserInvalidTotp() throws Exception {
         loginSuccess();
         loginInvalidPassword();
