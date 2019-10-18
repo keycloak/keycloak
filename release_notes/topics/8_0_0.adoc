@@ -26,6 +26,10 @@ Notice that when {project_name} acts as the IDP we can use the built-in role map
 before setting the roles into the assertion, so this SPI will probably be redundant in this case. The `RoleMappingsProvider`
 SPI was designed for situations when the IDP offer no way to map roles before adding them to the assertion.
 
+== WildFly 18 Upgrade
+
+Keycloak server was upgraded to use WildFly 18 under the covers.
+
 = Other Improvements
 
 == System properties and environment variables support in theme.properties
