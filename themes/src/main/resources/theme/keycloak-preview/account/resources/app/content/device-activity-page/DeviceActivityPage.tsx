@@ -26,8 +26,6 @@ import {
   DataListItem,
   DataListItemRow,
   DataListCell,
-  DataListToggle,
-  DataListContent,
   DataListItemCells,
   Grid,
   GridItem,
@@ -44,11 +42,8 @@ import {
         FirefoxIcon, 
         GlobeIcon,
         InternetExplorerIcon, 
-        LaptopIcon, 
-        MobileAltIcon, 
         OperaIcon,
         SafariIcon,
-        TabletAltIcon,
         YandexInternationalIcon, 
 } from '@patternfly/react-icons';
 
@@ -64,7 +59,6 @@ export interface DeviceActivityPageProps {
 }
 
 export interface DeviceActivityPageState {
-  isRowOpen: boolean[];
   devices: Device[];
 }
 
@@ -98,7 +92,6 @@ interface Client {
  
 /**
  * @author Stan Silvert ssilvert@redhat.com (C) 2019 Red Hat Inc.
- * 
  */
 export class DeviceActivityPage extends React.Component<DeviceActivityPageProps, DeviceActivityPageState> {
  
@@ -106,18 +99,11 @@ export class DeviceActivityPage extends React.Component<DeviceActivityPageProps,
         super(props);
 
         this.state = {
-          isRowOpen: [],
           devices: []
         };
 
         this.fetchDevices();
     }
-
-    private onToggle = (row: number): void => {
-      const newIsRowOpen: boolean[] = this.state.isRowOpen;
-      newIsRowOpen[row] = !newIsRowOpen[row];
-      this.setState({isRowOpen: newIsRowOpen});
-    };
 
     private signOutAll = () => {
       AccountServiceClient.Instance.doDelete("/sessions")
@@ -135,8 +121,6 @@ export class DeviceActivityPage extends React.Component<DeviceActivityPageProps,
     }
 
     private fetchDevices(): void {
-      const sessionsOnOpenRow: string[] = this.findSessionsOnOpenRow();
-      
       AccountServiceClient.Instance.doGet("/sessions/devices")
           .then((response: AxiosResponse<Object>) => {
             console.log({response});
@@ -145,41 +129,10 @@ export class DeviceActivityPage extends React.Component<DeviceActivityPageProps,
             devices = this.moveCurrentToTop(devices);
             
             this.setState({
-              isRowOpen: this.openRows(devices, sessionsOnOpenRow),
               devices: devices
             });
             
           });
-    }
-
-    // calculating open rows this way assures that when a session is signed out
-    // or on refresh, the open rows stay open
-    private findSessionsOnOpenRow() : string[] {
-      let sessionsOnOpenRow: string[] = [];
-
-      this.state.devices.forEach( (device: Device, index: number) => {
-        if (this.state.isRowOpen[index]) {
-          device.sessions.forEach( (session: Session) => {
-            sessionsOnOpenRow.push(session.id);
-          })
-        }
-      });
-
-      return sessionsOnOpenRow;
-    }
-
-    private openRows(devices: Device[], sessionsOnOpenRow: string[]): boolean[] {
-      const openRows: boolean[] = new Array<boolean>().fill(false);
-
-      devices.forEach((device: Device, deviceIndex: number) => {
-        device.sessions.forEach( (session: Session) => {
-          if (sessionsOnOpenRow.includes(session.id)) {
-            openRows[deviceIndex] = true;
-          }
-        })
-      });
-
-      return openRows;
     }
 
     // current device and session should display at the top of their respective lists
@@ -206,32 +159,6 @@ export class DeviceActivityPage extends React.Component<DeviceActivityPageProps,
 
     private time(time: number): string {
       return moment(time * 1000).format('LLLL');
-    }
-
-    private findDeviceName(device: Device): string {
-      let deviceName: string = device.device;
-
-      const deviceNameLower = deviceName.toLowerCase();
-      if (deviceNameLower.includes('other') || deviceNameLower.includes('generic') ) {
-        deviceName = this.findOS(device) + ' ' + this.findOSVersion(device);
-      }
-
-      if (deviceName.trim() === 'Other') {
-        deviceName = this.makeClientsString(device.sessions[0].clients);
-      }
-
-      return deviceName;
-    }
-
-    private findDeviceIcon(device: Device): React.ReactNode {
-      const deviceName = device.device.toLowerCase();
-      if (deviceName.includes('kindle') || deviceName.includes('ipad')) {
-        return (<TabletAltIcon size='lg' />);
-      }
-      
-      if (device.mobile) return (<MobileAltIcon size='lg' />);
-
-      return (<LaptopIcon size='lg'/>);
     }
 
     private findBrowserIcon(session: Session): React.ReactNode {
@@ -318,41 +245,17 @@ export class DeviceActivityPage extends React.Component<DeviceActivityPageProps,
                           />
                       </DataListItemRow>
                   </DataListItem>
-                      
-                  {this.state.devices.map((device: Device, deviceIndex: number) => {
-                    return (
-                    <DataListItem key={'device-' + deviceIndex} aria-labelledby="ex-item1" isExpanded={this.state.isRowOpen[deviceIndex]}>
-                        <DataListItemRow onClick={() => this.onToggle(deviceIndex)}>
-                            <DataListToggle
-                                isExpanded={this.state.isRowOpen[deviceIndex]}
-                                id={'deviceToggle-' + deviceIndex}
-                                aria-controls="ex-expand1"
-                            />
-                            <DataListItemCells
-                                dataListCells={[
-                                  <DataListCell isIcon key={"icon-" + deviceIndex} width={1}>
-                                    {this.findDeviceIcon(device)}
-                                  </DataListCell>,
-                                  <DataListCell key={"os-" + deviceIndex} width={1}>
-                                    <strong>{this.findDeviceName(device)}</strong>
-                                  </DataListCell>,
-                                  <DataListCell key={"lastAccess-" + deviceIndex} width={5}>
-                                    {device.current && <p><span className='pf-c-badge pf-m-read'><strong><Msg msgKey="currentDevice"/></strong></span></p>}
-                                    {!device.current && <p><strong><Msg msgKey="lastAccess"/>: </strong><span>{this.time(device.lastAccess)}</span></p>}
-                                  </DataListCell>
-                                ]}
-                            />
-                        </DataListItemRow>
-                        <DataListContent
-                            noPadding={false}
-                            aria-label="Session Details"
-                            id="ex-expand1"
-                            isHidden={!this.state.isRowOpen[deviceIndex]}
-                        >
-                          <Grid gutter='sm'>
+                  
+                  <DataListItem aria-labelledby='sessions'>
+                    <Grid gutter='sm'>
+                    <GridItem span={12}/> {/* <-- top spacing */}
+                      {this.state.devices.map((device: Device, deviceIndex: number) => {
+                        return (
+                          <React.Fragment>
                             {device.sessions.map((session: Session, sessionIndex: number) => {
                               return (
                                 <React.Fragment key={'device-' + deviceIndex + '-session-' + sessionIndex}>
+                                  
                                   <GridItem span={3}>
                                    <Stack>
                                       <StackItem isFilled={false}>
@@ -392,14 +295,15 @@ export class DeviceActivityPage extends React.Component<DeviceActivityPageProps,
                                     
                                   </GridItem>
                                 </React.Fragment>
-                              )})
-                            }
-
-                          </Grid>
-                        </DataListContent>
-                    </DataListItem>
-                  )})}
-
+                              );
+                              
+                            })}
+                          </React.Fragment>
+                        )
+                      })}
+                    <GridItem span={12}/> {/* <-- bottom spacing */}
+                    </Grid>
+                  </DataListItem>
               </DataList>
             </StackItem>
             
