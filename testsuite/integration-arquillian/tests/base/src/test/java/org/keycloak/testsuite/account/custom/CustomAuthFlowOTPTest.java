@@ -372,19 +372,15 @@ public class CustomAuthFlowOTPTest extends AbstractCustomAccountManagementTest {
     }
 
     private GroupRepresentation getOrCreateOTPRoleInGroup() {
-        try {
-            return testRealmResource().groups().groups("otp_group",0,1).get(0);
-        } catch (NotFoundException | IndexOutOfBoundsException ex ) {
-            GroupRepresentation group = new GroupRepresentation();
-            group.setName("otp_group");
-            RoleRepresentation role  = getOrCreateOTPRole();
-             testRealmResource().groups().add(group);
-            //obtain id
-            GroupRepresentation groupRep = testRealmResource().groups().groups("otp_group",0,1).get(0);
-            testRealmResource().groups().group(groupRep.getId()).roles().realmLevel().add(Arrays.asList(role));
-            //reread
-            return testRealmResource().groups().groups("otp_group",0,1).get(0);
-        }
+        GroupRepresentation group = new GroupRepresentation();
+        group.setName("otp_group");
+        RoleRepresentation role  = getOrCreateOTPRole();
+        testRealmResource().groups().add(group);
+        // obtain id
+        GroupRepresentation groupRep = testRealmResource().groups().groups("otp_group",0,1).get(0);
+        testRealmResource().groups().group(groupRep.getId()).roles().realmLevel().add(Arrays.asList(role));
+        // reread
+        return testRealmResource().groups().groups("otp_group",0,1).get(0);
     }
 
     @Test
