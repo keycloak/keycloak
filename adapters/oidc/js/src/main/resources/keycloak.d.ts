@@ -24,9 +24,9 @@ export = Keycloak;
 
 /**
  * Creates a new Keycloak client instance.
- * @param config Path to a JSON config file or a plain config object.
+ * @param config A configuration object or path to a JSON config file.
  */
-declare function Keycloak<TPromise extends Keycloak.KeycloakPromiseType = 'legacy'>(config?: string|{}): Keycloak.KeycloakInstance<TPromise>;
+declare function Keycloak<TPromise extends Keycloak.KeycloakPromiseType = 'legacy'>(config?: Keycloak.KeycloakConfig | string): Keycloak.KeycloakInstance<TPromise>;
 
 declare namespace Keycloak {
 	type KeycloakAdapterName = 'cordova' | 'cordova-native' |'default' | any;
@@ -36,6 +36,21 @@ declare namespace Keycloak {
 	type KeycloakFlow = 'standard'|'implicit'|'hybrid';
 	type KeycloakPromiseType = 'legacy' | 'native';
 	type KeycloakPkceMethod = 'S256';
+
+	interface KeycloakConfig {
+		/**
+		 * URL to the Keycloak server, for example: http://keycloak-server/auth
+		 */
+		url?: string;
+		/**
+		 * Name of the realm, for example: 'myrealm'
+		 */
+		realm: string;
+		/**
+		 * Client identifier, example: 'myapp'
+		 */
+		clientId: string;
+	}
 
 	interface KeycloakInitOptions {
 		/**
