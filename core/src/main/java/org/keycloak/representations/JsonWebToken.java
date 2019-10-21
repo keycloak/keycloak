@@ -49,6 +49,8 @@ public class JsonWebToken implements Serializable, Token {
     protected int issuedAt;
     @JsonProperty("iss")
     protected String issuer;
+    @JsonProperty("realm")
+    protected String realm;
     @JsonProperty("aud")
     @JsonSerialize(using = StringOrArraySerializer.class)
     @JsonDeserialize(using = StringOrArrayDeserializer.class)
@@ -139,6 +141,15 @@ public class JsonWebToken implements Serializable, Token {
 
     public JsonWebToken issuer(String issuer) {
         this.issuer = issuer;
+        return this;
+    }
+
+    public String getRealm() {
+        return realm;
+    }
+
+    public JsonWebToken realm(String realm){
+        this.realm = realm;
         return this;
     }
 

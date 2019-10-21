@@ -292,7 +292,9 @@ public class AuthorizationTokenService {
 
             authSession.setAuthenticatedUser(userSessionModel.getUser());
             authSession.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
-            authSession.setClientNote(OIDCLoginProtocol.ISSUER, Urls.realmIssuer(keycloakSession.getContext().getUri().getBaseUri(), realm.getName()));
+            String realmUrl = Urls.realmIssuer(keycloakSession.getContext().getUri().getBaseUri(), realm.getName());
+            authSession.setClientNote(OIDCLoginProtocol.REALM, realmUrl);
+            authSession.setClientNote(OIDCLoginProtocol.ISSUER, realm.getIssuerUrlOrDefault(realmUrl));
 
             AuthenticationManager.setClientScopesInSession(authSession);
             clientSessionCtx = TokenManager.attachAuthenticationSession(keycloakSession, userSessionModel, authSession);

@@ -72,7 +72,7 @@ public class KeycloakServer {
     private boolean sysout = false;
 
     public static class KeycloakServerConfig {
-        private String host = "localhost";
+        private String host = "0.0.0.0";
         private int port = 8081;
         private int portHttps = -1;
         private int workerThreads = Math.max(Runtime.getRuntime().availableProcessors(), 2) * 8;

@@ -16,6 +16,27 @@
  */
 package org.keycloak.services.managers;
 
+import static org.keycloak.protocol.oidc.endpoints.AuthorizationEndpoint.LOGIN_SESSION_NOTE_ADDITIONAL_REQ_PARAMS_PREFIX;
+
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import javax.ws.rs.core.Cookie;
+import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.NewCookie;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriBuilder;
+import javax.ws.rs.core.UriInfo;
+
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.OAuth2Constants;
@@ -45,6 +66,7 @@ import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.forms.login.LoginFormsProvider;
+import org.keycloak.models.AccountRoles;
 import org.keycloak.models.ActionTokenKeyModel;
 import org.keycloak.models.ActionTokenStoreProvider;
 import org.keycloak.models.AuthenticatedClientSessionModel;
@@ -78,27 +100,6 @@ import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.CommonClientSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 import org.keycloak.util.TokenUtil;
-
-import javax.ws.rs.core.Cookie;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.NewCookie;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriBuilder;
-import javax.ws.rs.core.UriInfo;
-import java.net.URI;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
-import org.keycloak.models.AccountRoles;
-
-import static org.keycloak.protocol.oidc.endpoints.AuthorizationEndpoint.LOGIN_SESSION_NOTE_ADDITIONAL_REQ_PARAMS_PREFIX;
 
 /**
  * Stateless object that manages authentication
@@ -177,12 +178,16 @@ public class AuthenticationManager {
             Cookie cookie = headers.getCookies().get(KEYCLOAK_IDENTITY_COOKIE);
             if (cookie == null) return;
             String tokenString = cookie.getValue();
+            String realmUrl = Urls.realmIssuer(uriInfo.getBaseUri(), realm.getName());
+            String issuerUrl = realm.getIssuerUrlOrDefault(realmUrl);
 
             TokenVerifier<AccessToken> verifier = TokenVerifier.create(tokenString, AccessToken.class)
-              .realmUrl(Urls.realmIssuer(uriInfo.getBaseUri(), realm.getName()))
+              .realmUrl(realmUrl)
+              .issuerUrl(issuerUrl)
               .checkActive(false)
               .checkTokenType(false)
-              .withChecks(VALIDATE_IDENTITY_COOKIE);
+              .withChecks(VALIDATE_IDENTITY_COOKIE)
+              .checkRealmUrl(realmUrl.equals(issuerUrl) || !realm.isRealmUrlCheckDeactivated());
 
             String kid = verifier.getHeader().getKeyId();
             String algorithm = verifier.getHeader().getAlgorithm().name();
@@ -587,12 +592,13 @@ public class AuthenticationManager {
     }
 
 
-    public static IdentityCookieToken createIdentityToken(KeycloakSession keycloakSession, RealmModel realm, UserModel user, UserSessionModel session, String issuer) {
+    public static IdentityCookieToken createIdentityToken(KeycloakSession keycloakSession, RealmModel realm, UserModel user, UserSessionModel session, String realmUrl, String issuer) {
         IdentityCookieToken token = new IdentityCookieToken();
         token.id(KeycloakModelUtils.generateId());
         token.issuedNow();
         token.subject(user.getId());
         token.issuer(issuer);
+        token.realm(realmUrl);
         token.type(TokenUtil.TOKEN_TYPE_KEYCLOAK_ID);
 
         if (session != null) {
@@ -617,8 +623,11 @@ public class AuthenticationManager {
 
     public static void createLoginCookie(KeycloakSession keycloakSession, RealmModel realm, UserModel user, UserSessionModel session, UriInfo uriInfo, ClientConnection connection) {
         String cookiePath = getIdentityCookiePath(realm, uriInfo);
-        String issuer = Urls.realmIssuer(uriInfo.getBaseUri(), realm.getName());
-        IdentityCookieToken identityCookieToken = createIdentityToken(keycloakSession, realm, user, session, issuer);
+
+        String realmUrl = Urls.realmIssuer(uriInfo.getBaseUri(), realm.getName());
+        String issuer = realm.getIssuerUrlOrDefault(realmUrl);
+
+        IdentityCookieToken identityCookieToken = createIdentityToken(keycloakSession, realm, user, session, realmUrl, issuer);
         String encoded = keycloakSession.tokens().encode(identityCookieToken);
         boolean secureOnly = realm.getSslRequired().isRequired(connection);
         int maxAge = NewCookie.DEFAULT_MAX_AGE;
@@ -1184,13 +1193,19 @@ public class AuthenticationManager {
 
     public static AuthResult verifyIdentityToken(KeycloakSession session, RealmModel realm, UriInfo uriInfo, ClientConnection connection, boolean checkActive, boolean checkTokenType,
                                                     boolean isCookie, String tokenString, HttpHeaders headers, Predicate<? super AccessToken>... additionalChecks) {
+        String realmUrl = Urls.realmIssuer(uriInfo.getBaseUri(), realm.getName());
+        String issuerUrl = realm.getIssuerUrlOrDefault(realmUrl);
+
         try {
             TokenVerifier<AccessToken> verifier = TokenVerifier.create(tokenString, AccessToken.class)
               .withDefaultChecks()
-              .realmUrl(Urls.realmIssuer(uriInfo.getBaseUri(), realm.getName()))
+              .realmUrl(realmUrl)
+              .issuerUrl(issuerUrl)
               .checkActive(checkActive)
               .checkTokenType(checkTokenType)
-              .withChecks(additionalChecks);
+              .withChecks(additionalChecks)
+              .checkRealmUrl(realmUrl.equals(issuerUrl) || !realm.isRealmUrlCheckDeactivated());
+
             String kid = verifier.getHeader().getKeyId();
             String algorithm = verifier.getHeader().getAlgorithm().name();
 

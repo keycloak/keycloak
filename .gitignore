@@ -72,3 +72,5 @@ target
 # testsuite #
 #############
 *offline-token.txt
+
+.vscode/

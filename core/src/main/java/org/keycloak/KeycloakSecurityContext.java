@@ -75,7 +75,9 @@ public class KeycloakSecurityContext implements Serializable {
 
     public String getRealm() {
         // Assumption that issuer contains realm name
-        return token.getIssuer().substring(token.getIssuer().lastIndexOf('/') + 1);
+        // NOTE(angelinsky7): New assumption that the realm contains realm name
+        // return token.getIssuer().substring(token.getIssuer().lastIndexOf('/') + 1);
+        return token.getRealm().substring(token.getRealm().lastIndexOf('/') + 1);
     }
 
     // SERIALIZATION

@@ -85,6 +85,7 @@ public class OIDCLoginProtocol implements LoginProtocol {
 
     public static final String LOGOUT_REDIRECT_URI = "OIDC_LOGOUT_REDIRECT_URI";
     public static final String ISSUER = "iss";
+    public static final String REALM = "realm";
 
     public static final String RESPONSE_MODE_PARAM = "response_mode";
 

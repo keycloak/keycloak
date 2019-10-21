@@ -149,7 +149,7 @@ public class DefaultActionToken extends DefaultActionTokenKey implements ActionT
     }
 
     private static String getIssuer(RealmModel realm, UriInfo uri) {
-        return Urls.realmIssuer(uri.getBaseUri(), realm.getName());
+        return realm.getIssuerUrlOrDefault(Urls.realmIssuer(uri.getBaseUri(), realm.getName()));
     }
 
 }

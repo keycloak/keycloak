@@ -596,6 +596,7 @@ public class TokenManager {
 
         AuthenticatedClientSessionModel clientSession = clientSessionCtx.getClientSession();
         token.issuer(clientSession.getNote(OIDCLoginProtocol.ISSUER));
+        token.realm(clientSession.getNote(OIDCLoginProtocol.REALM));
         token.setNonce(clientSessionCtx.getAttribute(OIDCLoginProtocol.NONCE_PARAM, String.class));
         token.setScope(clientSessionCtx.getScopeString());
 
@@ -759,6 +760,8 @@ public class TokenManager {
             idToken.issuedNow();
             idToken.issuedFor(accessToken.getIssuedFor());
             idToken.issuer(accessToken.getIssuer());
+            // NOTE(angelinsky7): added to pass the realm
+            idToken.realm(accessToken.getRealm());
             idToken.setNonce(accessToken.getNonce());
             idToken.setAuthTime(accessToken.getAuthTime());
             idToken.setSessionState(accessToken.getSessionState());

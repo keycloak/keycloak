@@ -17,25 +17,69 @@
 
 package org.keycloak.models.jpa;
 
+import static java.util.Objects.nonNull;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
+
+import javax.persistence.EntityManager;
+import javax.persistence.LockModeType;
+import javax.persistence.TypedQuery;
+
 import org.jboss.logging.Logger;
 import org.keycloak.common.enums.SslRequired;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentFactory;
 import org.keycloak.component.ComponentModel;
-import org.keycloak.models.*;
-import org.keycloak.models.jpa.entities.*;
+import org.keycloak.models.AuthenticationExecutionModel;
+import org.keycloak.models.AuthenticationFlowModel;
+import org.keycloak.models.AuthenticatorConfigModel;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientScopeModel;
+import org.keycloak.models.Constants;
+import org.keycloak.models.GroupModel;
+import org.keycloak.models.IdentityProviderMapperModel;
+import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelException;
+import org.keycloak.models.OTPPolicy;
+import org.keycloak.models.PasswordPolicy;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.RequiredActionProviderModel;
+import org.keycloak.models.RequiredCredentialModel;
+import org.keycloak.models.RoleModel;
+import org.keycloak.models.WebAuthnPolicy;
+import org.keycloak.models.jpa.entities.AuthenticationExecutionEntity;
+import org.keycloak.models.jpa.entities.AuthenticationFlowEntity;
+import org.keycloak.models.jpa.entities.AuthenticatorConfigEntity;
+import org.keycloak.models.jpa.entities.ClientEntity;
+import org.keycloak.models.jpa.entities.ClientScopeEntity;
+import org.keycloak.models.jpa.entities.ComponentConfigEntity;
+import org.keycloak.models.jpa.entities.ComponentEntity;
+import org.keycloak.models.jpa.entities.DefaultClientScopeRealmMappingEntity;
+import org.keycloak.models.jpa.entities.GroupEntity;
+import org.keycloak.models.jpa.entities.IdentityProviderEntity;
+import org.keycloak.models.jpa.entities.IdentityProviderMapperEntity;
+import org.keycloak.models.jpa.entities.RealmAttributeEntity;
+import org.keycloak.models.jpa.entities.RealmAttributes;
+import org.keycloak.models.jpa.entities.RealmEntity;
+import org.keycloak.models.jpa.entities.RequiredActionProviderEntity;
+import org.keycloak.models.jpa.entities.RequiredCredentialEntity;
+import org.keycloak.models.jpa.entities.RoleEntity;
 import org.keycloak.models.utils.ComponentUtil;
 import org.keycloak.models.utils.KeycloakModelUtils;
-
-import javax.persistence.EntityManager;
-import javax.persistence.TypedQuery;
-
-import java.util.*;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
-
-import javax.persistence.LockModeType;
-import static java.util.Objects.nonNull;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -394,6 +438,35 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
     public void setEditUsernameAllowed(boolean editUsernameAllowed) {
         realm.setEditUsernameAllowed(editUsernameAllowed);
         em.flush();
+    }
+
+    @Override
+    public String getIssuerUrl() {
+        return getAttribute(RealmAttributes.ISSUER_URL);
+    }
+
+    @Override
+    public void setIssuerUrl(String issuerUrl) {
+        setAttribute(RealmAttributes.ISSUER_URL, issuerUrl);
+    }
+
+    @Override
+    public String getIssuerUrlOrDefault(String defaultValue) {
+        String result = getIssuerUrl();
+        if(result != null && !result.isEmpty()) {
+            return result;
+        }
+        return defaultValue;
+    }
+
+    @Override
+    public void setRealmUrlCheckDeactivated(Boolean realmUrlCheckDeactivated){
+        setAttribute(RealmAttributes.IS_REALMURL_CHECK_DEACTIVATED, realmUrlCheckDeactivated);
+    }
+
+    @Override
+    public Boolean isRealmUrlCheckDeactivated(){
+        return getAttribute(RealmAttributes.IS_REALMURL_CHECK_DEACTIVATED, false);
     }
 
     @Override

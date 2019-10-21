@@ -92,6 +92,8 @@ public class OpenShiftTokenReviewEndpoint implements OIDCExtProvider, Environmen
 
         AccessToken token = null;
         try {
+            //TODO(angelinsky7): not the issuer url but the realm url
+            //TODO(angelinsky7): for now i don't know what to do...
             TokenVerifier<AccessToken> verifier = TokenVerifier.create(reviewRequest.getSpec().getToken(), AccessToken.class)
                     .realmUrl(Urls.realmIssuer(session.getContext().getUri().getBaseUri(), realm.getName()));
 

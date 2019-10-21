@@ -423,7 +423,9 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
         authenticationSession.setAction(AuthenticationSessionModel.Action.AUTHENTICATE.name());
         authenticationSession.setClientNote(OIDCLoginProtocol.RESPONSE_TYPE_PARAM, request.getResponseType());
         authenticationSession.setClientNote(OIDCLoginProtocol.REDIRECT_URI_PARAM, request.getRedirectUriParam());
-        authenticationSession.setClientNote(OIDCLoginProtocol.ISSUER, Urls.realmIssuer(session.getContext().getUri().getBaseUri(), realm.getName()));
+        String realmUrl = Urls.realmIssuer(session.getContext().getUri().getBaseUri(), realm.getName());
+        authenticationSession.setClientNote(OIDCLoginProtocol.REALM, realmUrl);
+        authenticationSession.setClientNote(OIDCLoginProtocol.ISSUER, realm.getIssuerUrlOrDefault(realmUrl));
 
         if (request.getState() != null) authenticationSession.setClientNote(OIDCLoginProtocol.STATE_PARAM, request.getState());
         if (request.getNonce() != null) authenticationSession.setClientNote(OIDCLoginProtocol.NONCE_PARAM, request.getNonce());

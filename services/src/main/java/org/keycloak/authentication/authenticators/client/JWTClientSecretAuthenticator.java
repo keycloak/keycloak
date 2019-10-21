@@ -130,10 +130,10 @@ public class JWTClientSecretAuthenticator extends AbstractClientAuthenticator {
             // JWT contents and verification in client_secret_jwt is the same as in private_key_jwt
             
             // Allow both "issuer" or "token-endpoint" as audience
-            String issuerUrl = Urls.realmIssuer(context.getUriInfo().getBaseUri(), realm.getName());
+            String realmUrl = Urls.realmIssuer(context.getUriInfo().getBaseUri(), realm.getName());
             String tokenUrl = OIDCLoginProtocolService.tokenUrl(context.getUriInfo().getBaseUriBuilder()).build(realm.getName()).toString();
-            if (!token.hasAudience(issuerUrl) && !token.hasAudience(tokenUrl)) {
-                throw new RuntimeException("Token audience doesn't match domain. Realm issuer is '" + issuerUrl + "' but audience from token is '" + Arrays.asList(token.getAudience()).toString() + "'");
+            if (!token.hasAudience(realmUrl) && !token.hasAudience(tokenUrl)) {
+                throw new RuntimeException("Token audience doesn't match domain. Realm issuer is '" + realmUrl + "' but audience from token is '" + Arrays.asList(token.getAudience()).toString() + "'");
             }
 
             if (!token.isActive()) {

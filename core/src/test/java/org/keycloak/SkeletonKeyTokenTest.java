@@ -143,6 +143,7 @@ public class SkeletonKeyTokenTest {
         AccessToken token = new AccessToken();
         token.id("111");
         token.issuer("http://localhost:8080/auth/acme");
+        token.realm("http://localhost:8080/auth/acme");
         token.addAccess("foo").addRole("admin");
         token.addAccess("bar").addRole("user");
         return token;

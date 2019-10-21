@@ -17,7 +17,13 @@
  */
 package org.keycloak.protocol.oidc;
 
+import java.io.IOException;
+
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+
 import com.fasterxml.jackson.databind.node.ObjectNode;
+
 import org.keycloak.OAuthErrorException;
 import org.keycloak.TokenVerifier;
 import org.keycloak.common.VerificationException;
@@ -28,10 +34,6 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.services.Urls;
 import org.keycloak.util.JsonSerialization;
-
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import java.io.IOException;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -71,10 +73,14 @@ public class AccessTokenIntrospectionProvider implements TokenIntrospectionProvi
 
     protected AccessToken verifyAccessToken(String token) throws OAuthErrorException, IOException {
         AccessToken accessToken;
+        String realmUrl = Urls.realmIssuer(session.getContext().getUri().getBaseUri(), realm.getName());
+        String issuerUrl = realm.getIssuerUrlOrDefault(realmUrl);
 
         try {
             TokenVerifier<AccessToken> verifier = TokenVerifier.create(token, AccessToken.class)
-                    .realmUrl(Urls.realmIssuer(session.getContext().getUri().getBaseUri(), realm.getName()));
+                    .realmUrl(realmUrl)
+                    .issuerUrl(issuerUrl)
+                    .checkRealmUrl(realmUrl.equals(issuerUrl) || !realm.isRealmUrlCheckDeactivated());
 
             SignatureVerifierContext verifierContext = session.getProvider(SignatureProvider.class, verifier.getHeader().getAlgorithm().name()).verifier(verifier.getHeader().getKeyId());
             verifier.verifierContext(verifierContext);

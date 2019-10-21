@@ -94,4 +94,8 @@ public class RealmBean {
         return false;
     }
 
+    public String issuerUrl() {
+        return realm.getIssuerUrl();
+    }
+
 }

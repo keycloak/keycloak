@@ -215,6 +215,11 @@ public class AccessToken extends IDToken {
         return (AccessToken) super.issuer(issuer);
     }
 
+    @Override 
+    public AccessToken realm(String realm){
+        return (AccessToken) super.realm(realm);
+    }
+
     @Override
     public AccessToken subject(String subject) {
         return (AccessToken) super.subject(subject);

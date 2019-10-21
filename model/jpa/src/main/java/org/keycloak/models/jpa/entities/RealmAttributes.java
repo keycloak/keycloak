@@ -47,4 +47,8 @@ public interface RealmAttributes {
     String WEBAUTHN_POLICY_AVOID_SAME_AUTHENTICATOR_REGISTER = "webAuthnPolicyAvoidSameAuthenticatorRegister";
     String WEBAUTHN_POLICY_ACCEPTABLE_AAGUIDS = "webAuthnPolicyAcceptableAaguids";
 
+    String ISSUER_URL = "issuerUrl";
+    
+    String IS_REALMURL_CHECK_DEACTIVATED = "IsRealmUrlCheckDeactivated";
+
 }

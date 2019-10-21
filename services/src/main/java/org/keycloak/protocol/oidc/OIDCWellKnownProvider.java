@@ -81,7 +81,9 @@ public class OIDCWellKnownProvider implements WellKnownProvider {
         UriBuilder uriBuilder = RealmsResource.protocolUrl(uriInfo);
 
         OIDCConfigurationRepresentation config = new OIDCConfigurationRepresentation();
-        config.setIssuer(Urls.realmIssuer(uriInfo.getBaseUri(), realm.getName()));
+        String realmUrl = Urls.realmIssuer(uriInfo.getBaseUri(), realm.getName());
+        config.setRealm(realmUrl);
+        config.setIssuer(realm.getIssuerUrlOrDefault(realmUrl));
         config.setAuthorizationEndpoint(uriBuilder.clone().path(OIDCLoginProtocolService.class, "auth").build(realm.getName(), OIDCLoginProtocol.LOGIN_PROTOCOL).toString());
         config.setTokenEndpoint(uriBuilder.clone().path(OIDCLoginProtocolService.class, "token").build(realm.getName(), OIDCLoginProtocol.LOGIN_PROTOCOL).toString());
         config.setTokenIntrospectionEndpoint(uriBuilder.clone().path(OIDCLoginProtocolService.class, "token").path(TokenEndpoint.class, "introspect").build(realm.getName(), OIDCLoginProtocol.LOGIN_PROTOCOL).toString());

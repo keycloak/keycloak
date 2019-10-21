@@ -283,7 +283,9 @@ public class PolicyEvaluationService {
 
             accessToken.issuedFor(client.getClientId());
             accessToken.audience(client.getId());
-            accessToken.issuer(Urls.realmIssuer(keycloakSession.getContext().getUri().getBaseUri(), realm.getName()));
+            String realmUrl = Urls.realmIssuer(keycloakSession.getContext().getUri().getBaseUri(), realm.getName());
+            accessToken.realm(realmUrl);
+            accessToken.issuer(realm.getIssuerUrlOrDefault(realmUrl));
             accessToken.setRealmAccess(new AccessToken.Access());
 
         }

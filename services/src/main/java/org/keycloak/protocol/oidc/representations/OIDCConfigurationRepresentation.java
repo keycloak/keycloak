@@ -34,6 +34,9 @@ public class OIDCConfigurationRepresentation {
     @JsonProperty("issuer")
     private String issuer;
 
+    @JsonProperty("realm")
+    private String realm;
+
     @JsonProperty("authorization_endpoint")
     private String authorizationEndpoint;
 
@@ -130,6 +133,14 @@ public class OIDCConfigurationRepresentation {
 
     public void setIssuer(String issuer) {
         this.issuer = issuer;
+    }
+
+    public String getRealm(){
+        return realm;
+    }
+
+    public void setRealm(String realm){
+        this.realm = realm;
     }
 
     public String getAuthorizationEndpoint() {

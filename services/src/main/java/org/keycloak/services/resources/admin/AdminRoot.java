@@ -16,12 +16,26 @@
  */
 package org.keycloak.services.resources.admin;
 
+import java.io.IOException;
+import java.util.Locale;
+import java.util.Properties;
+
+import javax.ws.rs.GET;
+import javax.ws.rs.HttpMethod;
+import javax.ws.rs.NotAuthorizedException;
+import javax.ws.rs.NotFoundException;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriBuilder;
+import javax.ws.rs.core.UriInfo;
+
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.HttpResponse;
-import javax.ws.rs.NotFoundException;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
-import javax.ws.rs.NotAuthorizedException;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
@@ -38,19 +52,6 @@ import org.keycloak.services.resources.Cors;
 import org.keycloak.services.resources.admin.info.ServerInfoAdminResource;
 import org.keycloak.services.resources.admin.permissions.AdminPermissions;
 import org.keycloak.theme.Theme;
-
-import javax.ws.rs.GET;
-import javax.ws.rs.HttpMethod;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriBuilder;
-import javax.ws.rs.core.UriInfo;
-import java.io.IOException;
-import java.util.Locale;
-import java.util.Properties;
 
 /**
  * Root resource for admin console and admin REST API
@@ -161,7 +162,7 @@ public class AdminRoot {
         } catch (JWSInputException e) {
             throw new NotAuthorizedException("Bearer token format error");
         }
-        String realmName = token.getIssuer().substring(token.getIssuer().lastIndexOf('/') + 1);
+        String realmName = token.getRealm().substring(token.getRealm().lastIndexOf('/') + 1);
         RealmManager realmManager = new RealmManager(session);
         RealmModel realm = realmManager.getRealmByName(realmName);
         if (realm == null) {

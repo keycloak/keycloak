@@ -83,7 +83,9 @@ public class DockerEndpoint extends AuthorizationEndpointBase {
         authenticationSession.setClientNote(DockerAuthV2Protocol.ACCOUNT_PARAM, account);
         authenticationSession.setClientNote(DockerAuthV2Protocol.SERVICE_PARAM, service);
         authenticationSession.setClientNote(DockerAuthV2Protocol.SCOPE_PARAM, scope);
-        authenticationSession.setClientNote(DockerAuthV2Protocol.ISSUER, Urls.realmIssuer(session.getContext().getUri().getBaseUri(), realm.getName()));
+        String realmUrl = Urls.realmIssuer(session.getContext().getUri().getBaseUri(), realm.getName());
+        authenticationSession.setClientNote(DockerAuthV2Protocol.REALM, realmUrl);
+        authenticationSession.setClientNote(DockerAuthV2Protocol.ISSUER, realm.getIssuerUrlOrDefault(realmUrl));
 
     }
 

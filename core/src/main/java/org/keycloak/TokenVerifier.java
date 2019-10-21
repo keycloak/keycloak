@@ -106,13 +106,38 @@ public class TokenVerifier<T extends JsonWebToken> {
                 throw new VerificationException("Realm URL not set");
             }
 
-            if (! this.realmUrl.equals(t.getIssuer())) {
-                throw new VerificationException("Invalid token issuer. Expected '" + this.realmUrl + "', but was '" + t.getIssuer() + "'");
+            if (! this.realmUrl.equals(t.getRealm())) {
+                throw new VerificationException("Invalid token realm. Expected '" + this.realmUrl + "', but was '" + t.getRealm() + "'");
             }
 
             return true;
         }
     };
+
+    // NOTE(angelinsky7): Added for the sake of the correct check
+    public static class IssuerUrlCheck implements Predicate<JsonWebToken> {
+
+        private static final IssuerUrlCheck NULL_INSTANCE = new IssuerUrlCheck(null);
+
+        private final String issuerUrl;
+
+        public IssuerUrlCheck(String issuerUrl) {
+            this.issuerUrl = issuerUrl;
+        }
+
+        @Override
+        public boolean test(JsonWebToken t) throws VerificationException {
+            if (this.issuerUrl == null) {
+                throw new VerificationException("Issuer URL not set");
+            }
+
+            if (! this.issuerUrl.equals(t.getIssuer())) {
+                throw new VerificationException("Invalid token issuer. Expected '" + this.issuerUrl + "', but was '" + t.getIssuer() + "'");
+            }
+
+            return true;
+        }
+    }
 
     public static class TokenTypeCheck implements Predicate<JsonWebToken> {
 
@@ -190,9 +215,11 @@ public class TokenVerifier<T extends JsonWebToken> {
     private PublicKey publicKey;
     private SecretKey secretKey;
     private String realmUrl;
+    private String issuerUrl;
     private String expectedTokenType = TokenUtil.TOKEN_TYPE_BEARER;
     private boolean checkTokenType = true;
     private boolean checkRealmUrl = true;
+    private boolean checkIssuerUrl = true;
     private final LinkedList<Predicate<? super T>> checks = new LinkedList<>();
 
     private JWSInput jws;
@@ -244,6 +271,7 @@ public class TokenVerifier<T extends JsonWebToken> {
      * Adds default checks to the token verification:
      * <ul>
      * <li>Realm URL (JWT issuer field: {@code iss}) has to be defined and match realm set via {@link #realmUrl(java.lang.String)} method</li>
+     * <li>Issuer URL (JWT issuer field: {@code realm}) has to be defined and match realm set via {@link #issuerUrl(java.lang.String)} method</li>
      * <li>Subject (JWT subject field: {@code sub}) has to be defined</li>
      * <li>Token type (JWT type field: {@code typ}) has to be {@code Bearer}. The type can be set via {@link #tokenType(java.lang.String)} method</li>
      * <li>Token has to be active, ie. both not expired and not used before its validity (JWT issuer fields: {@code exp} and {@code nbf})</li>
@@ -253,6 +281,7 @@ public class TokenVerifier<T extends JsonWebToken> {
     public TokenVerifier<T> withDefaultChecks()  {
         return withChecks(
           RealmUrlCheck.NULL_INSTANCE,
+          IssuerUrlCheck.NULL_INSTANCE,
           SUBJECT_EXISTS_CHECK,
           TokenTypeCheck.INSTANCE_BEARER,
           IS_ACTIVE
@@ -329,6 +358,15 @@ public class TokenVerifier<T extends JsonWebToken> {
     }
 
     /**
+     * @deprecated Added this to map the correct way of doing the realm and issuer url.
+     * @return This token verifier
+     */
+    public TokenVerifier<T> issuerUrl(String issuerUrl){
+        this.issuerUrl = issuerUrl;
+        return replaceCheck(IssuerUrlCheck.class, checkIssuerUrl, new IssuerUrlCheck(issuerUrl));
+    }
+
+    /**
      * @deprecated This method is here only for backward compatibility with previous version of {@code TokenVerifier}.
      * @return This token verifier
      */
@@ -361,6 +399,15 @@ public class TokenVerifier<T extends JsonWebToken> {
     public TokenVerifier<T> checkRealmUrl(boolean checkRealmUrl) {
         this.checkRealmUrl = checkRealmUrl;
         return replaceCheck(RealmUrlCheck.class, this.checkRealmUrl, new RealmUrlCheck(realmUrl));
+    }
+
+    /**
+     * @deprecated Added this to map the correct way of doing the realm and issuer url.
+     * @return This token verifier
+     */
+    public TokenVerifier<T> checkIssuerUrl(boolean checkIssuerUrl) {
+        this.checkIssuerUrl = checkIssuerUrl;
+        return replaceCheck(IssuerUrlCheck.class, this.checkIssuerUrl, new IssuerUrlCheck(issuerUrl));
     }
 
     /**

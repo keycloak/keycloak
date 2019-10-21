@@ -131,7 +131,7 @@ public class ClientRegistrationTokenUtils {
     }
 
     private static String getIssuer(KeycloakSession session, RealmModel realm) {
-        return Urls.realmIssuer(session.getContext().getUri().getBaseUri(), realm.getName());
+        return realm.getIssuerUrlOrDefault(Urls.realmIssuer(session.getContext().getUri().getBaseUri(), realm.getName()));
     }
 
     protected static class TokenVerification {

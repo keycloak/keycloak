@@ -177,6 +177,8 @@ public class RepresentationToModel {
         if (rep.isAdminEventsEnabled() != null) newRealm.setAdminEventsEnabled(rep.isAdminEventsEnabled());
         if (rep.isAdminEventsDetailsEnabled() != null)
             newRealm.setAdminEventsDetailsEnabled(rep.isAdminEventsDetailsEnabled());
+        if(rep.getIssuerUrl() != null) newRealm.setIssuerUrl(rep.getIssuerUrl());
+        if(rep.isRealmUrlCheckDeactivated() != null) newRealm.setRealmUrlCheckDeactivated(rep.isRealmUrlCheckDeactivated());
 
         if (rep.getNotBefore() != null) newRealm.setNotBefore(rep.getNotBefore());
 
@@ -959,6 +961,8 @@ public class RepresentationToModel {
         if (rep.isDuplicateEmailsAllowed() != null) realm.setDuplicateEmailsAllowed(rep.isDuplicateEmailsAllowed());
         if (rep.isResetPasswordAllowed() != null) realm.setResetPasswordAllowed(rep.isResetPasswordAllowed());
         if (rep.isEditUsernameAllowed() != null) realm.setEditUsernameAllowed(rep.isEditUsernameAllowed());
+        if (rep.getIssuerUrl() != null) realm.setIssuerUrl(rep.getIssuerUrl());
+        if (rep.isRealmUrlCheckDeactivated() != null) realm.setRealmUrlCheckDeactivated(rep.isRealmUrlCheckDeactivated());
         if (rep.getSslRequired() != null) realm.setSslRequired(SslRequired.valueOf(rep.getSslRequired().toUpperCase()));
         if (rep.getAccessCodeLifespan() != null) realm.setAccessCodeLifespan(rep.getAccessCodeLifespan());
         if (rep.getAccessCodeLifespanUserAction() != null)

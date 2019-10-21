@@ -94,6 +94,7 @@ public class RSAVerifierTest {
         token.type(TokenUtil.TOKEN_TYPE_BEARER)
                 .subject("CN=Client")
                 .issuer("http://localhost:8080/auth/realm")
+                .realm("http://localhost:8080/auth/realm")
                 .addAccess("service").addRole("admin");
     }
 
@@ -124,7 +125,7 @@ public class RSAVerifierTest {
     }
 
     private AccessToken verifySkeletonKeyToken(String encoded) throws VerificationException {
-        return RSATokenVerifier.verifyToken(encoded, idpPair.getPublic(), "http://localhost:8080/auth/realm");
+        return RSATokenVerifier.verifyToken(encoded, idpPair.getPublic(), "http://localhost:8080/auth/realm", "http://localhost:8080/auth/realm");
     }
 
 

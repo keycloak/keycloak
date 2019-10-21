@@ -392,7 +392,9 @@ public class LoginActionsService {
         authSession.setRedirectUri(redirectUri);
         authSession.setClientNote(OIDCLoginProtocol.RESPONSE_TYPE_PARAM, OAuth2Constants.CODE);
         authSession.setClientNote(OIDCLoginProtocol.REDIRECT_URI_PARAM, redirectUri);
-        authSession.setClientNote(OIDCLoginProtocol.ISSUER, Urls.realmIssuer(session.getContext().getUri().getBaseUri(), realm.getName()));
+        String realmUrl = Urls.realmIssuer(session.getContext().getUri().getBaseUri(), realm.getName());
+        authSession.setClientNote(OIDCLoginProtocol.REALM, realmUrl);
+        authSession.setClientNote(OIDCLoginProtocol.ISSUER, realm.getIssuerUrlOrDefault(realmUrl));
 
         return authSession;
     }
@@ -483,6 +485,8 @@ public class LoginActionsService {
                 throw new ExplainedTokenVerificationException(aToken, Errors.SSL_REQUIRED, Messages.HTTPS_REQUIRED);
             }
 
+            //TODO(angelinsky7): not the issuer url but the realm url
+            //TODO(angelinsky7): for now i don't know what to do...
             TokenVerifier<DefaultActionTokenKey> verifier = tokenVerifier
                     .withChecks(
                             // Token introspection checks

@@ -72,4 +72,9 @@ public class RealmBean {
     public boolean isUserManagedAccessAllowed() {
         return realm.isUserManagedAccessAllowed();
     }
+
+    public String getIssuerUrl() {
+        return realm.getIssuerUrl();
+    }
+
 }

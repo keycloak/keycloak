@@ -122,7 +122,9 @@ public class ActionTokenContext<T extends JsonWebToken> {
         authSession.setRedirectUri(redirectUri);
         authSession.setClientNote(OIDCLoginProtocol.REDIRECT_URI_PARAM, redirectUri);
         authSession.setClientNote(OIDCLoginProtocol.RESPONSE_TYPE_PARAM, OAuth2Constants.CODE);
-        authSession.setClientNote(OIDCLoginProtocol.ISSUER, Urls.realmIssuer(uriInfo.getBaseUri(), realm.getName()));
+        String realmUrl = Urls.realmIssuer(uriInfo.getBaseUri(), realm.getName());
+        authSession.setClientNote(OIDCLoginProtocol.REALM, realmUrl);
+        authSession.setClientNote(OIDCLoginProtocol.ISSUER, realm.getIssuerUrlOrDefault(realmUrl));
 
         return authSession;
     }

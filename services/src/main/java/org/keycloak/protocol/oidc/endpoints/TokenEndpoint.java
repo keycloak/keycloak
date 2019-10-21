@@ -572,7 +572,9 @@ public class TokenEndpoint {
 
         authSession.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
         authSession.setAction(AuthenticatedClientSessionModel.Action.AUTHENTICATE.name());
-        authSession.setClientNote(OIDCLoginProtocol.ISSUER, Urls.realmIssuer(session.getContext().getUri().getBaseUri(), realm.getName()));
+        String realmUrl = Urls.realmIssuer(session.getContext().getUri().getBaseUri(), realm.getName());
+        authSession.setClientNote(OIDCLoginProtocol.REALM, realmUrl);
+        authSession.setClientNote(OIDCLoginProtocol.ISSUER, realm.getIssuerUrlOrDefault(realmUrl));
         authSession.setClientNote(OIDCLoginProtocol.SCOPE_PARAM, scope);
 
         AuthenticationFlowModel flow = AuthenticationFlowResolver.resolveDirectGrantFlow(authSession);
@@ -662,7 +664,9 @@ public class TokenEndpoint {
 
         authSession.setAuthenticatedUser(clientUser);
         authSession.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
-        authSession.setClientNote(OIDCLoginProtocol.ISSUER, Urls.realmIssuer(session.getContext().getUri().getBaseUri(), realm.getName()));
+        String realmUrl = Urls.realmIssuer(session.getContext().getUri().getBaseUri(), realm.getName());
+        authSession.setClientNote(OIDCLoginProtocol.REALM, realmUrl);
+        authSession.setClientNote(OIDCLoginProtocol.ISSUER, realm.getIssuerUrlOrDefault(realmUrl));
         authSession.setClientNote(OIDCLoginProtocol.SCOPE_PARAM, scope);
 
         UserSessionModel userSession = session.sessions().createUserSession(authSession.getParentSession().getId(), realm, clientUser, clientUsername,
@@ -885,7 +889,9 @@ public class TokenEndpoint {
 
         authSession.setAuthenticatedUser(targetUser);
         authSession.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
-        authSession.setClientNote(OIDCLoginProtocol.ISSUER, Urls.realmIssuer(session.getContext().getUri().getBaseUri(), realm.getName()));
+        String realmUrl = Urls.realmIssuer(session.getContext().getUri().getBaseUri(), realm.getName());
+        authSession.setClientNote(OIDCLoginProtocol.REALM, realmUrl);
+        authSession.setClientNote(OIDCLoginProtocol.ISSUER, realm.getIssuerUrlOrDefault(realmUrl));
         authSession.setClientNote(OIDCLoginProtocol.SCOPE_PARAM, scope);
 
         event.session(targetUserSession);
