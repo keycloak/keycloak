@@ -1,16 +1,12 @@
 package org.keycloak.authentication.authenticators.client;
 
-import org.apache.commons.codec.binary.StringUtils;
-import org.keycloak.Config;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.ClientAuthenticationFlowContext;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.provider.ProviderConfigProperty;
-import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.x509.X509ClientCertificateLookup;
 
@@ -22,7 +18,6 @@ import java.security.cert.X509Certificate;
 import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class X509ClientAuthenticator extends AbstractClientAuthenticator {
 
