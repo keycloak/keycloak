@@ -58,6 +58,7 @@ import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.RegisterPage;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.updaters.RoleScopeUpdater;
+import org.keycloak.testsuite.util.DroneUtils;
 import org.keycloak.testsuite.util.IdentityProviderBuilder;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RealmBuilder;
@@ -65,10 +66,12 @@ import org.keycloak.testsuite.util.UIUtils;
 import org.keycloak.testsuite.util.UserBuilder;
 import java.io.Closeable;
 import java.io.IOException;
-import java.util.Collections;
 import org.openqa.selenium.By;
+import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebDriver;
 
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -1225,7 +1228,7 @@ public class AccountFormServiceTest extends AbstractTestRealmKeycloakTest {
 
         events.clear();
     }
-    
+
     @Test
     public void testReferrerLinkContents() {
         RealmResource testRealm = testRealm();
@@ -1273,5 +1276,26 @@ public class AccountFormServiceTest extends AbstractTestRealmKeycloakTest {
         Assert.assertNull(profilePage.getBackToApplicationLinkText());
 
         events.clear();
+    }
+
+    @Test
+    public void testNoPublicKeyCredentialRelatedElementsPresentOnEditAccountScreen() {
+        profilePage.open();
+        loginPage.login("test-user@localhost", "password");
+        Assert.assertTrue(profilePage.isCurrent());
+
+        int noSuchElementExceptionCount = 0;
+        for (String pkcElementId : Arrays.asList("user.attributes.public_key_credential_id",
+                                                 "user.attributes.public_key_credential_label",
+                                                 "user.attributes.public_key_credential_aaguid")) {
+            try {
+                DroneUtils.getCurrentDriver().findElement(By.id(pkcElementId));
+            } catch (NoSuchElementException nsee) {
+                // Expected to happen in every iteration of the for loop
+                noSuchElementExceptionCount++;
+            }
+        }
+        // None of PK credential ID, label, and AAGUID can be present on Edit Account screen
+        assertEquals(3, noSuchElementExceptionCount);
     }
 }
