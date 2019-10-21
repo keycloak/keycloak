@@ -1,0 +1,1 @@
+Keycloak.X - Version ${product.version}
