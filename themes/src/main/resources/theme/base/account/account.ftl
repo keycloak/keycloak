@@ -56,37 +56,6 @@
             </div>
         </div>
 
-
-        <div class="form-group">
-            <div class="col-sm-2 col-md-2">
-                <label for="publicKeyCredentialId" class="control-label">${msg("Public Key Credential ID")}</label>
-            </div>
-
-            <div class="col-sm-10 col-md-10">
-                <input type="text" class="form-control" id="user.attributes.public_key_credential_id" name="user.attributes.public_key_credential_id" disabled="disabled" value="${(account.attributes.public_key_credential_id!'')}"/>
-            </div>
-        </div>
-
-        <div class="form-group">
-            <div class="col-sm-2 col-md-2">
-                <label for="publicKeyCredentialLabel" class="control-label">${msg("Public Key Credential Label")}</label>
-            </div>
-
-            <div class="col-sm-10 col-md-10">
-                <input type="text" class="form-control" id="user.attributes.public_key_credential_label" name="user.attributes.public_key_credential_label" value="${(account.attributes.public_key_credential_label!'')}"/>
-            </div>
-        </div>
-
-        <div class="form-group">
-            <div class="col-sm-2 col-md-2">
-                <label for="publicKeyCredentialAaguid" class="control-label">${msg("Public Key Credential AAGUID")}</label>
-            </div>
-
-            <div class="col-sm-10 col-md-10">
-                <input type="text" class="form-control" id="user.attributes.public_key_credential_aaguid" name="user.attributes.public_key_credential_aaguid" disabled="disabled" value="${(account.attributes.public_key_credential_aaguid!'')}"/>
-            </div>
-        </div>
-
         <div class="form-group">
             <div id="kc-form-buttons" class="col-md-offset-2 col-md-10 submit">
                 <div class="">
