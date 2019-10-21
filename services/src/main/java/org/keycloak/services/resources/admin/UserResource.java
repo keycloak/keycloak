@@ -225,6 +225,16 @@ public class UserResource {
             }
         }
 
+        List<CredentialRepresentation> credentials = rep.getCredentials();
+        if (credentials != null) {
+            for (CredentialRepresentation credential : credentials) {
+                if (CredentialRepresentation.PASSWORD.equals(credential.getType()) && credential.isTemporary() != null
+                        && credential.isTemporary()) {
+                    user.addRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
+                }
+            }
+        }
+
         if (rep.getAttributes() != null) {
             for (Map.Entry<String, List<String>> attr : rep.getAttributes().entrySet()) {
                 user.setAttribute(attr.getKey(), attr.getValue());

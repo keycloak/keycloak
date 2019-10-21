@@ -308,6 +308,25 @@ public class UserTest extends AbstractAdminTest {
     }
 
     @Test
+    public void createUserWithTempolaryCredentials() {
+        UserRepresentation user = new UserRepresentation();
+        user.setUsername("user_temppw");
+        user.setEmail("email.temppw@localhost");
+
+        CredentialRepresentation password = new CredentialRepresentation();
+        password.setValue("password");
+        password.setType(CredentialRepresentation.PASSWORD);
+        password.setTemporary(true);
+        user.setCredentials(Arrays.asList(password));
+
+        String userId = createUser(user);
+
+        UserRepresentation userRep = realm.users().get(userId).toRepresentation();
+        Assert.assertEquals(1, userRep.getRequiredActions().size());
+        Assert.assertEquals(UserModel.RequiredAction.UPDATE_PASSWORD.toString(), userRep.getRequiredActions().get(0));
+    }
+
+    @Test
     public void createUserWithRawCredentials() {
         UserRepresentation user = new UserRepresentation();
         user.setUsername("user_rawpw");
