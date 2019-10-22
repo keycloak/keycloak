@@ -405,6 +405,74 @@ When restarting the server it is important to restart just the JBoss EAP process
 ====
 . Log in to the `master` realm's administration console of the {project_name} server using the credentials created in the steps above. In the browser, navigate to *\http://sso-<project-name>.<hostname>/auth/admin*  for the {project_name} web server, or to *\https://secure-sso-<project-name>.<hostname>/auth/admin* for the encrypted {project_name} web server, and specify the user name and password used to create the administrator user.
 
+
+=== Customizing the default behavior of the {project_name} image
+
+You can change the default behavior of the {project_name} image such as enabling TechPreview features or enabling debugging. This section describes how to make this change by using the JAVA_OPTS_APPEND variable.
+
+.Prerequisites
+
+This procedure assumes that the {project_openshift_product_name} image has been previously link:https://access.redhat.com/documentation/en-us/red_hat_single_sign-on/7.3/html-single/red_hat_single_sign-on_for_openshift/index#Example-Deploying-SSO[deployed using one of the following templates:]
+
+* *_{project_templates_version}-mysql_*
+* *_{project_templates_version}-mysql-persistent_*
+* *_{project_templates_version}-postgresql_*
+* *_{project_templates_version}-postgresql-persistent_*
+* *_{project_templates_version}-x509-mysql-persistent_*
+* *_{project_templates_version}-x509-postgresql-persistent_*
+
+.Procedure
+
+You can use the OpenShift web console or the CLI to change the default behavior.
+
+If you use the OpenShift web console, you add the JAVA_OPTS_APPEND variable to the sso deployment config. For example, to enable TechPreview features, you set the variable as follows:
+
+[source,bash,subs=+attributes]
+----
+JAVA_OPTS_APPEND="-Dkeycloak.profile=preview"
+----
+
+If you use the CLI, use the following commands to enable TechPreview features when the {project_name} pod was deployed using a template that is mentioned under Prerequisites.
+
+. Scale down the {project_name} pod:
+
++
+[source,bash,subs=+attributes]
+----
+$ oc get dc -o name
+deploymentconfig/sso
+deploymentconfig/sso-mysql
+
+$ oc scale --replicas=0 dc sso
+deploymentconfig "sso" scaled
+----
+
++
+[NOTE]
+====
+In the preceding command, ``sso-mysql`` appears because a MySQL template was used to deploy the {project_openshift_product_name} image. However, if a PostgreSQL template was used, the name of the deployment config of the PostgreSQL pod would be ``sso-postgresql``.
+====
+
+. Edit the deployment config to set the JAVA_OPTS_APPEND variable. For example, to enable TechPreview features, you set the variable as follows:
+
++
+[source,bash,subs=+attributes]
+----
+oc env dc/sso -e "JAVA_OPTS_APPEND=-Dkeycloak.profile=preview"
+----
+
+. Scale up the {project_name} pod:
+
++
+[source,bash,subs=+attributes]
+----
+$ oc scale --replicas=1 dc sso
+deploymentconfig "sso" scaled
+----
+
+. Test a TechPreview feature of your choice.
+
+
 === Deployment Process
 
 Once deployed, the *_{project_templates_version}-https_* and *_{project_templates_version}-x509-https_* templates create a single pod that contains both the database and the {project_name} servers. The *_{project_templates_version}-mysql_*, *_{project_templates_version}-mysql-persistent_*, *_{project_templates_version}-x509-mysql-persistent_*, *_{project_templates_version}-postgresql_*, *_{project_templates_version}-postgresql-persistent_*, and *_{project_templates_version}-x509-postgresql-persistent_* templates create two pods, one for the database server and one for the {project_name} web server.
