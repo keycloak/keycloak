@@ -541,6 +541,11 @@ public class RealmCacheSession implements CacheRealmProvider {
         return getClientDelegate().getClients(realm, firstResult, maxResults);
     }
 
+    @Override
+    public List<ClientModel> getClients(RealmModel realm) {
+        return getClientDelegate().getClients(realm);
+    }
+
 
     @Override
     public boolean removeClient(String id, RealmModel realm) {

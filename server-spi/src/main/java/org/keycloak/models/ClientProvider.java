@@ -29,6 +29,8 @@ import java.util.Set;
 public interface ClientProvider extends ClientLookupProvider, Provider {
     List<ClientModel> getClients(RealmModel realm, Integer firstResult, Integer maxResults);
 
+    List<ClientModel> getClients(RealmModel realm);
+
     ClientModel addClient(RealmModel realm, String clientId);
 
     ClientModel addClient(RealmModel realm, String id, String clientId);

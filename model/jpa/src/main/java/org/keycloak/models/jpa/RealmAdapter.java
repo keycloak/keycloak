@@ -786,7 +786,7 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
     }
     @Override
     public List<ClientModel> getClients() {
-        return session.realms().getClients(this, 0, session.realms().getClientsCount(this).intValue());
+        return session.realms().getClients(this);
     }
 
     @Override

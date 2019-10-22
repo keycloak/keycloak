@@ -19,7 +19,12 @@ package org.keycloak.storage;
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.reflections.Types;
 import org.keycloak.component.ComponentModel;
-import org.keycloak.models.*;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientProvider;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelException;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleModel;
 import org.keycloak.storage.client.ClientLookupProvider;
 import org.keycloak.storage.client.ClientStorageProvider;
 import org.keycloak.storage.client.ClientStorageProviderFactory;
@@ -174,6 +179,11 @@ public class ClientStorageManager implements ClientProvider {
     @Override
     public List<ClientModel> getClients(RealmModel realm, Integer firstResult, Integer maxResults) {
        return session.clientLocalStorage().getClients(realm, firstResult, maxResults);
+    }
+
+    @Override
+    public List<ClientModel> getClients(RealmModel realm) {
+        return session.clientLocalStorage().getClients(realm);
     }
 
     @Override

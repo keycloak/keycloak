@@ -42,6 +42,7 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import javax.persistence.EntityManager;
 import javax.persistence.LockModeType;
 import javax.persistence.TypedQuery;
+
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -302,7 +303,7 @@ public class JpaRealmProvider implements RealmProvider {
         RoleEntity roleEntity = em.getReference(RoleEntity.class, role.getId());
         String compositeRoleTable = JpaUtils.getTableNameForNativeQuery("COMPOSITE_ROLE", em);
         em.createNativeQuery("delete from " + compositeRoleTable + " where CHILD_ROLE = :role").setParameter("role", roleEntity).executeUpdate();
-        realm.getClients(0, realm.getClientsCount().intValue()).forEach(c -> c.deleteScopeMapping(role));
+        realm.getClients().forEach(c -> c.deleteScopeMapping(role));
         em.createNamedQuery("deleteClientScopeRoleMappingByRole").setParameter("role", roleEntity).executeUpdate();
         int val = em.createNamedQuery("deleteGroupRoleMappingsByRole").setParameter("roleId", roleEntity.getId()).executeUpdate();
 
@@ -383,10 +384,9 @@ public class JpaRealmProvider implements RealmProvider {
 
     @Override
     public Long getClientsCount(RealmModel realm) {
-        Long count = em.createNamedQuery("getRealmClientsCount", Long.class)
+        return em.createNamedQuery("getRealmClientsCount", Long.class)
                 .setParameter("realm", realm.getId())
                 .getSingleResult();
-        return count;
     }
 
     @Override
@@ -559,14 +559,18 @@ public class JpaRealmProvider implements RealmProvider {
         }
         query.setParameter("realm", realm.getId());
         List<String> clients = query.getResultList();
-        if (clients.isEmpty()) return Collections.emptyList();
+        if (clients.isEmpty()) return Collections.EMPTY_LIST;
         List<ClientModel> list = new LinkedList<>();
         for (String id : clients) {
             ClientModel client = session.realms().getClientById(id, realm);
             if (client != null) list.add(client);
         }
         return Collections.unmodifiableList(list);
+    }
 
+    @Override
+    public List<ClientModel> getClients(RealmModel realm) {
+        return this.getClients(realm, null, null);
     }
 
     @Override
@@ -602,7 +606,7 @@ public class JpaRealmProvider implements RealmProvider {
         query.setParameter("clientId", clientId);
         query.setParameter("realm", realm.getId());
         List<String> results = query.getResultList();
-        if (results.isEmpty()) return null;
+        if (results.isEmpty()) return Collections.EMPTY_LIST;
         return results.stream().map(id -> session.realms().getClientById(id, realm)).collect(Collectors.toList());
     }
 

@@ -692,7 +692,7 @@ public class RealmAdapter implements CachedRealmModel {
 
     @Override
     public List<ClientModel> getClients() {
-        return cacheSession.getClients(this, 0, cacheSession.getClientsCount(this).intValue());
+        return cacheSession.getClients(this);
     }
 
     @Override
