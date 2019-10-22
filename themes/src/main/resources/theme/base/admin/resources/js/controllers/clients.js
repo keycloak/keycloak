@@ -2127,6 +2127,7 @@ module.controller('ClientProtocolMapperCreateCtrl', function($scope, realm, serv
         changed: false,
         mapperTypes: serverInfo.protocolMapperTypes[protocol]
     };
+    console.log("mapper types: ", $scope.model.mapperTypes);
 
     // apply default configurations on change for selected protocolmapper type.
     $scope.$watch('model.mapperType', function() {
