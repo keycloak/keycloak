@@ -67,6 +67,9 @@
         <session.cache.owners>1</session.cache.owners>
         <offline.session.cache.owners>1</offline.session.cache.owners>
         <login.failure.cache.owners>1</login.failure.cache.owners>
+
+        <!-- Path to testsuite/test resources : Themes-->
+        <keycloak.base.test.resource>${project.parent.basedir}/../../../tests/base/src/test/resources</keycloak.base.test.resource>
     </properties>
 
     <profiles>
@@ -153,6 +156,21 @@
                     <plugin>
                         <artifactId>maven-resources-plugin</artifactId>
                         <executions>
+                            <execution>
+                                <id>add-extending-theme</id>
+                                <phase>process-resources</phase>
+                                <goals>
+                                    <goal>copy-resources</goal>
+                                </goals>
+                                <configuration>
+                                    <outputDirectory>${auth.server.home}/themes</outputDirectory>
+                                    <resources>
+                                        <resource>
+                                            <directory>${keycloak.base.test.resource}/theme</directory>
+                                        </resource>
+                                    </resources>
+                                </configuration>
+                            </execution>
                             <execution>
                                 <id>enable-jboss-mgmt-admin</id>
                                 <phase>process-resources</phase>
