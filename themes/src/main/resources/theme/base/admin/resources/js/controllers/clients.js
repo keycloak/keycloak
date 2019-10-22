@@ -859,7 +859,12 @@ module.controller('ClientListCtrl', function($scope, realm, Client, ClientListSe
         ClientListSearchState.query.realm = realm.realm;
         $scope.query = ClientListSearchState.query;
 
-        if (!ClientListSearchState.isFirstSearch) $scope.searchQuery();
+        if (!ClientListSearchState.isFirstSearch) { 
+            $scope.searchQuery();
+        } else {
+            $scope.query.clientId = null;
+            $scope.firstPage();
+        }
     };
     
     $scope.searchQuery = function() {
