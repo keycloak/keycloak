@@ -92,6 +92,10 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Cookie;
 import javax.ws.rs.core.Response;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.text.ParseException;
@@ -101,6 +105,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -831,6 +836,25 @@ public class TestingResourceProvider implements RealmResourceProvider {
         return new TestJavascriptResource();
     }
 
+    private void setFeatureInProfileFile(File file, Profile.Feature featureProfile, String newState) {
+        Properties properties = new Properties();
+        if (file.isFile() && file.exists()) {
+            try (FileInputStream fis = new FileInputStream(file)) {
+                properties.load(fis);
+            } catch (IOException e) {
+                throw new RuntimeException("Unable to read profile.properties file");
+            }
+        }
+
+        properties.setProperty("feature." + featureProfile.toString().toLowerCase(), newState);
+
+        try (FileOutputStream fos = new FileOutputStream(file)) {
+            properties.store(fos, null);
+        } catch (IOException e) {
+            throw new RuntimeException("Unable to write to profile.properties file");
+        }
+    }
+
     @POST
     @Path("/enable-feature/{feature}")
     @Consumes(MediaType.APPLICATION_JSON)
@@ -848,6 +872,13 @@ public class TestingResourceProvider implements RealmResourceProvider {
             return Response.ok().build();
 
         System.setProperty("keycloak.profile.feature." + featureProfile.toString().toLowerCase(), "enabled");
+
+        String jbossServerConfigDir = System.getProperty("jboss.server.config.dir");
+        // If we are in jboss-based container, we need to write profile.properties file, otherwise the change in system property will disappear after restart
+        if (jbossServerConfigDir != null) {
+            setFeatureInProfileFile(new File(jbossServerConfigDir, "profile.properties"), featureProfile, "enabled");
+        }
+
         Profile.init();
 
         if (Profile.isFeatureEnabled(featureProfile))
@@ -873,6 +904,13 @@ public class TestingResourceProvider implements RealmResourceProvider {
             return Response.ok().build();
 
         System.getProperties().remove("keycloak.profile.feature." + featureProfile.toString().toLowerCase());
+
+        String jbossServerConfigDir = System.getProperty("jboss.server.config.dir");
+        // If we are in jboss-based container, we need to write profile.properties file, otherwise the change in system property will disappear after restart
+        if (jbossServerConfigDir != null) {
+            setFeatureInProfileFile(new File(jbossServerConfigDir, "profile.properties"), featureProfile, "disabled");
+        }
+
         Profile.init();
 
         if (!Profile.isFeatureEnabled(featureProfile))

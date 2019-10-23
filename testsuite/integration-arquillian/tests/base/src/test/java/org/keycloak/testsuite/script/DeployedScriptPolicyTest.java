@@ -52,6 +52,7 @@ import org.keycloak.representations.idm.authorization.ResourcePermissionRepresen
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.provider.ScriptProviderDescriptor;
 import org.keycloak.testsuite.ProfileAssume;
+import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
 import org.keycloak.testsuite.authz.AbstractAuthzTest;
 import org.keycloak.testsuite.util.ClientBuilder;
@@ -119,15 +120,15 @@ public class DeployedScriptPolicyTest extends AbstractAuthzTest {
     }
 
     @Test
+    @DisableFeature(value = UPLOAD_SCRIPTS, skipRestart = true)
     public void testJSPolicyProviderNotAvailable() {
-        ProfileAssume.assumeFeatureDisabled(UPLOAD_SCRIPTS);
         assertFalse(getAuthorizationResource().policies().policyProviders().stream().anyMatch(rep -> "js".equals(rep.getType())));
     }
 
     @Test
     @UncaughtServerErrorExpected
+    @DisableFeature(value = UPLOAD_SCRIPTS, skipRestart = true)
     public void failCreateJSPolicy() {
-        ProfileAssume.assumeFeatureDisabled(UPLOAD_SCRIPTS);
         JSPolicyRepresentation grantPolicy = new JSPolicyRepresentation();
 
         grantPolicy.setName("JS Policy");

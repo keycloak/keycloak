@@ -19,7 +19,6 @@ package org.keycloak.testsuite.account;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 import static org.keycloak.common.Profile.Feature.ACCOUNT_API;
-import static org.keycloak.testsuite.ProfileAssume.assumeFeatureEnabled;
 
 import javax.ws.rs.core.Response;
 import java.io.IOException;
@@ -31,17 +30,21 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
+import org.junit.Test;
 import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.representations.account.SessionRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
+import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.util.TokenUtil;
 import org.keycloak.testsuite.util.UserBuilder;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
+@EnableFeature(value = ACCOUNT_API, skipRestart = true)
 public abstract class AbstractRestServiceTest extends AbstractTestRealmKeycloakTest {
 
     @Rule
@@ -55,32 +58,15 @@ public abstract class AbstractRestServiceTest extends AbstractTestRealmKeycloakT
     @Before
     public void before() {
         httpClient = HttpClientBuilder.create().build();
-        try {
-            checkIfFeatureWorks(false);
-            Response response = testingClient.testing().enableFeature(ACCOUNT_API.toString());
-            assertEquals(200, response.getStatus());
-            assumeFeatureEnabled(ACCOUNT_API);
-            checkIfFeatureWorks(true);
-        } catch (Exception e) {
-            disableFeature();
-            throw e;
-        }
     }
 
     @After
     public void after() {
         try {
-            disableFeature();
             httpClient.close();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-    }
-
-    private void disableFeature() {
-        Response response = testingClient.testing().disableFeature(ACCOUNT_API.toString());
-        assertEquals(200, response.getStatus());
-        checkIfFeatureWorks(false);
     }
 
     @Override
@@ -94,6 +80,12 @@ public abstract class AbstractRestServiceTest extends AbstractTestRealmKeycloakT
 
     protected String getAccountUrl(String resource) {
         return suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth/realms/test/account" + (resource != null ? "/" + resource : "");
+    }
+
+    @Test
+    @DisableFeature(value = ACCOUNT_API, skipRestart = true)
+    public void testFeatureDoesntWorkWhenDisabled() {
+        checkIfFeatureWorks(false);
     }
 
     // Check if the feature really works

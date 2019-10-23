@@ -48,6 +48,7 @@ import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.ProtocolMapperUtil;
@@ -129,8 +130,8 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
     }
 
     @Test
+    @EnableFeature(value = Profile.Feature.UPLOAD_SCRIPTS) // This requires also SCRIPTS feature, therefore we need to restart container
     public void testTokenScriptMapping() {
-        ProfileAssume.assumeFeatureEnabled(Profile.Feature.UPLOAD_SCRIPTS);
         {
             ClientResource app = findClientResourceByClientId(adminClient.realm("test"), "test-app");
 

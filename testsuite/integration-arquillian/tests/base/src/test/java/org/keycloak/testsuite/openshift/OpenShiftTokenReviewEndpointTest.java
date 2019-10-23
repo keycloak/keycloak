@@ -33,6 +33,7 @@ import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
+import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.arquillian.annotation.RestartContainer;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.util.ContainerAssume;
@@ -52,9 +53,8 @@ import java.util.Map;
 import static org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder;
 import static org.junit.Assert.*;
 import static org.keycloak.common.Profile.Feature.OPENSHIFT_INTEGRATION;
-import static org.keycloak.testsuite.ProfileAssume.assumeFeatureEnabled;
 
-@RestartContainer(enableFeatures = OPENSHIFT_INTEGRATION)
+@EnableFeature(OPENSHIFT_INTEGRATION)
 public class OpenShiftTokenReviewEndpointTest extends AbstractTestRealmKeycloakTest {
 
     private static boolean flowConfigured;
@@ -93,8 +93,6 @@ public class OpenShiftTokenReviewEndpointTest extends AbstractTestRealmKeycloakT
 
     @Before
     public void enablePassthroughAuthenticator() {
-        assumeFeatureEnabled(OPENSHIFT_INTEGRATION);
-
         if (!flowConfigured) {
             HashMap<String, String> data = new HashMap<>();
             data.put("newName", "testsuite-client-dummy");

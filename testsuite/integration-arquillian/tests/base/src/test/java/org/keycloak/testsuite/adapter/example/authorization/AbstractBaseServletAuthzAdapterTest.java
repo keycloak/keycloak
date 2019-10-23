@@ -28,6 +28,7 @@ import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
 import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
 import org.keycloak.testsuite.adapter.AbstractExampleAdapterTest;
+import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.util.UIUtils;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
@@ -50,6 +51,7 @@ import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
+@EnableFeature(value = UPLOAD_SCRIPTS, skipRestart = true)
 public abstract class AbstractBaseServletAuthzAdapterTest extends AbstractExampleAdapterTest {
 
     protected static final String REALM_NAME = "servlet-authz";
@@ -57,11 +59,6 @@ public abstract class AbstractBaseServletAuthzAdapterTest extends AbstractExampl
 
     @ArquillianResource
     private Deployer deployer;
-
-    @Before
-    public void onBefore() {
-        enableFeature(UPLOAD_SCRIPTS);
-    }
 
     @Override
     public void addAdapterTestRealms(List<RealmRepresentation> testRealms) {

@@ -18,6 +18,7 @@ package org.keycloak.testsuite.script;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.keycloak.common.Profile.Feature.SCRIPTS;
 import static org.keycloak.common.Profile.Feature.UPLOAD_SCRIPTS;
 import static org.keycloak.testsuite.admin.ApiUtil.findClientResourceByClientId;
 import static org.keycloak.testsuite.arquillian.DeploymentTargetModifier.AUTH_SERVER_CURRENT;
@@ -46,6 +47,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.provider.ScriptProviderDescriptor;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.ProfileAssume;
+import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.util.ContainerAssume;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.util.JsonSerialization;
@@ -95,15 +97,14 @@ public class DeployedScriptMapperTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void testScriptMapperNotAvailable() {
-        ProfileAssume.assumeFeatureDisabled(UPLOAD_SCRIPTS);
         assertFalse(adminClient.serverInfo().getInfo().getProtocolMapperTypes().get(OIDCLoginProtocol.LOGIN_PROTOCOL).stream()
                 .anyMatch(
                         mapper -> ScriptBasedOIDCProtocolMapper.PROVIDER_ID.equals(mapper.getId())));
     }
 
     @Test
+    @EnableFeature(SCRIPTS)
     public void testTokenScriptMapping() {
-        ProfileAssume.assumeFeatureEnabled(Profile.Feature.SCRIPTS);
         {
             ClientResource app = findClientResourceByClientId(adminClient.realm("test"), "test-app");
 

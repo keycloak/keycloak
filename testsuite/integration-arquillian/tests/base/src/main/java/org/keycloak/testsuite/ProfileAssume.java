@@ -76,7 +76,7 @@ public class ProfileAssume {
         Assume.assumeTrue("Ignoring test as community profile is not enabled", profile.equals("community"));
     }
 
-    private static boolean isFeatureEnabled(Profile.Feature feature) {
+    public static boolean isFeatureEnabled(Profile.Feature feature) {
         updateProfile();
         return !disabledFeatures.contains(feature.name());
     }

@@ -26,17 +26,14 @@ import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.representations.idm.authorization.JSPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.Logic;
+import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.console.page.clients.authorization.policy.JSPolicy;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
+@EnableFeature(value = UPLOAD_SCRIPTS, skipRestart = true)
 public class JSPolicyManagementTest extends AbstractAuthorizationSettingsTest {
-
-    @Before
-    public void onBefore() {
-        enableFeature(UPLOAD_SCRIPTS);
-    }
 
     @Test
     public void testUpdate() throws InterruptedException {

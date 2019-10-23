@@ -74,6 +74,7 @@ import org.keycloak.representations.idm.authorization.ResourceServerRepresentati
 import org.keycloak.testsuite.adapter.page.PhotozClientAuthzTestApp;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.AppServerTestEnricher;
+import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
 import org.keycloak.testsuite.auth.page.login.OAuthGrant;
 import org.keycloak.testsuite.util.DroneUtils;
@@ -93,6 +94,7 @@ import org.wildfly.extras.creaper.core.online.operations.admin.Administration;
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
+@EnableFeature(value = UPLOAD_SCRIPTS, skipRestart = true)
 public abstract class AbstractBasePhotozExampleAdapterTest extends AbstractPhotozJavascriptExecutorTest {
 
     protected static final String RESOURCE_SERVER_ID = "photoz-restful-api";
@@ -165,7 +167,6 @@ public abstract class AbstractBasePhotozExampleAdapterTest extends AbstractPhoto
 
     @Override
     public void addAdapterTestRealms(List<RealmRepresentation> testRealms) {
-        enableFeature(UPLOAD_SCRIPTS);
         RealmRepresentation realm = loadRealm(new File(TEST_APPS_HOME_DIR + "/photoz/photoz-realm.json"));
 
         realm.setAccessTokenLifespan(30 + TOKEN_LIFESPAN_LEEWAY); // seconds

@@ -152,7 +152,6 @@ public abstract class AbstractKeycloakTest {
     private PropertiesConfiguration constantsProperties;
 
     private boolean resetTimeOffset;
-    private List<Profile.Feature> enabledFeatures = new ArrayList<>();
 
     @Before
     public void beforeAbstractKeycloakTest() throws Exception {
@@ -228,10 +227,6 @@ public abstract class AbstractKeycloakTest {
                 }
             }
             testContext.getCleanups().clear();
-        }
-
-        for (Profile.Feature feature : enabledFeatures) {
-            disableFeature(feature);
         }
 
         postAfterAbstractKeycloak();
@@ -329,11 +324,6 @@ public abstract class AbstractKeycloakTest {
     public KeycloakTestingClient getTestingClient() {
         if (testingClient == null) {
             testingClient = testContext.getTestingClient();
-            if (testingClient == null) {
-                String authServerContextRoot = suiteContext.getAuthServerInfo().getContextRoot().toString();
-                testingClient = KeycloakTestingClient.getInstance(authServerContextRoot + "/auth");
-                testContext.setTestingClient(testingClient);
-            }
         }
         return testingClient;
     }
@@ -638,18 +628,5 @@ public abstract class AbstractKeycloakTest {
             }
         }
         return in;
-    }
-
-    protected void enableFeature(Profile.Feature feature) {
-        enabledFeatures.add(feature);
-        try (Response response = getTestingClient().testing().enableFeature(feature.toString())) {
-            assertEquals(200, response.getStatus());
-        }
-    }
-
-    protected void disableFeature(Profile.Feature feature) {
-        try (Response response = getTestingClient().testing().disableFeature(feature.toString())) {
-            assertEquals(200, response.getStatus());
-        }
     }
 }

@@ -52,6 +52,8 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.provider.ScriptProviderDescriptor;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.ProfileAssume;
+import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
+import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.forms.AbstractFlowTest;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.util.ContainerAssume;
@@ -64,6 +66,7 @@ import org.keycloak.util.JsonSerialization;
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
+@EnableFeature(SCRIPTS)
 public class DeployedScriptAuthenticatorTest extends AbstractFlowTest {
 
     public static final String EXECUTION_ID = "scriptAuth";
@@ -183,7 +186,6 @@ public class DeployedScriptAuthenticatorTest extends AbstractFlowTest {
      */
     @Test
     public void loginShouldWorkWithScriptAuthenticator() {
-        ProfileAssume.assumeFeatureEnabled(SCRIPTS);
         configureFlows();
 
         loginPage.open();
@@ -198,7 +200,6 @@ public class DeployedScriptAuthenticatorTest extends AbstractFlowTest {
      */
     @Test
     public void loginShouldFailWithScriptAuthenticator() {
-        ProfileAssume.assumeFeatureEnabled(SCRIPTS);
         configureFlows();
 
         loginPage.open();
@@ -209,8 +210,8 @@ public class DeployedScriptAuthenticatorTest extends AbstractFlowTest {
     }
 
     @Test
+    @DisableFeature(SCRIPTS)
     public void testScriptAuthenticatorNotAvailable() {
-        ProfileAssume.assumeFeatureDisabled(UPLOAD_SCRIPTS);
         assertFalse(testRealm().flows().getAuthenticatorProviders().stream().anyMatch(
                 provider -> ScriptBasedAuthenticatorFactory.PROVIDER_ID.equals(provider.get("id"))));
     }
