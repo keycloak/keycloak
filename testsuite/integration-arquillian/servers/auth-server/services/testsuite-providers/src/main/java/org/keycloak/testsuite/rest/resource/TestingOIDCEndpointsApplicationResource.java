@@ -20,6 +20,7 @@ package org.keycloak.testsuite.rest.resource;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import javax.ws.rs.BadRequestException;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.common.util.Base64;
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.crypto.Algorithm;
@@ -144,6 +145,19 @@ public class TestingOIDCEndpointsApplicationResource {
         return res;
     }
 
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("/get-keys-as-base64")
+    public Map<String, String> getKeysAsBase64() {
+        // It seems that PemUtils.decodePrivateKey, decodePublicKey can only treat RSA type keys, not EC type keys. Therefore, these are not used.
+        String privateKeyPem = Base64.encodeBytes(clientData.getSigningKeyPair().getPrivate().getEncoded());
+        String publicKeyPem = Base64.encodeBytes(clientData.getSigningKeyPair().getPublic().getEncoded());
+
+        Map<String, String> res = new HashMap<>();
+        res.put(PRIVATE_KEY, privateKeyPem);
+        res.put(PUBLIC_KEY, publicKeyPem);
+        return res;
+    }
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
