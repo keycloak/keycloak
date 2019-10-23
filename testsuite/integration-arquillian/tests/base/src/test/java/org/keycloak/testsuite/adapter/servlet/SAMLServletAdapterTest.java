@@ -1593,6 +1593,27 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
           });
     }
 
+    @Test
+    public void testDestinationUnset() throws Exception {
+        new SamlClientBuilder()
+          .navigateTo(employee2ServletPage.toString())
+          .processSamlResponse(Binding.POST).build()
+          .login().user(bburkeUser).build()
+          .processSamlResponse(Binding.POST)
+            .transformDocument(responseDoc -> {
+                responseDoc.getDocumentElement().removeAttribute("Destination");
+                return responseDoc;
+            })
+            .build()
+
+          .navigateTo(employee2ServletPage.toString())
+
+          .execute(r -> {
+              Assert.assertThat(r, statusCodeIsHC(Response.Status.OK));
+              Assert.assertThat(r, bodyHC(containsString("principal=")));
+          });
+    }
+
     // KEYCLOAK-4329
     @Test
     public void testEmptyKeyInfoElement() {
