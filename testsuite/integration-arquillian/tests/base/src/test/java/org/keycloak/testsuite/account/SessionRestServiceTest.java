@@ -21,7 +21,6 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.keycloak.common.Profile.Feature.ACCOUNT_API;
-import static org.keycloak.testsuite.ProfileAssume.assumeFeatureEnabled;
 
 import java.io.IOException;
 import java.util.List;
@@ -96,8 +95,6 @@ public class SessionRestServiceTest extends AbstractRestServiceTest {
 
     @Test
     public void testProfilePreviewPermissions() throws IOException {
-        assumeFeatureEnabled(ACCOUNT_API);
-
         TokenUtil noaccessToken = new TokenUtil("no-account-access", "password");
         TokenUtil viewToken = new TokenUtil("view-account-access", "password");
 
@@ -122,13 +119,6 @@ public class SessionRestServiceTest extends AbstractRestServiceTest {
         assertEquals(403,
                 SimpleHttp.doDelete(getAccountUrl("sessions/bogusId"), httpClient).header("Accept", "application/json")
                         .auth(viewToken.getToken()).asStatus());
-    }
-
-    @Before
-    @Override
-    public void before() {
-        super.before();
-        assumeFeatureEnabled(ACCOUNT_API);
     }
 
     @Test
@@ -364,8 +354,8 @@ public class SessionRestServiceTest extends AbstractRestServiceTest {
         assertEquals("Other", device.getDevice());
 
         List<SessionRepresentation> sessions = device.getSessions();
-        assertEquals(2, sessions.size());
-        SessionRepresentation session = sessions.stream().filter(rep -> rep.getCurrent() != null && rep.getCurrent()).findFirst().get();
+        assertEquals(1, sessions.size());
+        SessionRepresentation session = sessions.get(0);
         assertEquals("127.0.0.1", session.getIpAddress());
         assertEquals(device.getLastAccess(), session.getLastAccess());
 

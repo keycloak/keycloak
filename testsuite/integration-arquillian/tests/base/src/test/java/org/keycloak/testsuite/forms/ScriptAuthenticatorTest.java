@@ -38,6 +38,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.ProfileAssume;
+import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.util.ExecutionBuilder;
 import org.keycloak.testsuite.util.FlowBuilder;
@@ -53,6 +54,7 @@ import java.util.Map;
  *
  * @author <a href="mailto:thomas.darimont@gmail.com">Thomas Darimont</a>
  */
+@EnableFeature(Profile.Feature.UPLOAD_SCRIPTS)
 public class ScriptAuthenticatorTest extends AbstractFlowTest {
 
     @Page
@@ -64,13 +66,6 @@ public class ScriptAuthenticatorTest extends AbstractFlowTest {
     private AuthenticationFlowRepresentation flow;
 
     public static final String EXECUTION_ID = "scriptAuth";
-
-    @BeforeClass
-    public static void verifyEnvironment() {
-        // TODO: we should probably enable SCRIPTS automatically when UPLOAD_SCRIPTS is enabled
-        ProfileAssume.assumeFeatureEnabled(Profile.Feature.SCRIPTS);
-        ProfileAssume.assumeFeatureEnabled(Profile.Feature.UPLOAD_SCRIPTS);
-    }
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
@@ -236,3 +231,4 @@ public class ScriptAuthenticatorTest extends AbstractFlowTest {
         return configRep;
     }
 }
+

@@ -46,7 +46,8 @@ import org.keycloak.representations.idm.authorization.PermissionTicketRepresenta
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.UmaPermissionRepresentation;
-import org.keycloak.testsuite.ProfileAssume;
+import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
+import org.keycloak.testsuite.arquillian.annotation.RestartContainer;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.GroupBuilder;
 import org.keycloak.testsuite.util.RealmBuilder;
@@ -142,13 +143,12 @@ public class UserManagedPermissionServiceTest extends AbstractResourceServerTest
 
     @Test
     public void testCreateDeprecatedFeaturesEnabled() {
-        ProfileAssume.assumeFeatureEnabled(Profile.Feature.UPLOAD_SCRIPTS);
         testCreate();
     }
 
     @Test
+    @DisableFeature(value = Profile.Feature.UPLOAD_SCRIPTS, skipRestart = true)
     public void testCreateDeprecatedFeaturesDisabled() {
-        ProfileAssume.assumeFeatureDisabled(Profile.Feature.UPLOAD_SCRIPTS);
         testCreate();
     }
 
@@ -337,19 +337,18 @@ public class UserManagedPermissionServiceTest extends AbstractResourceServerTest
     
     @Test
     public void testUpdateDeprecatedFeaturesEnabled() {
-        ProfileAssume.assumeFeatureEnabled(Profile.Feature.UPLOAD_SCRIPTS);
         testUpdate();
     }
 
     @Test
+    @DisableFeature(value = Profile.Feature.UPLOAD_SCRIPTS, skipRestart = true)
     public void testUpdateDeprecatedFeaturesDisabled() {
-        ProfileAssume.assumeFeatureDisabled(Profile.Feature.UPLOAD_SCRIPTS);
         testUpdate();
     }
     
     @Test
+    @DisableFeature(value = Profile.Feature.UPLOAD_SCRIPTS, skipRestart = true)
     public void testUploadScriptDisabled() {
-        disableFeature(Profile.Feature.UPLOAD_SCRIPTS);
         ResourceRepresentation resource = new ResourceRepresentation();
 
         resource.setName("Resource A");

@@ -42,6 +42,8 @@ import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.ProfileAssume;
+import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
+import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
 import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
 import org.keycloak.testsuite.util.OAuthClient;
@@ -66,9 +68,8 @@ import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
+@EnableFeature(value = Profile.Feature.TOKEN_EXCHANGE, skipRestart = true)
 public class ClientTokenExchangeTest extends AbstractKeycloakTest {
-
-    private final Profile.Feature FEATURE = Profile.Feature.TOKEN_EXCHANGE;
 
     @Rule
     public AssertEvents events = new AssertEvents(this);
@@ -78,28 +79,22 @@ public class ClientTokenExchangeTest extends AbstractKeycloakTest {
         return RunOnServerDeployment.create(ClientTokenExchangeTest.class);
     }
 
-    @Before
-    public void enableFeature() {
+    @Test
+    @UncaughtServerErrorExpected
+    @DisableFeature(value = Profile.Feature.TOKEN_EXCHANGE, skipRestart = true)
+    public void checkFeatureDisabled() {
         // Required feature should return Status code 501 - Feature doesn't work
         testingClient.server().run(ClientTokenExchangeTest::addDirectExchanger);
         Assert.assertEquals(501, checkTokenExchange().getStatus());
         testingClient.server().run(ClientTokenExchangeTest::removeDirectExchanger);
+    }
 
-        // Test if required feature is enabled in Profiles.
-        Response response = testingClient.testing().enableFeature(FEATURE.toString());
-        Assert.assertEquals(200, response.getStatus());
-
+    @Test
+    public void checkFeatureEnabled() {
         // Test if the required feature really works.
         testingClient.server().run(ClientTokenExchangeTest::addDirectExchanger);
         Assert.assertEquals(200, checkTokenExchange().getStatus());
         testingClient.server().run(ClientTokenExchangeTest::removeDirectExchanger);
-    }
-
-    @After
-    public void disableFeature() {
-        // Test if required feature is disabled.
-        Response response = testingClient.testing().disableFeature(FEATURE.toString());
-        Assert.assertEquals(200, response.getStatus());
     }
 
     @Override
@@ -221,8 +216,6 @@ public class ClientTokenExchangeTest extends AbstractKeycloakTest {
     @Test
     @UncaughtServerErrorExpected
     public void testExchange() throws Exception {
-        ProfileAssume.assumeFeatureEnabled(Profile.Feature.TOKEN_EXCHANGE);
-
         testingClient.server().run(ClientTokenExchangeTest::setupRealm);
 
         oauth.realm(TEST);
@@ -265,8 +258,6 @@ public class ClientTokenExchangeTest extends AbstractKeycloakTest {
     @Test
     @UncaughtServerErrorExpected
     public void testImpersonation() throws Exception {
-        ProfileAssume.assumeFeatureEnabled(Profile.Feature.TOKEN_EXCHANGE);
-
         testingClient.server().run(ClientTokenExchangeTest::setupRealm);
 
         oauth.realm(TEST);
@@ -349,8 +340,6 @@ public class ClientTokenExchangeTest extends AbstractKeycloakTest {
     @Test
     @UncaughtServerErrorExpected
     public void testBadImpersonator() throws Exception {
-        ProfileAssume.assumeFeatureEnabled(Profile.Feature.TOKEN_EXCHANGE);
-
         testingClient.server().run(ClientTokenExchangeTest::setupRealm);
 
         oauth.realm(TEST);
@@ -393,8 +382,6 @@ public class ClientTokenExchangeTest extends AbstractKeycloakTest {
     @Test
     @UncaughtServerErrorExpected
     public void testDirectImpersonation() throws Exception {
-        ProfileAssume.assumeFeatureEnabled(Profile.Feature.TOKEN_EXCHANGE);
-
         testingClient.server().run(ClientTokenExchangeTest::setupRealm);
         Client httpClient = ClientBuilder.newClient();
 

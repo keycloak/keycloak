@@ -18,6 +18,7 @@ package org.keycloak.testsuite.admin.client.authorization;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
+import static org.keycloak.common.Profile.Feature.UPLOAD_SCRIPTS;
 
 import java.util.Collections;
 
@@ -33,16 +34,13 @@ import org.keycloak.common.Profile;
 import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.representations.idm.authorization.JSPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.Logic;
+import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
+@EnableFeature(value = UPLOAD_SCRIPTS, skipRestart = true)
 public class JSPolicyManagementTest extends AbstractPolicyManagementTest {
-
-    @Before
-    public void onBefore() {
-        enableFeature(Profile.Feature.UPLOAD_SCRIPTS);
-    }
     
     @Test
     public void testCreate() {

@@ -43,6 +43,7 @@ import org.keycloak.representations.idm.authorization.RolePolicyRepresentation;
 import org.keycloak.representations.idm.authorization.RulePolicyRepresentation;
 import org.keycloak.representations.idm.authorization.TimePolicyRepresentation;
 import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
+import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.console.page.clients.authorization.policy.AggregatePolicy;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.GroupBuilder;
@@ -51,13 +52,9 @@ import org.keycloak.testsuite.util.UserBuilder;
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
+@EnableFeature(value = UPLOAD_SCRIPTS, skipRestart = true)
 public class AggregatePolicyManagementTest extends AbstractAuthorizationSettingsTest {
 
-    @Before
-    public void onBefore() {
-        enableFeature(UPLOAD_SCRIPTS);
-    }
-    
     @Before
     public void configureTest() {
         super.configureTest();

@@ -26,6 +26,7 @@ import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.representations.idm.authorization.Logic;
 import org.keycloak.representations.idm.authorization.RulePolicyRepresentation;
 import org.keycloak.testsuite.ProfileAssume;
+import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.arquillian.annotation.RestartContainer;
 import org.keycloak.testsuite.util.ContainerAssume;
 
@@ -39,13 +40,12 @@ import static org.junit.Assert.fail;
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-@RestartContainer(enableFeatures = Profile.Feature.AUTHZ_DROOLS_POLICY)
+@EnableFeature(Profile.Feature.AUTHZ_DROOLS_POLICY)
 public class RulesPolicyManagementTest extends AbstractPolicyManagementTest {
 
     @BeforeClass
     public static void verifyEnvironment() {
         ContainerAssume.assumeNotAuthServerUndertow();
-        ProfileAssume.assumeFeatureEnabled(Profile.Feature.AUTHZ_DROOLS_POLICY);
         ContainerAssume.assumeNotAuthServerRemote();
     }
 

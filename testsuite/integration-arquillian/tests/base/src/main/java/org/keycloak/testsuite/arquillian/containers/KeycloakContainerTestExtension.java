@@ -112,6 +112,7 @@ public class KeycloakContainerTestExtension implements LoadableExtension {
             .observer(RemoteTestExecuter.class)
             .observer(DeploymentCommandObserver.class)
             .observer(ContainerCommandObserver.class)
-            .observer(RemoteResourceCommandObserver.class);
+            .observer(RemoteResourceCommandObserver.class)
+            .observer(KeycloakContainerFeaturesController.class);
     }
 }
