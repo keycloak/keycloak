@@ -103,8 +103,9 @@ public class ClientScopesEvaluateForm extends Form {
     public void selectUser(String username) {
         // TODO: Should be probably better way how to work with the "ui-select2" component
         driver.findElement(By.id("select2-chosen-1")).click();
-        driver.findElement(By.className("select2-input")).sendKeys(username);
-        driver.findElement(By.className("select2-result-label")).click();
+        String subContainerClass = "#select2-drop:not([style*='display: none'])";
+        driver.findElement(By.cssSelector( subContainerClass + " .select2-input")).sendKeys(username);
+        driver.findElements(By.cssSelector(subContainerClass + " .select2-results li.select2-result-selectable")).get(0).click();
     }
 
 
