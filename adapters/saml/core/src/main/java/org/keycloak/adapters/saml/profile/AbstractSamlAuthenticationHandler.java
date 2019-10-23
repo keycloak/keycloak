@@ -348,8 +348,10 @@ public abstract class AbstractSamlAuthenticationHandler implements SamlAuthentic
             try {
                 cvb.clockSkewInMillis(deployment.getIDP().getAllowedClockSkew());
                 cvb.addAllowedAudience(URI.create(deployment.getEntityID()));
-                // getDestination has been validated to match request URL already so it matches SAML endpoint
-                cvb.addAllowedAudience(URI.create(responseType.getDestination()));
+                if (responseType.getDestination() != null) {
+                  // getDestination has been validated to match request URL already so it matches SAML endpoint
+                  cvb.addAllowedAudience(URI.create(responseType.getDestination()));
+                }
             } catch (IllegalArgumentException ex) {
                 // warning has been already emitted in DeploymentBuilder
             }
