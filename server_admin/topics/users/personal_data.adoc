@@ -1,0 +1,19 @@
+[[_personal_data]]
+
+=== Personal data collected by {project_name}
+
+By default, {project_name} collects the following:
+
+* Basic user profile, such as email, firstname, and lastname
+
+* Basic user profile used for social accounts and references to the social account when using a social login
+
+* Device information collected for audit and security purposes, such as the IP address, operating system name, and browser name
+
+The information collected in {project_name} is highly customizable.  Be aware of the following guidelines when making customizations:
+
+* Registration and account forms could contain custom fields, such as birthday, gender, and nationality.  An administrator could configure {project_name} to retrieve that data from a social provider or a user storage provider such as LDAP.
+
+* {project_name} collects user credentials, such as password, OTP codes, and WebAuthn public keys. This information is encrypted and saved in a database, so it is not visible to {project_name} administrators. However, each type of credential can include non-confidential metadata that is visible to administrators such as the algorithm that is used to hash the password and the number of hash iterations used to hash the password.
+
+* With authorization services and UMA support enabled, {project_name} can hold information about some objects for which a particular user is the owner. For example, {project_name} can track that the user *john* is the owner of a photoalbum *album with animals* and a few photos called *lion picture* and *cow picture* in this album.
