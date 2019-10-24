@@ -50,6 +50,9 @@ public class DataTable {
     private WebElement body;
     @FindBy(xpath = "(//table)[1]/tbody/tr[@class='ng-scope']")
     private List<WebElement> rows;
+
+    @FindBy(tagName = "tfoot")
+    private WebElement footer;
     
     @FindBy
     private WebElement infoRow;
@@ -70,6 +73,11 @@ public class DataTable {
     public WebElement body() {
         return body;
     }
+
+    public WebElement footer() {
+        return footer;
+    }
+
 
     public List<WebElement> rows() {
         waitForPageToLoad();
