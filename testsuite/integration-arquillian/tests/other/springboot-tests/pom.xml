@@ -15,7 +15,7 @@
         <adapter.container>tomcat</adapter.container>
 
         <maven.settings.file/>
-        <springboot.version.option>-Dspringboot15</springboot.version.option>
+        <springboot.version.option>1.5</springboot.version.option>
 
         <app.server.debug.port>5006</app.server.debug.port>
         <app.server.debug.suspend>n</app.server.debug.suspend>
@@ -68,7 +68,7 @@
                                         <argument>-B</argument>
                                         <argument>-Pspring-boot-adapter-${adapter.container}</argument>
                                         <argument>-Dmaven.repo.local=${settings.localRepository}</argument>
-                                        <argument>${springboot.version.option}</argument>
+                                        <argument>-Dspringboot-version=${springboot.version.option}</argument>
                                     </arguments>
                                 </configuration>
                             </execution>
@@ -89,7 +89,7 @@
                                         <argument>-B</argument>
                                         <argument>-Pspring-boot-adapter-${adapter.container}</argument>
                                         <argument>-Dmaven.repo.local=${settings.localRepository}</argument>
-                                        <argument>${springboot.version.option}</argument>
+                                        <argument>-Dspringboot-version=${springboot.version.option}</argument>
                                         <argument>-Dapp.server.debug.port=${app.server.debug.port}</argument>
                                         <argument>-Dapp.server.debug.suspend=${app.server.debug.suspend}</argument>
                                     </arguments>
@@ -148,7 +148,7 @@
                                         <argument>-B</argument>
                                         <argument>-Pspring-boot-adapter-${adapter.container}</argument>
                                         <argument>-Dmaven.repo.local=${settings.localRepository}</argument>
-                                        <argument>${springboot.version.option}</argument>
+                                        <argument>-Dspringboot-version=${springboot.version.option}</argument>
                                         <argument>${repo.argument}</argument>
                                     </arguments>
                                 </configuration>
@@ -172,7 +172,7 @@
                                         <argument>${settings.path}</argument>
                                         <argument>-Pspring-boot-adapter-${adapter.container}</argument>
                                         <argument>-Dmaven.repo.local=${settings.localRepository}</argument>
-                                        <argument>${springboot.version.option}</argument>
+                                        <argument>-Dspringboot-version=${springboot.version.option}</argument>
                                         <argument>-Dapp.server.debug.port=${app.server.debug.port}</argument>
                                         <argument>-Dapp.server.debug.suspend=${app.server.debug.suspend}</argument>
                                         <argument>${repo.argument}</argument>
@@ -195,7 +195,14 @@
         <profile>
             <id>springboot21</id>
             <properties>
-                <springboot.version.option>-Dspringboot21</springboot.version.option>
+                <springboot.version.option>2.1</springboot.version.option>
+            </properties>
+        </profile>
+
+        <profile>
+            <id>springboot22</id>
+            <properties>
+                <springboot.version.option>2.2</springboot.version.option>
             </properties>
         </profile>
 
