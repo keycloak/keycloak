@@ -87,10 +87,6 @@
             <maven-resource group="org.keycloak" artifact="keycloak-as7-subsystem"/>
         </module-def>
 
-        <module-def name="org.keycloak.keycloak-servlet-oauth-client">
-            <maven-resource group="org.keycloak" artifact="keycloak-servlet-oauth-client"/>
-        </module-def>
-
         <!-- Authorization -->
         <module-def name="org.keycloak.keycloak-authz-client">
             <maven-resource group="org.keycloak" artifact="keycloak-authz-client"/>
