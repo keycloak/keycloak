@@ -164,6 +164,7 @@
         <!-- Spring Boot versions, used for tests -->
         <spring-boot15.version>1.5.20.RELEASE</spring-boot15.version>
         <spring-boot21.version>2.1.3.RELEASE</spring-boot21.version>
+        <spring-boot22.version>2.2.0.RELEASE</spring-boot22.version>
 
         <!-- webauthn support -->
         <webauthn4j.version>0.9.7.RELEASE</webauthn4j.version>
