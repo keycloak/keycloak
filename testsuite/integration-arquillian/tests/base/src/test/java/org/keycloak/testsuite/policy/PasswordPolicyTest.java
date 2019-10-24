@@ -176,6 +176,22 @@ public class PasswordPolicyTest extends AbstractKeycloakTest {
     }
 
     @Test
+    public void testNotEmail() {
+        testingClient.server("passwordPolicy").run(session -> {
+            RealmModel realmModel = session.getContext().getRealm();
+            PasswordPolicyManagerProvider policyManager = session.getProvider(PasswordPolicyManagerProvider.class);
+
+            realmModel.setPasswordPolicy(PasswordPolicy.parse(session, "notPersonalInformation"));
+            Assert.assertEquals("invalidPasswordNotPersonalInformationMessage", policyManager.validate("jdoe", "jdoe@keycloak.org").getMessage());
+            Assert.assertEquals("invalidPasswordNotPersonalInformationMessage", policyManager.validate("jdoe", "keycloak").getMessage());
+            Assert.assertEquals("invalidPasswordNotPersonalInformationMessage", policyManager.validate("jdoe", "john").getMessage());
+            Assert.assertEquals("invalidPasswordNotPersonalInformationMessage", policyManager.validate("jdoe", "jdoe").getMessage());
+            Assert.assertEquals("invalidPasswordNotPersonalInformationMessage", policyManager.validate("jdoe", "John123").getMessage());
+            assertNull(policyManager.validate("jdoe", "ab&d1234"));
+        });
+    }
+
+    @Test
     public void testInvalidPolicyName() {
         testingClient.server("passwordPolicy").run(session -> {
             RealmModel realmModel = session.getContext().getRealm();
