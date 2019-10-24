@@ -102,7 +102,7 @@ public class OIDCWellKnownProvider implements WellKnownProvider {
         config.setGrantTypesSupported(DEFAULT_GRANT_TYPES_SUPPORTED);
 
         config.setTokenEndpointAuthMethodsSupported(getClientAuthMethodsSupported());
-        config.setTokenEndpointAuthSigningAlgValuesSupported(DEFAULT_CLIENT_AUTH_SIGNING_ALG_VALUES_SUPPORTED);
+        config.setTokenEndpointAuthSigningAlgValuesSupported(getSupportedClientSigningAlgorithms(false));
 
         config.setClaimsSupported(DEFAULT_CLAIMS_SUPPORTED);
         config.setClaimTypesSupported(DEFAULT_CLAIM_TYPES_SUPPORTED);
