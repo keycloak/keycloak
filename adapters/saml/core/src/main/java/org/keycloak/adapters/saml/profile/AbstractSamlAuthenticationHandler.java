@@ -62,7 +62,6 @@ import org.keycloak.saml.common.util.DocumentUtil;
 import org.keycloak.saml.processing.api.saml.v2.sig.SAML2Signature;
 import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
 import org.keycloak.saml.processing.core.saml.v2.util.AssertionUtil;
-import org.keycloak.saml.processing.web.util.PostBindingUtil;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -601,8 +600,7 @@ public abstract class AbstractSamlAuthenticationHandler implements SamlAuthentic
 
 
     protected SAMLDocumentHolder extractPostBindingResponse(String response) {
-        byte[] samlBytes = PostBindingUtil.base64Decode(response);
-        return SAMLRequestParser.parseResponseDocument(samlBytes);
+        return SAMLRequestParser.parseResponsePostBinding(response);
     }
 
 
