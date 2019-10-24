@@ -26,6 +26,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -60,7 +61,8 @@ public class HistoryPasswordPolicyProvider implements PasswordPolicyProvider {
                 }
             }
             List<CredentialModel> passwordHistory = session.userCredentialManager().getStoredCredentialsByType(realm, user, CredentialModel.PASSWORD_HISTORY);
-            for (CredentialModel cred : passwordHistory) {
+            List<CredentialModel> recentPasswordHistory = getRecent(passwordHistory, passwordHistoryPolicyValue - 1);
+            for (CredentialModel cred : recentPasswordHistory) {
                 PasswordHashProvider hash = session.getProvider(PasswordHashProvider.class, cred.getAlgorithm());
                 if (hash.verify(password, cred)) {
                     return new PolicyError(ERROR_MESSAGE, passwordHistoryPolicyValue);
@@ -69,6 +71,13 @@ public class HistoryPasswordPolicyProvider implements PasswordPolicyProvider {
             }
         }
         return null;
+    }
+
+    private List<CredentialModel> getRecent(List<CredentialModel> passwordHistory, int limit) {
+        return passwordHistory.stream()
+                .sorted(CredentialModel.comparingByStartDateDesc())
+                .limit(limit)
+                .collect(Collectors.toList());
     }
 
     @Override

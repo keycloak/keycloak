@@ -562,6 +562,26 @@ public class AccountFormServiceTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
+    public void changePasswordToOldOneAfterPasswordHistoryPolicyExpirationChange() {
+        userId = createUser("test", "user-changePasswordToOldOneAfterPasswordHistoryPolicyExpirationChange", "password");
+
+        setPasswordPolicy(PasswordPolicy.PASSWORD_HISTORY_ID + "(3)");
+
+        changePasswordPage.open();
+        loginPage.login("user-changePasswordToOldOneAfterPasswordHistoryPolicyExpirationChange", "password");
+        events.expectLogin().user(userId).client("account").detail(Details.REDIRECT_URI, getAccountRedirectUrl() + "?path=password").assertEvent();
+
+        assertNumberOfStoredCredentials(1);
+        assertChangePasswordSucceeds("password", "password1");
+        assertNumberOfStoredCredentials(2);
+        assertChangePasswordSucceeds("password1", "password2");
+        assertNumberOfStoredCredentials(3);
+
+        setPasswordPolicy(PasswordPolicy.PASSWORD_HISTORY_ID + "(2)");
+        assertChangePasswordSucceeds("password2", "password");
+    }
+
+    @Test
     public void changePasswordWithPasswordHistoryPolicyExpiration() {
         userId = createUser("test", "user-changePasswordWithPasswordHistoryPolicyExpiration", "password");
 

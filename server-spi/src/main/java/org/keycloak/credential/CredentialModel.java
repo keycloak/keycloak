@@ -20,6 +20,7 @@ package org.keycloak.credential;
 import org.keycloak.common.util.MultivaluedHashMap;
 
 import java.io.Serializable;
+import java.util.Comparator;
 
 /**
  * Used just in cases when we want to "directly" update or retrieve the hash or salt of user credential (For example during export/import)
@@ -167,5 +168,13 @@ public class CredentialModel implements Serializable {
 
     public void setConfig(MultivaluedHashMap<String, String> config) {
         this.config = config;
+    }
+
+    public static Comparator<CredentialModel> comparingByStartDateDesc() {
+        return (o1, o2) -> { // sort by date descending
+            Long o1Date = o1.getCreatedDate() == null ? Long.MIN_VALUE : o1.getCreatedDate();
+            Long o2Date = o2.getCreatedDate() == null ? Long.MIN_VALUE : o2.getCreatedDate();
+            return (-o1Date.compareTo(o2Date));
+        };
     }
 }
