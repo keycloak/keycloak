@@ -22,7 +22,7 @@
     }
   });
 
-  $(window).resize(function () {
+  $(window).on('resize', function () {
     // Call sidebar() on resize if .sidebar-pf exists
     if ($('.sidebar-pf').length > 0) {
       $.fn.sidebar();

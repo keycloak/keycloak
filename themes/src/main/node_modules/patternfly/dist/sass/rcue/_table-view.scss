@@ -1,0 +1,188 @@
+//
+// Table View
+// --------------------------------------------------
+
+// Keep dataTable class for legacy apps
+table.dataTable {
+  height: 100%;
+  margin-bottom: 0;
+  max-width: none !important;
+  tbody {
+    > tr {
+      > td {
+        // Styling for inline actions
+        &.table-view-pf-actions {
+          padding: 0;
+          vertical-align: middle;
+        }
+      }
+      &:hover {
+        // Styling when hovering anywhere else on a row
+        > td.table-view-pf-actions {
+          background-color: $table-bg-accent;
+          border-bottom-color: $table-border-color;
+        }
+      }
+    }
+    > tr.selected {
+      color: $color-pf-white;
+      background-color: $color-pf-blue-400;
+      > td {
+        border-bottom-color: $color-pf-blue-500;
+        &.table-view-pf-actions {
+          background-color: $table-bg-accent;
+          border-bottom-color: $table-border-color;
+        }
+      }
+      &:hover {
+        > td {
+          background-color: inherit;
+          border-bottom-color: $color-pf-blue-500;
+          &.table-view-pf-actions {
+            background-color: $table-bg-accent;
+            border-bottom-color: $table-border-color;
+          }
+        }
+      }
+    }
+  }
+  thead {
+    .sorting,
+    .sorting_asc,
+    .sorting_desc,
+    .sorting_asc_disabled,
+    .sorting_desc_disabled {
+      cursor: pointer;
+    }
+    .sorting_asc,
+    .sorting_desc {
+      color: $link-color !important;
+      position: relative;
+      &:after {
+        content: $fa-var-angle-down;
+        font-family: $icon-font-name-fa;
+        font-size: ($font-size-base - 2);
+        font-weight: normal;
+        height: ($font-size-base - 3);
+        left: 7px;
+        line-height: $font-size-base;
+        position: relative;
+        top: 2px;
+        vertical-align: baseline;
+        width: $font-size-base;
+      }
+      &:before {
+        background: $link-color;
+        content: "";
+        height: 2px;
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+      }
+    }
+    .sorting_asc:after {
+      content: $fa-var-angle-up;
+      top: -3px;
+    }
+  }
+  th:active {
+    outline: none;
+  }
+}
+
+// Empty table
+.table-view-pf-empty {
+  &.blank-slate-pf {
+    background-color: $table-bg-accent;
+    border: 1px solid $table-border-color;
+    border-radius: 0;
+    margin-top: -1px;
+  }
+}
+
+// Embedded toolbar
+.table-view-pf-toolbar {
+  &.toolbar-pf {
+    background-color: $table-bg-accent;
+    border-bottom: none;
+    border-left: 1px solid $table-border-color;
+    border-right: 1px solid $table-border-color;
+    border-top: 1px solid $table-border-color;
+    box-shadow: none;
+    margin-left: 0px;
+    margin-right: 0px;
+    .toolbar-pf-results {
+      border-top: 1px solid $table-border-color;
+      min-height: 40px;
+      line-height: 40px;
+    }
+  }
+}
+
+// External Toolbar
+.table-view-pf-toolbar-external {
+  &.toolbar-pf {
+    border-bottom: none;
+    border-top: none;
+    box-shadow: none;
+    .toolbar-pf-results {
+      border-top: 1px solid $table-border-color;
+      min-height: 40px;
+      line-height: 40px;
+    }
+  }
+}
+
+.table-view-pf-colvis-menu {
+  > li {
+    padding: 5px 10px;
+    &:hover {
+      background-color: #def3ff;
+    }
+    > input {
+      margin-top: 0;
+      margin-right: 10px;
+      vertical-align: middle;
+    }
+    > label {
+      margin-bottom: 0;
+    }
+  }
+
+}
+
+// Inline action button and kebab
+// Sets button height to 100% of td height in firefox and chrome, but not in IE when wrapping occurs.
+// Button height must be set dynamically in IE to be equal to td height.
+.table-view-pf-actions {
+  background-color: $btn-default-bg; // included just in case there are gaps between the edges of the buttons and the table cell
+  height: 100%;
+  .btn,
+  .dropdown-toggle {
+    border: none;
+    box-shadow: none;
+    height: 100%;
+    width: 100%;
+  }
+  .dropdown,
+  .table-view-pf-btn {
+    height: 100%;
+  }
+  .dropdown-menu.dropdown-menu-right {
+    right: -5px;
+  }
+  &:last-child {
+    width: 24px;
+  }
+}
+
+// Selection column
+.table-view-pf-select {
+  width: 33px;
+}
+
+// Results area containing selected row text
+.table-view-pf-select-results {
+  text-align: right;
+}

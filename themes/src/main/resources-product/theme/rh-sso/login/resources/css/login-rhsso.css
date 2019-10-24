@@ -1,6 +1,7 @@
 .login-pf body {
   background: url("../node_modules/rcue/dist/img/bg-login.png") no-repeat left top fixed;
   background-size: auto;
+  height: 100%;
 }
 
 @media (max-width: 767px) {
