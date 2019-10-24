@@ -218,7 +218,6 @@ public class MSADUserAccountControlStorageMapper extends AbstractLDAPStorageMapp
         @Override
         public boolean isEnabled() {
             boolean kcEnabled = super.isEnabled();
-            
             return kcEnabled && !getUserAccountControl(ldapUser).has(UserAccountControl.ACCOUNTDISABLE);
         }
 
