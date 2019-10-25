@@ -22,6 +22,7 @@
       "dependencyOverride.org.apache.httpcomponents:httpclient@org.keycloak.testsuite:integration-arquillian-tests": "",
       "dependencyOverride.org.apache.httpcomponents:httpcore@*": "4.4.5.redhat-1",
       "dependencyOverride.org.apache.httpcomponents:httpclient@*": "4.5.4.redhat-00001",
+      "dependencyOverride.com.fasterxml.jackson.dataformat:*@*": "2.9.10.redhat-00003",
       "dependencyOverride.org.jboss.logging:jboss-logging-processor@*": "",
       "dependencyOverride.org.jboss.logging:jboss-logging@org.keycloak:keycloak-as7-subsystem": "",
       "dependencyOverride.org.jboss.logging:jboss-logging@org.keycloak:keycloak-saml-as7-subsystem": ""

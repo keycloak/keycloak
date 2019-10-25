@@ -18,9 +18,9 @@
 
 
 
-  <link crossorigin="anonymous" media="all" integrity="sha512-L6knYQj0qk2lhbBdXyy/eF0pc3uMue04cNJLLNWlHboKkkUQLJd4JbdYHGc9aqy92/vfVBLnddS6bpVf285Pqg==" rel="stylesheet" href="https://github.githubassets.com/assets/frameworks-c21c347ce575eb3ded7531f19af1d324.css" />
-  <link crossorigin="anonymous" media="all" integrity="sha512-q0uE9UAtjRgctFaLFVvUGVtXC6ggCD9Qcg86uwRaLx2RdC7FIE+hPfB4YDaM8lCecPVMwsxDyvqkXI2XEKDCOA==" rel="stylesheet" href="https://github.githubassets.com/assets/site-d2ea9f95eb7121ca3a5f9571e0012f11.css" />
-    <link crossorigin="anonymous" media="all" integrity="sha512-mnHMLvFf0p17JE6yFAd8B7ktb7BDi6ElVPTX9yAPKZE4nVuenu4/qXXBti6PR2MNm+stm6yfUDFF3rA7pC12UQ==" rel="stylesheet" href="https://github.githubassets.com/assets/github-823496642818413e247f8fadad05ea69.css" />
+  <link crossorigin="anonymous" media="all" integrity="sha512-TD/1gdStKo77Iu1A+WNb+2YoRJv7l1hZVO0/0h+eJ5wyGxiTvIbLRko1dQ1jEa9w5BK3poi18st9OPel71zK8A==" rel="stylesheet" href="https://github.githubassets.com/assets/frameworks-94d2de65a56b07e193e50e91873678b6.css" />
+  <link crossorigin="anonymous" media="all" integrity="sha512-1N4+QlbmRp6tyqxbm0KgsAq2CEnAm9g3BY5xUsD38O+IUdydhO7ltbRnpR2Vn4g5SXipGWiiwQO1HUYLDV136Q==" rel="stylesheet" href="https://github.githubassets.com/assets/site-09367dd1ae1784b858e71c8471ca0949.css" />
+    <link crossorigin="anonymous" media="all" integrity="sha512-eqU1NT5qhoZheRt6/GHsj8HMrNov9OI9sca28p0UDl1Zpm4amrLbq0o+7nZD3wkgM4h6huySMJFgj1eWIIvobw==" rel="stylesheet" href="https://github.githubassets.com/assets/github-d8b247d5c67a70b1cd47491640d354aa.css" />
     
     
     
@@ -40,7 +40,7 @@
   <link rel="assets" href="https://github.githubassets.com/">
   
   
-  <meta name="request-id" content="4C50:2286:254B56C:46C37A2:5D9DCB0B" data-pjax-transient>
+  <meta name="request-id" content="BF44:23F84:FF1DE7:17AD5CD:5DB29E3C" data-pjax-transient>
 
 
   
@@ -51,7 +51,7 @@
     <meta name="google-site-verification" content="ZzhVyEFwb7w3e0-uOTltm8Jsck2F5StVihD0exw2fsA">
     <meta name="google-site-verification" content="GXs5KoUUkNCoaAZn7wPN-t01Pywp9M3sEjnt_3_ZWPc">
 
-  <meta name="octolytics-host" content="collector.githubapp.com" /><meta name="octolytics-app-id" content="github" /><meta name="octolytics-event-url" content="https://collector.githubapp.com/github-external/browser_event" /><meta name="octolytics-dimension-request_id" content="4C50:2286:254B56C:46C37A2:5D9DCB0B" /><meta name="octolytics-dimension-region_edge" content="iad" /><meta name="octolytics-dimension-region_render" content="iad" /><meta name="octolytics-dimension-ga_id" content="" class="js-octo-ga-id" /><meta name="octolytics-dimension-visitor_id" content="704864569329044235" />
+  <meta name="octolytics-host" content="collector.githubapp.com" /><meta name="octolytics-app-id" content="github" /><meta name="octolytics-event-url" content="https://collector.githubapp.com/github-external/browser_event" /><meta name="octolytics-dimension-request_id" content="BF44:23F84:FF1DE7:17AD5CD:5DB29E3C" /><meta name="octolytics-dimension-region_edge" content="ams" /><meta name="octolytics-dimension-region_render" content="iad" /><meta name="octolytics-dimension-ga_id" content="" class="js-octo-ga-id" /><meta name="octolytics-dimension-visitor_id" content="9005531954303639101" />
 <meta name="analytics-location" content="/&lt;user-name&gt;/&lt;repo-name&gt;/blob/show" data-pjax-transient="true" />
 
 
@@ -69,13 +69,13 @@
     <meta name="user-login" content="">
 
       <meta name="expected-hostname" content="github.com">
-    <meta name="js-proxy-site-detection-payload" content="ZTgwMDNiM2NlM2VhNGNhOWUzY2FlYjMzYWVjMjg5MzBmZjYyZGNlYmQ0MGVhMzdmNTFkNTI2ZDAxZjAxMTk5Znx7InJlbW90ZV9hZGRyZXNzIjoiMjEzLjE3NS4zNy4xMCIsInJlcXVlc3RfaWQiOiI0QzUwOjIyODY6MjU0QjU2Qzo0NkMzN0EyOjVEOURDQjBCIiwidGltZXN0YW1wIjoxNTcwNjIyMjE5LCJob3N0IjoiZ2l0aHViLmNvbSJ9">
+    <meta name="js-proxy-site-detection-payload" content="ZTdiZjRmYzM5ZTAxYmNjYmNhMGJlZDIxZDY0ZjlkOTRhZGUyYjFjN2EwZWNjZGRmYTZmNTY1MzNmNzFlZGNkZHx7InJlbW90ZV9hZGRyZXNzIjoiOTQuMTEyLjEzNC42OSIsInJlcXVlc3RfaWQiOiJCRjQ0OjIzRjg0OkZGMURFNzoxN0FENUNEOjVEQjI5RTNDIiwidGltZXN0YW1wIjoxNTcxOTg3MDA1LCJob3N0IjoiZ2l0aHViLmNvbSJ9">
 
     <meta name="enabled-features" content="ACTIONS_V2_ON_MARKETPLACE,MARKETPLACE_FEATURED_BLOG_POSTS,MARKETPLACE_INVOICED_BILLING,MARKETPLACE_SOCIAL_PROOF_CUSTOMERS,MARKETPLACE_TRENDING_SOCIAL_PROOF,MARKETPLACE_RECOMMENDATIONS,MARKETPLACE_PENDING_INSTALLATIONS">
 
-  <meta name="html-safe-nonce" content="1d18c22a58b96d74c93a26a9f633121ae125f139">
+  <meta name="html-safe-nonce" content="2a173697b5c8469d9e2591f77b204b38e162cd99">
 
-  <meta http-equiv="x-pjax-version" content="90d9f05b2577a8c5d07e7e32c9171748">
+  <meta http-equiv="x-pjax-version" content="e6b1e455ee6c25be2a8c961e49b31bd2">
   
 
       <link href="https://github.com/webauthn4j/webauthn4j/commits/0.9.7.RELEASE.atom" rel="alternate" title="Recent Commits to webauthn4j:0.9.7.RELEASE" type="application/atom+xml">
@@ -123,7 +123,7 @@
   <div class="container-lg d-lg-flex flex-items-center p-responsive">
     <div class="d-flex flex-justify-between flex-items-center">
         <a class="mr-4" href="https://github.com/" aria-label="Homepage" data-ga-click="(Logged out) Header, go to homepage, icon:logo-wordmark">
-          <svg height="32" class="octicon octicon-mark-github text-white" viewBox="0 0 16 16" version="1.1" width="32" aria-hidden="true"><path fill-rule="evenodd" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>
+          <svg height="32" class="octicon octicon-mark-github text-white" viewBox="0 0 16 16" version="1.1" width="32" aria-hidden="true"><path fill-rule="evenodd" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
         </a>
 
           <div class="d-lg-none css-truncate css-truncate-target width-fit p-2">
@@ -139,7 +139,7 @@
         <div class="d-flex flex-items-center">
             <a href="/join?source=header-repo"
               class="d-inline-block d-lg-none f5 text-white no-underline border border-gray-dark rounded-2 px-2 py-1 mr-3 mr-sm-5"
-              data-hydro-click="{&quot;event_type&quot;:&quot;authentication.click&quot;,&quot;payload&quot;:{&quot;location_in_page&quot;:&quot;site header&quot;,&quot;repository_id&quot;:null,&quot;auth_type&quot;:&quot;SIGN_UP&quot;,&quot;client_id&quot;:null,&quot;originating_request_id&quot;:&quot;4C50:2286:254B56C:46C37A2:5D9DCB0B&quot;,&quot;originating_url&quot;:&quot;https://github.com/webauthn4j/webauthn4j/blob/0.9.7.RELEASE/LICENSE.txt&quot;,&quot;referrer&quot;:null,&quot;user_id&quot;:null}}" data-hydro-click-hmac="a75bbb49c3af7f8a6aaa2967ffe3f7df7152bcb0710b64dc07b79efdbb8f2270"
+              data-hydro-click="{&quot;event_type&quot;:&quot;authentication.click&quot;,&quot;payload&quot;:{&quot;location_in_page&quot;:&quot;site header&quot;,&quot;repository_id&quot;:null,&quot;auth_type&quot;:&quot;SIGN_UP&quot;,&quot;client_id&quot;:null,&quot;originating_request_id&quot;:&quot;BF44:23F84:FF1DE7:17AD5CD:5DB29E3C&quot;,&quot;originating_url&quot;:&quot;https://github.com/webauthn4j/webauthn4j/blob/0.9.7.RELEASE/LICENSE.txt&quot;,&quot;referrer&quot;:null,&quot;user_id&quot;:null}}" data-hydro-click-hmac="12c5a99b0d431aeff467c344581f4f21fab00893179543be2b39dc641ca12f4b"
               data-ga-click="(Logged out) Header, clicked Sign up, text:sign-up">
               Sign&nbsp;up
             </a>
@@ -282,7 +282,7 @@
           aria-autocomplete="list"
           aria-controls="jump-to-results"
           aria-label="Search"
-          data-jump-to-suggestions-path="/_graphql/GetSuggestedNavigationDestinations#csrf-token=x8D4JwYVIE9zctaUu74HGp6AeLKhBjgv0F58VhNSgtVJZqxr4k3EAyVp9hfZkwxD6bipFlko81D23QTerHg+Vg=="
+          data-jump-to-suggestions-path="/_graphql/GetSuggestedNavigationDestinations#csrf-token=4VR7N7nmOIXRy2ywPE1EpPi+wwCixj7zTkEewnZ3zTGb7FY5hSYqq86qS8ssuJq/kcRoFpBXvxBiHGWusyC/iQ=="
           spellcheck="false"
           autocomplete="off"
           >
@@ -298,8 +298,8 @@
   <a tabindex="-1" class="no-underline d-flex flex-auto flex-items-center jump-to-suggestions-path js-jump-to-suggestion-path js-navigation-open p-2" href="">
     <div class="jump-to-octicon js-jump-to-octicon flex-shrink-0 mr-2 text-center d-none">
       <svg height="16" width="16" class="octicon octicon-repo flex-shrink-0 js-jump-to-octicon-repo d-none" title="Repository" aria-label="Repository" viewBox="0 0 12 16" version="1.1" role="img"><path fill-rule="evenodd" d="M4 9H3V8h1v1zm0-3H3v1h1V6zm0-2H3v1h1V4zm0-2H3v1h1V2zm8-1v12c0 .55-.45 1-1 1H6v2l-1.5-1.5L3 16v-2H1c-.55 0-1-.45-1-1V1c0-.55.45-1 1-1h10c.55 0 1 .45 1 1zm-1 10H1v2h2v-1h3v1h5v-2zm0-10H2v9h9V1z"/></svg>
-      <svg height="16" width="16" class="octicon octicon-project flex-shrink-0 js-jump-to-octicon-project d-none" title="Project" aria-label="Project" viewBox="0 0 15 16" version="1.1" role="img"><path fill-rule="evenodd" d="M10 12h3V2h-3v10zm-4-2h3V2H6v8zm-4 4h3V2H2v12zm-1 1h13V1H1v14zM14 0H1a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h13a1 1 0 0 0 1-1V1a1 1 0 0 0-1-1z"/></svg>
-      <svg height="16" width="16" class="octicon octicon-search flex-shrink-0 js-jump-to-octicon-search d-none" title="Search" aria-label="Search" viewBox="0 0 16 16" version="1.1" role="img"><path fill-rule="evenodd" d="M15.7 13.3l-3.81-3.83A5.93 5.93 0 0 0 13 6c0-3.31-2.69-6-6-6S1 2.69 1 6s2.69 6 6 6c1.3 0 2.48-.41 3.47-1.11l3.83 3.81c.19.2.45.3.7.3.25 0 .52-.09.7-.3a.996.996 0 0 0 0-1.41v.01zM7 10.7c-2.59 0-4.7-2.11-4.7-4.7 0-2.59 2.11-4.7 4.7-4.7 2.59 0 4.7 2.11 4.7 4.7 0 2.59-2.11 4.7-4.7 4.7z"/></svg>
+      <svg height="16" width="16" class="octicon octicon-project flex-shrink-0 js-jump-to-octicon-project d-none" title="Project" aria-label="Project" viewBox="0 0 15 16" version="1.1" role="img"><path fill-rule="evenodd" d="M10 12h3V2h-3v10zm-4-2h3V2H6v8zm-4 4h3V2H2v12zm-1 1h13V1H1v14zM14 0H1a1 1 0 00-1 1v14a1 1 0 001 1h13a1 1 0 001-1V1a1 1 0 00-1-1z"/></svg>
+      <svg height="16" width="16" class="octicon octicon-search flex-shrink-0 js-jump-to-octicon-search d-none" title="Search" aria-label="Search" viewBox="0 0 16 16" version="1.1" role="img"><path fill-rule="evenodd" d="M15.7 13.3l-3.81-3.83A5.93 5.93 0 0013 6c0-3.31-2.69-6-6-6S1 2.69 1 6s2.69 6 6 6c1.3 0 2.48-.41 3.47-1.11l3.83 3.81c.19.2.45.3.7.3.25 0 .52-.09.7-.3a.996.996 0 000-1.41v.01zM7 10.7c-2.59 0-4.7-2.11-4.7-4.7 0-2.59 2.11-4.7 4.7-4.7 2.59 0 4.7 2.11 4.7 4.7 0 2.59-2.11 4.7-4.7 4.7z"/></svg>
     </div>
 
     <img class="avatar mr-2 flex-shrink-0 js-jump-to-suggestion-avatar d-none" alt="" aria-label="Team" src="" width="28" height="28">
@@ -339,8 +339,8 @@
   <a tabindex="-1" class="no-underline d-flex flex-auto flex-items-center jump-to-suggestions-path js-jump-to-suggestion-path js-navigation-open p-2" href="">
     <div class="jump-to-octicon js-jump-to-octicon flex-shrink-0 mr-2 text-center d-none">
       <svg height="16" width="16" class="octicon octicon-repo flex-shrink-0 js-jump-to-octicon-repo d-none" title="Repository" aria-label="Repository" viewBox="0 0 12 16" version="1.1" role="img"><path fill-rule="evenodd" d="M4 9H3V8h1v1zm0-3H3v1h1V6zm0-2H3v1h1V4zm0-2H3v1h1V2zm8-1v12c0 .55-.45 1-1 1H6v2l-1.5-1.5L3 16v-2H1c-.55 0-1-.45-1-1V1c0-.55.45-1 1-1h10c.55 0 1 .45 1 1zm-1 10H1v2h2v-1h3v1h5v-2zm0-10H2v9h9V1z"/></svg>
-      <svg height="16" width="16" class="octicon octicon-project flex-shrink-0 js-jump-to-octicon-project d-none" title="Project" aria-label="Project" viewBox="0 0 15 16" version="1.1" role="img"><path fill-rule="evenodd" d="M10 12h3V2h-3v10zm-4-2h3V2H6v8zm-4 4h3V2H2v12zm-1 1h13V1H1v14zM14 0H1a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h13a1 1 0 0 0 1-1V1a1 1 0 0 0-1-1z"/></svg>
-      <svg height="16" width="16" class="octicon octicon-search flex-shrink-0 js-jump-to-octicon-search d-none" title="Search" aria-label="Search" viewBox="0 0 16 16" version="1.1" role="img"><path fill-rule="evenodd" d="M15.7 13.3l-3.81-3.83A5.93 5.93 0 0 0 13 6c0-3.31-2.69-6-6-6S1 2.69 1 6s2.69 6 6 6c1.3 0 2.48-.41 3.47-1.11l3.83 3.81c.19.2.45.3.7.3.25 0 .52-.09.7-.3a.996.996 0 0 0 0-1.41v.01zM7 10.7c-2.59 0-4.7-2.11-4.7-4.7 0-2.59 2.11-4.7 4.7-4.7 2.59 0 4.7 2.11 4.7 4.7 0 2.59-2.11 4.7-4.7 4.7z"/></svg>
+      <svg height="16" width="16" class="octicon octicon-project flex-shrink-0 js-jump-to-octicon-project d-none" title="Project" aria-label="Project" viewBox="0 0 15 16" version="1.1" role="img"><path fill-rule="evenodd" d="M10 12h3V2h-3v10zm-4-2h3V2H6v8zm-4 4h3V2H2v12zm-1 1h13V1H1v14zM14 0H1a1 1 0 00-1 1v14a1 1 0 001 1h13a1 1 0 001-1V1a1 1 0 00-1-1z"/></svg>
+      <svg height="16" width="16" class="octicon octicon-search flex-shrink-0 js-jump-to-octicon-search d-none" title="Search" aria-label="Search" viewBox="0 0 16 16" version="1.1" role="img"><path fill-rule="evenodd" d="M15.7 13.3l-3.81-3.83A5.93 5.93 0 0013 6c0-3.31-2.69-6-6-6S1 2.69 1 6s2.69 6 6 6c1.3 0 2.48-.41 3.47-1.11l3.83 3.81c.19.2.45.3.7.3.25 0 .52-.09.7-.3a.996.996 0 000-1.41v.01zM7 10.7c-2.59 0-4.7-2.11-4.7-4.7 0-2.59 2.11-4.7 4.7-4.7 2.59 0 4.7 2.11 4.7 4.7 0 2.59-2.11 4.7-4.7 4.7z"/></svg>
     </div>
 
     <img class="avatar mr-2 flex-shrink-0 js-jump-to-suggestion-avatar d-none" alt="" aria-label="Team" src="" width="28" height="28">
@@ -371,8 +371,8 @@
   <a tabindex="-1" class="no-underline d-flex flex-auto flex-items-center jump-to-suggestions-path js-jump-to-suggestion-path js-navigation-open p-2" href="">
     <div class="jump-to-octicon js-jump-to-octicon flex-shrink-0 mr-2 text-center d-none">
       <svg height="16" width="16" class="octicon octicon-repo flex-shrink-0 js-jump-to-octicon-repo d-none" title="Repository" aria-label="Repository" viewBox="0 0 12 16" version="1.1" role="img"><path fill-rule="evenodd" d="M4 9H3V8h1v1zm0-3H3v1h1V6zm0-2H3v1h1V4zm0-2H3v1h1V2zm8-1v12c0 .55-.45 1-1 1H6v2l-1.5-1.5L3 16v-2H1c-.55 0-1-.45-1-1V1c0-.55.45-1 1-1h10c.55 0 1 .45 1 1zm-1 10H1v2h2v-1h3v1h5v-2zm0-10H2v9h9V1z"/></svg>
-      <svg height="16" width="16" class="octicon octicon-project flex-shrink-0 js-jump-to-octicon-project d-none" title="Project" aria-label="Project" viewBox="0 0 15 16" version="1.1" role="img"><path fill-rule="evenodd" d="M10 12h3V2h-3v10zm-4-2h3V2H6v8zm-4 4h3V2H2v12zm-1 1h13V1H1v14zM14 0H1a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h13a1 1 0 0 0 1-1V1a1 1 0 0 0-1-1z"/></svg>
-      <svg height="16" width="16" class="octicon octicon-search flex-shrink-0 js-jump-to-octicon-search d-none" title="Search" aria-label="Search" viewBox="0 0 16 16" version="1.1" role="img"><path fill-rule="evenodd" d="M15.7 13.3l-3.81-3.83A5.93 5.93 0 0 0 13 6c0-3.31-2.69-6-6-6S1 2.69 1 6s2.69 6 6 6c1.3 0 2.48-.41 3.47-1.11l3.83 3.81c.19.2.45.3.7.3.25 0 .52-.09.7-.3a.996.996 0 0 0 0-1.41v.01zM7 10.7c-2.59 0-4.7-2.11-4.7-4.7 0-2.59 2.11-4.7 4.7-4.7 2.59 0 4.7 2.11 4.7 4.7 0 2.59-2.11 4.7-4.7 4.7z"/></svg>
+      <svg height="16" width="16" class="octicon octicon-project flex-shrink-0 js-jump-to-octicon-project d-none" title="Project" aria-label="Project" viewBox="0 0 15 16" version="1.1" role="img"><path fill-rule="evenodd" d="M10 12h3V2h-3v10zm-4-2h3V2H6v8zm-4 4h3V2H2v12zm-1 1h13V1H1v14zM14 0H1a1 1 0 00-1 1v14a1 1 0 001 1h13a1 1 0 001-1V1a1 1 0 00-1-1z"/></svg>
+      <svg height="16" width="16" class="octicon octicon-search flex-shrink-0 js-jump-to-octicon-search d-none" title="Search" aria-label="Search" viewBox="0 0 16 16" version="1.1" role="img"><path fill-rule="evenodd" d="M15.7 13.3l-3.81-3.83A5.93 5.93 0 0013 6c0-3.31-2.69-6-6-6S1 2.69 1 6s2.69 6 6 6c1.3 0 2.48-.41 3.47-1.11l3.83 3.81c.19.2.45.3.7.3.25 0 .52-.09.7-.3a.996.996 0 000-1.41v.01zM7 10.7c-2.59 0-4.7-2.11-4.7-4.7 0-2.59 2.11-4.7 4.7-4.7 2.59 0 4.7 2.11 4.7 4.7 0 2.59-2.11 4.7-4.7 4.7z"/></svg>
     </div>
 
     <img class="avatar mr-2 flex-shrink-0 js-jump-to-suggestion-avatar d-none" alt="" aria-label="Team" src="" width="28" height="28">
@@ -409,13 +409,13 @@
 
         <a href="/login?return_to=%2Fwebauthn4j%2Fwebauthn4j%2Fblob%2F0.9.7.RELEASE%2FLICENSE.txt"
           class="HeaderMenu-link no-underline mr-3"
-          data-hydro-click="{&quot;event_type&quot;:&quot;authentication.click&quot;,&quot;payload&quot;:{&quot;location_in_page&quot;:&quot;site header menu&quot;,&quot;repository_id&quot;:null,&quot;auth_type&quot;:&quot;SIGN_UP&quot;,&quot;client_id&quot;:null,&quot;originating_request_id&quot;:&quot;4C50:2286:254B56C:46C37A2:5D9DCB0B&quot;,&quot;originating_url&quot;:&quot;https://github.com/webauthn4j/webauthn4j/blob/0.9.7.RELEASE/LICENSE.txt&quot;,&quot;referrer&quot;:null,&quot;user_id&quot;:null}}" data-hydro-click-hmac="e3452a62923a18b5a7c6c35a2dcfd069d6487009ea4b55a04ea7def60875d6cf"
+          data-hydro-click="{&quot;event_type&quot;:&quot;authentication.click&quot;,&quot;payload&quot;:{&quot;location_in_page&quot;:&quot;site header menu&quot;,&quot;repository_id&quot;:null,&quot;auth_type&quot;:&quot;SIGN_UP&quot;,&quot;client_id&quot;:null,&quot;originating_request_id&quot;:&quot;BF44:23F84:FF1DE7:17AD5CD:5DB29E3C&quot;,&quot;originating_url&quot;:&quot;https://github.com/webauthn4j/webauthn4j/blob/0.9.7.RELEASE/LICENSE.txt&quot;,&quot;referrer&quot;:null,&quot;user_id&quot;:null}}" data-hydro-click-hmac="da008466a9b1f0472bfbcb10c076e37a11f21cde70cabe6e1e18938838f1434e"
           data-ga-click="(Logged out) Header, clicked Sign in, text:sign-in">
           Sign&nbsp;in
         </a>
-          <a href="/join?source=header-repo"
+          <a href="/join?source=header-repo&amp;source_repo=webauthn4j%2Fwebauthn4j"
             class="HeaderMenu-link d-inline-block no-underline border border-gray-dark rounded-1 px-2 py-1"
-            data-hydro-click="{&quot;event_type&quot;:&quot;authentication.click&quot;,&quot;payload&quot;:{&quot;location_in_page&quot;:&quot;site header menu&quot;,&quot;repository_id&quot;:null,&quot;auth_type&quot;:&quot;SIGN_UP&quot;,&quot;client_id&quot;:null,&quot;originating_request_id&quot;:&quot;4C50:2286:254B56C:46C37A2:5D9DCB0B&quot;,&quot;originating_url&quot;:&quot;https://github.com/webauthn4j/webauthn4j/blob/0.9.7.RELEASE/LICENSE.txt&quot;,&quot;referrer&quot;:null,&quot;user_id&quot;:null}}" data-hydro-click-hmac="e3452a62923a18b5a7c6c35a2dcfd069d6487009ea4b55a04ea7def60875d6cf"
+            data-hydro-click="{&quot;event_type&quot;:&quot;authentication.click&quot;,&quot;payload&quot;:{&quot;location_in_page&quot;:&quot;site header menu&quot;,&quot;repository_id&quot;:null,&quot;auth_type&quot;:&quot;SIGN_UP&quot;,&quot;client_id&quot;:null,&quot;originating_request_id&quot;:&quot;BF44:23F84:FF1DE7:17AD5CD:5DB29E3C&quot;,&quot;originating_url&quot;:&quot;https://github.com/webauthn4j/webauthn4j/blob/0.9.7.RELEASE/LICENSE.txt&quot;,&quot;referrer&quot;:null,&quot;user_id&quot;:null}}" data-hydro-click-hmac="da008466a9b1f0472bfbcb10c076e37a11f21cde70cabe6e1e18938838f1434e"
             data-ga-click="(Logged out) Header, clicked Sign up, text:sign-up">
             Sign&nbsp;up
           </a>
@@ -454,6 +454,7 @@
 
 
 
+
   <div class="pagehead repohead instapaper_ignore readability-menu experiment-repo-nav pt-0 pt-lg-4 ">
     <div class="repohead-details-container clearfix container-lg p-responsive d-none d-lg-block">
 
@@ -464,31 +465,31 @@
 
   <li>
     
-  <a class="tooltipped tooltipped-s btn btn-sm btn-with-count" aria-label="You must be signed in to watch a repository" rel="nofollow" data-hydro-click="{&quot;event_type&quot;:&quot;authentication.click&quot;,&quot;payload&quot;:{&quot;location_in_page&quot;:&quot;notification subscription menu watch&quot;,&quot;repository_id&quot;:null,&quot;auth_type&quot;:&quot;LOG_IN&quot;,&quot;client_id&quot;:null,&quot;originating_request_id&quot;:&quot;4C50:2286:254B56C:46C37A2:5D9DCB0B&quot;,&quot;originating_url&quot;:&quot;https://github.com/webauthn4j/webauthn4j/blob/0.9.7.RELEASE/LICENSE.txt&quot;,&quot;referrer&quot;:null,&quot;user_id&quot;:null}}" data-hydro-click-hmac="b0f675d53d9b842a62fdb323304ef0d17689162fb1c14ba81f20709bf457751c" href="/login?return_to=%2Fwebauthn4j%2Fwebauthn4j">
+  <a class="tooltipped tooltipped-s btn btn-sm btn-with-count" aria-label="You must be signed in to watch a repository" rel="nofollow" data-hydro-click="{&quot;event_type&quot;:&quot;authentication.click&quot;,&quot;payload&quot;:{&quot;location_in_page&quot;:&quot;notification subscription menu watch&quot;,&quot;repository_id&quot;:null,&quot;auth_type&quot;:&quot;LOG_IN&quot;,&quot;client_id&quot;:null,&quot;originating_request_id&quot;:&quot;BF44:23F84:FF1DE7:17AD5CD:5DB29E3C&quot;,&quot;originating_url&quot;:&quot;https://github.com/webauthn4j/webauthn4j/blob/0.9.7.RELEASE/LICENSE.txt&quot;,&quot;referrer&quot;:null,&quot;user_id&quot;:null}}" data-hydro-click-hmac="c1c0df50e39252d19b858c7165b8bd896c0b1a24f698741bea60cfe2cd26d611" href="/login?return_to=%2Fwebauthn4j%2Fwebauthn4j">
     <svg class="octicon octicon-eye v-align-text-bottom" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M8.06 2C3 2 0 8 0 8s3 6 8.06 6C13 14 16 8 16 8s-3-6-7.94-6zM8 12c-2.2 0-4-1.78-4-4 0-2.2 1.8-4 4-4 2.22 0 4 1.8 4 4 0 2.22-1.78 4-4 4zm2-4c0 1.11-.89 2-2 2-1.11 0-2-.89-2-2 0-1.11.89-2 2-2 1.11 0 2 .89 2 2z"/></svg>
     Watch
 </a>    <a class="social-count" href="/webauthn4j/webauthn4j/watchers"
-       aria-label="16 users are watching this repository">
-      16
+       aria-label="14 users are watching this repository">
+      14
     </a>
 
   </li>
 
   <li>
-        <a class="btn btn-sm btn-with-count tooltipped tooltipped-s" aria-label="You must be signed in to star a repository" rel="nofollow" data-hydro-click="{&quot;event_type&quot;:&quot;authentication.click&quot;,&quot;payload&quot;:{&quot;location_in_page&quot;:&quot;star button&quot;,&quot;repository_id&quot;:134147639,&quot;auth_type&quot;:&quot;LOG_IN&quot;,&quot;client_id&quot;:null,&quot;originating_request_id&quot;:&quot;4C50:2286:254B56C:46C37A2:5D9DCB0B&quot;,&quot;originating_url&quot;:&quot;https://github.com/webauthn4j/webauthn4j/blob/0.9.7.RELEASE/LICENSE.txt&quot;,&quot;referrer&quot;:null,&quot;user_id&quot;:null}}" data-hydro-click-hmac="46c0f9cbebc8e181d7073ed0248509b95bdd6978950b060c45d5f2baf78c1526" href="/login?return_to=%2Fwebauthn4j%2Fwebauthn4j">
+        <a class="btn btn-sm btn-with-count tooltipped tooltipped-s" aria-label="You must be signed in to star a repository" rel="nofollow" data-hydro-click="{&quot;event_type&quot;:&quot;authentication.click&quot;,&quot;payload&quot;:{&quot;location_in_page&quot;:&quot;star button&quot;,&quot;repository_id&quot;:134147639,&quot;auth_type&quot;:&quot;LOG_IN&quot;,&quot;client_id&quot;:null,&quot;originating_request_id&quot;:&quot;BF44:23F84:FF1DE7:17AD5CD:5DB29E3C&quot;,&quot;originating_url&quot;:&quot;https://github.com/webauthn4j/webauthn4j/blob/0.9.7.RELEASE/LICENSE.txt&quot;,&quot;referrer&quot;:null,&quot;user_id&quot;:null}}" data-hydro-click-hmac="6269f5698893e073711a21f59f3f4550ce5185d54c96127a68a0ae71bf776e20" href="/login?return_to=%2Fwebauthn4j%2Fwebauthn4j">
       <svg class="octicon octicon-star v-align-text-bottom" viewBox="0 0 14 16" version="1.1" width="14" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M14 6l-4.9-.64L7 1 4.9 5.36 0 6l3.6 3.26L2.67 14 7 11.67 11.33 14l-.93-4.74L14 6z"/></svg>
       Star
 </a>
     <a class="social-count js-social-count" href="/webauthn4j/webauthn4j/stargazers"
-      aria-label="87 users starred this repository">
-      87
+      aria-label="88 users starred this repository">
+      88
     </a>
 
   </li>
 
   <li>
-      <a class="btn btn-sm btn-with-count tooltipped tooltipped-s" aria-label="You must be signed in to fork a repository" rel="nofollow" data-hydro-click="{&quot;event_type&quot;:&quot;authentication.click&quot;,&quot;payload&quot;:{&quot;location_in_page&quot;:&quot;repo details fork button&quot;,&quot;repository_id&quot;:134147639,&quot;auth_type&quot;:&quot;LOG_IN&quot;,&quot;client_id&quot;:null,&quot;originating_request_id&quot;:&quot;4C50:2286:254B56C:46C37A2:5D9DCB0B&quot;,&quot;originating_url&quot;:&quot;https://github.com/webauthn4j/webauthn4j/blob/0.9.7.RELEASE/LICENSE.txt&quot;,&quot;referrer&quot;:null,&quot;user_id&quot;:null}}" data-hydro-click-hmac="6214a0c803725be196916a946da24883a6a4d5f9daee0ca534078174436f95fd" href="/login?return_to=%2Fwebauthn4j%2Fwebauthn4j">
-        <svg class="octicon octicon-repo-forked v-align-text-bottom" viewBox="0 0 10 16" version="1.1" width="10" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M8 1a1.993 1.993 0 0 0-1 3.72V6L5 8 3 6V4.72A1.993 1.993 0 0 0 2 1a1.993 1.993 0 0 0-1 3.72V6.5l3 3v1.78A1.993 1.993 0 0 0 5 15a1.993 1.993 0 0 0 1-3.72V9.5l3-3V4.72A1.993 1.993 0 0 0 8 1zM2 4.2C1.34 4.2.8 3.65.8 3c0-.65.55-1.2 1.2-1.2.65 0 1.2.55 1.2 1.2 0 .65-.55 1.2-1.2 1.2zm3 10c-.66 0-1.2-.55-1.2-1.2 0-.65.55-1.2 1.2-1.2.65 0 1.2.55 1.2 1.2 0 .65-.55 1.2-1.2 1.2zm3-10c-.66 0-1.2-.55-1.2-1.2 0-.65.55-1.2 1.2-1.2.65 0 1.2.55 1.2 1.2 0 .65-.55 1.2-1.2 1.2z"/></svg>
+      <a class="btn btn-sm btn-with-count tooltipped tooltipped-s" aria-label="You must be signed in to fork a repository" rel="nofollow" data-hydro-click="{&quot;event_type&quot;:&quot;authentication.click&quot;,&quot;payload&quot;:{&quot;location_in_page&quot;:&quot;repo details fork button&quot;,&quot;repository_id&quot;:134147639,&quot;auth_type&quot;:&quot;LOG_IN&quot;,&quot;client_id&quot;:null,&quot;originating_request_id&quot;:&quot;BF44:23F84:FF1DE7:17AD5CD:5DB29E3C&quot;,&quot;originating_url&quot;:&quot;https://github.com/webauthn4j/webauthn4j/blob/0.9.7.RELEASE/LICENSE.txt&quot;,&quot;referrer&quot;:null,&quot;user_id&quot;:null}}" data-hydro-click-hmac="32d1df21f5dd4091df03c5432af9e5ac2fc0902942cb79074c30e79c39371406" href="/login?return_to=%2Fwebauthn4j%2Fwebauthn4j">
+        <svg class="octicon octicon-repo-forked v-align-text-bottom" viewBox="0 0 10 16" version="1.1" width="10" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M8 1a1.993 1.993 0 00-1 3.72V6L5 8 3 6V4.72A1.993 1.993 0 002 1a1.993 1.993 0 00-1 3.72V6.5l3 3v1.78A1.993 1.993 0 005 15a1.993 1.993 0 001-3.72V9.5l3-3V4.72A1.993 1.993 0 008 1zM2 4.2C1.34 4.2.8 3.65.8 3c0-.65.55-1.2 1.2-1.2.65 0 1.2.55 1.2 1.2 0 .65-.55 1.2-1.2 1.2zm3 10c-.66 0-1.2-.55-1.2-1.2 0-.65.55-1.2 1.2-1.2.65 0 1.2.55 1.2 1.2 0 .65-.55 1.2-1.2 1.2zm3-10c-.66 0-1.2-.55-1.2-1.2 0-.65.55-1.2 1.2-1.2.65 0 1.2.55 1.2 1.2 0 .65-.55 1.2-1.2 1.2z"/></svg>
         Fork
 </a>
     <a href="/webauthn4j/webauthn4j/network/members" class="social-count"
@@ -524,17 +525,17 @@
 
     <span itemscope itemtype="http://schema.org/ListItem" itemprop="itemListElement">
       <a itemprop="url" data-hotkey="g i" class="js-selected-navigation-item reponav-item" data-selected-links="repo_issues repo_labels repo_milestones /webauthn4j/webauthn4j/issues" href="/webauthn4j/webauthn4j/issues">
-        <svg class="octicon octicon-issue-opened" viewBox="0 0 14 16" version="1.1" width="14" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M7 2.3c3.14 0 5.7 2.56 5.7 5.7s-2.56 5.7-5.7 5.7A5.71 5.71 0 0 1 1.3 8c0-3.14 2.56-5.7 5.7-5.7zM7 1C3.14 1 0 4.14 0 8s3.14 7 7 7 7-3.14 7-7-3.14-7-7-7zm1 3H6v5h2V4zm0 6H6v2h2v-2z"/></svg>
+        <svg class="octicon octicon-issue-opened" viewBox="0 0 14 16" version="1.1" width="14" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M7 2.3c3.14 0 5.7 2.56 5.7 5.7s-2.56 5.7-5.7 5.7A5.71 5.71 0 011.3 8c0-3.14 2.56-5.7 5.7-5.7zM7 1C3.14 1 0 4.14 0 8s3.14 7 7 7 7-3.14 7-7-3.14-7-7-7zm1 3H6v5h2V4zm0 6H6v2h2v-2z"/></svg>
         <span itemprop="name">Issues</span>
-        <span class="Counter">4</span>
+        <span class="Counter">3</span>
         <meta itemprop="position" content="2">
 </a>    </span>
 
   <span itemscope itemtype="http://schema.org/ListItem" itemprop="itemListElement">
     <a data-hotkey="g p" itemprop="url" class="js-selected-navigation-item reponav-item" data-selected-links="repo_pulls checks /webauthn4j/webauthn4j/pulls" href="/webauthn4j/webauthn4j/pulls">
-      <svg class="octicon octicon-git-pull-request" viewBox="0 0 12 16" version="1.1" width="12" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M11 11.28V5c-.03-.78-.34-1.47-.94-2.06C9.46 2.35 8.78 2.03 8 2H7V0L4 3l3 3V4h1c.27.02.48.11.69.31.21.2.3.42.31.69v6.28A1.993 1.993 0 0 0 10 15a1.993 1.993 0 0 0 1-3.72zm-1 2.92c-.66 0-1.2-.55-1.2-1.2 0-.65.55-1.2 1.2-1.2.65 0 1.2.55 1.2 1.2 0 .65-.55 1.2-1.2 1.2zM4 3c0-1.11-.89-2-2-2a1.993 1.993 0 0 0-1 3.72v6.56A1.993 1.993 0 0 0 2 15a1.993 1.993 0 0 0 1-3.72V4.72c.59-.34 1-.98 1-1.72zm-.8 10c0 .66-.55 1.2-1.2 1.2-.65 0-1.2-.55-1.2-1.2 0-.65.55-1.2 1.2-1.2.65 0 1.2.55 1.2 1.2zM2 4.2C1.34 4.2.8 3.65.8 3c0-.65.55-1.2 1.2-1.2.65 0 1.2.55 1.2 1.2 0 .65-.55 1.2-1.2 1.2z"/></svg>
+      <svg class="octicon octicon-git-pull-request" viewBox="0 0 12 16" version="1.1" width="12" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M11 11.28V5c-.03-.78-.34-1.47-.94-2.06C9.46 2.35 8.78 2.03 8 2H7V0L4 3l3 3V4h1c.27.02.48.11.69.31.21.2.3.42.31.69v6.28A1.993 1.993 0 0010 15a1.993 1.993 0 001-3.72zm-1 2.92c-.66 0-1.2-.55-1.2-1.2 0-.65.55-1.2 1.2-1.2.65 0 1.2.55 1.2 1.2 0 .65-.55 1.2-1.2 1.2zM4 3c0-1.11-.89-2-2-2a1.993 1.993 0 00-1 3.72v6.56A1.993 1.993 0 002 15a1.993 1.993 0 001-3.72V4.72c.59-.34 1-.98 1-1.72zm-.8 10c0 .66-.55 1.2-1.2 1.2-.65 0-1.2-.55-1.2-1.2 0-.65.55-1.2 1.2-1.2.65 0 1.2.55 1.2 1.2zM2 4.2C1.34 4.2.8 3.65.8 3c0-.65.55-1.2 1.2-1.2.65 0 1.2.55 1.2 1.2 0 .65-.55 1.2-1.2 1.2z"/></svg>
       <span itemprop="name">Pull requests</span>
-      <span class="Counter">1</span>
+      <span class="Counter">0</span>
       <meta itemprop="position" content="3">
 </a>  </span>
 
@@ -567,14 +568,14 @@
       <span itemscope itemtype="http://schema.org/ListItem" itemprop="itemListElement">
         <a itemprop="url" class="js-selected-navigation-item reponav-item" data-selected-links="repo_issues repo_labels repo_milestones /webauthn4j/webauthn4j/issues" href="/webauthn4j/webauthn4j/issues">
           <span itemprop="name">Issues</span>
-          <span class="Counter">4</span>
+          <span class="Counter">3</span>
           <meta itemprop="position" content="2">
 </a>      </span>
 
     <span itemscope itemtype="http://schema.org/ListItem" itemprop="itemListElement">
       <a itemprop="url" class="js-selected-navigation-item reponav-item" data-selected-links="repo_pulls checks /webauthn4j/webauthn4j/pulls" href="/webauthn4j/webauthn4j/pulls">
         <span itemprop="name">Pull requests</span>
-        <span class="Counter">1</span>
+        <span class="Counter">0</span>
         <meta itemprop="position" content="3">
 </a>    </span>
 
@@ -606,34 +607,17 @@
     <a class="d-none js-permalink-shortcut" data-hotkey="y" href="/webauthn4j/webauthn4j/blob/befd1c8f25d290bcd8ea45e9152117cd5740364f/LICENSE.txt">Permalink</a>
 
     <!-- blob contrib key: blob_contributors:v21:406c346656b5598df42d2c537bbb3b7a -->
-          <div class="signup-prompt mx-auto mb-6 p-4 border rounded-2"
-      style="background-image: url('https://github.githubassets.com/images/modules/site/heroes/octocat-unpacking-hubot.svg'); background-position: 94% 96%; background-size: auto 170%;">
-      <div class="position-relative">
-        <!-- '"` --><!-- </textarea></xmp> --></option></form><form action="/prompt_dismissals/blobs" accept-charset="UTF-8" method="post"><input name="utf8" type="hidden" value="&#x2713;" /><input type="hidden" name="_method" value="put" /><input type="hidden" name="authenticity_token" value="OQhctt4koFDGWLXBs7wxCXlwo2YB/yLtsf2tOjNtFRdcwWq4JBO+Z3Oo+JumtUKvo3wpr8d09PPaz8jXskwXxw==" />
-          <button
-            type="submit"
-            class="position-absolute top-0 right-0 py-1 px-2 border bg-white btn-link link-gray no-underline f6"
-            data-ga-click="(Logged out) Sign up prompt, click, text:Dismiss"
-            data-ga-load="Blob, view, type:redesigned signup prompt">
-            Dismiss
-          </button>
-</form>        <h3>All your code in one place</h3>
-        <p class="col-md-7">
-          GitHub makes it easy to scale back on context switching. Read rendered
-          documentation, see the history of any file, and collaborate with
-          contributors on projects across GitHub.
-        </p>
-        <a href="/join?source=prompt-blob-show"
-          class="btn btn-primary mr-2"
-          data-ga-click="(Logged out) Sign up prompt, click, text:Sign up for free"
-          data-ga-load="Blob, view, type:redesigned signup prompt">
-          Sign up for free
-        </a>
-        <a href="/pricing"
-          data-ga-click="(Logged out) Sign up prompt, click, text:See pricing for teams and enterprises"
-          data-ga-load="Blob, view, type:redesigned signup prompt">
-          See pricing for teams and enterprises
-        </a>
+          <div class="signup-prompt-bg rounded-1">
+      <div class="signup-prompt p-4 text-center mb-4 rounded-1">
+        <div class="position-relative">
+          <!-- '"` --><!-- </textarea></xmp> --></option></form><form action="/prompt_dismissals/signup" accept-charset="UTF-8" method="post"><input name="utf8" type="hidden" value="&#x2713;" /><input type="hidden" name="_method" value="put" /><input type="hidden" name="authenticity_token" value="9dhmj4qEwNCZ3s75mzDcEsxfvaoWrc75f8JyrcxuqsM91OvHu7glLAP/hsNB6NDKAEIM69BCvcOWDgmuGtwgmA==" />
+            <button type="submit" class="position-absolute top-0 right-0 btn-link link-gray" data-ga-click="(Logged out) Sign up prompt, clicked Dismiss, text:dismiss">
+              Dismiss
+            </button>
+</form>          <h3 class="pt-2">Join GitHub today</h3>
+          <p class="col-6 mx-auto">GitHub is home to over 40 million developers working together to host and review code, manage projects, and build software together.</p>
+          <a class="btn btn-primary" data-hydro-click="{&quot;event_type&quot;:&quot;authentication.click&quot;,&quot;payload&quot;:{&quot;location_in_page&quot;:&quot;files signup prompt&quot;,&quot;repository_id&quot;:null,&quot;auth_type&quot;:&quot;SIGN_UP&quot;,&quot;client_id&quot;:null,&quot;originating_request_id&quot;:&quot;BF44:23F84:FF1DE7:17AD5CD:5DB29E3C&quot;,&quot;originating_url&quot;:&quot;https://github.com/webauthn4j/webauthn4j/blob/0.9.7.RELEASE/LICENSE.txt&quot;,&quot;referrer&quot;:null,&quot;user_id&quot;:null}}" data-hydro-click-hmac="9b7c47e7d48d4e0e2c9aba78f922802337f9891d6e9de36861d202dc55521468" data-ga-click="(Logged out) Sign up prompt, clicked Sign up, text:sign-up" href="/join?source=prompt-blob-show&amp;source_repo=webauthn4j%2Fwebauthn4j">Sign up</a>
+        </div>
       </div>
     </div>
 
@@ -688,7 +672,7 @@
       <div class="Box mb-3 clearfix">
   <div class="d-flex flex-column flex-md-row">
     <div class="p-3 col-md-6">
-      <svg height="32" class="octicon octicon-law license-summary-octicon float-left mr-2" viewBox="0 0 14 16" version="1.1" width="28" aria-hidden="true"><path fill-rule="evenodd" d="M7 4c-.83 0-1.5-.67-1.5-1.5S6.17 1 7 1s1.5.67 1.5 1.5S7.83 4 7 4zm7 6c0 1.11-.89 2-2 2h-1c-1.11 0-2-.89-2-2l2-4h-1c-.55 0-1-.45-1-1H8v8c.42 0 1 .45 1 1h1c.42 0 1 .45 1 1H3c0-.55.58-1 1-1h1c0-.55.58-1 1-1h.03L6 5H5c0 .55-.45 1-1 1H3l2 4c0 1.11-.89 2-2 2H2c-1.11 0-2-.89-2-2l2-4H1V5h3c0-.55.45-1 1-1h4c.55 0 1 .45 1 1h3v1h-1l2 4zM2.5 7L1 10h3L2.5 7zM13 10l-1.5-3-1.5 3h3z"/></svg>
+      <svg height="32" class="octicon octicon-law text-gray-dark float-left mr-2" viewBox="0 0 14 16" version="1.1" width="28" aria-hidden="true"><path fill-rule="evenodd" d="M7 4c-.83 0-1.5-.67-1.5-1.5S6.17 1 7 1s1.5.67 1.5 1.5S7.83 4 7 4zm7 6c0 1.11-.89 2-2 2h-1c-1.11 0-2-.89-2-2l2-4h-1c-.55 0-1-.45-1-1H8v8c.42 0 1 .45 1 1h1c.42 0 1 .45 1 1H3c0-.55.58-1 1-1h1c0-.55.58-1 1-1h.03L6 5H5c0 .55-.45 1-1 1H3l2 4c0 1.11-.89 2-2 2H2c-1.11 0-2-.89-2-2l2-4H1V5h3c0-.55.45-1 1-1h4c.55 0 1 .45 1 1h3v1h-1l2 4zM2.5 7L1 10h3L2.5 7zM13 10l-1.5-3-1.5 3h3z"/></svg>
       <p class="text-small text-gray mb-0 lh-condensed-ultra">
         webauthn4j/webauthn4j is licensed under the
       </p>
@@ -701,31 +685,31 @@
           <h4 class="mt-1 mb-2 h5">Permissions</h4>
           <ul class="list-style-none">
               <li class="text-small pl-3">
-                <svg width="13" class="octicon octicon-check rule-type-permissions ml-n3 v-align-middle" viewBox="0 0 12 16" version="1.1" height="17" aria-hidden="true"><path fill-rule="evenodd" d="M12 5l-8 8-4-4 1.5-1.5L4 10l6.5-6.5L12 5z"/></svg>
+                <svg width="13" class="octicon octicon-check text-green ml-n3 v-align-middle" viewBox="0 0 12 16" version="1.1" height="17" aria-hidden="true"><path fill-rule="evenodd" d="M12 5l-8 8-4-4 1.5-1.5L4 10l6.5-6.5L12 5z"/></svg>
                 <span class="v-align-middle" title="This software and derivatives may be used for commercial purposes.">
                   Commercial use
                 </span>
               </li>
               <li class="text-small pl-3">
-                <svg width="13" class="octicon octicon-check rule-type-permissions ml-n3 v-align-middle" viewBox="0 0 12 16" version="1.1" height="17" aria-hidden="true"><path fill-rule="evenodd" d="M12 5l-8 8-4-4 1.5-1.5L4 10l6.5-6.5L12 5z"/></svg>
+                <svg width="13" class="octicon octicon-check text-green ml-n3 v-align-middle" viewBox="0 0 12 16" version="1.1" height="17" aria-hidden="true"><path fill-rule="evenodd" d="M12 5l-8 8-4-4 1.5-1.5L4 10l6.5-6.5L12 5z"/></svg>
                 <span class="v-align-middle" title="This software may be modified.">
                   Modification
                 </span>
               </li>
               <li class="text-small pl-3">
-                <svg width="13" class="octicon octicon-check rule-type-permissions ml-n3 v-align-middle" viewBox="0 0 12 16" version="1.1" height="17" aria-hidden="true"><path fill-rule="evenodd" d="M12 5l-8 8-4-4 1.5-1.5L4 10l6.5-6.5L12 5z"/></svg>
+                <svg width="13" class="octicon octicon-check text-green ml-n3 v-align-middle" viewBox="0 0 12 16" version="1.1" height="17" aria-hidden="true"><path fill-rule="evenodd" d="M12 5l-8 8-4-4 1.5-1.5L4 10l6.5-6.5L12 5z"/></svg>
                 <span class="v-align-middle" title="This software may be distributed.">
                   Distribution
                 </span>
               </li>
               <li class="text-small pl-3">
-                <svg width="13" class="octicon octicon-check rule-type-permissions ml-n3 v-align-middle" viewBox="0 0 12 16" version="1.1" height="17" aria-hidden="true"><path fill-rule="evenodd" d="M12 5l-8 8-4-4 1.5-1.5L4 10l6.5-6.5L12 5z"/></svg>
+                <svg width="13" class="octicon octicon-check text-green ml-n3 v-align-middle" viewBox="0 0 12 16" version="1.1" height="17" aria-hidden="true"><path fill-rule="evenodd" d="M12 5l-8 8-4-4 1.5-1.5L4 10l6.5-6.5L12 5z"/></svg>
                 <span class="v-align-middle" title="This license provides an express grant of patent rights from contributors.">
                   Patent use
                 </span>
               </li>
               <li class="text-small pl-3">
-                <svg width="13" class="octicon octicon-check rule-type-permissions ml-n3 v-align-middle" viewBox="0 0 12 16" version="1.1" height="17" aria-hidden="true"><path fill-rule="evenodd" d="M12 5l-8 8-4-4 1.5-1.5L4 10l6.5-6.5L12 5z"/></svg>
+                <svg width="13" class="octicon octicon-check text-green ml-n3 v-align-middle" viewBox="0 0 12 16" version="1.1" height="17" aria-hidden="true"><path fill-rule="evenodd" d="M12 5l-8 8-4-4 1.5-1.5L4 10l6.5-6.5L12 5z"/></svg>
                 <span class="v-align-middle" title="This software may be used and modified in private.">
                   Private use
                 </span>
@@ -736,19 +720,19 @@
           <h4 class="mt-1 mb-2 h5">Limitations</h4>
           <ul class="list-style-none">
               <li class="text-small pl-3">
-                <svg width="13" class="octicon octicon-x rule-type-limitations ml-n3 v-align-middle" viewBox="0 0 12 16" version="1.1" height="17" aria-hidden="true"><path fill-rule="evenodd" d="M7.48 8l3.75 3.75-1.48 1.48L6 9.48l-3.75 3.75-1.48-1.48L4.52 8 .77 4.25l1.48-1.48L6 6.52l3.75-3.75 1.48 1.48L7.48 8z"/></svg>
+                <svg width="13" class="octicon octicon-x text-red ml-n3 v-align-middle" viewBox="0 0 12 16" version="1.1" height="17" aria-hidden="true"><path fill-rule="evenodd" d="M7.48 8l3.75 3.75-1.48 1.48L6 9.48l-3.75 3.75-1.48-1.48L4.52 8 .77 4.25l1.48-1.48L6 6.52l3.75-3.75 1.48 1.48L7.48 8z"/></svg>
                 <span class="v-align-middle" title="This license explicitly states that it does NOT grant trademark rights, even though licenses without such a statement probably do not grant any implicit trademark rights.">
                   Trademark use
                 </span>
               </li>
               <li class="text-small pl-3">
-                <svg width="13" class="octicon octicon-x rule-type-limitations ml-n3 v-align-middle" viewBox="0 0 12 16" version="1.1" height="17" aria-hidden="true"><path fill-rule="evenodd" d="M7.48 8l3.75 3.75-1.48 1.48L6 9.48l-3.75 3.75-1.48-1.48L4.52 8 .77 4.25l1.48-1.48L6 6.52l3.75-3.75 1.48 1.48L7.48 8z"/></svg>
+                <svg width="13" class="octicon octicon-x text-red ml-n3 v-align-middle" viewBox="0 0 12 16" version="1.1" height="17" aria-hidden="true"><path fill-rule="evenodd" d="M7.48 8l3.75 3.75-1.48 1.48L6 9.48l-3.75 3.75-1.48-1.48L4.52 8 .77 4.25l1.48-1.48L6 6.52l3.75-3.75 1.48 1.48L7.48 8z"/></svg>
                 <span class="v-align-middle" title="This license includes a limitation of liability.">
                   Liability
                 </span>
               </li>
               <li class="text-small pl-3">
-                <svg width="13" class="octicon octicon-x rule-type-limitations ml-n3 v-align-middle" viewBox="0 0 12 16" version="1.1" height="17" aria-hidden="true"><path fill-rule="evenodd" d="M7.48 8l3.75 3.75-1.48 1.48L6 9.48l-3.75 3.75-1.48-1.48L4.52 8 .77 4.25l1.48-1.48L6 6.52l3.75-3.75 1.48 1.48L7.48 8z"/></svg>
+                <svg width="13" class="octicon octicon-x text-red ml-n3 v-align-middle" viewBox="0 0 12 16" version="1.1" height="17" aria-hidden="true"><path fill-rule="evenodd" d="M7.48 8l3.75 3.75-1.48 1.48L6 9.48l-3.75 3.75-1.48-1.48L4.52 8 .77 4.25l1.48-1.48L6 6.52l3.75-3.75 1.48 1.48L7.48 8z"/></svg>
                 <span class="v-align-middle" title="The license explicitly states that it does NOT provide any warranty.">
                   Warranty
                 </span>
@@ -759,13 +743,13 @@
           <h4 class="mt-1 mb-2 h5">Conditions</h4>
           <ul class="list-style-none">
               <li class="text-small pl-3">
-                <svg width="13" class="octicon octicon-info rule-type-conditions ml-n3 v-align-middle" viewBox="0 0 14 16" version="1.1" height="14" aria-hidden="true"><path fill-rule="evenodd" d="M6.3 5.69a.942.942 0 0 1-.28-.7c0-.28.09-.52.28-.7.19-.18.42-.28.7-.28.28 0 .52.09.7.28.18.19.28.42.28.7 0 .28-.09.52-.28.7a1 1 0 0 1-.7.3c-.28 0-.52-.11-.7-.3zM8 7.99c-.02-.25-.11-.48-.31-.69-.2-.19-.42-.3-.69-.31H6c-.27.02-.48.13-.69.31-.2.2-.3.44-.31.69h1v3c.02.27.11.5.31.69.2.2.42.31.69.31h1c.27 0 .48-.11.69-.31.2-.19.3-.42.31-.69H8V7.98v.01zM7 2.3c-3.14 0-5.7 2.54-5.7 5.68 0 3.14 2.56 5.7 5.7 5.7s5.7-2.55 5.7-5.7c0-3.15-2.56-5.69-5.7-5.69v.01zM7 .98c3.86 0 7 3.14 7 7s-3.14 7-7 7-7-3.12-7-7 3.14-7 7-7z"/></svg>
+                <svg width="13" class="octicon octicon-info text-blue ml-n3 v-align-middle" viewBox="0 0 14 16" version="1.1" height="14" aria-hidden="true"><path fill-rule="evenodd" d="M6.3 5.69a.942.942 0 01-.28-.7c0-.28.09-.52.28-.7.19-.18.42-.28.7-.28.28 0 .52.09.7.28.18.19.28.42.28.7 0 .28-.09.52-.28.7a1 1 0 01-.7.3c-.28 0-.52-.11-.7-.3zM8 7.99c-.02-.25-.11-.48-.31-.69-.2-.19-.42-.3-.69-.31H6c-.27.02-.48.13-.69.31-.2.2-.3.44-.31.69h1v3c.02.27.11.5.31.69.2.2.42.31.69.31h1c.27 0 .48-.11.69-.31.2-.19.3-.42.31-.69H8V7.98v.01zM7 2.3c-3.14 0-5.7 2.54-5.7 5.68 0 3.14 2.56 5.7 5.7 5.7s5.7-2.55 5.7-5.7c0-3.15-2.56-5.69-5.7-5.69v.01zM7 .98c3.86 0 7 3.14 7 7s-3.14 7-7 7-7-3.12-7-7 3.14-7 7-7z"/></svg>
                 <span class="v-align-middle" title="A copy of the license and copyright notice must be included with the software.">
                   License and copyright notice
                 </span>
               </li>
               <li class="text-small pl-3">
-                <svg width="13" class="octicon octicon-info rule-type-conditions ml-n3 v-align-middle" viewBox="0 0 14 16" version="1.1" height="14" aria-hidden="true"><path fill-rule="evenodd" d="M6.3 5.69a.942.942 0 0 1-.28-.7c0-.28.09-.52.28-.7.19-.18.42-.28.7-.28.28 0 .52.09.7.28.18.19.28.42.28.7 0 .28-.09.52-.28.7a1 1 0 0 1-.7.3c-.28 0-.52-.11-.7-.3zM8 7.99c-.02-.25-.11-.48-.31-.69-.2-.19-.42-.3-.69-.31H6c-.27.02-.48.13-.69.31-.2.2-.3.44-.31.69h1v3c.02.27.11.5.31.69.2.2.42.31.69.31h1c.27 0 .48-.11.69-.31.2-.19.3-.42.31-.69H8V7.98v.01zM7 2.3c-3.14 0-5.7 2.54-5.7 5.68 0 3.14 2.56 5.7 5.7 5.7s5.7-2.55 5.7-5.7c0-3.15-2.56-5.69-5.7-5.69v.01zM7 .98c3.86 0 7 3.14 7 7s-3.14 7-7 7-7-3.12-7-7 3.14-7 7-7z"/></svg>
+                <svg width="13" class="octicon octicon-info text-blue ml-n3 v-align-middle" viewBox="0 0 14 16" version="1.1" height="14" aria-hidden="true"><path fill-rule="evenodd" d="M6.3 5.69a.942.942 0 01-.28-.7c0-.28.09-.52.28-.7.19-.18.42-.28.7-.28.28 0 .52.09.7.28.18.19.28.42.28.7 0 .28-.09.52-.28.7a1 1 0 01-.7.3c-.28 0-.52-.11-.7-.3zM8 7.99c-.02-.25-.11-.48-.31-.69-.2-.19-.42-.3-.69-.31H6c-.27.02-.48.13-.69.31-.2.2-.3.44-.31.69h1v3c.02.27.11.5.31.69.2.2.42.31.69.31h1c.27 0 .48-.11.69-.31.2-.19.3-.42.31-.69H8V7.98v.01zM7 2.3c-3.14 0-5.7 2.54-5.7 5.68 0 3.14 2.56 5.7 5.7 5.7s5.7-2.55 5.7-5.7c0-3.15-2.56-5.69-5.7-5.69v.01zM7 .98c3.86 0 7 3.14 7 7s-3.14 7-7 7-7-3.12-7-7 3.14-7 7-7z"/></svg>
                 <span class="v-align-middle" title="Changes made to the code must be documented.">
                   State changes
                 </span>
@@ -799,8 +783,8 @@
     <div class="Box mt-3 position-relative">
       
 <div class="Box-header py-2 d-flex flex-column flex-shrink-0 flex-md-row flex-md-items-center">
-
   <div class="text-mono f6 flex-auto pr-3 flex-order-2 flex-md-order-1 mt-2 mt-md-0">
+
       203 lines (169 sloc)
       <span class="file-info-divider"></span>
     11.1 KB
@@ -819,7 +803,7 @@
 
           <button type="button" class="btn-octicon disabled tooltipped tooltipped-nw"
             aria-label="You must be signed in to make or propose changes">
-            <svg class="octicon octicon-pencil" viewBox="0 0 14 16" version="1.1" width="14" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M0 12v3h3l8-8-3-3-8 8zm3 2H1v-2h1v1h1v1zm10.3-9.3L12 6 9 3l1.3-1.3a.996.996 0 0 1 1.41 0l1.59 1.59c.39.39.39 1.02 0 1.41z"/></svg>
+            <svg class="octicon octicon-pencil" viewBox="0 0 14 16" version="1.1" width="14" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M0 12v3h3l8-8-3-3-8 8zm3 2H1v-2h1v1h1v1zm10.3-9.3L12 6 9 3l1.3-1.3a.996.996 0 011.41 0l1.59 1.59c.39.39.39 1.02 0 1.41z"/></svg>
           </button>
           <button type="button" class="btn-octicon btn-octicon-danger disabled tooltipped tooltipped-nw"
             aria-label="You must be signed in to make or propose changes">
@@ -1682,7 +1666,7 @@
 
   <details class="details-reset details-overlay BlobToolbar position-absolute js-file-line-actions dropdown d-none" aria-hidden="true">
     <summary class="btn-octicon ml-0 px-2 p-0 bg-white border border-gray-dark rounded-1" aria-label="Inline file action toolbar">
-      <svg class="octicon octicon-kebab-horizontal" viewBox="0 0 13 16" version="1.1" width="13" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M1.5 9a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3zm5 0a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3zM13 7.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0z"/></svg>
+      <svg class="octicon octicon-kebab-horizontal" viewBox="0 0 13 16" version="1.1" width="13" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M1.5 9a1.5 1.5 0 100-3 1.5 1.5 0 000 3zm5 0a1.5 1.5 0 100-3 1.5 1.5 0 000 3zM13 7.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z"/></svg>
     </summary>
     <details-menu>
       <ul class="BlobToolbar-dropdown dropdown-menu dropdown-menu-se mt-2" style="width:185px">
@@ -1732,7 +1716,7 @@
 <div class="footer container-lg width-full p-responsive" role="contentinfo">
   <div class="position-relative d-flex flex-row-reverse flex-lg-row flex-wrap flex-lg-nowrap flex-justify-center flex-lg-justify-between pt-6 pb-2 mt-6 f6 text-gray border-top border-gray-light ">
     <ul class="list-style-none d-flex flex-wrap col-12 col-lg-5 flex-justify-center flex-lg-justify-between mb-2 mb-lg-0">
-      <li class="mr-3 mr-lg-0">&copy; 2019 <span title="0.24631s from unicorn-5885c54bf-jtcx5">GitHub</span>, Inc.</li>
+      <li class="mr-3 mr-lg-0">&copy; 2019 <span title="0.25417s from unicorn-7f8dbb576d-hbm9b">GitHub</span>, Inc.</li>
         <li class="mr-3 mr-lg-0"><a data-ga-click="Footer, go to terms, text:terms" href="https://github.com/site/terms">Terms</a></li>
         <li class="mr-3 mr-lg-0"><a data-ga-click="Footer, go to privacy, text:privacy" href="https://github.com/site/privacy">Privacy</a></li>
         <li class="mr-3 mr-lg-0"><a data-ga-click="Footer, go to security, text:security" href="https://github.com/security">Security</a></li>
@@ -1741,7 +1725,7 @@
     </ul>
 
     <a aria-label="Homepage" title="GitHub" class="footer-octicon d-none d-lg-block mx-lg-4" href="https://github.com">
-      <svg height="24" class="octicon octicon-mark-github" viewBox="0 0 16 16" version="1.1" width="24" aria-hidden="true"><path fill-rule="evenodd" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>
+      <svg height="24" class="octicon octicon-mark-github" viewBox="0 0 16 16" version="1.1" width="24" aria-hidden="true"><path fill-rule="evenodd" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
 </a>
    <ul class="list-style-none d-flex flex-wrap col-12 col-lg-5 flex-justify-center flex-lg-justify-between mb-2 mb-lg-0">
         <li class="mr-3 mr-lg-0"><a data-ga-click="Footer, go to contact, text:contact" href="https://github.com/contact">Contact GitHub</a></li>
@@ -1761,7 +1745,7 @@
 
 
   <div id="ajax-error-message" class="ajax-error-message flash flash-error">
-    <svg class="octicon octicon-alert" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M8.893 1.5c-.183-.31-.52-.5-.887-.5s-.703.19-.886.5L.138 13.499a.98.98 0 0 0 0 1.001c.193.31.53.501.886.501h13.964c.367 0 .704-.19.877-.5a1.03 1.03 0 0 0 .01-1.002L8.893 1.5zm.133 11.497H6.987v-2.003h2.039v2.003zm0-3.004H6.987V5.987h2.039v4.006z"/></svg>
+    <svg class="octicon octicon-alert" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M8.893 1.5c-.183-.31-.52-.5-.887-.5s-.703.19-.886.5L.138 13.499a.98.98 0 000 1.001c.193.31.53.501.886.501h13.964c.367 0 .704-.19.877-.5a1.03 1.03 0 00.01-1.002L8.893 1.5zm.133 11.497H6.987v-2.003h2.039v2.003zm0-3.004H6.987V5.987h2.039v4.006z"/></svg>
     <button type="button" class="flash-close js-ajax-error-dismiss" aria-label="Dismiss error">
       <svg class="octicon octicon-x" viewBox="0 0 12 16" version="1.1" width="12" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M7.48 8l3.75 3.75-1.48 1.48L6 9.48l-3.75 3.75-1.48-1.48L4.52 8 .77 4.25l1.48-1.48L6 6.52l3.75-3.75 1.48 1.48L7.48 8z"/></svg>
     </button>
@@ -1769,16 +1753,16 @@
   </div>
 
 
-    <script crossorigin="anonymous" integrity="sha512-Z2zZ550WCxISgUZjMiN/Hga29DgA7kxSJcnI3EEssOFxK+wt8QwLcu3CPhvwufZ/XMcL/nkjrXQYWIpwFucAPQ==" type="application/javascript" src="https://github.githubassets.com/assets/compat-bootstrap-6368f09f.js"></script>
-    <script crossorigin="anonymous" integrity="sha512-fLkwsdrBoopf1K6TnAjwPanoWuIarbBAOc6wG4fvpVUQHuvrUOO4nMA/TFQGthtZ03o0tm5Blibo2MyYQ0I3MA==" type="application/javascript" src="https://github.githubassets.com/assets/frameworks-0eb7b6c3.js"></script>
+    <script crossorigin="anonymous" integrity="sha512-iZSuM6MposoHy1LX+mdmRbYEN9yjFancYJLdKEGP0rV8OidiwsOVBrfnbAEN+LQIFYveqNFoOsT8e5QiFcHteg==" type="application/javascript" src="https://github.githubassets.com/assets/compat-bootstrap-a88ac301.js"></script>
+    <script crossorigin="anonymous" integrity="sha512-H68lyjqvhf8QSmg/2hTgg/jxC3W0viB1sxl0EcLEZFB+L5UJf78D38ce69KLWXeTI1sI/3TRRdDyrS/dEVaPdw==" type="application/javascript" src="https://github.githubassets.com/assets/frameworks-02ee494c.js"></script>
     
-    <script crossorigin="anonymous" async="async" integrity="sha512-9KpqeRHLo0xg+ygWuWloOXJG1bDpIM2NRl+N60RvLbmbp/fQ2yCTuAKhuFAq3Qlat5UMcfID5NWsIt7pbxyJRA==" type="application/javascript" src="https://github.githubassets.com/assets/github-bootstrap-1da6f3fb.js"></script>
+    <script crossorigin="anonymous" async="async" integrity="sha512-2jQaY/BluAVCl9LO/gjmKgk7aqCqbktUvJlXzPCt4Ik2mq0VCuQi+25kUQPZQZ87nM/2ooZDXC3F29d9cQR8Ag==" type="application/javascript" src="https://github.githubassets.com/assets/github-bootstrap-e6a5a935.js"></script>
     
     
     
   <div class="js-stale-session-flash flash flash-warn flash-banner" hidden
     >
-    <svg class="octicon octicon-alert" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M8.893 1.5c-.183-.31-.52-.5-.887-.5s-.703.19-.886.5L.138 13.499a.98.98 0 0 0 0 1.001c.193.31.53.501.886.501h13.964c.367 0 .704-.19.877-.5a1.03 1.03 0 0 0 .01-1.002L8.893 1.5zm.133 11.497H6.987v-2.003h2.039v2.003zm0-3.004H6.987V5.987h2.039v4.006z"/></svg>
+    <svg class="octicon octicon-alert" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M8.893 1.5c-.183-.31-.52-.5-.887-.5s-.703.19-.886.5L.138 13.499a.98.98 0 000 1.001c.193.31.53.501.886.501h13.964c.367 0 .704-.19.877-.5a1.03 1.03 0 00.01-1.002L8.893 1.5zm.133 11.497H6.987v-2.003h2.039v2.003zm0-3.004H6.987V5.987h2.039v4.006z"/></svg>
     <span class="js-stale-session-flash-signed-in" hidden>You signed in with another tab or window. <a href="">Reload</a> to refresh your session.</span>
     <span class="js-stale-session-flash-signed-out" hidden>You signed out in another tab or window. <a href="">Reload</a> to refresh your session.</span>
   </div>

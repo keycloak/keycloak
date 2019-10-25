@@ -4,22 +4,22 @@
     <dependency>
       <groupId>org.bouncycastle</groupId>
       <artifactId>bcpkix-jdk15on</artifactId>
-      <version>1.56</version>
+      <version>1.60</version>
       <licenses>
         <license>
           <name>MIT License</name>
-          <url>https://raw.githubusercontent.com/bcgit/bc-java/r1rv56/LICENSE.html</url>
+          <url>https://raw.githubusercontent.com/bcgit/bc-java/r1rv60/LICENSE.html</url>
         </license>
       </licenses>
     </dependency>
     <dependency>
       <groupId>org.bouncycastle</groupId>
       <artifactId>bcprov-jdk15on</artifactId>
-      <version>1.56</version>
+      <version>1.60</version>
       <licenses>
         <license>
           <name>MIT License</name>
-          <url>https://raw.githubusercontent.com/bcgit/bc-java/r1rv56/LICENSE.html</url>
+          <url>https://raw.githubusercontent.com/bcgit/bc-java/r1rv60/LICENSE.html</url>
         </license>
       </licenses>
     </dependency>

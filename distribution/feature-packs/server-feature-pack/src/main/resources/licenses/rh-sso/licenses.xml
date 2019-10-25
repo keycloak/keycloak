@@ -565,7 +565,7 @@
     <dependency>
       <groupId>com.fasterxml.jackson.dataformat</groupId>
       <artifactId>jackson-dataformat-cbor</artifactId>
-      <version>2.9.10</version>
+      <version>2.9.10.redhat-00003</version>
       <licenses>
         <license>
           <name>Apache Software License 2.0</name>
