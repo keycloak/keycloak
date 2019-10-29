@@ -93,10 +93,18 @@ public class XMLEncryptionUtil {
 
         try {
             String keyWrapAlgo = getXMLEncryptionURLForKeyUnwrap(pubKeyAlg, keySize);
-            keyCipher = XMLCipher.getInstance(keyWrapAlgo);
 
-            keyCipher.init(XMLCipher.WRAP_MODE, keyUsedToEncryptSecretKey);
-            return keyCipher.encryptKey(document, keyToBeEncrypted);
+            switch(keyWrapAlgo) {
+                case XMLCipher.RSA_OAEP:
+                    keyCipher = XMLCipher.getInstance(keyWrapAlgo, "", "SHA-256");
+                    keyCipher.init(XMLCipher.WRAP_MODE, keyUsedToEncryptSecretKey);
+                    return keyCipher.encryptKey(document, keyToBeEncrypted, "SHA-256", null);
+                default:
+                    keyCipher = XMLCipher.getInstance(keyWrapAlgo);
+                    keyCipher.init(XMLCipher.WRAP_MODE, keyUsedToEncryptSecretKey);
+                    return keyCipher.encryptKey(document, keyToBeEncrypted);
+            }
+
         } catch (XMLEncryptionException e) {
             throw logger.processingError(e);
         }
