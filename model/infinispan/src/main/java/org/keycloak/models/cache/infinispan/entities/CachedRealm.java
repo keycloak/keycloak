@@ -20,29 +20,19 @@ package org.keycloak.models.cache.infinispan.entities;
 import org.keycloak.common.enums.SslRequired;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentModel;
-import org.keycloak.models.AuthenticationExecutionModel;
-import org.keycloak.models.AuthenticationFlowModel;
+import org.keycloak.models.*;
 import org.keycloak.models.AuthenticatorConfigModel;
-import org.keycloak.models.ClientModel;
-import org.keycloak.models.ClientScopeModel;
-import org.keycloak.models.GroupModel;
-import org.keycloak.models.IdentityProviderMapperModel;
-import org.keycloak.models.IdentityProviderModel;
-import org.keycloak.models.OTPPolicy;
-import org.keycloak.models.PasswordPolicy;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.RequiredActionProviderModel;
-import org.keycloak.models.RequiredCredentialModel;
-import org.keycloak.models.WebAuthnPolicy;
+import org.keycloak.models.cache.infinispan.DefaultLazyLoader;
+import org.keycloak.models.cache.infinispan.LazyLoader;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -62,11 +52,11 @@ public class CachedRealm extends AbstractExtendableRevisioned {
     protected boolean loginWithEmailAllowed;
     protected boolean duplicateEmailsAllowed;
     protected boolean resetPasswordAllowed;
-    protected boolean identityFederationEnabled;
+    private boolean identityFederationEnabled;
     protected boolean editUsernameAllowed;
     //--- brute force settings
     protected boolean bruteForceProtected;
-    protected boolean permanentLockout;
+    private boolean permanentLockout;
     protected int maxFailureWaitSeconds;
     protected int minimumQuickLoginWaitSeconds;
     protected int waitIncrementSeconds;
@@ -75,86 +65,133 @@ public class CachedRealm extends AbstractExtendableRevisioned {
     protected int failureFactor;
     //--- end brute force settings
 
-    protected String defaultSignatureAlgorithm;
+    private String defaultSignatureAlgorithm;
     protected boolean revokeRefreshToken;
     protected int refreshTokenMaxReuse;
     protected int ssoSessionIdleTimeout;
     protected int ssoSessionMaxLifespan;
-    protected int ssoSessionIdleTimeoutRememberMe;
-    protected int ssoSessionMaxLifespanRememberMe;
+    private int ssoSessionIdleTimeoutRememberMe;
+    private int ssoSessionMaxLifespanRememberMe;
     protected int offlineSessionIdleTimeout;
     // KEYCLOAK-7688 Offline Session Max for Offline Token
-    protected boolean offlineSessionMaxLifespanEnabled;
-    protected int offlineSessionMaxLifespan;
+    private boolean offlineSessionMaxLifespanEnabled;
+    private int offlineSessionMaxLifespan;
     protected int accessTokenLifespan;
     protected int accessTokenLifespanForImplicitFlow;
     protected int accessCodeLifespan;
     protected int accessCodeLifespanUserAction;
     protected int accessCodeLifespanLogin;
-    protected int actionTokenGeneratedByAdminLifespan;
-    protected int actionTokenGeneratedByUserLifespan;
+    private int actionTokenGeneratedByAdminLifespan;
+    private int actionTokenGeneratedByUserLifespan;
     protected int notBefore;
     protected PasswordPolicy passwordPolicy;
-    protected OTPPolicy otpPolicy;
-    protected WebAuthnPolicy webAuthnPolicy;
+    private OTPPolicy otpPolicy;
+    private WebAuthnPolicy webAuthnPolicy;
 
-    protected String loginTheme;
-    protected String accountTheme;
-    protected String adminTheme;
-    protected String emailTheme;
-    protected String masterAdminClient;
+    private String loginTheme;
+    private String accountTheme;
+    private String adminTheme;
+    private String emailTheme;
+    private final transient LazyLoader<RealmModel, String> masterAdminClient = DefaultLazyLoader.create(rm -> {
+        ClientModel cm = rm.getMasterAdminClient();
+        return (cm != null) ? cm.getId() : null;
+    }, null);
 
-    protected List<RequiredCredentialModel> requiredCredentials;
-    protected MultivaluedHashMap<String, ComponentModel> componentsByParent = new MultivaluedHashMap<>();
-    protected MultivaluedHashMap<String, ComponentModel> componentsByParentAndType = new MultivaluedHashMap<>();
-    protected Map<String, ComponentModel> components = new HashMap<>();
-    protected List<IdentityProviderModel> identityProviders;
+    protected final transient LazyLoader<RealmModel, List<RequiredCredentialModel>> requiredCredentials =
+            DefaultLazyLoader.forList(RealmModel::getRequiredCredentials);
+    private final transient LazyLoader<RealmModel, List<ComponentModel>> componentsList =
+            new DefaultLazyLoader<>(RealmModel::getComponents, LinkedList::new);
+    private final transient LazyLoader<RealmModel, MultivaluedHashMap<String, ComponentModel>> componentsByParent =
+            DefaultLazyLoader.forMultivaluedMap(rm -> componentsList.get(() -> rm), ComponentModel::getParentId);
+    private final transient LazyLoader<RealmModel, MultivaluedHashMap<String, ComponentModel>> componentsByParentAndType =
+            DefaultLazyLoader.forMultivaluedMap(rm -> componentsList.get(() -> rm), cm -> cm.getParentId() + cm.getProviderType());
+    protected final transient LazyLoader<RealmModel, Map<String, ComponentModel>> components =
+            DefaultLazyLoader.forStreamAsMap(rm -> componentsList.get(() -> rm).stream(), ComponentModel::getId);
+    protected final transient LazyLoader<RealmModel, List<IdentityProviderModel>> identityProviders =
+            DefaultLazyLoader.forStreamAsList(rm -> rm.getIdentityProviders().stream().map(IdentityProviderModel::new));
 
     protected Map<String, String> browserSecurityHeaders;
-    protected Map<String, String> smtpConfig;
-    protected Map<String, AuthenticationFlowModel> authenticationFlows = new HashMap<>();
-    protected List<AuthenticationFlowModel> authenticationFlowList;
-    protected Map<String, AuthenticatorConfigModel> authenticatorConfigs = new HashMap<>();
-    protected Map<String, RequiredActionProviderModel> requiredActionProviders = new HashMap<>();
-    protected List<RequiredActionProviderModel> requiredActionProviderList;
-    protected Map<String, RequiredActionProviderModel> requiredActionProvidersByAlias = new HashMap<>();
-    protected MultivaluedHashMap<String, AuthenticationExecutionModel> authenticationExecutions = new MultivaluedHashMap<>();
-    protected Map<String, AuthenticationExecutionModel> executionsById = new HashMap<>();
+    private Map<String, String> smtpConfig;
+    private final transient LazyLoader<RealmModel, List<AuthenticationFlowModel>> authenticationFlowList
+            = DefaultLazyLoader.forList(RealmModel::getAuthenticationFlows);
+    protected final transient LazyLoader<RealmModel, Map<String, AuthenticationFlowModel>> authenticationFlows =
+            DefaultLazyLoader.forStreamAsMap(
+                    rm -> authenticationFlowList.get(() -> rm).stream(), AuthenticationFlowModel::getId);
+    private final transient LazyLoader<RealmModel, Map<String, AuthenticatorConfigModel>> authenticatorConfigs =
+            DefaultLazyLoader.forStreamAsMap(rm -> rm.getAuthenticatorConfigs().stream(), AuthenticatorConfigModel::getId);
+    private final transient LazyLoader<RealmModel, List<RequiredActionProviderModel>> requiredActionProviderList =
+            DefaultLazyLoader.forList(RealmModel::getRequiredActionProviders);
+    private final transient LazyLoader<RealmModel, Map<String, RequiredActionProviderModel>> requiredActionProviders =
+            DefaultLazyLoader.forStreamAsMap(
+                    rm -> requiredActionProviderList.get(() -> rm).stream(), RequiredActionProviderModel::getId);
+    private final transient LazyLoader<RealmModel, Map<String, RequiredActionProviderModel>> requiredActionProvidersByAlias =
+            DefaultLazyLoader.forStreamAsMap(
+                    rm -> requiredActionProviderList.get(() -> rm).stream(), RequiredActionProviderModel::getAlias);
+    protected final transient LazyLoader<RealmModel, MultivaluedHashMap<String, AuthenticationExecutionModel>> authenticationExecutions =
+            DefaultLazyLoader.forMultivaluedMap(rm -> {
+                MultivaluedHashMap<String, AuthenticationExecutionModel> result = new MultivaluedHashMap<>();
+                authenticationFlowList.get(() -> rm)
+                        .forEach(flow -> result.addAll(flow.getId(), rm.getAuthenticationExecutions(flow.getId())));
+                return result;
+            });
+    private final transient LazyLoader<RealmModel, Map<String, AuthenticationExecutionModel>> executionsById =
+            DefaultLazyLoader.forMap(rm -> {
+                HashMap<String, AuthenticationExecutionModel> result = new HashMap<>();
+                authenticationFlowList.get(() -> rm).forEach(flow ->
+                        rm.getAuthenticationExecutions(flow.getId())
+                                .forEach(execution -> result.put(execution.getId(), execution)));
+                return result;
+            });
 
     protected AuthenticationFlowModel browserFlow;
     protected AuthenticationFlowModel registrationFlow;
     protected AuthenticationFlowModel directGrantFlow;
     protected AuthenticationFlowModel resetCredentialsFlow;
     protected AuthenticationFlowModel clientAuthenticationFlow;
-    protected AuthenticationFlowModel dockerAuthenticationFlow;
+    private AuthenticationFlowModel dockerAuthenticationFlow;
 
     protected boolean eventsEnabled;
-    protected long eventsExpiration;
+    private long eventsExpiration;
     protected Set<String> eventsListeners;
     protected Set<String> enabledEventTypes;
     protected boolean adminEventsEnabled;
-    protected Set<String> adminEnabledEventOperations = new HashSet<String>();
+    private transient LazyLoader<RealmModel, Set<String>> adminEnabledEventOperations;
     protected boolean adminEventsDetailsEnabled;
-    protected List<String> defaultRoles;
+    protected final transient LazyLoader<RealmModel, List<String>> defaultRoles =
+            DefaultLazyLoader.forList(RealmModel::getDefaultRoles);
     private boolean allowUserManagedAccess;
 
-    public Set<IdentityProviderMapperModel> getIdentityProviderMapperSet() {
-        return identityProviderMapperSet;
-    }
-
-    protected List<String> defaultGroups = new LinkedList<String>();
-    protected List<String> clientScopes = new LinkedList<>();
-    protected List<String> defaultDefaultClientScopes = new LinkedList<>();
-    protected List<String> optionalDefaultClientScopes = new LinkedList<>();
+    private final transient LazyLoader<RealmModel, List<String>> defaultGroups =
+            DefaultLazyLoader.forList(rm -> rm.getDefaultGroups().stream().map(GroupModel::getId).collect(Collectors.toList()));
+    protected final transient LazyLoader<RealmModel, List<String>> clientScopes =
+            DefaultLazyLoader.forStreamAsList(rm -> rm.getClientScopes().stream().map(ClientScopeModel::getId));
+    private final transient LazyLoader<RealmModel, List<String>> defaultDefaultClientScopes =
+            DefaultLazyLoader.forStreamAsList(
+                    rm -> rm.getDefaultClientScopes(true).stream().map(ClientScopeModel::getId));
+    private final transient LazyLoader<RealmModel, List<String>> optionalDefaultClientScopes =
+            DefaultLazyLoader.forStreamAsList(
+                    rm -> rm.getDefaultClientScopes(false).stream().map(ClientScopeModel::getId));
     protected boolean internationalizationEnabled;
     protected Set<String> supportedLocales;
-    protected String defaultLocale;
-    protected MultivaluedHashMap<String, IdentityProviderMapperModel> identityProviderMappers = new MultivaluedHashMap<>();
-    protected Set<IdentityProviderMapperModel> identityProviderMapperSet;
+    private String defaultLocale;
+    private final transient LazyLoader<RealmModel, Set<IdentityProviderMapperModel>> identityProviderMapperSet =
+            DefaultLazyLoader.forSet(RealmModel::getIdentityProviderMappers);
+    private final transient LazyLoader<RealmModel, MultivaluedHashMap<String, IdentityProviderMapperModel>> identityProviderMappers =
+            DefaultLazyLoader.forMultivaluedMap(
+                    realmModel -> identityProviderMapperSet.get(() -> realmModel),
+                    IdentityProviderMapperModel::getIdentityProviderAlias);
 
-    protected Map<String, String> attributes;
+    protected final transient LazyLoader<RealmModel, Map<String, String>> attributes =
+            DefaultLazyLoader.forMap(realmModel -> {
+                try {
+                    return realmModel.getAttributes();
+                } catch (UnsupportedOperationException ex) {
+                    return Collections.emptyMap();
+                }
+            });
 
-    private Map<String, Integer> userActionTokenLifespans;
+    private final LazyLoader<RealmModel, Map<String, Integer>> userActionTokenLifespans =
+            DefaultLazyLoader.forMap(rm -> Collections.unmodifiableMap(new HashMap<>(rm.getUserActionTokenLifespans())));
 
     public CachedRealm(Long revision, RealmModel model) {
         super(revision, model.getId());
@@ -212,23 +249,6 @@ public class CachedRealm extends AbstractExtendableRevisioned {
         adminTheme = model.getAdminTheme();
         emailTheme = model.getEmailTheme();
 
-        requiredCredentials = model.getRequiredCredentials();
-        userActionTokenLifespans = Collections.unmodifiableMap(new HashMap<>(model.getUserActionTokenLifespans()));
-
-        this.identityProviders = new ArrayList<>();
-
-        for (IdentityProviderModel identityProviderModel : model.getIdentityProviders()) {
-            this.identityProviders.add(new IdentityProviderModel(identityProviderModel));
-        }
-        this.identityProviders = Collections.unmodifiableList(this.identityProviders);
-
-        this.identityProviderMapperSet = model.getIdentityProviderMappers();
-        for (IdentityProviderMapperModel mapper : identityProviderMapperSet) {
-            identityProviderMappers.add(mapper.getIdentityProviderAlias(), mapper);
-        }
-
-
-
         smtpConfig = model.getSmtpConfig();
         browserSecurityHeaders = model.getBrowserSecurityHeaders();
 
@@ -240,37 +260,9 @@ public class CachedRealm extends AbstractExtendableRevisioned {
         adminEventsEnabled = model.isAdminEventsEnabled();
         adminEventsDetailsEnabled = model.isAdminEventsDetailsEnabled();
 
-        defaultRoles = model.getDefaultRoles();
-        ClientModel masterAdminClient = model.getMasterAdminClient();
-        this.masterAdminClient = (masterAdminClient != null) ? masterAdminClient.getId() : null;
-
-        cacheClientScopes(model);
-
         internationalizationEnabled = model.isInternationalizationEnabled();
         supportedLocales = model.getSupportedLocales();
         defaultLocale = model.getDefaultLocale();
-        authenticationFlowList = model.getAuthenticationFlows();
-        for (AuthenticationFlowModel flow : authenticationFlowList) {
-            this.authenticationFlows.put(flow.getId(), flow);
-            authenticationExecutions.put(flow.getId(), new LinkedList<AuthenticationExecutionModel>());
-            for (AuthenticationExecutionModel execution : model.getAuthenticationExecutions(flow.getId())) {
-                authenticationExecutions.add(flow.getId(), execution);
-                executionsById.put(execution.getId(), execution);
-            }
-        }
-
-        for (AuthenticatorConfigModel authenticator : model.getAuthenticatorConfigs()) {
-            authenticatorConfigs.put(authenticator.getId(), authenticator);
-        }
-        requiredActionProviderList = model.getRequiredActionProviders();
-        for (RequiredActionProviderModel action : requiredActionProviderList) {
-            this.requiredActionProviders.put(action.getId(), action);
-            requiredActionProvidersByAlias.put(action.getAlias(), action);
-        }
-
-        for (GroupModel group : model.getDefaultGroups()) {
-            defaultGroups.add(group.getId());
-        }
 
         browserFlow = model.getBrowserFlow();
         registrationFlow = model.getRegistrationFlow();
@@ -278,38 +270,14 @@ public class CachedRealm extends AbstractExtendableRevisioned {
         resetCredentialsFlow = model.getResetCredentialsFlow();
         clientAuthenticationFlow = model.getClientAuthenticationFlow();
         dockerAuthenticationFlow = model.getDockerAuthenticationFlow();
-
-        for (ComponentModel component : model.getComponents()) {
-            componentsByParentAndType.add(component.getParentId() + component.getProviderType(), component);
-        }
-        for (ComponentModel component : model.getComponents()) {
-            componentsByParent.add(component.getParentId(), component);
-        }
-        for (ComponentModel component : model.getComponents()) {
-            components.put(component.getId(), component);
-        }
-
-        try {
-            attributes = model.getAttributes();
-        } catch (UnsupportedOperationException ex) {
-        }
-
     }
 
-    protected void cacheClientScopes(RealmModel model) {
-        for (ClientScopeModel clientScope : model.getClientScopes()) {
-            clientScopes.add(clientScope.getId());
-        }
-        for (ClientScopeModel clientScope : model.getDefaultClientScopes(true)) {
-            defaultDefaultClientScopes.add(clientScope.getId());
-        }
-        for (ClientScopeModel clientScope : model.getDefaultClientScopes(false)) {
-            optionalDefaultClientScopes.add(clientScope.getId());
-        }
+    public Set<IdentityProviderMapperModel> getIdentityProviderMapperSet(Supplier<RealmModel> realmModel) {
+        return identityProviderMapperSet.get(realmModel);
     }
 
-    public String getMasterAdminClient() {
-        return masterAdminClient;
+    public String getMasterAdminClient(Supplier<RealmModel> realmModel) {
+        return masterAdminClient.get(realmModel);
     }
 
     public String getName() {
@@ -324,8 +292,8 @@ public class CachedRealm extends AbstractExtendableRevisioned {
         return displayNameHtml;
     }
 
-    public List<String> getDefaultRoles() {
-        return defaultRoles;
+    public List<String> getDefaultRoles(Supplier<RealmModel> realmModel) {
+        return defaultRoles.get(realmModel);
     }
 
     public boolean isEnabled() {
@@ -457,8 +425,8 @@ public class CachedRealm extends AbstractExtendableRevisioned {
         return accessCodeLifespanUserAction;
     }
 
-    public Map<String, Integer> getUserActionTokenLifespans() {
-        return userActionTokenLifespans;
+    public Map<String, Integer> getUserActionTokenLifespans(Supplier<RealmModel> realmModel) {
+        return userActionTokenLifespans.get(realmModel);
     }
 
     public int getAccessCodeLifespanLogin() {
@@ -479,14 +447,14 @@ public class CachedRealm extends AbstractExtendableRevisioned {
      * @param actionTokenId
      * @return lifespan
      */
-    public int getActionTokenGeneratedByUserLifespan(String actionTokenId) {
-        if (actionTokenId == null || this.userActionTokenLifespans.get(actionTokenId) == null)
+    public int getActionTokenGeneratedByUserLifespan(Supplier<RealmModel> realmModel, String actionTokenId) {
+        if (actionTokenId == null || this.userActionTokenLifespans.get(realmModel).get(actionTokenId) == null)
             return getActionTokenGeneratedByUserLifespan();
-        return this.userActionTokenLifespans.get(actionTokenId);
+        return this.userActionTokenLifespans.get(realmModel).get(actionTokenId);
     }
 
-    public List<RequiredCredentialModel> getRequiredCredentials() {
-        return requiredCredentials;
+    public List<RequiredCredentialModel> getRequiredCredentials(Supplier<RealmModel> realmModel) {
+        return requiredCredentials.get(realmModel);
     }
 
     public PasswordPolicy getPasswordPolicy() {
@@ -545,16 +513,16 @@ public class CachedRealm extends AbstractExtendableRevisioned {
         return adminEventsEnabled;
     }
 
-    public Set<String> getAdminEnabledEventOperations() {
-        return adminEnabledEventOperations;
+    public Set<String> getAdminEnabledEventOperations(Supplier<RealmModel> realmModel) {
+        return adminEnabledEventOperations.get(realmModel);
     }
 
     public boolean isAdminEventsDetailsEnabled() {
         return adminEventsDetailsEnabled;
     }
 
-    public List<IdentityProviderModel> getIdentityProviders() {
-        return identityProviders;
+    public List<IdentityProviderModel> getIdentityProviders(Supplier<RealmModel> realmModel) {
+        return identityProviders.get(realmModel);
     }
 
     public boolean isInternationalizationEnabled() {
@@ -569,32 +537,32 @@ public class CachedRealm extends AbstractExtendableRevisioned {
         return defaultLocale;
     }
 
-    public MultivaluedHashMap<String, IdentityProviderMapperModel> getIdentityProviderMappers() {
-        return identityProviderMappers;
+    public MultivaluedHashMap<String, IdentityProviderMapperModel> getIdentityProviderMappers(Supplier<RealmModel> realmModel) {
+        return identityProviderMappers.get(realmModel);
     }
 
-    public Map<String, AuthenticationFlowModel> getAuthenticationFlows() {
-        return authenticationFlows;
+    public Map<String, AuthenticationFlowModel> getAuthenticationFlows(Supplier<RealmModel> realmModel) {
+        return authenticationFlows.get(realmModel);
     }
 
-    public Map<String, AuthenticatorConfigModel> getAuthenticatorConfigs() {
-        return authenticatorConfigs;
+    public Map<String, AuthenticatorConfigModel> getAuthenticatorConfigs(Supplier<RealmModel> realmModel) {
+        return authenticatorConfigs.get(realmModel);
     }
 
-    public MultivaluedHashMap<String, AuthenticationExecutionModel> getAuthenticationExecutions() {
-        return authenticationExecutions;
+    public MultivaluedHashMap<String, AuthenticationExecutionModel> getAuthenticationExecutions(Supplier<RealmModel> realmModel) {
+        return authenticationExecutions.get(realmModel);
     }
 
-    public Map<String, AuthenticationExecutionModel> getExecutionsById() {
-        return executionsById;
+    public Map<String, AuthenticationExecutionModel> getExecutionsById(Supplier<RealmModel> realmModel) {
+        return executionsById.get(realmModel);
     }
 
-    public Map<String, RequiredActionProviderModel> getRequiredActionProviders() {
-        return requiredActionProviders;
+    public Map<String, RequiredActionProviderModel> getRequiredActionProviders(Supplier<RealmModel> realmModel) {
+        return requiredActionProviders.get(realmModel);
     }
 
-    public Map<String, RequiredActionProviderModel> getRequiredActionProvidersByAlias() {
-        return requiredActionProvidersByAlias;
+    public Map<String, RequiredActionProviderModel> getRequiredActionProvidersByAlias(Supplier<RealmModel> realmModel) {
+        return requiredActionProvidersByAlias.get(realmModel);
     }
 
     public OTPPolicy getOtpPolicy() {
@@ -629,63 +597,63 @@ public class CachedRealm extends AbstractExtendableRevisioned {
         return dockerAuthenticationFlow;
     }
 
-    public List<String> getDefaultGroups() {
-        return defaultGroups;
+    public List<String> getDefaultGroups(Supplier<RealmModel> realmModel) {
+        return defaultGroups.get(realmModel);
     }
 
-    public List<String> getClientScopes() {
-        return clientScopes;
+    public List<String> getClientScopes(Supplier<RealmModel> realmModel) {
+        return clientScopes.get(realmModel);
     }
 
-    public List<String> getDefaultDefaultClientScopes() {
-        return defaultDefaultClientScopes;
+    public List<String> getDefaultDefaultClientScopes(Supplier<RealmModel> realmModel) {
+        return defaultDefaultClientScopes.get(realmModel);
     }
 
-    public List<String> getOptionalDefaultClientScopes() {
-        return optionalDefaultClientScopes;
+    public List<String> getOptionalDefaultClientScopes(Supplier<RealmModel> realmModel) {
+        return optionalDefaultClientScopes.get(realmModel);
     }
 
-    public List<AuthenticationFlowModel> getAuthenticationFlowList() {
-        return authenticationFlowList;
+    public List<AuthenticationFlowModel> getAuthenticationFlowList(Supplier<RealmModel> realmModel) {
+        return authenticationFlowList.get(realmModel);
     }
 
-    public List<RequiredActionProviderModel> getRequiredActionProviderList() {
-        return requiredActionProviderList;
+    public List<RequiredActionProviderModel> getRequiredActionProviderList(Supplier<RealmModel> realmModel) {
+        return requiredActionProviderList.get(realmModel);
     }
 
-    public MultivaluedHashMap<String, ComponentModel> getComponentsByParent() {
-        return componentsByParent;
+    public MultivaluedHashMap<String, ComponentModel> getComponentsByParent(Supplier<RealmModel> realmModel) {
+        return componentsByParent.get(realmModel);
     }
 
-    public MultivaluedHashMap<String, ComponentModel> getComponentsByParentAndType() {
-        return componentsByParentAndType;
+    public MultivaluedHashMap<String, ComponentModel> getComponentsByParentAndType(Supplier<RealmModel> realmModel) {
+        return componentsByParentAndType.get(realmModel);
     }
 
-    public Map<String, ComponentModel> getComponents() {
-        return components;
+    public Map<String, ComponentModel> getComponents(Supplier<RealmModel> realmModel) {
+        return components.get(realmModel);
     }
 
-    public String getAttribute(String name) {
-        return attributes != null ? attributes.get(name) : null;
+    public String getAttribute(Supplier<RealmModel> realmModel, String name) {
+        return attributes != null ? attributes.get(realmModel).get(name) : null;
     }
 
-    public Integer getAttribute(String name, Integer defaultValue) {
-        String v = getAttribute(name);
+    public Integer getAttribute(Supplier<RealmModel> realmModel, String name, Integer defaultValue) {
+        String v = getAttribute(realmModel, name);
         return v != null ? Integer.parseInt(v) : defaultValue;
     }
 
-    public Long getAttribute(String name, Long defaultValue) {
-        String v = getAttribute(name);
+    public Long getAttribute(Supplier<RealmModel> realmModel, String name, Long defaultValue) {
+        String v = getAttribute(realmModel, name);
         return v != null ? Long.parseLong(v) : defaultValue;
     }
 
-    public Boolean getAttribute(String name, Boolean defaultValue) {
-        String v = getAttribute(name);
+    public Boolean getAttribute(Supplier<RealmModel> realmModel, String name, Boolean defaultValue) {
+        String v = getAttribute(realmModel, name);
         return v != null ? Boolean.parseBoolean(v) : defaultValue;
     }
 
-    public Map<String, String> getAttributes() {
-        return attributes;
+    public Map<String, String> getAttributes(Supplier<RealmModel> realmModel) {
+        return attributes.get(realmModel);
     }
 
     public boolean isAllowUserManagedAccess() {

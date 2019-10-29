@@ -16,8 +16,19 @@
  */
 package org.keycloak.models.cache.infinispan;
 
+import com.sun.org.apache.xpath.internal.operations.Mult;
+import org.apache.commons.collections4.MultiValuedMap;
+import org.keycloak.common.util.MultivaluedHashMap;
+
+import javax.swing.plaf.multi.MultiViewportUI;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Default implementation of {@link DefaultLazyLoader} that only fetches data once. This implementation is not thread-safe
@@ -43,5 +54,53 @@ public class DefaultLazyLoader<S, D> implements LazyLoader<S, D> {
             data = source == null ? fallback.get() : this.loader.apply(source);
         }
         return data;
+    }
+
+    public static <S, D> LazyLoader<S, D> create(Function<S, D> loader, Supplier<D> fallback) {
+        return new DefaultLazyLoader<>(loader, fallback);
+    }
+
+    public static <S, D> LazyLoader<S, List<D>> forList(Function<S, List<D>> loader) {
+        return create(loader, Collections::emptyList);
+    }
+
+    public static <S, D> LazyLoader<S, Set<D>> forSet(Function<S, Set<D>> loader) {
+        return create(loader, Collections::emptySet);
+    }
+
+    public static <S, K, V> LazyLoader<S, Map<K, V>> forMap(Function<S, Map<K, V>> loader) {
+        return create(loader, Collections::emptyMap);
+    }
+
+    public static <S, K, V> LazyLoader<S, MultivaluedHashMap<K, V>> forMultivaluedMap(
+            Function<S, MultivaluedHashMap<K, V>> loader) {
+        return create(loader, MultivaluedHashMap::new);
+    }
+
+    public static <S, D, K, V> LazyLoader<S, MultivaluedHashMap<K, V>> forMultivaluedMap(
+            Function<S, Iterable<D>> loader, Function<D, K> keyMapper, Function<D, V> valueMapper) {
+        return create(s -> {
+            MultivaluedHashMap<K, V> result = new MultivaluedHashMap<>();
+            loader.apply(s).forEach(d -> result.add(keyMapper.apply(d), valueMapper.apply(d)));
+            return result;
+        }, MultivaluedHashMap::new);
+    }
+
+    public static <S, K, V> LazyLoader<S, MultivaluedHashMap<K, V>> forMultivaluedMap(
+            Function<S, Iterable<V>> loader, Function<V, K> keyMapper) {
+        return forMultivaluedMap(loader, keyMapper, v -> v);
+    }
+
+    public static <S, D> LazyLoader<S, List<D>> forStreamAsList(Function<S, Stream<D>> loader) {
+        return forList(s -> loader.apply(s).collect(Collectors.toList()));
+    }
+
+    public static <S, D, K, V> LazyLoader<S, Map<K, V>> forStreamAsMap(
+            Function<S, Stream<D>> loader, Function<D, K> keyMapper, Function<D, V> valueMapper) {
+        return forMap(s -> loader.apply(s).collect(Collectors.toMap(keyMapper, valueMapper)));
+    }
+
+    public static <S, K, V> LazyLoader<S, Map<K, V>> forStreamAsMap(Function<S, Stream<V>> loader, Function<V, K> keyMapper) {
+        return forStreamAsMap(loader, keyMapper, v -> v);
     }
 }

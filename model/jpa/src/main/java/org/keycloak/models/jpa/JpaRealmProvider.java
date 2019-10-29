@@ -18,6 +18,7 @@
 package org.keycloak.models.jpa;
 
 import org.jboss.logging.Logger;
+import org.keycloak.authorization.policy.evaluation.Realm;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.jpa.util.JpaUtils;
 import org.keycloak.migration.MigrationModel;
@@ -43,6 +44,7 @@ import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import javax.persistence.LockModeType;
 
 /**

@@ -29,12 +29,14 @@ import org.keycloak.storage.client.ClientStorageProvider;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Supplier;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
 public class RealmAdapter implements CachedRealmModel {
+    private final Supplier<RealmModel> modelSupplier;
     protected CachedRealm cached;
     protected RealmCacheSession cacheSession;
     protected volatile RealmModel updated;
@@ -44,13 +46,14 @@ public class RealmAdapter implements CachedRealmModel {
         this.cached = cached;
         this.cacheSession = cacheSession;
         this.session = session;
+        modelSupplier = this::getRealmModel;
     }
 
     @Override
     public RealmModel getDelegateForUpdate() {
         if (updated == null) {
             cacheSession.registerRealmInvalidation(cached.getId(), cached.getName());
-            updated = cacheSession.getRealmDelegate().getRealm(cached.getId());
+            updated = modelSupplier.get();
             if (updated == null) throw new IllegalStateException("Not found in database");
         }
         return updated;
@@ -531,7 +534,7 @@ public class RealmAdapter implements CachedRealmModel {
     @Override
     public Map<String, Integer> getUserActionTokenLifespans() {
         if (isUpdated()) return updated.getUserActionTokenLifespans();
-        return cached.getUserActionTokenLifespans();
+        return cached.getUserActionTokenLifespans(modelSupplier);
     }
 
     @Override
@@ -573,7 +576,7 @@ public class RealmAdapter implements CachedRealmModel {
     @Override
     public int getActionTokenGeneratedByUserLifespan(String actionTokenId) {
         if (isUpdated()) return updated.getActionTokenGeneratedByUserLifespan(actionTokenId);
-        return cached.getActionTokenGeneratedByUserLifespan(actionTokenId);
+        return cached.getActionTokenGeneratedByUserLifespan(modelSupplier, actionTokenId);
     }
 
     @Override
@@ -587,7 +590,7 @@ public class RealmAdapter implements CachedRealmModel {
     @Override
     public List<RequiredCredentialModel> getRequiredCredentials() {
         if (isUpdated()) return updated.getRequiredCredentials();
-        return cached.getRequiredCredentials();
+        return cached.getRequiredCredentials(modelSupplier);
     }
 
     @Override
@@ -644,7 +647,7 @@ public class RealmAdapter implements CachedRealmModel {
         if (isUpdated()) return updated.getDefaultGroups();
 
         List<GroupModel> defaultGroups = new LinkedList<>();
-        for (String id : cached.getDefaultGroups()) {
+        for (String id : cached.getDefaultGroups(modelSupplier)) {
             defaultGroups.add(cacheSession.getGroupById(id, this));
         }
         return Collections.unmodifiableList(defaultGroups);
@@ -668,7 +671,7 @@ public class RealmAdapter implements CachedRealmModel {
     @Override
     public List<String> getDefaultRoles() {
         if (isUpdated()) return updated.getDefaultRoles();
-        return cached.getDefaultRoles();
+        return cached.getDefaultRoles(modelSupplier);
     }
 
     @Override
@@ -757,7 +760,7 @@ public class RealmAdapter implements CachedRealmModel {
     @Override
     public List<IdentityProviderModel> getIdentityProviders() {
         if (isUpdated()) return updated.getIdentityProviders();
-        return cached.getIdentityProviders();
+        return cached.getIdentityProviders(modelSupplier);
     }
 
     @Override
@@ -924,7 +927,8 @@ public class RealmAdapter implements CachedRealmModel {
 
     @Override
     public ClientModel getMasterAdminClient() {
-        return cached.getMasterAdminClient()==null ? null : cacheSession.getRealm(Config.getAdminRealm()).getClientById(cached.getMasterAdminClient());
+        return cached.getMasterAdminClient(modelSupplier) == null ? null :
+                cacheSession.getRealm(Config.getAdminRealm()).getClientById(cached.getMasterAdminClient(modelSupplier));
     }
 
     @Override
@@ -1019,14 +1023,14 @@ public class RealmAdapter implements CachedRealmModel {
     @Override
     public Set<IdentityProviderMapperModel> getIdentityProviderMappers() {
         if (isUpdated()) return updated.getIdentityProviderMappers();
-        return cached.getIdentityProviderMapperSet();
+        return cached.getIdentityProviderMapperSet(modelSupplier);
     }
 
     @Override
     public Set<IdentityProviderMapperModel> getIdentityProviderMappersByAlias(String brokerAlias) {
         if (isUpdated()) return updated.getIdentityProviderMappersByAlias(brokerAlias);
         Set<IdentityProviderMapperModel> mappings = new HashSet<>();
-        List<IdentityProviderMapperModel> list = cached.getIdentityProviderMappers().getList(brokerAlias);
+        List<IdentityProviderMapperModel> list = cached.getIdentityProviderMappers(modelSupplier).getList(brokerAlias);
         for (IdentityProviderMapperModel entity : list) {
             mappings.add(entity);
         }
@@ -1054,7 +1058,7 @@ public class RealmAdapter implements CachedRealmModel {
     @Override
     public IdentityProviderMapperModel getIdentityProviderMapperById(String id) {
         if (isUpdated()) return updated.getIdentityProviderMapperById(id);
-        for (List<IdentityProviderMapperModel> models : cached.getIdentityProviderMappers().values()) {
+        for (List<IdentityProviderMapperModel> models : cached.getIdentityProviderMappers(modelSupplier).values()) {
             for (IdentityProviderMapperModel model : models) {
                 if (model.getId().equals(id)) return model;
             }
@@ -1065,7 +1069,7 @@ public class RealmAdapter implements CachedRealmModel {
     @Override
     public IdentityProviderMapperModel getIdentityProviderMapperByName(String alias, String name) {
         if (isUpdated()) return updated.getIdentityProviderMapperByName(alias, name);
-        List<IdentityProviderMapperModel> models = cached.getIdentityProviderMappers().getList(alias);
+        List<IdentityProviderMapperModel> models = cached.getIdentityProviderMappers(modelSupplier).getList(alias);
         if (models == null) return null;
         for (IdentityProviderMapperModel model : models) {
             if (model.getName().equals(name)) return model;
@@ -1151,7 +1155,7 @@ public class RealmAdapter implements CachedRealmModel {
     @Override
     public List<AuthenticationFlowModel> getAuthenticationFlows() {
         if (isUpdated()) return updated.getAuthenticationFlows();
-        return cached.getAuthenticationFlowList();
+        return cached.getAuthenticationFlowList(modelSupplier);
     }
 
     @Override
@@ -1184,7 +1188,7 @@ public class RealmAdapter implements CachedRealmModel {
     @Override
     public AuthenticationFlowModel getAuthenticationFlowById(String id) {
         if (isUpdated()) return updated.getAuthenticationFlowById(id);
-        return cached.getAuthenticationFlows().get(id);
+        return cached.getAuthenticationFlows(modelSupplier).get(id);
     }
 
     @Override
@@ -1204,13 +1208,13 @@ public class RealmAdapter implements CachedRealmModel {
     @Override
     public List<AuthenticationExecutionModel> getAuthenticationExecutions(String flowId) {
         if (isUpdated()) return updated.getAuthenticationExecutions(flowId);
-        return cached.getAuthenticationExecutions().get(flowId);
+        return cached.getAuthenticationExecutions(modelSupplier).get(flowId);
     }
 
     @Override
     public AuthenticationExecutionModel getAuthenticationExecutionById(String id) {
         if (isUpdated()) return updated.getAuthenticationExecutionById(id);
-        return cached.getExecutionsById().get(id);
+        return cached.getExecutionsById(modelSupplier).get(id);
     }
 
     @Override
@@ -1237,7 +1241,7 @@ public class RealmAdapter implements CachedRealmModel {
     public List<AuthenticatorConfigModel> getAuthenticatorConfigs() {
         if (isUpdated()) return updated.getAuthenticatorConfigs();
         List<AuthenticatorConfigModel> models = new ArrayList<>();
-        models.addAll(cached.getAuthenticatorConfigs().values());
+        models.addAll(cached.getAuthenticatorConfigs(modelSupplier).values());
         return Collections.unmodifiableList(models);
     }
 
@@ -1264,13 +1268,13 @@ public class RealmAdapter implements CachedRealmModel {
     @Override
     public AuthenticatorConfigModel getAuthenticatorConfigById(String id) {
         if (isUpdated()) return updated.getAuthenticatorConfigById(id);
-        return cached.getAuthenticatorConfigs().get(id);
+        return cached.getAuthenticatorConfigs(modelSupplier).get(id);
     }
 
     @Override
     public List<RequiredActionProviderModel> getRequiredActionProviders() {
         if (isUpdated()) return updated.getRequiredActionProviders();
-        return cached.getRequiredActionProviderList();
+        return cached.getRequiredActionProviderList(modelSupplier);
     }
 
     @Override
@@ -1296,13 +1300,13 @@ public class RealmAdapter implements CachedRealmModel {
     @Override
     public RequiredActionProviderModel getRequiredActionProviderById(String id) {
         if (isUpdated()) return updated.getRequiredActionProviderById(id);
-        return cached.getRequiredActionProviders().get(id);
+        return cached.getRequiredActionProviders(modelSupplier).get(id);
     }
 
     @Override
     public RequiredActionProviderModel getRequiredActionProviderByAlias(String alias) {
         if (isUpdated()) return updated.getRequiredActionProviderByAlias(alias);
-        return cached.getRequiredActionProvidersByAlias().get(alias);
+        return cached.getRequiredActionProvidersByAlias(modelSupplier).get(alias);
     }
 
     @Override
@@ -1363,7 +1367,7 @@ public class RealmAdapter implements CachedRealmModel {
     @Override
     public List<ClientScopeModel> getClientScopes() {
         if (isUpdated()) return updated.getClientScopes();
-        List<String> clientScopes = cached.getClientScopes();
+        List<String> clientScopes = cached.getClientScopes(modelSupplier);
         if (clientScopes.isEmpty()) return Collections.EMPTY_LIST;
         List<ClientScopeModel> apps = new LinkedList<ClientScopeModel>();
         for (String id : clientScopes) {
@@ -1422,7 +1426,7 @@ public class RealmAdapter implements CachedRealmModel {
     public List<ClientScopeModel> getDefaultClientScopes(boolean defaultScope) {
         if (isUpdated()) return updated.getDefaultClientScopes(defaultScope);
 
-        List<String> clientScopeIds = defaultScope ? cached.getDefaultDefaultClientScopes() : cached.getOptionalDefaultClientScopes();
+        List<String> clientScopeIds = defaultScope ? cached.getDefaultDefaultClientScopes(modelSupplier) : cached.getOptionalDefaultClientScopes(modelSupplier);
 
         List<ClientScopeModel> clientScopes = new LinkedList<>();
         for (String scopeId : clientScopeIds) {
@@ -1502,7 +1506,7 @@ public class RealmAdapter implements CachedRealmModel {
     @Override
     public List<ComponentModel> getComponents(String parentId, String providerType) {
         if (isUpdated()) return updated.getComponents(parentId, providerType);
-        List<ComponentModel> components = cached.getComponentsByParentAndType().getList(parentId + providerType);
+        List<ComponentModel> components = cached.getComponentsByParentAndType(modelSupplier).getList(parentId + providerType);
         if (components == null) return Collections.EMPTY_LIST;
         return Collections.unmodifiableList(components);
     }
@@ -1510,7 +1514,7 @@ public class RealmAdapter implements CachedRealmModel {
     @Override
     public List<ComponentModel> getComponents(String parentId) {
         if (isUpdated()) return updated.getComponents(parentId);
-        List<ComponentModel> components = cached.getComponentsByParent().getList(parentId);
+        List<ComponentModel> components = cached.getComponentsByParent(modelSupplier).getList(parentId);
         if (components == null) return Collections.EMPTY_LIST;
         return Collections.unmodifiableList(components);
     }
@@ -1519,14 +1523,14 @@ public class RealmAdapter implements CachedRealmModel {
     public List<ComponentModel> getComponents() {
         if (isUpdated()) return updated.getComponents();
         List<ComponentModel> results = new LinkedList<>();
-        results.addAll(cached.getComponents().values());
+        results.addAll(cached.getComponents(modelSupplier).values());
          return Collections.unmodifiableList(results);
     }
 
     @Override
     public ComponentModel getComponent(String id) {
         if (isUpdated()) return updated.getComponent(id);
-        return cached.getComponents().get(id);
+        return cached.getComponents(modelSupplier).get(id);
     }
 
     public void setAttribute(String name, String value) {
@@ -1561,31 +1565,34 @@ public class RealmAdapter implements CachedRealmModel {
     @Override
     public String getAttribute(String name) {
         if (isUpdated()) return updated.getAttribute(name);
-        return cached.getAttribute(name);
+        return cached.getAttribute(modelSupplier, name);
     }
 
     @Override
     public Integer getAttribute(String name, Integer defaultValue) {
         if (isUpdated()) return updated.getAttribute(name, defaultValue);
-        return cached.getAttribute(name, defaultValue);
+        return cached.getAttribute(modelSupplier, name, defaultValue);
     }
 
     @Override
     public Long getAttribute(String name, Long defaultValue) {
         if (isUpdated()) return updated.getAttribute(name, defaultValue);
-        return cached.getAttribute(name, defaultValue);
+        return cached.getAttribute(modelSupplier, name, defaultValue);
     }
 
     @Override
     public Boolean getAttribute(String name, Boolean defaultValue) {
         if (isUpdated()) return updated.getAttribute(name, defaultValue);
-        return cached.getAttribute(name, defaultValue);
+        return cached.getAttribute(modelSupplier, name, defaultValue);
     }
 
     @Override
     public Map<String, String> getAttributes() {
         if (isUpdated()) return updated.getAttributes();
-        return cached.getAttributes();
+        return cached.getAttributes(modelSupplier);
     }
 
+    private RealmModel getRealmModel() {
+        return cacheSession.getRealmDelegate().getRealm(cached.getId());
+    }
 }
