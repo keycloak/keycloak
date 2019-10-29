@@ -57,3 +57,14 @@ connection settings.
 
 Unicode is supported when the database character set is `UTF8`. In that case, Unicode characters can be used in any
 field, there is no reduction of field length for non-special fields. No special settings of JDBC driver is necessary.
+
+The character set of a PostgreSQL database is determined at the time it is created. You can determine the default 
+character set for a PostgreSQL cluster with the SQL command
+```SQL
+show server_encoding;
+```
+
+If the default character set is not UTF 8, then you can create the database with UTF8 as its character set like this:
+```SQL
+create database keycloak with encoding 'UTF8';
+```
