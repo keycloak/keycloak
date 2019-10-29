@@ -29,8 +29,6 @@ import {
   DataListItemCells,
   Grid,
   GridItem,
-  Level,
-  LevelItem,
   Stack,
   StackItem
 } from '@patternfly/react-core';
@@ -107,7 +105,7 @@ export class DeviceActivityPage extends React.Component<DeviceActivityPageProps,
 
     private signOutAll = () => {
       AccountServiceClient.Instance.doDelete("/sessions")
-        .then( (response: AxiosResponse<Object>) => {
+        .then( () => {
           KeycloakService.Instance.logout(baseUrl);
         });
     }
@@ -122,11 +120,10 @@ export class DeviceActivityPage extends React.Component<DeviceActivityPageProps,
 
     private fetchDevices(): void {
       AccountServiceClient.Instance.doGet("/sessions/devices")
-          .then((response: AxiosResponse<Object>) => {
+          .then((response: AxiosResponse<Device[]>) => {
             console.log({response});
 
-            let devices = response.data as Device[];
-            devices = this.moveCurrentToTop(devices);
+            let devices: Device[] = this.moveCurrentToTop(response.data);
             
             this.setState({
               devices: devices
@@ -188,10 +185,10 @@ export class DeviceActivityPage extends React.Component<DeviceActivityPageProps,
     }
 
     private makeClientsString(clients: Client[]): string {
-      let clientsString: string = "";
-      clients.map( (client: Client, index: number) => {
+      let clientsString = "";
+      clients.forEach( (client: Client, index: number) => {
         let clientName: string;
-        if (client.hasOwnProperty('clientName') && (client.clientName != undefined) && (client.clientName != '')) {
+        if (client.hasOwnProperty('clientName') && (client.clientName !== undefined) && (client.clientName !== '')) {
           clientName = Msg.localize(client.clientName);
         } else {
           clientName = client.clientId;
@@ -312,17 +309,3 @@ export class DeviceActivityPage extends React.Component<DeviceActivityPageProps,
         );
     }
 };
-
-class IconGridItem extends React.Component {
-  render() { 
-    return (
-        <GridItem span={1}>
-          <Level gutter='lg'>
-            <LevelItem/>
-            <LevelItem>{this.props.children}</LevelItem>
-            <LevelItem/>
-          </Level>
-        </GridItem>
-      );
-    }
-}
