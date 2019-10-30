@@ -104,6 +104,7 @@ import java.security.MessageDigest;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -605,7 +606,13 @@ public class TokenEndpoint {
         UserSessionModel userSession = processor.getUserSession();
         updateUserSessionFromClientAuth(userSession);
 
-        TokenManager.AccessTokenResponseBuilder responseBuilder = tokenManager.responseBuilder(realm, client, event, session, userSession, clientSessionCtx)
+        Optional.ofNullable(formParams.getFirst(OIDCLoginProtocol.NONCE_PARAM))
+                .ifPresent(nonce -> {
+                    logger.debug(String.format("Overriding session's nonce to request's nonce %s", nonce));
+                    clientSessionCtx.getClientSession().setNote(OIDCLoginProtocol.NONCE_PARAM, nonce);
+                });
+
+         TokenManager.AccessTokenResponseBuilder responseBuilder = tokenManager.responseBuilder(realm, client, event, session, userSession, clientSessionCtx)
                 .generateAccessToken()
                 .generateRefreshToken();
 
