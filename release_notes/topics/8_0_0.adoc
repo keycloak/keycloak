@@ -46,3 +46,13 @@ It is now possible to use system properties and environment variables within the
 == Support more signing algorithms for client authentication with signed JWT
 
 Thanks to https://github.com/tnorimat[tnorimat], we support more signing algorithms for client authentication with signed JWT.
+
+== Support enable/disable logging into the JavaScript adapter
+
+Thanks to https://github.com/jonkoops[jonkoops] now it's possible to enable or disable logging for the JS adapter.
+
+== Updates for Gatekeeper 
+
+* Secure token and logout endpoint were included in Gatekeeper. Thanks to https://github.com/fredbi[fredbi]
+* There was a bug on Gatekeeper which was making cookies to be applied to subdomains. Thanks to https://github.com/daniel-ac-martin[daniel-ac-martin] the issue was fixed
+* Now Gatekeeper provides support to https://www.owasp.org/index.php/SameSite[Same-site cookies]. Thanks to https://github.com/fiji-flo[fiji-flo]
