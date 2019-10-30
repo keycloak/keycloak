@@ -97,6 +97,8 @@ public class KeycloakApplication extends Application {
 
     public static final String SERVER_CONTEXT_CONFIG_PROPERTY_OVERRIDES = "keycloak.server.context.config.property-overrides";
 
+    public static final AtomicBoolean BOOTSTRAP_ADMIN_USER = new AtomicBoolean(false);
+
     private static final Logger logger = Logger.getLogger(KeycloakApplication.class);
 
     protected boolean embedded = false;
@@ -106,8 +108,6 @@ public class KeycloakApplication extends Application {
 
     protected KeycloakSessionFactory sessionFactory;
     protected String contextPath;
-
-    private AtomicBoolean bootstrapAdminUser = new AtomicBoolean(false);
 
     public KeycloakApplication() {
 
@@ -197,7 +197,7 @@ public class KeycloakApplication extends Application {
             @Override
             public void run(KeycloakSession session) {
                 boolean shouldBootstrapAdmin = new ApplianceBootstrap(session).isNoMasterUser();
-                bootstrapAdminUser.set(shouldBootstrapAdmin);
+                BOOTSTRAP_ADMIN_USER.set(shouldBootstrapAdmin);
             }
 
         });
@@ -383,10 +383,6 @@ public class KeycloakApplication extends Application {
     @Override
     public Set<Object> getSingletons() {
         return singletons;
-    }
-
-    boolean isBootstrap() {
-        return bootstrapAdminUser.get();
     }
 
     public void importRealms() {
