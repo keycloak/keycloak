@@ -39,6 +39,7 @@ import org.keycloak.services.resources.AttributeFormDataProcessor;
 import org.keycloak.services.validation.Validation;
 
 import javax.ws.rs.core.MultivaluedMap;
+import java.util.Collections;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -128,19 +129,22 @@ public class RegistrationUserCreation implements FormAction, FormActionFactory {
         }
         context.getEvent().detail(Details.USERNAME, username)
                 .detail(Details.REGISTER_METHOD, "form")
-                .detail(Details.EMAIL, email)
-        ;
+                .detail(Details.EMAIL, email);
+
+        String clientId = context.getAuthenticationSession().getClient().getClientId();
+
         UserModel user = context.getSession().users().addUser(context.getRealm(), username);
         user.setEnabled(true);
-
         user.setEmail(email);
+        user.setAttribute(UserModel.REGISTRATION_CLIENT_ID, Collections.singletonList(clientId));
+
         context.getAuthenticationSession().setClientNote(OIDCLoginProtocol.LOGIN_HINT_PARAM, username);
         AttributeFormDataProcessor.process(formData, context.getRealm(), user);
         context.setUser(user);
         context.getEvent().user(user);
         context.getEvent().success();
         context.newEvent().event(EventType.LOGIN);
-        context.getEvent().client(context.getAuthenticationSession().getClient().getClientId())
+        context.getEvent().client(clientId)
                 .detail(Details.REDIRECT_URI, context.getAuthenticationSession().getRedirectUri())
                 .detail(Details.AUTH_METHOD, context.getAuthenticationSession().getProtocol());
         String authType = context.getAuthenticationSession().getAuthNote(Details.AUTH_TYPE);
