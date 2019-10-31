@@ -320,13 +320,8 @@ th.w-40 {
   width: 148px;
 }
 
-.navbar-pf .navbar-utility > li > a{
-  padding: 22px 30px 23px 40px!important;
-}
-/* @media (min-width: 768px) */
-.navbar-pf .navbar-utility li.dropdown > .dropdown-toggle .pficon-user {
-  top: 22px;
-  left:20px;
+.navbar-pf .navbar-utility .dropdown-toggle {
+    padding: 23px !important;
 }
 
 .clickable {
