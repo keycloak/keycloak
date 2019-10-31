@@ -196,6 +196,7 @@ client-key-password::
 
 always-refresh-token::
   If _true_, the adapter will refresh token in every request.
+  Warning - when enabled this will result in a request to {project_name} for every request to your application.
 
 register-node-at-startup::
   If _true_, then adapter will send registration request to {project_name}.
