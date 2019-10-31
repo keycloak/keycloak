@@ -84,7 +84,7 @@ An administrator and a user can view the following information :
 
 - https://www.w3.org/TR/webauthn/#credential-id[Credential ID]
 - Label (WebAuthn authenticator's label the user entered on registering it)
-- https://fidoalliance.org/specs/fido-v2.0-rd-20180702/fido-metadata-statement-v2.0-rd-20180702.html#authenticator-attestation-guid-aaguid-typedef[AAGUID]
+- AAGUID
 
 An administrator carries out the following operations on the `Admin Console` :
 
