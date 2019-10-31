@@ -69,7 +69,7 @@
             <#if message?has_content>
                 <div class="alert alert-${message.type}">
                     <#if message.type=='success' ><span class="pficon pficon-ok"></span></#if>
-                    <#if message.type=='error' ><span class="pficon pficon-error-octagon"></span><span class="pficon pficon-error-exclamation"></span></#if>
+                    <#if message.type=='error' ><span class="pficon pficon-error-circle-o"></span></#if>
                     ${kcSanitize(message.summary)?no_esc}
                 </div>
             </#if>
