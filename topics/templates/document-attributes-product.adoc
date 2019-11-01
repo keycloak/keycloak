@@ -53,6 +53,8 @@ endif::[]
 :developerguide_link: {project_doc_base_url}/server_developer_guide/
 :developerguide_actiontoken_name: Action Token SPI
 :developerguide_actiontoken_link: {developerguide_link}#_action_token_spi
+:developerguide_jsproviders_name: JavaScript Providers
+:developerguide_jsproviders_link: {developerguide_link}#_script_providers
 :gettingstarted_name: Getting Started Guide
 :gettingstarted_link: {project_doc_base_url}/getting_started_guide/
 :upgradingguide_name: Upgrading Guide

@@ -9,6 +9,9 @@ include::topics/templates/document-attributes-community.adoc[]
 
 = {releasenotes_name}
 
+== {project_name_full} 7.0.1.Final
+include::topics/7_0_1_final.adoc[leveloffset=2]
+
 == {project_name_full} 7.0.0
 include::topics/7_0_0.adoc[leveloffset=2]
 

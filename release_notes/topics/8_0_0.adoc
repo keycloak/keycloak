@@ -62,3 +62,7 @@ Thanks to https://github.com/jonkoops[jonkoops] now it's possible to enable or d
 * Secure token and logout endpoint were included in Gatekeeper. Thanks to https://github.com/fredbi[fredbi]
 * There was a bug on Gatekeeper which was making cookies to be applied to subdomains. Thanks to https://github.com/daniel-ac-martin[daniel-ac-martin] the issue was fixed
 * Now Gatekeeper provides support to https://www.owasp.org/index.php/SameSite[Same-site cookies]. Thanks to https://github.com/fiji-flo[fiji-flo]
+
+== Deploying Scripts to the Server
+
+Please take a look at link:{releasenotes_link}#keycloak-7-0-1-final[7.0.1 {releasenotes_name}] for more details on how you can now deploy and run scripts to customize specific behavior.

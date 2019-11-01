@@ -60,6 +60,11 @@ endif::[]
 |Token Exchange Service
 |No
 |Preview
+
+|upload_scripts
+|Upload scripts through the {project_name} REST API
+|No
+|Deprecated
 |===
 
 To enable all preview features start the server with:

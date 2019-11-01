@@ -68,3 +68,9 @@ Service account sessions provide the following details:
 * `clientAddress`: The remote host IP of the service account authenticated device
 * `clientHost`: The remote host name of the service account authenticated device
 
+==== Script Mapper
+
+The `Script Mapper` allows you to map claims to tokens by running a user-defined JavaScript code. For more details about how to
+deploy scripts to the server, please take a look at link:{developerguide_jsproviders_link}[{developerguide_jsproviders_name}].
+
+Once you have your scripts deployed, you should be able to select the scripts you deployed from the list of available mappers.

@@ -303,6 +303,110 @@ public class EjbExampleUserStorageProviderFactory
     }
 ----
 
+[[_script_providers]]
+=== JavaScript Providers
+
+{project_name} has the ability to execute scripts during runtime in order to allow administrators to customize specific functionalities:
+
+* OpenID Connect Script Protocol Mapper
+* OpenID Connect Script Authenticator
+* JavaScript Policy
+
+==== Create a JAR with the scripts you want to deploy
+
+NOTE: JAR files are regular ZIP files with a `.jar` extension.
+
+In order to make your scripts available to {project_name} you need to deploy them to the server. For that, you should create
+a `JAR` file with the following structure:
+
+[source]
+----
+META-INF/keycloak-scripts.json
+
+my-script-authenticator.js
+my-script-policy.js
+my-script-mapper.js
+----
+
+The `META-INF/keycloak-scripts.json` is a file descriptor that provides metadata information about the scripts you want to deploy. It is a JSON file with the following structure:
+
+```json
+{
+    "authenticators": [
+        {
+            "name": "My Authenticator",
+            "fileName": "my-authenticator.js",
+            "description": "My Authenticator from a JS file"
+        }
+    ],
+    "policies": [
+        {
+            "name": "My Policy",
+            "fileName": "my-policy.js",
+            "description": "My Policy from a JS file"
+        }
+    ],
+    "mappers": [
+        {
+            "name": "My Mapper",
+            "fileName": "my-mapper.js",
+            "description": "My Mapper from a JS file"
+        }
+    ]
+}
+```
+
+This file should reference the different types of script providers that you want to deploy:
+
+* `authenticators`
++
+For OpenID Connect Script Authenticators. You can have one or multiple authenticators in the same JAR file
++
+* `policies`
++
+For JavaScript Policies when using {project_name} Authorization Services. You can have one or multiple policies in the same JAR file
++
+* `mappers`
++
+For OpenID Connect Script Protocol Mappers. You can have one or multiple mappers in the same JAR file
+
+For each script file in your `JAR` file you must have a corresponding entry in `META-INF/keycloak-scripts.json` that maps your scripts files to a specific provider type. For that you should provide the following properties for each entry:
+
+* `name`
++
+A friendly name that will be used to show the scripts through the {project_name} Administration Console. If not provided, the name
+of the script file will be used instead
++
+* `description`
++
+An optional text that better describes the intend of the script file
++
+* `fileName`
++
+The name of the script file. This property is *mandatory* and should map to a file within the JAR.
+
+==== Deploy the Script JAR
+
+Once you have a JAR file with a descriptor and the scripts you want to deploy, you just need to copy the JAR to the to the {project_name} `standalone/deployments/` directory.
+
+==== Using {project_name} Administration Console to upload scripts
+
+By default, the {project_name} Administration Console won't allow administrators to upload scripts to the server. The reason is that
+script execution can potentially harm the system due to the execution of malicious scripts. In order to prevent different types of
+attacks and lower the risks when running scripts at runtime, administrators should prefer deploying scripts directly to the server using a JAR file.
+
+By deploying scripts directly into the server, we expect that scripts go through a proper code analysis in order to find possible
+vulnerabilities that can be introduced by any script deployed to the server.
+
+However, it should still be possible to upload scripts to the server through the {project_name} Administration Console. For that,
+you must set the following system property when booting the server:
+
+```bash
+    -Dkeycloak.profile.feature.upload_scripts=enabled
+```
+
+For more details about how to enable the `upload_scripts` feature. Please, take a look at the link:{installguide_profile_link}[{installguide_profile_name}].
+
 === Available SPIs
 
 If you want to see list of all available SPIs at runtime, you can check `Server Info` page in admin console as described in <<_providers_admin_console,Admin Console>> section.
