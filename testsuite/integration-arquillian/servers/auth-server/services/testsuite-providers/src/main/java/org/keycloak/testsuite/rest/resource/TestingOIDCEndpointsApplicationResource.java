@@ -28,6 +28,7 @@ import org.keycloak.crypto.AsymmetricSignatureSignerContext;
 import org.keycloak.crypto.KeyType;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
+import org.keycloak.crypto.ServerECDSASignatureSignerContext;
 import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.jose.jwe.JWEConstants;
 import org.keycloak.jose.jwk.JSONWebKeySet;
@@ -214,7 +215,16 @@ public class TestingOIDCEndpointsApplicationResource {
             keyWrapper.setAlgorithm(clientData.getSigningKeyAlgorithm());
             keyWrapper.setKid(kid);
             keyWrapper.setPrivateKey(privateKey);
-            SignatureSignerContext signer = new AsymmetricSignatureSignerContext(keyWrapper);
+            SignatureSignerContext signer;
+            switch (clientData.getSigningKeyAlgorithm()) {
+                case Algorithm.ES256:
+                case Algorithm.ES384:
+                case Algorithm.ES512:
+                    signer = new ServerECDSASignatureSignerContext(keyWrapper);
+                    break;
+                default:
+                    signer = new AsymmetricSignatureSignerContext(keyWrapper);
+            }
             clientData.setOidcRequest(new JWSBuilder().kid(kid).jsonContent(oidcRequest).sign(signer));
         }
     }

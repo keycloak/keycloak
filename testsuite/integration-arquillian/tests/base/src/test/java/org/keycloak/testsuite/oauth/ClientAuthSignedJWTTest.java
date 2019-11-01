@@ -46,9 +46,8 @@ import org.keycloak.common.constants.ServiceAccountConstants;
 import org.keycloak.common.util.*;
 import org.keycloak.constants.ServiceUrlConstants;
 import org.keycloak.crypto.Algorithm;
-import org.keycloak.crypto.AsymmetricSignatureSignerContext;
+import org.keycloak.crypto.ECDSASignatureProvider;
 import org.keycloak.crypto.KeyType;
-import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
@@ -293,6 +292,48 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
     @Test
     public void testCodeToTokenRequestSuccessPS256() throws Exception {
         testCodeToTokenRequestSuccess(Algorithm.PS256);
+    }
+
+    @Test
+    public void testECDSASignature() throws Exception {
+        testECDSASignatureLength(getClientSignedToken(Algorithm.ES256), Algorithm.ES256);
+        testECDSASignatureLength(getClientSignedToken(Algorithm.ES384), Algorithm.ES384);
+        testECDSASignatureLength(getClientSignedToken(Algorithm.ES512), Algorithm.ES512);
+    }
+
+    private void testECDSASignatureLength(String clientSignedToken, String alg) {
+        String encodedSignature = clientSignedToken.split("\\.",3)[2];
+        byte[] signature = Base64Url.decode(encodedSignature);
+        assertEquals(ECDSASignatureProvider.ECDSA.valueOf(alg).getSignatureLength(), signature.length);
+    }
+
+    private String getClientSignedToken(String alg) throws Exception {
+        ClientRepresentation clientRepresentation = app2;
+        ClientResource clientResource = getClient(testRealm.getRealm(), clientRepresentation.getId());
+        clientRepresentation = clientResource.toRepresentation();
+        String clientSignedToken;
+        try {
+            // setup Jwks
+            KeyPair keyPair = setupJwks(alg, clientRepresentation, clientResource);
+            PublicKey publicKey = keyPair.getPublic();
+            PrivateKey privateKey = keyPair.getPrivate();
+
+            // test
+            oauth.clientId("client2");
+            oauth.doLogin("test-user@localhost", "password");
+
+            String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+            clientSignedToken = createSignedRequestToken("client2", getRealmInfoUrl(), privateKey, publicKey, alg);
+            OAuthClient.AccessTokenResponse response = doAccessTokenRequest(code, clientSignedToken);
+
+            assertEquals(200, response.getStatusCode());
+            oauth.verifyToken(response.getAccessToken());
+            oauth.openLogout();
+            return clientSignedToken;
+        } finally {
+            // Revert jwks_url settings
+            revertJwksSettings(clientRepresentation, clientResource);
+        }
     }
 
     private void testCodeToTokenRequestSuccess(String algorithm) throws Exception {
@@ -1154,14 +1195,9 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
     private String createSignedRequestToken(String clientId, String realmInfoUrl, PrivateKey privateKey, PublicKey publicKey, String algorithm) {
         JsonWebToken jwt = createRequestToken(clientId, realmInfoUrl);
         String kid = KeyUtils.createKeyId(publicKey);
-        KeyWrapper keyWrapper = new KeyWrapper();
-        keyWrapper.setAlgorithm(algorithm);
-        keyWrapper.setKid(kid);
-        keyWrapper.setPrivateKey(privateKey);
-        SignatureSignerContext signer = new AsymmetricSignatureSignerContext(keyWrapper);
+        SignatureSignerContext signer = oauth.createSigner(privateKey, kid, algorithm);
         String ret = new JWSBuilder().kid(kid).jsonContent(jwt).sign(signer);
         return ret;
-
     }
 
     private JsonWebToken createRequestToken(String clientId, String realmInfoUrl) {
