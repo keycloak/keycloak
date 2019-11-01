@@ -1,5 +1,7 @@
 package org.keycloak.representations.docker;
 
+import java.util.Objects;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
@@ -63,9 +65,9 @@ public class DockerResponse {
 
         final DockerResponse that = (DockerResponse) o;
 
-        if (token != null ? !token.equals(that.token) : that.token != null) return false;
-        if (expires_in != null ? !expires_in.equals(that.expires_in) : that.expires_in != null) return false;
-        return issued_at != null ? issued_at.equals(that.issued_at) : that.issued_at == null;
+        if (!Objects.equals(token, that.token)) return false;
+        if (!Objects.equals(expires_in, that.expires_in)) return false;
+        return Objects.equals(issued_at, that.issued_at);
 
     }
 
