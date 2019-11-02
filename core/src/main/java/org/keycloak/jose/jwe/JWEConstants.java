@@ -31,6 +31,4 @@ public class JWEConstants {
     public static final String A192CBC_HS384 = "A192CBC-HS384";
     public static final String A256CBC_HS512  = "A256CBC-HS512";
     public static final String A128GCM = "A128GCM";
-    public static final String A192GCM = "A192GCM";
-    public static final String A256GCM = "A256GCM";
 }

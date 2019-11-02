@@ -26,7 +26,6 @@ import org.keycloak.common.util.MultivaluedHashMap;
 public class CredentialRepresentation {
     public static final String SECRET = "secret";
     public static final String PASSWORD = "password";
-    public static final String PASSWORD_TOKEN = "password-token";
     public static final String TOTP = "totp";
     public static final String HOTP = "hotp";
     public static final String CLIENT_CERT = "cert";
