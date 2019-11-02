@@ -31,7 +31,7 @@ public class UserSessionRepresentation {
     private String ipAddress;
     private long start;
     private long lastAccess;
-    private Map<String, String> clients = new HashMap<String, String>();
+    private Map<String, String> clients = new HashMap<>();
 
     public String getId() {
         return id;

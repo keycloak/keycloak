@@ -43,7 +43,7 @@ public class PermissionRequest {
     public PermissionRequest(String resourceId, String... scopes) {
         this.resourceId = resourceId;
         if (scopes != null) {
-            this.scopes = new HashSet(Arrays.asList(scopes));
+            this.scopes = new HashSet<>(Arrays.asList(scopes));
         }
     }
 

@@ -52,7 +52,7 @@ public class RefreshToken extends AccessToken {
             realmAccess = token.realmAccess.clone();
         }
         if (token.resourceAccess != null) {
-            resourceAccess = new HashMap<String, Access>();
+            resourceAccess = new HashMap<>();
             for (Map.Entry<String, Access> entry : token.resourceAccess.entrySet()) {
                 resourceAccess.put(entry.getKey(), entry.getValue().clone());
             }

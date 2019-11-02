@@ -35,7 +35,7 @@ public class ProtocolMapperRepresentation {
 
     @Deprecated // backwards compatibility only
     protected String consentText;
-    protected Map<String, String> config = new HashMap<String, String>();
+    protected Map<String, String> config = new HashMap<>();
 
 
     public String getId() {
