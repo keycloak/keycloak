@@ -23,11 +23,8 @@
            <label class="control-label" for="clients">{{:: 'client-roles' | translate}}
                 <kc-tooltip>{{:: 'client-roles.tooltip' | translate}}</kc-tooltip>        
             </label>
-            <div class="col-md-6">
-                <input type="hidden" ui-select2="clientsUiSelect" id="clients" data-ng-model="selectedClient" data-ng-change="changeClient(selectedClient);" data-placeholder="{{:: 'authz-select-client' | translate}}...">
-                </input>
-            </div>
-
+            <input type="hidden" style="margin-bottom: 10px;"ui-select2="clientsUiSelect" id="clients" data-ng-model="selectedClient" data-ng-change="changeClient(selectedClient);" data-placeholder="{{:: 'authz-select-client' | translate}}...">
+            </input>
             <select id="available-client" class="form-control" size="5"
                     ng-dblclick="selectClientRole()"
                     ng-model="selectedClientRole.role"
