@@ -29,7 +29,7 @@ public class IdentityProviderMapperRepresentation {
     protected String name;
     protected String identityProviderAlias;
     protected String identityProviderMapper;
-    protected Map<String, String> config = new HashMap<String, String>();
+    protected Map<String, String> config = new HashMap<>();
 
 
     public String getId() {

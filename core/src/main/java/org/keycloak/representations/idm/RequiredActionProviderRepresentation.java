@@ -32,7 +32,7 @@ public class RequiredActionProviderRepresentation {
     private boolean enabled;
     private boolean defaultAction;
     private int priority;
-    private Map<String, String> config = new HashMap<String, String>();
+    private Map<String, String> config = new HashMap<>();
 
 
     public String getAlias() {

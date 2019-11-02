@@ -227,7 +227,7 @@ public class RealmRepresentation {
     public UserRepresentation user(String username) {
         UserRepresentation user = new UserRepresentation();
         user.setUsername(username);
-        if (users == null) users = new ArrayList<UserRepresentation>();
+        if (users == null) users = new ArrayList<>();
         users.add(user);
         return user;
     }
@@ -360,7 +360,7 @@ public class RealmRepresentation {
     public ScopeMappingRepresentation clientScopeMapping(String clientName) {
         ScopeMappingRepresentation mapping = new ScopeMappingRepresentation();
         mapping.setClient(clientName);
-        if (scopeMappings == null) scopeMappings = new ArrayList<ScopeMappingRepresentation>();
+        if (scopeMappings == null) scopeMappings = new ArrayList<>();
         scopeMappings.add(mapping);
         return mapping;
     }
@@ -368,7 +368,7 @@ public class RealmRepresentation {
     public ScopeMappingRepresentation clientScopeScopeMapping(String clientScopeName) {
         ScopeMappingRepresentation mapping = new ScopeMappingRepresentation();
         mapping.setClientScope(clientScopeName);
-        if (scopeMappings == null) scopeMappings = new ArrayList<ScopeMappingRepresentation>();
+        if (scopeMappings == null) scopeMappings = new ArrayList<>();
         scopeMappings.add(mapping);
         return mapping;
     }
