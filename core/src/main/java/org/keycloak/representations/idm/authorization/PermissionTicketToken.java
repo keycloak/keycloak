@@ -19,9 +19,7 @@ package org.keycloak.representations.idm.authorization;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import org.keycloak.TokenIdGenerator;
 import org.keycloak.json.StringListMapDeserializer;
