@@ -71,7 +71,7 @@
                         <select id="assigned-client" class="form-control overflow-select" multiple size=5
                                 ng-multiple="true"
                                 ng-model="selectedClientDefRoles">
-                            <option ng-repeat="r in client.defaultRoles | orderBy:'toString()'" value="{{r}}" title="{{r.toString()}}">
+                            <option ng-repeat="r in selectedClient.defaultRoles | orderBy:'toString()'" value="{{r}}" title="{{r.toString()}}">
                                 {{r.toString()}}
                             </option>
                         </select>

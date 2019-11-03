@@ -662,8 +662,7 @@ module.controller('RealmDefaultRolesCtrl', function ($scope, $route, Realm, real
 
         // Populate available roles for selected client
         if ($scope.selectedClient) {
-            var appDefaultRoles = ClientRole.query({realm: $scope.realm.realm, client: $scope.selectedClient.id}, function () {
-
+            ClientRole.query({realm: $scope.realm.realm, client: $scope.selectedClient.id}, function (appDefaultRoles) {
                 if (!$scope.selectedClient.hasOwnProperty('defaultRoles') || $scope.selectedClient.defaultRoles === null) {
                     $scope.selectedClient.defaultRoles = [];
                 }
