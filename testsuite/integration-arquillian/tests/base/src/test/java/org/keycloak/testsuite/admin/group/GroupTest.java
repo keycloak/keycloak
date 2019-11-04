@@ -17,6 +17,7 @@
 
 package org.keycloak.testsuite.admin.group;
 
+import com.google.common.collect.Comparators;
 import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.GroupResource;
@@ -54,6 +55,7 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -766,6 +768,58 @@ public class GroupTest extends AbstractGroupTest {
 
         assertEquals(new Long(allGroups.size()), realm.groups().count(true).get("count"));
         assertEquals(new Long(allGroups.size() + 1), realm.groups().count(false).get("count"));
+    }
+
+    @Test
+    public void orderGroupsByName() throws Exception {
+        RealmResource realm = this.adminClient.realms().realm("test");
+
+        // Clean up all test groups
+        for (GroupRepresentation group : realm.groups().groups()) {
+            GroupResource resource = realm.groups().group(group.getId());
+            resource.remove();
+            assertAdminEvents.assertEvent("test", OperationType.DELETE, AdminEventPaths.groupPath(group.getId()), ResourceType.GROUP);
+        }
+
+        // Create two pages worth of groups in a random order
+        List<GroupRepresentation> testGroups = new ArrayList<>();
+        for (int i = 0; i < 40; i++) {
+            GroupRepresentation group = new GroupRepresentation();
+            group.setName("group" + i);
+            testGroups.add(group);
+        }
+
+        Collections.shuffle(testGroups);
+
+        for (GroupRepresentation group : testGroups) {
+            group = createGroup(realm, group);
+        }
+
+        // Groups should be ordered by name
+        Comparator<GroupRepresentation> compareByName = Comparator.comparing(GroupRepresentation::getName);
+
+        // Assert that all groups are returned in order
+        List<GroupRepresentation> allGroups = realm.groups().groups();
+        assertEquals(40, allGroups.size());
+        assertTrue(Comparators.isInStrictOrder(allGroups, compareByName));
+
+        // Assert that pagination results are returned in order
+        List<GroupRepresentation> firstPage = realm.groups().groups(0, 20);
+        assertEquals(20, firstPage.size());
+        assertTrue(Comparators.isInStrictOrder(firstPage, compareByName));
+
+        List<GroupRepresentation> secondPage = realm.groups().groups(20, 20);
+        assertEquals(20, secondPage.size());
+        assertTrue(Comparators.isInStrictOrder(secondPage, compareByName));
+
+        // Check that the ordering of groups across multiple pages is correct
+        // Since the individual pages are ordered it is sufficient to compare 
+        // every group from the first page to the first group of the second page
+        GroupRepresentation firstGroupOnSecondPage = secondPage.get(0);
+        for (GroupRepresentation firstPageGroup : firstPage) {
+            int comparisonResult = compareByName.compare(firstPageGroup, firstGroupOnSecondPage);
+            assertTrue(comparisonResult < 0);
+        }
     }
 
     @Test
