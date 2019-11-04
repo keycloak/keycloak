@@ -129,7 +129,6 @@ public class AuthenticationManager {
     public static final String KEYCLOAK_REMEMBER_ME = "KEYCLOAK_REMEMBER_ME";
     public static final String KEYCLOAK_LOGOUT_PROTOCOL = "KEYCLOAK_LOGOUT_PROTOCOL";
     private static final TokenTypeCheck VALIDATE_IDENTITY_COOKIE = new TokenTypeCheck(TokenUtil.TOKEN_TYPE_KEYCLOAK_ID);
-    private static final String AIA_REQUEST = LOGIN_SESSION_NOTE_ADDITIONAL_REQ_PARAMS_PREFIX + Constants.KC_ACTION;
     public static final String IS_AIA_REQUEST = LOGIN_SESSION_NOTE_ADDITIONAL_REQ_PARAMS_PREFIX + Constants.IS_AIA_REQUEST;
     public static final String IS_SILENT_CANCEL = LOGIN_SESSION_NOTE_ADDITIONAL_REQ_PARAMS_PREFIX + Constants.AIA_SILENT_CANCEL;
 
@@ -1165,14 +1164,14 @@ public class AuthenticationManager {
                                                                   ) {
         if (provider.initiatedActionSupport() == InitiatedActionSupport.NOT_SUPPORTED) return;
         
-        String aia = authSession.getClientNote(AIA_REQUEST);
+        String aia = authSession.getClientNote(Constants.KC_ACTION);
         if (aia == null) return;
 
         // make sure you are evaluating the action that was requested
         if (!aia.equalsIgnoreCase(model.getProviderId())) return;
 
         authSession.addRequiredAction(model.getProviderId());
-        authSession.removeClientNote(AIA_REQUEST); // keep this from being executed twice
+        authSession.removeClientNote(Constants.KC_ACTION); // keep this from being executed twice
         authSession.setClientNote(IS_AIA_REQUEST, "true");
     }
 
