@@ -91,6 +91,62 @@ You can use value `TRACE` if you want to enable even TRACE logging.
 There is no support for more packages ATM, you need to edit the file `testsuite/integration-arquillian/servers/auth-server/jboss/common/jboss-cli/add-log-level.cli`
 and add packages manually.
 
+## Run tests against remote container
+
+### remote server tests
+
+note: if there is a need to run server on http only testsuite providers has to be re-builded with `-Dauth.server.ssl.required=false`
+    
+    mvn -f testsuite/integration-arquillian/pom.xml clean install -Pauth-server-wildfly -Dauth.server.ssl.required=false -DskipTests
+
+unzip prepared server:
+
+    unzip -q testsuite/integration-arquillian/servers/auth-server/jboss/wildfly/target/integration-arquillian-servers-auth-server-wildfly-*.zip
+
+start the server: 
+
+    sh auth-server-wildfly/bin/standalone.sh \
+        -Dauth.server.ssl.required=false \
+        -Djboss.socket.binding.port-offset=100 \
+        -Dauth.server.http.port=8180 \
+        -Dauth.server.https.port=8543
+
+run base testsuite:
+
+    mvn -f testsuite/integration-arquillian/tests/base/pom.xml clean install -Pauth-server-remote -Dauth.server.ssl.required=false
+
+note: it is also possible to run tests against server running on different host and port using `-Dauth.server.host=${server.host}` and `-Dauth.server.http.port=${server.port}`. The testsuite currently doesn't work with port 80.
+
+### remote adapter tests
+
+note: if there is a need to run server on http only testsuite providers has to be re-builded with `-Dauth.server.ssl.required=false`
+
+    mvn -f keycloak/testsuite/integration-arquillian/pom.xml clean install -Pauth-server-wildfly -Papp-server-wildfly -Dauth.server.ssl.required=false -DskipTests ${MVN_DEFAULT_ARGS}
+
+unzip prepared servers:
+
+    unzip -q keycloak/testsuite/integration-arquillian/servers/auth-server/jboss/wildfly/target/integration-arquillian-servers-auth-server-wildfly-*.zip
+    unzip -q keycloak/testsuite/integration-arquillian/servers/app-server/jboss/wildfly/target/integration-arquillian-servers-app-server-wildfly-*.zip
+
+start both servers:
+
+    sh auth-server-wildfly/bin/standalone.sh \
+        -Dauth.server.ssl.required=false \
+        -Djboss.socket.binding.port-offset=100 \
+        -Dauth.server.http.port=8180 \
+        -Dauth.server.https.port=8543
+
+    sh app-server-wildfly/bin/standalone.sh \
+        -Djboss.socket.binding.port-offset=200 \
+        -Dapp.server.ssl.required=false
+
+run other/adapters/jboss/remote tests:
+
+    mvn -f keycloak/testsuite/integration-arquillian/tests/other/adapters/jboss/remote/pom.xml clean install \
+        -Pauth-server-remote,app-server-remote \
+        -Dauth.server.ssl.required=false \
+        -Dapp.server.ssl.required=false
+
 
 ## Run adapter tests
 
