@@ -29,6 +29,7 @@ import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionContext;
+import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
@@ -38,7 +39,6 @@ import org.keycloak.protocol.oidc.utils.OIDCResponseMode;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.adapters.action.PushNotBeforeAction;
-import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationSessionManager;
@@ -46,7 +46,6 @@ import org.keycloak.protocol.oidc.utils.OAuth2Code;
 import org.keycloak.protocol.oidc.utils.OAuth2CodeParser;
 import org.keycloak.services.managers.ResourceAdminManager;
 import org.keycloak.sessions.AuthenticationSessionModel;
-import org.keycloak.sessions.CommonClientSessionModel;
 import org.keycloak.util.TokenUtil;
 
 import java.io.IOException;
@@ -338,7 +337,7 @@ public class OIDCLoginProtocol implements LoginProtocol {
 
     @Override
     public boolean requireReauthentication(UserSessionModel userSession, AuthenticationSessionModel authSession) {
-        return isPromptLogin(authSession) || isAuthTimeExpired(userSession, authSession);
+        return isPromptLogin(authSession) || isAuthTimeExpired(userSession, authSession) || isReAuthRequiredForKcAction(userSession, authSession);
     }
 
     protected boolean isPromptLogin(AuthenticationSessionModel authSession) {
@@ -363,6 +362,17 @@ public class OIDCLoginProtocol implements LoginProtocol {
         }
 
         return false;
+    }
+
+    protected boolean isReAuthRequiredForKcAction(UserSessionModel userSession, AuthenticationSessionModel authSession) {
+        if (authSession.getClientNote(Constants.KC_ACTION) != null) {
+            String authTime = userSession.getNote(AuthenticationManager.AUTH_TIME);
+            int authTimeInt = authTime == null ? 0 : Integer.parseInt(authTime);
+            int maxAgeInt = Constants.KC_ACTION_MAX_AGE;
+            return authTimeInt + maxAgeInt < Time.currentTime();
+        } else {
+            return false;
+        }
     }
 
     @Override
