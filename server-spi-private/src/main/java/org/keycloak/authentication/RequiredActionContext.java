@@ -37,12 +37,17 @@ import java.net.URI;
  * @version $Revision: 1 $
  */
 public interface RequiredActionContext {
-    public static enum Status {
+    enum Status {
         CHALLENGE,
         SUCCESS,
         IGNORE,
-        FAILURE,
-        CANCELED_AIA
+        FAILURE
+    }
+
+    enum KcActionStatus {
+        SUCCESS,
+        CANCELLED,
+        ERROR
     }
 
     /**
@@ -139,11 +144,5 @@ public interface RequiredActionContext {
      *
      */
     void ignore();
-    
-    /**
-     * Mark application-initiated action as canceled by the user.
-     *
-     */
-    void cancelAIA();
 
 }

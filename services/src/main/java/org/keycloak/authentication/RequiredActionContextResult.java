@@ -136,11 +136,6 @@ public class RequiredActionContextResult implements RequiredActionContext {
     public void ignore() {
         status = Status.IGNORE;
     }
-    
-    @Override
-    public void cancelAIA() {
-        status = Status.CANCELED_AIA;
-    }
 
     @Override
     public URI getActionUrl(String code) {

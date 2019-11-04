@@ -203,6 +203,11 @@ public class OIDCLoginProtocol implements LoginProtocol {
         String nonce = authSession.getClientNote(OIDCLoginProtocol.NONCE_PARAM);
         clientSessionCtx.setAttribute(OIDCLoginProtocol.NONCE_PARAM, nonce);
 
+        String kcActionStatus = authSession.getClientNote(Constants.KC_ACTION_STATUS);
+        if (kcActionStatus != null) {
+            redirectUri.addParam(Constants.KC_ACTION_STATUS, kcActionStatus);
+        }
+
         // Standard or hybrid flow
         String code = null;
         if (responseType.hasResponseType(OIDCResponseType.CODE)) {
