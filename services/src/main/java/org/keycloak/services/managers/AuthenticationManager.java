@@ -65,7 +65,6 @@ import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.LoginProtocol.Error;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.AccessToken;
-import org.keycloak.services.ForbiddenException;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.Urls;
 import org.keycloak.services.messages.Messages;
@@ -96,7 +95,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-import org.keycloak.models.AccountRoles;
 
 import static org.keycloak.protocol.oidc.endpoints.AuthorizationEndpoint.LOGIN_SESSION_NOTE_ADDITIONAL_REQ_PARAMS_PREFIX;
 
@@ -1172,11 +1170,7 @@ public class AuthenticationManager {
 
         // make sure you are evaluating the action that was requested
         if (!aia.equalsIgnoreCase(model.getProviderId())) return;
-        
-        if (session.getContext().getClient().getRole(AccountRoles.MANAGE_ACCOUNT) == null) {
-            throw new ForbiddenException("Client must have manage-account role to perform application-initiated actions.");
-        }
-        
+
         authSession.addRequiredAction(model.getProviderId());
         authSession.removeClientNote(AIA_REQUEST); // keep this from being executed twice
         authSession.setClientNote(IS_AIA_REQUEST, "true");
