@@ -25,6 +25,7 @@ import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.UserCredentialModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.HmacOTP;
 import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.representations.idm.AuthenticationExecutionInfoRepresentation;
@@ -51,7 +52,7 @@ import static org.junit.Assert.assertTrue;
 public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionTest {
 
     public AppInitiatedActionTotpSetupTest() {
-        super("configure_totp");
+        super(UserModel.RequiredAction.CONFIGURE_TOTP.name());
     }
     
     @Override
@@ -64,7 +65,7 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
         for (AuthenticationExecutionInfoRepresentation execution : adminClient.realm("test").flows().getExecutions("browser")) {
             String providerId = execution.getProviderId();
             if ("auth-otp-form".equals(providerId)) {
-                execution.setRequirement(AuthenticationExecutionModel.Requirement.REQUIRED.name());
+                execution.setRequirement(AuthenticationExecutionModel.Requirement.OPTIONAL.name());
                 adminClient.realm("test").flows().updateExecutions("browser", execution);
             }
         }
@@ -111,8 +112,8 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
         events.poll(); // skip to totp event
         String authSessionId = events.expectRequiredAction(EventType.UPDATE_TOTP).user(userId).detail(Details.USERNAME, "setuptotp").assertEvent()
                 .getDetails().get(Details.CODE_ID);
-        
-        assertRedirectSuccess();
+
+        assertKcActionStatus("success");
         
         events.expectLogin().user(userId).session(authSessionId).detail(Details.USERNAME, "setuptotp").assertEvent();
     }
@@ -125,9 +126,8 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
         
         totpPage.assertCurrent();
         totpPage.cancel();
-        
-        assertRedirectSuccess();
-        assertCancelMessage();
+
+        assertKcActionStatus("cancelled");
     }
 
     @Test
@@ -297,8 +297,8 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
         String authSessionId = events.expectRequiredAction(EventType.UPDATE_TOTP).assertEvent()
                 .getDetails().get(Details.CODE_ID);
 
-        assertRedirectSuccess();
-        
+        assertKcActionStatus("success");
+
         EventRepresentation loginEvent = events.expectLogin().session(authSessionId).assertEvent();
 
         oauth.openLogout();
@@ -309,8 +309,6 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
         loginPage.login("test-user@localhost", "password");
         
         loginTotpPage.login(totp.generateTOTP(totpSecret));
-
-        assertRedirectSuccess();
 
         events.expectLogin().assertEvent();
     }
@@ -333,7 +331,7 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
         totpPage.configure(totp.generateTOTP(totpCode));
 
         // After totp config, user should be on the app page
-        assertRedirectSuccess();
+        assertKcActionStatus("success");
 
         events.poll();
         events.expectRequiredAction(EventType.UPDATE_TOTP).user(userId).detail(Details.USERNAME, "setuptotp2").assertEvent();
@@ -375,17 +373,6 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
         // Try to login
         loginPage.open();
         loginPage.login("setupTotp2", "password2");
-
-        // Since the authentificator was removed, it has to be set up again
-        totpPage.assertCurrent();
-        totpPage.configure(totp.generateTOTP(totpPage.getTotpSecret()));
-
-        String sessionId = events.expectRequiredAction(EventType.UPDATE_TOTP).user(userId).detail(Details.USERNAME, "setupTotp2").assertEvent()
-                .getDetails().get(Details.CODE_ID);
-
-        assertRedirectSuccess();
-
-        events.expectLogin().user(userId).session(sessionId).detail(Details.USERNAME, "setupTotp2").assertEvent();
     }
 
     @Test
@@ -416,7 +403,7 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
         String sessionId = events.expectRequiredAction(EventType.UPDATE_TOTP).assertEvent()
                 .getDetails().get(Details.CODE_ID);
 
-        assertRedirectSuccess();
+        assertKcActionStatus("success");
 
         EventRepresentation loginEvent = events.expectLogin().session(sessionId).assertEvent();
 
@@ -431,7 +418,7 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
         assertEquals(8, token.length());
         loginTotpPage.login(token);
 
-        assertRedirectSuccess();
+        assertKcActionStatus(null);
 
         events.expectLogin().assertEvent();
 
@@ -469,7 +456,7 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
             .getDetails().get(Details.CODE_ID);
         
         //RequestType reqType = appPage.getRequestType();
-        assertRedirectSuccess();
+        assertKcActionStatus("success");
         EventRepresentation loginEvent = events.expectLogin().session(sessionId).assertEvent();
 
         oauth.openLogout();
@@ -481,7 +468,7 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
         String token = otpgen.generateHOTP(totpSecret, 1);
         loginTotpPage.login(token);
 
-        assertRedirectSuccess();
+        assertKcActionStatus(null);
 
         events.expectLogin().assertEvent();
 
@@ -506,7 +493,7 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
         loginTotpPage.assertCurrent();
         loginTotpPage.login(token);
 
-        assertRedirectSuccess();
+        assertKcActionStatus(null);
 
         events.expectLogin().assertEvent();
 

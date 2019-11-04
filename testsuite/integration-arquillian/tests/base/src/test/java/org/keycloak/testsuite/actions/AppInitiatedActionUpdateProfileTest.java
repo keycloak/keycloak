@@ -23,6 +23,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
+import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -37,7 +38,7 @@ import org.keycloak.testsuite.util.UserBuilder;
 public class AppInitiatedActionUpdateProfileTest extends AbstractAppInitiatedActionTest {
 
     public AppInitiatedActionUpdateProfileTest() {
-        super("update_profile");
+        super(UserModel.RequiredAction.UPDATE_PROFILE.name());
     }
     
     @Page
@@ -85,7 +86,7 @@ public class AppInitiatedActionUpdateProfileTest extends AbstractAppInitiatedAct
         events.expectRequiredAction(EventType.UPDATE_PROFILE).assertEvent();
         events.expectLogin().assertEvent();
 
-        assertRedirectSuccess();
+        assertKcActionStatus("success");
 
         // assert user is really updated in persistent store
         UserRepresentation user = ActionUtil.findUserWithAdminClient(adminClient, "test-user@localhost");
@@ -113,7 +114,7 @@ public class AppInitiatedActionUpdateProfileTest extends AbstractAppInitiatedAct
         events.expectRequiredAction(EventType.UPDATE_EMAIL).detail(Details.PREVIOUS_EMAIL, "test-user@localhost").detail(Details.UPDATED_EMAIL, "new@email.com").assertEvent();
         events.expectRequiredAction(EventType.UPDATE_PROFILE).assertEvent();
 
-        assertRedirectSuccess();
+        assertKcActionStatus("success");
 
         // assert user is really updated in persistent store
         UserRepresentation user = ActionUtil.findUserWithAdminClient(adminClient, "test-user@localhost");
@@ -132,8 +133,8 @@ public class AppInitiatedActionUpdateProfileTest extends AbstractAppInitiatedAct
         updateProfilePage.assertCurrent();
         updateProfilePage.cancel();
 
-        assertRedirectSuccess();
-        assertCancelMessage();
+        assertKcActionStatus("cancelled");
+
         
         // assert nothing was updated in persistent store
         UserRepresentation user = ActionUtil.findUserWithAdminClient(adminClient, "test-user@localhost");
@@ -164,7 +165,7 @@ public class AppInitiatedActionUpdateProfileTest extends AbstractAppInitiatedAct
                 .removeDetail(Details.CONSENT)
                 .assertEvent();
 
-        assertRedirectSuccess();
+        assertKcActionStatus("success");
 
         events.expectLogin().detail(Details.USERNAME, "john-doh@localhost").user(userId).assertEvent();
 

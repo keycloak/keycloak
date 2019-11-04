@@ -33,6 +33,9 @@ import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
 import org.keycloak.testsuite.util.GreenMailRule;
 
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
@@ -66,6 +69,8 @@ public class RequiredActionResetPasswordTest extends AbstractTestRealmKeycloakTe
         loginPage.login("test-user@localhost", "password");
 
         changePasswordPage.assertCurrent();
+        assertFalse(changePasswordPage.isCancelDisplayed());
+
         changePasswordPage.changePassword("new-password", "new-password");
 
         events.expectRequiredAction(EventType.UPDATE_PASSWORD).assertEvent();

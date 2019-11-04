@@ -69,6 +69,8 @@ public final class Constants {
     public static final String KEY = "key";
 
     public static final String KC_ACTION = "kc_action";
+    public static final String KC_ACTION_STATUS = "kc_action_status";
+    public static final String KC_ACTION_EXECUTING = "kc_action_executing";
     public static final int KC_ACTION_MAX_AGE = 300;
 
     public static final String IS_AIA_REQUEST = "IS_AIA_REQUEST";

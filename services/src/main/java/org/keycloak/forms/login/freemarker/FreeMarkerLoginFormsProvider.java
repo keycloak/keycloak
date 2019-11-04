@@ -66,7 +66,6 @@ import java.util.*;
 
 
 import static org.keycloak.models.UserModel.RequiredAction.UPDATE_PASSWORD;
-import static org.keycloak.services.managers.AuthenticationManager.IS_AIA_REQUEST;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -180,7 +179,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
             attributes.put("statusCode", status.getStatusCode());
         }
         
-        if (authenticationSession != null && authenticationSession.getClientNote(IS_AIA_REQUEST) != null) {
+        if (authenticationSession != null && authenticationSession.getClientNote(Constants.KC_ACTION_EXECUTING) != null) {
             attributes.put("isAppInitiatedAction", true);
         }
         

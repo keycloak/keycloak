@@ -17,6 +17,7 @@
 
 package org.keycloak.testsuite.pages;
 
+import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -89,6 +90,14 @@ public class LoginUpdateProfilePage extends AbstractPage {
     @Override
     public void open() {
         throw new UnsupportedOperationException();
+    }
+
+    public boolean isCancelDisplayed() {
+        try {
+            return cancelAIAButton.isDisplayed();
+        } catch (NoSuchElementException e) {
+            return false;
+        }
     }
 
 }

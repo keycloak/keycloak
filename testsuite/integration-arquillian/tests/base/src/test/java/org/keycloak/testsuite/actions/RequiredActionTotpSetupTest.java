@@ -131,6 +131,7 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
         String userId = events.expectRegister("setupTotp", "email@mail.com").assertEvent().getUserId();
 
         assertTrue(totpPage.isCurrent());
+        assertFalse(totpPage.isCancelDisplayed());
 
         totpPage.configure(totp.generateTOTP(totpPage.getTotpSecret()));
 
