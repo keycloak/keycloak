@@ -463,6 +463,11 @@ public class AccountRestService {
         }
         return consent;
     }
+    
+    @Path("/linked-accounts")
+    public LinkedAccountsResource linkedAccounts() {
+        return new LinkedAccountsResource(session, request, client, auth, event, user);
+    }
 
     // TODO Logs
     
