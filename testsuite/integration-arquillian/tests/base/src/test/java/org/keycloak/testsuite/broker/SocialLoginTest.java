@@ -230,14 +230,17 @@ public class SocialLoginTest extends AbstractKeycloakTest {
     }
 
     @Test
+    @UncaughtServerErrorExpected
     public void openshiftLogin() {
         setTestProvider(OPENSHIFT);
         performLogin();
         assertUpdateProfile(false, false, true);
         assertAccount();
+        testTokenExchange();
     }
 
     @Test
+    @UncaughtServerErrorExpected
     public void openshift4Login() {
         setTestProvider(OPENSHIFT4);
         performLogin();
