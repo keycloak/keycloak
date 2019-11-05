@@ -64,6 +64,9 @@ public class PolicyEnforcerConfig {
     @JsonProperty("http-method-as-scope")
     private Boolean httpMethodAsScope;
 
+    @JsonProperty("custom-enforcer")
+    private  CustomEnforcerConfig customEnforcerConfig;
+
     public List<PathConfig> getPaths() {
         return this.paths;
     }
@@ -127,6 +130,10 @@ public class PolicyEnforcerConfig {
     public void setHttpMethodAsScope(Boolean httpMethodAsScope) {
         this.httpMethodAsScope = httpMethodAsScope;
     }
+
+    public CustomEnforcerConfig getCustomEnforcerConfig() { return customEnforcerConfig; }
+
+    public void setCustomEnforcerConfig(CustomEnforcerConfig customEnforcerConfig) { this.customEnforcerConfig = customEnforcerConfig; }
 
     public static class PathConfig {
 
@@ -342,5 +349,30 @@ public class PolicyEnforcerConfig {
 
     public static class UserManagedAccessConfig {
 
+    }
+
+    public class CustomEnforcerConfig {
+
+        @JsonProperty("load-custom-enforcer")
+        private boolean customEnforcerEnabled;
+
+        @JsonProperty("enable-audit-logs")
+        private boolean auditLoggingEnabled;
+
+        public boolean isCustomEnforcerEnabled() {
+            return customEnforcerEnabled;
+        }
+
+        public void setCustomEnforcerEnabled(boolean customEnforcerEnabled) {
+            this.customEnforcerEnabled = customEnforcerEnabled;
+        }
+
+        public boolean isAuditLoggingEnabled() {
+            return auditLoggingEnabled;
+        }
+
+        public void setAuditLoggingEnabled(boolean auditLoggingEnabled) {
+            this.auditLoggingEnabled = auditLoggingEnabled;
+        }
     }
 }
