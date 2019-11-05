@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.keycloak.testsuite.console.page.clients.authorization.policy.ClientSelectModal;
 import org.keycloak.testsuite.console.page.fragment.DataTable;
 import org.keycloak.testsuite.page.Form;
 import org.keycloak.testsuite.util.WaitUtils;
@@ -81,6 +82,10 @@ public class ClientScopesEvaluateForm extends Form {
     @FindBy(tagName = "textarea")
     private WebElement accessTokenTextArea;
 
+    @FindBy(id = "s2id_users")
+    private ClientSelectModal clientsInput;
+
+
 
     public Set<String> getAvailableClientScopes() {
         return ClientScopesSetupForm.getSelectValues(availableClientScopesSelect);
@@ -101,11 +106,7 @@ public class ClientScopesEvaluateForm extends Form {
 
 
     public void selectUser(String username) {
-        // TODO: Should be probably better way how to work with the "ui-select2" component
-        driver.findElement(By.id("select2-chosen-1")).click();
-        String subContainerClass = "#select2-drop:not([style*='display: none'])";
-        driver.findElement(By.cssSelector( subContainerClass + " .select2-input")).sendKeys(username);
-        driver.findElements(By.cssSelector(subContainerClass + " .select2-results li.select2-result-selectable")).get(0).click();
+        clientsInput.select(username);
     }
 
 

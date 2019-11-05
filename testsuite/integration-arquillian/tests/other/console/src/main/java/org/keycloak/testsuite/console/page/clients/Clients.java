@@ -83,7 +83,7 @@ public class Clients extends AdminConsoleRealm {
         }
 
         private void clickFooterButton(int index) {
-            footer().findElements(By.tagName("button")).get(index).click();
+	      footer().findElements(By.tagName("button")).get(index).click();
         }
 
         public void clickNextPage() {

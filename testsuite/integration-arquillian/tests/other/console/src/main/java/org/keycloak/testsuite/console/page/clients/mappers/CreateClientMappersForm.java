@@ -1,11 +1,11 @@
 package org.keycloak.testsuite.console.page.clients.mappers;
 
 import org.jboss.arquillian.drone.api.annotation.Drone;
+import org.keycloak.testsuite.console.page.clients.authorization.policy.ClientSelectModal;
 import org.keycloak.testsuite.console.page.fragment.OnOffSwitch;
 import org.keycloak.testsuite.page.Form;
 import org.keycloak.testsuite.util.UIUtils;
 import org.keycloak.testsuite.util.WaitUtils;
-import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
@@ -103,7 +103,10 @@ public class CreateClientMappersForm extends Form {
         private WebElement selectClientRoleButton;
         @FindBy(xpath = ".//button[@class='close']")
         private WebElement closeButton;
-        
+
+        @FindBy(id = "s2id_clients")
+        private ClientSelectModal clientsInput;
+
         public void closeRoleSelectorModalDialog() {
             closeButton.click();
         }
@@ -128,10 +131,7 @@ public class CreateClientMappersForm extends Form {
         }
 
         public void selectClient(String clientName) {
-            driver.findElement(By.cssSelector("#s2id_clients .select2-choice")).click();
-            String subContainerClass = "#select2-drop:not([style*='display: none'])";
-            driver.findElement(By.cssSelector( subContainerClass + " .select2-input")).sendKeys(clientName);
-            driver.findElements(By.cssSelector(subContainerClass + " .select2-results li.select2-result-selectable")).get(0).click();
+            clientsInput.select(clientName);
         }
     }
     
