@@ -168,7 +168,8 @@
         <spring-boot22.version>2.2.0.RELEASE</spring-boot22.version>
 
         <!-- webauthn support -->
-        <webauthn4j.version>0.9.7.RELEASE</webauthn4j.version>
+        <webauthn4j.version>0.9.14.RELEASE</webauthn4j.version>
+        <org.apache.kerby.kerby-asn1.version>2.0.0</org.apache.kerby.kerby-asn1.version>
 
     </properties>
 
@@ -1447,6 +1448,11 @@
                 <groupId>com.webauthn4j</groupId>
                 <artifactId>webauthn4j-util</artifactId>
                 <version>${webauthn4j.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.kerby</groupId>
+                <artifactId>kerby-asn1</artifactId>
+                <version>${org.apache.kerby.kerby-asn1.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.fasterxml.jackson.dataformat</groupId>

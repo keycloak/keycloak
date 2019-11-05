@@ -543,22 +543,33 @@
     <dependency>
       <groupId>com.webauthn4j</groupId>
       <artifactId>webauthnj4-core</artifactId>
-      <version>0.9.7.RELEASE</version>
+      <version>0.9.14.RELEASE</version>
       <licenses>
         <license>
           <name>Apache Software License 2.0</name>
-          <url>https://github.com/webauthn4j/webauthn4j/blob/0.9.7.RELEASE/LICENSE.txt</url>
+          <url>https://github.com/webauthn4j/webauthn4j/blob/0.9.14.RELEASE/LICENSE.txt</url>
         </license>
       </licenses>
     </dependency>
     <dependency>
       <groupId>com.webauthn4j</groupId>
       <artifactId>webauthnj4-util</artifactId>
-      <version>0.9.7.RELEASE</version>
+      <version>0.9.14.RELEASE</version>
       <licenses>
         <license>
           <name>Apache Software License 2.0</name>
-          <url>https://github.com/webauthn4j/webauthn4j/blob/0.9.7.RELEASE/LICENSE.txt</url>
+          <url>https://github.com/webauthn4j/webauthn4j/blob/0.9.14.RELEASE/LICENSE.txt</url>
+        </license>
+      </licenses>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.kerby</groupId>
+      <artifactId>kerby-asn1</artifactId>
+      <version>2.0.0</version>
+      <licenses>
+        <license>
+          <name>Apache Software License 2.0</name>
+          <url>https://github.com/apache/directory-kerby/blob/kerby-all-2.0.0/LICENSE</url>
         </license>
       </licenses>
     </dependency>
