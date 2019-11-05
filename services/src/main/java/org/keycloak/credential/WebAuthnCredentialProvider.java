@@ -37,7 +37,7 @@ import com.webauthn4j.authenticator.AuthenticatorImpl;
 import com.webauthn4j.converter.util.CborConverter;
 import com.webauthn4j.data.attestation.authenticator.AAGUID;
 import com.webauthn4j.data.attestation.authenticator.AttestedCredentialData;
-import com.webauthn4j.data.attestation.authenticator.CredentialPublicKey;
+import com.webauthn4j.data.attestation.authenticator.COSEKey;
 import com.webauthn4j.data.attestation.statement.AttestationStatement;
 import com.webauthn4j.util.exception.WebAuthnException;
 import com.webauthn4j.validator.WebAuthnAuthenticationContextValidationResponse;
@@ -90,7 +90,7 @@ public class WebAuthnCredentialProvider implements CredentialProvider, Credentia
 
         credential.add(CREDENTIAL_ID, Base64.encodeBytes(webAuthnModel.getAttestedCredentialData().getCredentialId()));
 
-        credential.add(CREDENTIAL_PUBLIC_KEY, credentialPublicKeyConverter.convertToDatabaseColumn(webAuthnModel.getAttestedCredentialData().getCredentialPublicKey()));
+        credential.add(CREDENTIAL_PUBLIC_KEY, credentialPublicKeyConverter.convertToDatabaseColumn(webAuthnModel.getAttestedCredentialData().getCOSEKey()));
 
         model.setId(webAuthnModel.getAuthenticatorId());
 
@@ -206,7 +206,7 @@ public class WebAuthnCredentialProvider implements CredentialProvider, Credentia
                 // NOP
             }
 
-            CredentialPublicKey pubKey = credentialPublicKeyConverter.convertToEntityAttribute(attributes.getFirst(CREDENTIAL_PUBLIC_KEY));
+            COSEKey pubKey = credentialPublicKeyConverter.convertToEntityAttribute(attributes.getFirst(CREDENTIAL_PUBLIC_KEY));
 
             AttestedCredentialData attrCredData = new AttestedCredentialData(aaguid, credentialId, pubKey);
 
