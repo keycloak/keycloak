@@ -256,7 +256,7 @@
             <plugin>
                 <groupId>com.igormaznitsa</groupId>
                 <artifactId>mvn-golang-wrapper</artifactId>
-                <version>2.1.6</version>
+                <version>2.3.4</version>
                 <extensions>true</extensions>
                 <configuration>
                     <goVersion>1.9.2</goVersion>
