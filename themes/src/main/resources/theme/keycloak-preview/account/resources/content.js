@@ -10,18 +10,26 @@ var content = [
         label: 'Account Security',
         content: [
             {
+                path: 'security/signingin',
+                label: 'signingIn',
+                modulePath: '/app/content/signingin-page/SigningInPage',
+                componentName: 'SigningInPage',
+            },
+            {
                 path: 'security/password',
                 label: 'password',
                 modulePath: '/app/content/aia-page/AppInitiatedActionPage',
                 componentName: 'AppInitiatedActionPage',
-                kcAction: 'update_password'
+                kcAction: 'update_password',
+                hidden: true
             },
             {
                 path: 'security/authenticator',
                 label: 'authenticator',
                 modulePath: '/app/content/aia-page/AppInitiatedActionPage',
                 componentName: 'AppInitiatedActionPage',
-                kcAction: 'configure_totp'
+                kcAction: 'configure_totp',
+                hidden: true
             },
             {
                 path: 'security/device-activity',

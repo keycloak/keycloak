@@ -17,6 +17,7 @@
 import * as React from 'react';
 import {withRouter, RouteComponentProps} from 'react-router-dom';
 
+import {AIACommand} from '../../util/AIACommand';
 import {PageDef} from '../../ContentPages';
 import {Msg} from '../../widgets/Msg';
 
@@ -47,11 +48,6 @@ interface AppInitiatedActionPageProps extends RouteComponentProps {
     pageDef: ActionPageDef;
 }
 
-declare const baseUrl: string;
-declare const realm: string;
-declare const referrer: string;
-declare const referrerUri: string;
-
 /**
  * @author Stan Silvert
  */
@@ -62,29 +58,7 @@ class ApplicationInitiatedActionPage extends React.Component<AppInitiatedActionP
     }
 
     private handleClick = (): void => {
-        let redirectURI: string = baseUrl;
-        
-        if (typeof referrer !== 'undefined') {
-            // '_hash_' is a workaround for when uri encoding is not
-            // sufficient to escape the # character properly.
-            // The problem is that both the redirect and the application URL contain a hash.
-            // The browser will consider anything after the first hash to be client-side.  So
-            // it sees the hash in the redirect param and stops.
-            redirectURI += "?referrer=" + referrer + "&referrer_uri=" + referrerUri.replace('#', '_hash_');
-        }
-
-        redirectURI = encodeURIComponent(redirectURI);
-        
-        const href: string = "/auth/realms/" + realm +
-                             "/protocol/openid-connect/auth/" +
-                             "?response_type=code" +
-                             "&client_id=account&scope=openid" +
-                             "&kc_action=" + this.props.pageDef.kcAction + 
-                             "&silent_cancel=true" +
-                             "&redirect_uri=" + redirectURI +
-                             encodeURIComponent("/#" + this.props.location.pathname); // return to this page
-
-        window.location.href = href;
+        new AIACommand(this.props.pageDef.kcAction, this.props.location.pathname).execute();
     }
 
     public render(): React.ReactNode {

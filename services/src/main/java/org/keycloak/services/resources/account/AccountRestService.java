@@ -63,6 +63,7 @@ import java.util.Properties;
 import java.util.stream.Collectors;
 
 import org.keycloak.common.Profile;
+import org.keycloak.credential.CredentialModel;
 import org.keycloak.theme.Theme;
 
 /**
@@ -396,6 +397,17 @@ public class AccountRestService {
     public Response updateConsent(final @PathParam("clientId") String clientId,
                                   final ConsentRepresentation consent) {
         return upsert(clientId, consent);
+    }
+    
+    @Path("/totp/remove")
+    @DELETE
+    public Response removeTOTP() {
+        auth.require(AccountRoles.MANAGE_ACCOUNT);
+        
+        session.userCredentialManager().disableCredentialType(realm, user, CredentialModel.OTP);
+        event.event(EventType.REMOVE_TOTP).client(auth.getClient()).user(auth.getUser()).success();
+        
+        return Cors.add(request, Response.accepted()).build();
     }
 
     /**
