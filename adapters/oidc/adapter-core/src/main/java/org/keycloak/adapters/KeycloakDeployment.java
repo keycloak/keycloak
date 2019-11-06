@@ -17,7 +17,9 @@
 
 package org.keycloak.adapters;
 
+import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
 import org.jboss.logging.Logger;
 import org.keycloak.adapters.authentication.ClientCredentialsProvider;
 import org.keycloak.adapters.authorization.PolicyEnforcer;
@@ -27,7 +29,9 @@ import org.keycloak.common.enums.SslRequired;
 import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.constants.ServiceUrlConstants;
 import org.keycloak.enums.TokenStore;
+import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 import org.keycloak.representations.adapters.config.AdapterConfig;
+import org.keycloak.util.JsonSerialization;
 
 import java.net.URI;
 import java.util.HashMap;
@@ -135,6 +139,17 @@ public class KeycloakDeployment {
         this.authServerBaseUrl = config.getAuthServerUrl();
         if (authServerBaseUrl == null) return;
 
+        authServerBaseUrl = KeycloakUriBuilder.fromUri(authServerBaseUrl).build().toString();
+
+        authUrl = null;
+        realmInfoUrl = null;
+        tokenUrl = null;
+        logoutUrl = null;
+        accountUrl = null;
+        registerNodeUrl = null;
+        unregisterNodeUrl = null;
+        jwksUrl = null;
+
         URI authServerUri = URI.create(authServerBaseUrl);
 
         if (authServerUri.getHost() == null) {
@@ -142,22 +157,48 @@ public class KeycloakDeployment {
         } else {
             // We have absolute URI in config
             relativeUrls = RelativeUrlsUsed.NEVER;
-            KeycloakUriBuilder serverBuilder = KeycloakUriBuilder.fromUri(authServerBaseUrl);
-            resolveUrls(serverBuilder);
         }
     }
 
-
-
     /**
-     * @param authUrlBuilder absolute URI
+     * URLs are loaded lazily when used. This allows adapter to be deployed prior to Keycloak server starting, and will
+     * also allow the adapter to retry loading config for each request until the Keycloak server is ready.
+     *
+     * In the future we may want to support reloading config at a configurable interval.
      */
+    protected void resolveUrls() {
+        if (realmInfoUrl == null) {
+            synchronized (this) {
+                KeycloakUriBuilder authUrlBuilder = KeycloakUriBuilder.fromUri(authServerBaseUrl);
+
+                String discoveryUrl = authUrlBuilder.clone().path(ServiceUrlConstants.DISCOVERY_URL).build(getRealm()).toString();
+                try {
+                    log.debugv("Resolving URLs from {0}", discoveryUrl);
+
+                    OIDCConfigurationRepresentation config = getOidcConfiguration(discoveryUrl);
+
+                    authUrl = KeycloakUriBuilder.fromUri(config.getAuthorizationEndpoint());
+                    realmInfoUrl = config.getIssuer();
+
+                    tokenUrl = config.getTokenEndpoint();
+                    logoutUrl = KeycloakUriBuilder.fromUri(config.getLogoutEndpoint());
+                    accountUrl = KeycloakUriBuilder.fromUri(config.getIssuer()).path("/account").build().toString();
+                    registerNodeUrl = authUrlBuilder.clone().path(ServiceUrlConstants.CLIENTS_MANAGEMENT_REGISTER_NODE_PATH).build(getRealm()).toString();
+                    unregisterNodeUrl = authUrlBuilder.clone().path(ServiceUrlConstants.CLIENTS_MANAGEMENT_UNREGISTER_NODE_PATH).build(getRealm()).toString();
+                    jwksUrl = config.getJwksUri();
+
+                    log.infov("Loaded URLs from {0}", discoveryUrl);
+                } catch (Exception e) {
+                    log.warnv(e, "Failed to load URLs from {0}", discoveryUrl);
+                }
+            }
+        }
+    }
+
     protected void resolveUrls(KeycloakUriBuilder authUrlBuilder) {
         if (log.isDebugEnabled()) {
             log.debug("resolveUrls");
         }
-
-        authServerBaseUrl = authUrlBuilder.build().toString();
 
         String login = authUrlBuilder.clone().path(ServiceUrlConstants.AUTH_PATH).build(getRealm()).toString();
         authUrl = KeycloakUriBuilder.fromUri(login);
@@ -171,39 +212,59 @@ public class KeycloakDeployment {
         jwksUrl = authUrlBuilder.clone().path(ServiceUrlConstants.JWKS_URL).build(getRealm()).toString();
     }
 
+    protected OIDCConfigurationRepresentation getOidcConfiguration(String discoveryUrl) throws Exception {
+        HttpGet request = new HttpGet(discoveryUrl);
+        request.addHeader("accept", "application/json");
+
+        HttpResponse response = getClient().execute(request);
+        if (response.getStatusLine().getStatusCode() != 200) {
+            throw new Exception(response.getStatusLine().getReasonPhrase());
+        }
+
+        return JsonSerialization.readValue(response.getEntity().getContent(), OIDCConfigurationRepresentation.class);
+    }
+
     public RelativeUrlsUsed getRelativeUrls() {
         return relativeUrls;
     }
 
     public String getRealmInfoUrl() {
+        resolveUrls();
         return realmInfoUrl;
     }
 
     public KeycloakUriBuilder getAuthUrl() {
+        resolveUrls();
         return authUrl;
     }
 
     public String getTokenUrl() {
+        resolveUrls();
         return tokenUrl;
     }
 
     public KeycloakUriBuilder getLogoutUrl() {
+        resolveUrls();
         return logoutUrl;
     }
 
     public String getAccountUrl() {
+        resolveUrls();
         return accountUrl;
     }
 
     public String getRegisterNodeUrl() {
+        resolveUrls();
         return registerNodeUrl;
     }
 
     public String getUnregisterNodeUrl() {
+        resolveUrls();
         return unregisterNodeUrl;
     }
 
     public String getJwksUrl() {
+        resolveUrls();
         return jwksUrl;
     }
 

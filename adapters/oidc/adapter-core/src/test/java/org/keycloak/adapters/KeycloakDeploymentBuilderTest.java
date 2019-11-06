@@ -28,6 +28,7 @@ import org.keycloak.common.enums.RelativeUrlsUsed;
 import org.keycloak.common.enums.SslRequired;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.enums.TokenStore;
+import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -50,7 +51,7 @@ public class KeycloakDeploymentBuilderTest {
         assertEquals(PemUtils.decodePublicKey("MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCrVrCuTtArbgaZzL1hvh0xtL5mc7o0NqPVnYXkLvgcwiC3BjLGw1tGEGoJaXDuSaRllobm53JBhjx33UNv+5z/UMG4kytBWxheNVKnL6GgqlNabMaFfPLPCF8kAgKnsi79NMo+n6KnSY8YeUmec/p2vjO2NjsSAVcWEQMVhJ31LwIDAQAB"),
                 deployment.getPublicKeyLocator().getPublicKey(null, deployment));
 
-        assertEquals("https://localhost:8443/auth/realms/demo/protocol/openid-connect/auth", deployment.getAuthUrl().build().toString());
+        assertEquals("https://localhost:8443/auth", deployment.getAuthServerBaseUrl());
         assertEquals(SslRequired.EXTERNAL, deployment.getSslRequired());
         assertTrue(deployment.isUseResourceRoleMappings());
         assertTrue(deployment.isCors());
@@ -66,7 +67,6 @@ public class KeycloakDeploymentBuilderTest {
         assertEquals("234234-234234-234234", deployment.getResourceCredentials().get("secret"));
         assertEquals(ClientIdAndSecretCredentialsProvider.PROVIDER_ID, deployment.getClientAuthenticator().getId());
         assertEquals(20, ((ThreadSafeClientConnManager) deployment.getClient().getConnectionManager()).getMaxTotal());
-        assertEquals("https://localhost:8443/auth/realms/demo/protocol/openid-connect/token", deployment.getTokenUrl());
         assertEquals(RelativeUrlsUsed.NEVER, deployment.getRelativeUrls());
         assertTrue(deployment.isAlwaysRefreshToken());
         assertTrue(deployment.isRegisterNodeAtStartup());
@@ -101,4 +101,6 @@ public class KeycloakDeploymentBuilderTest {
         KeycloakDeployment deployment = KeycloakDeploymentBuilder.build(getClass().getResourceAsStream("/keycloak-secret-jwt.json"));
         assertEquals(JWTClientSecretCredentialsProvider.PROVIDER_ID, deployment.getClientAuthenticator().getId());
     }
+
+
 }
