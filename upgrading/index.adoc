@@ -9,4 +9,7 @@ include::topics/templates/document-attributes-community.adoc[]
 
 = {upgradingguide_name}
 
+:release_header_latest_link: {upgradingguide_link_latest}
+include::topics/templates/release-header.adoc[]
+
 include::topics.adoc[]

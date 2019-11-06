@@ -1,8 +1,11 @@
 package org.keycloak.documentation.test;
 
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
+import org.asciidoctor.Asciidoctor;
+import org.asciidoctor.AttributesBuilder;
+import org.asciidoctor.OptionsBuilder;
+import org.asciidoctor.ast.Document;
 
 import java.io.File;
 import java.io.IOException;
@@ -50,7 +53,7 @@ public class Config {
         }
 
         documentAttributes = loadDocumentAttributes();
-        docBaseUrl = documentAttributes.get("project_doc_base_url").replace("{project_versionDoc}", documentAttributes.get("project_versionDoc"));
+        docBaseUrl = documentAttributes.get("project_doc_base_url");
 
         guideBaseUrl = System.getProperty("guideBaseUrl");
         if (guideBaseUrl != null) {
@@ -62,7 +65,7 @@ public class Config {
 
         if (isLoadFromFiles()) {
             // Ignore api-docs link in unpublished docs
-            String apiDocsLink = documentAttributes.get("apidocs_link").replace("{project_doc_base_url}", docBaseUrl);
+            String apiDocsLink = documentAttributes.get("apidocs_link");
             ignoredLinks.add(apiDocsLink);
         }
 
@@ -142,24 +145,21 @@ public class Config {
                 f = new File(docsRootDir, "/topics/templates/document-attributes-product.adoc");
             }
 
+            String buildType = System.getProperty("latest") != null ? "latest" : "archive";
+
+            Asciidoctor asciidoctor = Asciidoctor.Factory.create();
+
+            Map<String, Object> options = OptionsBuilder.options()
+                    .inPlace(true)
+                    .attributes(AttributesBuilder.attributes().backend("html5").attribute("project_buildType", buildType).asMap())
+                    .asMap();
+
+            Document document = asciidoctor.loadFile(f, options);
+
             Map<String, String> attributes = new HashMap<>();
 
-            // Slight work around to CD block overriding attribute values
-            boolean useFirstAttribute = true;
-
-            for (String l : FileUtils.readLines(f, "utf-8")) {
-                if (l.startsWith(":")) {
-                    String[] s = l.split(": ");
-                    String key = s[0].substring(1).trim();
-                    String value = s[1].trim();
-                    if (!attributes.containsKey(key) || !useFirstAttribute) {
-                        attributes.put(key, value);
-                    }
-
-                    if (key.equals("project_product_cd") && value.equals("true")) {
-                        useFirstAttribute = false;
-                    }
-                }
+            for (Map.Entry<String, Object> a : document.getAttributes().entrySet()) {
+                attributes.put(a.getKey(), a.getValue().toString());
             }
 
             return attributes;

@@ -9,4 +9,7 @@ include::topics/templates/document-attributes-community.adoc[]
 
 = {gettingstarted_name}
 
+:release_header_latest_link: {gettingstarted_link_latest}
+include::topics/templates/release-header.adoc[]
+
 include::topics.adoc[]

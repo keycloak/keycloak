@@ -22,9 +22,10 @@
         <version.jar.plugin>3.0.2</version.jar.plugin>
         <version.install.plugin>2.5.2</version.install.plugin>
 
-
         <maven.compiler.target>1.8</maven.compiler.target>
         <maven.compiler.source>1.8</maven.compiler.source>
+
+        <buildType>archive</buildType>
     </properties>
 
     <modules>
@@ -54,6 +55,17 @@
             <properties>
                 <masterFile>master</masterFile>
                 <imagesDir>rhsso-images</imagesDir>
+            </properties>
+        </profile>
+        <profile>
+            <id>latest</id>
+            <activation>
+                <property>
+                    <name>latest</name>
+                </property>
+            </activation>
+            <properties>
+                <buildType>latest</buildType>
             </properties>
         </profile>
     </profiles>
@@ -93,7 +105,7 @@
                             </goals>
                             <configuration>
                                 <target>
-                                    <echo>OUTPUT: file://${project.build.directory}/generated-docs/${masterFile}.html</echo>
+                                    <echo>OUTPUT: file://${project.build.directory}/generated-docs/${masterFile}.html ${projectLatestBuild}</echo>
                                 </target>
                             </configuration>
                         </execution>
@@ -117,7 +129,6 @@
                             <configuration>
                                 <masterFile>${masterFile}</masterFile>
                             </configuration>
-
                         </execution>
                     </executions>
                 </plugin>
@@ -148,6 +159,7 @@
                                     <idseparator>-</idseparator>
                                     <docinfo1>true</docinfo1>
                                     <masterFile>${masterFile}</masterFile>
+                                    <project_buildType>${buildType}</project_buildType>
                                 </attributes>
                                 <resources>
                                     <resource>

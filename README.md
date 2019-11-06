@@ -35,6 +35,10 @@ To build Keycloak Documentation run:
 Or to build a specific guide run:
 
     mvn clean install -f GUIDE_DIR
+    
+By default an archive version of the documentation is built. To build a latest build run:
+
+    mvn clean install -Dlatest
 
 You can then view the documentation by opening GUIDE_DIR/target/generated-docs/index.html.
 
