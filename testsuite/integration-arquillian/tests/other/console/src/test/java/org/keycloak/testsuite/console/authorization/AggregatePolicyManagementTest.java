@@ -189,6 +189,7 @@ public class AggregatePolicyManagementTest extends AbstractAuthorizationSettings
 
     @Test
     public void testCreateWithChildAndSelectedPolicy() {
+        authorizationPage.getDriver().navigate().refresh();
         AggregatePolicyRepresentation expected = new AggregatePolicyRepresentation();
 
         expected.setName("Test Child Create And Select Aggregate Policy");
