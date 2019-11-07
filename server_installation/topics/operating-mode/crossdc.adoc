@@ -2,8 +2,6 @@
 [[crossdc-mode]]
 === Cross-Datacenter Replication Mode
 
-NOTE: Cross-Datacenter Replication Mode is Technology Preview and is not fully supported.
-
 :tech_feature_name: Cross-Datacenter Replication Mode
 :tech_feature_disabled: false
 include::../templates/techpreview.adoc[]

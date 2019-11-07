@@ -10,3 +10,9 @@ endif::[]
 . For more details see link:{installguide_profile_link}[{installguide_profile_name}].
 ====
 endif::[]
+ifeval::[{tech_feature_disabled}==false]
+[NOTE]
+====
+{tech_feature_name} is *Technology Preview* and is not fully supported.
+====
+endif::[]
