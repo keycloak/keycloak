@@ -613,11 +613,7 @@
                         req.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
                         req.withCredentials = true;
 
-                        if (kc.clientId && kc.clientSecret) {
-                            req.setRequestHeader('Authorization', 'Basic ' + btoa(kc.clientId + ':' + kc.clientSecret));
-                        } else {
-                            params += '&client_id=' + encodeURIComponent(kc.clientId);
-                        }
+                        params += '&client_id=' + encodeURIComponent(kc.clientId);
 
                         var timeLocal = new Date().getTime();
 
@@ -728,12 +724,7 @@
                 req.open('POST', url, true);
                 req.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
 
-                if (kc.clientId && kc.clientSecret) {
-                    req.setRequestHeader('Authorization', 'Basic ' + btoa(kc.clientId + ':' + kc.clientSecret));
-                } else {
-                    params += '&client_id=' + encodeURIComponent(kc.clientId);
-                }
-
+                params += '&client_id=' + encodeURIComponent(kc.clientId);
                 params += '&redirect_uri=' + oauth.redirectUri;
 
                 if (oauth.pkceCodeVerifier) {
@@ -863,7 +854,6 @@
                             kc.authServerUrl = config['auth-server-url'];
                             kc.realm = config['realm'];
                             kc.clientId = config['resource'];
-                            kc.clientSecret = (config['credentials'] || {})['secret'];
                             setupOidcEndoints(null);
                             promise.setSuccess();
                         } else {
@@ -879,7 +869,6 @@
                 }
 
                 kc.clientId = config.clientId;
-                kc.clientSecret = (config.credentials || {}).secret;
 
                 var oidcProvider = config['oidcProvider'];
                 if (!oidcProvider) {
