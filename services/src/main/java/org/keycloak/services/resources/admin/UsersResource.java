@@ -57,6 +57,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -136,7 +137,8 @@ public class UsersResource {
             if (session.getTransactionManager().isActive()) {
                 session.getTransactionManager().setRollbackOnly();
             }
-            return ErrorResponse.error("Password policy not met", new String[]{e.getMessage()}, Response.Status.BAD_REQUEST);
+            String[] policyErrorParam = Optional.ofNullable(e.getMessage()).map(message -> new String[]{message}).orElse(null);
+            return ErrorResponse.error("Password policy not met", policyErrorParam, Response.Status.BAD_REQUEST);
         } catch (ModelException me) {
             if (session.getTransactionManager().isActive()) {
                 session.getTransactionManager().setRollbackOnly();
