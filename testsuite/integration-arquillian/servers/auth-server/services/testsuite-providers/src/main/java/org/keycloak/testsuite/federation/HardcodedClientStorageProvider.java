@@ -82,7 +82,7 @@ public class HardcodedClientStorageProvider implements ClientStorageProvider, Cl
         if (clientId != null && this.clientId.toLowerCase().contains(clientId.toLowerCase())) {
             return Collections.singletonList(new ClientAdapter(realm));
         }
-        return null;
+        return Collections.EMPTY_LIST;
     }
 
     public class ClientAdapter extends AbstractReadOnlyClientStorageAdapter {
