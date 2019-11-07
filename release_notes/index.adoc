@@ -9,6 +9,7 @@ include::topics/templates/document-attributes-community.adoc[]
 
 = {releasenotes_name}
 
+:release_header_guide: {releasenotes_name_short}
 :release_header_latest_link: {releasenotes_link_latest}
 include::topics/templates/release-header.adoc[]
 

@@ -1,4 +1,111 @@
 <style>
+/* Top menu */
+
+@media only screen and (min-width: 768px) {
+       div.top-menu-guides {
+              position: fixed;
+              display: inline-block;
+              top: 0;
+              left: 0;
+              z-index: 9999;
+       }
+
+       div.top-menu-guides p {
+              margin: 0;
+              padding: 0;
+       }
+
+       div.top-menu-guides .content {
+              margin: 0;
+              padding: 7px 20px 0 20px;
+              background-color: #ededed;
+              height: 48px;
+              width: 20em;
+       }
+
+       @media only screen and (max-width: 1280px) {
+              div.top-menu-guides .content {
+                     width: 15em;
+              }
+       }
+
+       div.top-menu-guides .ulist {
+              display: none;
+              position: absolute;
+              background-color: #f9f9f9;
+              min-width: 160px;
+              box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+              padding: 0px;
+              margin-top: 12px;
+       }
+
+       div.top-menu-guides .ulist ul {
+              list-style: none;
+              padding: 5px;
+              margin: 0;
+       }
+
+       div.top-menu-guides .ulist li {
+              padding: 5px 10px;
+       }
+
+       div.top-menu-guides:hover .ulist {
+           display: block;
+       }
+
+       div.top-menu-version {
+           position: fixed;
+           top: 0;
+           z-index: 9999;
+       }
+
+       div.top-menu-version .content {
+           padding: 0;
+           margin: 0;
+           background-color: #eee;
+           height: 48px;
+           padding: 7px;
+       }
+
+       .versionarchive {
+           display: inline-block;
+       }
+
+       .versionarchive p {
+           margin: 0;
+           padding: 2px 5px 2px 10px;
+       }
+
+       .versionarchive a {
+           background-color: #ffdd57;
+           padding: 0 5px;
+           font-style: normal;
+           border-radius: 5px;
+           margin-left: 10px;
+       }
+
+       .versionlatest {
+           display: inline-block;
+       }
+
+       .versionlatest p {
+           background-color: #eee;
+           border-radius: 5px;
+           margin: 0;
+           padding: 2px 5px 2px 10px;
+       }
+
+       .versionlatest em {
+           background-color: #23d160;
+           padding: 0 5px;
+           font-style: normal;
+           border-radius: 5px;
+           margin-left: 10px;
+       }
+}
+
+/* TOC */
+
 #tocbot a.toc-link.node-name--H1{ font-style: italic }
 @media screen{
 #tocbot > ul.toc-list{ margin-bottom: 0.5em; margin-left: 0.125em }
@@ -13,44 +120,6 @@
 #tocbot a.toc-link.node-name--H4{ display:none }
 }
 
-.versionarchive {
-    display: inline-block;
-}
-
-.versionarchive p {
-    background-color: #eee;
-    border-radius: 5px;
-    margin: 0;
-    padding: 2px 5px 2px 10px;
-}
-
-.versionarchive a {
-    background-color: #ffdd57;
-    padding: 0 5px;
-    font-style: normal;
-    border-radius: 5px;
-    margin-left: 10px;
-}
-
-.versionlatest {
-    display: inline-block;
-}
-
-.versionlatest p {
-    background-color: #eee;
-    border-radius: 5px;
-    margin: 0;
-    padding: 2px 5px 2px 10px;
-}
-
-.versionlatest em {
-    background-color: #23d160;
-    padding: 0 5px;
-    font-style: normal;
-    border-radius: 5px;
-    margin-left: 10px;
-}
-
 /* Fix scroll to anchor hides title */
 h1::before, h2::before, h3::before, h4::before, h5::before, h6::before {
     display: block;
@@ -61,47 +130,6 @@ h1::before, h2::before, h3::before, h4::before, h5::before, h6::before {
 
 h1 {
     border-bottom: none !important
-}
-
-
-/* Global Navbar */
-
-ul#globalnav {
-    background-color: #ededed;
-
-    list-style: none;
-    width: 100%;
-    margin: 0;
-    padding: 0;
-
-    overflow: hidden;
-    position: fixed;
-    left: 0px;
-    top: 0px;
-    font-size: 0.6em;
-    height: 30px;
-}
-
-ul#globalnav::after {
-    content: "";
-    display: block;
-    clear: both;
-}
-
-ul#globalnav li {
-    float: left;
-}
-
-ul#globalnav li a {
-    display: inline-block;
-    color: #004670;
-    text-align: center;
-    padding: 0.75em;
-    text-decoration: none;
-}
-
-ul#globalnav li a:hover {
-    color: #428bca;
 }
 
 #toc.toc2 {
@@ -115,11 +143,6 @@ body.toc2 {
 }
 
 @media only screen and (min-width:768px) {
-    ul#globalnav {
-        font-size: 0.75em;
-        height: 40px;
-    }
-
     #toc.toc2 {
         top: 40px;
     }
@@ -130,11 +153,6 @@ body.toc2 {
 }
 
 @media only screen and (min-width:1280px) {
-    ul#globalnav {
-        font-size: 1em;
-        height: 48px;
-    }
-
     #toc.toc2 {
         top: 48px;
     }

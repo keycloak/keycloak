@@ -1,3 +1,35 @@
+[.top-menu-guides]
+====
+*{release_header_guide}* icon:angle-down[]
+
+ifeval::["{release_header_guide}" != "{gettingstarted_name_short}"]
+* {gettingstarted_link}[{gettingstarted_name_short}]
+endif::[]
+ifeval::["{release_header_guide}" != "{installguide_name_short}"]
+* {installguide_link}[{installguide_name_short}]
+endif::[]
+ifeval::["{release_header_guide}" != "{adapterguide_name_short}"]
+* {adapterguide_link}[{adapterguide_name_short}]
+endif::[]
+ifeval::["{release_header_guide}" != "{adminguide_name_short}"]
+* {adminguide_link}[{adminguide_name_short}]
+endif::[]
+ifeval::["{release_header_guide}" != "{developerguide_name_short}"]
+* {developerguide_link}[{developerguide_name_short}]
+endif::[]
+ifeval::["{release_header_guide}" != "{authorizationguide_name_short}"]
+* {authorizationguide_link}[{authorizationguide_name_short}]
+endif::[]
+ifeval::["{release_header_guide}" != "{upgradingguide_name_short}"]
+* {upgradingguide_link}[{upgradingguide_name_short}]
+endif::[]
+ifeval::["{release_header_guide}" != "{releasenotes_name_short}"]
+* {releasenotes_link}[{releasenotes_name_short}]
+endif::[]
+====
+
+[.top-menu-version]
+====
 ifeval::["{project_buildType}" == "latest"]
 [.versionlatest]
 Version *{project_version}* _Latest_
@@ -6,3 +38,4 @@ ifeval::["{project_buildType}" == "archive"]
 [.versionarchive]
 Version *{project_version}* _{release_header_latest_link}[Click here for latest]_
 endif::[]
+====

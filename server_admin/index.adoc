@@ -9,6 +9,7 @@ include::topics/templates/document-attributes-community.adoc[]
 
 = {adminguide_name}
 
+:release_header_guide: {adminguide_name_short}
 :release_header_latest_link: {adminguide_link_latest}
 include::topics/templates/release-header.adoc[]
 

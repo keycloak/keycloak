@@ -25,14 +25,17 @@ endif::[]
 :quickstartRepo_dir: keycloak-quickstarts
 
 :authorizationguide_name: Authorization Services Guide
+:authorizationguide_name_short: Authorization Services
 :authorizationguide_link: {project_doc_base_url}/authorization_services/
 :authorizationguide_link_latest: {project_doc_base_url_latest}/authorization_services/
 :adapterguide_name: Securing Applications and Services Guide
+:adapterguide_name_short: Securing Apps
 :adapterguide_link: {project_doc_base_url}/securing_apps/
 :adapterguide_link_js_adapter: {adapterguide_link}#_javascript_adapter
 :adapterguide_link_latest: {project_doc_base_url_latest}/securing_apps/
 :adapterguide_logout_link: {adapterguide_link}#_java_adapter_logout
 :adminguide_name: Server Administration Guide
+:adminguide_name_short: Server Administration
 :adminguide_link: {project_doc_base_url}/server_admin/
 :adminguide_link_latest: {project_doc_base_url_latest}/server_admin/
 :adminguide_bruteforce_name: Password guess: brute force attacks
@@ -44,6 +47,7 @@ endif::[]
 :apidocs_name: API Documentation
 :apidocs_link: https://www.keycloak.org/docs/{project_versionDoc}/api_documentation/
 :developerguide_name: Server Developer Guide
+:developerguide_name_short: Server Developer
 :developerguide_link: {project_doc_base_url}/server_development/
 :developerguide_link_latest: {project_doc_base_url_latest}/server_development/
 :developerguide_actiontoken_name: Action Token SPI
@@ -51,16 +55,20 @@ endif::[]
 :developerguide_jsproviders_name: JavaScript Providers
 :developerguide_jsproviders_link: {developerguide_link}#_script_providers
 :gettingstarted_name: Getting Started Guide
+:gettingstarted_name_short: Getting Started
 :gettingstarted_link: {project_doc_base_url}/getting_started/
 :gettingstarted_link_latest: {project_doc_base_url_latest}/getting_started/
 :upgradingguide_name: Upgrading Guide
+:upgradingguide_name_short: Upgrading
 :upgradingguide_link: {project_doc_base_url}/upgrading/
 :upgradingguide_link_latest: {project_doc_base_url_latest}/upgrading/
 :releasenotes_name: Release Notes
+:releasenotes_name_short: {releasenotes_name}
 :releasenotes_link: {project_doc_base_url}/release_notes/
 :releasenotes_link_latest: {project_doc_base_url_latest}/release_notes/
 
 :installguide_name: Server Installation and Configuration Guide
+:installguide_name_short: Server Installation
 :installguide_link: {project_doc_base_url}/server_installation/
 :installguide_link_latest: {project_doc_base_url_latest}/server_installation/
 :installguide_clustering_name: Clustering

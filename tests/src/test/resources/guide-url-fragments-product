@@ -6,3 +6,4 @@ server_admin=server_administration_guide
 server_development=server_developer_guide
 server_installation=server_installation_and_configuration_guide
 upgrading=upgrading_guide
+release_notes=release_notes
