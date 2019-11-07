@@ -60,6 +60,12 @@ public class Config {
             guideBaseUrl = guideBaseUrl.replace("{version}", documentAttributes.get("project_versionDoc"));
         }
 
+        if (isLoadFromFiles()) {
+            // Ignore api-docs link in unpublished docs
+            String apiDocsLink = documentAttributes.get("apidocs_link").replace("{project_doc_base_url}", docBaseUrl);
+            ignoredLinks.add(apiDocsLink);
+        }
+
         log.info("Testing " + (community ? "community" : "product") + " documentation");
     }
 
