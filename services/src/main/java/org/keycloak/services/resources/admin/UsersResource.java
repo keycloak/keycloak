@@ -31,6 +31,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
+import org.keycloak.policy.PasswordPolicyNotMetException;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.ForbiddenException;
@@ -131,7 +132,12 @@ public class UsersResource {
                 session.getTransactionManager().setRollbackOnly();
             }
             return ErrorResponse.exists("User exists with same username or email");
-        } catch (ModelException me){
+        } catch (PasswordPolicyNotMetException e) {
+            if (session.getTransactionManager().isActive()) {
+                session.getTransactionManager().setRollbackOnly();
+            }
+            return ErrorResponse.error("Password policy not met", new String[]{e.getMessage()}, Response.Status.BAD_REQUEST);
+        } catch (ModelException me) {
             if (session.getTransactionManager().isActive()) {
                 session.getTransactionManager().setRollbackOnly();
             }
