@@ -74,6 +74,14 @@ To determine the proxy for an outgoing HTTP request the target hostname is match
 hostname patterns. The first matching pattern determines the proxy-uri to use.
 If none of the configured patterns match for the given hostname then no proxy is used.
 
+If the proxy server requires authentication, include the proxy user's credentials in this format `username:password@`. 
+For example:
+
+[source]
+----
+.*\.(google|googleapis)\.com;http://user01:pas2w0rd@www-proxy.acme.com:8080
+----
+
 The special value `NO_PROXY` for the proxy-uri can be used to indicate that no proxy 
 should be used for hosts matching the associated hostname pattern.
 It is possible to specify a catch-all pattern at the end of the proxy-mappings to define a default 
