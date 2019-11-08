@@ -54,11 +54,11 @@ public class UriUtilsTest {
         assertInvalid("http://test:8080:8080");
     }
 
-    public void assertValid(String origin) {
+    private void assertValid(String origin) {
         assertTrue(UriUtils.isOrigin(origin));
     }
 
-    public void assertInvalid(String origin) {
+    private void assertInvalid(String origin) {
         assertFalse(UriUtils.isOrigin(origin));
     }
 
