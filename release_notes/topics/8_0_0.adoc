@@ -57,6 +57,10 @@ are supported now. Thanks to https://github.com/madgaet[madgaet] and https://git
 
 Thanks to https://github.com/jonkoops[jonkoops] now it's possible to enable or disable logging for the JS adapter.
 
+== Credentials support removed from the JavaScript adapter
+
+The option to provide client credentials in the JavaScript adapter was removed. Thanks to https://github.com/jonkoops[jonkoops] 
+
 == Updates for Gatekeeper 
 
 * Secure token and logout endpoint were included in Gatekeeper. Thanks to https://github.com/fredbi[fredbi]

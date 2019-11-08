@@ -26,6 +26,10 @@ through the RESTful Admin API.
 For now on, this capability is *disabled* by default and users should prefer to deploy scripts directly to the server. For more details,
 please take a look at link:{developerguide_jsproviders_link}[{developerguide_jsproviders_name}].
 
+==== Client Credentials in the JavaScript adapter
+
+In the previous releases, developers were allowed to provide client credentials to the JavaScript adapter. For now on, this capability was *removed*, because client-side apps are not safe to keep secrets.
+
 === Migrating to 7.0.0
 
 ==== Upgrade to Wildfly 17
