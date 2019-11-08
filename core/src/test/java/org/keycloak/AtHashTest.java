@@ -37,13 +37,13 @@ public class AtHashTest {
     }
 
     @Test
-    public void testAtHashRsa() throws Exception {
+    public void testAtHashRsa() {
         verifyHash(Algorithm.RS256,"jHkWEdUXMU1BwAsC4vtUsZwnNvTIxEl0z9K3vx5KF0Y", "77QmUPtjPfzWtF2AnpK9RQ");
         verifyHash(Algorithm.RS256,"ya29.eQETFbFOkAs8nWHcmYXKwEi0Zz46NfsrUU_KuQLOLTwWS40y6Fb99aVzEXC0U14m61lcPMIr1hEIBA", "aUAkJG-u6x4RTWuILWy-CA");
     }
 
     @Test
-    public void testAtHashEs() throws Exception {
+    public void testAtHashEs() {
         verifyHash(Algorithm.ES256,"jHkWEdUXMU1BwAsC4vtUsZwnNvTIxEl0z9K3vx5KF0Y", "77QmUPtjPfzWtF2AnpK9RQ");
         verifyHash(Algorithm.ES256,"ya29.eQETFbFOkAs8nWHcmYXKwEi0Zz46NfsrUU_KuQLOLTwWS40y6Fb99aVzEXC0U14m61lcPMIr1hEIBA", "aUAkJG-u6x4RTWuILWy-CA");
     }
