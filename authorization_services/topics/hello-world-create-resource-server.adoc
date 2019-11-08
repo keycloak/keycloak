@@ -15,7 +15,7 @@ image:{project_images}/getting-started/hello-world/create-client.png[alt="Create
 .Client Details
 image:{project_images}/getting-started/hello-world/enable-authz.png[alt="Client Details"]
 
-. On the Client Details page, click the *Authorization Enabled* switch to *ON*, and then click *Save*.
+. On the Client Details page, select *confidential* in the *Access Type* field, change the *Authorization Enabled* switch to *ON*, and then click *Save*.
 A new *Authorization* tab is displayed for the client.
 
 . Click the *Authorization* tab and an Authorization Settings page similar to the following is displayed:
