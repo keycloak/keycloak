@@ -38,7 +38,6 @@ import com.webauthn4j.converter.util.CborConverter;
 import com.webauthn4j.data.attestation.authenticator.AAGUID;
 import com.webauthn4j.data.attestation.authenticator.AttestedCredentialData;
 import com.webauthn4j.data.attestation.authenticator.COSEKey;
-import com.webauthn4j.data.attestation.statement.AttestationStatement;
 import com.webauthn4j.util.exception.WebAuthnException;
 import com.webauthn4j.validator.WebAuthnAuthenticationContextValidationResponse;
 import com.webauthn4j.validator.WebAuthnAuthenticationContextValidator;
@@ -47,7 +46,6 @@ public class WebAuthnCredentialProvider implements CredentialProvider, Credentia
 
     private static final Logger logger = Logger.getLogger(WebAuthnCredentialProvider.class);
 
-    private static final String ATTESTATION_STATEMENT = "ATTESTATION_STATEMENT";
     private static final String AAGUID = "AAGUID";
     private static final String CREDENTIAL_ID = "CREDENTIAL_ID";
     private static final String CREDENTIAL_PUBLIC_KEY = "CREDENTIAL_PUBLIC_KEY";
@@ -78,24 +76,17 @@ public class WebAuthnCredentialProvider implements CredentialProvider, Credentia
         if (!supportsCredentialType(input.getType())) return null;
 
         WebAuthnCredentialModel webAuthnModel = (WebAuthnCredentialModel) input;
+        MultivaluedHashMap<String, String> credential = new MultivaluedHashMap<>();
+
+        credential.add(AAGUID, webAuthnModel.getAttestedCredentialData().getAaguid().toString());
+        credential.add(CREDENTIAL_ID, Base64.encodeBytes(webAuthnModel.getAttestedCredentialData().getCredentialId()));
+        credential.add(CREDENTIAL_PUBLIC_KEY, credentialPublicKeyConverter.convertToDatabaseColumn(webAuthnModel.getAttestedCredentialData().getCOSEKey()));
+
         CredentialModel model = new CredentialModel();
         model.setType(WebAuthnCredentialModel.WEBAUTHN_CREDENTIAL_TYPE);
         model.setCreatedDate(Time.currentTimeMillis());
-
-        MultivaluedHashMap<String, String> credential = new MultivaluedHashMap<>();
-
-        credential.add(ATTESTATION_STATEMENT, attestationStatementConverter.convertToDatabaseColumn(webAuthnModel.getAttestationStatement()));
-
-        credential.add(AAGUID, webAuthnModel.getAttestedCredentialData().getAaguid().toString());
-
-        credential.add(CREDENTIAL_ID, Base64.encodeBytes(webAuthnModel.getAttestedCredentialData().getCredentialId()));
-
-        credential.add(CREDENTIAL_PUBLIC_KEY, credentialPublicKeyConverter.convertToDatabaseColumn(webAuthnModel.getAttestedCredentialData().getCOSEKey()));
-
         model.setId(webAuthnModel.getAuthenticatorId());
-
         model.setConfig(credential);
-
         // authenticator's counter
         model.setValue(String.valueOf(webAuthnModel.getCount()));
 
@@ -113,7 +104,7 @@ public class WebAuthnCredentialProvider implements CredentialProvider, Credentia
         // delete webauthn authenticator's credential itself
         for (CredentialModel credential : session.userCredentialManager().getStoredCredentialsByType(realm, user, credentialType)) {
             logger.infov("Delete public key credential. username = {0}, credentialType = {1}", user.getUsername(), credentialType);
-            dumpCredentialModel(credential);
+            if(logger.isDebugEnabled()) dumpCredentialModel(credential);
             session.userCredentialManager().removeStoredCredential(realm, user, credential.getId());
         }
         // delete webauthn authenticator's metadata
@@ -194,9 +185,6 @@ public class WebAuthnCredentialProvider implements CredentialProvider, Credentia
             WebAuthnCredentialModel auth = new WebAuthnCredentialModel();
             MultivaluedHashMap<String, String> attributes = credential.getConfig();
 
-            AttestationStatement attrStatement = attestationStatementConverter.convertToEntityAttribute(attributes.getFirst(ATTESTATION_STATEMENT));
-            auth.setAttestationStatement(attrStatement);
-
             AAGUID aaguid = new AAGUID(attributes.getFirst(AAGUID));
 
             byte[] credentialId = null;
@@ -225,7 +213,6 @@ public class WebAuthnCredentialProvider implements CredentialProvider, Credentia
     private void dumpCredentialModel(CredentialModel credential) {
         logger.debugv("  Persisted Credential Info::");
         MultivaluedHashMap<String, String> attributes = credential.getConfig();
-        logger.debugv("    ATTESTATION_STATEMENT = {0}", attributes.getFirst(ATTESTATION_STATEMENT));
         logger.debugv("    AAGUID = {0}", attributes.getFirst(AAGUID));
         logger.debugv("    CREDENTIAL_ID = {0}", attributes.getFirst(CREDENTIAL_ID));
         logger.debugv("    CREDENTIAL_PUBLIC_KEY = {0}", attributes.getFirst(CREDENTIAL_PUBLIC_KEY));
