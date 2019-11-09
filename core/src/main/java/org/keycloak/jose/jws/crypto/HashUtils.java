@@ -21,7 +21,7 @@ import org.keycloak.common.util.Base64Url;
 import org.keycloak.crypto.HashException;
 import org.keycloak.crypto.JavaAlgorithm;
 
-import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.Arrays;
 
@@ -32,15 +32,11 @@ public class HashUtils {
 
     // See "at_hash" and "c_hash" in OIDC specification
     public static String oidcHash(String jwtAlgorithmName, String input) {
-        try {
-            byte[] inputBytes = input.getBytes("UTF-8");
-            String javaAlgName = JavaAlgorithm.getJavaAlgorithmForHash(jwtAlgorithmName);
-            byte[] hash = hash(javaAlgName, inputBytes);
+        byte[] inputBytes = input.getBytes(StandardCharsets.UTF_8);
+        String javaAlgName = JavaAlgorithm.getJavaAlgorithmForHash(jwtAlgorithmName);
+        byte[] hash = hash(javaAlgName, inputBytes);
 
-            return encodeHashToOIDC(hash);
-        } catch (UnsupportedEncodingException e) {
-            throw new HashException("Error when creating token hash", e);
-        }
+        return encodeHashToOIDC(hash);
     }
 
 

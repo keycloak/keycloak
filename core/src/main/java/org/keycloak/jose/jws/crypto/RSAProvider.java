@@ -22,6 +22,7 @@ import org.keycloak.common.util.PemUtils;
 import org.keycloak.jose.jws.Algorithm;
 import org.keycloak.jose.jws.JWSInput;
 
+import java.nio.charset.StandardCharsets;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.Signature;
@@ -78,7 +79,7 @@ public class RSAProvider implements SignatureProvider {
         try {
             Signature verifier = getSignature(input.getHeader().getAlgorithm());
             verifier.initVerify(publicKey);
-            verifier.update(input.getEncodedSignatureInput().getBytes("UTF-8"));
+            verifier.update(input.getEncodedSignatureInput().getBytes(StandardCharsets.UTF_8));
             return verifier.verify(input.getSignature());
         } catch (Exception e) {
             return false;
