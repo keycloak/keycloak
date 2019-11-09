@@ -21,7 +21,7 @@ import org.keycloak.common.util.Base64Url;
 import org.keycloak.util.JsonSerialization;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -106,10 +106,6 @@ public class JWSInput {
     }
 
     public String readContentAsString() {
-        try {
-            return new String(content, "UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException(e);
-        }
+        return new String(content, StandardCharsets.UTF_8);
     }
 }
