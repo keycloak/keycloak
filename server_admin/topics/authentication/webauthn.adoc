@@ -2,13 +2,11 @@
 
 === W3C Web Authentication (WebAuthn)
 
-{project_name} provides the limited support for https://www.w3.org/TR/webauthn/[W3C Web Authentication (WebAuthn)]. {project_name} works as WebAuthn's https://www.w3.org/TR/webauthn/#rp-operations[Relying Party (RP)].
+{project_name} provides the limited support for https://www.w3.org/TR/webauthn/[W3C Web Authentication (WebAuthn)]. {project_name} works as a WebAuthn's https://www.w3.org/TR/webauthn/#rp-operations[Relying Party (RP)].
 
 IMPORTANT: Please note that WebAuthn support is still in development and not yet complete, so we recommend that you use this feature experimentally. Also, this support's specification and user interfaces may change.
 
 NOTE: Whether WebAuthn's operations succeed depends on a user's WebAuthn supporting authenticator, browser and platform. If you use this WebAuthn support, please clarify to what extent those entities support the WebAuthn specification.
-
-Also note that on registering the WebAuthn authenticator, its https://www.w3.org/TR/webauthn/#attestation-statement[Attestation Statement] is not verified.
 
 ==== Setup
 
@@ -105,44 +103,51 @@ The configurable items and their description follow.
 |Configuration|Description
 
 |Relying Party Entity Name
-|Human-readable server name as WebAuthn Relying Party. This is a mandatory configuration, which is applied to the operation of registering the WebAuthn authenticator. The default setting is "keycloak".
+|Human-readable server name as a WebAuthn Relying Party. This is a mandatory configuration, which is applied to the operation of registering the WebAuthn authenticator. The default setting is "keycloak".
  For more details, see https://www.w3.org/TR/webauthn/#dictionary-pkcredentialentity[WebAuthn Specification].
 
 |Signature Algorithms
-|It tells the WebAuthn authenticator which signature algorithms to use for the https://www.w3.org/TR/webauthn/#public-key-credential[Public Key Credential] that can be used for signing and verifying the https://www.w3.org/TR/webauthn/#authentication-assertion[Authentication Assertion]. Multiple algorithms can be specified. If no algorithm is specified, https://tools.ietf.org/html/rfc8152#section-8.1[ES256] is adapted. The default setting is ES256. This is an optional configuration item that is applied to the operation of registering WebAuthn authenticator.
+|It tells the WebAuthn authenticator which signature algorithms to use for the https://www.w3.org/TR/webauthn/#public-key-credential[Public Key Credential] that can be used for signing and verifying the https://www.w3.org/TR/webauthn/#authentication-assertion[Authentication Assertion]. Multiple algorithms can be specified. If no algorithm is specified, https://tools.ietf.org/html/rfc8152#section-8.1[ES256] is adapted. The default setting is ES256. This is an optional configuration item that is applied to the operation of registering a WebAuthn authenticator.
  For more details, see https://www.w3.org/TR/webauthn/#dictdef-publickeycredentialparameters[WebAuthn Specification].
 
 |Relying Party ID
-|This is the ID as WebAuthn Relying Party and determines the scope of Public Key Credentials. It must be origin's effective domain. This is an optional configuration item that is applied to the operation of registering WebAuthn authenticator. If no entry is entered, the host part of the base URL of {project_name}'s server is adapted.
+|This is the ID as a WebAuthn Relying Party and determines the scope of Public Key Credentials. It must be origin's effective domain. This is an optional configuration item that is applied to the operation of registering a WebAuthn authenticator. If no entry is entered, the host part of the base URL of {project_name}'s server is adapted.
  For more details, see https://www.w3.org/TR/webauthn/#rp-id[WebAuthn Specification].
 
 |Attestation Conveyance Preference
-|It tells the WebAuthn API implementation on the browser (https://www.w3.org/TR/webauthn/#webauthn-client[WebAuthn Client]) the preference of how to generate an Attestation Statement. However, {project_name} does not verify the Attestation Statement so that only "none" option can be selected. This is an optional configuration item that is applied to the operation of registering WebAuthn authenticator. If no option is selected, its behavior is the same as selecting "none".
+|It tells the WebAuthn API implementation on the browser (https://www.w3.org/TR/webauthn/#webauthn-client[WebAuthn Client]) the preference of how to generate an Attestation Statement. This is an optional configuration item that is applied to the operation of registering a WebAuthn authenticator. If no option is selected, its behavior is the same as selecting "none".
  For more details, see https://www.w3.org/TR/webauthn/#attestation-convey[WebAuthn Specification].
 
 |Authenticator Attachment
-|It tells the WebAuthn Client an acceptable attachment pattern of a WebAuthn authenticator. This is an optional configuration item that is applied to the operation of registering WebAuthn authenticator. If no option is selected, the WebAuthn Client does not consider the attachment pattern.
+|It tells the WebAuthn Client an acceptable attachment pattern of a WebAuthn authenticator. This is an optional configuration item that is applied to the operation of registering a WebAuthn authenticator. If no option is selected, the WebAuthn Client does not consider the attachment pattern.
  For more details, see https://www.w3.org/TR/webauthn/#enumdef-authenticatorattachment[WebAuthn Specification].
 
 |Require Resident Key
-|It tells the WebAuthn authenticator to generate the Public Key Credential as https://www.w3.org/TR/webauthn/#client-side-resident-public-key-credential-source[Client-side-resident Public Key Credential Source]. This is an optional configuration item that is applied to the operation of registering WebAuthn authenticator. If no option is selected, its behavior is the same as selecting "No".
+|It tells the WebAuthn authenticator to generate the Public Key Credential as https://www.w3.org/TR/webauthn/#client-side-resident-public-key-credential-source[Client-side-resident Public Key Credential Source]. This is an optional configuration item that is applied to the operation of registering a WebAuthn authenticator. If no option is selected, its behavior is the same as selecting "No".
  For more details, see https://www.w3.org/TR/webauthn/#dom-authenticatorselectioncriteria-requireresidentkey[WebAuthn Specification].
 
 |User Verification Requirement
-|It tells the WebAuthn authenticator to confirm actually verifying a user. This is an optional configuration item that is applied to the operation of registering WebAuthn authenticator and authenticating the user by WebAuthn authenticator. If no option is selected, its behavior is the same as selecting "preferred".
- For more details, see https://www.w3.org/TR/webauthn/#dom-authenticatorselectioncriteria-userverification[WebAuthn Specification for registering WebAuthn authenticator] and https://www.w3.org/TR/webauthn/#dom-publickeycredentialrequestoptions-userverification[WebAuthn Specification for authenticating the user by WebAuthn authenticator].
+|It tells the WebAuthn authenticator to confirm actually verifying a user. This is an optional configuration item that is applied to the operation of registering a WebAuthn authenticator and authenticating the user by a WebAuthn authenticator. If no option is selected, its behavior is the same as selecting "preferred".
+ For more details, see https://www.w3.org/TR/webauthn/#dom-authenticatorselectioncriteria-userverification[WebAuthn Specification for registering a WebAuthn authenticator] and https://www.w3.org/TR/webauthn/#dom-publickeycredentialrequestoptions-userverification[WebAuthn Specification for authenticating the user by a WebAuthn authenticator].
 
 |Timeout
-|It specifies the timeout value in seconds for registering WebAuthn authenticator and authenticating the user by WebAuthn authenticator. If set to 0, its behavior depends on the WebAuthn authenticator's implementation. The default value is 0.
- For more details, see https://www.w3.org/TR/webauthn/#dom-publickeycredentialcreationoptions-timeout[WebAuthn Specification for registering WebAuthn authenticator] and https://www.w3.org/TR/webauthn/#dom-publickeycredentialrequestoptions-timeout[WebAuthn Specification for authenticating the user by WebAuthn authenticator].
+|It specifies the timeout value in seconds for registering a WebAuthn authenticator and authenticating the user by a WebAuthn authenticator. If set to 0, its behavior depends on the WebAuthn authenticator's implementation. The default value is 0.
+ For more details, see https://www.w3.org/TR/webauthn/#dom-publickeycredentialcreationoptions-timeout[WebAuthn Specification for registering a WebAuthn authenticator] and https://www.w3.org/TR/webauthn/#dom-publickeycredentialrequestoptions-timeout[WebAuthn Specification for authenticating the user by a WebAuthn authenticator].
 
 |Avoid Same Authenticator Registration
-|If set to "ON", the WebAuthn authenticator that has already been registered can not be newly registered. This is applied to the operation of registering WebAuthn authenticator. The default setting is "OFF".
+|If set to "ON", the WebAuthn authenticator that has already been registered can not be newly registered. This is applied to the operation of registering a WebAuthn authenticator. The default setting is "OFF".
 
 |Acceptable AAGUIDs
-|The white list of AAGUID of which a WebAuthn authenticator can be registered. This is applied to the operation of registering WebAuthn authenticator. If no entry is set on this list, any WebAuthn authenticator can be registered.
+|The white list of AAGUID of which a WebAuthn authenticator can be registered. This is applied to the operation of registering a WebAuthn authenticator. If no entry is set on this list, any WebAuthn authenticator can be registered.
 
 |===
+
+==== Attestation Statement Verification
+
+When registering a WebAuthn authenticator, {project_name} verifies an attestation statement generated by this WebAuthn authenticator. On this verification process, {project_name} validates this attestation statement's trustworthiness. It requires trust anchor's certificates. {project_name} uses the link:{installguide_truststore_link}[{installguide_truststore_name}]  so that you need to import these certificates onto it in advance.
+
+If you want to omit this attestation statement trustworthiness validation, please disable this truststore or set the WebAuthn policy's configuration item "Attestation Conveyance Preference" to "none".
+
 
 ==== Managing WebAuthn credentials as a user
 
