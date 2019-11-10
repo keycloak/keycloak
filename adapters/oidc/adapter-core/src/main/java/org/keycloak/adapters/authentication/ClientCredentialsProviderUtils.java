@@ -24,7 +24,6 @@ import org.jboss.logging.Logger;
 import org.keycloak.adapters.KeycloakDeployment;
 
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.ServiceConfigurationError;
@@ -74,10 +73,8 @@ public class ClientCredentialsProviderUtils {
     }
 
     private static void loadAuthenticators(Map<String, ClientCredentialsProvider> authenticators, ClassLoader classLoader) {
-        Iterator<ClientCredentialsProvider> iterator = ServiceLoader.load(ClientCredentialsProvider.class, classLoader).iterator();
-        while (iterator.hasNext()) {
+        for (ClientCredentialsProvider authenticator : ServiceLoader.load(ClientCredentialsProvider.class, classLoader)) {
             try {
-                ClientCredentialsProvider authenticator = iterator.next();
                 logger.debugf("Loaded clientCredentialsProvider %s", authenticator.getId());
                 authenticators.put(authenticator.getId(), authenticator);
             } catch (ServiceConfigurationError e) {

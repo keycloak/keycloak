@@ -70,7 +70,7 @@ public class JWTClientCredentialsProvider implements ClientCredentialsProvider {
 
     @Override
     public void init(KeycloakDeployment deployment, Object config) {
-        if (config == null || !(config instanceof Map)) {
+        if (!(config instanceof Map)) {
             throw new RuntimeException("Configuration of jwt credentials is missing or incorrect for client '" + deployment.getResourceName() + "'. Check your adapter configuration");
         }
 
