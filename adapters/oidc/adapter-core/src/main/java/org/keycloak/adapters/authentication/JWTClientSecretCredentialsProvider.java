@@ -1,6 +1,6 @@
 package org.keycloak.adapters.authentication;
 
-import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 import javax.crypto.SecretKey;
@@ -12,7 +12,6 @@ import org.keycloak.adapters.AdapterUtils;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.common.util.Time;
 import org.keycloak.jose.jws.JWSBuilder;
-import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.representations.JsonWebToken;
 
 /**
@@ -36,7 +35,7 @@ public class JWTClientSecretCredentialsProvider implements ClientCredentialsProv
     
     @Override
     public void init(KeycloakDeployment deployment, Object config) {
-        if (config == null || !(config instanceof Map)) {
+        if (!(config instanceof Map)) {
             throw new RuntimeException("Configuration of jwt credentials by client secret is missing or incorrect for client '" + deployment.getResourceName() + "'. Check your adapter configuration");
         }
         
@@ -61,11 +60,7 @@ public class JWTClientSecretCredentialsProvider implements ClientCredentialsProv
         // The HMAC (Hash-based Message Authentication Code) is calculated using the octets of the UTF-8 representation of the client_secret as the shared key. 
         // Use "HmacSHA256" consulting <a href="https://docs.oracle.com/javase/jp/8/docs/api/javax/crypto/Mac.html">java8 api</a>
         // because it must be implemented in every java platform.
-    	try {
-            clientSecret = new SecretKeySpec(clientSecretString.getBytes("UTF-8"), "HmacSHA256");
-        } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException("Failed to create secret key spec due to unsupported encoding.");
-        }
+        clientSecret = new SecretKeySpec(clientSecretString.getBytes(StandardCharsets.UTF_8), "HmacSHA256");
     }
     
     public String createSignedRequestToken(String clientId, String realmInfoUrl) {

@@ -21,7 +21,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -131,11 +130,8 @@ public class PolicyEnforcer {
     }
 
     private void loadClaimInformationPointProviders(ServiceLoader<ClaimInformationPointProviderFactory> loader) {
-        Iterator<ClaimInformationPointProviderFactory> iterator = loader.iterator();
 
-        while (iterator.hasNext()) {
-            ClaimInformationPointProviderFactory factory = iterator.next();
-
+        for (ClaimInformationPointProviderFactory factory : loader) {
             factory.init(this);
 
             claimInformationPointProviderFactories.put(factory.getName(), factory);
