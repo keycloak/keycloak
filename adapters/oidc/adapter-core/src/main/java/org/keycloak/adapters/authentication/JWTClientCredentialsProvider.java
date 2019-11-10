@@ -30,11 +30,6 @@ import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.common.util.KeystoreUtil;
 import org.keycloak.common.util.Time;
-import org.keycloak.jose.jws.JWSBuilder;
-import org.keycloak.representations.JsonWebToken;
-
-import java.security.PrivateKey;
-import java.util.Map;
 
 /**
  * Client authentication based on JWT signed by client private key .

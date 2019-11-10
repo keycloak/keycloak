@@ -32,7 +32,6 @@ import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.JWKBuilder;
 import org.keycloak.representations.JsonWebToken;
-import org.keycloak.representations.VersionRepresentation;
 import org.keycloak.constants.AdapterConstants;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.representations.adapters.action.AdminAction;

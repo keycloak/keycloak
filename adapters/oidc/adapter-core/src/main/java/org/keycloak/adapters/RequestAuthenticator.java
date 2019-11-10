@@ -24,7 +24,6 @@ import org.keycloak.KeycloakPrincipal;
 import org.keycloak.adapters.spi.AuthChallenge;
 import org.keycloak.adapters.spi.AuthOutcome;
 import org.keycloak.adapters.spi.HttpFacade;
-import org.keycloak.common.enums.SslRequired;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -214,7 +213,7 @@ public abstract class RequestAuthenticator {
 
     protected void completeAuthentication(OAuthRequestAuthenticator oauth) {
         RefreshableKeycloakSecurityContext session = new RefreshableKeycloakSecurityContext(deployment, tokenStore, oauth.getTokenString(), oauth.getToken(), oauth.getIdTokenString(), oauth.getIdToken(), oauth.getRefreshToken());
-        final KeycloakPrincipal<RefreshableKeycloakSecurityContext> principal = new KeycloakPrincipal<RefreshableKeycloakSecurityContext>(AdapterUtils.getPrincipalName(deployment, oauth.getToken()), session);
+        final KeycloakPrincipal<RefreshableKeycloakSecurityContext> principal = new KeycloakPrincipal<>(AdapterUtils.getPrincipalName(deployment, oauth.getToken()), session);
         completeOAuthAuthentication(principal);
         log.debugv("User ''{0}'' invoking ''{1}'' on client ''{2}''", principal.getName(), facade.getRequest().getURI(), deployment.getResourceName());
     }
@@ -233,7 +232,7 @@ public abstract class RequestAuthenticator {
 
     protected void completeAuthentication(BearerTokenRequestAuthenticator bearer, String method) {
         RefreshableKeycloakSecurityContext session = new RefreshableKeycloakSecurityContext(deployment, null, bearer.getTokenString(), bearer.getToken(), null, null, null);
-        final KeycloakPrincipal<RefreshableKeycloakSecurityContext> principal = new KeycloakPrincipal<RefreshableKeycloakSecurityContext>(AdapterUtils.getPrincipalName(deployment, bearer.getToken()), session);
+        final KeycloakPrincipal<RefreshableKeycloakSecurityContext> principal = new KeycloakPrincipal<>(AdapterUtils.getPrincipalName(deployment, bearer.getToken()), session);
         completeBearerAuthentication(principal, method);
         log.debugv("User ''{0}'' invoking ''{1}'' on client ''{2}''", principal.getName(), facade.getRequest().getURI(), deployment.getResourceName());
     }

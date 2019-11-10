@@ -155,7 +155,7 @@ public class DirectAccessGrantsLoginModule extends AbstractKeycloakLoginModule {
                 URI logoutUri = deployment.getLogoutUrl().clone().build();
                 HttpPost post = new HttpPost(logoutUri);
 
-                List<NameValuePair> formparams = new ArrayList<NameValuePair>();
+                List<NameValuePair> formparams = new ArrayList<>();
                 ClientCredentialsProviderUtils.setClientCredentials(deployment, post, formparams);
                 formparams.add(new BasicNameValuePair(OAuth2Constants.REFRESH_TOKEN, refreshToken));
 
