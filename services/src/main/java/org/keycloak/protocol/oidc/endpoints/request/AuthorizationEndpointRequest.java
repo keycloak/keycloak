@@ -25,6 +25,8 @@ import java.util.Map;
  */
 public class AuthorizationEndpointRequest {
 
+    String invalidRequestMessage;
+
     String clientId;
     String redirectUriParam;
     String responseType;
@@ -119,5 +121,9 @@ public class AuthorizationEndpointRequest {
 
     public String getDisplay() {
         return display;
+    }
+
+    public String getInvalidRequestMessage() {
+        return invalidRequestMessage;
     }
 }

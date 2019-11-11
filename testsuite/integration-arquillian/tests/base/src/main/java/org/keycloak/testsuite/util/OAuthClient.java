@@ -73,7 +73,6 @@ import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.security.KeyStore;
 import java.security.PublicKey;
 import java.util.Collections;
@@ -150,6 +149,8 @@ public class OAuthClient {
     private String codeChallengeMethod;
     private String origin;
 
+    private Map<String, String> customParameters;
+
     private boolean openid = true;
 
     private Supplier<CloseableHttpClient> httpClient = OAuthClient::newCloseableHttpClient;
@@ -215,6 +216,7 @@ public class OAuthClient {
         codeChallenge = null;
         codeChallengeMethod = null;
         origin = null;
+        customParameters = null;
         openid = true;
     }
 
@@ -841,7 +843,11 @@ public class OAuthClient {
         }
         if (codeChallengeMethod != null) {
             b.queryParam(OAuth2Constants.CODE_CHALLENGE_METHOD, codeChallengeMethod);
-        }  
+        }
+        if (customParameters != null) {
+            customParameters.keySet().stream().forEach(i -> b.queryParam(i, customParameters.get(i)));
+        }
+
         return b.build(realm).toString();
     }
 
@@ -1007,6 +1013,14 @@ public class OAuthClient {
     }
     public OAuthClient origin(String origin) {
         this.origin = origin;
+        return this;
+    }
+
+    public OAuthClient addCustomerParameter(String key, String value) {
+        if (customParameters == null) {
+            customParameters = new HashMap<>();
+        }
+        customParameters.put(key, value);
         return this;
     }
 

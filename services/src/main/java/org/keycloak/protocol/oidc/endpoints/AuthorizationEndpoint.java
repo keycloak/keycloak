@@ -55,6 +55,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -111,7 +112,7 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
     }
 
     private Response process(MultivaluedMap<String, String> params) {
-        String clientId = params.getFirst(OIDCLoginProtocol.CLIENT_ID_PARAM);
+        String clientId = AuthorizationEndpointRequestParserProcessor.getClientId(event, session, params);
 
         checkSsl();
         checkRealm();
@@ -123,6 +124,11 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
         Response errorResponse = checkResponseType();
         if (errorResponse != null) {
             return errorResponse;
+        }
+
+        if (request.getInvalidRequestMessage() != null) {
+            event.error(Errors.INVALID_REQUEST);
+            return redirectErrorToClient(parsedResponseMode, Errors.INVALID_REQUEST, request.getInvalidRequestMessage());
         }
 
         if (!TokenUtil.isOIDCRequest(request.getScope())) {
