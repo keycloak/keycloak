@@ -18,18 +18,19 @@
 package org.keycloak.vault;
 
 /**
- * Thrown when a vault directory doesn't exist.
+ * This exception is thrown when the factory fails to init due to a configuration error.
  *
- * @author Sebastian Łaskawiec
+ * @author <a href="mailto:sguilhen@redhat.com">Stefan Guilhen</a>
  */
-public class VaultNotFoundException extends RuntimeException {
+public class VaultConfigurationException extends RuntimeException {
 
     /**
-     * Constructs new exception.
+     * Constructs a new {@code VaultConfigurationException}.
      *
-     * @param message A full text message of the exception.
+     * @param message the exception message.
      */
-    public VaultNotFoundException(String message) {
+    public VaultConfigurationException(String message) {
         super(message);
     }
+
 }
