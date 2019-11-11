@@ -243,6 +243,7 @@
                                                 <include>master_ldap__bindCredential</include>
                                                 <include>test_ldap__bindCredential</include>
                                                 <include>admin-client-test_ldap__bindCredential</include>
+                                                <include>credential-store.p12</include>
                                             </includes>
                                         </resource>
                                     </resources>

@@ -36,5 +36,6 @@
         <module name="org.jboss.logging"/>
         <module name="org.jboss.modules"/>
         <module name="org.jboss.resteasy.resteasy-jaxrs"/>
+        <module name="org.wildfly.security.elytron"/>
     </dependencies>
 </module>

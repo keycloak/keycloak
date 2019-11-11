@@ -198,7 +198,7 @@
     "vault": {
         "files-plaintext": {
             "dir": "target/dependency/vault",
-            "enabled": "${keycloak.vault.plaintext.provider.enabled:false}"
+            "enabled": "${keycloak.vault.files-plaintext.provider.enabled:false}"
         }
     }
 }
