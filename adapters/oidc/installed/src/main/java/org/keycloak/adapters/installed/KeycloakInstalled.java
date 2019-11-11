@@ -43,6 +43,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.util.Locale;
@@ -526,7 +527,7 @@ public class KeycloakInstalled {
     }
 
 
-    public String getTokenString() throws VerificationException, IOException, ServerRequest.HttpFailure {
+    public String getTokenString() {
         return tokenString;
     }
 
@@ -734,7 +735,7 @@ public class KeycloakInstalled {
         // https://tools.ietf.org/html/rfc7636#section-4.6
         private static String generateS256CodeChallenge(String codeVerifier) throws Exception {
             MessageDigest md = MessageDigest.getInstance("SHA-256");
-            md.update(codeVerifier.getBytes("ISO_8859_1"));
+            md.update(codeVerifier.getBytes(StandardCharsets.ISO_8859_1));
             return Base64Url.encode(md.digest());
         }
     }
