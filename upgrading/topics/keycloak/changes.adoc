@@ -2,6 +2,12 @@
 
 === Migrating to 8.0.0
 
+==== New Default Hostname provider
+
+The old request and fixed hostname providers have been replaced with a new default hostname provider. The request
+and fixed hostname providers are now deprecated and it is recommended to switch to the default hostname provider as
+soon as possible.
+
 ==== Upgrade to Wildfly 18
 
 The {project_name} server was upgraded to use Wildfly 18 as the underlying container. This does not directly involve any

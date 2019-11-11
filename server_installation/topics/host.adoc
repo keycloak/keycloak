@@ -1,0 +1,67 @@
+
+== Hostname
+
+{project_name} uses the public hostname for a number of things. For example, in the token issuer fields and URLs sent in
+password reset emails.
+
+The Hostname SPI provides a way to configure the hostname for a request. The default provider allows setting
+a fixed URL for frontend requests, while allowing backend requests to be based on the request URI. It is also possible
+to develop your own provider in the case the built-in provider does not provide the functionality needed.
+
+
+=== Default provider
+
+The default hostname provider uses the configured `frontendUrl` as the base URL for frontend requests (requests from
+user-agents) and uses the request URL as the basis for backend requests (direct requests from clients).
+
+Frontend request do not have to have the same context-path as the Keycloak server. This means you can expose Keycloak
+on for example `https://auth.example.org` or `https://example.org/keycloak` while internally its URL could be
+`https://10.0.0.10:8080/auth`.
+
+This makes it possible to have user-agents (browsers) send requests to ${project.name} through the public domain name,
+while internal clients can use an internal domain name or IP address.
+
+This is reflected in the OpenID Connect Discovery endpoint for example where the `authorization_endpoint` uses the
+frontend URL, while `token_endpoint` uses the backend URL. As a note here a public client for instance would contact
+Keycloak through the public endpoint, which would result in the base of `authorization_endpoint` and `token_endpoint`
+being the same.
+
+To set the frontendUrl for Keycloak you can either pass add `-Dkeycloak.frontendUrl=https://auth.example.org` to the
+startup or you can configure it in `standalone.xml`. See the example below:
+
+[source, xml]
+----
+<spi name="hostname">
+    <default-provider>default</default-provider>
+    <provider name="default" enabled="true">
+        <properties>
+            <property name="frontendUrl" value="https://auth.example.com"/>
+            <property name="forceBackendUrlToFrontendUrl" value="false"/>
+        </properties>
+    </provider>
+</spi>
+----
+
+To update the `frontendUrl` with jboss-cli use the following command:
+
+[source,bash]
+----
+/subsystem=keycloak-server/spi=hostname/provider=fixed:write-attribute(name=properties.frontendUrl,value="https://auth.example.com")
+----
+
+If you want all requests to go through the public domain name you can force backend requests to use the frontend URL as
+well by setting `forceBackendUrlToFrontendUrl` to `true`.
+
+It is also possible to override the default frontend URL for individual realms. This can be done in the admin console.
+
+If you do not want to expose the admin endpoints and console on the public domain use the property `adminUrl` to set
+a fixed URL for the admin console, which is different to the `frontendUrl`. It is also required to block access to
+`/auth/admin` externally, for details on how to do that refer to the link:{adminguide_link}[{adminguide_name}].
+
+=== Custom provider
+
+To develop a custom hostname provider you need to implement `org.keycloak.urls.HostnameProviderFactory` and
+`org.keycloak.urls.HostnameProvider`.
+
+Follow the instructions in the Service Provider Interfaces section in link:{developerguide_link}[{developerguide_name}]
+for more information on how to develop a custom provider.

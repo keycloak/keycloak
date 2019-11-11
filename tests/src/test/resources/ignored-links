@@ -1,3 +1,6 @@
+https://auth.example.org
+https://example.org/keycloak
+https://10.0.0.10:8080/*
 http://localhost*
 http://localhost:8080*
 http://localhost:8180*

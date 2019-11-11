@@ -9,6 +9,15 @@ SMTP password, and identity provider secrets.
 Furthermore, new vault SPI has been introduced to enable development
 of extensions to access secrets from custom vaults.
 
+== New Default Hostname provider
+
+The fixed and request hostname providers have been replaced with a single new default hostname provider. This provider
+comes with a number of improvements, including:
+
+* No need to change provider to set fixed base URL
+* Support different base URL for frontend and backend requests
+* Support changing context-path in cases where Keycloak is exposed on a different context-path through a reverse proxy
+
 == Messages in theme resources
 
 Message bundles in theme resources enables internationalization of custom providers such as authenticators. They are also shared between all theme types, making it possible to for example share messages between the login and account console. Thanks to https://github.com/micedre[micedre].
