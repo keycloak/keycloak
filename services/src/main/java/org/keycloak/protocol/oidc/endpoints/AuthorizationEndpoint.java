@@ -124,6 +124,11 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
         if (errorResponse != null) {
             return errorResponse;
         }
+ 
+        errorResponse = checkParamsMoreThanOnce(params);
+        if (errorResponse != null) {
+            return errorResponse;
+        }
 
         if (!TokenUtil.isOIDCRequest(request.getScope())) {
             ServicesLogger.LOGGER.oidcScopeMissing();
@@ -271,6 +276,33 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
         this.parsedResponseMode = parsedResponseMode;
 
         return null;
+    }
+
+    private Response checkParamsMoreThanOnce(MultivaluedMap<String, String> params) {
+        Response res = null;
+        boolean isClientSuspicious = false;
+        boolean isParamSuspicious = false;
+
+        for (String key : params.keySet()) {
+            if (params.get(key).size() != 1) {
+                isParamSuspicious = true;
+                if (OAuth2Constants.REDIRECT_URI.equals(key) || OAuth2Constants.CLIENT_ID.equals(key)) {
+                    isClientSuspicious = true;
+                    break;
+                }
+            }
+        }
+
+        if (isParamSuspicious) {
+            event.error(Errors.INVALID_REQUEST);
+            if (isClientSuspicious) {
+                throw new ErrorPageException(session, authenticationSession, Response.Status.BAD_REQUEST, Messages.INVALID_REQUEST);
+            } else {
+                res = redirectErrorToClient(parsedResponseMode, OAuthErrorException.INVALID_REQUEST, "Parameter sent more than once");
+            }
+        }
+
+        return res;
     }
 
     private Response checkOIDCParams() {

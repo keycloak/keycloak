@@ -38,7 +38,9 @@ import org.openqa.selenium.By;
 import javax.ws.rs.core.UriBuilder;
 import java.io.IOException;
 import java.net.URI;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
@@ -197,4 +199,34 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
         Assert.assertNull(currentUri.getRawFragment());
     }
 
+    @Test
+    public void authorizationRequestParamsMoreThanOnce() throws IOException {
+        oauth.stateParamHardcoded("OpenIdConnect.AuthenticationProperties=2302984sdlk");
+        Map<String, String> extraParams = new HashMap<>();
+        extraParams.put(OAuth2Constants.SCOPE, "read_write");
+        extraParams.put(OAuth2Constants.STATE, "abcdefg");
+        extraParams.put(OAuth2Constants.SCOPE, "pop push");
+        oauth.extraParamsAuthzEndpoint(extraParams);
+
+        oauth.openLoginForm();
+        Assert.assertTrue(driver.getCurrentUrl().contains("error=invalid_request&"));
+        events.expectLogin().error(Errors.INVALID_REQUEST).user((String) null).session((String) null).clearDetails().assertEvent();
+    }
+
+    @Test
+    public void authorizationRequestClientParamsMoreThanOnce() throws IOException {
+        oauth.stateParamHardcoded("OpenIdConnect.AuthenticationProperties=2302984sdlk");
+        Map<String, String> extraParams = new HashMap<>();
+        extraParams.put(OAuth2Constants.SCOPE, "read_write");
+        extraParams.put(OAuth2Constants.CLIENT_ID, "client2client");
+        extraParams.put(OAuth2Constants.REDIRECT_URI, "https://www.example.com");
+        extraParams.put(OAuth2Constants.STATE, "abcdefg");
+        extraParams.put(OAuth2Constants.SCOPE, "pop push");
+        oauth.extraParamsAuthzEndpoint(extraParams);
+
+        oauth.openLoginForm();
+        assertEquals("Invalid Request", driver.findElement(By.className("instruction")).getText());
+        events.expectLogin().error(Errors.INVALID_REQUEST).user((String) null).session((String) null).clearDetails().assertEvent();
+    }
+    
 }

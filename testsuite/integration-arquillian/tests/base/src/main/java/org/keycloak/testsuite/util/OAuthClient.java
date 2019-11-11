@@ -150,6 +150,8 @@ public class OAuthClient {
     private String codeChallengeMethod;
     private String origin;
 
+    private Map<String, String> extraParamsAuthzEndpoint;
+
     private boolean openid = true;
 
     private Supplier<CloseableHttpClient> httpClient = OAuthClient::newCloseableHttpClient;
@@ -215,6 +217,7 @@ public class OAuthClient {
         codeChallenge = null;
         codeChallengeMethod = null;
         origin = null;
+        extraParamsAuthzEndpoint = null;
         openid = true;
     }
 
@@ -841,7 +844,11 @@ public class OAuthClient {
         }
         if (codeChallengeMethod != null) {
             b.queryParam(OAuth2Constants.CODE_CHALLENGE_METHOD, codeChallengeMethod);
-        }  
+        }
+        if (extraParamsAuthzEndpoint != null) {
+            extraParamsAuthzEndpoint.keySet().stream().forEach(i -> b.queryParam(i, extraParamsAuthzEndpoint.get(i)));
+        }
+
         return b.build(realm).toString();
     }
 
@@ -1007,6 +1014,11 @@ public class OAuthClient {
     }
     public OAuthClient origin(String origin) {
         this.origin = origin;
+        return this;
+    }
+
+    public OAuthClient extraParamsAuthzEndpoint(Map<String, String> extraParamsAuthzEndpoint) {
+        this.extraParamsAuthzEndpoint = extraParamsAuthzEndpoint;
         return this;
     }
 
