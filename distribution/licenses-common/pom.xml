@@ -33,7 +33,7 @@
                 <targetPath>keycloak-licenses-common</targetPath>
                 <directory>../../</directory>
                 <includes>
-                    <include>License.html</include>
+                    <include>LICENSE.txt</include>
                 </includes>
             </resource>
             <resource>
