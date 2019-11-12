@@ -320,7 +320,7 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
             Assert.assertEquals("", loginPage.getPassword());
 
             // KEYCLOAK-2024
-            Assert.assertEquals("Account is disabled, contact admin.", loginPage.getError());
+            Assert.assertEquals("Account is disabled, contact your administrator.", loginPage.getError());
 
             events.expectLogin().user(userId).session((String) null).error("user_disabled")
                     .detail(Details.USERNAME, "login-test")
@@ -700,7 +700,7 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
         loginPage.login("login@test.com", "password");
         loginPage.assertCurrent();
 
-        Assert.assertEquals("You took too long to login. Login process starting from beginning.", loginPage.getError());
+        Assert.assertEquals("Your login attempt timed out. Login will start from the beginning.", loginPage.getError());
         setTimeOffset(0);
 
         events.expectLogin().user((String) null).session((String) null).error(Errors.EXPIRED_CODE).clearDetails()
@@ -720,7 +720,7 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
         //loginPage.assertCurrent();
         loginPage.assertCurrent();
 
-        Assert.assertEquals("You took too long to login. Login process starting from beginning.", loginPage.getError());
+        Assert.assertEquals("Your login attempt timed out. Login will start from the beginning.", loginPage.getError());
         setTimeOffset(0);
 
         events.expectLogin().user((String) null).session((String) null).error(Errors.EXPIRED_CODE).clearDetails()

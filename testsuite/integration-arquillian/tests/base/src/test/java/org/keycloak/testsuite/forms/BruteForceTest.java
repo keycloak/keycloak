@@ -527,7 +527,7 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
         loginPage.login(username, "password");
 
         loginPage.assertCurrent();
-        Assert.assertEquals("Account is disabled, contact admin.", loginPage.getError());
+        Assert.assertEquals("Account is disabled, contact your administrator.", loginPage.getError());
         ExpectedEvent event = events.expectLogin()
             .session((String) null)
             .error(Errors.USER_DISABLED)

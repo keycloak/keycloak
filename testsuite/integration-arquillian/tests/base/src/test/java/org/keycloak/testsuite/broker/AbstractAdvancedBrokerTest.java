@@ -258,7 +258,7 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
 
         loginPage.login(bc.getUserLogin(), bc.getUserPassword());
 
-        assertEquals("Account is disabled, contact admin.", errorPage.getError());
+        assertEquals("Account is disabled, contact your administrator.", errorPage.getError());
     }
 
     // KEYCLOAK-4181
@@ -311,7 +311,7 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
 
         logInWithBroker(bc);
         errorPage.assertCurrent();
-        assertEquals("Account is disabled, contact admin.", errorPage.getError());
+        assertEquals("Account is disabled, contact your administrator.", errorPage.getError());
     }
 
 
