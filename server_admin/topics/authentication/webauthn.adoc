@@ -8,24 +8,20 @@ IMPORTANT: Please note that WebAuthn support is still in development and not yet
 
 NOTE: Whether WebAuthn's operations succeed depends on a user's WebAuthn supporting authenticator, browser and platform. If you use this WebAuthn support, please clarify to what extent those entities support the WebAuthn specification.
 
-The major restriction is as follows :
-
-- A user can register only one WebAuthn supporting Authenticator (called WebAuthn authenticator here).
-- On registering the WebAuthn authenticator, its https://www.w3.org/TR/webauthn/#attestation-statement[Attestation Statement] is not verified.
-- Only the Two-Factor Authentication (2FA) scenario is supported.
+Also note that on registering the WebAuthn authenticator, its https://www.w3.org/TR/webauthn/#attestation-statement[Attestation Statement] is not verified.
 
 ==== Setup
 
 The setup procedure of WebAuthn support for 2FA is the following :
 
-Enable User Registration::
+===== Enable User Registration
 
 An administrator carries out the following operations on the `Admin Console` :
 
 - Open the `Realm Settings -> Login` tab.
 - Set the `User Registration` to ON and click `Save`.
 
-Enable Webauthn Authenticator Registration::
+===== Enable Webauthn Authenticator Registration
 
 An administrator carries out the following operations on the `Admin Console` :
 
@@ -34,107 +30,67 @@ An administrator carries out the following operations on the `Admin Console` :
 - Select `Webauthn Register` as `Required Action`.
 - Mark `Enabled` and `Default Action` checkbox.
 
-Enable 2FA by Webauthn Authenticator::
+===== Adding WebAuthn Authentication to a Browser Flow
 
-An administrator carries out the following operations on the `Admin Console` :
+* Select a realm, click on Authentication link, select the "Browser" flow
+* Make a copy of the built-in "Browser" flow. You may want to give the new flow a distinctive name, i.e. "WebAuthn Browser"
+* Using the drop down, select the copied flow
+* Delete the `WebAuthn Browser Browser - Conditional OTP` sub-flow using its `Actions` menu
 
-- Open the `Authentication -> Flows` tab.
-- Copy and create the new browser flow.
-- Add the `WebAuthn Authenticator` execution below the `User Password Form` execution.
-- Set `REQUIRED` to the `WebAuthn Authenticator` execution's requirement.
-- Open the `Authentication -> Bindings` tab.
-- Select the created new browser flow as `Browser Flow`.
-- Click `Save`.
+If you want to have WebAuthn required for all users:
 
-==== Register WebAuthn Authenticator
+* Using the `Actions` menu of the `WebAuthn Browser Forms`, click on `Add execution`
+* Select `WebAuthn Authenticator` using the drop down and click on "Save"
+* Set its Requirement to _Required_.
 
-The appropriate method to register a WebAuthen authenticator depends on if the user has or has not already registered an account on {project_name}.
+image:images/webauthn-browser-flow-required.png[]
 
-User without their account::
+Note that in this scenario, if a user doesn't have a WebAuthn credential, a required action will be set that forces him
+to register one.
 
-A user carries out the following operations :
+Alternatively, you can have users login with WebAuthn only if they have a WebAuthn credential registered, so instead of adding
+the `WebAuthn Authenticator` execution:
 
-- Open the login form.
-- Click the `Register` link.
-- Fill in items on the register form and click `Register`.
-- The user's browser asks the user to register their WebAuthn authenticator.
-- After successful registration, the user's browser asks the user to enter the text as their just registered WebAuthn authenticator's label.
+* Using the `Actions` menu of the `WebAuthn Browser Forms`, click on `Add flow`
+* Set the alias to "Conditional 2FA"
+* Set the Requirement of `Conditional 2FA` to _Conditional_
+* Using the `Actions` menu of the `Conditional 2FA`, click on `Add execution`
+* Select `Condition - User Configured` using the drop down and click on "Save"
+* Using the `Actions` menu of the `Conditional 2FA`, click on `Add execution`
+* Select `WebAuthn Authenticator` using the drop down and click on "Save"
+* Set its Requirement to _Alternative_.
 
-User with their account::
+image:images/webauthn-browser-flow-conditional.png[]
 
-When such the users try to log in, they are required to register their WebAuthn authenticator automatically :
+You can also allow the user to choose between using WebAuthn and OTP for his second factor:
 
-- Open the login form.
-- Fill in items, click `Save` and  click `Login`.
-- When the users log in, they are required to register their WebAuthn authenticator.
-- After successful registration, the user's browser asks the user to enter the text as their just registered WebAuthn authenticator's label.
+* Using the `Actions` menu of the `Conditional 2FA`, click on `Add execution`
+* Select `OTP Form` using the drop down and click on "Save"
+* Set its Requirement to _Alternative_.
 
-==== Authenticate by WebAuthn Authenticator
+image:images/webauthn-browser-flow-conditional-with-OTP.png[]
+
+==== Authenticate with WebAuthn Authenticator
 
 After registering their WebAuthn authenticator, the user carries out the following operations :
 
 - Open the login form.
-- Fill in items, click `Save` and  click `Login`.
+- Select the credential or credentials that {project_name} must accept for login. Then click `Save` and  click `Login`.
 - The list of registered Webauthn Authenticators' labels appears. Click `Authenticate`.
-- The user's browser asks the user to authenticate by their WebAuthn authenticator.
+- The user's browser asks the user to authenticate by their WebAuthn authenticator
 
-==== View Registered WebAuthn Authenticator
+==== Managing WebAuthn as an administrator
 
-An administrator and a user can view the following information :
+===== Managing Credentials
 
-- https://www.w3.org/TR/webauthn/#credential-id[Credential ID]
-- Label (WebAuthn authenticator's label the user entered on registering it)
-- AAGUID
+WebAuthn credentials are managed in a similar manner as other credentials, such as OTP, from the <<user-credentials, User credential management>>:
 
-An administrator carries out the following operations on the `Admin Console` :
+* Users can be assigned a required action to create a WebAuthn credential from the `Reset Actions` list, and selecting `Webauthn Register`
+* The administrator can delete a WebAuthn credential by pressing it's `Delete` button
+* The administrator can view the credential's data such as the AAGUID by selecting `Show data...`
+* The administrator can set a label for the credential by setting a value in the `User Label` field and saving the data.
 
-- Open the `Users -> (user) -> Credentials` tab.
-- View the `Manage WebAuthn Authenticator` area.
-
-A user carries out the following operations on the <<_account-service, `User Account Service`>>  :
-
-- View the `Account` page.
-
-==== Edit Registered WebAuthn Authenticator
-
-A user can edit the following information :
-
-- Label (WebAuthn authenticator's label the user entered on registering it)
-
-A user carries out the following operations on the <<_account-service, `User Account Service`>>  :
-
-- View the `Account` page.
-- Edit the text in `Public Key Credential Label`.
-- Click `Save`.
-
-==== Delete Registered WebAuthn Authenticator
-
-An administrator can delete the users' registered WebAuthn authenticators.
-
-An Administrator carries out the following operations on the `Admin Console` :
-
-- Open the `Users -> (user) -> Credentials` tab.
-- On the `Disable Credentials` area, add `webauthn` to `Disable Types`.
-- Click `Disable Credential Types`.
-
-==== Re-Register WebAuthn Authenticator
-
-A user can re-register their WebAuthn authenticator. Newly registered WebAuthn authenticator overrides the old registered one.
-
-At first, an administrator carries out the following operations on the `Admin Console` to require the user to register their WebAuthn authenticator after their login :
-
-- Open the `Users -> (user) -> Details` tab.
-- Set `WebAuthn Register` on `Required User Actions`.
-- Click `Save`.
-
-After that, the user carries out the following operations :
-
-- Open the login form.
-- Fill in items, click `Save` and  click `Login`.
-- When the users log in, they are required to register their WebAuthn authenticator.
-- After successful registration, the user's browser asks the user to enter the text as their just registered WebAuthn authenticator's label.
-
-==== Configuration
+===== Managing Policy
 
 An administrator can configure WebAuthn related operations as `WebAuthn Policy` per realm.
 
@@ -151,7 +107,7 @@ The configurable items and their description follow.
 |Relying Party Entity Name
 |Human-readable server name as WebAuthn Relying Party. This is a mandatory configuration, which is applied to the operation of registering the WebAuthn authenticator. The default setting is "keycloak".
  For more details, see https://www.w3.org/TR/webauthn/#dictionary-pkcredentialentity[WebAuthn Specification].
- 
+
 |Signature Algorithms
 |It tells the WebAuthn authenticator which signature algorithms to use for the https://www.w3.org/TR/webauthn/#public-key-credential[Public Key Credential] that can be used for signing and verifying the https://www.w3.org/TR/webauthn/#authentication-assertion[Authentication Assertion]. Multiple algorithms can be specified. If no algorithm is specified, https://tools.ietf.org/html/rfc8152#section-8.1[ES256] is adapted. The default setting is ES256. This is an optional configuration item that is applied to the operation of registering WebAuthn authenticator.
  For more details, see https://www.w3.org/TR/webauthn/#dictdef-publickeycredentialparameters[WebAuthn Specification].
@@ -187,3 +143,46 @@ The configurable items and their description follow.
 |The white list of AAGUID of which a WebAuthn authenticator can be registered. This is applied to the operation of registering WebAuthn authenticator. If no entry is set on this list, any WebAuthn authenticator can be registered.
 
 |===
+
+==== Managing WebAuthn credentials as a user
+
+===== Register WebAuthn Authenticator
+
+The appropriate method to register a WebAuthn authenticator depends on if the user has or has not already registered an account on {project_name}.
+
+New user::
+
+A new user carries out the following operations :
+
+- Open the login form.
+- Click the `Register` link.
+- Fill in items on the register form and click `Register`.
+- The user's browser asks the user to register their WebAuthn authenticator.
+- After successful registration, the user's browser asks the user to enter the text as their just registered WebAuthn authenticator's label.
+
+Existing user::
+
+When existing users try to log in, they are required to register their WebAuthn authenticator automatically :
+
+- Open the login form.
+- Fill in items, click `Save` and  click `Login`.
+- When the users log in, they are required to register their WebAuthn authenticator.
+- After successful registration, the user's browser asks the user to enter the text as their just registered WebAuthn authenticator's label.
+
+===== View Registered WebAuthn Authenticator
+
+A user carries out the following operations on the <<_account-service, `User Account Service`>>  :
+
+- View the `Account` page.
+
+===== Edit Registered WebAuthn Authenticator
+
+A user can edit the following information :
+
+- Label (WebAuthn authenticator's label the user entered on registering it)
+
+A user carries out the following operations on the <<_account-service, `User Account Service`>>  :
+
+- View the `Account` page.
+- Edit the text in `Public Key Credential Label`.
+- Click `Save`.

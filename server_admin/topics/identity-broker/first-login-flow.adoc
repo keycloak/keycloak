@@ -72,8 +72,10 @@ In order to configure a first login flow in which users are automatically linked
 Create User If Unique::
 This authenticator ensures that unique users are handled. Set the authenticator requirement to "Alternative".
 
-Automatically Link Brokered Account::
-Automatically link brokered identities without any validation with this authenticator. This is useful in an intranet environment of multiple user databases each with overlapping usernames/email addresses, but different passwords, and you want to allow users to use any password without having to validate. This is only reasonable if you manage all internal databases, and usernames/email addresses from one database matching those in another database belong to the same person. Set the authenticator requirement to "Alternative".
+Automatically Set Existing User::
+Automatically sets an existing user to the authentication context without any verification. Set the authenticator requirement to "Alternative".
 
 NOTE: The described setup uses two authenticators, and is the simplest one, but it is possible to use other
-authenticators according to your needs. For example, you can add the Review Profile authenticator to the beginning of the flow if you still want end users to confirm their profile information.
+authenticators according to your needs. For example, you can add the Review Profile authenticator to the beginning of the flow if you still want
+end users to confirm their profile information. You can also add authentication mechanisms to this flow, forcing a user to verify his credentials. This
+would require a more complex flow, for example setting the "Automatically Set Existing User" and "Password Form" as "Required" in an "Alternative" sub-flow.

@@ -45,6 +45,18 @@ In this release, we added initial support for W3C Web Authentication (WebAuthn).
 however we are working on further improvements in this area. Thanks to https://github.com/tnorimat[tnorimat] for the contribution. Also thanks to
 https://github.com/ynojima[ynojima] for the help and feedback.
 
+== Support for password-less authentication, multi-factor authentication and multiple credentials per user
+
+With the arrival of W3C Web Authentication support, we've refined the authentication flow system to be able to allow a user to select which authentication method he
+wishes to use during his login (for example, to choose between his OTP credential and his WebAuthn credential). The new mechanisms also allow an administrator to
+craft flows for password-less login, for example just using WebAuthn as an authentication method. Please note that with these changes, any custom authentication
+flow you have created may need to be adapted to the new flow logic.
+
+As a result of these changes, it is now also possible for users to have multiple OTP devices and multiple WebAuthn devices. The same system that allows a user
+to select which type of device to use during login also allows him to select which specific device to use. Thanks to the https://github.com/cloudtrust[Cloudtrust] team:
+https://github.com/AlistairDoswald[AlistairDoswald], https://github.com/fperot74[sispeo] and https://github.com/Fratt[Fratt] for their contributions, and
+to https://github.com/harture[harture] and https://github.com/lagess[Laurent] for their help.
+
 
 = Other Improvements
 
@@ -68,9 +80,9 @@ Thanks to https://github.com/jonkoops[jonkoops] now it's possible to enable or d
 
 == Credentials support removed from the JavaScript adapter
 
-The option to provide client credentials in the JavaScript adapter was removed. Thanks to https://github.com/jonkoops[jonkoops] 
+The option to provide client credentials in the JavaScript adapter was removed. Thanks to https://github.com/jonkoops[jonkoops]
 
-== Updates for Gatekeeper 
+== Updates for Gatekeeper
 
 * Secure token and logout endpoint were included in Gatekeeper. Thanks to https://github.com/fredbi[fredbi]
 * There was a bug on Gatekeeper which was making cookies to be applied to subdomains. Thanks to https://github.com/daniel-ac-martin[daniel-ac-martin] the issue was fixed
