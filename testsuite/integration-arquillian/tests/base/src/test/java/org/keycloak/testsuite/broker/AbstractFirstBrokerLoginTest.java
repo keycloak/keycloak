@@ -354,7 +354,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         log.debug("Updating info on updateAccount page");
         updateAccountInformationPage.updateAccountInformation("consumer", "consumer-user@redhat.com", "FirstName", "LastName");
 
-        waitForPage(driver, "we're sorry...", false);
+        waitForPage(driver, "we are sorry...", false);
         assertEquals("User with username consumer already exists. Please login to account management to link the account.", errorPage.getError());
     }
 

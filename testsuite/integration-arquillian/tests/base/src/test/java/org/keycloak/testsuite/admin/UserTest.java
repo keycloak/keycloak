@@ -765,7 +765,7 @@ public class UserTest extends AbstractAdminTest {
 
         driver.navigate().to(link);
 
-        assertEquals("We're sorry...", PageUtils.getPageTitle(driver));
+        assertEquals("We are sorry...", PageUtils.getPageTitle(driver));
     }
 
     @Test
@@ -1002,7 +1002,7 @@ public class UserTest extends AbstractAdminTest {
 
         driver.navigate().to(link);
 
-        assertEquals("We're sorry...", PageUtils.getPageTitle(driver));
+        assertEquals("We are sorry...", PageUtils.getPageTitle(driver));
     }
 
     @Test
@@ -1070,7 +1070,7 @@ public class UserTest extends AbstractAdminTest {
 
         driver.navigate().to(link);
 
-        assertEquals("We're sorry...", PageUtils.getPageTitle(driver));
+        assertEquals("We are sorry...", PageUtils.getPageTitle(driver));
     }
 
 
