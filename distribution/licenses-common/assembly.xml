@@ -36,8 +36,8 @@
 
     <files>
         <file>
-            <source>../../License.html</source>
-            <destName>keycloak-components-license.html</destName>
+            <source>../../LICENSE.txt</source>
+            <destName>keycloak-components-license.txt</destName>
             <fileMode>0664</fileMode>
         </file>
     </files>

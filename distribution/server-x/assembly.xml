@@ -79,7 +79,7 @@
             <directory>../../</directory>
             <outputDirectory></outputDirectory>
             <includes>
-                <include>License.html</include>
+                <include>LICENSE.txt</include>
             </includes>
         </fileSet>
     </fileSets>
