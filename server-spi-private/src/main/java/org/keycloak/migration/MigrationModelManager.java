@@ -21,6 +21,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.regex.Pattern;
 import org.jboss.logging.Logger;
+import org.keycloak.common.Version;
 import org.keycloak.migration.migrators.MigrateTo1_2_0;
 import org.keycloak.migration.migrators.MigrateTo1_3_0;
 import org.keycloak.migration.migrators.MigrateTo1_4_0;
@@ -87,26 +88,28 @@ public class MigrationModelManager {
     };
 
     public static void migrate(KeycloakSession session) {
-        ModelVersion latest = migrations[migrations.length-1].getVersion();
         MigrationModel model = session.realms().getMigrationModel();
-        ModelVersion stored = null;
-        if (model.getStoredVersion() != null) {
-            stored = new ModelVersion(model.getStoredVersion());
-            if (latest.equals(stored)) {
-                return;
-            }
-        }
 
-        for (Migration m : migrations) {
-            if (stored == null || stored.lessThan(m.getVersion())) {
-                if (stored != null) {
-                    logger.debugf("Migrating older model to %s", m.getVersion());
+        ModelVersion currentVersion = new ModelVersion(Version.VERSION_KEYCLOAK);
+        ModelVersion latestUpdate = migrations[migrations.length-1].getVersion();
+        ModelVersion databaseVersion = model.getStoredVersion() != null ? new ModelVersion(model.getStoredVersion()) : null;
+
+        if (databaseVersion == null || databaseVersion.lessThan(latestUpdate)) {
+            for (Migration m : migrations) {
+                if (databaseVersion == null || databaseVersion.lessThan(m.getVersion())) {
+                    if (databaseVersion != null) {
+                        logger.debugf("Migrating older model to %s", m.getVersion());
+                    }
+                    m.migrate(session);
                 }
-                m.migrate(session);
             }
         }
 
-        model.setStoredVersion(latest.toString());
+        if (databaseVersion == null || databaseVersion.lessThan(currentVersion)) {
+            model.setStoredVersion(currentVersion.toString());
+        }
+
+        Version.RESOURCES_VERSION = model.getResourcesTag();
     }
 
     public static final ModelVersion RHSSO_VERSION_7_0_KEYCLOAK_VERSION = new ModelVersion("1.9.8");

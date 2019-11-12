@@ -16,11 +16,15 @@
  */
 package org.keycloak.testsuite.migration;
 
+import org.apache.commons.io.IOUtils;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
 import org.hamcrest.Matchers;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.RoleResource;
+import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.common.constants.KerberosConstants;
 import org.keycloak.component.PrioritizedComponentModel;
 import org.keycloak.keys.KeyProvider;
@@ -57,6 +61,9 @@ import org.keycloak.testsuite.exportimport.ExportImportUtil;
 import org.keycloak.testsuite.runonserver.RunHelpers;
 import org.keycloak.testsuite.util.OAuthClient;
 
+import java.io.IOException;
+import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -64,6 +71,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static org.hamcrest.Matchers.equalTo;
@@ -257,6 +266,8 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
 
         // MFA - Check that authentication flows were migrated as expected
         testOTPAuthenticatorsMigratedToConditionalFlow();
+
+        testResourceTag();
     }
 
     private void testAdminClientUrls(RealmResource realm) {
@@ -734,6 +745,18 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
     protected void testMigrationTo7_x(boolean supportedAuthzServices) {
         if (supportedAuthzServices) {
             testDecisionStrategySetOnResourceServer();
+        }
+    }
+
+    protected void testResourceTag() {
+        try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
+            URI url = suiteContext.getAuthServerInfo().getUriBuilder().path("/auth").build();
+            String response = SimpleHttp.doGet(url.toString(), client).asString();
+            Matcher m = Pattern.compile("resources/([^/]*)/welcome").matcher(response);
+            assertTrue(m.find());
+            assertTrue(m.group(1).matches("[\\da-z]{5}"));
+        } catch (IOException e) {
+            fail(e.getMessage());
         }
     }
 }

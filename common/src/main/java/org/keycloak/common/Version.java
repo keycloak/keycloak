@@ -31,6 +31,7 @@ public class Version {
     public static String NAME_FULL;
     public static String NAME_HTML;
     public static String VERSION;
+    public static String VERSION_KEYCLOAK;
     public static String RESOURCES_VERSION;
     public static String BUILD_TIME;
     public static String DEFAULT_PROFILE;
@@ -45,6 +46,7 @@ public class Version {
             Version.NAME_HTML = props.getProperty("name-html");
             Version.DEFAULT_PROFILE = props.getProperty("default-profile");
             Version.VERSION = props.getProperty("version");
+            Version.VERSION_KEYCLOAK = props.getProperty("version-keycloak");
             Version.BUILD_TIME = props.getProperty("build-time");
             Version.RESOURCES_VERSION = Version.VERSION.toLowerCase();
 

@@ -24,5 +24,6 @@ package org.keycloak.migration;
  */
 public interface MigrationModel {
     String getStoredVersion();
+    String getResourcesTag();
     void setStoredVersion(String version);
 }
