@@ -202,4 +202,16 @@
 
     </changeSet>
 
+    <changeSet author="keycloak" id="8.0.0-resource-tag-support">
+        <addColumn tableName="MIGRATION_MODEL">
+            <column name="UPDATE_TIME" type="BIGINT" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+
+        <createIndex tableName="MIGRATION_MODEL" indexName="IDX_UPDATE_TIME">
+            <column name="UPDATE_TIME" type="BIGINT" />
+        </createIndex>
+    </changeSet>
+
 </databaseChangeLog>
