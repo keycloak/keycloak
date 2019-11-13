@@ -41,29 +41,29 @@ In the previous releases, developers were allowed to provide client credentials 
 We did some refactoring and improvements related to the authentication flows, which requires some attention during migration.
 
 OPTIONAL execution requirement removed::
-    Regarding migration, the most important change is removing the support for OPTIONAL requirement from authentication executions and
-    replacing it with the CONDITIONAL requirement, which allows more flexibility. The existing OPTIONAL authenticators configured in previous version will be replaced with the CONDITIONAL subflows, where particular subflow will have
+    Regarding migration, the most important change is removing the support for the OPTIONAL requirement from authentication executions and
+    replacing it with the CONDITIONAL requirement, which allows more flexibility. The existing OPTIONAL authenticators configured in the previous version will be replaced with the CONDITIONAL subflows. These subflows will have
     the `Condition - User Configured` condition configured as first execution, and the previously OPTIONAL authenticator (for example `OTP Form`) as second execution.
-    From the user's point of view, the behaviour during authentication should be same as in previous version.
+    From the user's point of view, the behavior during authentication should be same as in the previous version.
 
 Changes in the Java SPI::
     There are some changes in the Java Authentication SPI and Credential Provider SPI. The interface `Authenticator` is not changed,
     but you may be affected if you're developing more advanced authenticators, which introduce some new credential types (subclasses of `CredentialModel`).
     There are changes on the `CredentialProvider` interface and introduction of some new interfaces like `CredentialValidator`. Also you
-    may be affected if your authenticator supported the OPTIONAL execution requirement. It is recommended to double check latest authentication
+    may be affected if your authenticator supported the OPTIONAL execution requirement. It is recommended to double check the latest authentication
     examples in the server development guide for more details.
 
 Freemarker template changes::
    There are also some changes in the freemarker templates. You may be affected if you have your own theme with custom freemarker
    templates for login forms or some account forms, especially for the forms related to OTP. It is recommended to double check changes in
-   the Freemarker templates in latest {project_name} and align your templates according to it.
+   the Freemarker templates in the latest {project_name} and align your templates according to it.
 
 ==== User credentials changes
 
-We added more flexibility around storing of user credentials. Among other things, every user can have multiple credentials of same
+We added more flexibility around storing of user credentials. Among other things, every user can have multiple credentials of the same
 type, for example multiple OTP credentials. There are some changes in the database schema in relation to that, however the credentials from
-previous version should be automatically updated to the new format and users should be still able to login with their passwords or OTP
-credentials set in previous version.
+the previous version should be automatically updated to the new format and users should be still able to login with their passwords or OTP
+credentials set in the previous version.
 
 === Migrating to 7.0.0
 

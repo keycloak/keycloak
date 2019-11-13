@@ -33,7 +33,7 @@ An administrator carries out the following operations on the `Admin Console` :
 ===== Adding WebAuthn Authentication to a Browser Flow
 
 * Select a realm, click on Authentication link, select the "Browser" flow
-* Make a copy of the built-in "Browser" flow. You may want to give the new flow a distinctive name, i.e. "WebAuthn Browser"
+* Make a copy of the built-in "Browser" flow. You may want to give the new flow a distinctive name, for example "WebAuthn Browser"
 * Using the drop down, select the copied flow
 * Delete the `WebAuthn Browser Browser - Conditional OTP` sub-flow using its `Actions` menu
 
@@ -45,10 +45,10 @@ If you want to have WebAuthn required for all users:
 
 image:images/webauthn-browser-flow-required.png[]
 
-Note that in this scenario, if a user doesn't have a WebAuthn credential, a required action will be set that forces him
+Note that in this scenario, if a user doesn't have a WebAuthn credential, a required action will be set that forces that user
 to register one.
 
-Alternatively, you can have users login with WebAuthn only if they have a WebAuthn credential registered, so instead of adding
+Alternatively, you can have users log in with WebAuthn only if they have a WebAuthn credential registered, so instead of adding
 the `WebAuthn Authenticator` execution:
 
 * Using the `Actions` menu of the `WebAuthn Browser Forms`, click on `Add flow`
@@ -77,7 +77,7 @@ After registering their WebAuthn authenticator, the user carries out the followi
 - Open the login form.
 - Select the credential or credentials that {project_name} must accept for login. Then click `Save` and  click `Login`.
 - The list of registered Webauthn Authenticators' labels appears. Click `Authenticate`.
-- The user's browser asks the user to authenticate by their WebAuthn authenticator
+- The user's browser asks the user to authenticate by their WebAuthn authenticator.
 
 ==== Managing WebAuthn as an administrator
 
@@ -86,8 +86,8 @@ After registering their WebAuthn authenticator, the user carries out the followi
 WebAuthn credentials are managed in a similar manner as other credentials, such as OTP, from the <<user-credentials, User credential management>>:
 
 * Users can be assigned a required action to create a WebAuthn credential from the `Reset Actions` list, and selecting `Webauthn Register`
-* The administrator can delete a WebAuthn credential by pressing it's `Delete` button
-* The administrator can view the credential's data such as the AAGUID by selecting `Show data...`
+* The administrator can delete a WebAuthn credential by pressing `Delete`.
+* The administrator can view the credential's data such as the AAGUID by selecting `Show data...`.
 * The administrator can set a label for the credential by setting a value in the `User Label` field and saving the data.
 
 ===== Managing Policy

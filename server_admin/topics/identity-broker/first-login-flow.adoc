@@ -75,7 +75,7 @@ This authenticator ensures that unique users are handled. Set the authenticator 
 Automatically Set Existing User::
 Automatically sets an existing user to the authentication context without any verification. Set the authenticator requirement to "Alternative".
 
-NOTE: The described setup uses two authenticators, and is the simplest one, but it is possible to use other
+NOTE: The described setup uses two authenticators. This setup is the simplest one, but it is possible to use other
 authenticators according to your needs. For example, you can add the Review Profile authenticator to the beginning of the flow if you still want
 end users to confirm their profile information. You can also add authentication mechanisms to this flow, forcing a user to verify his credentials. This
 would require a more complex flow, for example setting the "Automatically Set Existing User" and "Password Form" as "Required" in an "Alternative" sub-flow.
