@@ -41,6 +41,7 @@ import org.keycloak.connections.httpclient.HttpClientProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.util.JsonSerialization;
 
+import javax.ws.rs.core.MediaType;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -273,6 +274,8 @@ public class SimpleHttp {
                 HttpEntity entity = response.getEntity();
                 if (entity != null) {
                     is = entity.getContent();
+                    MediaType mediaType = MediaType.valueOf(entity.getContentType().getValue());
+                    String charset = mediaType.getParameters().getOrDefault("charset", "UTF-8");
                     try {
                         HeaderIterator it = response.headerIterator();
                         while (it.hasNext()) {
@@ -282,7 +285,7 @@ public class SimpleHttp {
                             }
                         }
 
-                        InputStreamReader reader = new InputStreamReader(is);
+                        InputStreamReader reader = new InputStreamReader(is, charset);
 
                         StringWriter writer = new StringWriter();
 
