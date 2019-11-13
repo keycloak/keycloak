@@ -24,6 +24,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
  */
 public class LinkedAccountRepresentation implements Comparable<LinkedAccountRepresentation> {
     private boolean connected;
+    private boolean isSocial;
     private String providerAlias;
     private String providerName;
     private String displayName;
@@ -46,6 +47,14 @@ public class LinkedAccountRepresentation implements Comparable<LinkedAccountRepr
 
     public void setConnected(boolean connected) {
         this.connected = connected;
+    }
+    
+    public boolean isSocial() {
+        return this.isSocial;
+    }
+
+    public void setSocial(boolean isSocial) {
+        this.isSocial = isSocial;
     }
 
     public String getProviderAlias() {
