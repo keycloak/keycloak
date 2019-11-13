@@ -34,6 +34,7 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.message.BasicNameValuePair;
 import org.keycloak.common.util.Base64;
@@ -41,13 +42,13 @@ import org.keycloak.connections.httpclient.HttpClientProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.util.JsonSerialization;
 
-import javax.ws.rs.core.MediaType;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.StringWriter;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -274,8 +275,8 @@ public class SimpleHttp {
                 HttpEntity entity = response.getEntity();
                 if (entity != null) {
                     is = entity.getContent();
-                    MediaType mediaType = MediaType.valueOf(entity.getContentType().getValue());
-                    String charset = mediaType.getParameters().getOrDefault("charset", "UTF-8");
+                    ContentType contentType = ContentType.getOrDefault(entity);
+                    Charset charset = contentType.getCharset();
                     try {
                         HeaderIterator it = response.headerIterator();
                         while (it.hasNext()) {
