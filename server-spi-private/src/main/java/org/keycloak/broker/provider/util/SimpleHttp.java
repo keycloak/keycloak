@@ -187,7 +187,7 @@ public class SimpleHttp {
         boolean delete = method.equals("DELETE");
 
         HttpRequestBase httpRequest = new HttpPost(url);
-        
+
         if (get) {
             httpRequest = new HttpGet(appendParameterToUrl(url));
         }
@@ -286,7 +286,8 @@ public class SimpleHttp {
                             }
                         }
 
-                        InputStreamReader reader = new InputStreamReader(is, charset);
+                        InputStreamReader reader = charset == null ? new InputStreamReader(is) :
+                                new InputStreamReader(is, charset);
 
                         StringWriter writer = new StringWriter();
 
@@ -330,11 +331,11 @@ public class SimpleHttp {
         public String getFirstHeader(String name) throws IOException {
             readResponse();
             Header[] headers = response.getHeaders(name);
-            
+
             if (headers != null && headers.length > 0) {
-                return headers[0].getValue();       
+                return headers[0].getValue();
             }
-            
+
             return null;
         }
 

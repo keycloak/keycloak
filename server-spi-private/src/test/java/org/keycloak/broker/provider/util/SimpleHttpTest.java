@@ -43,7 +43,8 @@ public final class SimpleHttpTest {
             return Arrays.asList(new Object[][]{
                     {"English", StandardCharsets.UTF_8, true},
                     {"Русский", StandardCharsets.UTF_8, true},
-                    {"Русский", StandardCharsets.ISO_8859_1, false}
+                    {"Русский", StandardCharsets.ISO_8859_1, false},
+                    {"Русский", null, false},
             });
         }
 
