@@ -20,6 +20,8 @@ package org.keycloak.protocol.oidc.endpoints.request;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.keycloak.OAuthErrorException;
+
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
@@ -46,6 +48,9 @@ public class AuthorizationEndpointRequest {
     String codeChallengeMethod;
 
     String acr;
+
+    // keep the error on parsing request in order to send it to the client after keycloak confirms the client's valid redirect uri.
+    OAuthErrorException invaidRequestParamException;
 
     public String getAcr() {
         return acr;
@@ -119,5 +124,13 @@ public class AuthorizationEndpointRequest {
 
     public String getDisplay() {
         return display;
+    }
+
+    public OAuthErrorException getInvaidRequestParamException() {
+        return invaidRequestParamException;
+    }
+
+    public void setInvaidRequestParamException(OAuthErrorException invaidRequestParamException) {
+        this.invaidRequestParamException = invaidRequestParamException;
     }
 }

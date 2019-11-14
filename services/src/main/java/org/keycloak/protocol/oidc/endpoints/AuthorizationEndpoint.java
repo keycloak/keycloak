@@ -111,6 +111,10 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
     }
 
     private Response process(MultivaluedMap<String, String> params) {
+        if (params.get(OIDCLoginProtocol.CLIENT_ID_PARAM) != null && params.get(OIDCLoginProtocol.CLIENT_ID_PARAM).size() != 1) {
+            event.error(Errors.INVALID_REQUEST);
+            throw new ErrorPageException(session, Response.Status.BAD_REQUEST, Messages.INVALID_REQUEST);
+        }
         String clientId = params.getFirst(OIDCLoginProtocol.CLIENT_ID_PARAM);
 
         checkSsl();
@@ -124,8 +128,8 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
         if (errorResponse != null) {
             return errorResponse;
         }
- 
-        errorResponse = checkParamsMoreThanOnce(params);
+
+        errorResponse = checkErrorOnParseRequest();
         if (errorResponse != null) {
             return errorResponse;
         }
@@ -278,31 +282,14 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
         return null;
     }
 
-    private Response checkParamsMoreThanOnce(MultivaluedMap<String, String> params) {
-        Response res = null;
-        boolean isClientSuspicious = false;
-        boolean isParamSuspicious = false;
-
-        for (String key : params.keySet()) {
-            if (params.get(key).size() != 1) {
-                isParamSuspicious = true;
-                if (OAuth2Constants.REDIRECT_URI.equals(key) || OAuth2Constants.CLIENT_ID.equals(key)) {
-                    isClientSuspicious = true;
-                    break;
-                }
-            }
-        }
-
-        if (isParamSuspicious) {
+    private Response checkErrorOnParseRequest() {
+        // send to the client the error on parsing request and was kept temporarily
+        if (request.getInvaidRequestParamException() != null) {
             event.error(Errors.INVALID_REQUEST);
-            if (isClientSuspicious) {
-                throw new ErrorPageException(session, authenticationSession, Response.Status.BAD_REQUEST, Messages.INVALID_REQUEST);
-            } else {
-                res = redirectErrorToClient(parsedResponseMode, OAuthErrorException.INVALID_REQUEST, "Parameter sent more than once");
-            }
+            return redirectErrorToClient(parsedResponseMode, request.getInvaidRequestParamException().getError(), request.getInvaidRequestParamException().getDescription());
         }
 
-        return res;
+        return null;
     }
 
     private Response checkOIDCParams() {

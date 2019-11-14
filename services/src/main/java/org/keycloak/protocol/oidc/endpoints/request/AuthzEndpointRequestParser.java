@@ -19,6 +19,7 @@ package org.keycloak.protocol.oidc.endpoints.request;
 
 import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.OAuthErrorException;
 import org.keycloak.constants.AdapterConstants;
 import org.keycloak.models.Constants;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -26,6 +27,8 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+
+import javax.ws.rs.core.MultivaluedMap;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -75,40 +78,40 @@ abstract class AuthzEndpointRequestParser {
 
 
     public void parseRequest(AuthorizationEndpointRequest request) {
-        String clientId = getParameter(OIDCLoginProtocol.CLIENT_ID_PARAM);
+        String clientId = getParameter(OIDCLoginProtocol.CLIENT_ID_PARAM, request);
 
         if (request.clientId != null && !request.clientId.equals(clientId)) {
             throw new IllegalArgumentException("The client_id parameter doesn't match the one from OIDC 'request' or 'request_uri'");
         }
 
         request.clientId = clientId;
-        request.responseType = replaceIfNotNull(request.responseType, getParameter(OIDCLoginProtocol.RESPONSE_TYPE_PARAM));
-        request.responseMode = replaceIfNotNull(request.responseMode, getParameter(OIDCLoginProtocol.RESPONSE_MODE_PARAM));
-        request.redirectUriParam = replaceIfNotNull(request.redirectUriParam, getParameter(OIDCLoginProtocol.REDIRECT_URI_PARAM));
-        request.state = replaceIfNotNull(request.state, getParameter(OIDCLoginProtocol.STATE_PARAM));
-        request.scope = replaceIfNotNull(request.scope, getParameter(OIDCLoginProtocol.SCOPE_PARAM));
-        request.loginHint = replaceIfNotNull(request.loginHint, getParameter(OIDCLoginProtocol.LOGIN_HINT_PARAM));
-        request.prompt = replaceIfNotNull(request.prompt, getParameter(OIDCLoginProtocol.PROMPT_PARAM));
-        request.idpHint = replaceIfNotNull(request.idpHint, getParameter(AdapterConstants.KC_IDP_HINT));
-        request.action = replaceIfNotNull(request.action, getParameter(Constants.KC_ACTION));
-        request.nonce = replaceIfNotNull(request.nonce, getParameter(OIDCLoginProtocol.NONCE_PARAM));
-        request.maxAge = replaceIfNotNull(request.maxAge, getIntParameter(OIDCLoginProtocol.MAX_AGE_PARAM));
-        request.claims = replaceIfNotNull(request.claims, getParameter(OIDCLoginProtocol.CLAIMS_PARAM));
-        request.acr = replaceIfNotNull(request.acr, getParameter(OIDCLoginProtocol.ACR_PARAM));
-        request.display = replaceIfNotNull(request.display, getParameter(OAuth2Constants.DISPLAY));
+        request.responseType = replaceIfNotNull(request.responseType, getParameter(OIDCLoginProtocol.RESPONSE_TYPE_PARAM, request));
+        request.responseMode = replaceIfNotNull(request.responseMode, getParameter(OIDCLoginProtocol.RESPONSE_MODE_PARAM, request));
+        request.redirectUriParam = replaceIfNotNull(request.redirectUriParam, getParameter(OIDCLoginProtocol.REDIRECT_URI_PARAM, request));
+        request.state = replaceIfNotNull(request.state, getParameter(OIDCLoginProtocol.STATE_PARAM, request));
+        request.scope = replaceIfNotNull(request.scope, getParameter(OIDCLoginProtocol.SCOPE_PARAM, request));
+        request.loginHint = replaceIfNotNull(request.loginHint, getParameter(OIDCLoginProtocol.LOGIN_HINT_PARAM, request));
+        request.prompt = replaceIfNotNull(request.prompt, getParameter(OIDCLoginProtocol.PROMPT_PARAM, request));
+        request.idpHint = replaceIfNotNull(request.idpHint, getParameter(AdapterConstants.KC_IDP_HINT, request));
+        request.action = replaceIfNotNull(request.action, getParameter(Constants.KC_ACTION, request));
+        request.nonce = replaceIfNotNull(request.nonce, getParameter(OIDCLoginProtocol.NONCE_PARAM, request));
+        request.maxAge = replaceIfNotNull(request.maxAge, getIntParameter(OIDCLoginProtocol.MAX_AGE_PARAM, request));
+        request.claims = replaceIfNotNull(request.claims, getParameter(OIDCLoginProtocol.CLAIMS_PARAM, request));
+        request.acr = replaceIfNotNull(request.acr, getParameter(OIDCLoginProtocol.ACR_PARAM, request));
+        request.display = replaceIfNotNull(request.display, getParameter(OAuth2Constants.DISPLAY, request));
 
         // https://tools.ietf.org/html/rfc7636#section-6.1
-        request.codeChallenge = replaceIfNotNull(request.codeChallenge, getParameter(OIDCLoginProtocol.CODE_CHALLENGE_PARAM));
-        request.codeChallengeMethod = replaceIfNotNull(request.codeChallengeMethod, getParameter(OIDCLoginProtocol.CODE_CHALLENGE_METHOD_PARAM));
+        request.codeChallenge = replaceIfNotNull(request.codeChallenge, getParameter(OIDCLoginProtocol.CODE_CHALLENGE_PARAM, request));
+        request.codeChallengeMethod = replaceIfNotNull(request.codeChallengeMethod, getParameter(OIDCLoginProtocol.CODE_CHALLENGE_METHOD_PARAM, request));
 
-        extractAdditionalReqParams(request.additionalReqParams);
+        extractAdditionalReqParams(request.additionalReqParams, request);
     }
 
 
-    protected void extractAdditionalReqParams(Map<String, String> additionalReqParams) {
+    protected void extractAdditionalReqParams(Map<String, String> additionalReqParams, AuthorizationEndpointRequest request) {
         for (String paramName : keySet()) {
             if (!KNOWN_REQ_PARAMS.contains(paramName)) {
-                String value = getParameter(paramName);
+                String value = getParameter(paramName, request);
                 if (value != null && value.trim().isEmpty()) {
                     value = null;
                 }
@@ -130,10 +133,20 @@ abstract class AuthzEndpointRequestParser {
         return newVal==null ? previousVal : newVal;
     }
 
+    protected void checkParameterDuplicated(MultivaluedMap<String, String> requestParams, String paramName, AuthorizationEndpointRequest request) {
+        if(!isParameterCheckNeeded(request)) return;
 
-    protected abstract String getParameter(String paramName);
+        if (requestParams.get(paramName) != null && requestParams.get(paramName).size() != 1)
+            request.invaidRequestParamException = new OAuthErrorException(OAuthErrorException.INVALID_REQUEST, "parameter duplicated");
+    }
 
-    protected abstract Integer getIntParameter(String paramName);
+    protected boolean isParameterCheckNeeded(AuthorizationEndpointRequest request) {
+        return request.invaidRequestParamException == null ? true : false;
+    }
+
+    protected abstract String getParameter(String paramName, AuthorizationEndpointRequest request);
+
+    protected abstract Integer getIntParameter(String paramName, AuthorizationEndpointRequest request);
 
     protected abstract Set<String> keySet();
 

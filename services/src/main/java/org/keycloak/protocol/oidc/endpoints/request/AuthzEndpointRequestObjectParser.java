@@ -65,7 +65,7 @@ class AuthzEndpointRequestObjectParser extends AuthzEndpointRequestParser {
     }
 
     @Override
-    protected String getParameter(String paramName) {
+    protected String getParameter(String paramName, AuthorizationEndpointRequest request) {
         JsonNode val = this.requestParams.get(paramName);
         if (val == null) {
             return null;
@@ -77,9 +77,9 @@ class AuthzEndpointRequestObjectParser extends AuthzEndpointRequestParser {
     }
 
     @Override
-    protected Integer getIntParameter(String paramName) {
+    protected Integer getIntParameter(String paramName, AuthorizationEndpointRequest request) {
         Object val = this.requestParams.get(paramName);
-        return val==null ? null : Integer.parseInt(getParameter(paramName));
+        return val==null ? null : Integer.parseInt(getParameter(paramName, request));
     }
 
     @Override

@@ -226,7 +226,7 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
 
         oauth.openLoginForm();
         assertEquals("Invalid Request", driver.findElement(By.className("instruction")).getText());
-        events.expectLogin().error(Errors.INVALID_REQUEST).user((String) null).session((String) null).clearDetails().assertEvent();
+        events.expectLogin().error(Errors.INVALID_REQUEST).user((String) null).session((String) null).client((String) null).clearDetails().assertEvent();
     }
     
 }
