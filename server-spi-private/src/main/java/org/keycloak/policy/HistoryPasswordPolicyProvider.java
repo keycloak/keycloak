@@ -25,6 +25,7 @@ import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -74,10 +75,13 @@ public class HistoryPasswordPolicyProvider implements PasswordPolicyProvider {
     }
 
     private List<CredentialModel> getRecent(List<CredentialModel> passwordHistory, int limit) {
-        return passwordHistory.stream()
-                .sorted(CredentialModel.comparingByStartDateDesc())
-                .limit(limit)
-                .collect(Collectors.toList());
+        return limit < 0
+                ? Collections.emptyList()
+                :
+                passwordHistory.stream()
+                        .sorted(CredentialModel.comparingByStartDateDesc())
+                        .limit(limit)
+                        .collect(Collectors.toList());
     }
 
     @Override
