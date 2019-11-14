@@ -32,17 +32,22 @@ import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.credential.CredentialAuthentication;
+import org.keycloak.credential.CredentialModel;
 import org.keycloak.credential.UserCredentialStoreManager;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import static org.keycloak.models.UserModel.RequiredAction.UPDATE_PROFILE;
 import org.keycloak.models.cache.CachedUserModel;
+import org.keycloak.models.credential.OTPCredentialModel;
+import org.keycloak.models.credential.PasswordCredentialModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.storage.StorageId;
 import org.keycloak.storage.UserStorageProvider;
 import static org.keycloak.storage.UserStorageProviderModel.CACHE_POLICY;
 import org.keycloak.storage.CacheableStorageProviderModel.CachePolicy;
@@ -63,6 +68,8 @@ import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.GreenMailRule;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
+
 import javax.mail.internet.MimeMessage;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Rule;
@@ -844,6 +851,125 @@ public class UserStorageTest extends AbstractAuthTest {
             Assert.assertEquals(2, UserMapStorage.roleRemovals.get()); // check if role removal hooks were called
         });
 
+    }
+
+
+    @Test
+    @ModelTest
+    public void testCredentialCRUD(KeycloakSession session) throws Exception {
+        AtomicReference<String> passwordId = new AtomicReference<>();
+        AtomicReference<String> otp1Id = new AtomicReference<>();
+        AtomicReference<String> otp2Id = new AtomicReference<>();
+
+        KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession currentSession) -> {
+            RealmModel realm = currentSession.realms().getRealmByName("test");
+
+            UserModel user = currentSession.users().getUserByUsername("thor", realm);
+            Assert.assertFalse(StorageId.isLocalStorage(user));
+
+            List<CredentialModel> list = currentSession.userCredentialManager().getStoredCredentials(realm, user);
+            org.keycloak.testsuite.Assert.assertEquals(0, list.size());
+
+            // Create password
+            CredentialModel passwordCred = PasswordCredentialModel.createFromValues("my-algorithm", "theSalt".getBytes(), 22, "ABC");
+            passwordCred = currentSession.userCredentialManager().createCredential(realm, user, passwordCred);
+            passwordId.set(passwordCred.getId());
+
+            // Create Password and 2 OTP credentials (password was already created)
+            CredentialModel otp1 = OTPCredentialModel.createFromPolicy(realm, "secret1");
+            CredentialModel otp2 = OTPCredentialModel.createFromPolicy(realm, "secret2");
+            otp1 = currentSession.userCredentialManager().createCredential(realm, user, otp1);
+            otp2 = currentSession.userCredentialManager().createCredential(realm, user, otp2);
+            otp1Id.set(otp1.getId());
+            otp2Id.set(otp2.getId());
+        });
+
+
+        KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession currentSession) -> {
+            RealmModel realm = currentSession.realms().getRealmByName("test");
+            UserModel user = currentSession.users().getUserByUsername("thor", realm);
+
+            // Assert priorities: password, otp1, otp2
+            List<CredentialModel> list = currentSession.userCredentialManager().getStoredCredentials(realm, user);
+            assertOrder(list, passwordId.get(), otp1Id.get(), otp2Id.get());
+
+            // Assert can't move password when newPreviousCredential not found
+            assertFalse(currentSession.userCredentialManager().moveCredentialTo(realm, user, passwordId.get(), "not-known"));
+
+            // Assert can't move credential when not found
+            assertFalse(currentSession.userCredentialManager().moveCredentialTo(realm, user, "not-known", otp2Id.get()));
+
+            // Move otp2 up
+            assertTrue(currentSession.userCredentialManager().moveCredentialTo(realm, user, otp2Id.get(), passwordId.get()));
+        });
+
+        KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession currentSession) -> {
+            RealmModel realm = currentSession.realms().getRealmByName("test");
+            UserModel user = currentSession.users().getUserByUsername("thor", realm);
+
+            // Assert priorities: password, otp2, otp1
+            List<CredentialModel> list = currentSession.userCredentialManager().getStoredCredentials(realm, user);
+            assertOrder(list, passwordId.get(), otp2Id.get(), otp1Id.get());
+
+            // Move otp2 to the top
+            org.keycloak.testsuite.Assert.assertTrue(currentSession.userCredentialManager().moveCredentialTo(realm, user, otp2Id.get(), null));
+        });
+
+        KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession currentSession) -> {
+            RealmModel realm = currentSession.realms().getRealmByName("test");
+            UserModel user = currentSession.users().getUserByUsername("thor", realm);
+
+            // Assert priorities: otp2, password, otp1
+            List<CredentialModel> list = currentSession.userCredentialManager().getStoredCredentials(realm, user);
+            assertOrder(list, otp2Id.get(), passwordId.get(), otp1Id.get());
+
+            // Move password down
+            assertTrue(currentSession.userCredentialManager().moveCredentialTo(realm, user, passwordId.get(), otp1Id.get()));
+        });
+
+        KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession currentSession) -> {
+            RealmModel realm = currentSession.realms().getRealmByName("test");
+            UserModel user = currentSession.users().getUserByUsername("thor", realm);
+
+            // Assert priorities: otp2, otp1, password
+            List<CredentialModel> list = currentSession.userCredentialManager().getStoredCredentials(realm, user);
+            assertOrder(list, otp2Id.get(), otp1Id.get(), passwordId.get());
+
+            // Remove otp2 down two positions
+            assertTrue(currentSession.userCredentialManager().moveCredentialTo(realm, user, otp2Id.get(), passwordId.get()));
+        });
+
+        KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession currentSession) -> {
+            RealmModel realm = currentSession.realms().getRealmByName("test");
+            UserModel user = currentSession.users().getUserByUsername("thor", realm);
+
+            // Assert priorities: otp2, otp1, password
+            List<CredentialModel> list = currentSession.userCredentialManager().getStoredCredentials(realm, user);
+            assertOrder(list, otp1Id.get(), passwordId.get(), otp2Id.get());
+
+            // Remove password
+            assertTrue(currentSession.userCredentialManager().removeStoredCredential(realm, user, passwordId.get()));
+        });
+
+        KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession currentSession) -> {
+            RealmModel realm = currentSession.realms().getRealmByName("test");
+            UserModel user = currentSession.users().getUserByUsername("thor", realm);
+
+            // Assert priorities: otp2, password
+            List<CredentialModel> list = currentSession.userCredentialManager().getStoredCredentials(realm, user);
+            assertOrder(list, otp1Id.get(), otp2Id.get());
+        });
+    }
+
+
+    private void assertOrder(List<CredentialModel> creds, String... expectedIds) {
+        org.keycloak.testsuite.Assert.assertEquals(expectedIds.length, creds.size());
+
+        if (creds.size() == 0) return;
+
+        for (int i=0 ; i<expectedIds.length ; i++) {
+            org.keycloak.testsuite.Assert.assertEquals(creds.get(i).getId(), expectedIds[i]);
+        }
     }
 
 }

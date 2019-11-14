@@ -28,6 +28,7 @@ import org.keycloak.admin.client.resource.AuthorizationResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.Constants;
+import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.representations.KeyStoreConfig;
 import org.keycloak.representations.idm.AuthenticationExecutionInfoRepresentation;
 import org.keycloak.representations.idm.AuthenticationExecutionRepresentation;
@@ -37,7 +38,7 @@ import org.keycloak.representations.idm.ClientInitialAccessCreatePresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.ComponentRepresentation;
-import org.keycloak.representations.idm.ConfigPropertyRepresentation;
+import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
@@ -82,7 +83,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 import static org.keycloak.services.resources.admin.AdminAuth.Resource.AUTHORIZATION;
 import static org.keycloak.services.resources.admin.AdminAuth.Resource.CLIENT;
-import org.keycloak.testsuite.ProfileAssume;
+
 import org.keycloak.testsuite.utils.tls.TLSUtils;
 
 /**
@@ -1146,7 +1147,7 @@ public class PermissionsTest extends AbstractKeycloakTest {
             public void invoke(RealmResource realm, AtomicReference<Response> response) {
                 AuthenticationExecutionRepresentation rep = new AuthenticationExecutionRepresentation();
                 rep.setAuthenticator("auth-cookie");
-                rep.setRequirement("OPTIONAL");
+                rep.setRequirement("CONDITIONAL");
                 response.set(realm.flows().addExecution(rep));
             }
         }, Resource.REALM, true);
@@ -1499,7 +1500,13 @@ public class PermissionsTest extends AbstractKeycloakTest {
         }, Resource.USER, true);
         invoke(new Invocation() {
             public void invoke(RealmResource realm) {
-                realm.users().get(user.getId()).removeTotp();
+                CredentialRepresentation totpCredential = realm.users().get(user.getId()).credentials().stream()
+                        .filter(c -> OTPCredentialModel.TYPE.equals(c.getType())).findFirst().orElse(null);
+                if (totpCredential != null) {
+                    realm.users().get(user.getId()).removeCredential(totpCredential.getId());
+                } else {
+                    realm.users().get(user.getId()).removeCredential("123");
+                }
             }
         }, Resource.USER, true);
         invoke(new Invocation() {

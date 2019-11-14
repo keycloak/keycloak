@@ -62,9 +62,7 @@ public class LDAPTestUtils {
         user.setEmail(email);
         user.setEnabled(true);
 
-        UserCredentialModel creds = new UserCredentialModel();
-        creds.setType(CredentialRepresentation.PASSWORD);
-        creds.setValue(password);
+        UserCredentialModel creds = UserCredentialModel.password(password);
 
         session.userCredentialManager().updateCredential(realm, user, creds);
         return user;

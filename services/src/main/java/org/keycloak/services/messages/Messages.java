@@ -177,6 +177,8 @@ public class Messages {
 
     public static final String REALM_SUPPORTS_NO_CREDENTIALS = "realmSupportsNoCredentialsMessage";
 
+    public static final String CREDENTIAL_SETUP_REQUIRED ="credentialSetupRequired";
+
     public static final String READ_ONLY_USER = "readOnlyUserMessage";
 
     public static final String READ_ONLY_USERNAME = "readOnlyUsernameMessage";

@@ -1744,14 +1744,24 @@
     "totp" : false,
     "emailVerified" : false,
     "credentials" : [ {
-      "type" : "password",
-      "hashedSaltedValue" : "Y71bKP3V5cvqiPGxPspDCQRraGbJD4IGxjYOez4QdubTYpoFjYb2wdC+pRoXskBvOaCYQcGzMa3SatDrFlBm9Q==",
-      "salt" : "o6D0KTKeFVejy00RhKZxvQ==",
-      "hashIterations" : 20000,
+      "type" : "totp",
+      "hashedSaltedValue" : "dSdmuHLQhkm54oIm0A0S",
+      "hashIterations" : 0,
       "counter" : 0,
-      "algorithm" : "pbkdf2",
+      "algorithm" : "HmacSHA1",
+      "digits" : 8,
+      "period" : 40,
+      "createdDate" : 1570002889420
+    }, {
+      "type" : "password",
+      "hashedSaltedValue" : "kNwotFPNeuwelpT1HWt+E4ONXFK6wjd+h0zbzNBRGwOqacAjeY7vYN9QZQ46DlEKSdn04cEU/3RvX8WPcRegxg==",
+      "salt" : "rEIJDbs+BQqpx31v8mONWA==",
+      "hashIterations" : 27500,
+      "counter" : 0,
+      "algorithm" : "pbkdf2-sha256",
       "digits" : 0,
-      "createdDate" : 1476260086000
+      "period" : 0,
+      "createdDate" : 1570002786025
     } ],
     "requiredActions" : [ ],
     "realmRoles" : [ "offline_access" ],

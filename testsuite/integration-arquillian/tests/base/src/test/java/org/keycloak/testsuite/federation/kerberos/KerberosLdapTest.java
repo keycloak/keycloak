@@ -85,7 +85,7 @@ public class KerberosLdapTest extends AbstractKerberosSingleRealmTest {
 
         for (AuthenticationExecutionInfoRepresentation execution : executions) {
             if ("basic-auth".equals(execution.getProviderId())) {
-                execution.setRequirement("OPTIONAL");
+                execution.setRequirement("ALTERNATIVE");
                 testRealmResource().flows().updateExecutions("http challenge", execution);
             }
             if ("auth-spnego".equals(execution.getProviderId())) {

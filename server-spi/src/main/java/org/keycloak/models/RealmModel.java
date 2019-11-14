@@ -298,6 +298,7 @@ public interface RealmModel extends RoleContainerModel {
 
     List<AuthenticationExecutionModel> getAuthenticationExecutions(String flowId);
     AuthenticationExecutionModel getAuthenticationExecutionById(String id);
+    AuthenticationExecutionModel getAuthenticationExecutionByFlowId(String flowId);
     AuthenticationExecutionModel addAuthenticatorExecution(AuthenticationExecutionModel model);
     void updateAuthenticatorExecution(AuthenticationExecutionModel model);
     void removeAuthenticatorExecution(AuthenticationExecutionModel model);

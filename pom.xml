@@ -154,7 +154,7 @@
         <surefire.memory.Xms>512m</surefire.memory.Xms>
         <surefire.memory.Xmx>2048m</surefire.memory.Xmx>
         <surefire.memory.metaspace>96m</surefire.memory.metaspace>
-        <surefire.memory.metaspace.max>256m</surefire.memory.metaspace.max>
+        <surefire.memory.metaspace.max>512m</surefire.memory.metaspace.max>
         <surefire.memory.settings>-Xms${surefire.memory.Xms} -Xmx${surefire.memory.Xmx} -XX:MetaspaceSize=${surefire.memory.metaspace} -XX:MaxMetaspaceSize=${surefire.memory.metaspace.max}</surefire.memory.settings>
 
         <!-- Tomcat versions -->

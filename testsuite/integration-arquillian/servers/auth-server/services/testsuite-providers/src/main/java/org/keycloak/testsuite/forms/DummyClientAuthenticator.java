@@ -41,10 +41,6 @@ public class DummyClientAuthenticator extends AbstractClientAuthenticator {
 
     public static final String PROVIDER_ID = "testsuite-client-dummy";
 
-    public static final AuthenticationExecutionModel.Requirement[] REQUIREMENT_CHOICES = {
-            AuthenticationExecutionModel.Requirement.ALTERNATIVE
-    };
-
     @Override
     public void authenticateClient(ClientAuthenticationFlowContext context) {
         ClientIdAndSecretAuthenticator authenticator = new ClientIdAndSecretAuthenticator();

@@ -40,14 +40,12 @@ import org.keycloak.federation.kerberos.impl.KerberosUsernamePasswordAuthenticat
 import org.keycloak.federation.kerberos.impl.SPNEGOAuthenticator;
 import org.keycloak.models.*;
 import org.keycloak.models.cache.CachedUserModel;
+import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.models.utils.DefaultRoles;
 import org.keycloak.models.utils.ReadOnlyUserModelDelegate;
 import org.keycloak.policy.PasswordPolicyManagerProvider;
 import org.keycloak.policy.PolicyError;
 import org.keycloak.models.cache.UserCache;
-import org.keycloak.models.credential.PasswordUserCredentialModel;
-import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.models.utils.ReadOnlyUserModelDelegate;
 import org.keycloak.storage.ReadOnlyException;
 import org.keycloak.storage.StorageId;
 import org.keycloak.storage.UserStorageProvider;
@@ -110,7 +108,7 @@ public class LDAPStorageProvider implements UserStorageProvider,
         this.mapperManager = new LDAPStorageMapperManager(this);
         this.userManager = new LDAPStorageUserManager(this);
 
-        supportedCredentialTypes.add(UserCredentialModel.PASSWORD);
+        supportedCredentialTypes.add(PasswordCredentialModel.TYPE);
         if (kerberosConfig.isAllowKerberosAuthentication()) {
             supportedCredentialTypes.add(UserCredentialModel.KERBEROS);
         }
@@ -218,7 +216,7 @@ public class LDAPStorageProvider implements UserStorageProvider,
 
     @Override
     public boolean supportsCredentialAuthenticationFor(String type) {
-        return type.equals(CredentialModel.KERBEROS) && kerberosConfig.isAllowKerberosAuthentication();
+        return type.equals(UserCredentialModel.KERBEROS) && kerberosConfig.isAllowKerberosAuthentication();
     }
 
     @Override
@@ -613,14 +611,13 @@ public class LDAPStorageProvider implements UserStorageProvider,
 
     @Override
     public boolean updateCredential(RealmModel realm, UserModel user, CredentialInput input) {
-        if (!CredentialModel.PASSWORD.equals(input.getType()) || ! (input instanceof PasswordUserCredentialModel)) return false;
+        if (!PasswordCredentialModel.TYPE.equals(input.getType()) || ! (input instanceof UserCredentialModel)) return false;
         if (editMode == UserStorageProvider.EditMode.READ_ONLY) {
             throw new ReadOnlyException("Federated storage is not writable");
 
         } else if (editMode == UserStorageProvider.EditMode.WRITABLE) {
             LDAPIdentityStore ldapIdentityStore = getLdapIdentityStore();
-            PasswordUserCredentialModel cred = (PasswordUserCredentialModel)input;
-            String password = cred.getValue();
+            String password = input.getChallengeResponse();
             LDAPObject ldapUser = loadAndValidateUser(realm, user);
             if (ldapIdentityStore.getConfig().isValidatePasswordPolicy()) {
 		PolicyError error = session.getProvider(PasswordPolicyManagerProvider.class).validate(realm, user, password);
@@ -629,16 +626,16 @@ public class LDAPStorageProvider implements UserStorageProvider,
             try {
                 LDAPOperationDecorator operationDecorator = null;
                 if (updater != null) {
-                    operationDecorator = updater.beforePasswordUpdate(user, ldapUser, cred);
+                    operationDecorator = updater.beforePasswordUpdate(user, ldapUser, (UserCredentialModel)input);
                 }
 
                 ldapIdentityStore.updatePassword(ldapUser, password, operationDecorator);
 
-                if (updater != null) updater.passwordUpdated(user, ldapUser, cred);
+                if (updater != null) updater.passwordUpdated(user, ldapUser, (UserCredentialModel)input);
                 return true;
             } catch (ModelException me) {
                 if (updater != null) {
-                    updater.passwordUpdateFailed(user, ldapUser, cred, me);
+                    updater.passwordUpdateFailed(user, ldapUser, (UserCredentialModel)input, me);
                     return false;
                 } else {
                     throw me;
@@ -678,8 +675,8 @@ public class LDAPStorageProvider implements UserStorageProvider,
     @Override
     public boolean isValid(RealmModel realm, UserModel user, CredentialInput input) {
         if (!(input instanceof UserCredentialModel)) return false;
-        if (input.getType().equals(UserCredentialModel.PASSWORD) && !session.userCredentialManager().isConfiguredLocally(realm, user, UserCredentialModel.PASSWORD)) {
-            return validPassword(realm, user, ((UserCredentialModel)input).getValue());
+        if (input.getType().equals(PasswordCredentialModel.TYPE) && !session.userCredentialManager().isConfiguredLocally(realm, user, PasswordCredentialModel.TYPE)) {
+            return validPassword(realm, user, input.getChallengeResponse());
         } else {
             return false; // invalid cred type
         }
@@ -691,7 +688,7 @@ public class LDAPStorageProvider implements UserStorageProvider,
         UserCredentialModel credential = (UserCredentialModel)cred;
         if (credential.getType().equals(UserCredentialModel.KERBEROS)) {
             if (kerberosConfig.isAllowKerberosAuthentication()) {
-                String spnegoToken = credential.getValue();
+                String spnegoToken = credential.getChallengeResponse();
                 SPNEGOAuthenticator spnegoAuthenticator = factory.createSPNEGOAuthenticator(spnegoToken, kerberosConfig);
 
                 spnegoAuthenticator.authenticate();

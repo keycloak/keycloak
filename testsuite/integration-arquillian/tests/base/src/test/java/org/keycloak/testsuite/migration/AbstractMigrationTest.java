@@ -32,9 +32,11 @@ import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
+import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.AuthenticationExecutionExportRepresentation;
+import org.keycloak.representations.idm.AuthenticationExecutionInfoRepresentation;
 import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
@@ -244,10 +246,17 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
     }
 
     protected void testMigrationTo8_0_0() {
+        // Common
         testAdminClientUrls(masterRealm);
         testAdminClientUrls(migrationRealm);
         testAccountClientUrls(masterRealm);
         testAccountClientUrls(migrationRealm);
+
+        // MFA - Check that credentials were created for user and are available
+        testCredentialsMigratedToNewFormat();
+
+        // MFA - Check that authentication flows were migrated as expected
+        testOTPAuthenticatorsMigratedToConditionalFlow();
     }
 
     private void testAdminClientUrls(RealmResource realm) {
@@ -603,6 +612,83 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
                 priority += 10;
             }
         }
+    }
+
+    protected void testCredentialsMigratedToNewFormat() {
+        log.info("testing user's credentials migrated to new format with secretData and credentialData");
+
+        // Try to login with password+otp after the migration
+        try {
+            oauth.realm(MIGRATION);
+            oauth.clientId("migration-test-client");
+
+            TimeBasedOTP otpGenerator = new TimeBasedOTP("HmacSHA1", 8, 40, 1);
+            String otp = otpGenerator.generateTOTP("dSdmuHLQhkm54oIm0A0S");
+
+            // Try invalid password first
+            OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("b2c07929-69e3-44c6-8d7f-76939000b3e4",
+                    "migration-test-user", "password", otp);
+            Assert.assertNull(response.getAccessToken());
+            Assert.assertNotNull(response.getError());
+
+            // Try invalid OTP then
+            response = oauth.doGrantAccessTokenRequest("b2c07929-69e3-44c6-8d7f-76939000b3e4",
+                    "migration-test-user", "password2", "invalid");
+            Assert.assertNull(response.getAccessToken());
+            Assert.assertNotNull(response.getError());
+
+            // Try successful login now
+            response = oauth.doGrantAccessTokenRequest("b2c07929-69e3-44c6-8d7f-76939000b3e4",
+                    "migration-test-user", "password2", otp);
+            Assert.assertNull(response.getError());
+            AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
+            assertEquals("migration-test-user", accessToken.getPreferredUsername());
+        } catch (Exception e) {
+            throw new AssertionError("Failed to login with user 'migration-test-user' after migration", e);
+        }
+    }
+
+
+    protected void testOTPAuthenticatorsMigratedToConditionalFlow() {
+        log.info("testing optional authentication executions migrated");
+
+        testOTPExecutionMigratedToConditionalFlow("browser", "forms - auth-otp-form - Conditional","OTP Form");
+        testOTPExecutionMigratedToConditionalFlow("direct grant", "direct grant - direct-grant-validate-otp - Conditional","OTP");
+        testOTPExecutionMigratedToConditionalFlow("reset credentials", "reset credentials - reset-otp - Conditional","Reset OTP");
+        testOTPExecutionMigratedToConditionalFlow("first broker login", "Verify Existing Account by Re-authentication - auth-otp-form - Conditional","OTP Form");
+    }
+
+
+    private void testOTPExecutionMigratedToConditionalFlow(String topFlowAlias, String expectedOTPSubflowAlias, String expectedOTPExecutionDisplayName) {
+        List<AuthenticationExecutionInfoRepresentation> authExecutions = migrationRealm.flows().getExecutions(topFlowAlias);
+
+        int counter = -1;
+        AuthenticationExecutionInfoRepresentation subflowExecution = null;
+        for (AuthenticationExecutionInfoRepresentation ex : authExecutions) {
+            counter++;
+            if (expectedOTPSubflowAlias.equals(ex.getDisplayName())) {
+                subflowExecution = ex;
+                break;
+            }
+        }
+
+        if (subflowExecution == null) {
+            throw new AssertionError("Not found subflow with displayName '" + expectedOTPSubflowAlias + "' in the flow " + topFlowAlias);
+        }
+
+        Assert.assertEquals(AuthenticationExecutionModel.Requirement.CONDITIONAL.toString(), subflowExecution.getRequirement());
+
+        AuthenticationExecutionInfoRepresentation childEx1 = authExecutions.get(counter + 1);
+        Assert.assertEquals("Condition - user configured", childEx1.getDisplayName());
+        Assert.assertEquals(AuthenticationExecutionModel.Requirement.REQUIRED.toString(), childEx1.getRequirement());
+        Assert.assertEquals(0, childEx1.getIndex());
+        Assert.assertEquals(subflowExecution.getLevel() + 1, childEx1.getLevel());
+
+        AuthenticationExecutionInfoRepresentation childEx2 = authExecutions.get(counter + 2);
+        Assert.assertEquals(expectedOTPExecutionDisplayName, childEx2.getDisplayName());
+        Assert.assertEquals(AuthenticationExecutionModel.Requirement.REQUIRED.toString(), childEx2.getRequirement());
+        Assert.assertEquals(1, childEx2.getIndex());
+        Assert.assertEquals(subflowExecution.getLevel() + 1, childEx2.getLevel());
     }
 
     protected void testMigrationTo2_x() throws Exception {

@@ -22,6 +22,8 @@ import com.webauthn4j.converter.util.CborConverter;
 
 public class WebAuthnCredentialProviderFactory implements CredentialProviderFactory<WebAuthnCredentialProvider> {
 
+    public static final String PROVIDER_ID = "keycloak-webauthn";
+
     private static CborConverter converter = new CborConverter();
 
     @Override
@@ -31,6 +33,6 @@ public class WebAuthnCredentialProviderFactory implements CredentialProviderFact
 
     @Override
     public String getId() {
-        return "keycloak-webauthn";
+        return PROVIDER_ID;
     }
 }

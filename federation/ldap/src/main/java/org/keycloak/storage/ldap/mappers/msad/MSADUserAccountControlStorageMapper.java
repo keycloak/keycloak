@@ -19,13 +19,11 @@ package org.keycloak.storage.ldap.mappers.msad;
 
 import org.jboss.logging.Logger;
 import org.keycloak.component.ComponentModel;
-import org.keycloak.credential.CredentialInput;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.credential.PasswordUserCredentialModel;
-import org.keycloak.models.utils.UserModelDelegate;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.ldap.LDAPStorageProvider;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
@@ -75,7 +73,7 @@ public class MSADUserAccountControlStorageMapper extends AbstractLDAPStorageMapp
     }
 
     @Override
-    public LDAPOperationDecorator beforePasswordUpdate(UserModel user, LDAPObject ldapUser, PasswordUserCredentialModel password) {
+    public LDAPOperationDecorator beforePasswordUpdate(UserModel user, LDAPObject ldapUser, UserCredentialModel password) {
         // Not apply policies if password is reset by admin (not by user himself)
         if (password.isAdminRequest()) {
             return null;
@@ -86,7 +84,7 @@ public class MSADUserAccountControlStorageMapper extends AbstractLDAPStorageMapp
     }
 
     @Override
-    public void passwordUpdated(UserModel user, LDAPObject ldapUser, PasswordUserCredentialModel password) {
+    public void passwordUpdated(UserModel user, LDAPObject ldapUser, UserCredentialModel password) {
         logger.debugf("Going to update userAccountControl for ldap user '%s' after successful password update", ldapUser.getDn().toString());
 
         // Normally it's read-only
@@ -106,7 +104,7 @@ public class MSADUserAccountControlStorageMapper extends AbstractLDAPStorageMapp
     }
 
     @Override
-    public void passwordUpdateFailed(UserModel user, LDAPObject ldapUser, PasswordUserCredentialModel password, ModelException exception) {
+    public void passwordUpdateFailed(UserModel user, LDAPObject ldapUser, UserCredentialModel password, ModelException exception) {
         throw processFailedPasswordUpdateException(exception);
     }
 

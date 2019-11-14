@@ -66,10 +66,6 @@ public class JWTClientAuthenticator extends AbstractClientAuthenticator {
     public static final String ATTR_PREFIX = "jwt.credential";
     public static final String CERTIFICATE_ATTR = "jwt.credential.certificate";
 
-    public static final AuthenticationExecutionModel.Requirement[] REQUIREMENT_CHOICES = {
-            AuthenticationExecutionModel.Requirement.ALTERNATIVE,
-            AuthenticationExecutionModel.Requirement.DISABLED
-    };
 
     @Override
     public void authenticateClient(ClientAuthenticationFlowContext context) {

@@ -21,6 +21,8 @@ import org.jboss.resteasy.annotations.cache.NoCache;
 import javax.ws.rs.BadRequestException;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.common.Profile;
+import org.keycloak.common.util.Base64Url;
+import org.keycloak.common.util.HtmlUtils;
 import org.keycloak.common.util.Time;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.events.Event;
@@ -98,6 +100,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.net.URI;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -918,6 +921,65 @@ public class TestingResourceProvider implements RealmResourceProvider {
         else
             return Response.status(Response.Status.NOT_FOUND).build();
     }
+
+
+    /**
+     * This will send POST request to specified URL with specified form parameters. It's not easily possible to "trick" web driver to send POST
+     * request with custom parameters, which are not directly available in the form.
+     *
+     * See URLUtils.sendPOSTWithWebDriver for more details
+     *
+     * @param postRequestUrl Absolute URL. It can include query parameters etc. The POST request will be send to this URL
+     * @param encodedFormParameters Encoded parameters in the form of "param1=value1:param2=value2"
+     * @return
+     */
+    @GET
+    @Path("/simulate-post-request")
+    @Produces(MediaType.TEXT_HTML_UTF_8)
+    public Response simulatePostRequest(@QueryParam("postRequestUrl") String postRequestUrl,
+                                         @QueryParam("encodedFormParameters") String encodedFormParameters) {
+        Map<String, String> params = new HashMap<>();
+
+        // Parse parameters to use in the POST request
+        for (String param : encodedFormParameters.split("&")) {
+            String[] paramParts = param.split("=");
+            String value = paramParts.length == 2 ? paramParts[1] : "";
+            params.put(paramParts[0], value);
+        }
+
+        // Send the POST request "manually"
+        StringBuilder builder = new StringBuilder();
+
+        builder.append("<HTML>");
+        builder.append("  <HEAD>");
+        builder.append("    <TITLE>OIDC Form_Post Response</TITLE>");
+        builder.append("  </HEAD>");
+        builder.append("  <BODY Onload=\"document.forms[0].submit()\">");
+
+        builder.append("    <FORM METHOD=\"POST\" ACTION=\"" + postRequestUrl + "\">");
+
+        for (Map.Entry<String, String> param : params.entrySet()) {
+            builder.append("  <INPUT TYPE=\"HIDDEN\" NAME=\"")
+                    .append(param.getKey())
+                    .append("\" VALUE=\"")
+                    .append(HtmlUtils.escapeAttribute(param.getValue()))
+                    .append("\" />");
+        }
+
+        builder.append("      <NOSCRIPT>");
+        builder.append("        <P>JavaScript is disabled. We strongly recommend to enable it. Click the button below to continue .</P>");
+        builder.append("        <INPUT name=\"continue\" TYPE=\"SUBMIT\" VALUE=\"CONTINUE\" />");
+        builder.append("      </NOSCRIPT>");
+        builder.append("    </FORM>");
+        builder.append("  </BODY>");
+        builder.append("</HTML>");
+
+        return Response.status(Response.Status.OK)
+                .type(javax.ws.rs.core.MediaType.TEXT_HTML_TYPE)
+                .entity(builder.toString()).build();
+
+    }
+
 
     private RealmModel getRealmByName(String realmName) {
         RealmProvider realmProvider = session.getProvider(RealmProvider.class);

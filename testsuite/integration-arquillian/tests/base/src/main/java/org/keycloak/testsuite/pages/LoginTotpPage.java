@@ -23,10 +23,10 @@ import org.openqa.selenium.support.FindBy;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class LoginTotpPage extends AbstractPage {
+public class LoginTotpPage extends CredentialsComboboxPage {
 
-    @FindBy(id = "totp")
-    private WebElement totpInput;
+    @FindBy(id = "otp")
+    private WebElement otpInput;
 
     @FindBy(id = "password-token")
     private WebElement passwordToken;
@@ -41,8 +41,8 @@ public class LoginTotpPage extends AbstractPage {
     private WebElement loginErrorMessage;
 
     public void login(String totp) {
-        totpInput.clear();
-        if (totp != null) totpInput.sendKeys(totp);
+        otpInput.clear();
+        if (totp != null) otpInput.sendKeys(totp);
 
         submitButton.click();
     }
@@ -58,7 +58,7 @@ public class LoginTotpPage extends AbstractPage {
     public boolean isCurrent() {
         if (driver.getTitle().startsWith("Log in to ")) {
             try {
-                driver.findElement(By.id("totp"));
+                driver.findElement(By.id("otp"));
                 return true;
             } catch (Throwable t) {
             }

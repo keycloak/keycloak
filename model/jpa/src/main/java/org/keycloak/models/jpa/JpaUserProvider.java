@@ -18,7 +18,6 @@
 package org.keycloak.models.jpa;
 
 import org.keycloak.authorization.jpa.entities.ResourceEntity;
-import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.Time;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.credential.CredentialModel;
@@ -37,7 +36,6 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
-import org.keycloak.models.jpa.entities.CredentialAttributeEntity;
 import org.keycloak.models.jpa.entities.CredentialEntity;
 import org.keycloak.models.jpa.entities.FederatedIdentityEntity;
 import org.keycloak.models.jpa.entities.UserConsentClientScopeEntity;
@@ -60,7 +58,6 @@ import javax.persistence.criteria.Subquery;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -68,12 +65,12 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import javax.persistence.LockModeType;
 import javax.persistence.criteria.Expression;
-import javax.persistence.criteria.Path;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
+@SuppressWarnings("JpaQueryApiInspection")
 public class JpaUserProvider implements UserProvider, UserCredentialStore {
 
     private static final String EMAIL = "email";
@@ -83,10 +80,12 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
 
     private final KeycloakSession session;
     protected EntityManager em;
+    private final JpaUserCredentialStore credentialStore;
 
     public JpaUserProvider(KeycloakSession session, EntityManager em) {
         this.session = session;
         this.em = em;
+        credentialStore = new JpaUserCredentialStore(session, em);
     }
 
     @Override
@@ -382,8 +381,6 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
                 .setParameter("realmId", realm.getId()).executeUpdate();
         num = em.createNamedQuery("deleteFederatedIdentityByRealm")
                 .setParameter("realmId", realm.getId()).executeUpdate();
-        num = em.createNamedQuery("deleteCredentialAttributeByRealm")
-                .setParameter("realmId", realm.getId()).executeUpdate();
         num = em.createNamedQuery("deleteCredentialsByRealm")
                 .setParameter("realmId", realm.getId()).executeUpdate();
         num = em.createNamedQuery("deleteUserAttributesByRealm")
@@ -405,10 +402,6 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
                 .setParameter("link", storageProviderId)
                 .executeUpdate();
         num = em.createNamedQuery("deleteFederatedIdentityByRealmAndLink")
-                .setParameter("realmId", realm.getId())
-                .setParameter("link", storageProviderId)
-                .executeUpdate();
-        num = em.createNamedQuery("deleteCredentialAttributeByRealmAndLink")
                 .setParameter("realmId", realm.getId())
                 .setParameter("link", storageProviderId)
                 .executeUpdate();
@@ -498,7 +491,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
         }
         return users;
     }
-    
+
     @Override
     public List<UserModel> getRoleMembers(RealmModel realm, RoleModel role) {
         TypedQuery<UserEntity> query = em.createNamedQuery("usersInRole", UserEntity.class);
@@ -542,11 +535,11 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
         query.setParameter("email", email.toLowerCase());
         query.setParameter("realmId", realm.getId());
         List<UserEntity> results = query.getResultList();
-        
+
         if (results.isEmpty()) return null;
-        
+
         ensureEmailConstraint(results, realm);
-        
+
         return new UserAdapter(session, realm, em, results.get(0));
     }
 
@@ -659,7 +652,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
         }
         return users;
     }
-    
+
     @Override
     public List<UserModel> getRoleMembers(RealmModel realm, RoleModel role, int firstResult, int maxResults) {
         TypedQuery<UserEntity> query = em.createNamedQuery("usersInRole", UserEntity.class);
@@ -756,7 +749,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
             Root from1 = subquery1.from(ResourceEntity.class);
 
             List<Predicate> subs = new ArrayList<>();
-            
+
             Expression<String> groupId = from.get("groupId");
             subs.add(builder.like(from1.get("name"), builder.concat("group.resource.", groupId)));
 
@@ -858,93 +851,12 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
 
     @Override
     public void updateCredential(RealmModel realm, UserModel user, CredentialModel cred) {
-        CredentialEntity entity = em.find(CredentialEntity.class, cred.getId());
-        if (entity == null) return;
-        entity.setAlgorithm(cred.getAlgorithm());
-        entity.setCounter(cred.getCounter());
-        entity.setCreatedDate(cred.getCreatedDate());
-        entity.setDevice(cred.getDevice());
-        entity.setDigits(cred.getDigits());
-        entity.setHashIterations(cred.getHashIterations());
-        entity.setPeriod(cred.getPeriod());
-        entity.setSalt(cred.getSalt());
-        entity.setType(cred.getType());
-        entity.setValue(cred.getValue());
-        if (entity.getCredentialAttributes().isEmpty() && (cred.getConfig() == null || cred.getConfig().isEmpty())) {
-
-        } else {
-            MultivaluedHashMap<String, String> attrs = cred.getConfig();
-            MultivaluedHashMap<String, String> config = cred.getConfig();
-            if (config == null) config = new MultivaluedHashMap<>();
-
-            Iterator<CredentialAttributeEntity> it = entity.getCredentialAttributes().iterator();
-            while (it.hasNext()) {
-                CredentialAttributeEntity attr = it.next();
-                List<String> values = config.getList(attr.getName());
-                if (values == null || !values.contains(attr.getValue())) {
-                    em.remove(attr);
-                    it.remove();
-                } else {
-                    attrs.add(attr.getName(), attr.getValue());
-                }
-
-            }
-            for (String key : config.keySet()) {
-                List<String> values = config.getList(key);
-                List<String> attrValues = attrs.getList(key);
-                for (String val : values) {
-                    if (attrValues == null || !attrValues.contains(val)) {
-                        CredentialAttributeEntity attr = new CredentialAttributeEntity();
-                        attr.setId(KeycloakModelUtils.generateId());
-                        attr.setValue(val);
-                        attr.setName(key);
-                        attr.setCredential(entity);
-                        em.persist(attr);
-                        entity.getCredentialAttributes().add(attr);
-                    }
-                }
-            }
-
-        }
-
+        credentialStore.updateCredential(realm, user, cred);
     }
 
     @Override
     public CredentialModel createCredential(RealmModel realm, UserModel user, CredentialModel cred) {
-        CredentialEntity entity = new CredentialEntity();
-        String id = cred.getId() == null ? KeycloakModelUtils.generateId() : cred.getId();
-        entity.setId(id);
-        entity.setAlgorithm(cred.getAlgorithm());
-        entity.setCounter(cred.getCounter());
-        entity.setCreatedDate(cred.getCreatedDate());
-        entity.setDevice(cred.getDevice());
-        entity.setDigits(cred.getDigits());
-        entity.setHashIterations(cred.getHashIterations());
-        entity.setPeriod(cred.getPeriod());
-        entity.setSalt(cred.getSalt());
-        entity.setType(cred.getType());
-        entity.setValue(cred.getValue());
-        UserEntity userRef = em.getReference(UserEntity.class, user.getId());
-        entity.setUser(userRef);
-        em.persist(entity);
-
-        MultivaluedHashMap<String, String> config = cred.getConfig();
-        if (config != null && !config.isEmpty()) {
-
-            for (String key : config.keySet()) {
-                List<String> values = config.getList(key);
-                for (String val : values) {
-                    CredentialAttributeEntity attr = new CredentialAttributeEntity();
-                    attr.setId(KeycloakModelUtils.generateId());
-                    attr.setValue(val);
-                    attr.setName(key);
-                    attr.setCredential(entity);
-                    em.persist(attr);
-                    entity.getCredentialAttributes().add(attr);
-                }
-            }
-
-        }
+        CredentialEntity entity = credentialStore.createCredentialEntity(realm, user, cred);
 
         UserEntity userEntity = userInEntityManagerContext(user.getId());
         if (userEntity != null) {
@@ -955,56 +867,26 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
 
     @Override
     public boolean removeStoredCredential(RealmModel realm, UserModel user, String id) {
-        CredentialEntity entity = em.find(CredentialEntity.class, id, LockModeType.PESSIMISTIC_WRITE);
-        if (entity == null) return false;
-        em.remove(entity);
+        CredentialEntity entity = credentialStore.removeCredentialEntity(realm, user, id);
         UserEntity userEntity = userInEntityManagerContext(user.getId());
-        if (userEntity != null) {
+        if (entity != null && userEntity != null) {
             userEntity.getCredentials().remove(entity);
         }
-        return true;
+        return entity != null;
     }
 
     @Override
     public CredentialModel getStoredCredentialById(RealmModel realm, UserModel user, String id) {
-        CredentialEntity entity = em.find(CredentialEntity.class, id);
-        if (entity == null) return null;
-        CredentialModel model = toModel(entity);
-        return model;
+        return credentialStore.getStoredCredentialById(realm, user, id);
     }
 
     protected CredentialModel toModel(CredentialEntity entity) {
-        CredentialModel model = new CredentialModel();
-        model.setId(entity.getId());
-        model.setType(entity.getType());
-        model.setValue(entity.getValue());
-        model.setAlgorithm(entity.getAlgorithm());
-        model.setSalt(entity.getSalt());
-        model.setPeriod(entity.getPeriod());
-        model.setCounter(entity.getCounter());
-        model.setCreatedDate(entity.getCreatedDate());
-        model.setDevice(entity.getDevice());
-        model.setDigits(entity.getDigits());
-        model.setHashIterations(entity.getHashIterations());
-        MultivaluedHashMap<String, String> config = new MultivaluedHashMap<>();
-        model.setConfig(config);
-        for (CredentialAttributeEntity attr : entity.getCredentialAttributes()) {
-            config.add(attr.getName(), attr.getValue());
-        }
-        return model;
+        return credentialStore.toModel(entity);
     }
 
     @Override
     public List<CredentialModel> getStoredCredentials(RealmModel realm, UserModel user) {
-        UserEntity userEntity = em.getReference(UserEntity.class, user.getId());
-        TypedQuery<CredentialEntity> query = em.createNamedQuery("credentialByUser", CredentialEntity.class)
-                .setParameter("user", userEntity);
-        List<CredentialEntity> results = query.getResultList();
-        List<CredentialModel> rtn = new LinkedList<>();
-        for (CredentialEntity entity : results) {
-            rtn.add(toModel(entity));
-        }
-        return rtn;
+        return credentialStore.getStoredCredentials(realm, user);
     }
 
     @Override
@@ -1014,53 +896,47 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
         if (userEntity != null) {
 
             // user already in persistence context, no need to execute a query
-            results = userEntity.getCredentials().stream().filter(it -> it.getType().equals(type)).collect(Collectors.toList());
+            results = userEntity.getCredentials().stream().filter(it -> type.equals(it.getType())).collect(Collectors.toList());
+            List<CredentialModel> rtn = new LinkedList<>();
+            for (CredentialEntity entity : results) {
+                rtn.add(toModel(entity));
+            }
+            return rtn;
         } else {
-            userEntity = em.getReference(UserEntity.class, user.getId());
-            TypedQuery<CredentialEntity> query = em.createNamedQuery("credentialByUserAndType", CredentialEntity.class)
-                    .setParameter("type", type)
-                    .setParameter("user", userEntity);
-            results = query.getResultList();
+           return credentialStore.getStoredCredentialsByType(realm, user, type);
         }
-        List<CredentialModel> rtn = new LinkedList<>();
-        for (CredentialEntity entity : results) {
-            rtn.add(toModel(entity));
-        }
-        return rtn;
     }
 
     @Override
     public CredentialModel getStoredCredentialByNameAndType(RealmModel realm, UserModel user, String name, String type) {
-        UserEntity userEntity = em.getReference(UserEntity.class, user.getId());
-        TypedQuery<CredentialEntity> query = em.createNamedQuery("credentialByNameAndType", CredentialEntity.class)
-                .setParameter("type", type)
-                .setParameter("device", name)
-                .setParameter("user", userEntity);
-        List<CredentialEntity> results = query.getResultList();
-        if (results.isEmpty()) return null;
-        return toModel(results.get(0));
+        return credentialStore.getStoredCredentialByNameAndType(realm, user, name, type);
+    }
+
+    @Override
+    public boolean moveCredentialTo(RealmModel realm, UserModel user, String id, String newPreviousCredentialId) {
+        return credentialStore.moveCredentialTo(realm, user, id, newPreviousCredentialId);
     }
 
     // Could override this to provide a custom behavior.
     protected void ensureEmailConstraint(List<UserEntity> users, RealmModel realm) {
         UserEntity user = users.get(0);
-        
+
         if (users.size() > 1) {
             // Realm settings have been changed from allowing duplicate emails to not allowing them
             // but duplicates haven't been removed.
             throw new ModelDuplicateException("Multiple users with email '" + user.getEmail() + "' exist in Keycloak.");
         }
-        
+
         if (realm.isDuplicateEmailsAllowed()) {
             return;
         }
-     
+
         if (user.getEmail() != null && !user.getEmail().equals(user.getEmailConstraint())) {
             // Realm settings have been changed from allowing duplicate emails to not allowing them.
             // We need to update the email constraint to reflect this change in the user entities.
             user.setEmailConstraint(user.getEmail());
             em.persist(user);
-        }  
+        }
     }
 
     private UserEntity userInEntityManagerContext(String id) {

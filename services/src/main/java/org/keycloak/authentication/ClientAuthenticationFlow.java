@@ -42,6 +42,8 @@ public class ClientAuthenticationFlow implements AuthenticationFlow {
     AuthenticationProcessor processor;
     AuthenticationFlowModel flow;
 
+    private boolean success;
+
     public ClientAuthenticationFlow(AuthenticationProcessor processor, AuthenticationFlowModel flow) {
         this.processor = processor;
         this.flow = flow;
@@ -84,6 +86,8 @@ public class ClientAuthenticationFlow implements AuthenticationFlow {
 
                     if (!context.getStatus().equals(FlowStatus.SUCCESS)) {
                         throw new AuthenticationFlowException("Expected success, but for an unknown reason the status was " + context.getStatus(), AuthenticationFlowError.INTERNAL_ERROR);
+                    } else {
+                        success = true;
                     }
 
                     logger.debugv("Client {0} authenticated by {1}", client.getClientId(), factory.getId());
@@ -175,5 +179,10 @@ public class ClientAuthenticationFlow implements AuthenticationFlow {
         }
 
         return result.getChallenge();
+    }
+
+    @Override
+    public boolean isSuccessful() {
+        return success;
     }
 }

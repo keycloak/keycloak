@@ -42,6 +42,7 @@ import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.common.util.Retry;
 import org.keycloak.testsuite.auth.page.account2.ChangePasswordPage;
+import org.keycloak.testsuite.client.KeycloakTestingClient;
 import org.keycloak.testsuite.pages.AccountApplicationsPage;
 import org.keycloak.testsuite.pages.AccountFederatedIdentityPage;
 import org.keycloak.testsuite.pages.AccountPasswordPage;
@@ -59,6 +60,7 @@ import org.keycloak.testsuite.pages.ProceedPage;
 import org.keycloak.testsuite.pages.UpdateAccountInformationPage;
 import org.keycloak.testsuite.pages.VerifyEmailPage;
 import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
+import org.keycloak.testsuite.util.FlowUtil;
 import org.keycloak.testsuite.util.MailServer;
 import org.keycloak.testsuite.util.UserBuilder;
 import org.openqa.selenium.TimeoutException;
@@ -191,7 +193,7 @@ public abstract class AbstractBaseBrokerTest extends AbstractKeycloakTest {
 
     @Deployment
     public static WebArchive deploy() {
-        return RunOnServerDeployment.create(BrokerRunOnServerUtil.class);
+        return RunOnServerDeployment.create(BrokerRunOnServerUtil.class, FlowUtil.class, KeycloakTestingClient.class);
     }
 
     protected void logInAsUserInIDP() {

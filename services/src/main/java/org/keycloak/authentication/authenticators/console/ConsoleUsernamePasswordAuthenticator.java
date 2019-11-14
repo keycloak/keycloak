@@ -50,13 +50,10 @@ public class ConsoleUsernamePasswordAuthenticator extends AbstractUsernameFormAu
                 .challenge();
     }
 
-
     @Override
     public void authenticate(AuthenticationFlowContext context) {
         Response response = challenge(context).form().createForm("cli_splash.ftl");
         context.challenge(response);
-
-
     }
 
     @Override
@@ -79,7 +76,6 @@ public class ConsoleUsernamePasswordAuthenticator extends AbstractUsernameFormAu
         if (!validateUserAndPassword(context, formData)) {
             return;
         }
-
         context.success();
     }
 

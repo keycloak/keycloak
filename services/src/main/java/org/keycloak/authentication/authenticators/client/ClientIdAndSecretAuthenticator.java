@@ -50,11 +50,6 @@ public class ClientIdAndSecretAuthenticator extends AbstractClientAuthenticator 
 
     public static final String PROVIDER_ID = "client-secret";
 
-    public static final AuthenticationExecutionModel.Requirement[] REQUIREMENT_CHOICES = {
-            AuthenticationExecutionModel.Requirement.ALTERNATIVE,
-            AuthenticationExecutionModel.Requirement.DISABLED
-    };
-
     @Override
     public void authenticateClient(ClientAuthenticationFlowContext context) {
         String client_id = null;

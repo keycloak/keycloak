@@ -143,9 +143,6 @@ public class DefaultAuthenticationFlows {
         execution.setAuthenticatorFlow(false);
         //execution.setAuthenticatorConfig(captchaConfig.getId());
         realm.addAuthenticatorExecution(execution);
-
-
-
     }
 
     public static void browserFlow(RealmModel realm) {
@@ -163,18 +160,18 @@ public class DefaultAuthenticationFlows {
     }
 
     public static void resetCredentialsFlow(RealmModel realm) {
-        AuthenticationFlowModel grant = new AuthenticationFlowModel();
-        grant.setAlias(RESET_CREDENTIALS_FLOW);
-        grant.setDescription("Reset credentials for a user if they forgot their password or something");
-        grant.setProviderId("basic-flow");
-        grant.setTopLevel(true);
-        grant.setBuiltIn(true);
-        grant = realm.addAuthenticationFlow(grant);
-        realm.setResetCredentialsFlow(grant);
+        AuthenticationFlowModel reset = new AuthenticationFlowModel();
+        reset.setAlias(RESET_CREDENTIALS_FLOW);
+        reset.setDescription("Reset credentials for a user if they forgot their password or something");
+        reset.setProviderId("basic-flow");
+        reset.setTopLevel(true);
+        reset.setBuiltIn(true);
+        reset = realm.addAuthenticationFlow(reset);
+        realm.setResetCredentialsFlow(reset);
 
         // username
         AuthenticationExecutionModel execution = new AuthenticationExecutionModel();
-        execution.setParentFlow(grant.getId());
+        execution.setParentFlow(reset.getId());
         execution.setRequirement(AuthenticationExecutionModel.Requirement.REQUIRED);
         execution.setAuthenticator("reset-credentials-choose-user");
         execution.setPriority(10);
@@ -183,7 +180,7 @@ public class DefaultAuthenticationFlows {
 
         // send email
         execution = new AuthenticationExecutionModel();
-        execution.setParentFlow(grant.getId());
+        execution.setParentFlow(reset.getId());
         execution.setRequirement(AuthenticationExecutionModel.Requirement.REQUIRED);
         execution.setAuthenticator("reset-credential-email");
         execution.setPriority(20);
@@ -192,19 +189,41 @@ public class DefaultAuthenticationFlows {
 
         // password
         execution = new AuthenticationExecutionModel();
-        execution.setParentFlow(grant.getId());
+        execution.setParentFlow(reset.getId());
         execution.setRequirement(AuthenticationExecutionModel.Requirement.REQUIRED);
         execution.setAuthenticator("reset-password");
         execution.setPriority(30);
         execution.setAuthenticatorFlow(false);
         realm.addAuthenticatorExecution(execution);
 
-        // otp
+        AuthenticationFlowModel conditionalOTP = new AuthenticationFlowModel();
+        conditionalOTP.setTopLevel(false);
+        conditionalOTP.setBuiltIn(true);
+        conditionalOTP.setAlias("Reset - Conditional OTP");
+        conditionalOTP.setDescription("Flow to determine if the OTP should be reset or not. Set to REQUIRED to force.");
+        conditionalOTP.setProviderId("basic-flow");
+        conditionalOTP = realm.addAuthenticationFlow(conditionalOTP);
         execution = new AuthenticationExecutionModel();
-        execution.setParentFlow(grant.getId());
-        execution.setRequirement(AuthenticationExecutionModel.Requirement.OPTIONAL);
-        execution.setAuthenticator("reset-otp");
+        execution.setParentFlow(reset.getId());
+        execution.setRequirement(AuthenticationExecutionModel.Requirement.CONDITIONAL);
+        execution.setFlowId(conditionalOTP.getId());
         execution.setPriority(40);
+        execution.setAuthenticatorFlow(true);
+        realm.addAuthenticatorExecution(execution);
+
+        execution = new AuthenticationExecutionModel();
+        execution.setParentFlow(conditionalOTP.getId());
+        execution.setRequirement(AuthenticationExecutionModel.Requirement.REQUIRED);
+        execution.setAuthenticator("conditional-user-configured");
+        execution.setPriority(10);
+        execution.setAuthenticatorFlow(false);
+        realm.addAuthenticatorExecution(execution);
+
+        execution = new AuthenticationExecutionModel();
+        execution.setParentFlow(conditionalOTP.getId());
+        execution.setRequirement(AuthenticationExecutionModel.Requirement.REQUIRED);
+        execution.setAuthenticator("reset-otp");
+        execution.setPriority(20);
         execution.setAuthenticatorFlow(false);
         realm.addAuthenticatorExecution(execution);
     }
@@ -241,14 +260,37 @@ public class DefaultAuthenticationFlows {
         realm.addAuthenticatorExecution(execution);
 
         // otp
+        AuthenticationFlowModel conditionalOTP = new AuthenticationFlowModel();
+        conditionalOTP.setTopLevel(false);
+        conditionalOTP.setBuiltIn(true);
+        conditionalOTP.setAlias("Direct Grant - Conditional OTP");
+        conditionalOTP.setDescription("Flow to determine if the OTP is required for the authentication");
+        conditionalOTP.setProviderId("basic-flow");
+        conditionalOTP = realm.addAuthenticationFlow(conditionalOTP);
         execution = new AuthenticationExecutionModel();
         execution.setParentFlow(grant.getId());
-        execution.setRequirement(AuthenticationExecutionModel.Requirement.OPTIONAL);
+        execution.setRequirement(AuthenticationExecutionModel.Requirement.CONDITIONAL);
         if (migrate && hasCredentialType(realm, RequiredCredentialModel.TOTP.getType())) {
             execution.setRequirement(AuthenticationExecutionModel.Requirement.REQUIRED);
         }
-        execution.setAuthenticator("direct-grant-validate-otp");
+        execution.setFlowId(conditionalOTP.getId());
         execution.setPriority(30);
+        execution.setAuthenticatorFlow(true);
+        realm.addAuthenticatorExecution(execution);
+
+        execution = new AuthenticationExecutionModel();
+        execution.setParentFlow(conditionalOTP.getId());
+        execution.setRequirement(AuthenticationExecutionModel.Requirement.REQUIRED);
+        execution.setAuthenticator("conditional-user-configured");
+        execution.setPriority(10);
+        execution.setAuthenticatorFlow(false);
+        realm.addAuthenticatorExecution(execution);
+
+        execution = new AuthenticationExecutionModel();
+        execution.setParentFlow(conditionalOTP.getId());
+        execution.setRequirement(AuthenticationExecutionModel.Requirement.REQUIRED);
+        execution.setAuthenticator("direct-grant-validate-otp");
+        execution.setPriority(20);
         execution.setAuthenticatorFlow(false);
         realm.addAuthenticatorExecution(execution);
     }
@@ -309,15 +351,36 @@ public class DefaultAuthenticationFlows {
         execution.setAuthenticatorFlow(false);
         realm.addAuthenticatorExecution(execution);
 
-        // otp processing
+        AuthenticationFlowModel conditionalOTP = new AuthenticationFlowModel();
+        conditionalOTP.setTopLevel(false);
+        conditionalOTP.setBuiltIn(true);
+        conditionalOTP.setAlias("Browser - Conditional OTP");
+        conditionalOTP.setDescription("Flow to determine if the OTP is required for the authentication");
+        conditionalOTP.setProviderId("basic-flow");
+        conditionalOTP = realm.addAuthenticationFlow(conditionalOTP);
         execution = new AuthenticationExecutionModel();
         execution.setParentFlow(forms.getId());
-        execution.setRequirement(AuthenticationExecutionModel.Requirement.OPTIONAL);
+        execution.setRequirement(AuthenticationExecutionModel.Requirement.CONDITIONAL);
         if (migrate && hasCredentialType(realm, RequiredCredentialModel.TOTP.getType())) {
             execution.setRequirement(AuthenticationExecutionModel.Requirement.REQUIRED);
-
         }
+        execution.setFlowId(conditionalOTP.getId());
+        execution.setPriority(20);
+        execution.setAuthenticatorFlow(true);
+        realm.addAuthenticatorExecution(execution);
 
+        execution = new AuthenticationExecutionModel();
+        execution.setParentFlow(conditionalOTP.getId());
+        execution.setRequirement(AuthenticationExecutionModel.Requirement.REQUIRED);
+        execution.setAuthenticator("conditional-user-configured");
+        execution.setPriority(10);
+        execution.setAuthenticatorFlow(false);
+        realm.addAuthenticatorExecution(execution);
+
+        // otp processing
+        execution = new AuthenticationExecutionModel();
+        execution.setParentFlow(conditionalOTP.getId());
+        execution.setRequirement(AuthenticationExecutionModel.Requirement.REQUIRED);
         execution.setAuthenticator("auth-otp-form");
         execution.setPriority(20);
         execution.setAuthenticatorFlow(false);
@@ -432,6 +495,20 @@ public class DefaultAuthenticationFlows {
         execution.setAuthenticatorConfig(reviewProfileConfig.getId());
         realm.addAuthenticatorExecution(execution);
 
+        AuthenticationFlowModel uniqueOrExistingFlow = new AuthenticationFlowModel();
+        uniqueOrExistingFlow.setTopLevel(false);
+        uniqueOrExistingFlow.setBuiltIn(true);
+        uniqueOrExistingFlow.setAlias("User creation or linking");
+        uniqueOrExistingFlow.setDescription("Flow for the existing/non-existing user alternatives");
+        uniqueOrExistingFlow.setProviderId("basic-flow");
+        uniqueOrExistingFlow = realm.addAuthenticationFlow(uniqueOrExistingFlow);
+        execution = new AuthenticationExecutionModel();
+        execution.setParentFlow(firstBrokerLogin.getId());
+        execution.setRequirement(AuthenticationExecutionModel.Requirement.REQUIRED);
+        execution.setFlowId(uniqueOrExistingFlow.getId());
+        execution.setPriority(20);
+        execution.setAuthenticatorFlow(true);
+        realm.addAuthenticatorExecution(execution);
 
         AuthenticatorConfigModel createUserIfUniqueConfig = new AuthenticatorConfigModel();
         createUserIfUniqueConfig.setAlias(IDP_CREATE_UNIQUE_USER_CONFIG_ALIAS);
@@ -441,10 +518,10 @@ public class DefaultAuthenticationFlows {
         createUserIfUniqueConfig = realm.addAuthenticatorConfig(createUserIfUniqueConfig);
 
         execution = new AuthenticationExecutionModel();
-        execution.setParentFlow(firstBrokerLogin.getId());
+        execution.setParentFlow(uniqueOrExistingFlow.getId());
         execution.setRequirement(AuthenticationExecutionModel.Requirement.ALTERNATIVE);
         execution.setAuthenticator("idp-create-user-if-unique");
-        execution.setPriority(20);
+        execution.setPriority(10);
         execution.setAuthenticatorFlow(false);
         execution.setAuthenticatorConfig(createUserIfUniqueConfig.getId());
         realm.addAuthenticatorExecution(execution);
@@ -458,10 +535,10 @@ public class DefaultAuthenticationFlows {
         linkExistingAccountFlow.setProviderId("basic-flow");
         linkExistingAccountFlow = realm.addAuthenticationFlow(linkExistingAccountFlow);
         execution = new AuthenticationExecutionModel();
-        execution.setParentFlow(firstBrokerLogin.getId());
+        execution.setParentFlow(uniqueOrExistingFlow.getId());
         execution.setRequirement(AuthenticationExecutionModel.Requirement.ALTERNATIVE);
         execution.setFlowId(linkExistingAccountFlow.getId());
-        execution.setPriority(30);
+        execution.setPriority(20);
         execution.setAuthenticatorFlow(true);
         realm.addAuthenticatorExecution(execution);
 
@@ -473,11 +550,26 @@ public class DefaultAuthenticationFlows {
         execution.setAuthenticatorFlow(false);
         realm.addAuthenticatorExecution(execution);
 
+        AuthenticationFlowModel accountVerificationOptions = new AuthenticationFlowModel();
+        accountVerificationOptions.setTopLevel(false);
+        accountVerificationOptions.setBuiltIn(true);
+        accountVerificationOptions.setAlias("Account verification options");
+        accountVerificationOptions.setDescription("Method with which to verity the existing account");
+        accountVerificationOptions.setProviderId("basic-flow");
+        accountVerificationOptions = realm.addAuthenticationFlow(accountVerificationOptions);
         execution = new AuthenticationExecutionModel();
         execution.setParentFlow(linkExistingAccountFlow.getId());
+        execution.setRequirement(AuthenticationExecutionModel.Requirement.REQUIRED);
+        execution.setFlowId(accountVerificationOptions.getId());
+        execution.setPriority(20);
+        execution.setAuthenticatorFlow(true);
+        realm.addAuthenticatorExecution(execution);
+
+        execution = new AuthenticationExecutionModel();
+        execution.setParentFlow(accountVerificationOptions.getId());
         execution.setRequirement(AuthenticationExecutionModel.Requirement.ALTERNATIVE);
         execution.setAuthenticator("idp-email-verification");
-        execution.setPriority(20);
+        execution.setPriority(10);
         execution.setAuthenticatorFlow(false);
         realm.addAuthenticatorExecution(execution);
 
@@ -489,10 +581,10 @@ public class DefaultAuthenticationFlows {
         verifyByReauthenticationAccountFlow.setProviderId("basic-flow");
         verifyByReauthenticationAccountFlow = realm.addAuthenticationFlow(verifyByReauthenticationAccountFlow);
         execution = new AuthenticationExecutionModel();
-        execution.setParentFlow(linkExistingAccountFlow.getId());
+        execution.setParentFlow(accountVerificationOptions.getId());
         execution.setRequirement(AuthenticationExecutionModel.Requirement.ALTERNATIVE);
         execution.setFlowId(verifyByReauthenticationAccountFlow.getId());
-        execution.setPriority(30);
+        execution.setPriority(20);
         execution.setAuthenticatorFlow(true);
         realm.addAuthenticatorExecution(execution);
 
@@ -505,26 +597,48 @@ public class DefaultAuthenticationFlows {
         execution.setAuthenticatorFlow(false);
         realm.addAuthenticatorExecution(execution);
 
+        AuthenticationFlowModel conditionalOTP = new AuthenticationFlowModel();
+        conditionalOTP.setTopLevel(false);
+        conditionalOTP.setBuiltIn(true);
+        conditionalOTP.setAlias("First broker login - Conditional OTP");
+        conditionalOTP.setDescription("Flow to determine if the OTP is required for the authentication");
+        conditionalOTP.setProviderId("basic-flow");
+        conditionalOTP = realm.addAuthenticationFlow(conditionalOTP);
         execution = new AuthenticationExecutionModel();
         execution.setParentFlow(verifyByReauthenticationAccountFlow.getId());
-        execution.setRequirement(AuthenticationExecutionModel.Requirement.OPTIONAL);
-
+        execution.setRequirement(AuthenticationExecutionModel.Requirement.CONDITIONAL);
         if (migrate) {
             // Try to read OTP requirement from browser flow
             AuthenticationFlowModel browserFlow = realm.getBrowserFlow();
             if (browserFlow == null) {
                 browserFlow = realm.getFlowByAlias(DefaultAuthenticationFlows.BROWSER_FLOW);
             }
-
             List<AuthenticationExecutionModel> browserExecutions = new LinkedList<>();
             KeycloakModelUtils.deepFindAuthenticationExecutions(realm, browserFlow, browserExecutions);
             for (AuthenticationExecutionModel browserExecution : browserExecutions) {
-                if (browserExecution.getAuthenticator().equals("auth-otp-form")) {
-                    execution.setRequirement(browserExecution.getRequirement());
+                if (browserExecution.isAuthenticatorFlow()){
+                    if (realm.getAuthenticationExecutions(browserExecution.getFlowId()).stream().anyMatch(e -> e.getAuthenticator().equals("auth-otp-form"))){
+                        execution.setRequirement(browserExecution.getRequirement());
+                    }
                 }
             }
         }
+        execution.setFlowId(conditionalOTP.getId());
+        execution.setPriority(20);
+        execution.setAuthenticatorFlow(true);
+        realm.addAuthenticatorExecution(execution);
 
+        execution = new AuthenticationExecutionModel();
+        execution.setParentFlow(conditionalOTP.getId());
+        execution.setRequirement(AuthenticationExecutionModel.Requirement.REQUIRED);
+        execution.setAuthenticator("conditional-user-configured");
+        execution.setPriority(10);
+        execution.setAuthenticatorFlow(false);
+        realm.addAuthenticatorExecution(execution);
+
+        execution = new AuthenticationExecutionModel();
+        execution.setParentFlow(conditionalOTP.getId());
+        execution.setRequirement(AuthenticationExecutionModel.Requirement.REQUIRED);
         execution.setAuthenticator("auth-otp-form");
         execution.setPriority(20);
         execution.setAuthenticatorFlow(false);
@@ -591,27 +705,42 @@ public class DefaultAuthenticationFlows {
         execution.setAuthenticatorFlow(false);
         realm.addAuthenticatorExecution(execution);
 
+        AuthenticationFlowModel authType = new AuthenticationFlowModel();
+        authType.setTopLevel(false);
+        authType.setBuiltIn(true);
+        authType.setAlias("Authentication Options");
+        authType.setDescription("Authentication options.");
+        authType.setProviderId("basic-flow");
+        authType = realm.addAuthenticationFlow(authType);
         execution = new AuthenticationExecutionModel();
         execution.setParentFlow(challengeFlow.getId());
         execution.setRequirement(AuthenticationExecutionModel.Requirement.REQUIRED);
+        execution.setFlowId(authType.getId());
+        execution.setPriority(20);
+        execution.setAuthenticatorFlow(true);
+        realm.addAuthenticatorExecution(execution);
+
+        execution = new AuthenticationExecutionModel();
+        execution.setParentFlow(authType.getId());
+        execution.setRequirement(AuthenticationExecutionModel.Requirement.REQUIRED);
         execution.setAuthenticator("basic-auth");
+        execution.setPriority(10);
+        execution.setAuthenticatorFlow(false);
+        realm.addAuthenticatorExecution(execution);
+
+        execution = new AuthenticationExecutionModel();
+        execution.setParentFlow(authType.getId());
+        execution.setRequirement(AuthenticationExecutionModel.Requirement.DISABLED);
+        execution.setAuthenticator("basic-auth-otp");
         execution.setPriority(20);
         execution.setAuthenticatorFlow(false);
         realm.addAuthenticatorExecution(execution);
 
         execution = new AuthenticationExecutionModel();
-        execution.setParentFlow(challengeFlow.getId());
-        execution.setRequirement(AuthenticationExecutionModel.Requirement.DISABLED);
-        execution.setAuthenticator("basic-auth-otp");
-        execution.setPriority(30);
-        execution.setAuthenticatorFlow(false);
-        realm.addAuthenticatorExecution(execution);
-
-        execution = new AuthenticationExecutionModel();
-        execution.setParentFlow(challengeFlow.getId());
+        execution.setParentFlow(authType.getId());
         execution.setRequirement(AuthenticationExecutionModel.Requirement.DISABLED);
         execution.setAuthenticator("auth-spnego");
-        execution.setPriority(40);
+        execution.setPriority(30);
         execution.setAuthenticatorFlow(false);
         realm.addAuthenticatorExecution(execution);
     }

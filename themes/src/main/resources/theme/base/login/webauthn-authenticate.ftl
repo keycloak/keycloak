@@ -1,4 +1,4 @@
-    <#import "template.ftl" as layout>
+    <#import "select.ftl" as layout>
     <@layout.registrationLayout; section>
     <#if section = "title">
      title
@@ -18,7 +18,7 @@
     </form>
 
     <#if authenticators??>
-        <form id="authn_select">
+        <form id="authn_select" class="${properties.kcFormClass!}">
             <table class="table table-striped table-bordered">
                 <thead>
                     <tr>
@@ -39,7 +39,13 @@
                     </#list>
                 </tbody>
             </table>
-            <input type="button" value="Authenticate" onclick="checkAllowCredentials();">
+
+            <div class="${properties.kcFormGroupClass!}">
+                <div id="kc-form-buttons" class="${properties.kcFormButtonsClass!}">
+                    <input class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonBlockClass!} ${properties.kcButtonLargeClass!}"
+                           name="login" id="kc-login" type="button" value="${msg("doLogIn")}" onclick="checkAllowCredentials();"/>
+                </div>
+            </div>
         </form>
     </#if>
 
@@ -55,11 +61,24 @@
     function checkAllowCredentials() {
         let allowCredentials = [];
         let authn_use = document.forms['authn_select'].authn_use_chk;
-        if (authn_use !== undefined && authn_use.length === undefined && authn_use.checked) {
-            allowCredentials.push({
-                id: base64url.decode(authn_use.value, { loose: true }),
-                type: 'public-key',
-            })
+        if (authn_use !== undefined) {
+
+            if (authn_use.length === undefined && authn_use.checked) {
+                allowCredentials.push({
+                    id: base64url.decode(authn_use.value, { loose: true }),
+                    type: 'public-key',
+                })
+            } else if (authn_use.length != undefined) {
+                for (var i = 0; i < authn_use.length; i++) {
+                    if (authn_use[i].checked) {
+                        allowCredentials.push({
+                            id: base64url.decode(authn_use[i].value, { loose: true }),
+                            type: 'public-key',
+                        })
+                    }
+                }
+            }
+
         }
         doAuthenticate(allowCredentials);
     }

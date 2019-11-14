@@ -70,7 +70,7 @@
                 <div class="alert alert-${message.type}">
                     <#if message.type=='success' ><span class="pficon pficon-ok"></span></#if>
                     <#if message.type=='error' ><span class="pficon pficon-error-circle-o"></span></#if>
-                    ${kcSanitize(message.summary)?no_esc}
+                    <span class="kc-feedback-text">${kcSanitize(message.summary)?no_esc}</span>
                 </div>
             </#if>
 

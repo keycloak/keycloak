@@ -27,6 +27,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.user.UserLookupProvider;
 import org.keycloak.storage.user.UserRegistrationProvider;
@@ -103,7 +104,7 @@ public class DummyUserFederationProvider implements UserStorageProvider,
     }
 
     public Set<String> getSupportedCredentialTypes() {
-        return Collections.singleton(UserCredentialModel.PASSWORD);
+        return Collections.singleton(PasswordCredentialModel.TYPE);
     }
 
     @Override
@@ -113,7 +114,7 @@ public class DummyUserFederationProvider implements UserStorageProvider,
 
     @Override
     public boolean isConfiguredFor(RealmModel realm, UserModel user, String credentialType) {
-        if (!CredentialModel.PASSWORD.equals(credentialType)) return false;
+        if (!PasswordCredentialModel.TYPE.equals(credentialType)) return false;
 
         if (user.getUsername().equals("test-user")) {
             return true;
@@ -123,14 +124,12 @@ public class DummyUserFederationProvider implements UserStorageProvider,
     }
 
     @Override
-    public boolean isValid(RealmModel realm, UserModel user, CredentialInput input) {
+    public boolean isValid(RealmModel realm, UserModel user, CredentialInput credentialInput) {
         if (user.getUsername().equals("test-user")) {
-            UserCredentialModel password = (UserCredentialModel)input;
-            if (password.getType().equals(UserCredentialModel.PASSWORD)) {
-                return "secret".equals(password.getValue());
-            }
+            return "secret".equals(credentialInput.getChallengeResponse());
         }
-        return false;    }
+        return false;
+    }
 
      @Override
     public void close() {

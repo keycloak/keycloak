@@ -31,6 +31,8 @@ import org.keycloak.testsuite.page.PatternFlyClosableAlert;
 import org.openqa.selenium.safari.SafariDriver;
 import org.openqa.selenium.support.FindBy;
 
+import static org.keycloak.testsuite.admin.Users.setPasswordFor;
+import static org.keycloak.testsuite.auth.page.AuthRealm.ADMIN;
 import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWithLoginUrlOf;
@@ -56,6 +58,8 @@ public abstract class AbstractConsoleTest extends AbstractAuthTest {
     @Page
     protected PatternFlyClosableAlert alert;
 
+    protected UserRepresentation adminUser;
+
     protected boolean adminLoggedIn = false;
 
     @Override
@@ -74,11 +78,20 @@ public abstract class AbstractConsoleTest extends AbstractAuthTest {
             testContext.setAdminLoggedIn(false);
         }
 
+        adminUser = createAdminUserRepresentation();
+
         createTestUserWithAdminClient();
         if (!testContext.isAdminLoggedIn()) {
             loginToMasterRealmAdminConsoleAs(adminUser);
             testContext.setAdminLoggedIn(true);
         }
+    }
+
+    private UserRepresentation createAdminUserRepresentation() {
+        UserRepresentation adminUserRep = new UserRepresentation();
+        adminUserRep.setUsername(ADMIN);
+        setPasswordFor(adminUserRep, ADMIN);
+        return adminUserRep;
     }
 
     // TODO: Fix the tests so this workaround is not necessary

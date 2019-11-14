@@ -17,16 +17,12 @@
 package org.keycloak.credential;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
-import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.jboss.logging.Logger;
-import org.keycloak.WebAuthnConstants;
 import org.keycloak.common.util.Base64;
-import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -41,14 +37,12 @@ import com.webauthn4j.data.attestation.authenticator.COSEKey;
 import com.webauthn4j.util.exception.WebAuthnException;
 import com.webauthn4j.validator.WebAuthnAuthenticationContextValidationResponse;
 import com.webauthn4j.validator.WebAuthnAuthenticationContextValidator;
+import org.keycloak.models.credential.WebAuthnCredentialModel;
+import org.keycloak.models.credential.dto.WebAuthnCredentialData;
 
-public class WebAuthnCredentialProvider implements CredentialProvider, CredentialInputValidator, CredentialInputUpdater {
+public class WebAuthnCredentialProvider implements CredentialProvider<WebAuthnCredentialModel>, CredentialInputValidator {
 
     private static final Logger logger = Logger.getLogger(WebAuthnCredentialProvider.class);
-
-    private static final String AAGUID = "AAGUID";
-    private static final String CREDENTIAL_ID = "CREDENTIAL_ID";
-    private static final String CREDENTIAL_PUBLIC_KEY = "CREDENTIAL_PUBLIC_KEY";
 
     private KeycloakSession session;
 
@@ -63,64 +57,92 @@ public class WebAuthnCredentialProvider implements CredentialProvider, Credentia
             attestationStatementConverter = new AttestationStatementConverter(converter);
     }
 
-    @Override
-    public boolean updateCredential(RealmModel realm, UserModel user, CredentialInput input) {
-        if (input == null) return false;
-        CredentialModel model = createCredentialModel(input);
-        if (model == null) return false;
-        session.userCredentialManager().createCredential(realm, user, model);
-        return true;
+    private UserCredentialStore getCredentialStore() {
+        return session.userCredentialManager();
     }
 
-    private CredentialModel createCredentialModel(CredentialInput input) {
+    @Override
+    public CredentialModel createCredential(RealmModel realm, UserModel user, WebAuthnCredentialModel credentialModel) {
+        if (credentialModel.getCreatedDate() == null) {
+            credentialModel.setCreatedDate(Time.currentTimeMillis());
+        }
+
+        return getCredentialStore().createCredential(realm, user, credentialModel);
+    }
+
+    @Override
+    public void deleteCredential(RealmModel realm, UserModel user, String credentialId) {
+        logger.debugv("Delete WebAuthn credential. username = {0}, credentialId = {1}", user.getUsername(), credentialId);
+        getCredentialStore().removeStoredCredential(realm, user, credentialId);
+    }
+
+    @Override
+    public WebAuthnCredentialModel getCredentialFromModel(CredentialModel model) {
+        return WebAuthnCredentialModel.createFromCredentialModel(model);
+    }
+
+
+    /**
+     * Convert WebAuthn credential input to the model, which can be saved in the persistent storage (DB)
+     *
+     * @param input should be typically WebAuthnCredentialModelInput
+     * @param userLabel label for the credential
+     */
+    public WebAuthnCredentialModel getCredentialModelFromCredentialInput(CredentialInput input, String userLabel) {
         if (!supportsCredentialType(input.getType())) return null;
 
-        WebAuthnCredentialModel webAuthnModel = (WebAuthnCredentialModel) input;
-        MultivaluedHashMap<String, String> credential = new MultivaluedHashMap<>();
+        WebAuthnCredentialModelInput webAuthnModel = (WebAuthnCredentialModelInput) input;
 
-        credential.add(AAGUID, webAuthnModel.getAttestedCredentialData().getAaguid().toString());
-        credential.add(CREDENTIAL_ID, Base64.encodeBytes(webAuthnModel.getAttestedCredentialData().getCredentialId()));
-        credential.add(CREDENTIAL_PUBLIC_KEY, credentialPublicKeyConverter.convertToDatabaseColumn(webAuthnModel.getAttestedCredentialData().getCOSEKey()));
+        String aaguid = webAuthnModel.getAttestedCredentialData().getAaguid().toString();
+        String credentialId = Base64.encodeBytes(webAuthnModel.getAttestedCredentialData().getCredentialId());
+        String credentialPublicKey = credentialPublicKeyConverter.convertToDatabaseColumn(webAuthnModel.getAttestedCredentialData().getCOSEKey());
+        long counter = webAuthnModel.getCount();
 
-        CredentialModel model = new CredentialModel();
-        model.setType(WebAuthnCredentialModel.WEBAUTHN_CREDENTIAL_TYPE);
-        model.setCreatedDate(Time.currentTimeMillis());
-        model.setId(webAuthnModel.getAuthenticatorId());
-        model.setConfig(credential);
-        // authenticator's counter
-        model.setValue(String.valueOf(webAuthnModel.getCount()));
+        WebAuthnCredentialModel model = WebAuthnCredentialModel.create(userLabel, aaguid, credentialId, null, credentialPublicKey, counter);
 
-        if(logger.isDebugEnabled()) {
-            dumpCredentialModel(model);
-            dumpWebAuthnCredentialModel(webAuthnModel);
-        }
+        model.setId(webAuthnModel.getCredentialDBId());
 
         return model;
     }
 
-    @Override
-    public void disableCredentialType(RealmModel realm, UserModel user, String credentialType) {
-        if (!supportsCredentialType(credentialType)) return;
-        // delete webauthn authenticator's credential itself
-        for (CredentialModel credential : session.userCredentialManager().getStoredCredentialsByType(realm, user, credentialType)) {
-            logger.infov("Delete public key credential. username = {0}, credentialType = {1}", user.getUsername(), credentialType);
-            if(logger.isDebugEnabled()) dumpCredentialModel(credential);
-            session.userCredentialManager().removeStoredCredential(realm, user, credential.getId());
+
+    /**
+     * Convert WebAuthnCredentialModel, which was usually retrieved from DB, to the CredentialInput, which contains data in the webauthn4j specific format
+     */
+    private WebAuthnCredentialModelInput getCredentialInputFromCredentialModel(CredentialModel credential) {
+        WebAuthnCredentialModel webAuthnCredential = getCredentialFromModel(credential);
+
+        WebAuthnCredentialData credData = webAuthnCredential.getWebAuthnCredentialData();
+
+        WebAuthnCredentialModelInput auth = new WebAuthnCredentialModelInput();
+
+        byte[] credentialId = null;
+        try {
+            credentialId = Base64.decode(credData.getCredentialId());
+        } catch (IOException ioe) {
+            // NOP
         }
-        // delete webauthn authenticator's metadata
-        user.removeAttribute(WebAuthnConstants.PUBKEY_CRED_AAGUID_ATTR);
-        user.removeAttribute(WebAuthnConstants.PUBKEY_CRED_ID_ATTR);
-        user.removeAttribute(WebAuthnConstants.PUBKEY_CRED_LABEL_ATTR);
+
+        AAGUID aaguid = new AAGUID(credData.getAaguid());
+
+        COSEKey pubKey = credentialPublicKeyConverter.convertToEntityAttribute(credData.getCredentialPublicKey());
+
+        AttestedCredentialData attrCredData = new AttestedCredentialData(aaguid, credentialId, pubKey);
+
+        auth.setAttestedCredentialData(attrCredData);
+
+        long count = credData.getCounter();
+        auth.setCount(count);
+
+        auth.setCredentialDBId(credential.getId());
+
+        return auth;
     }
 
-    @Override
-    public Set<String> getDisableableCredentialTypes(RealmModel realm, UserModel user) {
-        return isConfiguredFor(realm, user, WebAuthnCredentialModel.WEBAUTHN_CREDENTIAL_TYPE) ? Collections.singleton(WebAuthnCredentialModel.WEBAUTHN_CREDENTIAL_TYPE) : Collections.emptySet();
-    }
 
     @Override
     public boolean supportsCredentialType(String credentialType) {
-        return WebAuthnCredentialModel.WEBAUTHN_CREDENTIAL_TYPE.equals(credentialType);
+        return WebAuthnCredentialModelInput.WEBAUTHN_CREDENTIAL_TYPE.equals(credentialType);
     }
 
     @Override
@@ -129,17 +151,18 @@ public class WebAuthnCredentialProvider implements CredentialProvider, Credentia
         return !session.userCredentialManager().getStoredCredentialsByType(realm, user, credentialType).isEmpty();
     }
 
+
     @Override
     public boolean isValid(RealmModel realm, UserModel user, CredentialInput input) {
-        if (!WebAuthnCredentialModel.class.isInstance(input)) return false;
+        if (!WebAuthnCredentialModelInput.class.isInstance(input)) return false;
 
-        WebAuthnCredentialModel context = WebAuthnCredentialModel.class.cast(input);
-        List<WebAuthnCredentialModel> auths = getWebAuthnCredentialModelList(realm, user);
+        WebAuthnCredentialModelInput context = WebAuthnCredentialModelInput.class.cast(input);
+        List<WebAuthnCredentialModelInput> auths = getWebAuthnCredentialModelList(realm, user);
 
         WebAuthnAuthenticationContextValidator webAuthnAuthenticationContextValidator =
                 new WebAuthnAuthenticationContextValidator();
         try {
-            for (WebAuthnCredentialModel auth : auths) {
+            for (WebAuthnCredentialModelInput auth : auths) {
 
                 byte[] credentialId = auth.getAttestedCredentialData().getCredentialId();
                 if (Arrays.equals(credentialId, context.getAuthenticationContext().getCredentialId())) {
@@ -155,18 +178,17 @@ public class WebAuthnCredentialProvider implements CredentialProvider, Credentia
                                     context.getAuthenticationContext(),
                                     authenticator);
 
-                    logger.infov("response.getAuthenticatorData().getFlags() = {0}", response.getAuthenticatorData().getFlags());
+                    logger.debugv("response.getAuthenticatorData().getFlags() = {0}", response.getAuthenticatorData().getFlags());
 
                     // update authenticator counter
                     long count = auth.getCount();
-                    auth.setCount(count + 1);
-                    CredentialModel cred = createCredentialModel(auth);
-                    session.userCredentialManager().updateCredential(realm, user, cred);
+                    CredentialModel credModel = getCredentialStore().getStoredCredentialById(realm, user, auth.getCredentialDBId());
+                    WebAuthnCredentialModel webAuthnCredModel = getCredentialFromModel(credModel);
+                    webAuthnCredModel.updateCounter(count + 1);
+                    getCredentialStore().updateCredential(realm, user, webAuthnCredModel);
 
-                    if(logger.isDebugEnabled()) {
-                        dumpCredentialModel(cred);
-                        dumpWebAuthnCredentialModel(auth);
-                    }
+                    logger.debugf("Successfully validated WebAuthn credential for user %s", user.getUsername());
+                    dumpCredentialModel(webAuthnCredModel, auth);
 
                     return true;
                 }
@@ -179,50 +201,28 @@ public class WebAuthnCredentialProvider implements CredentialProvider, Credentia
         return false;
     }
 
-    private List<WebAuthnCredentialModel> getWebAuthnCredentialModelList(RealmModel realm, UserModel user) {
-        List<WebAuthnCredentialModel> auths = new ArrayList<>();
-        for (CredentialModel credential : session.userCredentialManager().getStoredCredentialsByType(realm, user, WebAuthnCredentialModel.WEBAUTHN_CREDENTIAL_TYPE)) {
-            WebAuthnCredentialModel auth = new WebAuthnCredentialModel();
-            MultivaluedHashMap<String, String> attributes = credential.getConfig();
 
-            AAGUID aaguid = new AAGUID(attributes.getFirst(AAGUID));
+    @Override
+    public String getType() {
+        return WebAuthnCredentialModel.TYPE;
+    }
 
-            byte[] credentialId = null;
-            try {
-                credentialId = Base64.decode(attributes.getFirst(CREDENTIAL_ID));
-            } catch (IOException ioe) {
-                // NOP
-            }
 
-            COSEKey pubKey = credentialPublicKeyConverter.convertToEntityAttribute(attributes.getFirst(CREDENTIAL_PUBLIC_KEY));
+    private List<WebAuthnCredentialModelInput> getWebAuthnCredentialModelList(RealmModel realm, UserModel user) {
+        List<CredentialModel> credentialModels = session.userCredentialManager().getStoredCredentialsByType(realm, user, WebAuthnCredentialModel.TYPE);
 
-            AttestedCredentialData attrCredData = new AttestedCredentialData(aaguid, credentialId, pubKey);
+        return credentialModels.stream()
+                .map(this::getCredentialInputFromCredentialModel)
+                .collect(Collectors.toList());
+    }
 
-            auth.setAttestedCredentialData(attrCredData);
-
-            long count = Long.parseLong(credential.getValue());
-            auth.setCount(count);
-
-            auth.setAuthenticatorId(credential.getId());
-
-            auths.add(auth);
+    public void dumpCredentialModel(WebAuthnCredentialModel credential, WebAuthnCredentialModelInput auth) {
+        if(logger.isDebugEnabled()) {
+            logger.debug("  Persisted Credential Info::");
+            logger.debug(credential);
+            logger.debug("  Context Credential Info::");
+            logger.debug(auth);
         }
-        return auths;
-    }
-
-    private void dumpCredentialModel(CredentialModel credential) {
-        logger.debugv("  Persisted Credential Info::");
-        MultivaluedHashMap<String, String> attributes = credential.getConfig();
-        logger.debugv("    AAGUID = {0}", attributes.getFirst(AAGUID));
-        logger.debugv("    CREDENTIAL_ID = {0}", attributes.getFirst(CREDENTIAL_ID));
-        logger.debugv("    CREDENTIAL_PUBLIC_KEY = {0}", attributes.getFirst(CREDENTIAL_PUBLIC_KEY));
-        logger.debugv("    count = {0}", credential.getValue());
-        logger.debugv("    authenticator_id = {0}", credential.getId());
-    }
-
-    private void dumpWebAuthnCredentialModel(WebAuthnCredentialModel auth) {
-        logger.debug("  Context Credential Info::");
-        logger.debug(auth);
     }
 
 }

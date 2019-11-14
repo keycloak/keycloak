@@ -15,24 +15,25 @@
  * limitations under the License.
  */
 
-package org.keycloak.models.credential;
+package org.keycloak.examples.authenticator.credential.dto;
 
-import org.keycloak.models.UserCredentialModel;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
- * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
+ * @author <a href="mailto:alistair.doswald@elca.ch">Alistair Doswald</a>
+ * @version $Revision: 1 $
  */
-public class PasswordUserCredentialModel extends UserCredentialModel {
+public class SecretQuestionCredentialData {
 
-    // True if we have password-update request triggered by admin, not by user himself
-    private static final String ADMIN_REQUEST = "adminRequest";
+    private final String question;
 
-    public boolean isAdminRequest() {
-        Boolean b = (Boolean) this.notes.get(ADMIN_REQUEST);
-        return b!=null && b;
+    @JsonCreator
+    public SecretQuestionCredentialData(@JsonProperty("question") String question) {
+        this.question = question;
     }
 
-    public void setAdminRequest(boolean adminRequest) {
-        this.notes.put(ADMIN_REQUEST, adminRequest);
+    public String getQuestion() {
+        return question;
     }
 }
