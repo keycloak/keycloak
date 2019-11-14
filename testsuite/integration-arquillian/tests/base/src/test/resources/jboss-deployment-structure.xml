@@ -1,0 +1,44 @@
+<!--
+  ~ Copyright 2019 Red Hat, Inc. and/or its affiliates
+  ~ and other contributors as indicated by the @author tags.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+<jboss-deployment-structure>
+    <deployment>
+        <dependencies>
+            <module name="javax.api"/>
+            <module name="javax.ws.rs.api"/>
+            <module name="javax.servlet.api"/>
+            <module name="io.undertow.core"/>
+            <module name="io.undertow.servlet"/>
+            <module name="org.keycloak.keycloak-common"/>
+            <module name="org.keycloak.keycloak-core"/>
+            <module name="org.keycloak.keycloak-server-spi"/>
+            <module name="org.keycloak.keycloak-server-spi-private"/>
+            <module name="org.keycloak.keycloak-services" services="import"/>
+            <module name="org.keycloak.keycloak-model-infinispan"/>
+            <module name="org.keycloak.keycloak-model-jpa"/>
+            <module name="org.keycloak.keycloak-ldap-federation"/>
+            <module name="org.infinispan"/>
+            <module name="org.infinispan.client.hotrod"/>
+            <module name="org.jgroups"/>
+            <module name="org.jboss.logging"/>
+            <module name="org.jboss.resteasy.resteasy-jaxrs"/>
+            <module name="javax.persistence.api"/>
+            <module name="org.hibernate"/>
+            <module name="org.javassist"/>
+            <module name="org.jboss.modules"/>
+        </dependencies>
+    </deployment>
+</jboss-deployment-structure>

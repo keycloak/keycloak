@@ -34,11 +34,14 @@ import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.keycloak.testsuite.Assert.assertNames;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 
 /**
  * @author <a href="mailto:volker.suschke@bosch-si.com">Volker Suschke</a>
  * @author <a href="mailto:leon.graser@bosch-si.com">Leon Graser</a>
  */
+@AuthServerContainerExclude(AuthServer.REMOTE)
 public class UserGroupMembershipTest extends AbstractAdminTest {
 
     public String createUser() {

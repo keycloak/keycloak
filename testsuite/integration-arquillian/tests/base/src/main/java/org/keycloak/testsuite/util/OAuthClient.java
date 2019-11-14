@@ -90,6 +90,7 @@ import java.util.Map;
 import java.util.function.Supplier;
 
 import static org.keycloak.testsuite.admin.Users.getPasswordOf;
+import static org.keycloak.testsuite.util.URLUtils.removeDefaultPorts;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -108,7 +109,7 @@ public class OAuthClient {
 
     // Workaround, but many tests directly use system properties like OAuthClient.AUTH_SERVER_ROOT instead of taking the URL from suite context
     public static void updateURLs(String serverRoot) {
-        SERVER_ROOT = serverRoot;
+        SERVER_ROOT = removeDefaultPorts(serverRoot);
         AUTH_SERVER_ROOT = SERVER_ROOT + "/auth";
         APP_ROOT = AUTH_SERVER_ROOT + "/realms/master/app";
         APP_AUTH_ROOT = APP_ROOT + "/auth";

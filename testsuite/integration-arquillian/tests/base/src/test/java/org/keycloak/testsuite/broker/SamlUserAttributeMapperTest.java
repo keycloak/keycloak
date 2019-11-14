@@ -6,9 +6,6 @@ import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 
-/**
- * Refers to in old testsuite: org.keycloak.testsuite.broker.SAMLBrokerUserPropertyTest
- */
 public class SamlUserAttributeMapperTest extends AbstractUserAttributeMapperTest {
 
     @Override

@@ -14,7 +14,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Pattern;
 
-import static org.junit.Assert.assertEquals;
 import static org.keycloak.testsuite.util.DroneUtils.getCurrentDriver;
 import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 import static org.openqa.selenium.support.ui.ExpectedConditions.not;
@@ -74,7 +73,7 @@ public final class URLUtils {
     }
 
     public static boolean currentUrlEquals(String url) {
-        return urlCheck(urlToBe(url));
+        return urlCheck(urlToBe(removeDefaultPorts(url)));
     }
 
     public static boolean currentUrlDoesntEqual(String url) {
@@ -98,11 +97,11 @@ public final class URLUtils {
     }
 
     public static boolean currentUrlStartsWith(String url) {
-        return currentUrlMatches("^" + Pattern.quote(url) + ".*$");
+        return currentUrlMatches("^" + Pattern.quote(removeDefaultPorts(url)) + ".*$");
     }
 
     public static boolean currentUrlDoesntStartWith(String url) {
-        return currentUrlMatches("^(?!" + Pattern.quote(url) + ").+$");
+        return currentUrlMatches("^(?!" + Pattern.quote(removeDefaultPorts(url)) + ").+$");
     }
 
     public static boolean currentUrlMatches(String regex) {
@@ -134,6 +133,12 @@ public final class URLUtils {
         return true;
     }
 
+    /**
+     * Removes default ports: 80 and 443 from url
+     */
+    public static String removeDefaultPorts(String url) {
+        return url != null ? url.replaceFirst("(.*)(:80)(\\/.*)?$", "$1$3").replaceFirst("(.*)(:443)(\\/.*)?$", "$1$3") : null;
+    }
 
     /**
      * This will send POST request to specified URL with specified form parameters. It's not easily possible to "trick" web driver to send POST

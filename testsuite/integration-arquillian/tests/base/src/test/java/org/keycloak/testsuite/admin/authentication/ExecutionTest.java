@@ -42,6 +42,8 @@ import java.util.List;
 import java.util.Map;
 
 import static org.hamcrest.Matchers.hasItems;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
@@ -318,6 +320,7 @@ public class ExecutionTest extends AbstractAuthenticationTest {
     }
 
     @Test
+    @AuthServerContainerExclude(AuthServer.REMOTE)
     public void testRequirementsInExecution() {
         HashMap<String, String> params = new HashMap<>();
         String newBrowserFlow = "new-exec-flow";

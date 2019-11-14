@@ -43,6 +43,8 @@ import org.keycloak.representations.idm.authorization.ScopePermissionRepresentat
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 
 import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
 
@@ -50,6 +52,7 @@ import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
+@AuthServerContainerExclude(AuthServer.REMOTE)
 public class PolicyEvaluationCompositeRoleTest extends AbstractAuthzTest {
 
     @Override

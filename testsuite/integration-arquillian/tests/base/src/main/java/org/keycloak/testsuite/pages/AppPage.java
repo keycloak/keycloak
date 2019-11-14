@@ -24,6 +24,9 @@ import org.openqa.selenium.support.FindBy;
 
 import javax.ws.rs.core.UriBuilder;
 
+import static org.keycloak.testsuite.util.UIUtils.clickLink;
+import static org.keycloak.testsuite.util.URLUtils.removeDefaultPorts;
+
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
@@ -39,7 +42,7 @@ public class AppPage extends AbstractPage {
 
     @Override
     public boolean isCurrent() {
-        return driver.getCurrentUrl().startsWith(oauth.APP_AUTH_ROOT);
+        return removeDefaultPorts(driver.getCurrentUrl()).startsWith(oauth.APP_AUTH_ROOT);
     }
 
     public RequestType getRequestType() {
@@ -47,7 +50,7 @@ public class AppPage extends AbstractPage {
     }
 
     public void openAccount() {
-        accountLink.click();
+        clickLink(accountLink);
     }
 
     public enum RequestType {

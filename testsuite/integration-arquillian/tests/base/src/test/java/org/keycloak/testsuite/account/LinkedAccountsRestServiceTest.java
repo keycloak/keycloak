@@ -52,6 +52,8 @@ import org.junit.FixMethodOrder;
 import org.junit.runners.MethodSorters;
 import org.keycloak.representations.account.AccountLinkUriRepresentation;
 import org.keycloak.representations.account.LinkedAccountRepresentation;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 
 /**
  * @author <a href="mailto:ssilvert@redhat.com">Stan Silvert</a>
@@ -145,6 +147,7 @@ public class LinkedAccountsRestServiceTest extends AbstractTestRealmKeycloakTest
     }
     
     @Test
+    @AuthServerContainerExclude(AuthServer.REMOTE)
     public void testBuildLinkedAccountUri() throws IOException {
         AccountLinkUriRepresentation rep = SimpleHttp.doGet(getAccountUrl("linked-accounts/github?redirectUri=phonyUri"), client)
                                        .auth(tokenUtil.getToken())

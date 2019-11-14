@@ -62,6 +62,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.keycloak.testsuite.admin.ApiUtil.createUserWithAdminClient;
 import static org.keycloak.testsuite.admin.ApiUtil.resetUserPassword;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import static org.keycloak.testsuite.broker.BrokerTestConstants.USER_EMAIL;
 import static org.keycloak.testsuite.broker.BrokerTestTools.encodeUrl;
 import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
@@ -69,6 +71,7 @@ import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
 /**
  * No test methods there. Just some useful common functionality
  */
+@AuthServerContainerExclude(AuthServer.REMOTE)
 public abstract class AbstractBaseBrokerTest extends AbstractKeycloakTest {
 
     protected static final String ATTRIBUTE_VALUE = "attribute.value";

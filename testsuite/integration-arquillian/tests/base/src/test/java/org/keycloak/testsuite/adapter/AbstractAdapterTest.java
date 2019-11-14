@@ -17,7 +17,6 @@
 
 package org.keycloak.testsuite.adapter;
 
-import java.io.File;
 import org.apache.commons.io.IOUtils;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.shrinkwrap.api.Archive;
@@ -29,6 +28,7 @@ import org.keycloak.testsuite.AbstractAuthTest;
 import org.keycloak.testsuite.adapter.page.AppServerContextRoot;
 import org.keycloak.testsuite.arquillian.AppServerTestEnricher;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.wildfly.extras.creaper.commands.undertow.AddUndertowListener;
 import org.wildfly.extras.creaper.commands.undertow.RemoveUndertowListener;
 import org.wildfly.extras.creaper.commands.undertow.UndertowListenerType;
@@ -44,14 +44,12 @@ import org.wildfly.extras.creaper.core.online.operations.admin.Administration;
 
 import java.io.IOException;
 import java.net.URL;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
-import org.apache.commons.io.FileUtils;
-import org.junit.Before;
+import static org.keycloak.testsuite.arquillian.AuthServerTestEnricher.AUTH_SERVER_SSL_REQUIRED;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 
 /**
  * <code>@AppServerContainer</code> is needed for stopping recursion in 
@@ -60,6 +58,7 @@ import org.junit.Before;
  * @author tkyjovsk
  */
 @AppServerContainer("")
+@AuthServerContainerExclude(AuthServer.REMOTE)
 public abstract class AbstractAdapterTest extends AbstractAuthTest {
 
     @Page

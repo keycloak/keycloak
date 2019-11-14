@@ -56,6 +56,7 @@
         <auth.server.config.dir>${auth.server.home}</auth.server.config.dir>
 
         <auth.server.host>localhost</auth.server.host>
+        <auth.server.management.host>${auth.server.host}</auth.server.management.host>
         <auth.server.browserHost/> <!-- if set, this host will be used by the browser instead of auth.server.host -->
         <auth.server.port.offset>100</auth.server.port.offset>
         <auth.server.http.port>8180</auth.server.http.port>
@@ -442,6 +443,7 @@
                             <auth.server.java.home>${auth.server.java.home}</auth.server.java.home>
 
                             <auth.server.host>${auth.server.host}</auth.server.host>
+                            <auth.server.management.host>${auth.server.management.host}</auth.server.management.host>
                             <auth.server.browserHost>${auth.server.browserHost}</auth.server.browserHost>
                             <auth.server.port.offset>${auth.server.port.offset}</auth.server.port.offset>
                             <auth.server.http.port>${auth.server.http.port}</auth.server.http.port>

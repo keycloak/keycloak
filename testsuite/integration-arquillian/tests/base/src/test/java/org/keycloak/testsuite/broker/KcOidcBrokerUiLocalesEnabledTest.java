@@ -11,7 +11,6 @@ import java.util.Map;
 
 import static java.util.Locale.ENGLISH;
 import static org.hamcrest.CoreMatchers.containsString;
-import static org.hamcrest.CoreMatchers.not;
 import static org.keycloak.OAuth2Constants.UI_LOCALES_PARAM;
 import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_ALIAS;
 import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_PROVIDER_ID;

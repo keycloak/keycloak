@@ -53,11 +53,14 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.keycloak.testsuite.broker.BrokerTestConstants.REALM_CONS_NAME;
 import static org.keycloak.testsuite.broker.BrokerTestConstants.REALM_PROV_NAME;
 import static org.junit.Assert.assertThat;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 
 /**
  *
  * @author hmlnarik
  */
+@AuthServerContainerExclude(AuthServer.REMOTE)
 public class KcSamlIdPInitiatedSsoTest extends AbstractKeycloakTest {
 
     private static final String PROVIDER_REALM_USER_NAME = "test";
