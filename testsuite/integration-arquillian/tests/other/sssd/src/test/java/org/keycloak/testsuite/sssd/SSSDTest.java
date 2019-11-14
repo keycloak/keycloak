@@ -32,8 +32,6 @@ import org.keycloak.testsuite.pages.AccountUpdateProfilePage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.util.LDAPTestConfiguration;
 
-import com.beust.jcommander.internal.Lists;
-
 public class SSSDTest extends AbstractKeycloakTest {
 
 	private static final Logger log = Logger.getLogger(SSSDTest.class);
@@ -224,7 +222,7 @@ public class SSSDTest extends AbstractKeycloakTest {
     }
 
     private List<String> getUsernames() {
-        return Lists.newArrayList(sssdConfig.getStringArray("usernames"));
+        return Arrays.asList(sssdConfig.getStringArray("usernames"));
     }
 
     private String getPassword(String username) {
@@ -232,6 +230,6 @@ public class SSSDTest extends AbstractKeycloakTest {
     }
 
     private List<String> getGroups(String username) {
-        return Lists.newArrayList(sssdConfig.getStringArray("user." + username + ".groups"));
+        return Arrays.asList(sssdConfig.getStringArray("user." + username + ".groups"));
     }
 }
