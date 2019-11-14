@@ -35,7 +35,9 @@ import java.util.Collection;
         @NamedQuery(name="getTopLevelGroupCount", query="select count(u) from GroupEntity u where u.realm.id = :realm and u.parent is null")
 })
 @Entity
-@Table(name="KEYCLOAK_GROUP")
+@Table(name="KEYCLOAK_GROUP",
+        uniqueConstraints = { @UniqueConstraint(columnNames = {"REALM_ID", "PARENT_GROUP", "NAME"})}
+)
 public class GroupEntity {
     @Id
     @Column(name="ID", length = 36)

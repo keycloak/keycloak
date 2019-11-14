@@ -159,6 +159,11 @@ public class LDAPUtils {
         return ldapObject;
     }
 
+    public static LDAPObject updateLDAPGroup(LDAPStorageProvider ldapProvider, LDAPObject ldapObject) {
+        ldapProvider.getLdapIdentityStore().update(ldapObject);
+        return ldapObject;
+    }
+
     /**
      * Add ldapChild as member of ldapParent and save ldapParent to LDAP.
      *
