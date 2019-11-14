@@ -43,7 +43,7 @@ public class IdpUsernamePasswordForm extends UsernamePasswordForm {
 
         return setupForm(context, formData, existingUser)
                 .setStatus(Response.Status.OK)
-                .createLogin();
+                .createLoginUsernamePassword();
     }
 
     @Override

@@ -374,7 +374,7 @@ public class SocialLoginTest extends AbstractKeycloakTest {
         assertAccount();
     }
 
-    private IdentityProviderRepresentation buildIdp(Provider provider) {
+    public IdentityProviderRepresentation buildIdp(Provider provider) {
         IdentityProviderRepresentation idp = IdentityProviderBuilder.create().alias(provider.id()).providerId(provider.id()).build();
         idp.setEnabled(true);
         idp.setStoreToken(true);

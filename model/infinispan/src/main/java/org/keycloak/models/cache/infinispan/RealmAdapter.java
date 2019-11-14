@@ -1213,6 +1213,11 @@ public class RealmAdapter implements CachedRealmModel {
         return cached.getExecutionsById().get(id);
     }
 
+    public AuthenticationExecutionModel getAuthenticationExecutionByFlowId(String flowId) {
+        getDelegateForUpdate();
+        return updated.getAuthenticationExecutionByFlowId(flowId);
+    }
+
     @Override
     public AuthenticationExecutionModel addAuthenticatorExecution(AuthenticationExecutionModel model) {
         getDelegateForUpdate();

@@ -33,12 +33,6 @@ public class WebAuthnAuthenticatorFactory implements AuthenticatorFactory {
 
     public static final String PROVIDER_ID = "webauthn-authenticator";
 
-    private static AuthenticationExecutionModel.Requirement[] REQUIREMENT_CHOICES = {
-            AuthenticationExecutionModel.Requirement.REQUIRED,
-            AuthenticationExecutionModel.Requirement.OPTIONAL,
-            AuthenticationExecutionModel.Requirement.DISABLED,
-    };
-
     @Override
     public String getDisplayType() {
         return "WebAuthn Authenticator";

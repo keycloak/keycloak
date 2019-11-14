@@ -451,7 +451,7 @@ public class OAuthClient {
             parameters.add(new BasicNameValuePair("username", username));
             parameters.add(new BasicNameValuePair("password", password));
             if (totp != null) {
-                parameters.add(new BasicNameValuePair("totp", totp));
+                parameters.add(new BasicNameValuePair("otp", totp));
 
             }
             if (clientSecret != null) {

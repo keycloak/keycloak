@@ -17,14 +17,20 @@
 
 package org.keycloak.forms.account.freemarker.model;
 
+import org.keycloak.credential.CredentialModel;
+import org.keycloak.credential.CredentialProvider;
+import org.keycloak.credential.OTPCredentialProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OTPPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.models.utils.HmacOTP;
 import org.keycloak.utils.TotpUtils;
 
 import javax.ws.rs.core.UriBuilder;
+import java.util.Collections;
+import java.util.List;
 
 
 /**
@@ -38,10 +44,16 @@ public class TotpBean {
     private final String totpSecretQrCode;
     private final boolean enabled;
     private final UriBuilder uriBuilder;
+    private final List<CredentialModel> otpCredentials;
 
     public TotpBean(KeycloakSession session, RealmModel realm, UserModel user, UriBuilder uriBuilder) {
         this.uriBuilder = uriBuilder;
-        this.enabled = session.userCredentialManager().isConfiguredFor(realm, user, realm.getOTPPolicy().getType());
+        this.enabled = ((OTPCredentialProvider)session.getProvider(CredentialProvider.class, "keycloak-otp")).isConfiguredFor(realm, user);
+        if (enabled) {
+            otpCredentials = session.userCredentialManager().getStoredCredentialsByType(realm, user, OTPCredentialModel.TYPE);
+        } else {
+            otpCredentials = Collections.EMPTY_LIST;
+        }
 
         this.realm = realm;
         this.totpSecret = HmacOTP.generateSecret(20);
@@ -75,6 +87,10 @@ public class TotpBean {
 
     public OTPPolicy getPolicy() {
         return realm.getOTPPolicy();
+    }
+
+    public List<CredentialModel> getOtpCredentials() {
+        return otpCredentials;
     }
 
 }

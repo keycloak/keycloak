@@ -210,11 +210,9 @@ public class CustomFlowTest extends AbstractFlowTest {
 
     /**
      * KEYCLOAK-3506
-     *
-     * @throws Exception
      */
     @Test
-    public void testRequiredAfterAlternative() throws Exception {
+    public void testRequiredAfterAlternative() {
         AuthenticationManagementResource authMgmtResource = testRealm().flows();
         Map<String, String> params = new HashMap();
         String flowAlias = "Browser Flow With Extra";
@@ -247,11 +245,11 @@ public class CustomFlowTest extends AbstractFlowTest {
 
 
         loginPage.open();
-        String url = driver.getCurrentUrl();
+         /* In the new flows, any required execution will render any optional flows unused.
         // test to make sure we aren't skipping anything
         loginPage.login("test-user@localhost", "bad-password");
         Assert.assertTrue(loginPage.isCurrent());
-        loginPage.login("test-user@localhost", "password");
+        loginPage.login("test-user@localhost", "password");*/
         Assert.assertTrue(termsPage.isCurrent());
 
         // Revert dummy flow

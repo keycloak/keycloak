@@ -60,11 +60,7 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
         UserRepresentation user = RealmRepUtil.findUser(testRealm, "test-user@localhost");
-        CredentialRepresentation credRep = new CredentialRepresentation();
-        credRep.setType(CredentialRepresentation.TOTP);
-        credRep.setValue("totpSecret");
-        user.getCredentials().add(credRep);
-        user.setTotp(Boolean.TRUE);
+        UserBuilder.edit(user).totpSecret("totpSecret");
 
         testRealm.setBruteForceProtected(true);
         testRealm.setFailureFactor(2);

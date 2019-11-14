@@ -1,5 +1,6 @@
 package org.keycloak.authentication.authenticators.client;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -21,7 +22,6 @@ import org.keycloak.authentication.ClientAuthenticationFlowContext;
 import org.keycloak.common.util.Time;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.crypto.HMACProvider;
-import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationExecutionModel.Requirement;
 import org.keycloak.models.SingleUseTokenStoreProvider;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -48,11 +48,7 @@ public class JWTClientSecretAuthenticator extends AbstractClientAuthenticator {
 	private static final Logger logger = Logger.getLogger(JWTClientSecretAuthenticator.class);
 	
     public static final String PROVIDER_ID = "client-secret-jwt";
-    
-    public static final AuthenticationExecutionModel.Requirement[] REQUIREMENT_CHOICES = {
-            AuthenticationExecutionModel.Requirement.ALTERNATIVE,
-            AuthenticationExecutionModel.Requirement.DISABLED
-    };
+
 
     @Override
     public void authenticateClient(ClientAuthenticationFlowContext context) {
@@ -114,7 +110,7 @@ public class JWTClientSecretAuthenticator extends AbstractClientAuthenticator {
             // According to <a href="http://openid.net/specs/openid-connect-core-1_0.html#ClientAuthentication">OIDC's client authentication spec</a>,
             // The HMAC (Hash-based Message Authentication Code) is calculated using the octets of the UTF-8 representation of the client_secret as the shared key. 
             // Use "HmacSHA256" consulting <a href="https://docs.oracle.com/javase/jp/8/docs/api/javax/crypto/Mac.html">java8 api</a>.
-            SecretKey clientSecret = new SecretKeySpec(clientSecretString.getBytes("UTF-8"), "HmacSHA256");
+            SecretKey clientSecret = new SecretKeySpec(clientSecretString.getBytes(StandardCharsets.UTF_8), "HmacSHA256");
 
             boolean signatureValid;
             try {

@@ -32,6 +32,7 @@ import org.keycloak.events.Event;
 import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.events.admin.AuthDetails;
 import org.keycloak.models.*;
+import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.idm.*;
 import org.keycloak.representations.idm.authorization.*;
@@ -168,7 +169,7 @@ public class ModelToRepresentation {
         rep.setEmail(user.getEmail());
         rep.setEnabled(user.isEnabled());
         rep.setEmailVerified(user.isEmailVerified());
-        rep.setTotp(session.userCredentialManager().isConfiguredFor(realm, user, CredentialModel.OTP));
+        rep.setTotp(session.userCredentialManager().isConfiguredFor(realm, user, OTPCredentialModel.TYPE));
         rep.setDisableableCredentialTypes(session.userCredentialManager().getDisableableCredentialTypes(realm, user));
         rep.setFederationLink(user.getFederationLink());
 
@@ -185,6 +186,7 @@ public class ModelToRepresentation {
             attrs.putAll(user.getAttributes());
             rep.setAttributes(attrs);
         }
+
         return rep;
     }
 
@@ -489,7 +491,18 @@ public class ModelToRepresentation {
     public static CredentialRepresentation toRepresentation(UserCredentialModel cred) {
         CredentialRepresentation rep = new CredentialRepresentation();
         rep.setType(CredentialRepresentation.SECRET);
-        rep.setValue(cred.getValue());
+        rep.setValue(cred.getChallengeResponse());
+        return rep;
+    }
+
+    public static CredentialRepresentation toRepresentation(CredentialModel cred) {
+        CredentialRepresentation rep = new CredentialRepresentation();
+        rep.setId(cred.getId());
+        rep.setType(cred.getType());
+        rep.setUserLabel(cred.getUserLabel());
+        rep.setCreatedDate(cred.getCreatedDate());
+        rep.setSecretData(cred.getSecretData());
+        rep.setCredentialData(cred.getCredentialData());
         return rep;
     }
 

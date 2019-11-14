@@ -20,7 +20,6 @@ import org.keycloak.component.ComponentModel;
 import org.keycloak.credential.CredentialInput;
 import org.keycloak.credential.CredentialInputUpdater;
 import org.keycloak.credential.CredentialInputValidator;
-import org.keycloak.credential.CredentialModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.LDAPConstants;
@@ -29,6 +28,7 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.storage.ReadOnlyException;
+import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.storage.StorageId;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.adapter.AbstractUserAdapterFederatedStorage;
@@ -149,7 +149,7 @@ public class UserMapStorage implements UserLookupProvider, UserStorageProvider, 
 
     @Override
     public boolean supportsCredentialType(String credentialType) {
-        return CredentialModel.PASSWORD.equals(credentialType);
+        return PasswordCredentialModel.TYPE.equals(credentialType);
     }
 
     @Override
@@ -160,8 +160,8 @@ public class UserMapStorage implements UserLookupProvider, UserStorageProvider, 
         if (!(input instanceof UserCredentialModel)) {
             return false;
         }
-        if (input.getType().equals(UserCredentialModel.PASSWORD)) {
-            userPasswords.put(user.getUsername(), ((UserCredentialModel) input).getValue());
+        if (input.getType().equals(PasswordCredentialModel.TYPE)) {
+            userPasswords.put(user.getUsername(), input.getChallengeResponse());
             return true;
 
         } else {
@@ -181,7 +181,7 @@ public class UserMapStorage implements UserLookupProvider, UserStorageProvider, 
 
     @Override
     public boolean isConfiguredFor(RealmModel realm, UserModel user, String credentialType) {
-        return CredentialModel.PASSWORD.equals(credentialType);
+        return PasswordCredentialModel.TYPE.equals(credentialType);
     }
 
     @Override
@@ -189,9 +189,9 @@ public class UserMapStorage implements UserLookupProvider, UserStorageProvider, 
         if (!(input instanceof UserCredentialModel)) {
             return false;
         }
-        if (input.getType().equals(UserCredentialModel.PASSWORD)) {
+        if (input.getType().equals(PasswordCredentialModel.TYPE)) {
             String pw = userPasswords.get(user.getUsername());
-            return pw != null && pw.equals(((UserCredentialModel) input).getValue());
+            return pw != null && pw.equals(input.getChallengeResponse());
         } else {
             return false;
         }

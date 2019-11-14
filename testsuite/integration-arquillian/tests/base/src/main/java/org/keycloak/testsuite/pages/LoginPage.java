@@ -35,7 +35,7 @@ public class LoginPage extends LanguageComboboxAwarePage {
     protected OAuthClient oauth;
 
     @FindBy(id = "username")
-    private WebElement usernameInput;
+    protected WebElement usernameInput;
 
     @FindBy(id = "password")
     private WebElement passwordInput;
@@ -47,7 +47,7 @@ public class LoginPage extends LanguageComboboxAwarePage {
     private WebElement rememberMe;
 
     @FindBy(name = "login")
-    private WebElement submitButton;
+    protected WebElement submitButton;
 
     @FindBy(name = "cancel")
     private WebElement cancelButton;

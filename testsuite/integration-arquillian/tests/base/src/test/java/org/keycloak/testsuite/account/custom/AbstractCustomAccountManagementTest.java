@@ -23,6 +23,8 @@ import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.representations.idm.AuthenticationExecutionInfoRepresentation;
 
 import java.util.List;
+import java.util.Optional;
+import java.util.function.Function;
 
 /**
  *
@@ -51,6 +53,15 @@ public abstract class AbstractCustomAccountManagementTest extends AbstractAccoun
         
         exec.setRequirement(requirement.name());
         authMgmtResource.updateExecutions(flowAlias, exec);
+    }
+
+    protected void updateRequirement(String flowAlias, AuthenticationExecutionModel.Requirement requirement, Function<AuthenticationExecutionInfoRepresentation, Boolean> filterFunc){
+        List<AuthenticationExecutionInfoRepresentation> executionReps = authMgmtResource.getExecutions(flowAlias);
+        AuthenticationExecutionInfoRepresentation exec =  executionReps.stream().filter(filterFunc::apply).findFirst().orElse(null);
+        if (exec != null) {
+            exec.setRequirement(requirement.name());
+            authMgmtResource.updateExecutions(flowAlias, exec);
+        }
     }
     
     protected AuthenticationExecutionInfoRepresentation getExecution(String flowAlias, String provider) {

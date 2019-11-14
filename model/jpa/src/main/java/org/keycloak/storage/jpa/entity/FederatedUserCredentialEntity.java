@@ -17,6 +17,8 @@
 
 package org.keycloak.storage.jpa.entity;
 
+import org.keycloak.models.jpa.entities.UserEntity;
+
 import javax.persistence.Access;
 import javax.persistence.AccessType;
 import javax.persistence.CascadeType;
@@ -24,6 +26,7 @@ import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.Id;
+import javax.persistence.Lob;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
@@ -36,12 +39,12 @@ import java.util.Collection;
  * @version $Revision: 1 $
  */
 @NamedQueries({
-        @NamedQuery(name="federatedUserCredentialByUser", query="select cred from FederatedUserCredentialEntity cred where cred.userId = :userId"),
-        @NamedQuery(name="federatedUserCredentialByUserAndType", query="select cred from FederatedUserCredentialEntity cred where cred.userId = :userId and cred.type = :type"),
-        @NamedQuery(name="federatedUserCredentialByNameAndType", query="select cred from FederatedUserCredentialEntity cred where cred.userId = :userId and cred.type = :type and cred.device = :device"),
+        @NamedQuery(name="federatedUserCredentialByUser", query="select cred from FederatedUserCredentialEntity cred where cred.userId = :userId order by cred.priority"),
+        @NamedQuery(name="federatedUserCredentialByUserAndType", query="select cred from FederatedUserCredentialEntity cred where cred.userId = :userId and cred.type = :type order by cred.priority"),
+        @NamedQuery(name="federatedUserCredentialByNameAndType", query="select cred from FederatedUserCredentialEntity cred where cred.userId = :userId and cred.type = :type and cred.userLabel = :userLabel order by cred.priority"),
         @NamedQuery(name="deleteFederatedUserCredentialByUser", query="delete from FederatedUserCredentialEntity cred where cred.userId = :userId and cred.realmId = :realmId"),
         @NamedQuery(name="deleteFederatedUserCredentialByUserAndType", query="delete from FederatedUserCredentialEntity cred where cred.userId = :userId and cred.type = :type"),
-        @NamedQuery(name="deleteFederatedUserCredentialByUserAndTypeAndDevice", query="delete from FederatedUserCredentialEntity cred where cred.userId = :userId and cred.type = :type and cred.device = :device"),
+        @NamedQuery(name="deleteFederatedUserCredentialByUserAndTypeAndUserLabel", query="delete from FederatedUserCredentialEntity cred where cred.userId = :userId and cred.type = :type and cred.userLabel = :userLabel"),
         @NamedQuery(name="deleteFederatedUserCredentialsByRealm", query="delete from FederatedUserCredentialEntity cred where cred.realmId=:realmId"),
         @NamedQuery(name="deleteFederatedUserCredentialsByStorageProvider", query="delete from FederatedUserCredentialEntity cred where cred.storageProviderId=:storageProviderId"),
         @NamedQuery(name="deleteFederatedUserCredentialsByRealmAndLink", query="delete from FederatedUserCredentialEntity cred where cred.userId IN (select u.id from UserEntity u where u.realmId=:realmId and u.federationLink=:link)")
@@ -55,19 +58,21 @@ public class FederatedUserCredentialEntity {
     @Access(AccessType.PROPERTY) // we do this because relationships often fetch id, but not entity.  This avoids an extra SQL
     protected String id;
 
+    @Column(name="SECRET_DATA")
+    protected String secretData;
+
+    @Column(name="CREDENTIAL_DATA")
+    protected String credentialData;
+
     @Column(name="TYPE")
     protected String type;
-    @Column(name="VALUE")
-    protected String value;
-    @Column(name="DEVICE")
-    protected String device;
-    @Column(name="SALT")
-    protected byte[] salt;
-    @Column(name="HASH_ITERATIONS")
-    protected int hashIterations;
+
+    @Column(name="USER_LABEL")
+    protected String userLabel;
+
     @Column(name="CREATED_DATE")
     protected Long createdDate;
-    
+
     @Column(name="USER_ID")
     protected String userId;
 
@@ -77,57 +82,62 @@ public class FederatedUserCredentialEntity {
     @Column(name = "STORAGE_PROVIDER_ID")
     protected String storageProviderId;
 
+    @Column(name="PRIORITY")
+    protected int priority;
 
-
-    @Column(name="COUNTER")
-    protected int counter;
-
-    @Column(name="ALGORITHM")
-    protected String algorithm;
-    @Column(name="DIGITS")
-    protected int digits;
-    @Column(name="PERIOD")
-    protected int period;
-    @OneToMany(cascade = CascadeType.REMOVE, fetch = FetchType.EAGER, orphanRemoval = true, mappedBy="credential")
-    protected Collection<FederatedUserCredentialAttributeEntity> credentialAttributes = new ArrayList<>();
+    @Deprecated // Needed just for backwards compatibility when migrating old credentials
+    @Column(name="SALT")
+    protected byte[] salt;
 
 
     public String getId() {
         return id;
     }
-
     public void setId(String id) {
         this.id = id;
     }
 
-    public String getValue() {
-        return value;
-    }
-
-    public void setValue(String value) {
-        this.value = value;
-    }
 
     public String getType() {
         return type;
     }
-
     public void setType(String type) {
         this.type = type;
     }
 
-    public String getDevice() {
-        return device;
+    public String getUserLabel() {
+        return userLabel;
+    }
+    public void setUserLabel(String userLabel) {
+        this.userLabel = userLabel;
     }
 
-    public void setDevice(String device) {
-        this.device = device;
+    public Long getCreatedDate() {
+        return createdDate;
     }
+    public void setCreatedDate(Long createdDate) {
+        this.createdDate = createdDate;
+    }
+
+    public String getSecretData() {
+        return secretData;
+    }
+    public void setSecretData(String secretData) {
+        this.secretData = secretData;
+    }
+
+    public String getCredentialData() {
+        return credentialData;
+    }
+    public void setCredentialData(String credentialData) {
+        this.credentialData = credentialData;
+    }
+
+
 
     public String getUserId() {
         return userId;
     }
-
     public void setUserId(String userId) {
         this.userId = userId;
     }
@@ -135,7 +145,6 @@ public class FederatedUserCredentialEntity {
     public String getRealmId() {
         return realmId;
     }
-
     public void setRealmId(String realmId) {
         this.realmId = realmId;
     }
@@ -143,73 +152,26 @@ public class FederatedUserCredentialEntity {
     public String getStorageProviderId() {
         return storageProviderId;
     }
-
     public void setStorageProviderId(String storageProviderId) {
         this.storageProviderId = storageProviderId;
     }
 
+    public int getPriority() {
+        return priority;
+    }
+
+    public void setPriority(int priority) {
+        this.priority = priority;
+    }
+
+    @Deprecated
     public byte[] getSalt() {
         return salt;
     }
 
+    @Deprecated
     public void setSalt(byte[] salt) {
         this.salt = salt;
-    }
-
-    public int getHashIterations() {
-        return hashIterations;
-    }
-
-    public void setHashIterations(int hashIterations) {
-        this.hashIterations = hashIterations;
-    }
-
-    public Long getCreatedDate() {
-        return createdDate;
-    }
-
-    public void setCreatedDate(Long createdDate) {
-        this.createdDate = createdDate;
-    }
-
-    public int getCounter() {
-        return counter;
-    }
-
-    public void setCounter(int counter) {
-        this.counter = counter;
-    }
-
-    public String getAlgorithm() {
-        return algorithm;
-    }
-
-    public void setAlgorithm(String algorithm) {
-        this.algorithm = algorithm;
-    }
-
-    public int getDigits() {
-        return digits;
-    }
-
-    public void setDigits(int digits) {
-        this.digits = digits;
-    }
-
-    public int getPeriod() {
-        return period;
-    }
-
-    public void setPeriod(int period) {
-        this.period = period;
-    }
-
-    public Collection<FederatedUserCredentialAttributeEntity> getCredentialAttributes() {
-        return credentialAttributes;
-    }
-
-    public void setCredentialAttributes(Collection<FederatedUserCredentialAttributeEntity> credentialAttributes) {
-        this.credentialAttributes = credentialAttributes;
     }
 
     @Override

@@ -47,6 +47,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -176,7 +177,7 @@ public class KcinitTest extends AbstractTestRealmKeycloakTest {
             realm.updateAuthenticationFlow(copy);
             execution = new AuthenticationExecutionModel();
             execution.setParentFlow(browser.getId());
-            execution.setRequirement(AuthenticationExecutionModel.Requirement.ALTERNATIVE);
+            execution.setRequirement(AuthenticationExecutionModel.Requirement.REQUIRED);
             execution.setFlowId(copy.getId());
             execution.setPriority(30);
             execution.setAuthenticatorFlow(true);
@@ -630,7 +631,9 @@ public class KcinitTest extends AbstractTestRealmKeycloakTest {
             testingClient.server().run(session -> {
                 RealmModel realm = session.realms().getRealmByName("test");
                 UserModel user = session.users().getUserByUsername("wburke", realm);
-                session.userCredentialManager().disableCredentialType(realm, user, CredentialModel.OTP);
+                for (CredentialModel c: session.userCredentialManager().getStoredCredentialsByType(realm, user, OTPCredentialModel.TYPE)){
+                    session.userCredentialManager().removeStoredCredential(realm, user, c.getId());
+                }
             });
         }
 

@@ -25,6 +25,12 @@ import org.keycloak.provider.ConfiguredProvider;
  * @version $Revision: 1 $
  */
 public interface ConfigurableAuthenticatorFactory extends ConfiguredProvider {
+
+    AuthenticationExecutionModel.Requirement[] REQUIREMENT_CHOICES = {
+            AuthenticationExecutionModel.Requirement.REQUIRED,
+            AuthenticationExecutionModel.Requirement.ALTERNATIVE,
+            AuthenticationExecutionModel.Requirement.DISABLED};
+
     /**
      * Friendly name for the authenticator
      *

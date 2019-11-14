@@ -22,22 +22,34 @@ import com.webauthn4j.data.WebAuthnAuthenticationContext;
 import com.webauthn4j.data.attestation.authenticator.AttestedCredentialData;
 import com.webauthn4j.data.attestation.authenticator.COSEKey;
 import com.webauthn4j.data.attestation.statement.AttestationStatement;
+import org.keycloak.models.credential.WebAuthnCredentialModel;
 
-public class WebAuthnCredentialModel implements CredentialInput {
+public class WebAuthnCredentialModelInput implements CredentialInput {
 
-    public static final String WEBAUTHN_CREDENTIAL_TYPE = "webauthn";
+    public static final String WEBAUTHN_CREDENTIAL_TYPE = WebAuthnCredentialModel.TYPE;
+
     private AttestedCredentialData attestedCredentialData;
     private AttestationStatement attestationStatement;
     private WebAuthnAuthenticationContext authenticationContext;
     private long count;
-    private String authenticatorId;
+    private String credentialDBId;
+
+    @Override
+    public String getCredentialId() {
+        return credentialDBId;
+    }
+
+    @Override
+    public String getChallengeResponse() {
+        throw new UnsupportedOperationException("WebAuthn credential doesn't support getChallengeResponse");
+    }
 
     @Override
     public String getType() {
         return WEBAUTHN_CREDENTIAL_TYPE;
     }
 
-    public WebAuthnCredentialModel() {
+    public WebAuthnCredentialModelInput() {
 
     }
 
@@ -73,19 +85,19 @@ public class WebAuthnCredentialModel implements CredentialInput {
         this.count = count;
     }
 
-    public String getAuthenticatorId() {
-        return authenticatorId;
+    public String getCredentialDBId() {
+        return credentialDBId;
     }
 
-    public void setAuthenticatorId(String authenticatorId) {
-        this.authenticatorId = authenticatorId;
+    public void setCredentialDBId(String credentialDBId) {
+        this.credentialDBId = credentialDBId;
     }
 
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        if (authenticatorId != null)
-            sb.append("Authenticator Id = ")
-              .append(authenticatorId)
+        if (credentialDBId != null)
+            sb.append("Credential DB Id = ")
+              .append(credentialDBId)
               .append(",");
         if (attestationStatement != null)
             sb.append("Attestation Statement Format = ")

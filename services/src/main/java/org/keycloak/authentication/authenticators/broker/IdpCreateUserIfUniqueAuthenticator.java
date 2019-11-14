@@ -99,19 +99,20 @@ public class IdpCreateUserIfUniqueAuthenticator extends AbstractIdpAuthenticator
 
             // Set duplicated user, so next authenticators can deal with it
             context.getAuthenticationSession().setAuthNote(EXISTING_USER_INFO, duplication.serialize());
-
-            Response challengeResponse = context.form()
-                    .setError(Messages.FEDERATED_IDENTITY_EXISTS, duplication.getDuplicateAttributeName(), duplication.getDuplicateAttributeValue())
-                    .createErrorPage(Response.Status.CONFLICT);
-            context.challenge(challengeResponse);
-
+            //Only show error message if the authenticator was required
             if (context.getExecution().isRequired()) {
+                Response challengeResponse = context.form()
+                        .setError(Messages.FEDERATED_IDENTITY_EXISTS, duplication.getDuplicateAttributeName(), duplication.getDuplicateAttributeValue())
+                        .createErrorPage(Response.Status.CONFLICT);
+                context.challenge(challengeResponse);
                 context.getEvent()
                         .user(duplication.getExistingUserId())
                         .detail("existing_" + duplication.getDuplicateAttributeName(), duplication.getDuplicateAttributeValue())
                         .removeDetail(Details.AUTH_METHOD)
                         .removeDetail(Details.AUTH_TYPE)
                         .error(Errors.FEDERATED_IDENTITY_EXISTS);
+            } else {
+                context.attempted();
             }
         }
     }

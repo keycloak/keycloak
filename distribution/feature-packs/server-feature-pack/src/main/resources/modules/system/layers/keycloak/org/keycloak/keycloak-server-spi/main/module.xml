@@ -30,5 +30,9 @@
         <module name="org.apache.httpcomponents"/>
         <module name="org.jboss.resteasy.resteasy-jaxrs"/>
         <module name="javax.transaction.api"/>
+        <module name="com.fasterxml.jackson.core.jackson-core"/>
+        <module name="com.fasterxml.jackson.core.jackson-annotations"/>
+        <module name="com.fasterxml.jackson.core.jackson-databind"/>
+        <module name="com.fasterxml.jackson.jaxrs.jackson-jaxrs-json-provider"/>
     </dependencies>
 </module>

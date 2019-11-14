@@ -17,9 +17,7 @@
 
 package org.keycloak.models.utils;
 
-import org.keycloak.models.OTPPolicy;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserCredentialModel;
+import org.keycloak.models.credential.OTPCredentialModel;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -27,14 +25,17 @@ import org.keycloak.models.UserCredentialModel;
  */
 public class CredentialValidation {
 
-    public static boolean validOTP(RealmModel realm, String token, String secret) {
-        OTPPolicy policy = realm.getOTPPolicy();
-        if (policy.getType().equals(UserCredentialModel.TOTP)) {
-            TimeBasedOTP validator = new TimeBasedOTP(policy.getAlgorithm(), policy.getDigits(), policy.getPeriod(), policy.getLookAheadWindow());
-            return validator.validateTOTP(token, secret.getBytes());
+    public static boolean validOTP(String token, OTPCredentialModel credentialModel, int lookAheadWindow) {
+        if (credentialModel.getOTPCredentialData().getSubType().equals(OTPCredentialModel.TOTP)) {
+            TimeBasedOTP validator = new TimeBasedOTP(credentialModel.getOTPCredentialData().getAlgorithm(),
+                    credentialModel.getOTPCredentialData().getDigits(), credentialModel.getOTPCredentialData().getPeriod(),
+                    lookAheadWindow);
+            return validator.validateTOTP(token, credentialModel.getOTPSecretData().getValue().getBytes());
         } else {
-            HmacOTP validator = new HmacOTP(policy.getDigits(), policy.getAlgorithm(), policy.getLookAheadWindow());
-            int c = validator.validateHOTP(token, secret, policy.getInitialCounter());
+            HmacOTP validator = new HmacOTP(credentialModel.getOTPCredentialData().getDigits(),
+                    credentialModel.getOTPCredentialData().getAlgorithm(), lookAheadWindow);
+            int c = validator.validateHOTP(token, credentialModel.getOTPSecretData().getValue(),
+                    credentialModel.getOTPCredentialData().getCounter());
             return c > -1;
         }
 

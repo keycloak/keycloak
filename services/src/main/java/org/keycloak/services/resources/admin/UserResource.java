@@ -27,6 +27,8 @@ import org.keycloak.common.ClientConnection;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.Time;
 import org.keycloak.credential.CredentialModel;
+import org.keycloak.credential.CredentialProvider;
+import org.keycloak.credential.PasswordCredentialProvider;
 import org.keycloak.email.EmailException;
 import org.keycloak.email.EmailTemplateProvider;
 import org.keycloak.events.Details;
@@ -40,13 +42,11 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.IdentityProviderModel;
-import org.keycloak.models.ImpersonationSessionNote;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserConsentModel;
-import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserLoginFailureModel;
 import org.keycloak.models.UserManager;
 import org.keycloak.models.UserModel;
@@ -79,6 +79,8 @@ import org.keycloak.utils.ProfileHelper;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
+import javax.ws.rs.NotFoundException;
+import javax.ws.rs.NotSupportedException;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
@@ -105,6 +107,7 @@ import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import static org.keycloak.models.ImpersonationSessionNote.IMPERSONATOR_ID;
 import static org.keycloak.models.ImpersonationSessionNote.IMPERSONATOR_USERNAME;
@@ -477,6 +480,7 @@ public class UserResource {
         return result;
     }
 
+
     /**
      * Revoke consent and offline tokens for particular client from user
      *
@@ -562,36 +566,29 @@ public class UserResource {
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
     public void disableCredentialType(List<String> credentialTypes) {
-        auth.users().requireManage(user);
-        if (credentialTypes == null) return;
-        for (String type : credentialTypes) {
-            session.userCredentialManager().disableCredentialType(realm, user, type);
-
-        }
-
-
+        throw new NotSupportedException("Not supported to disable credentials. Only credentials removal is supported");
     }
 
     /**
      * Set up a new password for the user.
      *
-     * @param pass The representation must contain a value and the type equals to "password"
+     * @param cred The representation must contain a rawPassword with the plain-text password
      */
     @Path("reset-password")
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
-    public void resetPassword(CredentialRepresentation pass) {
+    public void resetPassword(CredentialRepresentation cred) {
         auth.users().requireManage(user);
-        if (pass == null || pass.getValue() == null || !CredentialRepresentation.PASSWORD.equals(pass.getType())) {
+        if (cred == null || cred.getValue() == null) {
             throw new BadRequestException("No password provided");
         }
-        if (Validation.isBlank(pass.getValue())) {
+        if (Validation.isBlank(cred.getValue())) {
             throw new BadRequestException("Empty password not allowed");
         }
 
-        UserCredentialModel cred = UserCredentialModel.password(pass.getValue(), true);
         try {
-            session.userCredentialManager().updateCredential(realm, user, cred);
+            PasswordCredentialProvider provider = (PasswordCredentialProvider)session.getProvider(CredentialProvider.class, "keycloak-password");
+            provider.createCredential(realm, user, cred.getValue());
         } catch (IllegalStateException ise) {
             throw new BadRequestException("Resetting to N old passwords is not allowed.");
         } catch (ReadOnlyException mre) {
@@ -601,23 +598,80 @@ public class UserResource {
             throw new ErrorResponseException(e.getMessage(), MessageFormat.format(messages.getProperty(e.getMessage(), e.getMessage()), e.getParameters()),
                     Status.BAD_REQUEST);
         }
-        if (pass.isTemporary() != null && pass.isTemporary()) user.addRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
+        if (cred.isTemporary() != null && cred.isTemporary()) user.addRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
 
         adminEvent.operation(OperationType.ACTION).resourcePath(session.getContext().getUri()).success();
     }
 
+
+    @GET
+    @Path("credentials")
+    @NoCache
+    @Produces(MediaType.APPLICATION_JSON)
+    public List<CredentialRepresentation> credentials(){
+        auth.users().requireManage(user);
+        List<CredentialModel> models = session.userCredentialManager().getStoredCredentials(realm, user);
+        models.forEach(c -> c.setSecretData(null));
+        return models.stream().map(ModelToRepresentation::toRepresentation).collect(Collectors.toList());
+    }
+
+
     /**
-     * Remove TOTP from the user
+     * Remove a credential for a user
      *
      */
-    @Path("remove-totp")
-    @PUT
-    @Consumes(MediaType.APPLICATION_JSON)
-    public void removeTotp() {
+    @Path("credentials/{credentialId}")
+    @DELETE
+    @NoCache
+    public void removeCredential(final @PathParam("credentialId") String credentialId) {
         auth.users().requireManage(user);
-
-        session.userCredentialManager().disableCredentialType(realm, user, CredentialModel.OTP);
+        session.userCredentialManager().removeStoredCredential(realm, user, credentialId);
         adminEvent.operation(OperationType.ACTION).resourcePath(session.getContext().getUri()).success();
+    }
+
+    /**
+     * Update a credential label for a user
+     */
+    @PUT
+    @Consumes(javax.ws.rs.core.MediaType.TEXT_PLAIN)
+    @Path("credentials/{credentialId}/userLabel")
+    public void setCredentialUserLabel(final @PathParam("credentialId") String credentialId, String userLabel) {
+        auth.users().requireManage(user);
+        CredentialModel credential = session.userCredentialManager().getStoredCredentialById(realm, user, credentialId);
+        if (credential == null) {
+            // we do this to make sure somebody can't phish ids
+            if (auth.users().canQuery()) throw new NotFoundException("User not found");
+            else throw new ForbiddenException();
+        }
+        session.userCredentialManager().updateCredentialLabel(realm, user, credentialId, userLabel);
+    }
+
+    /**
+     * Move a credential to a first position in the credentials list of the user
+     * @param credentialId The credential to move
+     */
+    @Path("credentials/{credentialId}/moveToFirst")
+    @POST
+    public void moveCredentialToFirst(final @PathParam("credentialId") String credentialId){
+        moveCredentialAfter(credentialId, null);
+    }
+
+    /**
+     * Move a credential to a position behind another credential
+     * @param credentialId The credential to move
+     * @param newPreviousCredentialId The credential that will be the previous element in the list. If set to null, the moved credential will be the first element in the list.
+     */
+    @Path("credentials/{credentialId}/moveAfter/{newPreviousCredentialId}")
+    @POST
+    public void moveCredentialAfter(final @PathParam("credentialId") String credentialId, final @PathParam("newPreviousCredentialId") String newPreviousCredentialId){
+        auth.users().requireManage(user);
+        CredentialModel credential = session.userCredentialManager().getStoredCredentialById(realm, user, credentialId);
+        if (credential == null) {
+            // we do this to make sure somebody can't phish ids
+            if (auth.users().canQuery()) throw new NotFoundException("User not found");
+            else throw new ForbiddenException();
+        }
+        session.userCredentialManager().moveCredentialTo(realm, user, credentialId, newPreviousCredentialId);
     }
 
     /**

@@ -83,20 +83,59 @@ public interface UserResource {
     @Path("logout")
     public void logout();
 
+
+
+    @GET
+    @Path("credentials")
+    @Produces(MediaType.APPLICATION_JSON)
+    List<CredentialRepresentation> credentials();
+
+    /**
+     * Remove a credential for a user
+     *
+     */
+    @DELETE
+    @Path("credentials/{credentialId}")
+    void removeCredential(@PathParam("credentialId")String credentialId);
+
+    /**
+     * Update a credential label for a user
+     */
     @PUT
-    @Path("remove-totp")
-    public void removeTotp();
+    @Consumes(javax.ws.rs.core.MediaType.TEXT_PLAIN)
+    @Path("credentials/{credentialId}/userLabel")
+    void setCredentialUserLabel(final @PathParam("credentialId") String credentialId, String userLabel);
+
+    /**
+     * Move a credential to a first position in the credentials list of the user
+     * @param credentialId The credential to move
+     */
+    @Path("credentials/{credentialId}/moveToFirst")
+    @POST
+    void moveCredentialToFirst(final @PathParam("credentialId") String credentialId);
+
+    /**
+     * Move a credential to a position behind another credential
+     * @param credentialId The credential to move
+     * @param newPreviousCredentialId The credential that will be the previous element in the list. If set to null, the moved credential will be the first element in the list.
+     */
+    @Path("credentials/{credentialId}/moveAfter/{newPreviousCredentialId}")
+    @POST
+    void moveCredentialAfter(final @PathParam("credentialId") String credentialId, final @PathParam("newPreviousCredentialId") String newPreviousCredentialId);
+
 
     /**
      * Disables or deletes all credentials for specific types.
      * Type examples "otp", "password"
      *
+     * This endpoint is deprecated as it is not supported to disable credentials, just delete them
      *
      * @param credentialTypes
      */
     @Path("disable-credential-types")
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
+    @Deprecated
     public void disableCredentialType(List<String> credentialTypes);
 
     @PUT

@@ -31,6 +31,9 @@ public class LoginConfigTotpPage extends AbstractPage {
     @FindBy(id = "totp")
     private WebElement totpInput;
 
+    @FindBy(id = "userLabel")
+    private WebElement totpLabelInput;
+
     @FindBy(css = "input[type=\"submit\"]")
     private WebElement submitButton;
     
@@ -48,6 +51,12 @@ public class LoginConfigTotpPage extends AbstractPage {
 
     public void configure(String totp) {
         totpInput.sendKeys(totp);
+        submitButton.click();
+    }
+
+    public void configure(String totp, String userLabel) {
+        totpInput.sendKeys(totp);
+        totpLabelInput.sendKeys(userLabel);
         submitButton.click();
     }
 

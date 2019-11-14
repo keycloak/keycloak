@@ -18,19 +18,23 @@ package org.keycloak.forms.login.freemarker.model;
 import java.util.LinkedList;
 import java.util.List;
 
-import org.keycloak.WebAuthnConstants;
+import org.keycloak.common.util.Base64Url;
+import org.keycloak.credential.CredentialModel;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.credential.WebAuthnCredentialModel;
 
 public class WebAuthnAuthenticatorsBean {
     private List<WebAuthnAuthenticatorBean> authenticators = new LinkedList<WebAuthnAuthenticatorBean>();
 
-    public WebAuthnAuthenticatorsBean(UserModel user) {
+    public WebAuthnAuthenticatorsBean(KeycloakSession session, RealmModel realm, UserModel user) {
         // should consider multiple credentials in the future, but only single credential supported now.
-        List<String> credentialIds = user.getAttribute(WebAuthnConstants.PUBKEY_CRED_ID_ATTR);
-        List<String> labels = user.getAttribute(WebAuthnConstants.PUBKEY_CRED_LABEL_ATTR);
-        if (credentialIds != null && credentialIds.size() == 1 && !credentialIds.get(0).isEmpty()) {
-            String credentialId = credentialIds.get(0);
-            String label = (labels.size() == 1 && !labels.get(0).isEmpty()) ? labels.get(0) : "label missing";
+        for (CredentialModel credential : session.userCredentialManager().getStoredCredentialsByType(realm, user, WebAuthnCredentialModel.TYPE)) {
+            WebAuthnCredentialModel webAuthnCredential = WebAuthnCredentialModel.createFromCredentialModel(credential);
+
+            String credentialId = Base64Url.encodeBase64ToBase64Url(webAuthnCredential.getWebAuthnCredentialData().getCredentialId());
+            String label = (webAuthnCredential.getUserLabel()==null || webAuthnCredential.getUserLabel().isEmpty()) ? "label missing" : webAuthnCredential.getUserLabel();
             authenticators.add(new WebAuthnAuthenticatorBean(credentialId, label));
         }
     }
