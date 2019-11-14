@@ -37,6 +37,7 @@ import org.keycloak.models.utils.SessionTimeoutHelper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.ModelTest;
 
 import java.util.Arrays;
@@ -53,10 +54,12 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
+@AuthServerContainerExclude(AuthServer.REMOTE)
 public class UserSessionProviderTest extends AbstractTestRealmKeycloakTest {
 
     public static void setupRealm(KeycloakSession session){

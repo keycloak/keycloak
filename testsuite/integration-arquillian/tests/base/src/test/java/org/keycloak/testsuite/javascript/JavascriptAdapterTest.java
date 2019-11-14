@@ -48,6 +48,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlDoesntStartWith;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
 import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
@@ -56,6 +58,7 @@ import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
 /**
  * @author mhajas
  */
+@AuthServerContainerExclude(AuthServer.REMOTE)
 public class JavascriptAdapterTest extends AbstractJavascriptTest {
 
     private String testAppUrl;

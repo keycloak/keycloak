@@ -21,6 +21,7 @@ package org.keycloak.testsuite.adapter.servlet;
 import static org.hamcrest.Matchers.containsString;
 
 import static org.junit.Assert.assertThat;
+import static org.keycloak.testsuite.arquillian.AuthServerTestEnricher.AUTH_SERVER_SSL_REQUIRED;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlEquals;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWithLoginUrlOf;
 

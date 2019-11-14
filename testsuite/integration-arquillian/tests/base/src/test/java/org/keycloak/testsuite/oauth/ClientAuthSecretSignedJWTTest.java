@@ -27,11 +27,14 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.AbstractAdminTest;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import org.keycloak.testsuite.util.OAuthClient;
 
 /**
  * @author Takashi Norimatsu <takashi.norimatsu.ws@hitachi.com>
  */
+@AuthServerContainerExclude(AuthServer.REMOTE)
 public class ClientAuthSecretSignedJWTTest extends AbstractKeycloakTest {
 	private static final Logger logger = Logger.getLogger(ClientAuthSecretSignedJWTTest.class);
 	

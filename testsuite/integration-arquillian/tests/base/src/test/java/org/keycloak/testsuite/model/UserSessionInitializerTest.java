@@ -37,6 +37,7 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.UserSessionManager;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.ModelTest;
 
 import java.util.List;
@@ -44,11 +45,13 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  * @author <a href="mailto:mabartos@redhat.com">Martin Bartos</a>
  */
+@AuthServerContainerExclude(AuthServer.REMOTE)
 public class UserSessionInitializerTest extends AbstractTestRealmKeycloakTest {
     private final String realmName = "test";
 

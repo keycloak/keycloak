@@ -42,6 +42,9 @@ import static org.junit.Assert.assertEquals;
 
 import java.util.Arrays;
 import java.util.List;
+import org.junit.Assume;
+import org.junit.BeforeClass;
+import static org.keycloak.testsuite.arquillian.AuthServerTestEnricher.AUTH_SERVER_SSL_REQUIRED;
 
 public class WebAuthnRegisterAndLoginTest extends AbstractTestRealmKeycloakTest {
 
@@ -57,10 +60,6 @@ public class WebAuthnRegisterAndLoginTest extends AbstractTestRealmKeycloakTest 
     @Page
     protected WebAuthnRegisterPage registerPage;
 
-    @Override
-    public void configureTestRealm(RealmRepresentation testRealm) {
-    }
-
     private static final String ALL_ZERO_AAGUID = "00000000-0000-0000-0000-000000000000";
 
     private List<String> signatureAlgorithms;
@@ -73,6 +72,15 @@ public class WebAuthnRegisterAndLoginTest extends AbstractTestRealmKeycloakTest 
     private int createTimeout;
     private boolean avoidSameAuthenticatorRegister;
     private List<String> acceptableAaguids;
+
+    @Override
+    public void configureTestRealm(RealmRepresentation testRealm) {
+    }
+
+    @BeforeClass
+    public static void enabled() {
+        Assume.assumeTrue(AUTH_SERVER_SSL_REQUIRED);
+    }
 
     @Before
     public void verifyEnvironment() {

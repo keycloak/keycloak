@@ -26,9 +26,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.cache.infinispan.ClientAdapter;
 import org.keycloak.models.cache.infinispan.RealmAdapter;
-import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
-import org.keycloak.testsuite.Assert;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 
 import java.util.List;
 import java.util.Set;
@@ -36,11 +34,16 @@ import java.util.Set;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
+import org.keycloak.testsuite.Assert;
+import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
+
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-
+@AuthServerContainerExclude(AuthServer.REMOTE)
 public class CacheTest extends AbstractTestRealmKeycloakTest {
 
 	private ClientModel testApp = null;

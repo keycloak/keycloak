@@ -1,12 +1,7 @@
 package org.keycloak.testsuite.arquillian.containers;
 
-import org.jboss.arquillian.container.spi.event.ContainerMultiControlEvent;
-import org.jboss.arquillian.container.spi.event.StartClassContainers;
 import org.jboss.arquillian.container.spi.event.StartContainer;
-import org.jboss.arquillian.container.spi.event.StartSuiteContainers;
 import org.jboss.arquillian.container.spi.event.StopContainer;
-import org.jboss.arquillian.container.spi.event.StopManualContainers;
-import org.jboss.arquillian.container.spi.event.StopSuiteContainers;
 import org.jboss.arquillian.core.api.Event;
 import org.jboss.arquillian.core.api.Instance;
 import org.jboss.arquillian.core.api.annotation.Inject;
@@ -17,7 +12,6 @@ import org.jboss.arquillian.test.spi.event.suite.Before;
 import org.jboss.arquillian.test.spi.event.suite.BeforeClass;
 import org.keycloak.common.Profile;
 import org.keycloak.testsuite.ProfileAssume;
-import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
 import org.keycloak.testsuite.arquillian.SuiteContext;
 import org.keycloak.testsuite.arquillian.TestContext;
 import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
@@ -38,6 +32,7 @@ import java.util.stream.Collectors;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 import static org.keycloak.testsuite.arquillian.AuthServerTestEnricher.getManagementClient;
+import static org.keycloak.testsuite.arquillian.AuthServerTestEnricher.isAuthServerRemote;
 
 /**
  * @author mhajas
@@ -112,11 +107,12 @@ public class KeycloakContainerFeaturesController {
     }
 
     public void restartAuthServer() throws Exception {
-        if (AuthServerTestEnricher.AUTH_SERVER_CONTAINER.equals("auth-server-remote")) {
-            OnlineManagementClient client = getManagementClient();
-            Administration administration = new Administration(client);
-            administration.reload();
-            client.close();
+        if (isAuthServerRemote()) {
+            try (OnlineManagementClient client = getManagementClient()) {
+                int timeoutInSec = Integer.getInteger(System.getProperty("auth.server.jboss.startup.timeout"), 300);
+                Administration administration = new Administration(client, timeoutInSec);
+                administration.reload();
+            }
         } else {
             stopContainerEvent.fire(new StopContainer(suiteContextInstance.get().getAuthServerInfo().getArquillianContainer()));
             startContainerEvent.fire(new StartContainer(suiteContextInstance.get().getAuthServerInfo().getArquillianContainer()));

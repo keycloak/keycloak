@@ -72,10 +72,13 @@ import org.openqa.selenium.WebElement;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertEquals;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
+@AuthServerContainerExclude(AuthServer.REMOTE)
 public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeycloakTest {
 
     @Rule

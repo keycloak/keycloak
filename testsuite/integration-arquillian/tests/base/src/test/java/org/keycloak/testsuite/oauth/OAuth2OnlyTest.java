@@ -47,6 +47,7 @@ import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.OAuthClient;
 
 import static org.junit.Assert.assertEquals;
+import static org.keycloak.testsuite.arquillian.AuthServerTestEnricher.AUTH_SERVER_SSL_REQUIRED;
 
 /**
  * Test for scenarios when 'scope=openid' is missing. Which means we have pure OAuth2 request (not OpenID Connect)

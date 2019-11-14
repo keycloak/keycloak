@@ -58,11 +58,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.*;
-import static org.keycloak.testsuite.auth.page.login.Login.OIDC;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -70,6 +70,7 @@ import static org.keycloak.testsuite.auth.page.login.Login.OIDC;
 public class ClientTest extends AbstractAdminTest {
 
     @Test
+    @AuthServerContainerExclude(AuthServer.REMOTE)
     public void getClients() {
         Assert.assertNames(realm.clients().findAll(), "account", "account-console", "realm-management", "security-admin-console", "broker", Constants.ADMIN_CLI_CLIENT_ID);
     }
@@ -94,6 +95,7 @@ public class ClientTest extends AbstractAdminTest {
     }
 
     @Test
+    @AuthServerContainerExclude(AuthServer.REMOTE)
     public void createClientVerify() {
         String id = createClient().getId();
 
@@ -160,6 +162,7 @@ public class ClientTest extends AbstractAdminTest {
     }
 
     @Test
+    @AuthServerContainerExclude(AuthServer.REMOTE)
     public void getAllClientsSearchAndPagination() {
         Set<String> ids = new HashSet<>();
         try {
@@ -258,6 +261,7 @@ public class ClientTest extends AbstractAdminTest {
     }
 
     @Test
+    @AuthServerContainerExclude(AuthServer.REMOTE)
     public void serviceAccount() {
         Response response = realm.clients().create(ClientBuilder.create().clientId("serviceClient").serviceAccount().build());
         String id = ApiUtil.getCreatedId(response);

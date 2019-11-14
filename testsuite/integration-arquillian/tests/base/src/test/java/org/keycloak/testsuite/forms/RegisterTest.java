@@ -22,11 +22,11 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
-import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.pages.*;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
 
@@ -35,6 +35,7 @@ import javax.mail.internet.MimeMessage;
 
 import static org.jgroups.util.Util.assertTrue;
 import static org.junit.Assert.assertEquals;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -324,6 +325,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
+    @AuthServerContainerExclude(AuthServer.REMOTE) // GreenMailRule is not working atm
     public void registerUserSuccessWithEmailVerification() throws Exception {
         RealmRepresentation realm = testRealm().toRepresentation();
         boolean origVerifyEmail = realm.isVerifyEmail();
@@ -374,6 +376,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
+    @AuthServerContainerExclude(AuthServer.REMOTE) // GreenMailRule is not working atm
     public void registerUserSuccessWithEmailVerificationWithResend() throws Exception {
         RealmRepresentation realm = testRealm().toRepresentation();
         boolean origVerifyEmail = realm.isVerifyEmail();

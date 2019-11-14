@@ -27,15 +27,20 @@ import org.keycloak.events.admin.ResourceType;
 import org.keycloak.representations.idm.ClientInitialAccessCreatePresentation;
 import org.keycloak.representations.idm.ClientInitialAccessPresentation;
 import org.keycloak.testsuite.Assert;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.util.AdminEventPaths;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static org.hamcrest.CoreMatchers.allOf;
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
+import static org.hamcrest.Matchers.lessThanOrEqualTo;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertThat;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -50,6 +55,7 @@ public class InitialAccessTokenResourceTest extends AbstractAdminTest {
     }
 
     @Test
+    @AuthServerContainerExclude(AuthServer.REMOTE) // Time difference is possible on remote server
     public void testInitialAccessTokens() {
         ClientInitialAccessCreatePresentation rep = new ClientInitialAccessCreatePresentation();
         rep.setCount(2);
@@ -64,7 +70,7 @@ public class InitialAccessTokenResourceTest extends AbstractAdminTest {
         assertEquals(new Integer(2), response.getCount());
         assertEquals(new Integer(2), response.getRemainingCount());
         assertEquals(new Integer(100), response.getExpiration());
-        assertTrue(time <= response.getTimestamp() && response.getTimestamp() <= Time.currentTime());
+        assertThat(response.getTimestamp(), allOf(greaterThanOrEqualTo(time), lessThanOrEqualTo(Time.currentTime())));
         assertNotNull(response.getToken());
 
         rep.setCount(3);

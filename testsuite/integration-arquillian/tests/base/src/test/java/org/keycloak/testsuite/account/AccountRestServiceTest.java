@@ -31,7 +31,6 @@ import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.account.AccountCredentialResource;
-import org.keycloak.services.resources.account.AccountCredentialResource.PasswordUpdate;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.TokenUtil;
 
@@ -44,10 +43,14 @@ import java.util.stream.Collectors;
 
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.junit.Assert.*;
+import org.keycloak.services.resources.account.AccountCredentialResource.PasswordUpdate;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
+@AuthServerContainerExclude(AuthServer.REMOTE)
 public class AccountRestServiceTest extends AbstractRestServiceTest {
     @Test
     public void testGetProfile() throws IOException {

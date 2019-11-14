@@ -31,7 +31,6 @@ import static org.keycloak.protocol.saml.SamlProtocol.SAML_IDP_INITIATED_SSO_URL
 import static org.keycloak.testsuite.broker.BrokerTestConstants.*;
 import static org.keycloak.testsuite.broker.BrokerTestTools.*;
 
-
 public class KcSamlBrokerConfiguration implements BrokerConfiguration {
 
     public static final KcSamlBrokerConfiguration INSTANCE = new KcSamlBrokerConfiguration();

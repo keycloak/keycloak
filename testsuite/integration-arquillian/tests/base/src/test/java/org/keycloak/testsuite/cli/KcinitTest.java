@@ -49,6 +49,8 @@ import org.keycloak.services.resources.admin.permissions.AdminPermissions;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.actions.DummyRequiredActionFactory;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import org.keycloak.testsuite.authentication.PushButtonAuthenticatorFactory;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.util.GreenMailRule;
@@ -67,6 +69,7 @@ import java.util.regex.Pattern;
  *
  * @author <a href="mailto:bburke@redhat.com">Bill Burke</a>
  */
+@AuthServerContainerExclude(AuthServer.REMOTE)
 public class KcinitTest extends AbstractTestRealmKeycloakTest {
 
     public static final String KCINIT_CLIENT = "kcinit";

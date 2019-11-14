@@ -43,6 +43,7 @@ import org.keycloak.services.resources.admin.permissions.AdminPermissions;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
@@ -63,11 +64,13 @@ import static org.hamcrest.Matchers.instanceOf;
 import static org.junit.Assert.assertNotNull;
 import static org.keycloak.models.ImpersonationSessionNote.IMPERSONATOR_ID;
 import static org.keycloak.models.ImpersonationSessionNote.IMPERSONATOR_USERNAME;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
+@AuthServerContainerExclude(AuthServer.REMOTE)
 @EnableFeature(value = Profile.Feature.TOKEN_EXCHANGE, skipRestart = true)
 public class ClientTokenExchangeTest extends AbstractKeycloakTest {
 

@@ -18,11 +18,14 @@ import java.util.UUID;
 
 import static org.keycloak.client.admin.cli.util.OsUtil.CMD;
 import static org.keycloak.client.admin.cli.util.OsUtil.EOL;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import static org.keycloak.testsuite.cli.KcAdmExec.execute;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
  */
+@AuthServerContainerExclude(AuthServer.REMOTE)
 public class KcAdmTest extends AbstractAdmCliTest {
 
     @Test

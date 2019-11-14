@@ -31,10 +31,12 @@ import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
 import org.keycloak.protocol.oidc.mappers.UserSessionNoteMapper;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
-
-import java.util.List;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
+
+import java.util.List;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 
 
 /**
@@ -42,6 +44,7 @@ import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
  * @version $Revision: 1 $
  */
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
+@AuthServerContainerExclude(AuthServer.REMOTE)
 public class ImportTest extends AbstractTestRealmKeycloakTest {
 
     @Test

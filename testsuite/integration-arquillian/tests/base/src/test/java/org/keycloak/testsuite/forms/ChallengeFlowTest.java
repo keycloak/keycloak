@@ -31,6 +31,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
@@ -48,11 +49,14 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
+
 /**
  * Test that clients can override auth flows
  *
  * @author <a href="mailto:bburke@redhat.com">Bill Burke</a>
  */
+@AuthServerContainerExclude(AuthServer.REMOTE)
 public class ChallengeFlowTest extends AbstractTestRealmKeycloakTest {
 
     public static final String TEST_APP_DIRECT_OVERRIDE = "test-app-direct-override";

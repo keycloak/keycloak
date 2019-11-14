@@ -14,13 +14,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.testsuite.arquillian.migration;
+package org.keycloak.testsuite.arquillian.decider;
 
 import org.jboss.arquillian.test.spi.execution.ExecutionDecision;
 import org.jboss.arquillian.test.spi.execution.TestExecutionDecider;
 
 import java.lang.reflect.Method;
 import org.jboss.logging.Logger;
+import org.keycloak.testsuite.arquillian.migration.Migration;
 
 /**
  * @author <a href="mailto:vramik@redhat.com">Vlastislav Ramik</a>

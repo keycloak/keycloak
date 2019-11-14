@@ -20,29 +20,24 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.TokenUtil;
 import org.keycloak.testsuite.util.WebDriverLogDumper;
-import org.keycloak.util.JsonSerialization;
 import org.openqa.selenium.JavascriptExecutor;
 
 import java.io.IOException;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
+@AuthServerContainerExclude(AuthServer.REMOTE)
 public class AccountRestServiceCorsTest extends AbstractTestRealmKeycloakTest {
 
     private static final String VALID_CORS_URL = "http://localtest.me:8180/auth";

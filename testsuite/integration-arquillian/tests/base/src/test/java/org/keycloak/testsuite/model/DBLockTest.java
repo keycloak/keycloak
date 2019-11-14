@@ -29,15 +29,19 @@ import org.keycloak.models.dblock.DBLockProviderFactory;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.ModelTest;
 
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
+
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
+@AuthServerContainerExclude(AuthServer.REMOTE)
 public class DBLockTest extends AbstractTestRealmKeycloakTest {
 
     private static final Logger log = Logger.getLogger(DBLockTest.class);

@@ -17,8 +17,6 @@
  */
 package org.keycloak.testsuite.admin.client.authorization;
 
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.PoliciesResource;
 import org.keycloak.admin.client.resource.PolicyResource;

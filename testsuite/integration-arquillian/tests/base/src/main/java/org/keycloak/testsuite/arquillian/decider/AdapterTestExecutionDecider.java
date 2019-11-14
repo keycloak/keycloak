@@ -14,18 +14,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.testsuite.arquillian;
+package org.keycloak.testsuite.arquillian.decider;
 
 import java.lang.reflect.Method;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import org.jboss.arquillian.test.spi.execution.ExecutionDecision;
 import org.jboss.arquillian.test.spi.execution.TestExecutionDecider;
 import org.jboss.arquillian.core.api.Instance;
 import org.jboss.arquillian.core.api.annotation.Inject;
-import org.jboss.logging.Logger;
+import org.keycloak.testsuite.arquillian.AppServerTestEnricher;
+import org.keycloak.testsuite.arquillian.TestContext;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainers;
 
@@ -33,8 +32,6 @@ import org.keycloak.testsuite.arquillian.annotation.AppServerContainers;
  * @author <a href="mailto:vramik@redhat.com">Vlastislav Ramik</a>
  */
 public class AdapterTestExecutionDecider implements TestExecutionDecider {
-
-    private final Logger log = Logger.getLogger(AdapterTestExecutionDecider.class);
 
     @Inject private Instance<TestContext> testContextInstance;
 

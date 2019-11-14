@@ -30,6 +30,7 @@ import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.storage.user.SynchronizationResult;
 import org.keycloak.testsuite.AbstractAuthTest;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.auth.page.AuthRealm;
 import org.keycloak.testsuite.federation.DummyUserFederationProviderFactory;
 import org.keycloak.timer.TimerProvider;
@@ -38,12 +39,15 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
+
 /**
  * Test with Dummy providers
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
+@AuthServerContainerExclude(AuthServer.REMOTE)
 public class SyncFederationTest extends AbstractAuthTest {
 
     private static final Logger log = Logger.getLogger(SyncFederationTest.class);

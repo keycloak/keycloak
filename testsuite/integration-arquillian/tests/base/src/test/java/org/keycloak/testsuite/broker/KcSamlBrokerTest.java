@@ -5,26 +5,21 @@ import com.google.common.collect.ImmutableMap;
 import org.keycloak.broker.saml.mappers.AttributeToRoleMapper;
 import org.keycloak.broker.saml.mappers.UserAttributeMapper;
 import org.keycloak.dom.saml.v2.protocol.AuthnRequestType;
-import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.processing.api.saml.v2.request.SAML2Request;
 import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
-import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.testsuite.saml.AbstractSamlTest;
 import org.keycloak.testsuite.util.SamlClient;
 import org.keycloak.testsuite.util.SamlClient.Binding;
 import org.keycloak.testsuite.util.SamlClientBuilder;
-import java.net.URI;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Set;
 import java.util.stream.Collectors;
-import javax.ws.rs.core.UriBuilder;
-import javax.ws.rs.core.UriBuilderException;
 import org.hamcrest.Matchers;
 import org.junit.Assert;
 import org.junit.Test;
@@ -32,6 +27,9 @@ import org.w3c.dom.Document;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertThat;
+import static org.keycloak.testsuite.arquillian.AuthServerTestEnricher.getAuthServerContextRoot;
+import static org.keycloak.testsuite.broker.AbstractBrokerTest.ROLE_MANAGER;
+import static org.keycloak.testsuite.broker.AbstractBrokerTest.ROLE_USER;
 import static org.keycloak.testsuite.util.Matchers.isSamlResponse;
 
 /**
@@ -206,7 +204,7 @@ public final class KcSamlBrokerTest extends AbstractAdvancedBrokerTest {
     // KEYCLOAK-6106
     @Test
     public void loginClientWithDotsInName() throws Exception {
-        AuthnRequestType loginRep = SamlClient.createLoginRequestDocument(AbstractSamlTest.SAML_CLIENT_ID_SALES_POST + ".dot/ted", AUTH_SERVER_SCHEME + "://localhost:" + AUTH_SERVER_PORT + "/sales-post/saml", null);
+        AuthnRequestType loginRep = SamlClient.createLoginRequestDocument(AbstractSamlTest.SAML_CLIENT_ID_SALES_POST + ".dot/ted", getAuthServerContextRoot() + "/sales-post/saml", null);
 
         Document doc = SAML2Request.convert(loginRep);
 

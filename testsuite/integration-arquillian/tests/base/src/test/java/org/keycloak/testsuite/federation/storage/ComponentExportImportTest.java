@@ -14,6 +14,9 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.testsuite.AbstractAuthTest;
 import org.keycloak.testsuite.admin.ApiUtil;
+
+
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
 import org.keycloak.testsuite.federation.UserMapStorageFactory;
 import org.keycloak.testsuite.util.RealmBuilder;
@@ -26,11 +29,13 @@ import java.util.Set;
 
 import static org.junit.Assert.fail;
 import static org.keycloak.storage.UserStorageProviderModel.IMPORT_ENABLED;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 
 /**
  *
  * @author tkyjovsk
  */
+@AuthServerContainerExclude(AuthServer.REMOTE)
 public class ComponentExportImportTest extends AbstractAuthTest {
 
     private static final String REALM_NAME = "exported-component";

@@ -15,11 +15,14 @@ import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import static org.keycloak.testsuite.cli.KcAdmExec.execute;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
  */
+@AuthServerContainerExclude(AuthServer.REMOTE)
 public class KcAdmSessionTest extends AbstractAdmCliTest {
 
     static Class<? extends List<ObjectNode>> LIST_OF_JSON = new ArrayList<ObjectNode>() {}.getClass();

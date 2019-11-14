@@ -72,8 +72,7 @@ import org.hamcrest.Matchers;
 import org.keycloak.util.JsonSerialization;
 
 import static org.hamcrest.Matchers.containsString;
-
-
+import static org.keycloak.testsuite.arquillian.AuthServerTestEnricher.AUTH_SERVER_SSL_REQUIRED;
 /**
  * @author <a href="mailto:vramik@redhat.com">Vlastislav Ramik</a>
  */

@@ -48,6 +48,8 @@ import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.AbstractAdminTest;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import org.keycloak.testsuite.auth.page.AuthRealm;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
 import org.keycloak.testsuite.events.EventsListenerProviderFactory;
@@ -87,6 +89,7 @@ import static org.junit.Assert.fail;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
+@AuthServerContainerExclude(AuthServer.REMOTE)
 public class RealmTest extends AbstractAdminTest {
 
     @Rule

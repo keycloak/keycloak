@@ -42,6 +42,7 @@ import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.drone.Different;
 import org.keycloak.testsuite.pages.AccountApplicationsPage;
 import org.keycloak.testsuite.pages.AccountFederatedIdentityPage;
@@ -82,6 +83,9 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
+import static org.keycloak.testsuite.arquillian.AuthServerTestEnricher.AUTH_SERVER_SSL_REQUIRED;
+import static org.keycloak.testsuite.arquillian.AuthServerTestEnricher.getAuthServerContextRoot;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -137,7 +141,7 @@ public class AccountFormServiceTest extends AbstractTestRealmKeycloakTest {
         if (AUTH_SERVER_SSL_REQUIRED) {
             // Some scenarios here use redirections, so we need to fix the base url
             findTestApp(testRealm)
-                  .setBaseUrl(String.format("%s://localhost:%s/auth/realms/master/app/auth", AUTH_SERVER_SCHEME, AUTH_SERVER_PORT));
+                  .setBaseUrl(String.format("%s/auth/realms/master/app/auth", getAuthServerContextRoot()));
         }
     }
 
@@ -203,7 +207,7 @@ public class AccountFormServiceTest extends AbstractTestRealmKeycloakTest {
 
         Assert.assertTrue(appPage.isCurrent());
 
-        driver.navigate().to(String.format("%s?referrer=test-app&referrer_uri=%s://localhost:%s/auth/realms/master/app/auth?test", profilePage.getPath(), AUTH_SERVER_SCHEME, AUTH_SERVER_PORT));
+        driver.navigate().to(String.format("%s?referrer=test-app&referrer_uri=%s/auth/realms/master/app/auth?test", profilePage.getPath(), getAuthServerContextRoot()));
         Assert.assertTrue(profilePage.isCurrent());
         profilePage.backToApplication();
 
@@ -1044,6 +1048,7 @@ public class AccountFormServiceTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
+    @AuthServerContainerExclude(AuthServer.REMOTE) // we need to do domain name -> ip address to make this test work in remote testing
     public void sessions() {
         loginPage.open();
         loginPage.clickRegister();
@@ -1096,6 +1101,7 @@ public class AccountFormServiceTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
+    @AuthServerContainerExclude(AuthServer.REMOTE)
     public void applicationsVisibilityNoScopesNoConsent() throws Exception {
         try (ClientAttributeUpdater cau = ClientAttributeUpdater.forClient(adminClient, REALM_NAME, ROOT_URL_CLIENT)
           .setConsentRequired(false)
@@ -1123,6 +1129,7 @@ public class AccountFormServiceTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
+    @AuthServerContainerExclude(AuthServer.REMOTE)
     public void applicationsVisibilityNoScopesAndConsent() throws Exception {
         try (ClientAttributeUpdater cau = ClientAttributeUpdater.forClient(adminClient, REALM_NAME, ROOT_URL_CLIENT)
           .setConsentRequired(true)
@@ -1142,6 +1149,7 @@ public class AccountFormServiceTest extends AbstractTestRealmKeycloakTest {
 
     // More tests (including revoke) are in OAuthGrantTest and OfflineTokenTest
     @Test
+    @AuthServerContainerExclude(AuthServer.REMOTE)
     public void applications() {
         applicationsPage.open();
         loginPage.login("test-user@localhost", "password");

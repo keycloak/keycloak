@@ -71,6 +71,8 @@ import org.keycloak.testsuite.AbstractAuthTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import org.keycloak.testsuite.auth.page.AuthRealm;
 import org.keycloak.testsuite.pages.AccountPasswordPage;
 import org.keycloak.testsuite.pages.LoginPage;
@@ -82,6 +84,7 @@ import org.keycloak.testsuite.util.OAuthClient;
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
+@AuthServerContainerExclude(AuthServer.REMOTE)
 public abstract class AbstractKerberosTest extends AbstractAuthTest {
 
     protected KeycloakSPNegoSchemeFactory spnegoSchemeFactory;

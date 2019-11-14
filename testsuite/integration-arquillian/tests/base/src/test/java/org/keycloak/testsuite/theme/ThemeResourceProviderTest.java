@@ -4,12 +4,16 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.theme.Theme;
 import org.keycloak.theme.ThemeProvider;
 
 import java.io.IOException;
 import java.util.Locale;
 
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
+
+@AuthServerContainerExclude(AuthServer.REMOTE)
 public class ThemeResourceProviderTest extends AbstractTestRealmKeycloakTest {
 
     @Override

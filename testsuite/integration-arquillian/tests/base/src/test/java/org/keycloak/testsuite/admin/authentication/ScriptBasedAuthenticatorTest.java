@@ -6,10 +6,13 @@ import org.keycloak.testsuite.ProfileAssume;
 
 import javax.ws.rs.BadRequestException;
 import java.util.HashMap;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 
 /**
  * @author mhajas
  */
+@AuthServerContainerExclude(AuthServer.REMOTE)
 public class ScriptBasedAuthenticatorTest extends AbstractAuthenticationTest {
 
     @Test

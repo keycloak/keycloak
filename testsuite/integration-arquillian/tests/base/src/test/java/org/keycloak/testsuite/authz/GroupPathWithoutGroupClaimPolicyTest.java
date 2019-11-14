@@ -16,52 +16,32 @@
  */
 package org.keycloak.testsuite.authz;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
-
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-import org.junit.Before;
-import org.junit.Test;
-import org.keycloak.admin.client.resource.AuthorizationResource;
-import org.keycloak.admin.client.resource.ClientResource;
-import org.keycloak.admin.client.resource.ClientsResource;
-import org.keycloak.admin.client.resource.RealmResource;
-import org.keycloak.authorization.client.AuthorizationDeniedException;
-import org.keycloak.authorization.client.AuthzClient;
-import org.keycloak.authorization.client.Configuration;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.mappers.GroupMembershipMapper;
 import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.representations.idm.authorization.AuthorizationRequest;
-import org.keycloak.representations.idm.authorization.AuthorizationResponse;
-import org.keycloak.representations.idm.authorization.GroupPolicyRepresentation;
-import org.keycloak.representations.idm.authorization.PermissionRequest;
-import org.keycloak.representations.idm.authorization.ResourcePermissionRepresentation;
-import org.keycloak.representations.idm.authorization.ResourceRepresentation;
-import org.keycloak.testsuite.util.AdminClientUtil;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.GroupBuilder;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.RoleBuilder;
 import org.keycloak.testsuite.util.RolesBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
-import org.keycloak.util.JsonSerialization;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
+@AuthServerContainerExclude(AuthServer.REMOTE)
 public class GroupPathWithoutGroupClaimPolicyTest extends GroupPathPolicyTest {
 
     @Override
