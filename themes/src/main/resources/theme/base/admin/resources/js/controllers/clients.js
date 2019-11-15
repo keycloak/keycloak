@@ -1037,6 +1037,7 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, flows, $ro
     $scope.tlsClientCertificateBoundAccessTokens = false;
 
     $scope.accessTokenLifespan = TimeUnit2.asUnit(client.attributes['access.token.lifespan']);
+    $scope.samlAssertionLifespan = TimeUnit2.asUnit(client.attributes['saml.assertion.lifespan']);
 
     if(client.origin) {
         if ($scope.access.viewRealm) {
@@ -1359,6 +1360,14 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, flows, $ro
             }
         } else {
             $scope.clientEdit.attributes['access.token.lifespan'] = null;
+        }
+    }
+
+    $scope.updateAssertionLifespan = function() {
+        if ($scope.samlAssertionLifespan.time) {
+            $scope.clientEdit.attributes['saml.assertion.lifespan'] = $scope.samlAssertionLifespan.toSeconds();
+        } else {
+            $scope.clientEdit.attributes['saml.assertion.lifespan'] = null;
         }
     }
 
