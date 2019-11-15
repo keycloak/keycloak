@@ -133,7 +133,7 @@ public class CachedRealm extends AbstractExtendableRevisioned {
     protected Set<String> eventsListeners;
     protected Set<String> enabledEventTypes;
     protected boolean adminEventsEnabled;
-    protected Set<String> adminEnabledEventOperations = new HashSet<String>();
+    protected Set<String> adminEnabledEventOperations = new HashSet<>();
     protected boolean adminEventsDetailsEnabled;
     protected List<String> defaultRoles;
     private boolean allowUserManagedAccess;
@@ -142,7 +142,7 @@ public class CachedRealm extends AbstractExtendableRevisioned {
         return identityProviderMapperSet;
     }
 
-    protected List<String> defaultGroups = new LinkedList<String>();
+    protected List<String> defaultGroups = new LinkedList<>();
     protected List<String> clientScopes = new LinkedList<>();
     protected List<String> defaultDefaultClientScopes = new LinkedList<>();
     protected List<String> optionalDefaultClientScopes = new LinkedList<>();
@@ -252,7 +252,7 @@ public class CachedRealm extends AbstractExtendableRevisioned {
         authenticationFlowList = model.getAuthenticationFlows();
         for (AuthenticationFlowModel flow : authenticationFlowList) {
             this.authenticationFlows.put(flow.getId(), flow);
-            authenticationExecutions.put(flow.getId(), new LinkedList<AuthenticationExecutionModel>());
+            authenticationExecutions.put(flow.getId(), new LinkedList<>());
             for (AuthenticationExecutionModel execution : model.getAuthenticationExecutions(flow.getId())) {
                 authenticationExecutions.add(flow.getId(), execution);
                 executionsById.put(execution.getId(), execution);
