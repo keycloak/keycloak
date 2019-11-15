@@ -36,23 +36,23 @@ import java.util.List;
 public interface ClientsResource {
 
     @Path("{id}")
-    public ClientResource get(@PathParam("id") String id);
+    ClientResource get(@PathParam("id") String id);
 
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response create(ClientRepresentation clientRepresentation);
+    Response create(ClientRepresentation clientRepresentation);
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    public List<ClientRepresentation> findAll();
+    List<ClientRepresentation> findAll();
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    public List<ClientRepresentation> findAll(@QueryParam("viewableOnly") boolean viewableOnly);
+    List<ClientRepresentation> findAll(@QueryParam("viewableOnly") boolean viewableOnly);
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    public List<ClientRepresentation> findByClientId(@QueryParam("clientId") String clientId);
+    List<ClientRepresentation> findByClientId(@QueryParam("clientId") String clientId);
 
 
 
