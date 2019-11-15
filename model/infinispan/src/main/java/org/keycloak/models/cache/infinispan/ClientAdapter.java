@@ -238,7 +238,7 @@ public class ClientAdapter implements ClientModel, CachedObject {
 
     public Set<RoleModel> getScopeMappings() {
         if (isUpdated()) return updated.getScopeMappings();
-        Set<RoleModel> roles = new HashSet<RoleModel>();
+        Set<RoleModel> roles = new HashSet<>();
         for (String id : cached.getScope()) {
             roles.add(cacheSession.getRoleById(id, getRealm()));
 
@@ -259,7 +259,7 @@ public class ClientAdapter implements ClientModel, CachedObject {
     public Set<RoleModel> getRealmScopeMappings() {
         Set<RoleModel> roleMappings = getScopeMappings();
 
-        Set<RoleModel> appRoles = new HashSet<RoleModel>();
+        Set<RoleModel> appRoles = new HashSet<>();
         for (RoleModel role : roleMappings) {
             RoleContainerModel container = role.getContainer();
             if (container instanceof RealmModel) {
@@ -321,7 +321,7 @@ public class ClientAdapter implements ClientModel, CachedObject {
     @Override
     public Map<String, String> getAttributes() {
         if (isUpdated()) return updated.getAttributes();
-        Map<String, String> copy = new HashMap<String, String>();
+        Map<String, String> copy = new HashMap<>();
         copy.putAll(cached.getAttributes());
         return copy;
     }
@@ -349,7 +349,7 @@ public class ClientAdapter implements ClientModel, CachedObject {
     @Override
     public Map<String, String> getAuthenticationFlowBindingOverrides() {
         if (isUpdated()) return updated.getAuthenticationFlowBindingOverrides();
-        Map<String, String> copy = new HashMap<String, String>();
+        Map<String, String> copy = new HashMap<>();
         copy.putAll(cached.getAuthFlowBindings());
         return copy;
     }

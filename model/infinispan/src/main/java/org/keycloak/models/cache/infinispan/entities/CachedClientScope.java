@@ -38,7 +38,7 @@ public class CachedClientScope extends AbstractRevisioned implements InRealm {
     private String realm;
     private String protocol;
     private Set<String> scope = new HashSet<>();
-    private Set<ProtocolMapperModel> protocolMappers = new HashSet<ProtocolMapperModel>();
+    private Set<ProtocolMapperModel> protocolMappers = new HashSet<>();
     private Map<String, String> attributes = new HashMap<>();
 
     public CachedClientScope(Long revision, RealmModel realm, ClientScopeModel model) {

@@ -469,7 +469,7 @@ public class RealmCacheSession implements CacheRealmProvider {
 
     private List<RealmModel> getRealms(List<RealmModel> backendRealms) {
         // Return cache delegates to ensure cache invalidated during write operations
-        List<RealmModel> cachedRealms = new LinkedList<RealmModel>();
+        List<RealmModel> cachedRealms = new LinkedList<>();
         for (RealmModel realm : backendRealms) {
             RealmModel cached = getRealm(realm.getId());
             cachedRealms.add(cached);

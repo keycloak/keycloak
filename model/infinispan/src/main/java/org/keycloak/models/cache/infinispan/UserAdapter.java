@@ -163,7 +163,7 @@ public class UserAdapter implements CachedUserModel {
     public List<String> getAttribute(String name) {
         if (updated != null) return updated.getAttribute(name);
         List<String> result = cached.getAttributes(modelSupplier).get(name);
-        return (result == null) ? Collections.<String>emptyList() : result;
+        return (result == null) ? Collections.emptyList() : result;
     }
 
     @Override
@@ -279,7 +279,7 @@ public class UserAdapter implements CachedUserModel {
     public Set<RoleModel> getRealmRoleMappings() {
         if (updated != null) return updated.getRealmRoleMappings();
         Set<RoleModel> roleMappings = getRoleMappings();
-        Set<RoleModel> realmMappings = new HashSet<RoleModel>();
+        Set<RoleModel> realmMappings = new HashSet<>();
         for (RoleModel role : roleMappings) {
             RoleContainerModel container = role.getContainer();
             if (container instanceof RealmModel) {
@@ -295,7 +295,7 @@ public class UserAdapter implements CachedUserModel {
     public Set<RoleModel> getClientRoleMappings(ClientModel app) {
         if (updated != null) return updated.getClientRoleMappings(app);
         Set<RoleModel> roleMappings = getRoleMappings();
-        Set<RoleModel> appMappings = new HashSet<RoleModel>();
+        Set<RoleModel> appMappings = new HashSet<>();
         for (RoleModel role : roleMappings) {
             RoleContainerModel container = role.getContainer();
             if (container instanceof ClientModel) {
@@ -328,7 +328,7 @@ public class UserAdapter implements CachedUserModel {
     @Override
     public Set<RoleModel> getRoleMappings() {
         if (updated != null) return updated.getRoleMappings();
-        Set<RoleModel> roles = new HashSet<RoleModel>();
+        Set<RoleModel> roles = new HashSet<>();
         for (String id : cached.getRoleMappings(modelSupplier)) {
             RoleModel roleById = keycloakSession.realms().getRoleById(id, realm);
             if (roleById == null) {

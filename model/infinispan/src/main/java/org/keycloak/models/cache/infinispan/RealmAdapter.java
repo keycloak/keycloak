@@ -1370,7 +1370,7 @@ public class RealmAdapter implements CachedRealmModel {
         if (isUpdated()) return updated.getClientScopes();
         List<String> clientScopes = cached.getClientScopes();
         if (clientScopes.isEmpty()) return Collections.EMPTY_LIST;
-        List<ClientScopeModel> apps = new LinkedList<ClientScopeModel>();
+        List<ClientScopeModel> apps = new LinkedList<>();
         for (String id : clientScopes) {
             ClientScopeModel model = cacheSession.getClientScopeById(id, this);
             if (model == null) {

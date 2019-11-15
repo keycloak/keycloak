@@ -129,7 +129,7 @@ public class RoleAdapter implements RoleModel {
         if (isUpdated()) return updated.getComposites();
 
         if (composites == null) {
-            composites = new HashSet<RoleModel>();
+            composites = new HashSet<>();
             for (String id : cached.getComposites()) {
                 RoleModel role = realm.getRoleById(id);
                 if (role == null) {
