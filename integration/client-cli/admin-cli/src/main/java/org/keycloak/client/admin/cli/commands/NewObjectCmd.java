@@ -31,7 +31,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -118,7 +118,7 @@ public class NewObjectCmd extends AbstractGlobalOptionsCmd {
         }
 
         if (body == null && ctx.getContent() != null) {
-            body = new ByteArrayInputStream(ctx.getContent().getBytes(Charset.forName("utf-8")));
+            body = new ByteArrayInputStream(ctx.getContent().getBytes(StandardCharsets.UTF_8));
         }
 
         AccessibleBufferOutputStream abos = new AccessibleBufferOutputStream(System.out);
