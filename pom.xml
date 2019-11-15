@@ -85,6 +85,7 @@
         <slf4j.version>1.7.22</slf4j.version>
         <sun.istack.version>3.0.7</sun.istack.version>
         <sun.jaxb.version>2.3.1</sun.jaxb.version>
+        <javax.xml.bind.jaxb.version>2.3.1</javax.xml.bind.jaxb.version>
         <sun.activation.version>1.2.0</sun.activation.version>
         <org.glassfish.jaxb.xsom.version>2.3.1</org.glassfish.jaxb.xsom.version>
         <undertow.version>2.0.26.Final</undertow.version>
@@ -264,7 +265,7 @@
             <dependency>
                 <groupId>javax.xml.bind</groupId>
                 <artifactId>jaxb-api</artifactId>
-                <version>${sun.jaxb.version}</version>
+                <version>${javax.xml.bind.jaxb.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.sun.xml.ws</groupId>
