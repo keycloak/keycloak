@@ -17,10 +17,7 @@
 
 package org.keycloak.models.sessions.infinispan.changes.sessions;
 
-import org.infinispan.Cache;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
-import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

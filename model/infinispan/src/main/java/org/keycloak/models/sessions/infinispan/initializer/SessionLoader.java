@@ -18,7 +18,6 @@
 package org.keycloak.models.sessions.infinispan.initializer;
 
 import java.io.Serializable;
-import java.util.List;
 
 import org.keycloak.models.KeycloakSession;
 
