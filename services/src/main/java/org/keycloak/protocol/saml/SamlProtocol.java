@@ -397,12 +397,13 @@ public class SamlProtocol implements LoginProtocol {
         clientSession.setNote(SAML_NAME_ID, nameId);
         clientSession.setNote(SAML_NAME_ID_FORMAT, nameIdFormat);
 
+        int assertionLifespan = samlClient.getAssertionLifespan();
         SAML2LoginResponseBuilder builder = new SAML2LoginResponseBuilder();
         builder.requestID(requestID)
                 .destination(redirectUri)
                 .issuer(responseIssuer)
-                .assertionExpiration(realm.getAccessCodeLifespan())
-                .subjectExpiration(realm.getAccessTokenLifespan())
+                .assertionExpiration(assertionLifespan <= 0? realm.getAccessCodeLifespan() : assertionLifespan)
+                .subjectExpiration(assertionLifespan <= 0? realm.getAccessTokenLifespan() : assertionLifespan)
                 .sessionExpiration(realm.getSsoSessionMaxLifespan())
                 .requestIssuer(clientSession.getClient().getClientId())
                 .nameIdentifier(nameIdFormat, nameId)

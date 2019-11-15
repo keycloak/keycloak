@@ -17,6 +17,7 @@
 
 package org.keycloak.protocol.saml;
 
+import org.jboss.logging.Logger;
 import org.keycloak.models.ClientConfigResolver;
 import org.keycloak.models.ClientModel;
 import org.keycloak.saml.SignatureAlgorithm;
@@ -30,6 +31,8 @@ import org.keycloak.saml.common.util.XmlKeyInfoKeyNameTransformer;
  * @version $Revision: 1 $
  */
 public class SamlClient extends ClientConfigResolver {
+
+    protected static final Logger logger = Logger.getLogger(SamlClient.class);
 
     public static final XmlKeyInfoKeyNameTransformer DEFAULT_XML_KEY_INFO_KEY_NAME_TRANSFORMER = XmlKeyInfoKeyNameTransformer.KEY_ID;
 
@@ -231,5 +234,20 @@ public class SamlClient extends ClientConfigResolver {
         client.setAttribute(SamlConfigAttributes.SAML_ONETIMEUSE_CONDITION, Boolean.toString(val));
     }
 
+    public void setAssertionLifespan(int assertionLifespan) {
+        client.setAttribute(SamlConfigAttributes.SAML_ASSERTION_LIFESPAN, Integer.toString(assertionLifespan));
+    }
 
+    public int getAssertionLifespan() {
+        String value = client.getAttribute(SamlConfigAttributes.SAML_ASSERTION_LIFESPAN);
+        if (value == null || value.isEmpty()) {
+            return -1;
+        }
+        try {
+            return Integer.parseInt(value);
+        } catch (NumberFormatException e) {
+            logger.warnf("Invalid numeric value for saml attribute \"%s\": %s", SamlConfigAttributes.SAML_ASSERTION_LIFESPAN, value);
+            return -1;
+        }
+    }
 }
