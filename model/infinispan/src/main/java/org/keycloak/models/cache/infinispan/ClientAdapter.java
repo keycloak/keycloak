@@ -655,7 +655,7 @@ public class ClientAdapter implements ClientModel, CachedObject {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o == null || !(o instanceof ClientModel)) return false;
+        if (!(o instanceof ClientModel)) return false;
 
         ClientModel that = (ClientModel) o;
         return that.getId().equals(getId());

@@ -77,7 +77,7 @@ public class GroupAdapter implements GroupModel {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o == null || !(o instanceof GroupModel)) return false;
+        if (!(o instanceof GroupModel)) return false;
 
         GroupModel that = (GroupModel) o;
 

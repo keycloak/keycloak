@@ -389,7 +389,7 @@ public class UserAdapter implements CachedUserModel {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o == null || !(o instanceof UserModel)) return false;
+        if (!(o instanceof UserModel)) return false;
 
         UserModel that = (UserModel) o;
         return that.getId().equals(getId());
