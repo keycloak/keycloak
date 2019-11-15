@@ -70,28 +70,28 @@ public interface ClientResource {
     ManagementPermissionReference getPermissions();
 
     @Path("protocol-mappers")
-    public ProtocolMappersResource getProtocolMappers();
+    ProtocolMappersResource getProtocolMappers();
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    public ClientRepresentation toRepresentation();
+    ClientRepresentation toRepresentation();
 
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
-    public void update(ClientRepresentation clientRepresentation);
+    void update(ClientRepresentation clientRepresentation);
 
     @DELETE
-    public void remove();
+    void remove();
 
     @POST
     @Path("client-secret")
     @Produces(MediaType.APPLICATION_JSON)
-    public CredentialRepresentation generateNewSecret();
+    CredentialRepresentation generateNewSecret();
 
     @GET
     @Path("client-secret")
     @Produces(MediaType.APPLICATION_JSON)
-    public CredentialRepresentation getSecret();
+    CredentialRepresentation getSecret();
 
     /**
      * Generate a new registration access token for the client
@@ -102,7 +102,7 @@ public interface ClientResource {
     @POST
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    public ClientRepresentation regenerateRegistrationAccessToken();
+    ClientRepresentation regenerateRegistrationAccessToken();
 
     /**
      * Get representation of certificate resource
@@ -111,22 +111,22 @@ public interface ClientResource {
      * @return
      */
     @Path("certificates/{attr}")
-    public ClientAttributeCertificateResource getCertficateResource(@PathParam("attr") String attributePrefix);
+    ClientAttributeCertificateResource getCertficateResource(@PathParam("attr") String attributePrefix);
 
     @GET
     @NoCache
     @Path("installation/providers/{providerId}")
-    public String getInstallationProvider(@PathParam("providerId") String providerId);
+    String getInstallationProvider(@PathParam("providerId") String providerId);
 
     @Path("session-count")
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    public Map<String, Integer> getApplicationSessionCount();
+    Map<String, Integer> getApplicationSessionCount();
 
     @Path("user-sessions")
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    public List<UserSessionRepresentation> getUserSessions(@QueryParam("first") Integer firstResult, @QueryParam("max") Integer maxResults);
+    List<UserSessionRepresentation> getUserSessions(@QueryParam("first") Integer firstResult, @QueryParam("max") Integer maxResults);
 
     @Path("offline-session-count")
     @GET
@@ -144,10 +144,10 @@ public interface ClientResource {
     void pushRevocation();
 
     @Path("/scope-mappings")
-    public RoleMappingResource getScopeMappings();
+    RoleMappingResource getScopeMappings();
 
     @Path("/roles")
-    public RolesResource roles();
+    RolesResource roles();
 
     /**
      * Get default client scopes.  Only name and ids are returned.

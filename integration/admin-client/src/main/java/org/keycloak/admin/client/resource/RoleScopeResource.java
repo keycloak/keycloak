@@ -36,20 +36,20 @@ import java.util.List;
 public interface RoleScopeResource {
 
     @GET
-    public List<RoleRepresentation> listAll();
+    List<RoleRepresentation> listAll();
 
     @GET
     @Path("available")
-    public List<RoleRepresentation> listAvailable();
+    List<RoleRepresentation> listAvailable();
 
     @GET
     @Path("composite")
-    public List<RoleRepresentation> listEffective();
+    List<RoleRepresentation> listEffective();
 
     @POST
-    public void add(List<RoleRepresentation> rolesToAdd);
+    void add(List<RoleRepresentation> rolesToAdd);
 
     @DELETE
-    public void remove(List<RoleRepresentation> rolesToRemove);
+    void remove(List<RoleRepresentation> rolesToRemove);
 
 }
