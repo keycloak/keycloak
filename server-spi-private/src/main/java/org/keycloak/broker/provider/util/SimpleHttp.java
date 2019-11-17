@@ -34,6 +34,7 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.message.BasicNameValuePair;
 import org.keycloak.common.util.Base64;
@@ -47,6 +48,7 @@ import java.io.InputStreamReader;
 import java.io.StringWriter;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -185,7 +187,7 @@ public class SimpleHttp {
         boolean delete = method.equals("DELETE");
 
         HttpRequestBase httpRequest = new HttpPost(url);
-        
+
         if (get) {
             httpRequest = new HttpGet(appendParameterToUrl(url));
         }
@@ -273,6 +275,8 @@ public class SimpleHttp {
                 HttpEntity entity = response.getEntity();
                 if (entity != null) {
                     is = entity.getContent();
+                    ContentType contentType = ContentType.getOrDefault(entity);
+                    Charset charset = contentType.getCharset();
                     try {
                         HeaderIterator it = response.headerIterator();
                         while (it.hasNext()) {
@@ -282,7 +286,8 @@ public class SimpleHttp {
                             }
                         }
 
-                        InputStreamReader reader = new InputStreamReader(is);
+                        InputStreamReader reader = charset == null ? new InputStreamReader(is) :
+                                new InputStreamReader(is, charset);
 
                         StringWriter writer = new StringWriter();
 
@@ -326,11 +331,11 @@ public class SimpleHttp {
         public String getFirstHeader(String name) throws IOException {
             readResponse();
             Header[] headers = response.getHeaders(name);
-            
+
             if (headers != null && headers.length > 0) {
-                return headers[0].getValue();       
+                return headers[0].getValue();
             }
-            
+
             return null;
         }
 
