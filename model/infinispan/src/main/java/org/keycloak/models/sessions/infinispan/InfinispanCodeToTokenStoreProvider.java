@@ -25,7 +25,6 @@ import java.util.function.Supplier;
 import org.infinispan.client.hotrod.exceptions.HotRodClientException;
 import org.infinispan.commons.api.BasicCache;
 import org.jboss.logging.Logger;
-import org.keycloak.common.util.Retry;
 import org.keycloak.models.CodeToTokenStoreProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.sessions.infinispan.entities.ActionTokenValueEntity;

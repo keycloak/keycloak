@@ -21,8 +21,6 @@ import java.util.Set;
 
 import org.infinispan.Cache;
 import org.infinispan.client.hotrod.RemoteCache;
-import org.infinispan.configuration.cache.CacheMode;
-import org.infinispan.distribution.DistributionManager;
 import org.infinispan.persistence.manager.PersistenceManager;
 import org.infinispan.persistence.remote.RemoteStore;
 import org.infinispan.remoting.transport.Transport;
