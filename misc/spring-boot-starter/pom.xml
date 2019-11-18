@@ -21,7 +21,7 @@
         <dependency>
           <groupId>org.keycloak.bom</groupId>
           <artifactId>keycloak-adapter-bom</artifactId>
-          <version>9.0.0-SNAPSHOT</version>
+          <version>${project.version}</version>
           <type>pom</type>
           <scope>import</scope>
         </dependency>
