@@ -406,6 +406,7 @@ public class RealmManager {
             client = KeycloakModelUtils.createClient(realm, Constants.ACCOUNT_MANAGEMENT_CLIENT_ID);
             client.setName("${client_" + Constants.ACCOUNT_MANAGEMENT_CLIENT_ID + "}");
             client.setEnabled(true);
+            client.setPublicClient(true);
             client.setFullScopeAllowed(false);
 
             client.setRootUrl(Constants.AUTH_BASE_URL_PROP);

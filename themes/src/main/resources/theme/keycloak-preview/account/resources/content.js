@@ -14,14 +14,14 @@ var content = [
                 label: 'password',
                 modulePath: '/app/content/aia-page/AppInitiatedActionPage',
                 componentName: 'AppInitiatedActionPage',
-                kcAction: 'update_password'
+                kcAction: 'UPDATE_PASSWORD'
             },
             {
                 path: 'security/authenticator',
                 label: 'authenticator',
                 modulePath: '/app/content/aia-page/AppInitiatedActionPage',
                 componentName: 'AppInitiatedActionPage',
-                kcAction: 'configure_totp'
+                kcAction: 'CONFIGURE_TOTP'
             },
             {
                 path: 'security/device-activity',
