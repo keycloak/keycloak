@@ -17,13 +17,10 @@
 package org.keycloak.services.resources;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.jboss.dmr.ModelNode;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.common.util.Resteasy;
-import org.keycloak.common.util.SystemEnvProperties;
+import org.keycloak.config.ConfigProviderFactory;
 import org.keycloak.exportimport.ExportImportManager;
 import org.keycloak.migration.MigrationModelManager;
 import org.keycloak.models.KeycloakSession;
@@ -53,7 +50,6 @@ import org.keycloak.services.scheduled.ClearExpiredEvents;
 import org.keycloak.services.scheduled.ClearExpiredUserSessions;
 import org.keycloak.services.scheduled.ClusterAwareScheduledTaskRunner;
 import org.keycloak.services.scheduled.ScheduledTaskRunner;
-import org.keycloak.services.util.JsonConfigProvider;
 import org.keycloak.services.util.ObjectMapperResolver;
 import org.keycloak.timer.TimerProvider;
 import org.keycloak.transaction.JtaTransactionManagerLookup;
@@ -63,39 +59,30 @@ import javax.servlet.ServletContext;
 import javax.transaction.SystemException;
 import javax.transaction.Transaction;
 import javax.ws.rs.core.Application;
-import javax.ws.rs.core.UriInfo;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URI;
-import java.net.URL;
-import java.util.HashMap;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
-import java.util.Properties;
+import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.StreamSupport;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
 public class KeycloakApplication extends Application {
-    // This param name is defined again in Keycloak Server Subsystem class
-    // org.keycloak.subsystem.server.extension.KeycloakServerDeploymentProcessor.  We have this value in
-    // two places to avoid dependency between Keycloak Subsystem and Keycloak Services module.
-    public static final String KEYCLOAK_CONFIG_PARAM_NAME = "org.keycloak.server-subsystem.Config";
 
     public static final String KEYCLOAK_EMBEDDED = "keycloak.embedded";
-
-    public static final String SERVER_CONTEXT_CONFIG_PROPERTY_OVERRIDES = "keycloak.server.context.config.property-overrides";
 
     public static final AtomicBoolean BOOTSTRAP_ADMIN_USER = new AtomicBoolean(false);
 
@@ -120,7 +107,7 @@ public class KeycloakApplication extends Application {
                 embedded = true;
             }
 
-            loadConfig(context);
+            loadConfig();
 
             this.sessionFactory = createSessionFactory();
 
@@ -279,59 +266,26 @@ public class KeycloakApplication extends Application {
         }
     }
 
-    public static void loadConfig(ServletContext context) {
-        try {
-            JsonNode node = null;
+    protected void loadConfig() {
 
-            String dmrConfig = loadDmrConfig(context);
-            if (dmrConfig != null) {
-                node = new ObjectMapper().readTree(dmrConfig);
-                ServicesLogger.LOGGER.loadingFrom("standalone.xml or domain.xml");
-            }
+        Comparator<ConfigProviderFactory> comparator = (f1, f2) -> { // non-fallback factories first
+            boolean b1 = f1.isFallback();
+            boolean b2 = f2.isFallback();
+            return b1 ^ b2 ? (b2 ? -1 : 1) : 0;
+        };
 
-            String configDir = System.getProperty("jboss.server.config.dir");
-            if (node == null && configDir != null) {
-                File f = new File(configDir + File.separator + "keycloak-server.json");
-                if (f.isFile()) {
-                    ServicesLogger.LOGGER.loadingFrom(f.getAbsolutePath());
-                    node = new ObjectMapper().readTree(f);
-                }
-            }
+        ServiceLoader<ConfigProviderFactory> loader = ServiceLoader.load(ConfigProviderFactory.class, KeycloakApplication.class.getClassLoader());
 
-            if (node == null) {
-                URL resource = Thread.currentThread().getContextClassLoader().getResource("META-INF/keycloak-server.json");
-                if (resource != null) {
-                    ServicesLogger.LOGGER.loadingFrom(resource);
-                    node = new ObjectMapper().readTree(resource);
-                }
-            }
+        Optional<Config.ConfigProvider> provider = StreamSupport.stream(loader.spliterator(), false)
+                .sorted(comparator)
+                .peek(p -> logger.infov("Trying ConfigProvider: {0}", p.getClass().getName()))
+                .map(ConfigProviderFactory::create)
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .findFirst();
 
-            if (node != null) {
-                Map<String, String> propertyOverridesMap = new HashMap<>();
-                String propertyOverrides = context.getInitParameter(SERVER_CONTEXT_CONFIG_PROPERTY_OVERRIDES);
-                if (context.getInitParameter(SERVER_CONTEXT_CONFIG_PROPERTY_OVERRIDES) != null) {
-                    JsonNode jsonObj = new ObjectMapper().readTree(propertyOverrides);
-                    jsonObj.fields().forEachRemaining(e -> propertyOverridesMap.put(e.getKey(), e.getValue().asText()));
-                }
-                Properties properties = new SystemEnvProperties(propertyOverridesMap);
-                Config.init(new JsonConfigProvider(node, properties));
-            } else {
-                throw new RuntimeException("Keycloak config not found.");
-            }
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to load config", e);
-        }
-    }
+        Config.init(provider.orElseThrow(() -> new RuntimeException("No valid ConfigProvider(s) found")));
 
-    private static String loadDmrConfig(ServletContext context) {
-        String dmrConfig = context.getInitParameter(KEYCLOAK_CONFIG_PARAM_NAME);
-        if (dmrConfig == null) return null;
-
-        ModelNode dmrConfigNode = ModelNode.fromString(dmrConfig);
-        if (dmrConfigNode.asPropertyList().isEmpty()) return null;
-
-        // note that we need to resolve expressions BEFORE we convert to JSON
-        return dmrConfigNode.resolve().toJSONString(true);
     }
 
     public static KeycloakSessionFactory createSessionFactory() {
