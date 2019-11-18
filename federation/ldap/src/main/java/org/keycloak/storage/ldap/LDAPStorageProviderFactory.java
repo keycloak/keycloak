@@ -410,13 +410,24 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
             mapperModel = KeycloakModelUtils.createComponentModel("MSAD account controls", model.getId(), MSADUserAccountControlStorageMapperFactory.PROVIDER_ID,LDAPStorageMapper.class.getName());
             realm.addComponentModel(mapperModel);
         }
-        checkKerberosCredential(session, realm, model);
+        String allowKerberosCfg = model.getConfig().getFirst(KerberosConstants.ALLOW_KERBEROS_AUTHENTICATION);
+        if (Boolean.valueOf(allowKerberosCfg)) {
+            CredentialHelper.setOrReplaceAuthenticationRequirement(session, realm, CredentialRepresentation.KERBEROS,
+                    AuthenticationExecutionModel.Requirement.ALTERNATIVE, AuthenticationExecutionModel.Requirement.DISABLED);
+        }
     }
 
     @Override
     public void onUpdate(KeycloakSession session, RealmModel realm, ComponentModel oldModel, ComponentModel newModel) {
-        checkKerberosCredential(session, realm, newModel);
-
+        boolean allowKerberosCfgOld = Boolean.valueOf(oldModel.getConfig().getFirst(KerberosConstants.ALLOW_KERBEROS_AUTHENTICATION));
+        boolean allowKerberosCfgNew = Boolean.valueOf(newModel.getConfig().getFirst(KerberosConstants.ALLOW_KERBEROS_AUTHENTICATION));
+        if (!allowKerberosCfgOld && allowKerberosCfgNew) {
+            CredentialHelper.setOrReplaceAuthenticationRequirement(session, realm, CredentialRepresentation.KERBEROS,
+                    AuthenticationExecutionModel.Requirement.ALTERNATIVE, AuthenticationExecutionModel.Requirement.DISABLED);
+        } else if(allowKerberosCfgOld && !allowKerberosCfgNew) {
+            CredentialHelper.setOrReplaceAuthenticationRequirement(session, realm, CredentialRepresentation.KERBEROS,
+                    AuthenticationExecutionModel.Requirement.DISABLED, AuthenticationExecutionModel.Requirement.ALTERNATIVE);
+        } // else: keep current settings
     }
 
     @Override
@@ -649,16 +660,6 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
 
     protected KerberosUsernamePasswordAuthenticator createKerberosUsernamePasswordAuthenticator(CommonKerberosConfig kerberosConfig) {
         return new KerberosUsernamePasswordAuthenticator(kerberosConfig);
-    }
-
-    public static boolean checkKerberosCredential(KeycloakSession session, RealmModel realm, ComponentModel model) {
-        String allowKerberosCfg = model.getConfig().getFirst(KerberosConstants.ALLOW_KERBEROS_AUTHENTICATION);
-        if (Boolean.valueOf(allowKerberosCfg)) {
-            CredentialHelper.setOrReplaceAuthenticationRequirement(session, realm, CredentialRepresentation.KERBEROS,
-                    AuthenticationExecutionModel.Requirement.ALTERNATIVE, AuthenticationExecutionModel.Requirement.DISABLED);
-            return true;
-        }
-        return false;
     }
 
  }
