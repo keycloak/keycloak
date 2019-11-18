@@ -119,7 +119,7 @@ public class ResourceServerAdapter implements ResourceServer, CachedModel<Resour
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o == null || !(o instanceof ResourceServer)) return false;
+        if (!(o instanceof ResourceServer)) return false;
 
         ResourceServer that = (ResourceServer) o;
         return that.getId().equals(getId());

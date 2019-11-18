@@ -229,7 +229,7 @@ public class RoleAdapter implements RoleModel {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o == null || !(o instanceof RoleModel)) return false;
+        if (!(o instanceof RoleModel)) return false;
 
         RoleModel that = (RoleModel) o;
         return that.getId().equals(getId());

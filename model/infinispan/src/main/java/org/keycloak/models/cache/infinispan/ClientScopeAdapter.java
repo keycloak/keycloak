@@ -239,7 +239,7 @@ public class ClientScopeAdapter implements ClientScopeModel {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o == null || !(o instanceof ClientModel)) return false;
+        if (!(o instanceof ClientModel)) return false;
 
         ClientScopeModel that = (ClientScopeModel) o;
         return that.getId().equals(getId());

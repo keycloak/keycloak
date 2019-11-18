@@ -970,7 +970,7 @@ public class RealmAdapter implements CachedRealmModel {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o == null || !(o instanceof RealmModel)) return false;
+        if (!(o instanceof RealmModel)) return false;
 
         RealmModel that = (RealmModel) o;
         return that.getId().equals(getId());
