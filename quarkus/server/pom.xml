@@ -316,7 +316,6 @@
                 </exclusion>
             </exclusions>
         </dependency>
-        <!--TODO Should come from Infinispan extension -->
         <dependency>
             <groupId>org.infinispan</groupId>
             <artifactId>infinispan-core</artifactId>

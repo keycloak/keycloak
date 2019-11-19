@@ -76,6 +76,13 @@
             </includes>
         </fileSet>
         <fileSet>
+            <directory>src/main/content/conf</directory>
+            <outputDirectory>conf</outputDirectory>
+            <includes>
+                <include>*.*</include>
+            </includes>
+        </fileSet>
+        <fileSet>
             <directory>../../</directory>
             <outputDirectory></outputDirectory>
             <includes>

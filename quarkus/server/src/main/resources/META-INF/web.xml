@@ -67,10 +67,4 @@
         <filter-name>Keycloak Session Management</filter-name>
         <url-pattern>/*</url-pattern>
     </filter-mapping>
-
-    <resource-env-ref>
-        <resource-env-ref-name>infinispan/Keycloak</resource-env-ref-name>
-        <resource-env-ref-type>org.infinispan.manager.EmbeddedCacheManager</resource-env-ref-type>
-        <lookup-name>java:jboss/infinispan/container/keycloak</lookup-name>
-    </resource-env-ref>
 </web-app>
