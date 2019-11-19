@@ -21,4 +21,4 @@ if [ "x$RESOLVED_NAME" = "x" ]; then
 fi
 
 DIRNAME=`dirname "$RESOLVED_NAME"`
-java -Dkeycloak.theme.dir=$DIRNAME/../themes -cp "$DIRNAME/../providers/*:$DIRNAME/../lib/keycloak-runner.jar" io.quarkus.runner.GeneratedMain "$@"
+java -Dkeycloak.home.dir=$DIRNAME/../ -Dkeycloak.theme.dir=$DIRNAME/../themes -Djava.net.preferIPv4Stack=true -cp "$DIRNAME/../providers/*:$DIRNAME/../lib/keycloak-runner.jar" io.quarkus.runner.GeneratedMain "$@"
