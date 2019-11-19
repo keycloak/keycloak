@@ -82,7 +82,6 @@ public class UserCredentials extends User {
     }
 
     public void resetPassword(String newPassword, String confirmPassword) {
-        deletePassword();
         setNewPassword(newPassword);
         setConfirmPassword(confirmPassword);
         resetPasswordButton.click();
