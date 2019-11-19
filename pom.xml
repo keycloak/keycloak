@@ -84,8 +84,9 @@
         <slf4j-api.version>1.7.22</slf4j-api.version>
         <slf4j.version>1.7.22</slf4j.version>
         <sun.istack.version>3.0.7</sun.istack.version>
-        <sun.jaxb.version>2.3.1</sun.jaxb.version>
+        <sun.xml.bind.version>2.3.1</sun.xml.bind.version>
         <javax.xml.bind.jaxb.version>2.3.1</javax.xml.bind.jaxb.version>
+        <sun.xml.ws.version>2.3.1</sun.xml.ws.version>
         <sun.activation.version>1.2.0</sun.activation.version>
         <org.glassfish.jaxb.xsom.version>2.3.1</org.glassfish.jaxb.xsom.version>
         <undertow.version>2.0.26.Final</undertow.version>
@@ -270,18 +271,22 @@
             <dependency>
                 <groupId>com.sun.xml.ws</groupId>
                 <artifactId>rt</artifactId>
-                <version>${sun.jaxb.version}</version>
+                <version>${sun.xml.ws.version}</version>
                 <exclusions>
                     <exclusion>
                         <groupId>com.fasterxml.woodstox</groupId>
                         <artifactId>woodstox-core</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.glassfish.jaxb</groupId>
+                        <artifactId>txw2</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
             <dependency>
                 <groupId>com.sun.xml.bind.external</groupId>
                 <artifactId>rngom</artifactId>
-                <version>${sun.jaxb.version}</version>
+                <version>${sun.xml.bind.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.sun.activation</groupId>
