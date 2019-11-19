@@ -28,6 +28,7 @@ import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.common.constants.KerberosConstants;
 import org.keycloak.component.PrioritizedComponentModel;
 import org.keycloak.keys.KeyProvider;
+import org.keycloak.models.AccountRoles;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.ClientModel;
@@ -75,9 +76,11 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -116,7 +119,7 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
 
     protected void testMigratedMigrationData(boolean supportsAuthzService) {
         assertNames(migrationRealm.roles().list(), "offline_access", "uma_authorization", "migration-test-realm-role");
-        List<String> expectedClientIds = new ArrayList<>(Arrays.asList("account", "admin-cli", "broker", "migration-test-client", "realm-management", "security-admin-console"));
+        List<String> expectedClientIds = new ArrayList<>(Arrays.asList("account", "account-console", "admin-cli", "broker", "migration-test-client", "realm-management", "security-admin-console"));
 
         if (supportsAuthzService) {
             expectedClientIds.add("authz-servlet");
@@ -132,7 +135,7 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
 
     protected void testMigratedMasterData() {
         assertNames(masterRealm.roles().list(), "offline_access", "uma_authorization", "create-realm", "master-test-realm-role", "admin");
-        assertNames(masterRealm.clients().findAll(), "admin-cli", "security-admin-console", "broker", "account",
+        assertNames(masterRealm.clients().findAll(), "admin-cli", "security-admin-console", "broker", "account", "account-console",
                 "master-realm", "master-test-client", "Migration-realm", "Migration2-realm");
         String id = masterRealm.clients().findByClientId("master-test-client").get(0).getId();
         assertNames(masterRealm.clients().get(id).roles().list(), "master-test-client-role");
@@ -270,6 +273,11 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         testResourceTag();
     }
 
+    protected void testMigrationTo9_0_0() {
+        testAccountConsoleClient(masterRealm);
+        testAccountConsoleClient(migrationRealm);
+    }
+
     private void testAdminClientUrls(RealmResource realm) {
         ClientRepresentation adminConsoleClient = realm.clients().findByClientId(Constants.ADMIN_CONSOLE_CLIENT_ID).get(0);
 
@@ -290,6 +298,29 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         assertEquals(baseUrl, accountConsoleClient.getBaseUrl());
         assertEquals(baseUrl + "*", accountConsoleClient.getRedirectUris().iterator().next());
         assertEquals(1, accountConsoleClient.getRedirectUris().size());
+    }
+
+    private void testAccountConsoleClient(RealmResource realm) {
+        ClientRepresentation accountConsoleClient = realm.clients().findByClientId(Constants.ACCOUNT_CONSOLE_CLIENT_ID).get(0);
+
+        assertEquals(Constants.AUTH_BASE_URL_PROP, accountConsoleClient.getRootUrl());
+        assertEquals("/realms/" + realm.toRepresentation().getRealm() + "/account/", accountConsoleClient.getBaseUrl());
+        assertTrue(accountConsoleClient.isPublicClient());
+        assertFalse(accountConsoleClient.isFullScopeAllowed());
+        assertTrue(accountConsoleClient.isStandardFlowEnabled());
+        assertFalse(accountConsoleClient.isDirectAccessGrantsEnabled());
+
+        ClientResource clientResource = realm.clients().get(accountConsoleClient.getId());
+
+        MappingsRepresentation scopes = clientResource.getScopeMappings().getAll();
+        assertNull(scopes.getRealmMappings());
+        assertEquals(1, scopes.getClientMappings().size());
+        assertEquals(1, scopes.getClientMappings().get(ACCOUNT_MANAGEMENT_CLIENT_ID).getMappings().size());
+        assertEquals(MANAGE_ACCOUNT, scopes.getClientMappings().get(ACCOUNT_MANAGEMENT_CLIENT_ID).getMappings().get(0).getName());
+
+        List<ProtocolMapperRepresentation> mappers = clientResource.getProtocolMappers().getMappers();
+        assertEquals(1, mappers.size());
+        assertEquals("oidc-audience-resolve-mapper", mappers.get(0).getProtocolMapper());
     }
 
     private void testDecisionStrategySetOnResourceServer() {
@@ -431,7 +462,7 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         ClientsResource clients = migrationRealm.clients();
         ClientRepresentation clientRepresentation = clients.findByClientId("authz-servlet").get(0);
         ResourceRepresentation resource = clients.get(clientRepresentation.getId()).authorization().resources().findByName("Protected Resource").get(0);
-        org.junit.Assert.assertThat(resource.getUris(), Matchers.containsInAnyOrder("/*"));
+        org.junit.Assert.assertThat(resource.getUris(), containsInAnyOrder("/*"));
     }
 
     protected void testAuthorizationServices(RealmResource... realms) {
@@ -740,6 +771,9 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
 
     protected void testMigrationTo8_x() {
         testMigrationTo8_0_0();
+    }
+    protected void testMigrationTo9_x() {
+        testMigrationTo9_0_0();
     }
 
     protected void testMigrationTo7_x(boolean supportedAuthzServices) {

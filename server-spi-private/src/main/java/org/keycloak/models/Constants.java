@@ -33,6 +33,7 @@ public final class Constants {
     public static final String ADMIN_CLI_CLIENT_ID = "admin-cli";
 
     public static final String ACCOUNT_MANAGEMENT_CLIENT_ID = "account";
+    public static final String ACCOUNT_CONSOLE_CLIENT_ID = "account-console";
     public static final String BROKER_SERVICE_CLIENT_ID = "broker";
     public static final String REALM_MANAGEMENT_CLIENT_ID = "realm-management";
 
