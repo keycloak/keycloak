@@ -86,7 +86,12 @@ public class AccountConsole {
 
             URI baseUri = session.getContext().getUri().getBaseUri();
 
-            map.put("authUrl", session.getContext().getUri(UrlType.FRONTEND).getBaseUri().toString());
+            String authServerBaseUrl = baseUri.toString();
+            if (authServerBaseUrl.endsWith("/")) {
+                authServerBaseUrl = authServerBaseUrl.substring(0, authServerBaseUrl.length() - 1);
+            }
+
+            map.put("authUrl", authServerBaseUrl);
             map.put("baseUrl", session.getContext().getUri(UrlType.FRONTEND).getBaseUriBuilder().replacePath("/realms/" + realm.getName() + "/account").build().toString());
             map.put("realm", realm);
             map.put("resourceUrl", Urls.themeRoot(baseUri).getPath() + "/account/" + theme.getName());
@@ -170,20 +175,6 @@ public class AccountConsole {
         return Response.status(302).location(session.getContext().getUri().getRequestUriBuilder().path("../").build()).build();
     }
 
-    @GET
-    @Path("keycloak.json")
-    @Produces(MediaType.APPLICATION_JSON)
-    @NoCache
-    public ClientManager.InstallationAdapterConfig getConfig() {
-        ClientModel accountClient = realm.getClientByClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID);
-        if (accountClient == null) {
-            throw new javax.ws.rs.NotFoundException("Account console client not found");
-        }
-        RealmManager realmMgr = new RealmManager(session);
-        URI baseUri = session.getContext().getUri().getBaseUri();
-        return new ClientManager(realmMgr).toInstallationRepresentation(realm, accountClient, baseUri);
-    }
-    
     // TODO: took this code from elsewhere - refactor
     private String[] getReferrer() {
         String referrer = session.getContext().getUri().getQueryParameters().getFirst("referrer");

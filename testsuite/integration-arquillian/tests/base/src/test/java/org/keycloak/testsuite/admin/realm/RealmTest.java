@@ -70,8 +70,10 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import javax.ws.rs.BadRequestException;
 
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.junit.Assert.*;
 import org.keycloak.events.EventType;
 import org.keycloak.events.log.JBossLoggingEventListenerProviderFactory;
@@ -152,6 +154,9 @@ public class RealmTest extends AbstractAdminTest {
         adminClient.realms().create(rep);
 
         Assert.assertNames(adminClient.realms().findAll(), "master", AuthRealm.TEST, REALM_NAME, "new-realm");
+
+        List<String> clients = adminClient.realms().realm("new-realm").clients().findAll().stream().map(ClientRepresentation::getClientId).collect(Collectors.toList());
+        assertThat(clients, containsInAnyOrder("account", "account-console", "admin-cli", "broker", "realm-management", "security-admin-console"));
 
         adminClient.realms().realm("new-realm").remove();
 
@@ -663,7 +668,7 @@ public class RealmTest extends AbstractAdminTest {
         GlobalRequestResult globalRequestResult = realm.pushRevocation();
         assertAdminEvents.assertEvent(realmId, OperationType.ACTION, "push-revocation", globalRequestResult, ResourceType.REALM);
 
-        assertThat(globalRequestResult.getSuccessRequests(), Matchers.containsInAnyOrder(oauth.AUTH_SERVER_ROOT + "/realms/master/app/admin"));
+        assertThat(globalRequestResult.getSuccessRequests(), containsInAnyOrder(oauth.AUTH_SERVER_ROOT + "/realms/master/app/admin"));
         assertNull(globalRequestResult.getFailedRequests());
 
         PushNotBeforeAction adminPushNotBefore = testingClient.testApp().getAdminPushNotBefore();
@@ -685,8 +690,8 @@ public class RealmTest extends AbstractAdminTest {
         GlobalRequestResult globalRequestResult = realm.pushRevocation();
         assertAdminEvents.assertEvent(realmId, OperationType.ACTION, "push-revocation", globalRequestResult, ResourceType.REALM);
 
-        assertThat(globalRequestResult.getSuccessRequests(), Matchers.containsInAnyOrder(oauth.AUTH_SERVER_ROOT + "/realms/master/app/admin"));
-        assertThat(globalRequestResult.getFailedRequests(), Matchers.containsInAnyOrder(oauth.AUTH_SERVER_ROOT + "/realms/master/saml-app/saml"));
+        assertThat(globalRequestResult.getSuccessRequests(), containsInAnyOrder(oauth.AUTH_SERVER_ROOT + "/realms/master/app/admin"));
+        assertThat(globalRequestResult.getFailedRequests(), containsInAnyOrder(oauth.AUTH_SERVER_ROOT + "/realms/master/saml-app/saml"));
 
         PushNotBeforeAction adminPushNotBefore = testingClient.testApp().getAdminPushNotBefore();
         assertEquals(time, adminPushNotBefore.getNotBefore());

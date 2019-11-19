@@ -1110,7 +1110,7 @@ public class AccountFormServiceTest extends AbstractTestRealmKeycloakTest {
 
             Map<String, AccountApplicationsPage.AppEntry> apps = applicationsPage.getApplications();
             Assert.assertThat(apps.keySet(), containsInAnyOrder(
-              /* "root-url-client", */ "Account", "test-app", "test-app-scope", "third-party", "test-app-authz", "My Named Test App", "Test App Named - ${client_account}", "direct-grant"));
+              /* "root-url-client", */ "Account", "Account Console", "test-app", "test-app-scope", "third-party", "test-app-authz", "My Named Test App", "Test App Named - ${client_account}", "direct-grant"));
 
             rsu.add(testRealm().roles().get("user").toRepresentation())
               .update();
@@ -1118,7 +1118,7 @@ public class AccountFormServiceTest extends AbstractTestRealmKeycloakTest {
             driver.navigate().refresh();
             apps = applicationsPage.getApplications();
             Assert.assertThat(apps.keySet(), containsInAnyOrder(
-              "root-url-client", "Account", "test-app", "test-app-scope", "third-party", "test-app-authz", "My Named Test App", "Test App Named - ${client_account}", "direct-grant"));
+              "root-url-client", "Account", "Account Console", "test-app", "test-app-scope", "third-party", "test-app-authz", "My Named Test App", "Test App Named - ${client_account}", "direct-grant"));
         }
     }
 
@@ -1136,7 +1136,7 @@ public class AccountFormServiceTest extends AbstractTestRealmKeycloakTest {
 
             Map<String, AccountApplicationsPage.AppEntry> apps = applicationsPage.getApplications();
             Assert.assertThat(apps.keySet(), containsInAnyOrder(
-              "root-url-client", "Account", "test-app", "test-app-scope", "third-party", "test-app-authz", "My Named Test App", "Test App Named - ${client_account}", "direct-grant"));
+              "root-url-client", "Account", "Account Console", "test-app", "test-app-scope", "third-party", "test-app-authz", "My Named Test App", "Test App Named - ${client_account}", "direct-grant"));
         }
     }
 
@@ -1150,7 +1150,7 @@ public class AccountFormServiceTest extends AbstractTestRealmKeycloakTest {
         applicationsPage.assertCurrent();
 
         Map<String, AccountApplicationsPage.AppEntry> apps = applicationsPage.getApplications();
-        Assert.assertThat(apps.keySet(), containsInAnyOrder("root-url-client", "Account", "Broker", "test-app", "test-app-scope", "third-party", "test-app-authz", "My Named Test App", "Test App Named - ${client_account}", "direct-grant"));
+        Assert.assertThat(apps.keySet(), containsInAnyOrder("root-url-client", "Account", "Account Console", "Broker", "test-app", "test-app-scope", "third-party", "test-app-authz", "My Named Test App", "Test App Named - ${client_account}", "direct-grant"));
 
         AccountApplicationsPage.AppEntry accountEntry = apps.get("Account");
         Assert.assertThat(accountEntry.getRolesAvailable(), containsInAnyOrder(

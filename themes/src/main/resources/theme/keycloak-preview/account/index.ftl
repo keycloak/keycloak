@@ -86,7 +86,11 @@
     <body>
 
         <script>
-            var keycloak = Keycloak('${authUrl}/realms/${realm.name}/account/keycloak.json');
+            var keycloak = Keycloak({
+                authServerUrl: authUrl,
+                realm: realm,
+                clientId: 'account-console'
+            });
             keycloak.init({onLoad: 'check-sso'}).success(function(authenticated) {
                 toggleReact();
                 if (!keycloak.authenticated) {
