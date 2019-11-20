@@ -80,7 +80,6 @@ class ApplicationInitiatedActionPage extends React.Component<AppInitiatedActionP
                              "?response_type=code" +
                              "&client_id=account&scope=openid" +
                              "&kc_action=" + this.props.pageDef.kcAction + 
-                             "&silent_cancel=true" +
                              "&redirect_uri=" + redirectURI +
                              encodeURIComponent("/#" + this.props.location.pathname); // return to this page
 
