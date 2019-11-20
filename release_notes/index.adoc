@@ -16,8 +16,8 @@ include::topics/templates/release-header.adoc[]
 == {project_name_full} 8.0.0
 include::topics/8_0_0.adoc[leveloffset=2]
 
-== {project_name_full} 7.0.1.Final
-include::topics/7_0_1_final.adoc[leveloffset=2]
+== {project_name_full} 7.0.1
+include::topics/7_0_1.adoc[leveloffset=2]
 
 == {project_name_full} 7.0.0
 include::topics/7_0_0.adoc[leveloffset=2]

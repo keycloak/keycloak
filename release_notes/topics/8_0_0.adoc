@@ -90,5 +90,5 @@ The option to provide client credentials in the JavaScript adapter was removed. 
 ifeval::[{project_community}==true]
 == Deploying Scripts to the Server
 
-Please take a look at link:{releasenotes_link}#keycloak-7-0-1-final[7.0.1 {releasenotes_name}] for more details on how you can now deploy and run scripts to customize specific behavior.
+Please take a look at link:{releasenotes_link}#keycloak-7-0-1[7.0.1 {releasenotes_name}] for more details on how you can now deploy and run scripts to customize specific behavior.
 endif::[]
