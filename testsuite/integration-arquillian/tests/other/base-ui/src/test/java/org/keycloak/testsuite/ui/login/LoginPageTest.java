@@ -97,7 +97,7 @@ public class LoginPageTest extends AbstractLoginTest {
 
         testRealmLoginPage.form().login(testUser);
 
-        assertLoginFailed("Account is disabled, contact admin.");
+        assertLoginFailed("Account is disabled, contact your administrator.");
     }
 
     @Test
