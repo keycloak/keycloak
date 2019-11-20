@@ -34,7 +34,7 @@ public class LoginTotpPage extends CredentialsComboboxPage {
     @FindBy(css = "input[type=\"submit\"]")
     private WebElement submitButton;
 
-    @FindBy(id = "kc-cancel")
+    @FindBy(id = "kc-back")
     private WebElement cancelButton;
 
     @FindBy(className = "alert-error")
