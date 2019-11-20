@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2018 Red Hat, Inc. and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,6 +15,7 @@
  */
 
 import * as React from 'react';
+import { FormEvent, FocusEvent } from 'react';
 import {AxiosResponse} from 'axios';
 import {ActionGroup, Button, Form, FormGroup, TextInput} from '@patternfly/react-core';
 
@@ -25,15 +26,26 @@ import {ContentPage} from '../ContentPage';
 import {ContentAlert} from '../ContentAlert';
 
 declare const features: Features;
- 
+
 interface AccountPageProps {
 }
 
+class Field {
+    readonly value?: string;
+    readonly dirty: boolean = false;
+    constructor(value: string = '') {
+        this.value = value;
+    }
+    isValid() {
+        return !this.dirty || !!this.value
+    }
+}
+
 interface FormFields {
-    readonly username?: string;
-    readonly firstName?: string;
-    readonly lastName?: string;
-    readonly email?: string;
+    readonly username: Field;
+    readonly firstName: Field;
+    readonly lastName: Field;
+    readonly email: Field;
     readonly emailVerified?: boolean;
 }
 
@@ -42,26 +54,36 @@ interface AccountPageState {
     readonly formFields: FormFields;
 }
 
+const EMAIL_REGEX = /(.+)@(.+){2,}\.(.+){2,}/
+
 /**
  * @author Stan Silvert ssilvert@redhat.com (C) 2018 Red Hat Inc.
  */
 export class AccountPage extends React.Component<AccountPageProps, AccountPageState> {
     private isRegistrationEmailAsUsername: boolean = features.isRegistrationEmailAsUsername;
     private isEditUserNameAllowed: boolean = features.isEditUserNameAllowed;
-    
+
     public state: AccountPageState = {
         canSubmit: false,
-        formFields: {username: '',
-                     firstName: '',
-                     lastName: '',
-                     email: ''}
+        formFields: {
+            username: new Field(),
+            firstName: new Field(),
+            lastName: new Field(),
+            email: {
+                value: '',
+                dirty: false,
+                isValid() {
+                    return !this.dirty || !!this.value && EMAIL_REGEX.test(this.value||'')
+                }
+            }
+        }
     };
-    
+
     public constructor(props: AccountPageProps) {
         super(props);
         this.fetchPersonalInfo();
     }
-    
+
     private fetchPersonalInfo(): void {
         AccountServiceClient.Instance.doGet("/")
             .then((response: AxiosResponse<FormFields>) => {
@@ -69,20 +91,32 @@ export class AccountPage extends React.Component<AccountPageProps, AccountPageSt
                 console.log({response});
             });
     }
-    
+
     private handleCancel = (): void => {
         this.fetchPersonalInfo();
     }
 
-    private handleChange = (value: string, event: React.FormEvent<HTMLInputElement>) => {
+    private handleChange = (value: string, event: FormEvent<HTMLInputElement>) => {
         const target: HTMLInputElement = event.currentTarget;
         const name: string = target.name;
+        this.updateField(name, value);
+    }
+
+    private handleFocus = (event: FocusEvent<HTMLInputElement>) => {
+        this.updateField(event.target.name, event.target.value)
+    }
+
+    private updateField(name: string, value: string) {
         this.setState({
             canSubmit: this.requiredFieldsHaveData(name, value),
-            formFields: {...this.state.formFields, [name]:value}
+            formFields: { ...this.state.formFields, [name]: {
+                value,
+                dirty: true,
+                isValid: this.state.formFields[name].isValid
+            } }
         });
     }
-    
+
     private handleSubmit = (): void => {
         if (!this.requiredFieldsHaveData()) return;
         const reqData: FormFields = {...this.state.formFields};
@@ -92,28 +126,28 @@ export class AccountPage extends React.Component<AccountPageProps, AccountPageSt
                 ContentAlert.success('accountUpdatedMessage');
             });
     }
-    
-    private requiredFieldsHaveData(fieldName?: string, newValue?: string): boolean { 
+
+    private requiredFieldsHaveData(fieldName?: string, newValue?: string): boolean {
         const fields: FormFields = {...this.state.formFields};
         if (fieldName && newValue) {
             fields[fieldName] = newValue;
         }
-        
+
         for (const field of Object.keys(fields)) {
             if (field === 'emailVerified') continue;
             if (!fields[field]) return false;
         }
-        
+
         return true;
     }
-    
+
     public render(): React.ReactNode {
         const fields: FormFields = this.state.formFields;
         return (
-            <ContentPage title="personalInfoHtmlTitle" 
+            <ContentPage title="personalInfoHtmlTitle"
                      introMessage="personalSubMessage">
                 <Form isHorizontal>
-                    {!this.isRegistrationEmailAsUsername && 
+                    {!this.isRegistrationEmailAsUsername &&
                         <FormGroup
                             label={Msg.localize('username')}
                             isRequired
@@ -133,9 +167,10 @@ export class AccountPage extends React.Component<AccountPageProps, AccountPageSt
                             type="email"
                             id="email-address"
                             name="email"
-                            value={fields.email}
+                            value={fields.email.value}
                             onChange={this.handleChange}
-                            isValid={fields.email !== ''}
+                            onFocus={this.handleFocus}
+                            isValid={fields.email.isValid()}
                             >
                         </TextInput>
                     </FormGroup>
@@ -149,9 +184,10 @@ export class AccountPage extends React.Component<AccountPageProps, AccountPageSt
                             type="text"
                             id="first-name"
                             name="firstName"
-                            value={fields.firstName}
+                            value={fields.firstName.value}
                             onChange={this.handleChange}
-                            isValid={fields.firstName !== ''}
+                            onFocus={this.handleFocus}
+                            isValid={fields.firstName.isValid()}
                             >
                         </TextInput>
                     </FormGroup>
@@ -165,21 +201,22 @@ export class AccountPage extends React.Component<AccountPageProps, AccountPageSt
                             type="text"
                             id="last-name"
                             name="lastName"
-                            value={fields.lastName}
+                            value={fields.lastName.value}
                             onChange={this.handleChange}
-                            isValid={fields.lastName !== ''}
+                            onFocus={this.handleFocus}
+                            isValid={fields.lastName.isValid()}
                             >
                         </TextInput>
                     </FormGroup>
                     <ActionGroup>
-                        <Button 
+                        <Button
                             variant="primary"
                             isDisabled={!this.state.canSubmit && this.requiredFieldsHaveData()}
                             onClick={this.handleSubmit}
                         >
-                            <Msg msgKey="doSave"/>                          
+                            <Msg msgKey="doSave"/>
                         </Button>
-                        <Button 
+                        <Button
                             variant="secondary"
                             onClick={this.handleCancel}
                         >
@@ -190,27 +227,28 @@ export class AccountPage extends React.Component<AccountPageProps, AccountPageSt
             </ContentPage>
         );
     }
-    
+
     private UsernameInput = () => (
         <TextInput
             isRequired
             type="text"
             id="user-name"
             name="username"
-            value={this.state.formFields.username}
+            value={this.state.formFields.username.value}
             onChange={this.handleChange}
-            isValid={this.state.formFields.username !== ''}
+            onFocus={this.handleFocus}
+            isValid={this.state.formFields.username.isValid()}
             >
         </TextInput>
     );
-    
+
     private RestrictedUsernameInput = () => (
         <TextInput
             isDisabled
             type="text"
             id="user-name"
             name="username"
-            value={this.state.formFields.username}
+            value={this.state.formFields.username.value}
             >
         </TextInput>
     );
