@@ -266,7 +266,8 @@ public class TokenEndpoint {
             event.event(EventType.PERMISSION_TOKEN);
             action = Action.PERMISSION;
         } else {
-            throw new CorsErrorResponseException(cors, Errors.INVALID_REQUEST, "Invalid " + OIDCLoginProtocol.GRANT_TYPE_PARAM, Response.Status.BAD_REQUEST);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.UNSUPPORTED_GRANT_TYPE,
+                "Unsupported " + OIDCLoginProtocol.GRANT_TYPE_PARAM, Response.Status.BAD_REQUEST);
         }
 
         event.detail(Details.GRANT_TYPE, grantType);
