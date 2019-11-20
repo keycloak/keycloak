@@ -18,6 +18,7 @@
 package org.keycloak.email.freemarker;
 
 import java.io.IOException;
+import java.net.URI;
 import java.text.MessageFormat;
 import java.util.Arrays;
 import java.util.Collections;
@@ -37,13 +38,14 @@ import org.keycloak.email.freemarker.beans.ProfileBean;
 import org.keycloak.events.Event;
 import org.keycloak.events.EventType;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakUriInfo;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.theme.FreeMarkerException;
 import org.keycloak.theme.FreeMarkerUtil;
 import org.keycloak.theme.Theme;
-import org.keycloak.theme.ThemeProvider;
+import org.keycloak.forms.login.freemarker.model.UrlBean;
 import org.keycloak.theme.beans.LinkExpirationFormatterMethod;
 import org.keycloak.theme.beans.MessageFormatterMethod;
 
@@ -184,9 +186,12 @@ public class FreeMarkerEmailTemplateProvider implements EmailTemplateProvider {
     protected void addLinkInfoIntoAttributes(String link, long expirationInMinutes, Map<String, Object> attributes) throws EmailException {
         attributes.put("link", link);
         attributes.put("linkExpiration", expirationInMinutes);
+        KeycloakUriInfo uriInfo = session.getContext().getUri();
+        URI baseUri = uriInfo.getBaseUri();
         try {
             Locale locale = session.getContext().resolveLocale(user);
             attributes.put("linkExpirationFormatter", new LinkExpirationFormatterMethod(getTheme().getMessages(locale), locale));
+            attributes.put("url", new UrlBean(realm, getTheme(), baseUri, null));
         } catch (IOException e) {
             throw new EmailException("Failed to template email", e);
         }

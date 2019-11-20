@@ -93,6 +93,10 @@ public class UrlBean {
         return Urls.firstBrokerLoginProcessor(baseURI, realm).toString();
     }
 
+    public String getResourcesUrl() {
+        return getHostPortScheme(baseURI)+ getResourcesPath();
+    }
+
     public String getOauthAction() {
         if (this.actionuri != null) {
             return this.actionuri.getPath();
@@ -104,5 +108,32 @@ public class UrlBean {
     public String getResourcesPath() {
         URI uri = Urls.themeRoot(baseURI);
         return uri.getPath() + "/" + theme.getType().toString().toLowerCase() +"/" + theme.getName();
+    }
+
+    private String getHostPortScheme(URI baseUri) {
+
+        StringBuilder hostPostScheme = new StringBuilder("");
+        String scheme = baseUri.getScheme();
+        int port = baseUri.getPort();
+        String host = baseUri.getHost();
+
+        if (scheme == null) {
+            scheme = "http";
+        }
+        hostPostScheme
+                .append(scheme)
+                .append("://");
+
+        if (host == null) {
+            host = "localhost";
+        }
+        hostPostScheme.append(host);
+
+        if (port != -1) {
+            hostPostScheme.append(":")
+                    .append(port);
+        }
+
+        return hostPostScheme.toString();
     }
 }
