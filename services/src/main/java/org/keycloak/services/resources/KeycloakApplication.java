@@ -64,17 +64,15 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Optional;
+import java.util.NoSuchElementException;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.stream.StreamSupport;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -268,23 +266,15 @@ public class KeycloakApplication extends Application {
 
     protected void loadConfig() {
 
-        Comparator<ConfigProviderFactory> comparator = (f1, f2) -> { // non-fallback factories first
-            boolean b1 = f1.isFallback();
-            boolean b2 = f2.isFallback();
-            return b1 ^ b2 ? (b2 ? -1 : 1) : 0;
-        };
-
         ServiceLoader<ConfigProviderFactory> loader = ServiceLoader.load(ConfigProviderFactory.class, KeycloakApplication.class.getClassLoader());
 
-        Optional<Config.ConfigProvider> provider = StreamSupport.stream(loader.spliterator(), false)
-                .sorted(comparator)
-                .peek(p -> logger.infov("Trying ConfigProvider: {0}", p.getClass().getName()))
-                .map(ConfigProviderFactory::create)
-                .filter(Optional::isPresent)
-                .map(Optional::get)
-                .findFirst();
-
-        Config.init(provider.orElseThrow(() -> new RuntimeException("No valid ConfigProvider(s) found")));
+        try {
+            ConfigProviderFactory factory = loader.iterator().next();
+            logger.infov("Using ConfigProvider: {0}", factory.getClass().getName());
+            Config.init(factory.create().orElseThrow(() -> new RuntimeException("Failed to load Keycloak configuration")));
+        } catch (NoSuchElementException e) {
+            throw new RuntimeException("No valid ConfigProvider found");
+        }
 
     }
 

@@ -18,7 +18,6 @@
 package org.keycloak.testsuite;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
@@ -26,6 +25,7 @@ import java.util.Properties;
 import javax.servlet.ServletContext;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.common.util.SystemEnvProperties;
+import org.keycloak.util.JsonSerialization;
 
 public class JsonConfigProviderFactory extends org.keycloak.services.util.JsonConfigProviderFactory {
 
@@ -44,7 +44,7 @@ public class JsonConfigProviderFactory extends org.keycloak.services.util.JsonCo
 
         try {
             if (context.getInitParameter(SERVER_CONTEXT_CONFIG_PROPERTY_OVERRIDES) != null) {
-                JsonNode jsonObj = new ObjectMapper().readTree(propertyOverrides);
+                JsonNode jsonObj = JsonSerialization.mapper.readTree(propertyOverrides);
                 jsonObj.fields().forEachRemaining(e -> propertyOverridesMap.put(e.getKey(), e.getValue().asText()));
             }
         } catch (IOException e) {

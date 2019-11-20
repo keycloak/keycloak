@@ -19,7 +19,6 @@ package org.keycloak.services.util;
 
 import org.keycloak.config.ConfigProviderFactory;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
@@ -29,15 +28,11 @@ import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.common.util.SystemEnvProperties;
 import org.keycloak.services.ServicesLogger;
+import org.keycloak.util.JsonSerialization;
 
-public class JsonConfigProviderFactory implements ConfigProviderFactory {
+public abstract class JsonConfigProviderFactory implements ConfigProviderFactory {
 
     private static final Logger LOG = Logger.getLogger(JsonConfigProviderFactory.class);
-
-    @Override
-    public boolean isFallback() {
-        return true;
-    }
 
     @Override
     public Optional<Config.ConfigProvider> create() {
@@ -46,11 +41,11 @@ public class JsonConfigProviderFactory implements ConfigProviderFactory {
 
         try {
             String configDir = System.getProperty("jboss.server.config.dir");
-            if (node == null && configDir != null) {
+            if (configDir != null) {
                 File f = new File(configDir + File.separator + "keycloak-server.json");
                 if (f.isFile()) {
                     ServicesLogger.LOGGER.loadingFrom(f.getAbsolutePath());
-                    node = new ObjectMapper().readTree(f);
+                    node = JsonSerialization.mapper.readTree(f);
                 }
             }
 
@@ -58,7 +53,7 @@ public class JsonConfigProviderFactory implements ConfigProviderFactory {
                 URL resource = Thread.currentThread().getContextClassLoader().getResource("META-INF/keycloak-server.json");
                 if (resource != null) {
                     ServicesLogger.LOGGER.loadingFrom(resource);
-                    node = new ObjectMapper().readTree(resource);
+                    node = JsonSerialization.mapper.readTree(resource);
                 }
             }
         } catch (IOException e) {

@@ -22,10 +22,6 @@ import org.keycloak.Config;
 
 public interface ConfigProviderFactory {
 
-    default boolean isFallback() {
-        return false;
-    }
-
     Optional<Config.ConfigProvider> create();
 
 }

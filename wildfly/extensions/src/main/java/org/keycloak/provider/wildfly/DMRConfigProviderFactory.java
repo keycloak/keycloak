@@ -18,15 +18,21 @@
 package org.keycloak.provider.wildfly;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Properties;
 import javax.servlet.ServletContext;
 import org.jboss.dmr.ModelNode;
 import org.jboss.logging.Logger;
+import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.Config;
 import org.keycloak.common.util.Resteasy;
+import org.keycloak.common.util.SystemEnvProperties;
 import org.keycloak.services.ServicesLogger;
+import org.keycloak.services.util.JsonConfigProviderFactory;
+import org.keycloak.util.JsonSerialization;
 
 public class DMRConfigProviderFactory extends JsonConfigProviderFactory {
 
@@ -35,12 +41,9 @@ public class DMRConfigProviderFactory extends JsonConfigProviderFactory {
     // two places to avoid dependency between Keycloak Subsystem and Keycloak Wildfly Extensions module.
     public static final String KEYCLOAK_CONFIG_PARAM_NAME = "org.keycloak.server-subsystem.Config";
 
-    private static final Logger LOG = Logger.getLogger(DMRConfigProviderFactory.class);
+    public static final String SERVER_CONTEXT_CONFIG_PROPERTY_OVERRIDES = "keycloak.server.context.config.property-overrides";
 
-    @Override
-    public boolean isFallback() {
-        return false;
-    }
+    private static final Logger LOG = Logger.getLogger(DMRConfigProviderFactory.class);
 
     @Override
     public Optional<Config.ConfigProvider> create() {
@@ -52,7 +55,7 @@ public class DMRConfigProviderFactory extends JsonConfigProviderFactory {
         try {
             String dmrConfig = loadDmrConfig(context);
             if (dmrConfig != null) {
-                node = new ObjectMapper().readTree(dmrConfig);
+                node = JsonSerialization.mapper.readTree(dmrConfig);
                 ServicesLogger.LOGGER.loadingFrom("standalone.xml or domain.xml");
             }
         } catch (IOException e) {
@@ -61,6 +64,11 @@ public class DMRConfigProviderFactory extends JsonConfigProviderFactory {
 
         return createJsonProvider(node);
 
+    }
+
+    @Override
+    protected Properties getProperties() {
+        return new SystemEnvProperties(getPropertyOverrides());
     }
 
     private String loadDmrConfig(ServletContext context) {
@@ -76,6 +84,24 @@ public class DMRConfigProviderFactory extends JsonConfigProviderFactory {
 
         // note that we need to resolve expressions BEFORE we convert to JSON
         return dmrConfigNode.resolve().toJSONString(true);
+    }
+
+    private Map<String, String> getPropertyOverrides() {
+
+        ServletContext context = ResteasyProviderFactory.getContextData(ServletContext.class);
+        Map<String, String> propertyOverridesMap = new HashMap<>();
+        String propertyOverrides = context.getInitParameter(SERVER_CONTEXT_CONFIG_PROPERTY_OVERRIDES);
+
+        try {
+            if (context.getInitParameter(SERVER_CONTEXT_CONFIG_PROPERTY_OVERRIDES) != null) {
+                JsonNode jsonObj = JsonSerialization.mapper.readTree(propertyOverrides);
+                jsonObj.fields().forEachRemaining(e -> propertyOverridesMap.put(e.getKey(), e.getValue().asText()));
+            }
+        } catch (IOException e) {
+        }
+
+        return propertyOverridesMap;
+
     }
 
 }
