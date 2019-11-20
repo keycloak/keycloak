@@ -24,6 +24,7 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.OAuthErrorException;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
 import org.keycloak.crypto.Algorithm;
@@ -386,7 +387,7 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
 
         assertEquals(400, response.getStatusCode());
 
-        assertEquals("invalid_grant", response.getError());
+        assertEquals(OAuthErrorException.UNAUTHORIZED_CLIENT, response.getError());
 
         events.expectLogin()
                 .client("resource-owner")
