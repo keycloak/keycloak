@@ -57,7 +57,7 @@
         <link rel="icon" href="${resourceUrl}/app/assets/img/favicon.ico" type="image/x-icon"/>
         <link rel="stylesheet" href="${resourceUrl}/node_modules/@patternfly/patternfly/patternfly.min.css">
 
-        <script src="${authUrl}/js/keycloak.js"></script>
+        <script src="${authUrl}js/keycloak.js"></script>
         
         <#if properties.developmentMode?has_content && properties.developmentMode == "true">
         <!-- Don't use this in production: -->
