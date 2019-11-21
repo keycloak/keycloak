@@ -192,28 +192,6 @@ module.config(['$routeProvider', function ($routeProvider) {
             }
         },
         controller: 'ResourceServerPolicyCtrl'
-    }).when('/realms/:realm/clients/:client/authz/resource-server/policy/rules/create', {
-        templateUrl: resourceUrl + '/partials/authz/policy/provider/resource-server-policy-drools-detail.html',
-        resolve: {
-            realm: function (RealmLoader) {
-                return RealmLoader();
-            },
-            client : function(ClientLoader) {
-                return ClientLoader();
-            }
-        },
-        controller: 'ResourceServerPolicyDroolsDetailCtrl'
-    }).when('/realms/:realm/clients/:client/authz/resource-server/policy/rules/:id', {
-        templateUrl: resourceUrl + '/partials/authz/policy/provider/resource-server-policy-drools-detail.html',
-        resolve: {
-            realm: function (RealmLoader) {
-                return RealmLoader();
-            },
-            client : function(ClientLoader) {
-                return ClientLoader();
-            }
-        },
-        controller: 'ResourceServerPolicyDroolsDetailCtrl'
     }).when('/realms/:realm/clients/:client/authz/resource-server/permission/resource/create', {
         templateUrl: resourceUrl + '/partials/authz/permission/provider/resource-server-policy-resource-detail.html',
         resolve: {
