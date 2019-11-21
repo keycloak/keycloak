@@ -30,6 +30,7 @@ interface ContinueCancelModalProps {
     modalContinueButtonLabel?: string;
     modalCancelButtonLabel?: string;
     onContinue: () => void;
+    isDisabled?: boolean;
 }
 
 interface ContinueCancelModalState {
@@ -46,7 +47,8 @@ export class ContinueCancelModal extends React.Component<ContinueCancelModalProp
     protected static defaultProps = {
         buttonVariant: 'primary',
         modalContinueButtonLabel: 'continue',
-        modalCancelButtonLabel: 'doCancel'
+        modalCancelButtonLabel: 'doCancel',
+        isDisabled: false
     };
     
     public constructor(props: ContinueCancelModalProps) {
@@ -72,7 +74,7 @@ export class ContinueCancelModal extends React.Component<ContinueCancelModalProp
 
         return (
             <React.Fragment>
-                <Button variant={this.props.buttonVariant} onClick={this.handleModalToggle}>
+                <Button variant={this.props.buttonVariant} onClick={this.handleModalToggle} isDisabled={this.props.isDisabled}>
                     <Msg msgKey={this.props.buttonTitle}/>
                 </Button>
                 <Modal

@@ -120,7 +120,7 @@
               './Radio': '@empty', //'./Radio/index.js',
               './Select': '@empty', //'./Select/index.js',
               './SkipToContent': '@empty', //'./SkipToContent/index.js',
-              './Switch': '@empty', //'./Switch/index.js',
+              './Switch': './Switch/index.js',
               './Tabs': './Tabs/index.js', //'./Tabs/index.js',
               './Text': '@empty', //'./Text/index.js',
               './TextArea': '@empty', //'./TextArea/index.js',
