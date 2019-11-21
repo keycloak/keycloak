@@ -40,7 +40,6 @@ import org.keycloak.representations.idm.authorization.GroupPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.JSPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.Logic;
 import org.keycloak.representations.idm.authorization.RolePolicyRepresentation;
-import org.keycloak.representations.idm.authorization.RulePolicyRepresentation;
 import org.keycloak.representations.idm.authorization.TimePolicyRepresentation;
 import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
@@ -231,22 +230,6 @@ public class AggregatePolicyManagementTest extends AbstractAuthorizationSettings
         childTimePolicy.setNotBefore("2018-01-01 00:00:00");
         policy.createPolicy(childTimePolicy);
         expected.addPolicy(childTimePolicy.getName());
-
-        if (Profile.isFeatureEnabled(Profile.Feature.AUTHZ_DROOLS_POLICY)) {
-            RulePolicyRepresentation rulePolicy = new RulePolicyRepresentation();
-
-            rulePolicy.setName(UUID.randomUUID().toString());
-            rulePolicy.setDescription("description");
-            rulePolicy.setArtifactGroupId("org.keycloak.testsuite");
-            rulePolicy.setArtifactId("photoz-authz-policy");
-            rulePolicy.setArtifactVersion(System.getProperty("project.version"));
-            rulePolicy.setModuleName("PhotozAuthzOwnerPolicy");
-            rulePolicy.setSessionName("MainOwnerSession");
-            rulePolicy.setScannerPeriod("1");
-            rulePolicy.setScannerPeriodUnit("Minutes");
-            policy.createPolicy(rulePolicy);
-            expected.addPolicy(rulePolicy.getName());
-        }
 
         GroupPolicyRepresentation childGroupPolicy = new GroupPolicyRepresentation();
 

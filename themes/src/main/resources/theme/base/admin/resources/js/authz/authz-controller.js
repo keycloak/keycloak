@@ -900,59 +900,6 @@ module.controller('ResourceServerPermissionCtrl', function($scope, $http, $route
     };
 });
 
-module.controller('ResourceServerPolicyDroolsDetailCtrl', function($scope, $http, $route, realm, client, PolicyController) {
-    PolicyController.onInit({
-        getPolicyType : function() {
-            return "rules";
-        },
-
-        onInit : function() {
-            $scope.drools = {};
-
-            $scope.resolveModules = function(policy) {
-                if (!policy) {
-                    policy = $scope.policy;
-                }
-
-                delete policy.config;
-
-                $http.post(authUrl + '/admin/realms/'+ $route.current.params.realm + '/clients/' + client.id + '/authz/resource-server/policy/rules/provider/resolveModules'
-                        , policy).then(function(response) {
-                            $scope.drools.moduleNames = response.data;
-                            $scope.resolveSessions();
-                        });
-            }
-
-            $scope.resolveSessions = function() {
-                delete $scope.policy.config;
-
-                $http.post(authUrl + '/admin/realms/'+ $route.current.params.realm + '/clients/' + client.id + '/authz/resource-server/policy/rules/provider/resolveSessions'
-                        , $scope.policy).then(function(response) {
-                            $scope.drools.moduleSessions = response.data;
-                        });
-            }
-        },
-
-        onInitUpdate : function(policy) {
-            policy.scannerPeriod = parseInt(policy.scannerPeriod);
-            $scope.resolveModules(policy);
-        },
-
-        onUpdate : function() {
-            delete $scope.policy.config;
-        },
-
-        onInitCreate : function(newPolicy) {
-            newPolicy.scannerPeriod = 1;
-            newPolicy.scannerPeriodUnit = 'Hours';
-        },
-
-        onCreate : function() {
-            delete $scope.policy.config;
-        }
-    }, realm, client, $scope);
-});
-
 module.controller('ResourceServerPolicyResourceDetailCtrl', function($scope, $route, $location, realm, client, PolicyController, ResourceServerPermission, ResourceServerResource, policyViewState) {
     PolicyController.onInit({
         getPolicyType : function() {
