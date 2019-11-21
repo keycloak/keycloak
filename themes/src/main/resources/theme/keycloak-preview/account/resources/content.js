@@ -10,6 +10,12 @@ var content = [
         label: 'Account Security',
         content: [
             {
+                path: 'security/signingin',
+                label: 'signingIn',
+                modulePath: '/app/content/signingin-page/SigningInPage',
+                componentName: 'SigningInPage',
+            },
+          /*  {
                 path: 'security/password',
                 label: 'password',
                 modulePath: '/app/content/aia-page/AppInitiatedActionPage',
@@ -22,7 +28,7 @@ var content = [
                 modulePath: '/app/content/aia-page/AppInitiatedActionPage',
                 componentName: 'AppInitiatedActionPage',
                 kcAction: 'CONFIGURE_TOTP'
-            },
+            }, */
             {
                 path: 'security/device-activity',
                 label: 'device-activity',

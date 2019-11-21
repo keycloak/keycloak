@@ -114,6 +114,12 @@ public class AccountConsole {
             EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
             map.put("isEventsEnabled", eventStore != null && realm.isEventsEnabled());
             map.put("isAuthorizationEnabled", true);
+            
+            boolean isTotpConfigured = false;
+            if (user != null) {
+                isTotpConfigured = session.userCredentialManager().isConfiguredFor(realm, user, realm.getOTPPolicy().getType());
+            }
+            map.put("isTotpConfigured", isTotpConfigured);
 
             FreeMarkerUtil freeMarkerUtil = new FreeMarkerUtil();
             String result = freeMarkerUtil.processTemplate(map, "index.ftl", theme);

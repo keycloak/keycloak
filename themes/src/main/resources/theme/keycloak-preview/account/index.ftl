@@ -31,7 +31,8 @@
                 isInternationalizationEnabled : ${realm.internationalizationEnabled?c},
                 isLinkedAccountsEnabled : ${realm.identityFederationEnabled?c},
                 isEventsEnabled : ${isEventsEnabled?c},
-                isMyResourcesEnabled : ${(realm.userManagedAccessAllowed && isAuthorizationEnabled)?c}
+                isMyResourcesEnabled : ${(realm.userManagedAccessAllowed && isAuthorizationEnabled)?c},
+                isTotpConfigured : ${isTotpConfigured?c}
             }
                 
             var availableLocales = [];
@@ -229,8 +230,7 @@
                     <h6>${msg("accountSecurityIntroMessage")}</h6>
                 </div>
                 <div class="pf-c-card__body pf-c-content">
-                    <h5 id="changePasswordLink"><a href="#/app/security/password">${msg("changePasswordHtmlTitle")}</a></h5>
-                    <h5 id="authenticatorLink"><a href="#/app/security/authenticator">${msg("authenticatorTitle")}</a></h5>
+                    <h5 id="signingInLink"><a href="#/app/security/signingin">${msg("signingIn")}</a></h5>
                     <h5 id="deviceActivityLink"><a href="#/app/security/device-activity">${msg("deviceActivityHtmlTitle")}</a></h5>
                     <h5 id="linkedAccountsLink" style="display:none"><a href="#/app/security/linked-accounts">${msg("linkedAccountsHtmlTitle")}</a></h5>
                 </div>
