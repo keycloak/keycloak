@@ -12,7 +12,6 @@ mechanisms such as:
 * **Context-based access control (CBAC)**
 * **Rule-based access control**
     ** Using JavaScript
-    ** Using JBoss Drools
 * **Time-based access control**
 * **Support for custom access control mechanisms (ACMs) through a Policy Provider Service Provider Interface (SPI)**
 

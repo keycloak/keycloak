@@ -110,6 +110,6 @@ That re-enables access to the application as we are negating the result of that 
 There are additional things you can do, such as:
 
 * Create a scope, define a policy and permission for it, and test it on the application side. Can the user perform an action (or anything else represented by the scope you created)?
-* Create different types of policies such as <<_policy_drools, rule-based>>, and associate these policies with the `Default Permission`.
+* Create different types of policies such as <<_policy_js, JavaScript-based>>, and associate these policies with the `Default Permission`.
 * Apply multiple policies to the `Default Permission` and test the behavior. For example, combine multiple policies and change the `Decision Strategy` accordingly.
 * For more information about how to view and test permissions inside your application see <<_enforcer_authorization_context, Obtaining the Authorization Context>>.

@@ -1,0 +1,5 @@
+= Highlights
+
+== Drools Policy Removed
+
+The Drools Policy was finally removed after the deprecation period. If you need more complex policies you can still use JavaScript-based policies.

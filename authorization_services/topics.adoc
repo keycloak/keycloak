@@ -42,8 +42,6 @@ include::topics/policy-role-policy-required-role.adoc[leveloffset=+3]
 
 include::topics/policy-js-policy.adoc[leveloffset=+2]
 
-include::topics/policy-drools-policy.adoc[leveloffset=+2]
-
 include::topics/policy-time-policy.adoc[leveloffset=+2]
 
 include::topics/policy-aggregated-policy.adoc[leveloffset=+2]

@@ -67,7 +67,7 @@ Policies define the conditions that must be satisfied to access or perform opera
 
 For instance,to allow access to a group of resources only for users granted with a role "User Premium", you can use RBAC (Role-based Access Control).
 
-{project_name} provides a few built-in policy types (and their respective policy providers) covering the most common access control mechanisms. You can even create policies based on rules written using JavaScript or JBoss Drools.
+{project_name} provides a few built-in policy types (and their respective policy providers) covering the most common access control mechanisms. You can even create policies based on rules written using JavaScript.
 
 Once you have your policies defined, you can start defining your permissions. Permissions are coupled with the resource they are protecting. Here you specify
 what you want to protect (resource or scope) and the policies that must be satisfied to grant or deny permission.

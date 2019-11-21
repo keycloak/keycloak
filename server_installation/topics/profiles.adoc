@@ -31,11 +31,6 @@ endif::[]
 |No
 |Preview
 
-|authz_drools_policy
-|Drools Policy for Authorization Services
-|No
-|Preview
-
 |docker
 |Docker Registry protocol
 |No
