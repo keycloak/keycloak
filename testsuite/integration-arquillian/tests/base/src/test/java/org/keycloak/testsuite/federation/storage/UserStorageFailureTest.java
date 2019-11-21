@@ -17,10 +17,8 @@
 package org.keycloak.testsuite.federation.storage;
 
 import org.jboss.arquillian.container.test.api.ContainerController;
-import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.arquillian.test.api.ArquillianResource;
-import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
@@ -45,17 +43,14 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderModel;
-import org.keycloak.testsuite.AbstractAuthTest;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.auth.page.AuthRealm;
 import org.keycloak.testsuite.federation.FailableHardcodedStorageProvider;
 import org.keycloak.testsuite.federation.FailableHardcodedStorageProviderFactory;
-import org.keycloak.testsuite.pages.AccountApplicationsPage;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
-import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
-import org.keycloak.testsuite.util.Matchers;
+import org.keycloak.testsuite.util.ContainerAssume;
 import org.keycloak.testsuite.util.OAuthClient;
 
 import java.io.IOException;
@@ -64,7 +59,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import org.keycloak.testsuite.util.ContainerAssume;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -73,12 +67,6 @@ import org.keycloak.testsuite.util.ContainerAssume;
 public class UserStorageFailureTest extends AbstractTestRealmKeycloakTest {
 
     private static boolean initialized = false;
-
-    @Deployment
-    public static WebArchive deploy() {
-        return RunOnServerDeployment.create(ComponentExportImportTest.class, AbstractAuthTest.class, RealmResource.class)
-                .addPackages(true, "org.keycloak.testsuite");
-    }
 
     private static final String LOCAL_USER = "localUser";
 
@@ -102,7 +90,7 @@ public class UserStorageFailureTest extends AbstractTestRealmKeycloakTest {
 
 
     @Before
-    public void addProvidersBeforeTest() throws URISyntaxException, IOException {
+    public void addProvidersBeforeTest() {
         ComponentRepresentation memProvider = new ComponentRepresentation();
         memProvider.setName("failure");
         memProvider.setProviderId(FailableHardcodedStorageProviderFactory.PROVIDER_ID);
@@ -112,6 +100,8 @@ public class UserStorageFailureTest extends AbstractTestRealmKeycloakTest {
         failureProviderId = addComponent(memProvider);
 
         if (initialized) return;
+
+        final String authServerRoot = OAuthClient.AUTH_SERVER_ROOT;
 
         testingClient.server().run(session -> {
             RealmManager manager = new RealmManager(session);
@@ -123,7 +113,7 @@ public class UserStorageFailureTest extends AbstractTestRealmKeycloakTest {
             offlineClient.setDirectAccessGrantsEnabled(true);
             offlineClient.setSecret("secret");
             HashSet<String> redirects = new HashSet<>();
-            redirects.add(OAuthClient.AUTH_SERVER_ROOT + "/offline-client");
+            redirects.add(authServerRoot + "/offline-client");
             offlineClient.setRedirectUris(redirects);
             offlineClient.setServiceAccountsEnabled(true);
             offlineClient.setFullScopeAllowed(true);

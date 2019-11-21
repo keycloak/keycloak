@@ -1,13 +1,6 @@
 package org.keycloak.testsuite.model;
 
-import java.util.List;
-import java.util.concurrent.atomic.AtomicReference;
-
-import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.arquillian.container.test.api.TargetsContainer;
-import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Test;
-import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -18,24 +11,14 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.arquillian.annotation.ModelTest;
-import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
 
-import static org.keycloak.testsuite.arquillian.DeploymentTargetModifier.AUTH_SERVER_CURRENT;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class CredentialModelTest extends AbstractTestRealmKeycloakTest {
-
-    @Deployment
-    @TargetsContainer(AUTH_SERVER_CURRENT)
-    public static WebArchive deploy() {
-        return RunOnServerDeployment.create(UserResource.class, UserModelTest.class)
-                .addPackages(true,
-                        "org.keycloak.testsuite",
-                        "org.keycloak.testsuite.model",
-                        "com.google.common");
-    }
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {

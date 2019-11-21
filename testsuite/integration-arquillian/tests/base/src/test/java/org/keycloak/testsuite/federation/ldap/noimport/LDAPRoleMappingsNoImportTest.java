@@ -17,15 +17,11 @@
 
 package org.keycloak.testsuite.federation.ldap.noimport;
 
-import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.arquillian.container.test.api.TargetsContainer;
-import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
-import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.AccountRoles;
 import org.keycloak.models.ClientModel;
@@ -41,13 +37,10 @@ import org.keycloak.storage.ldap.mappers.membership.LDAPGroupMapperMode;
 import org.keycloak.storage.ldap.mappers.membership.role.RoleLDAPStorageMapper;
 import org.keycloak.testsuite.federation.ldap.AbstractLDAPTest;
 import org.keycloak.testsuite.federation.ldap.LDAPTestContext;
-import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
 import org.keycloak.testsuite.util.LDAPRule;
 import org.keycloak.testsuite.util.LDAPTestUtils;
 
 import java.util.Set;
-
-import static org.keycloak.testsuite.arquillian.DeploymentTargetModifier.AUTH_SERVER_CURRENT;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -58,18 +51,6 @@ public class LDAPRoleMappingsNoImportTest extends AbstractLDAPTest {
 
     @ClassRule
     public static LDAPRule ldapRule = new LDAPRule();
-
-
-    @Deployment
-    @TargetsContainer(AUTH_SERVER_CURRENT)
-    public static WebArchive deploy() {
-        return RunOnServerDeployment.create(UserResource.class, AbstractLDAPTest.class)
-                .addPackages(true,
-                        "org.keycloak.testsuite",
-                        "org.keycloak.testsuite.federation.ldap",
-                        "org.keycloak.testsuite.federation.ldap.noimport");
-    }
-
 
     @Override
     protected LDAPRule getLDAPRule() {

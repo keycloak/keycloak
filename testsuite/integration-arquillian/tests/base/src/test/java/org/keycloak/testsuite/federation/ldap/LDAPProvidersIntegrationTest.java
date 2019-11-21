@@ -17,26 +17,12 @@
 
 package org.keycloak.testsuite.federation.ldap;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.keycloak.testsuite.arquillian.DeploymentTargetModifier.AUTH_SERVER_CURRENT;
-
-import java.util.List;
-import java.util.Map;
-
-import javax.naming.AuthenticationException;
-import javax.ws.rs.core.Response;
-
-import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.arquillian.container.test.api.TargetsContainer;
-import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
 import org.keycloak.OAuth2Constants;
-import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.models.GroupModel;
@@ -74,10 +60,17 @@ import org.keycloak.storage.ldap.mappers.UserAttributeLDAPStorageMapper;
 import org.keycloak.testsuite.AbstractAuthTest;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.pages.AppPage;
-import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
 import org.keycloak.testsuite.util.LDAPRule;
 import org.keycloak.testsuite.util.LDAPTestUtils;
 import org.keycloak.testsuite.util.OAuthClient;
+
+import javax.naming.AuthenticationException;
+import javax.ws.rs.core.Response;
+import java.util.List;
+import java.util.Map;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -87,16 +80,6 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
 
     @ClassRule
     public static LDAPRule ldapRule = new LDAPRule();
-
-    @Deployment
-    @TargetsContainer(AUTH_SERVER_CURRENT)
-    public static WebArchive deploy() {
-        return RunOnServerDeployment.create(UserResource.class, AbstractLDAPTest.class)
-                .addPackages(true,
-                        "org.keycloak.testsuite",
-                        "org.keycloak.testsuite.federation.ldap");
-    }
-
 
     @Override
     protected LDAPRule getLDAPRule() {

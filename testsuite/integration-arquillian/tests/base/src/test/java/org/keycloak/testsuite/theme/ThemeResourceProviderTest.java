@@ -1,24 +1,16 @@
 package org.keycloak.testsuite.theme;
 
-import java.io.IOException;
-import java.util.Locale;
-
-import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
-import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
 import org.keycloak.theme.Theme;
 import org.keycloak.theme.ThemeProvider;
 
-public class ThemeResourceProviderTest extends AbstractTestRealmKeycloakTest {
+import java.io.IOException;
+import java.util.Locale;
 
-    @Deployment
-    public static WebArchive deploy() {
-        return RunOnServerDeployment.create(ThemeResourceProviderTest.class, AbstractTestRealmKeycloakTest.class);
-    }
+public class ThemeResourceProviderTest extends AbstractTestRealmKeycloakTest {
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {

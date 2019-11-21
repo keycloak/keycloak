@@ -18,9 +18,7 @@
 package org.keycloak.testsuite.oidc;
 
 import com.google.common.collect.ImmutableMap;
-import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.graphene.page.Page;
-import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -46,9 +44,9 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.util.CertificateInfoHelper;
+import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.admin.AbstractAdminTest;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.client.resources.TestApplicationResourceUrls;
@@ -59,17 +57,15 @@ import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.OAuthGrantPage;
 import org.keycloak.testsuite.rest.resource.TestingOIDCEndpointsApplicationResource;
-import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
 import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.util.JsonSerialization;
 
+import javax.ws.rs.core.UriBuilder;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import javax.ws.rs.core.UriBuilder;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -99,11 +95,6 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
 
     @Page
     protected ErrorPage errorPage;
-
-    @Deployment
-    public static WebArchive deploy() {
-        return RunOnServerDeployment.create(OIDCAdvancedRequestParamsTest.class, AbstractTestRealmKeycloakTest.class);
-    }
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {

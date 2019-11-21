@@ -17,22 +17,10 @@
 
 package org.keycloak.testsuite.openshift;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
-import static org.keycloak.common.Profile.Feature.OPENSHIFT_INTEGRATION;
-import static org.keycloak.testsuite.admin.ApiUtil.findUserByUsername;
-
-import javax.ws.rs.core.Response;
-
-import java.io.IOException;
-import java.util.Arrays;
-
 import io.undertow.Undertow;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
-import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.graphene.page.Page;
-import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
@@ -42,7 +30,6 @@ import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.admin.client.resource.ComponentResource;
-import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.StreamUtil;
 import org.keycloak.events.Details;
@@ -56,14 +43,21 @@ import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
-import org.keycloak.testsuite.arquillian.annotation.RestartContainer;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.ConsentPage;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
-import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
 import org.keycloak.testsuite.util.ContainerAssume;
 import org.keycloak.testsuite.util.OAuthClient;
+
+import javax.ws.rs.core.Response;
+import java.io.IOException;
+import java.util.Arrays;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
+import static org.keycloak.common.Profile.Feature.OPENSHIFT_INTEGRATION;
+import static org.keycloak.testsuite.admin.ApiUtil.findUserByUsername;
 
 /**
  * Test that clients can override auth flows
@@ -92,12 +86,6 @@ public final class OpenshiftClientStorageTest extends AbstractTestRealmKeycloakT
 
     private String userId;
     private String clientStorageId;
-
-    @Deployment
-    public static WebArchive deploy() {
-        return RunOnServerDeployment.create(UserResource.class)
-                .addPackages(true, "org.keycloak.testsuite");
-    }
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {

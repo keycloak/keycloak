@@ -17,10 +17,8 @@
 package org.keycloak.testsuite.federation.storage;
 
 import org.jboss.arquillian.container.test.api.ContainerController;
-import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.arquillian.test.api.ArquillianResource;
-import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
@@ -33,11 +31,9 @@ import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderModel;
-import org.keycloak.testsuite.AbstractAuthTest;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
-import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
 
 import java.util.List;
 
@@ -48,12 +44,6 @@ import java.util.List;
  * @version $Revision: 1 $
  */
 public class BrokenUserStorageTest extends AbstractTestRealmKeycloakTest {
-
-    @Deployment
-    public static WebArchive deploy() {
-        return RunOnServerDeployment.create(ComponentExportImportTest.class, AbstractAuthTest.class, RealmResource.class)
-                .addPackages(true, "org.keycloak.testsuite");
-    }
 
     @ArquillianResource
     protected ContainerController controller;

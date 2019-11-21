@@ -17,17 +17,11 @@
 
 package org.keycloak.testsuite.session;
 
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
-
 import org.infinispan.Cache;
-import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
-import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.common.util.Retry;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.models.KeycloakSession;
@@ -38,22 +32,17 @@ import org.keycloak.models.sessions.infinispan.changes.sessions.SessionData;
 import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
-import org.keycloak.common.util.Retry;
 import org.keycloak.testsuite.runonserver.RunOnServer;
-import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
 import org.keycloak.timer.TimerProvider;
+
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class LastSessionRefreshUnitTest extends AbstractKeycloakTest {
-
-    @Deployment
-    public static WebArchive deploy() {
-        return RunOnServerDeployment.create(UserResource.class)
-                .addPackages(true, "org.keycloak.testsuite");
-    }
-
 
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {

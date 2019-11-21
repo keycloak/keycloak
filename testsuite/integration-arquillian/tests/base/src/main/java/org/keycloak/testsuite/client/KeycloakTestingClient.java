@@ -93,6 +93,13 @@ public class KeycloakTestingClient implements AutoCloseable {
 
     public TestExampleCompanyResource testExampleCompany() { return target.proxy(TestExampleCompanyResource.class); }
 
+    /**
+     * Allows running code on the server-side for white-box testing. When using be careful what imports your test class
+     * has and also what classes are used within the function sent to the server. Classes have to be either available
+     * server-side or defined in @{@link org.keycloak.testsuite.arquillian.TestClassProvider#PERMITTED_PACKAGES}
+     *
+     * @return
+     */
     public Server server() {
         return new Server("master");
     }
@@ -151,7 +158,6 @@ public class KeycloakTestingClient implements AutoCloseable {
                 }
             }
         }
-
 
         public void runModelTest(String testClassName, String testMethodName) throws RunOnServerException {
             String result = testing(realm != null ? realm : "master").runModelTestOnServer(testClassName, testMethodName);

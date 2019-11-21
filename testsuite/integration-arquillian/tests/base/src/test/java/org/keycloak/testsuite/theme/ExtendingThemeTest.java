@@ -1,14 +1,10 @@
 package org.keycloak.testsuite.theme;
 
-import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.arquillian.container.test.api.TargetsContainer;
-import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
-import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
 import org.keycloak.testsuite.util.ContainerAssume;
 import org.keycloak.theme.Theme;
 import org.keycloak.theme.ThemeProvider;
@@ -16,21 +12,12 @@ import org.keycloak.theme.ThemeProvider;
 import java.io.IOException;
 import java.util.List;
 
-import static org.keycloak.testsuite.arquillian.DeploymentTargetModifier.AUTH_SERVER_CURRENT;
-
 /**
  * @author <a href="mailto:vincent.letarouilly@gmail.com">Vincent Letarouilly</a>
  */
 public class ExtendingThemeTest extends AbstractKeycloakTest {
 
     private static final String THEME_NAME = "environment-agnostic";
-
-    @Deployment
-    @TargetsContainer(AUTH_SERVER_CURRENT)
-    public static WebArchive deploy() {
-        return RunOnServerDeployment.create(ExtendingThemeTest.class)
-                .addPackages(true, "org.keycloak.testsuite");
-    }
 
     @Before
     public void setUp() {

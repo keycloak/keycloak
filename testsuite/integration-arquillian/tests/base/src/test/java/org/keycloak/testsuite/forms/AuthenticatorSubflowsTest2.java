@@ -17,17 +17,11 @@
 
 package org.keycloak.testsuite.forms;
 
-import java.util.HashMap;
-import java.util.Map;
-
-import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.graphene.page.Page;
-import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
-import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.authentication.authenticators.browser.UsernamePasswordFormFactory;
 import org.keycloak.events.Details;
 import org.keycloak.models.AuthenticationExecutionModel;
@@ -43,8 +37,10 @@ import org.keycloak.testsuite.authentication.PushButtonAuthenticatorFactory;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
-import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
 import org.openqa.selenium.By;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:n1330@me.com">Tomohiro Nagai</a>
@@ -66,13 +62,6 @@ public class AuthenticatorSubflowsTest2 extends AbstractTestRealmKeycloakTest {
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
     }
-
-    @Deployment
-    public static WebArchive deploy() {
-        return RunOnServerDeployment.create(UserResource.class)
-                .addPackages(true, "org.keycloak.testsuite");
-    }
-
 
     @Before
     public void setupFlows() {

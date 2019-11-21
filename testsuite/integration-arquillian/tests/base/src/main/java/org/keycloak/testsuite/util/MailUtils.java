@@ -41,11 +41,11 @@ public class MailUtils {
         throw new AssertionError("No link found in " + body);
     }
 
-    public static String getPasswordResetEmailLink(MimeMessage message) throws IOException, MessagingException {
+    public static String getPasswordResetEmailLink(MimeMessage message) throws IOException {
         return getPasswordResetEmailLink(new EmailBody(message));
     }
 
-    public static String getPasswordResetEmailLink(EmailBody body) throws IOException, MessagingException {
+    public static String getPasswordResetEmailLink(EmailBody body) throws IOException {
         final String textChangePwdUrl = getLink(body.getText());
         String htmlChangePwdUrl = getLink(body.getHtml());
         
@@ -59,7 +59,7 @@ public class MailUtils {
         return htmlChangePwdUrl;
     }
 
-    public static EmailBody getBody(MimeMessage message) throws IOException, MessagingException {
+    public static EmailBody getBody(MimeMessage message) throws IOException {
         return new EmailBody(message);
     }
 
@@ -68,20 +68,24 @@ public class MailUtils {
         private String text;
         private String html;
 
-        private EmailBody(MimeMessage message) throws IOException, MessagingException {
-            Multipart multipart = (Multipart) message.getContent();
+        private EmailBody(MimeMessage message) throws IOException {
+            try {
+                Multipart multipart = (Multipart) message.getContent();
 
-            String textContentType = multipart.getBodyPart(0).getContentType();
+                String textContentType = multipart.getBodyPart(0).getContentType();
 
-            assertEquals("text/plain; charset=UTF-8", textContentType);
+                assertEquals("text/plain; charset=UTF-8", textContentType);
 
-            text = (String) multipart.getBodyPart(0).getContent();
+                text = (String) multipart.getBodyPart(0).getContent();
 
-            String htmlContentType = multipart.getBodyPart(1).getContentType();
+                String htmlContentType = multipart.getBodyPart(1).getContentType();
 
-            assertEquals("text/html; charset=UTF-8", htmlContentType);
+                assertEquals("text/html; charset=UTF-8", htmlContentType);
 
-            html = (String) multipart.getBodyPart(1).getContent();
+                html = (String) multipart.getBodyPart(1).getContent();
+            } catch (MessagingException e) {
+                throw new RuntimeException(e);
+            }
         }
 
         public String getText() {

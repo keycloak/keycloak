@@ -17,11 +17,6 @@
 
 package org.keycloak.testsuite.vault;
 
-import java.util.List;
-import java.util.Optional;
-
-import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.models.KeycloakSession;
@@ -29,10 +24,12 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.arquillian.annotation.EnableVault;
 import org.keycloak.testsuite.runonserver.RunOnServer;
-import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
 import org.keycloak.testsuite.utils.io.IOUtil;
 import org.keycloak.vault.VaultStringSecret;
 import org.keycloak.vault.VaultTranscriber;
+
+import java.util.List;
+import java.util.Optional;
 
 /**
  * Tests the usage of the {@link VaultTranscriber} on the server side. The tests attempt to obtain the transcriber from
@@ -42,11 +39,6 @@ import org.keycloak.vault.VaultTranscriber;
  */
 @EnableVault
 public class KeycloakVaultTest extends AbstractKeycloakTest {
-
-    @Deployment
-    public static WebArchive deploy() {
-        return RunOnServerDeployment.create();
-    }
 
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {

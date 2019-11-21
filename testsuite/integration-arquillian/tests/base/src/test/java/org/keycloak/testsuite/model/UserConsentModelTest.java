@@ -17,16 +17,19 @@
 
 package org.keycloak.testsuite.model;
 
-import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.arquillian.container.test.api.TargetsContainer;
-import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.component.ComponentModel;
-import org.keycloak.models.*;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientScopeModel;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelException;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserConsentModel;
+import org.keycloak.models.UserManager;
+import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -35,12 +38,9 @@ import org.keycloak.storage.client.ClientStorageProviderModel;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.arquillian.annotation.ModelTest;
 import org.keycloak.testsuite.federation.HardcodedClientStorageProviderFactory;
-import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
 
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
-
-import static org.keycloak.testsuite.arquillian.DeploymentTargetModifier.AUTH_SERVER_CURRENT;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -48,15 +48,6 @@ import static org.keycloak.testsuite.arquillian.DeploymentTargetModifier.AUTH_SE
 public class UserConsentModelTest extends AbstractTestRealmKeycloakTest {
 
     private static ComponentModel clientStorageComponent;
-
-    @Deployment
-    @TargetsContainer(AUTH_SERVER_CURRENT)
-    public static WebArchive deploy() {
-        return RunOnServerDeployment.create(UserResource.class, UserConsentModelTest.class)
-                .addPackages(true,
-                        "org.keycloak.testsuite",
-                        "org.keycloak.testsuite.model");
-    }
 
     @Before
     public void before() {

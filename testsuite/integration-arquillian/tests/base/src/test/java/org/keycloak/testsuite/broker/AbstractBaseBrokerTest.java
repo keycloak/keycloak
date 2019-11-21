@@ -17,21 +17,13 @@
 
 package org.keycloak.testsuite.broker;
 
-import java.net.URI;
-import java.util.Collections;
-import java.util.List;
-
-import javax.ws.rs.core.UriBuilder;
-import javax.ws.rs.core.UriBuilderException;
-
-import org.hamcrest.Matchers;
 import org.apache.commons.lang.StringUtils;
-import org.jboss.arquillian.container.test.api.Deployment;
+import org.hamcrest.Matchers;
 import org.jboss.arquillian.graphene.page.Page;
-import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.After;
 import org.junit.Before;
 import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.common.util.Retry;
 import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -40,8 +32,6 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
-import org.keycloak.common.util.Retry;
-import org.keycloak.testsuite.client.KeycloakTestingClient;
 import org.keycloak.testsuite.pages.AccountApplicationsPage;
 import org.keycloak.testsuite.pages.AccountFederatedIdentityPage;
 import org.keycloak.testsuite.pages.AccountPasswordPage;
@@ -58,11 +48,15 @@ import org.keycloak.testsuite.pages.OAuthGrantPage;
 import org.keycloak.testsuite.pages.ProceedPage;
 import org.keycloak.testsuite.pages.UpdateAccountInformationPage;
 import org.keycloak.testsuite.pages.VerifyEmailPage;
-import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
-import org.keycloak.testsuite.util.FlowUtil;
 import org.keycloak.testsuite.util.MailServer;
 import org.keycloak.testsuite.util.UserBuilder;
 import org.openqa.selenium.TimeoutException;
+
+import javax.ws.rs.core.UriBuilder;
+import javax.ws.rs.core.UriBuilderException;
+import java.net.URI;
+import java.util.Collections;
+import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
@@ -185,11 +179,6 @@ public abstract class AbstractBaseBrokerTest extends AbstractKeycloakTest {
 
     protected void assertNumFederatedIdentities(String userId, int expected) {
         assertEquals(expected, adminClient.realm(bc.consumerRealmName()).users().get(userId).getFederatedIdentity().size());
-    }
-
-    @Deployment
-    public static WebArchive deploy() {
-        return RunOnServerDeployment.create(BrokerRunOnServerUtil.class, FlowUtil.class, KeycloakTestingClient.class);
     }
 
     protected void logInAsUserInIDP() {

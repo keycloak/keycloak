@@ -16,9 +16,7 @@
  */
 package org.keycloak.testsuite.forms;
 
-import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.graphene.page.Page;
-import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Test;
 import org.keycloak.common.util.Base64;
 import org.keycloak.credential.CredentialModel;
@@ -37,7 +35,6 @@ import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.pages.AccountUpdateProfilePage;
 import org.keycloak.testsuite.pages.LoginPage;
-import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
 import org.keycloak.testsuite.util.UserBuilder;
 
 import javax.crypto.SecretKeyFactory;
@@ -56,11 +53,6 @@ public class PasswordHashingTest extends AbstractTestRealmKeycloakTest {
 
     @Page
     private AccountUpdateProfilePage updateProfilePage;
-
-    @Deployment
-    public static WebArchive deploy() {
-        return RunOnServerDeployment.create(PasswordHashingTest.class, AbstractTestRealmKeycloakTest.class);
-    }
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {

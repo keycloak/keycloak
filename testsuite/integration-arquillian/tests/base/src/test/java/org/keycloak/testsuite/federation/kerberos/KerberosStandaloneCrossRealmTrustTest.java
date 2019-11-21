@@ -17,41 +17,22 @@
 
 package org.keycloak.testsuite.federation.kerberos;
 
-import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.arquillian.container.test.api.TargetsContainer;
-import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.ClassRule;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
-import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.federation.kerberos.CommonKerberosConfig;
 import org.keycloak.federation.kerberos.KerberosConfig;
 import org.keycloak.federation.kerberos.KerberosFederationProviderFactory;
 import org.keycloak.representations.idm.ComponentRepresentation;
-import org.keycloak.testsuite.federation.ldap.AbstractLDAPTest;
-import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
 import org.keycloak.testsuite.util.KerberosRule;
 import org.keycloak.util.ldap.KerberosEmbeddedServer;
-
-import static org.keycloak.testsuite.arquillian.DeploymentTargetModifier.AUTH_SERVER_CURRENT;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class KerberosStandaloneCrossRealmTrustTest extends AbstractKerberosTest {
-
-    @Deployment
-    @TargetsContainer(AUTH_SERVER_CURRENT)
-    public static WebArchive deploy() {
-        return RunOnServerDeployment.create(UserResource.class, AbstractLDAPTest.class, AbstractKerberosTest.class)
-                .addPackages(true,
-                        "org.keycloak.testsuite",
-                        "org.keycloak.testsuite.federation.ldap",
-                        "org.keycloak.testsuite.federation.kerberos");
-    }
-
 
     private static final String PROVIDER_CONFIG_LOCATION = "classpath:kerberos/kerberos-standalone-connection.properties";
 

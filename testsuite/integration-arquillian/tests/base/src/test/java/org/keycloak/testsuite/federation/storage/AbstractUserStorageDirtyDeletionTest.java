@@ -1,5 +1,8 @@
 package org.keycloak.testsuite.federation.storage;
 
+import org.hamcrest.Matchers;
+import org.junit.Before;
+import org.junit.Test;
 import org.keycloak.admin.client.resource.GroupResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.common.util.MultivaluedHashMap;
@@ -12,20 +15,16 @@ import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.testsuite.admin.concurrency.AbstractConcurrencyTest;
 import org.keycloak.testsuite.federation.UserMapStorage;
 import org.keycloak.testsuite.federation.UserMapStorageFactory;
-import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
 import org.keycloak.testsuite.updaters.Creator;
 import org.keycloak.testsuite.util.GroupBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
+
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import org.hamcrest.Matchers;
-import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.shrinkwrap.api.spec.WebArchive;
-import org.junit.Before;
-import org.junit.Test;
+
 import static org.hamcrest.Matchers.hasSize;
 import static org.junit.Assert.assertThat;
 import static org.keycloak.storage.UserStorageProviderModel.IMPORT_ENABLED;
@@ -42,13 +41,6 @@ public abstract class AbstractUserStorageDirtyDeletionTest extends AbstractConcu
     private static final int REMOVED_USERS_COUNT = NUM_USERS / 2;
 
     private List<Creator<UserResource>> createdUsers;
-
-    @Deployment
-    public static WebArchive deploy() {
-        return RunOnServerDeployment.create()
-                .addPackages(true, "org.keycloak.testsuite")
-                .addPackages(true, "org.keycloak.admin.client");
-    }
 
     public static void remove20UsersFromStorageProvider(KeycloakSession session) {
         assertThat(REMOVED_USERS_COUNT, Matchers.lessThan(NUM_USERS));
