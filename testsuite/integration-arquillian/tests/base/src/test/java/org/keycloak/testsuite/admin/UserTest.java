@@ -18,11 +18,9 @@
 package org.keycloak.testsuite.admin;
 
 import org.hamcrest.Matchers;
-import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.arquillian.test.api.ArquillianResource;
-import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
@@ -54,8 +52,6 @@ import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.storage.UserStorageProvider;
-import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
-import org.keycloak.testsuite.federation.DummyUserFederationProvider;
 import org.keycloak.testsuite.federation.DummyUserFederationProviderFactory;
 import org.keycloak.testsuite.page.LoginPasswordUpdatePage;
 import org.keycloak.testsuite.pages.ErrorPage;
@@ -63,7 +59,7 @@ import org.keycloak.testsuite.pages.InfoPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.PageUtils;
 import org.keycloak.testsuite.pages.ProceedPage;
-import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
+import org.keycloak.testsuite.runonserver.RunHelpers;
 import org.keycloak.testsuite.util.AdminEventPaths;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.GreenMailRule;
@@ -76,7 +72,6 @@ import org.keycloak.util.JsonSerialization;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 
-import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
 import javax.ws.rs.ClientErrorException;
 import javax.ws.rs.NotFoundException;
@@ -129,15 +124,6 @@ public class UserTest extends AbstractAdminTest {
 
     @Page
     protected LoginPage loginPage;
-
-    @Deployment
-    public static WebArchive deploy() {
-        return RunOnServerDeployment.create(
-                AbstractAdminTest.class,
-                AbstractTestRealmKeycloakTest.class,
-                DummyUserFederationProviderFactory.class, DummyUserFederationProvider.class,
-                UserResource.class);
-    }
 
     public String createUser() {
         return createUser("user1", "user1@localhost");
@@ -349,13 +335,7 @@ public class UserTest extends AbstractAdminTest {
     }
 
     private CredentialModel fetchCredentials(String username) {
-        return getTestingClient().server(REALM_NAME).fetch(session -> {
-            RealmModel realm = session.getContext().getRealm();
-            UserModel user = session.users().getUserByUsername(username, realm);
-            List<CredentialModel> storedCredentialsByType = session.userCredentialManager().getStoredCredentialsByType(realm, user, CredentialRepresentation.PASSWORD);
-            System.out.println(storedCredentialsByType.size());
-            return storedCredentialsByType.get(0);
-        }, CredentialModel.class);
+        return getTestingClient().server(REALM_NAME).fetch(RunHelpers.fetchCredentials(username));
     }
 
     @Test
@@ -784,7 +764,7 @@ public class UserTest extends AbstractAdminTest {
     }
 
     @Test
-    public void sendResetPasswordEmailSuccess() throws IOException, MessagingException {
+    public void sendResetPasswordEmailSuccess() throws IOException {
         UserRepresentation userRep = new UserRepresentation();
         userRep.setEnabled(true);
         userRep.setUsername("user1");
@@ -831,7 +811,7 @@ public class UserTest extends AbstractAdminTest {
     }
 
     @Test
-    public void sendResetPasswordEmailSuccessTwoLinks() throws IOException, MessagingException {
+    public void sendResetPasswordEmailSuccessTwoLinks() throws IOException {
         UserRepresentation userRep = new UserRepresentation();
         userRep.setEnabled(true);
         userRep.setUsername("user1");
@@ -874,7 +854,7 @@ public class UserTest extends AbstractAdminTest {
     }
 
     @Test
-    public void sendResetPasswordEmailSuccessTwoLinksReverse() throws IOException, MessagingException {
+    public void sendResetPasswordEmailSuccessTwoLinksReverse() throws IOException {
         UserRepresentation userRep = new UserRepresentation();
         userRep.setEnabled(true);
         userRep.setUsername("user1");
@@ -919,7 +899,7 @@ public class UserTest extends AbstractAdminTest {
     }
 
     @Test
-    public void sendResetPasswordEmailSuccessLinkOpenDoesNotExpireWhenOpenedOnly() throws IOException, MessagingException {
+    public void sendResetPasswordEmailSuccessLinkOpenDoesNotExpireWhenOpenedOnly() throws IOException {
         UserRepresentation userRep = new UserRepresentation();
         userRep.setEnabled(true);
         userRep.setUsername("user1");
@@ -962,7 +942,7 @@ public class UserTest extends AbstractAdminTest {
     }
 
     @Test
-    public void sendResetPasswordEmailSuccessTokenShortLifespan() throws IOException, MessagingException {
+    public void sendResetPasswordEmailSuccessTokenShortLifespan() throws IOException {
         UserRepresentation userRep = new UserRepresentation();
         userRep.setEnabled(true);
         userRep.setUsername("user1");
@@ -1004,7 +984,7 @@ public class UserTest extends AbstractAdminTest {
     }
 
     @Test
-    public void sendResetPasswordEmailSuccessWithRecycledAuthSession() throws IOException, MessagingException {
+    public void sendResetPasswordEmailSuccessWithRecycledAuthSession() throws IOException {
         UserRepresentation userRep = new UserRepresentation();
         userRep.setEnabled(true);
         userRep.setUsername("user1");
@@ -1068,7 +1048,7 @@ public class UserTest extends AbstractAdminTest {
     }
 
     @Test
-    public void sendResetPasswordEmailWithRedirect() throws IOException, MessagingException {
+    public void sendResetPasswordEmailWithRedirect() throws IOException {
 
         UserRepresentation userRep = new UserRepresentation();
         userRep.setEnabled(true);
@@ -1137,7 +1117,7 @@ public class UserTest extends AbstractAdminTest {
 
 
     @Test
-    public void sendVerifyEmail() throws IOException, MessagingException {
+    public void sendVerifyEmail() throws IOException {
         UserRepresentation userRep = new UserRepresentation();
         userRep.setUsername("user1");
 

@@ -18,10 +18,8 @@
 package org.keycloak.testsuite.rest;
 
 import org.jboss.resteasy.annotations.cache.NoCache;
-import javax.ws.rs.BadRequestException;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.common.Profile;
-import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.HtmlUtils;
 import org.keycloak.common.util.Time;
 import org.keycloak.component.ComponentModel;
@@ -33,7 +31,6 @@ import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.events.admin.AdminEventQuery;
 import org.keycloak.events.admin.AuthDetails;
 import org.keycloak.events.admin.OperationType;
-import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
@@ -73,7 +70,6 @@ import org.keycloak.testsuite.rest.resource.TestCacheResource;
 import org.keycloak.testsuite.rest.resource.TestJavascriptResource;
 import org.keycloak.testsuite.rest.resource.TestLDAPResource;
 import org.keycloak.testsuite.rest.resource.TestingExportImportResource;
-import org.keycloak.testsuite.runonserver.ModuleUtil;
 import org.keycloak.testsuite.runonserver.FetchOnServer;
 import org.keycloak.testsuite.runonserver.RunOnServer;
 import org.keycloak.testsuite.runonserver.SerializationUtil;
@@ -81,6 +77,7 @@ import org.keycloak.timer.TimerProvider;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.MediaType;
 
+import javax.ws.rs.BadRequestException;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.NotFoundException;
@@ -93,14 +90,12 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Cookie;
 import javax.ws.rs.core.Response;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.net.URI;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -790,8 +785,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
     @Produces(MediaType.TEXT_PLAIN_UTF_8)
     public String runOnServer(String runOnServer) throws Exception {
         try {
-            ClassLoader cl = ModuleUtil.isModules() ? ModuleUtil.getClassLoader() : getClass().getClassLoader();
-            Object r = SerializationUtil.decode(runOnServer, cl);
+            Object r = SerializationUtil.decode(runOnServer, TestClassLoader.getInstance());
 
             if (r instanceof FetchOnServer) {
                 Object result = ((FetchOnServer) r).run(session);
@@ -815,9 +809,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
     public String runModelTestOnServer(@QueryParam("testClassName") String testClassName,
                                        @QueryParam("testMethodName") String testMethodName) throws Exception {
         try {
-            ClassLoader cl = ModuleUtil.isModules() ? ModuleUtil.getClassLoader() : getClass().getClassLoader();
-
-            Class testClass = cl.loadClass(testClassName);
+            Class testClass = TestClassLoader.getInstance().loadClass(testClassName);
             Method testMethod = testClass.getDeclaredMethod(testMethodName, KeycloakSession.class);
 
             Object test = testClass.newInstance();

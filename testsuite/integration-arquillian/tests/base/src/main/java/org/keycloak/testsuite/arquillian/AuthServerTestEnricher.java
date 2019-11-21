@@ -544,6 +544,10 @@ public class AuthServerTestEnricher {
         suiteContext.getServerLogChecker().updateLastCheckedPositionsOfAllFilesToEndOfFile();
     }
 
+    public void startTestClassProvider(@Observes(precedence = 100) BeforeSuite beforeSuite) {
+        new TestClassProvider().start();
+    }
+
     private static final Pattern UNEXPECTED_UNCAUGHT_ERROR = Pattern.compile(
       KeycloakErrorHandler.class.getSimpleName()
         + ".*"

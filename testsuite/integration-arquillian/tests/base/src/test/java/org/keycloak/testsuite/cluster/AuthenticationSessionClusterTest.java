@@ -17,17 +17,9 @@
 
 package org.keycloak.testsuite.cluster;
 
-import java.util.HashSet;
-import java.util.Set;
-
-import javax.ws.rs.core.UriBuilder;
-
 import org.hamcrest.Matchers;
 import org.infinispan.Cache;
-import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.arquillian.container.test.api.TargetsContainer;
 import org.jboss.arquillian.graphene.page.Page;
-import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -38,13 +30,14 @@ import org.keycloak.models.sessions.infinispan.util.InfinispanUtil;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.sessions.StickySessionEncoderProvider;
-import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
-import org.keycloak.testsuite.client.KeycloakTestingClient;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
 import org.keycloak.testsuite.pages.LoginUpdateProfilePage;
-import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
+
+import javax.ws.rs.core.UriBuilder;
+import java.util.HashSet;
+import java.util.Set;
 
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 
@@ -52,18 +45,6 @@ import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class AuthenticationSessionClusterTest extends AbstractClusterTest {
-
-    @Deployment(name = "node0")
-    @TargetsContainer(QUALIFIER_AUTH_SERVER_NODE_1)
-    public static WebArchive deployDC0() {
-        return RunOnServerDeployment.create(
-                AuthenticationSessionClusterTest.class,
-                AbstractClusterTest.class,
-                AbstractTestRealmKeycloakTest.class,
-                KeycloakTestingClient.class
-        );
-    }
-
 
     @Page
     protected LoginPage loginPage;

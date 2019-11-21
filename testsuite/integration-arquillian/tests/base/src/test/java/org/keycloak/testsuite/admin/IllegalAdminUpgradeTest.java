@@ -16,8 +16,6 @@
  */
 package org.keycloak.testsuite.admin;
 
-import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.admin.client.Keycloak;
@@ -35,7 +33,6 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
-import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
 import org.keycloak.testsuite.util.AdminClientUtil;
 
 import javax.ws.rs.ClientErrorException;
@@ -54,11 +51,6 @@ import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
 public class IllegalAdminUpgradeTest extends AbstractKeycloakTest {
 
     public static final String CLIENT_NAME = "application";
-
-    @Deployment
-    public static WebArchive deploy() {
-        return RunOnServerDeployment.create(FineGrainAdminUnitTest.class);
-    }
 
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {

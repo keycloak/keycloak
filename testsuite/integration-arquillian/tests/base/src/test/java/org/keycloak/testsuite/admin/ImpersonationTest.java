@@ -17,11 +17,9 @@
 
 package org.keycloak.testsuite.admin;
 
-import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.resteasy.client.jaxrs.ResteasyClient;
 import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
-import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Before;
@@ -54,7 +52,6 @@ import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
 import org.keycloak.testsuite.auth.page.AuthRealm;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
-import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
 import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.CredentialBuilder;
@@ -111,12 +108,6 @@ public class ImpersonationTest extends AbstractKeycloakTest {
     protected LoginPage loginPage;
 
     private String impersonatedUserId;
-
-    @Deployment
-    public static WebArchive deploy() {
-        return RunOnServerDeployment.create(ImpersonationTest.class, AbstractKeycloakTest.class, UserResource.class)
-                .addPackages(true, "org.keycloak.testsuite", "org.keycloak.admin.client", "org.openqa.selenium");
-    }
 
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {

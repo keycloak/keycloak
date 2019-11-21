@@ -1,32 +1,12 @@
 package org.keycloak.testsuite.federation.storage;
 
-import java.io.File;
-import java.io.IOException;
-import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Calendar;
-import static java.util.Calendar.DAY_OF_WEEK;
-import static java.util.Calendar.HOUR_OF_DAY;
-import static java.util.Calendar.MINUTE;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import javax.ws.rs.NotFoundException;
-import javax.ws.rs.core.Response;
-
 import org.apache.commons.io.FileUtils;
-import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.shrinkwrap.api.spec.WebArchive;
+import org.jboss.arquillian.graphene.page.Page;
 import org.junit.After;
 import org.junit.Assert;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 import org.junit.Before;
 import org.junit.Ignore;
+import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
@@ -37,7 +17,6 @@ import org.keycloak.credential.UserCredentialStoreManager;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
-import static org.keycloak.models.UserModel.RequiredAction.UPDATE_PROFILE;
 import org.keycloak.models.cache.CachedUserModel;
 import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.models.credential.PasswordCredentialModel;
@@ -47,14 +26,9 @@ import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.storage.CacheableStorageProviderModel.CachePolicy;
 import org.keycloak.storage.StorageId;
 import org.keycloak.storage.UserStorageProvider;
-import static org.keycloak.storage.UserStorageProviderModel.CACHE_POLICY;
-import org.keycloak.storage.CacheableStorageProviderModel.CachePolicy;
-import static org.keycloak.storage.UserStorageProviderModel.EVICTION_DAY;
-import static org.keycloak.storage.UserStorageProviderModel.EVICTION_HOUR;
-import static org.keycloak.storage.UserStorageProviderModel.EVICTION_MINUTE;
-import static org.keycloak.storage.UserStorageProviderModel.MAX_LIFESPAN;
 import org.keycloak.testsuite.AbstractAuthTest;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.ModelTest;
@@ -64,18 +38,40 @@ import org.keycloak.testsuite.federation.UserPropertyFileStorageFactory;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.RegisterPage;
 import org.keycloak.testsuite.pages.VerifyEmailPage;
-import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.GreenMailRule;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicReference;
-
-import javax.mail.internet.MimeMessage;
-import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Rule;
 import org.keycloak.testsuite.util.TestCleanup;
 
+import javax.mail.internet.MimeMessage;
+import javax.ws.rs.NotFoundException;
+import javax.ws.rs.core.Response;
+import java.io.File;
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
+
+import static java.util.Calendar.DAY_OF_WEEK;
+import static java.util.Calendar.HOUR_OF_DAY;
+import static java.util.Calendar.MINUTE;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import static org.keycloak.models.UserModel.RequiredAction.UPDATE_PROFILE;
+import static org.keycloak.storage.UserStorageProviderModel.CACHE_POLICY;
+import static org.keycloak.storage.UserStorageProviderModel.EVICTION_DAY;
+import static org.keycloak.storage.UserStorageProviderModel.EVICTION_HOUR;
+import static org.keycloak.storage.UserStorageProviderModel.EVICTION_MINUTE;
 import static org.keycloak.storage.UserStorageProviderModel.IMPORT_ENABLED;
+import static org.keycloak.storage.UserStorageProviderModel.MAX_LIFESPAN;
 import static org.keycloak.testsuite.actions.RequiredActionEmailVerificationTest.getPasswordResetEmailLink;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlDoesntStartWith;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
@@ -462,13 +458,6 @@ public class UserStorageTest extends AbstractAuthTest {
             Assert.assertEquals(1, userModels.size());
             Assert.assertEquals("thor", userModels.get(0).getUsername());
         });
-    }
-
-    @Deployment
-    public static WebArchive deploy() {
-        return RunOnServerDeployment.create(UserResource.class)
-                .addPackages(true, "org.keycloak.testsuite")
-                .addPackages(true, "org.keycloak.admin.client.resource");
     }
 
     private void setDailyEvictionTime(int hour, int minutes) {

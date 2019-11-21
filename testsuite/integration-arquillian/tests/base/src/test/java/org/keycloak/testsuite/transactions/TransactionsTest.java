@@ -17,13 +17,10 @@
 
 package org.keycloak.testsuite.transactions;
 
-import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
-import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
 
 import java.util.List;
 
@@ -31,11 +28,6 @@ import java.util.List;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class TransactionsTest extends AbstractKeycloakTest {
-
-    @Deployment
-    public static WebArchive deploy() {
-        return RunOnServerDeployment.create(TransactionsTest.class);
-    }
 
     @Test
     public void testTransactionActive() {
