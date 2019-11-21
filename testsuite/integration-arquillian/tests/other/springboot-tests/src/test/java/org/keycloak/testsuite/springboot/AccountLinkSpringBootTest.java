@@ -214,7 +214,7 @@ public class AccountLinkSpringBootTest extends AbstractSpringBootTest {
         // now test CSRF with bad hash.
         navigateTo(linkUrl);
 
-        assertThat(driver.getPageSource(), containsString("We're sorry..."));
+        assertThat(driver.getPageSource(), containsString("We are sorry..."));
 
         logoutAll();
 
@@ -529,7 +529,7 @@ public class AccountLinkSpringBootTest extends AbstractSpringBootTest {
 
         assertThat(errorPage.getError(), is(equalTo("You are already authenticated as different user '"
                 + CHILD_USERNAME_1
-                + "' in this session. Please logout first.")));
+                + "' in this session. Please log out first.")));
 
         logoutAll();
 
