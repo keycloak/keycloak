@@ -559,8 +559,15 @@ if (outcome == failed) of /subsystem=microprofile-metrics-smallrye/:read-resourc
     /subsystem=microprofile-metrics-smallrye/:add
     /subsystem=microprofile-metrics-smallrye/:write-attribute(name=security-enabled,value=false)
     /subsystem=microprofile-metrics-smallrye/:write-attribute(name=exposed-subsystems,value=[*])
-    /subsystem=microprofile-metrics-smallrye/:write-attribute(name=prefix,value=${wildfly.metrics.prefix:wildfly})
     echo
+end-if
+
+if (result == "Keycloak") of :read-attribute(name=product-name)
+    echo Adding microprofile-metrics-smallrye subsystem prefix attribute to Keycloak
+    /subsystem=microprofile-metrics-smallrye/:write-attribute(name=prefix,value=${wildfly.metrics.prefix:wildfly})
+else
+    echo Adding microprofile-metrics-smallrye subsystem prefix attribute to RH-SSO
+    /subsystem=microprofile-metrics-smallrye/:write-attribute(name=prefix,value=${wildfly.metrics.prefix:jboss})
 end-if
 
 # Migrate from 6.0.1 to 7.0.0
