@@ -44,7 +44,7 @@ import java.util.List;
  */
 public class ProxyRestrictionType extends ConditionAbstractType {
 
-    protected List<URI> audience = new ArrayList<URI>();
+    protected List<URI> audience = new ArrayList<>();
 
     protected BigInteger count;
 

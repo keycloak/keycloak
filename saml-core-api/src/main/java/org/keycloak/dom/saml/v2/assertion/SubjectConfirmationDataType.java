@@ -59,7 +59,7 @@ public class SubjectConfirmationDataType implements Serializable {
 
     protected String address;
 
-    private final Map<QName, String> otherAttributes = new HashMap<QName, String>();
+    private final Map<QName, String> otherAttributes = new HashMap<>();
 
     private Object anyType;
 

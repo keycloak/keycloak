@@ -44,7 +44,7 @@ import java.util.List;
  */
 public class AttributeStatementType extends StatementAbstractType {
 
-    protected List<ASTChoiceType> attributes = new ArrayList<ASTChoiceType>();
+    protected List<ASTChoiceType> attributes = new ArrayList<>();
 
     /**
      * Add an attribute
