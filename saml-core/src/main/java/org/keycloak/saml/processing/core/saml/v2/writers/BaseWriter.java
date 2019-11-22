@@ -155,7 +155,7 @@ public class BaseWriter {
         // Take care of other attributes such as x500:encoding
         Map<QName, String> otherAttribs = attributeType.getOtherAttributes();
         if (otherAttribs != null) {
-            List<String> nameSpacesDealt = new ArrayList<String>();
+            List<String> nameSpacesDealt = new ArrayList<>();
 
             Iterator<QName> keySet = otherAttribs.keySet().iterator();
             while (keySet != null && keySet.hasNext()) {
