@@ -28,8 +28,6 @@ public interface ErrorCodes {
 
     String AUDIT_MANAGER_NULL = "PL00028: Audit Manager Is Not Set";
 
-    String AUTHENTICATOR_DOES_NOT_HANDLE_ENC = "PL00027: Authenticator does not handle encryption";
-
     String AUTHN_REQUEST_ID_VERIFICATION_FAILED = "PL00104:Authn Request ID verification failed:";
 
     String CLASS_NOT_LOADED = "PL00085: Class Not Loaded:";
@@ -39,8 +37,6 @@ public interface ErrorCodes {
     String DOM_MISSING_DOC_ELEMENT = "PL00098: Missing Document Element:";
 
     String DOM_MISSING_ELEMENT = "PL00099: Missing Element:";
-
-    String ENCRYPTION_PROCESS_FAILURE = "PL00101: Encryption Process Failure:";
 
     String EXPIRED_ASSERTION = "PL00079: Assertion has expired:";
 
@@ -60,13 +56,7 @@ public interface ErrorCodes {
 
     String IDP_AUTH_FAILED = "PL00015: IDP Authentication Failed:";
 
-    String IDP_WEBBROWSER_VALVE_ALREADY_STARTED = "PL00021: IDPWebBrowserSSOValve already Started";
-
     String IDP_WEBBROWSER_VALVE_CONF_FILE_MISSING = "PL00017: Configuration File missing:";
-
-    String IDP_WEBBROWSER_VALVE_NOT_STARTED = "PL00024: IDPWebBrowserSSOValve NotStarted";
-
-    String ILLEGAL_METHOD_CALLED = "PL00020: Illegal Method Called";
 
     String INVALID_ASSERTION = "PL00080: Invalid Assertion:";
 
@@ -96,11 +86,7 @@ public interface ErrorCodes {
 
     String NULL_ARGUMENT = "PL00078: Null Parameter:";
 
-    String NULL_ASSERTION = "PL00054: Assertion is null";
-
     String NULL_ISSUE_INSTANT = "PL00088: Null IssueInstant";
-
-    String NULL_INPUT_STREAM = "PL00060: Input Stream is null";
 
     String NULL_START_ELEMENT = "PL00068: Parser : Start Element is null";
 
@@ -120,10 +106,6 @@ public interface ErrorCodes {
 
     String SAML2STSLM_CONF_FILE_MISSING = "PL00039: SAML2STSLoginModule: Failed to validate assertion: STS configuration file not specified";
 
-    String SAML2STSLM_UNABLE_DECODE_PWD = "PL00047: SAML2STSLoginModule: Unable to decode password:";
-
-    String SERVICE_PROVIDER_CONF_FILE_MISSING = "PL00025: Service Provider:: Configuration File missing:";
-
     String SERVICE_PROVIDER_NOT_CATALINA_RESPONSE = "PL00026: Response was not of type catalina response";
 
     String SERVICE_PROVIDER_SERVER_EXCEPTION = "PL00032: Service Provider :: Server Exception";
@@ -133,8 +115,6 @@ public interface ErrorCodes {
     String SIGNING_PROCESS_FAILURE = "PL00100: Signing Process Failure:";
 
     String STS_CLIENT_PUBLIC_KEY_ERROR = "PL00008: Unable to locate client public key";
-
-    String STS_CONFIGURATION_NOT_SET = "PL00014: Configuration is not set";
 
     String STS_CONFIGURATION_FILE_PARSING_ERROR = "PL00005: Error parsing the configuration file:";
 
@@ -197,11 +177,5 @@ public interface ErrorCodes {
     String WRITER_UNSUPPORTED_ATTRIB_VALUE = "PL00084: Writer: Unsupported Attribute Value:";
 
     String WRONG_TYPE = "PL00095: Wrong type:";
-
-    String SOAP_MESSAGE_DUMP_ERROR = "PL00104: Error while dumping SOAP message:";
-
-    String LOCAL_VALIDATION_SEC_DOMAIN_MUST_BE_SPECIFIED = "PL00105: When using local validation 'localValidationSecurityDomain' must be specified.";
-
-    String COMPRESSION_ENABLED_SAML_CRED = "When compression is enabled, received credential should be SamlCredential, but got ";
 
 }
