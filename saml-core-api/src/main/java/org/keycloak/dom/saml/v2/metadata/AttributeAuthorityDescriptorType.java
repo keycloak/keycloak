@@ -50,15 +50,15 @@ import java.util.List;
 
 public class AttributeAuthorityDescriptorType extends RoleDescriptorType {
 
-    protected List<EndpointType> attributeService = new ArrayList<EndpointType>();
+    protected List<EndpointType> attributeService = new ArrayList<>();
 
-    protected List<EndpointType> assertionIDRequestService = new ArrayList<EndpointType>();
+    protected List<EndpointType> assertionIDRequestService = new ArrayList<>();
 
-    protected List<String> nameIDFormat = new ArrayList<String>();
+    protected List<String> nameIDFormat = new ArrayList<>();
 
-    protected List<String> attributeProfile = new ArrayList<String>();
+    protected List<String> attributeProfile = new ArrayList<>();
 
-    protected List<AttributeType> attribute = new ArrayList<AttributeType>();
+    protected List<AttributeType> attribute = new ArrayList<>();
 
     public AttributeAuthorityDescriptorType(List<String> protocolSupport) {
         super(protocolSupport);

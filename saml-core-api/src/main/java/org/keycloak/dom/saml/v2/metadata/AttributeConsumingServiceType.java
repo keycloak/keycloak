@@ -46,11 +46,11 @@ import java.util.List;
  */
 public class AttributeConsumingServiceType {
 
-    protected List<LocalizedNameType> serviceName = new ArrayList<LocalizedNameType>();
+    protected List<LocalizedNameType> serviceName = new ArrayList<>();
 
-    protected List<LocalizedNameType> serviceDescription = new ArrayList<LocalizedNameType>();
+    protected List<LocalizedNameType> serviceDescription = new ArrayList<>();
 
-    protected List<RequestedAttributeType> requestedAttribute = new ArrayList<RequestedAttributeType>();
+    protected List<RequestedAttributeType> requestedAttribute = new ArrayList<>();
 
     protected int index;
 

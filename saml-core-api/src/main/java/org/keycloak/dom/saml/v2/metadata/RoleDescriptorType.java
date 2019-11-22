@@ -59,11 +59,11 @@ public abstract class RoleDescriptorType extends TypeWithOtherAttributes {
 
     protected ExtensionsType extensions;
 
-    protected List<KeyDescriptorType> keyDescriptor = new ArrayList<KeyDescriptorType>();
+    protected List<KeyDescriptorType> keyDescriptor = new ArrayList<>();
 
     protected OrganizationType organization;
 
-    protected List<ContactType> contactPerson = new ArrayList<ContactType>();
+    protected List<ContactType> contactPerson = new ArrayList<>();
 
     protected String id;
 
@@ -71,7 +71,7 @@ public abstract class RoleDescriptorType extends TypeWithOtherAttributes {
 
     protected Duration cacheDuration;
 
-    protected List<String> protocolSupportEnumeration = new ArrayList<String>();
+    protected List<String> protocolSupportEnumeration = new ArrayList<>();
 
     protected String errorURL;
 

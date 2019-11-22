@@ -45,9 +45,9 @@ import java.util.List;
  */
 public class SPSSODescriptorType extends SSODescriptorType {
 
-    protected List<IndexedEndpointType> assertionConsumerService = new ArrayList<IndexedEndpointType>();
+    protected List<IndexedEndpointType> assertionConsumerService = new ArrayList<>();
 
-    protected List<AttributeConsumingServiceType> attributeConsumingService = new ArrayList<AttributeConsumingServiceType>();
+    protected List<AttributeConsumingServiceType> attributeConsumingService = new ArrayList<>();
 
     protected boolean authnRequestsSigned = false;
 
