@@ -17,6 +17,7 @@
 package org.keycloak.services.managers;
 
 import org.keycloak.Config;
+import org.keycloak.common.Profile;
 import org.keycloak.common.enums.SslRequired;
 import org.keycloak.migration.MigrationModelManager;
 import org.keycloak.models.AccountRoles;
@@ -428,6 +429,13 @@ public class RealmManager {
             manageAccountLinks.setDescription("${role_" + AccountRoles.MANAGE_ACCOUNT_LINKS + "}");
             RoleModel manageAccount = accountClient.getRole(AccountRoles.MANAGE_ACCOUNT);
             manageAccount.addCompositeRole(manageAccountLinks);
+            RoleModel viewAppRole = accountClient.addRole(AccountRoles.VIEW_APPLICATIONS);
+            viewAppRole.setDescription("${role_" + AccountRoles.VIEW_APPLICATIONS + "}");
+            RoleModel viewConsentRole = accountClient.addRole(AccountRoles.VIEW_CONSENT);
+            viewConsentRole.setDescription("${role_" + AccountRoles.VIEW_CONSENT + "}");
+            RoleModel manageConsentRole = accountClient.addRole(AccountRoles.MANAGE_CONSENT);
+            manageConsentRole.setDescription("${role_" + AccountRoles.MANAGE_CONSENT + "}");
+            manageConsentRole.addCompositeRole(viewConsentRole);
 
             ClientModel accountConsoleClient = realm.getClientByClientId(Constants.ACCOUNT_CONSOLE_CLIENT_ID);
             if (accountConsoleClient == null) {

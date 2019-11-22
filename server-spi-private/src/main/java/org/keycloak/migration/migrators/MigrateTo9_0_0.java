@@ -25,6 +25,7 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.RealmRepresentation;
 
@@ -45,7 +46,7 @@ public class MigrateTo9_0_0 implements Migration {
 
     @Override
     public void migrate(KeycloakSession session) {
-        session.realms().getRealms().stream().forEach(realm -> addAccountConsoleClient(realm));
+        session.realms().getRealms().stream().forEach(realm -> migrateRealmCommon(realm));
     }
 
     @Override
@@ -55,6 +56,22 @@ public class MigrateTo9_0_0 implements Migration {
 
     protected void migrateRealmCommon(RealmModel realm) {
         addAccountConsoleClient(realm);
+        addAccountApiRoles(realm);
+    }
+
+    private void addAccountApiRoles(RealmModel realm) {
+        ClientModel accountClient = realm.getClientByClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID);
+        RoleModel viewAppRole = accountClient.addRole(AccountRoles.VIEW_APPLICATIONS);
+        viewAppRole.setDescription("${role_" + AccountRoles.VIEW_APPLICATIONS + "}");
+        LOG.debugf("Added the role %s to the '%s' client.", AccountRoles.VIEW_APPLICATIONS, Constants.ACCOUNT_MANAGEMENT_CLIENT_ID);
+        RoleModel viewConsentRole = accountClient.addRole(AccountRoles.VIEW_CONSENT);
+        viewConsentRole.setDescription("${role_" + AccountRoles.VIEW_CONSENT + "}");
+        LOG.debugf("Added the role %s to the '%s' client.", AccountRoles.VIEW_CONSENT, Constants.ACCOUNT_MANAGEMENT_CLIENT_ID);
+        RoleModel manageConsentRole = accountClient.addRole(AccountRoles.MANAGE_CONSENT);
+        manageConsentRole.setDescription("${role_" + AccountRoles.MANAGE_CONSENT + "}");
+        LOG.debugf("Added the role %s to the '%s' client.", AccountRoles.MANAGE_CONSENT, Constants.ACCOUNT_MANAGEMENT_CLIENT_ID);
+        manageConsentRole.addCompositeRole(viewConsentRole);
+        LOG.debugf("Added the %s role as a composite role to %s", AccountRoles.VIEW_CONSENT, AccountRoles.MANAGE_CONSENT);
     }
 
     protected void addAccountConsoleClient(RealmModel realm) {
