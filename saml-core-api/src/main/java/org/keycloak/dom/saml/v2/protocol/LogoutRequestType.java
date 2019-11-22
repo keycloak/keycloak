@@ -59,7 +59,7 @@ public class LogoutRequestType extends RequestAbstractType {
 
     protected EncryptedElementType encryptedID;
 
-    protected List<String> sessionIndex = new ArrayList<String>();
+    protected List<String> sessionIndex = new ArrayList<>();
 
     protected String reason;
 

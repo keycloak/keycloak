@@ -43,7 +43,7 @@ import java.util.List;
  */
 public class IDPListType {
 
-    protected List<IDPEntryType> idpEntry = new ArrayList<IDPEntryType>();
+    protected List<IDPEntryType> idpEntry = new ArrayList<>();
     protected URI getComplete;
 
     /**
