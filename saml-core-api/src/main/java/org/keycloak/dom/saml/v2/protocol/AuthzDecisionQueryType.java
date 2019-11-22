@@ -48,7 +48,7 @@ import java.util.List;
  */
 public class AuthzDecisionQueryType extends SubjectQueryAbstractType {
 
-    protected List<ActionType> action = new ArrayList<ActionType>();
+    protected List<ActionType> action = new ArrayList<>();
 
     protected EvidenceType evidence;
 

@@ -46,7 +46,7 @@ import java.util.List;
  */
 public class ResponseType extends StatusResponseType {
 
-    protected List<RTChoiceType> assertions = new ArrayList<ResponseType.RTChoiceType>();
+    protected List<RTChoiceType> assertions = new ArrayList<>();
 
     public ResponseType(String id, XMLGregorianCalendar issueInstant) {
         super(id, issueInstant);
