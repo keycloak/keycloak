@@ -35,7 +35,7 @@ import java.util.List;
  */
 public class SAML11SubjectConfirmationType {
 
-    protected List<URI> confirmationMethod = new ArrayList<URI>();
+    protected List<URI> confirmationMethod = new ArrayList<>();
 
     protected Object subjectConfirmationData;
 
