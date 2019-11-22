@@ -44,7 +44,7 @@ import java.util.List;
  */
 public class ObjectType {
 
-    protected List<Object> content = new ArrayList<Object>();
+    protected List<Object> content = new ArrayList<>();
     protected String id;
     protected String mimeType;
     protected String encoding;

@@ -48,7 +48,7 @@ import java.util.List;
  */
 public class X509DataType {
 
-    protected List<Object> x509IssuerSerialOrX509SKIOrX509SubjectName = new ArrayList<Object>();
+    protected List<Object> x509IssuerSerialOrX509SKIOrX509SubjectName = new ArrayList<>();
 
     public void add(Object obj) {
         this.x509IssuerSerialOrX509SKIOrX509SubjectName.add(obj);
