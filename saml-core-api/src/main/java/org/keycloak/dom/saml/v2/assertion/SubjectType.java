@@ -51,7 +51,7 @@ import java.util.List;
  */
 public class SubjectType implements Serializable {
 
-    protected List<SubjectConfirmationType> subjectConfirmation = new ArrayList<SubjectConfirmationType>();
+    protected List<SubjectConfirmationType> subjectConfirmation = new ArrayList<>();
 
     protected STSubType subType;
 
