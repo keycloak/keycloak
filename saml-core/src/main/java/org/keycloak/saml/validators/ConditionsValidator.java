@@ -41,7 +41,7 @@ public class ConditionsValidator {
 
     private static final Logger LOG = Logger.getLogger(ConditionsValidator.class);
 
-    public static enum Result { 
+    public enum Result {
         VALID           { @Override public Result joinResult(Result otherResult) { return otherResult; } },
         INDETERMINATE   { @Override public Result joinResult(Result otherResult) { return otherResult == INVALID ? INVALID : INDETERMINATE; } },
         INVALID         { @Override public Result joinResult(Result otherResult) { return INVALID; } };
