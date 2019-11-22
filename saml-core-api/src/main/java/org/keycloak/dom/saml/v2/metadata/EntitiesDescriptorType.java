@@ -58,7 +58,7 @@ public class EntitiesDescriptorType {
 
     protected ExtensionsType extensions;
 
-    protected List<Object> entityDescriptor = new ArrayList<Object>();
+    protected List<Object> entityDescriptor = new ArrayList<>();
 
     protected XMLGregorianCalendar validUntil;
 

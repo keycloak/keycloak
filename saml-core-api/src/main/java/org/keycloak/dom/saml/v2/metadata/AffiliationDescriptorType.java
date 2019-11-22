@@ -126,7 +126,7 @@ public class AffiliationDescriptorType extends TypeWithOtherAttributes {
      */
     public List<String> getAffiliateMember() {
         if (affiliateMember == null) {
-            affiliateMember = new ArrayList<String>();
+            affiliateMember = new ArrayList<>();
         }
         return this.affiliateMember;
     }
@@ -153,7 +153,7 @@ public class AffiliationDescriptorType extends TypeWithOtherAttributes {
      */
     public List<KeyDescriptorType> getKeyDescriptor() {
         if (keyDescriptor == null) {
-            keyDescriptor = new ArrayList<KeyDescriptorType>();
+            keyDescriptor = new ArrayList<>();
         }
         return this.keyDescriptor;
     }

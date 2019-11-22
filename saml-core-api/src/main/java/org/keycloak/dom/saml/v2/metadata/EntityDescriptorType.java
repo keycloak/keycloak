@@ -67,7 +67,7 @@ public class EntityDescriptorType extends TypeWithOtherAttributes {
 
     public static class EDTChoiceType {
 
-        private List<EDTDescriptorChoiceType> descriptors = new ArrayList<EntityDescriptorType.EDTDescriptorChoiceType>();
+        private List<EDTDescriptorChoiceType> descriptors = new ArrayList<>();
 
         private AffiliationDescriptorType affiliationDescriptor;
 
@@ -88,7 +88,7 @@ public class EntityDescriptorType extends TypeWithOtherAttributes {
         }
 
         public static EDTChoiceType oneValue(EDTDescriptorChoiceType edt) {
-            List<EDTDescriptorChoiceType> aList = new ArrayList<EntityDescriptorType.EDTDescriptorChoiceType>();
+            List<EDTDescriptorChoiceType> aList = new ArrayList<>();
             aList.add(edt);
             return new EDTChoiceType(aList);
         }
@@ -160,11 +160,11 @@ public class EntityDescriptorType extends TypeWithOtherAttributes {
 
     protected ExtensionsType extensions;
 
-    protected List<EDTChoiceType> choiceType = new ArrayList<EntityDescriptorType.EDTChoiceType>();
+    protected List<EDTChoiceType> choiceType = new ArrayList<>();
 
     protected OrganizationType organization;
 
-    protected List<ContactType> contactPerson = new ArrayList<ContactType>();
+    protected List<ContactType> contactPerson = new ArrayList<>();
 
     protected List<AdditionalMetadataLocationType> additionalMetadataLocation = new ArrayList<AdditionalMetadataLocationType>();
 
