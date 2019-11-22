@@ -33,6 +33,7 @@ import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.common.constants.KerberosConstants;
 import org.keycloak.component.PrioritizedComponentModel;
 import org.keycloak.keys.KeyProvider;
+import org.keycloak.models.AccountRoles;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.Constants;
@@ -278,6 +279,25 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         testAlwaysDisplayInConsole();
         testFirstBrokerLoginFlowMigrated(masterRealm);
         testFirstBrokerLoginFlowMigrated(migrationRealm);
+        testAccountClient(masterRealm);
+        testAccountClient(migrationRealm);
+    }
+
+    private void testAccountClient(RealmResource realm) {
+        ClientRepresentation accountClient = realm.clients().findByClientId(ACCOUNT_MANAGEMENT_CLIENT_ID).get(0);
+
+        ClientResource accountResource = realm.clients().get(accountClient.getId());
+        RoleRepresentation viewAppRole = accountResource.roles().get(AccountRoles.VIEW_APPLICATIONS).toRepresentation();
+        assertNotNull(viewAppRole);
+        RoleRepresentation viewConsentRole = accountResource.roles().get(AccountRoles.VIEW_CONSENT).toRepresentation();
+        assertNotNull(viewConsentRole);
+        RoleResource manageConsentResource = accountResource.roles().get(AccountRoles.MANAGE_CONSENT);
+        RoleRepresentation manageConsentRole = manageConsentResource.toRepresentation();
+        assertNotNull(manageConsentRole);
+        assertTrue(manageConsentRole.isComposite());
+        Set<RoleRepresentation> composites = manageConsentResource.getRoleComposites();
+        assertEquals(1, composites.size());
+        assertEquals(viewConsentRole.getId(), composites.iterator().next().getId());
     }
 
     private void testAdminClientUrls(RealmResource realm) {
