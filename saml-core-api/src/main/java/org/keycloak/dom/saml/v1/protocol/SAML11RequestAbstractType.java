@@ -42,7 +42,7 @@ public abstract class SAML11RequestAbstractType extends CommonRequestAbstractTyp
 
     protected int minorVersion = 1;
 
-    protected List<QName> respondWith = new ArrayList<QName>();
+    protected List<QName> respondWith = new ArrayList<>();
 
     public SAML11RequestAbstractType(String id, XMLGregorianCalendar issueInstant) {
         super(id, issueInstant);

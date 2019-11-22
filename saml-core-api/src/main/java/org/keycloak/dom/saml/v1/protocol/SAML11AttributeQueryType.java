@@ -35,7 +35,7 @@ import java.util.List;
  */
 public class SAML11AttributeQueryType extends SAML11SubjectQueryAbstractType {
 
-    protected List<SAML11AttributeDesignatorType> attributeDesignator = new ArrayList<SAML11AttributeDesignatorType>();
+    protected List<SAML11AttributeDesignatorType> attributeDesignator = new ArrayList<>();
 
     protected URI resource;
 
