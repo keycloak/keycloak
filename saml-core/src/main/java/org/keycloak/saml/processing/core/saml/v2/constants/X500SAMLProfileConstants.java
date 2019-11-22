@@ -134,7 +134,7 @@ public enum X500SAMLProfileConstants {
             lookup.put(s.friendlyName, s.uri);
     }
 
-    private X500SAMLProfileConstants(String friendlyName, String uristr) {
+    X500SAMLProfileConstants(String friendlyName, String uristr) {
         this.uri = uristr;
         this.friendlyName = friendlyName;
     }

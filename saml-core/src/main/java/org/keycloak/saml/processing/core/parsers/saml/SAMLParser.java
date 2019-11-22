@@ -64,7 +64,7 @@ public class SAMLParser extends AbstractParser {
 
     // Since we have to support JDK 7, no lambdas are available
     private interface ParserFactory {
-        public StaxParser create();
+        StaxParser create();
     }
     private static final Map<QName, ParserFactory> PARSERS = new HashMap<>();
 
