@@ -355,11 +355,6 @@ adapter::
 responseType::
     Response type sent to {project_name} with login requests. This is determined based on the flow value used during initialization, but can be overridden by setting this value.
 
-pkceMethod::
-    The method for Proof Key Code Exchange (https://tools.ietf.org/html/rfc7636[PKCE]) to use. Configuring this value enables the PKCE mechanism.
-    Available options:
-    * "S256" - The SHA256 based PKCE method
-
 ===== Methods
 
 ====== init(options)
@@ -381,6 +376,8 @@ Options is an Object, where:
 * flow - Set the OpenID Connect flow. Valid values are standard, implicit or hybrid.
 * promiseType - If set to `native` all methods returning a promise will return a native JavaScript promise. If not set will return Keycloak specific promise objects.
 * enableLogging - Enables logging messages from Keycloak to the console (default is false).
+* pkceMethod - The method for Proof Key Code Exchange (https://tools.ietf.org/html/rfc7636[PKCE]) to use. Configuring this value enables the PKCE mechanism. Available options:
+    - "S256" - The SHA256 based PKCE method
 
 Returns a promise that resolves when initialization completes.
 
