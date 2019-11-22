@@ -125,4 +125,9 @@ public class ClientAttributeUpdater extends ServerResourceUpdater<ClientAttribut
         rep.setAdminUrl(adminUrl);
         return this;
     }
+
+    public ClientAttributeUpdater addDefaultClientScope(String clientScope) {
+        rep.getDefaultClientScopes().add(clientScope);
+        return this;
+    }
 }
