@@ -46,7 +46,7 @@ public class SignedInfoType {
 
     protected CanonicalizationMethodType canonicalizationMethod;
     protected SignatureMethodType signatureMethod;
-    protected List<ReferenceType> reference = new ArrayList<ReferenceType>();
+    protected List<ReferenceType> reference = new ArrayList<>();
     protected String id;
 
     /**

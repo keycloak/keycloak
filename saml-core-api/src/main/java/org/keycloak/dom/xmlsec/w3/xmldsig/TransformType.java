@@ -44,7 +44,7 @@ import java.util.List;
  */
 public class TransformType {
 
-    protected List<Object> content = new ArrayList<Object>();
+    protected List<Object> content = new ArrayList<>();
     protected URI algorithm;
 
     public TransformType(URI algorithm) {

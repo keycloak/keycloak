@@ -47,7 +47,7 @@ public class EncryptionPropertyType {
 
     protected URI target;
     protected String id;
-    private Map<QName, String> otherAttributes = new HashMap<QName, String>();
+    private Map<QName, String> otherAttributes = new HashMap<>();
 
     /**
      * Gets the value of the target property.

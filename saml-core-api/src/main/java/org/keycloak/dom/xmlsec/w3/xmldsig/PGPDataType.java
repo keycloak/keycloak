@@ -49,7 +49,7 @@ import java.util.List;
  */
 public class PGPDataType {
 
-    protected List<Object> content = new ArrayList<Object>();
+    protected List<Object> content = new ArrayList<>();
 
     public void add(Object obj) {
         this.content.add(obj);
