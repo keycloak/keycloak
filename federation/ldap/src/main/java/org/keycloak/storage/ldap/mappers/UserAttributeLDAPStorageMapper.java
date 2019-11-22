@@ -132,12 +132,6 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
             // we have java property on UserModel. Assuming we support just properties of simple types
             Object attrValue = userModelProperty.getValue(localUser);
 
-            if (Boolean.class.equals(userModelProperty.getJavaClass()) || boolean.class.equals(userModelProperty.getJavaClass())) {
-		attrValue = false;
-		if (attrValue.equals("TRUE")) {
-		    attrValue = true;
-		}
-	    }
             if (attrValue == null) {
                 if (isMandatoryInLdap) {
                     ldapUser.setSingleAttribute(ldapAttrName, LDAPConstants.EMPTY_ATTRIBUTE_VALUE);
@@ -483,11 +477,7 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
             if (String.class.equals(clazz)) {
                 userModelProperty.setValue(user, ldapAttrValue);
             } else if (Boolean.class.equals(clazz) || boolean.class.equals(clazz)) {
-   		Boolean boolVal = false;
-                if (ldapAttrValue.equals("TRUE")) {
-                   boolVal = true;
-                }
-                //Boolean boolVal = Boolean.valueOf(ldapAttrValue);
+                Boolean boolVal = Boolean.valueOf(ldapAttrValue);
                 userModelProperty.setValue(user, boolVal);
             } else {
                 logger.warnf("Don't know how to set the property '%s' on user '%s' . Value of LDAP attribute is '%s' ", userModelProperty.getName(), user.getUsername(), ldapAttrValue.toString());
