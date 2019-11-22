@@ -79,7 +79,7 @@ public class GoverningAgreementsType {
      */
     public List<GoverningAgreementRefType> getGoverningAgreementRef() {
         if (governingAgreementRef == null) {
-            governingAgreementRef = new ArrayList<GoverningAgreementRefType>();
+            governingAgreementRef = new ArrayList<>();
         }
         return this.governingAgreementRef;
     }

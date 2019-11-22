@@ -100,7 +100,7 @@ public class SecurityAuditType {
      */
     public List<ExtensionType> getExtension() {
         if (extension == null) {
-            extension = new ArrayList<ExtensionType>();
+            extension = new ArrayList<>();
         }
         return this.extension;
     }
