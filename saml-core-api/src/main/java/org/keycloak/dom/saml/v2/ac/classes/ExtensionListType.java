@@ -28,7 +28,7 @@ import java.util.List;
  */
 public class ExtensionListType {
 
-    protected List<ExtensionType> content = new ArrayList<ExtensionType>();
+    protected List<ExtensionType> content = new ArrayList<>();
 
     public void add(ExtensionType obj) {
         this.content.add(obj);

@@ -43,7 +43,7 @@ import java.util.List;
  */
 public class GoverningAgreementsType {
 
-    protected List<GoverningAgreementRefType> governingAgreementRef = new ArrayList<GoverningAgreementRefType>();
+    protected List<GoverningAgreementRefType> governingAgreementRef = new ArrayList<>();
 
     public void add(GoverningAgreementRefType gov) {
         this.governingAgreementRef.add(gov);
