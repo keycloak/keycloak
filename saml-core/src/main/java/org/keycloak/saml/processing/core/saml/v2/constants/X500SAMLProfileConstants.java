@@ -127,7 +127,7 @@ public enum X500SAMLProfileConstants {
     private String friendlyName = null;
     private String uri = null;
 
-    private static final Map<String, String> lookup = new HashMap<String, String>();
+    private static final Map<String, String> lookup = new HashMap<>();
 
     static {
         for (X500SAMLProfileConstants s : EnumSet.allOf(X500SAMLProfileConstants.class))

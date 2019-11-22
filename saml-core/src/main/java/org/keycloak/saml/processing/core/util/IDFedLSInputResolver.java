@@ -109,7 +109,7 @@ public class IDFedLSInputResolver implements LSResourceResolver {
     }
 
     public static Collection<String> schemas() {
-        Collection<String> schemaValues = new HashSet<String>(schemaLocationMap.values());
+        Collection<String> schemaValues = new HashSet<>(schemaLocationMap.values());
         schemaValues.remove("schema/w3c/xmlschema/datatypes.dtd");
         schemaValues.remove("schema/w3c/xmlschema/XMLSchema.dtd");
         logger.info("Considered the schemas:" + schemaValues);
