@@ -18,7 +18,6 @@ package org.keycloak.storage.federated;
 
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserModel;
 
 import java.util.List;
 

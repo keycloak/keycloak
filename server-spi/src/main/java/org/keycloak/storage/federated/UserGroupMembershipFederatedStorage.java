@@ -18,7 +18,6 @@ package org.keycloak.storage.federated;
 
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserModel;
 
 import java.util.List;
 import java.util.Set;

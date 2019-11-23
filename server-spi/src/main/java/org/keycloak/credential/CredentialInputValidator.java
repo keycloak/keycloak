@@ -19,8 +19,6 @@ package org.keycloak.credential;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 
-import java.util.List;
-
 /**
  * Implentations of this interface can validate CredentialInput, i.e. verify a password.
  * UserStorageProviders and CredentialProviders can implement this interface.
