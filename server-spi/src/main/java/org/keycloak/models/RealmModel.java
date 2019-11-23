@@ -328,8 +328,8 @@ public interface RealmModel extends RoleContainerModel {
     IdentityProviderMapperModel addIdentityProviderMapper(IdentityProviderMapperModel model);
     void removeIdentityProviderMapper(IdentityProviderMapperModel mapping);
     void updateIdentityProviderMapper(IdentityProviderMapperModel mapping);
-    public IdentityProviderMapperModel getIdentityProviderMapperById(String id);
-    public IdentityProviderMapperModel getIdentityProviderMapperByName(String brokerAlias, String name);
+    IdentityProviderMapperModel getIdentityProviderMapperById(String id);
+    IdentityProviderMapperModel getIdentityProviderMapperByName(String brokerAlias, String name);
 
 
     /**

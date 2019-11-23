@@ -9,8 +9,8 @@ import java.io.IOException;
 
 public class PasswordCredentialModel extends CredentialModel {
 
-    public final static String TYPE = "password";
-    public final static String PASSWORD_HISTORY = "password-history";
+    public static final String TYPE = "password";
+    public static final String PASSWORD_HISTORY = "password-history";
 
     private final PasswordCredentialData credentialData;
     private final PasswordSecretData secretData;

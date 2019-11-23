@@ -31,7 +31,7 @@ import org.keycloak.util.JsonSerialization;
  */
 public class WebAuthnCredentialModel extends CredentialModel {
 
-    public final static String TYPE = "webauthn";
+    public static final String TYPE = "webauthn";
 
     private final WebAuthnCredentialData credentialData;
     private final WebAuthnSecretData secretData;
