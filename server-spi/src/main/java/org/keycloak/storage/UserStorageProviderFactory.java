@@ -78,7 +78,7 @@ public interface UserStorageProviderFactory<T extends UserStorageProvider> exten
 
     @Override
     default List<ProviderConfigProperty> getConfigProperties() {
-        return Collections.EMPTY_LIST;
+        return Collections.emptyList();
     }
 
     @Override
