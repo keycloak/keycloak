@@ -79,7 +79,7 @@ public class RequiredCredentialModel implements Serializable {
     public static final RequiredCredentialModel KERBEROS;
 
     static {
-        Map<String, RequiredCredentialModel> map = new HashMap<String, RequiredCredentialModel>();
+        Map<String, RequiredCredentialModel> map = new HashMap<>();
         PASSWORD = new RequiredCredentialModel();
         PASSWORD.setType(PasswordCredentialModel.TYPE);
         PASSWORD.setInput(true);
