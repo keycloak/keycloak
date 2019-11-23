@@ -31,27 +31,27 @@ import org.keycloak.models.KeycloakSessionFactory;
  */
 public interface ProviderFactory<T extends Provider> {
 
-    public T create(KeycloakSession session);
+    T create(KeycloakSession session);
 
     /**
      * Only called once when the factory is first created.  This config is pulled from keycloak_server.json
      *
      * @param config
      */
-    public void init(Config.Scope config);
+    void init(Config.Scope config);
 
     /**
      * Called after all provider factories have been initialized
      */
-    public void postInit(KeycloakSessionFactory factory);
+    void postInit(KeycloakSessionFactory factory);
 
     /**
      * This is called when the server shuts down.
      *
      */
-    public void close();
+    void close();
 
-    public String getId();
+    String getId();
 
     default int order() {
         return 0;

@@ -12,10 +12,10 @@ import java.io.IOException;
 
 public class OTPCredentialModel extends CredentialModel {
 
-    public final static String TYPE = "otp";
+    public static final String TYPE = "otp";
 
-    public final static String TOTP = "totp";
-    public final static String HOTP = "hotp";
+    public static final String TOTP = "totp";
+    public static final String HOTP = "hotp";
 
     private final OTPCredentialData credentialData;
     private final OTPSecretData secretData;
