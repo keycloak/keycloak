@@ -18,9 +18,6 @@
 
 package org.keycloak.models.cache.authorization;
 
-import org.keycloak.authorization.AuthorizationProvider;
-import org.keycloak.authorization.store.StoreFactory;
-import org.keycloak.models.KeycloakSession;
 import org.keycloak.provider.ProviderFactory;
 
 /**
