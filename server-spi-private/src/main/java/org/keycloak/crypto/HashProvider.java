@@ -17,7 +17,7 @@
 
 package org.keycloak.crypto;
 
-import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 
 import org.keycloak.provider.Provider;
 
@@ -28,12 +28,8 @@ public interface HashProvider extends Provider {
 
 
     default byte[] hash(String input) throws HashException {
-        try {
-            byte[] inputBytes = input.getBytes("UTF-8");
-            return hash(inputBytes);
-        } catch (UnsupportedEncodingException e) {
-            throw new HashException("Unsupported encoding when trying to hash", e);
-        }
+        byte[] inputBytes = input.getBytes(StandardCharsets.UTF_8);
+        return hash(inputBytes);
     }
 
 
