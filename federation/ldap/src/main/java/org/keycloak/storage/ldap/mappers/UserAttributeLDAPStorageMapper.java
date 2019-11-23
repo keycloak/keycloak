@@ -139,11 +139,11 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
                     ldapUser.setAttribute(ldapAttrName, new LinkedHashSet<String>());
                 }
             } else {
-            	if (Boolean.class.equals(userModelProperty.getJavaClass()) || boolean.class.equals(userModelProperty.getJavaClass())) {
-              	    ldapUser.setSingleBooleanAttribute(ldapAttrName, (Boolean)attrValue);
-		} else {
-              	    ldapUser.setSingleAttribute(ldapAttrName, attrValue.toString());
-		}
+                if (Boolean.class.equals(userModelProperty.getJavaClass()) || boolean.class.equals(userModelProperty.getJavaClass())) {
+                    ldapUser.setSingleBooleanAttribute(ldapAttrName, (Boolean)attrValue);
+                } else {
+                    ldapUser.setSingleAttribute(ldapAttrName, attrValue.toString());
+               }
             }
         } else {
 
@@ -286,7 +286,7 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
                         } else if (value instanceof String) {
                             ldapUser.setSingleAttribute(ldapAttrName, (String) value);
                         } else if (value instanceof Boolean) {
-              	    	    ldapUser.setSingleBooleanAttribute(ldapAttrName, (Boolean)value);
+                            ldapUser.setSingleBooleanAttribute(ldapAttrName, (Boolean)value);
                         } else {
                             List<String> asList = (List<String>) value;
                             if (asList.isEmpty() && isMandatoryInLdap) {
@@ -469,7 +469,7 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
                 userModelProperty.setValue(user, false);
             } else {
                 userModelProperty.setValue(user, null);
-            }	
+            }
             userModelProperty.setValue(user, null);
         } else {
             Class<Object> clazz = userModelProperty.getJavaClass();

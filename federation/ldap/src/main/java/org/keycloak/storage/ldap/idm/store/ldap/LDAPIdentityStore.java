@@ -427,12 +427,12 @@ public class LDAPIdentityStore implements IdentityStore {
                             String attrVal = Base64.encodeBytes((byte[]) val);
                             attrValues.add(attrVal);
                         } if (val instanceof Boolean) { //Boolean
-			    Boolean attrVal = (Boolean)val;
+                            Boolean attrVal = (Boolean)val;
                             attrValues.add("FALSE");
-		    	    if (attrVal) {
-		        	attrValues.add("TRUE");
-	    	   	    }
-			}else { // String
+                            if (attrVal) {
+                                attrValues.add("TRUE");
+                            }
+                        } else { // String
                             String attrVal = val.toString().trim();
                             attrValues.add(attrVal);
                         }

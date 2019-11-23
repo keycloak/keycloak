@@ -104,11 +104,11 @@ public class LDAPObject {
 
     public void setSingleBooleanAttribute(String attributeName, Boolean attributeValue) {
         Set<String> asSet = new LinkedHashSet<>();
-	if (attributeValue) {
+        if (attributeValue) {
             asSet.add("TRUE");
-	} else {
+        } else {
             asSet.add("FALSE");
-	}
+        }
         setAttribute(attributeName, asSet);
     }
 
