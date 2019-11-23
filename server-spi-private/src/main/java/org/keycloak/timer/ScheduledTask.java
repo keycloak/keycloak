@@ -24,6 +24,6 @@ import org.keycloak.models.KeycloakSession;
  */
 public interface ScheduledTask {
 
-    public void run(KeycloakSession session);
+    void run(KeycloakSession session);
 
 }

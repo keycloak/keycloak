@@ -25,8 +25,8 @@ import org.keycloak.provider.Provider;
  */
 public interface EventListenerProvider extends Provider {
 
-    public void onEvent(Event event);
+    void onEvent(Event event);
 
-    public void onEvent(AdminEvent event, boolean includeRepresentation);
+    void onEvent(AdminEvent event, boolean includeRepresentation);
 
 }
