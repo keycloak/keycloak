@@ -40,7 +40,7 @@ public interface DBLockProvider extends Provider {
     /**
      * Lock namespace to have different lock types or contexts.
      */
-    public enum Namespace {
+    enum Namespace {
 
         DATABASE(1),
         KEYCLOAK_BOOT(1000),
@@ -48,7 +48,7 @@ public interface DBLockProvider extends Provider {
 
         private final int id;
 
-        private Namespace(int id) {
+        Namespace(int id) {
             this.id = id;
         }
 
