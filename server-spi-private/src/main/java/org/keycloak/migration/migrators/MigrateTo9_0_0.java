@@ -20,8 +20,6 @@ package org.keycloak.migration.migrators;
 import org.jboss.logging.Logger;
 import org.keycloak.migration.ModelVersion;
 import org.keycloak.models.AccountRoles;
-import org.keycloak.models.AuthenticationExecutionModel;
-import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
@@ -30,7 +28,6 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.RealmRepresentation;
 
-import java.util.Collections;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

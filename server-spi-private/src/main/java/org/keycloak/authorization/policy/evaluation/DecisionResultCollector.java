@@ -18,11 +18,6 @@
 
 package org.keycloak.authorization.policy.evaluation;
 
-import java.util.Collection;
-import java.util.Map;
-
-import org.keycloak.authorization.permission.ResourcePermission;
-
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
