@@ -252,7 +252,7 @@ public class InMemoryUserAdapter implements UserModel {
 
     @Override
     public Set<GroupModel> getGroups() {
-        if (groupIds.size() == 0) return Collections.EMPTY_SET;
+        if (groupIds.isEmpty()) return Collections.emptySet();
         Set<GroupModel> groups = new HashSet<>();
         for (String id : groupIds) {
             groups.add(realm.getGroupById(id));
@@ -311,7 +311,7 @@ public class InMemoryUserAdapter implements UserModel {
         Set<RoleModel> allRoles = getRoleMappings();
 
         // Filter to retrieve just realm roles
-        Set<RoleModel> realmRoles = new HashSet<RoleModel>();
+        Set<RoleModel> realmRoles = new HashSet<>();
         for (RoleModel role : allRoles) {
             if (role.getContainer() instanceof RealmModel) {
                 realmRoles.add(role);
@@ -322,7 +322,7 @@ public class InMemoryUserAdapter implements UserModel {
 
     @Override
     public Set<RoleModel> getClientRoleMappings(ClientModel app) {
-        Set<RoleModel> result = new HashSet<RoleModel>();
+        Set<RoleModel> result = new HashSet<>();
         Set<RoleModel> roles = getRoleMappings();
 
         for (RoleModel role : roles) {
@@ -348,7 +348,7 @@ public class InMemoryUserAdapter implements UserModel {
 
     @Override
     public Set<RoleModel> getRoleMappings() {
-        if (roleIds.size() == 0) return Collections.EMPTY_SET;
+        if (roleIds.isEmpty()) return Collections.emptySet();
         Set<RoleModel> roles = new HashSet<>();
         for (String id : roleIds) {
             roles.add(realm.getRoleById(id));
