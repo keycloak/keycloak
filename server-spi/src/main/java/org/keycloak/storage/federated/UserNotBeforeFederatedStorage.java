@@ -18,7 +18,6 @@
 package org.keycloak.storage.federated;
 
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserModel;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

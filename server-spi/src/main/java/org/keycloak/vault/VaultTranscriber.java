@@ -18,8 +18,6 @@
 package org.keycloak.vault;
 
 import java.lang.ref.WeakReference;
-import java.nio.CharBuffer;
-import java.util.Optional;
 
 /**
  * A facade to the configured vault provider that exposes utility methods for obtaining the vault secrets in different
