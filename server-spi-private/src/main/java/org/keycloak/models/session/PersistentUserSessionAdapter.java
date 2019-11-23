@@ -198,7 +198,7 @@ public class PersistentUserSessionAdapter implements OfflineUserSessionModel {
     public void setNote(String name, String value) {
         PersistentUserSessionData data = getData();
         if (data.getNotes() == null) {
-            data.setNotes(new HashMap<String, String>());
+            data.setNotes(new HashMap<>());
         }
         data.getNotes().put(name, value);
 

@@ -175,15 +175,13 @@ public class ModelToRepresentation {
 
         rep.setNotBefore(session.users().getNotBeforeOfUser(realm, user));
 
-        List<String> reqActions = new ArrayList<String>();
         Set<String> requiredActions = user.getRequiredActions();
-        reqActions.addAll(requiredActions);
+        List<String> reqActions = new ArrayList<>(requiredActions);
 
         rep.setRequiredActions(reqActions);
 
         if (user.getAttributes() != null && !user.getAttributes().isEmpty()) {
-            Map<String, List<String>> attrs = new HashMap<>();
-            attrs.putAll(user.getAttributes());
+            Map<String, List<String>> attrs = new HashMap<>(user.getAttributes());
             rep.setAttributes(attrs);
         }
 
@@ -296,10 +294,10 @@ public class ModelToRepresentation {
             rep.setEventsExpiration(realm.getEventsExpiration());
         }
         if (realm.getEventsListeners() != null) {
-            rep.setEventsListeners(new LinkedList<String>(realm.getEventsListeners()));
+            rep.setEventsListeners(new LinkedList<>(realm.getEventsListeners()));
         }
         if (realm.getEnabledEventTypes() != null) {
-            rep.setEnabledEventTypes(new LinkedList<String>(realm.getEnabledEventTypes()));
+            rep.setEnabledEventTypes(new LinkedList<>(realm.getEnabledEventTypes()));
         }
 
         rep.setAdminEventsEnabled(realm.isAdminEventsEnabled());
@@ -365,8 +363,7 @@ public class ModelToRepresentation {
 
         List<String> defaultRoles = realm.getDefaultRoles();
         if (!defaultRoles.isEmpty()) {
-            List<String> roleStrings = new ArrayList<String>();
-            roleStrings.addAll(defaultRoles);
+            List<String> roleStrings = new ArrayList<>(defaultRoles);
             rep.setDefaultRoles(roleStrings);
         }
         List<GroupModel> defaultGroups = realm.getDefaultGroups();
@@ -379,8 +376,8 @@ public class ModelToRepresentation {
         }
 
         List<RequiredCredentialModel> requiredCredentialModels = realm.getRequiredCredentials();
-        if (requiredCredentialModels.size() > 0) {
-            rep.setRequiredCredentials(new HashSet<String>());
+        if (!requiredCredentialModels.isEmpty()) {
+            rep.setRequiredCredentials(new HashSet<>());
             for (RequiredCredentialModel cred : requiredCredentialModels) {
                 rep.getRequiredCredentials().add(cred.getType());
             }
@@ -396,7 +393,7 @@ public class ModelToRepresentation {
 
         rep.setInternationalizationEnabled(realm.isInternationalizationEnabled());
         if (realm.getSupportedLocales() != null) {
-            rep.setSupportedLocales(new HashSet<String>());
+            rep.setSupportedLocales(new HashSet<>());
             rep.getSupportedLocales().addAll(realm.getSupportedLocales());
         }
         rep.setDefaultLocale(realm.getDefaultLocale());
@@ -422,8 +419,8 @@ public class ModelToRepresentation {
     }
 
     public static void exportAuthenticationFlows(RealmModel realm, RealmRepresentation rep) {
-        rep.setAuthenticationFlows(new LinkedList<AuthenticationFlowRepresentation>());
-        rep.setAuthenticatorConfig(new LinkedList<AuthenticatorConfigRepresentation>());
+        rep.setAuthenticationFlows(new LinkedList<>());
+        rep.setAuthenticatorConfig(new LinkedList<>());
 
         List<AuthenticationFlowModel> authenticationFlows = new ArrayList<>(realm.getAuthenticationFlows());
         //ensure consistent ordering of authenticationFlows.
@@ -629,8 +626,7 @@ public class ModelToRepresentation {
         providerRep.setStoreToken(identityProviderModel.isStoreToken());
         providerRep.setTrustEmail(identityProviderModel.isTrustEmail());
         providerRep.setAuthenticateByDefault(identityProviderModel.isAuthenticateByDefault());
-        Map<String, String> config = new HashMap<>();
-        config.putAll(identityProviderModel.getConfig());
+        Map<String, String> config = new HashMap<>(identityProviderModel.getConfig());
         providerRep.setConfig(config);
         providerRep.setAddReadTokenRoleOnCreate(identityProviderModel.isAddReadTokenRoleOnCreate());
 
@@ -659,8 +655,7 @@ public class ModelToRepresentation {
         ProtocolMapperRepresentation rep = new ProtocolMapperRepresentation();
         rep.setId(model.getId());
         rep.setProtocol(model.getProtocol());
-        Map<String, String> config = new HashMap<String, String>();
-        config.putAll(model.getConfig());
+        Map<String, String> config = new HashMap<>(model.getConfig());
         rep.setConfig(config);
         rep.setName(model.getName());
         rep.setProtocolMapper(model.getProtocolMapper());
@@ -672,8 +667,7 @@ public class ModelToRepresentation {
         rep.setId(model.getId());
         rep.setIdentityProviderMapper(model.getIdentityProviderMapper());
         rep.setIdentityProviderAlias(model.getIdentityProviderAlias());
-        Map<String, String> config = new HashMap<String, String>();
-        config.putAll(model.getConfig());
+        Map<String, String> config = new HashMap<>(model.getConfig());
         rep.setConfig(config);
         rep.setName(model.getName());
         return rep;
@@ -707,7 +701,7 @@ public class ModelToRepresentation {
         rep.setProviderId(model.getProviderId());
         rep.setAlias(model.getAlias());
         rep.setDescription(model.getDescription());
-        rep.setAuthenticationExecutions(new LinkedList<AuthenticationExecutionExportRepresentation>());
+        rep.setAuthenticationExecutions(new LinkedList<>());
         for (AuthenticationExecutionModel execution : realm.getAuthenticationExecutions(model.getId())) {
             rep.getAuthenticationExecutions().add(toRepresentation(realm, execution));
         }

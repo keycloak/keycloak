@@ -45,7 +45,7 @@ public class PropertyQuery<V> {
         }
 
         this.targetClass = targetClass;
-        this.criteria = new ArrayList<PropertyCriteria>();
+        this.criteria = new ArrayList<>();
     }
 
     /**
@@ -148,7 +148,7 @@ public class PropertyQuery<V> {
      * @return the results, or an empty list if there are no results
      */
     private Map<String, Property<V>> getResultList(boolean writable) {
-        Map<String, Property<V>> properties = new HashMap<String, Property<V>>();
+        Map<String, Property<V>> properties = new HashMap<>();
 
         // First check public accessor methods (we ignore private methods)
         for (Method method : targetClass.getMethods()) {
@@ -165,7 +165,7 @@ public class PropertyQuery<V> {
             }
 
             if (match) {
-                MethodProperty<V> property = Properties.<V>createProperty(method);
+                MethodProperty<V> property = Properties.createProperty(method);
 
                 if (!writable || !property.isReadOnly()) {
                     properties.put(property.getName(), property);

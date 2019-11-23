@@ -110,7 +110,7 @@ public class SimpleHttp {
 
     public SimpleHttp header(String name, String value) {
         if (headers == null) {
-            headers = new HashMap<String, String>();
+            headers = new HashMap<>();
         }
         headers.put(name, value);
         return this;
@@ -123,7 +123,7 @@ public class SimpleHttp {
 
     public SimpleHttp param(String name, String value) {
         if (params == null) {
-            params = new HashMap<String, String>();
+            params = new HashMap<>();
         }
         params.put(name, value);
         return this;
