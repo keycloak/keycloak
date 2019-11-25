@@ -18,13 +18,14 @@
 
 
 
-  <link crossorigin="anonymous" media="all" integrity="sha512-TD/1gdStKo77Iu1A+WNb+2YoRJv7l1hZVO0/0h+eJ5wyGxiTvIbLRko1dQ1jEa9w5BK3poi18st9OPel71zK8A==" rel="stylesheet" href="https://github.githubassets.com/assets/frameworks-94d2de65a56b07e193e50e91873678b6.css" />
-  <link crossorigin="anonymous" media="all" integrity="sha512-1N4+QlbmRp6tyqxbm0KgsAq2CEnAm9g3BY5xUsD38O+IUdydhO7ltbRnpR2Vn4g5SXipGWiiwQO1HUYLDV136Q==" rel="stylesheet" href="https://github.githubassets.com/assets/site-09367dd1ae1784b858e71c8471ca0949.css" />
-    <link crossorigin="anonymous" media="all" integrity="sha512-eqU1NT5qhoZheRt6/GHsj8HMrNov9OI9sca28p0UDl1Zpm4amrLbq0o+7nZD3wkgM4h6huySMJFgj1eWIIvobw==" rel="stylesheet" href="https://github.githubassets.com/assets/github-d8b247d5c67a70b1cd47491640d354aa.css" />
+  <link crossorigin="anonymous" media="all" integrity="sha512-/YEVWs7BzxfKyUd6zVxjEQcXRWsLbcEjv045Rq8DSoipySmQblhVKxlXLva2GtNd5DhwCxHwW1RM0N9I7S2Vew==" rel="stylesheet" href="https://github.githubassets.com/assets/frameworks-481a47a96965f6706fb41bae0d14b09a.css" />
+  <link crossorigin="anonymous" media="all" integrity="sha512-xod5+iick6st6a0tvmfiqwCFLFTRzOkGLX0SAqY7SQFl0Q3sWxKUB2rm1Kw4Vz/57FMg7chtfVYeUB/Yr/xmFQ==" rel="stylesheet" href="https://github.githubassets.com/assets/site-d3c48f1b58ea95d9efb184fd4592b411.css" />
+    <link crossorigin="anonymous" media="all" integrity="sha512-be5r5xuxODmYFmuTS+1cSN8d6F0RzdeVfs0ROLxLMm2LZZBhFIbm/d3qYpjkDPQzCCvtMzJdFLe4whQ7qttY3g==" rel="stylesheet" href="https://github.githubassets.com/assets/github-a642f13ab8f184aef0b02fdcda9ef474.css" />
     
     
     
     
+
 
   <meta name="viewport" content="width=device-width">
   
@@ -40,7 +41,8 @@
   <link rel="assets" href="https://github.githubassets.com/">
   
   
-  <meta name="request-id" content="C046:1B30D:FEDA36:17A3B07:5DB29E8F" data-pjax-transient>
+
+    <meta name="request-id" content="58D1:11CF5:493099:6F269A:5DDCF4FF" data-pjax-transient>
 
 
   
@@ -51,7 +53,8 @@
     <meta name="google-site-verification" content="ZzhVyEFwb7w3e0-uOTltm8Jsck2F5StVihD0exw2fsA">
     <meta name="google-site-verification" content="GXs5KoUUkNCoaAZn7wPN-t01Pywp9M3sEjnt_3_ZWPc">
 
-  <meta name="octolytics-host" content="collector.githubapp.com" /><meta name="octolytics-app-id" content="github" /><meta name="octolytics-event-url" content="https://collector.githubapp.com/github-external/browser_event" /><meta name="octolytics-dimension-request_id" content="C046:1B30D:FEDA36:17A3B07:5DB29E8F" /><meta name="octolytics-dimension-region_edge" content="ams" /><meta name="octolytics-dimension-region_render" content="iad" /><meta name="octolytics-dimension-ga_id" content="" class="js-octo-ga-id" /><meta name="octolytics-dimension-visitor_id" content="3348466426631593615" />
+    <meta name="octolytics-host" content="collector.githubapp.com" /><meta name="octolytics-app-id" content="github" /><meta name="octolytics-event-url" content="https://collector.githubapp.com/github-external/browser_event" /><meta name="octolytics-dimension-request_id" content="58D1:11CF5:493099:6F269A:5DDCF4FF" /><meta name="octolytics-dimension-region_edge" content="ams" /><meta name="octolytics-dimension-region_render" content="iad" /><meta name="octolytics-dimension-ga_id" content="" class="js-octo-ga-id" /><meta name="octolytics-dimension-visitor_id" content="6402383874275210496" />
+
 <meta name="analytics-location" content="/&lt;user-name&gt;/&lt;repo-name&gt;/blob/show" data-pjax-transient="true" />
 
 
@@ -69,13 +72,14 @@
     <meta name="user-login" content="">
 
       <meta name="expected-hostname" content="github.com">
-    <meta name="js-proxy-site-detection-payload" content="OTAxNzYzN2VlMTU2MDYyMzBiNzkyZWI1NGJhYzQ3ZGUyODVmNjYxM2Y1NTU2NjI1NzZkOGJhODUyZmFlNzNjOXx7InJlbW90ZV9hZGRyZXNzIjoiOTQuMTEyLjEzNC42OSIsInJlcXVlc3RfaWQiOiJDMDQ2OjFCMzBEOkZFREEzNjoxN0EzQjA3OjVEQjI5RThGIiwidGltZXN0YW1wIjoxNTcxOTg3MDg3LCJob3N0IjoiZ2l0aHViLmNvbSJ9">
 
-    <meta name="enabled-features" content="ACTIONS_V2_ON_MARKETPLACE,MARKETPLACE_FEATURED_BLOG_POSTS,MARKETPLACE_INVOICED_BILLING,MARKETPLACE_SOCIAL_PROOF_CUSTOMERS,MARKETPLACE_TRENDING_SOCIAL_PROOF,MARKETPLACE_RECOMMENDATIONS,MARKETPLACE_PENDING_INSTALLATIONS">
+      <meta name="js-proxy-site-detection-payload" content="NzIxYzFlNWYzNmYxNjRkZWExYThjZDNlYmRjMTBiMmYwNmMzNTNlYzhkNDVjNjQ3Mjk5MDZjNzJhNWViNjg4Ynx7InJlbW90ZV9hZGRyZXNzIjoiMjEzLjE3NS4zNy4xMCIsInJlcXVlc3RfaWQiOiI1OEQxOjExQ0Y1OjQ5MzA5OTo2RjI2OUE6NUREQ0Y0RkYiLCJ0aW1lc3RhbXAiOjE1NzQ3NjE3MjgsImhvc3QiOiJnaXRodWIuY29tIn0=">
 
-  <meta name="html-safe-nonce" content="1253bdc2da8a79c4e1020d832f7977a789618f02">
+    <meta name="enabled-features" content="MARKETPLACE_FEATURED_BLOG_POSTS,MARKETPLACE_INVOICED_BILLING,MARKETPLACE_SOCIAL_PROOF_CUSTOMERS,MARKETPLACE_TRENDING_SOCIAL_PROOF,MARKETPLACE_RECOMMENDATIONS,MARKETPLACE_PENDING_INSTALLATIONS">
 
-  <meta http-equiv="x-pjax-version" content="e6b1e455ee6c25be2a8c961e49b31bd2">
+    <meta name="html-safe-nonce" content="edefb0dce2ca4cc06e27c3eb698a5d0e7efc8835">
+
+  <meta http-equiv="x-pjax-version" content="c8fb83525e6233667a451d337f063661">
   
 
       <link href="https://github.com/swansontec/rfc4648.js/commits/master.atom" rel="alternate" title="Recent Commits to rfc4648.js:master" type="application/atom+xml">
@@ -139,7 +143,7 @@
         <div class="d-flex flex-items-center">
             <a href="/join?source=header-repo"
               class="d-inline-block d-lg-none f5 text-white no-underline border border-gray-dark rounded-2 px-2 py-1 mr-3 mr-sm-5"
-              data-hydro-click="{&quot;event_type&quot;:&quot;authentication.click&quot;,&quot;payload&quot;:{&quot;location_in_page&quot;:&quot;site header&quot;,&quot;repository_id&quot;:null,&quot;auth_type&quot;:&quot;SIGN_UP&quot;,&quot;client_id&quot;:null,&quot;originating_request_id&quot;:&quot;C046:1B30D:FEDA36:17A3B07:5DB29E8F&quot;,&quot;originating_url&quot;:&quot;https://github.com/swansontec/rfc4648.js/blob/master/package.json&quot;,&quot;referrer&quot;:null,&quot;user_id&quot;:null}}" data-hydro-click-hmac="0d51f94d148fc7f9311a3a6644086958b2660e14e8fdf24b518d48bbb248f38f"
+              data-hydro-click="{&quot;event_type&quot;:&quot;authentication.click&quot;,&quot;payload&quot;:{&quot;location_in_page&quot;:&quot;site header&quot;,&quot;repository_id&quot;:null,&quot;auth_type&quot;:&quot;SIGN_UP&quot;,&quot;client_id&quot;:null,&quot;originating_request_id&quot;:&quot;58D1:11CF5:493099:6F269A:5DDCF4FF&quot;,&quot;originating_url&quot;:&quot;https://github.com/swansontec/rfc4648.js/blob/master/package.json&quot;,&quot;referrer&quot;:null,&quot;user_id&quot;:null}}" data-hydro-click-hmac="9f67fa93b0d11e77481c53ec4bf470fc9ad245def17017354d8eb687d6d88812"
               data-ga-click="(Logged out) Header, clicked Sign up, text:sign-up">
               Sign&nbsp;up
             </a>
@@ -173,10 +177,9 @@
                       <li class="edge-item-fix"><a href="/features/code-review/" class="py-2 lh-condensed-ultra d-block link-gray no-underline f5" data-ga-click="(Logged out) Header, go to Code review">Code review</a></li>
                       <li class="edge-item-fix"><a href="/features/project-management/" class="py-2 lh-condensed-ultra d-block link-gray no-underline f5" data-ga-click="(Logged out) Header, go to Project management">Project management</a></li>
                       <li class="edge-item-fix"><a href="/features/integrations" class="py-2 lh-condensed-ultra d-block link-gray no-underline f5" data-ga-click="(Logged out) Header, go to Integrations">Integrations</a></li>
-                      <li class="edge-item-fix"><a href="/features/actions" class="py-2 lh-condensed-ultra d-block link-gray no-underline f5" data-ga-click="(Logged out) Header, go to Actions">Actions</a>
-                          <li class="edge-item-fix"><a href="/features/package-registry" class="py-2 lh-condensed-ultra d-block link-gray no-underline f5" data-ga-click="(Logged out) Header, go to Package Registry">Package registry</a>
-
-                      <li class="edge-item-fix"><a href="/features/security" class="py-2 lh-condensed-ultra d-block link-gray no-underline f5" data-ga-click="(Logged out) Header, go to Security">Security</a>
+                      <li class="edge-item-fix"><a href="/features/actions" class="py-2 lh-condensed-ultra d-block link-gray no-underline f5" data-ga-click="(Logged out) Header, go to Actions">Actions</a></li>
+                          <li class="edge-item-fix"><a href="/features/packages" class="py-2 lh-condensed-ultra d-block link-gray no-underline f5" data-ga-click="(Logged out) Header, go to GitHub Packages">Packages</a></li>
+                      <li class="edge-item-fix"><a href="/features/security" class="py-2 lh-condensed-ultra d-block link-gray no-underline f5" data-ga-click="(Logged out) Header, go to Security">Security</a></li>
                       <li class="edge-item-fix"><a href="/features#team-management" class="py-2 lh-condensed-ultra d-block link-gray no-underline f5" data-ga-click="(Logged out) Header, go to Team management">Team management</a></li>
                       <li class="edge-item-fix"><a href="/features#social-coding" class="py-2 lh-condensed-ultra d-block link-gray no-underline f5" data-ga-click="(Logged out) Header, go to Social coding">Social coding</a></li>
                       <li class="edge-item-fix"><a href="/features#documentation" class="py-2 lh-condensed-ultra d-block link-gray no-underline f5" data-ga-click="(Logged out) Header, go to Documentation">Documentation</a></li>
@@ -282,7 +285,7 @@
           aria-autocomplete="list"
           aria-controls="jump-to-results"
           aria-label="Search"
-          data-jump-to-suggestions-path="/_graphql/GetSuggestedNavigationDestinations#csrf-token=fViKMuhgHjIlVfeSrPoNRIxToqmKVWe0vxTAnD2YaHWAMkwQpKdhZQ62cekDMRHm2Bszven/vIpJ+acphsUmhw=="
+          data-jump-to-suggestions-path="/_graphql/GetSuggestedNavigationDestinations#csrf-token=Z5ZJQTH8/n1Wqg/tFuKnQ8qHk5iN5qaar/iKPe7enU67ZGHkJ5fN7OqjkoEPAnWRTlYT9CVxRfRtJsseqi8wrw=="
           spellcheck="false"
           autocomplete="off"
           >
@@ -409,13 +412,13 @@
 
         <a href="/login?return_to=%2Fswansontec%2Frfc4648.js%2Fblob%2Fmaster%2Fpackage.json"
           class="HeaderMenu-link no-underline mr-3"
-          data-hydro-click="{&quot;event_type&quot;:&quot;authentication.click&quot;,&quot;payload&quot;:{&quot;location_in_page&quot;:&quot;site header menu&quot;,&quot;repository_id&quot;:null,&quot;auth_type&quot;:&quot;SIGN_UP&quot;,&quot;client_id&quot;:null,&quot;originating_request_id&quot;:&quot;C046:1B30D:FEDA36:17A3B07:5DB29E8F&quot;,&quot;originating_url&quot;:&quot;https://github.com/swansontec/rfc4648.js/blob/master/package.json&quot;,&quot;referrer&quot;:null,&quot;user_id&quot;:null}}" data-hydro-click-hmac="fa0af07a6f5a2639378fcc79de7bf2076d93e2fa585f17f6a4f48aa4859bcdb6"
+          data-hydro-click="{&quot;event_type&quot;:&quot;authentication.click&quot;,&quot;payload&quot;:{&quot;location_in_page&quot;:&quot;site header menu&quot;,&quot;repository_id&quot;:null,&quot;auth_type&quot;:&quot;SIGN_UP&quot;,&quot;client_id&quot;:null,&quot;originating_request_id&quot;:&quot;58D1:11CF5:493099:6F269A:5DDCF4FF&quot;,&quot;originating_url&quot;:&quot;https://github.com/swansontec/rfc4648.js/blob/master/package.json&quot;,&quot;referrer&quot;:null,&quot;user_id&quot;:null}}" data-hydro-click-hmac="1a2caf6cf4ea22f60e931b37fc45cca493e5f46e4aef04b8c2aa1feda7b94d94"
           data-ga-click="(Logged out) Header, clicked Sign in, text:sign-in">
           Sign&nbsp;in
         </a>
           <a href="/join?source=header-repo&amp;source_repo=swansontec%2Frfc4648.js"
             class="HeaderMenu-link d-inline-block no-underline border border-gray-dark rounded-1 px-2 py-1"
-            data-hydro-click="{&quot;event_type&quot;:&quot;authentication.click&quot;,&quot;payload&quot;:{&quot;location_in_page&quot;:&quot;site header menu&quot;,&quot;repository_id&quot;:null,&quot;auth_type&quot;:&quot;SIGN_UP&quot;,&quot;client_id&quot;:null,&quot;originating_request_id&quot;:&quot;C046:1B30D:FEDA36:17A3B07:5DB29E8F&quot;,&quot;originating_url&quot;:&quot;https://github.com/swansontec/rfc4648.js/blob/master/package.json&quot;,&quot;referrer&quot;:null,&quot;user_id&quot;:null}}" data-hydro-click-hmac="fa0af07a6f5a2639378fcc79de7bf2076d93e2fa585f17f6a4f48aa4859bcdb6"
+            data-hydro-click="{&quot;event_type&quot;:&quot;authentication.click&quot;,&quot;payload&quot;:{&quot;location_in_page&quot;:&quot;site header menu&quot;,&quot;repository_id&quot;:null,&quot;auth_type&quot;:&quot;SIGN_UP&quot;,&quot;client_id&quot;:null,&quot;originating_request_id&quot;:&quot;58D1:11CF5:493099:6F269A:5DDCF4FF&quot;,&quot;originating_url&quot;:&quot;https://github.com/swansontec/rfc4648.js/blob/master/package.json&quot;,&quot;referrer&quot;:null,&quot;user_id&quot;:null}}" data-hydro-click-hmac="1a2caf6cf4ea22f60e931b37fc45cca493e5f46e4aef04b8c2aa1feda7b94d94"
             data-ga-click="(Logged out) Header, clicked Sign up, text:sign-up">
             Sign&nbsp;up
           </a>
@@ -453,7 +456,7 @@
 
 
 
-  <div class="pagehead repohead instapaper_ignore readability-menu experiment-repo-nav pt-0 pt-lg-4 ">
+  <div class=" pagehead repohead instapaper_ignore readability-menu experiment-repo-nav pt-0 pt-lg-4 ">
     <div class="repohead-details-container clearfix container-lg p-responsive d-none d-lg-block">
 
       <ul class="pagehead-actions">
@@ -463,7 +466,7 @@
 
   <li>
     
-  <a class="tooltipped tooltipped-s btn btn-sm btn-with-count" aria-label="You must be signed in to watch a repository" rel="nofollow" data-hydro-click="{&quot;event_type&quot;:&quot;authentication.click&quot;,&quot;payload&quot;:{&quot;location_in_page&quot;:&quot;notification subscription menu watch&quot;,&quot;repository_id&quot;:null,&quot;auth_type&quot;:&quot;LOG_IN&quot;,&quot;client_id&quot;:null,&quot;originating_request_id&quot;:&quot;C046:1B30D:FEDA36:17A3B07:5DB29E8F&quot;,&quot;originating_url&quot;:&quot;https://github.com/swansontec/rfc4648.js/blob/master/package.json&quot;,&quot;referrer&quot;:null,&quot;user_id&quot;:null}}" data-hydro-click-hmac="b19393792cc05ad38764fe4166a26c363c8ef6dcfe1e38bfedfdd97ab550da42" href="/login?return_to=%2Fswansontec%2Frfc4648.js">
+  <a class="tooltipped tooltipped-s btn btn-sm btn-with-count" aria-label="You must be signed in to watch a repository" rel="nofollow" data-hydro-click="{&quot;event_type&quot;:&quot;authentication.click&quot;,&quot;payload&quot;:{&quot;location_in_page&quot;:&quot;notification subscription menu watch&quot;,&quot;repository_id&quot;:null,&quot;auth_type&quot;:&quot;LOG_IN&quot;,&quot;client_id&quot;:null,&quot;originating_request_id&quot;:&quot;58D1:11CF5:493099:6F269A:5DDCF4FF&quot;,&quot;originating_url&quot;:&quot;https://github.com/swansontec/rfc4648.js/blob/master/package.json&quot;,&quot;referrer&quot;:null,&quot;user_id&quot;:null}}" data-hydro-click-hmac="b1e05c484668b43da01102eb002137c891119e5d3439a9b102b7df10864b70f5" href="/login?return_to=%2Fswansontec%2Frfc4648.js">
     <svg class="octicon octicon-eye v-align-text-bottom" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M8.06 2C3 2 0 8 0 8s3 6 8.06 6C13 14 16 8 16 8s-3-6-7.94-6zM8 12c-2.2 0-4-1.78-4-4 0-2.2 1.8-4 4-4 2.22 0 4 1.8 4 4 0 2.22-1.78 4-4 4zm2-4c0 1.11-.89 2-2 2-1.11 0-2-.89-2-2 0-1.11.89-2 2-2 1.11 0 2 .89 2 2z"/></svg>
     Watch
 </a>    <a class="social-count" href="/swansontec/rfc4648.js/watchers"
@@ -474,19 +477,19 @@
   </li>
 
   <li>
-        <a class="btn btn-sm btn-with-count tooltipped tooltipped-s" aria-label="You must be signed in to star a repository" rel="nofollow" data-hydro-click="{&quot;event_type&quot;:&quot;authentication.click&quot;,&quot;payload&quot;:{&quot;location_in_page&quot;:&quot;star button&quot;,&quot;repository_id&quot;:87911995,&quot;auth_type&quot;:&quot;LOG_IN&quot;,&quot;client_id&quot;:null,&quot;originating_request_id&quot;:&quot;C046:1B30D:FEDA36:17A3B07:5DB29E8F&quot;,&quot;originating_url&quot;:&quot;https://github.com/swansontec/rfc4648.js/blob/master/package.json&quot;,&quot;referrer&quot;:null,&quot;user_id&quot;:null}}" data-hydro-click-hmac="f37c45ece428e8b8f4f70d3e53ee3d621dc72bd9cd210b295781ad3b3dc2faee" href="/login?return_to=%2Fswansontec%2Frfc4648.js">
+        <a class="btn btn-sm btn-with-count tooltipped tooltipped-s" aria-label="You must be signed in to star a repository" rel="nofollow" data-hydro-click="{&quot;event_type&quot;:&quot;authentication.click&quot;,&quot;payload&quot;:{&quot;location_in_page&quot;:&quot;star button&quot;,&quot;repository_id&quot;:87911995,&quot;auth_type&quot;:&quot;LOG_IN&quot;,&quot;client_id&quot;:null,&quot;originating_request_id&quot;:&quot;58D1:11CF5:493099:6F269A:5DDCF4FF&quot;,&quot;originating_url&quot;:&quot;https://github.com/swansontec/rfc4648.js/blob/master/package.json&quot;,&quot;referrer&quot;:null,&quot;user_id&quot;:null}}" data-hydro-click-hmac="985d46a165422f2042066dcf22044b028fe0045c1634f7c54e6468f6d2c19b47" href="/login?return_to=%2Fswansontec%2Frfc4648.js">
       <svg class="octicon octicon-star v-align-text-bottom" viewBox="0 0 14 16" version="1.1" width="14" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M14 6l-4.9-.64L7 1 4.9 5.36 0 6l3.6 3.26L2.67 14 7 11.67 11.33 14l-.93-4.74L14 6z"/></svg>
       Star
 </a>
     <a class="social-count js-social-count" href="/swansontec/rfc4648.js/stargazers"
-      aria-label="6 users starred this repository">
-      6
+      aria-label="7 users starred this repository">
+      7
     </a>
 
   </li>
 
   <li>
-      <a class="btn btn-sm btn-with-count tooltipped tooltipped-s" aria-label="You must be signed in to fork a repository" rel="nofollow" data-hydro-click="{&quot;event_type&quot;:&quot;authentication.click&quot;,&quot;payload&quot;:{&quot;location_in_page&quot;:&quot;repo details fork button&quot;,&quot;repository_id&quot;:87911995,&quot;auth_type&quot;:&quot;LOG_IN&quot;,&quot;client_id&quot;:null,&quot;originating_request_id&quot;:&quot;C046:1B30D:FEDA36:17A3B07:5DB29E8F&quot;,&quot;originating_url&quot;:&quot;https://github.com/swansontec/rfc4648.js/blob/master/package.json&quot;,&quot;referrer&quot;:null,&quot;user_id&quot;:null}}" data-hydro-click-hmac="c8d681e0a08bab74ccf8ddf4338fe4cf6830e3d5814d733cb697de8896cd328f" href="/login?return_to=%2Fswansontec%2Frfc4648.js">
+      <a class="btn btn-sm btn-with-count tooltipped tooltipped-s" aria-label="You must be signed in to fork a repository" rel="nofollow" data-hydro-click="{&quot;event_type&quot;:&quot;authentication.click&quot;,&quot;payload&quot;:{&quot;location_in_page&quot;:&quot;repo details fork button&quot;,&quot;repository_id&quot;:87911995,&quot;auth_type&quot;:&quot;LOG_IN&quot;,&quot;client_id&quot;:null,&quot;originating_request_id&quot;:&quot;58D1:11CF5:493099:6F269A:5DDCF4FF&quot;,&quot;originating_url&quot;:&quot;https://github.com/swansontec/rfc4648.js/blob/master/package.json&quot;,&quot;referrer&quot;:null,&quot;user_id&quot;:null}}" data-hydro-click-hmac="218fe6a44df9df19429e6f7ec6a89adecdbfac9c030b333c8655c7abf2c7223a" href="/login?return_to=%2Fswansontec%2Frfc4648.js">
         <svg class="octicon octicon-repo-forked v-align-text-bottom" viewBox="0 0 10 16" version="1.1" width="10" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M8 1a1.993 1.993 0 00-1 3.72V6L5 8 3 6V4.72A1.993 1.993 0 002 1a1.993 1.993 0 00-1 3.72V6.5l3 3v1.78A1.993 1.993 0 005 15a1.993 1.993 0 001-3.72V9.5l3-3V4.72A1.993 1.993 0 008 1zM2 4.2C1.34 4.2.8 3.65.8 3c0-.65.55-1.2 1.2-1.2.65 0 1.2.55 1.2 1.2 0 .65-.55 1.2-1.2 1.2zm3 10c-.66 0-1.2-.55-1.2-1.2 0-.65.55-1.2 1.2-1.2.65 0 1.2.55 1.2 1.2 0 .65-.55 1.2-1.2 1.2zm3-10c-.66 0-1.2-.55-1.2-1.2 0-.65.55-1.2 1.2-1.2.65 0 1.2.55 1.2 1.2 0 .65-.55 1.2-1.2 1.2z"/></svg>
         Fork
 </a>
@@ -499,7 +502,7 @@
 
       <h1 class="public ">
     <svg class="octicon octicon-repo" viewBox="0 0 12 16" version="1.1" width="12" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M4 9H3V8h1v1zm0-3H3v1h1V6zm0-2H3v1h1V4zm0-2H3v1h1V2zm8-1v12c0 .55-.45 1-1 1H6v2l-1.5-1.5L3 16v-2H1c-.55 0-1-.45-1-1V1c0-.55.45-1 1-1h10c.55 0 1 .45 1 1zm-1 10H1v2h2v-1h3v1h5v-2zm0-10H2v9h9V1z"/></svg>
-  <span class="author" itemprop="author"><a class="url fn" rel="author" data-hovercard-type="user" data-hovercard-url="/hovercards?user_id=276214" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="/swansontec">swansontec</a></span><!--
+  <span class="author" itemprop="author"><a class="url fn" rel="author" data-hovercard-type="user" data-hovercard-url="/users/swansontec/hovercard" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="/swansontec">swansontec</a></span><!--
 --><span class="path-divider">/</span><!--
 --><strong itemprop="name"><a data-pjax="#js-repo-pjax-container" href="/swansontec/rfc4648.js">rfc4648.js</a></strong>
   
@@ -530,7 +533,7 @@
 </a>    </span>
 
   <span itemscope itemtype="http://schema.org/ListItem" itemprop="itemListElement">
-    <a data-hotkey="g p" itemprop="url" class="js-selected-navigation-item reponav-item" data-selected-links="repo_pulls checks /swansontec/rfc4648.js/pulls" href="/swansontec/rfc4648.js/pulls">
+    <a data-hotkey="g p" data-skip-pjax="true" itemprop="url" class="js-selected-navigation-item reponav-item" data-selected-links="repo_pulls checks /swansontec/rfc4648.js/pulls" href="/swansontec/rfc4648.js/pulls">
       <svg class="octicon octicon-git-pull-request" viewBox="0 0 12 16" version="1.1" width="12" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M11 11.28V5c-.03-.78-.34-1.47-.94-2.06C9.46 2.35 8.78 2.03 8 2H7V0L4 3l3 3V4h1c.27.02.48.11.69.31.21.2.3.42.31.69v6.28A1.993 1.993 0 0010 15a1.993 1.993 0 001-3.72zm-1 2.92c-.66 0-1.2-.55-1.2-1.2 0-.65.55-1.2 1.2-1.2.65 0 1.2.55 1.2 1.2 0 .65-.55 1.2-1.2 1.2zM4 3c0-1.11-.89-2-2-2a1.993 1.993 0 00-1 3.72v6.56A1.993 1.993 0 002 15a1.993 1.993 0 001-3.72V4.72c.59-.34 1-.98 1-1.72zm-.8 10c0 .66-.55 1.2-1.2 1.2-.65 0-1.2-.55-1.2-1.2 0-.65.55-1.2 1.2-1.2.65 0 1.2.55 1.2 1.2zM2 4.2C1.34 4.2.8 3.65.8 3c0-.65.55-1.2 1.2-1.2.65 0 1.2.55 1.2 1.2 0 .65-.55 1.2-1.2 1.2z"/></svg>
       <span itemprop="name">Pull requests</span>
       <span class="Counter">0</span>
@@ -618,13 +621,13 @@
           <div class="signup-prompt-bg rounded-1">
       <div class="signup-prompt p-4 text-center mb-4 rounded-1">
         <div class="position-relative">
-          <!-- '"` --><!-- </textarea></xmp> --></option></form><form action="/prompt_dismissals/signup" accept-charset="UTF-8" method="post"><input name="utf8" type="hidden" value="&#x2713;" /><input type="hidden" name="_method" value="put" /><input type="hidden" name="authenticity_token" value="IAjbJPi37eGvIAvtIT4SC+abMkTETNTSVDJukHX8DhDu4M4+920mMNCJa+tjGmSdpo79NRs7ReUfMiOkyLdyEQ==" />
+          <!-- '"` --><!-- </textarea></xmp> --></option></form><form action="/prompt_dismissals/signup" accept-charset="UTF-8" method="post"><input name="utf8" type="hidden" value="&#x2713;" /><input type="hidden" name="_method" value="put" /><input type="hidden" name="authenticity_token" value="qFyhtKMEj4rgScYljxUMlS1BWyI3Zt1lzkbcpX5R3t3x4pnbLWQtO0pY6kmwPvpywsWRKL+GKA2mFIPPQN7X1Q==" />
             <button type="submit" class="position-absolute top-0 right-0 btn-link link-gray" data-ga-click="(Logged out) Sign up prompt, clicked Dismiss, text:dismiss">
               Dismiss
             </button>
 </form>          <h3 class="pt-2">Join GitHub today</h3>
           <p class="col-6 mx-auto">GitHub is home to over 40 million developers working together to host and review code, manage projects, and build software together.</p>
-          <a class="btn btn-primary" data-hydro-click="{&quot;event_type&quot;:&quot;authentication.click&quot;,&quot;payload&quot;:{&quot;location_in_page&quot;:&quot;files signup prompt&quot;,&quot;repository_id&quot;:null,&quot;auth_type&quot;:&quot;SIGN_UP&quot;,&quot;client_id&quot;:null,&quot;originating_request_id&quot;:&quot;C046:1B30D:FEDA36:17A3B07:5DB29E8F&quot;,&quot;originating_url&quot;:&quot;https://github.com/swansontec/rfc4648.js/blob/master/package.json&quot;,&quot;referrer&quot;:null,&quot;user_id&quot;:null}}" data-hydro-click-hmac="5f2d91895c9dd3b3151bfea9fc8e946101423eb88e82e85fb8662d623ba75ddf" data-ga-click="(Logged out) Sign up prompt, clicked Sign up, text:sign-up" href="/join?source=prompt-blob-show&amp;source_repo=swansontec%2Frfc4648.js">Sign up</a>
+          <a class="btn btn-primary" data-hydro-click="{&quot;event_type&quot;:&quot;authentication.click&quot;,&quot;payload&quot;:{&quot;location_in_page&quot;:&quot;files signup prompt&quot;,&quot;repository_id&quot;:null,&quot;auth_type&quot;:&quot;SIGN_UP&quot;,&quot;client_id&quot;:null,&quot;originating_request_id&quot;:&quot;58D1:11CF5:493099:6F269A:5DDCF4FF&quot;,&quot;originating_url&quot;:&quot;https://github.com/swansontec/rfc4648.js/blob/master/package.json&quot;,&quot;referrer&quot;:null,&quot;user_id&quot;:null}}" data-hydro-click-hmac="2ce238547059f7adf0345fa6e05c3f54d6044a9f0ffc775f060d0d4388c293fd" data-ga-click="(Logged out) Sign up prompt, clicked Sign up, text:sign-up" href="/join?source=prompt-blob-show&amp;source_repo=swansontec%2Frfc4648.js">Sign up</a>
         </div>
       </div>
     </div>
@@ -677,18 +680,49 @@
       </div>
     </div>
 
+    
 
 
-    <include-fragment src="/swansontec/rfc4648.js/contributors/master/package.json" class="Box Box--condensed commit-loader">
-      <div class="Box-body bg-blue-light f6">
-        Fetching contributors&hellip;
+
+    
+  <div class="Box Box--condensed d-flex flex-column flex-shrink-0">
+      <div class="Box-body d-flex flex-justify-between bg-blue-light flex-column flex-md-row flex-items-start flex-md-items-center">
+        <span class="pr-md-4 f6">
+          <a rel="author" data-skip-pjax="true" data-hovercard-type="user" data-hovercard-url="/users/swansontec/hovercard" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="/swansontec"><img class="avatar" src="https://avatars2.githubusercontent.com/u/276214?s=40&amp;v=4" width="20" height="20" alt="@swansontec" /></a>
+          <a class="text-bold link-gray-dark lh-default v-align-middle" rel="author" data-hovercard-type="user" data-hovercard-url="/users/swansontec/hovercard" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="/swansontec">swansontec</a>
+            <span class="lh-default v-align-middle">
+              <a data-pjax="true" title="v1.3.0" class="link-gray" href="/swansontec/rfc4648.js/commit/a14a5d4881d1ed772173915da08a12447fcb8671">v1.3.0</a>
+            </span>
+        </span>
+        <span class="d-inline-block flex-shrink-0 v-align-bottom f6 mt-2 mt-md-0">
+          <a class="pr-2 text-mono link-gray" href="/swansontec/rfc4648.js/commit/a14a5d4881d1ed772173915da08a12447fcb8671" data-pjax>a14a5d4</a>
+          <relative-time datetime="2019-09-25T22:40:59Z" class="no-wrap">Sep 26, 2019</relative-time>
+        </span>
       </div>
 
-      <div class="Box-body d-flex flex-items-center" >
-          <img alt="" class="loader-loading mr-2" src="https://github.githubassets.com/images/spinners/octocat-spinner-32-EAF2F5.gif" width="16" height="16" />
-        <span class="text-red h6 loader-error">Cannot retrieve contributors at this time</span>
-      </div>
-</include-fragment>
+    <div class="Box-body d-flex flex-items-center flex-auto f6 border-bottom-0 flex-wrap" >
+      <details class="details-reset details-overlay details-overlay-dark lh-default text-gray-dark float-left mr-2" id="blob_contributors_box">
+        <summary class="btn-link">
+          <span><strong>1</strong> contributor</span>
+        </summary>
+        <details-dialog
+          class="Box Box--overlay d-flex flex-column anim-fade-in fast"
+          aria-label="Users who have contributed to this file"
+          src="/swansontec/rfc4648.js/contributors-list/master/package.json" preload>
+          <div class="Box-header">
+            <button class="Box-btn-octicon btn-octicon float-right" type="button" aria-label="Close dialog" data-close-dialog>
+              <svg class="octicon octicon-x" viewBox="0 0 12 16" version="1.1" width="12" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M7.48 8l3.75 3.75-1.48 1.48L6 9.48l-3.75 3.75-1.48-1.48L4.52 8 .77 4.25l1.48-1.48L6 6.52l3.75-3.75 1.48 1.48L7.48 8z"/></svg>
+            </button>
+            <h3 class="Box-title">
+              Users who have contributed to this file
+            </h3>
+          </div>
+          <include-fragment class="octocat-spinner my-3" aria-label="Loading..."></include-fragment>
+        </details-dialog>
+      </details>
+    </div>
+  </div>
+
 
 
 
@@ -698,7 +732,7 @@
 <div class="Box-header py-2 d-flex flex-column flex-shrink-0 flex-md-row flex-md-items-center">
   <div class="text-mono f6 flex-auto pr-3 flex-order-2 flex-md-order-1 mt-2 mt-md-0">
 
-      70 lines (69 sloc)
+      69 lines (69 sloc)
       <span class="file-info-divider"></span>
     1.79 KB
   </div>
@@ -1064,7 +1098,7 @@
 <div class="footer container-lg width-full p-responsive" role="contentinfo">
   <div class="position-relative d-flex flex-row-reverse flex-lg-row flex-wrap flex-lg-nowrap flex-justify-center flex-lg-justify-between pt-6 pb-2 mt-6 f6 text-gray border-top border-gray-light ">
     <ul class="list-style-none d-flex flex-wrap col-12 col-lg-5 flex-justify-center flex-lg-justify-between mb-2 mb-lg-0">
-      <li class="mr-3 mr-lg-0">&copy; 2019 <span title="0.33431s from unicorn-7f8dbb576d-sp4dx">GitHub</span>, Inc.</li>
+      <li class="mr-3 mr-lg-0">&copy; 2019 GitHub, Inc.</li>
         <li class="mr-3 mr-lg-0"><a data-ga-click="Footer, go to terms, text:terms" href="https://github.com/site/terms">Terms</a></li>
         <li class="mr-3 mr-lg-0"><a data-ga-click="Footer, go to privacy, text:privacy" href="https://github.com/site/privacy">Privacy</a></li>
         <li class="mr-3 mr-lg-0"><a data-ga-click="Footer, go to security, text:security" href="https://github.com/security">Security</a></li>
@@ -1101,10 +1135,10 @@
   </div>
 
 
-    <script crossorigin="anonymous" integrity="sha512-iZSuM6MposoHy1LX+mdmRbYEN9yjFancYJLdKEGP0rV8OidiwsOVBrfnbAEN+LQIFYveqNFoOsT8e5QiFcHteg==" type="application/javascript" src="https://github.githubassets.com/assets/compat-bootstrap-a88ac301.js"></script>
-    <script crossorigin="anonymous" integrity="sha512-H68lyjqvhf8QSmg/2hTgg/jxC3W0viB1sxl0EcLEZFB+L5UJf78D38ce69KLWXeTI1sI/3TRRdDyrS/dEVaPdw==" type="application/javascript" src="https://github.githubassets.com/assets/frameworks-02ee494c.js"></script>
+    <script crossorigin="anonymous" integrity="sha512-+HrX8ahxgj74CUPPmM6Z3OU9WEiCyL7ZNdFDi1qwf32rgamIx9tGkQuWb4dFkMHthTaCuRbi3x2Zu8qtC88+6A==" type="application/javascript" src="https://github.githubassets.com/assets/compat-bootstrap-f87ad7f1.js"></script>
+    <script crossorigin="anonymous" integrity="sha512-nQRXAP+2hZCqfsS4Qic6D16WoLFpw86Fg3KOtx3GA+q/L7eiaH1qmUUartcOTPWhB0jl34UPeA3ma6sOZEyomg==" type="application/javascript" src="https://github.githubassets.com/assets/frameworks-9d045700.js"></script>
     
-    <script crossorigin="anonymous" async="async" integrity="sha512-2jQaY/BluAVCl9LO/gjmKgk7aqCqbktUvJlXzPCt4Ik2mq0VCuQi+25kUQPZQZ87nM/2ooZDXC3F29d9cQR8Ag==" type="application/javascript" src="https://github.githubassets.com/assets/github-bootstrap-e6a5a935.js"></script>
+    <script crossorigin="anonymous" async="async" integrity="sha512-suV12uxq+Xe/m3pj8XK+Xubprkr1oOxwbLSfVrE5KZ6FbRs59ncrBGYMrYGeScIEHmOZJugx7bOx+hblxsam9w==" type="application/javascript" src="https://github.githubassets.com/assets/github-bootstrap-b2e575da.js"></script>
     
     
     
