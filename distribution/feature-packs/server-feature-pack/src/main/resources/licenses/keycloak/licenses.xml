@@ -547,7 +547,7 @@
       <licenses>
         <license>
           <name>Apache Software License 2.0</name>
-          <url>https://github.com/webauthn4j/webauthn4j/blob/0.9.14.RELEASE/LICENSE.txt</url>
+          <url>https://raw.githubusercontent.com/webauthn4j/webauthn4j/0.9.14.RELEASE/LICENSE.txt</url>
         </license>
       </licenses>
     </dependency>
@@ -558,7 +558,7 @@
       <licenses>
         <license>
           <name>Apache Software License 2.0</name>
-          <url>https://github.com/webauthn4j/webauthn4j/blob/0.9.14.RELEASE/LICENSE.txt</url>
+          <url>https://raw.githubusercontent.com/webauthn4j/webauthn4j/0.9.14.RELEASE/LICENSE.txt</url>
         </license>
       </licenses>
     </dependency>
@@ -569,7 +569,7 @@
       <licenses>
         <license>
           <name>Apache Software License 2.0</name>
-          <url>https://github.com/apache/directory-kerby/blob/kerby-all-2.0.0/LICENSE</url>
+          <url>https://raw.githubusercontent.com/apache/directory-kerby/kerby-all-2.0.0/LICENSE</url>
         </license>
       </licenses>
     </dependency>
