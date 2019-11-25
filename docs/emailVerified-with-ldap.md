@@ -34,7 +34,7 @@ objectClasses: ( 2.25.28639311321113238241701611583088740684.14.2.3
 !
 ```
 
-New users creation will have `emailVerified` attribute after below command.
+New users will have `emailVerified` attribute after below command.
 ```
 ipa config-mod --addattr=ipaUserObjectClasses=emailVerification
 ```
@@ -46,5 +46,5 @@ ipa user-mod --addattr objectclass=emailVerification
 ipa user-mod --addattr emailVerified=FALSE
 ```
 
-Note : If the existing users are not updated, they wont be displayed in keycloak after `emailVerification` is added to `User Object Classes` value of LDAP user federation setting.
+Note : If the existing users are not updated, they won't be displayed in keycloak after `emailVerification` is added to `User Object Classes` value of LDAP user federation setting.
 
