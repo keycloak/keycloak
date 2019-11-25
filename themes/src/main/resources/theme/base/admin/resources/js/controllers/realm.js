@@ -252,6 +252,7 @@ module.controller('RealmDetailCtrl', function($scope, Current, Realm, realm, ser
     $scope.serverInfo = serverInfo;
     $scope.realmName = realm.realm;
     $scope.disableRename = realm.realm == masterRealm;
+    $scope.authServerUrl = authServerUrl;
 
     if (Current.realm == null || Current.realm.realm != realm.realm) {
         for (var i = 0; i < Current.realms.length; i++) {
