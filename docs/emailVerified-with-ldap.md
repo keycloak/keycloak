@@ -13,7 +13,8 @@ In the `User Federation > Ldap > LDAP Mappers` create a new `user-attribute-ldap
 
 A new ObjectClass `emailVerification` needs to be added with Attribute `emailVerified`
 
-```ldapmodify -v -D "${BIND-DN}" -w "${BIND-PASSWORD}" <<!
+```
+ldapmodify -v -D "${BIND-DN}" -w "${BIND-PASSWORD}" <<!
 dn: cn=schema
 changetype: modify
 add: attributeTypes
