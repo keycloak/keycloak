@@ -501,20 +501,25 @@ public class LDAPOperationManager {
 
         try {
 
-            Hashtable<Object, Object> env = LDAPContextManager.getConnectionProperties(config);
+            Hashtable<Object, Object> env = LDAPContextManager.getNonAuthConnectionProperties(config);
 
             // Never use connection pool to prevent password caching
             env.put("com.sun.jndi.ldap.connect.pool", "false");
 
             if(!this.config.isStartTls()) {
-                env.put(Context.SECURITY_AUTHENTICATION, this.config.getAuthType());
+                env.put(Context.SECURITY_AUTHENTICATION, "simple");
                 env.put(Context.SECURITY_PRINCIPAL, dn);
                 env.put(Context.SECURITY_CREDENTIALS, password);
             }
 
             authCtx = new InitialLdapContext(env, null);
             if (config.isStartTls()) {
-                tlsResponse = LDAPContextManager.startTLS(authCtx, this.config.getAuthType(), dn, password.toCharArray());
+                tlsResponse = LDAPContextManager.startTLS(authCtx, "simple", dn, password.toCharArray());
+
+                // Exception should be already thrown by LDAPContextManager.startTLS if "startTLS" could not be established, but rather do some additional check
+                if (tlsResponse == null) {
+                    throw new AuthenticationException("Null TLS Response returned from the authentication");
+                }
             }
         } catch (AuthenticationException ae) {
             if (logger.isDebugEnabled()) {
@@ -541,7 +546,6 @@ public class LDAPOperationManager {
                     e.printStackTrace();
                 }
             }
-
         }
     }
 

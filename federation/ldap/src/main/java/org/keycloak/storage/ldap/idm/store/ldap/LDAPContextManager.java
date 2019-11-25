@@ -6,6 +6,7 @@ import org.keycloak.models.LDAPConstants;
 import org.keycloak.storage.ldap.LDAPConfig;
 import org.keycloak.vault.VaultCharSecret;
 
+import javax.naming.AuthenticationException;
 import javax.naming.Context;
 import javax.naming.NamingException;
 import javax.naming.ldap.InitialLdapContext;
@@ -77,6 +78,11 @@ public final class LDAPContextManager implements AutoCloseable {
         if (ldapConfig.isStartTls()) {
             tlsResponse = startTLS(ldapContext, ldapConfig.getAuthType(), ldapConfig.getBindDN(),
                     vaultCharSecret.getAsArray().orElse(ldapConfig.getBindCredential().toCharArray()));
+
+            // Exception should be already thrown by LDAPContextManager.startTLS if "startTLS" could not be established, but rather do some additional check
+            if (tlsResponse == null) {
+                throw new NamingException("Wasn't able to establish LDAP connection through StartTLS");
+            }
         }
 
     }
@@ -94,8 +100,10 @@ public final class LDAPContextManager implements AutoCloseable {
     }
 
     public static StartTlsResponse startTLS(LdapContext ldapContext, String authType, String bindDN, char[] bindCredential) throws NamingException {
+        StartTlsResponse tls = null;
+
         try {
-            StartTlsResponse tls = (StartTlsResponse) ldapContext.extendedOperation(new StartTlsRequest());
+            tls = (StartTlsResponse) ldapContext.extendedOperation(new StartTlsRequest());
             tls.negotiate();
 
             ldapContext.addToEnvironment(Context.SECURITY_AUTHENTICATION, authType);
@@ -104,21 +112,20 @@ public final class LDAPContextManager implements AutoCloseable {
                 ldapContext.addToEnvironment(Context.SECURITY_PRINCIPAL, bindDN);
                 ldapContext.addToEnvironment(Context.SECURITY_CREDENTIALS, bindCredential);
             }
-
-            ldapContext.lookup("");
-
-            return tls;
         } catch (Exception e) {
             logger.error("Could not negotiate TLS", e);
+            throw new AuthenticationException("Could not negotiate TLS");
         }
 
-        return null;
+        // throws AuthenticationException when authentication fails
+        ldapContext.lookup("");
+
+        return tls;
     }
 
-    public static Hashtable<Object, Object> getConnectionProperties(LDAPConfig ldapConfig) {
-        HashMap<String, Object> env = new HashMap<>();
-
-        env.put(Context.INITIAL_CONTEXT_FACTORY, ldapConfig.getFactoryName());
+    // Get connection properties of admin connection
+    private Hashtable<Object, Object> getConnectionProperties(LDAPConfig ldapConfig) {
+        Hashtable<Object, Object> env = getNonAuthConnectionProperties(ldapConfig);
 
         if(!ldapConfig.isStartTls()) {
             String authType = ldapConfig.getAuthType();
@@ -138,6 +145,32 @@ public final class LDAPContextManager implements AutoCloseable {
                 env.put(Context.SECURITY_CREDENTIALS, bindCredential);
             }
         }
+
+        if (logger.isDebugEnabled()) {
+            Map<Object, Object> copyEnv = new Hashtable<>(env);
+            if (copyEnv.containsKey(Context.SECURITY_CREDENTIALS)) {
+                copyEnv.put(Context.SECURITY_CREDENTIALS, "**************************************");
+            }
+            logger.debugf("Creating LdapContext using properties: [%s]", copyEnv);
+        }
+
+        return env;
+    }
+
+
+    /**
+     * This method is used for admin connection and user authentication. Hence it returns just connection properties NOT related to
+     * authentication (properties like bindType, bindDn, bindPassword). Caller of this method needs to fill auth-related connection properties
+     * based on the fact whether he does admin connection or user authentication
+     *
+     * @param ldapConfig
+     * @return
+     */
+    public static Hashtable<Object, Object> getNonAuthConnectionProperties(LDAPConfig ldapConfig) {
+        HashMap<String, Object> env = new HashMap<>();
+
+        env.put(Context.INITIAL_CONTEXT_FACTORY, ldapConfig.getFactoryName());
+
         String url = ldapConfig.getConnectionUrl();
 
         if (url != null) {
@@ -186,14 +219,6 @@ public final class LDAPContextManager implements AutoCloseable {
         String binaryAttrs = binaryAttrsBuilder.toString().trim();
         if (!binaryAttrs.isEmpty()) {
             env.put("java.naming.ldap.attributes.binary", binaryAttrs);
-        }
-
-        if (logger.isDebugEnabled()) {
-            Map<String, Object> copyEnv = new HashMap<>(env);
-            if (copyEnv.containsKey(Context.SECURITY_CREDENTIALS)) {
-                copyEnv.put(Context.SECURITY_CREDENTIALS, "**************************************");
-            }
-            logger.debugf("Creating LdapContext using properties: [%s]", copyEnv);
         }
 
         return new Hashtable<>(env);
