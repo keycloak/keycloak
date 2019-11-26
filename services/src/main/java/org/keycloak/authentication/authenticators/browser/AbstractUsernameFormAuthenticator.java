@@ -104,7 +104,7 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
         if (user == null) {
             dummyHash(context);
             context.getEvent().error(Errors.USER_NOT_FOUND);
-            Response challengeResponse = challenge(context, Messages.INVALID_USER);
+            Response challengeResponse = challenge(context, getDefaultChallengeMessage(context));
             context.failureChallenge(AuthenticationFlowError.INVALID_USER, challengeResponse);
         }
     }
@@ -138,7 +138,7 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
         String username = inputData.getFirst(AuthenticationManager.FORM_USERNAME);
         if (username == null) {
             context.getEvent().error(Errors.USER_NOT_FOUND);
-            Response challengeResponse = challenge(context, Messages.INVALID_USER);
+            Response challengeResponse = challenge(context, getDefaultChallengeMessage(context));
             context.failureChallenge(AuthenticationFlowError.INVALID_USER, challengeResponse);
             return null;
         }
@@ -193,7 +193,7 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
         if (password == null || password.isEmpty()) {
             context.getEvent().user(user);
             context.getEvent().error(Errors.INVALID_USER_CREDENTIALS);
-            Response challengeResponse = challenge(context, Messages.INVALID_USER);
+            Response challengeResponse = challenge(context, getDefaultChallengeMessage(context));
             context.forceChallenge(challengeResponse);
             context.clearUser();
             return false;
@@ -206,7 +206,7 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
         } else {
             context.getEvent().user(user);
             context.getEvent().error(Errors.INVALID_USER_CREDENTIALS);
-            Response challengeResponse = challenge(context, Messages.INVALID_USER);
+            Response challengeResponse = challenge(context, getDefaultChallengeMessage(context));
             context.failureChallenge(AuthenticationFlowError.INVALID_CREDENTIALS, challengeResponse);
             if (clearUser) {
                 context.clearUser();
@@ -227,5 +227,9 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
             }
         }
         return false;
+    }
+
+    protected String getDefaultChallengeMessage(AuthenticationFlowContext context) {
+        return Messages.INVALID_USER;
     }
 }

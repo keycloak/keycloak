@@ -1011,6 +1011,77 @@ public class BrowserFlowTest extends AbstractTestRealmKeycloakTest {
     }
 
     /**
+     * This test checks the error messages, when the credentials are invalid and UsernameForm and PasswordForm are separated.
+     */
+    @Test
+    public void testLoginWithWrongCredentialsMessage() {
+        UserRepresentation user = testRealm().users().search("test-user@localhost").get(0);
+        Assert.assertNotNull(user);
+
+        loginPage.open();
+        loginPage.assertCurrent();
+        loginPage.login(user.getUsername(), "wrong_password");
+
+        Assert.assertEquals("Invalid username or password.", loginPage.getError());
+        events.clear();
+
+        loginPage.assertCurrent();
+        loginPage.login(user.getUsername(), "password");
+
+        Assert.assertFalse(loginPage.isCurrent());
+        events.expectLogin()
+                .user(user)
+                .detail(Details.USERNAME, "test-user@localhost")
+                .assertEvent();
+    }
+
+    /**
+     * This test checks the error messages, when the credentials are invalid and UsernameForm and PasswordForm are separated.
+     */
+    @Test
+    public void testLoginMultiFactorWithWrongCredentialsMessage() {
+        UserRepresentation user = testRealm().users().search("test-user@localhost").get(0);
+        Assert.assertNotNull(user);
+
+        configureBrowserFlowWithAlternativeCredentials();
+        try {
+            RealmRepresentation realm = testRealm().toRepresentation();
+            realm.setLoginWithEmailAllowed(false);
+            testRealm().update(realm);
+
+            loginUsernameOnlyPage.open();
+            loginUsernameOnlyPage.assertCurrent();
+            loginUsernameOnlyPage.login("non_existing_user");
+            Assert.assertEquals("Invalid username.", loginUsernameOnlyPage.getError());
+
+            realm.setLoginWithEmailAllowed(true);
+            testRealm().update(realm);
+            loginUsernameOnlyPage.login("non_existing_user");
+            Assert.assertEquals("Invalid username or email.", loginUsernameOnlyPage.getError());
+
+            loginUsernameOnlyPage.login(user.getUsername());
+
+            passwordPage.assertCurrent();
+            passwordPage.login("wrong_password");
+            Assert.assertEquals("Invalid password.", passwordPage.getError());
+
+            passwordPage.assertCurrent();
+            events.clear();
+            passwordPage.login("password");
+
+            Assert.assertFalse(loginUsernameOnlyPage.isCurrent());
+            Assert.assertFalse(passwordPage.isCurrent());
+
+            events.expectLogin()
+                    .user(user)
+                    .detail(Details.USERNAME, "test-user@localhost")
+                    .assertEvent();
+        } finally {
+            revertFlows("browser - alternative");
+        }
+    }
+
+    /**
      * This flow contains:
      * UsernameForm REQUIRED
      * Subflow REQUIRED

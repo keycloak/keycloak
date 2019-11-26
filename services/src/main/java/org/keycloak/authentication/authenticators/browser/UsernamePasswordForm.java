@@ -30,6 +30,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.managers.AuthenticationManager;
+import org.keycloak.services.messages.Messages;
 
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
@@ -110,5 +111,10 @@ public class UsernamePasswordForm extends AbstractUsernameFormAuthenticator impl
     @Override
     public PasswordCredentialProvider getCredentialProvider(KeycloakSession session) {
         return (PasswordCredentialProvider)session.getProvider(CredentialProvider.class, "keycloak-password");
+    }
+
+    @Override
+    protected String getDefaultChallengeMessage(AuthenticationFlowContext context){
+        return Messages.INVALID_USER;
     }
 }
