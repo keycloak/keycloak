@@ -17,7 +17,6 @@
 
 package org.keycloak.authentication.requiredactions;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import org.keycloak.authentication.RequiredActionContext;
 import org.keycloak.authentication.RequiredActionProvider;
 import org.keycloak.authentication.ConsoleDisplayMode;

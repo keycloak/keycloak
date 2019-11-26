@@ -17,8 +17,6 @@
  */
 package org.keycloak.authorization.config;
 
-import java.net.URI;
-
 import javax.ws.rs.core.UriBuilder;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
