@@ -74,7 +74,7 @@ public class JBossLoggingEventListenerProvider implements EventListenerProvider 
             if(event.getDetails().containsKey(Details.CLIENT_SESSION_STATE))
                 event.getDetails().remove(Details.CLIENT_SESSION_STATE);
             if(event.getDetails().containsKey(Details.CLIENT_SESSION_HOST))
-                event.getDetails().containsKey(Details.CLIENT_SESSION_HOST);
+                event.getDetails().remove(Details.CLIENT_SESSION_HOST);
 
             if (event.getDetails() != null) {
                 for (Map.Entry<String, String> e : event.getDetails().entrySet()) {
