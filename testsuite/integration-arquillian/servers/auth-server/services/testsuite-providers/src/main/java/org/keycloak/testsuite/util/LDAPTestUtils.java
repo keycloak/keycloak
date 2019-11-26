@@ -292,6 +292,13 @@ public class LDAPTestUtils {
         return getGroupMapper(mapperModel, ldapProvider, appRealm).createLDAPGroup(groupName, additAttrs);
     }
 
+    public static LDAPObject updateLDAPGroup(KeycloakSession session, RealmModel appRealm, ComponentModel ldapModel, LDAPObject ldapObject) {
+        ComponentModel mapperModel = getSubcomponentByName(appRealm, ldapModel, "groupsMapper");
+        LDAPStorageProvider ldapProvider = LDAPTestUtils.getLdapProvider(session, ldapModel);
+
+        return getGroupMapper(mapperModel, ldapProvider, appRealm).updateLDAPGroup(ldapObject);
+    }
+
     public static GroupLDAPStorageMapper getGroupMapper(ComponentModel mapperModel, LDAPStorageProvider ldapProvider, RealmModel realm) {
         return new GroupLDAPStorageMapper(mapperModel, ldapProvider, new GroupLDAPStorageMapperFactory());
     }
