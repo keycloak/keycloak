@@ -37,6 +37,7 @@ import org.keycloak.services.messages.Messages;
 
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
+import java.util.Arrays;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -48,6 +49,7 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
 
     public static final String REGISTRATION_FORM_ACTION = "registration_form";
     public static final String ATTEMPTED_USERNAME = "ATTEMPTED_USERNAME";
+    private boolean isUserPasswordForm = false;
 
     @Override
     public void action(AuthenticationFlowContext context) {
@@ -103,9 +105,7 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
     public void testInvalidUser(AuthenticationFlowContext context, UserModel user) {
         if (user == null) {
             dummyHash(context);
-            context.getEvent().error(Errors.USER_NOT_FOUND);
-            Response challengeResponse = challenge(context, Messages.INVALID_USER);
-            context.failureChallenge(AuthenticationFlowError.INVALID_USER, challengeResponse);
+            setInvalidUser(context);
         }
     }
 
@@ -123,9 +123,33 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
 
 
     public boolean validateUserAndPassword(AuthenticationFlowContext context, MultivaluedMap<String, String> inputData)  {
-        context.clearUser();
-        UserModel user = getUser(context, inputData);
-        return user != null && validatePassword(context, user, inputData) && validateUser(context, user, inputData);
+        try {
+            context.clearUser();
+            isUserPasswordForm = true;
+            UserModel user = getUser(context, inputData);
+
+            if (user != null) {
+                // If user is disabled by brute-force, then the errors won't be overridden by "INVALID_USER"
+                if (!validateUser(context, user, inputData) && isEventError(context, Errors.USER_TEMPORARILY_DISABLED))
+                    return false;
+
+                if (validatePassword(context, user, inputData))
+                    //KEYCLOAK-2024
+                    return enabledUser(context, user);
+
+                return false;
+            }
+
+            if (isEventError(context, Errors.EMAIL_IN_USE, Errors.USERNAME_IN_USE)) {
+                return false;
+            }
+
+            Response challengeResponse = challenge(context, Messages.INVALID_USER);
+            context.failureChallenge(AuthenticationFlowError.INVALID_USER, challengeResponse);
+            return false;
+        } finally {
+            isUserPasswordForm = false;
+        }
     }
 
     public boolean validateUser(AuthenticationFlowContext context, MultivaluedMap<String, String> inputData) {
@@ -137,9 +161,7 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
     private UserModel getUser(AuthenticationFlowContext context, MultivaluedMap<String, String> inputData) {
         String username = inputData.getFirst(AuthenticationManager.FORM_USERNAME);
         if (username == null) {
-            context.getEvent().error(Errors.USER_NOT_FOUND);
-            Response challengeResponse = challenge(context, Messages.INVALID_USER);
-            context.failureChallenge(AuthenticationFlowError.INVALID_USER, challengeResponse);
+            setInvalidUser(context);
             return null;
         }
 
@@ -193,7 +215,11 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
         if (password == null || password.isEmpty()) {
             context.getEvent().user(user);
             context.getEvent().error(Errors.INVALID_USER_CREDENTIALS);
-            Response challengeResponse = challenge(context, Messages.INVALID_USER);
+            Response challengeResponse;
+            if (isUserPasswordForm) {
+                challengeResponse = challenge(context, Messages.INVALID_USER);
+            } else
+                challengeResponse = challenge(context, Messages.INVALID_PASSWORD);
             context.forceChallenge(challengeResponse);
             context.clearUser();
             return false;
@@ -206,8 +232,13 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
         } else {
             context.getEvent().user(user);
             context.getEvent().error(Errors.INVALID_USER_CREDENTIALS);
-            Response challengeResponse = challenge(context, Messages.INVALID_USER);
+            Response challengeResponse;
+            if (isUserPasswordForm) {
+                challengeResponse = challenge(context, Messages.INVALID_USER);
+            } else
+                challengeResponse = challenge(context, Messages.INVALID_PASSWORD);
             context.failureChallenge(AuthenticationFlowError.INVALID_CREDENTIALS, challengeResponse);
+
             if (clearUser) {
                 context.clearUser();
             }
@@ -225,6 +256,27 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
                 context.forceChallenge(challengeResponse);
                 return true;
             }
+        }
+        return false;
+    }
+
+    private void setInvalidUser(AuthenticationFlowContext context) {
+        context.getEvent().error(Errors.USER_NOT_FOUND);
+        if (!isUserPasswordForm) {
+            Response challengeResponse;
+            if (context.getRealm().isLoginWithEmailAllowed()) {
+                challengeResponse = challenge(context, Messages.INVALID_USERNAME_OR_EMAIL);
+            } else {
+                challengeResponse = challenge(context, Messages.INVALID_USERNAME);
+            }
+            context.failureChallenge(AuthenticationFlowError.INVALID_USER, challengeResponse);
+        }
+    }
+
+    private boolean isEventError(AuthenticationFlowContext context, String... errors) {
+        String eventError = context.getEvent().getEvent().getError();
+        if (eventError != null && errors != null) {
+            return Arrays.asList(errors).contains(eventError);
         }
         return false;
     }
