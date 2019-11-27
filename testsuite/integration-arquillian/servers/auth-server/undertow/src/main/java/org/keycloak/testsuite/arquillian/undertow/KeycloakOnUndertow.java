@@ -88,7 +88,6 @@ public class KeycloakOnUndertow implements DeployableContainer<KeycloakOnUnderto
         di.setClassLoader(getClass().getClassLoader());
         di.setContextPath("/auth");
         di.setDeploymentName("Keycloak");
-        di.addInitParameter(KeycloakApplication.KEYCLOAK_EMBEDDED, "true");
         if (configuration.getKeycloakConfigPropertyOverridesMap() != null) {
             try {
                 di.addInitParameter(JsonConfigProviderFactory.SERVER_CONTEXT_CONFIG_PROPERTY_OVERRIDES,

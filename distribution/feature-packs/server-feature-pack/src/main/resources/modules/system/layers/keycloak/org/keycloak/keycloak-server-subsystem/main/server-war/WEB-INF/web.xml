@@ -44,7 +44,7 @@
     </context-param>
 
     <listener>
-        <listener-class>org.keycloak.services.listeners.KeycloakSessionDestroyListener</listener-class>
+        <listener-class>org.keycloak.provider.wildfly.WildflyLifecycleListener</listener-class>
     </listener>
 
     <filter>

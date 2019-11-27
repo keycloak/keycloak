@@ -38,7 +38,7 @@
         <module name="org.keycloak.keycloak-saml-core-public" services="import"/>
         <module name="org.keycloak.keycloak-saml-core" services="import"/>
         <module name="org.keycloak.keycloak-services" export="true" services="import"/>
-        <module name="org.keycloak.keycloak-wildfly-extensions" services="import"/>
+        <module name="org.keycloak.keycloak-wildfly-extensions" export="true" services="import"/>
 
         <!-- Authorization -->
         <module name="org.keycloak.keycloak-authz-policy-common" services="import"/>
