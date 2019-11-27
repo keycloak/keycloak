@@ -66,6 +66,12 @@
                 <module>downloads</module>
             </modules>
         </profile>
+        <profile>
+            <id>quarkus</id>
+            <modules>
+                <module>server-x</module>
+            </modules>
+        </profile>
     </profiles>
 
 </project>

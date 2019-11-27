@@ -1741,6 +1741,15 @@
             <modules>
                 <module>quarkus</module>
             </modules>
+            <dependencyManagement>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.keycloak</groupId>
+                        <artifactId>keycloak-quarkus-server</artifactId>
+                        <version>${project.version}</version>
+                    </dependency>
+                </dependencies>
+            </dependencyManagement>
         </profile>
 
     </profiles>
