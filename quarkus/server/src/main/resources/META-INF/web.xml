@@ -42,19 +42,11 @@
        <param-name>resteasy.disable.html.sanitizer</param-name>
        <param-value>true</param-value>
     </context-param>
-    <context-param>
-       <param-name>keycloak.embedded</param-name>
-       <param-value>true</param-value>
-    </context-param>
 
     <listener>
         <listener-class>
             org.jboss.resteasy.plugins.server.servlet.ResteasyBootstrap
         </listener-class>
-    </listener>
-
-    <listener>
-        <listener-class>org.keycloak.services.listeners.KeycloakSessionDestroyListener</listener-class>
     </listener>
 
     <filter>

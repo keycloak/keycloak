@@ -15,17 +15,24 @@
  * limitations under the License.
  */
 
-package org.keycloak.provider.quarkus;
+package org.keycloak.testsuite;
 
-import io.quarkus.arc.Arc;
-import org.keycloak.services.resources.KeycloakApplication;
+import org.keycloak.platform.PlatformProvider;
 
-public class QuarkusStartup implements KeycloakApplication.Startup {
+public class TestPlatform implements PlatformProvider {
 
     @Override
-    public void execute(Runnable command) {
-        QuarkusStartupObserver observer = Arc.container().instance(QuarkusStartupObserver.class).get();
-        observer.setCommand(command);
+    public void onStartup(Runnable startupHook) {
+        startupHook.run();
+    }
+
+    @Override
+    public void onShutdown(Runnable shutdownHook) {
+    }
+
+    @Override
+    public void exit(Throwable cause) {
+        throw new RuntimeException(cause);
     }
 
 }

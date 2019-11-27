@@ -35,6 +35,8 @@ import org.keycloak.models.dblock.DBLockProvider;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.PostMigrationEvent;
 import org.keycloak.models.utils.RepresentationToModel;
+import org.keycloak.platform.Platform;
+import org.keycloak.platform.PlatformProvider;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.DefaultKeycloakSessionFactory;
@@ -65,13 +67,11 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.StringTokenizer;
-import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -80,13 +80,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public class KeycloakApplication extends Application {
 
-    public static final String KEYCLOAK_EMBEDDED = "keycloak.embedded";
-
     public static final AtomicBoolean BOOTSTRAP_ADMIN_USER = new AtomicBoolean(false);
 
     private static final Logger logger = Logger.getLogger(KeycloakApplication.class);
 
-    protected boolean embedded = false;
+    protected final PlatformProvider platform = Platform.getPlatform();
 
     protected Set<Object> singletons = new HashSet<Object>();
     protected Set<Class<?>> classes = new HashSet<Class<?>>();
@@ -97,13 +95,10 @@ public class KeycloakApplication extends Application {
 
         try {
 
+            logger.debugv("PlatformProvider: {0}", platform.getClass().getName());
             logger.debugv("RestEasy provider: {0}", Resteasy.getProvider().getClass().getName());
 
             ServletContext context = Resteasy.getContextData(ServletContext.class);
-
-            if ("true".equals(context.getInitParameter(KEYCLOAK_EMBEDDED))) {
-                embedded = true;
-            }
 
             loadConfig();
 
@@ -125,26 +120,11 @@ public class KeycloakApplication extends Application {
             singletons.add(new ObjectMapperResolver(Boolean.parseBoolean(System.getProperty("keycloak.jsonPrettyPrint", "false"))));
             singletons.add(new WelcomeResource());
 
-            init(this::startup);
+            platform.onStartup(this::startup);
+            platform.onShutdown(this::shutdown);
 
         } catch (Throwable t) {
-            if (!embedded) {
-                exit(1);
-            }
-            throw t;
-        }
-
-    }
-
-    private void init(Runnable function) {
-
-        ServiceLoader<Startup> loader = ServiceLoader.load(Startup.class);
-        Iterator<Startup> iterator = loader.iterator();
-
-        if (iterator.hasNext()) {
-            iterator.next().execute(function);
-        } else {
-            function.run();
+            platform.exit(t);
         }
 
     }
@@ -189,6 +169,11 @@ public class KeycloakApplication extends Application {
 
         setupScheduledTasks(sessionFactory);
 
+    }
+
+    protected void shutdown() {
+        if (sessionFactory != null)
+            sessionFactory.close();
     }
 
     // Migrate model, bootstrap master realm, import realms and create admin user. This is done with acquired dbLock
@@ -270,7 +255,7 @@ public class KeycloakApplication extends Application {
 
         try {
             ConfigProviderFactory factory = loader.iterator().next();
-            logger.infov("Using ConfigProvider: {0}", factory.getClass().getName());
+            logger.debugv("ConfigProvider: {0}", factory.getClass().getName());
             Config.init(factory.create().orElseThrow(() -> new RuntimeException("Failed to load Keycloak configuration")));
         } catch (NoSuchElementException e) {
             throw new RuntimeException("No valid ConfigProvider found");
@@ -430,18 +415,6 @@ public class KeycloakApplication extends Application {
         } catch (IOException e) {
             throw new RuntimeException("Failed to parse json", e);
         }
-    }
-
-    private void exit(int status) {
-        new Thread() {
-            @Override
-            public void run() {
-                System.exit(status);
-            }
-        }.start();
-    }
-
-    public static interface Startup extends Executor {
     }
 
 }

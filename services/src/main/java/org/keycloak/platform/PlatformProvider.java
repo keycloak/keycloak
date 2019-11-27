@@ -15,25 +15,14 @@
  * limitations under the License.
  */
 
-package org.keycloak.provider.quarkus;
+package org.keycloak.platform;
 
-import io.quarkus.runtime.StartupEvent;
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.event.Observes;
+public interface PlatformProvider {
+    
+    void onStartup(Runnable runnable);
 
-@ApplicationScoped
-public class QuarkusStartupObserver {
+    void onShutdown(Runnable runnable);
 
-    private Runnable command;
-
-    public void setCommand(Runnable command) {
-        this.command = command;
-    }
-
-    private void startupEvent(@Observes StartupEvent event) {
-        if (command != null) {
-            command.run();
-        }
-    }
+    void exit(Throwable cause);
 
 }

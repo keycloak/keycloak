@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2019 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,17 +15,15 @@
  * limitations under the License.
  */
 
-package org.keycloak.services.listeners;
-
-import org.keycloak.models.KeycloakSessionFactory;
+package org.keycloak.provider.wildfly;
 
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
+import javax.servlet.annotation.WebListener;
+import org.keycloak.platform.Platform;
 
-/**
- * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
- */
-public class KeycloakSessionDestroyListener implements ServletContextListener {
+@WebListener
+public class WildflyLifecycleListener implements ServletContextListener {
 
     @Override
     public void contextInitialized(ServletContextEvent sce) {
@@ -33,10 +31,13 @@ public class KeycloakSessionDestroyListener implements ServletContextListener {
 
     @Override
     public void contextDestroyed(ServletContextEvent sce) {
-        KeycloakSessionFactory sessionFactory = (KeycloakSessionFactory) sce.getServletContext().getAttribute(KeycloakSessionFactory.class.getName());
-        if (sessionFactory != null) {
-            sessionFactory.close();
+
+        Runnable shutdownHook = ((WildflyPlatform) Platform.getPlatform()).shutdownHook;
+
+        if (shutdownHook != null) {
+            shutdownHook.run();
         }
+
     }
 
 }

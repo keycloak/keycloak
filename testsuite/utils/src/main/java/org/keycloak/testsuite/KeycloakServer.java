@@ -399,8 +399,6 @@ public class KeycloakServer {
             di.setDeploymentName("Keycloak");
             di.setDefaultEncoding("UTF-8");
 
-            di.addInitParameter(KeycloakApplication.KEYCLOAK_EMBEDDED, "true");
-
             di.setDefaultServletConfig(new DefaultServletConfig(true));
 
             ServletInfo restEasyDispatcher = Servlets.servlet("Keycloak REST Interface", HttpServlet30Dispatcher.class);
