@@ -13,7 +13,7 @@ import org.openqa.selenium.support.FindBy;
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class PasswordPage extends CredentialsComboboxPage {
+public class PasswordPage extends LanguageComboboxAwarePage {
 
     @ArquillianResource
     protected OAuthClient oauth;

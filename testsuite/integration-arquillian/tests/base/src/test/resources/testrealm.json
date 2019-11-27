@@ -146,6 +146,7 @@
       "credentials" : [
         {
           "id" : "first",
+          "userLabel" : "first",
           "type" : "otp",
           "secretData" : "{\"value\":\"DJmQfC73VGFhw7D4QJ8A\"}",
           "credentialData" : "{\"digits\":6,\"counter\":0,\"period\":30,\"algorithm\":\"HmacSHA1\",\"subType\":\"totp\"}"

@@ -280,7 +280,6 @@ public class AuthenticationProcessor {
         List<AuthenticationExecutionModel> currentExecutions;
         FormMessage errorMessage;
         FormMessage successMessage;
-        String selectedCredentialId;
         List<AuthenticationSelectionOption> authenticationSelections;
 
         private Result(AuthenticationExecutionModel execution, Authenticator authenticator, List<AuthenticationExecutionModel> currentExecutions) {
@@ -397,16 +396,6 @@ public class AuthenticationProcessor {
         @Override
         public void setUser(UserModel user) {
             setAutheticatedUser(user);
-        }
-
-        @Override
-        public String getSelectedCredentialId() {
-            return selectedCredentialId;
-        }
-
-        @Override
-        public void setSelectedCredentialId(String selectedCredentialId) {
-            this.selectedCredentialId = selectedCredentialId;
         }
 
         @Override

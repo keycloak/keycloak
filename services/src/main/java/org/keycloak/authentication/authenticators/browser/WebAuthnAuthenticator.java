@@ -28,12 +28,17 @@ import org.keycloak.WebAuthnConstants;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.Authenticator;
+import org.keycloak.authentication.CredentialValidator;
 import org.keycloak.authentication.RequiredActionFactory;
 import org.keycloak.authentication.RequiredActionProvider;
 import org.keycloak.authentication.requiredactions.WebAuthnRegisterFactory;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.UriUtils;
+import org.keycloak.credential.CredentialProvider;
+import org.keycloak.credential.OTPCredentialProvider;
 import org.keycloak.credential.WebAuthnCredentialModelInput;
+import org.keycloak.credential.WebAuthnCredentialProvider;
+import org.keycloak.credential.WebAuthnCredentialProviderFactory;
 import org.keycloak.events.Errors;
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.forms.login.freemarker.model.WebAuthnAuthenticatorsBean;
@@ -47,7 +52,7 @@ import javax.ws.rs.core.Response;
 import java.util.Collections;
 import java.util.List;
 
-public class WebAuthnAuthenticator implements Authenticator {
+public class WebAuthnAuthenticator implements Authenticator, CredentialValidator<WebAuthnCredentialProvider> {
 
     private static final Logger logger = Logger.getLogger(WebAuthnAuthenticator.class);
     private KeycloakSession session;
@@ -202,6 +207,11 @@ public class WebAuthnAuthenticator implements Authenticator {
 
     public void close() {
         // NOP
+    }
+
+    @Override
+    public WebAuthnCredentialProvider getCredentialProvider(KeycloakSession session) {
+        return (WebAuthnCredentialProvider)session.getProvider(CredentialProvider.class, WebAuthnCredentialProviderFactory.PROVIDER_ID);
     }
 
     private static final String ERR_LABEL = "web_authn_authentication_error";
