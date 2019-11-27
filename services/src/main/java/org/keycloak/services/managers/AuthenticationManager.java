@@ -800,6 +800,21 @@ public class AuthenticationManager {
 
     }
 
+    public static String getSessionIdFromSessionCookie(KeycloakSession session) {
+        Cookie cookie = session.getContext().getRequestHeaders().getCookies().get(KEYCLOAK_SESSION_COOKIE);
+        if (cookie == null || "".equals(cookie.getValue())) {
+            logger.debugv("Could not find cookie: {0}", KEYCLOAK_SESSION_COOKIE);
+            return null;
+        }
+
+        String[] parts = cookie.getValue().split("/", 3);
+        if (parts.length != 3) {
+            logger.debugv("Cannot parse session value from: {0}", KEYCLOAK_SESSION_COOKIE);
+            return null;
+        }
+        return parts[2];
+    }
+
     public static boolean isSSOAuthentication(AuthenticatedClientSessionModel clientSession) {
         String ssoAuth = clientSession.getNote(SSO_AUTH);
         return Boolean.parseBoolean(ssoAuth);
