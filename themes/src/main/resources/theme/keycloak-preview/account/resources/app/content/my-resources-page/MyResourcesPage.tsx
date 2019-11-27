@@ -277,7 +277,7 @@ export class MyResourcesPage extends React.Component<MyResourcesPageProps, MyRes
         }
     }
 
-    private handleTabClick = (event: React.FormEvent<HTMLInputElement>, tabIndex: number) => {
+    private handleTabClick = (event: React.MouseEvent<HTMLInputElement>, tabIndex: number) => {
         if (this.state.activeTabKey === tabIndex) return;
 
         this.setState({
