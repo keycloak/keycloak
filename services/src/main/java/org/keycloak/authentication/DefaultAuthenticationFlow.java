@@ -352,6 +352,7 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
         List<AuthenticationExecutionModel> modelList = processor.getRealm().getAuthenticationExecutions(model.getFlowId());
         List<AuthenticationExecutionModel> conditionalAuthenticatorList = modelList.stream()
                 .filter(this::isConditionalAuthenticator)
+                .filter(s -> s.isEnabled())
                 .collect(Collectors.toList());
         return conditionalAuthenticatorList.isEmpty() || conditionalAuthenticatorList.stream().anyMatch(m-> conditionalNotMatched(m, modelList));
     }
