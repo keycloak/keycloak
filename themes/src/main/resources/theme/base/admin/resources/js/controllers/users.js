@@ -656,12 +656,13 @@ module.controller('UserCredentialsCtrl', function($scope, realm, user, $route, R
             }
         }
 
-        var msgTitle = 'Set password';
-        var msg = 'Are you sure you want to set a password for the user?';
-
+        var msgTitle = ($scope.hasPassword ? 'Reset' : 'Set') + ' password';
+        var msg = 'Are you sure you want to ' + ($scope.hasPassword ? 'reset' : 'set') + ' a password for the user?';
+        var msgSuccess = 'The password has been ' + ($scope.hasPassword ? 'reset.' : 'set.');
+        
         Dialog.confirm(msgTitle, msg, function() {
             UserCredentials.resetPassword({ realm: realm.realm, userId: user.id }, { type : "password", value : $scope.password, temporary: $scope.temporaryPassword }, function() {
-                Notifications.success("The password has been set");
+                Notifications.success(msgSuccess);
                 $scope.password = null;
                 $scope.confirmPassword = null;
                 $route.reload();
