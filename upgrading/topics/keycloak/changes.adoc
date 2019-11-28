@@ -1,5 +1,19 @@
 == Migration Changes
 
+=== Migrating to 8.0.2
+
+==== More Authentication flows changes
+
+REQUIRED and ALTERNATIVE executions not supported at same flow::
+    In previous version, it was possible to have REQUIRED and ALTERNATIVE executions in the same authentication flow at the same level.
+    There were some issues with this approach and we did the refactoring in the Authentication SPI, which means that this is not considered
+    valid anymore. If ALTERNATIVE and REQUIRED executions are configured at the same level, the ALTERNATIVE executions are considered disabled.
+    So when migrating to the newest version, your existing authentication flows will be automatically migrated preserved the same behavior as existed in the previous version.
+    If they contain ALTERNATIVE executions at the same level as some REQUIRED executions, then the ALTERNATIVE executions will be added to the separate REQUIRED subflow. This
+    should ensure same/similar behavior of the particular authentication flow as in the previous version. We always recommend
+    to doublecheck the configuration of your authentication flow and test it to doublecheck that everything works as expected.
+    This recommendation is true in particular if you have some more customized authentication flows with custom authenticator implementations.
+
 === Migrating to 8.0.0
 
 ==== New Default Hostname provider
