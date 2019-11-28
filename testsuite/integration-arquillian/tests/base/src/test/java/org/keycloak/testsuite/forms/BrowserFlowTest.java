@@ -363,6 +363,37 @@ public class BrowserFlowTest extends AbstractTestRealmKeycloakTest {
         );
     }
 
+    // A conditional flow with disabled conditional authenticator should automatically be disabled
+    @Test
+    public void testFlowDisabledWhenConditionalAuthenticatorIsDisabled() {
+        try {
+            configureBrowserFlowWithConditionalSubFlowHavingDisabledConditionalAuthenticator("browser - disabled conditional authenticator");
+            // Flow is conditional but it is missing a conditional authentication executor
+            // The whole flow is disabled
+            Assert.assertFalse(needsPassword("user-with-two-configured-otp"));
+        } finally {
+            revertFlows("browser - disabled conditional authenticator");
+        }
+    }
+
+    private void configureBrowserFlowWithConditionalSubFlowHavingDisabledConditionalAuthenticator(String newFlowAlias) {
+        testingClient.server("test").run(session -> FlowUtil.inCurrentRealm(session).copyBrowserFlow(newFlowAlias));
+        testingClient.server("test").run(session -> FlowUtil.inCurrentRealm(session)
+                .selectFlow(newFlowAlias)
+                .inForms(forms -> forms
+                        .clear()
+                        .addAuthenticatorExecution(Requirement.REQUIRED, UsernameFormFactory.PROVIDER_ID)
+                        .addSubFlowExecution(Requirement.CONDITIONAL, subFlow -> {
+                            // Add authenticators to this flow: 1 conditional authenticator and a basic authenticator executions
+                            subFlow.addAuthenticatorExecution(Requirement.DISABLED, ConditionalUserConfiguredAuthenticatorFactory.PROVIDER_ID);
+
+                            // Update the browser forms only with a UsernameForm
+                            subFlow.addAuthenticatorExecution(Requirement.REQUIRED, PasswordFormFactory.PROVIDER_ID);
+                        }))
+                .defineAsBrowserFlow()
+        );
+    }
+
     // Configure a conditional authenticator in a non-conditional sub-flow
     // In such case, the flow is evaluated and the conditional authenticator is considered as disabled
     @Test
