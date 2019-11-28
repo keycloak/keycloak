@@ -600,18 +600,19 @@ public class RealmAdminResource {
     public List<Map<String, String>> getClientSessionStats() {
         auth.realm().requireViewRealm();
 
-        Map<String, Map<String, String>> data = new HashMap();
+        Map<String, Map<String, String>> data = new HashMap<>();
         {
-            Map<String, Long> activeCount =session.sessions().getActiveClientSessionStats(realm, false);
+            Map<String, Long> activeCount = session.sessions().getActiveClientSessionStats(realm, false);
             for (Map.Entry<String, Long> entry : activeCount.entrySet()) {
                 Map<String, String> map = new HashMap<>();
                 ClientModel client = realm.getClientById(entry.getKey());
+                if (client == null)
+                    continue;
                 map.put("id", client.getId());
                 map.put("clientId", client.getClientId());
                 map.put("active", entry.getValue().toString());
                 map.put("offline", "0");
                 data.put(client.getId(), map);
-
             }
         }
         {
@@ -621,6 +622,8 @@ public class RealmAdminResource {
                 if (map == null) {
                     map = new HashMap<>();
                     ClientModel client = realm.getClientById(entry.getKey());
+                    if (client == null)
+                        continue;
                     map.put("id", client.getId());
                     map.put("clientId", client.getClientId());
                     map.put("active", "0");
@@ -630,7 +633,8 @@ public class RealmAdminResource {
             }
         }
         List<Map<String, String>> result = new LinkedList<>();
-        for (Map<String, String> item : data.values()) result.add(item);
+        for (Map<String, String> item : data.values())
+            result.add(item);
         return result;
     }
 
