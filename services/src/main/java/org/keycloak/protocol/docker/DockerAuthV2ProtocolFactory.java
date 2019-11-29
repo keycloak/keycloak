@@ -28,7 +28,7 @@ public class DockerAuthV2ProtocolFactory extends AbstractLoginProtocolFactory im
         addAllRequestedScopeMapper.setName(AllowAllDockerProtocolMapper.PROVIDER_ID);
         addAllRequestedScopeMapper.setProtocolMapper(AllowAllDockerProtocolMapper.PROVIDER_ID);
         addAllRequestedScopeMapper.setProtocol(DockerAuthV2Protocol.LOGIN_PROTOCOL);
-        addAllRequestedScopeMapper.setConfig(Collections.EMPTY_MAP);
+        addAllRequestedScopeMapper.setConfig(Collections.emptyMap());
         builtins.put(AllowAllDockerProtocolMapper.PROVIDER_ID, addAllRequestedScopeMapper);
         defaultBuiltins.add(addAllRequestedScopeMapper);
     }

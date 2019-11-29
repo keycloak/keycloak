@@ -192,7 +192,7 @@ public class UserInfoEndpoint {
         AccessToken userInfo = new AccessToken();
         tokenManager.transformUserInfoAccessToken(session, userInfo, userSession, clientSessionCtx);
 
-        Map<String, Object> claims = new HashMap<String, Object>();
+        Map<String, Object> claims = new HashMap<>();
         claims.put("sub", userModel.getId());
         claims.putAll(userInfo.getOtherClaims());
 
