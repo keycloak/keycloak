@@ -93,7 +93,7 @@ public class NoCookieFlowRedirectAuthenticatorFactory implements AuthenticatorFa
 
     @Override
     public List<ProviderConfigProperty> getConfigProperties() {
-        return Collections.EMPTY_LIST;
+        return Collections.emptyList();
     }
 
     @Override

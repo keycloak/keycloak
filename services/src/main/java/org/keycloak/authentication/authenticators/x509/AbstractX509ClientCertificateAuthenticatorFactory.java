@@ -18,6 +18,7 @@
 
 package org.keycloak.authentication.authenticators.x509;
 
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -89,9 +90,7 @@ public abstract class AbstractX509ClientCertificateAuthenticatorFactory implemen
     protected static final List<ProviderConfigProperty> configProperties;
     static {
         List<String> mappingSourceTypes = new LinkedList<>();
-        for (String s : mappingSources) {
-            mappingSourceTypes.add(s);
-        }
+        Collections.addAll(mappingSourceTypes, mappingSources);
         ProviderConfigProperty mappingMethodList = new ProviderConfigProperty();
         mappingMethodList.setType(ProviderConfigProperty.LIST_TYPE);
         mappingMethodList.setName(MAPPING_SOURCE_SELECTION);
@@ -123,9 +122,7 @@ public abstract class AbstractX509ClientCertificateAuthenticatorFactory implemen
         regExp.setHelpText("The regular expression to extract a user identity. The expression must contain a single group. For example, 'uniqueId=(.*?)(?:,|$)' will match 'uniqueId=somebody@company.org, CN=somebody' and give somebody@company.org");
 
         List<String> mapperTypes = new LinkedList<>();
-        for (String m : userModelMappers) {
-            mapperTypes.add(m);
-        }
+        Collections.addAll(mapperTypes, userModelMappers);
 
         ProviderConfigProperty userMapperList = new ProviderConfigProperty();
         userMapperList.setType(ProviderConfigProperty.LIST_TYPE);
