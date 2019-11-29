@@ -2,7 +2,7 @@
 === Setting Up a Load Balancer or Proxy
 
 This section discusses a number of things you need to configure before you can put a reverse proxy or load balancer
-in front of your clustered {project_name} deployment.  It also covers configuring the built in load balancer that
+in front of your clustered {project_name} deployment.  It also covers configuring the built-in load balancer that
 was <<_clustered-domain-example, Clustered Domain Example>>.
 
 
@@ -119,7 +119,7 @@ through the reverse proxy. For example if the reverse proxy address is `\https:/
 of endpoints for {project_name}. Make sure the endpoints starts with the address (scheme, domain and port) of your
 reverse proxy or load balancer. By doing this you make sure that {project_name} is using the correct endpoint.
 
-You should also verify that {project_name} sees the correct source IP address for requests. Do check this you can
+You should also verify that {project_name} sees the correct source IP address for requests. To check this, you can
 try to login to the admin console with an invalid username and/or password. This should show a warning in the server log
 something like this:
 
@@ -133,7 +133,7 @@ Check that the value of `ipAddress` is the IP address of the machine you tried t
 
 ==== Using the Built-In Load Balancer
 
-This section covers configuring the built in load balancer that is discussed in the
+This section covers configuring the built-in load balancer that is discussed in the
 <<_clustered-domain-example, Clustered Domain Example>>.
 
 The <<_clustered-domain-example, Clustered Domain Example>> is only designed to run
@@ -216,9 +216,8 @@ $ domain.sh --host-config=host-slave.xml
        -Djboss.domain.master.address=192.168.0.2
 ----
 
-The values of `jboss.bind.address` and `jboss.bind.addres.management` pertain to the host slave's IP address.
-The value of `jboss.domain.master.address` need to be the IP address of the domain controller which is the management address
-of the master host.
+The values of `jboss.bind.address` and `jboss.bind.address.management` pertain to the host slave's IP address.
+The value of `jboss.domain.master.address` needs to be the IP address of the domain controller, which is the management address of the master host.
 
 ==== Configuring Other Load Balancers
 
