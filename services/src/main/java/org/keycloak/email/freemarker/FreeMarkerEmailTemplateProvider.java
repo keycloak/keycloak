@@ -104,7 +104,7 @@ public class FreeMarkerEmailTemplateProvider implements EmailTemplateProvider {
 
     @Override
     public void sendEvent(Event event) throws EmailException {
-        Map<String, Object> attributes = new HashMap<String, Object>();
+        Map<String, Object> attributes = new HashMap<>();
         attributes.put("user", new ProfileBean(user));
         attributes.put("event", new EventBean(event));
 
@@ -113,7 +113,7 @@ public class FreeMarkerEmailTemplateProvider implements EmailTemplateProvider {
 
     @Override
     public void sendPasswordReset(String link, long expirationInMinutes) throws EmailException {
-        Map<String, Object> attributes = new HashMap<String, Object>(this.attributes);
+        Map<String, Object> attributes = new HashMap<>(this.attributes);
         attributes.put("user", new ProfileBean(user));
         addLinkInfoIntoAttributes(link, expirationInMinutes, attributes);
 
@@ -127,7 +127,7 @@ public class FreeMarkerEmailTemplateProvider implements EmailTemplateProvider {
         setRealm(session.getContext().getRealm());
         setUser(user);
 
-        Map<String, Object> attributes = new HashMap<String, Object>(this.attributes);
+        Map<String, Object> attributes = new HashMap<>(this.attributes);
         attributes.put("user", new ProfileBean(user));
         attributes.put("realmName", realm.getName());
 
@@ -137,7 +137,7 @@ public class FreeMarkerEmailTemplateProvider implements EmailTemplateProvider {
 
     @Override
     public void sendConfirmIdentityBrokerLink(String link, long expirationInMinutes) throws EmailException {
-        Map<String, Object> attributes = new HashMap<String, Object>(this.attributes);
+        Map<String, Object> attributes = new HashMap<>(this.attributes);
         attributes.put("user", new ProfileBean(user));
         addLinkInfoIntoAttributes(link, expirationInMinutes, attributes);
 
@@ -150,13 +150,13 @@ public class FreeMarkerEmailTemplateProvider implements EmailTemplateProvider {
         attributes.put("identityProviderContext", brokerContext);
         attributes.put("identityProviderAlias", idpAlias);
 
-        List<Object> subjectAttrs = Arrays.<Object> asList(idpAlias);
+        List<Object> subjectAttrs = Arrays.asList(idpAlias);
         send("identityProviderLinkSubject", subjectAttrs, "identity-provider-link.ftl", attributes);
     }
 
     @Override
     public void sendExecuteActions(String link, long expirationInMinutes) throws EmailException {
-        Map<String, Object> attributes = new HashMap<String, Object>(this.attributes);
+        Map<String, Object> attributes = new HashMap<>(this.attributes);
         attributes.put("user", new ProfileBean(user));
         addLinkInfoIntoAttributes(link, expirationInMinutes, attributes);
 
@@ -167,7 +167,7 @@ public class FreeMarkerEmailTemplateProvider implements EmailTemplateProvider {
 
     @Override
     public void sendVerifyEmail(String link, long expirationInMinutes) throws EmailException {
-        Map<String, Object> attributes = new HashMap<String, Object>(this.attributes);
+        Map<String, Object> attributes = new HashMap<>(this.attributes);
         attributes.put("user", new ProfileBean(user));
         addLinkInfoIntoAttributes(link, expirationInMinutes, attributes);
 

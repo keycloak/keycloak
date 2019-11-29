@@ -410,7 +410,7 @@ public class ExportUtils {
     }
 
     public static List<String> getRoleNames(Collection<RoleModel> roles) {
-        List<String> roleNames = new ArrayList<String>();
+        List<String> roleNames = new ArrayList<>();
         for (RoleModel role : roles) {
             roleNames.add(role.getName());
         }
@@ -479,7 +479,7 @@ public class ExportUtils {
 
         // Social links
         Set<FederatedIdentityModel> socialLinks = session.users().getFederatedIdentities(user, realm);
-        List<FederatedIdentityRepresentation> socialLinkReps = new ArrayList<FederatedIdentityRepresentation>();
+        List<FederatedIdentityRepresentation> socialLinkReps = new ArrayList<>();
         for (FederatedIdentityModel socialLink : socialLinks) {
             FederatedIdentityRepresentation socialLinkRep = exportSocialLink(socialLink);
             socialLinkReps.add(socialLinkRep);
@@ -517,7 +517,7 @@ public class ExportUtils {
 
         // Credentials
         List<CredentialModel> creds = session.userCredentialManager().getStoredCredentials(realm, user);
-        List<CredentialRepresentation> credReps = new ArrayList<CredentialRepresentation>();
+        List<CredentialRepresentation> credReps = new ArrayList<>();
         for (CredentialModel cred : creds) {
             CredentialRepresentation credRep = exportCredential(cred);
             credReps.add(credRep);
@@ -527,7 +527,7 @@ public class ExportUtils {
 
         // Grants
         List<UserConsentModel> consents = session.users().getConsents(realm, user.getId());
-        LinkedList<UserConsentRepresentation> consentReps = new LinkedList<UserConsentRepresentation>();
+        LinkedList<UserConsentRepresentation> consentReps = new LinkedList<>();
         for (UserConsentModel consent : consents) {
             UserConsentRepresentation consentRep = ModelToRepresentation.toRepresentation(consent);
             consentReps.add(consentRep);
@@ -657,7 +657,7 @@ public class ExportUtils {
 
         // Social links
         Set<FederatedIdentityModel> socialLinks = session.userFederatedStorage().getFederatedIdentities(id, realm);
-        List<FederatedIdentityRepresentation> socialLinkReps = new ArrayList<FederatedIdentityRepresentation>();
+        List<FederatedIdentityRepresentation> socialLinkReps = new ArrayList<>();
         for (FederatedIdentityModel socialLink : socialLinks) {
             FederatedIdentityRepresentation socialLinkRep = exportSocialLink(socialLink);
             socialLinkReps.add(socialLinkRep);
@@ -697,7 +697,7 @@ public class ExportUtils {
 
         // Credentials
         List<CredentialModel> creds = session.userFederatedStorage().getStoredCredentials(realm, id);
-        List<CredentialRepresentation> credReps = new ArrayList<CredentialRepresentation>();
+        List<CredentialRepresentation> credReps = new ArrayList<>();
         for (CredentialModel cred : creds) {
             CredentialRepresentation credRep = exportCredential(cred);
             credReps.add(credRep);
@@ -706,7 +706,7 @@ public class ExportUtils {
 
         // Grants
         List<UserConsentModel> consents = session.users().getConsents(realm, id);
-        LinkedList<UserConsentRepresentation> consentReps = new LinkedList<UserConsentRepresentation>();
+        LinkedList<UserConsentRepresentation> consentReps = new LinkedList<>();
         for (UserConsentModel consent : consents) {
             UserConsentRepresentation consentRep = ModelToRepresentation.toRepresentation(consent);
             consentReps.add(consentRep);

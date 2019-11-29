@@ -95,7 +95,7 @@ public class DirImportProvider implements ImportProvider {
             }
         });
 
-        List<String> realmNames = new ArrayList<String>();
+        List<String> realmNames = new ArrayList<>();
         for (File file : realmFiles) {
             String fileName = file.getName();
             // Parse "foo" from "foo-realm.json"

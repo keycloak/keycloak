@@ -35,7 +35,7 @@ import java.util.Map;
 public abstract class AbstractX509ClientCertificateDirectGrantAuthenticator extends AbstractX509ClientCertificateAuthenticator {
 
     public Response errorResponse(int status, String error, String errorDescription) {
-        Map<String, String> e = new HashMap<String, String>();
+        Map<String, String> e = new HashMap<>();
         e.put(OAuth2Constants.ERROR, error);
         if (errorDescription != null) {
             e.put(OAuth2Constants.ERROR_DESCRIPTION, errorDescription);
