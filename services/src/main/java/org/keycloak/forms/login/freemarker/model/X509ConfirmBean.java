@@ -25,7 +25,7 @@ import java.util.Map;
  */
 public class X509ConfirmBean {
 
-    private Map<String, String> formData = new HashMap<>();
+    private Map<String, String> formData;
 
     public X509ConfirmBean(MultivaluedMap<String, String> formData) {
         this.formData = new HashMap<>();

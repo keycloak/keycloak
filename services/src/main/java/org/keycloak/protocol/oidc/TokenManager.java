@@ -470,10 +470,9 @@ public class TokenManager {
             }
             return roleMappings;
         } else {
-            Set<RoleModel> scopeMappings = new HashSet<>();
 
             // 1 - Client roles of this client itself
-            scopeMappings.addAll(client.getRoles());
+            Set<RoleModel> scopeMappings = new HashSet<>(client.getRoles());
 
             // 2 - Role mappings of client itself + default client scopes + optional client scopes requested by scope parameter (if applyScopeParam is true)
             for (ClientScopeModel clientScope : clientScopes) {

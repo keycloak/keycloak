@@ -137,9 +137,7 @@ public class DefaultKeyManager implements KeyManager {
     public List<KeyWrapper> getKeys(RealmModel realm) {
         List<KeyWrapper> keys = new LinkedList<>();
         for (KeyProvider p : getProviders(realm)) {
-            for (KeyWrapper key : p .getKeys()) {
-                keys.add(key);
-            }
+            keys.addAll(p.getKeys());
         }
         return keys;
     }

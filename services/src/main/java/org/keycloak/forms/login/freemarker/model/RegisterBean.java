@@ -25,10 +25,10 @@ import java.util.Map;
  */
 public class RegisterBean {
 
-    private Map<String, String> formData = new HashMap<String, String>();
+    private Map<String, String> formData;
 
     public RegisterBean(MultivaluedMap<String, String> formData) {
-        this.formData = new HashMap<String, String>();
+        this.formData = new HashMap<>();
 
         if (formData != null) {
             for (String k : formData.keySet()) {
