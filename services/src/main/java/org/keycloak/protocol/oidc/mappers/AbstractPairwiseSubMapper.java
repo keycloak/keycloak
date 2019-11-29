@@ -1,6 +1,5 @@
 package org.keycloak.protocol.oidc.mappers;
 
-import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.KeycloakSession;

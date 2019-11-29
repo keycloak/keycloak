@@ -18,8 +18,6 @@ package org.keycloak.jose.jws;
 
 import java.io.UnsupportedEncodingException;
 import java.security.Key;
-import java.util.LinkedList;
-import java.util.List;
 
 import org.jboss.logging.Logger;
 import org.keycloak.Token;
@@ -32,7 +30,6 @@ import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.crypto.SignatureProvider;
 import org.keycloak.crypto.SignatureSignerContext;
-import org.keycloak.jose.jwe.JWEConstants;
 import org.keycloak.jose.jwe.JWEException;
 import org.keycloak.jose.jwe.alg.JWEAlgorithmProvider;
 import org.keycloak.jose.jwe.enc.JWEEncryptionProvider;
