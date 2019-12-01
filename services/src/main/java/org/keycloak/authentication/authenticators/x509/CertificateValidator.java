@@ -136,7 +136,7 @@ public class CertificateValidator {
         }
     }
 
-    public static abstract class OCSPChecker {
+    public abstract static class OCSPChecker {
         /**
          * Requests certificate revocation status using OCSP. The OCSP responder URI
          * is obtained from the certificate's AIA extension.
@@ -147,7 +147,7 @@ public class CertificateValidator {
         public abstract OCSPUtils.OCSPRevocationStatus check(X509Certificate cert, X509Certificate issuerCertificate) throws CertPathValidatorException;
     }
 
-    public static abstract class CRLLoaderImpl {
+    public abstract static class CRLLoaderImpl {
         /**
          * Returns a collection of {@link X509CRL}
          * @return
