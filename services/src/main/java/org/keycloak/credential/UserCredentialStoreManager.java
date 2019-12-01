@@ -152,7 +152,7 @@ public class UserCredentialStoreManager implements UserCredentialManager, OnUser
         } else {
             if (user.getFederationLink() != null) {
                 UserStorageProvider provider = UserStorageManager.getStorageProvider(session, realm, user.getFederationLink());
-                if (provider != null && provider instanceof CredentialInputValidator) {
+                if (provider instanceof CredentialInputValidator) {
                     if (!UserStorageManager.isStorageProviderEnabled(realm, user.getFederationLink())) return false;
                     validate(realm, user, toValidate, ((CredentialInputValidator)provider));
                 }
@@ -205,7 +205,7 @@ public class UserCredentialStoreManager implements UserCredentialManager, OnUser
         } else {
             if (user.getFederationLink() != null) {
                 UserStorageProvider provider = UserStorageManager.getStorageProvider(session, realm, user.getFederationLink());
-                if (provider != null && provider instanceof CredentialInputUpdater) {
+                if (provider instanceof CredentialInputUpdater) {
                     if (!UserStorageManager.isStorageProviderEnabled(realm, user.getFederationLink())) return;
                     if (((CredentialInputUpdater) provider).updateCredential(realm, user, input)) return;
                 }
@@ -236,7 +236,7 @@ public class UserCredentialStoreManager implements UserCredentialManager, OnUser
         } else {
             if (user.getFederationLink() != null) {
                 UserStorageProvider provider = UserStorageManager.getStorageProvider(session, realm, user.getFederationLink());
-                if (provider != null && provider instanceof CredentialInputUpdater) {
+                if (provider instanceof CredentialInputUpdater) {
                     if (!UserStorageManager.isStorageProviderEnabled(realm, user.getFederationLink())) return;
                     ((CredentialInputUpdater) provider).disableCredentialType(realm, user, credentialType);
                 }
@@ -268,7 +268,7 @@ public class UserCredentialStoreManager implements UserCredentialManager, OnUser
         } else {
             if (user.getFederationLink() != null) {
                 UserStorageProvider provider = UserStorageManager.getStorageProvider(session, realm, user.getFederationLink());
-                if (provider != null && provider instanceof CredentialInputUpdater) {
+                if (provider instanceof CredentialInputUpdater) {
                     if (!UserStorageManager.isStorageProviderEnabled(realm, user.getFederationLink())) return Collections.EMPTY_SET;
                     types.addAll(((CredentialInputUpdater) provider).getDisableableCredentialTypes(realm, user));
                 }
@@ -298,7 +298,7 @@ public class UserCredentialStoreManager implements UserCredentialManager, OnUser
         } else {
             if (user.getFederationLink() != null) {
                 UserStorageProvider provider = UserStorageManager.getStorageProvider(session, realm, user.getFederationLink());
-                if (provider != null && provider instanceof CredentialInputValidator) {
+                if (provider instanceof CredentialInputValidator) {
                     if (!UserStorageManager.isStorageProviderEnabled(realm, user.getFederationLink())) return false;
                     if (((CredentialInputValidator) provider).isConfiguredFor(realm, user, type)) return true;
                 }
