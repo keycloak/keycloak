@@ -137,13 +137,13 @@ public abstract class AbstractX509ClientCertificateAuthenticator implements Auth
             return null;
         };
         
-        private static final Function<X509Certificate[], String> getSerialnumberFunc(X509AuthenticatorConfigModel config) {
+        private static Function<X509Certificate[], String> getSerialnumberFunc(X509AuthenticatorConfigModel config) {
             return config.isSerialnumberHex() ? 
                     certs -> Hex.toHexString(certs[0].getSerialNumber().toByteArray()) : 
                     certs -> certs[0].getSerialNumber().toString();
         }
         
-        private static final Function<X509Certificate[], String> getIssuerDNFunc(X509AuthenticatorConfigModel config) {
+        private static Function<X509Certificate[], String> getIssuerDNFunc(X509AuthenticatorConfigModel config) {
             return config.isCanonicalDnEnabled() ? 
                     certs -> certs[0].getIssuerX500Principal().getName(X500Principal.CANONICAL) : 
                     certs -> certs[0].getIssuerDN().getName();

@@ -70,7 +70,7 @@ public class X509AuthenticatorConfigModel extends AuthenticatorConfigModel {
             this.name = name;
         }
         public String getName() {  return this.name; }
-        static public MappingSourceType parse(String name) throws IllegalArgumentException, IndexOutOfBoundsException {
+        public static MappingSourceType parse(String name) throws IllegalArgumentException, IndexOutOfBoundsException {
             if (name == null || name.trim().length() == 0)
                 throw new IllegalArgumentException("name");
 

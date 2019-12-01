@@ -25,5 +25,5 @@ import org.keycloak.models.ProtocolMapperModel;
  * @version $Revision: 1 $
  */
 public interface SAMLGroupNameMapper {
-    public String mapName(ProtocolMapperModel model, GroupModel group);
+    String mapName(ProtocolMapperModel model, GroupModel group);
 }

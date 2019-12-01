@@ -509,8 +509,8 @@ public class SamlProtocol implements LoginProtocol {
     }
 
     public static class ProtocolMapperProcessor<T> {
-        final public T mapper;
-        final public ProtocolMapperModel model;
+        public final T mapper;
+        public final ProtocolMapperModel model;
 
         public ProtocolMapperProcessor(T mapper, ProtocolMapperModel model) {
             this.mapper = mapper;
