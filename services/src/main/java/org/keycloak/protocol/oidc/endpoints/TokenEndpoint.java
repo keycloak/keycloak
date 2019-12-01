@@ -1203,7 +1203,7 @@ public class TokenEndpoint {
             return false;
         }
         Matcher m = VALID_CODE_VERIFIER_PATTERN.matcher(codeVerifier);
-        return m.matches() ? true : false;
+        return m.matches();
     }
 
     // https://tools.ietf.org/html/rfc7636#section-4.6

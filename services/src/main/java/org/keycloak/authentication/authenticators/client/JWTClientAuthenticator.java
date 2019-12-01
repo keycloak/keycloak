@@ -127,7 +127,7 @@ public class JWTClientAuthenticator extends AbstractClientAuthenticator {
             boolean signatureValid;
             try {
                 JsonWebToken jwt = context.getSession().tokens().decodeClientJWT(clientAssertion, client, JsonWebToken.class);
-                signatureValid = jwt == null ? false : true;
+                signatureValid = jwt != null;
             } catch (RuntimeException e) {
                 Throwable cause = e.getCause() != null ? e.getCause() : e;
                 throw new RuntimeException("Signature on JWT token failed validation", cause);

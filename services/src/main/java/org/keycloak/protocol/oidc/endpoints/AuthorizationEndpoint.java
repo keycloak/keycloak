@@ -321,7 +321,7 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
             return false;
         }
         Matcher m = VALID_CODE_CHALLENGE_PATTERN.matcher(codeChallenge);
-        return m.matches() ? true : false;
+        return m.matches();
     }
 
     private Response checkParamsForPkceEnforcedClient(String codeChallengeMethod, String pkceCodeChallengeMethod, String codeChallenge) {

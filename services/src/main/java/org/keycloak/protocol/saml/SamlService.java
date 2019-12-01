@@ -347,7 +347,7 @@ public class SamlService extends AuthorizationEndpointBase {
                 SubjectType.STSubType subType = subject.getSubType();
                 if (subType != null) {
                     BaseIDAbstractType baseID = subject.getSubType().getBaseID();
-                    if (baseID != null && baseID instanceof NameIDType) {
+                    if (baseID instanceof NameIDType) {
                         NameIDType nameID = (NameIDType) baseID;
                         authSession.setClientNote(OIDCLoginProtocol.LOGIN_HINT_PARAM, nameID.getValue());
                     }
@@ -366,8 +366,7 @@ public class SamlService extends AuthorizationEndpointBase {
             }
 
             //If unset we fall back to default "false"
-            final boolean isPassive = (null == requestAbstractType.isIsPassive() ?
-                    false : requestAbstractType.isIsPassive().booleanValue());
+            final boolean isPassive = (null != requestAbstractType.isIsPassive() && requestAbstractType.isIsPassive().booleanValue());
             return newBrowserAuthentication(authSession, isPassive, redirectToAuthentication);
         }
 

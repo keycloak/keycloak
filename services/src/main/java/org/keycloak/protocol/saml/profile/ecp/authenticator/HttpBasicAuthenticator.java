@@ -104,7 +104,7 @@ public class HttpBasicAuthenticator implements Authenticator {
             if (authHeader.startsWith(BASIC_PREFIX)) {
                 final String[] split = authHeader.trim().split("\\s+");
 
-                if (split == null || split.length != 2) return null;
+                if (split.length != 2) return null;
 
                 credentials = split[1];
             }
