@@ -378,21 +378,6 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
-    public void testTotpGoingBack() throws Exception {
-        loginPage.open();
-        loginPage.login("test-user@localhost", "password");
-
-        continueLoginWithInvalidTotp();
-        loginTotpPage.cancel();
-        loginPage.assertCurrent();
-        loginPage.login("test-user@localhost", "password");
-        continueLoginWithInvalidTotp();
-        continueLoginWithCorrectTotpExpectFailure();
-        clearUserFailures();
-        continueLoginWithTotp();
-    }
-
-    @Test
     public void testBrowserMissingTotp() throws Exception {
         loginSuccess();
         loginWithMissingTotp();
