@@ -7,7 +7,7 @@
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
         <meta name="robots" content="noindex, nofollow">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-          
+
         <script>
             <#if properties.developmentMode?has_content && properties.developmentMode == "true">
             var developmentMode = true;
@@ -24,7 +24,7 @@
             var baseUrl = '${baseUrl}';
             var realm = '${realm.name}';
             var resourceUrl = '${resourceUrl}';
-                
+
             var features = {
                 isRegistrationEmailAsUsername : ${realm.registrationEmailAsUsername?c},
                 isEditUserNameAllowed : ${realm.editUsernameAllowed?c},
@@ -34,7 +34,7 @@
                 isMyResourcesEnabled : ${(realm.userManagedAccessAllowed && isAuthorizationEnabled)?c},
                 isTotpConfigured : ${isTotpConfigured?c}
             }
-                
+
             var availableLocales = [];
             <#list supportedLocales as locale, label>
                 availableLocales.push({locale : '${locale}', label : '${label}'});
@@ -54,19 +54,19 @@
                 var l18Msg = {};
             </#if>
         </script>
-        
+
         <link rel="icon" href="${resourceUrl}/app/assets/img/favicon.ico" type="image/x-icon"/>
         <link rel="stylesheet" href="${resourceUrl}/node_modules/@patternfly/patternfly/patternfly.min.css">
 
         <script src="${authUrl}js/keycloak.js"></script>
-        
+
         <#if properties.developmentMode?has_content && properties.developmentMode == "true">
         <!-- Don't use this in production: -->
         <script src="${resourceUrl}/node_modules/react/umd/react.development.js" crossorigin></script>
         <script src="${resourceUrl}/node_modules/react-dom/umd/react-dom.development.js" crossorigin></script>
         <script src="https://unpkg.com/babel-standalone@6.26.0/babel.min.js"></script>
         </#if>
-        
+
         <#if properties.extensions?has_content>
             <#list properties.extensions?split(' ') as script>
                 <#if properties.developmentMode?has_content && properties.developmentMode == "true">
@@ -76,7 +76,7 @@
                 </#if>
             </#list>
         </#if>
-        
+
         <#if properties.scripts?has_content>
             <#list properties.scripts?split(' ') as script>
         <script type="text/javascript" src="${resourceUrl}/${script}"></script>
@@ -101,7 +101,7 @@
                     document.getElementById("landingSignOutButton").style.display='inline';
                     document.getElementById("landingSignOutLink").style.display='inline';
                 }
-                    
+
                 loadjs("/node_modules/systemjs/dist/system.src.js", function() {
                     loadjs("/systemjs.config.js", function() {
                         System.import('${resourceUrl}/Main.js').catch(function (err) {
@@ -116,13 +116,28 @@
 
 <div id="main_react_container" style="display:none;height:100%"></div>
 
+<style>
+    .icon {
+        border: 2px solid #39a5dc;
+        font-size: 2.4em;
+        border-radius: 50%;
+        width: 1.8em;
+        margin: 0 auto;
+    }
+    .pf-l-gallery__item {
+        text-align: center;
+    }
+    .pf-c-card__body.pf-c-content {
+        border: 2px solid #eee;
+    }
+</style>
 <div id="welcomeScreen" style="display:none;height:100%">
     <#if properties.styles?has_content>
         <#list properties.styles?split(' ') as style>
         <link href="${resourceUrl}/${style}" rel="stylesheet"/>
         </#list>
     </#if>
-    
+
     <div class="pf-c-page" id="page-layout-default-nav">
       <header role="banner" class="pf-c-page__header">
         <div class="pf-c-page__header-brand">
@@ -136,7 +151,7 @@
               <a id="landingReferrerLink" href="${referrer_uri}" id="referrer" tabindex="0"><span class="pf-icon pf-icon-arrow"></span>${msg("backTo",referrerName)}</a>
             </div>
             </#if>
-            
+
             <#if realm.internationalizationEnabled  && supportedLocales?size gt 1>
             <div class="pf-c-page__header-tools-group pf-m-icons">
               <div id="landing-locale-dropdown" class="pf-c-dropdown">
@@ -158,12 +173,12 @@
               </div>
             </div>
             </#if>
-            
+
             <div class="pf-c-page__header-tools-group pf-m-icons">
               <button id="landingSignInButton" tabindex="0" style="display:none" onclick="keycloak.login();" class="pf-c-button pf-m-primary" type="button">${msg("doLogIn")}</button>
               <button id="landingSignOutButton" tabindex="0" style="display:none" onclick="keycloak.logout();" class="pf-c-button pf-m-primary" type="button">${msg("doSignOut")}</button>
             </div>
-            
+
             <!-- Kebab for mobile -->
             <div class="pf-c-page__header-tools-group">
                 <div id="landingMobileKebab" class="pf-c-dropdown pf-m-mobile" onclick="toggleMobileDropdown();"> <!-- pf-m-expanded -->
@@ -176,9 +191,9 @@
                             <a id="landingMobileReferrerLink" href="${referrer_uri}" role="menuitem" tabindex="0" aria-disabled="false" class="pf-c-dropdown__menu-item">${msg("backTo",referrerName)}</a>
                         </li>
                         </#if>
-                        
+
                         <!-- locale selector for mobile -->
-                        <#if realm.internationalizationEnabled  && supportedLocales?size gt 1>
+                        <#if realm.internationalizationEnabled && supportedLocales?size gt 1>
                             <li role="none" aria-expanded="false" onclick="toggleMobileChooseLocale();"><a href="#" id="landing-mobile-local-toggle" class="pf-c-dropdown__menu-item">${msg("locale_" + locale)} <i id="landingMobileLocaleSelectedIcon" class="fas fa-angle-right pf-c-options-menu__menu-item-icon" aria-hidden="true"></i></a></li>
                             <#list supportedLocales as locale, label>
                                 <#if referrer?has_content && referrer_uri?has_content>
@@ -200,7 +215,7 @@
                     </ul>
                 </div>
             </div>
-            
+
         </div> <!-- end header tools -->
       </header>
 
@@ -215,7 +230,10 @@
             <div class="pf-l-gallery__item">
               <div class="pf-c-card">
                 <div class="pf-c-card__header pf-c-content">
-                    <h2><i class="pf-icon pf-icon-user"></i>&nbsp${msg("personalInfoHtmlTitle")}</h2>
+                    <div class="icon">
+                        <i class="pf-icon pf-icon-user"></i>
+                    </div>
+                    <h2>${msg("personalInfoHtmlTitle")}</h2>
                     <h6>${msg("personalInfoIntroMessage")}</h6>
                 </div>
                 <div class="pf-c-card__body pf-c-content">
@@ -226,7 +244,10 @@
             <div class="pf-l-gallery__item">
               <div class="pf-c-card">
                 <div class="pf-c-card__header pf-c-content">
-                    <h2><i class="pf-icon pf-icon-security"></i>&nbsp${msg("accountSecurityTitle")}</h2>
+                    <div class="icon">
+                        <i class="pf-icon pf-icon-security"></i>
+                    </div>
+                    <h2>${msg("accountSecurityTitle")}</h2>
                     <h6>${msg("accountSecurityIntroMessage")}</h6>
                 </div>
                 <div class="pf-c-card__body pf-c-content">
@@ -239,7 +260,10 @@
             <div class="pf-l-gallery__item">
               <div class="pf-c-card">
                 <div class="pf-c-card__header pf-c-content">
-                    <h2><i class="pf-icon pf-icon-applications"></i>&nbsp${msg("applicationsHtmlTitle")}</h2>
+                    <div class="icon">
+                        <i class="pf-icon pf-icon-applications"></i>
+                    </div>
+                    <h2>${msg("applicationsHtmlTitle")}</h2>
                     <h6>${msg("applicationsIntroMessage")}</h6>
                 </div>
                 <div class="pf-c-card__body pf-c-content">
@@ -269,7 +293,7 @@
                 document.getElementById("landingLinkedAccountsLink").style.display='block';
             };
 
-            // Hidden until feature is complete.  
+            // Hidden until feature is complete.
             //if (features.isMyResourcesEnabled) {
             //    document.getElementById("landingMyResourcesCard").style.display='block';
             //};
