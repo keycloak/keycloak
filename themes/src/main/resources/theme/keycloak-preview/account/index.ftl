@@ -118,7 +118,7 @@
 
 <style>
     .icon {
-        border: 2px solid #39a5dc;
+        border: 2px solid #1f87d6a1;
         font-size: 2.4em;
         border-radius: 50%;
         width: 1.8em;
@@ -128,7 +128,13 @@
         text-align: center;
     }
     .pf-c-card__body.pf-c-content {
-        border: 2px solid #eee;
+        padding: 0;
+    }
+    .pf-c-card__body.pf-c-content h5 {
+        border-top: 1px solid #ededed;
+        line-height: 2em;
+        margin-top: 0;
+        padding-top: 5px;
     }
 </style>
 <div id="welcomeScreen" style="display:none;height:100%">
