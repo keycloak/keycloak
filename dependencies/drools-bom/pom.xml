@@ -4,7 +4,7 @@
     <parent>
         <groupId>org.keycloak</groupId>
         <artifactId>keycloak-dependencies-parent</artifactId>
-        <version>8.0.0</version>
+        <version>8.0.1</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
