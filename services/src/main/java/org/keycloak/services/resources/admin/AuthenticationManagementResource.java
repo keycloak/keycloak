@@ -18,7 +18,7 @@ package org.keycloak.services.resources.admin;
 
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
-import org.jboss.resteasy.spi.BadRequestException;
+import javax.ws.rs.BadRequestException;
 import javax.ws.rs.NotFoundException;
 import org.keycloak.authentication.AuthenticationFlow;
 import org.keycloak.authentication.Authenticator;
@@ -459,7 +459,13 @@ public class AuthenticationManagementResource {
 
         AuthenticationExecutionModel execution = new AuthenticationExecutionModel();
         execution.setParentFlow(parentFlow.getId());
-        execution.setRequirement(AuthenticationExecutionModel.Requirement.DISABLED);
+
+        ConfigurableAuthenticatorFactory conf = (ConfigurableAuthenticatorFactory) f;
+        if (conf.getRequirementChoices().length == 1)
+            execution.setRequirement(conf.getRequirementChoices()[0]);
+        else
+            execution.setRequirement(AuthenticationExecutionModel.Requirement.DISABLED);
+
         execution.setAuthenticatorFlow(false);
         execution.setAuthenticator(provider);
         execution.setPriority(getNextPriority(parentFlow));
