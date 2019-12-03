@@ -63,7 +63,7 @@ To become a maintainer, you need to demonstrate the following:
 * Ability to collaborate with the team
 * Helping the community
 
-A new maintainer must be proposed by sending an email to the [developer mailing list](https://lists.jboss.org/mailman/listinfo/keycloak-dev).
+A new maintainer must be proposed by sending an email to the [developer mailing list](https://groups.google.com/forum/#!forum/keycloak-dev).
 The email should include evidence of the above list.
 
 The existing maintainers will then discuss the proposal. If anyone objects or wants more information, the maintainers 
@@ -96,7 +96,7 @@ If the change has a bigger impact it has to follow the process for larger change
 ### Larger Changes
 
 For larger changes all maintainers and contributors should have a chance of reviewing the change. This is done by
-sending an email to the [developer mailing list](https://lists.jboss.org/mailman/listinfo/keycloak-dev) to start a
+sending an email to the [developer mailing list](https://groups.google.com/forum/#!forum/keycloak-dev) to start a
 discussion around the change.
 
 For new features we highly recommend creating a design proposal. There is no strict requirement of the content or layout,
