@@ -1,0 +1,76 @@
+
+=== KeycloakUser Custom Resource
+
+{project_name} Users can be represented as Custom Resources in {project_operator}:
+
+.`KeycloakUser` Custom Resource
+```yaml
+apiVersion: keycloak.org/v1alpha1
+kind: KeycloakUser
+metadata:
+  name: example-realm-user
+spec:
+  user:
+    username: "realm_user"
+    firstName: "John"
+    lastName: "Doe"
+    email: "user@example.com"
+    enabled: True
+    emailVerified: False
+    realmRoles:
+      - "offline_access"
+    clientRoles:
+      account:
+        - "manage-account"
+      realm-management:
+        - "manage-users"
+  realmSelector:
+    matchLabels:
+      app: sso
+```
+
+IMPORTANT: Note, that `realmSelector` needs to match labels of an existing `KeycloakRealm` Custom Resource.
+
+NOTE: {project_operator} synchronizes all the changes made to the Custom Resource with a running {project_name} instance. No manual changes via {project_name} Admin Console are allowed.
+
+Once {project_operator} reconciles the Custom Resource, it reports the status back:
+
+.`KeycloakUser` Custom Resource Status
+```yaml
+Name:         example-realm-user
+Namespace:    keycloak
+Labels:       app=sso
+API Version:  keycloak.org/v1alpha1
+Kind:         KeycloakUser
+Spec:
+  Realm Selector:
+    Match Labels:
+      App:  sso
+  User:
+    Email:           realm_user@redhat.com
+    Credentials:
+      Type:          password
+      Value:         <user password>
+    Email Verified:  false
+    Enabled:         true
+    First Name:      John
+    Last Name:       Doe
+    Username:        realm_user
+Status:
+  Message:
+  Phase:    reconciled
+Events:     <none>
+```
+
+Once a User is created, {project_operator} creates a Secret containing both username and password using the
+following naming pattern: `credential-<realm name>-<user name>-<namespace>`. Here's an example:
+
+.`KeycloakUser` Secret
+```
+kind: Secret
+apiVersion: v1
+data:
+  password: <base64 encoded password>
+  username: <base64 encoded username>
+type: Opaque
+```

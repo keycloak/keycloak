@@ -1,0 +1,67 @@
+
+=== KeycloakClient Custom Resource
+
+{project_operator} allows application developers to represent Keycloak Clients as Custom Resources:
+
+.`KeycloakClient` Custom Resource
+```yaml
+apiVersion: keycloak.org/v1alpha1
+kind: KeycloakClient
+metadata:
+  name: <Keycloak Client name>
+  labels:
+    app: sso
+spec:
+  realmSelector:
+     matchLabels:
+      app: <matching labels for KeycloakRealm Custom Resource>
+  client:
+    # auto-generated if not supplied
+    #id: 123
+    clientId: client-secret
+    secret: client-secret
+    # ...
+    # other properties of Keycloak Client
+```
+
+TIP: Note, that `realmSelector` needs to match labels of an existing `KeycloakRealm` Custom Resource.
+
+NOTE: {project_operator} synchronizes all the changes made to the Custom Resource with a running {project_name} instance. No manual changes via Keycloak Admin Console are allowed.
+
+Once {project_operator} reconciles the Custom Resource, it reports the status back:
+
+.`KeycloakClient` Custom Resource Status
+```yaml
+Name:         client-secret
+Namespace:    keycloak
+Labels:       app=sso
+API Version:  keycloak.org/v1alpha1
+Kind:         KeycloakClient
+Spec:
+  Client:
+    Client Authenticator Type:     client-secret
+    Client Id:                     client-secret
+    Id:                            keycloak-client-secret
+  Realm Selector:
+    Match Labels:
+      App:  sso
+Status:
+  Message:
+  Phase:    reconciling
+  Ready:    true
+  Secondary Resources:
+    Secret:
+      keycloak-client-secret-client-secret
+Events:  <none>
+```
+
+Once a Client is created, {project_operator} creates a Secret with, containing both `Client ID` as well as the client's secret using the following naming pattern: `keycloak-client-secret-<Custom Resource name>`. Here's an example:
+
+.`KeycloakClient`'s Secret
+```
+apiVersion: v1
+data:
+  CLIENT_ID: <base64 encoded Client ID>
+  CLIENT_SECRET: <base64 encoded Client Secret>
+kind: Secret
+```

@@ -1,0 +1,110 @@
+
+=== KeycloakBackup Custom Resource
+
+{project_operator} provides automatic backups with manual restore in 3 modes:
+
+* One time backups to a local Persistent Volume.
+* One time backups to Amazon S3 storage.
+* Periodic backups to Amazon S3 storage.
+
+The Operator uses `KeycloakBackup` Custom Resource (CR) to trigger a backup Job (or a `CronJob` in case of Periodic Backups) and reports back its status. The CR has the following structure:
+
+.`KeycloakBackup` Custom Resource
+```yaml
+apiVersion: keycloak.org/v1alpha1
+kind: KeycloakBackup
+metadata:
+  name: <CR Name>
+spec:
+  aws:
+    # Optional - used only for Periodic Backups.
+    # Follows usual crond syntax (e.g. use "0 1 * * *") to perform the backup every day at 1 AM.
+    schedule: <Cron Job Schedule>
+    # Required - the name of the secret containing the credentials to access the S3 storage
+    credentialsSecretName: <A Secret containing S3 credentials>
+```
+
+.AWS S3 `Secret`
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: <Secret Name>
+type: Opaque
+stringData:
+  AWS_S3_BUCKET_NAME: <S3 Bucket Name>
+  AWS_ACCESS_KEY_ID: <AWS Access Key ID>
+  AWS_SECRET_ACCESS_KEY: <AWS Secret Key>
+```
+
+IMPORTANT: The above secret name needs to match the one referred in the `KeycloakBackup` Custom Resource.
+
+Once the `KeycloakBackup` Custom Resource is created, {project_operator} will create a corresponding Job to back up the PostgreSQL database. The status of the backup is reported in the `status` field.
+Here's an example:
+
+.`KeycloakBackup` Status
+```yaml
+Name:         example-keycloakbackup
+Namespace:    keycloak
+Labels:       <none>
+Annotations:  <none>
+API Version:  keycloak.org/v1alpha1
+Kind:         KeycloakBackup
+Metadata:
+  Creation Timestamp:  2019-10-31T08:13:10Z
+  Generation:          1
+  Resource Version:    110940
+  Self Link:           /apis/keycloak.org/v1alpha1/namespaces/keycloak/keycloakbackups/example-keycloakbackup
+  UID:                 0ea2e038-c328-48a0-8d5a-52acbc826577
+Status:
+  Message:
+  Phase:    created
+  Ready:    true
+  Secondary Resources:
+    Job:
+      example-keycloakbackup
+    Persistent Volume Claim:
+      keycloak-backup-example-keycloakbackup
+```
+
+==== Backups to AWS S3
+
+In order to create Backups uploaded to S3 storage, you need to create a `KeycloakBackup` Custom Resource with `aws` sub-properties.
+
+IMPORTANT: The `credentialsSecretName` field is required and needs to contain a valid reference to a `Secret` containing AWS S3 credentials.
+
+If the `schedule` contains valid `CronJob` schedule definition, the Operator will backup your data periodically.
+
+==== Backups to a Local Storage
+
+{project_operator} can also create a backup to a local Persistent Volume. In order to do it, you need to create a `KeycloakBackup` Custom Resource without `aws` sub-properties. Here's an example:
+
+```yaml
+apiVersion: keycloak.org/v1alpha1
+kind: KeycloakBackup
+metadata:
+  name: <CR Name>
+```
+
+{project_operator} will create a new `PersistentVolumeClaim` with the following naming scheme:
+
+  keycloak-backup-<Custom Resource Name>
+
+It is a good practice to create a corresponding `PersistentVolume` for the upcoming backups upfront and use `claimRef` to reserve it only for `PersistentVolumeClaim` created by the Keycloak Operator (see https://docs.okd.io/3.6/dev_guide/persistent_volumes.html#persistent-volumes-volumes-and-claim-prebinding[OKD manual for more details]).
+
+==== Automatic Restore
+
+WARNING: This is not implemented!
+
+One of the design goals of {project_name} Backups is to maintain one-to-one relationship between
+`KeycloakBackup` object and a physical copy of the data. This relationship is then used to restore the data. All you need to do is to set the `restore` flag in the `KeycloakBackup` to true:
+
+.`KeycloakBackup` with restore
+```yaml
+apiVersion: keycloak.org/v1alpha1
+kind: KeycloakBackup
+metadata:
+  name: <CR Name>
+spec:
+  restore: true
+```

@@ -1,0 +1,67 @@
+
+=== Keycloak Custom Resource
+
+The {project_operator} allows users to manage {project_name} clusters by using Keycloak Custom Resources:
+
+.`Keycloak` Custom Resource
+```yaml
+apiVersion: keycloak.org/v1alpha1
+kind: Keycloak
+metadata:
+  name: example-keycloak
+  labels:
+    app: sso
+spec:
+  instances: 1
+  externalAccess:
+    enabled: True
+```
+
+The `Spec` contains three properties (two of them are listed above and the external database has been covered in the other paragraphs of this manual):
+
+* `instances` - controls the number of instances running in HA mode
+* `externalAccess` - if the `enabled` flag is set to `True`, depending on the types available in the cluster {project_operator} will create a Route or an Ingress for {project_name} cluster.
+
+Once {project_operator} reconciles the Custom Resource, it reports the status back:
+
+.`Keycloak` Custom Resource Status
+```yaml
+Name:         example-keycloak
+Namespace:    keycloak
+Labels:       app=sso
+Annotations:  <none>
+API Version:  keycloak.org/v1alpha1
+Kind:         Keycloak
+Spec:
+  External Access:
+    Enabled:  true
+  Instances:  1
+Status:
+  Credential Secret:  credential-example-keycloak
+  Internal URL:       https://<External URL to the deployed instance>
+  Message:
+  Phase:              reconciling
+  Ready:              true
+  Secondary Resources:
+    Deployment:
+      keycloak-postgresql
+    Persistent Volume Claim:
+      keycloak-postgresql-claim
+    Prometheus Rule:
+      keycloak
+    Route:
+      keycloak
+    Secret:
+      credential-example-keycloak
+      keycloak-db-secret
+    Service:
+      keycloak-postgresql
+      keycloak
+      keycloak-discovery
+    Service Monitor:
+      keycloak
+    Stateful Set:
+      keycloak
+  Version:
+Events:
+```

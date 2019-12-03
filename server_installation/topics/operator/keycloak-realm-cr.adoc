@@ -1,0 +1,63 @@
+
+=== KeycloakRealm Custom Resource
+
+The {project_operator} allows application developers to represent {project_name} Realms as Custom Resources:
+
+.`KeycloakRealm` Custom Resource
+```yaml
+apiVersion: keycloak.org/v1alpha1
+kind: KeycloakRealm
+metadata:
+  name: example-keycloakrealm
+  labels:
+    app: sso
+spec:
+  realm:
+    id: "basic"
+    realm: "basic"
+    enabled: True
+    displayName: "Basic Realm"
+  instanceSelector:
+    matchLabels:
+      app: sso
+```
+
+IMPORTANT: Note, that `instanceSelector` needs to match labels of an existing `Keycloak` Custom Resource.
+
+NOTE: {project_operator} synchronizes all the changes made to the Custom Resource with a running {project_name} instance. No manual changes via {project_name} Admin Console are allowed.
+
+Once {project_operator} reconciles the Custom Resource, it reports the status back:
+
+.`KeycloakRealm` Custom Resource Status
+```yaml
+Name:         example-keycloakrealm
+Namespace:    keycloak
+Labels:       app=sso
+Annotations:  <none>
+API Version:  keycloak.org/v1alpha1
+Kind:         KeycloakRealm
+Metadata:
+  Creation Timestamp:  2019-12-03T09:46:02Z
+  Finalizers:
+    realm.cleanup
+  Generation:        1
+  Resource Version:  804596
+  Self Link:         /apis/keycloak.org/v1alpha1/namespaces/keycloak/keycloakrealms/example-keycloakrealm
+  UID:               b7b2f883-15b1-11ea-91e6-02cb885627a6
+Spec:
+  Instance Selector:
+    Match Labels:
+      App:  sso
+  Realm:
+    Display Name:  Basic Realm
+    Enabled:       true
+    Id:            basic
+    Realm:         basic
+Status:
+  Login URL:
+  Message:
+  Phase:      reconciling
+  Ready:      true
+Events:       <none>
+
+```

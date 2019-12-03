@@ -1,0 +1,14 @@
+
+[[_operator]]
+== {project_operator}
+
+{project_operator} has been designed to automate {project_name} administration in Kubernetes/OpenShift cluster.
+It allows you to:
+
+* Install Keycloak to a namespace
+* Import Keycloak Realms
+* Import Keycloak Clients
+* Import Keycloak Users
+* Create scheduled backups of the database
+* Install Extensions
+

@@ -1,0 +1,31 @@
+
+=== Monitoring Stack
+
+{project_operator} integrates with {application_monitoring_operator} providing Graphana Dashboard and Prometheus Alerts. The integration is seamless and doesn't require any action from the user. However, {application_monitoring_operator} needs to be properly installed in the cluster.
+
+==== Installing {application_monitoring_operator}
+
+Prior to running {project_operator} it is recommended to install {application_monitoring_operator} by following the link:{application_monitoring_operator_installation_link}[documentation]. After {application_monitoring_operator} is up and running, you need to annotate the namespace used for {project_operator} installation. Here's an example:
+
+.Annotating namespace for monitoring
+```bash
+oc label namespace <namespace> monitoring-key=middleware
+```
+
+Once the {application_monitoring_operator} is installed and running, also the corresponding namespace is annotated for monitoring, you can search for Prometheus and Graphana route in `application-monitoring` namespace:
+
+image:{project_images}/operator-application-monitoring-routes.png[]
+
+==== Graphana Dashboard
+
+{project_operator} installs a pre-defined Graphana Dashboard. Here's how it looks like:
+
+image:{project_images}/operator-graphana-dashboard.png[]
+
+NOTE: Graphana Dashboard is likely to be changed in future releases. If you need any customizations, please clone it and adjust to your needs.
+
+==== Prometheus Alerts
+
+{project_operator} installs a set of pre-defined Prometheus Alerts. Here's how they look like:
+
+image:{project_images}/operator-prometheus-alerts.png[]

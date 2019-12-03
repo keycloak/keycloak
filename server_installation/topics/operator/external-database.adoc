@@ -1,0 +1,61 @@
+
+=== External database support
+
+Enabling external Postgresql database support requires creating `keycloak-db-secret` in the following form (note that values are Base64 encoded, see https://kubernetes.io/docs/concepts/configuration/secret/[Kubernetes Secrets manual]):
+
+.`keycloak-db-secret` Secret
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+    name: keycloak-db-secret
+    namespace: keycloak
+stringData:
+    POSTGRES_DATABASE: <Database Name>
+    POSTGRES_EXTERNAL_ADDRESS: <External Database IP or URL (resolvable by K8s)>
+    POSTGRES_EXTERNAL_PORT: <External Database Port>
+    # Strongly recommended to use <'Keycloak CR Name'-postgresql>
+    POSTGRES_HOST: <Database Service Name>
+    POSTGRES_PASSWORD: <Database Password>
+    # Required for AWS Backup functionality
+    POSTGRES_SUPERUSER: true
+    POSTGRES_USERNAME: <Database Username>
+ type: Opaque
+```
+
+There are two properties specifically responsible for specifying external database hostname or IP address and its port:
+
+* POSTGRES_EXTERNAL_ADDRESS - an IP address (or a Hostname) of the external database. This address needs to be resolvable from the perspective of a Kubernetes cluster.
+* POSTGRES_EXTERNAL_PORT - (Optional) A database port.
+
+The other properties should to be set as follows:
+
+* `POSTGRES_DATABASE` - Database name to be used.
+* `POSTGRES_HOST` - The name of the `Service` used to communicate with a database. Typically `keycloak-postgresql`.
+* `POSTGRES_USERNAME` - Database username
+* `POSTGRES_PASSWORD` - Database password
+* `POSTGRES_SUPERUSER` - Indicates, whether backups should assume running as super user. Typically `true`.
+
+The other properties remain the same for both operating modes (hosted Postgresql and an external one).
+
+The Keycloak Custom Resource also needs to be updated to turn the external database support on.
+Here's an example:
+
+.`Keycloak` Custom Resource with external database support
+```yaml
+apiVersion: keycloak.org/v1alpha1
+kind: Keycloak
+metadata:
+  labels:
+    app: sso
+  name: example-keycloak
+  namespace: keycloak
+spec:
+  externalDatabase:
+    enabled: true
+  instances: 1
+```
+
+==== Implementation details
+
+{project_operator} allows you to use an external Postgresql database by modifying `<Keycloak Custom Resource Name>-postgresql` Endpoints object. Typically, this object is maintained by Kubernetes, however it might be used to connect to an external service. See https://docs.openshift.com/container-platform/3.11/dev_guide/integrating_external_services.html[OpenShift manual] for more details.

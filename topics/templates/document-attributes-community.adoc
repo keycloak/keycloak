@@ -20,6 +20,11 @@ endif::[]
 :project_dirref: KEYCLOAK_HOME
 :project_openshift_product_name: Keycloak for OpenShift
 
+:project_operator: Keycloak Operator
+:operatorRepo_link: https://github.com/keycloak/keycloak-operator
+:application_monitoring_operator: Application Monitoring Operator
+:application_monitoring_operator_installation_link: https://github.com/integr8ly/application-monitoring-operator#installation
+
 :quickstartRepo_link: https://github.com/keycloak/keycloak-quickstarts
 :quickstartRepo_name: Keycloak Quickstarts Repository
 :quickstartRepo_dir: keycloak-quickstarts

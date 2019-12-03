@@ -1,0 +1,68 @@
+
+=== Installing {project_operator} into OpenShift cluster
+
+There are two ways of running {project_operator} in Kubernetes/OpenShift cluster:
+
+* Using Operator Lifecycle Manager (OLM)
+* Running manually
+
+==== Using Operator Lifecycle Manager
+
+In case of a newly installed OpenShift 4.x cluster, {project_operator} should already be available in
+OperatorHub tab of the OpenShift administration panel (as shown in the image below).
+
+image:{project_images}/operator-openshift-operatorhub.png[]
+
+If {project_operator} is not available, please navigate to https://operatorhub.io/operator/keycloak-operator, click `Install` button and follow the instructions on screen.
+
+image:{project_images}/operator-operatorhub-install.png[]
+
+TIP: For Kubernetes installation, please follow link:https://github.com/operator-framework/operator-lifecycle-manager/blob/master/doc/install/install.md[Operator Lifecycle Manager Installation Guide]
+
+Once {project_operator} is available in your cluster, click `Install` button and follow the instruction on
+screen.
+
+image:{project_images}/operator-olm-installation.png[]
+
+For more information, navigate to link:https://docs.openshift.com/container-platform/4.2/operators/olm-what-operators-are.html[OpenShift Operators guide].
+
+==== Running manually
+
+It is possible to run {project_operator} without Operator Lifecycle Manager. This requires running several
+steps manually from link:{operatorRepo_link}[Github repo]:
+
+* Install all required Custom Resource Definitions by using the following command:
+
+```bash
+kubectl apply -f deploy/crds/
+```
+
+* Create a new namespace (or reuse an existing one). For this example, we'll be using namespace `myproject`.
+
+```bash
+kubectl create namespace myproject
+```
+
+* Deploy Role, Role Binding and a Service Account for {project_operator}.
+
+```bash
+kubectl apply -f deploy/role.yaml -n myproject
+kubectl apply -f deploy/role_binding.yaml -n myproject
+kubectl apply -f deploy/service_account.yaml -n myproject
+```
+
+* Deploy {project_operator}
+
+```bash
+kubectl apply -f deploy/operator.yaml -n myproject
+```
+
+* Validate if {project_operator} is running
+
+```bash
+kubectl get deployment keycloak-operator
+NAME                READY   UP-TO-DATE   AVAILABLE   AGE
+keycloak-operator   1/1     1            1           41s
+```
+
+TIP: When deploying {project_operator} to an OpenShift cluster, `kubectl apply` commands can be replaced with their `oc create` counterparts.
