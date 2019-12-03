@@ -61,6 +61,8 @@ import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.Cors;
 import org.keycloak.services.validation.Validation;
 
+import static org.keycloak.models.Constants.ACCOUNT_CONSOLE_CLIENT_ID;
+
 /**
  * API for linking/unlinking social login accounts
  *
@@ -175,14 +177,16 @@ public class LinkedAccountsResource {
         try {
             String nonce = UUID.randomUUID().toString();
             MessageDigest md = MessageDigest.getInstance("SHA-256");
-            String input = nonce + auth.getSession().getId() +  client.getClientId() + providerId;
+            String input = nonce + auth.getSession().getId() +  ACCOUNT_CONSOLE_CLIENT_ID + providerId;
             byte[] check = md.digest(input.getBytes(StandardCharsets.UTF_8));
             String hash = Base64Url.encode(check);
             URI linkUri = Urls.identityProviderLinkRequest(this.session.getContext().getUri().getBaseUri(), providerId, realm.getName());
             linkUri = UriBuilder.fromUri(linkUri)
                     .queryParam("nonce", nonce)
                     .queryParam("hash", hash)
-                    .queryParam("client_id", client.getClientId())
+                    // need to use "account-console" client because IdentityBrokerService authenticates user using cookies
+                    // the regular "account" client is used only for REST calls therefore cookies authentication cannot be used
+                    .queryParam("client_id", ACCOUNT_CONSOLE_CLIENT_ID)
                     .queryParam("redirect_uri", redirectUri)
                     .build();
             

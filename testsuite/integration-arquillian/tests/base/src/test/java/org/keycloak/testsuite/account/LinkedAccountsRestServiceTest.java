@@ -42,7 +42,12 @@ import org.keycloak.representations.idm.FederatedIdentityRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.util.IdentityProviderBuilder;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.keycloak.models.Constants.ACCOUNT_CONSOLE_CLIENT_ID;
+
 import org.junit.FixMethodOrder;
 import org.junit.runners.MethodSorters;
 import org.keycloak.representations.account.AccountLinkUriRepresentation;
@@ -162,7 +167,7 @@ public class LinkedAccountsRestServiceTest extends AbstractTestRealmKeycloakTest
                     assertEquals(rep.getHash(), nvp.getValue());
                     break;
                 }
-                case "client_id" : assertEquals("account", nvp.getValue()); break;
+                case "client_id" : assertEquals(ACCOUNT_CONSOLE_CLIENT_ID, nvp.getValue()); break;
                 case "redirect_uri" : assertEquals("phonyUri", nvp.getValue());
             }
         }
