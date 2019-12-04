@@ -22,7 +22,10 @@
     },
 
     "eventsStore": {
-        "provider": "${keycloak.eventsStore.provider:jpa}"
+        "provider": "${keycloak.eventsStore.provider:jpa}",
+        "jpa": {
+            "max-detail-length": "${keycloak.eventsStore.maxDetailLength:1000}"
+        }
     },
 
     "eventsListener": {
