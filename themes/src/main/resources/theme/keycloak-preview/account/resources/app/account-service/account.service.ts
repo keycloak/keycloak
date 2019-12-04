@@ -14,14 +14,14 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
- 
+
 //import {KeycloakNotificationService} from '../notification/keycloak-notification.service';
 import {KeycloakService} from '../keycloak-service/keycloak.service';
-import Axios, {AxiosRequestConfig, AxiosResponse} from 'axios';
+import Axios, {AxiosRequestConfig, AxiosResponse, AxiosError} from 'axios';
 import {ContentAlert} from '../content/ContentAlert';
 
 //import {NotificationType} from 'patternfly-ng/notification';*/
- 
+
 type AxiosResolve = (response: AxiosResponse) => void;
 type ConfigResolve = (config: AxiosRequestConfig) => void;
 type ErrorReject = (error: Error) => void;
@@ -32,73 +32,77 @@ type ErrorReject = (error: Error) => void;
  */
 export class AccountServiceClient {
     private static instance: AccountServiceClient = new AccountServiceClient();
-    
+
     private kcSvc: KeycloakService = KeycloakService.Instance;
     private accountUrl: string = this.kcSvc.authServerUrl() + 'realms/' + this.kcSvc.realm() + '/account';
- 
+
     private constructor() {}
-    
+
     public static get Instance(): AccountServiceClient  {
         return AccountServiceClient.instance;
     }
-    
-    public doGet(endpoint: string, 
+
+    public doGet(endpoint: string,
                 config?: AxiosRequestConfig): Promise<AxiosResponse> {
         return this.doRequest(endpoint, {...config, method: 'get'});
     }
 
-    public doDelete(endpoint: string, 
+    public doDelete(endpoint: string,
             config?: AxiosRequestConfig): Promise<AxiosResponse> {
         return this.doRequest(endpoint, {...config, method: 'delete'});
     }
-    
-    public doPut(endpoint: string, 
+
+    public doPut(endpoint: string,
                 config?: AxiosRequestConfig): Promise<AxiosResponse> {
-        return this.doRequest(endpoint, {...config, 
-                                         method: 'put', 
+        return this.doRequest(endpoint, {...config,
+                                         method: 'put',
                                          headers: {'Content-Type': 'application/json'}
                                         }
         );
     }
-    
-    public doPost(endpoint: string, 
+
+    public doPost(endpoint: string,
                 config?: AxiosRequestConfig): Promise<AxiosResponse> {
         return this.doRequest(endpoint, {...config, method: 'post'});
     }
-    
-    public doRequest(endpoint: string, 
+
+    public doRequest(endpoint: string,
                      config?: AxiosRequestConfig): Promise<AxiosResponse> {
-        
+
         return new Promise((resolve: AxiosResolve, reject: ErrorReject) => {
             this.makeConfig(endpoint, config)
                 .then((config: AxiosRequestConfig) => {
                     console.log({config});
                     this.axiosRequest(config, resolve, reject);
-                }).catch( (error: Error) => {
+                }).catch( (error: AxiosError) => {
                     this.handleError(error);
                     reject(error);
                 });
         });
     }
-    
-    private axiosRequest(config: AxiosRequestConfig, 
-                         resolve: AxiosResolve, 
+
+    private axiosRequest(config: AxiosRequestConfig,
+                         resolve: AxiosResolve,
                          reject: ErrorReject): void {
         Axios.request(config)
-            .then((response: AxiosResponse) => { 
+            .then((response: AxiosResponse) => {
                  resolve(response);
             })
-            .catch((error: Error) => {
+            .catch((error: AxiosError) => {
                 this.handleError(error);
                 reject(error);
             });
     }
-    
-    private handleError(error: Error): void {
+
+    private handleError(error: AxiosError): void {
+        if (error != null && error.response != null && error.response.status === 401) {
+            // session timed out?
+            this.kcSvc.login();
+        }
         console.log(error);
         ContentAlert.danger(error.name + ': ' + error.message);
     }
-    
+
     private makeConfig(endpoint: string, config: AxiosRequestConfig = {}): Promise<AxiosRequestConfig> {
         return new Promise( (resolve: ConfigResolve, reject: ErrorReject) => {
             this.kcSvc.getToken()
@@ -109,9 +113,9 @@ export class AccountServiceClient {
                         url: endpoint,
                         headers: {...config.headers, Authorization: 'Bearer ' + token}
                     });
-                }).catch((error: Error) => {
-                    reject(error);
-                });       
+                }).catch(() => {
+                    this.kcSvc.login();
+                });
         });
     }
 }

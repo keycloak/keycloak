@@ -62,7 +62,6 @@ public class SessionTest extends AbstractAccountTest {
     }
 
     @Test
-    @Ignore
     public void reactPageSsoTimeoutTest() {
         deviceActivityPage.navigateToUsingSidebar();
         deviceActivityPage.assertCurrent();
@@ -75,7 +74,6 @@ public class SessionTest extends AbstractAccountTest {
     }
 
     @Test
-    @Ignore
     public void reactPageAsyncLogoutTest() {
         testRealmResource().logoutAll();
         deviceActivityPage.navigateToUsingSidebar();
