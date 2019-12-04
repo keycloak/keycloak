@@ -7,3 +7,9 @@ The Drools Policy was finally removed after the deprecation period. If you need 
 == Pagination support for clients
 
 Pagination support was added to clients in the Admin Console and REST API. Thanks to https://github.com/saibot94[saibot94].
+
+== New Elytron Credential Store Vault Provider
+
+A new built-in vault provider that reads secrets from a keystore-backed Elytron credential store has been added as a WildFly
+extension. The creation and management of the credential store is handled by Elytron using either the `elytron` subsystem or the
+`elytron-tool.sh` script.

@@ -6,8 +6,12 @@ Several fields in the administration support obtaining the value of a secret fro
 
 To obtain a secret from a vault instead of entering it directly, enter
 the following specially crafted string into the appropriate field:
-`**${vault.**_entry-name_**}**` where you replace the `_entry-name_`
+`**${vault.**_key_**}**` where you replace the `_key_`
 with the name of the secret as recognized by the vault.
+
+In order to prevent secrets from leaking across realms, implementations may combine the realm name with the `_key_`
+obtained from the vault expression. This means that the `_key_` won't directly map to an entry in the vault, but rather
+be used to create the final entry name according to the algorithm used to combine it with the realm name.
 
 Currently, the secret can be obtained from the vault in the following fields:
 
@@ -24,7 +28,11 @@ To use a vault, a vault provider must be registered within {project_name}.
 It is possible to either use a built-in provider described below or
 implement your own provider. See the link:{developerguide_link}[{developerguide_name}] for more information.
 
-=== Kubernetes / OpenShift files plaintext vault provider
+NOTE: There is at most one vault provider active per {project_name} instance
+at any given time, and the vault provider in each instance within the cluster
+has to be configured consistently.
+
+=== Kubernetes / OpenShift Files Plaintext Vault Provider
 
 {project_name} supports vault implementation for https://kubernetes.io/docs/concepts/configuration/secret/[Kubernetes secrets]. These secrets
 can be mounted as data volumes, and they appear as a directory with a flat file structure, where each secret is represented by a file whose name is the secret name, and contents of that file is the secret value.
@@ -54,6 +62,157 @@ Here is the equivalent configuration using CLI commands:
 /subsystem=keycloak-server/spi=vault/provider=files-plaintext/:add(enabled=true,properties={dir => "${jboss.home.dir}/standalone/configuration/vault"})
 ----
 
-NOTE: There is at most one vault provider active per {project_name} instance
-at any given time, and the vault provider in each instance within the cluster
-have to be configured consistently.
+=== Elytron Credential Store Vault Provider
+
+{project_name} also provides support for reading secrets stored in an Elytron credential store. The `elytron-cs-keystore`
+vault provider is capable of retrieving secrets from the keystore-based implementation of the credential store, which
+is also the default implementation provided by Elytron.
+
+This credential store is backed by a keystore (`JCEKS` is the default format, but it is possible to use other formats such as `PKCS12`)
+and users can create and manage the store contents using either the `elytron` subsystem in WildFly/JBoss EAP, or using the
+`elytron-tool.sh` script.
+
+To use this provider, you have to declare the `elytron-cs-keystore` in the `keycloak-server` subsystem and set the location
+and master secret of the keystore that was created by Elytron. An example of the minimal configuration for the provider follows:
+
+[source, xml]
+----
+<spi name="vault">
+    <default-provider>elytron-cs-keystore</default-provider>
+    <provider name="elytron-cs-keystore" enabled="true">
+        <properties>
+            <property name="location" value="${jboss.home.dir}/standalone/configuration/vault/credential-store.jceks" />
+            <property name="secret" value="secretpw1!"/>
+        </properties>
+    </provider>
+</spi>
+----
+
+If the underlying keystore has a format other than `JCEKS`, this format has to be informed using the `keyStoreType`:
+
+[source, xml]
+----
+<spi name="vault">
+    <default-provider>elytron-cs-keystore</default-provider>
+    <provider name="elytron-cs-keystore" enabled="true">
+        <properties>
+            <property name="location" value="${jboss.home.dir}/standalone/configuration/vault/credential-store.p12" />
+            <property name="secret" value="secretpw1!"/>
+            <property name="keyStoreType" value="PKCS12"/>
+        </properties>
+    </provider>
+</spi>
+----
+
+For the secret, the `elytron-cs-keystore` provider supports both clear-text values (as shown above) and also values that
+were masked using the `elytron-tool.sh` script:
+
+[source, xml]
+----
+<spi name="vault">
+   ...
+            <property name="secret" value="MASK-3u2HNQaMogJJ8VP7J6gRIl;12345678;321"/>
+   ...
+</spi>
+----
+
+For more detailed information on how to create/manage elytron credential stores, as well as how to mask keystore secrets,
+please refer to the Elytron documentation.
+
+NOTE: The `elytron-cs-keystore` vault provider has been implemented as a WildFly extension and as such is only available
+if the {project_name} server runs on WildFly/JBoss EAP.
+
+=== Key Resolvers
+
+All built-in providers support the configuration of one or more key resolvers. A key resolver essentially implements
+the algorithm or strategy for combining the realm name with the key (as obtained from the `${vault.key}` expression} into
+the final entry name that will be used to retrieve the secret from the vault. The `keyResolvers` property is used to configure
+the resolvers that are to be used by the provider. The value is a comma-separated list of resolver names. An example of
+configuration for the `files-plaintext` provider follows:
+
+[source, xml]
+----
+<spi name="vault">
+    <default-provider>files-plaintext</default-provider>
+    <provider name="files-plaintext" enabled="true">
+        <properties>
+            <property name="dir" value="${jboss.home.dir}/standalone/configuration/vault/" />
+            <property name="keyResolvers" value="REALM_UNDERSCORE_KEY, KEY_ONLY"/>
+        </properties>
+    </provider>
+</spi>
+----
+
+The resolvers are executed in the same order that they are declared in the configuration. For each resolver, the final entry
+name produced by the resolver that combines the realm with the vault key is used to search for the secret in the vault.
+If a secret is found, it is immediately returned. If not, the next resolver is used and this continues until a non-empty
+secret is found or all resolvers have been tried, in which case an empty secret is returned. In the example above, first
+the `REALM_UNDERSCORE_KEY` resolver is used. If an entry is found in the vault with the name it produces, it is returned.
+If not, then the `KEY_ONLY` resolver is used. Again, if an entry is found in the vault with the name it produces, it is
+returned. If not, an empty secret is returned since there are no more resolvers to be used.
+
+A list of the currently available resolvers follows:
+
+* `KEY_ONLY`: the realm name is ignored and the key from the vault expression is used as is.
+* `REALM_UNDERSCORE_KEY`: the realm and key are combined using an underscore `_` character. Occurrences of underscore in either the
+realm or key are escaped by another underscore character. So if the realm is called `master_realm` and the key is `smtp_key`, the
+combined key will be `master+++__+++realm_smtp+++__+++key`.
+* `REALM_FILESEPARATOR_KEY`: the realm and key are combined using the platform file separator character. This is useful in situations
+where the keys are grouped by realm using a directory structure.
+ifeval::[{project_community}==true]
+* `FACTORY_PROVIDED`: the realm and key are combined using the `VaultKeyResolver` that is provided by the vault provider factory,
+allowing the creation of a custom key resolver by extending an existing factory and implementing the `getFactoryResolver` method.
+endif::[]
+
+If no resolver is configured for the built-in providers, the `REALM_UNDERSCORE_KEY` is selected by default.
+
+ifeval::[{project_community}==true]
+The `FACTORY_PROVIDED` resolver provides a hook that can be used to implement a custom resolver by extending the provider
+factory of choice and overriding the `getFactoryResolver` method so it returns the custom resolver. For example, if you want
+to use the `elytron-cs-keystore` provider but none of the built-in resolvers match the format used in your keystore, you
+can extend the `ElytronCSKeystoreProvider and implement the getFactoryResolver method:
+
+[source,java]
+----
+    public class CustomElytronProviderFactory extends ElytronCSKeyStoreProviderFactory {
+        ...
+        @Override
+        protected VaultKeyResolver getFactoryResolver() {
+            return (realm, key) -> realm + "###" + key;
+        }
+
+        @Override
+        public String getId() {
+            return "custom-elytron-cs-keystore;
+        }
+
+        ...
+    }
+----
+
+The custom factory returns a key resolver that combines the realm and key with a triple `#` character. So an entry would look
+like `master_realm###smtp_key`, for example. This factory must then be installed just like any custom provider.
+
+Note that the custom factory must override both the `getFactoryResolver` and `getId` methods. The second method is needed so that
+we can properly configure the custom factory in {project_name}.
+
+To install and use the above custom provider the configuration would look something like this:
+
+[source, xml]
+----
+<spi name="vault">
+    <default-provider>custom-elytron-cs-keystore</default-provider>
+    <provider name="custom-elytron-cs-keystore" enabled="true">
+        <properties>
+            <property name="location" value="${jboss.home.dir}/standalone/configuration/vault/credential-store.p12" />
+            <property name="secret" value="MASK-3u2HNQaMogJJ8VP7J6gRIl;12345678;321"/>
+            <property name="keyStoreType" value="PKCS12"/>
+            <property name="keyResolvers" value="FACTORY_PROVIDED"/>
+        </properties>
+    </provider>
+</spi>
+----
+
+The configuration above tells {project_name} to setup the custom Elytron provider and use the key resolver that is created by
+the custom factory.
+endif::[]
