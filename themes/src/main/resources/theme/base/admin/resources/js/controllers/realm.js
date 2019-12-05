@@ -415,11 +415,7 @@ module.controller('RealmWebAuthnPolicyCtrl', function($scope, Current, Realm, re
 module.controller('RealmThemeCtrl', function($scope, Current, Realm, realm, serverInfo, $http, $route, Dialog, Notifications) {
     genericRealmUpdate($scope, Current, Realm, realm, serverInfo, $http, $route, Dialog, Notifications, "/realms/" + realm.realm + "/theme-settings");
 
-    $scope.supportedLocalesOptions = {
-        'multiple' : true,
-        'simple_tags' : true,
-        'tags' : []
-    };
+    $scope.supportedLocalesOptions = [];
     
     updateSupported();
     
@@ -447,7 +443,7 @@ module.controller('RealmThemeCtrl', function($scope, Current, Realm, realm, serv
                 }
             }
 
-            $scope.supportedLocalesOptions.tags = supportedLocales;
+            $scope.supportedLocalesOptions = supportedLocales;
 
             if (!$scope.realm.supportedLocales) {
                 $scope.realm.supportedLocales = supportedLocales;
@@ -1653,17 +1649,7 @@ module.controller('RealmEventsConfigCtrl', function($scope, eventsConfig, RealmE
     
     $scope.eventListeners = Object.keys(serverInfo.providers.eventsListener.providers);
     
-    $scope.eventsConfigSelectOptions = {
-        'multiple': true,
-        'simple_tags': true,
-        'tags': $scope.eventListeners
-    };
-    
-    $scope.eventSelectOptions = {
-        'multiple': true,
-        'simple_tags': true,
-        'tags': serverInfo.enums['eventType']
-    };
+    $scope.eventSelectOptions = serverInfo.enums['eventType'];
 
     var oldCopy = angular.copy($scope.eventsConfig);
     $scope.changed = false;
@@ -1716,11 +1702,7 @@ module.controller('RealmEventsCtrl', function($scope, RealmEvents, realm, server
     $scope.realm = realm;
     $scope.page = 0;
     
-    $scope.eventSelectOptions = {
-        'multiple': true,
-        'simple_tags': true,
-        'tags': serverInfo.enums['eventType']
-    };
+    $scope.eventSelectOptions = serverInfo.enums['eventType'];
 
     $scope.query = {
         id : realm.realm,
@@ -1795,17 +1777,9 @@ module.controller('RealmAdminEventsCtrl', function($scope, RealmAdminEvents, rea
         first : 0
     };
 
-    $scope.adminEnabledEventOperationsOptions = {
-        'multiple': true,
-        'simple_tags': true,
-        'tags': serverInfo.enums['operationType']
-    };
+    $scope.adminEnabledEventOperationsOptions = serverInfo.enums['operationType'];
 
-    $scope.adminEnabledEventResourceTypesOptions = {
-        'multiple': true,
-        'simple_tags': true,
-        'tags': serverInfo.enums['resourceType']
-    };
+    $scope.adminEnabledEventResourceTypesOptions = serverInfo.enums['resourceType'];
     
     $scope.disablePaste = function(e) {
         e.preventDefault();
@@ -2652,7 +2626,6 @@ module.controller('ClientRegPolicyDetailCtrl', function($scope, realm, clientReg
 
     if ($scope.providerType.properties) {
         ComponentUtils.addLastEmptyValueToMultivaluedLists($scope.providerType.properties, $scope.instance.config);
-        ComponentUtils.addMvOptionsToMultivaluedLists($scope.providerType.properties);
     }
 
     var oldCopy = angular.copy($scope.instance);

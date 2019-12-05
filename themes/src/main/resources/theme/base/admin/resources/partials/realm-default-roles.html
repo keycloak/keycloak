@@ -46,8 +46,17 @@
         <div class="form-group">
            <label class="col-md-2 control-label" for="clients">{{:: 'client-roles' | translate}}</label>
                 <div class="col-md-6">
-                    <input type="hidden" ui-select2="clientsUiSelect" id="clients" data-ng-model="selectedClient" data-ng-change="changeClient(selectedClient);" data-placeholder="{{:: 'authz-select-client' | translate}}...">
-                    </input>
+                    <ui-select data-ng-model="clientUiSelection.selected.newClient" data-ng-change="changeClient(clientUiSelection.selected.newClient)"
+                            id="clients" theme="bootstrap" style="margin-bottom: 10px;">
+                        <ui-select-match placeholder="{{:: 'authz-select-client' | translate}}..." allow-clear="true">{{$select.selected.clientId}}</ui-select-match>
+                        <ui-select-choices minimum-input-length="1" refresh="clientsUiSelect($select.search)" refresh-delay="500"
+                                repeat="client as client in clientUiSelection.available.clients">
+                            {{client.clientId}}
+                        </ui-select-choices>
+                        <ui-select-no-choice>
+                            {{:: 'authz-select-min-character-hint' | translate}}
+                        </ui-select-no-choice>
+                    </ui-select>
                 </div>
                 <div class="col-md-10 col-md-push-2">
                     <div class="row" data-ng-show="selectedClient">

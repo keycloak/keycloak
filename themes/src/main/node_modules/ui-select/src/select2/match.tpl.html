@@ -1,0 +1,13 @@
+<!--
+  select2-choice needs to be before ui-select-match
+  otherwise CSS rules from https://github.com/fk/select2-bootstrap-css
+  do not work: [class^="select2-choice"]
+-->
+<a class="select2-choice ui-select-match"
+   ng-class="{'select2-default': $select.isEmpty()}"
+   ng-click="$select.toggle($event)" aria-label="{{ $select.baseTitle }} select">
+  <span ng-show="$select.isEmpty()" class="select2-chosen">{{$select.placeholder}}</span>
+  <span ng-hide="$select.isEmpty()" class="select2-chosen" ng-transclude></span>
+  <abbr ng-if="$select.allowClear && !$select.isEmpty()" class="select2-search-choice-close" ng-click="$select.clear($event)"></abbr>
+  <span class="select2-arrow ui-select-toggle"><b></b></span>
+</a>

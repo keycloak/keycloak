@@ -1,0 +1,64 @@
+﻿<!DOCTYPE html>
+<html lang="en" ng-app="demo">
+<head>
+    <meta charset="utf-8">
+    <title>AngularJS ui-select</title>
+
+    <!--
+      IE8 support, see AngularJS Internet Explorer Compatibility https://docs.angularjs.org/guide/ie
+      For Firefox 3.6, you will also need to include jQuery and ECMAScript 5 shim
+    -->
+    <!--[if lt IE 9]>
+      <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.js"></script>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/es5-shim/2.2.0/es5-shim.js"></script>
+      <script>
+        document.createElement('ui-select');
+        document.createElement('ui-select-match');
+        document.createElement('ui-select-choices');
+      </script>
+    <![endif]-->
+
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.5.0/angular.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.5.0/angular-sanitize.js"></script>
+
+    <!-- ui-select files -->
+    <script src="./dist/select.js"></script>
+    <link rel="stylesheet" href="./dist/select.css">
+
+    <script src="./assets/demo.js"></script>
+
+    <!-- themes -->
+    <link rel="stylesheet" href="https://netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/select2/3.4.5/select2.css">    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/selectize.js/0.8.5/css/selectize.default.css">
+    <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/selectize.js/0.8.5/css/selectize.bootstrap2.css"> -->
+    <!--<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/selectize.js/0.8.5/css/selectize.bootstrap3.css">--> 
+
+    <style>
+        body {
+            padding: 15px;
+        }
+
+        .select2 > .select2-choice.ui-select-match {
+            /* Because of the inclusion of Bootstrap */
+            height: 29px;
+        }
+
+        .selectize-control > .selectize-dropdown {
+            top: 36px;
+        }
+        /* Some additional styling to demonstrate that append-to-body helps achieve the proper z-index layering. */
+        .select-box {
+          background: #fff;
+          position: relative;
+          z-index: 1;
+        }
+        .alert-info.positioned {
+          margin-top: 1em;
+          position: relative;
+          z-index: 10000; /* The select2 dropdown has a z-index of 9999 */
+        }
+    </style>
+</head>
+
+<body class="ng-cloak" ng-controller="DemoCtrl as ctrl">

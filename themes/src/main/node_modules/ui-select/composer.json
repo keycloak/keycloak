@@ -1,0 +1,29 @@
+{
+    "name": "components/ui-select",
+    "description": "AngularJS UI Select",
+    "keywords": ["angular", "angular-ui", "select", "select2", "angularjs"],
+    "type": "component",
+    "homepage": "https://github.com/angular-ui/ui-select",
+    "license": "MIT",
+    "support": {
+        "issues": "https://github.com/angular-ui/ui-select/issues",
+        "wiki": "https://github.com/angular-ui/ui-select/wiki",
+        "source": "https://github.com/angular-ui/ui-select"
+    },
+    "require": {
+        "robloach/component-installer": "*"
+    },
+    "extra": {
+        "component": {
+            "scripts": [
+                "dist/select.js"
+            ],
+            "files": [
+                "dist/select.js",
+                "dist/select.css",
+                "dist/select.min.js",
+                "dist/select.min.css"
+            ]
+        }
+    }
+}

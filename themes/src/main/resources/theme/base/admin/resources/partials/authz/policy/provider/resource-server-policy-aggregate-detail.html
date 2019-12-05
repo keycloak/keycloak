@@ -42,7 +42,18 @@
                                     <div class="form-inline col-md-12" style="width: 107%">
                                         <div class="form-group" style="width: 100%">
                                             <div class="input-group" style="width: 100%">
-                                                <input type="hidden" ui-select2="policiesUiSelect" id="policies" data-ng-change="selectPolicy(selectedPolicy);" data-ng-model="selectedPolicy" data-placeholder="{{:: 'authz-select-a-policy' | translate}}..." data-ng-required="!selectedPolicies || selectedPolicies.length == 0"/>
+                                                <ui-select data-ng-model="uiSelection.selected.newPolicy" data-ng-change="selectPolicy(uiSelection.selected.newPolicy)"
+                                                        id="policies" theme="bootstrap"
+                                                        data-ng-required="!selectedPolicies || selectedPolicies.length == 0">
+                                                    <ui-select-match placeholder="{{:: 'authz-select-a-policy' | translate}}..." allow-clear="true">{{$select.selected.name}}</ui-select-match>
+                                                    <ui-select-choices minimum-input-length="1" refresh="policiesUiSelect($select.search)" refresh-delay="500"
+                                                            repeat="policy as policy in uiSelection.available.policies">
+                                                        {{policy.name}}
+                                                    </ui-select-choices>
+                                                    <ui-select-no-choice>
+                                                        {{:: 'authz-select-min-character-hint' | translate}}
+                                                    </ui-select-no-choice>
+                                                </ui-select>
                                             </div>
                                         </div>
                                     </div>

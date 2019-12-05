@@ -4,7 +4,7 @@ var auth = {};
 var resourceBundle;
 var locale = 'en';
 
-var module = angular.module('keycloak', [ 'keycloak.services', 'keycloak.loaders', 'ui.bootstrap', 'ui.select2', 'angularFileUpload', 'angularTreeview', 'pascalprecht.translate', 'ngCookies', 'ngSanitize', 'ui.ace']);
+var module = angular.module('keycloak', [ 'keycloak.services', 'keycloak.loaders', 'ui.bootstrap', 'ui.select', 'angularFileUpload', 'angularTreeview', 'pascalprecht.translate', 'ngCookies', 'ngSanitize', 'ui.ace']);
 var resourceRequests = 0;
 var loadingTimer = -1;
 
@@ -2734,16 +2734,22 @@ module.controller('ProviderConfigCtrl', function ($modal, $scope, $route, Compon
     };
 
     $scope.initSelectedClient = function(configName, config) {
-        if(config[configName]) {
-            $scope.selectedClient = null;
-            Client.query({realm: $route.current.params.realm, search: false, clientId: config[configName], max: 1}, function(data) {
+        if(config[configName] && config[configName].length > 0) {
+            Client.query({realm: $route.current.params.realm, search: false, clientId: config[configName][0], max: 1}, function(data) {
                 if(data.length > 0) {
-                    $scope.selectedClient = angular.copy(data[0]);
-                    $scope.selectedClient.text = $scope.selectedClient.clientId;
+                    $scope.clientUiSelection.selected.newClient = angular.copy(data[0]);
                 }
             });
-        }   
+        }
     }
+
+    $scope.changeClient = function(configName, config, client) {
+        if (!client || !client.id) {
+            config[configName] = null;
+            return;
+        }
+        config[configName] = [client.clientId];
+    };
 
     $scope.openRoleSelector = function (configName, config) {
         $modal.open({
@@ -2762,16 +2768,6 @@ module.controller('ProviderConfigCtrl', function ($modal, $scope, $route, Compon
             }
         })
     }
-
-    $scope.changeClient = function(configName, config, client) {
-        if (!client || !client.id) {
-            config[configName] = null;
-            $scope.selectedClient = null;
-            return;
-        }
-        $scope.selectedClient = client;
-        config[configName] = client.clientId;
-    };
 
     ComponentUtils.convertAllMultivaluedStringValuesToList($scope.properties, $scope.config);
 
@@ -2817,6 +2813,21 @@ module.directive('kcProviderConfig', function ($modal) {
         replace: true,
         controller: 'ProviderConfigCtrl',
         templateUrl: resourceUrl + '/templates/kc-provider-config.html'
+    }
+});
+module.directive('kcComponentConfig', function ($modal) {
+    return {
+        scope: {
+            config: '=',
+            properties: '=',
+            realm: '=',
+            clients: '=',
+            configName: '='
+        },
+        restrict: 'E',
+        replace: true,
+        controller: 'ProviderConfigCtrl',
+        templateUrl: resourceUrl + '/templates/kc-component-config.html'
     }
 });
 
@@ -2868,64 +2879,6 @@ module.controller('ComponentRoleSelectorModalCtrl', function($scope, realm, conf
     })
 });
 
-module.controller('ComponentConfigCtrl', function ($modal, $scope, $route, Client) {
-
-    $scope.initSelectedClient = function(configName, config) {
-        if(config[configName]) {
-            $scope.selectedClient = null;
-            Client.query({realm: $route.current.params.realm, search: false, clientId: config[configName], max: 1}, function(data) {
-                if(data.length > 0) {
-                    $scope.selectedClient = angular.copy(data[0]);
-                    $scope.selectedClient.text = $scope.selectedClient.clientId;
-                }
-            });
-        }   
-    }
-
-    $scope.changeClient = function(configName, config, client) {
-        if (!client || !client.id) {
-            config[configName] = null;
-            $scope.selectedClient = null;
-            return;
-        }
-        $scope.selectedClient = client;
-        config[configName] = client.clientId;
-    };
-
-
-    $scope.openRoleSelector = function (configName, config) {
-        $modal.open({
-            templateUrl: resourceUrl + '/partials/modal/component-role-selector.html',
-            controller: 'ComponentRoleSelectorModalCtrl',
-            resolve: {
-                realm: function () {
-                    return $scope.realm;
-                },
-                config: function () {
-                    return config;
-                },
-                configName: function () {
-                    return configName;
-                }
-            }
-        })
-    }
-});
-module.directive('kcComponentConfig', function ($modal) {
-    return {
-        scope: {
-            config: '=',
-            properties: '=',
-            realm: '=',
-            clients: '=',
-            configName: '='
-        },
-        restrict: 'E',
-        replace: true,
-        controller: 'ComponentConfigCtrl',
-        templateUrl: resourceUrl + '/templates/kc-component-config.html'
-    }
-});
 
 /*
 *  Used to select the element (invoke $(elem).select()) on specified action list.

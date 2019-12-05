@@ -19,7 +19,12 @@
                     <label class="col-md-2 control-label" for="eventsListeners" class="control-label">{{:: 'event-listeners' | translate}}</label>
                     <kc-tooltip>{{:: 'event-listeners.tooltip' | translate}}</kc-tooltip>
                     <div class="col-md-6">
-                        <input ui-select2="eventsConfigSelectOptions" id="eventsListeners" ng-model="eventsConfig.eventsListeners" data-placeholder="{{:: 'select-an-action.placeholder' | translate}}"/>
+                        <ui-select data-ng-model="eventsConfig.eventsListeners" id="eventsListeners" theme="bootstrap" multiple close-on-select="false">
+                            <ui-select-match placeholder="{{:: 'select-an-action.placeholder' | translate}}...">{{$item}}</ui-select-match>
+                            <ui-select-choices repeat="listener as listener in eventListeners | filter:$select.search">
+                                {{listener}}
+                             </ui-select-choices>
+                        </ui-select>
                     </div>
                 </div>
             </fieldset>
@@ -39,7 +44,12 @@
                     <label class="col-md-2 control-label" for="enabledEventTypes" class="control-label">{{:: 'saved-types' | translate}}</label>
                     <kc-tooltip>{{:: 'saved-types.tooltip' | translate}}</kc-tooltip>
                     <div class="col-md-6">
-                        <input ui-select2="eventSelectOptions" id="enabledEventTypes" ng-model="eventsConfig.enabledEventTypes" data-placeholder="{{:: 'select-event-types.placeholder' | translate}}"/>
+                        <ui-select data-ng-model="eventsConfig.enabledEventTypes" id="enabledEventTypes" theme="bootstrap" multiple close-on-select="false">
+                            <ui-select-match placeholder="{{:: 'select-event-types.placeholder' | translate}}...">{{$item}}</ui-select-match>
+                            <ui-select-choices repeat="type as type in eventSelectOptions | filter:$select.search">
+                                {{type}}
+                             </ui-select-choices>
+                        </ui-select>
                     </div>
                 </div>
 

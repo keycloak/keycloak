@@ -32,27 +32,49 @@
                 <label class="col-md-2 control-label" for="resources">{{:: 'authz-resource' | translate}}</label>
 
                 <div class="col-md-6">
-                    <input type="hidden" ui-select2="resourcesUiSelect" data-ng-change="selectResource()" id="resources" data-ng-model="selectedResource" data-placeholder="{{:: 'authz-any-resource' | translate}}..." />
+                    <ui-select data-ng-model="uiSelection.selected.newResource" data-ng-change="selectResource(uiSelection.selected.newResource)"
+                            id="resources" theme="bootstrap"
+                            data-ng-required="!applyResourceType && authzRequest.resources.length == 0 && !authzRequest.entitlements">
+                        <ui-select-match placeholder="{{:: 'authz-any-resource' | translate}}..." allow-clear="true">{{$select.selected.name}}</ui-select-match>
+                        <ui-select-choices minimum-input-length="1" refresh="resourcesUiSelect($select.search)" refresh-delay="500"
+                                repeat="resource as resource in uiSelection.available.resources track by resource._id">
+                            {{resource.name}}
+                        </ui-select-choices>
+                        <ui-select-no-choice>
+                            {{:: 'authz-select-min-character-hint' | translate}}
+                        </ui-select-no-choice>
+                    </ui-select>
                 </div>
                 <kc-tooltip>{{:: 'authz-permission-scope-resource.tooltip' | translate}}</kc-tooltip>
             </div>
-            <div class="form-group clearfix" data-ng-show="selectedResource">
+            <div class="form-group clearfix" data-ng-show="uiSelection.selected.newResource">
                 <label class="col-md-2 control-label" for="resourceScopes">{{:: 'authz-scopes' | translate}} <span class="required">*</span></label>
                 <div class="col-md-6">
-                    <select ui-select2 id="resourceScopes"
-                            data-ng-model="selectedScopes"
-                            data-placeholder="{{:: 'authz-any-scope' | translate}}..." multiple
-                            data-ng-required="selectedResource != null">
-                        <option ng-repeat="scope in resourceScopes" value="{{scope.id}}">{{scope.name}}</option>
-                    </select>
+                    <ui-select data-ng-model="uiSelection.selected.scopes" id="resourceScopes" theme="bootstrap" multiple close-on-select="false"
+                            data-ng-required="uiSelection.selected.newResource != null">
+                        <ui-select-match placeholder="{{:: 'authz-any-scope' | translate}}...">{{$item.name}}</ui-select-match>
+                        <ui-select-choices repeat="scope.id as scope in uiSelection.available.resourceScopes | filter:$select.search">
+                            {{scope.name}}
+                        </ui-select-choices>
+                    </ui-select>
                 </div>
                 <kc-tooltip>{{:: 'authz-permission-scope-scope.tooltip' | translate}}</kc-tooltip>
             </div>
-            <div class="form-group clearfix" data-ng-show="!selectedResource">
+            <div class="form-group clearfix" data-ng-show="!uiSelection.selected.newResource">
                 <label class="col-md-2 control-label" for="scopes">{{:: 'authz-scopes' | translate}} <span class="required">*</span></label>
 
                 <div class="col-md-6">
-                    <input type="hidden" ui-select2="scopesUiSelect" id="scopes" data-ng-model="selectedScopes" data-placeholder="{{:: 'authz-any-scope' | translate}}..." multiple data-ng-required="selectedResource == null" />
+                    <ui-select data-ng-model="uiSelection.selected.scopes" id="scopes" theme="bootstrap" multiple close-on-select="false"
+                            data-ng-required="uiSelection.selected.newResource == null">
+                        <ui-select-match placeholder="{{:: 'authz-any-scope' | translate}}...">{{$item.name}}</ui-select-match>
+                        <ui-select-choices minimum-input-length="1" refresh="scopesUiSelect($select.search) | filter:$select.search" refresh-delay="500"
+                                repeat="scope.id as scope in uiSelection.available.scopes">
+                            {{scope.name}}
+                        </ui-select-choices>
+                        <ui-select-no-choice>
+                            {{:: 'authz-select-min-character-hint' | translate}}
+                        </ui-select-no-choice>
+                    </ui-select>
                 </div>
                 <kc-tooltip>{{:: 'authz-permission-scope-scope.tooltip' | translate}}</kc-tooltip>
             </div>
@@ -66,7 +88,17 @@
                                 <div class="form-inline col-md-12" style="width: 107%">
                                     <div class="form-group" style="width: 100%">
                                         <div class="input-group" style="width: 100%">
-                                            <input type="hidden" ui-select2="policiesUiSelect" id="policies" data-ng-change="selectPolicy(selectedPolicy);" data-ng-model="selectedPolicy" data-placeholder="{{:: 'authz-select-a-policy' | translate}}..."/>
+                                            <ui-select data-ng-model="uiSelection.selected.newPolicy" data-ng-change="selectPolicy(uiSelection.selected.newPolicy)"
+                                                    id="policies" theme="bootstrap">
+                                                <ui-select-match placeholder="{{:: 'authz-select-a-policy' | translate}}..." allow-clear="true">{{$select.selected.name}}</ui-select-match>
+                                                <ui-select-choices minimum-input-length="1" refresh="policiesUiSelect($select.search)" refresh-delay="500"
+                                                        repeat="policy as policy in uiSelection.available.policies">
+                                                    {{policy.name}}
+                                                </ui-select-choices>
+                                                <ui-select-no-choice>
+                                                    {{:: 'authz-select-min-character-hint' | translate}}
+                                                </ui-select-no-choice>
+                                            </ui-select>
                                         </div>
                                     </div>
                                 </div>

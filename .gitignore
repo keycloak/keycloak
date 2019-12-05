@@ -72,3 +72,7 @@ target
 # testsuite #
 #############
 *offline-token.txt
+
+# VIM
+#####
+*.swp

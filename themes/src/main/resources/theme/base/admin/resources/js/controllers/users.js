@@ -711,6 +711,13 @@ module.controller('UserCredentialsCtrl', function($scope, realm, user, $route, R
         });
     };
 
+    $scope.addDisableableCredentialType = function(types) {
+        $scope.disableableCredentialTypes = types;
+    };
+
+    $scope.addEmailActions = function(actions) {
+        $scope.emailActions = actions;
+    };
 
 
     $scope.$watch('user', function() {

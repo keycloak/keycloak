@@ -1,0 +1,7 @@
+{
+  "undef"     : true,
+  "unused"    : true,
+  "strict"    : true,
+  "boss"      : true,
+  "globals"   : {"angular":false , "window":false}
+}

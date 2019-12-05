@@ -1,0 +1,157 @@
+﻿<!DOCTYPE html>
+<html lang="en" ng-app="demo">
+<head>
+    <meta charset="utf-8">
+    <title>AngularJS ui-select</title>
+
+    <!--
+      IE8 support, see AngularJS Internet Explorer Compatibility https://docs.angularjs.org/guide/ie
+      For Firefox 3.6, you will also need to include jQuery and ECMAScript 5 shim
+    -->
+    <!--[if lt IE 9]>
+      <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.js"></script>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/es5-shim/2.2.0/es5-shim.js"></script>
+      <script>
+        document.createElement('ui-select');
+        document.createElement('ui-select-match');
+        document.createElement('ui-select-choices');
+      </script>
+    <![endif]-->
+
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.5.0/angular.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.5.0/angular-sanitize.js"></script>
+
+    <!-- ui-select files -->
+    <script src="./dist/select.js"></script>
+    <link rel="stylesheet" href="./dist/select.css">
+
+    <script src="./assets/demo.js"></script>
+
+    <!-- themes -->
+    <link rel="stylesheet" href="https://netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/select2/3.4.5/select2.css">    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/selectize.js/0.8.5/css/selectize.default.css">
+    <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/selectize.js/0.8.5/css/selectize.bootstrap2.css"> -->
+    <!--<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/selectize.js/0.8.5/css/selectize.bootstrap3.css">--> 
+
+    <style>
+        body {
+            padding: 15px;
+        }
+
+        .select2 > .select2-choice.ui-select-match {
+            /* Because of the inclusion of Bootstrap */
+            height: 29px;
+        }
+
+        .selectize-control > .selectize-dropdown {
+            top: 36px;
+        }
+        /* Some additional styling to demonstrate that append-to-body helps achieve the proper z-index layering. */
+        .select-box {
+          background: #fff;
+          position: relative;
+          z-index: 1;
+        }
+        .alert-info.positioned {
+          margin-top: 1em;
+          position: relative;
+          z-index: 10000; /* The select2 dropdown has a z-index of 9999 */
+        }
+    </style>
+</head>
+
+<body class="ng-cloak" ng-controller="DemoCtrl as ctrl">
+  <p>Selected: {{ctrl.person.selected.name}}</p>
+
+  <form class="form-horizontal">
+    <fieldset>
+      <legend>ui-select inside a Bootstrap form</legend>
+
+      <div class="form-group">
+        <label class="col-sm-3 control-label">Default</label>
+        <div class="col-sm-6">
+
+          <ui-select ng-model="ctrl.person.selected" theme="select2" class="form-control" title="Choose a person">
+            <ui-select-match placeholder="Select or search a person in the list...">{{$select.selected.name}}</ui-select-match>
+            <ui-select-choices repeat="item in ctrl.people | filter: $select.search">
+              <div ng-bind-html="item.name | highlight: $select.search"></div>
+              <small ng-bind-html="item.email | highlight: $select.search"></small>
+            </ui-select-choices>
+          </ui-select>
+
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="col-sm-3 control-label">Multiple</label>
+        <div class="col-sm-6">
+
+          <ui-select multiple sortable="true" ng-model="ctrl.multipleDemo.selectedPeople" theme="select2" class="form-control" title="Choose a person">
+            <ui-select-match placeholder="Select or search a person in the list...">{{$item.name}}</ui-select-match>
+            <ui-select-choices repeat="item in ctrl.people | filter: $select.search">
+              <div ng-bind-html="item.name | highlight: $select.search"></div>
+              <small ng-bind-html="item.email | highlight: $select.search"></small>
+            </ui-select-choices>
+          </ui-select>
+
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="col-sm-3 control-label">Grouped</label>
+        <div class="col-sm-6">
+
+          <ui-select ng-model="ctrl.person.selected" theme="select2" class="form-control" title="Choose a person">
+            <ui-select-match placeholder="Select or search a person in the list...">{{$select.selected.name}}</ui-select-match>
+            <ui-select-choices group-by="'country'" repeat="item in ctrl.people | filter: $select.search">
+              <span ng-bind-html="item.name | highlight: $select.search"></span>
+              <small ng-bind-html="item.email | highlight: $select.search"></small>
+            </ui-select-choices>
+          </ui-select>
+
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="col-sm-3 control-label">With a clear button</label>
+        <div class="col-sm-6">
+          <div class="input-group select2-bootstrap-append">
+
+            <ui-select ng-model="ctrl.person.selected" theme="select2" class="form-control" title="Choose a person">
+              <ui-select-match placeholder="Select or search a person in the list...">{{$select.selected.name}}</ui-select-match>
+              <ui-select-choices repeat="item in ctrl.people | filter: $select.search">
+                <span ng-bind-html="item.name | highlight: $select.search"></span>
+                <small ng-bind-html="item.email | highlight: $select.search"></small>
+              </ui-select-choices>
+            </ui-select>
+
+            <span class="input-group-btn">
+              <button type="button" ng-click="ctrl.person.selected = undefined" class="btn btn-default">
+                <span class="glyphicon glyphicon-trash"></span>
+              </button>
+            </span>
+
+          </div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="col-sm-3 control-label">Disabled</label>
+        <div class="col-sm-6">
+
+          <ui-select ng-model="ctrl.person.selected" theme="select2" class="form-control" ng-disabled="true" title="Choose a person">
+            <ui-select-match placeholder="Select or search a person in the list...">{{$select.selected.name}}</ui-select-match>
+            <ui-select-choices repeat="item in ctrl.people | filter: $select.search">
+              <div ng-bind-html="item.name | highlight: $select.search"></div>
+              <small ng-bind-html="item.email | highlight: $select.search"></small>
+            </ui-select-choices>
+          </ui-select>
+
+        </div>
+      </div>
+
+    </fieldset>
+  </form>
+</body>
+</html>

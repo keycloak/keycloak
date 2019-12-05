@@ -101,9 +101,12 @@
                 <label class="col-md-2 control-label" for="reqActions">{{:: 'required-user-actions' | translate}}</label>
 
                 <div class="col-md-6">
-                    <select ui-select2 id="reqActions" ng-model="user.requiredActions" data-placeholder="{{:: 'select-an-action.placeholder' | translate}}" multiple>
-                        <option ng-repeat="action in userReqActionList" value="{{action.alias}}">{{action.name}}</option>
-                    </select>
+                    <ui-select multiple close-on-select="false" ng-model="user.requiredActions" theme="bootstrap" id="reqActions">
+                        <ui-select-match placeholder="{{:: 'select-an-action.placeholder' | translate}}">{{$item.name}}</ui-select-match>
+                        <ui-select-choices repeat="action.alias as action in userReqActionList | filter:$select.search">
+                            {{action.name}}
+                        </ui-select-choices>
+                    </ui-select>
                 </div>
                 <kc-tooltip>{{:: 'required-user-actions.tooltip' | translate}}</kc-tooltip>
             </div>

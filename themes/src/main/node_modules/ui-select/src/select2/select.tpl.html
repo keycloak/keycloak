@@ -1,0 +1,22 @@
+<div class="ui-select-container select2 select2-container"
+     ng-class="{'select2-container-active select2-dropdown-open open': $select.open,
+                'select2-container-disabled': $select.disabled,
+                'select2-container-active': $select.focus,
+                'select2-allowclear': $select.allowClear && !$select.isEmpty()}">
+  <div class="ui-select-match"></div>
+  <div class="ui-select-dropdown select2-drop select2-with-searchbox select2-drop-active"
+       ng-class="{'select2-display-none': !$select.open}">
+    <div class="search-container" ng-class="{'ui-select-search-hidden':!$select.searchEnabled, 'select2-search':$select.searchEnabled}">
+      <input type="search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+       ng-class="{'select2-active': $select.refreshing}"
+       role="combobox"
+       aria-expanded="true"
+       aria-owns="ui-select-choices-{{ $select.generatedId }}"
+       aria-label="{{ $select.baseTitle }}"
+             class="ui-select-search select2-input"
+             ng-model="$select.search">
+    </div>
+    <div class="ui-select-choices"></div>
+    <div class="ui-select-no-choice"></div>
+  </div>
+</div>

@@ -1,0 +1,6 @@
+<div ng-hide="$select.searchEnabled && ($select.open || $select.isEmpty())" class="ui-select-match">
+  <span ng-show="!$select.searchEnabled && ($select.isEmpty() || $select.open)" class="ui-select-placeholder text-muted">{{$select.placeholder}}</span>
+  <span ng-hide="$select.isEmpty() || $select.open" ng-transclude></span>
+</div>
+
+

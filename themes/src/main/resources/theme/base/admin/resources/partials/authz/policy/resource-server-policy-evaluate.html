@@ -59,9 +59,16 @@
                                                                                      data-ng-show="!authzRequest.roleIds || authzRequest.roleIds.length == 0">*</span></label>
 
                         <div class="col-md-6">
-                            <input type="hidden" ui-select2="usersUiSelect" id="users" data-ng-model="selectedUser" data-ng-change="selectUser(selectedUser);" data-placeholder="{{:: 'authz-select-user' | translate}}..."
-                                   data-ng-required="!authzRequest.roleIds || authzRequest.roleIds.length == 0">
-                            </input>
+                            <ui-select data-ng-model="uiSelection.selected.user" data-ng-change="selectUser(uiSelection.selected.user);" id="users" theme="bootstrap"
+                                    data-ng-required="!authzRequest.roleIds || authzRequest.roleIds.length == 0">
+                                <ui-select-match placeholder="{{:: 'authz-select-user' | translate}}..." allow-clear="true">{{$select.selected.username}}</ui-select-match>
+                                <ui-select-choices minimum-input-length="1" refresh="usersUiSelect($select.search)" refresh-delay="500" repeat="user as user in uiSelection.available.users">
+                                    {{user.username}}
+                                </ui-select-choices>
+                                <ui-select-no-choice>
+                                    {{:: 'authz-select-min-character-hint' | translate}}
+                                </ui-select-no-choice>
+                            </ui-select>
                         </div>
 
                         <kc-tooltip>{{:: 'authz-evaluation-user.tooltip' | translate}}</kc-tooltip>
@@ -72,13 +79,13 @@
                                                                                            data-ng-show="!authzRequest.userId || authzRequest.userId == null">*</span></label>
 
                         <div class="col-md-6">
-                            <select ui-select2="{ minimumInputLength: 1}"
-                                    data-ng-model="authzRequest.roleIds"
-                                    data-placeholder="{{:: 'authz-any-role' | translate}}..." multiple
+                            <ui-select multiple close-on-select="false" ng-model="authzRequest.roleIds" theme="bootstrap" id="roles"
                                     data-ng-required="!authzRequest.userId || authzRequest.userId == null">
-                                <option ng-repeat="role in roles track by role.id" value="{{role.name}}">{{role.name}}
-                                </option>
-                            </select>
+                                <ui-select-match placeholder="{{:: 'authz-any-role' | translate}}...">{{$item.name}}</ui-select-match>
+                                <ui-select-choices repeat="role.name as role in roles | filter:$select.search">
+                                    {{role.name}}
+                                </ui-select-choices>
+                            </ui-select>
                         </div>
 
                         <kc-tooltip>{{:: 'authz-evaluation-role.tooltip' | translate}}</kc-tooltip>
@@ -172,41 +179,59 @@
                         <label class="col-md-2 control-label" for="reqActions">{{:: 'authz-resources' | translate}} <span class="required">*</span></label>
 
                         <div class="col-md-6">
-                            <input type="hidden" ui-select2="resourcesUiSelect" id="reqActions3" data-ng-change="resolveScopes()" data-ng-model="newResource" data-placeholder="{{:: 'authz-select-resource' | translate}}..." data-ng-required="!applyResourceType && authzRequest.resources.length == 0 && !authzRequest.entitlements" />
+                            <ui-select data-ng-model="uiSelection.selected.newResource" data-ng-change="resolveScopes(uiSelection.selected.newResource)"
+                                    id="newResource" theme="bootstrap"
+                                    data-ng-required="!applyResourceType && authzRequest.resources.length == 0 && !authzRequest.entitlements">
+                                <ui-select-match placeholder="{{:: 'authz-select-resource' | translate}}..." allow-clear="true">{{$select.selected.name}}</ui-select-match>
+                                <ui-select-choices minimum-input-length="1" refresh="resourcesUiSelect($select.search)" refresh-delay="500" repeat="resource as resource in uiSelection.available.resources track by resource._id">
+                                    {{resource.name}}
+                                </ui-select-choices>
+                                <ui-select-no-choice>
+                                    {{:: 'authz-select-min-character-hint' | translate}}
+                                </ui-select-no-choice>
+                            </ui-select>
                         </div>
                         <kc-tooltip>{{:: 'authz-permission-resource-resource.tooltip' | translate}}</kc-tooltip>
                     </div>
                     <div class="form-group clearfix" data-ng-show="applyResourceType">
-                        <label class="col-md-2 control-label" for="newResource.type">{{:: 'authz-resource-type' | translate}} <span
+                        <label class="col-md-2 control-label" for="uiSelection.selected.newResource.type">{{:: 'authz-resource-type' | translate}} <span
                                 class="required">*</span></label>
 
                         <div class="col-md-6">
-                            <input class="form-control" type="text" id="newResource.type" name="newResource.type"
+                            <input class="form-control" type="text" id="uiSelection.selected.newResource.type" name="uiSelection.selected.newResource.type"
                                    data-ng-model="authzRequest.resources[0].type"
                                    data-ng-required="applyResourceType && !authzRequest.resources[0].type && !authzRequest.entitlements">
                         </div>
 
                         <kc-tooltip>{{:: 'authz-permission-resource-type.tooltip' | translate}}</kc-tooltip>
                     </div>
-                    <div class="form-group clearfix" data-ng-show="applyResourceType || newResource._id == null">
-                        <label class="col-md-2 control-label" for="newResource.scopes">{{:: 'authz-scopes' | translate}}</label>
+                    <div class="form-group clearfix" data-ng-show="applyResourceType || uiSelection.selected.newResource._id == null">
+                        <label class="col-md-2 control-label" for="uiSelection.selected.newResource.scopes">{{:: 'authz-scopes' | translate}}</label>
 
                         <div class="col-md-6">
-                            <input type="hidden" ui-select2="scopesUiSelect" id="reqActions" data-ng-model="newScopes" data-placeholder="{{:: 'authz-any-scope' | translate}}..." multiple />
+                            <ui-select data-ng-model="uiSelection.selected.newScopes" close-on-select="false" id="reqActions" theme="bootstrap" multiple>
+                                <ui-select-match placeholder="{{:: 'authz-any-scope' | translate}}..." allow-clear="true">{{$item.name}}</ui-select-match>
+                                <ui-select-choices minimum-input-length="1" refresh="scopesUiSelect($select.search)" refresh-delay="500" repeat="scope as scope in uiSelection.available.scopes">
+                                    {{scope.name}}
+                                </ui-select-choices>
+                                <ui-select-no-choice>
+                                    {{:: 'authz-select-min-character-hint' | translate}}
+                                </ui-select-no-choice>
+                            </ui-select>
                         </div>
 
                         <kc-tooltip>{{:: 'authz-permission-scope-scope.tooltip' | translate}}</kc-tooltip>
                     </div>
-                    <div class="form-group clearfix" data-ng-show="newResource._id != null">
-                        <label class="col-md-2 control-label" for="newResource.scopes">{{:: 'authz-scopes' | translate}}</label>
+                    <div class="form-group clearfix" data-ng-show="uiSelection.selected.newResource._id != null">
+                        <label class="col-md-2 control-label" for="uiSelection.selected.newResource.scopes">{{:: 'authz-scopes' | translate}}</label>
 
                         <div class="col-md-6">
-                            <select ui-select2
-                                    id="newResource.scopes"
-                                    data-ng-model="newScopes"
-                                    data-placeholder="{{:: 'authz-any-scope' | translate}}..." multiple>
-                                <option ng-repeat="scope in scopes" value="{{scope.name}}">{{scope.name}}</option>
-                            </select>
+                            <ui-select data-ng-model="uiSelection.selected.newScopes" close-on-select="false" id="newResource.scopes" theme="bootstrap" multiple>
+                                <ui-select-match placeholder="{{:: 'authz-any-scope' | translate}}...">{{$item.name}}</ui-select-match>
+                                <ui-select-choices repeat="scope.name as scope in scopes">
+                                    {{scope.name}}
+                                </ui-select-choices>
+                            </ui-select>
                         </div>
 
                         <kc-tooltip>{{:: 'authz-permission-scope-scope.tooltip' | translate}}</kc-tooltip>

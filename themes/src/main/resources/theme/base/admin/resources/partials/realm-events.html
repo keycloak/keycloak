@@ -30,11 +30,16 @@
                 </div>
                 <form class="form-horizontal">
                     <div class="form-group" data-ng-show="filter">
-                <label class="col-md-2 control-label" for="eventTypes">{{:: 'event-type' | translate}}</label>
+                        <label class="col-md-2 control-label" for="eventTypes">{{:: 'event-type' | translate}}</label>
                         <div class="col-sm-5" onkeypress="return false;" ng-paste="disablePaste($event)">
-                            <input ui-select2="eventSelectOptions" id="eventTypes" ng-model="query.type" data-placeholder="{{:: 'select-event-types.placeholder' | translate}}"/>
-            </div>
-        </div>
+                            <ui-select data-ng-model="query.type" id="eventTypes" theme="bootstrap" multiple close-on-select="false">
+                                <ui-select-match placeholder="{{:: 'select-event-types.placeholder' | translate}}...">{{$item}}</ui-select-match>
+                                <ui-select-choices repeat="type as type in eventSelectOptions | filter:$select.search">
+                                    {{type}}
+                                 </ui-select-choices>
+                            </ui-select>
+                        </div>
+                    </div>
                     <div class="form-group" data-ng-show="filter">
                         <label class="col-md-2 control-label" for="client">{{:: 'client' | translate}}</label>
                         <div class="col-md-6">

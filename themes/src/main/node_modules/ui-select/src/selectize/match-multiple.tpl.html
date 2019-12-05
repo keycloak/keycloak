@@ -1,0 +1,11 @@
+<div class="ui-select-match" data-value
+     ng-repeat="$item in $select.selected track by $index"
+     ng-click="$selectMultiple.activeMatchIndex = $index;"
+     ng-class="{'active':$selectMultiple.activeMatchIndex === $index}"
+     ui-select-sort="$select.selected">
+  <span class="ui-select-match-item"
+        ng-class="{'select-locked':$select.isLocked(this, $index)}">
+    <span uis-transclude-append></span>
+    <span class="remove ui-select-match-close" ng-hide="$select.disabled" ng-click="$selectMultiple.removeChoice($index)">&times;</span>
+  </span>
+</div>

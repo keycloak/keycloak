@@ -34,13 +34,23 @@
                         <div class="form-group">
                             <label class="col-sm-2 control-label" for="adminEnabledEventOperations">{{:: 'operation-types' | translate}}</label>
                             <div class="col-sm-5" onkeypress="return false;" ng-paste="disablePaste($event)">
-                                <input ui-select2="adminEnabledEventOperationsOptions" id="adminEnabledEventOperations" ng-model="query.operationTypes" data-placeholder="{{:: 'select-operations.placeholder' | translate}}"/>
+                                <ui-select data-ng-model="query.operationTypes" id="adminEnabledEventOperations" theme="bootstrap" multiple close-on-select="false">
+                                    <ui-select-match placeholder="{{:: 'select-operations.placeholder' | translate}}...">{{$item}}</ui-select-match>
+                                    <ui-select-choices repeat="operation as operation in adminEnabledEventOperationsOptions | filter:$select.search">
+                                        {{operation}}
+                                     </ui-select-choices>
+                                </ui-select>
                             </div>
                         </div>
                         <div class="form-group">
                             <label class="col-sm-2 control-label" for="adminEnabledEventResourceTypes">{{:: 'resource-types' | translate}}</label>
                             <div class="col-sm-5" onkeypress="return false;" ng-paste="disablePaste($event)">
-                                <input ui-select2="adminEnabledEventResourceTypesOptions" id="adminEnabledEventResourceTypes" ng-model="query.resourceTypes" data-placeholder="{{:: 'select-resource-types.placeholder' | translate}}"/>
+                                <ui-select data-ng-model="query.resourceType" id="adminEnabledEventResourceTypes" theme="bootstrap" multiple close-on-select="false">
+                                    <ui-select-match placeholder="{{:: 'select-resource-types.placeholder' | translate}}...">{{$item}}</ui-select-match>
+                                    <ui-select-choices repeat="resource as resource in adminEnabledEventResourceTypesOptions | filter:$select.search">
+                                        {{resource}}
+                                     </ui-select-choices>
+                                </ui-select>
                             </div>
                         </div>
                         <div class="form-group">

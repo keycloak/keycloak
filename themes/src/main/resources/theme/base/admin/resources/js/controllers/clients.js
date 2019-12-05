@@ -2341,6 +2341,8 @@ module.controller('ClientClientScopesEvaluateCtrl', function($scope, Realm, User
     $scope.selectedDefClientScopes = [];
     $scope.effectiveClientScopes = [];
 
+    $scope.uiSelection = {selected: {}, available: {}};
+
     // Populate available client scopes. Available client scopes are neither already assigned to 'default' or 'optional'
     for (var i = 0; i < clientOptionalClientScopes.length; i++) {
         $scope.availableClientScopes.push(clientOptionalClientScopes[i]);
@@ -2422,34 +2424,21 @@ module.controller('ClientClientScopesEvaluateCtrl', function($scope, Realm, User
         updateState();
     };
 
-    $scope.usersUiSelect = {
-        minimumInputLength: 1,
-        delay: 500,
-        allowClear: true,
-        query: function (query) {
-            var data = {results: []};
-            if ('' == query.term.trim()) {
-                query.callback(data);
-                return;
-            }
-            User.query({realm: $route.current.params.realm, search: query.term.trim(), max: 20}, function(response) {
-                data.results = response;
-                query.callback(data);
-            });
-        },
-        formatResult: function(object, container, query) {
-            object.text = object.username;
-            return object.username;
+    $scope.usersUiSelect = function(query) {
+        $scope.uiSelection.available.users = [];
+        if ('' == query.trim()) {
+            return;
         }
+        User.query({realm: $route.current.params.realm, search: query.trim(), max: 20}, function(response) {
+            $scope.uiSelection.available.users = response;
+        });
     };
-
-    $scope.selectedUser = null;
 
     $scope.selectUser = function(user) {
         clearEvalResponse();
 
         if (!user || !user.id) {
-            $scope.selectedUser = null;
+            delete $scope.uiSelection.selected.user;
             $scope.userId = '';
             return;
         }

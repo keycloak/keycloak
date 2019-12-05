@@ -1,0 +1,45 @@
+language: node_js
+node_js:
+  - "5.9"
+env:
+  global:
+    - CXX=g++-4.8
+    - GH_REF: github.com/angular-ui/ui-select.git
+    - GH_PAGES_BRANCH: gh-pages
+    - secure: "PkIhXXwrR5fHh7fH+2WizaY0MmK1l1Dr7PCqs112PkEimVPcntRJeA5pjTwGRwHm+RSkFVtfo38EY/GUwzhLSRTO7WZ+id+vIMGQLgiofqrOwi0nq93esG6qI8Jg5K0GUt8mzg5m9B2tgm2I91RAojEhIukKcbsDsq3hNAUy71Y="
+
+addons:
+  apt:
+    sources:
+      - ubuntu-toolchain-r-test
+    packages:
+      - g++-4.8
+
+before_script:
+  - export DISPLAY=:99.0
+  - sh -e /etc/init.d/xvfb start
+  - npm install --quiet -g gulp
+
+script: "gulp test"
+
+after_success:
+  - "gulp docs"
+
+deploy:
+
+  - provider: "script"
+    skip_cleanup: true
+    script: "bash ./deploy-docs.sh"
+    on:
+      tags: true
+  - provider: npm
+    email: aaronaroberson@gmail.com
+    api_key:
+      secure: AUjI1lAZofXXFN2/CH497TN1hqm+fAUXKJCBjxmd0xiSrNUgMZqjg96g5R6OU11+zFRwcuvIWKvBcjiozSbej5zaU2Eh6amrJN+cM4cfLf4ljAdnHPGs4divlFchbqX1ThNQsLfC/dZZCVBo4oOvTz8l2L3LLwOYZkngQ0DoiHE=
+    on:
+      tags: true
+
+sudo: false
+
+git:
+  depth: 10

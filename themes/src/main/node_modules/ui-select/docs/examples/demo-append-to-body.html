@@ -1,0 +1,56 @@
+  <button class="btn btn-default btn-xs" ng-click="ctrl.enable()">Enable ui-select</button>
+  <button class="btn btn-default btn-xs" ng-click="ctrl.disable()">Disable ui-select</button>
+  <button class="btn btn-default btn-xs" ng-click="ctrl.appendToBodyDemo.startToggleTimer()"
+          ng-disabled="ctrl.appendToBodyDemo.remainingTime">
+    {{ ctrl.appendToBodyDemo.remainingTime ? 'Toggling in ' + (ctrl.appendToBodyDemo.remainingTime / 1000) + ' seconds' : 'Toggle ui-select presence' }}
+  </button>
+  <button class="btn btn-default btn-xs" ng-click="ctrl.clear()">Clear ng-model</button>
+
+  <div class="select-box" ng-show="ctrl.appendToBodyDemo.present">
+    <h3>Bootstrap theme</h3>
+    <p>Selected: {{ctrl.address.selected.formatted_address}}</p>
+    <ui-select ng-model="ctrl.address.selected"
+               theme="bootstrap"
+               ng-disabled="ctrl.disabled"
+               reset-search-input="false"
+               style="width: 600px;"
+               title="Choose an address"
+               append-to-body="true">
+      <ui-select-match placeholder="Enter an address...">{{$select.selected.formatted_address}}</ui-select-match>
+      <ui-select-choices repeat="address in ctrl.addresses track by $index"
+               refresh="ctrl.refreshAddresses($select.search)"
+               refresh-delay="0">
+        <div ng-bind-html="address.formatted_address | highlight: $select.search"></div>
+      </ui-select-choices>
+    </ui-select>
+    <p class="alert alert-info positioned">The select dropdown menu should be displayed above this element.</p>
+  </div>
+
+  <div class="select-box" ng-if="ctrl.appendToBodyDemo.present">
+    <h3>Select2 theme</h3>
+    <p>Selected: {{ctrl.person.selected}}</p>
+    <ui-select ng-model="ctrl.person.selected" theme="select2" ng-disabled="ctrl.disabled" style="min-width: 300px;" title="Choose a person" append-to-body="true">
+      <ui-select-match placeholder="Select a person in the list or search his name/age...">{{$select.selected.name}}</ui-select-match>
+      <ui-select-choices repeat="person in ctrl.people | propsFilter: {name: $select.search, age: $select.search}">
+        <div ng-bind-html="person.name | highlight: $select.search"></div>
+        <small>
+          email: {{person.email}}
+          age: <span ng-bind-html="''+person.age | highlight: $select.search"></span>
+        </small>
+      </ui-select-choices>
+    </ui-select>
+    <p class="alert alert-info positioned">The select dropdown menu should be displayed above this element.</p>
+  </div>
+
+  <div class="select-box" ng-if="ctrl.appendToBodyDemo.present">
+    <h3>Selectize theme</h3>
+    <p>Selected: {{ctrl.country.selected}}</p>
+    <ui-select ng-model="ctrl.country.selected" theme="selectize" ng-disabled="ctrl.disabled" style="width: 300px;" title="Choose a country" append-to-body="true">
+      <ui-select-match placeholder="Select or search a country in the list...">{{$select.selected.name}}</ui-select-match>
+      <ui-select-choices repeat="country in ctrl.countries | filter: $select.search">
+        <span ng-bind-html="country.name | highlight: $select.search"></span>
+        <small ng-bind-html="country.code | highlight: $select.search"></small>
+      </ui-select-choices>
+    </ui-select>
+    <p class="alert alert-info positioned">The select dropdown menu should be displayed above this element.</p>
+  </div>

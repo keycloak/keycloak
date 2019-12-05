@@ -1,0 +1,26 @@
+  <button class="btn btn-default btn-xs" ng-click="ctrl.enable()">Enable ui-select</button>
+  <button class="btn btn-default btn-xs" ng-click="ctrl.disable()">Disable ui-select</button>
+  <button class="btn btn-default btn-xs" ng-click="ctrl.clear()">Clear ng-model</button>
+
+  <h1>Group Filtering</h1>
+  <p>You can filter which groups are displayed by ui-select, by using the <code>group-filter</code> attribute. The provided value should either be an array or function.</p>
+  <p>Selected: {{country.selected}}</p>
+
+
+  <h3> Filter groups by array <small><code>group-filter="['Z','B','C']"</code></small></h3>
+  <ui-select ng-model="ctrl.country.selected" theme="select2" ng-disabled="ctrl.disabled" style="width: 300px;" title="Choose a country">
+    <ui-select-match placeholder="Select or search a country in the list...">{{$select.selected.name}}</ui-select-match>
+    <ui-select-choices group-by="ctrl.firstLetterGroupFn" group-filter="['Z','B','C']" repeat="country in ctrl.countries | filter: $select.search">
+      <span ng-bind-html="country.name | highlight: $select.search"></span>
+      <small ng-bind-html="country.code | highlight: $select.search"></small>
+    </ui-select-choices>
+  </ui-select>
+
+  <h3>Filter groups using a function <small><code>group-filter="ctrl.reverseOrderFilterFn"</code></small></h3>
+  <ui-select ng-model="ctrl.country.selected" theme="select2" ng-disabled="ctrl.disabled" style="width: 300px;" title="Choose a country">
+    <ui-select-match placeholder="Select or search a country in the list...">{{$select.selected.name}}</ui-select-match>
+    <ui-select-choices group-by="ctrl.firstLetterGroupFn" group-filter="ctrl.reverseOrderFilterFn" repeat="country in ctrl.countries | filter: $select.search">
+      <span ng-bind-html="country.name | highlight: $select.search"></span>
+      <small ng-bind-html="country.code | highlight: $select.search"></small>
+    </ui-select-choices>
+  </ui-select>

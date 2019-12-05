@@ -39,8 +39,20 @@
                 <label class="col-md-2 control-label" for="resources">{{:: 'authz-resources' | translate}} <span class="required">*</span></label>
 
                 <div class="col-md-6">
-                    <input type="hidden" ui-select2="resourcesUiSelect" id="resources" data-ng-model="selectedResource" data-placeholder="{{:: 'authz-select-resource' | translate}}..." data-ng-required="!applyToResourceTypeFlag"/>
+                    <ui-select data-ng-model="uiSelection.selected.newResource" id="resources" theme="bootstrap"
+                            data-ng-required="!applyToResourceTypeFlag">
+                        <ui-select-match placeholder="{{:: 'authz-select-resource' | translate}}..." allow-clear="true">{{$select.selected.name}}</ui-select-match>
+                        <ui-select-choices minimum-input-length="1" refresh="resourcesUiSelect($select.search)" refresh-delay="500"
+                                repeat="resource as resource in uiSelection.available.resources track by resource._id">
+                            {{resource.name}}
+                        </ui-select-choices>
+                        <ui-select-no-choice>
+                           {{:: 'authz-select-min-character-hint' | translate}}
+                        </ui-select-no-choice>
+                    </ui-select>
+
                 </div>
+
                 <kc-tooltip>{{:: 'authz-permission-resource-resource.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group clearfix" data-ng-show="applyToResourceTypeFlag">
@@ -62,7 +74,17 @@
                                 <div class="form-inline col-md-12" style="width: 107%">
                                     <div class="form-group" style="width: 100%">
                                         <div class="input-group" style="width: 100%">
-                                            <input type="hidden" ui-select2="policiesUiSelect" id="policies" data-ng-change="selectPolicy(selectedPolicy);" data-ng-model="selectedPolicy" data-placeholder="{{:: 'authz-select-a-policy' | translate}}..."/>
+                                            <ui-select data-ng-model="uiSelection.selected.newPolicy" data-ng-change="selectPolicy(uiSelection.selected.newPolicy)"
+                                                    id="policies" theme="bootstrap">
+                                                <ui-select-match placeholder="{{:: 'authz-select-a-policy' | translate}}..." allow-clear="true">{{$select.selected.name}}</ui-select-match>
+                                                <ui-select-choices minimum-input-length="1" refresh="policiesUiSelect($select.search)" refresh-delay="500"
+                                                        repeat="policy as policy in uiSelection.available.policies">
+                                                    {{policy.name}}
+                                                </ui-select-choices>
+                                                <ui-select-no-choice>
+                                                    {{:: 'authz-select-min-character-hint' | translate}}
+                                                </ui-select-no-choice>
+                                            </ui-select>
                                         </div>
                                     </div>
                                 </div>

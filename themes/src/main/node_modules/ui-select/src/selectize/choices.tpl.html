@@ -1,0 +1,11 @@
+<div ng-show="$select.open" class="ui-select-choices ui-select-dropdown selectize-dropdown"
+     ng-class="{'single': !$select.multiple, 'multi': $select.multiple}">
+  <div class="ui-select-choices-content selectize-dropdown-content">
+    <div class="ui-select-choices-group optgroup">
+      <div ng-show="$select.isGrouped" class="ui-select-choices-group-label optgroup-header" ng-bind="$group.name"></div>
+      <div role="option" class="ui-select-choices-row" ng-class="{active: $select.isActive(this), disabled: $select.isDisabled(this)}">
+        <div class="option ui-select-choices-row-inner" data-selectable></div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,8 @@
+/bower_components
+/node_modules
+/temp
+/.idea
+/.tmp
+.DS_Store
+npm-debug.log
+*~

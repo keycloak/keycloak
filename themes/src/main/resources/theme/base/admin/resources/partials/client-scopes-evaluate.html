@@ -102,8 +102,17 @@
             <label class="col-md-2 control-label" for="users">{{:: 'user' | translate}}</label>
 
             <div class="col-md-6">
-                <input type="hidden" ui-select2="usersUiSelect" id="users" data-ng-model="selectedUser" data-ng-change="selectUser(selectedUser);" data-placeholder="{{:: 'authz-select-user' | translate}}...">
-                </input>
+                <ui-select data-ng-model="uiSelection.selected.user" data-ng-change="selectUser(uiSelection.selected.user)" id="users" theme="bootstrap"
+                          data-ng-required="selectedClients.length == 0">
+                    <ui-select-match placeholder="{{:: 'authz-select-user' | translate}}..." allow-clear="true">{{$select.selected.username}}</ui-select-match>
+                    <ui-select-choices minimum-input-length="1" refresh="usersUiSelect($select.search)" refresh-delay="500"
+                            repeat="user as user in uiSelection.available.users">
+                        {{user.username}}
+                    </ui-select-choices>
+                    <ui-select-no-choice>
+                        {{:: 'authz-select-min-character-hint' | translate}}
+                    </ui-select-no-choice>
+                 </ui-select>
             </div>
 
             <kc-tooltip>{{:: 'client-scopes.evaluate.user.tooltip' | translate}}</kc-tooltip>
@@ -210,8 +219,17 @@
         <div class="form-group" data-ng-show="rolesShown()">
             <label class="col-md-2 control-label" for="clients">{{:: 'client-roles' | translate}}</label>
             <div class="col-md-6">
-                <input type="hidden" ui-select2="clientsUiSelect" id="clients" data-ng-model="selectedClient" data-ng-change="selectClient(selectedClient);" data-placeholder="{{:: 'authz-select-client' | translate}}...">
-                </input>
+                <ui-select data-ng-model="clientUiSelection.selected.newClient" data-ng-change="selectClient(clientUiSelection.selected.newClient)"
+                        id="clients" theme="bootstrap">
+                    <ui-select-match placeholder="{{:: 'authz-select-client' | translate}}..." allow-clear="true">{{$select.selected.clientId}}</ui-select-match>
+                    <ui-select-choices minimum-input-length="1" refresh="clientsUiSelect($select.search)" refresh-delay="500"
+                            repeat="client as client in clientUiSelection.available.clients">
+                        {{client.clientId}}
+                    </ui-select-choices>
+                    <ui-select-no-choice>
+                        {{:: 'authz-select-min-character-hint' | translate}}
+                    </ui-select-no-choice>
+                </ui-select>
             </div>
 
             <div class="col-md-10 col-md-offset-2">

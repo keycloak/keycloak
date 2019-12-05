@@ -1,0 +1,11 @@
+<ul tabindex="-1" class="ui-select-choices ui-select-choices-content select2-results">
+  <li class="ui-select-choices-group" ng-class="{'select2-result-with-children': $select.choiceGrouped($group) }">
+    <div ng-show="$select.choiceGrouped($group)" class="ui-select-choices-group-label select2-result-label" ng-bind="$group.name"></div>
+    <ul
+      id="ui-select-choices-{{ $select.generatedId }}" ng-class="{'select2-result-sub': $select.choiceGrouped($group), 'select2-result-single': !$select.choiceGrouped($group) }">
+      <li role="option" ng-attr-id="ui-select-choices-row-{{ $select.generatedId }}-{{$index}}" class="ui-select-choices-row" ng-class="{'select2-highlighted': $select.isActive(this), 'select2-disabled': $select.isDisabled(this)}">
+        <div class="select2-result-label ui-select-choices-row-inner"></div>
+      </li>
+    </ul>
+  </li>
+</ul>

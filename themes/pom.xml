@@ -240,6 +240,8 @@
                                                 <exclude>**/bin/**</exclude>
                                                 <exclude>**/build/**</exclude>
                                                 <exclude>**/docs/**</exclude>
+                                                <exclude>**/docs-built/**</exclude>
+                                                <exclude>**/docs-out/**</exclude>
                                                 <exclude>**/demo/**</exclude>
                                                 <exclude>**/devtools/**</exclude>
                                                 <exclude>**/example/**</exclude>
@@ -268,7 +270,6 @@
                                         <resource>
                                             <directory>src/main/node_modules</directory>
                                             <includes>
-                                                <include>angular-ui-select2/src/select2.js</include>
                                                 <include>filesaver/src/Filesaver.js</include>
                                                 <include>filesaver/src/changename.js</include>
                                             </includes>

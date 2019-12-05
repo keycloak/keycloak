@@ -625,14 +625,14 @@
       </licenses>
     </other>
     <other>
-      <description>ui-select2</description>
+      <description>ui-select</description>
       <locations>
-        <directory>themes/keycloak/common/resources/node_modules/angular-ui-select2</directory>
+        <directory>themes/keycloak/common/resources/node_modules/ui-select</directory>
       </locations>
       <licenses>
         <license>
           <name>MIT License</name>
-          <url>https://raw.githubusercontent.com/angular-ui/ui-select2/v0.0.5/LICENSE</url>
+          <url>https://raw.githubusercontent.com/angular-ui/ui-select/v0.19.8/LICENSE</url>
         </license>
       </licenses>
     </other>
@@ -668,11 +668,11 @@
       <licenses>
         <license>
           <name>Apache Software License 2.0</name>
-          <url>https://raw.githubusercontent.com/select2/select2/3.4.1/LICENSE</url>
+          <url>https://raw.githubusercontent.com/select2/select2/4.0.10/LICENSE.md</url>
         </license>
         <license>
           <name>GNU General Public License v2.0 only</name>
-          <url>https://raw.githubusercontent.com/select2/select2/3.4.1/LICENSE</url>
+          <url>https://raw.githubusercontent.com/select2/select2/4.0.10/LICENSE.md</url>
         </license>
       </licenses>
     </other>

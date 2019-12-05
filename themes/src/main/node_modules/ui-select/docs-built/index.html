@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en" ng-app="ui.select.pages">
+<head>
+  <meta charset="utf-8">
+  <title>AngularJS ui-select</title>
+
+  <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.5.0/angular.js"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.5.0/angular-sanitize.js"></script>
+
+  <script src="./assets/app.js" type="text/javascript"></script>
+  <script src="./assets/plunkr.js" type="text/javascript"></script>
+
+  <!-- themes -->
+  <link rel="stylesheet" href="https://netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.css">
+  <link rel="stylesheet" href="./assets/docs.css" />
+
+</head>
+
+<body>
+  <header class="navbar navbar-default navbar-fixed-top navbar-inner">
+    <div class="container">
+      <div class="navbar-header">
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#bs-example-navbar-collapse-3" ng-click="isCollapsed = !isCollapsed">
+          <span class="sr-only">Toggle navigation</span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand visible-xs" href="#">UI Select</a>
+      </div>
+      <nav class="hidden-xs">
+        <ul class="nav navbar-nav">
+          <a href="#top" role="button" class="navbar-brand">
+            UI Select
+          </a>
+          <li><a href="#getting_started">Getting started</a></li>
+          <li><a href="#documenation">Documentation</a></li>
+          <li><a href="#examples">Examples</a></li>
+          <!--<li class="dropdown" uib-dropdown>
+              <a role="button" class="dropdown-toggle" uib-dropdown-toggle>
+                  Previous docs <b class="caret"></b>
+              </a>
+              <ul class="dropdown-menu">
+                  <li ng-repeat="version in oldDocs">
+                      <a ng-href="{{version.url}}">{{version.version}}</a>
+                  </li>
+              </ul>
+          </li>-->
+        </ul>
+      </nav>
+      <nav class="visible-xs" uib-collapse="!isCollapsed">
+        <ul class="nav navbar-nav">
+          <li><a href="#getting_started" ng-click="isCollapsed = !isCollapsed">Getting started</a></li>
+          <li><a href="#directives_small" ng-click="isCollapsed = !isCollapsed">Directives</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+  <div class="header-placeholder"></div>
+  <div role="main">
+    <header class="bs-header text-center" id="overview">
+      <div class="container">
+
+        <h1>UI Select</h1>
+        <p>
+          A native <a href="http://angularjs.org">AngularJS</a> implementation of Select2/Selectize by the
+          <a href="http://angular-ui.github.io">AngularUI Team</a>
+        </p>
+
+        <p>
+          <a class="btn btn-outline-inverse btn-lg" href="https://github.com/angular-ui/ui-select"><i class="icon-github"></i>Code on Github</a>
+          <!--<button type="button" class="btn btn-outline-inverse btn-lg" ng-click="showDownloadModal()">
+              <i class="glyphicon glyphicon-download-alt"></i> Download <small>(<%= pkg.version%>)</small>
+          </button>-->
+        </p>
+      </div>
+      <div class="bs-social container">
+        <ul class="bs-social-buttons">
+            <li>
+                <iframe src="//ghbtns.com/github-btn.html?user=angular-ui&repo=ui-select&type=watch&count=true"
+                        allowtransparency="true" frameborder="0" scrolling="0" width="110" height="20"></iframe>
+            </li>
+            <li>
+                <iframe src="//ghbtns.com/github-btn.html?user=angular-ui&repo=ui-select&type=fork&count=true"
+                        allowtransparency="true" frameborder="0" scrolling="0" width="110" height="20"></iframe>
+            </li>
+            <li>
+                <a href="https://twitter.com/share" class="twitter-share-button"
+                   data-hashtags="angularjs">Tweet</a>
+                <script>
+                !function (d, s, id) {
+                    var js, fjs = d.getElementsByTagName(s)[0];
+                    if (!d.getElementById(id)) {
+                        js = d.createElement(s);
+                        js.id = id;
+                        js.src = "//platform.twitter.com/widgets.js";
+                        fjs.parentNode.insertBefore(js, fjs);
+                    }
+                }(document, "script", "twitter-wjs");</script>
+            </li>
+            <li>
+                <!-- Place this tag where you want the +1 button to render. -->
+                <div class="g-plusone" data-size="medium"></div>
+
+                <!-- Place this tag after the last +1 button tag. -->
+                <script type="text/javascript">
+                    (function () {
+                        var po = document.createElement('script');
+                        po.type = 'text/javascript';
+                        po.async = true;
+                        po.src = 'https://apis.google.com/js/plusone.js';
+                        var s = document.getElementsByTagName('script')[0];
+                        s.parentNode.insertBefore(po, s);
+                    })();
+                </script>
+            </li>
+        </ul>
+      </div>
+    </header>
+    <div class="container">
+      <div class="row">
+        <div class="col-md-12">
+          <section id="getting_started">
+            <div class="page-header">
+              <h1>Getting started</h1>
+            </div>
+            <h3>Dependencies</h3>
+            <p>
+              This repository contains a <strong>native AngularJS</strong> select directive based on
+              Bootstrap/Select2/Selectize's CSS. As a result no dependency on jQuery or 3rd-Party 
+              JavaScript is required. The only <strong>required</strong> dependencies are:
+            </p>
+            <ul>
+              <li>
+                <a href="http://angularjs.org" target="_blank">AngularJS</a> (requires AngularJS 1.2.x or higher, tested with 1.5.3).
+              </li>
+              <li>
+                <a href="http://angularjs.org" target="_blank">Angular-Sanitize</a> (the version should match your version of angular.js).
+              </li>
+              <li>
+                The matching CSS for your the theme you wish to use:
+                <ul>
+                  <li>Bootstrap</li>
+                  <li>Select2</li>
+                  <li>Selectize</li>
+                </ul>
+              </li>
+            </ul>
+
+            <h3>Installation</h3>
+            <h4>Install via npm</h4>
+            <pre>$ npm install ui-select</pre>
+            <h4>Install via bower</h4>
+            <pre>$ bower install angular-ui-select</pre>
+            <p>
+              As soon as you've got all the files downloaded and included in your page you just need to declare
+              a dependency on the <code>ui.select</code> <a href="http://docs.angularjs.org/guide/module">module</a>:<br>
+              <pre><code>angular.module('myModule', ['ui.select', 'ngSanitize']);</code></pre>
+            </p>
+
+          </section>
+          <section id="documenation">
+            <div class="page-header">
+              <h1>Documentation</h1>
+            </div>
+            <h3>Wiki</h3>
+            For up to date information please refer to the <a href="https://github.com/angular-ui/ui-select/wiki" target="_blank">Wiki</a>
+            <h3>FAQ</h3>
+            <p>Please check <a href="https://github.com/angular-ui/ui-select/wiki/FAQs" target="_blank">our FAQ section</a> for common problems / solutions.</p>
+          </section>
+          <section id="examples">
+            <div class="page-header">
+              <h1>Examples</h1>
+            </div>
+            <p>You can fork one of the plunkers from this page to see a working example of what is described here.</p>
+            
+            <h4><a href="./demo-append-to-body.html">Append To Body</a> <plnkr-opener example-path="demo-append-to-body.html"></plnkr-opener></h4>
+<h4><a href="./demo-basic.html">Basic</a> <plnkr-opener example-path="demo-basic.html"></plnkr-opener></h4>
+<h4><a href="./demo-bind-to-single-property-async.html">Bind To Single Property Async</a> <plnkr-opener example-path="demo-bind-to-single-property-async.html"></plnkr-opener></h4>
+<h4><a href="./demo-bind-to-single-property.html">Bind To Single Property</a> <plnkr-opener example-path="demo-bind-to-single-property.html"></plnkr-opener></h4>
+<h4><a href="./demo-bootstrap.html">Bootstrap</a> <plnkr-opener example-path="demo-bootstrap.html"></plnkr-opener></h4>
+<h4><a href="./demo-disable-search.html">Disable Search</a> <plnkr-opener example-path="demo-disable-search.html"></plnkr-opener></h4>
+<h4><a href="./demo-dropdown-position.html">Dropdown Position</a> <plnkr-opener example-path="demo-dropdown-position.html"></plnkr-opener></h4>
+<h4><a href="./demo-event-on-selection.html">Event On Selection</a> <plnkr-opener example-path="demo-event-on-selection.html"></plnkr-opener></h4>
+<h4><a href="./demo-focus.html">Focus</a> <plnkr-opener example-path="demo-focus.html"></plnkr-opener></h4>
+<h4><a href="./demo-group-by.html">Group By</a> <plnkr-opener example-path="demo-group-by.html"></plnkr-opener></h4>
+<h4><a href="./demo-group-filter.html">Group Filter</a> <plnkr-opener example-path="demo-group-filter.html"></plnkr-opener></h4>
+<h4><a href="./demo-multiple-selection.html">Multiple Selection</a> <plnkr-opener example-path="demo-multiple-selection.html"></plnkr-opener></h4>
+<h4><a href="./demo-object-as-source.html">Object As Source</a> <plnkr-opener example-path="demo-object-as-source.html"></plnkr-opener></h4>
+<h4><a href="./demo-select2-with-bootstrap.html">Select 2 With Bootstrap</a> <plnkr-opener example-path="demo-select2-with-bootstrap.html"></plnkr-opener></h4>
+<h4><a href="./demo-selectize-with-bootstrap.html">Selectize With Bootstrap</a> <plnkr-opener example-path="demo-selectize-with-bootstrap.html"></plnkr-opener></h4>
+<h4><a href="./demo-tagging.html">Tagging</a> <plnkr-opener example-path="demo-tagging.html"></plnkr-opener></h4>
+          </section>
+        </div>
+      </div>
+    </div><!-- /.container -->
+  </div><!-- /.main -->
+  <footer class="footer">
+    <div class="container">
+      <p>Designed and built by all ui-select <a href="https://github.com/angular-ui/ui-select/graphs/contributors" target="_blank">contributors</a>.</p>
+      <p>Code licensed under <a href="https://github.com/angular-ui/ui-select/blob/master/LICENSE">MIT License</a>.</p>
+      <p><a href="https://github.com/angular-ui/ui-select/issues?state=open">Issues</a></p>
+    </div>
+  </footer>
+</body>
+</html>

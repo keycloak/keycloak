@@ -1,0 +1,87 @@
+
+  <button class="btn btn-default btn-xs" ng-click="ctrl.enable()">Enable ui-select</button>
+  <button class="btn btn-default btn-xs" ng-click="ctrl.disable()">Disable ui-select</button>
+  <button class="btn btn-default btn-xs" ng-click="ctrl.clear()">Clear ng-model</button>
+
+  <h1>Tagging</h1>
+  <p>Tagging allows the creation of new items not present in the item list</p>
+
+  <h3>Simple String Tags <small>(With Custom Tag Label &amp; Sort Enabled)</small></h3>
+
+  <ui-select multiple tagging tagging-label="(custom 'new' label)" ng-model="ctrl.multipleDemo.colors" theme="bootstrap" sortable="true" ng-disabled="ctrl.disabled" style="width: 300px;" title="Choose a color">
+    <ui-select-match placeholder="Select colors...">{{$item}}</ui-select-match>
+    <ui-select-choices repeat="color in ctrl.availableColors | filter:$select.search">
+      {{color}}
+    </ui-select-choices>
+  </ui-select>
+  <p>Selected: {{ctrl.multipleDemo.colors}}</p>
+  <hr>
+
+  <h3>Simple String Tags <small>(Predictive Search Model &amp; No Labels)</small></h3>
+
+  <ui-select multiple tagging tagging-label="false" ng-model="ctrl.multipleDemo.colors2" theme="bootstrap" ng-disabled="ctrl.disabled" style="width: 300px;" title="Choose a color">
+    <ui-select-match placeholder="Select colors...">{{$item}}</ui-select-match>
+    <ui-select-choices repeat="color in ctrl.availableColors | filter:$select.search">
+      {{color}}
+    </ui-select-choices>
+  </ui-select>
+  <p>Selected: {{ctrl.multipleDemo.colors2}}</p>
+  <hr>
+
+  <h3>Object Tags <small>(with grouping)</small></h3>
+  <ui-select multiple tagging="ctrl.tagTransform" ng-model="ctrl.multipleDemo.selectedPeople" theme="bootstrap" ng-disabled="ctrl.disabled" style="width: 800px;" title="Choose a person">
+    <ui-select-match placeholder="Select person...">{{$item.name}} &lt;{{$item.email}}&gt;</ui-select-match>
+    <ui-select-choices repeat="person in ctrl.people | propsFilter: {name: $select.search, age: $select.search}" group-by="'country'">
+      <div ng-if="person.isTag" ng-bind-html="(person.name | highlight: $select.search) +' (new)'"></div>
+      <div ng-if="!person.isTag" ng-bind-html="person.name + person.isTag| highlight: $select.search"></div>
+      <small>
+        email: {{person.email}}
+        age: <span ng-bind-html="''+person.age | highlight: $select.search"></span>
+      </small>
+    </ui-select-choices>
+  </ui-select>
+  <p>Selected: </p>
+  <pre>selectedPeople = {{ctrl.multipleDemo.selectedPeople | json}}</pre>
+  <hr>
+
+  <h3>Object Tags with Tokenization <small>("<code>&nbsp;</code>", <code>/</code>, <code>,</code>)</small></h3>
+  <strong>Note that the Space character can't be used literally, use the keyword SPACE - <code>tagging-tokens="SPACE|,|/"</code></strong>
+  <ui-select multiple tagging="ctrl.tagTransform" tagging-tokens="SPACE|,|/" ng-model="ctrl.multipleDemo.selectedPeople2" theme="bootstrap" ng-disabled="ctrl.disabled" style="width: 800px;" title="Choose a person">
+    <ui-select-match placeholder="Select person...">{{$item.name}} &lt;{{$item.email}}&gt;</ui-select-match>
+    <ui-select-choices repeat="person in ctrl.people | propsFilter: {name: $select.search, age: $select.search}">
+      <div ng-if="person.isTag" ng-bind-html="person.name + ' ' + $select.taggingLabel | highlight: $select.search"></div>
+      <div ng-if="!person.isTag" ng-bind-html="person.name| highlight: $select.search"></div>
+      <small>
+        email: {{person.email}}
+        age: <span ng-bind-html="''+person.age | highlight: $select.search"></span>
+      </small>
+    </ui-select-choices>
+  </ui-select>
+  <p>Selected: </p>
+  <pre>selectedPeople2 = {{ctrl.multipleDemo.selectedPeople2 | json}}</pre>
+
+  <h3>Tagging in Single Select mode</h3>(NOT WORKING)
+  <ui-select tagging="ctrl.tagTransform" ng-model="ctrl.person.selected" theme="bootstrap" ng-disabled="ctrl.disabled" style="width: 800px;" title="Choose a person">
+  <ui-select-match placeholder="Select person...">{{$select.selected.name}} &lt;{{$select.selected.email}}&gt;</ui-select-match>
+  <ui-select-choices repeat="person in ctrl.people | propsFilter: {name: $select.search, age: $select.search}">
+    <div ng-if="person.isTag" ng-bind-html="(person.name | highlight: $select.search) +' (new)'"></div>
+    <div ng-if="!person.isTag" ng-bind-html="person.name + person.isTag| highlight: $select.search"></div>
+    <small>
+      email: {{person.email}}
+      age: <span ng-bind-html="''+person.age | highlight: $select.search"></span>
+    </small>
+  </ui-select-choices>
+  </ui-select>
+  <p>Selected:</p>
+  <pre>ctrl.person.selected = {{ctrl.person.selected | json }}</pre>
+
+  <h3>Tagging in Single select mode, with simple strings</h3>(NOT WORKING)
+  <ui-select tagging tagging-label="('new')" ng-model="ctrl.singleDemo.color" theme="bootstrap" style="width: 800px;" title="Choose a color">
+    <ui-select-match placeholder="Select color...">{{$select.selected}}</ui-select-match>
+    <ui-select-choices repeat="color in ctrl.availableColors | filter: $select.search">
+      <div ng-bind-html="color | highlight: $select.search"></div>
+    </ui-select-choices>
+  </ui-select>
+  <p>Selected: <code>{{ctrl.singleDemo.color}}</code></p>
+
+  <div style="height:500px"></div>

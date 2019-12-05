@@ -27,8 +27,18 @@
             </div>
         </div>
         <div class="col-md-4" data-ng-if="option.type == 'ClientList'">
-            <input type="hidden" ui-select2="clientsUiSelect" id="clients" data-ng-init="initSelectedClient(option.name, config)" data-ng-model="selectedClient" data-ng-change="changeClient(option.name, config, selectedClient);" data-placeholder="{{:: 'selectOne' | translate}}...">
-            </input>
+            <ui-select data-ng-init="initSelectedClient(option.name, config)" data-ng-model="clientUiSelection.selected.newClient"
+                    data-ng-change="changeClient(option.name, config, clientUiSelection.selected.newClient);"
+                    id="clients" theme="bootstrap" style="margin-bottom: 10px;">
+                <ui-select-match placeholder="{{:: 'authz-select-client' | translate}}..." allow-clear="true">{{$select.selected.clientId}}</ui-select-match>
+                <ui-select-choices minimum-input-length="1" refresh="clientsUiSelect($select.search)" refresh-delay="500"
+                        repeat="client as client in clientUiSelection.available.clients">
+                    {{client.clientId}}
+                </ui-select-choices>
+                <ui-select-no-choice>
+                    {{:: 'authz-select-min-character-hint' | translate}}
+                </ui-select-no-choice>
+            </ui-select>
         </div>
 
         <div class="col-md-6" data-ng-if="option.type == 'Script'">

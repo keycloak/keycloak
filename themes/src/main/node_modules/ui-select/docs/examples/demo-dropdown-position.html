@@ -1,0 +1,106 @@
+﻿  <h3>Dropdown Position</h3>
+
+  <br>
+  <br>
+  <br>
+
+  <pre>default value can be changed at <strong class="text-warning">uiSelectConfig</strong></pre>
+
+  <br>
+  <br>
+  <br>
+  <br>
+  <br>
+  <br>
+  <br>
+  <br>
+  <br>
+  <br>
+  <br>
+  <br>
+  <br>
+  <br>
+  <br>
+  <br>
+  
+
+  <p>Always UP</p>
+  <ui-select ng-model="ctrl.person.selected" theme="select2" ng-disabled="ctrl.disabled" style="min-width: 300px;" title="Choose a person">
+    <ui-select-match placeholder="Select a person in the list or search his name/age...">{{$select.selected.name}}</ui-select-match>
+    <ui-select-choices repeat="person in ctrl.people | propsFilter: {name: $select.search, age: $select.search}" position='up'>
+      <div ng-bind-html="person.name | highlight: $select.search"></div>
+      <small>
+        email: {{person.email}}
+        age: <span ng-bind-html="''+person.age | highlight: $select.search"></span>
+      </small>
+    </ui-select-choices>
+  </ui-select>
+
+  <br>
+  <br>
+  <br>
+  <br>
+  <br>
+  <br>
+  <br>
+  <br>
+  <br>
+  <br>
+  <br>
+  <br>
+  
+
+  <p>Always DOWN</p>
+  <ui-select ng-model="ctrl.person.selected" theme="select2" ng-disabled="ctrl.disabled" style="min-width: 300px;" title="Choose a person">
+    <ui-select-match placeholder="Select a person in the list or search his name/age...">{{$select.selected.name}}</ui-select-match>
+    <ui-select-choices repeat="person in ctrl.people | propsFilter: {name: $select.search, age: $select.search}" position='down'>
+      <div ng-bind-html="person.name | highlight: $select.search"></div>
+      <small>
+        email: {{person.email}}
+        age: <span ng-bind-html="''+person.age | highlight: $select.search"></span>
+      </small>
+    </ui-select-choices>
+  </ui-select>
+
+  <br>
+  <br>
+  <br>
+  <br>
+  <br>
+  <br>
+  <br>
+  <br>
+  
+
+  <p>AUTO depending on available space (default)</p>
+  <ui-select ng-model="ctrl.person.selected" theme="select2" ng-disabled="ctrl.disabled" style="min-width: 300px;" title="Choose a person">
+    <ui-select-match placeholder="Select a person in the list or search his name/age...">{{$select.selected.name}}</ui-select-match>
+    <ui-select-choices repeat="person in ctrl.people | propsFilter: {name: $select.search, age: $select.search}" position='auto'>
+      <div ng-bind-html="person.name | highlight: $select.search"></div>
+      <small>
+        email: {{person.email}}
+        age: <span ng-bind-html="''+person.age | highlight: $select.search"></span>
+      </small>
+    </ui-select-choices>
+  </ui-select>
+
+  <br>
+  <br>
+  <br>
+  <br>
+  <br>
+  <br>
+  <br>
+  <br>
+  <br>
+  <br>
+  <br>
+  <br>
+  <br>
+  <br>
+  <br>
+  <br>
+  <br>
+  <br>
+  <br>
+  <br>
