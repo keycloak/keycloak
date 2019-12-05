@@ -19,6 +19,7 @@ package org.keycloak.testsuite.ui.account2.page.fragment;
 
 import org.jboss.arquillian.graphene.fragment.Root;
 import org.openqa.selenium.By;
+import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -73,6 +74,16 @@ public class Sidebar extends AbstractFragmentWithMobileLayout {
 
     protected WebElement getNavElement(String id) {
         return sidebarRoot.findElement(By.id(NAV_ITEM_ID_PREFIX + id));
+    }
+
+    public void assertNavNotPresent(String id) {
+        try {
+            getNavElement(id).isDisplayed();
+            throw new AssertionError("Nav element " + id + " shouldn't be present");
+        }
+        catch (NoSuchElementException e) {
+            // ok
+        }
     }
 
     protected WebElement getNavSubsection(WebElement parent) {
