@@ -20,7 +20,6 @@ package org.keycloak.protocol.openshift;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.io.Serializable;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 

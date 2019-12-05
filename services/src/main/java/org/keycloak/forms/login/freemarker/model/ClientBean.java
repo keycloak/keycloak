@@ -21,7 +21,6 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.services.util.ResolveRelative;
 
-import java.net.URI;
 import java.util.Map;
 
 /**

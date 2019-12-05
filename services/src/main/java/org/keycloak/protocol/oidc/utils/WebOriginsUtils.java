@@ -21,7 +21,6 @@ import org.keycloak.common.util.UriUtils;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 
-import javax.ws.rs.core.UriInfo;
 import java.util.HashSet;
 import java.util.Set;
 

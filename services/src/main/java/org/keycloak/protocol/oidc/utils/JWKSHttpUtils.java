@@ -20,14 +20,11 @@ package org.keycloak.protocol.oidc.utils;
 import org.keycloak.common.util.StreamUtil;
 import org.keycloak.connections.httpclient.HttpClientProvider;
 import org.keycloak.jose.jwk.JSONWebKeySet;
-import org.keycloak.jose.jwk.JWK;
-import org.keycloak.jose.jwk.JWKParser;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.util.JsonSerialization;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.security.PublicKey;
 
 /**
  *

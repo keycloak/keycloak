@@ -16,7 +16,6 @@
  */
 package org.keycloak.forms.login.freemarker.model;
 
-import org.keycloak.credential.CredentialModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OTPPolicy;
 import org.keycloak.models.RealmModel;
