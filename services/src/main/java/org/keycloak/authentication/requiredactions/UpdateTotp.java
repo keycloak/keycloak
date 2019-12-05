@@ -17,7 +17,6 @@
 
 package org.keycloak.authentication.requiredactions;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import org.keycloak.Config;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.*;

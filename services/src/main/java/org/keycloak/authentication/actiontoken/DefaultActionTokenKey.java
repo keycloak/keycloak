@@ -24,8 +24,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.UUID;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
 /**
