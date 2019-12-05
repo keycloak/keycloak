@@ -93,6 +93,10 @@ public class WelcomeScreenTest extends AbstractAccountTest {
         loginToAccount();
         deviceActivityPage.assertCurrent();
 
+        // linked accounts nav item (this doesn't test welcome page directly but the sidebar after login)
+        personalInfoPage.navigateTo();
+        personalInfoPage.sidebar().assertNavNotPresent(LinkedAccountsPage.LINKED_ACCOUNTS_ID);
+
         // linked accounts link
         accountWelcomeScreen.navigateTo();
         accountWelcomeScreen.assertLinkedAccountsLinkVisible(false);

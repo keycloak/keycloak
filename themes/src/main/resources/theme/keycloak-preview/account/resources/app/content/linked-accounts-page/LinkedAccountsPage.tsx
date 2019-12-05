@@ -129,7 +129,7 @@ class LinkedAccountsPage extends React.Component<LinkedAccountsPageProps, Linked
                         <Title headingLevel={TitleLevel.h2} size='2xl'>
                             <Msg msgKey='linkedLoginProviders'/>
                         </Title>
-                        <DataList aria-label='foo'>
+                        <DataList id="linked-idps" aria-label='foo'>
                             {this.makeRows(this.state.linkedAccounts, true)}
                         </DataList>
                     </StackItem>
@@ -138,7 +138,7 @@ class LinkedAccountsPage extends React.Component<LinkedAccountsPageProps, Linked
                         <Title headingLevel={TitleLevel.h2} size='2xl'>
                             <Msg msgKey='unlinkedLoginProviders'/>
                         </Title>
-                        <DataList aria-label='foo'>
+                        <DataList id="unlinked-idps" aria-label='foo'>
                             {this.makeRows(this.state.unLinkedAccounts, false)}
                         </DataList>
                     </StackItem>                    
@@ -175,17 +175,17 @@ class LinkedAccountsPage extends React.Component<LinkedAccountsPageProps, Linked
             <> {
         
                 accounts.map( (account: LinkedAccount) => (
-                    <DataListItem key={account.providerName} aria-labelledby="simple-item1">
+                    <DataListItem id={`${account.providerAlias}-idp`} key={account.providerName} aria-labelledby="simple-item1">
                         <DataListItemRow key={account.providerName}>
                             <DataListItemCells
                                 dataListCells={[
-                                    <DataListCell key='idp'><Stack><StackItem isFilled>{this.findIcon(account)}</StackItem><StackItem isFilled><h2><strong>{account.displayName}</strong></h2></StackItem></Stack></DataListCell>,
-                                    <DataListCell key='badge'><Stack><StackItem isFilled/><StackItem isFilled>{this.badge(account)}</StackItem></Stack></DataListCell>,
-                                    <DataListCell key='username'><Stack><StackItem isFilled/><StackItem isFilled>{account.linkedUsername}</StackItem></Stack></DataListCell>,
+                                    <DataListCell key='idp'><Stack><StackItem isFilled>{this.findIcon(account)}</StackItem><StackItem id={`${account.providerAlias}-idp-name`} isFilled><h2><strong>{account.displayName}</strong></h2></StackItem></Stack></DataListCell>,
+                                    <DataListCell key='badge'><Stack><StackItem isFilled/><StackItem id={`${account.providerAlias}-idp-badge`} isFilled>{this.badge(account)}</StackItem></Stack></DataListCell>,
+                                    <DataListCell key='username'><Stack><StackItem isFilled/><StackItem id={`${account.providerAlias}-idp-username`} isFilled>{account.linkedUsername}</StackItem></Stack></DataListCell>,
                                 ]}/>
                             <DataListAction aria-labelledby='foo' aria-label='foo action' id='setPasswordAction'>
-                                {isLinked && <Button variant='link' onClick={() => this.unLinkAccount(account)}><UnlinkIcon size='sm'/> <Msg msgKey='unLink'/></Button>}
-                                {!isLinked && <Button variant='link' onClick={() => this.linkAccount(account)}><LinkIcon size='sm'/> <Msg msgKey='link'/></Button>}
+                                {isLinked && <Button id={`${account.providerAlias}-idp-unlink`} variant='link' onClick={() => this.unLinkAccount(account)}><UnlinkIcon size='sm'/> <Msg msgKey='unLink'/></Button>}
+                                {!isLinked && <Button id={`${account.providerAlias}-idp-link`} variant='link' onClick={() => this.linkAccount(account)}><LinkIcon size='sm'/> <Msg msgKey='link'/></Button>}
                             </DataListAction>
                         </DataListItemRow>
                     </DataListItem>
@@ -205,20 +205,21 @@ class LinkedAccountsPage extends React.Component<LinkedAccountsPageProps, Linked
     }
 
     private findIcon(account: LinkedAccount): React.ReactNode {
-        if (account.providerName.toLowerCase().includes('github')) return (<GithubIcon size='xl'/>);
-        if (account.providerName.toLowerCase().includes('linkedin')) return (<LinkedinIcon size='xl'/>);
-        if (account.providerName.toLowerCase().includes('facebook')) return (<FacebookIcon size='xl'/>);
-        if (account.providerName.toLowerCase().includes('google')) return (<GoogleIcon size='xl'/>);
-        if (account.providerName.toLowerCase().includes('instagram')) return (<InstagramIcon size='xl'/>);
-        if (account.providerName.toLowerCase().includes('microsoft')) return (<MicrosoftIcon size='xl'/>);
-        if (account.providerName.toLowerCase().includes('bitbucket')) return (<BitbucketIcon size='xl'/>);
-        if (account.providerName.toLowerCase().includes('twitter')) return (<TwitterIcon size='xl'/>);
-        if (account.providerName.toLowerCase().includes('openshift')) return (<OpenshiftIcon size='xl'/>);
-        if (account.providerName.toLowerCase().includes('gitlab')) return (<GitlabIcon size='xl'/>);
-        if (account.providerName.toLowerCase().includes('paypal')) return (<PaypalIcon size='xl'/>);
-        if (account.providerName.toLowerCase().includes('stackoverflow')) return (<StackOverflowIcon size='xl'/>);
+        const socialIconId = `${account.providerAlias}-idp-icon-social`;
+        if (account.providerName.toLowerCase().includes('github')) return (<GithubIcon id={socialIconId} size='xl'/>);
+        if (account.providerName.toLowerCase().includes('linkedin')) return (<LinkedinIcon id={socialIconId} size='xl'/>);
+        if (account.providerName.toLowerCase().includes('facebook')) return (<FacebookIcon id={socialIconId} size='xl'/>);
+        if (account.providerName.toLowerCase().includes('google')) return (<GoogleIcon id={socialIconId} size='xl'/>);
+        if (account.providerName.toLowerCase().includes('instagram')) return (<InstagramIcon id={socialIconId} size='xl'/>);
+        if (account.providerName.toLowerCase().includes('microsoft')) return (<MicrosoftIcon id={socialIconId} size='xl'/>);
+        if (account.providerName.toLowerCase().includes('bitbucket')) return (<BitbucketIcon id={socialIconId} size='xl'/>);
+        if (account.providerName.toLowerCase().includes('twitter')) return (<TwitterIcon id={socialIconId} size='xl'/>);
+        if (account.providerName.toLowerCase().includes('openshift')) return (<OpenshiftIcon id={socialIconId} size='xl'/>);
+        if (account.providerName.toLowerCase().includes('gitlab')) return (<GitlabIcon id={socialIconId} size='xl'/>);
+        if (account.providerName.toLowerCase().includes('paypal')) return (<PaypalIcon id={socialIconId} size='xl'/>);
+        if (account.providerName.toLowerCase().includes('stackoverflow')) return (<StackOverflowIcon id={socialIconId} size='xl'/>);
 
-        return (<CubeIcon size='xl'/>);
+        return (<CubeIcon id={`${account.providerAlias}-idp-icon-default`} size='xl'/>);
     }
 
 };
