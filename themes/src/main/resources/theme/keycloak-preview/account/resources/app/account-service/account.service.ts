@@ -97,7 +97,7 @@ export class AccountServiceClient {
     private handleError(error: AxiosError): void {
         if (error != null && error.response != null && error.response.status === 401) {
             // session timed out?
-            this.kcSvc.login();
+            this.kcSvc.login({ redirectUri: window.location.href });
         }
         console.log(error);
         ContentAlert.danger(error.name + ': ' + error.message);
@@ -114,7 +114,7 @@ export class AccountServiceClient {
                         headers: {...config.headers, Authorization: 'Bearer ' + token}
                     });
                 }).catch(() => {
-                    this.kcSvc.login();
+                    this.kcSvc.login({ redirectUri: window.location.href });
                 });
         });
     }
