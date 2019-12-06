@@ -125,6 +125,10 @@ FullName Mapper::
   This allows you to specify that the full name of the user, which is saved in some LDAP attribute (usually `cn` ) will be mapped to `firstName` and `lastname` attributes in the {project_name} database.
   Having `cn` to contain full name of user is a common case for some LDAP deployments.
 
+Hardcoded Attribute Mapper::
+  This mapper adds a hardcoded attribute value to each {project_name} user linked with LDAP. 
+  This mapper can also force the values for the `enabled` or `emailVerified` user properties.
+
 Role Mapper::
   This allows you to configure role mappings from LDAP into {project_name} role mappings.
   One Role mapper can be used to map LDAP roles (usually groups from a particular branch of LDAP tree) into roles corresponding to either realm roles or client roles of a specified client.
