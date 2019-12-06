@@ -757,7 +757,8 @@ public class RealmTest extends AbstractAdminTest {
         System.out.println(sessionStats.size());
 
         oauth.doLogin("testuser", "password");
-        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(oauth.getCurrentQuery().get(OAuth2Constants.CODE), "secret");
+        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(oauth.getCurrentQuery().get(OAuth2Constants.CODE),
+            "secret");
         assertEquals(200, tokenResponse.getStatusCode());
 
         sessionStats = realm.getClientSessionStats();
@@ -765,6 +766,13 @@ public class RealmTest extends AbstractAdminTest {
         assertEquals(1, sessionStats.size());
         assertEquals("test-app", sessionStats.get(0).get("clientId"));
         assertEquals("1", sessionStats.get(0).get("active"));
+
+        String clientUuid = sessionStats.get(0).get("id");
+        realm.clients().get(clientUuid).remove();
+
+        sessionStats = realm.getClientSessionStats();
+
+        assertEquals(0, sessionStats.size());
     }
 
     private void setupTestAppAndUser() {
