@@ -104,5 +104,19 @@ that comes with your distribution and adding for example:
 </spi>
 ----
 
+You can also set up a maximum length of the Event detail stored in the database by editing `standalone.xml`, `standalone-ha.xml`, or 
+`domain.xml`. This setting can be useful in case some field (e.g. redirect_uri) is very long. Here is an example of defining the maximum length.:
+
+[source,xml]
+----
+<spi name="eventsStore">
+    <provider name="jpa" enabled="true">
+        <properties>
+            <property name="max-detail-length" value="1000"/>
+        </properties>
+    </provider>
+</spi>
+----
+
 See the link:{installguide_link}[{installguide_name}] for more details on
 where the `standalone.xml`, `standalone-ha.xml`, or `domain.xml` file lives.
