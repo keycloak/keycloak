@@ -46,6 +46,7 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.AuthorizationEndpointBase;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
+import org.keycloak.protocol.saml.preprocessor.SamlAuthenticationPreprocessor;
 import org.keycloak.protocol.saml.profile.ecp.SamlEcpProfileService;
 import org.keycloak.saml.SAML2LogoutResponseBuilder;
 import org.keycloak.saml.SAMLRequestParser;
@@ -74,6 +75,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.security.PublicKey;
+import java.util.Iterator;
 import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
@@ -297,7 +299,7 @@ public class SamlService extends AuthorizationEndpointBase {
             String redirect;
             URI redirectUri = requestAbstractType.getAssertionConsumerServiceURL();
             if (redirectUri != null && ! "null".equals(redirectUri.toString())) { // "null" is for testing purposes
-                redirect = RedirectUtils.verifyRedirectUri(session.getContext().getUri(), redirectUri.toString(), realm, client);
+                redirect = RedirectUtils.verifyRedirectUri(session, redirectUri.toString(), client);
             } else {
                 if (bindingType.equals(SamlProtocol.SAML_POST_BINDING)) {
                     redirect = client.getAttribute(SamlProtocol.SAML_ASSERTION_CONSUMER_URL_POST_ATTRIBUTE);
@@ -352,6 +354,17 @@ public class SamlService extends AuthorizationEndpointBase {
 
                 }
             }
+
+            if (null != requestAbstractType.isForceAuthn()
+                && requestAbstractType.isForceAuthn()) {
+                authSession.setAuthNote(SamlProtocol.SAML_LOGIN_REQUEST_FORCEAUTHN, SamlProtocol.SAML_FORCEAUTHN_REQUIREMENT);
+            }
+            
+
+            for(Iterator<SamlAuthenticationPreprocessor> it = SamlSessionUtils.getSamlAuthenticationPreprocessorIterator(session); it.hasNext();) {
+                requestAbstractType = it.next().beforeProcessingLoginRequest(requestAbstractType, authSession);
+            }
+
             //If unset we fall back to default "false"
             final boolean isPassive = (null == requestAbstractType.isIsPassive() ?
                     false : requestAbstractType.isIsPassive().booleanValue());
@@ -400,12 +413,12 @@ public class SamlService extends AuthorizationEndpointBase {
             AuthenticationManager.AuthResult authResult = authManager.authenticateIdentityCookie(session, realm, false);
             if (authResult != null) {
                 String logoutBinding = getBindingType();
-                String postBindingUri = SamlProtocol.getLogoutServiceUrl(session.getContext().getUri(), client, SamlProtocol.SAML_POST_BINDING);
+                String postBindingUri = SamlProtocol.getLogoutServiceUrl(session, client, SamlProtocol.SAML_POST_BINDING);
                 if (samlClient.forcePostBinding() && postBindingUri != null && ! postBindingUri.trim().isEmpty())
                     logoutBinding = SamlProtocol.SAML_POST_BINDING;
                 boolean postBinding = Objects.equals(SamlProtocol.SAML_POST_BINDING, logoutBinding);
 
-                String bindingUri = SamlProtocol.getLogoutServiceUrl(session.getContext().getUri(), client, logoutBinding);
+                String bindingUri = SamlProtocol.getLogoutServiceUrl(session, client, logoutBinding);
                 UserSessionModel userSession = authResult.getSession();
                 userSession.setNote(SamlProtocol.SAML_LOGOUT_BINDING_URI, bindingUri);
                 if (samlClient.requiresRealmSignature()) {
@@ -425,6 +438,11 @@ public class SamlService extends AuthorizationEndpointBase {
                 if (clientSession != null) {
                     clientSession.setAction(AuthenticationSessionModel.Action.LOGGED_OUT.name());
                 }
+
+                for(Iterator<SamlAuthenticationPreprocessor> it = SamlSessionUtils.getSamlAuthenticationPreprocessorIterator(session); it.hasNext();) {
+                    logoutRequest = it.next().beforeProcessingLogoutRequest(logoutRequest, userSession, clientSession);
+                }
+                
                 logger.debug("browser Logout");
                 return authManager.browserLogout(session, realm, userSession, session.getContext().getUri(), clientConnection, headers, null);
             } else if (logoutRequest.getSessionIndex() != null) {
@@ -437,6 +455,10 @@ public class SamlService extends AuthorizationEndpointBase {
                     if (clientSession.getClient().getClientId().equals(client.getClientId())) {
                         // remove requesting client from logout
                         clientSession.setAction(AuthenticationSessionModel.Action.LOGGED_OUT.name());
+                    }
+
+                    for(Iterator<SamlAuthenticationPreprocessor> it = SamlSessionUtils.getSamlAuthenticationPreprocessorIterator(session); it.hasNext();) {
+                        logoutRequest = it.next().beforeProcessingLogoutRequest(logoutRequest, userSession, clientSession);
                     }
 
                     try {
@@ -452,7 +474,7 @@ public class SamlService extends AuthorizationEndpointBase {
             // default
 
             String logoutBinding = getBindingType();
-            String logoutBindingUri = SamlProtocol.getLogoutServiceUrl(session.getContext().getUri(), client, logoutBinding);
+            String logoutBindingUri = SamlProtocol.getLogoutServiceUrl(session, client, logoutBinding);
             String logoutRelayState = relayState;
             SAML2LogoutResponseBuilder builder = new SAML2LogoutResponseBuilder();
             builder.logoutRequestID(logoutRequest.getID());

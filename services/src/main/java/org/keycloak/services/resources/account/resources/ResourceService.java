@@ -74,14 +74,14 @@ public class ResourceService extends AbstractResourceService {
     @GET
     @Path("permissions")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response getPermissions() {
+    public Response toPermissions() {
         Map<String, String> filters = new HashMap<>();
 
         filters.put(PermissionTicket.OWNER, user.getId());
         filters.put(PermissionTicket.GRANTED, Boolean.TRUE.toString());
         filters.put(PermissionTicket.RESOURCE, resource.getId());
 
-        Collection<ResourcePermission> resources = getPermissions(ticketStore.find(filters, null, -1, -1), true);
+        Collection<ResourcePermission> resources = toPermissions(ticketStore.find(filters, null, -1, -1));
         Collection<Permission> permissions = Collections.EMPTY_LIST;
         
         if (!resources.isEmpty()) {
@@ -209,5 +209,24 @@ public class ResourceService extends AbstractResourceService {
         }
 
         return user;
+    }
+
+    private Collection<ResourcePermission> toPermissions(List<PermissionTicket> tickets) {
+        Map<String, ResourcePermission> permissions = new HashMap<>();
+
+        for (PermissionTicket ticket : tickets) {
+            ResourcePermission resource = permissions
+                    .computeIfAbsent(ticket.getResource().getId(), s -> new ResourcePermission(ticket, provider));
+
+            Permission user = resource.getPermission(ticket.getRequester());
+
+            if (user == null) {
+                resource.addPermission(ticket.getRequester(), user = new Permission(ticket.getRequester(), provider));
+            }
+
+            user.addScope(ticket.getScope().getName());
+        }
+
+        return permissions.values();
     }
 }

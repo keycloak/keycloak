@@ -47,6 +47,7 @@ import static org.hamcrest.collection.IsMapContaining.hasEntry;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlDoesntStartWith;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
 import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
@@ -151,6 +152,58 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
                 .init(pkceS256, this::assertSuccessfullyLoggedIn)
                 .logout(this::assertOnTestAppUrl)
                 .init(pkceS256, this::assertInitNotAuth);
+    }
+
+    @Test
+    public void testSilentCheckSso() {
+        JSObjectBuilder checkSSO = defaultArguments().checkSSOOnLoad();
+        testExecutor.init(checkSSO, this::assertInitNotAuth)
+                .login(this::assertOnLoginPage)
+                .loginForm(testUser, this::assertOnTestAppUrl)
+                .init(checkSSO, this::assertSuccessfullyLoggedIn)
+                .refresh()
+                .init(checkSSO
+                        .add("silentCheckSsoRedirectUri", authServerContextRootPage + JAVASCRIPT_URL + "/silent-check-sso.html")
+                        , this::assertSuccessfullyLoggedIn);
+    }
+
+    @Test
+    public void testSilentCheckSsoLoginWithLoginIframeDisabled() {
+        JSObjectBuilder checkSSO = defaultArguments().checkSSOOnLoad();
+        testExecutor.init(checkSSO, this::assertInitNotAuth)
+                .login(this::assertOnLoginPage)
+                .loginForm(testUser, this::assertOnTestAppUrl)
+                .init(checkSSO, this::assertSuccessfullyLoggedIn)
+                .refresh()
+                .init(checkSSO
+                        .add("checkLoginIframe", false)
+                        .add("silentCheckSsoRedirectUri", authServerContextRootPage + JAVASCRIPT_URL + "/silent-check-sso.html")
+                        , this::assertSuccessfullyLoggedIn);
+    }
+
+    @Test
+    public void testSilentCheckSsoWithoutRedirectUri() {
+        JSObjectBuilder checkSSO = defaultArguments().checkSSOOnLoad();
+        try {
+            testExecutor.init(checkSSO, this::assertInitNotAuth)
+                    .login(this::assertOnLoginPage)
+                    .loginForm(testUser, this::assertOnTestAppUrl)
+                    .init(checkSSO, this::assertSuccessfullyLoggedIn)
+                    .refresh()
+                    .init(checkSSO);
+            fail();
+        } catch (WebDriverException e) {
+            // should happen
+        }
+    }
+
+    @Test
+    public void testSilentCheckSsoNotAuthenticated() {
+        JSObjectBuilder checkSSO = defaultArguments().checkSSOOnLoad();
+        testExecutor.init(checkSSO
+                .add("checkLoginIframe", false)
+                .add("silentCheckSsoRedirectUri", authServerContextRootPage + JAVASCRIPT_URL + "/silent-check-sso.html")
+                , this::assertInitNotAuth);
     }
 
     @Test

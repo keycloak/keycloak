@@ -173,7 +173,7 @@ public class ClientSessionCode<CLIENT_SESSION extends CommonClientSessionModel> 
                 throw new IllegalArgumentException();
         }
 
-        return timestamp + lifespan > Time.currentTime();
+        return lifespan > Time.currentTime() - timestamp;
     }
 
     public boolean isValidAction(String requestedAction) {

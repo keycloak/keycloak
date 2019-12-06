@@ -118,11 +118,35 @@ public class OIDCAdvancedConfigWrapper {
         setAttribute(OIDCConfigAttributes.USE_MTLS_HOK_TOKEN, val);
     }
 
+    public String getPkceCodeChallengeMethod() {
+        return getAttribute(OIDCConfigAttributes.PKCE_CODE_CHALLENGE_METHOD);
+    }
+
+    public void setPkceCodeChallengeMethod(String codeChallengeMethodName) {
+        setAttribute(OIDCConfigAttributes.PKCE_CODE_CHALLENGE_METHOD, codeChallengeMethodName);
+    }
+
     public String getIdTokenSignedResponseAlg() {
         return getAttribute(OIDCConfigAttributes.ID_TOKEN_SIGNED_RESPONSE_ALG);
     }
     public void setIdTokenSignedResponseAlg(String algName) {
         setAttribute(OIDCConfigAttributes.ID_TOKEN_SIGNED_RESPONSE_ALG, algName);
+    }
+
+    public String getIdTokenEncryptedResponseAlg() {
+        return getAttribute(OIDCConfigAttributes.ID_TOKEN_ENCRYPTED_RESPONSE_ALG);
+    }
+
+    public void setIdTokenEncryptedResponseAlg(String algName) {
+        setAttribute(OIDCConfigAttributes.ID_TOKEN_ENCRYPTED_RESPONSE_ALG, algName);
+    }
+
+    public String getIdTokenEncryptedResponseEnc() {
+        return getAttribute(OIDCConfigAttributes.ID_TOKEN_ENCRYPTED_RESPONSE_ENC);
+    }
+
+    public void setIdTokenEncryptedResponseEnc(String encName) {
+        setAttribute(OIDCConfigAttributes.ID_TOKEN_ENCRYPTED_RESPONSE_ENC, encName);
     }
 
     private String getAttribute(String attrKey) {

@@ -21,7 +21,7 @@ import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.Authenticator;
 import org.keycloak.authentication.ConsoleDisplayMode;
 import org.keycloak.authentication.authenticators.browser.OTPFormAuthenticator;
-import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.models.credential.OTPCredentialModel;
 
 import javax.ws.rs.core.Response;
 import java.net.URI;
@@ -40,7 +40,7 @@ public class ConsoleOTPFormAuthenticator extends OTPFormAuthenticator implements
     protected ConsoleDisplayMode challenge(AuthenticationFlowContext context) {
         return ConsoleDisplayMode.challenge(context)
                 .header()
-                .param(CredentialRepresentation.TOTP)
+                .param(OTPCredentialModel.TYPE)
                 .label("console-otp")
                  .challenge();
     }

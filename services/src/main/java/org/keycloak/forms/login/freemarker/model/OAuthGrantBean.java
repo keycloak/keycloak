@@ -21,10 +21,7 @@ import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.OrderedModel;
 
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.Set;
-import java.util.TreeSet;
 
 /**
  * @author <a href="mailto:vrockai@redhat.com">Viliam Rockai</a>

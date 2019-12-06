@@ -76,12 +76,12 @@ import java.util.Map;
 import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel.IdentityMapperType.USERNAME_EMAIL;
 import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel.IdentityMapperType.USER_ATTRIBUTE;
 import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel.MappingSourceType.ISSUERDN;
-import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel.MappingSourceType.ISSUERDN_CN;
 import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel.MappingSourceType.SUBJECTALTNAME_EMAIL;
 import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel.MappingSourceType.SUBJECTALTNAME_OTHERNAME;
 import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel.MappingSourceType.SUBJECTDN;
 import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel.MappingSourceType.SUBJECTDN_CN;
 import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel.MappingSourceType.SUBJECTDN_EMAIL;
+import org.keycloak.testsuite.util.ContainerAssume;
 
 /**
  * @author <a href="mailto:brat000012001@gmail.com">Peter Nalyvayko</a>
@@ -92,6 +92,8 @@ public abstract class AbstractX509AuthenticationTest extends AbstractTestRealmKe
 
     public static final String EMPTY_CRL_PATH = "empty.crl";
     public static final String INTERMEDIATE_CA_CRL_PATH = "intermediate-ca.crl";
+    public static final String INTERMEDIATE_CA_INVALID_SIGNATURE_CRL_PATH = "intermediate-ca-invalid-signature.crl";
+    public static final String INTERMEDIATE_CA_3_CRL_PATH = "intermediate-ca-3.crl";
     protected final Logger log = Logger.getLogger(this.getClass());
 
     static final String REQUIRED = "REQUIRED";
@@ -141,6 +143,7 @@ public abstract class AbstractX509AuthenticationTest extends AbstractTestRealmKe
     @Before
     public void validateConfiguration() {
         Assume.assumeTrue(AUTH_SERVER_SSL_REQUIRED);
+        ContainerAssume.assumeNotAuthServerRemote();
     }
 
 

@@ -28,9 +28,14 @@ import javax.servlet.http.HttpServletResponse;
 import org.keycloak.KeycloakPrincipal;
 import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.adapters.AdapterDeploymentContext;
+import org.keycloak.adapters.AdapterTokenStore;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.RefreshableKeycloakSecurityContext;
 import org.keycloak.adapters.springsecurity.facade.SimpleHttpFacade;
+import org.keycloak.adapters.springsecurity.token.AdapterTokenStoreFactory;
+import org.keycloak.adapters.springsecurity.token.SpringSecurityAdapterTokenStoreFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -42,8 +47,10 @@ import org.springframework.web.filter.GenericFilterBean;
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
 public class KeycloakSecurityContextRequestFilter extends GenericFilterBean implements ApplicationContextAware {
+    private static final Logger log = LoggerFactory.getLogger(KeycloakSecurityContextRequestFilter.class);
 
     private static final String FILTER_APPLIED = KeycloakSecurityContext.class.getPackage().getName() + ".token-refreshed";
+    private final AdapterTokenStoreFactory adapterTokenStoreFactory = new SpringSecurityAdapterTokenStoreFactory();
 
     private ApplicationContext applicationContext;
     private AdapterDeploymentContext deploymentContext;
@@ -57,11 +64,19 @@ public class KeycloakSecurityContextRequestFilter extends GenericFilterBean impl
 
         request.setAttribute(FILTER_APPLIED, Boolean.TRUE);
 
-        KeycloakSecurityContext keycloakSecurityContext = getKeycloakPrincipal();
+        KeycloakSecurityContext keycloakSecurityContext = getKeycloakSecurityContext();
 
         if (keycloakSecurityContext instanceof RefreshableKeycloakSecurityContext) {
             RefreshableKeycloakSecurityContext refreshableSecurityContext = (RefreshableKeycloakSecurityContext) keycloakSecurityContext;
             KeycloakDeployment deployment = resolveDeployment(request, response);
+
+            // just in case session got serialized
+            if (refreshableSecurityContext.getDeployment()==null) {
+                log.trace("Recreating missing deployment and related fields in deserialized context");
+                AdapterTokenStore adapterTokenStore = adapterTokenStoreFactory.createAdapterTokenStore(deployment, (HttpServletRequest) request,
+                        (HttpServletResponse) response);
+                refreshableSecurityContext.setCurrentRequestInfo(deployment, adapterTokenStore);
+            }
 
             if (!refreshableSecurityContext.isActive() || deployment.isAlwaysRefreshToken()) {
                 if (refreshableSecurityContext.refreshExpiredToken(false)) {
@@ -87,7 +102,7 @@ public class KeycloakSecurityContextRequestFilter extends GenericFilterBean impl
         this.applicationContext = applicationContext;
     }
 
-    private KeycloakSecurityContext getKeycloakPrincipal() {
+    private KeycloakSecurityContext getKeycloakSecurityContext() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
         if (authentication != null) {

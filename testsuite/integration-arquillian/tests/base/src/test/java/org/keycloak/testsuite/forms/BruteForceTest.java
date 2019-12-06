@@ -60,11 +60,7 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
         UserRepresentation user = RealmRepUtil.findUser(testRealm, "test-user@localhost");
-        CredentialRepresentation credRep = new CredentialRepresentation();
-        credRep.setType(CredentialRepresentation.TOTP);
-        credRep.setValue("totpSecret");
-        user.getCredentials().add(credRep);
-        user.setTotp(Boolean.TRUE);
+        UserBuilder.edit(user).totpSecret("totpSecret");
 
         testRealm.setBruteForceProtected(true);
         testRealm.setFailureFactor(2);
@@ -367,9 +363,6 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
         loginSuccess();
         loginMissingPassword();
         loginMissingPassword();
-        expectTemporarilyDisabled();
-        expectTemporarilyDisabled("test-user@localhost", null, "invalid");
-        clearUserFailures();
         loginSuccess();
     }
 
@@ -530,7 +523,7 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
         loginPage.login(username, "password");
 
         loginPage.assertCurrent();
-        Assert.assertEquals("Account is disabled, contact admin.", loginPage.getError());
+        Assert.assertEquals("Account is disabled, contact your administrator.", loginPage.getError());
         ExpectedEvent event = events.expectLogin()
             .session((String) null)
             .error(Errors.USER_DISABLED)

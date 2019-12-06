@@ -58,7 +58,22 @@
             <#if mode??><input type="hidden" id="mode" name="mode" value="${mode}"/></#if>
         </div>
 
-        <input class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonBlockClass!} ${properties.kcButtonLargeClass!}" type="submit" value="${msg("doSubmit")}"/>
+        <div class="${properties.kcFormGroupClass!}">
+            <div class="${properties.kcInputWrapperClass!}">
+                <label for="userLabel" class="control-label">Device Name</label>
+            </div>
+
+            <div class="${properties.kcInputWrapperClass!}">
+                <input type="text" class="form-control" id="userLabel" name="userLabel" autocomplete="off">
+            </div>
+        </div>
+
+        <#if isAppInitiatedAction??>
+        <input class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonLargeClass!}" type="submit" value="${msg("doSubmit")}" />
+        <button class="${properties.kcButtonClass!} ${properties.kcButtonDefaultClass!} ${properties.kcButtonLargeClass!} ${properties.kcButtonLargeClass!}" type="submit" name="cancel-aia" value="true" />${msg("doCancel")}</button>
+        <#else>
+        <input class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonBlockClass!} ${properties.kcButtonLargeClass!}" type="submit" value="${msg("doSubmit")}" />
+        </#if>
     </form>
     </#if>
 </@layout.registrationLayout>

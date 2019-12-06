@@ -138,6 +138,12 @@ public class TokenManager {
             throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "User disabled", "User disabled");
         }
 
+        if (oldToken.getIssuedAt() + 1 < userSession.getStarted()) {
+            logger.debug("Refresh toked issued before the user session started");
+            throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Refresh toked issued before the user session started");
+        }
+
+
         ClientModel client = session.getContext().getClient();
         AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessionByClient(client.getId());
 
@@ -243,6 +249,9 @@ public class TokenManager {
             return false;
         }
         if (token.getIssuedAt() < session.users().getNotBeforeOfUser(realm, user)) {
+            return false;
+        }
+        if (token.getIssuedAt() + 1 < userSession.getStarted()) {
             return false;
         }
         return true;
@@ -815,7 +824,7 @@ public class TokenManager {
                 idToken.setStateHash(stateHash);
             }
             if (idToken != null) {
-                String encodedToken = session.tokens().encode(idToken);
+                String encodedToken = session.tokens().encodeAndEncrypt(idToken);
                 res.setIdToken(encodedToken);
             }
             if (refreshToken != null) {

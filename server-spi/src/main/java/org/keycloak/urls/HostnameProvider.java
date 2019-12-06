@@ -21,20 +21,99 @@ import org.keycloak.provider.Provider;
 
 import javax.ws.rs.core.UriInfo;
 
+/**
+ * The Hostname provider is used by Keycloak to decide URLs for frontend and backend requests. A provider can either
+ * base the URL on the request (Host header for example) or based on hard-coded URLs. Further, it is possible to have
+ * different URLs on frontend requests and backend requests.
+ *
+ * Note: Do NOT use {@link KeycloakContext#getUri()} within a Hostname provider. It will result in an infinite loop.
+ */
 public interface HostnameProvider extends Provider {
 
-    String getScheme(UriInfo originalUriInfo);
+    /**
+     * Returns the URL scheme. If not implemented will delegate to {@link #getScheme(UriInfo)}.
+     *
+     * @param originalUriInfo the original URI
+     * @param uype type of the request
+     * @return the schema
+     */
+    default String getScheme(UriInfo originalUriInfo, UrlType type) {
+        return getScheme(originalUriInfo);
+    }
 
     /**
-     * Return the hostname. Http headers, realm details, etc. can be retrieved from the KeycloakSession. Do NOT use
-     * {@link KeycloakContext#getUri()} as it will in turn call the HostnameProvider resulting in an infinite loop!
+     * Returns the URL scheme. If not implemented will get the scheme from the request.
      *
-     * @param originalUriInfo the original UriInfo before hostname is replaced by the HostnameProvider
-     * @return the hostname
+     * @param originalUriInfo the original URI
+     * @return the schema
      */
-    String getHostname(UriInfo originalUriInfo);
+    default String getScheme(UriInfo originalUriInfo) {
+        return originalUriInfo.getBaseUri().getScheme();
+    }
 
-    int getPort(UriInfo originalUriInfo);
+    /**
+     * Returns the host. If not implemented will delegate to {@link #getHostname(UriInfo)}.
+     *
+     * @param originalUriInfo the original URI
+     * @param type type of the request
+     * @return the host
+     */
+    default String getHostname(UriInfo originalUriInfo, UrlType type) {
+        return getHostname(originalUriInfo);
+    }
+
+    /**
+     *  Returns the host. If not implemented will get the host from the request.
+     * @param originalUriInfo
+     * @return the host
+     */
+    default String getHostname(UriInfo originalUriInfo) {
+        return originalUriInfo.getBaseUri().getHost();
+    }
+
+    /**
+     * Returns the port (or -1 for default port). If not implemented will delegate to {@link #getPort(UriInfo)}
+     *
+     * @param originalUriInfo the original URI
+     * @param type type of the request
+     * @return the port
+     */
+    default int getPort(UriInfo originalUriInfo, UrlType type) {
+        return getPort(originalUriInfo);
+    }
+
+    /**
+     * Returns the port (or -1 for default port). If not implemented will get the port from the request.
+     *
+     * @param originalUriInfo the original URI
+     * @return the port
+     */
+    default int getPort(UriInfo originalUriInfo) {
+        return originalUriInfo.getBaseUri().getPort();
+    }
+
+    /**
+     * Returns the context-path for Keycloak. This is useful when Keycloak is exposed on a different context-path on
+     * a reverse proxy. If not implemented will delegate to {@link #getContextPath(UriInfo)}
+     *
+     * @param originalUriInfo the original URI
+     * @param type type of the request
+     * @return the context-path
+     */
+    default String getContextPath(UriInfo originalUriInfo, UrlType type) {
+        return getContextPath(originalUriInfo);
+    }
+
+    /**
+     * Returns the context-path for Keycloak This is useful when Keycloak is exposed on a different context-path on
+     * a reverse proxy. If not implemented will use the context-path from the request, which by default is /auth
+     *
+     * @param originalUriInfo the original URI
+     * @return the context-path
+     */
+    default String getContextPath(UriInfo originalUriInfo) {
+        return originalUriInfo.getBaseUri().getPath();
+    }
 
     @Override
     default void close() {

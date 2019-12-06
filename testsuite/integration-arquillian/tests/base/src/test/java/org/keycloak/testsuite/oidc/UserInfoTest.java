@@ -32,6 +32,7 @@ import org.keycloak.events.EventType;
 import org.keycloak.jose.jws.Algorithm;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.crypto.RSAProvider;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.testsuite.util.KeycloakModelUtils;
@@ -343,6 +344,44 @@ public class UserInfoTest extends AbstractKeycloakTest {
     }
 
     @Test
+    public void testAccessTokenAfterUserSessionLogoutAndLoginAgain() {
+        OAuthClient.AccessTokenResponse accessTokenResponse = loginAndForceNewLoginPage();
+        String refreshToken1 = accessTokenResponse.getRefreshToken();
+
+        oauth.doLogout(refreshToken1, "password");
+        events.clear();
+
+        setTimeOffset(2);
+
+        oauth.fillLoginForm("test-user@localhost", "password");
+        events.expectLogin().assertEvent();
+
+        Assert.assertFalse(loginPage.isCurrent());
+
+        events.clear();
+
+        Client client = ClientBuilder.newClient();
+
+        try {
+            Response response = UserInfoClientUtil.executeUserInfoRequest_getMethod(client, accessTokenResponse.getAccessToken());
+
+            assertEquals(Status.UNAUTHORIZED.getStatusCode(), response.getStatus());
+
+            response.close();
+
+            events.expect(EventType.USER_INFO_REQUEST_ERROR)
+                    .error(Errors.INVALID_TOKEN)
+                    .user(Matchers.nullValue(String.class))
+                    .session(Matchers.nullValue(String.class))
+                    .detail(Details.AUTH_METHOD, Details.VALIDATE_ACCESS_TOKEN)
+                    .client("test-app")
+                    .assertEvent();
+        } finally {
+            client.close();
+        }
+    }
+
+    @Test
     public void testSessionExpiredOfflineAccess() throws Exception {
         Client client = ClientBuilder.newClient();
 
@@ -518,4 +557,23 @@ public class UserInfoTest extends AbstractKeycloakTest {
         }
     }
 
+    private OAuthClient.AccessTokenResponse loginAndForceNewLoginPage() {
+        oauth.doLogin("test-user@localhost", "password");
+
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        oauth.clientSessionState("client-session");
+
+        OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
+
+        setTimeOffset(1);
+
+        String loginFormUri = UriBuilder.fromUri(oauth.getLoginFormUrl())
+                .queryParam(OIDCLoginProtocol.PROMPT_PARAM, OIDCLoginProtocol.PROMPT_VALUE_LOGIN)
+                .build().toString();
+        driver.navigate().to(loginFormUri);
+
+        loginPage.assertCurrent();
+
+        return tokenResponse;
+    }
 }

@@ -76,7 +76,8 @@ export class KeycloakService {
     }
     
     public authServerUrl(): string | undefined {
-        return KeycloakService.keycloakAuth.authServerUrl;
+        const authServerUrl = KeycloakService.keycloakAuth.authServerUrl;
+        return authServerUrl!.charAt(authServerUrl!.length - 1) === '/' ?  authServerUrl : authServerUrl + '/';
     }
     
     public realm(): string | undefined {

@@ -1,5 +1,23 @@
 <div class="page-header">
-  <h1 id="pageTitle">{{'linkedAccountsHtmlTitle' | translate}}</h1>
+  <h1>{{'linkedAccountsHtmlTitle' | translate}}</h1>
+  <hr/>
+  <h2>Buttons for manual testing.  See JS Console for output.</h2>
+  <div class="card-pf-body row">
+      <button class="label label-primary" (click)="doGet()">List All</button>
+  </div>
+  <div class="card-pf-body row">
+    <button class="label label-primary" (click)="linkAccount('github')">Link Account to GitHub</button>
+    <button class="label label-primary" (click)="doRemove('github')">Remove GitHub</button>
+  </div>
+  <div class="card-pf-body row">
+    <button class="label label-primary" (click)="linkAccount('stackoverflow')">Link Account to Stack Overflow</button>
+    <button class="label label-primary" (click)="doRemove('stackoverflow')">Remove Stack Overflow</button>
+  </div>
+  <div class="card-pf-body row">
+    <button class="label label-primary" (click)="linkAccount('linkedin')">Link Account to LinkedIn</button>
+    <button class="label label-primary" (click)="doRemove('linkedin')">Remove LinkedIn</button>
+  </div>
+  <hr/>
 </div>
 <div class="col-sm-12 card-pf card-linked-account">
   <div class="card-pf-body row">

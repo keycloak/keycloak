@@ -66,8 +66,8 @@ public abstract class AbstractEcdsaKeyProvider implements KeyProvider {
         key.setType(KeyType.EC);
         key.setAlgorithm(AbstractEcdsaKeyProviderFactory.convertECDomainParmNistRepToAlgorithm(ecInNistRep));
         key.setStatus(status);
-        key.setSignKey(keyPair.getPrivate());
-        key.setVerifyKey(keyPair.getPublic());
+        key.setPrivateKey(keyPair.getPrivate());
+        key.setPublicKey(keyPair.getPublic());
 
         return key;
     }

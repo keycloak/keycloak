@@ -32,11 +32,12 @@ import org.w3c.dom.Document;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertThat;
-import static org.keycloak.testsuite.broker.AbstractBrokerTest.ROLE_MANAGER;
-import static org.keycloak.testsuite.broker.AbstractBrokerTest.ROLE_USER;
 import static org.keycloak.testsuite.util.Matchers.isSamlResponse;
 
-public class KcSamlBrokerTest extends AbstractBrokerTest {
+/**
+ * Final class as it's not intended to be overriden. Feel free to remove "final" if you really know what you are doing.
+ */
+public final class KcSamlBrokerTest extends AbstractAdvancedBrokerTest {
 
     @Override
     protected BrokerConfiguration getBrokerConfiguration() {
@@ -202,12 +203,6 @@ public class KcSamlBrokerTest extends AbstractBrokerTest {
         logoutFromRealm(bc.consumerRealmName());
     }
 
-    protected URI getAuthServerSamlEndpoint(String realm) throws IllegalArgumentException, UriBuilderException {
-        return RealmsResource
-                .protocolUrl(UriBuilder.fromUri(getAuthServerRoot()))
-                .build(realm, SamlProtocol.LOGIN_PROTOCOL);
-    }
-
     // KEYCLOAK-6106
     @Test
     public void loginClientWithDotsInName() throws Exception {
@@ -238,9 +233,4 @@ public class KcSamlBrokerTest extends AbstractBrokerTest {
         Assert.assertThat(samlResponse.getSamlObject(), isSamlResponse(JBossSAMLURIConstants.STATUS_SUCCESS));
     }
 
-    @Test
-    @Override
-    public void testUpdateProfileIfNotMissingInformation() {
-        // skip this test as this provider do not return name and surname so something is missing always
-    }
 }

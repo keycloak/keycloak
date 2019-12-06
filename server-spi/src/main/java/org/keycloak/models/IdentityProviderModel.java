@@ -66,7 +66,7 @@ public class IdentityProviderModel implements Serializable {
      * <p>A map containing the configuration and properties for a specific identity provider instance and implementation. The items
      * in the map are understood by the identity provider implementation.</p>
      */
-    private Map<String, String> config = new HashMap<String, String>();
+    private Map<String, String> config = new HashMap<>();
 
     public IdentityProviderModel() {
     }
@@ -77,7 +77,7 @@ public class IdentityProviderModel implements Serializable {
             this.providerId = model.getProviderId();
             this.alias = model.getAlias();
             this.displayName = model.getDisplayName();
-            this.config = new HashMap<String, String>(model.getConfig());
+            this.config = new HashMap<>(model.getConfig());
             this.enabled = model.isEnabled();
             this.trustEmail = model.isTrustEmail();
             this.storeToken = model.isStoreToken();

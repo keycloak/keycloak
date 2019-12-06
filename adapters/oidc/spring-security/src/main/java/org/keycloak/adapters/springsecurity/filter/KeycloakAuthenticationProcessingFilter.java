@@ -33,7 +33,9 @@ import org.keycloak.adapters.spi.AuthChallenge;
 import org.keycloak.adapters.spi.AuthOutcome;
 import org.keycloak.adapters.spi.HttpFacade;
 import org.keycloak.adapters.springsecurity.KeycloakAuthenticationException;
+import org.keycloak.adapters.springsecurity.authentication.KeycloakAuthenticationEntryPoint;
 import org.keycloak.adapters.springsecurity.authentication.KeycloakAuthenticationFailureHandler;
+import org.keycloak.adapters.springsecurity.authentication.KeycloakAuthenticationSuccessHandler;
 import org.keycloak.adapters.springsecurity.authentication.RequestAuthenticatorFactory;
 import org.keycloak.adapters.springsecurity.authentication.SpringSecurityRequestAuthenticatorFactory;
 import org.keycloak.adapters.springsecurity.facade.SimpleHttpFacade;
@@ -52,6 +54,7 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.AbstractAuthenticationProcessingFilter;
+import org.springframework.security.web.authentication.SavedRequestAwareAuthenticationSuccessHandler;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.security.web.util.matcher.OrRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestHeaderRequestMatcher;
@@ -65,18 +68,18 @@ import org.springframework.util.Assert;
  * @version $Revision: 1 $
  */
 public class KeycloakAuthenticationProcessingFilter extends AbstractAuthenticationProcessingFilter implements ApplicationContextAware {
-    public static final String DEFAULT_LOGIN_URL = "/sso/login";
     public static final String AUTHORIZATION_HEADER = "Authorization";
 
     /**
      * Request matcher that matches requests to the {@link KeycloakAuthenticationEntryPoint#DEFAULT_LOGIN_URI default login URI}
-     * and any request with a <code>Authorization</code> header.
+     * and any request with a <code>Authorization</code> header or an {@link AdapterStateCookieRequestMatcher adapter state cookie}.
      */
     public static final RequestMatcher DEFAULT_REQUEST_MATCHER =
             new OrRequestMatcher(
-                    new AntPathRequestMatcher(DEFAULT_LOGIN_URL),
+                    new AntPathRequestMatcher(KeycloakAuthenticationEntryPoint.DEFAULT_LOGIN_URI),
                     new RequestHeaderRequestMatcher(AUTHORIZATION_HEADER),
-                    new QueryParamPresenceRequestMatcher(OAuth2Constants.ACCESS_TOKEN)
+                    new QueryParamPresenceRequestMatcher(OAuth2Constants.ACCESS_TOKEN),
+                    new AdapterStateCookieRequestMatcher()
             );
 
     private static final Logger log = LoggerFactory.getLogger(KeycloakAuthenticationProcessingFilter.class);
@@ -97,6 +100,7 @@ public class KeycloakAuthenticationProcessingFilter extends AbstractAuthenticati
     public KeycloakAuthenticationProcessingFilter(AuthenticationManager authenticationManager) {
         this(authenticationManager, DEFAULT_REQUEST_MATCHER);
         setAuthenticationFailureHandler(new KeycloakAuthenticationFailureHandler());
+        setAuthenticationSuccessHandler(new KeycloakAuthenticationSuccessHandler(new SavedRequestAwareAuthenticationSuccessHandler()));
     }
 
     /**
@@ -143,7 +147,7 @@ public class KeycloakAuthenticationProcessingFilter extends AbstractAuthenticati
         // using Spring authenticationFailureHandler
         deployment.setDelegateBearerErrorResponseSending(true);
 
-        AdapterTokenStore tokenStore = adapterTokenStoreFactory.createAdapterTokenStore(deployment, request);
+        AdapterTokenStore tokenStore = adapterTokenStoreFactory.createAdapterTokenStore(deployment, request, response);
         RequestAuthenticator authenticator
                 = requestAuthenticatorFactory.createRequestAuthenticator(facade, request, deployment, tokenStore, -1);
 

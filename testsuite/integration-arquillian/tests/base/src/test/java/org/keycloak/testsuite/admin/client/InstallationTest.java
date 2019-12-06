@@ -138,15 +138,16 @@ public class InstallationTest extends AbstractClientTest {
 
     @Test
     public void testOidcBearerOnlyWithAuthzJson() {
-        oidcBearerOnlyClientWithAuthzId = createOidcBearerOnlyClientWithAuthz(OIDC_NAME_BEARER_ONLY_WITH_AUTHZ_NAME);
+        oidcBearerOnlyClientWithAuthzId = createOidcConfidentialClientWithAuthz(OIDC_NAME_BEARER_ONLY_WITH_AUTHZ_NAME);
         oidcBearerOnlyClientWithAuthz = findClientResource(OIDC_NAME_BEARER_ONLY_WITH_AUTHZ_NAME);
 
         String json = oidcBearerOnlyClientWithAuthz.getInstallationProvider("keycloak-oidc-keycloak-json");
         assertOidcInstallationConfig(json);
-        assertThat(json, containsString("bearer-only"));
+        assertThat(json, not(containsString("bearer-only")));
         assertThat(json, not(containsString("public-client")));
         assertThat(json, containsString("credentials"));
         assertThat(json, containsString("secret"));
+        assertThat(json, containsString("policy-enforcer"));
 
         removeClient(oidcBearerOnlyClientWithAuthzId);
     }

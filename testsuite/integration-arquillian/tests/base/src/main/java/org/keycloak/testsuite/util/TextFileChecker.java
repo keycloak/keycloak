@@ -41,15 +41,8 @@ public class TextFileChecker {
 
     private final Path[] paths;
 
-    private final boolean verbose;
-
-    public TextFileChecker(boolean verbose, Path... paths) {
-        this.verbose = verbose;
-        this.paths = paths;
-    }
-
     public TextFileChecker(Path... paths) {
-        this(false, paths);
+        this.paths = paths;
     }
 
     private void updateLastCheckedPositionsOfAllFilesToEndOfFile(Path path) throws IOException {
@@ -60,7 +53,7 @@ public class TextFileChecker {
         }
     }
 
-    public void checkFiles(Consumer<Stream<String>> lineChecker) throws IOException {
+    public void checkFiles(boolean verbose, Consumer<Stream<String>> lineChecker) throws IOException {
         for (Path path : paths) {
             log.logf(verbose ? Level.INFO : Level.DEBUG, "Checking server log: '%s'", path.toAbsolutePath());
 

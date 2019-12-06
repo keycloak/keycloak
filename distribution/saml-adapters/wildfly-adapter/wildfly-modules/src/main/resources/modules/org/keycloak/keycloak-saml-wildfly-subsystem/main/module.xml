@@ -38,7 +38,8 @@
         <module name="org.jboss.logging"/>
         <module name="org.jboss.vfs"/>
         <module name="org.jboss.as.web-common"/>
-        <module name="org.jboss.metadata"/>
+        <module name="org.jboss.metadata.common"/>
+        <module name="org.jboss.metadata.web"/>
         <module name="org.apache.httpcomponents"/>
         <module name="org.infinispan.cachestore.remote"/>
         <module name="org.keycloak.keycloak-saml-wildfly-elytron-adapter"/>

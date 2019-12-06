@@ -57,9 +57,9 @@ public class ContactType extends TypeWithOtherAttributes {
 
     protected String surName;
 
-    protected List<String> emailAddress = new ArrayList<String>();
+    protected List<String> emailAddress = new ArrayList<>();
 
-    protected List<String> telephoneNumber = new ArrayList<String>();
+    protected List<String> telephoneNumber = new ArrayList<>();
 
     protected ContactTypeType contactType;
 

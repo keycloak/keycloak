@@ -76,7 +76,6 @@
         {
             "username" : "service-account-product-sa-client",
             "enabled": true,
-            "email" : "service-account-product-sa-client@placeholder.org",
             "serviceAccountClientId": "product-sa-client",
             "realmRoles": [ "user" ]
         }

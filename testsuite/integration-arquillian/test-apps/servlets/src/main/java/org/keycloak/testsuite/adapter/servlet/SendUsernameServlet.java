@@ -21,11 +21,13 @@ package org.keycloak.testsuite.adapter.servlet;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.keycloak.adapters.saml.SamlAuthenticationError;
 import org.keycloak.adapters.saml.SamlPrincipal;
+import org.keycloak.adapters.saml.SamlSession;
 import org.keycloak.adapters.spi.AuthenticationError;
 import org.keycloak.saml.processing.core.saml.v2.constants.X500SAMLProfileConstants;
 
-import javax.servlet.ServletException;
+import javax.servlet.RequestDispatcher;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -35,11 +37,21 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import javax.xml.datatype.XMLGregorianCalendar;
 import java.io.IOException;
+import java.io.StringWriter;
 import java.security.Principal;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
+import org.w3c.dom.Document;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -92,6 +104,25 @@ public class SendUsernameServlet {
     }
 
     @GET
+    @Path("getAssertionFromDocument")
+    public Response getAssertionFromDocument() throws IOException, TransformerException {
+        sentPrincipal = httpServletRequest.getUserPrincipal();
+        DocumentBuilderFactory domFact = DocumentBuilderFactory.newInstance();
+        Document doc = ((SamlPrincipal) sentPrincipal).getAssertionDocument();
+        String xml = "";
+        if (doc != null) {
+            DOMSource domSource = new DOMSource(doc);
+            StringWriter writer = new StringWriter();
+            StreamResult result = new StreamResult(writer);
+            TransformerFactory tf = TransformerFactory.newInstance();
+            Transformer transformer = tf.newTransformer();
+            transformer.transform(domSource, result);
+            xml = writer.toString();
+        }
+        return Response.ok(xml).header(HttpHeaders.CONTENT_TYPE, MediaType.TEXT_PLAIN_TYPE + ";charset=UTF-8").build();
+    }
+
+    @GET
     @Path("{path}")
     public Response doGetElseWhere(@PathParam("path") String path, @QueryParam("checkRoles") boolean checkRolesFlag) throws IOException {
         System.out.println("In SendUsername Servlet doGetElseWhere() - path: " + path);
@@ -109,7 +140,7 @@ public class SendUsernameServlet {
     @Path("error.html")
     public Response errorPagePost() {
         authError = (SamlAuthenticationError) httpServletRequest.getAttribute(AuthenticationError.class.getName());
-        Integer statusCode = (Integer) httpServletRequest.getAttribute("javax.servlet.error.status_code");
+        Integer statusCode = (Integer) httpServletRequest.getAttribute(RequestDispatcher.ERROR_STATUS_CODE);
         System.out.println("In SendUsername Servlet errorPage() status code: " + statusCode);
 
         return Response.ok(getErrorOutput(statusCode)).header(HttpHeaders.CONTENT_TYPE, MediaType.TEXT_HTML_TYPE + ";charset=UTF-8").build();
@@ -149,7 +180,6 @@ public class SendUsernameServlet {
         return "These roles will be checked: " + checkRolesList.toString();
     }
 
-
     private boolean checkRoles() {
         for (String role : checkRolesList) {
             System.out.println("In checkRoles() checking role " + role + " for user " + httpServletRequest.getUserPrincipal().getName());
@@ -175,7 +205,39 @@ public class SendUsernameServlet {
 
         sentPrincipal = principal;
 
-        return output + principal.getName();
+        output += principal.getName() + "\n";
+        output += getSessionInfo() + "\n";
+        output += getRoles() + "\n";
+
+        return output;
+    }
+
+    private String getSessionInfo() {
+        HttpSession session = httpServletRequest.getSession(false);
+
+        if (session != null) {
+            final SamlSession samlSession = (SamlSession) httpServletRequest.getSession(false).getAttribute(SamlSession.class.getName());
+
+            if (samlSession != null) {
+                String output = "Session ID: " + samlSession.getSessionIndex() + "\n";
+                XMLGregorianCalendar sessionNotOnOrAfter = samlSession.getSessionNotOnOrAfter();
+                output += "SessionNotOnOrAfter: " + (sessionNotOnOrAfter == null ? "null" : sessionNotOnOrAfter.toString());
+                return output;
+            }
+
+            return "SamlSession doesn't exists";
+        }
+
+        return "Session doesn't exists";
+    }
+
+    private String getRoles() {
+        StringBuilder output = new StringBuilder("Roles: ");
+        for (String role : ((SamlPrincipal) httpServletRequest.getUserPrincipal()).getAttributes("Roles")) {
+            output.append(role).append(",");
+        }
+
+        return output.toString();
     }
 
     private String getErrorOutput(Integer statusCode) {

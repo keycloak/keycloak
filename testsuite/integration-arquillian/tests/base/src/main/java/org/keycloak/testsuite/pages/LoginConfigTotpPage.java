@@ -16,6 +16,7 @@
  */
 package org.keycloak.testsuite.pages;
 
+import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -30,8 +31,14 @@ public class LoginConfigTotpPage extends AbstractPage {
     @FindBy(id = "totp")
     private WebElement totpInput;
 
+    @FindBy(id = "userLabel")
+    private WebElement totpLabelInput;
+
     @FindBy(css = "input[type=\"submit\"]")
     private WebElement submitButton;
+    
+    @FindBy(name = "cancel-aia")
+    private WebElement cancelAIAButton;
 
     @FindBy(id = "mode-barcode")
     private WebElement barcodeLink;
@@ -47,8 +54,18 @@ public class LoginConfigTotpPage extends AbstractPage {
         submitButton.click();
     }
 
+    public void configure(String totp, String userLabel) {
+        totpInput.sendKeys(totp);
+        totpLabelInput.sendKeys(userLabel);
+        submitButton.click();
+    }
+
     public void submit() {
         submitButton.click();
+    }
+    
+    public void cancel() {
+        cancelAIAButton.click();
     }
 
     public String getTotpSecret() {
@@ -73,6 +90,14 @@ public class LoginConfigTotpPage extends AbstractPage {
 
     public String getError() {
         return loginErrorMessage.getText();
+    }
+
+    public boolean isCancelDisplayed() {
+        try {
+            return cancelAIAButton.isDisplayed();
+        } catch (NoSuchElementException e) {
+            return false;
+        }
     }
 
 }

@@ -36,9 +36,12 @@ import javax.persistence.criteria.Root;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.jpa.entities.PermissionTicketEntity;
 import org.keycloak.authorization.model.PermissionTicket;
+import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.store.PermissionTicketStore;
+import org.keycloak.authorization.store.ResourceStore;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import javax.persistence.LockModeType;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -77,7 +80,7 @@ public class JPAPermissionTicketStore implements PermissionTicketStore {
 
     @Override
     public void delete(String id) {
-        PermissionTicketEntity policy = entityManager.find(PermissionTicketEntity.class, id);
+        PermissionTicketEntity policy = entityManager.find(PermissionTicketEntity.class, id, LockModeType.PESSIMISTIC_WRITE);
         if (policy != null) {
             this.entityManager.remove(policy);
         }
@@ -260,6 +263,66 @@ public class JPAPermissionTicketStore implements PermissionTicketStore {
         filters.put(PermissionTicket.REQUESTER, userId);
 
         return find(filters, resourceServerId, -1, -1);
+    }
+
+    @Override
+    public List<Resource> findGrantedResources(String requester, String name, int first, int max) {
+        TypedQuery<String> query = name == null ? 
+                entityManager.createNamedQuery("findGrantedResources", String.class) :
+                entityManager.createNamedQuery("findGrantedResourcesByName", String.class);
+
+        query.setFlushMode(FlushModeType.COMMIT);
+        query.setParameter("requester", requester);
+        
+        if (name != null) {
+            query.setParameter("resourceName", "%" + name.toLowerCase() + "%");
+        }
+        
+        if (first > -1 && max > -1) {
+            query.setFirstResult(first);
+            query.setMaxResults(max);
+        }
+
+        List<String> result = query.getResultList();
+        List<Resource> list = new LinkedList<>();
+        ResourceStore resourceStore = provider.getStoreFactory().getResourceStore();
+
+        for (String id : result) {
+            Resource resource = resourceStore.findById(id, null);
+
+            if (Objects.nonNull(resource)) {
+                list.add(resource);
+            }
+        }
+        
+        return list;
+    }
+
+    @Override
+    public List<Resource> findGrantedOwnerResources(String owner, int first, int max) {
+        TypedQuery<String> query = entityManager.createNamedQuery("findGrantedOwnerResources", String.class);
+
+        query.setFlushMode(FlushModeType.COMMIT);
+        query.setParameter("owner", owner);
+
+        if (first > -1 && max > -1) {
+            query.setFirstResult(first);
+            query.setMaxResults(max);
+        }
+
+        List<String> result = query.getResultList();
+        List<Resource> list = new LinkedList<>();
+        ResourceStore resourceStore = provider.getStoreFactory().getResourceStore();
+
+        for (String id : result) {
+            Resource resource = resourceStore.findById(id, null);
+
+            if (Objects.nonNull(resource)) {
+                list.add(resource);
+            }
+        }
+
+        return list;
     }
 
     @Override

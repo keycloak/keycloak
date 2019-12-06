@@ -29,7 +29,7 @@ import java.util.List;
  */
 public class CommonAdviceType implements Serializable {
 
-    protected List<Object> advices = new ArrayList<Object>();
+    protected List<Object> advices = new ArrayList<>();
 
     /**
      * Add an advice

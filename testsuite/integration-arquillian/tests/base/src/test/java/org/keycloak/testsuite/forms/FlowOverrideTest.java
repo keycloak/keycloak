@@ -35,8 +35,10 @@ import org.keycloak.models.AuthenticationFlowBindings;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
@@ -399,8 +401,11 @@ public class FlowOverrideTest extends AbstractTestRealmKeycloakTest {
     @Test
     public void testDirectGrantHttpChallengeOTP() {
         UserRepresentation user = adminClient.realm("test").users().search("test-user@localhost").get(0);
-        UserRepresentation userUpdated = UserBuilder.edit(user).totpSecret("totpSecret").otpEnabled().build();
-        adminClient.realm("test").users().get(user.getId()).update(userUpdated);
+        UserRepresentation userUpdate = UserBuilder.edit(user).totpSecret("totpSecret").otpEnabled().build();
+        adminClient.realm("test").users().get(user.getId()).update(userUpdate);
+
+        CredentialRepresentation totpCredential = adminClient.realm("test").users()
+                .get(user.getId()).credentials().stream().filter(c -> OTPCredentialModel.TYPE.equals(c.getType())).findFirst().get();
 
         setupBruteForce();
 
@@ -439,7 +444,7 @@ public class FlowOverrideTest extends AbstractTestRealmKeycloakTest {
         response.close();
 
         clearBruteForce();
-        adminClient.realm("test").users().get(user.getId()).removeTotp();
+        adminClient.realm("test").users().get(user.getId()).removeCredential(totpCredential.getId());
     }
 
     @Test

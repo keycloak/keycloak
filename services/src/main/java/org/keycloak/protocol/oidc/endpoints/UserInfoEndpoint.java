@@ -35,7 +35,6 @@ import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionContext;
-import org.keycloak.models.TokenManager;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -233,11 +232,13 @@ public class UserInfoEndpoint {
         UserSessionModel userSession = new UserSessionCrossDCManager(session).getUserSessionWithClient(realm, token.getSessionState(), false, client.getId());
         UserSessionModel offlineUserSession = null;
         if (AuthenticationManager.isSessionValid(realm, userSession)) {
+            checkTokenIssuedAt(token, userSession, event);
             event.session(userSession);
             return userSession;
         } else {
             offlineUserSession = new UserSessionCrossDCManager(session).getUserSessionWithClient(realm, token.getSessionState(), true, client.getId());
             if (AuthenticationManager.isOfflineSessionValid(realm, offlineUserSession)) {
+                checkTokenIssuedAt(token, offlineUserSession, event);
                 event.session(offlineUserSession);
                 return offlineUserSession;
             }
@@ -258,4 +259,10 @@ public class UserInfoEndpoint {
         throw new ErrorResponseException(OAuthErrorException.INVALID_TOKEN, "Session expired", Response.Status.UNAUTHORIZED);
     }
 
+    private void checkTokenIssuedAt(AccessToken token, UserSessionModel userSession, EventBuilder event) throws ErrorResponseException {
+        if (token.getIssuedAt() + 1 < userSession.getStarted()) {
+            event.error(Errors.INVALID_TOKEN);
+            throw new ErrorResponseException(OAuthErrorException.INVALID_TOKEN, "Stale token", Response.Status.UNAUTHORIZED);
+        }
+    }
 }

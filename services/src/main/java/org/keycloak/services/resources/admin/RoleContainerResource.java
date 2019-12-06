@@ -18,7 +18,7 @@
 package org.keycloak.services.resources.admin;
 
 import org.jboss.resteasy.annotations.cache.NoCache;
-import org.jboss.resteasy.spi.NotFoundException;
+import javax.ws.rs.NotFoundException;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.ClientModel;
@@ -397,6 +397,11 @@ public class RoleContainerResource extends RoleResource {
         maxResults = maxResults != null ? maxResults : Constants.DEFAULT_MAX_RESULTS;
         
         RoleModel role = roleContainer.getRole(roleName);
+        
+        if (role == null) {
+            throw new NotFoundException("Could not find role");
+        }
+        
         List<UserRepresentation> results = new ArrayList<UserRepresentation>();
         List<UserModel> userModels = session.users().getRoleMembers(realm, role, firstResult, maxResults);
 
@@ -431,6 +436,11 @@ public class RoleContainerResource extends RoleResource {
         maxResults = maxResults != null ? maxResults : Constants.DEFAULT_MAX_RESULTS;
         
         RoleModel role = roleContainer.getRole(roleName);
+        
+        if (role == null) {
+            throw new NotFoundException("Could not find role");
+        }
+        
         List<GroupModel> groupsModel = session.realms().getGroupsByRole(realm, role, firstResult, maxResults);
 
         return groupsModel.stream()

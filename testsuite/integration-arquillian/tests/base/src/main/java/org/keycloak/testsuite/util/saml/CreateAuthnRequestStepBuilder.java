@@ -26,6 +26,8 @@ import org.keycloak.saml.processing.api.saml.v2.request.SAML2Request;
 import org.keycloak.testsuite.util.SamlClient.Binding;
 import java.net.URI;
 import java.util.UUID;
+import java.util.function.Supplier;
+
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.protocol.HttpClientContext;
@@ -44,7 +46,7 @@ public class CreateAuthnRequestStepBuilder extends SamlDocumentStepBuilder<Authn
 
     private final Document forceLoginRequestDocument;
 
-    private String relayState;
+    private Supplier<String> relayState;
 
     public CreateAuthnRequestStepBuilder(URI authServerSamlUrl, String issuer, String assertionConsumerURL, Binding requestBinding, SamlClientBuilder clientBuilder) {
         super(clientBuilder);
@@ -67,16 +69,14 @@ public class CreateAuthnRequestStepBuilder extends SamlDocumentStepBuilder<Authn
         this.assertionConsumerURL = null;
     }
 
-    public String assertionConsumerURL() {
-        return assertionConsumerURL;
-    }
-
-    public String relayState() {
-        return relayState;
-    }
-
-    public void relayState(String relayState) {
+    public CreateAuthnRequestStepBuilder relayState(Supplier<String> relayState) {
         this.relayState = relayState;
+        return this;
+    }
+
+    public CreateAuthnRequestStepBuilder relayState(String relayState) {
+        this.relayState = () -> relayState;
+        return this;
     }
 
     public CreateAuthnRequestStepBuilder signWith(String signingPrivateKeyPem, String signingPublicKeyPem) {
@@ -97,6 +97,7 @@ public class CreateAuthnRequestStepBuilder extends SamlDocumentStepBuilder<Authn
         }
 
         Document samlDoc = DocumentUtil.getDocument(transformed);
+        String relayState = this.relayState == null ? null : this.relayState.get();
         return this.signingPrivateKeyPem == null
           ? requestBinding.createSamlUnsignedRequest(authServerSamlUrl, relayState, samlDoc)
           : requestBinding.createSamlSignedRequest(authServerSamlUrl, relayState, samlDoc, signingPrivateKeyPem, signingPublicKeyPem);
@@ -109,7 +110,8 @@ public class CreateAuthnRequestStepBuilder extends SamlDocumentStepBuilder<Authn
 
         try {
             SAML2Request samlReq = new SAML2Request();
-            AuthnRequestType loginReq = samlReq.createAuthnRequestType(UUID.randomUUID().toString(), assertionConsumerURL, this.authServerSamlUrl.toString(), issuer);
+            AuthnRequestType loginReq = samlReq.createAuthnRequestType(UUID.randomUUID().toString(),
+                    assertionConsumerURL, this.authServerSamlUrl.toString(), issuer, requestBinding.getBindingUri());
 
             return SAML2Request.convert(loginReq);
         } catch (ConfigurationException | ParsingException | ProcessingException ex) {

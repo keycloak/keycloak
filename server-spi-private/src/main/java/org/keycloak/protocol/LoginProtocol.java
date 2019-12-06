@@ -37,12 +37,20 @@ import javax.ws.rs.core.UriInfo;
  */
 public interface LoginProtocol extends Provider {
 
-    public static enum Error {
+    enum Error {
 
         /**
          * Login cancelled by the user
          */
         CANCELLED_BY_USER,
+        /**
+         * Applications-initiated action was canceled by the user
+         */
+        CANCELLED_AIA,
+        /**
+         * Applications-initiated action was canceled by the user. Do not send error.
+         */
+        CANCELLED_AIA_SILENT,
         /**
          * Consent denied by the user
          */

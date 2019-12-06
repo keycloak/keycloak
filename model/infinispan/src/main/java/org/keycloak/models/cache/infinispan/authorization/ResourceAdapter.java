@@ -275,7 +275,7 @@ public class ResourceAdapter implements Resource, CachedModel<Resource> {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o == null || !(o instanceof Resource)) return false;
+        if (!(o instanceof Resource)) return false;
 
         Resource that = (Resource) o;
         return that.getId().equals(getId());

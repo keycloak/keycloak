@@ -40,7 +40,7 @@ public class SAML11AuthenticationStatementType extends SAML11SubjectStatementTyp
 
     protected SAML11SubjectLocalityType subjectLocality;
 
-    protected List<SAML11AuthorityBindingType> authorityBinding = new ArrayList<SAML11AuthorityBindingType>();
+    protected List<SAML11AuthorityBindingType> authorityBinding = new ArrayList<>();
 
     public SAML11AuthenticationStatementType(URI authenticationMethod, XMLGregorianCalendar authenticationInstant) {
         this.authenticationMethod = authenticationMethod;

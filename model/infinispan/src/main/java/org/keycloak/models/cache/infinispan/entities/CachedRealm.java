@@ -33,6 +33,7 @@ import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.RequiredCredentialModel;
+import org.keycloak.models.WebAuthnPolicy;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -95,6 +96,7 @@ public class CachedRealm extends AbstractExtendableRevisioned {
     protected int notBefore;
     protected PasswordPolicy passwordPolicy;
     protected OTPPolicy otpPolicy;
+    protected WebAuthnPolicy webAuthnPolicy;
 
     protected String loginTheme;
     protected String accountTheme;
@@ -131,7 +133,7 @@ public class CachedRealm extends AbstractExtendableRevisioned {
     protected Set<String> eventsListeners;
     protected Set<String> enabledEventTypes;
     protected boolean adminEventsEnabled;
-    protected Set<String> adminEnabledEventOperations = new HashSet<String>();
+    protected Set<String> adminEnabledEventOperations = new HashSet<>();
     protected boolean adminEventsDetailsEnabled;
     protected List<String> defaultRoles;
     private boolean allowUserManagedAccess;
@@ -140,7 +142,7 @@ public class CachedRealm extends AbstractExtendableRevisioned {
         return identityProviderMapperSet;
     }
 
-    protected List<String> defaultGroups = new LinkedList<String>();
+    protected List<String> defaultGroups = new LinkedList<>();
     protected List<String> clientScopes = new LinkedList<>();
     protected List<String> defaultDefaultClientScopes = new LinkedList<>();
     protected List<String> optionalDefaultClientScopes = new LinkedList<>();
@@ -203,6 +205,7 @@ public class CachedRealm extends AbstractExtendableRevisioned {
         notBefore = model.getNotBefore();
         passwordPolicy = model.getPasswordPolicy();
         otpPolicy = model.getOTPPolicy();
+        webAuthnPolicy = model.getWebAuthnPolicy();
 
         loginTheme = model.getLoginTheme();
         accountTheme = model.getAccountTheme();
@@ -249,7 +252,7 @@ public class CachedRealm extends AbstractExtendableRevisioned {
         authenticationFlowList = model.getAuthenticationFlows();
         for (AuthenticationFlowModel flow : authenticationFlowList) {
             this.authenticationFlows.put(flow.getId(), flow);
-            authenticationExecutions.put(flow.getId(), new LinkedList<AuthenticationExecutionModel>());
+            authenticationExecutions.put(flow.getId(), new LinkedList<>());
             for (AuthenticationExecutionModel execution : model.getAuthenticationExecutions(flow.getId())) {
                 authenticationExecutions.add(flow.getId(), execution);
                 executionsById.put(execution.getId(), execution);
@@ -596,6 +599,10 @@ public class CachedRealm extends AbstractExtendableRevisioned {
 
     public OTPPolicy getOtpPolicy() {
         return otpPolicy;
+    }
+
+    public WebAuthnPolicy getWebAuthnPolicy() {
+        return webAuthnPolicy;
     }
 
     public AuthenticationFlowModel getBrowserFlow() {

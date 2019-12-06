@@ -17,8 +17,8 @@
 package org.keycloak.storage.ldap.mappers;
 
 import org.keycloak.models.ModelException;
+import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.credential.PasswordUserCredentialModel;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
 
 /**
@@ -27,9 +27,9 @@ import org.keycloak.storage.ldap.idm.model.LDAPObject;
  */
 public interface PasswordUpdateCallback {
 
-    LDAPOperationDecorator beforePasswordUpdate(UserModel user, LDAPObject ldapUser, PasswordUserCredentialModel password);
+    LDAPOperationDecorator beforePasswordUpdate(UserModel user, LDAPObject ldapUser, UserCredentialModel password);
 
-    void passwordUpdated(UserModel user, LDAPObject ldapUser, PasswordUserCredentialModel password);
+    void passwordUpdated(UserModel user, LDAPObject ldapUser, UserCredentialModel password);
 
-    void passwordUpdateFailed(UserModel user, LDAPObject ldapUser, PasswordUserCredentialModel password, ModelException exception) throws ModelException;
+    void passwordUpdateFailed(UserModel user, LDAPObject ldapUser, UserCredentialModel password, ModelException exception) throws ModelException;
 }

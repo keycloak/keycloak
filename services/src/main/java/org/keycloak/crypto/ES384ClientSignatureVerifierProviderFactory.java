@@ -29,7 +29,7 @@ public class ES384ClientSignatureVerifierProviderFactory implements ClientSignat
 
     @Override
     public ClientSignatureVerifierProvider create(KeycloakSession session) {
-        return new AsymmetricClientSignatureVerifierProvider(session, Algorithm.ES384);
+        return new ECDSAClientSignatureVerifierProvider(session, Algorithm.ES384);
     }
 
 }

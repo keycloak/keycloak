@@ -248,7 +248,7 @@ public class ClientInitiatedAccountLinkTest extends AbstractServletsAdapterTest 
 
         navigateTo(linkUrl);
 
-        Assert.assertTrue(driver.getPageSource().contains("We're sorry..."));
+        Assert.assertTrue(driver.getPageSource().contains("We are sorry..."));
 
         logoutAll();
 
@@ -571,7 +571,7 @@ public class ClientInitiatedAccountLinkTest extends AbstractServletsAdapterTest 
         loginUpdateProfilePage.update("Joe", "Doe", "joe@parent.com");
 
         errorPage.assertCurrent();
-        Assert.assertEquals("You are already authenticated as different user 'child' in this session. Please logout first.", errorPage.getError());
+        Assert.assertEquals("You are already authenticated as different user 'child' in this session. Please log out first.", errorPage.getError());
 
         logoutAll();
 

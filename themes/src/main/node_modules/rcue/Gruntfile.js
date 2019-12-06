@@ -2,9 +2,6 @@
 var lrSnippet = require('connect-livereload')({
   port: 35730
 });
-var mountFolder = function (connect, dir) {
-  return connect.static(require('path').resolve(dir));
-};
 
 module.exports = function (grunt) {
   'use strict';
@@ -31,13 +28,12 @@ module.exports = function (grunt) {
       server: {
         options: {
           hostname: '0.0.0.0',
-          middleware: function (connect) {
-            return [
-              lrSnippet,
-              mountFolder(connect, projectConfig.src),
-              mountFolder(connect, projectConfig.src + 'tests')
-            ];
-          },
+          livereload: true,
+          base: [
+            projectConfig.dist,
+            projectConfig.src,
+            projectConfig.src + 'tests'
+          ],
           port: 9001
         }
       }

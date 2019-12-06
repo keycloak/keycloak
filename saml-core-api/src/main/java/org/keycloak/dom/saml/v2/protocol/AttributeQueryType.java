@@ -44,7 +44,7 @@ import java.util.List;
  */
 public class AttributeQueryType extends SubjectQueryAbstractType {
 
-    protected List<AttributeType> attribute = new ArrayList<AttributeType>();
+    protected List<AttributeType> attribute = new ArrayList<>();
 
     public AttributeQueryType(String id, XMLGregorianCalendar instant) {
         super(id, instant);

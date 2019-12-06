@@ -11,6 +11,11 @@
 .list-group-item {
   border-left: 0;
   border-right: 0;
+  &.disabled,
+  &.disabled:hover,
+  &.disabled:focus {
+    background-color: @list-group-disabled-bg;
+  }
 }
 
 .list-group-item-heading {

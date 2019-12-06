@@ -17,7 +17,6 @@
 
 package org.keycloak.jose.jwk;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import org.bouncycastle.jce.ECNamedCurveTable;
 import org.bouncycastle.jce.spec.ECNamedCurveParameterSpec;
 import org.bouncycastle.jce.spec.ECNamedCurveSpec;
@@ -31,14 +30,11 @@ import java.security.PublicKey;
 import java.security.spec.ECPoint;
 import java.security.spec.ECPublicKeySpec;
 import java.security.spec.RSAPublicKeySpec;
-import java.util.Map;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class JWKParser {
-
-    private static TypeReference<Map<String,String>> typeRef = new TypeReference<Map<String,String>>() {};
 
     private JWK jwk;
 

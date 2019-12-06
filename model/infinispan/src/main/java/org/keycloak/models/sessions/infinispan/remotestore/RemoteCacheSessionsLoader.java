@@ -20,7 +20,6 @@ package org.keycloak.models.sessions.infinispan.remotestore;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -94,7 +93,7 @@ public class RemoteCacheSessionsLoader implements SessionLoader<RemoteCacheSessi
 
 
     @Override
-    public WorkerContext computeWorkerContext(RemoteCacheSessionsLoaderContext loaderCtx, int segment, int workerId, List<WorkerResult> previousResults) {
+    public WorkerContext computeWorkerContext(RemoteCacheSessionsLoaderContext loaderCtx, int segment, int workerId, WorkerResult previousResult) {
         return new WorkerContext(segment, workerId);
     }
 

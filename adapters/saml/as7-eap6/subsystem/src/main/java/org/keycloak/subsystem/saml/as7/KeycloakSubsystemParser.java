@@ -118,6 +118,8 @@ class KeycloakSubsystemParser implements XMLStreamConstants, XMLElementReader<Li
                 readPrincipalNameMapping(addServiceProvider, reader);
             } else if (Constants.XML.ROLE_IDENTIFIERS.equals(tagName)) {
                 readRoleIdentifiers(addServiceProvider, reader);
+            } else if (Constants.XML.ROLE_MAPPINGS_PROVIDER.equals(tagName)) {
+                readRoleMappingsProvider(addServiceProvider, reader);
             } else if (Constants.XML.IDENTITY_PROVIDER.equals(tagName)) {
                 readIdentityProvider(list, reader, addr);
             } else {
@@ -159,6 +161,8 @@ class KeycloakSubsystemParser implements XMLStreamConstants, XMLElementReader<Li
                 readSingleLogout(addIdentityProvider, reader);
             } else if (Constants.XML.KEYS.equals(tagName)) {
                 readKeys(list, reader, addr);
+            } else if (Constants.XML.ALLOWED_CLOCK_SKEW.equals(tagName)) {
+                readAllowedClockSkew(addIdentityProvider, reader);
             } else {
                 throw ParseUtils.unexpectedElement(reader);
             }
@@ -206,6 +210,25 @@ class KeycloakSubsystemParser implements XMLStreamConstants, XMLElementReader<Li
             readKey(keyList, reader, parentAddr);
         }
         list.addAll(keyList);
+    }
+
+    void readAllowedClockSkew(ModelNode addIdentityProvider, XMLExtendedStreamReader reader) throws XMLStreamException {
+        ModelNode allowedClockSkew = addIdentityProvider.get(Constants.Model.ALLOWED_CLOCK_SKEW);
+        for (int i = 0; i < reader.getAttributeCount(); i++) {
+            String name = reader.getAttributeLocalName(i);
+            String value = reader.getAttributeValue(i);
+
+            if (Constants.XML.ALLOWED_CLOCK_SKEW_UNIT.equals(name)) {
+                SimpleAttributeDefinition attr = AllowedClockSkew.ALLOWED_CLOCK_SKEW_UNIT;
+                attr.parseAndSetParameter(value, allowedClockSkew, reader);
+            } else {
+                throw ParseUtils.unexpectedAttribute(reader, i);
+            }
+        }
+        // the real value is the content
+        String value = reader.getElementText();
+        SimpleAttributeDefinition attr = AllowedClockSkew.ALLOWED_CLOCK_SKEW_VALUE;
+        attr.parseAndSetParameter(value, allowedClockSkew, reader);
     }
 
     void readKey(List<ModelNode> list, XMLExtendedStreamReader reader, PathAddress parentAddr) throws XMLStreamException {
@@ -339,6 +362,21 @@ class KeycloakSubsystemParser implements XMLStreamConstants, XMLElementReader<Li
         }
     }
 
+    void readRoleMappingsProvider(final ModelNode addServiceProvider, final XMLExtendedStreamReader reader) throws XMLStreamException {
+        String providerId = readRequiredAttribute(reader, Constants.XML.ID);
+        ServiceProviderDefinition.ROLE_MAPPINGS_PROVIDER_ID.parseAndSetParameter(providerId, addServiceProvider, reader);
+
+        while (reader.hasNext() && nextTag(reader) != END_ELEMENT) {
+            String tagName = reader.getLocalName();
+            if (!Constants.XML.PROPERTY.equals(tagName)) {
+                throw ParseUtils.unexpectedElement(reader);
+            }
+            final String[] array = ParseUtils.requireAttributes(reader, Constants.XML.NAME, Constants.XML.VALUE);
+            ServiceProviderDefinition.ROLE_MAPPINGS_PROVIDER_CONFIG.parseAndAddParameterElement(array[0], array[1], addServiceProvider, reader);
+            ParseUtils.requireNoContent(reader);
+        }
+    }
+
     void readPrincipalNameMapping(ModelNode addServiceProvider, XMLExtendedStreamReader reader) throws XMLStreamException {
 
         boolean policySet = false;
@@ -386,7 +424,7 @@ class KeycloakSubsystemParser implements XMLStreamConstants, XMLElementReader<Li
      */
     @Override
     public void writeContent(final XMLExtendedStreamWriter writer, final SubsystemMarshallingContext context) throws XMLStreamException {
-        context.startSubsystemElement(KeycloakSamlExtension.NAMESPACE, false);
+        context.startSubsystemElement(KeycloakSamlExtension.CURRENT_NAMESPACE, false);
         writeSecureDeployment(writer, context.getModelNode());
         writer.writeEndElement();
     }
@@ -419,6 +457,7 @@ class KeycloakSubsystemParser implements XMLStreamConstants, XMLElementReader<Li
             writeKeys(writer, spAttributes.get(Constants.Model.KEY));
             writePrincipalNameMapping(writer, spAttributes);
             writeRoleIdentifiers(writer, spAttributes);
+            writeRoleMappingsProvider(writer, spAttributes);
             writeIdentityProvider(writer, spAttributes.get(Constants.Model.IDENTITY_PROVIDER));
 
             writer.writeEndElement();
@@ -442,6 +481,7 @@ class KeycloakSubsystemParser implements XMLStreamConstants, XMLElementReader<Li
             writeSingleSignOn(writer, idpAttributes.get(Constants.Model.SINGLE_SIGN_ON));
             writeSingleLogout(writer, idpAttributes.get(Constants.Model.SINGLE_LOGOUT));
             writeKeys(writer, idpAttributes.get(Constants.Model.KEY));
+            writeAllowedClockSkew(writer, idpAttributes.get(Constants.Model.ALLOWED_CLOCK_SKEW));
         }
         writer.writeEndElement();
     }
@@ -494,6 +534,18 @@ class KeycloakSubsystemParser implements XMLStreamConstants, XMLElementReader<Li
         if (contains) {
             writer.writeEndElement();
         }
+    }
+
+    void writeAllowedClockSkew(XMLExtendedStreamWriter writer, ModelNode allowedClockSkew) throws XMLStreamException {
+        if (!allowedClockSkew.isDefined()) {
+            return;
+        }
+        writer.writeStartElement(Constants.XML.ALLOWED_CLOCK_SKEW);
+        AllowedClockSkew.ALLOWED_CLOCK_SKEW_UNIT.getAttributeMarshaller().marshallAsAttribute(AllowedClockSkew.ALLOWED_CLOCK_SKEW_UNIT, allowedClockSkew, false, writer);
+        ModelNode allowedClockSkewValue = allowedClockSkew.get(Constants.Model.ALLOWED_CLOCK_SKEW_VALUE);
+        char[] chars = allowedClockSkewValue.asString().toCharArray();
+        writer.writeCharacters(chars, 0, chars.length);
+        writer.writeEndElement();
     }
 
     void writeKeyStore(XMLExtendedStreamWriter writer, ModelNode model) throws XMLStreamException {
@@ -551,6 +603,17 @@ class KeycloakSubsystemParser implements XMLStreamConstants, XMLElementReader<Li
             writer.writeAttribute("name", item.asString());
             writer.writeEndElement();
         }
+        writer.writeEndElement();
+    }
+
+    void writeRoleMappingsProvider(final XMLExtendedStreamWriter writer, final ModelNode model) throws XMLStreamException {
+        ModelNode providerId = model.get(Constants.Model.ROLE_MAPPINGS_PROVIDER_ID);
+        if (!providerId.isDefined()) {
+            return;
+        }
+        writer.writeStartElement(Constants.XML.ROLE_MAPPINGS_PROVIDER);
+        writer.writeAttribute(Constants.XML.ID, providerId.asString());
+        ServiceProviderDefinition.ROLE_MAPPINGS_PROVIDER_CONFIG.marshallAsElement(model, false, writer);
         writer.writeEndElement();
     }
 

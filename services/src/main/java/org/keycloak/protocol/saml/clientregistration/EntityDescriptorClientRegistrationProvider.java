@@ -22,7 +22,6 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.saml.EntityDescriptorDescriptionConverter;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.services.clientregistration.AbstractClientRegistrationProvider;
-import org.keycloak.services.clientregistration.DefaultClientRegistrationContext;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;

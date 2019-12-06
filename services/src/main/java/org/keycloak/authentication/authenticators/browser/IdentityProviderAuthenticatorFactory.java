@@ -39,7 +39,7 @@ import static org.keycloak.provider.ProviderConfigProperty.STRING_TYPE;
 public class IdentityProviderAuthenticatorFactory implements AuthenticatorFactory, DisplayTypeAuthenticatorFactory {
 
     protected static final AuthenticationExecutionModel.Requirement[] REQUIREMENT_CHOICES = {
-            AuthenticationExecutionModel.Requirement.ALTERNATIVE, AuthenticationExecutionModel.Requirement.DISABLED
+            AuthenticationExecutionModel.Requirement.REQUIRED, AuthenticationExecutionModel.Requirement.ALTERNATIVE, AuthenticationExecutionModel.Requirement.DISABLED
     };
 
     protected static final String DEFAULT_PROVIDER = "defaultProvider";

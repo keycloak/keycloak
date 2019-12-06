@@ -49,7 +49,7 @@ import java.util.List;
  */
 public class ConditionsType extends CommonConditionsType implements Serializable {
 
-    protected List<ConditionAbstractType> conditions = new ArrayList<ConditionAbstractType>();
+    protected List<ConditionAbstractType> conditions = new ArrayList<>();
 
     /**
      * Add a condition

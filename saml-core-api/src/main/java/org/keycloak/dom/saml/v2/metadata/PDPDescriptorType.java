@@ -44,11 +44,11 @@ import java.util.List;
  */
 public class PDPDescriptorType extends RoleDescriptorType {
 
-    protected List<EndpointType> authzService = new ArrayList<EndpointType>();
+    protected List<EndpointType> authzService = new ArrayList<>();
 
-    protected List<EndpointType> assertionIDRequestService = new ArrayList<EndpointType>();
+    protected List<EndpointType> assertionIDRequestService = new ArrayList<>();
 
-    protected List<String> nameIDFormat = new ArrayList<String>();
+    protected List<String> nameIDFormat = new ArrayList<>();
 
     public PDPDescriptorType(List<String> protocolSupport) {
         super(protocolSupport);

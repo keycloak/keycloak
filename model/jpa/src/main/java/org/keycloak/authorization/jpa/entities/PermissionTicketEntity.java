@@ -41,7 +41,10 @@ import javax.persistence.UniqueConstraint;
     {
         @NamedQuery(name="findPermissionIdByResource", query="select p.id from PermissionTicketEntity p inner join p.resource r where p.resourceServer.id = :serverId and (r.resourceServer.id = :serverId and r.id = :resourceId)"),
         @NamedQuery(name="findPermissionIdByScope", query="select p.id from PermissionTicketEntity p inner join p.scope s where p.resourceServer.id = :serverId and (s.resourceServer.id = :serverId and s.id = :scopeId)"),
-        @NamedQuery(name="findPermissionTicketIdByServerId", query="select p.id from PermissionTicketEntity p where  p.resourceServer.id = :serverId ")
+        @NamedQuery(name="findPermissionTicketIdByServerId", query="select p.id from PermissionTicketEntity p where  p.resourceServer.id = :serverId "),
+        @NamedQuery(name="findGrantedResources", query="select distinct(r.id) from ResourceEntity r inner join PermissionTicketEntity p on r.id = p.resource.id where p.grantedTimestamp is not null and p.requester = :requester order by r.id"),
+        @NamedQuery(name="findGrantedResourcesByName", query="select distinct(r.id) from ResourceEntity r inner join PermissionTicketEntity p on r.id = p.resource.id where p.grantedTimestamp is not null and p.requester = :requester and lower(r.name) like :resourceName order by r.id"),
+        @NamedQuery(name="findGrantedOwnerResources", query="select distinct(r.id) from ResourceEntity r inner join PermissionTicketEntity p on r.id = p.resource.id where p.grantedTimestamp is not null and p.owner = :owner order by r.id")
     }
 )
 public class PermissionTicketEntity {

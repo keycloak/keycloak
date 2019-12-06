@@ -37,7 +37,10 @@ export class ReferrerLink extends React.Component<ReferrerLinkProps> {
 
     public render(): React.ReactNode {
         return (
-            <a href={referrerUri}>
+            // '_hash_' is a workaround for when uri encoding is not
+            // sufficient to escape the # character properly.
+            // See AppInitiatedActionPage for more details.
+            <a id="referrerLink" href={referrerUri.replace('_hash_', '#')}>
                <ArrowIcon/> <Msg msgKey="backTo" params={[referrerName]}/>
             </a>
         );

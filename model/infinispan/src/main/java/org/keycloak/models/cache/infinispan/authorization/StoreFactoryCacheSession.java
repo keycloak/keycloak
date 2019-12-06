@@ -677,6 +677,11 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
         }
 
         @Override
+        public List<Resource> findByOwner(String ownerId, String resourceServerId, int first, int max) {
+            return getResourceStoreDelegate().findByOwner(ownerId, resourceServerId, first, max);
+        }
+
+        @Override
         public List<Resource> findByUri(String uri, String resourceServerId) {
             if (uri == null) return null;
             String cacheKey = getResourceByUriCacheKey(uri, resourceServerId);
@@ -1128,6 +1133,16 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
             String cacheKey = getPermissionTicketByResourceNameAndGranted(resourceName, userId, resourceServerId);
             return cacheQuery(cacheKey, PermissionTicketListQuery.class, () -> getPermissionTicketStoreDelegate().findGranted(resourceName, userId, resourceServerId),
                     (revision, permissions) -> new PermissionTicketResourceListQuery(revision, cacheKey, resourceName, permissions.stream().map(permission -> permission.getId()).collect(Collectors.toSet()), resourceServerId), resourceServerId);
+        }
+
+        @Override
+        public List<Resource> findGrantedResources(String requester, String name, int first, int max) {
+            return getPermissionTicketStoreDelegate().findGrantedResources(requester, name, first, max);
+        }
+
+        @Override
+        public List<Resource> findGrantedOwnerResources(String owner, int first, int max) {
+            return getPermissionTicketStoreDelegate().findGrantedOwnerResources(owner, first, max);
         }
 
         @Override

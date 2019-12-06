@@ -23,6 +23,7 @@ import org.keycloak.saml.common.util.StaxParserUtil;
 
 import javax.xml.stream.XMLEventReader;
 import javax.xml.stream.events.StartElement;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -71,6 +72,13 @@ public class IdpParser extends AbstractKeycloakSamlAdapterV1Parser<IDP> {
 
             case SINGLE_LOGOUT_SERVICE:
                 target.setSingleLogoutService(SingleLogoutServiceParser.getInstance().parse(xmlEventReader));
+                break;
+
+            case ALLOWED_CLOCK_SKEW:
+                String timeUnitString = StaxParserUtil.getAttributeValueRP(elementDetail, KeycloakSamlAdapterV1QNames.ATTR_UNIT);
+                target.setAllowedClockSkewUnit(timeUnitString == null ? TimeUnit.SECONDS : TimeUnit.valueOf(timeUnitString));
+                StaxParserUtil.advance(xmlEventReader);
+                target.setAllowedClockSkew(Integer.parseInt(StaxParserUtil.getElementText(xmlEventReader)));
                 break;
         }
     }

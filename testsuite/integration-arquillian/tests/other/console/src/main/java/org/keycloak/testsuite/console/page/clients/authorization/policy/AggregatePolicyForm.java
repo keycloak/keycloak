@@ -28,7 +28,6 @@ import org.keycloak.representations.idm.authorization.GroupPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.JSPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.Logic;
 import org.keycloak.representations.idm.authorization.RolePolicyRepresentation;
-import org.keycloak.representations.idm.authorization.RulePolicyRepresentation;
 import org.keycloak.representations.idm.authorization.TimePolicyRepresentation;
 import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
 import org.keycloak.testsuite.console.page.fragment.ModalDialog;
@@ -78,9 +77,6 @@ public class AggregatePolicyForm extends Form {
 
     @Page
     private TimePolicy timePolicy;
-
-    @Page
-    private RulePolicy rulePolicy;
 
     @Page
     private GroupPolicy groupPolicy;
@@ -150,8 +146,6 @@ public class AggregatePolicyForm extends Form {
             jsPolicy.form().populate((JSPolicyRepresentation) expected, true);
         } else if ("time".equalsIgnoreCase(expected.getType())) {
             timePolicy.form().populate((TimePolicyRepresentation) expected, true);
-        } else if ("rules".equalsIgnoreCase(expected.getType())) {
-            rulePolicy.form().populate((RulePolicyRepresentation) expected, true);
         } else if ("group".equalsIgnoreCase(expected.getType())) {
             groupPolicy.form().populate((GroupPolicyRepresentation) expected, true);
         }

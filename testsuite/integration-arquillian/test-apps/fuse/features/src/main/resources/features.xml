@@ -56,22 +56,4 @@
           <bundle>mvn:org.keycloak.testsuite/fuse-example-cxf-jaxrs/${project.version}</bundle>
       </feature>
 
-      <!-- The difference are keycloak-jetty8-adapter and camel-jetty feature -->
-    <feature name="keycloak-fuse-6.2-example" version="${project.version}">
-        <details>The keycloak fuse example</details>
-        <feature>war</feature>
-        <feature>camel</feature>
-        <feature>camel-jetty</feature>
-        <feature>cxf</feature>
-        <feature>keycloak</feature>
-        <feature>keycloak-jetty8-adapter</feature>
-        <bundle dependency="true">mvn:com.fasterxml.jackson.jaxrs/jackson-jaxrs-base/${jackson.version}</bundle>
-        <bundle dependency="true">mvn:com.fasterxml.jackson.jaxrs/jackson-jaxrs-json-provider/${jackson.version}</bundle>
-        <bundle>mvn:org.keycloak.testsuite/fuse-example-product-portal/${project.version}</bundle>
-        <bundle>mvn:org.keycloak.testsuite/fuse-example-customer-portal/${project.version}/war</bundle>
-        <bundle>mvn:org.keycloak.testsuite/fuse-example-camel-endpoint/${project.version}</bundle>
-        <bundle>mvn:org.keycloak.testsuite/fuse-example-cxf-jaxws/${project.version}</bundle>
-        <bundle>mvn:org.keycloak.testsuite/fuse-example-cxf-jaxrs/${project.version}</bundle>
-    </feature>
-
 </features>

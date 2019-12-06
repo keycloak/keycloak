@@ -25,7 +25,7 @@ import org.keycloak.authentication.AuthenticatorFactory;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.models.UserCredentialModel;
+import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.provider.ProviderConfigProperty;
 
 /**
@@ -64,7 +64,7 @@ public class NoCookieFlowRedirectAuthenticatorFactory implements AuthenticatorFa
 
     @Override
     public String getReferenceCategory() {
-        return UserCredentialModel.PASSWORD;
+        return PasswordCredentialModel.TYPE;
     }
 
     @Override

@@ -39,7 +39,7 @@ export class ReferrerDropdownItem extends React.Component<ReferrerDropdownItemPr
     public render(): React.ReactNode {
         
         return (
-            <DropdownItem href={referrerUri}>
+            <DropdownItem id="referrerMobileLink" href={referrerUri}>
                 <ArrowIcon /> {Msg.localize('backTo', [referrerName])}
             </DropdownItem>
         );

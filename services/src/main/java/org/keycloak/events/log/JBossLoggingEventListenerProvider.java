@@ -23,6 +23,7 @@ import org.keycloak.events.EventListenerProvider;
 import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.sessions.AuthenticationSessionModel;
 
 import javax.ws.rs.core.Cookie;
 import javax.ws.rs.core.HttpHeaders;
@@ -84,6 +85,14 @@ public class JBossLoggingEventListenerProvider implements EventListenerProvider 
                 }
             }
             
+            AuthenticationSessionModel authSession = session.getContext().getAuthenticationSession(); 
+            if(authSession!=null) {
+                sb.append(", authSessionParentId=");
+                sb.append(authSession.getParentSession().getId());
+                sb.append(", authSessionTabId=");
+                sb.append(authSession.getTabId());
+            }
+            
             if(logger.isTraceEnabled()) {
                 setKeycloakContext(sb);
             }
@@ -109,6 +118,8 @@ public class JBossLoggingEventListenerProvider implements EventListenerProvider 
             sb.append(adminEvent.getAuthDetails().getUserId());
             sb.append(", ipAddress=");
             sb.append(adminEvent.getAuthDetails().getIpAddress());
+            sb.append(", resourceType=");
+            sb.append(adminEvent.getResourceTypeAsString());
             sb.append(", resourcePath=");
             sb.append(adminEvent.getResourcePath());
 

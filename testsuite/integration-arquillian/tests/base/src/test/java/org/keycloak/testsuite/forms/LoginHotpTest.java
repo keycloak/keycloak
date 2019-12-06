@@ -24,6 +24,7 @@ import org.junit.Test;
 import org.keycloak.events.Details;
 import org.keycloak.models.OTPPolicy;
 import org.keycloak.models.UserCredentialModel;
+import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.models.utils.HmacOTP;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -49,9 +50,10 @@ public class LoginHotpTest extends AbstractTestRealmKeycloakTest {
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
-        testRealm.setOtpPolicyType(UserCredentialModel.HOTP);
+        testRealm.setOtpPolicyType(OTPCredentialModel.HOTP);
         testRealm.setOtpPolicyAlgorithm(HmacOTP.DEFAULT_ALGORITHM);
         testRealm.setOtpPolicyLookAheadWindow(2);
+        testRealm.setOtpPolicyDigits(6);
         UserRepresentation user = RealmRepUtil.findUser(testRealm, "test-user@localhost");
         UserBuilder.edit(user)
                    .hotpSecret("hotpSecret")
@@ -140,6 +142,8 @@ public class LoginHotpTest extends AbstractTestRealmKeycloakTest {
         Assert.assertTrue("expecting totpPage got: " + driver.getCurrentUrl(), loginTotpPage.isCurrent());
 
         loginTotpPage.login(otp.generateHOTP("hotpSecret", counter++));
+
+        appPage.assertCurrent();
 
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 

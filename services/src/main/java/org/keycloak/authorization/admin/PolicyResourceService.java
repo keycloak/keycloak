@@ -26,10 +26,8 @@ import javax.ws.rs.GET;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
-import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
-import javax.ws.rs.core.UriInfo;
 
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.keycloak.authorization.AuthorizationProvider;
@@ -109,13 +107,13 @@ public class PolicyResourceService {
         PolicyStore policyStore = storeFactory.getPolicyStore();
         PolicyProviderFactory resource = getProviderFactory(policy.getType());
 
-        resource.onRemove(policy, authorization);
+        if (resource != null) {
+            resource.onRemove(policy, authorization);
+        }
 
         policyStore.delete(policy.getId());
 
-        if (authorization.getRealm().isAdminEventsEnabled()) {
-            audit(toRepresentation(policy, authorization), OperationType.DELETE);
-        }
+        audit(toRepresentation(policy, authorization), OperationType.DELETE);
 
         return Response.noContent().build();
     }
@@ -257,8 +255,6 @@ public class PolicyResourceService {
     }
 
     private void audit(AbstractPolicyRepresentation policy, OperationType operation) {
-        if (authorization.getRealm().isAdminEventsEnabled()) {
-            adminEvent.operation(operation).resourcePath(authorization.getKeycloakSession().getContext().getUri()).representation(policy).success();
-        }
+        adminEvent.operation(operation).resourcePath(authorization.getKeycloakSession().getContext().getUri()).representation(policy).success();
     }
 }

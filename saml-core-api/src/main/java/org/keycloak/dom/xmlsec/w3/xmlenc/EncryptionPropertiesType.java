@@ -42,7 +42,7 @@ import java.util.List;
  */
 public class EncryptionPropertiesType {
 
-    protected List<EncryptionPropertyType> encryptionProperty = new ArrayList<EncryptionPropertyType>();
+    protected List<EncryptionPropertyType> encryptionProperty = new ArrayList<>();
     protected String id;
 
     public void addEncryptionProperty(EncryptionPropertyType enc) {

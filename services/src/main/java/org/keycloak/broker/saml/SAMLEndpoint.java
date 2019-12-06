@@ -46,6 +46,8 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.saml.JaxrsSAML2BindingBuilder;
 import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.protocol.saml.SamlProtocolUtils;
+import org.keycloak.protocol.saml.SamlSessionUtils;
+import org.keycloak.protocol.saml.preprocessor.SamlAuthenticationPreprocessor;
 import org.keycloak.saml.SAML2LogoutResponseBuilder;
 import org.keycloak.saml.SAMLRequestParser;
 import org.keycloak.saml.common.constants.GeneralConstants;
@@ -94,6 +96,7 @@ import java.security.cert.CertificateException;
 import org.w3c.dom.Element;
 
 import java.util.*;
+import javax.ws.rs.core.MultivaluedMap;
 import javax.xml.crypto.dsig.XMLSignature;
 import org.w3c.dom.NodeList;
 
@@ -104,8 +107,11 @@ import org.w3c.dom.NodeList;
 public class SAMLEndpoint {
     protected static final Logger logger = Logger.getLogger(SAMLEndpoint.class);
     public static final String SAML_FEDERATED_SESSION_INDEX = "SAML_FEDERATED_SESSION_INDEX";
+    @Deprecated // in favor of SAML_FEDERATED_SUBJECT_NAMEID
     public static final String SAML_FEDERATED_SUBJECT = "SAML_FEDERATED_SUBJECT";
+    @Deprecated // in favor of SAML_FEDERATED_SUBJECT_NAMEID
     public static final String SAML_FEDERATED_SUBJECT_NAMEFORMAT = "SAML_FEDERATED_SUBJECT_NAMEFORMAT";
+    public static final String SAML_FEDERATED_SUBJECT_NAMEID = "SAML_FEDERATED_SUBJECT_NAME_ID";
     public static final String SAML_LOGIN_RESPONSE = "SAML_LOGIN_RESPONSE";
     public static final String SAML_ASSERTION = "SAML_ASSERTION";
     public static final String SAML_IDP_INITIATED_CLIENT_ID = "SAML_IDP_INITIATED_CLIENT_ID";
@@ -213,6 +219,7 @@ public class SAMLEndpoint {
         }
 
         protected abstract String getBindingType();
+        protected abstract boolean containsUnencryptedSignature(SAMLDocumentHolder documentHolder);
         protected abstract void verifySignature(String key, SAMLDocumentHolder documentHolder) throws VerificationException;
         protected abstract SAMLDocumentHolder extractRequestDocument(String samlRequest);
         protected abstract SAMLDocumentHolder extractResponseDocument(String response);
@@ -286,6 +293,11 @@ public class SAMLEndpoint {
                     if (userSession.getState() == UserSessionModel.State.LOGGING_OUT || userSession.getState() == UserSessionModel.State.LOGGED_OUT) {
                         continue;
                     }
+
+                    for(Iterator<SamlAuthenticationPreprocessor> it = SamlSessionUtils.getSamlAuthenticationPreprocessorIterator(session); it.hasNext();) {
+                        request = it.next().beforeProcessingLogoutRequest(request, userSession, null);
+                    }
+
                     try {
                         AuthenticationManager.backchannelLogout(session, realm, userSession, session.getContext().getUri(), clientConnection, headers, false);
                     } catch (Exception e) {
@@ -301,6 +313,11 @@ public class SAMLEndpoint {
                         if (userSession.getState() == UserSessionModel.State.LOGGING_OUT || userSession.getState() == UserSessionModel.State.LOGGED_OUT) {
                             continue;
                         }
+
+                        for(Iterator<SamlAuthenticationPreprocessor> it = SamlSessionUtils.getSamlAuthenticationPreprocessorIterator(session); it.hasNext();) {
+                            request = it.next().beforeProcessingLogoutRequest(request, userSession, null);
+                        }
+
                         try {
                             AuthenticationManager.backchannelLogout(session, realm, userSession, session.getContext().getUri(), clientConnection, headers, false);
                         } catch (Exception e) {
@@ -381,8 +398,11 @@ public class SAMLEndpoint {
                 }
 
                 boolean signed = AssertionUtil.isSignedElement(assertionElement);
-                if ((config.isWantAssertionsSigned() && !signed)
-                        || (signed && config.isValidateSignature() && !AssertionUtil.isSignatureValid(assertionElement, getIDPKeyLocator()))) {
+                final boolean assertionSignatureNotExistsWhenRequired = config.isWantAssertionsSigned() && !signed;
+                final boolean signatureNotValid = signed && config.isValidateSignature() && !AssertionUtil.isSignatureValid(assertionElement, getIDPKeyLocator());
+                final boolean hasNoSignatureWhenRequired = ! signed && config.isValidateSignature() && ! containsUnencryptedSignature(holder);
+
+                if (assertionSignatureNotExistsWhenRequired || signatureNotValid || hasNoSignatureWhenRequired) {
                     logger.error("validation failed");
                     event.event(EventType.IDENTITY_PROVIDER_RESPONSE);
                     event.error(Errors.INVALID_SIGNATURE);
@@ -542,10 +562,14 @@ public class SAMLEndpoint {
 
     protected class PostBinding extends Binding {
         @Override
-        protected void verifySignature(String key, SAMLDocumentHolder documentHolder) throws VerificationException {
+        protected boolean containsUnencryptedSignature(SAMLDocumentHolder documentHolder) {
             NodeList nl = documentHolder.getSamlDocument().getElementsByTagNameNS(XMLSignature.XMLNS, "Signature");
-            boolean anyElementSigned = (nl != null && nl.getLength() > 0);
-            if ((! anyElementSigned) && (documentHolder.getSamlObject() instanceof ResponseType)) {
+            return (nl != null && nl.getLength() > 0);
+        }
+
+        @Override
+        protected void verifySignature(String key, SAMLDocumentHolder documentHolder) throws VerificationException {
+            if ((! containsUnencryptedSignature(documentHolder)) && (documentHolder.getSamlObject() instanceof ResponseType)) {
                 ResponseType responseType = (ResponseType) documentHolder.getSamlObject();
                 List<ResponseType.RTChoiceType> assertions = responseType.getAssertions();
                 if (! assertions.isEmpty() ) {
@@ -574,6 +598,14 @@ public class SAMLEndpoint {
     }
 
     protected class RedirectBinding extends Binding {
+        @Override
+        protected boolean containsUnencryptedSignature(SAMLDocumentHolder documentHolder) {
+            MultivaluedMap<String, String> encodedParams = session.getContext().getUri().getQueryParameters(false);
+            String algorithm = encodedParams.getFirst(GeneralConstants.SAML_SIG_ALG_REQUEST_KEY);
+            String signature = encodedParams.getFirst(GeneralConstants.SAML_SIGNATURE_REQUEST_KEY);
+            return algorithm != null && signature != null;
+        }
+
         @Override
         protected void verifySignature(String key, SAMLDocumentHolder documentHolder) throws VerificationException {
             KeyLocator locator = getIDPKeyLocator();

@@ -31,7 +31,8 @@
                 isInternationalizationEnabled : ${realm.internationalizationEnabled?c},
                 isLinkedAccountsEnabled : ${realm.identityFederationEnabled?c},
                 isEventsEnabled : ${isEventsEnabled?c},
-                isMyResourcesEnabled : ${(realm.userManagedAccessAllowed && isAuthorizationEnabled)?c}
+                isMyResourcesEnabled : ${(realm.userManagedAccessAllowed && isAuthorizationEnabled)?c},
+                isTotpConfigured : ${isTotpConfigured?c}
             }
                 
             var availableLocales = [];
@@ -57,7 +58,7 @@
         <link rel="icon" href="${resourceUrl}/app/assets/img/favicon.ico" type="image/x-icon"/>
         <link rel="stylesheet" href="${resourceUrl}/node_modules/@patternfly/patternfly/patternfly.min.css">
 
-        <script src="${authUrl}/js/keycloak.js"></script>
+        <script src="${authUrl}js/keycloak.js"></script>
         
         <#if properties.developmentMode?has_content && properties.developmentMode == "true">
         <!-- Don't use this in production: -->
@@ -86,15 +87,19 @@
     <body>
 
         <script>
-            var keycloak = Keycloak('${authUrl}/realms/${realm.name}/account/keycloak.json');
+            var keycloak = Keycloak({
+                authServerUrl: authUrl,
+                realm: realm,
+                clientId: 'account-console'
+            });
             keycloak.init({onLoad: 'check-sso'}).success(function(authenticated) {
                 toggleReact();
                 if (!keycloak.authenticated) {
-                    document.getElementById("signInButton").style.display='inline';
-                    document.getElementById("signInLink").style.display='inline';
+                    document.getElementById("landingSignInButton").style.display='inline';
+                    document.getElementById("landingSignInLink").style.display='inline';
                 } else {
-                    document.getElementById("signOutButton").style.display='inline';
-                    document.getElementById("signOutLink").style.display='inline';
+                    document.getElementById("landingSignOutButton").style.display='inline';
+                    document.getElementById("landingSignOutLink").style.display='inline';
                 }
                     
                 loadjs("/node_modules/systemjs/dist/system.src.js", function() {
@@ -109,41 +114,15 @@
             });
         </script>
 
-<div id="main_react_container"></div>
+<div id="main_react_container" style="display:none;height:100%"></div>
 
-<div id="welcomeScreen" style="display:none">
+<div id="welcomeScreen" style="display:none;height:100%">
     <#if properties.styles?has_content>
         <#list properties.styles?split(' ') as style>
         <link href="${resourceUrl}/${style}" rel="stylesheet"/>
         </#list>
     </#if>
-    <style>
-        .pf-c-background-image {
-            --pf-c-background-image--BackgroundImage: url('${resourceUrl}/node_modules/@patternfly/patternfly/assets/images/pfbg_576.jpg');
-            --pf-c-background-image--BackgroundImage-2x: url('${resourceUrl}/node_modules/@patternfly/patternfly/assets/images/pfbg_576@2x.jpg');
-            --pf-c-background-image--BackgroundImage--sm: url('${resourceUrl}/node_modules/@patternfly/patternfly/assets/images/pfbg_768.jpg');
-            --pf-c-background-image--BackgroundImage--sm-2x: url('${resourceUrl}/node_modules/@patternfly/patternfly/assets/images/pfbg_768@2x.jpg');
-            --pf-c-background-image--BackgroundImage--lg: url('${resourceUrl}/node_modules/@patternfly/patternfly/assets/images/pfbg_1200.jpg');
-            --pf-c-background-image--Filter: url('${resourceUrl}/node_modules/@patternfly/patternfly/assets/images/background-filter.svg#image_overlay');
-        }
-    </style>
-        
-<div class="pf-c-background-image">
-  <svg xmlns="http://www.w3.org/2000/svg" class="pf-c-background-image__filter" width="0" height="0">
-    <filter id="image_overlay">
-      <feColorMatrix type="matrix" values="1 0 0 0 0
-              1 0 0 0 0
-              1 0 0 0 0
-              0 0 0 1 0" />
-      <feComponentTransfer color-interpolation-filters="sRGB" result="duotone">
-        <feFuncR type="table" tableValues="0.086274509803922 0.43921568627451"></feFuncR>
-        <feFuncG type="table" tableValues="0.086274509803922 0.43921568627451"></feFuncG>
-        <feFuncB type="table" tableValues="0.086274509803922 0.43921568627451"></feFuncB>
-        <feFuncA type="table" tableValues="0 1"></feFuncA>
-      </feComponentTransfer>
-    </filter>
-  </svg>
-</div>
+    
     <div class="pf-c-page" id="page-layout-default-nav">
       <header role="banner" class="pf-c-page__header">
         <div class="pf-c-page__header-brand">
@@ -154,7 +133,7 @@
         <div class="pf-c-page__header-tools">
             <#if referrer?has_content && referrer_uri?has_content>
             <div class="pf-c-page__header-tools-group pf-m-icons">
-              <a href="${referrer_uri}" id="referrer" tabindex="0"><span class="pf-icon pf-icon-arrow"></span>${msg("backTo",referrerName)}</a>
+              <a id="landingReferrerLink" href="${referrer_uri}" id="referrer" tabindex="0"><span class="pf-icon pf-icon-arrow"></span>${msg("backTo",referrerName)}</a>
             </div>
             </#if>
             
@@ -167,12 +146,12 @@
                     </span>
                     <i class="fas fa-caret-down pf-c-dropdown__toggle-icon" aria-hidden="true"></i>
                 </button>
-                <ul id="landing-locale-dropdown-list" class="pf-c-dropdown__menu" aria-labeledby="pf-toggle-id-20" role="menu" hidden>
+                <ul id="landing-locale-dropdown-list" class="pf-c-dropdown__menu" aria-labeledby="landing-locale-dropdown-button" role="menu" hidden>
                     <#list supportedLocales as locale, label>
                         <#if referrer?has_content && referrer_uri?has_content>
-                        <li role="none"><a href="${baseUrl}/?kc_locale=${locale}&referrer=${referrer}&referrer_uri=${referrer_uri}" role="menuitem" tabindex="0" aria-disabled="false" class="pf-c-dropdown__menu-item">${label}</a></li>
+                        <li id="landing-locale-${locale}" role="none"><a href="${baseUrl}/?kc_locale=${locale}&referrer=${referrer}&referrer_uri=${referrer_uri}" role="menuitem" tabindex="0" aria-disabled="false" class="pf-c-dropdown__menu-item">${label}</a></li>
                         <#else>
-                        <li role="none"><a href="${baseUrl}/?kc_locale=${locale}" role="menuitem" tabindex="0" aria-disabled="false" class="pf-c-dropdown__menu-item">${label}</a></li>
+                        <li id="landing-locale-${locale}" role="none"><a href="${baseUrl}/?kc_locale=${locale}" role="menuitem" tabindex="0" aria-disabled="false" class="pf-c-dropdown__menu-item">${label}</a></li>
                         </#if>
                     </#list>
                 </ul>
@@ -181,41 +160,41 @@
             </#if>
             
             <div class="pf-c-page__header-tools-group pf-m-icons">
-              <button id="signInButton" tabindex="0" style="display:none" onclick="keycloak.login();" class="pf-c-button pf-m-primary" type="button">${msg("doLogIn")}</button>
-              <button id="signOutButton" tabindex="0" style="display:none" onclick="keycloak.logout();" class="pf-c-button pf-m-primary" type="button">${msg("doSignOut")}</button>
+              <button id="landingSignInButton" tabindex="0" style="display:none" onclick="keycloak.login();" class="pf-c-button pf-m-primary" type="button">${msg("doLogIn")}</button>
+              <button id="landingSignOutButton" tabindex="0" style="display:none" onclick="keycloak.logout();" class="pf-c-button pf-m-primary" type="button">${msg("doSignOut")}</button>
             </div>
             
             <!-- Kebab for mobile -->
             <div class="pf-c-page__header-tools-group">
-                <div id="mobileKebab" class="pf-c-dropdown pf-m-mobile" onclick="toggleMobileDropdown();"> <!-- pf-m-expanded -->
-                    <button aria-label="Actions" tabindex="0" id="mobileKebabButton" class="pf-c-dropdown__toggle pf-m-plain" type="button" aria-expanded="true" aria-haspopup="true">
+                <div id="landingMobileKebab" class="pf-c-dropdown pf-m-mobile" onclick="toggleMobileDropdown();"> <!-- pf-m-expanded -->
+                    <button aria-label="Actions" tabindex="0" id="landingMobileKebabButton" class="pf-c-dropdown__toggle pf-m-plain" type="button" aria-expanded="true" aria-haspopup="true">
                         <i class="fas fa-ellipsis-v" aria-hidden="false"></i>
                     </button>
-                    <ul id="mobileDropdown" aria-labelledby="pf-toggle-id-2" class="pf-c-dropdown__menu pf-m-align-right" role="menu" style="display:none">
+                    <ul id="landingMobileDropdown" aria-labelledby="landingMobileKebabButton" class="pf-c-dropdown__menu pf-m-align-right" role="menu" style="display:none">
                         <#if referrer?has_content && referrer_uri?has_content>
                         <li role="none">
-                            <a href="${referrer_uri}" role="menuitem" tabindex="0" aria-disabled="false" class="pf-c-dropdown__menu-item">${msg("backTo",referrerName)}</a>
+                            <a id="landingMobileReferrerLink" href="${referrer_uri}" role="menuitem" tabindex="0" aria-disabled="false" class="pf-c-dropdown__menu-item">${msg("backTo",referrerName)}</a>
                         </li>
                         </#if>
                         
                         <!-- locale selector for mobile -->
                         <#if realm.internationalizationEnabled  && supportedLocales?size gt 1>
-                            <li role="none" aria-expanded="false" onclick="toggleMobileChooseLocale();"><a href="#" class="pf-c-dropdown__menu-item">${msg("locale_" + locale)} <i id="mobileLocaleSelectedIcon" class="fas fa-angle-right pf-c-options-menu__menu-item-icon" aria-hidden="true"></i></a></li>
+                            <li role="none" aria-expanded="false" onclick="toggleMobileChooseLocale();"><a href="#" id="landing-mobile-local-toggle" class="pf-c-dropdown__menu-item">${msg("locale_" + locale)} <i id="landingMobileLocaleSelectedIcon" class="fas fa-angle-right pf-c-options-menu__menu-item-icon" aria-hidden="true"></i></a></li>
                             <#list supportedLocales as locale, label>
                                 <#if referrer?has_content && referrer_uri?has_content>
-                                <li role="none" id="mobile-locale-${locale}" style="display:none"><a href="${baseUrl}/?kc_locale=${locale}&referrer=${referrer}&referrer_uri=${referrer_uri}" role="menuitem" tabindex="0" aria-disabled="false" class="pf-c-dropdown__menu-item">${label}</a></li>
+                                <li role="none" id="landing-mobile-locale-${locale}" style="display:none"><a href="${baseUrl}/?kc_locale=${locale}&referrer=${referrer}&referrer_uri=${referrer_uri}" role="menuitem" tabindex="0" aria-disabled="false" class="pf-c-dropdown__menu-item">${label}</a></li>
                                 <#else>
-                                <li role="none" id="mobile-locale-${locale}" style="display:none"><a href="${baseUrl}/?kc_locale=${locale}" role="menuitem" tabindex="0" aria-disabled="false" class="pf-c-dropdown__menu-item">${label}</a></li>
+                                <li role="none" id="landing-mobile-locale-${locale}" style="display:none"><a href="${baseUrl}/?kc_locale=${locale}" role="menuitem" tabindex="0" aria-disabled="false" class="pf-c-dropdown__menu-item">${label}</a></li>
                                 </#if>
                             </#list>
-                            <li id="mobileLocaleSeperator" class="pf-c-dropdown__separator" role="separator" style="display:none"></li>
+                            <li id="landingMobileLocaleSeparator" class="pf-c-dropdown__separator" role="separator" style="display:none"></li>
                         </#if>
                         <!-- end locale selector for mobile -->
 
-                        <li id="signInLink" role="none" style="display:none">
+                        <li id="landingSignInLink" role="none" style="display:none">
                             <a href="#" onclick="keycloak.login();" role="menuitem" tabindex="0" aria-disabled="false" class="pf-c-dropdown__menu-item">${msg("doLogIn")}</a>
                         </li>
-                        <li id="signOutLink" role="none" style="display:none">
+                        <li id="landingSignOutLink" role="none" style="display:none">
                             <a href="#" onclick="keycloak.logout();" role="menuitem" tabindex="0" aria-disabled="false" class="pf-c-dropdown__menu-item">${msg("doSignOut")}</a>
                         </li>
                     </ul>
@@ -227,7 +206,7 @@
 
       <main role="main" class="pf-c-page__main">
         <section class="pf-c-page__main-section pf-m-light">
-          <div class="pf-c-content">
+          <div class="pf-c-content" id="landingWelcomeMessage">
             <h1>${msg("accountManagementWelcomeMessage")}</h1>
           </div>
         </section>
@@ -240,7 +219,7 @@
                     <h6>${msg("personalInfoIntroMessage")}</h6>
                 </div>
                 <div class="pf-c-card__body pf-c-content">
-                    <h5 id="personalInfoLink"><a href="#/app/personal-info">${msg("personalInfoHtmlTitle")}</a></h5>
+                    <h5 id="landingPersonalInfoLink"><a href="#/app/personal-info">${msg("personalInfoHtmlTitle")}</a></h5>
                 </div>
               </div>
             </div>
@@ -251,10 +230,9 @@
                     <h6>${msg("accountSecurityIntroMessage")}</h6>
                 </div>
                 <div class="pf-c-card__body pf-c-content">
-                    <h5 id="changePasswordLink"><a href="#/app/security/password">${msg("changePasswordHtmlTitle")}</a></h5>
-                    <h5 id="authenticatorLink"><a href="#/app/security/authenticator">${msg("authenticatorTitle")}</a></h5>
-                    <h5 id="deviceActivityLink"><a href="#/app/security/device-activity">${msg("deviceActivityHtmlTitle")}</a></h5>
-                    <h5 id="linkedAccountsLink" style="display:none"><a href="#/app/security/linked-accounts">${msg("linkedAccountsHtmlTitle")}</a></h5>
+                    <h5 id="landingSigningInLink"><a href="#/app/security/signingin">${msg("signingIn")}</a></h5>
+                    <h5 id="landingDeviceActivityLink"><a href="#/app/security/device-activity">${msg("deviceActivityHtmlTitle")}</a></h5>
+                    <h5 id="landingLinkedAccountsLink" style="display:none"><a href="#/app/security/linked-accounts">${msg("linkedAccountsHtmlTitle")}</a></h5>
                 </div>
               </div>
             </div>
@@ -265,18 +243,18 @@
                     <h6>${msg("applicationsIntroMessage")}</h6>
                 </div>
                 <div class="pf-c-card__body pf-c-content">
-                    <h5 id="applicationsLink"><a href="#/app/applications">${msg("applicationsHtmlTitle")}</a></h5>
+                    <h5 id="landingApplicationsLink"><a href="#/app/applications">${msg("applicationsHtmlTitle")}</a></h5>
                 </div>
               </div>
             </div>
-            <div class="pf-l-gallery__item" style="display:none" id="myResourcesCard">
+            <div class="pf-l-gallery__item" style="display:none" id="landingMyResourcesCard">
               <div class="pf-c-card">
                 <div class="pf-c-card__header pf-c-content">
                     <h2><i class="pf-icon pf-icon-repository"></i>&nbsp${msg("myResources")}</h2>
                     <h6>${msg("resourceIntroMessage")}</h6>
                 </div>
                 <div class="pf-c-card__body pf-c-content">
-                    <h5 id="myResourcesLink"><a href="#/app/my-resources">${msg("myResources")}</a></h5>
+                    <h5 id="landingMyResourcesLink"><a href="#/app/resources">${msg("myResources")}</a></h5>
                 </div>
               </div>
             </div>
@@ -288,12 +266,13 @@
 
         <script>
             if (features.isLinkedAccountsEnabled) {
-                document.getElementById("linkedAccountsLink").style.display='block';
+                document.getElementById("landingLinkedAccountsLink").style.display='block';
             };
-                
-            if (features.isMyResourcesEnabled) {
-                document.getElementById("myResourcesCard").style.display='block';
-            };
+
+            // Hidden until feature is complete.  
+            //if (features.isMyResourcesEnabled) {
+            //    document.getElementById("landingMyResourcesCard").style.display='block';
+            //};
         </script>
 
     </body>

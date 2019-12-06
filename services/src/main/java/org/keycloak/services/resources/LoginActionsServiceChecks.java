@@ -222,7 +222,7 @@ public class LoginActionsServiceChecks {
 
             ClientModel client = context.getAuthenticationSession().getClient();
 
-            if (RedirectUtils.verifyRedirectUri(context.getUriInfo(), redirectUri, context.getRealm(), client) == null) {
+            if (RedirectUtils.verifyRedirectUri(context.getSession(), redirectUri, client) == null) {
                 throw new ExplainedTokenVerificationException(t, Errors.INVALID_REDIRECT_URI, Messages.INVALID_REDIRECT_URI);
             }
 

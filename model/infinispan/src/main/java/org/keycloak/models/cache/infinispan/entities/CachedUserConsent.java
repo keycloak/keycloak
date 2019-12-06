@@ -18,8 +18,6 @@
 package org.keycloak.models.cache.infinispan.entities;
 
 import org.keycloak.models.ClientScopeModel;
-import org.keycloak.models.ProtocolMapperModel;
-import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserConsentModel;
 
 import java.util.HashSet;

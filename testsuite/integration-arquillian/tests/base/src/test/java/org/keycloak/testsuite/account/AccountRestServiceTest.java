@@ -19,13 +19,18 @@ package org.keycloak.testsuite.account;
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.junit.Test;
 import org.keycloak.broker.provider.util.SimpleHttp;
+import org.keycloak.representations.account.ClientRepresentation;
+import org.keycloak.representations.account.ConsentRepresentation;
+import org.keycloak.representations.account.ConsentScopeRepresentation;
 import org.keycloak.representations.account.SessionRepresentation;
 import org.keycloak.representations.account.UserRepresentation;
+import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.account.AccountCredentialResource;
 import org.keycloak.services.resources.account.AccountCredentialResource.PasswordUpdate;
+import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.util.TokenUtil;
 
 import java.io.IOException;
@@ -37,7 +42,6 @@ import java.util.Map;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.junit.Assert.*;
 import static org.keycloak.common.Profile.Feature.ACCOUNT_API;
-import static org.keycloak.testsuite.ProfileAssume.assumeFeatureEnabled;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -187,25 +191,8 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
     
     @Test
     public void testProfilePreviewPermissions() throws IOException {
-        assumeFeatureEnabled(ACCOUNT_API);
-        
         TokenUtil noaccessToken = new TokenUtil("no-account-access", "password");
         TokenUtil viewToken = new TokenUtil("view-account-access", "password");
-        
-        // Read sessions with no access
-        assertEquals(403, SimpleHttp.doGet(getAccountUrl("sessions"), httpClient).header("Accept", "application/json").auth(noaccessToken.getToken()).asStatus());
-        
-        // Delete all sessions with no access
-        assertEquals(403, SimpleHttp.doDelete(getAccountUrl("sessions"), httpClient).header("Accept", "application/json").auth(noaccessToken.getToken()).asStatus());
-        
-        // Delete all sessions with read only
-        assertEquals(403, SimpleHttp.doDelete(getAccountUrl("sessions"), httpClient).header("Accept", "application/json").auth(viewToken.getToken()).asStatus());
-        
-        // Delete single session with no access
-        assertEquals(403, SimpleHttp.doDelete(getAccountUrl("session?id=bogusId"), httpClient).header("Accept", "application/json").auth(noaccessToken.getToken()).asStatus());
-        
-        // Delete single session with read only
-        assertEquals(403, SimpleHttp.doDelete(getAccountUrl("session?id=bogusId"), httpClient).header("Accept", "application/json").auth(viewToken.getToken()).asStatus());
         
         // Read password details with no access
         assertEquals(403, SimpleHttp.doGet(getAccountUrl("credentials/password"), httpClient).header("Accept", "application/json").auth(noaccessToken.getToken()).asStatus());
@@ -229,25 +216,12 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
     }
 
     @Test
-    public void testGetSessions() throws IOException {
-        assumeFeatureEnabled(ACCOUNT_API);
-        
-        List<SessionRepresentation> sessions = SimpleHttp.doGet(getAccountUrl("sessions"), httpClient).auth(tokenUtil.getToken()).asJson(new TypeReference<List<SessionRepresentation>>() {});
-
-        assertEquals(1, sessions.size());
-    }
-
-    @Test
     public void testGetPasswordDetails() throws IOException {
-        assumeFeatureEnabled(ACCOUNT_API);
-        
         getPasswordDetails();
     }
 
     @Test
     public void testPostPasswordUpdate() throws IOException {
-        assumeFeatureEnabled(ACCOUNT_API);
-        
         //Get the time of lastUpdate
         AccountCredentialResource.PasswordDetails initialDetails = getPasswordDetails();
 
@@ -271,8 +245,6 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
 
     @Test
     public void testPasswordConfirmation() throws IOException {
-        assumeFeatureEnabled(ACCOUNT_API);
-        
         updatePassword("password", "Str0ng3rP4ssw0rd", "confirmationDoesNotMatch", 400);
 
         updatePassword("password", "Str0ng3rP4ssw0rd", "Str0ng3rP4ssw0rd", 200);
@@ -313,24 +285,417 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
     }
 
     @Test
-    public void testDeleteSession() throws IOException {
-        assumeFeatureEnabled(ACCOUNT_API);
-        
-        TokenUtil viewToken = new TokenUtil("view-account-access", "password");
-        String sessionId = oauth.doLogin("view-account-access", "password").getSessionState();
-        List<SessionRepresentation> sessions = SimpleHttp.doGet(getAccountUrl("sessions"), httpClient).auth(viewToken.getToken()).asJson(new TypeReference<List<SessionRepresentation>>() {});
-        assertEquals(2, sessions.size());
+    public void listApplications() throws IOException {
+        TokenUtil token = new TokenUtil("view-applications-access", "password");
+        List<ClientRepresentation> applications = SimpleHttp
+                .doGet(getAccountUrl("applications"), httpClient)
+                .header("Accept", "application/json")
+                .auth(token.getToken())
+                .asJson(new TypeReference<List<ClientRepresentation>>() {
+                });
+        assertFalse(applications.isEmpty());
+    }
 
-        // With `ViewToken` you can only read
-        int status = SimpleHttp.doDelete(getAccountUrl("session?id=" + sessionId), httpClient).acceptJson().auth(viewToken.getToken()).asStatus();
-        assertEquals(403, status);
-        sessions = SimpleHttp.doGet(getAccountUrl("sessions"), httpClient).auth(viewToken.getToken()).asJson(new TypeReference<List<SessionRepresentation>>() {});
-        assertEquals(2, sessions.size());
+    @Test
+    public void listApplicationsWithoutPermission() throws IOException {
+        TokenUtil token = new TokenUtil("view-account-access", "password");
+        SimpleHttp.Response response = SimpleHttp
+                .doGet(getAccountUrl("applications"), httpClient)
+                .header("Accept", "application/json")
+                .auth(token.getToken())
+                .asResponse();
+        assertEquals(403, response.getStatus());
+    }
 
-        // Here you can delete the session
-        status = SimpleHttp.doDelete(getAccountUrl("session?id=" + sessionId), httpClient).acceptJson().auth(tokenUtil.getToken()).asStatus();
-        assertEquals(200, status);
-        sessions = SimpleHttp.doGet(getAccountUrl("sessions"), httpClient).auth(tokenUtil.getToken()).asJson(new TypeReference<List<SessionRepresentation>>() {});
-        assertEquals(1, sessions.size());
+    @Test
+    public void getWebConsoleApplication() throws IOException {
+        TokenUtil token = new TokenUtil("view-applications-access", "password");
+        String appId = "security-admin-console";
+        ClientRepresentation webConsole = SimpleHttp
+                .doGet(getAccountUrl("applications/" + appId), httpClient)
+                .header("Accept", "application/json")
+                .auth(token.getToken())
+                .asJson(ClientRepresentation.class);
+        assertEquals(appId, webConsole.getClientId());
+    }
+
+    @Test
+    public void getWebConsoleApplicationWithoutPermission() throws IOException {
+        TokenUtil token = new TokenUtil("view-account-access", "password");
+        String appId = "security-admin-console";
+        SimpleHttp.Response response = SimpleHttp
+                .doGet(getAccountUrl("applications/" + appId), httpClient)
+                .header("Accept", "application/json")
+                .auth(token.getToken())
+                .asResponse();
+        assertEquals(403, response.getStatus());
+    }
+
+    @Test
+    public void getNotExistingApplication() throws IOException {
+        TokenUtil token = new TokenUtil("view-applications-access", "password");
+        String appId = "not-existing";
+        SimpleHttp.Response response = SimpleHttp
+                .doGet(getAccountUrl("applications/" + appId), httpClient)
+                .header("Accept", "application/json")
+                .auth(token.getToken())
+                .asResponse();
+        assertEquals(404, response.getStatus());
+    }
+
+    @Test
+    public void createConsentForClient() throws IOException {
+        TokenUtil token = new TokenUtil("manage-consent-access", "password");
+        String appId = "security-admin-console";
+
+        ClientScopeRepresentation clientScopeRepresentation = testRealm().clientScopes().findAll().get(0);
+        ConsentScopeRepresentation consentScopeRepresentation = new ConsentScopeRepresentation();
+        consentScopeRepresentation.setId(clientScopeRepresentation.getId());
+
+        ConsentRepresentation requestedConsent = new ConsentRepresentation();
+        requestedConsent.setScopes(Collections.singletonList(consentScopeRepresentation));
+
+        ConsentRepresentation consentRepresentation = SimpleHttp
+                .doPost(getAccountUrl("applications/" + appId + "/consent"), httpClient)
+                .header("Accept", "application/json")
+                .json(requestedConsent)
+                .auth(token.getToken())
+                .asJson(ConsentRepresentation.class);
+        assertTrue(consentRepresentation.getCreatedDate() > 0);
+        assertTrue(consentRepresentation.getLastUpdatedDate() > 0);
+        assertEquals(1, consentRepresentation.getScopes().size());
+        assertEquals(consentScopeRepresentation.getId(), consentRepresentation.getScopes().get(0).getId());
+    }
+
+    @Test
+    public void updateConsentForClient() throws IOException {
+        TokenUtil token = new TokenUtil("manage-consent-access", "password");
+        String appId = "security-admin-console";
+
+        ClientScopeRepresentation clientScopeRepresentation = testRealm().clientScopes().findAll().get(0);
+        ConsentScopeRepresentation consentScopeRepresentation = new ConsentScopeRepresentation();
+        consentScopeRepresentation.setId(clientScopeRepresentation.getId());
+
+        ConsentRepresentation requestedConsent = new ConsentRepresentation();
+        requestedConsent.setScopes(Collections.singletonList(consentScopeRepresentation));
+
+        ConsentRepresentation consentRepresentation = SimpleHttp
+                .doPost(getAccountUrl("applications/" + appId + "/consent"), httpClient)
+                .header("Accept", "application/json")
+                .json(requestedConsent)
+                .auth(token.getToken())
+                .asJson(ConsentRepresentation.class);
+        assertTrue(consentRepresentation.getCreatedDate() > 0);
+        assertTrue(consentRepresentation.getLastUpdatedDate() > 0);
+        assertEquals(1, consentRepresentation.getScopes().size());
+        assertEquals(consentScopeRepresentation.getId(), consentRepresentation.getScopes().get(0).getId());
+
+        clientScopeRepresentation = testRealm().clientScopes().findAll().get(1);
+        consentScopeRepresentation = new ConsentScopeRepresentation();
+        consentScopeRepresentation.setId(clientScopeRepresentation.getId());
+
+        requestedConsent = new ConsentRepresentation();
+        requestedConsent.setScopes(Collections.singletonList(consentScopeRepresentation));
+
+        ConsentRepresentation consentRepresentation2 = SimpleHttp
+                .doPost(getAccountUrl("applications/" + appId + "/consent"), httpClient)
+                .header("Accept", "application/json")
+                .json(requestedConsent)
+                .auth(token.getToken())
+                .asJson(ConsentRepresentation.class);
+        assertTrue(consentRepresentation2.getCreatedDate() > 0);
+        assertEquals(consentRepresentation.getCreatedDate(), consentRepresentation2.getCreatedDate());
+        assertTrue(consentRepresentation2.getLastUpdatedDate() > 0);
+        assertTrue(consentRepresentation2.getLastUpdatedDate() > consentRepresentation.getLastUpdatedDate());
+        assertEquals(1, consentRepresentation2.getScopes().size());
+        assertEquals(consentScopeRepresentation.getId(), consentRepresentation2.getScopes().get(0).getId());
+    }
+
+    @Test
+    public void createConsentForNotExistingClient() throws IOException {
+        TokenUtil token = new TokenUtil("manage-consent-access", "password");
+        String appId = "not-existing";
+
+        ClientScopeRepresentation clientScopeRepresentation = testRealm().clientScopes().findAll().get(0);
+        ConsentScopeRepresentation consentScopeRepresentation = new ConsentScopeRepresentation();
+        consentScopeRepresentation.setId(clientScopeRepresentation.getId());
+
+        ConsentRepresentation requestedConsent = new ConsentRepresentation();
+        requestedConsent.setScopes(Collections.singletonList(consentScopeRepresentation));
+
+        SimpleHttp.Response response = SimpleHttp
+                .doPost(getAccountUrl("applications/" + appId + "/consent"), httpClient)
+                .header("Accept", "application/json")
+                .json(requestedConsent)
+                .auth(token.getToken())
+                .asResponse();
+
+        assertEquals(404, response.getStatus());
+    }
+
+    @Test
+    public void createConsentForClientWithoutPermission() throws IOException {
+        TokenUtil token = new TokenUtil("view-consent-access", "password");
+        String appId = "security-admin-console";
+
+        ClientScopeRepresentation clientScopeRepresentation = testRealm().clientScopes().findAll().get(0);
+        ConsentScopeRepresentation consentScopeRepresentation = new ConsentScopeRepresentation();
+        consentScopeRepresentation.setId(clientScopeRepresentation.getId());
+
+        ConsentRepresentation requestedConsent = new ConsentRepresentation();
+        requestedConsent.setScopes(Collections.singletonList(consentScopeRepresentation));
+
+        SimpleHttp.Response response = SimpleHttp
+                .doPost(getAccountUrl("applications/" + appId + "/consent"), httpClient)
+                .header("Accept", "application/json")
+                .json(requestedConsent)
+                .auth(token.getToken())
+                .asResponse();
+
+        assertEquals(403, response.getStatus());
+    }
+
+    @Test
+    public void createConsentForClientWithPut() throws IOException {
+        TokenUtil token = new TokenUtil("manage-consent-access", "password");
+        String appId = "security-admin-console";
+
+        ClientScopeRepresentation clientScopeRepresentation = testRealm().clientScopes().findAll().get(0);
+        ConsentScopeRepresentation consentScopeRepresentation = new ConsentScopeRepresentation();
+        consentScopeRepresentation.setId(clientScopeRepresentation.getId());
+
+        ConsentRepresentation requestedConsent = new ConsentRepresentation();
+        requestedConsent.setScopes(Collections.singletonList(consentScopeRepresentation));
+
+        ConsentRepresentation consentRepresentation = SimpleHttp
+                .doPut(getAccountUrl("applications/" + appId + "/consent"), httpClient)
+                .header("Accept", "application/json")
+                .json(requestedConsent)
+                .auth(token.getToken())
+                .asJson(ConsentRepresentation.class);
+        assertTrue(consentRepresentation.getCreatedDate() > 0);
+        assertTrue(consentRepresentation.getLastUpdatedDate() > 0);
+        assertEquals(1, consentRepresentation.getScopes().size());
+        assertEquals(consentScopeRepresentation.getId(), consentRepresentation.getScopes().get(0).getId());
+    }
+
+    @Test
+    public void updateConsentForClientWithPut() throws IOException {
+        TokenUtil token = new TokenUtil("manage-consent-access", "password");
+        String appId = "security-admin-console";
+
+        ClientScopeRepresentation clientScopeRepresentation = testRealm().clientScopes().findAll().get(0);
+        ConsentScopeRepresentation consentScopeRepresentation = new ConsentScopeRepresentation();
+        consentScopeRepresentation.setId(clientScopeRepresentation.getId());
+
+        ConsentRepresentation requestedConsent = new ConsentRepresentation();
+        requestedConsent.setScopes(Collections.singletonList(consentScopeRepresentation));
+
+        ConsentRepresentation consentRepresentation = SimpleHttp
+                .doPut(getAccountUrl("applications/" + appId + "/consent"), httpClient)
+                .header("Accept", "application/json")
+                .json(requestedConsent)
+                .auth(token.getToken())
+                .asJson(ConsentRepresentation.class);
+        assertTrue(consentRepresentation.getCreatedDate() > 0);
+        assertTrue(consentRepresentation.getLastUpdatedDate() > 0);
+        assertEquals(1, consentRepresentation.getScopes().size());
+        assertEquals(consentScopeRepresentation.getId(), consentRepresentation.getScopes().get(0).getId());
+
+        clientScopeRepresentation = testRealm().clientScopes().findAll().get(1);
+        consentScopeRepresentation = new ConsentScopeRepresentation();
+        consentScopeRepresentation.setId(clientScopeRepresentation.getId());
+
+        requestedConsent = new ConsentRepresentation();
+        requestedConsent.setScopes(Collections.singletonList(consentScopeRepresentation));
+
+        ConsentRepresentation consentRepresentation2 = SimpleHttp
+                .doPut(getAccountUrl("applications/" + appId + "/consent"), httpClient)
+                .header("Accept", "application/json")
+                .json(requestedConsent)
+                .auth(token.getToken())
+                .asJson(ConsentRepresentation.class);
+        assertTrue(consentRepresentation2.getCreatedDate() > 0);
+        assertEquals(consentRepresentation.getCreatedDate(), consentRepresentation2.getCreatedDate());
+        assertTrue(consentRepresentation2.getLastUpdatedDate() > 0);
+        assertTrue(consentRepresentation2.getLastUpdatedDate() > consentRepresentation.getLastUpdatedDate());
+        assertEquals(1, consentRepresentation2.getScopes().size());
+        assertEquals(consentScopeRepresentation.getId(), consentRepresentation2.getScopes().get(0).getId());
+    }
+
+    @Test
+    public void createConsentForNotExistingClientWithPut() throws IOException {
+        TokenUtil token = new TokenUtil("manage-consent-access", "password");
+        String appId = "not-existing";
+
+        ClientScopeRepresentation clientScopeRepresentation = testRealm().clientScopes().findAll().get(0);
+        ConsentScopeRepresentation consentScopeRepresentation = new ConsentScopeRepresentation();
+        consentScopeRepresentation.setId(clientScopeRepresentation.getId());
+
+        ConsentRepresentation requestedConsent = new ConsentRepresentation();
+        requestedConsent.setScopes(Collections.singletonList(consentScopeRepresentation));
+
+        SimpleHttp.Response response = SimpleHttp
+                .doPut(getAccountUrl("applications/" + appId + "/consent"), httpClient)
+                .header("Accept", "application/json")
+                .json(requestedConsent)
+                .auth(token.getToken())
+                .asResponse();
+
+        assertEquals(404, response.getStatus());
+    }
+
+    @Test
+    public void createConsentForClientWithoutPermissionWithPut() throws IOException {
+        TokenUtil token = new TokenUtil("view-consent-access", "password");
+        String appId = "security-admin-console";
+
+        ClientScopeRepresentation clientScopeRepresentation = testRealm().clientScopes().findAll().get(0);
+        ConsentScopeRepresentation consentScopeRepresentation = new ConsentScopeRepresentation();
+        consentScopeRepresentation.setId(clientScopeRepresentation.getId());
+
+        ConsentRepresentation requestedConsent = new ConsentRepresentation();
+        requestedConsent.setScopes(Collections.singletonList(consentScopeRepresentation));
+
+        SimpleHttp.Response response = SimpleHttp
+                .doPut(getAccountUrl("applications/" + appId + "/consent"), httpClient)
+                .header("Accept", "application/json")
+                .json(requestedConsent)
+                .auth(token.getToken())
+                .asResponse();
+
+        assertEquals(403, response.getStatus());
+    }
+
+    @Test
+    public void getConsentForClient() throws IOException {
+        TokenUtil token = new TokenUtil("manage-consent-access", "password");
+        String appId = "security-admin-console";
+
+        ClientScopeRepresentation clientScopeRepresentation = testRealm().clientScopes().findAll().get(0);
+        ConsentScopeRepresentation consentScopeRepresentation = new ConsentScopeRepresentation();
+        consentScopeRepresentation.setId(clientScopeRepresentation.getId());
+
+        ConsentRepresentation requestedConsent = new ConsentRepresentation();
+        requestedConsent.setScopes(Collections.singletonList(consentScopeRepresentation));
+
+        ConsentRepresentation consentRepresentation1 = SimpleHttp
+                .doPost(getAccountUrl("applications/" + appId + "/consent"), httpClient)
+                .header("Accept", "application/json")
+                .json(requestedConsent)
+                .auth(token.getToken())
+                .asJson(ConsentRepresentation.class);
+        assertTrue(consentRepresentation1.getCreatedDate() > 0);
+        assertTrue(consentRepresentation1.getLastUpdatedDate() > 0);
+        assertEquals(1, consentRepresentation1.getScopes().size());
+        assertEquals(consentScopeRepresentation.getId(), consentRepresentation1.getScopes().get(0).getId());
+
+        ConsentRepresentation consentRepresentation2 = SimpleHttp
+                .doGet(getAccountUrl("applications/" + appId + "/consent"), httpClient)
+                .header("Accept", "application/json")
+                .auth(token.getToken())
+                .asJson(ConsentRepresentation.class);
+        assertEquals(consentRepresentation1.getLastUpdatedDate(), consentRepresentation2.getLastUpdatedDate());
+        assertEquals(consentRepresentation1.getCreatedDate(), consentRepresentation2.getCreatedDate());
+        assertEquals(consentRepresentation1.getScopes().get(0).getId(), consentRepresentation2.getScopes().get(0).getId());
+    }
+
+    @Test
+    public void getConsentForNotExistingClient() throws IOException {
+        TokenUtil token = new TokenUtil("view-consent-access", "password");
+        String appId = "not-existing";
+        SimpleHttp.Response response = SimpleHttp
+                .doGet(getAccountUrl("applications/" + appId + "/consent"), httpClient)
+                .header("Accept", "application/json")
+                .auth(token.getToken())
+                .asResponse();
+        assertEquals(404, response.getStatus());
+    }
+
+    @Test
+    public void getNotExistingConsentForClient() throws IOException {
+        TokenUtil token = new TokenUtil("view-consent-access", "password");
+        String appId = "security-admin-console";
+        SimpleHttp.Response response = SimpleHttp
+                .doGet(getAccountUrl("applications/" + appId + "/consent"), httpClient)
+                .header("Accept", "application/json")
+                .auth(token.getToken())
+                .asResponse();
+        assertEquals(204, response.getStatus());
+    }
+
+    @Test
+    public void getConsentWithoutPermission() throws IOException {
+        TokenUtil token = new TokenUtil("view-applications-access", "password");
+        String appId = "security-admin-console";
+        SimpleHttp.Response response = SimpleHttp
+                .doGet(getAccountUrl("applications/" + appId + "/consent"), httpClient)
+                .header("Accept", "application/json")
+                .auth(token.getToken())
+                .asResponse();
+        assertEquals(403, response.getStatus());
+    }
+
+    @Test
+    public void deleteConsentForClient() throws IOException {
+        TokenUtil token = new TokenUtil("manage-consent-access", "password");
+        String appId = "security-admin-console";
+
+        ClientScopeRepresentation clientScopeRepresentation = testRealm().clientScopes().findAll().get(0);
+        ConsentScopeRepresentation consentScopeRepresentation = new ConsentScopeRepresentation();
+        consentScopeRepresentation.setId(clientScopeRepresentation.getId());
+
+        ConsentRepresentation requestedConsent = new ConsentRepresentation();
+        requestedConsent.setScopes(Collections.singletonList(consentScopeRepresentation));
+
+        ConsentRepresentation consentRepresentation = SimpleHttp
+                .doPost(getAccountUrl("applications/" + appId + "/consent"), httpClient)
+                .header("Accept", "application/json")
+                .json(requestedConsent)
+                .auth(token.getToken())
+                .asJson(ConsentRepresentation.class);
+        assertTrue(consentRepresentation.getCreatedDate() > 0);
+        assertTrue(consentRepresentation.getLastUpdatedDate() > 0);
+        assertEquals(1, consentRepresentation.getScopes().size());
+        assertEquals(consentScopeRepresentation.getId(), consentRepresentation.getScopes().get(0).getId());
+
+        SimpleHttp.Response response = SimpleHttp
+                .doDelete(getAccountUrl("applications/" + appId + "/consent"), httpClient)
+                .header("Accept", "application/json")
+                .auth(token.getToken())
+                .asResponse();
+        assertEquals(202, response.getStatus());
+
+        response = SimpleHttp
+                .doDelete(getAccountUrl("applications/" + appId + "/consent"), httpClient)
+                .header("Accept", "application/json")
+                .auth(token.getToken())
+                .asResponse();
+        assertEquals(202, response.getStatus());
+    }
+
+    @Test
+    public void deleteConsentForNotExistingClient() throws IOException {
+        TokenUtil token = new TokenUtil("manage-consent-access", "password");
+        String appId = "not-existing";
+        SimpleHttp.Response response = SimpleHttp
+                .doDelete(getAccountUrl("applications/" + appId + "/consent"), httpClient)
+                .header("Accept", "application/json")
+                .auth(token.getToken())
+                .asResponse();
+        assertEquals(404, response.getStatus());
+    }
+
+
+    @Test
+    public void deleteConsentWithoutPermission() throws IOException {
+        TokenUtil token = new TokenUtil("view-consent-access", "password");
+        String appId = "security-admin-console";
+        SimpleHttp.Response response = SimpleHttp
+                .doDelete(getAccountUrl("applications/" + appId + "/consent"), httpClient)
+                .header("Accept", "application/json")
+                .auth(token.getToken())
+                .asResponse();
+        assertEquals(403, response.getStatus());
     }
 }

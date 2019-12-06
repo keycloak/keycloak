@@ -61,7 +61,7 @@ public class ReferenceList {
         }
     }
 
-    private List<References> referencesList = new ArrayList<References>();
+    private List<References> referencesList = new ArrayList<>();
 
     public void add(References ref) {
         this.referencesList.add(ref);

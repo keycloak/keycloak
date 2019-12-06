@@ -43,7 +43,7 @@ public interface ClientAttributeCertificateResource {
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
-    public CertificateRepresentation getKeyInfo();
+    CertificateRepresentation getKeyInfo();
 
     /**
      * Generate a new certificate with new key pair
@@ -54,7 +54,7 @@ public interface ClientAttributeCertificateResource {
     @NoCache
     @Path("generate")
     @Produces(MediaType.APPLICATION_JSON)
-    public CertificateRepresentation generate();
+    CertificateRepresentation generate();
 
     /**
      * Upload certificate and eventually private key
@@ -66,7 +66,7 @@ public interface ClientAttributeCertificateResource {
     @Path("upload")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces(MediaType.APPLICATION_JSON)
-    public CertificateRepresentation uploadJks(MultipartFormDataOutput output);
+    CertificateRepresentation uploadJks(MultipartFormDataOutput output);
 
     /**
      * Upload only certificate, not private key
@@ -78,7 +78,7 @@ public interface ClientAttributeCertificateResource {
     @Path("upload-certificate")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces(MediaType.APPLICATION_JSON)
-    public CertificateRepresentation uploadJksCertificate(MultipartFormDataOutput output);
+    CertificateRepresentation uploadJksCertificate(MultipartFormDataOutput output);
 
     /**
      * Get a keystore file for the client, containing private key and public certificate
@@ -91,7 +91,7 @@ public interface ClientAttributeCertificateResource {
     @Path("/download")
     @Produces(MediaType.APPLICATION_OCTET_STREAM)
     @Consumes(MediaType.APPLICATION_JSON)
-    public byte[] getKeystore(final KeyStoreConfig config);
+    byte[] getKeystore(final KeyStoreConfig config);
 
     /**
      * Generate a new keypair and certificate, and get the private key file
@@ -107,5 +107,5 @@ public interface ClientAttributeCertificateResource {
     @Path("/generate-and-download")
     @Produces(MediaType.APPLICATION_OCTET_STREAM)
     @Consumes(MediaType.APPLICATION_JSON)
-    public byte[] generateAndGetKeystore(final KeyStoreConfig config);
+    byte[] generateAndGetKeystore(final KeyStoreConfig config);
 }

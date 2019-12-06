@@ -4,88 +4,88 @@
     <dependency>
       <groupId>org.bouncycastle</groupId>
       <artifactId>bcpkix-jdk15on</artifactId>
-      <version>1.56</version>
+      <version>1.60</version>
       <licenses>
         <license>
           <name>MIT License</name>
-          <url>https://raw.githubusercontent.com/bcgit/bc-java/r1rv56/LICENSE.html</url>
+          <url>https://raw.githubusercontent.com/bcgit/bc-java/r1rv60/LICENSE.html</url>
         </license>
       </licenses>
     </dependency>
     <dependency>
       <groupId>org.bouncycastle</groupId>
       <artifactId>bcprov-jdk15on</artifactId>
-      <version>1.56</version>
+      <version>1.60</version>
       <licenses>
         <license>
           <name>MIT License</name>
-          <url>https://raw.githubusercontent.com/bcgit/bc-java/r1rv56/LICENSE.html</url>
+          <url>https://raw.githubusercontent.com/bcgit/bc-java/r1rv60/LICENSE.html</url>
         </license>
       </licenses>
     </dependency>
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-annotations</artifactId>
-      <version>2.8.11</version>
+      <version>2.9.10</version>
       <licenses>
         <license>
           <name>Apache Software License 2.0</name>
-          <url>https://raw.githubusercontent.com/FasterXML/jackson-annotations/jackson-annotations-2.8.11/src/main/resources/META-INF/LICENSE</url>
+          <url>https://raw.githubusercontent.com/FasterXML/jackson-annotations/jackson-annotations-2.9.10/src/main/resources/META-INF/LICENSE</url>
         </license>
       </licenses>
     </dependency>
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-core</artifactId>
-      <version>2.8.11</version>
+      <version>2.9.10</version>
       <licenses>
         <license>
           <name>Apache Software License 2.0</name>
-          <url>https://raw.githubusercontent.com/FasterXML/jackson-core/jackson-core-2.8.11/src/main/resources/META-INF/LICENSE</url>
+          <url>https://raw.githubusercontent.com/FasterXML/jackson-core/jackson-core-2.9.10/src/main/resources/META-INF/LICENSE</url>
         </license>
       </licenses>
     </dependency>
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-databind</artifactId>
-      <version>2.8.11.1</version>
+      <version>2.9.10.1</version>
       <licenses>
         <license>
           <name>Apache Software License 2.0</name>
-          <url>https://raw.githubusercontent.com/FasterXML/jackson-databind/jackson-databind-2.8.11.1/src/main/resources/META-INF/LICENSE</url>
+          <url>https://raw.githubusercontent.com/FasterXML/jackson-databind/jackson-databind-2.9.10.1/src/main/resources/META-INF/LICENSE</url>
         </license>
       </licenses>
     </dependency>
     <dependency>
       <groupId>com.fasterxml.jackson.jaxrs</groupId>
       <artifactId>jackson-jaxrs-base</artifactId>
-      <version>2.8.11</version>
+      <version>2.9.10</version>
       <licenses>
         <license>
           <name>Apache Software License 2.0</name>
-          <url>https://raw.githubusercontent.com/FasterXML/jackson-jaxrs-providers/jackson-jaxrs-providers-2.8.11/json/src/main/resources/META-INF/LICENSE</url>
+          <url>https://raw.githubusercontent.com/FasterXML/jackson-jaxrs-providers/jackson-jaxrs-providers-2.9.10/json/src/main/resources/META-INF/LICENSE</url>
         </license>
       </licenses>
     </dependency>
     <dependency>
       <groupId>com.fasterxml.jackson.jaxrs</groupId>
       <artifactId>jackson-jaxrs-json-provider</artifactId>
-      <version>2.8.11</version>
+      <version>2.9.10</version>
       <licenses>
         <license>
           <name>Apache Software License 2.0</name>
-          <url>https://raw.githubusercontent.com/FasterXML/jackson-jaxrs-providers/jackson-jaxrs-providers-2.8.11/json/src/main/resources/META-INF/LICENSE</url>
+          <url>https://raw.githubusercontent.com/FasterXML/jackson-jaxrs-providers/jackson-jaxrs-providers-2.9.10/json/src/main/resources/META-INF/LICENSE</url>
         </license>
       </licenses>
     </dependency>
     <dependency>
       <groupId>com.fasterxml.jackson.module</groupId>
       <artifactId>jackson-module-jaxb-annotations</artifactId>
-      <version>2.8.11</version>
+      <version>2.9.10</version>
       <licenses>
         <license>
           <name>Apache Software License 2.0</name>
-          <url>https://raw.githubusercontent.com/FasterXML/jackson-jaxrs-providers/jackson-jaxrs-providers-2.8.11/json/src/main/resources/META-INF/LICENSE</url>
+          <url>https://raw.githubusercontent.com/FasterXML/jackson-jaxrs-providers/jackson-jaxrs-providers-2.9.10/json/src/main/resources/META-INF/LICENSE</url>
         </license>
       </licenses>
     </dependency>

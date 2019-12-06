@@ -42,7 +42,7 @@ import java.util.List;
  */
 public class AssertionIDRequestType extends RequestAbstractType {
 
-    protected List<String> assertionIDRef = new ArrayList<String>();
+    protected List<String> assertionIDRef = new ArrayList<>();
 
     public AssertionIDRequestType(String id, XMLGregorianCalendar instant) {
         super(id, instant);

@@ -110,10 +110,24 @@ public class JPAResourceStore implements ResourceStore {
 
     @Override
     public void findByOwner(String ownerId, String resourceServerId, Consumer<Resource> consumer) {
-        String queryName = "findResourceIdByOwner";
+        findByOwnerFilter(ownerId, resourceServerId, consumer, -1, -1);
+    }
+
+    @Override
+    public List<Resource> findByOwner(String ownerId, String resourceServerId, int first, int max) {
+        List<Resource> list = new LinkedList<>();
+
+        findByOwnerFilter(ownerId, resourceServerId, list::add, first, max);
+
+        return list;
+    }
+
+    private void findByOwnerFilter(String ownerId, String resourceServerId, Consumer<Resource> consumer, int firstResult, int maxResult) {
+        boolean pagination = firstResult > -1 && maxResult > -1;
+        String queryName = pagination ? "findResourceIdByOwnerOrdered" : "findResourceIdByOwner";
 
         if (resourceServerId == null) {
-            queryName = "findAnyResourceIdByOwner";
+            queryName = pagination ? "findAnyResourceIdByOwnerOrdered" : "findAnyResourceIdByOwner";
         }
 
         TypedQuery<ResourceEntity> query = entityManager.createNamedQuery(queryName, ResourceEntity.class);
@@ -125,11 +139,21 @@ public class JPAResourceStore implements ResourceStore {
             query.setParameter("serverId", resourceServerId);
         }
 
-        StoreFactory storeFactory = provider.getStoreFactory();
+        if (pagination) {
+            query.setFirstResult(firstResult);
+            query.setMaxResults(maxResult);
+        }
 
-        query.getResultList().stream()
-                .map(id -> new ResourceAdapter(id, entityManager, storeFactory))
-                .forEach(consumer);
+        ResourceStore resourceStore = provider.getStoreFactory().getResourceStore();
+        List<ResourceEntity> result = query.getResultList();
+
+        for (ResourceEntity entity : result) {
+            Resource cached = resourceStore.findById(entity.getId(), resourceServerId);
+            
+            if (cached != null) {
+                consumer.accept(cached);
+            }
+        }
     }
 
     @Override

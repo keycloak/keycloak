@@ -41,7 +41,7 @@ import java.util.List;
  */
 public class ExtensionsType {
 
-    protected List<Object> any = new ArrayList<Object>();
+    protected List<Object> any = new ArrayList<>();
 
     /**
      * Add an extension

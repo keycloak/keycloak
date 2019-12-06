@@ -26,6 +26,8 @@ import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.credential.hash.Pbkdf2Sha256PasswordHashProviderFactory;
 import org.keycloak.models.Constants;
+import org.keycloak.models.credential.PasswordCredentialModel;
+import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.representations.idm.*;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.util.ContainerAssume;
@@ -36,6 +38,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.util.List;
 
+import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsNull.notNullValue;
@@ -55,6 +58,9 @@ public class AddUserTest extends AbstractKeycloakTest {
     public static void enabled() {
         // don't run with auth-server-undertow for now
         ContainerAssume.assumeNotAuthServerUndertow();
+
+        // container auth-server-remote cannot be restarted
+        ContainerAssume.assumeNotAuthServerRemote();
     }
 
     @Test
@@ -75,7 +81,7 @@ public class AddUserTest extends AbstractKeycloakTest {
                 new TypeReference<List<RealmRepresentation>>() {
                 });
 
-        assertThat("File 'keycloak-add-user.json' is empty.", realms.size() > 0, is(true));
+        assertThat("File 'keycloak-add-user.json' is empty.", realms, not(empty()));
 
         //-----------------Get-Indexes-------------------//
         int realmIndex = getRealmIndex(realmName, realms);
@@ -91,8 +97,9 @@ public class AddUserTest extends AbstractKeycloakTest {
         //------------------Credentials-----------------------------//
         assertThat("User Credentials are NULL", user.getCredentials().get(0), notNullValue());
         CredentialRepresentation credentials = user.getCredentials().get(0);
-        assertThat("User Credentials have wrong Algorithm.", credentials.getAlgorithm(), is(Pbkdf2Sha256PasswordHashProviderFactory.ID));
-        assertThat("User Credentials have wrong Hash Iterations", credentials.getHashIterations(), is(100000));
+        PasswordCredentialModel pcm = PasswordCredentialModel.createFromCredentialModel(RepresentationToModel.toModel(credentials));
+        assertThat("User Credentials have wrong Algorithm.", pcm.getPasswordCredentialData().getAlgorithm(), is(Pbkdf2Sha256PasswordHashProviderFactory.ID));
+        assertThat("User Credentials have wrong Hash Iterations", pcm.getPasswordCredentialData().getHashIterations(), is(100000));
 
         //------------------Restart--Container---------------------//
         controller.stop(authServerQualifier);

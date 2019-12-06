@@ -27,6 +27,10 @@ import org.junit.Test;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.testsuite.console.page.clients.settings.ClientSettings;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.IntStream;
+
 import static org.junit.Assert.*;
 import static org.keycloak.testsuite.auth.page.login.Login.OIDC;
 import static org.keycloak.testsuite.console.clients.AbstractClientTest.createClientRep;
@@ -38,19 +42,24 @@ import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlEquals;
  */
 public class ClientsTest extends AbstractClientTest {
 
-    private ClientRepresentation newClient;
-    
     @Page
     private ClientSettings clientSettingsPage;
     
     @Before
     public void beforeClientsTest() {
-        newClient = createClientRep(TEST_CLIENT_ID, OIDC);
+        ClientRepresentation newClient = createClientRep(TEST_CLIENT_ID, OIDC);
         testRealmResource().clients().create(newClient).close();
         
         ClientRepresentation found = findClientByClientId(TEST_CLIENT_ID);
         assertNotNull("Client " + TEST_CLIENT_ID + " was not found.", found);
         clientSettingsPage.setId(found.getId());
+    }
+
+    private void create100Clients() {
+        List<ClientRepresentation> clients = new ArrayList<>();
+        IntStream.range(0, 100)
+                .mapToObj(i -> createClientRep(TEST_CLIENT_ID + i, OIDC))
+                .forEach(rep -> testRealmResource().clients().create(rep).close());
     }
     
     @Test
@@ -72,5 +81,43 @@ public class ClientsTest extends AbstractClientTest {
         
         ClientRepresentation found = findClientByClientId(TEST_CLIENT_ID);
         assertNull("Deleted client " + TEST_CLIENT_ID + " was found.", found);
+    }
+
+
+    @Test
+    public void clientsNavigationTest() {
+        //create 100 clients
+        create100Clients();
+        String firstPageClient = TEST_CLIENT_ID + 0;
+        String secondPageClient = TEST_CLIENT_ID + 22;
+        String thirdPageClient = TEST_CLIENT_ID + 41;
+
+        //edit on the 2nd page then go back
+        clientsPage.navigateTo();
+        clientsPage.table().clickNextPage();
+        clientsPage.table().editClient(secondPageClient);
+        assertEquals(secondPageClient, clientSettingsPage.form().getClientId());
+
+        //go to the main page and delete
+        clientsPage.navigateTo();
+        clientsPage.table().clickPrevPage();
+        clientsPage.table().deleteClient(TEST_CLIENT_ID);
+        modalDialog.confirmDeletion();
+        ClientRepresentation found = findClientByClientId(TEST_CLIENT_ID);
+        assertNull("Deleted client " + TEST_CLIENT_ID + " was found.", found);
+
+        // go forward two pages then main page
+        clientsPage.navigateTo();
+        clientsPage.table().clickNextPage();
+        clientsPage.table().clickNextPage();
+        clientsPage.table().editClient(thirdPageClient);
+        assertEquals(thirdPageClient, clientSettingsPage.form().getClientId());
+        clientsPage.navigateTo();
+
+        clientsPage.table().clickFirstPage();
+        clientsPage.table().editClient(firstPageClient);
+        assertEquals(firstPageClient, clientSettingsPage.form().getClientId());
+        clientsPage.navigateTo();
+
     }
 }

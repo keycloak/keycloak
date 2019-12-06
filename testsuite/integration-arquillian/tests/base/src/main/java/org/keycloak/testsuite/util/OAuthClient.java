@@ -31,20 +31,29 @@ import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.message.BasicNameValuePair;
+import org.jboss.arquillian.drone.webdriver.htmlunit.DroneHtmlUnitDriver;
 import org.junit.Assert;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.TokenVerifier;
 import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.common.VerificationException;
+import org.keycloak.common.util.KeyUtils;
 import org.keycloak.common.util.KeystoreUtil;
 import org.keycloak.constants.AdapterConstants;
+import org.keycloak.crypto.Algorithm;
+import org.keycloak.crypto.AsymmetricSignatureSignerContext;
 import org.keycloak.crypto.AsymmetricSignatureVerifierContext;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
+import org.keycloak.crypto.ServerECDSASignatureSignerContext;
+import org.keycloak.crypto.ServerECDSASignatureVerifierContext;
+import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.JWKParser;
+import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.models.Constants;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
@@ -73,6 +82,7 @@ import java.net.URISyntaxException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.security.KeyStore;
+import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.util.Collections;
 import java.util.HashMap;
@@ -115,6 +125,8 @@ public class OAuthClient {
     private String clientId;
 
     private String redirectUri;
+    
+    private String kcAction;
 
     private StateParamProvider state;
 
@@ -267,34 +279,43 @@ public class OAuthClient {
         return this;
     }
 
+    public Supplier<CloseableHttpClient> getHttpClient() {
+        return httpClient;
+    }
+
     public static CloseableHttpClient newCloseableHttpClient() {
         if (sslRequired) {
-            KeyStore keystore = null;
-            // load the keystore containing the client certificate - keystore type is probably jks or pkcs12
             String keyStorePath = System.getProperty("client.certificate.keystore");
             String keyStorePassword = System.getProperty("client.certificate.keystore.passphrase");
-            try {
-                keystore = KeystoreUtil.loadKeyStore(keyStorePath, keyStorePassword);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-
-            // load the trustore
-            KeyStore truststore = null;
             String trustStorePath = System.getProperty("client.truststore");
             String trustStorePassword = System.getProperty("client.truststore.passphrase");
-            try {
-                truststore = KeystoreUtil.loadKeyStore(trustStorePath, trustStorePassword);
-            } catch(Exception e) {
-                e.printStackTrace();
-            }
-            return (CloseableHttpClient) new org.keycloak.adapters.HttpClientBuilder()
-                    .keyStore(keystore, keyStorePassword)
-                    .trustStore(truststore)
-                    .hostnameVerification(org.keycloak.adapters.HttpClientBuilder.HostnameVerificationPolicy.ANY)
-                    .build();
+            return newCloseableHttpClientSSL(keyStorePath, keyStorePassword, trustStorePath, trustStorePassword);
         }
         return HttpClientBuilder.create().build();
+    }
+
+    public static CloseableHttpClient newCloseableHttpClientSSL(String keyStorePath,
+            String keyStorePassword, String trustStorePath, String trustStorePassword) {
+        KeyStore keystore = null;
+        // load the keystore containing the client certificate - keystore type is probably jks or pkcs12
+        try {
+            keystore = KeystoreUtil.loadKeyStore(keyStorePath, keyStorePassword);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        // load the trustore
+        KeyStore truststore = null;
+        try {
+            truststore = KeystoreUtil.loadKeyStore(trustStorePath, trustStorePassword);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return (CloseableHttpClient) new org.keycloak.adapters.HttpClientBuilder()
+                .keyStore(keystore, keyStorePassword)
+                .trustStore(truststore)
+                .hostnameVerification(org.keycloak.adapters.HttpClientBuilder.HostnameVerificationPolicy.ANY)
+                .build();
     }
 
     public CloseableHttpResponse doPreflightRequest() {
@@ -430,7 +451,7 @@ public class OAuthClient {
             parameters.add(new BasicNameValuePair("username", username));
             parameters.add(new BasicNameValuePair("password", password));
             if (totp != null) {
-                parameters.add(new BasicNameValuePair("totp", totp));
+                parameters.add(new BasicNameValuePair("otp", totp));
 
             }
             if (clientSecret != null) {
@@ -697,13 +718,40 @@ public class OAuthClient {
             String kid = verifier.getHeader().getKeyId();
             String algorithm = verifier.getHeader().getAlgorithm().name();
             KeyWrapper key = getRealmPublicKey(realm, algorithm, kid);
-            AsymmetricSignatureVerifierContext verifierContext = new AsymmetricSignatureVerifierContext(key);
+            AsymmetricSignatureVerifierContext verifierContext;
+            switch (algorithm) {
+                case Algorithm.ES256:
+                case Algorithm.ES384:
+                case Algorithm.ES512:
+                    verifierContext = new ServerECDSASignatureVerifierContext(key);
+                    break;
+                default:
+                    verifierContext = new AsymmetricSignatureVerifierContext(key);
+            }
             verifier.verifierContext(verifierContext);
             verifier.verify();
             return verifier.getToken();
         } catch (VerificationException e) {
             throw new RuntimeException("Failed to decode token", e);
         }
+    }
+
+    public SignatureSignerContext createSigner(PrivateKey privateKey, String kid, String algorithm) {
+        KeyWrapper keyWrapper = new KeyWrapper();
+        keyWrapper.setAlgorithm(algorithm);
+        keyWrapper.setKid(kid);
+        keyWrapper.setPrivateKey(privateKey);
+        SignatureSignerContext signer;
+        switch (algorithm) {
+            case Algorithm.ES256:
+            case Algorithm.ES384:
+            case Algorithm.ES512:
+                signer = new ServerECDSASignatureSignerContext(keyWrapper);
+                break;
+            default:
+                signer = new AsymmetricSignatureSignerContext(keyWrapper);
+        }
+        return signer;
     }
 
     public String getClientId() {
@@ -762,6 +810,15 @@ public class OAuthClient {
     public String getRedirectUri() {
         return redirectUri;
     }
+    
+    /**
+     * Application-initiated action.
+     * 
+     * @return The action name.
+     */
+    public String getKcAction() {
+        return kcAction;
+    }
 
     public String getState() {
         return state.getState();
@@ -784,6 +841,9 @@ public class OAuthClient {
         }
         if (redirectUri != null) {
             b.queryParam(OAuth2Constants.REDIRECT_URI, redirectUri);
+        }
+        if (kcAction != null) {
+            b.queryParam(Constants.KC_ACTION, kcAction);
         }
         String state = this.state.getState();
         if (state != null) {
@@ -886,6 +946,11 @@ public class OAuthClient {
 
     public OAuthClient redirectUri(String redirectUri) {
         this.redirectUri = redirectUri;
+        return this;
+    }
+    
+    public OAuthClient kcAction(String kcAction) {
+        this.kcAction = kcAction;
         return this;
     }
 
@@ -1207,7 +1272,7 @@ public class OAuthClient {
                 KeyWrapper key = new KeyWrapper();
                 key.setKid(k.getKeyId());
                 key.setAlgorithm(k.getAlgorithm());
-                key.setVerifyKey(publicKey);
+                key.setPublicKey(publicKey);
                 key.setUse(KeyUse.SIG);
 
                 return key;
@@ -1220,6 +1285,17 @@ public class OAuthClient {
         publicKeys.clear();
     }
 
+    public void setBrowserHeader(String name, String value) {
+        if (driver instanceof DroneHtmlUnitDriver) {
+            DroneHtmlUnitDriver droneDriver = (DroneHtmlUnitDriver) this.driver;
+            droneDriver.getWebClient().removeRequestHeader(name);
+            droneDriver.getWebClient().addRequestHeader(name, value);
+        }
+    }
+
+    public WebDriver getDriver() {
+        return driver;
+    }
 
     private interface StateParamProvider {
 

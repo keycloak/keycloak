@@ -19,10 +19,12 @@ package org.keycloak.testsuite.client;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLSession;
+import javax.ws.rs.core.Response;
 
 import org.jboss.resteasy.client.jaxrs.ResteasyClient;
 import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
 import org.jboss.resteasy.client.jaxrs.ResteasyWebTarget;
+import org.keycloak.common.Profile;
 import org.keycloak.testsuite.client.resources.TestApplicationResource;
 import org.keycloak.testsuite.client.resources.TestExampleCompanyResource;
 import org.keycloak.testsuite.client.resources.TestSamlApplicationResource;
@@ -30,6 +32,8 @@ import org.keycloak.testsuite.client.resources.TestingResource;
 import org.keycloak.testsuite.runonserver.*;
 import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.util.JsonSerialization;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
@@ -69,6 +73,18 @@ public class KeycloakTestingClient implements AutoCloseable {
 
     public TestingResource testing(String realm) {
         return target.path("/realms/" + realm).proxy(TestingResource.class);
+    }
+
+    public void enableFeature(Profile.Feature feature) {
+        try (Response response = testing().enableFeature(feature.toString())) {
+            assertEquals(200, response.getStatus());
+        }
+    }
+
+    public void disableFeature(Profile.Feature feature) {
+        try (Response response = testing().disableFeature(feature.toString())) {
+            assertEquals(200, response.getStatus());
+        }
     }
 
     public TestApplicationResource testApp() { return target.proxy(TestApplicationResource.class); }

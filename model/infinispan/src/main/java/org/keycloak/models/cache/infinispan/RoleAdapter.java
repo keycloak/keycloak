@@ -129,7 +129,7 @@ public class RoleAdapter implements RoleModel {
         if (isUpdated()) return updated.getComposites();
 
         if (composites == null) {
-            composites = new HashSet<RoleModel>();
+            composites = new HashSet<>();
             for (String id : cached.getComposites()) {
                 RoleModel role = realm.getRoleById(id);
                 if (role == null) {
@@ -229,7 +229,7 @@ public class RoleAdapter implements RoleModel {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o == null || !(o instanceof RoleModel)) return false;
+        if (!(o instanceof RoleModel)) return false;
 
         RoleModel that = (RoleModel) o;
         return that.getId().equals(getId());

@@ -14,7 +14,7 @@ We do have a few guidelines in place to help you be successful with your contrib
 
 Here's a quick checklist for a good PR, more details below:
 
-1. [Keycloak Dev Mailing List](https://lists.jboss.org/mailman/listinfo/keycloak-dev)
+1. [Keycloak Dev Mailing List](https://groups.google.com/forum/#!forum/keycloak-dev)
 2. A JIRA associated with the PR
 3. One feature/change per PR
 4. One commit per PR
@@ -39,7 +39,7 @@ issues that are awaiting contributions in the
 ### Open a discussion on Keycloak Dev Mailing List
 
 As Keycloak is a community-driven project we require contributors to send a description of what they are planning to 
-work on to the [Keycloak Dev Mailing List](https://lists.jboss.org/mailman/listinfo/keycloak-dev).
+work on to the [Keycloak Dev Mailing List](https://groups.google.com/forum/#!forum/keycloak-dev).
 
 We recommend starting the discussion prior to submitting your PR. Through the mailing list you can get valuable
 feedback both from the core Keycloak team as well as the wider community.

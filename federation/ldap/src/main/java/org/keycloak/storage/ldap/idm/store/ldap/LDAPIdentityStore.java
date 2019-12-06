@@ -19,6 +19,7 @@ package org.keycloak.storage.ldap.idm.store.ldap;
 
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.Base64;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.ModelException;
 import org.keycloak.storage.ldap.LDAPConfig;
@@ -75,14 +76,9 @@ public class LDAPIdentityStore implements IdentityStore {
     private final LDAPConfig config;
     private final LDAPOperationManager operationManager;
 
-    public LDAPIdentityStore(LDAPConfig config) {
+    public LDAPIdentityStore(KeycloakSession session, LDAPConfig config) {
         this.config = config;
-
-        try {
-            this.operationManager = new LDAPOperationManager(config);
-        } catch (NamingException e) {
-            throw new ModelException("Couldn't init operation manager", e);
-        }
+        this.operationManager = new LDAPOperationManager(session, config);
     }
 
     @Override

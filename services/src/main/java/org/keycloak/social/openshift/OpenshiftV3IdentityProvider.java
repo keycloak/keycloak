@@ -84,7 +84,7 @@ public class OpenshiftV3IdentityProvider extends AbstractOAuth2IdentityProvider<
 
     @Override
     protected BrokeredIdentityContext extractIdentityFromProfile(EventBuilder event, JsonNode profile) {
-        final BrokeredIdentityContext user = extractUserContext(profile.get("metadata"));
+        final BrokeredIdentityContext user = extractUserContext(profile);
         AbstractJsonUserAttributeMapper.storeUserProfileForMapper(user, profile, getConfig().getAlias());
         return user;
     }

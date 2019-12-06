@@ -27,6 +27,7 @@ import org.keycloak.authentication.AuthenticationFlowException;
 import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.authentication.ConsoleDisplayMode;
 import org.keycloak.authentication.DisplayTypeRequiredActionFactory;
+import org.keycloak.authentication.InitiatedActionSupport;
 import org.keycloak.authentication.RequiredActionContext;
 import org.keycloak.authentication.RequiredActionContextResult;
 import org.keycloak.authentication.RequiredActionFactory;
@@ -94,6 +95,8 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import static org.keycloak.protocol.oidc.endpoints.AuthorizationEndpoint.LOGIN_SESSION_NOTE_ADDITIONAL_REQ_PARAMS_PREFIX;
 
 /**
  * Stateless object that manages authentication
@@ -242,7 +245,8 @@ public class AuthenticationManager {
             backchannelLogoutAll(session, realm, userSession, logoutAuthSession, uriInfo, headers, logoutBroker);
             checkUserSessionOnlyHasLoggedOutClients(realm, userSession, logoutAuthSession);
         } finally {
-            asm.removeAuthenticationSession(realm, logoutAuthSession, false);
+            RootAuthenticationSessionModel rootAuthSession = logoutAuthSession.getParentSession();
+            rootAuthSession.removeAuthenticationSessionByTabId(logoutAuthSession.getTabId());
         }
 
         userSession.setState(UserSessionModel.State.LOGGED_OUT);
@@ -290,12 +294,12 @@ public class AuthenticationManager {
 
         // See if we have logoutAuthSession inside current rootSession. Create new if not
         Optional<AuthenticationSessionModel> found = rootLogoutSession.getAuthenticationSessions().values().stream().filter((AuthenticationSessionModel authSession) -> {
-
             return client.equals(authSession.getClient()) && Objects.equals(AuthenticationSessionModel.Action.LOGGING_OUT.name(), authSession.getAction());
 
         }).findFirst();
 
         AuthenticationSessionModel logoutAuthSession = found.isPresent() ? found.get() : rootLogoutSession.createAuthenticationSession(client);
+        session.getContext().setAuthenticationSession(logoutAuthSession);
 
         logoutAuthSession.setAction(AuthenticationSessionModel.Action.LOGGING_OUT.name());
         return logoutAuthSession;
@@ -707,7 +711,7 @@ public class AuthenticationManager {
     }
 
     public static void expireCookie(RealmModel realm, String cookieName, String path, boolean httpOnly, ClientConnection connection) {
-        logger.debugv("Expiring cookie: {0} path: {1}", cookieName, path);
+        logger.debugf("Expiring cookie: %s path: %s", cookieName, path);
         boolean secureOnly = realm.getSslRequired().isRequired(connection);;
         CookieHelper.addCookie(cookieName, "", path, null, "Expiring cookie", 0, secureOnly, httpOnly);
     }
@@ -794,6 +798,21 @@ public class AuthenticationManager {
 
         return protocol.authenticated(authSession, userSession, clientSessionCtx);
 
+    }
+
+    public static String getSessionIdFromSessionCookie(KeycloakSession session) {
+        Cookie cookie = session.getContext().getRequestHeaders().getCookies().get(KEYCLOAK_SESSION_COOKIE);
+        if (cookie == null || "".equals(cookie.getValue())) {
+            logger.debugv("Could not find cookie: {0}", KEYCLOAK_SESSION_COOKIE);
+            return null;
+        }
+
+        String[] parts = cookie.getValue().split("/", 3);
+        if (parts.length != 3) {
+            logger.debugv("Cannot parse session value from: {0}", KEYCLOAK_SESSION_COOKIE);
+            return null;
+        }
+        return parts[2];
     }
 
     public static boolean isSSOAuthentication(AuthenticatedClientSessionModel clientSession) {
@@ -896,6 +915,11 @@ public class AuthenticationManager {
         }
         if (!authSession.getRequiredActions().isEmpty()) {
             return authSession.getRequiredActions().iterator().next();
+        }
+
+        String kcAction = authSession.getClientNote(Constants.KC_ACTION);
+        if (kcAction != null) {
+            return kcAction;
         }
 
         if (client.isConsentRequired()) {
@@ -1050,43 +1074,78 @@ public class AuthenticationManager {
         List<RequiredActionProviderModel> sortedRequiredActions = sortRequiredActionsByPriority(realm, requiredActions);
 
         for (RequiredActionProviderModel model : sortedRequiredActions) {
-            RequiredActionFactory factory = (RequiredActionFactory)session.getKeycloakSessionFactory().getProviderFactory(RequiredActionProvider.class, model.getProviderId());
-            if (factory == null) {
-                throw new RuntimeException("Unable to find factory for Required Action: " + model.getProviderId() + " did you forget to declare it in a META-INF/services file?");
-            }
-            RequiredActionContextResult context = new RequiredActionContextResult(authSession, realm, event, session, request, user, factory);
-            RequiredActionProvider actionProvider = null;
-            try {
-                actionProvider = createRequiredAction(context);
-            } catch (AuthenticationFlowException e) {
-                if (e.getResponse() != null) {
-                    return e.getResponse();
-                }
-                throw e;
-            }
-            actionProvider.requiredActionChallenge(context);
-
-            if (context.getStatus() == RequiredActionContext.Status.FAILURE) {
-                LoginProtocol protocol = context.getSession().getProvider(LoginProtocol.class, context.getAuthenticationSession().getProtocol());
-                protocol.setRealm(context.getRealm())
-                        .setHttpHeaders(context.getHttpRequest().getHttpHeaders())
-                        .setUriInfo(context.getUriInfo())
-                        .setEventBuilder(event);
-                Response response = protocol.sendError(context.getAuthenticationSession(), Error.CONSENT_DENIED);
-                event.error(Errors.REJECTED_BY_USER);
+            Response response = executeAction(session, authSession, model, request, event, realm, user, false);
+            if (response != null) {
                 return response;
             }
-            else if (context.getStatus() == RequiredActionContext.Status.CHALLENGE) {
-                authSession.setAuthNote(AuthenticationProcessor.CURRENT_AUTHENTICATION_EXECUTION, model.getProviderId());
-                return context.getChallenge();
+        }
+
+        String kcAction = authSession.getClientNote(Constants.KC_ACTION);
+        if (kcAction != null) {
+            for (RequiredActionProviderModel m : realm.getRequiredActionProviders()) {
+                if (m.getProviderId().equals(kcAction)) {
+                    return executeAction(session, authSession, m, request, event, realm, user, true);
+                }
             }
-            else if (context.getStatus() == RequiredActionContext.Status.SUCCESS) {
-                event.clone().event(EventType.CUSTOM_REQUIRED_ACTION).detail(Details.CUSTOM_REQUIRED_ACTION, factory.getId()).success();
-                // don't have to perform the same action twice, so remove it from both the user and session required actions
-                authSession.getAuthenticatedUser().removeRequiredAction(factory.getId());
-                authSession.removeRequiredAction(factory.getId());
+
+            logger.debugv("Requested action {0} not configured for realm", kcAction);
+            setKcActionStatus(kcAction, RequiredActionContext.KcActionStatus.ERROR, authSession);
+        }
+
+        return null;
+    }
+
+    private static Response executeAction(KeycloakSession session, AuthenticationSessionModel authSession, RequiredActionProviderModel model,
+                                          HttpRequest request, EventBuilder event, RealmModel realm, UserModel user, boolean kcActionExecution) {
+        RequiredActionFactory factory = (RequiredActionFactory) session.getKeycloakSessionFactory().getProviderFactory(RequiredActionProvider.class, model.getProviderId());
+        if (factory == null) {
+            throw new RuntimeException("Unable to find factory for Required Action: " + model.getProviderId() + " did you forget to declare it in a META-INF/services file?");
+        }
+        RequiredActionContextResult context = new RequiredActionContextResult(authSession, realm, event, session, request, user, factory);
+        RequiredActionProvider actionProvider = null;
+        try {
+            actionProvider = createRequiredAction(context);
+        } catch (AuthenticationFlowException e) {
+            if (e.getResponse() != null) {
+                return e.getResponse();
+            }
+            throw e;
+        }
+
+        if (kcActionExecution) {
+            if (actionProvider.initiatedActionSupport() == InitiatedActionSupport.NOT_SUPPORTED) {
+                logger.debugv("Requested action {0} does not support being invoked with kc_action", factory.getId());
+                setKcActionStatus(factory.getId(), RequiredActionContext.KcActionStatus.ERROR, authSession);
+                return null;
+            } else {
+                authSession.setClientNote(Constants.KC_ACTION_EXECUTING, factory.getId());
             }
         }
+
+        actionProvider.requiredActionChallenge(context);
+
+        if (context.getStatus() == RequiredActionContext.Status.FAILURE) {
+            LoginProtocol protocol = context.getSession().getProvider(LoginProtocol.class, context.getAuthenticationSession().getProtocol());
+            protocol.setRealm(context.getRealm())
+                    .setHttpHeaders(context.getHttpRequest().getHttpHeaders())
+                    .setUriInfo(context.getUriInfo())
+                    .setEventBuilder(event);
+            Response response = protocol.sendError(context.getAuthenticationSession(), Error.CONSENT_DENIED);
+            event.error(Errors.REJECTED_BY_USER);
+            return response;
+        }
+        else if (context.getStatus() == RequiredActionContext.Status.CHALLENGE) {
+            authSession.setAuthNote(AuthenticationProcessor.CURRENT_AUTHENTICATION_EXECUTION, model.getProviderId());
+            return context.getChallenge();
+        }
+        else if (context.getStatus() == RequiredActionContext.Status.SUCCESS) {
+            event.clone().event(EventType.CUSTOM_REQUIRED_ACTION).detail(Details.CUSTOM_REQUIRED_ACTION, factory.getId()).success();
+            // don't have to perform the same action twice, so remove it from both the user and session required actions
+            authSession.getAuthenticatedUser().removeRequiredAction(factory.getId());
+            authSession.removeRequiredAction(factory.getId());
+            setKcActionStatus(factory.getId(), RequiredActionContext.KcActionStatus.SUCCESS, authSession);
+        }
+
         return null;
     }
 
@@ -1106,7 +1165,7 @@ public class AuthenticationManager {
         Collections.sort(actions, RequiredActionProviderModel.RequiredActionComparator.SINGLETON);
         return actions;
     }
-
+    
     public static void evaluateRequiredActionTriggers(final KeycloakSession session, final AuthenticationSessionModel authSession, final ClientConnection clientConnection, final HttpRequest request, final UriInfo uriInfo, final EventBuilder event, final RealmModel realm, final UserModel user) {
 
         // see if any required actions need triggering, i.e. an expired password
@@ -1142,7 +1201,6 @@ public class AuthenticationManager {
             provider.evaluateTriggers(result);
         }
     }
-
 
     public static AuthResult verifyIdentityToken(KeycloakSession session, RealmModel realm, UriInfo uriInfo, ClientConnection connection, boolean checkActive, boolean checkTokenType,
                                                     boolean isCookie, String tokenString, HttpHeaders headers, Predicate<? super AccessToken>... additionalChecks) {
@@ -1232,6 +1290,14 @@ public class AuthenticationManager {
 
         public AccessToken getToken() {
             return token;
+        }
+    }
+
+    public static void setKcActionStatus(String executedProviderId, RequiredActionContext.KcActionStatus status, AuthenticationSessionModel authSession) {
+        if (executedProviderId.equals(authSession.getClientNote(Constants.KC_ACTION))) {
+            authSession.setClientNote(Constants.KC_ACTION_STATUS, status.name().toLowerCase());
+            authSession.removeClientNote(Constants.KC_ACTION);
+            authSession.removeClientNote(Constants.KC_ACTION_EXECUTING);
         }
     }
 

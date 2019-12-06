@@ -18,8 +18,6 @@
 package org.keycloak.models.sessions.infinispan;
 
 import org.infinispan.Cache;
-import org.infinispan.distribution.DistributionManager;
-import org.infinispan.remoting.transport.Address;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.sessions.infinispan.util.InfinispanUtil;

@@ -18,15 +18,9 @@ package org.keycloak.testsuite.arquillian.containers;
 
 import org.apache.commons.io.FileUtils;
 import org.jboss.arquillian.config.descriptor.api.ContainerDef;
-import org.jboss.arquillian.container.impl.client.container.ContainerDeployController;
 import org.jboss.arquillian.container.spi.Container;
 import org.jboss.arquillian.container.spi.ContainerRegistry;
-import org.jboss.arquillian.container.spi.client.deployment.Deployment;
-import org.jboss.arquillian.container.spi.client.deployment.DeploymentScenario;
 import org.jboss.arquillian.container.spi.event.ContainerMultiControlEvent;
-import org.jboss.arquillian.container.spi.event.DeployDeployment;
-import org.jboss.arquillian.container.spi.event.DeployManagedDeployments;
-import org.jboss.arquillian.container.spi.event.DeploymentEvent;
 import org.jboss.arquillian.container.spi.event.StartClassContainers;
 import org.jboss.arquillian.container.spi.event.StartSuiteContainers;
 import org.jboss.arquillian.container.spi.event.StopClassContainers;
@@ -35,7 +29,6 @@ import org.jboss.arquillian.container.spi.event.StopSuiteContainers;
 import org.jboss.arquillian.container.spi.event.UnDeployManagedDeployments;
 import org.jboss.arquillian.container.test.impl.client.ContainerEventController;
 import org.jboss.arquillian.core.api.Event;
-import org.jboss.arquillian.core.api.Injector;
 import org.jboss.arquillian.core.api.Instance;
 import org.jboss.arquillian.core.api.annotation.Inject;
 import org.jboss.arquillian.core.api.annotation.Observes;
@@ -47,7 +40,9 @@ import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.exporter.ZipExporter;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
+import org.keycloak.common.Profile;
 import org.keycloak.helpers.DropAllServlet;
+import org.keycloak.testsuite.arquillian.ContainerInfo;
 import org.keycloak.testsuite.arquillian.annotation.RestartContainer;
 import org.wildfly.extras.creaper.commands.deployments.Deploy;
 import org.wildfly.extras.creaper.commands.deployments.Undeploy;
@@ -58,7 +53,15 @@ import org.wildfly.extras.creaper.core.online.OnlineOptions;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.List;
+import java.io.PrintWriter;
+import java.nio.file.FileAlreadyExistsException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Arrays;
+import java.util.Optional;
+import java.util.Properties;
+import org.keycloak.testsuite.util.ContainerAssume;
 
 /**
  * Changes behaviour of original ContainerEventController to stop manual containers 
@@ -68,6 +71,7 @@ import java.util.List;
  * 
  * @author vramik
  * @author pskopek
+ * @author mabartos
  */
 public class KeycloakContainerEventsController extends ContainerEventController {
 
@@ -75,6 +79,8 @@ public class KeycloakContainerEventsController extends ContainerEventController 
 
     @Inject
     private Event<ContainerMultiControlEvent> container;
+    @Inject
+    private Instance<ContainerRegistry> containerRegistry;
 
     @Override
     public void execute(@Observes AfterSuite event) {
@@ -83,7 +89,7 @@ public class KeycloakContainerEventsController extends ContainerEventController 
     }
 
     @Override
-    public void execute(@Observes(precedence = 3) AfterClass event) {
+    public void execute(@Observes(precedence = 0) AfterClass event) {
         try {
             container.fire(new UnDeployManagedDeployments());
         } finally {
@@ -97,6 +103,10 @@ public class KeycloakContainerEventsController extends ContainerEventController 
     @Override
     public void execute(BeforeClass event) {
         if (event.getTestClass().isAnnotationPresent(RestartContainer.class)) {
+
+            // stop executing the test - remote container cannot be restarted
+            ContainerAssume.assumeNotAuthServerRemote();
+
             RestartContainer restartContainer = event.getTestClass().getAnnotation(RestartContainer.class);
 
             beforeOriginalContainerStop(restartContainer);
@@ -239,54 +249,6 @@ public class KeycloakContainerEventsController extends ContainerEventController 
                 }
                 adminUserJsonFile.delete();
             }
-        }
-    }
-
-    /*
-     * Coppied from org.jboss.arquillian.container.impl.client.container.ContainerDeployController
-     * 
-     * Overrides a condition that container cannot be in manual mode, and deploys the deployment
-     * if the container is started
-     */
-    @Inject
-    private Instance<Injector> injector;
-    @Inject
-    private Instance<DeploymentScenario> deploymentScenario;
-    @Inject
-    private Instance<ContainerRegistry> containerRegistry;
-
-    public void deployManaged(@Observes DeployManagedDeployments event) throws Exception {
-        forEachManagedDeployment(new ContainerDeployController.Operation<Container, Deployment>() {
-            @Inject
-            private Event<DeploymentEvent> event;
-
-            @Override
-            public void perform(Container container, Deployment deployment) throws Exception {
-                if (container.getState().equals(Container.State.STARTED)) {
-                    event.fire(new DeployDeployment(container, deployment));
-                }
-            }
-        });
-    }
-
-    private void forEachManagedDeployment(ContainerDeployController.Operation<Container, Deployment> operation) throws Exception {
-        DeploymentScenario scenario = this.deploymentScenario.get();
-        if (scenario == null) {
-            return;
-        }
-        forEachDeployment(scenario.managedDeploymentsInDeployOrder(), operation);
-    }
-
-    private void forEachDeployment(List<Deployment> deployments, ContainerDeployController.Operation<Container, Deployment> operation)
-        throws Exception {
-        injector.get().inject(operation);
-        ContainerRegistry containerRegistry = this.containerRegistry.get();
-        if (containerRegistry == null) {
-            return;
-        }
-        for (Deployment deployment : deployments) {
-            Container container = containerRegistry.getContainer(deployment.getDescription().getTarget());
-            operation.perform(container, deployment);
         }
     }
 }

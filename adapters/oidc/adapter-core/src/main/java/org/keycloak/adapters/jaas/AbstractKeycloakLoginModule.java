@@ -65,7 +65,7 @@ public abstract class AbstractKeycloakLoginModule implements LoginModule {
     protected String rolePrincipalClass;
 
     // This is to avoid parsing keycloak.json file in each request. Key is file location, Value is parsed keycloak deployment
-    private static ConcurrentMap<String, KeycloakDeployment> deployments = new ConcurrentHashMap<String, KeycloakDeployment>();
+    private static ConcurrentMap<String, KeycloakDeployment> deployments = new ConcurrentHashMap<>();
 
     @Override
     public void initialize(Subject subject, CallbackHandler callbackHandler, Map<String, ?> sharedState, Map<String, ?> options) {

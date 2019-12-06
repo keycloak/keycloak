@@ -32,7 +32,7 @@ import {
 declare const locale: string;
 declare const baseUrl: string;
 declare const referrer: string;
-declare const referrerUri: string
+declare const referrerUri: string;
 
 interface AvailableLocale {
     locale: string; 
@@ -63,15 +63,18 @@ class LocaleKebabItem extends React.Component<LocaleKebabItemProps, LocaleKebabI
         const appPath = this.props.location.pathname;
         const localeNavItems = availLocales.map((availableLocale: AvailableLocale) => {
             const url = baseUrl + '?kc_locale=' + availableLocale.locale + referrerFragment + '#' + appPath;
-            return (<NavItem key={availableLocale.locale} to={url}>
-                        {availableLocale.label}
+            return (<NavItem
+                        id={`mobile-locale-${availableLocale.locale}`}
+                        key={availableLocale.locale}
+                        to={url}>
+                            {availableLocale.label}
                     </NavItem> );
         });
         
         return (
             <Nav>
                 <NavList>
-                    <NavExpandable title={Msg.localize('locale_' + locale)} isActive={false} groupId="locale-group">
+                    <NavExpandable id="mobile-locale" title={Msg.localize('locale_' + locale)} isActive={false} groupId="locale-group">
                     {localeNavItems}
                   </NavExpandable>
                 </NavList>
@@ -104,10 +107,15 @@ class LocaleDropdownComponent extends React.Component<LocaleDropdownComponentPro
         const appPath = this.props.location.pathname;
         const localeDropdownItems = availLocales.map((availableLocale: AvailableLocale) => {
             const url = baseUrl + '?kc_locale=' + availableLocale.locale + referrerFragment + '#' + appPath;
-            return (<DropdownItem key={availableLocale.locale} href={url}>
-                        {availableLocale.label}
+            return (<DropdownItem
+                        id={`locale-${availableLocale.locale}`}
+                        key={availableLocale.locale}
+                        href={url}>
+                            {availableLocale.label}
                     </DropdownItem> );
         });
+
+        if (localeDropdownItems.length < 2) return (<React.Fragment/>);
         
         return (
             <Dropdown
@@ -115,7 +123,7 @@ class LocaleDropdownComponent extends React.Component<LocaleDropdownComponentPro
                 position="right"
                 onSelect={this.onDropdownSelect}
                 isOpen={this.state.isDropdownOpen}
-                toggle={<DropdownToggle onToggle={this.onDropdownToggle}><Msg msgKey={'locale_' + locale}/></DropdownToggle>}
+                toggle={<DropdownToggle id="locale-dropdown-toggle" onToggle={this.onDropdownToggle}><Msg msgKey={'locale_' + locale}/></DropdownToggle>}
                 dropdownItems={localeDropdownItems}
             />
         );

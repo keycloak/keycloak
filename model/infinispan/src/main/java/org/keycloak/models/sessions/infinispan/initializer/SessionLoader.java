@@ -18,7 +18,6 @@
 package org.keycloak.models.sessions.infinispan.initializer;
 
 import java.io.Serializable;
-import java.util.List;
 
 import org.keycloak.models.KeycloakSession;
 
@@ -58,10 +57,10 @@ public interface SessionLoader<LOADER_CONTEXT extends SessionLoader.LoaderContex
      * @param loaderCtx global loader context
      * @param segment the current segment (page) to compute
      * @param workerId ID of worker for current worker iteration. Usually the number 0-8 (with single cluster node)
-     * @param previousResults workerResults from previous computation. Can be empty list in case of the operation is triggered for the 1st time
+     * @param previousResult last workerResult from previous computation. Can be empty list in case of the operation is triggered for the 1st time
      * @return
      */
-    WORKER_CONTEXT computeWorkerContext(LOADER_CONTEXT loaderCtx, int segment, int workerId, List<WORKER_RESULT> previousResults);
+    WORKER_CONTEXT computeWorkerContext(LOADER_CONTEXT loaderCtx, int segment, int workerId, WORKER_RESULT previousResult);
 
 
     /**

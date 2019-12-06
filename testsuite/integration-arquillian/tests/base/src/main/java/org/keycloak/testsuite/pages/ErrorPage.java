@@ -52,7 +52,7 @@ public class ErrorPage extends AbstractPage {
     }
 
     public boolean isCurrent() {
-        return PageUtils.getPageTitle(driver) != null && PageUtils.getPageTitle(driver).equals("We're sorry...");
+        return PageUtils.getPageTitle(driver) != null && PageUtils.getPageTitle(driver).equals("We are sorry...");
     }
 
     @Override

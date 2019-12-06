@@ -23,10 +23,11 @@ package org.keycloak.models;
  */
 public class ClaimTypeModel {
 
-    public static enum ValueType {
+    public enum ValueType {
         BOOLEAN,
         INT,
-        STRING
+        STRING,
+        JSON
     }
 
     private String id;

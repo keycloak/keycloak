@@ -17,10 +17,14 @@
 
 package org.keycloak.models.jpa;
 
+import org.keycloak.common.util.Time;
 import org.keycloak.migration.MigrationModel;
 import org.keycloak.models.jpa.entities.MigrationModelEntity;
 
 import javax.persistence.EntityManager;
+import javax.persistence.TypedQuery;
+import java.security.SecureRandom;
+import java.util.List;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -28,29 +32,62 @@ import javax.persistence.EntityManager;
  */
 public class MigrationModelAdapter implements MigrationModel {
     protected EntityManager em;
+    protected MigrationModelEntity latest;
+
+    private static final int RESOURCE_TAG_LENGTH = 5;
+    private static final char[] RESOURCE_TAG_CHARSET = "0123456789abcdefghijklmnopqrstuvwxyz".toCharArray();
 
     public MigrationModelAdapter(EntityManager em) {
         this.em = em;
+        init();
     }
 
     @Override
     public String getStoredVersion() {
-        MigrationModelEntity entity = em.find(MigrationModelEntity.class, MigrationModelEntity.SINGLETON_ID);
-        if (entity == null) return null;
-        return entity.getVersion();
+        return latest != null ? latest.getVersion() : null;
+    }
+
+    @Override
+    public String getResourcesTag() {
+        return latest != null ? latest.getId() : null;
+    }
+
+    private void init() {
+        TypedQuery<MigrationModelEntity> q = em.createNamedQuery("getLatest", MigrationModelEntity.class);
+        q.setMaxResults(1);
+        List<MigrationModelEntity> l = q.getResultList();
+        if (l.isEmpty()) {
+            latest = null;
+        } else {
+            latest = l.get(0);
+        }
     }
 
     @Override
     public void setStoredVersion(String version) {
-        MigrationModelEntity entity = em.find(MigrationModelEntity.class, MigrationModelEntity.SINGLETON_ID);
-        if (entity == null) {
-            entity = new MigrationModelEntity();
-            entity.setId(MigrationModelEntity.SINGLETON_ID);
-            entity.setVersion(version);
-            em.persist(entity);
-        } else {
-            entity.setVersion(version);
-            em.flush();
+        String resourceTag = createResourceTag();
+
+        // Make sure resource-tag is unique within current installation
+        while (em.find(MigrationModelEntity.class, resourceTag) != null) {
+            resourceTag = createResourceTag();
         }
+
+        MigrationModelEntity entity = new MigrationModelEntity();
+        entity.setId(resourceTag);
+        entity.setVersion(version);
+        entity.setUpdatedTime(Time.currentTime());
+
+        em.persist(entity);
+
+        latest = entity;
     }
+
+    private String createResourceTag() {
+        StringBuilder sb = new StringBuilder(RESOURCE_TAG_LENGTH);
+        for (int i = 0; i < RESOURCE_TAG_LENGTH; i++) {
+            sb.append(RESOURCE_TAG_CHARSET[new SecureRandom().nextInt(RESOURCE_TAG_CHARSET.length)]);
+        }
+        return sb.toString();
+    }
+
 }

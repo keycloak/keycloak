@@ -59,6 +59,8 @@ import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.adapter.AbstractAdapterTest;
 import org.keycloak.testsuite.adapter.AbstractServletsAdapterTest;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
+import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
+import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
 import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
 import org.keycloak.testsuite.broker.BrokerTestTools;
@@ -69,6 +71,7 @@ import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginUpdateProfilePage;
 import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
 import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.ContainerAssume;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.util.BasicAuthHelper;
 
@@ -99,6 +102,7 @@ import static org.keycloak.testsuite.arquillian.DeploymentTargetModifier.AUTH_SE
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP)
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP6)
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP71)
+@EnableFeature(value = Profile.Feature.TOKEN_EXCHANGE, skipRestart = true)
 public class BrokerLinkAndTokenExchangeTest extends AbstractServletsAdapterTest {
     public static final String CHILD_IDP = "child";
     public static final String PARENT_IDP = "parent-idp";
@@ -205,30 +209,23 @@ public class BrokerLinkAndTokenExchangeTest extends AbstractServletsAdapterTest 
 
     }
 
-    @Before
-    public void enableFeature() throws Exception {
-        try {
-            addIdpUser();
-            addChildUser();
-            createBroker();
-
-            checkFeature(Response.Status.NOT_IMPLEMENTED.getStatusCode());
-            Response response = testingClient.testing().enableFeature(Profile.Feature.TOKEN_EXCHANGE.toString());
-            assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
-            checkFeature(Response.Status.OK.getStatusCode());
-
-            ProfileAssume.assumeFeatureEnabled(Profile.Feature.TOKEN_EXCHANGE);
-        } catch (Exception e) {
-            disableFeature();
-            throw e;
-        }
+    @Test
+    @DisableFeature(value = Profile.Feature.TOKEN_EXCHANGE, skipRestart = true)
+    @UncaughtServerErrorExpected
+    public void testFeatureDisabled() throws Exception {
+        checkFeature(Response.Status.NOT_IMPLEMENTED.getStatusCode());
     }
 
-    @After
-    public void disableFeature() throws Exception {
-        Response response = testingClient.testing().disableFeature(Profile.Feature.TOKEN_EXCHANGE.toString());
-        assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
-        checkFeature(Response.Status.NOT_IMPLEMENTED.getStatusCode());
+    @Test
+    public void testFeatureEnabled() throws Exception {
+        checkFeature(Response.Status.OK.getStatusCode());
+    }
+
+    @Before
+    public void beforeTest() throws Exception {
+        addIdpUser();
+        addChildUser();
+        createBroker();
     }
 
     public void addIdpUser() {
@@ -510,6 +507,8 @@ public class BrokerLinkAndTokenExchangeTest extends AbstractServletsAdapterTest 
     @Test
     @UncaughtServerErrorExpected
     public void testExportImport() throws Exception {
+        ContainerAssume.assumeNotAuthServerRemote();
+
         testExternalExchange();
         testingClient.testing().exportImport().setProvider(SingleFileExportProviderFactory.PROVIDER_ID);
         String targetFilePath = testingClient.testing().exportImport().getExportImportTestDirectory() + File.separator + "singleFile-full.json";

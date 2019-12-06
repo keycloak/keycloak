@@ -29,7 +29,7 @@ import org.keycloak.models.utils.HmacOTP;
 public class HmacTest {
 
     @Test
-    public void testHmac() throws Exception {
+    public void testHmac() {
         HmacOTP hmacOTP = new HmacOTP(6, HmacOTP.HMAC_SHA1, 10);
         String secret = "JNSVMMTEKZCUGSKJIVGHMNSQOZBDA5JT";
         String decoded = new String(Base32.decode(secret));

@@ -98,7 +98,7 @@ public class RSAVerifierTest {
     }
 
     @Test
-    public void testPemWriter() throws Exception {
+    public void testPemWriter() {
         PublicKey realmPublicKey = idpPair.getPublic();
         StringWriter sw = new StringWriter();
         PEMWriter writer = new PEMWriter(sw);
@@ -152,7 +152,7 @@ public class RSAVerifierTest {
 
 
     @Test
-    public void testBadSignature() throws Exception {
+    public void testBadSignature() {
 
         String encoded = new JWSBuilder()
                 .jsonContent(token)
@@ -183,7 +183,7 @@ public class RSAVerifierTest {
     }
 
     @Test
-    public void testNotBeforeBad() throws Exception {
+    public void testNotBeforeBad() {
         token.notBefore(Time.currentTime() + 100);
 
         String encoded = new JWSBuilder()
@@ -216,7 +216,7 @@ public class RSAVerifierTest {
     }
 
     @Test
-    public void testExpirationBad() throws Exception {
+    public void testExpirationBad() {
         token.expiration(Time.currentTime() - 100);
 
         String encoded = new JWSBuilder()
@@ -232,7 +232,7 @@ public class RSAVerifierTest {
     }
 
     @Test
-    public void testTokenAuth() throws Exception {
+    public void testTokenAuth() {
         token = new AccessToken();
         token.subject("CN=Client")
                 .issuer("http://localhost:8080/auth/realms/demo")

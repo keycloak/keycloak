@@ -21,6 +21,7 @@ import org.junit.ClassRule;
 import org.junit.Test;
 import org.keycloak.services.managers.LDAPConnectionTestManager;
 import org.keycloak.testsuite.Assert;
+import org.keycloak.testsuite.arquillian.annotation.EnableVault;
 import org.keycloak.testsuite.util.LDAPRule;
 
 import javax.ws.rs.core.Response;
@@ -28,6 +29,7 @@ import javax.ws.rs.core.Response;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
+@EnableVault
 public class UserFederationLdapConnectionTest extends AbstractAdminTest {
 
     @ClassRule
@@ -55,6 +57,9 @@ public class UserFederationLdapConnectionTest extends AbstractAdminTest {
         response = realm.testLDAPConnection(LDAPConnectionTestManager.TEST_AUTHENTICATION, "ldap://localhost:10389", "uid=admin,ou=system", "secret", "false", null);
         assertStatus(response, 204);
 
+        // Authentication success with bindCredential from Vault
+        response = realm.testLDAPConnection(LDAPConnectionTestManager.TEST_AUTHENTICATION, "ldap://localhost:10389", "uid=admin,ou=system", "${vault.ldap_bindCredential}", "false", null);
+        assertStatus(response, 204);
     }
 
     @Test
@@ -73,6 +78,10 @@ public class UserFederationLdapConnectionTest extends AbstractAdminTest {
         assertStatus(response, 204);
 
         response = realm.testLDAPConnection(LDAPConnectionTestManager.TEST_AUTHENTICATION, "ldaps://localhost:10636", "uid=admin,ou=system", "secret", "true", "10000");
+        assertStatus(response, 204);
+
+        // Authentication success with bindCredential from Vault
+        response = realm.testLDAPConnection(LDAPConnectionTestManager.TEST_AUTHENTICATION, "ldaps://localhost:10636", "uid=admin,ou=system", "${vault.ldap_bindCredential}", "true", null);
         assertStatus(response, 204);
     }
 

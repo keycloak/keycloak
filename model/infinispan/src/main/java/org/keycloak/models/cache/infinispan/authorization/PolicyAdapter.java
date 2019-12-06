@@ -318,7 +318,7 @@ public class PolicyAdapter implements Policy, CachedModel<Policy> {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o == null || !(o instanceof Policy)) return false;
+        if (!(o instanceof Policy)) return false;
 
         Policy that = (Policy) o;
         return that.getId().equals(getId());

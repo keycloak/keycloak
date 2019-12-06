@@ -125,7 +125,7 @@ public class ModelVersion {
         }
 
         ModelVersion v = (ModelVersion) obj;
-        return v.getMajor() == major && v.getMinor() == minor && v.getMicro() != micro;
+        return v.getMajor() == major && v.getMinor() == minor && v.getMicro() == micro;
     }
 
     @Override

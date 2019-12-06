@@ -72,6 +72,8 @@ public class LDAPConstants {
 
     public static final String VALIDATE_PASSWORD_POLICY = "validatePasswordPolicy";
 
+    public static final String TRUST_EMAIL = "trustEmail";
+
     // Count of users processed per single transaction during sync process
     public static final String BATCH_SIZE_FOR_SYNC = "batchSizeForSync";
     public static final int DEFAULT_BATCH_SIZE_FOR_SYNC = 1000;
@@ -122,6 +124,7 @@ public class LDAPConstants {
     public static final String CUSTOM_ATTRIBUTE_EXPIRY_DATE = "expiryDate";
     public static final String ENTRY_UUID = "entryUUID";
     public static final String OBJECT_GUID = "objectGUID";
+    public static final String NOVELL_EDIRECTORY_GUID = "guid";
     public static final String CREATE_TIMESTAMP = "createTimestamp";
     public static final String MODIFY_TIMESTAMP = "modifyTimestamp";
 

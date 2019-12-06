@@ -18,9 +18,9 @@
 package org.keycloak.forms.login.freemarker.model;
 
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.services.util.ResolveRelative;
 
-import java.net.URI;
 import java.util.Map;
 
 /**
@@ -29,13 +29,12 @@ import java.util.Map;
  */
 public class ClientBean {
 
+    private KeycloakSession session;
     protected ClientModel client;
 
-    private URI requestUri;
-
-    public ClientBean(ClientModel client, URI requestUri) {
+    public ClientBean(KeycloakSession session, ClientModel client) {
+        this.session = session;
         this.client = client;
-        this.requestUri = requestUri;
     }
 
     public String getClientId() {
@@ -51,7 +50,7 @@ public class ClientBean {
     }
 
     public String getBaseUrl() {
-        return ResolveRelative.resolveRelativeUri(requestUri, client.getRootUrl(), client.getBaseUrl());
+        return ResolveRelative.resolveRelativeUri(session, client.getRootUrl(), client.getBaseUrl());
     }
 
     public Map<String,String> getAttributes(){

@@ -18,8 +18,8 @@
 package org.keycloak.authentication.authenticators.resetcred;
 
 import org.keycloak.authentication.AuthenticationFlowContext;
-import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.credential.PasswordCredentialModel;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -32,7 +32,7 @@ public class ResetPassword extends AbstractSetRequiredActionAuthenticator {
     @Override
     public void authenticate(AuthenticationFlowContext context) {
         if (context.getExecution().isRequired() ||
-                (context.getExecution().isOptional() &&
+                (context.getExecution().isConditional() &&
                         configuredFor(context))) {
             context.getAuthenticationSession().addRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
         }
@@ -40,7 +40,7 @@ public class ResetPassword extends AbstractSetRequiredActionAuthenticator {
     }
 
     protected boolean configuredFor(AuthenticationFlowContext context) {
-        return context.getSession().userCredentialManager().isConfiguredFor(context.getRealm(), context.getUser(), UserCredentialModel.PASSWORD);
+        return context.getSession().userCredentialManager().isConfiguredFor(context.getRealm(), context.getUser(), PasswordCredentialModel.TYPE);
     }
 
     @Override

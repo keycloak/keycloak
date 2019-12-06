@@ -22,7 +22,10 @@ import javax.persistence.AccessType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
+import javax.persistence.NamedQueries;
+import javax.persistence.NamedQuery;
 import javax.persistence.Table;
+import java.util.Date;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -30,6 +33,9 @@ import javax.persistence.Table;
  */
 @Table(name="MIGRATION_MODEL")
 @Entity
+@NamedQueries({
+        @NamedQuery(name = "getLatest", query = "select m from MigrationModelEntity m ORDER BY m.updatedTime DESC")
+})
 public class MigrationModelEntity {
     public static final String SINGLETON_ID = "SINGLETON";
     @Id
@@ -39,6 +45,9 @@ public class MigrationModelEntity {
 
     @Column(name="VERSION", length = 36)
     protected String version;
+
+    @Column(name="UPDATE_TIME")
+    protected long updatedTime;
 
     public String getId() {
         return id;
@@ -54,6 +63,14 @@ public class MigrationModelEntity {
 
     public void setVersion(String version) {
         this.version = version;
+    }
+
+    public long getUpdateTime() {
+        return updatedTime;
+    }
+
+    public void setUpdatedTime(long updatedTime) {
+        this.updatedTime = updatedTime;
     }
 
     @Override

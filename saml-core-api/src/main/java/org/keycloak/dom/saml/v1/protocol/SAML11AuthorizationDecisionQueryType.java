@@ -38,7 +38,7 @@ import java.util.List;
  */
 public class SAML11AuthorizationDecisionQueryType extends SAML11SubjectQueryAbstractType {
 
-    protected List<SAML11ActionType> action = new ArrayList<SAML11ActionType>();
+    protected List<SAML11ActionType> action = new ArrayList<>();
 
     protected SAML11EvidenceType evidence;
 

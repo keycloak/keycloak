@@ -46,10 +46,19 @@ export class AccountServiceClient {
                 config?: AxiosRequestConfig): Promise<AxiosResponse> {
         return this.doRequest(endpoint, {...config, method: 'get'});
     }
+
+    public doDelete(endpoint: string, 
+            config?: AxiosRequestConfig): Promise<AxiosResponse> {
+        return this.doRequest(endpoint, {...config, method: 'delete'});
+    }
     
     public doPut(endpoint: string, 
                 config?: AxiosRequestConfig): Promise<AxiosResponse> {
-        return this.doRequest(endpoint, {...config, method: 'put'});
+        return this.doRequest(endpoint, {...config, 
+                                         method: 'put', 
+                                         headers: {'Content-Type': 'application/json'}
+                                        }
+        );
     }
     
     public doPost(endpoint: string, 

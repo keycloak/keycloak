@@ -8,7 +8,11 @@ import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.admin.ApiUtil;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
 import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 
@@ -61,7 +65,7 @@ public class BasicSpringBootTest extends AbstractSpringBootTest {
         testRealmLoginPage.form().login(USER_LOGIN, USER_PASSWORD);
 
         adminPage.assertIsCurrent();
-        assertThat(driver.getPageSource()).contains("You are now admin");
+        assertThat(driver.getPageSource(), containsString("You are now admin"));
 
         driver.navigate().to(logoutPage(BASE_URL));
         waitForPageToLoad();
@@ -81,7 +85,7 @@ public class BasicSpringBootTest extends AbstractSpringBootTest {
 
         testRealmLoginPage.form().login(USER_LOGIN_2, USER_PASSWORD_2);
 
-        assertThat(driver.getPageSource()).contains("Forbidden");
+        assertThat(driver.getPageSource(), containsString("Forbidden"));
 
         driver.navigate().to(logoutPage(BASE_URL));
         waitForPageToLoad();
@@ -98,7 +102,7 @@ public class BasicSpringBootTest extends AbstractSpringBootTest {
 
         testRealmLoginPage.form().login(USER_LOGIN, USER_PASSWORD_2);
 
-        assertThat(testRealmLoginPage.feedbackMessage().isError()).isTrue();
-        assertThat(testRealmLoginPage.feedbackMessage().getText()).isEqualTo("Invalid username or password.");
+        assertThat(testRealmLoginPage.feedbackMessage().isError(), is(true));
+        assertThat(testRealmLoginPage.feedbackMessage().getText(), is(equalTo("Invalid username or password.")));
     }
 }

@@ -17,6 +17,7 @@
 package org.keycloak.testsuite.util;
 
 import org.keycloak.dom.saml.v2.SAML2Object;
+import org.keycloak.dom.saml.v2.protocol.AuthnRequestType;
 import org.keycloak.dom.saml.v2.protocol.LogoutRequestType;
 import org.keycloak.dom.saml.v2.protocol.ResponseType;
 import org.keycloak.dom.saml.v2.protocol.StatusResponseType;
@@ -141,6 +142,13 @@ public class Matchers {
           instanceOf(LogoutRequestType.class),
           new SamlLogoutRequestTypeMatcher(URI.create(destination))
         );
+    }
+    /**
+     * Matches when the type of a SAML object is instance of {@link AuthnRequestType}.
+     * @return
+     */
+    public static <T> Matcher<SAML2Object> isSamlAuthnRequest() {
+        return instanceOf(AuthnRequestType.class);
     }
 
     /**

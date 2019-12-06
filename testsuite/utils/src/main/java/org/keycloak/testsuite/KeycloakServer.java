@@ -346,7 +346,6 @@ public class KeycloakServer {
                 info("Not importing realm " + rep.getRealm() + " realm already exists");
                 return;
             }
-            manager.setContextPath("/auth");
             RealmModel realm = manager.importRealm(rep);
 
             info("Imported realm " + realm.getName());
@@ -411,7 +410,7 @@ public class KeycloakServer {
 
             di.addServlet(restEasyDispatcher);
 
-            FilterInfo filter = Servlets.filter("SessionFilter", KeycloakSessionServletFilter.class);
+            FilterInfo filter = Servlets.filter("SessionFilter", TestKeycloakSessionServletFilter.class);
 
             filter.setAsyncSupported(true);
 

@@ -159,6 +159,11 @@ public class LDAPUtils {
         return ldapObject;
     }
 
+    public static LDAPObject updateLDAPGroup(LDAPStorageProvider ldapProvider, LDAPObject ldapObject) {
+        ldapProvider.getLdapIdentityStore().update(ldapObject);
+        return ldapObject;
+    }
+
     /**
      * Add ldapChild as member of ldapParent and save ldapParent to LDAP.
      *
@@ -288,9 +293,10 @@ public class LDAPUtils {
     public static void fillRangedAttribute(LDAPStorageProvider ldapProvider, LDAPObject ldapObject, String name) {
         LDAPObject newObject = ldapObject;
         while (!newObject.isRangeComplete(name)) {
-            LDAPQuery q = createLdapQueryForRangeAttribute(ldapProvider, ldapObject, name);
-            newObject = q.getFirstResult();
-            ldapObject.populateRangedAttribute(newObject, name);
+            try (LDAPQuery q = createLdapQueryForRangeAttribute(ldapProvider, ldapObject, name)) {
+                newObject = q.getFirstResult();
+                ldapObject.populateRangedAttribute(newObject, name);
+            }
         }
     }
 }

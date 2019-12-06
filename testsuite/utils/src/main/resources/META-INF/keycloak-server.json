@@ -1,12 +1,12 @@
 {
 
     "hostname": {
-        "provider": "request",
+        "provider": "${keycloak.hostname.provider:default}",
 
-        "fixed": {
-            "hostname": "localhost",
-            "httpPort": "-1",
-            "httpsPort": "-1"
+        "default": {
+            "frontendUrl": "${keycloak.frontendUrl:}",
+            "adminUrl": "${keycloak.adminUrl:}",
+            "forceBackendUrlToFrontendUrl": "${keycloak.hostname.default.forceBackendUrlToFrontendUrl:false}"
         }
     },
 

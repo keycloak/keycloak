@@ -17,6 +17,8 @@
 
 package org.keycloak.common;
 
+import static org.keycloak.common.Profile.Type.DEPRECATED;
+
 import org.jboss.logging.Logger;
 
 import java.io.File;
@@ -38,9 +40,9 @@ public class Profile {
         DEFAULT,
         DISABLED_BY_DEFAULT,
         PREVIEW,
-        EXPERIMENTAL
+        EXPERIMENTAL,
+        DEPRECATED;
     }
-
     public enum Feature {
         ACCOUNT2(Type.EXPERIMENTAL),
         ACCOUNT_API(Type.PREVIEW),
@@ -50,7 +52,7 @@ public class Profile {
         OPENSHIFT_INTEGRATION(Type.PREVIEW),
         SCRIPTS(Type.PREVIEW),
         TOKEN_EXCHANGE(Type.PREVIEW),
-        AUTHZ_DROOLS_POLICY(Type.PREVIEW);
+        UPLOAD_SCRIPTS(DEPRECATED);
 
         private Type type;
 
@@ -83,6 +85,7 @@ public class Profile {
     private final Set<Feature> disabledFeatures = new HashSet<>();
     private final Set<Feature> previewFeatures = new HashSet<>();
     private final Set<Feature> experimentalFeatures = new HashSet<>();
+    private final Set<Feature> deprecatedFeatures = new HashSet<>();
 
     private Profile() {
         Config config = new Config();
@@ -99,9 +102,18 @@ public class Profile {
                         disabledFeatures.add(f);
                     }
                     break;
+                case DEPRECATED:
+                    deprecatedFeatures.add(f);
                 case DISABLED_BY_DEFAULT:
                     if (enabled == null || !enabled) {
                         disabledFeatures.add(f);
+                    } else if (DEPRECATED.equals(f.getType())) {
+                        logger.warnf("Deprecated feature enabled: " + f.name().toLowerCase());
+                        if (Feature.UPLOAD_SCRIPTS.equals(f)) {
+                            previewFeatures.add(Feature.SCRIPTS);
+                            disabledFeatures.remove(Feature.SCRIPTS);
+                            logger.warnf("Preview feature enabled: " + Feature.SCRIPTS.name().toLowerCase());
+                        }
                     }
                     break;
                 case PREVIEW:
@@ -142,6 +154,10 @@ public class Profile {
 
     public static Set<Feature> getExperimentalFeatures() {
         return CURRENT.experimentalFeatures;
+    }
+
+    public static Set<Feature> getDeprecatedFeatures() {
+        return CURRENT.deprecatedFeatures;
     }
 
     public static boolean isFeatureEnabled(Feature feature) {

@@ -30,9 +30,8 @@
             </div>
         </div>
         <div class="col-md-4" data-ng-if="option.type == 'ClientList'">
-            <select ng-model="config[ option.name ][0]" ng-options="client.clientId as client.clientId for client in clients">
-                <option value="" selected> {{:: 'selectOne' | translate}} </option>
-            </select>
+            <input type="hidden" ui-select2="clientsUiSelect" id="clients" data-ng-init="initSelectedClient(option.name, config)" data-ng-model="selectedClient" data-ng-change="changeClient(option.name, config, selectedClient);" data-placeholder="{{:: 'selectOne' | translate}}...">
+            </input>
         </div>
 
         <div class="col-md-6" data-ng-if="option.type == 'File'">

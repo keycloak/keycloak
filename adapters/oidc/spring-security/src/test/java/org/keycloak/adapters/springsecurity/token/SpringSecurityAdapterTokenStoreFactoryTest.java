@@ -21,13 +21,15 @@ import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.spi.AdapterSessionStore;
+import org.keycloak.enums.TokenStore;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.when;
 
 /**
  * Spring Security adapter token store factory tests.
@@ -42,6 +44,9 @@ public class SpringSecurityAdapterTokenStoreFactoryTest {
     @Mock
     private HttpServletRequest request;
 
+    @Mock
+    private HttpServletResponse response;
+
     @Before
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
@@ -49,18 +54,37 @@ public class SpringSecurityAdapterTokenStoreFactoryTest {
 
     @Test
     public void testCreateAdapterTokenStore() throws Exception {
-        AdapterSessionStore store = factory.createAdapterTokenStore(deployment, request);
-        assertNotNull(store);
+        when(deployment.getTokenStore()).thenReturn(TokenStore.SESSION);
+        AdapterSessionStore store = factory.createAdapterTokenStore(deployment, request, response);
         assertTrue(store instanceof SpringSecurityTokenStore);
+    }
+
+    @Test
+    public void testCreateAdapterTokenStoreUsingCookies() throws Exception {
+        when(deployment.getTokenStore()).thenReturn(TokenStore.COOKIE);
+        AdapterSessionStore store = factory.createAdapterTokenStore(deployment, request, response);
+        assertTrue(store instanceof SpringSecurityCookieTokenStore);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testCreateAdapterTokenStoreNullDeployment() throws Exception {
-        factory.createAdapterTokenStore(null, request);
+        factory.createAdapterTokenStore(null, request, response);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testCreateAdapterTokenStoreNullRequest() throws Exception {
-        factory.createAdapterTokenStore(deployment, null);
+        factory.createAdapterTokenStore(deployment, null, response);
+    }
+
+    @Test
+    public void testCreateAdapterTokenStoreNullResponse() throws Exception {
+        when(deployment.getTokenStore()).thenReturn(TokenStore.SESSION);
+        factory.createAdapterTokenStore(deployment, request, null);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testCreateAdapterTokenStoreNullResponseUsingCookies() throws Exception {
+        when(deployment.getTokenStore()).thenReturn(TokenStore.COOKIE);
+        factory.createAdapterTokenStore(deployment, request, null);
     }
 }

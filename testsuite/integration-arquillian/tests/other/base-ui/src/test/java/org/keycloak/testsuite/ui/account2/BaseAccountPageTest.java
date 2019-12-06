@@ -18,9 +18,10 @@
 package org.keycloak.testsuite.ui.account2;
 
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
-import org.keycloak.testsuite.auth.page.account2.AbstractLoggedInPage;
+import org.keycloak.testsuite.ui.account2.page.AbstractLoggedInPage;
+
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
@@ -36,9 +37,16 @@ public abstract class BaseAccountPageTest extends AbstractAccountTest {
     }
 
     @Test
-    @Ignore // TODO, blocked by KEYCLOAK-8217
     public void navigationTest() {
-        getAccountPage().navigateToUsingNavBar();
+        pageNotFound.navigateTo();
+        pageNotFound.assertCurrent();
+
+        getAccountPage().navigateToUsingSidebar();
         getAccountPage().assertCurrent();
+
+        if (getAccountPage().getParentPageId() != null) {
+            assertTrue("Nav bar subsection should be expanded after clicking nav item",
+                    getAccountPage().sidebar().isNavSubsectionExpanded(getAccountPage().getParentPageId()));
+        }
     }
 }

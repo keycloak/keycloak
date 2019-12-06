@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.keycloak.authorization.model.PermissionTicket;
+import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 
 /**
@@ -109,4 +110,25 @@ public interface PermissionTicketStore {
      * @return a list of permissions granted for a particular user
      */
     List<PermissionTicket> findGranted(String resourceName, String userId, String resourceServerId);
+
+    /**
+     * Returns a list of {@link Resource} granted to the given {@code requester}
+     * 
+     * @param requester the requester
+     * @param name the keyword to query resources by name or null if any resource
+     * @param first first  result
+     * @param max max result
+     * @return a list of {@link Resource} granted to the given {@code requester}
+     */
+    List<Resource> findGrantedResources(String requester, String name, int first, int max);
+
+    /**
+     * Returns a list of {@link Resource} granted by the owner to other users
+     *
+     * @param owner the owner
+     * @param first first  result
+     * @param max max result
+     * @return a list of {@link Resource} granted by the owner
+     */
+    List<Resource> findGrantedOwnerResources(String owner, int first, int max);
 }

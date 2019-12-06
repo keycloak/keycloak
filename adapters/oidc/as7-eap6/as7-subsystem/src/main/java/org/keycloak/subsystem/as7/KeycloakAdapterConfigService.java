@@ -45,10 +45,10 @@ public final class KeycloakAdapterConfigService {
         return INSTANCE;
     }
 
-    private final Map<String, ModelNode> realms = new HashMap<String, ModelNode>();
+    private final Map<String, ModelNode> realms = new HashMap<>();
 
     // keycloak-secured deployments
-    private final Map<String, ModelNode> secureDeployments = new HashMap<String, ModelNode>();
+    private final Map<String, ModelNode> secureDeployments = new HashMap<>();
 
 
     private KeycloakAdapterConfigService() {

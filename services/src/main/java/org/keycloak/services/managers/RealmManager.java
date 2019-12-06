@@ -42,6 +42,7 @@ import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
+import org.keycloak.protocol.oidc.mappers.AudienceResolveProtocolMapper;
 import org.keycloak.representations.idm.ApplicationRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
@@ -67,15 +68,6 @@ public class RealmManager {
 
     protected KeycloakSession session;
     protected RealmProvider model;
-    protected String contextPath = "";
-
-    public String getContextPath() {
-        return contextPath;
-    }
-
-    public void setContextPath(String contextPath) {
-        this.contextPath = contextPath;
-    }
 
     public RealmManager(KeycloakSession session) {
         this.session = session;
@@ -165,11 +157,15 @@ public class RealmManager {
         ClientModel adminConsole = realm.getClientByClientId(Constants.ADMIN_CONSOLE_CLIENT_ID);
         if (adminConsole == null) adminConsole = KeycloakModelUtils.createClient(realm, Constants.ADMIN_CONSOLE_CLIENT_ID);
         adminConsole.setName("${client_" + Constants.ADMIN_CONSOLE_CLIENT_ID + "}");
-        String baseUrl = contextPath + "/admin/" + realm.getName() + "/console";
-        adminConsole.setBaseUrl(baseUrl + "/index.html");
+
+        adminConsole.setRootUrl(Constants.AUTH_ADMIN_URL_PROP);
+        String baseUrl = "/admin/" + realm.getName() + "/console/";
+        adminConsole.setBaseUrl(baseUrl);
+        adminConsole.addRedirectUri(baseUrl + "*");
+        adminConsole.setWebOrigins(Collections.singleton("+"));
+
         adminConsole.setEnabled(true);
         adminConsole.setPublicClient(true);
-        adminConsole.addRedirectUri(baseUrl + "/*");
         adminConsole.setFullScopeAllowed(false);
         adminConsole.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
     }
@@ -406,27 +402,54 @@ public class RealmManager {
 
 
     private void setupAccountManagement(RealmModel realm) {
-        ClientModel client = realm.getClientByClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID);
-        if (client == null) {
-            client = KeycloakModelUtils.createClient(realm, Constants.ACCOUNT_MANAGEMENT_CLIENT_ID);
-            client.setName("${client_" + Constants.ACCOUNT_MANAGEMENT_CLIENT_ID + "}");
-            client.setEnabled(true);
-            client.setFullScopeAllowed(false);
-            String base = contextPath + "/realms/" + realm.getName() + "/account";
-            String redirectUri = base + "/*";
-            client.addRedirectUri(redirectUri);
-            client.setBaseUrl(base);
-            client.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+        ClientModel accountClient = realm.getClientByClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID);
+        if (accountClient == null) {
+            accountClient = KeycloakModelUtils.createClient(realm, Constants.ACCOUNT_MANAGEMENT_CLIENT_ID);
+            accountClient.setName("${client_" + Constants.ACCOUNT_MANAGEMENT_CLIENT_ID + "}");
+            accountClient.setEnabled(true);
+            accountClient.setFullScopeAllowed(false);
+
+            accountClient.setRootUrl(Constants.AUTH_BASE_URL_PROP);
+            String baseUrl = "/realms/" + realm.getName() + "/account/";
+            accountClient.setBaseUrl(baseUrl);
+            accountClient.addRedirectUri(baseUrl + "*");
+
+            accountClient.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
 
             for (String role : AccountRoles.ALL) {
-                client.addDefaultRole(role);
-                RoleModel roleModel = client.getRole(role);
+                accountClient.addDefaultRole(role);
+                RoleModel roleModel = accountClient.getRole(role);
                 roleModel.setDescription("${role_" + role + "}");
             }
-            RoleModel manageAccountLinks = client.addRole(AccountRoles.MANAGE_ACCOUNT_LINKS);
+            RoleModel manageAccountLinks = accountClient.addRole(AccountRoles.MANAGE_ACCOUNT_LINKS);
             manageAccountLinks.setDescription("${role_" + AccountRoles.MANAGE_ACCOUNT_LINKS + "}");
-            RoleModel manageAccount = client.getRole(AccountRoles.MANAGE_ACCOUNT);
+            RoleModel manageAccount = accountClient.getRole(AccountRoles.MANAGE_ACCOUNT);
             manageAccount.addCompositeRole(manageAccountLinks);
+
+            ClientModel accountConsoleClient = realm.getClientByClientId(Constants.ACCOUNT_CONSOLE_CLIENT_ID);
+            if (accountConsoleClient == null) {
+                accountConsoleClient = KeycloakModelUtils.createClient(realm, Constants.ACCOUNT_CONSOLE_CLIENT_ID);
+                accountConsoleClient.setName("${client_" + Constants.ACCOUNT_CONSOLE_CLIENT_ID + "}");
+                accountConsoleClient.setEnabled(true);
+                accountConsoleClient.setFullScopeAllowed(false);
+                accountConsoleClient.setPublicClient(true);
+                accountConsoleClient.setDirectAccessGrantsEnabled(false);
+
+                accountConsoleClient.setRootUrl(Constants.AUTH_BASE_URL_PROP);
+                accountConsoleClient.setBaseUrl(baseUrl);
+                accountConsoleClient.addRedirectUri(baseUrl + "*");
+
+                accountConsoleClient.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+
+                accountConsoleClient.addScopeMapping(accountClient.getRole(AccountRoles.MANAGE_ACCOUNT));
+
+                ProtocolMapperModel audienceMapper = new ProtocolMapperModel();
+                audienceMapper.setName(OIDCLoginProtocolFactory.AUDIENCE_RESOLVE);
+                audienceMapper.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+                audienceMapper.setProtocolMapper(AudienceResolveProtocolMapper.PROVIDER_ID);
+
+                accountConsoleClient.addProtocolMapper(audienceMapper);
+            }
         }
     }
 

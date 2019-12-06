@@ -29,7 +29,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
@@ -121,14 +121,13 @@ public class IoUtil {
     }
 
     public static String readFully(InputStream is) {
-        Charset charset = Charset.forName("utf-8");
         StringBuilder out = new StringBuilder();
         byte [] buf = new byte[8192];
 
         int rc;
         try {
             while ((rc = is.read(buf)) != -1) {
-                out.append(new String(buf, 0, rc, charset));
+                out.append(new String(buf, 0, rc, StandardCharsets.UTF_8));
             }
         } catch (Exception e) {
             throw new RuntimeException("Failed to read stream", e);

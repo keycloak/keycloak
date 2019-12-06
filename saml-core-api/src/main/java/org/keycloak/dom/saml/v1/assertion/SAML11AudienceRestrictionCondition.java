@@ -32,7 +32,7 @@ import java.util.List;
  */
 public class SAML11AudienceRestrictionCondition extends SAML11ConditionAbstractType {
 
-    protected List<URI> audience = new ArrayList<URI>();
+    protected List<URI> audience = new ArrayList<>();
 
     public void add(URI advice) {
         this.audience.add(advice);

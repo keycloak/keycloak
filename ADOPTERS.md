@@ -10,12 +10,14 @@ List of organization names below is based on information collected using Keycloa
 * Actinver
 * Akvo Foundation
 * Appier
+* Associazione Rousseau
 * BISPRO
 * Bluestem Brands, Inc
 * Bundesversicherungsamt
 * Capgemini
 * Chassi
 * CloudNative Inc.
+* Conciso GmbH
 * Copenhagen Optimization
 * Curecomp GmbH
 * Cybertech

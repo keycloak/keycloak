@@ -20,7 +20,6 @@ package org.keycloak.testsuite.openshift;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 import static org.keycloak.common.Profile.Feature.OPENSHIFT_INTEGRATION;
-import static org.keycloak.testsuite.ProfileAssume.assumeFeatureEnabled;
 import static org.keycloak.testsuite.admin.ApiUtil.findUserByUsername;
 
 import javax.ws.rs.core.Response;
@@ -56,11 +55,14 @@ import org.keycloak.storage.openshift.OpenshiftClientStorageProviderFactory;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
+import org.keycloak.testsuite.arquillian.annotation.RestartContainer;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.ConsentPage;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
+import org.keycloak.testsuite.util.ContainerAssume;
 import org.keycloak.testsuite.util.OAuthClient;
 
 /**
@@ -68,6 +70,7 @@ import org.keycloak.testsuite.util.OAuthClient;
  *
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
+@EnableFeature(OPENSHIFT_INTEGRATION)
 public final class OpenshiftClientStorageTest extends AbstractTestRealmKeycloakTest {
 
     private static Undertow OPENSHIFT_API_SERVER;
@@ -142,12 +145,15 @@ public final class OpenshiftClientStorageTest extends AbstractTestRealmKeycloakT
 
     @AfterClass
     public static void onAfterClass() {
-        OPENSHIFT_API_SERVER.stop();
+        if (OPENSHIFT_API_SERVER != null) {
+            OPENSHIFT_API_SERVER.stop();
+        }
     }
 
     @Before
     public void onBefore() {
-        assumeFeatureEnabled(OPENSHIFT_INTEGRATION);
+        ContainerAssume.assumeNotAuthServerRemote();
+
         ComponentRepresentation provider = new ComponentRepresentation();
 
         provider.setName("openshift-client-storage");

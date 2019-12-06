@@ -36,7 +36,7 @@ export class Msg extends React.Component<MsgProps> {
     }
     
     public static localize(msgKey: string, params?: string[]): string {
-        let message: string = l18nMsg[msgKey];
+        let message: string = l18nMsg[this.processKey(msgKey)];
         if (message === undefined) message = msgKey;
         
         if ((params !== undefined) && (params.length > 0)) {
@@ -46,7 +46,15 @@ export class Msg extends React.Component<MsgProps> {
             })
         }
         
-        return message;
+        return unescape(message);
+    }
+
+    // if the message key has Freemarker syntax, remove it
+    private static processKey(msgKey: string): string {
+        if (!(msgKey.startsWith('${') && msgKey.endsWith('}'))) return msgKey;
+
+        // remove Freemarker syntax
+        return msgKey.substring(2, msgKey.length - 1);
     }
     
     // if the param has Freemarker syntax, try to look up its value

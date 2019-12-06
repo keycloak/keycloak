@@ -17,6 +17,7 @@
 
 package org.keycloak.testsuite.federation.ldap;
 
+import org.hamcrest.Matchers;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.container.test.api.TargetsContainer;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
@@ -27,8 +28,12 @@ import org.junit.Test;
 import org.junit.runners.MethodSorters;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.component.ComponentModel;
+import org.keycloak.models.GroupModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.ComponentRepresentation;
+import org.keycloak.representations.idm.SynchronizationResultRepresentation;
 import org.keycloak.services.managers.UserStorageSyncManager;
+import org.keycloak.storage.ldap.LDAPUtils;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.LDAPConstants;
@@ -39,6 +44,11 @@ import org.keycloak.models.cache.UserCache;
 import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.storage.ldap.LDAPStorageProvider;
 import org.keycloak.storage.ldap.LDAPStorageProviderFactory;
+import org.keycloak.storage.ldap.mappers.membership.LDAPGroupMapperMode;
+import org.keycloak.storage.ldap.mappers.membership.MembershipType;
+import org.keycloak.storage.ldap.mappers.membership.group.GroupLDAPStorageMapper;
+import org.keycloak.storage.ldap.mappers.membership.group.GroupLDAPStorageMapperFactory;
+import org.keycloak.storage.ldap.mappers.membership.group.GroupMapperConfig;
 import org.keycloak.storage.user.SynchronizationResult;
 import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
 import org.keycloak.testsuite.util.LDAPRule;
@@ -46,6 +56,8 @@ import org.keycloak.testsuite.util.LDAPTestUtils;
 import org.keycloak.testsuite.util.WaitUtils;
 
 import static org.keycloak.testsuite.arquillian.DeploymentTargetModifier.AUTH_SERVER_CURRENT;
+
+import javax.ws.rs.BadRequestException;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -114,7 +126,7 @@ public class LDAPSyncTest extends AbstractLDAPTest {
     @Test
     public void test01LDAPSync() {
         // wait a bit
-        WaitUtils.pause(ldapRule.getSleepTime());
+        WaitUtils.pause(getLDAPRule().getSleepTime());
 
         // Sync 5 users from LDAP
         testingClient.server().run(session -> {
@@ -151,7 +163,7 @@ public class LDAPSyncTest extends AbstractLDAPTest {
         });
 
         // wait a bit
-        WaitUtils.pause(ldapRule.getSleepTime());
+        WaitUtils.pause(getLDAPRule().getSleepTime());
 
         testingClient.server().run(session -> {
             LDAPTestContext ctx = LDAPTestContext.init(session);
@@ -286,11 +298,7 @@ public class LDAPSyncTest extends AbstractLDAPTest {
 
         // Revert config changes
         ComponentRepresentation ldapRep = testRealm().components().component(ldapModelId).toRepresentation();
-        if (origUuidAttrName == null) {
-            ldapRep.getConfig().remove(LDAPConstants.UUID_LDAP_ATTRIBUTE);
-        } else {
-            ldapRep.getConfig().putSingle(LDAPConstants.UUID_LDAP_ATTRIBUTE, origUuidAttrName);
-        }
+        ldapRep.getConfig().putSingle(LDAPConstants.UUID_LDAP_ATTRIBUTE, origUuidAttrName);
         testRealm().components().component(ldapModelId).update(ldapRep);
     }
 
@@ -355,4 +363,94 @@ public class LDAPSyncTest extends AbstractLDAPTest {
         });
     }
 
+    // KEYCLOAK-10770 user-storage/{id}/sync should return 400 instead of 404
+    @Test
+    public void test05SyncRestAPIMissingAction() {
+        ComponentRepresentation ldapRep = testRealm().components().component(ldapModelId).toRepresentation();
+
+        try {
+            SynchronizationResultRepresentation syncResultRep = adminClient.realm("test").userStorage().syncUsers( ldapModelId, null);
+            Assert.fail("Should throw 400");
+        } catch (Exception e) {
+            Assert.assertTrue(e instanceof BadRequestException);
+        }
+    }
+
+    // KEYCLOAK-10770 user-storage/{id}/sync should return 400 instead of 404
+    @Test
+    public void test06SyncRestAPIWrongAction() {
+        ComponentRepresentation ldapRep = testRealm().components().component(ldapModelId).toRepresentation();
+
+        try {
+            SynchronizationResultRepresentation syncResultRep = adminClient.realm("test").userStorage().syncUsers( ldapModelId, "wrong action");
+            Assert.fail("Should throw 400");
+        } catch (Exception e) {
+            Assert.assertTrue(e instanceof BadRequestException);
+        }
+    }
+
+    @Test
+    public void test07LDAPGroupSyncAfterGroupRename() {
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel appRealm = ctx.getRealm();
+            String descriptionAttrName = LDAPTestUtils.getGroupDescriptionLDAPAttrName(ctx.getLdapProvider());
+            // Add group mapper
+            LDAPTestUtils.addOrUpdateGroupMapper(appRealm, ctx.getLdapModel(), LDAPGroupMapperMode.READ_ONLY, descriptionAttrName);
+
+            LDAPObject group1 = LDAPTestUtils.createLDAPGroup(session, appRealm, ctx.getLdapModel(), "group1", descriptionAttrName, "group1 - description");
+            LDAPObject group2 = LDAPTestUtils.createLDAPGroup(session, appRealm, ctx.getLdapModel(), "group2", descriptionAttrName, "group2 - description");
+            LDAPUtils.addMember(ctx.getLdapProvider(), MembershipType.DN, LDAPConstants.MEMBER, "not-used", group2, group1);
+
+            ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(appRealm, ctx.getLdapModel(), "groupsMapper");
+            LDAPTestUtils.updateGroupMapperConfigOptions(mapperModel, GroupMapperConfig.PRESERVE_GROUP_INHERITANCE, "false");
+            ctx.getRealm().updateComponent(mapperModel);
+
+            // sync groups to Keycloak
+            new GroupLDAPStorageMapperFactory().create(session, mapperModel).syncDataFromFederationProviderToKeycloak(appRealm);
+        });
+
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel appRealm = ctx.getRealm();
+
+            GroupModel kcGroup1 = KeycloakModelUtils.findGroupByPath(appRealm, "/group1");
+            String descriptionAttrName = LDAPTestUtils.getGroupDescriptionLDAPAttrName(ctx.getLdapProvider());
+
+            Assert.assertEquals("group1 - description", kcGroup1.getFirstAttribute(descriptionAttrName));
+        });
+
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel appRealm = ctx.getRealm();
+            String descriptionAttrName = LDAPTestUtils.getGroupDescriptionLDAPAttrName(ctx.getLdapProvider());
+            // Add group mapper
+            LDAPTestUtils.addOrUpdateGroupMapper(appRealm, ctx.getLdapModel(), LDAPGroupMapperMode.LDAP_ONLY, descriptionAttrName);
+
+            ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(appRealm, ctx.getLdapModel(), "groupsMapper");
+            LDAPStorageProvider ldapProvider = LDAPTestUtils.getLdapProvider(session, ctx.getLdapModel());
+            GroupLDAPStorageMapper groupMapper = LDAPTestUtils.getGroupMapper(mapperModel, ldapProvider, appRealm);
+            LDAPObject group1Loaded = groupMapper.loadLDAPGroupByName("group1");
+
+            // update group name and description
+            group1Loaded.setSingleAttribute(group1Loaded.getRdnAttributeName(), "group5");
+            group1Loaded.setSingleAttribute(descriptionAttrName, "group5 - description");
+            LDAPTestUtils.updateLDAPGroup(session, appRealm, ctx.getLdapModel(), group1Loaded);
+
+            // sync to Keycloak should pass without an error
+            SynchronizationResult syncResult = new GroupLDAPStorageMapperFactory().create(session, mapperModel).syncDataFromFederationProviderToKeycloak(appRealm);
+            Assert.assertThat(syncResult.getFailed(), Matchers.is(0));
+        });
+
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel appRealm = ctx.getRealm();
+
+            // load previously synced group (a new group has been created in Keycloak)
+            GroupModel kcGroup5 = KeycloakModelUtils.findGroupByPath(appRealm, "/group5");
+            String descriptionAttrName = LDAPTestUtils.getGroupDescriptionLDAPAttrName(ctx.getLdapProvider());
+
+            Assert.assertEquals("group5 - description", kcGroup5.getFirstAttribute(descriptionAttrName));
+        });
+    }
 }

@@ -147,7 +147,7 @@ public final class KeycloakModelUtils {
 
     public static UserCredentialModel generateSecret(ClientModel client) {
         UserCredentialModel secret = UserCredentialModel.generateSecret();
-        client.setSecret(secret.getValue());
+        client.setSecret(secret.getChallengeResponse());
         return secret;
     }
 

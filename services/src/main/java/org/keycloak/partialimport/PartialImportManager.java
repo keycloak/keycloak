@@ -19,7 +19,6 @@ package org.keycloak.partialimport;
 
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.PartialImportRepresentation;

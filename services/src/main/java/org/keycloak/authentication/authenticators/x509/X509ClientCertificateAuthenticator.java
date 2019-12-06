@@ -31,9 +31,7 @@ import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.authenticators.browser.AbstractUsernameFormAuthenticator;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
-import org.keycloak.forms.login.LoginFormsPages;
 import org.keycloak.forms.login.LoginFormsProvider;
-import org.keycloak.forms.login.freemarker.Templates;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.FormMessage;
@@ -82,7 +80,7 @@ public class X509ClientCertificateAuthenticator extends AbstractX509ClientCertif
 
             // Validate X509 client certificate
             try {
-                CertificateValidator.CertificateValidatorBuilder builder = certificateValidationParameters(config);
+                CertificateValidator.CertificateValidatorBuilder builder = certificateValidationParameters(context.getSession(), config);
                 CertificateValidator validator = builder.build(certs);
                 validator.checkRevocationStatus()
                          .validateKeyUsage()

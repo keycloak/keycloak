@@ -18,15 +18,19 @@
 package org.keycloak.testsuite.rest.resource;
 
 import org.jboss.resteasy.annotations.cache.NoCache;
-import org.jboss.resteasy.spi.BadRequestException;
+import javax.ws.rs.BadRequestException;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.common.util.Base64;
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.AsymmetricSignatureSignerContext;
 import org.keycloak.crypto.KeyType;
+import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
+import org.keycloak.crypto.ServerECDSASignatureSignerContext;
 import org.keycloak.crypto.SignatureSignerContext;
+import org.keycloak.jose.jwe.JWEConstants;
 import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.JWKBuilder;
@@ -73,7 +77,8 @@ public class TestingOIDCEndpointsApplicationResource {
     public Map<String, String> generateKeys(@QueryParam("jwaAlgorithm") String jwaAlgorithm) {
         try {
             KeyPair keyPair = null;
-            if (jwaAlgorithm == null) jwaAlgorithm = org.keycloak.crypto.Algorithm.RS256;
+            KeyUse keyUse = KeyUse.SIG;
+            if (jwaAlgorithm == null) jwaAlgorithm = Algorithm.RS256;
             String keyType = null;
 
             switch (jwaAlgorithm) {
@@ -98,13 +103,21 @@ public class TestingOIDCEndpointsApplicationResource {
                     keyType = KeyType.EC;
                     keyPair = generateEcdsaKey("secp521r1");
                     break;
+                case JWEConstants.RSA1_5:
+                case JWEConstants.RSA_OAEP:
+                    // for JWE KEK Key Encryption
+                    keyType = KeyType.RSA;
+                    keyUse = KeyUse.ENC;
+                    keyPair = KeyUtils.generateRsaKeyPair(2048);
+                    break;
                 default :
                     throw new RuntimeException("Unsupported signature algorithm");
             }
 
-            clientData.setSigningKeyPair(keyPair);
-            clientData.setSigningKeyType(keyType);
-            clientData.setSigningKeyAlgorithm(jwaAlgorithm);
+            clientData.setKeyPair(keyPair);
+            clientData.setKeyType(keyType);
+            clientData.setKeyAlgorithm(jwaAlgorithm);
+            clientData.setKeyUse(keyUse);
         } catch (Exception e) {
             throw new BadRequestException("Error generating signing keypair", e);
         }
@@ -133,6 +146,19 @@ public class TestingOIDCEndpointsApplicationResource {
         return res;
     }
 
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("/get-keys-as-base64")
+    public Map<String, String> getKeysAsBase64() {
+        // It seems that PemUtils.decodePrivateKey, decodePublicKey can only treat RSA type keys, not EC type keys. Therefore, these are not used.
+        String privateKeyPem = Base64.encodeBytes(clientData.getSigningKeyPair().getPrivate().getEncoded());
+        String publicKeyPem = Base64.encodeBytes(clientData.getSigningKeyPair().getPublic().getEncoded());
+
+        Map<String, String> res = new HashMap<>();
+        res.put(PRIVATE_KEY, privateKeyPem);
+        res.put(PUBLIC_KEY, publicKeyPem);
+        return res;
+    }
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
@@ -140,21 +166,23 @@ public class TestingOIDCEndpointsApplicationResource {
     @NoCache
     public JSONWebKeySet getJwks() {
         JSONWebKeySet keySet = new JSONWebKeySet();
-        KeyPair signingKeyPair = clientData.getSigningKeyPair();
-        String signingKeyAlgorithm = clientData.getSigningKeyAlgorithm();
-        String signingKeyType = clientData.getSigningKeyType();
+        KeyPair keyPair = clientData.getKeyPair();
+        String keyAlgorithm = clientData.getKeyAlgorithm();
+        String keyType = clientData.getKeyType();
+        KeyUse keyUse = clientData.getKeyUse();
 
-        if (signingKeyPair == null || !isSupportedSigningAlgorithm(signingKeyAlgorithm)) {
+        if (keyPair == null || !isSupportedAlgorithm(keyAlgorithm)) {
             keySet.setKeys(new JWK[] {});
-        } else if (KeyType.RSA.equals(signingKeyType)) {
-            keySet.setKeys(new JWK[] { JWKBuilder.create().algorithm(signingKeyAlgorithm).rsa(signingKeyPair.getPublic()) });
-        } else if (KeyType.EC.equals(signingKeyType)) {
-            keySet.setKeys(new JWK[] { JWKBuilder.create().algorithm(signingKeyAlgorithm).ec(signingKeyPair.getPublic()) });
+        } else if (KeyType.RSA.equals(keyType)) {
+            keySet.setKeys(new JWK[] { JWKBuilder.create().algorithm(keyAlgorithm).rsa(keyPair.getPublic(), keyUse) });
+        } else if (KeyType.EC.equals(keyType)) {
+            keySet.setKeys(new JWK[] { JWKBuilder.create().algorithm(keyAlgorithm).ec(keyPair.getPublic()) });
         } else {
             keySet.setKeys(new JWK[] {});
         }
 
         return keySet;
+        
     }
 
 
@@ -174,7 +202,7 @@ public class TestingOIDCEndpointsApplicationResource {
             oidcRequest.put(OIDCLoginProtocol.MAX_AGE_PARAM, Integer.parseInt(maxAge));
         }
 
-        if (!isSupportedSigningAlgorithm(jwaAlgorithm)) throw new BadRequestException("Unknown argument: " + jwaAlgorithm);
+        if (!isSupportedAlgorithm(jwaAlgorithm)) throw new BadRequestException("Unknown argument: " + jwaAlgorithm);
 
         if ("none".equals(jwaAlgorithm)) {
             clientData.setOidcRequest(new JWSBuilder().jsonContent(oidcRequest).none());
@@ -186,13 +214,23 @@ public class TestingOIDCEndpointsApplicationResource {
             KeyWrapper keyWrapper = new KeyWrapper();
             keyWrapper.setAlgorithm(clientData.getSigningKeyAlgorithm());
             keyWrapper.setKid(kid);
-            keyWrapper.setSignKey(privateKey);
-            SignatureSignerContext signer = new AsymmetricSignatureSignerContext(keyWrapper);
+            keyWrapper.setPrivateKey(privateKey);
+            SignatureSignerContext signer;
+            switch (clientData.getSigningKeyAlgorithm()) {
+                case Algorithm.ES256:
+                case Algorithm.ES384:
+                case Algorithm.ES512:
+                    signer = new ServerECDSASignatureSignerContext(keyWrapper);
+                    break;
+                default:
+                    signer = new AsymmetricSignatureSignerContext(keyWrapper);
+            }
             clientData.setOidcRequest(new JWSBuilder().kid(kid).jsonContent(oidcRequest).sign(signer));
         }
     }
-    
-    private boolean isSupportedSigningAlgorithm(String signingAlgorithm) {
+
+    private boolean isSupportedAlgorithm(String signingAlgorithm) {
+        if (signingAlgorithm == null) return false;
         boolean ret = false;
         switch (signingAlgorithm) {
             case "none":
@@ -205,6 +243,8 @@ public class TestingOIDCEndpointsApplicationResource {
             case Algorithm.ES256:
             case Algorithm.ES384:
             case Algorithm.ES512:
+            case JWEConstants.RSA1_5:
+            case JWEConstants.RSA_OAEP:
                 ret = true;
         }
         return ret;

@@ -40,12 +40,6 @@ public class PassThroughClientAuthenticator extends AbstractClientAuthenticator 
     public static final String PROVIDER_ID = "testsuite-client-passthrough";
     public static String clientId = "test-app";
 
-    public static final AuthenticationExecutionModel.Requirement[] REQUIREMENT_CHOICES = {
-            AuthenticationExecutionModel.Requirement.REQUIRED,
-            AuthenticationExecutionModel.Requirement.ALTERNATIVE,
-            AuthenticationExecutionModel.Requirement.DISABLED
-    };
-
     private static final List<ProviderConfigProperty> clientConfigProperties = new ArrayList<ProviderConfigProperty>();
 
     static {

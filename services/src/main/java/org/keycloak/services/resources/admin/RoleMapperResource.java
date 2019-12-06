@@ -18,7 +18,7 @@ package org.keycloak.services.resources.admin;
 
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
-import org.jboss.resteasy.spi.NotFoundException;
+import javax.ws.rs.NotFoundException;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
@@ -26,6 +26,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleMapperModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.utils.ModelToRepresentation;
@@ -33,7 +34,6 @@ import org.keycloak.representations.idm.ClientMappingsRepresentation;
 import org.keycloak.representations.idm.MappingsRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.services.ErrorResponseException;
-import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 
 import javax.ws.rs.Consumes;
@@ -62,6 +62,7 @@ import java.util.stream.Collectors;
  *
  * @resource Role Mapper
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
+ * @author <a href="mailto:mpaulosnunes@gmail.com">Miguel P. Nunes</a>
  * @version $Revision: 1 $
  */
 public class RoleMapperResource {
@@ -113,36 +114,33 @@ public class RoleMapperResource {
     public MappingsRepresentation getRoleMappings() {
         viewPermission.require();
 
-        MappingsRepresentation all = new MappingsRepresentation();
-        Set<RoleModel> realmMappings = roleMapper.getRealmRoleMappings();
-        RealmManager manager = new RealmManager(session);
-        if (realmMappings.size() > 0) {
-            List<RoleRepresentation> realmRep = new ArrayList<RoleRepresentation>();
-            for (RoleModel roleModel : realmMappings) {
-                realmRep.add(ModelToRepresentation.toBriefRepresentation(roleModel));
+        List<RoleRepresentation> realmRolesRepresentation = new ArrayList<>();
+        Map<String, ClientMappingsRepresentation> appMappings = new HashMap<>();
+
+        ClientModel clientModel;
+        ClientMappingsRepresentation mappings;
+
+        for (RoleModel roleMapping : roleMapper.getRoleMappings()) {
+            RoleContainerModel container = roleMapping.getContainer();
+            if (container instanceof RealmModel) {
+                realmRolesRepresentation.add(ModelToRepresentation.toBriefRepresentation(roleMapping));
+            } else if (container instanceof ClientModel) {
+                clientModel = (ClientModel) container;
+                if ((mappings = appMappings.get(clientModel.getClientId())) == null) {
+                    mappings = new ClientMappingsRepresentation();
+                    mappings.setId(clientModel.getId());
+                    mappings.setClient(clientModel.getClientId());
+                    mappings.setMappings(new ArrayList<>());
+                    appMappings.put(clientModel.getClientId(), mappings);
+                }
+                mappings.getMappings().add(ModelToRepresentation.toBriefRepresentation(roleMapping));
             }
-            all.setRealmMappings(realmRep);
         }
 
-        List<ClientModel> clients = realm.getClients();
-        if (clients.size() > 0) {
-            Map<String, ClientMappingsRepresentation> appMappings = new HashMap<String, ClientMappingsRepresentation>();
-            for (ClientModel client : clients) {
-                Set<RoleModel> roleMappings = roleMapper.getClientRoleMappings(client);
-                if (roleMappings.size() > 0) {
-                    ClientMappingsRepresentation mappings = new ClientMappingsRepresentation();
-                    mappings.setId(client.getId());
-                    mappings.setClient(client.getClientId());
-                    List<RoleRepresentation> roles = new ArrayList<RoleRepresentation>();
-                    mappings.setMappings(roles);
-                    for (RoleModel role : roleMappings) {
-                        roles.add(ModelToRepresentation.toBriefRepresentation(role));
-                    }
-                    appMappings.put(client.getClientId(), mappings);
-                    all.setClientMappings(appMappings);
-                }
-            }
-        }
+        MappingsRepresentation all = new MappingsRepresentation();
+        if (!realmRolesRepresentation.isEmpty()) all.setRealmMappings(realmRolesRepresentation);
+        if (!appMappings.isEmpty()) all.setClientMappings(appMappings);
+
         return all;
     }
 

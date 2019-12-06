@@ -36,21 +36,21 @@ import java.util.List;
 public interface ComponentsResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    public List<ComponentRepresentation> query();
+    List<ComponentRepresentation> query();
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    public List<ComponentRepresentation> query(@QueryParam("parent") String parent);
+    List<ComponentRepresentation> query(@QueryParam("parent") String parent);
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    public List<ComponentRepresentation> query(@QueryParam("parent") String parent, @QueryParam("type") String type);
+    List<ComponentRepresentation> query(@QueryParam("parent") String parent, @QueryParam("type") String type);
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    public List<ComponentRepresentation> query(@QueryParam("parent") String parent,
-                                               @QueryParam("type") String type,
-                                               @QueryParam("name") String name);
+    List<ComponentRepresentation> query(@QueryParam("parent") String parent,
+                                        @QueryParam("type") String type,
+                                        @QueryParam("name") String name);
 
     @POST
     @Consumes(MediaType.APPLICATION_JSON)

@@ -32,6 +32,7 @@ import org.keycloak.testsuite.pages.AppPage.RequestType;
 
 import org.keycloak.testsuite.util.*;
 import javax.mail.internet.MimeMessage;
+
 import static org.jgroups.util.Util.assertTrue;
 import static org.junit.Assert.assertEquals;
 
@@ -493,7 +494,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void registerExistingUser_emailAsUsername() {
-        configureRelamRegistrationEmailAsUsername(true);
+        configureRealmRegistrationEmailAsUsername(true);
 
         try {
             loginPage.open();
@@ -507,13 +508,13 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
 
             events.expectRegister("test-user@localhost", "test-user@localhost").user((String) null).error("email_in_use").assertEvent();
         } finally {
-            configureRelamRegistrationEmailAsUsername(false);
+            configureRealmRegistrationEmailAsUsername(false);
         }
     }
 
     @Test
     public void registerUserMissingOrInvalidEmail_emailAsUsername() {
-        configureRelamRegistrationEmailAsUsername(true);
+        configureRealmRegistrationEmailAsUsername(true);
 
         try {
             loginPage.open();
@@ -530,13 +531,13 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
             assertEquals("Invalid email address.", registerPage.getError());
             events.expectRegister("registerUserInvalidEmailemail", "registerUserInvalidEmailemail").error("invalid_registration").assertEvent();
         } finally {
-            configureRelamRegistrationEmailAsUsername(false);
+            configureRealmRegistrationEmailAsUsername(false);
         }
     }
 
     @Test
     public void registerUserSuccess_emailAsUsername() {
-        configureRelamRegistrationEmailAsUsername(true);
+        configureRealmRegistrationEmailAsUsername(true);
 
         try {
             loginPage.open();
@@ -557,16 +558,16 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
             Assert.assertTrue((System.currentTimeMillis() - user.getCreatedTimestamp()) < 10000);
 
         } finally {
-            configureRelamRegistrationEmailAsUsername(false);
+            configureRealmRegistrationEmailAsUsername(false);
         }
     }
 
-    protected void configureRelamRegistrationEmailAsUsername(final boolean value) {
+    protected void configureRealmRegistrationEmailAsUsername(final boolean value) {
         RealmRepresentation realm = testRealm().toRepresentation();
         realm.setRegistrationEmailAsUsername(value);
         testRealm().update(realm);
     }
-    
+
     private void setDuplicateEmailsAllowed(boolean allowed) {
         RealmRepresentation testRealm = testRealm().toRepresentation();
         testRealm.setDuplicateEmailsAllowed(allowed);

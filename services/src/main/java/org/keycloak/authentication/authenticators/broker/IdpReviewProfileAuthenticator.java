@@ -132,6 +132,10 @@ public class IdpReviewProfileAuthenticator extends AbstractIdpAuthenticator {
         logger.debugf("Profile updated successfully after first authentication with identity provider '%s' for broker user '%s'.", brokerContext.getIdpConfig().getAlias(), userCtx.getUsername());
 
         event.detail(Details.UPDATED_EMAIL, email);
+
+        // Ensure page is always shown when user later returns to it - for example with form "back" button
+        context.getAuthenticationSession().setAuthNote(ENFORCE_UPDATE_PROFILE, "true");
+
         context.success();
     }
 

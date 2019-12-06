@@ -143,9 +143,7 @@ public class ScopeService {
 
         storeFactory.getScopeStore().delete(id);
 
-        if (authorization.getRealm().isAdminEventsEnabled()) {
-            audit(toRepresentation(scope), OperationType.DELETE);
-        }
+        audit(toRepresentation(scope), OperationType.DELETE);
 
         return Response.noContent().build();
     }
@@ -266,12 +264,10 @@ public class ScopeService {
     }
 
     private void audit(ScopeRepresentation resource, String id, OperationType operation) {
-        if (authorization.getRealm().isAdminEventsEnabled()) {
-            if (id != null) {
-                adminEvent.operation(operation).resourcePath(session.getContext().getUri(), id).representation(resource).success();
-            } else {
-                adminEvent.operation(operation).resourcePath(session.getContext().getUri()).representation(resource).success();
-            }
+        if (id != null) {
+            adminEvent.operation(operation).resourcePath(session.getContext().getUri(), id).representation(resource).success();
+        } else {
+            adminEvent.operation(operation).resourcePath(session.getContext().getUri()).representation(resource).success();
         }
     }
 }

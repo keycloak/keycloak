@@ -70,29 +70,6 @@ public abstract class AbstractResourceService {
         return Cors.add(request, response).auth().allowedOrigins(auth.getToken()).build();
     }
 
-    protected Collection<ResourcePermission> getPermissions(List<PermissionTicket> tickets, boolean withRequesters) {
-        Map<String, ResourcePermission> permissions = new HashMap<>();
-
-        for (PermissionTicket ticket : tickets) {
-            ResourcePermission resource = permissions
-                    .computeIfAbsent(ticket.getResource().getId(), s -> new ResourcePermission(ticket, provider));
-
-            if (withRequesters) {
-                Permission user = resource.getPermission(ticket.getRequester());
-
-                if (user == null) {
-                    resource.addPermission(ticket.getRequester(), user = new Permission(ticket.getRequester(), provider));
-                }
-
-                user.addScope(ticket.getScope().getName());
-            } else {
-                resource.addScope(new Scope(ticket.getScope()));
-            }
-        }
-
-        return permissions.values();
-    }
-
     public static class Resource extends ResourceRepresentation {
 
         private Client client;
@@ -132,6 +109,11 @@ public abstract class AbstractResourceService {
 
         ResourcePermission(PermissionTicket ticket, AuthorizationProvider provider) {
             super(ticket.getResource(), provider);
+            setScopes(new HashSet<>());
+        }
+
+        ResourcePermission(org.keycloak.authorization.model.Resource resource, AuthorizationProvider provider) {
+            super(resource, provider);
             setScopes(new HashSet<>());
         }
 

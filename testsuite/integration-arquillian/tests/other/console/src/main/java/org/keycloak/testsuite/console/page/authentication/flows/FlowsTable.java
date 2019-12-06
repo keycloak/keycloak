@@ -44,7 +44,7 @@ public class FlowsTable {
         
         ALTERNATIVE("ALTERNATIVE"),
         DISABLED("DISABLED"),
-        OPTIONAL("OPTIONAL"),
+        CONDITIONAL("CONDITIONAL"),
         REQUIRED("REQUIRED");
         
         private final String name;

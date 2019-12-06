@@ -47,13 +47,13 @@ import java.util.List;
  */
 public abstract class SSODescriptorType extends RoleDescriptorType {
 
-    protected List<IndexedEndpointType> artifactResolutionService = new ArrayList<IndexedEndpointType>();
+    protected List<IndexedEndpointType> artifactResolutionService = new ArrayList<>();
 
-    protected List<EndpointType> singleLogoutService = new ArrayList<EndpointType>();
+    protected List<EndpointType> singleLogoutService = new ArrayList<>();
 
-    protected List<EndpointType> manageNameIDService = new ArrayList<EndpointType>();
+    protected List<EndpointType> manageNameIDService = new ArrayList<>();
 
-    protected List<String> nameIDFormat = new ArrayList<String>();
+    protected List<String> nameIDFormat = new ArrayList<>();
 
     public SSODescriptorType(List<String> protocolSupport) {
         super(protocolSupport);

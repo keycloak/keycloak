@@ -62,7 +62,7 @@ public abstract class AbstractUserAdapter implements UserModel {
 
     @Override
     public Set<String> getRequiredActions() {
-        return Collections.EMPTY_SET;
+        return Collections.emptySet();
     }
 
     @Override
@@ -94,7 +94,7 @@ public abstract class AbstractUserAdapter implements UserModel {
      * @return
      */
     protected Set<GroupModel> getGroupsInternal() {
-        return Collections.EMPTY_SET;
+        return Collections.emptySet();
     }
 
     /**
@@ -138,7 +138,7 @@ public abstract class AbstractUserAdapter implements UserModel {
     public Set<RoleModel> getRealmRoleMappings() {
         Set<RoleModel> roleMappings = getRoleMappings();
 
-        Set<RoleModel> realmRoles = new HashSet<RoleModel>();
+        Set<RoleModel> realmRoles = new HashSet<>();
         for (RoleModel role : roleMappings) {
             RoleContainerModel container = role.getContainer();
             if (container instanceof RealmModel) {
@@ -152,7 +152,7 @@ public abstract class AbstractUserAdapter implements UserModel {
     public Set<RoleModel> getClientRoleMappings(ClientModel app) {
         Set<RoleModel> roleMappings = getRoleMappings();
 
-        Set<RoleModel> roles = new HashSet<RoleModel>();
+        Set<RoleModel> roles = new HashSet<>();
         for (RoleModel role : roleMappings) {
             RoleContainerModel container = role.getContainer();
             if (container instanceof ClientModel) {
@@ -190,7 +190,7 @@ public abstract class AbstractUserAdapter implements UserModel {
     }
 
     protected Set<RoleModel> getRoleMappingsInternal() {
-        return Collections.EMPTY_SET;
+        return Collections.emptySet();
     }
 
     @Override

@@ -26,6 +26,7 @@ import org.keycloak.admin.client.resource.ClientScopeResource;
 import org.keycloak.admin.client.resource.ProtocolMappersResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.common.Profile;
 import org.keycloak.common.util.UriUtils;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.models.AccountRoles;
@@ -45,7 +46,9 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.ProtocolMapperUtil;
@@ -54,6 +57,7 @@ import javax.ws.rs.core.Response;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -125,6 +129,27 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
         testRealms.add(realm);
     }
 
+    @Test
+    @EnableFeature(value = Profile.Feature.UPLOAD_SCRIPTS) // This requires also SCRIPTS feature, therefore we need to restart container
+    public void testTokenScriptMapping() {
+        {
+            ClientResource app = findClientResourceByClientId(adminClient.realm("test"), "test-app");
+
+            app.getProtocolMappers().createMapper(createScriptMapper("test-script-mapper1","computed-via-script", "computed-via-script", "String", true, true, "'hello_' + user.username", false)).close();
+            app.getProtocolMappers().createMapper(createScriptMapper("test-script-mapper2","multiValued-via-script", "multiValued-via-script", "String", true, true, "new java.util.ArrayList(['A','B'])", true)).close();
+
+            Response response = app.getProtocolMappers().createMapper(createScriptMapper("test-script-mapper3", "syntax-error-script", "syntax-error-script", "String", true, true, "func_tion foo(){ return 'fail';} foo()", false));
+            assertThat(response.getStatusInfo().getFamily(), is(Response.Status.Family.CLIENT_ERROR));
+            response.close();
+        }
+        {
+            OAuthClient.AccessTokenResponse response = browserLogin("password", "test-user@localhost", "password");
+            AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
+
+            assertEquals("hello_test-user@localhost", accessToken.getOtherClaims().get("computed-via-script"));
+            assertEquals(Arrays.asList("A","B"), accessToken.getOtherClaims().get("multiValued-via-script"));
+        }
+    }
 
     @Test
     public void testTokenMapping() throws Exception {
@@ -139,6 +164,8 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
             user.singleAttribute("country", "USA");
             user.singleAttribute("formatted", "6 Foo Street");
             user.singleAttribute("phone", "617-777-6666");
+            user.singleAttribute("json-attribute", "{\"a\": 1, \"b\": 2, \"c\": [{\"a\": 1, \"b\": 2}], \"d\": {\"a\": 1, \"b\": 2}}");
+            user.getAttributes().put("json-attribute-multi", Arrays.asList("{\"a\": 1, \"b\": 2, \"c\": [{\"a\": 1, \"b\": 2}], \"d\": {\"a\": 1, \"b\": 2}}", "{\"a\": 1, \"b\": 2, \"c\": [{\"a\": 1, \"b\": 2}], \"d\": {\"a\": 1, \"b\": 2}}"));
 
             List<String> departments = Arrays.asList("finance", "development");
             user.getAttributes().put("departments", departments);
@@ -165,6 +192,10 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
             app.getProtocolMappers().createMapper(createRoleNameMapper("rename-app-role", "test-app.customer-user", "realm-user")).close();
             app.getProtocolMappers().createMapper(createScriptMapper("test-script-mapper1","computed-via-script", "computed-via-script", "String", true, true, "'hello_' + user.username", false)).close();
             app.getProtocolMappers().createMapper(createScriptMapper("test-script-mapper2","multiValued-via-script", "multiValued-via-script", "String", true, true, "new java.util.ArrayList(['A','B'])", true)).close();
+            app.getProtocolMappers().createMapper(createClaimMapper("json-attribute-mapper", "json-attribute", "claim-from-json-attribute",
+                    "JSON", true, true, false)).close();
+            app.getProtocolMappers().createMapper(createClaimMapper("json-attribute-mapper-multi", "json-attribute-multi", "claim-from-json-attribute-multi",
+                    "JSON", true, true, true)).close();
 
             Response response = app.getProtocolMappers().createMapper(createScriptMapper("test-script-mapper3", "syntax-error-script", "syntax-error-script", "String", true, true, "func_tion foo(){ return 'fail';} foo()", false));
             assertThat(response.getStatusInfo().getFamily(), is(Response.Status.Family.CLIENT_ERROR));
@@ -200,6 +231,17 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
             assertThat(firstDepartment, instanceOf(String.class));
             assertThat(firstDepartment, anyOf(is("finance"), is("development")));   // Has to be the first item
 
+            Map jsonClaim = (Map) idToken.getOtherClaims().get("claim-from-json-attribute");
+            assertThat(jsonClaim.get("a"), instanceOf(int.class));
+            assertThat(jsonClaim.get("c"), instanceOf(Collection.class));
+            assertThat(jsonClaim.get("d"), instanceOf(Map.class));
+
+            List<Map> jsonClaims = (List<Map>) idToken.getOtherClaims().get("claim-from-json-attribute-multi");
+            assertEquals(2, jsonClaims.size());
+            assertThat(jsonClaims.get(0).get("a"), instanceOf(int.class));
+            assertThat(jsonClaims.get(1).get("c"), instanceOf(Collection.class));
+            assertThat(jsonClaims.get(1).get("d"), instanceOf(Map.class));
+
             AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
             assertEquals(accessToken.getName(), "Tom Brady");
             assertNotNull(accessToken.getAddress());
@@ -224,14 +266,16 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
             Assert.assertNull(accessToken.getResourceAccess("test-app"));
             assertTrue(accessToken.getResourceAccess("app").getRoles().contains("hardcoded"));
 
-            assertEquals("hello_test-user@localhost", accessToken.getOtherClaims().get("computed-via-script"));
-            assertEquals(Arrays.asList("A","B"), accessToken.getOtherClaims().get("multiValued-via-script"));
-
             // Assert audiences added through AudienceResolve mapper
             Assert.assertThat(accessToken.getAudience(), arrayContainingInAnyOrder( "app", "account"));
 
             // Assert allowed origins
             Assert.assertNames(accessToken.getAllowedOrigins(), "http://localhost:8180", "https://localhost:8543");
+
+            jsonClaim = (Map) accessToken.getOtherClaims().get("claim-from-json-attribute");
+            assertThat(jsonClaim.get("a"), instanceOf(int.class));
+            assertThat(jsonClaim.get("c"), instanceOf(Collection.class));
+            assertThat(jsonClaim.get("d"), instanceOf(Map.class));
 
             oauth.openLogout();
         }
@@ -253,6 +297,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
                         || model.getName().equals("hard-realm")
                         || model.getName().equals("hard-app")
                         || model.getName().equals("test-script-mapper")
+                        || model.getName().equals("json-attribute-mapper")
                         ) {
                     app.getProtocolMappers().delete(model.getId());
                 }

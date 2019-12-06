@@ -49,11 +49,11 @@ import java.util.Map;
  */
 public class AttributeType implements Serializable {
 
-    protected List<Object> attributeValue = new ArrayList<Object>();
+    protected List<Object> attributeValue = new ArrayList<>();
     protected String name;
     protected String nameFormat;
     protected String friendlyName;
-    private Map<QName, String> otherAttributes = new HashMap<QName, String>();
+    private Map<QName, String> otherAttributes = new HashMap<>();
 
     public AttributeType(String name) {
         this.name = name;

@@ -44,7 +44,7 @@ import java.util.List;
  */
 public class SignatureMethodType {
 
-    protected List<Object> content = new ArrayList<Object>();
+    protected List<Object> content = new ArrayList<>();
     protected String algorithm;
 
     public void add(Object obj) {

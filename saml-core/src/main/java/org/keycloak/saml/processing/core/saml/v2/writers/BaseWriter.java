@@ -64,12 +64,6 @@ public class BaseWriter {
 
     protected static String ASSERTION_PREFIX = "saml";
 
-    protected static String XACML_SAML_PREFIX = "xacml-saml";
-
-    protected static String XACML_SAML_PROTO_PREFIX = "xacml-samlp";
-
-    protected static String XSI_PREFIX = "xsi";
-
     protected XMLStreamWriter writer = null;
 
     public BaseWriter(XMLStreamWriter writer) {
@@ -155,7 +149,7 @@ public class BaseWriter {
         // Take care of other attributes such as x500:encoding
         Map<QName, String> otherAttribs = attributeType.getOtherAttributes();
         if (otherAttribs != null) {
-            List<String> nameSpacesDealt = new ArrayList<String>();
+            List<String> nameSpacesDealt = new ArrayList<>();
 
             Iterator<QName> keySet = otherAttribs.keySet().iterator();
             while (keySet != null && keySet.hasNext()) {

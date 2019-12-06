@@ -57,7 +57,9 @@
       <div id="kc-content">
         <div id="kc-content-wrapper">
 
-          <#if displayMessage && message?has_content>
+          <#-- App-initiated actions should not see warning messages about the need to complete the action -->
+          <#-- during login.                                                                               -->
+          <#if displayMessage && message?has_content && (message.type != 'warning' || !isAppInitiatedAction??)>
               <div class="alert alert-${message.type}">
                   <#if message.type = 'success'><span class="${properties.kcFeedbackSuccessIcon!}"></span></#if>
                   <#if message.type = 'warning'><span class="${properties.kcFeedbackWarningIcon!}"></span></#if>
@@ -68,6 +70,17 @@
           </#if>
 
           <#nested "form">
+
+          <#if auth?has_content && auth.showBackButton() >
+          <form id="kc-select-back-form" action="${url.loginAction}" method="post" <#if displayWide>class="${properties.kcContentWrapperClass!}"</#if>>
+              <div <#if displayWide>class="${properties.kcFormSocialAccountContentClass!} ${properties.kcFormSocialAccountClass!}"</#if>>
+                  <div class="${properties.kcFormGroupClass!}">
+                    <input class="${properties.kcButtonClass!} ${properties.kcButtonDefaultClass!} ${properties.kcButtonBlockClass!} ${properties.kcButtonLargeClass!}"
+                           name="back" id="kc-back" type="submit" value="${msg("doBack")}"/>
+                  </div>
+              </div>
+          </form>
+          </#if>
 
           <#if displayInfo>
               <div id="kc-info" class="${properties.kcSignUpClass!}">

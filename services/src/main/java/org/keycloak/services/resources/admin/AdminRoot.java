@@ -19,9 +19,9 @@ package org.keycloak.services.resources.admin;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.HttpResponse;
-import org.jboss.resteasy.spi.NotFoundException;
+import javax.ws.rs.NotFoundException;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
-import org.jboss.resteasy.spi.UnauthorizedException;
+import javax.ws.rs.NotAuthorizedException;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
@@ -38,6 +38,7 @@ import org.keycloak.services.resources.Cors;
 import org.keycloak.services.resources.admin.info.ServerInfoAdminResource;
 import org.keycloak.services.resources.admin.permissions.AdminPermissions;
 import org.keycloak.theme.Theme;
+import org.keycloak.urls.UrlType;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.HttpMethod;
@@ -100,7 +101,7 @@ public class AdminRoot {
     public Response masterRealmAdminConsoleRedirect() {
         RealmModel master = new RealmManager(session).getKeycloakAdminstrationRealm();
         return Response.status(302).location(
-                session.getContext().getUri().getBaseUriBuilder().path(AdminRoot.class).path(AdminRoot.class, "getAdminConsole").path("/").build(master.getName())
+                session.getContext().getUri(UrlType.ADMIN).getBaseUriBuilder().path(AdminRoot.class).path(AdminRoot.class, "getAdminConsole").path("/").build(master.getName())
         ).build();
     }
 
@@ -153,25 +154,25 @@ public class AdminRoot {
 
     protected AdminAuth authenticateRealmAdminRequest(HttpHeaders headers) {
         String tokenString = authManager.extractAuthorizationHeaderToken(headers);
-        if (tokenString == null) throw new UnauthorizedException("Bearer");
+        if (tokenString == null) throw new NotAuthorizedException("Bearer");
         AccessToken token;
         try {
             JWSInput input = new JWSInput(tokenString);
             token = input.readJsonContent(AccessToken.class);
         } catch (JWSInputException e) {
-            throw new UnauthorizedException("Bearer token format error");
+            throw new NotAuthorizedException("Bearer token format error");
         }
         String realmName = token.getIssuer().substring(token.getIssuer().lastIndexOf('/') + 1);
         RealmManager realmManager = new RealmManager(session);
         RealmModel realm = realmManager.getRealmByName(realmName);
         if (realm == null) {
-            throw new UnauthorizedException("Unknown realm in token");
+            throw new NotAuthorizedException("Unknown realm in token");
         }
         session.getContext().setRealm(realm);
         AuthenticationManager.AuthResult authResult = authManager.authenticateBearerToken(session, realm, session.getContext().getUri(), clientConnection, headers);
         if (authResult == null) {
             logger.debug("Token not valid");
-            throw new UnauthorizedException("Bearer");
+            throw new NotAuthorizedException("Bearer");
         }
 
         ClientModel client = realm.getClientByClientId(token.getIssuedFor());

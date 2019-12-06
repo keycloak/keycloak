@@ -42,6 +42,7 @@ import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static org.keycloak.storage.UserStorageProviderModel.IMPORT_ENABLED;
 import static org.keycloak.testsuite.arquillian.DeploymentTargetModifier.AUTH_SERVER_CURRENT;
 
 /**
@@ -113,6 +114,7 @@ public class UserConsentWithUserStorageModelTest extends AbstractTestRealmKeyclo
             model.setPriority(0);
             model.setProviderId(UserMapStorageFactory.PROVIDER_ID);
             model.setParentId(realm.getId());
+            model.getConfig().putSingle(IMPORT_ENABLED, Boolean.toString(false));
             realm.addComponentModel(model);
 
             ClientModel fooClient = realm.addClient("foo-client");

@@ -84,9 +84,6 @@ public interface PoliciesResource {
     @Path("aggregate")
     AggregatePoliciesResource aggregate();
 
-    @Path("rules")
-    RulePoliciesResource rule();
-
     @Path("client")
     ClientPoliciesResource client();
 

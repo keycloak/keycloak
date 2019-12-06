@@ -19,8 +19,12 @@ package org.keycloak.authentication;
 
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.provider.Provider;
+
+import java.util.Collections;
+import java.util.List;
 
 /**
  * This interface is for users that want to add custom authenticators to an authentication flow.
@@ -83,6 +87,28 @@ public interface Authenticator extends Provider {
      */
     void setRequiredActions(KeycloakSession session, RealmModel realm, UserModel user);
 
+    /**
+     * Overwrite this if the authenticator is associated with
+     * @return
+     */
+    default List<RequiredActionFactory> getRequiredActions(KeycloakSession session) {
+        return Collections.emptyList();
+    }
 
-
+    /**
+     * Checks if all required actions are configured in the realm and are enabled
+     * @return
+     */
+    default boolean areRequiredActionsEnabled(KeycloakSession session, RealmModel realm) {
+        for (RequiredActionFactory raf : getRequiredActions(session)) {
+            RequiredActionProviderModel rafpm = realm.getRequiredActionProviderByAlias(raf.getId());
+            if (rafpm == null) {
+                return false;
+            }
+            if (!rafpm.isEnabled()) {
+                return false;
+            }
+        }
+        return true;
+    }
 }

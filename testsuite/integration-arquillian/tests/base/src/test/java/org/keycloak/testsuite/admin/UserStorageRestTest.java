@@ -99,12 +99,32 @@ public class UserStorageRestTest extends AbstractAdminTest {
         realm.flows().updateExecutions("browser", kerberosExecution);
         assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, AdminEventPaths.authUpdateExecutionPath("browser"), kerberosExecution, ResourceType.AUTH_EXECUTION);
 
-        // update LDAP provider with kerberos
+        // update LDAP provider with kerberos (without changing kerberos switch)
         ldapRep = realm.components().component(id).toRepresentation();
         realm.components().component(id).update(ldapRep);
         assertAdminEvents.clear();
 
-        // Assert kerberos authenticator ALTERNATIVE
+        // Assert kerberos authenticator is still DISABLED
+        kerberosExecution = findKerberosExecution();
+        Assert.assertEquals(kerberosExecution.getRequirement(), AuthenticationExecutionModel.Requirement.DISABLED.toString());
+
+        // update LDAP provider with kerberos (with changing kerberos switch to disabled)
+        ldapRep = realm.components().component(id).toRepresentation();
+        ldapRep.getConfig().putSingle(KerberosConstants.ALLOW_KERBEROS_AUTHENTICATION, "false");
+        realm.components().component(id).update(ldapRep);
+        assertAdminEvents.clear();
+
+        // Assert kerberos authenticator is still DISABLED
+        kerberosExecution = findKerberosExecution();
+        Assert.assertEquals(kerberosExecution.getRequirement(), AuthenticationExecutionModel.Requirement.DISABLED.toString());
+
+        // update LDAP provider with kerberos (with changing kerberos switch to enabled)
+        ldapRep = realm.components().component(id).toRepresentation();
+        ldapRep.getConfig().putSingle(KerberosConstants.ALLOW_KERBEROS_AUTHENTICATION, "true");
+        realm.components().component(id).update(ldapRep);
+        assertAdminEvents.clear();
+
+        // Assert kerberos authenticator is still ALTERNATIVE
         kerberosExecution = findKerberosExecution();
         Assert.assertEquals(kerberosExecution.getRequirement(), AuthenticationExecutionModel.Requirement.ALTERNATIVE.toString());
 

@@ -22,7 +22,9 @@ import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.RefreshableKeycloakSecurityContext;
 import org.keycloak.adapters.spi.HttpFacade;
 import org.keycloak.adapters.springsecurity.facade.SimpleHttpFacade;
+import org.keycloak.adapters.springsecurity.token.AdapterTokenStoreFactory;
 import org.keycloak.adapters.springsecurity.token.KeycloakAuthenticationToken;
+import org.keycloak.adapters.springsecurity.token.SpringSecurityAdapterTokenStoreFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.core.Authentication;
@@ -43,10 +45,15 @@ public class KeycloakLogoutHandler implements LogoutHandler {
     private static final Logger log = LoggerFactory.getLogger(KeycloakLogoutHandler.class);
 
     private AdapterDeploymentContext adapterDeploymentContext;
+    private AdapterTokenStoreFactory adapterTokenStoreFactory = new SpringSecurityAdapterTokenStoreFactory();
 
     public KeycloakLogoutHandler(AdapterDeploymentContext adapterDeploymentContext) {
         Assert.notNull(adapterDeploymentContext);
         this.adapterDeploymentContext = adapterDeploymentContext;
+    }
+
+    public void setAdapterTokenStoreFactory(AdapterTokenStoreFactory adapterTokenStoreFactory) {
+        this.adapterTokenStoreFactory = adapterTokenStoreFactory;
     }
 
     @Override
@@ -66,6 +73,7 @@ public class KeycloakLogoutHandler implements LogoutHandler {
     protected void handleSingleSignOut(HttpServletRequest request, HttpServletResponse response, KeycloakAuthenticationToken authenticationToken) {
         HttpFacade facade = new SimpleHttpFacade(request, response);
         KeycloakDeployment deployment = adapterDeploymentContext.resolveDeployment(facade);
+        adapterTokenStoreFactory.createAdapterTokenStore(deployment, request, response).logout();
         RefreshableKeycloakSecurityContext session = (RefreshableKeycloakSecurityContext) authenticationToken.getAccount().getKeycloakSecurityContext();
         session.logout(deployment);
     }

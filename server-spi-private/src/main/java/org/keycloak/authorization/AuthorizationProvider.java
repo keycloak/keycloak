@@ -78,14 +78,12 @@ public final class AuthorizationProvider implements Provider {
     private final PolicyEvaluator policyEvaluator;
     private StoreFactory storeFactory;
     private StoreFactory storeFactoryDelegate;
-    private final Map<String, PolicyProviderFactory> policyProviderFactories;
     private final KeycloakSession keycloakSession;
     private final RealmModel realm;
 
-    public AuthorizationProvider(KeycloakSession session, RealmModel realm, Map<String, PolicyProviderFactory> policyProviderFactories, PolicyEvaluator policyEvaluator) {
+    public AuthorizationProvider(KeycloakSession session, RealmModel realm, PolicyEvaluator policyEvaluator) {
         this.keycloakSession = session;
         this.realm = realm;
-        this.policyProviderFactories = policyProviderFactories;
         this.policyEvaluator = policyEvaluator;
     }
 
@@ -131,7 +129,8 @@ public final class AuthorizationProvider implements Provider {
      * @return a {@link List} containing all registered {@link PolicyProviderFactory}
      */
     public Collection<PolicyProviderFactory> getProviderFactories() {
-        return this.policyProviderFactories.values();
+        return keycloakSession.getKeycloakSessionFactory().getProviderFactories(PolicyProvider.class).stream().map(
+                PolicyProviderFactory.class::cast).collect(Collectors.toList());
     }
 
     /**
@@ -141,8 +140,8 @@ public final class AuthorizationProvider implements Provider {
      * @param <F> the expected type of the provider
      * @return a {@link PolicyProviderFactory} with the given <code>type</code>
      */
-    public <F extends PolicyProviderFactory> F getProviderFactory(String type) {
-        return (F) policyProviderFactories.get(type);
+    public PolicyProviderFactory getProviderFactory(String type) {
+        return (PolicyProviderFactory) keycloakSession.getKeycloakSessionFactory().getProviderFactory(PolicyProvider.class, type);
     }
 
     /**
@@ -153,7 +152,7 @@ public final class AuthorizationProvider implements Provider {
      * @return a {@link PolicyProvider} with the given <code>type</code>
      */
     public <P extends PolicyProvider> P getProvider(String type) {
-        PolicyProviderFactory policyProviderFactory = policyProviderFactories.get(type);
+        PolicyProviderFactory policyProviderFactory = getProviderFactory(type);
 
         if (policyProviderFactory == null) {
             return null;
@@ -489,6 +488,11 @@ public final class AuthorizationProvider implements Provider {
             @Override
             public void findByOwner(String ownerId, String resourceServerId, Consumer<Resource> consumer) {
                 delegate.findByOwner(ownerId, resourceServerId, consumer);
+            }
+
+            @Override
+            public List<Resource> findByOwner(String ownerId, String resourceServerId, int first, int max) {
+                return delegate.findByOwner(ownerId, resourceServerId, first, max);
             }
 
             @Override

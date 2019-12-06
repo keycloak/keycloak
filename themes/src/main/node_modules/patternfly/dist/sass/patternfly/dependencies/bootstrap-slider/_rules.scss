@@ -178,10 +178,10 @@
 
 .slider-track-low, .slider-track-high {
   @include slider_box-sizing(border-box);
-  @include slider_border-radius($slider-border-radius);
 
   position: absolute;
   background: transparent;
+  border-radius: slider_border-radius($slider-border-radius);
 }
 
 .slider-handle {

@@ -77,6 +77,8 @@ public interface ResourceStore {
 
     void findByOwner(String ownerId, String resourceServerId, Consumer<Resource> consumer);
 
+    List<Resource> findByOwner(String ownerId, String resourceServerId, int first, int max);
+
     /**
      * Finds all {@link Resource} instances with the given uri.
      *

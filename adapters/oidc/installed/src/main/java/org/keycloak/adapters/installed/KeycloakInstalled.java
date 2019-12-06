@@ -26,7 +26,9 @@ import org.keycloak.adapters.KeycloakDeploymentBuilder;
 import org.keycloak.adapters.ServerRequest;
 import org.keycloak.adapters.rotation.AdapterTokenVerifier;
 import org.keycloak.common.VerificationException;
+import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.KeycloakUriBuilder;
+import org.keycloak.common.util.RandomString;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.IDToken;
@@ -41,6 +43,9 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.SecureRandom;
 import java.util.Locale;
 import java.util.UUID;
 import java.util.concurrent.*;
@@ -190,6 +195,7 @@ public class KeycloakInstalled {
         CallbackListener callback = new CallbackListener(getLoginResponseWriter());
         String redirectUri = "http://localhost:" + callback.server.getLocalPort();
         String state = UUID.randomUUID().toString();
+        Pkce pkce = deployment.isPkce() ? generatePkce() : null;
         final CompletableFuture<Void> future = callback.runAsync().thenCompose((Void dummy) ->
         {
             final CompletableFuture<Void> statusFuture = new CompletableFuture<>();
@@ -203,7 +209,7 @@ public class KeycloakInstalled {
             }
             else {
                 try {
-                    processCode(callback.code, redirectUri);
+                    processCode(callback.code, redirectUri, pkce);
                     status = Status.LOGGED_DESKTOP;
                     statusFuture.complete(null);
                 } catch (IOException | ServerRequest.HttpFailure | VerificationException | RuntimeException e) {
@@ -216,21 +222,11 @@ public class KeycloakInstalled {
             callback.closeSockets();
         });
 
-
-        KeycloakUriBuilder builder = deployment.getAuthUrl().clone()
-                .queryParam(OAuth2Constants.RESPONSE_TYPE, OAuth2Constants.CODE)
-                .queryParam(OAuth2Constants.CLIENT_ID, deployment.getResourceName())
-                .queryParam(OAuth2Constants.REDIRECT_URI, redirectUri)
-                .queryParam(OAuth2Constants.STATE, state)
-                .queryParam(OAuth2Constants.SCOPE, OAuth2Constants.SCOPE_OPENID);
-        if (locale != null) {
-            builder.queryParam(OAuth2Constants.UI_LOCALES_PARAM, locale.getLanguage());
-        }
-        String authUrl = builder.build().toString();
+        String authUrl = createAuthUrl(redirectUri, state, pkce);
 
         Desktop.getDesktop().browse(new URI(authUrl));
 
-		return future;
+        return future;
     }
 
     private void logoutDesktop() throws IOException, URISyntaxException, InterruptedException {
@@ -263,11 +259,39 @@ public class KeycloakInstalled {
 
         Desktop.getDesktop().browse(new URI(logoutUrl));
         future.whenComplete((x, y) -> {
-        	callback.closeSockets();
-        	if(y == null)
-        		removeTokens();
+            callback.closeSockets();
+            if(y == null)
+                removeTokens();
         });
         return future;
+    }
+
+    protected String createAuthUrl(String redirectUri, String state, Pkce pkce) {
+
+        KeycloakUriBuilder builder = deployment.getAuthUrl().clone()
+                .queryParam(OAuth2Constants.RESPONSE_TYPE, OAuth2Constants.CODE)
+                .queryParam(OAuth2Constants.CLIENT_ID, deployment.getResourceName())
+                .queryParam(OAuth2Constants.REDIRECT_URI, redirectUri)
+                .queryParam(OAuth2Constants.SCOPE, OAuth2Constants.SCOPE_OPENID);
+
+        if (state != null) {
+            builder.queryParam(OAuth2Constants.STATE, state);
+        }
+
+        if (locale != null) {
+            builder.queryParam(OAuth2Constants.UI_LOCALES_PARAM, locale.getLanguage());
+        }
+
+        if (pkce != null) {
+            builder.queryParam(OAuth2Constants.CODE_CHALLENGE, pkce.getCodeChallenge());
+            builder.queryParam(OAuth2Constants.CODE_CHALLENGE_METHOD, "S256");
+        }
+
+        return builder.build().toString();
+    }
+
+    protected Pkce generatePkce(){
+        return Pkce.generatePkce();
     }
 
     public void loginManual() throws IOException, ServerRequest.HttpFailure, VerificationException {
@@ -275,14 +299,12 @@ public class KeycloakInstalled {
     }
 
     public void loginManual(PrintStream printer, Reader reader) throws IOException, ServerRequest.HttpFailure, VerificationException {
+
         String redirectUri = "urn:ietf:wg:oauth:2.0:oob";
 
-        String authUrl = deployment.getAuthUrl().clone()
-                .queryParam(OAuth2Constants.RESPONSE_TYPE, OAuth2Constants.CODE)
-                .queryParam(OAuth2Constants.CLIENT_ID, deployment.getResourceName())
-                .queryParam(OAuth2Constants.REDIRECT_URI, redirectUri)
-                .queryParam(OAuth2Constants.SCOPE, OAuth2Constants.SCOPE_OPENID)
-                .build().toString();
+        Pkce pkce = generatePkce();
+
+        String authUrl = createAuthUrl(redirectUri, null, pkce);
 
         printer.println("Open the following URL in a browser. After login copy/paste the code back and press <enter>");
         printer.println(authUrl);
@@ -290,7 +312,7 @@ public class KeycloakInstalled {
         printer.print("Code: ");
 
         String code = readCode(reader);
-        processCode(code, redirectUri);
+        processCode(code, redirectUri, pkce);
 
         status = Status.LOGGED_MANUAL;
     }
@@ -524,7 +546,7 @@ public class KeycloakInstalled {
                             response.close();
                             client.close();
                             String code = m.group(1);
-                            processCode(code, redirectUri);
+                            processCode(code, redirectUri, null);
                             return true;
                         }
                         if (response.getStatus() == 302 && redirectCount++ > 4) {
@@ -561,7 +583,7 @@ public class KeycloakInstalled {
     }
 
 
-    public String getTokenString() throws VerificationException, IOException, ServerRequest.HttpFailure {
+    public String getTokenString() {
         return tokenString;
     }
 
@@ -625,8 +647,9 @@ public class KeycloakInstalled {
     }
 
 
-    private void processCode(String code, String redirectUri) throws IOException, ServerRequest.HttpFailure, VerificationException {
-        AccessTokenResponse tokenResponse = ServerRequest.invokeAccessCodeToToken(deployment, code, redirectUri, null);
+    private void processCode(String code, String redirectUri, Pkce pkce) throws IOException, ServerRequest.HttpFailure, VerificationException {
+
+        AccessTokenResponse tokenResponse = ServerRequest.invokeAccessCodeToToken(deployment, code, redirectUri, null, pkce == null ? null : pkce.getCodeVerifier());
         parseAccessToken(tokenResponse);
     }
 
@@ -742,6 +765,45 @@ public class KeycloakInstalled {
             		socket.close();
             } catch (IOException e) {
             }
+        }
+    }
+
+    public static class Pkce {
+
+        // https://tools.ietf.org/html/rfc7636#section-4.1
+        public static final int PKCE_CODE_VERIFIER_MAX_LENGTH = 128;
+
+        private final String codeChallenge;
+        private final String codeVerifier;
+
+        public Pkce(String codeVerifier, String codeChallenge) {
+            this.codeChallenge = codeChallenge;
+            this.codeVerifier = codeVerifier;
+        }
+
+        public String getCodeChallenge() {
+            return codeChallenge;
+        }
+
+        public String getCodeVerifier() {
+            return codeVerifier;
+        }
+
+        public static Pkce generatePkce() {
+            try {
+                String codeVerifier = new RandomString(PKCE_CODE_VERIFIER_MAX_LENGTH, new SecureRandom()).nextString();
+                String codeChallenge = generateS256CodeChallenge(codeVerifier);
+                return new Pkce(codeVerifier, codeChallenge);
+            } catch (Exception ex){
+                throw new RuntimeException("Could not generate PKCE", ex);
+            }
+        }
+
+        // https://tools.ietf.org/html/rfc7636#section-4.6
+        private static String generateS256CodeChallenge(String codeVerifier) throws Exception {
+            MessageDigest md = MessageDigest.getInstance("SHA-256");
+            md.update(codeVerifier.getBytes(StandardCharsets.ISO_8859_1));
+            return Base64Url.encode(md.digest());
         }
     }
 }

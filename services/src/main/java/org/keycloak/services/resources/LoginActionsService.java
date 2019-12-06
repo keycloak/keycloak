@@ -122,6 +122,8 @@ public class LoginActionsService {
 
     public static final String SESSION_CODE = "session_code";
     public static final String AUTH_SESSION_ID = "auth_session_id";
+    
+    public static final String CANCEL_AIA = "cancel-aia";
 
     private RealmModel realm;
 
@@ -864,13 +866,13 @@ public class LoginActionsService {
 
         for (String clientScopeId : authSession.getClientScopes()) {
             ClientScopeModel clientScope = KeycloakModelUtils.findClientScopeById(realm, client, clientScopeId);
-            if (clientScope != null && clientScope.isDisplayOnConsentScreen()) {
-                if (!grantedConsent.isClientScopeGranted(clientScope)) {
+            if (clientScope != null) {
+                if (!grantedConsent.isClientScopeGranted(clientScope) && clientScope.isDisplayOnConsentScreen()) {
                     grantedConsent.addGrantedClientScope(clientScope);
                     updateConsentRequired = true;
                 }
             } else {
-                logger.warnf("Client scope with ID '%s' not found", clientScopeId);
+                logger.warnf("Client scope or client with ID '%s' not found", clientScopeId);
             }
         }
 
@@ -988,7 +990,14 @@ public class LoginActionsService {
 
 
         Response response;
-        provider.processAction(context);
+        
+        if (isCancelAppInitiatedAction(factory.getId(), authSession, context)) {
+            provider.initiatedActionCanceled(session, authSession);
+            AuthenticationManager.setKcActionStatus(factory.getId(), RequiredActionContext.KcActionStatus.CANCELLED, authSession);
+            context.success();
+        } else {
+            provider.processAction(context);
+        }
 
         if (action != null) {
             authSession.setAuthNote(AuthenticationProcessor.LAST_PROCESSED_EXECUTION, action);
@@ -1001,25 +1010,40 @@ public class LoginActionsService {
             authSession.removeRequiredAction(factory.getId());
             authSession.getAuthenticatedUser().removeRequiredAction(factory.getId());
             authSession.removeAuthNote(AuthenticationProcessor.CURRENT_AUTHENTICATION_EXECUTION);
+            AuthenticationManager.setKcActionStatus(factory.getId(), RequiredActionContext.KcActionStatus.SUCCESS, authSession);
 
             response = AuthenticationManager.nextActionAfterAuthentication(session, authSession, clientConnection, request, session.getContext().getUri(), event);
         } else if (context.getStatus() == RequiredActionContext.Status.CHALLENGE) {
             response = context.getChallenge();
         } else if (context.getStatus() == RequiredActionContext.Status.FAILURE) {
-            LoginProtocol protocol = context.getSession().getProvider(LoginProtocol.class, authSession.getProtocol());
-            protocol.setRealm(context.getRealm())
-                    .setHttpHeaders(context.getHttpRequest().getHttpHeaders())
-                    .setUriInfo(context.getUriInfo())
-                    .setEventBuilder(event);
-
-            event.detail(Details.CUSTOM_REQUIRED_ACTION, action);
-            response = protocol.sendError(authSession, Error.CONSENT_DENIED);
-            event.error(Errors.REJECTED_BY_USER);
+            response = interruptionResponse(context, authSession, action, Error.CONSENT_DENIED);
         } else {
             throw new RuntimeException("Unreachable");
         }
 
         return BrowserHistoryHelper.getInstance().saveResponseAndRedirect(session, authSession, response, true, request);
+    }
+    
+    private Response interruptionResponse(RequiredActionContextResult context, AuthenticationSessionModel authSession, String action, Error error) {
+        LoginProtocol protocol = context.getSession().getProvider(LoginProtocol.class, authSession.getProtocol());
+        protocol.setRealm(context.getRealm())
+                .setHttpHeaders(context.getHttpRequest().getHttpHeaders())
+                .setUriInfo(context.getUriInfo())
+                .setEventBuilder(event);
+
+        event.detail(Details.CUSTOM_REQUIRED_ACTION, action);
+        
+        event.error(Errors.REJECTED_BY_USER);
+        return protocol.sendError(authSession, error);
+    }
+    
+    private boolean isCancelAppInitiatedAction(String providerId, AuthenticationSessionModel authSession, RequiredActionContextResult context) {
+        if (providerId.equals(authSession.getClientNote(Constants.KC_ACTION_EXECUTING))) {
+            MultivaluedMap<String, String> formData = context.getHttpRequest().getDecodedFormParameters();
+            boolean userRequestedCancelAIA = formData.getFirst(CANCEL_AIA) != null;
+            return userRequestedCancelAIA;
+        }
+        return false;
     }
 
 }

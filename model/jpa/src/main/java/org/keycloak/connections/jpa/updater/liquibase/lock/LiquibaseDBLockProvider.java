@@ -49,6 +49,7 @@ public class LiquibaseDBLockProvider implements DBLockProvider {
     private CustomLockService lockService;
     private Connection dbConnection;
     private boolean initialized = false;
+    private Namespace namespaceLocked = null;
 
     public LiquibaseDBLockProvider(LiquibaseDBLockProviderFactory factory, KeycloakSession session) {
         this.factory = factory;
@@ -88,17 +89,26 @@ public class LiquibaseDBLockProvider implements DBLockProvider {
         lazyInit();
     }
 
-
     @Override
-    public void waitForLock() {
+    public void waitForLock(Namespace lock) {
         KeycloakModelUtils.suspendJtaTransaction(session.getKeycloakSessionFactory(), () -> {
 
             lazyInit();
 
+            if (this.lockService.hasChangeLogLock()) {
+                if (lock.equals(this.namespaceLocked)) {
+                    logger.warnf("Locking namespace %s which was already locked in this provider", lock);
+                    return;
+                } else {
+                    throw new RuntimeException(String.format("Trying to get a lock when one was already taken by the provider"));
+                }
+            }
+
+            logger.debugf("Going to lock namespace=%s", lock);
             Retry.executeWithBackoff((int iteration) -> {
 
-                lockService.waitForLock();
-                factory.setHasLock(true);
+                lockService.waitForLock(lock);
+                namespaceLocked = lock;
 
             }, (int iteration, Throwable e) -> {
 
@@ -116,21 +126,21 @@ public class LiquibaseDBLockProvider implements DBLockProvider {
 
     }
 
-
     @Override
     public void releaseLock() {
         KeycloakModelUtils.suspendJtaTransaction(session.getKeycloakSessionFactory(), () -> {
             lazyInit();
 
+            logger.debugf("Going to release database lock namespace=%s", namespaceLocked);
+            namespaceLocked = null;
             lockService.releaseLock();
             lockService.reset();
-            factory.setHasLock(false);
         });
     }
 
     @Override
-    public boolean hasLock() {
-        return factory.hasLock();
+    public Namespace getCurrentLock() {
+        return this.namespaceLocked;
     }
 
     @Override

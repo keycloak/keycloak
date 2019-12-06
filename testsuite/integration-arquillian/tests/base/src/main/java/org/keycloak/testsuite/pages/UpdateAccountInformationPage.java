@@ -3,7 +3,7 @@ package org.keycloak.testsuite.pages;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
-public class UpdateAccountInformationPage extends AbstractPage {
+public class UpdateAccountInformationPage extends LanguageComboboxAwarePage {
 
     @FindBy(id = "username")
     private WebElement usernameInput;

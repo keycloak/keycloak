@@ -98,7 +98,7 @@ public interface ComponentFactory<CreatedType, ProviderType extends Provider> ex
      */
     default
     List<ProviderConfigProperty> getCommonProviderConfigProperties() {
-        return Collections.EMPTY_LIST;
+        return Collections.emptyList();
     }
 
     /**
@@ -109,7 +109,7 @@ public interface ComponentFactory<CreatedType, ProviderType extends Provider> ex
      */
     default
     Map<String, Object> getTypeMetadata() {
-        return Collections.EMPTY_MAP;
+        return Collections.emptyMap();
 
     }
 

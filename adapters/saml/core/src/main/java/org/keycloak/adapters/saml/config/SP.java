@@ -19,6 +19,7 @@ package org.keycloak.adapters.saml.config;
 
 import java.io.Serializable;
 import java.util.List;
+import java.util.Properties;
 import java.util.Set;
 
 /**
@@ -47,6 +48,35 @@ public class SP implements Serializable {
         }
     }
 
+    /**
+     * Holds the configuration of the {@code RoleMappingsProvider}. Contains the provider's id and a {@link Properties}
+     * object that holds the provider's configuration options.
+     */
+    public static class RoleMappingsProviderConfig implements Serializable {
+        private String id;
+        private Properties configuration;
+
+        public String getId() {
+            return this.id;
+        }
+
+        public void setId(final String id) {
+            this.id = id;
+        }
+
+        public Properties getConfiguration() {
+            return this.configuration;
+        }
+
+        public void setConfiguration(final Properties configuration) {
+            this.configuration = configuration;
+        }
+
+        public void addConfigurationProperty(final String name, final String value) {
+            this.configuration.setProperty(name, value);
+        }
+    }
+
     private String entityID;
     private String sslPolicy;
     private boolean forceAuthentication;
@@ -57,8 +87,10 @@ public class SP implements Serializable {
     private String nameIDPolicyFormat;
     private PrincipalNameMapping principalNameMapping;
     private Set<String> roleAttributes;
+    private RoleMappingsProviderConfig roleMappingsProviderConfig;
     private IDP idp;
     private boolean autodetectBearerOnly;
+    private boolean keepDOMAssertion;
 
     public String getEntityID() {
         return entityID;
@@ -100,6 +132,14 @@ public class SP implements Serializable {
         this.turnOffChangeSessionIdOnLogin = turnOffChangeSessionIdOnLogin != null && turnOffChangeSessionIdOnLogin;
     }
 
+    public boolean isKeepDOMAssertion() {
+        return keepDOMAssertion;
+    }
+
+    public void setKeepDOMAssertion(Boolean keepDOMAssertion) {
+        this.keepDOMAssertion = keepDOMAssertion != null && keepDOMAssertion;
+    }
+
     public List<Key> getKeys() {
         return keys;
     }
@@ -130,6 +170,14 @@ public class SP implements Serializable {
 
     public void setRoleAttributes(Set<String> roleAttributes) {
         this.roleAttributes = roleAttributes;
+    }
+
+    public RoleMappingsProviderConfig getRoleMappingsProviderConfig() {
+        return this.roleMappingsProviderConfig;
+    }
+
+    public void setRoleMappingsProviderConfig(final RoleMappingsProviderConfig provider) {
+        this.roleMappingsProviderConfig = provider;
     }
 
     public IDP getIdp() {

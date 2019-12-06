@@ -205,6 +205,7 @@ public class DefaultSamlDeployment implements SamlDeployment {
         private SingleLogoutService singleLogoutService;
         private final List<PublicKey> signatureValidationKeys = new LinkedList<>();
         private int minTimeBetweenDescriptorRequests;
+        private int allowedClockSkew;
         private HttpClient client;
         private String metadataUrl;
 
@@ -284,6 +285,16 @@ public class DefaultSamlDeployment implements SamlDeployment {
         public void setMetadataUrl(String metadataUrl) {
             this.metadataUrl = metadataUrl;
         }
+
+        @Override
+        public int getAllowedClockSkew() {
+            return allowedClockSkew;
+        }
+
+
+        public void setAllowedClockSkew(int allowedClockSkew) {
+            this.allowedClockSkew = allowedClockSkew;
+        }
     }
 
     private IDP idp;
@@ -297,12 +308,14 @@ public class DefaultSamlDeployment implements SamlDeployment {
     private PrivateKey decryptionKey;
     private KeyPair signingKeyPair;
     private Set<String> roleAttributeNames;
+    private RoleMappingsProvider roleMappingsProvider;
     private PrincipalNamePolicy principalNamePolicy = PrincipalNamePolicy.FROM_NAME_ID;
     private String principalAttributeName;
     private String logoutPage;
     private SignatureAlgorithm signatureAlgorithm;
     private String signatureCanonicalizationMethod;
     private boolean autodetectBearerOnly;
+    private boolean keepDOMAssertion;
 
     @Override
     public boolean turnOffChangeSessionIdOnLogin() {
@@ -365,6 +378,11 @@ public class DefaultSamlDeployment implements SamlDeployment {
     }
 
     @Override
+    public RoleMappingsProvider getRoleMappingsProvider() {
+        return this.roleMappingsProvider;
+    }
+
+    @Override
     public PrincipalNamePolicy getPrincipalNamePolicy() {
         return principalNamePolicy;
     }
@@ -414,6 +432,10 @@ public class DefaultSamlDeployment implements SamlDeployment {
         this.roleAttributeNames = roleAttributeNames;
     }
 
+    public void setRoleMappingsProvider(final RoleMappingsProvider provider) {
+        this.roleMappingsProvider = provider;
+    }
+
     public void setPrincipalNamePolicy(PrincipalNamePolicy principalNamePolicy) {
         this.principalNamePolicy = principalNamePolicy;
     }
@@ -456,5 +478,14 @@ public class DefaultSamlDeployment implements SamlDeployment {
 
     public void setAutodetectBearerOnly(boolean autodetectBearerOnly) {
         this.autodetectBearerOnly = autodetectBearerOnly;
+    }
+
+    @Override
+    public boolean isKeepDOMAssertion() {
+        return keepDOMAssertion;
+    }
+
+    public void setKeepDOMAssertion(Boolean keepDOMAssertion) {
+        this.keepDOMAssertion = keepDOMAssertion != null && keepDOMAssertion;
     }
 }

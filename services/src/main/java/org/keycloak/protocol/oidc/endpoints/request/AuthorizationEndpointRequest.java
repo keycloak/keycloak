@@ -37,6 +37,7 @@ public class AuthorizationEndpointRequest {
     String nonce;
     Integer maxAge;
     String idpHint;
+    String action;
     String claims;
     Map<String, String> additionalReqParams = new HashMap<>();
 
@@ -92,6 +93,10 @@ public class AuthorizationEndpointRequest {
 
     public String getIdpHint() {
         return idpHint;
+    }
+
+    public String getAction() {
+        return action;
     }
 
     public String getClaims() {

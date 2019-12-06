@@ -20,7 +20,6 @@ package org.keycloak.jose.jwk;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.keycloak.common.util.PemUtils;
 
-import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 
 /**
@@ -73,7 +72,7 @@ public class RSAPublicJWK extends JWK {
             try {
                 sha1x509Thumbprint = PemUtils.generateThumbprint(x509CertificateChain, "SHA-1");
                 sha256x509Thumbprint = PemUtils.generateThumbprint(x509CertificateChain, "SHA-256");
-            } catch (NoSuchAlgorithmException | IOException e) {
+            } catch (NoSuchAlgorithmException e) {
                 throw new RuntimeException(e);
             }
         }

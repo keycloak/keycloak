@@ -26,7 +26,7 @@ import org.keycloak.authentication.authenticators.console.ConsoleUsernamePasswor
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.models.UserCredentialModel;
+import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.provider.ProviderConfigProperty;
 
 import java.util.List;
@@ -74,7 +74,7 @@ public class UsernamePasswordFormFactory implements AuthenticatorFactory, Displa
 
     @Override
     public String getReferenceCategory() {
-        return UserCredentialModel.PASSWORD;
+        return PasswordCredentialModel.TYPE;
     }
 
     @Override

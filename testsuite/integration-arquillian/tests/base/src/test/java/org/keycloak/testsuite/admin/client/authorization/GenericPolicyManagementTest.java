@@ -54,7 +54,7 @@ import static org.junit.Assert.assertTrue;
  */
 public class GenericPolicyManagementTest extends AbstractAuthorizationTest {
 
-    private static final String[] EXPECTED_BUILTIN_POLICY_PROVIDERS = {"test", "user", "role", "rules", "js", "time", "aggregate", "scope", "resource"};
+    private static final String[] EXPECTED_BUILTIN_POLICY_PROVIDERS = {"test", "user", "role", "js", "time", "aggregate", "scope", "resource"};
 
     @Test
     public void testCreate() {
@@ -145,10 +145,6 @@ public class GenericPolicyManagementTest extends AbstractAuthorizationTest {
 
         assertFalse(providers.isEmpty());
         List expected = new ArrayList(Arrays.asList(EXPECTED_BUILTIN_POLICY_PROVIDERS));
-
-        if (!Profile.isFeatureEnabled(Profile.Feature.AUTHZ_DROOLS_POLICY)) {
-            expected.remove("rules");
-        }
 
         assertTrue(providers.containsAll(expected));
     }

@@ -20,7 +20,6 @@ import org.keycloak.events.EventBuilder;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
-import org.keycloak.representations.AccessToken;
 
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;

@@ -36,13 +36,16 @@
         <property name="firefoxBinary">${firefox_binary}</property> <!-- we need to use 'firefoxBinary' instead of 'firefox_binary' due to some weird conflict with Appium -->
         <property name="firefoxLogLevel">OFF</property>
         <property name="firefoxLegacy">${firefoxLegacyDriver}</property>
+        <property name="firefoxDriverVersion">${firefoxDriverVersion}</property>
 
         <!-- chrome -->
         <property name="chromeBinary">${chromeBinary}</property>
         <property name="chromeArguments">${chromeArguments}</property>
+        <property name="chromeDriverVersion">${chromeDriverVersion}</property>
 
         <!-- internet explorer -->
         <property name="ieDriverArch">${ieDriverArch}</property>
+        <property name="ieDriverVersion">${ieDriverVersion}</property>
 
         <!-- appium -->
         <property name="appium.platformName">${appium.platformName}</property>
@@ -72,6 +75,7 @@
         <property name="githubUsername">${github.username}</property>
         <property name="githubToken">${github.secretToken}</property>
         <property name="ieDriverArch">${ieDriverArch}</property>
+        <property name="ieDriverVersion">${ieDriverVersion}</property>
 
         <!-- htmlunit -->
         <property name="htmlUnit.version">${htmlUnitBrowserVersion}</property>
@@ -81,10 +85,12 @@
         <property name="firefoxBinary">${firefox_binary}</property>
         <property name="firefoxLogLevel">OFF</property>
         <property name="firefoxLegacy">${firefoxLegacyDriver}</property>
+        <property name="firefoxDriverVersion">${firefoxDriverVersion}</property>
 
         <!-- chrome -->
         <property name="chromeBinary">${chromeBinary}</property>
         <property name="chromeArguments">${js.chromeArguments}</property>
+        <property name="chromeDriverVersion">${chromeDriverVersion}</property>
     </extension>
 
     <extension qualifier="webdriver-phantomjsbrowser">
@@ -122,6 +128,7 @@
             <!-- This is required for domain mode -->
             <property name="allowConnectingToRunningServer">true</property>
             <property name="jbossArguments">
+                -Djboss.as.management.blocking.timeout=${auth.server.jboss.startup.timeout}
                 -Djboss.socket.binding.port-offset=${auth.server.port.offset}
                 -Djboss.bind.address=0.0.0.0 
                 -Dauth.server.http.port=${auth.server.http.port}
@@ -155,6 +162,7 @@
                 <property name="jbossHome">${auth.server.backend1.home}</property>
                 <property name="serverConfig">standalone-ha.xml</property>
                 <property name="jbossArguments">
+                    -Djboss.as.management.blocking.timeout=${auth.server.jboss.startup.timeout}
                     -Djboss.socket.binding.port-offset=${auth.server.backend1.port.offset}
                     -Djboss.node.name=node1
                     ${adapter.test.props}
@@ -181,6 +189,7 @@
                 <property name="jbossHome">${auth.server.backend2.home}</property>
                 <property name="serverConfig">standalone-ha.xml</property>
                 <property name="jbossArguments">
+                    -Djboss.as.management.blocking.timeout=${auth.server.jboss.startup.timeout}
                     -Djboss.socket.binding.port-offset=${auth.server.backend2.port.offset} 
                     -Djboss.node.name=node2
                     ${adapter.test.props}
@@ -265,6 +274,7 @@
                 <property name="jbossHome">${cache.server.home}</property>
                 <property name="serverConfig">clustered-1.xml</property>
                 <property name="jbossArguments">
+                    -Djboss.as.management.blocking.timeout=${auth.server.jboss.startup.timeout}
                     -Djboss.socket.binding.port-offset=${cache.server.1.port.offset}
                     -Djboss.default.multicast.address=234.56.78.99
                     -Djboss.node.name=cache-server-dc-1
@@ -295,6 +305,7 @@
                 <property name="cleanServerBaseDir">${cache.server.home}/standalone-dc-2</property>
                 <property name="serverConfig">clustered-2.xml</property>
                 <property name="jbossArguments">
+                    -Djboss.as.management.blocking.timeout=${auth.server.jboss.startup.timeout}
                     -Djboss.socket.binding.port-offset=${cache.server.2.port.offset}
                     -Djboss.default.multicast.address=234.56.78.100
                     -Djboss.node.name=cache-server-dc-2
@@ -438,6 +449,7 @@
                 <property name="jbossHome">${auth.server.crossdc01.home}</property>
                 <property name="serverConfig">standalone-ha.xml</property>
                 <property name="jbossArguments">
+                    -Djboss.as.management.blocking.timeout=${auth.server.jboss.startup.timeout}
                     -Djboss.socket.binding.port-offset=${auth.server.crossdc01.port.offset}
                     -Djboss.default.multicast.address=234.56.78.1
                     -Dremote.cache.port=12232
@@ -469,6 +481,7 @@
                 <property name="jbossHome">${auth.server.crossdc02.home}</property>
                 <property name="serverConfig">standalone-ha.xml</property>
                 <property name="jbossArguments">
+                    -Djboss.as.management.blocking.timeout=${auth.server.jboss.startup.timeout}
                     -Djboss.socket.binding.port-offset=${auth.server.crossdc02.port.offset}
                     -Djboss.default.multicast.address=234.56.78.1
                     -Dremote.cache.port=12232
@@ -501,6 +514,7 @@
                 <property name="jbossHome">${auth.server.crossdc11.home}</property>
                 <property name="serverConfig">standalone-ha.xml</property>
                 <property name="jbossArguments">
+                    -Djboss.as.management.blocking.timeout=${auth.server.jboss.startup.timeout}
                     -Djboss.socket.binding.port-offset=${auth.server.crossdc11.port.offset}
                     -Djboss.default.multicast.address=234.56.78.2
                     -Dremote.cache.port=13232
@@ -532,6 +546,7 @@
                 <property name="jbossHome">${auth.server.crossdc12.home}</property>
                 <property name="serverConfig">standalone-ha.xml</property>
                 <property name="jbossArguments">
+                    -Djboss.as.management.blocking.timeout=${auth.server.jboss.startup.timeout}
                     -Djboss.socket.binding.port-offset=${auth.server.crossdc12.port.offset}
                     -Djboss.default.multicast.address=234.56.78.2
                     -Dremote.cache.port=13232
@@ -557,8 +572,8 @@
             </configuration>
         </container>
     </group>
-    
-    <container qualifier="auth-server-remote" mode="suite" >
+
+    <container qualifier="auth-server-remote" mode="manual" >
         <configuration>
             <property name="enabled">${auth.server.remote}</property>
             <property name="adapterImplClass">org.jboss.as.arquillian.container.remote.RemoteDeployableContainer</property>
@@ -569,15 +584,16 @@
             <property name="password">admin</property>
         </configuration>
     </container>
-    
+
     <!-- PREVIOUS VERSION OF KEYCLOAK FOR MIGRATION TESTS -->
-    
+
     <container qualifier="auth-server-jboss-migration" mode="manual" >
         <configuration>
             <property name="enabled">${auth.server.jboss.migration}</property>
             <property name="adapterImplClass">org.jboss.as.arquillian.container.managed.ManagedDeployableContainer</property>
             <property name="jbossHome">${keycloak.migration.home}</property>
             <property name="javaVmArguments">
+                -Djboss.as.management.blocking.timeout=${auth.server.jboss.startup.timeout}
                 -Djboss.socket.binding.port-offset=${auth.server.port.offset}
                 ${migration.import.props.previous}
                 ${auth.server.memory.settings}

@@ -45,7 +45,7 @@ import java.util.List;
  */
 public class EndpointType extends TypeWithOtherAttributes {
 
-    protected List<Object> any = new ArrayList<Object>();
+    protected List<Object> any = new ArrayList<>();
 
     protected URI binding;
 

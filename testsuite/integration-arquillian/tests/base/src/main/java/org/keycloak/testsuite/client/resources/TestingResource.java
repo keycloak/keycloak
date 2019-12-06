@@ -321,4 +321,17 @@ public interface TestingResource {
     @Path("/disable-feature/{feature}")
     @Consumes(MediaType.APPLICATION_JSON)
     Response disableFeature(@PathParam("feature") String feature);
+
+
+    /**
+     * This method is here just to have all endpoints from TestingResourceProvider available here.
+     *
+     * But usually it is requested to call this endpoint through WebDriver. See URLUtils.sendPOSTWithWebDriver for more details
+     */
+    @GET
+    @Path("/simulate-post-request")
+    @Produces(MediaType.TEXT_HTML_UTF_8)
+    Response simulatePostRequest(@QueryParam("postRequestUrl") String postRequestUrl,
+                                         @QueryParam("encodedFormParameters") String encodedFormParameters);
+
 }

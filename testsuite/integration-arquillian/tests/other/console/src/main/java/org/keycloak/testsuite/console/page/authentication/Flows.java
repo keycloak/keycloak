@@ -74,9 +74,6 @@ public class Flows extends Authentication {
         clickRadioButton("O T P", 2);
     }
 
-    public void setOTPOptional() {
-        clickRadioButton("O T P", 3);
-    }
 
     public void setOTPDisabled() {
         clickRadioButton("O T P", 4);
@@ -160,10 +157,6 @@ public class Flows extends Authentication {
         clickRadioButton(" O T P  Form", 3);
     }
 
-    public void setOTPFormOptional() {
-        clickRadioButton(" O T P  Form", 4);
-    }
-
     public void setOTPFormDisabled() {
         clickRadioButton(" O T P  Form", 5);
     }
@@ -173,20 +166,12 @@ public class Flows extends Authentication {
         clickRadioButton("Reset  Password", 2);
     }
 
-    public void setResetPasswordOptional() {
-        clickRadioButton("Reset  Password", 3);
-    }
-
     public void setResetPasswordDisabled() {
         clickRadioButton("Reset  Password", 4);
     }
 
     public void setResetOTPRequired() {
         clickRadioButton("Reset  O T P", 2);
-    }
-
-    public void setResetOTPOptional() {
-        clickRadioButton("Reset  O T P", 3);
     }
 
     public void setResetOTPDisabled() {

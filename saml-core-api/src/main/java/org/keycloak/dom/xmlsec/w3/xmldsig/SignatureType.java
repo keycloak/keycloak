@@ -48,7 +48,7 @@ public class SignatureType {
     protected SignedInfoType signedInfo;
     protected SignatureValueType signatureValue;
     protected KeyInfoType keyInfo;
-    protected List<ObjectType> object = new ArrayList<ObjectType>();
+    protected List<ObjectType> object = new ArrayList<>();
     protected String id;
 
     /**

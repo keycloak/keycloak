@@ -52,22 +52,29 @@ public class ClientPublicKeyLoader implements PublicKeyLoader {
 
     private final KeycloakSession session;
     private final ClientModel client;
+    private final JWK.Use keyUse;
 
     public ClientPublicKeyLoader(KeycloakSession session, ClientModel client) {
         this.session = session;
         this.client = client;
+        this.keyUse = JWK.Use.SIG;
     }
 
+    public ClientPublicKeyLoader(KeycloakSession session, ClientModel client, JWK.Use keyUse) {
+        this.session = session;
+        this.client = client;
+        this.keyUse = keyUse;
+    }
 
     @Override
     public Map<String, KeyWrapper> loadKeys() throws Exception {
         OIDCAdvancedConfigWrapper config = OIDCAdvancedConfigWrapper.fromClientModel(client);
         if (config.isUseJwksUrl()) {
             String jwksUrl = config.getJwksUrl();
-            jwksUrl = ResolveRelative.resolveRelativeUri(session.getContext().getUri().getRequestUri(), client.getRootUrl(), jwksUrl);
+            jwksUrl = ResolveRelative.resolveRelativeUri(session, client.getRootUrl(), jwksUrl);
             JSONWebKeySet jwks = JWKSHttpUtils.sendJwksRequest(session, jwksUrl);
-            return JWKSUtils.getKeyWrappersForUse(jwks, JWK.Use.SIG);
-        } else {
+            return JWKSUtils.getKeyWrappersForUse(jwks, keyUse);
+        } else if (keyUse == JWK.Use.SIG) {
             try {
                 CertificateRepresentation certInfo = CertificateInfoHelper.getCertificateFromClient(client, JWTClientAuthenticator.ATTR_PREFIX);
                 KeyWrapper publicKey = getSignatureValidationKey(certInfo);
@@ -76,7 +83,9 @@ public class ClientPublicKeyLoader implements PublicKeyLoader {
                 logger.warnf(me, "Unable to retrieve publicKey for verify signature of client '%s' . Error details: %s", client.getClientId(), me.getMessage());
                 return Collections.emptyMap();
             }
-
+        } else {
+            logger.warnf("Unable to retrieve publicKey of client '%s' for the specified purpose other than verifying signature", client.getClientId());
+            return Collections.emptyMap();
         }
     }
 
@@ -102,14 +111,14 @@ public class ClientPublicKeyLoader implements PublicKeyLoader {
             // Check if we have kid in DB, generate otherwise
             kid = certInfo.getKid() != null ? certInfo.getKid() : KeyUtils.createKeyId(clientCert.getPublicKey());
             keyWrapper.setKid(kid);
-            keyWrapper.setVerifyKey(clientCert.getPublicKey());
+            keyWrapper.setPublicKey(clientCert.getPublicKey());
             keyWrapper.setCertificate(clientCert);
         } else {
             PublicKey publicKey = KeycloakModelUtils.getPublicKey(encodedPublicKey);
             // Check if we have kid in DB, generate otherwise
             kid = certInfo.getKid() != null ? certInfo.getKid() : KeyUtils.createKeyId(publicKey);
             keyWrapper.setKid(kid);
-            keyWrapper.setVerifyKey(publicKey);
+            keyWrapper.setPublicKey(publicKey);
         }
         return keyWrapper;
     }

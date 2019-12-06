@@ -16,6 +16,7 @@
  */
 package org.keycloak.testsuite.arquillian.annotation;
 
+import org.keycloak.common.Profile;
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

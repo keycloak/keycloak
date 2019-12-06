@@ -16,6 +16,7 @@
  */
 package org.keycloak.testsuite.pages;
 
+import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -38,12 +39,19 @@ public class LoginPasswordUpdatePage extends LanguageComboboxAwarePage {
 
     @FindBy(xpath = "//span[@class='kc-feedback-text']")
     private WebElement feedbackMessage;
+    
+    @FindBy(name = "cancel-aia")
+    private WebElement cancelAIAButton;
 
     public void changePassword(String newPassword, String passwordConfirm) {
         newPasswordInput.sendKeys(newPassword);
         passwordConfirmInput.sendKeys(passwordConfirm);
 
         submitButton.click();
+    }
+    
+    public void cancel() {
+        cancelAIAButton.click();
     }
 
     public boolean isCurrent() {
@@ -61,4 +69,13 @@ public class LoginPasswordUpdatePage extends LanguageComboboxAwarePage {
     public String getFeedbackMessage() {
         return feedbackMessage.getText();
     }
+
+    public boolean isCancelDisplayed() {
+        try {
+            return cancelAIAButton.isDisplayed();
+        } catch (NoSuchElementException e) {
+            return false;
+        }
+    }
+
 }
