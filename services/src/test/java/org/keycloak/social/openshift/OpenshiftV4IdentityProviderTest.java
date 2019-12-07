@@ -11,7 +11,6 @@ import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.HashMap;
@@ -35,7 +34,7 @@ public class OpenshiftV4IdentityProviderTest {
     }
 
     @Test
-    public void testExtractingConfigProperties() throws IOException {
+    public void testExtractingConfigProperties() {
         //given
         OpenshiftV4IdentityProviderConfig config = new OpenshiftV4IdentityProviderConfig(new IdentityProviderModel());
 
@@ -54,7 +53,7 @@ public class OpenshiftV4IdentityProviderTest {
     }
 
     @Test
-    public void testHttpClientErrors() throws IOException {
+    public void testHttpClientErrors() {
         //given
         OpenshiftV4IdentityProviderConfig config = new OpenshiftV4IdentityProviderConfig(new IdentityProviderModel());
 
