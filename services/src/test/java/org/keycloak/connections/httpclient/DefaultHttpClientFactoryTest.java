@@ -32,7 +32,6 @@ import javax.net.ssl.SSLPeerUnverifiedException;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.HttpStatus;
-import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -52,7 +51,7 @@ public class DefaultHttpClientFactoryTest {
 	private static final String TEST_DOMAIN = "www.google.com";
 
 	@Test
-	public void createHttpClientProviderWithDisableTrustManager() throws ClientProtocolException, IOException{
+	public void createHttpClientProviderWithDisableTrustManager() throws IOException{
 		Map<String, String> values = new HashMap<>();
 		values.put(DISABLE_TRUST_MANAGER_PROPERTY, "true");
 		DefaultHttpClientFactory factory = new DefaultHttpClientFactory();
@@ -69,7 +68,7 @@ public class DefaultHttpClientFactoryTest {
 	}
 
 	@Test(expected = SSLPeerUnverifiedException.class)
-	public void createHttpClientProviderWithUnvailableURL() throws ClientProtocolException, IOException {
+	public void createHttpClientProviderWithUnvailableURL() throws IOException {
 		DefaultHttpClientFactory factory = new DefaultHttpClientFactory();
 		factory.init(scope(new HashMap<>()));
 		KeycloakSession session = new DefaultKeycloakSession(new DefaultKeycloakSessionFactory());
