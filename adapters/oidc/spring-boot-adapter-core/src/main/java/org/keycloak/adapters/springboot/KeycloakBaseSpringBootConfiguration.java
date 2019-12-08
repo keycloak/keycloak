@@ -18,8 +18,10 @@
 package org.keycloak.adapters.springboot;
 
 import io.undertow.servlet.api.DeploymentInfo;
+import io.undertow.servlet.api.SecurityInfo.EmptyRoleSemantic;
 import io.undertow.servlet.api.WebResourceCollection;
 import org.apache.catalina.Context;
+import org.apache.log4j.Logger;
 import org.apache.tomcat.util.descriptor.web.LoginConfig;
 import org.apache.tomcat.util.descriptor.web.SecurityCollection;
 import org.apache.tomcat.util.descriptor.web.SecurityConstraint;
@@ -32,6 +34,7 @@ import org.eclipse.jetty.server.handler.HandlerList;
 import org.eclipse.jetty.server.handler.HandlerWrapper;
 import org.eclipse.jetty.util.security.Constraint;
 import org.eclipse.jetty.webapp.WebAppContext;
+import org.keycloak.adapters.KeycloakDeploymentBuilder;
 import org.keycloak.adapters.jetty.KeycloakJettyAuthenticator;
 import org.keycloak.adapters.undertow.KeycloakServletExtension;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,15 +42,18 @@ import org.springframework.context.ApplicationContext;
 
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+
 
 /**
  * Keycloak authentication base integration for Spring Boot - base to be extended for particular boot versions.
  */
 public class KeycloakBaseSpringBootConfiguration {
 
-    protected KeycloakSpringBootProperties keycloakProperties;
+	
+	protected KeycloakSpringBootProperties keycloakProperties;
 
     @Autowired
     public void setKeycloakSpringBootProperties(KeycloakSpringBootProperties keycloakProperties, KeycloakSpringBootConfigResolver resolver) {
@@ -76,11 +82,34 @@ public class KeycloakBaseSpringBootConfiguration {
             deploymentInfo.setLoginConfig(loginConfig);
 
             deploymentInfo.addInitParameter("keycloak.config.resolver", KeycloakSpringBootConfigResolverWrapper.class.getName());
-            deploymentInfo.addSecurityConstraints(getSecurityConstraints());
-
+            
+            
+            /* Support for '*' as all roles allowed
+             * We clear out the role in the SecurityConstraints
+             * and set the EmptyRoleSemantic to Authenticate
+             * But we will set EmptyRoleSemantic to DENY (default)
+             * if roles are non existing or left empty
+             */
+            Iterator<io.undertow.servlet.api.SecurityConstraint> it = this.getSecurityConstraints().iterator();
+            while (it.hasNext()) {
+            	io.undertow.servlet.api.SecurityConstraint securityConstraint = it.next();
+            	Set<String> rolesAllowed = securityConstraint.getRolesAllowed();
+            	
+            	if (rolesAllowed.contains("*") || rolesAllowed.contains("**") ) {
+            		io.undertow.servlet.api.SecurityConstraint allRolesAllowed = new io.undertow.servlet.api.SecurityConstraint();
+            		allRolesAllowed.setEmptyRoleSemantic(EmptyRoleSemantic.AUTHENTICATE);
+            		allRolesAllowed.setTransportGuaranteeType(securityConstraint.getTransportGuaranteeType());
+            		for (WebResourceCollection wr : securityConstraint.getWebResourceCollections()) {
+            			allRolesAllowed.addWebResourceCollection(wr);
+            		}
+            		deploymentInfo.addSecurityConstraint(allRolesAllowed);
+            	} else // left empty will fall back on default EmptyRoleSemantic.DENY
+            		deploymentInfo.addSecurityConstraint(securityConstraint);
+            	
+            }
             deploymentInfo.addServletExtension(new KeycloakServletExtension());
         }
-
+      
         private List<io.undertow.servlet.api.SecurityConstraint> getSecurityConstraints() {
 
             List<io.undertow.servlet.api.SecurityConstraint> undertowSecurityConstraints = new ArrayList<io.undertow.servlet.api.SecurityConstraint>();
@@ -105,7 +134,7 @@ public class KeycloakBaseSpringBootConfiguration {
             return undertowSecurityConstraints;
         }
     }
-
+    
     static class KeycloakBaseJettyServerCustomizer {
 
         protected final KeycloakSpringBootProperties keycloakProperties;
