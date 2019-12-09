@@ -24,6 +24,7 @@ import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.common.enums.SslRequired;
@@ -35,10 +36,12 @@ import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.SessionTimeoutHelper;
+import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.RefreshToken;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
@@ -77,6 +80,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.keycloak.testsuite.Assert.assertExpiration;
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 import static org.keycloak.testsuite.admin.ApiUtil.findUserByUsername;
 import static org.keycloak.testsuite.arquillian.AuthServerTestEnricher.AUTH_SERVER_SSL_REQUIRED;
@@ -1044,6 +1048,93 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
         response = oauth.doRefreshTokenRequest(response.getRefreshToken(), "secret");
 
         assertNotNull(response.getRefreshToken());
+    }
+
+    @Test
+    public void testClientSessionMaxLifespan() throws Exception {
+        ClientResource client = ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app");
+        ClientRepresentation clientRepresentation = client.toRepresentation();
+
+        RealmResource realm = adminClient.realm("test");
+        RealmRepresentation rep = realm.toRepresentation();
+        Integer originalSsoSessionMaxLifespan = rep.getSsoSessionMaxLifespan();
+        int ssoSessionMaxLifespan = rep.getSsoSessionIdleTimeout() - 100;
+        Integer originalClientSessionMaxLifespan = rep.getClientSessionMaxLifespan();
+
+        try {
+            rep.setSsoSessionMaxLifespan(ssoSessionMaxLifespan);
+            realm.update(rep);
+
+            oauth.doLogin("test-user@localhost", "password");
+            String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+            OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
+            assertEquals(200, response.getStatusCode());
+            assertExpiration(response.getRefreshExpiresIn(), ssoSessionMaxLifespan);
+
+            rep.setClientSessionMaxLifespan(ssoSessionMaxLifespan - 100);
+            realm.update(rep);
+
+            String refreshToken = response.getRefreshToken();
+            response = oauth.doRefreshTokenRequest(refreshToken, "password");
+            assertEquals(200, response.getStatusCode());
+            assertExpiration(response.getRefreshExpiresIn(), ssoSessionMaxLifespan - 100);
+
+            clientRepresentation.getAttributes().put(OIDCConfigAttributes.CLIENT_SESSION_MAX_LIFESPAN,
+                Integer.toString(ssoSessionMaxLifespan - 200));
+            client.update(clientRepresentation);
+
+            refreshToken = response.getRefreshToken();
+            response = oauth.doRefreshTokenRequest(refreshToken, "password");
+            assertEquals(200, response.getStatusCode());
+            assertExpiration(response.getRefreshExpiresIn(), ssoSessionMaxLifespan - 200);
+        } finally {
+            rep.setSsoSessionMaxLifespan(originalSsoSessionMaxLifespan);
+            rep.setClientSessionMaxLifespan(originalClientSessionMaxLifespan);
+            realm.update(rep);
+            clientRepresentation.getAttributes().put(OIDCConfigAttributes.CLIENT_SESSION_MAX_LIFESPAN, null);
+            client.update(clientRepresentation);
+        }
+    }
+
+    @Test
+    public void testClientSessionIdleTimeout() throws Exception {
+        ClientResource client = ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app");
+        ClientRepresentation clientRepresentation = client.toRepresentation();
+
+        RealmResource realm = adminClient.realm("test");
+        RealmRepresentation rep = realm.toRepresentation();
+        int ssoSessionIdleTimeout = rep.getSsoSessionIdleTimeout();
+        Integer originalClientSessionIdleTimeout = rep.getClientSessionIdleTimeout();
+
+        try {
+            oauth.doLogin("test-user@localhost", "password");
+            String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+            OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
+            assertEquals(200, response.getStatusCode());
+            assertExpiration(response.getRefreshExpiresIn(), ssoSessionIdleTimeout);
+
+            rep.setClientSessionIdleTimeout(ssoSessionIdleTimeout - 100);
+            realm.update(rep);
+
+            String refreshToken = response.getRefreshToken();
+            response = oauth.doRefreshTokenRequest(refreshToken, "password");
+            assertEquals(200, response.getStatusCode());
+            assertExpiration(response.getRefreshExpiresIn(), ssoSessionIdleTimeout - 100);
+
+            clientRepresentation.getAttributes().put(OIDCConfigAttributes.CLIENT_SESSION_IDLE_TIMEOUT,
+                Integer.toString(ssoSessionIdleTimeout - 200));
+            client.update(clientRepresentation);
+
+            refreshToken = response.getRefreshToken();
+            response = oauth.doRefreshTokenRequest(refreshToken, "password");
+            assertEquals(200, response.getStatusCode());
+            assertExpiration(response.getRefreshExpiresIn(), ssoSessionIdleTimeout - 200);
+        } finally {
+            rep.setClientSessionIdleTimeout(originalClientSessionIdleTimeout);
+            realm.update(rep);
+            clientRepresentation.getAttributes().put(OIDCConfigAttributes.CLIENT_SESSION_IDLE_TIMEOUT, null);
+            client.update(clientRepresentation);
+        }
     }
 
     @Test

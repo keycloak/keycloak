@@ -364,6 +364,8 @@ public class ModelToRepresentation {
         // KEYCLOAK-7688 Offline Session Max for Offline Token
         rep.setOfflineSessionMaxLifespanEnabled(realm.isOfflineSessionMaxLifespanEnabled());
         rep.setOfflineSessionMaxLifespan(realm.getOfflineSessionMaxLifespan());
+        rep.setClientSessionIdleTimeout(realm.getClientSessionIdleTimeout());
+        rep.setClientSessionMaxLifespan(realm.getClientSessionMaxLifespan());
         rep.setAccessCodeLifespan(realm.getAccessCodeLifespan());
         rep.setAccessCodeLifespanUserAction(realm.getAccessCodeLifespanUserAction());
         rep.setAccessCodeLifespanLogin(realm.getAccessCodeLifespanLogin());

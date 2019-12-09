@@ -687,6 +687,19 @@ public class TokenManager {
             expiration = expiration <= sessionExpires ? expiration : sessionExpires;
         }
 
+        int clientSessionMaxLifespan;
+        String clientSessionMaxLifespanPerClient = client.getAttribute(OIDCConfigAttributes.CLIENT_SESSION_MAX_LIFESPAN);
+        if (clientSessionMaxLifespanPerClient != null && !clientSessionMaxLifespanPerClient.trim().isEmpty()) {
+            clientSessionMaxLifespan = Integer.parseInt(clientSessionMaxLifespanPerClient);
+        } else {
+            clientSessionMaxLifespan = realm.getClientSessionMaxLifespan();
+        }
+
+        if (clientSessionMaxLifespan > 0) {
+            int clientSessionExpiration = userSession.getStarted() + clientSessionMaxLifespan;
+            return expiration < clientSessionExpiration ? expiration : clientSessionExpiration;
+        }
+
         return expiration;
     }
 
@@ -777,10 +790,41 @@ public class TokenManager {
         }
 
         private int getRefreshExpiration() {
-            int sessionExpires = userSession.getStarted() + (userSession.isRememberMe() && realm.getSsoSessionMaxLifespanRememberMe() > 0 ?
-                    realm.getSsoSessionMaxLifespanRememberMe() : realm.getSsoSessionMaxLifespan());
-            int expiration = Time.currentTime() + (userSession.isRememberMe() && realm.getSsoSessionIdleTimeoutRememberMe() > 0 ?
-                    realm.getSsoSessionIdleTimeoutRememberMe() : realm.getSsoSessionIdleTimeout());
+            int sessionExpires = userSession.getStarted()
+                + (userSession.isRememberMe() && realm.getSsoSessionMaxLifespanRememberMe() > 0
+                    ? realm.getSsoSessionMaxLifespanRememberMe()
+                    : realm.getSsoSessionMaxLifespan());
+
+            int clientSessionMaxLifespan;
+            String clientSessionMaxLifespanPerClient = client.getAttribute(OIDCConfigAttributes.CLIENT_SESSION_MAX_LIFESPAN);
+            if (clientSessionMaxLifespanPerClient != null && !clientSessionMaxLifespanPerClient.trim().isEmpty()) {
+                clientSessionMaxLifespan = Integer.parseInt(clientSessionMaxLifespanPerClient);
+            } else {
+                clientSessionMaxLifespan = realm.getClientSessionMaxLifespan();
+            }
+
+            if (clientSessionMaxLifespan > 0) {
+                int clientSessionMaxExpiration = userSession.getStarted() + clientSessionMaxLifespan;
+                sessionExpires = sessionExpires < clientSessionMaxExpiration ? sessionExpires : clientSessionMaxExpiration;
+            }
+
+            int expiration = Time.currentTime() + (userSession.isRememberMe() && realm.getSsoSessionIdleTimeoutRememberMe() > 0
+                ? realm.getSsoSessionIdleTimeoutRememberMe()
+                : realm.getSsoSessionIdleTimeout());
+
+            int clientSessionIdleTimeout;
+            String clientSessionIdleTimeoutPerClient = client.getAttribute(OIDCConfigAttributes.CLIENT_SESSION_IDLE_TIMEOUT);
+            if (clientSessionIdleTimeoutPerClient != null && !clientSessionIdleTimeoutPerClient.trim().isEmpty()) {
+                clientSessionIdleTimeout = Integer.parseInt(clientSessionIdleTimeoutPerClient);
+            } else {
+                clientSessionIdleTimeout = realm.getClientSessionIdleTimeout();
+            }
+
+            if (clientSessionIdleTimeout > 0) {
+                int clientSessionIdleExpiration = Time.currentTime() + clientSessionIdleTimeout;
+                expiration = expiration < clientSessionIdleExpiration ? expiration : clientSessionIdleExpiration;
+            }
+
             return expiration <= sessionExpires ? expiration : sessionExpires;
         }
 

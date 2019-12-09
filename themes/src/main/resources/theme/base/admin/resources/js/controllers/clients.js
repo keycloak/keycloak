@@ -1090,6 +1090,8 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, flows, $ro
 
     $scope.accessTokenLifespan = TimeUnit2.asUnit(client.attributes['access.token.lifespan']);
     $scope.samlAssertionLifespan = TimeUnit2.asUnit(client.attributes['saml.assertion.lifespan']);
+    $scope.clientSessionIdleTimeout = TimeUnit2.asUnit(client.attributes['client.session.idle.timeout']);
+    $scope.clientSessionMaxLifespan = TimeUnit2.asUnit(client.attributes['client.session.max.lifespan']);
 
     if(client.origin) {
         if ($scope.access.viewRealm) {
@@ -1421,6 +1423,22 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, flows, $ro
             $scope.clientEdit.attributes['saml.assertion.lifespan'] = $scope.samlAssertionLifespan.toSeconds();
         } else {
             $scope.clientEdit.attributes['saml.assertion.lifespan'] = null;
+        }
+    }
+
+    $scope.updateClientSessionIdleTimeout = function() {
+        if ($scope.clientSessionIdleTimeout.time) {
+            $scope.clientEdit.attributes['client.session.idle.timeout'] = $scope.clientSessionIdleTimeout.toSeconds();
+        } else {
+            $scope.clientEdit.attributes['client.session.idle.timeout'] = null;
+        }
+    }
+
+    $scope.updateClientSessionMaxLifespan = function() {
+        if ($scope.clientSessionMaxLifespan.time) {
+            $scope.clientEdit.attributes['client.session.max.lifespan'] = $scope.clientSessionMaxLifespan.toSeconds();
+        } else {
+            $scope.clientEdit.attributes['client.session.max.lifespan'] = null;
         }
     }
 
