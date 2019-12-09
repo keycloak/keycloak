@@ -17,6 +17,16 @@
 
 package org.keycloak.provider.quarkus;
 
-public class JsonConfigProviderFactory extends org.keycloak.services.util.JsonConfigProviderFactory {
+import java.util.Optional;
+
+import org.keycloak.Config;
+import org.keycloak.config.ConfigProviderFactory;
+
+public class MicroProfileConfigProviderFactory implements ConfigProviderFactory {
+
+    @Override
+    public Optional<Config.ConfigProvider> create() {
+        return Optional.of(new MicroProfileConfigProvider());
+    }
 
 }
