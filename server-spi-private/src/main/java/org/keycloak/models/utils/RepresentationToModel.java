@@ -220,6 +220,11 @@ public class RepresentationToModel {
             newRealm.setOfflineSessionMaxLifespan(rep.getOfflineSessionMaxLifespan());
         else newRealm.setOfflineSessionMaxLifespan(Constants.DEFAULT_OFFLINE_SESSION_MAX_LIFESPAN);
 
+        if (rep.getClientSessionIdleTimeout() != null)
+            newRealm.setClientSessionIdleTimeout(rep.getClientSessionIdleTimeout());
+        if (rep.getClientSessionMaxLifespan() != null)
+            newRealm.setClientSessionMaxLifespan(rep.getClientSessionMaxLifespan());
+
         if (rep.getAccessCodeLifespan() != null) newRealm.setAccessCodeLifespan(rep.getAccessCodeLifespan());
         else newRealm.setAccessCodeLifespan(60);
 
@@ -1088,6 +1093,10 @@ public class RepresentationToModel {
         if (rep.getOfflineSessionMaxLifespanEnabled() != null) realm.setOfflineSessionMaxLifespanEnabled(rep.getOfflineSessionMaxLifespanEnabled());
         if (rep.getOfflineSessionMaxLifespan() != null)
             realm.setOfflineSessionMaxLifespan(rep.getOfflineSessionMaxLifespan());
+        if (rep.getClientSessionIdleTimeout() != null)
+            realm.setClientSessionIdleTimeout(rep.getClientSessionIdleTimeout());
+        if (rep.getClientSessionMaxLifespan() != null)
+            realm.setClientSessionMaxLifespan(rep.getClientSessionMaxLifespan());
         if (rep.getRequiredCredentials() != null) {
             realm.updateRequiredCredentials(rep.getRequiredCredentials());
         }

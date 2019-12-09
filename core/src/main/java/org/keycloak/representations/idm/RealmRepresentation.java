@@ -50,6 +50,8 @@ public class RealmRepresentation {
     // KEYCLOAK-7688 Offline Session Max for Offline Token
     protected Boolean offlineSessionMaxLifespanEnabled;
     protected Integer offlineSessionMaxLifespan;
+    protected Integer clientSessionIdleTimeout;
+    protected Integer clientSessionMaxLifespan;
     protected Integer accessCodeLifespan;
     protected Integer accessCodeLifespanUserAction;
     protected Integer accessCodeLifespanLogin;
@@ -367,6 +369,22 @@ public class RealmRepresentation {
 
     public void setOfflineSessionMaxLifespan(Integer offlineSessionMaxLifespan) {
         this.offlineSessionMaxLifespan = offlineSessionMaxLifespan;
+    }
+
+    public Integer getClientSessionIdleTimeout() {
+        return clientSessionIdleTimeout;
+    }
+
+    public void setClientSessionIdleTimeout(Integer clientSessionIdleTimeout) {
+        this.clientSessionIdleTimeout = clientSessionIdleTimeout;
+    }
+
+    public Integer getClientSessionMaxLifespan() {
+        return clientSessionMaxLifespan;
+    }
+
+    public void setClientSessionMaxLifespan(Integer clientSessionMaxLifespan) {
+        this.clientSessionMaxLifespan = clientSessionMaxLifespan;
     }
 
     public List<ScopeMappingRepresentation> getScopeMappings() {

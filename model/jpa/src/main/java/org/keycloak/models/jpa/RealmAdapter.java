@@ -524,6 +524,26 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
     }
 
     @Override
+    public int getClientSessionIdleTimeout() {
+        return getAttribute(RealmAttributes.CLIENT_SESSION_IDLE_TIMEOUT, 0);
+    }
+
+    @Override
+    public void setClientSessionIdleTimeout(int seconds) {
+        setAttribute(RealmAttributes.CLIENT_SESSION_IDLE_TIMEOUT, seconds);
+    }
+
+    @Override
+    public int getClientSessionMaxLifespan() {
+        return getAttribute(RealmAttributes.CLIENT_SESSION_MAX_LIFESPAN, 0);
+    }
+
+    @Override
+    public void setClientSessionMaxLifespan(int seconds) {
+        setAttribute(RealmAttributes.CLIENT_SESSION_MAX_LIFESPAN, seconds);
+    }
+
+    @Override
     public int getAccessCodeLifespan() {
         return realm.getAccessCodeLifespan();
     }
