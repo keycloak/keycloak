@@ -21,17 +21,34 @@ import io.quarkus.runtime.ShutdownEvent;
 import io.quarkus.runtime.StartupEvent;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.event.Observes;
+import javax.inject.Inject;
+import javax.servlet.ServletContext;
+
+import org.keycloak.Config;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.KeycloakTransactionManager;
 import org.keycloak.platform.Platform;
+import org.keycloak.services.ServicesLogger;
+import org.keycloak.services.managers.ApplianceBootstrap;
 
 @ApplicationScoped
 public class QuarkusLifecycleObserver {
+
+    private static final String KEYCLOAK_ADMIN_ENV_VAR = "KEYCLOAK_ADMIN";
+    private static final String KEYCLOAK_ADMIN_PASSWORD_ENV_VAR = "KEYCLOAK_ADMIN_PASSWORD";
+
+    @Inject
+    ServletContext servletContext;
 
     private void onStartupEvent(@Observes StartupEvent event) {
 
         Runnable startupHook = ((QuarkusPlatform) Platform.getPlatform()).startupHook;
 
-        if (startupHook != null)
+        if (startupHook != null) {
             startupHook.run();
+            createAdminUser();
+        }
 
     }
 
@@ -44,4 +61,35 @@ public class QuarkusLifecycleObserver {
 
     }
 
+    private void createAdminUser() {
+        String adminUserName = System.getenv(KEYCLOAK_ADMIN_ENV_VAR);
+        String adminPassword = System.getenv(KEYCLOAK_ADMIN_PASSWORD_ENV_VAR);
+
+        if ((adminUserName == null || adminUserName.trim().length() == 0)
+                || (adminPassword == null || adminPassword.trim().length() == 0)) {
+            return;
+        }
+
+        KeycloakSessionFactory sessionFactory = (KeycloakSessionFactory) servletContext
+                .getAttribute(KeycloakSessionFactory.class.getName());
+        KeycloakSession session = sessionFactory.create();
+        KeycloakTransactionManager transaction = session.getTransactionManager();
+
+        try {
+            transaction.begin();
+
+            new ApplianceBootstrap(session).createMasterRealmUser(adminUserName, adminPassword);
+            ServicesLogger.LOGGER.addUserSuccess(adminUserName, Config.getAdminRealm());
+
+            transaction.commit();
+        } catch (IllegalStateException e) {
+            session.getTransactionManager().rollback();
+            ServicesLogger.LOGGER.addUserFailedUserExists(adminUserName, Config.getAdminRealm());
+        } catch (Throwable t) {
+            session.getTransactionManager().rollback();
+            ServicesLogger.LOGGER.addUserFailed(t, adminUserName, Config.getAdminRealm());
+        } finally {
+            session.close();
+        }
+    }
 }
