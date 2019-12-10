@@ -696,6 +696,11 @@ public class RealmAdapter implements CachedRealmModel {
     }
 
     @Override
+    public List<ClientModel> getAlwaysDisplayInConsoleClients() {
+        return cacheSession.getAlwaysDisplayInConsoleClients(this);
+    }
+
+    @Override
     public ClientModel addClient(String name) {
         return cacheSession.addClient(this, name);
     }

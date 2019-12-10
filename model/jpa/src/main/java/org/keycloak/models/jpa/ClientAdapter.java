@@ -107,6 +107,16 @@ public class ClientAdapter implements ClientModel, JpaModel<ClientEntity> {
     }
 
     @Override
+    public boolean isAlwaysDisplayInConsole() {
+        return entity.isAlwaysDisplayInConsole();
+    }
+
+    @Override
+    public void setAlwaysDisplayInConsole(boolean alwaysDisplayInConsole) {
+        entity.setAlwaysDisplayInConsole(alwaysDisplayInConsole);
+    }
+
+    @Override
     public boolean isPublicClient() {
         return entity.isPublicClient();
     }

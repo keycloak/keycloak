@@ -555,6 +555,7 @@ public class ModelToRepresentation {
         rep.setName(clientModel.getName());
         rep.setDescription(clientModel.getDescription());
         rep.setEnabled(clientModel.isEnabled());
+        rep.setAlwaysDisplayInConsole(clientModel.isAlwaysDisplayInConsole());
         rep.setAdminUrl(clientModel.getManagementUrl());
         rep.setPublicClient(clientModel.isPublicClient());
         rep.setFrontchannelLogout(clientModel.isFrontchannelLogout());

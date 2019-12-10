@@ -62,6 +62,10 @@ public interface ClientModel extends ClientScopeModel, RoleContainerModel,  Prot
 
     void setEnabled(boolean enabled);
 
+    boolean isAlwaysDisplayInConsole();
+
+    void setAlwaysDisplayInConsole(boolean alwaysDisplayInConsole);
+
     boolean isSurrogateAuthRequired();
 
     void setSurrogateAuthRequired(boolean surrogateAuthRequired);

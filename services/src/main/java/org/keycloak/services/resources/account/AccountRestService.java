@@ -518,6 +518,11 @@ public class AccountRestService {
             consentModels.put(client.getClientId(), consent);
         }
 
+        List<ClientModel> alwaysDisplayClients = realm.getAlwaysDisplayInConsoleClients();
+        for(ClientModel client : alwaysDisplayClients) {
+            clients.add(client);
+        }
+
         List<ClientRepresentation> apps = new LinkedList<ClientRepresentation>();
         for (ClientModel client : clients) {
             if (client.isBearerOnly() || client.getBaseUrl() == null) {

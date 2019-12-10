@@ -1239,6 +1239,7 @@ public class RepresentationToModel {
         if (resourceRep.getName() != null) client.setName(resourceRep.getName());
         if (resourceRep.getDescription() != null) client.setDescription(resourceRep.getDescription());
         if (resourceRep.isEnabled() != null) client.setEnabled(resourceRep.isEnabled());
+        if (resourceRep.isAlwaysDisplayInConsole() != null) client.setAlwaysDisplayInConsole(resourceRep.isAlwaysDisplayInConsole());
         client.setManagementUrl(resourceRep.getAdminUrl());
         if (resourceRep.isSurrogateAuthRequired() != null)
             client.setSurrogateAuthRequired(resourceRep.isSurrogateAuthRequired());
@@ -1426,6 +1427,7 @@ public class RepresentationToModel {
         if (rep.getName() != null) resource.setName(rep.getName());
         if (rep.getDescription() != null) resource.setDescription(rep.getDescription());
         if (rep.isEnabled() != null) resource.setEnabled(rep.isEnabled());
+        if (rep.isAlwaysDisplayInConsole() != null) resource.setAlwaysDisplayInConsole(rep.isAlwaysDisplayInConsole());
         if (rep.isBearerOnly() != null) resource.setBearerOnly(rep.isBearerOnly());
         if (rep.isConsentRequired() != null) resource.setConsentRequired(rep.isConsentRequired());
         if (rep.isStandardFlowEnabled() != null) resource.setStandardFlowEnabled(rep.isStandardFlowEnabled());

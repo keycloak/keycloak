@@ -54,6 +54,7 @@ import java.util.Set;
         @NamedQuery(name="getClientsByRealm", query="select client from ClientEntity client where client.realm = :realm"),
         @NamedQuery(name="getClientById", query="select client from ClientEntity client where client.id = :id and client.realm.id = :realm"),
         @NamedQuery(name="getClientIdsByRealm", query="select client.id from ClientEntity client where client.realm.id = :realm"),
+        @NamedQuery(name="getAlwaysDisplayInConsoleClients", query="select client.id from ClientEntity client where client.alwaysDisplayInConsole = true and client.realm.id = :realm"),
         @NamedQuery(name="findClientIdByClientId", query="select client.id from ClientEntity client where client.clientId = :clientId and client.realm.id = :realm"),
         @NamedQuery(name="searchClientsByClientId", query="select client.id from ClientEntity client where lower(client.clientId) like lower(concat('%',:clientId,'%')) and client.realm.id = :realm"),
         @NamedQuery(name="getRealmClientsCount", query="select count(client) from ClientEntity client where client.realm.id = :realm"),
@@ -75,6 +76,8 @@ public class ClientEntity {
     private String clientId;
     @Column(name="ENABLED")
     private boolean enabled;
+    @Column(name = "ALWAYS_DISPLAY_IN_CONSOLE")
+    private boolean alwaysDisplayInConsole;
     @Column(name="SECRET")
     private String secret;
     @Column(name="REGISTRATION_TOKEN")
@@ -203,6 +206,14 @@ public class ClientEntity {
 
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
+    }
+
+    public boolean isAlwaysDisplayInConsole() {
+        return alwaysDisplayInConsole;
+    }
+
+    public void setAlwaysDisplayInConsole(boolean alwaysDisplayInConsole) {
+        this.alwaysDisplayInConsole = alwaysDisplayInConsole;
     }
 
     public String getClientId() {

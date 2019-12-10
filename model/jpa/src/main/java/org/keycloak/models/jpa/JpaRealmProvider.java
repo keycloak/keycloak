@@ -575,6 +575,20 @@ public class JpaRealmProvider implements RealmProvider {
     }
 
     @Override
+    public List<ClientModel> getAlwaysDisplayInConsoleClients(RealmModel realm) {
+        TypedQuery<String> query = em.createNamedQuery("getAlwaysDisplayInConsoleClients", String.class);
+        query.setParameter("realm", realm.getId());
+        List<String> clients = query.getResultList();
+        if (clients.isEmpty()) return Collections.EMPTY_LIST;
+        List<ClientModel> list = new LinkedList<>();
+        for (String id : clients) {
+            ClientModel client = session.realms().getClientById(id, realm);
+            if (client != null) list.add(client);
+        }
+        return Collections.unmodifiableList(list);
+    }
+
+    @Override
     public ClientModel getClientById(String id, RealmModel realm) {
         ClientEntity app = em.find(ClientEntity.class, id);
         // Check if application belongs to this realm

@@ -255,6 +255,8 @@ public interface RealmModel extends RoleContainerModel {
     List<ClientModel> getClients(Integer firstResult, Integer maxResults);
     Long getClientsCount();
 
+    List<ClientModel> getAlwaysDisplayInConsoleClients();
+
     ClientModel addClient(String name);
 
     ClientModel addClient(String id, String clientId);

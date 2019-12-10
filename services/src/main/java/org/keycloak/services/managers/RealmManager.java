@@ -165,6 +165,7 @@ public class RealmManager {
         adminConsole.setWebOrigins(Collections.singleton("+"));
 
         adminConsole.setEnabled(true);
+        adminConsole.setAlwaysDisplayInConsole(false);
         adminConsole.setPublicClient(true);
         adminConsole.setFullScopeAllowed(false);
         adminConsole.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
@@ -188,6 +189,7 @@ public class RealmManager {
             adminCli = KeycloakModelUtils.createClient(realm, Constants.ADMIN_CLI_CLIENT_ID);
             adminCli.setName("${client_" + Constants.ADMIN_CLI_CLIENT_ID + "}");
             adminCli.setEnabled(true);
+            adminCli.setAlwaysDisplayInConsole(false);
             adminCli.setPublicClient(true);
             adminCli.setFullScopeAllowed(false);
             adminCli.setStandardFlowEnabled(false);
@@ -407,6 +409,7 @@ public class RealmManager {
             accountClient = KeycloakModelUtils.createClient(realm, Constants.ACCOUNT_MANAGEMENT_CLIENT_ID);
             accountClient.setName("${client_" + Constants.ACCOUNT_MANAGEMENT_CLIENT_ID + "}");
             accountClient.setEnabled(true);
+            accountClient.setAlwaysDisplayInConsole(false);
             accountClient.setFullScopeAllowed(false);
 
             accountClient.setRootUrl(Constants.AUTH_BASE_URL_PROP);
@@ -431,6 +434,7 @@ public class RealmManager {
                 accountConsoleClient = KeycloakModelUtils.createClient(realm, Constants.ACCOUNT_CONSOLE_CLIENT_ID);
                 accountConsoleClient.setName("${client_" + Constants.ACCOUNT_CONSOLE_CLIENT_ID + "}");
                 accountConsoleClient.setEnabled(true);
+                accountConsoleClient.setAlwaysDisplayInConsole(false);
                 accountConsoleClient.setFullScopeAllowed(false);
                 accountConsoleClient.setPublicClient(true);
                 accountConsoleClient.setDirectAccessGrantsEnabled(false);
@@ -462,6 +466,7 @@ public class RealmManager {
         if (client == null) {
             client = KeycloakModelUtils.createClient(realm, Constants.BROKER_SERVICE_CLIENT_ID);
             client.setEnabled(true);
+            client.setAlwaysDisplayInConsole(false);
             client.setName("${client_" + Constants.BROKER_SERVICE_CLIENT_ID + "}");
             client.setFullScopeAllowed(false);
             client.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);

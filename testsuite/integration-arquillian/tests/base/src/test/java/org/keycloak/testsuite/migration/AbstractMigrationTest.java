@@ -276,6 +276,7 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
     protected void testMigrationTo9_0_0() {
         testAccountConsoleClient(masterRealm);
         testAccountConsoleClient(migrationRealm);
+        testAlwaysDisplayInConsole();
     }
 
     private void testAdminClientUrls(RealmResource realm) {
@@ -791,6 +792,12 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
             assertTrue(m.group(1).matches("[\\da-z]{5}"));
         } catch (IOException e) {
             fail(e.getMessage());
+        }
+    }
+
+    protected void testAlwaysDisplayInConsole() {
+        for(ClientRepresentation clientRep : masterRealm.clients().findAll()) {
+            Assert.assertFalse(clientRep.isAlwaysDisplayInConsole());
         }
     }
 }
