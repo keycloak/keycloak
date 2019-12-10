@@ -36,8 +36,7 @@ import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlEquals;
  */
 public class ReferrerTest extends AbstractAccountTest {
     public static final String FAKE_CLIENT_ID = "fake-client-name";
-    public static final String FAKE_CLIENT_NAME_LOCALIZE = "Referrer Test Client";
-    public static final String REFERRER_LINK_TEXT = "Back to " + FAKE_CLIENT_NAME_LOCALIZE;
+    public static final String REFERRER_LINK_TEXT = "Back to " + LOCALE_CLIENT_NAME_LOCALIZED;
 
     @Page
     private WelcomeScreen welcomeScreen;
@@ -52,7 +51,7 @@ public class ReferrerTest extends AbstractAccountTest {
 
         ClientRepresentation testClient = new ClientRepresentation();
         testClient.setClientId(FAKE_CLIENT_ID);
-        testClient.setName("${client_" + FAKE_CLIENT_ID + "}");
+        testClient.setName(LOCALE_CLIENT_NAME);
         testClient.setRedirectUris(Collections.singletonList(getFakeClientUrl()));
         testClient.setEnabled(true);
 

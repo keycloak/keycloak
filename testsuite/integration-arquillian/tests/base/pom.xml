@@ -236,25 +236,6 @@
                              </artifactItems>
                         </configuration>
                     </execution>
-                    <execution>
-                        <id>unpack-undertow-server</id>
-                        <phase>generate-test-resources</phase>
-                        <goals>
-                            <goal>unpack</goal>
-                        </goals>
-                        <configuration>
-                            <artifactItems>
-                                <artifactItem>
-                                    <groupId>org.keycloak.testsuite</groupId>
-                                    <artifactId>integration-arquillian-servers-auth-server-undertow</artifactId>
-                                    <version>${project.version}</version>
-                                    <type>jar</type>
-                                    <outputDirectory>${containers.home}/auth-server-undertow</outputDirectory>
-                                </artifactItem>
-                            </artifactItems>
-                            <includes>*.jks,*.crt,*.truststore,*.crl,*.key,certs/clients/*</includes>
-                        </configuration>
-                    </execution>
                 </executions>
             </plugin>
             <plugin>

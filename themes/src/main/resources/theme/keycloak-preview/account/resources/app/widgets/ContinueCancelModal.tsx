@@ -25,6 +25,7 @@ import {Msg} from './Msg';
 interface ContinueCancelModalProps {
     buttonTitle: string;
     buttonVariant?: ButtonProps['variant'];
+    buttonId?: string;
     modalTitle: string;
     modalMessage: string;
     modalContinueButtonLabel?: string;
@@ -74,7 +75,7 @@ export class ContinueCancelModal extends React.Component<ContinueCancelModalProp
 
         return (
             <React.Fragment>
-                <Button variant={this.props.buttonVariant} onClick={this.handleModalToggle} isDisabled={this.props.isDisabled}>
+                <Button id={this.props.buttonId} variant={this.props.buttonVariant} onClick={this.handleModalToggle} isDisabled={this.props.isDisabled}>
                     <Msg msgKey={this.props.buttonTitle}/>
                 </Button>
                 <Modal
@@ -83,10 +84,10 @@ export class ContinueCancelModal extends React.Component<ContinueCancelModalProp
                     isOpen={isModalOpen}
                     onClose={this.handleModalToggle}
                     actions={[
-                        <Button key="cancel" variant="secondary" onClick={this.handleModalToggle}>
+                        <Button id='modal-cancel' key="cancel" variant="secondary" onClick={this.handleModalToggle}>
                             <Msg msgKey={this.props.modalCancelButtonLabel!}/>
                         </Button>,
-                        <Button key="confirm" variant="primary" onClick={this.handleContinue}>
+                        <Button id='modal-confirm' key="confirm" variant="primary" onClick={this.handleContinue}>
                             <Msg msgKey={this.props.modalContinueButtonLabel!}/>
                         </Button>
                     ]}

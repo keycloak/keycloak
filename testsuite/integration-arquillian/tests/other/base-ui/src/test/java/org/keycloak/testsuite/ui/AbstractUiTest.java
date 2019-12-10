@@ -39,6 +39,8 @@ public abstract class AbstractUiTest extends AbstractAuthTest {
     public static final String CUSTOM_LOCALE_NAME = "Přísný jazyk";
     public static final String DEFAULT_LOCALE="en";
     public static final String DEFAULT_LOCALE_NAME = "English";
+    public static final String LOCALE_CLIENT_NAME = "${client_localized-client}";
+    public static final String LOCALE_CLIENT_NAME_LOCALIZED = "Přespříliš lokalizovaný klient";
 
     @BeforeClass
     public static void assumeSupportedBrowser() {

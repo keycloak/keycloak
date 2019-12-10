@@ -158,18 +158,22 @@ export class DeviceActivityPage extends React.Component<DeviceActivityPageProps,
       return moment(time * 1000).format('LLLL');
     }
 
+    private elementId(item: string, session: Session) : string {
+        return `session-${session.id.substring(0,7)}-${item}`;
+    }
+
     private findBrowserIcon(session: Session): React.ReactNode {
       const browserName: string = session.browser.toLowerCase();
-      if (browserName.includes("chrom")) return (<ChromeIcon size='lg'/>); // chrome or chromium
-      if (browserName.includes("firefox")) return (<FirefoxIcon size='lg'/>);
-      if (browserName.includes("edge")) return (<EdgeIcon size='lg'/>);
-      if (browserName.startsWith("ie/")) return (<InternetExplorerIcon size='lg'/>);
-      if (browserName.includes("safari")) return (<SafariIcon size='lg'/>);
-      if (browserName.includes("opera")) return (<OperaIcon size='lg'/>);
-      if (browserName.includes("yandex")) return (<YandexInternationalIcon size='lg'/>);
-      if (browserName.includes("amazon")) return (<AmazonIcon size='lg'/>);
+      if (browserName.includes("chrom")) return (<ChromeIcon id={this.elementId('icon-chrome', session)} size='lg'/>); // chrome or chromium
+      if (browserName.includes("firefox")) return (<FirefoxIcon id={this.elementId('icon-firefox', session)} size='lg'/>);
+      if (browserName.includes("edge")) return (<EdgeIcon id={this.elementId('icon-edge', session)} size='lg'/>);
+      if (browserName.startsWith("ie/")) return (<InternetExplorerIcon id={this.elementId('icon-ie', session)} size='lg'/>);
+      if (browserName.includes("safari")) return (<SafariIcon id={this.elementId('icon-safari', session)} size='lg'/>);
+      if (browserName.includes("opera")) return (<OperaIcon id={this.elementId('icon-opera', session)} size='lg'/>);
+      if (browserName.includes("yandex")) return (<YandexInternationalIcon id={this.elementId('icon-yandex', session)} size='lg'/>);
+      if (browserName.includes("amazon")) return (<AmazonIcon id={this.elementId('icon-amazon', session)} size='lg'/>);
 
-      return (<GlobeIcon size='lg'/>);
+      return (<GlobeIcon id={this.elementId('icon-default', session)} size='lg'/>);
     }
 
     private findOS(device: Device): string {
@@ -232,6 +236,7 @@ export class DeviceActivityPage extends React.Component<DeviceActivityPageProps,
                                 <DataListCell key='signOutAllButton' width={1}>
                                   {this.isShowSignOutAll(this.state.devices) && 
                                     <ContinueCancelModal buttonTitle='signOutAllDevices'
+                                                  buttonId='sign-out-all'
                                                   modalTitle='signOutAllDevices'
                                                   modalMessage='signOutAllDevicesWarning'
                                                   onContinue={this.signOutAll}
@@ -260,29 +265,30 @@ export class DeviceActivityPage extends React.Component<DeviceActivityPageProps,
                                       </StackItem>
                                       {!this.state.devices[0].mobile &&
                                         <StackItem isFilled={false}>
-                                          <Bullseye>{session.ipAddress}</Bullseye>
+                                          <Bullseye id={this.elementId('ip', session)}>{session.ipAddress}</Bullseye>
                                         </StackItem>
                                       }
                                       {session.current && 
                                         <StackItem isFilled={false}>
-                                          <Bullseye><strong className='pf-c-badge pf-m-read'><Msg msgKey="currentSession"/></strong></Bullseye>
+                                          <Bullseye id={this.elementId('current-badge', session)}><strong className='pf-c-badge pf-m-read'><Msg msgKey="currentSession"/></strong></Bullseye>
                                         </StackItem>
                                       }
                                     </Stack>
                                   </GridItem>
                                   <GridItem span={9}>
                                     {!session.browser.toLowerCase().includes('unknown') &&
-                                      <p><strong>{session.browser} / {this.findOS(device)} {this.findOSVersion(device)}</strong></p>
+                                      <p id={this.elementId('browser', session)}><strong>{session.browser} / {this.findOS(device)} {this.findOSVersion(device)}</strong></p>
                                     }
                                     {this.state.devices[0].mobile &&
-                                      <p><strong>{Msg.localize('ipAddress')} </strong> {session.ipAddress}</p>
+                                      <p id={this.elementId('ip', session)}><strong>{Msg.localize('ipAddress')} </strong> {session.ipAddress}</p>
                                     }
-                                    <p><strong>{Msg.localize('lastAccessedOn')}</strong> {this.time(session.lastAccess)}</p>
-                                    <p><strong>{Msg.localize('clients')}</strong> {this.makeClientsString(session.clients)}</p>
-                                    <p><strong>{Msg.localize('startedAt')}</strong> {this.time(session.started)}</p>
-                                    <p><strong>{Msg.localize('expiresAt')}</strong> {this.time(session.expires)}</p>
+                                    <p id={this.elementId('last-access', session)}><strong>{Msg.localize('lastAccessedOn')}</strong> {this.time(session.lastAccess)}</p>
+                                    <p id={this.elementId('clients', session)}><strong>{Msg.localize('clients')}</strong> {this.makeClientsString(session.clients)}</p>
+                                    <p id={this.elementId('started', session)}><strong>{Msg.localize('startedAt')}</strong> {this.time(session.started)}</p>
+                                    <p id={this.elementId('expires', session)}><strong>{Msg.localize('expiresAt')}</strong> {this.time(session.expires)}</p>
                                     {!session.current && 
                                       <ContinueCancelModal buttonTitle='doSignOut'
+                                                          buttonId={this.elementId('sign-out', session)}
                                                           modalTitle='doSignOut'
                                                           buttonVariant='secondary'
                                                           modalMessage='signOutWarning'                                        
