@@ -77,7 +77,7 @@ public final class QuarkusCacheManagerProvider implements ManagedCacheManagerPro
     }
 
     private InputStream loadDefaultConfiguration(Config.Scope config) throws FileNotFoundException {
-        if (config.getBoolean("clustered")) {
+        if (config.getBoolean("clustered", false)) {
             log.debugf("Using default clustered cache configuration.");
             return FileLookupFactory.newInstance()
                     .lookupFileStrict("default-clustered-cache.xml", Thread.currentThread().getContextClassLoader());    
