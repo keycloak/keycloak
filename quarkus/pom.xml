@@ -31,7 +31,7 @@
     <packaging>pom</packaging>
 
     <properties>
-        <quarkus.version>0.25.0</quarkus.version>
+        <quarkus.version>1.0.1.Final</quarkus.version>
         <resteasy.version>4.3.1.Final</resteasy.version>
 
         <surefire-plugin.version>2.22.0</surefire-plugin.version>

@@ -148,16 +148,6 @@ public class LoginTotpTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
-    public void loginWithTotpCancel() throws Exception {
-        loginPage.open();
-        loginPage.login("test-user@localhost", "password");
-
-        Assert.assertTrue(loginTotpPage.isCurrent());
-        loginTotpPage.cancel();
-        loginPage.assertCurrent();
-    }
-
-    @Test
     public void loginWithTotpInvalidPassword() throws Exception {
         loginPage.open();
         loginPage.login("test-user@localhost", "invalid");

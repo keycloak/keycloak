@@ -34,9 +34,6 @@ public class LoginTotpPage extends CredentialsComboboxPage {
     @FindBy(css = "input[type=\"submit\"]")
     private WebElement submitButton;
 
-    @FindBy(id = "kc-cancel")
-    private WebElement cancelButton;
-
     @FindBy(className = "alert-error")
     private WebElement loginErrorMessage;
 
@@ -45,10 +42,6 @@ public class LoginTotpPage extends CredentialsComboboxPage {
         if (totp != null) otpInput.sendKeys(totp);
 
         submitButton.click();
-    }
-
-    public void cancel() {
-        cancelButton.click();
     }
 
     public String getError() {

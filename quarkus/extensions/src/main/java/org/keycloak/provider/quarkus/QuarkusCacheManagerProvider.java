@@ -44,7 +44,11 @@ public final class QuarkusCacheManagerProvider implements ManagedCacheManagerPro
         try {
             InputStream configurationStream = loadConfiguration(config);
             ConfigurationBuilderHolder builder = new ParserRegistry().parse(configurationStream);
-            configureTransportStack(config, builder);
+
+            if (builder.getNamedConfigurationBuilders().get("sessions").clustering().cacheMode().isClustered()) {
+                configureTransportStack(config, builder);
+            }
+
             return (C) new DefaultCacheManager(builder, true);
         } catch (Exception e) {
             throw new RuntimeException(e);
