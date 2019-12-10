@@ -31,9 +31,11 @@ import org.keycloak.models.utils.reflection.PropertyCriteria;
 import org.keycloak.models.utils.reflection.PropertyQueries;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.ldap.LDAPStorageProvider;
+import org.keycloak.storage.ldap.LDAPUtils;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
 import org.keycloak.storage.ldap.idm.query.Condition;
 import org.keycloak.storage.ldap.idm.query.internal.LDAPQuery;
+import org.keycloak.storage.ldap.idm.store.ldap.LDAPUtil;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -53,28 +55,7 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
 
     private static final Logger logger = Logger.getLogger(UserAttributeLDAPStorageMapper.class);
 
-    private static final Map<String, Property<Object>> userModelProperties;
-
-    static {
-        Map<String, Property<Object>> userModelProps = PropertyQueries.createQuery(UserModel.class).addCriteria(new PropertyCriteria() {
-
-            @Override
-            public boolean methodMatches(Method m) {
-                if ((m.getName().startsWith("get") || m.getName().startsWith("is")) && m.getParameterTypes().length > 0) {
-                    return false;
-                }
-
-                return true;
-            }
-
-        }).getResultList();
-
-        // Convert to be keyed by lower-cased attribute names
-        userModelProperties = new HashMap<>();
-        for (Map.Entry<String, Property<Object>> entry : userModelProps.entrySet()) {
-            userModelProperties.put(entry.getKey().toLowerCase(), entry.getValue());
-        }
-    }
+    private static final Map<String, Property<Object>> userModelProperties = LDAPUtils.getUserModelProperties();
 
     public static final String USER_MODEL_ATTRIBUTE = "user.model.attribute";
     public static final String LDAP_ATTRIBUTE = "ldap.attribute";
