@@ -221,6 +221,11 @@ public class ClientStorageManager implements ClientProvider {
     }
 
     @Override
+    public List<ClientModel> getAlwaysDisplayInConsoleClients(RealmModel realm) {
+        return session.clientLocalStorage().getAlwaysDisplayInConsoleClients(realm);
+    }
+
+    @Override
     public void close() {
 
     }

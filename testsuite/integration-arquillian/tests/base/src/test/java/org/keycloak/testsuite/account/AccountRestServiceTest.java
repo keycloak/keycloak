@@ -301,9 +301,10 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         assertFalse(applications.isEmpty());
 
         Map<String, ClientRepresentation> apps = applications.stream().collect(Collectors.toMap(x -> x.getClientId(), x -> x));
-        Assert.assertThat(apps.keySet(), containsInAnyOrder("in-use-client"));
+        Assert.assertThat(apps.keySet(), containsInAnyOrder("in-use-client", "always-display-client"));
 
         assertClientRep(apps.get("in-use-client"), "In Use Client", null, false, true, false, inUseClientAppUri);
+        assertClientRep(apps.get("always-display-client"), "Always Display Client", null, false, false, false, alwaysDisplayClientAppUri);
     }
 
     @Test
@@ -323,7 +324,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         assertFalse(applications.isEmpty());
 
         Map<String, ClientRepresentation> apps = applications.stream().collect(Collectors.toMap(x -> x.getClientId(), x -> x));
-        Assert.assertThat(apps.keySet(), containsInAnyOrder("offline-client"));
+        Assert.assertThat(apps.keySet(), containsInAnyOrder("offline-client", "always-display-client"));
 
         assertClientRep(apps.get("offline-client"), "Offline Client", null, false, true, true, offlineClientAppUri);
     }
@@ -361,7 +362,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
                 .asResponse();
 
         Map<String, ClientRepresentation> apps = applications.stream().collect(Collectors.toMap(x -> x.getClientId(), x -> x));
-        Assert.assertThat(apps.keySet(), containsInAnyOrder(appId));
+        Assert.assertThat(apps.keySet(), containsInAnyOrder(appId, "always-display-client"));
 
         ClientRepresentation app = apps.get(appId);
         assertClientRep(app, null, "A third party application", true, false, false, "http://localhost:8180/auth/realms/master/app/auth");

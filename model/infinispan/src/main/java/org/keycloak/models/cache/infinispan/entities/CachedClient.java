@@ -42,6 +42,7 @@ public class CachedClient extends AbstractRevisioned implements InRealm {
     protected String realm;
     protected Set<String> redirectUris = new HashSet<>();
     protected boolean enabled;
+    protected boolean alwaysDisplayInConsole;
     protected String clientAuthenticatorType;
     protected String secret;
     protected String registrationToken;
@@ -81,6 +82,7 @@ public class CachedClient extends AbstractRevisioned implements InRealm {
         description = model.getDescription();
         this.realm = realm.getId();
         enabled = model.isEnabled();
+        alwaysDisplayInConsole = model.isAlwaysDisplayInConsole();
         protocol = model.getProtocol();
         attributes.putAll(model.getAttributes());
         authFlowBindings.putAll(model.getAuthenticationFlowBindingOverrides());
@@ -143,6 +145,10 @@ public class CachedClient extends AbstractRevisioned implements InRealm {
 
     public boolean isEnabled() {
         return enabled;
+    }
+
+    public boolean isAlwaysDisplayInConsole() {
+        return alwaysDisplayInConsole;
     }
 
     public String getClientAuthenticatorType() {

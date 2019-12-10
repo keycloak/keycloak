@@ -798,6 +798,11 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
     }
 
     @Override
+    public List<ClientModel> getAlwaysDisplayInConsoleClients() {
+        return session.realms().getAlwaysDisplayInConsoleClients(this);
+    }
+
+    @Override
     public ClientModel addClient(String name) {
         return session.realms().addClient(this, name);
     }

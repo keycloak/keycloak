@@ -168,6 +168,16 @@ public class ClientAdapter implements ClientModel, CachedObject {
         updated.setEnabled(enabled);
     }
 
+    public boolean isAlwaysDisplayInConsole() {
+        if(isUpdated()) return updated.isAlwaysDisplayInConsole();
+        return cached.isAlwaysDisplayInConsole();
+    }
+
+    public void setAlwaysDisplayInConsole(boolean alwaysDisplayInConsole) {
+        getDelegateForUpdate();
+        updated.setAlwaysDisplayInConsole(alwaysDisplayInConsole);
+    }
+
     @Override
     public String getClientAuthenticatorType() {
         if (isUpdated()) return updated.getClientAuthenticatorType();
