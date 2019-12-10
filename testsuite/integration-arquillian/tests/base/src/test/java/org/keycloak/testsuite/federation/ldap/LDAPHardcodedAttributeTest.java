@@ -17,24 +17,14 @@
 
 package org.keycloak.testsuite.federation.ldap;
 
-import static org.keycloak.testsuite.arquillian.DeploymentTargetModifier.AUTH_SERVER_CURRENT;
-
-import org.hamcrest.BaseMatcher;
-import org.hamcrest.Matcher;
-import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.arquillian.container.test.api.TargetsContainer;
-import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.FixMethodOrder;
 import org.junit.Rule;
 import org.junit.Test;
-import org.junit.internal.matchers.ThrowableCauseMatcher;
 import org.junit.rules.ExpectedException;
 import org.junit.runners.MethodSorters;
-import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.component.ComponentModel;
-import org.keycloak.component.ComponentValidationException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -42,7 +32,6 @@ import org.keycloak.storage.ldap.LDAPStorageProvider;
 import org.keycloak.storage.ldap.mappers.HardcodedAttributeMapper;
 import org.keycloak.storage.ldap.mappers.HardcodedAttributeMapperFactory;
 import org.keycloak.storage.ldap.mappers.LDAPStorageMapper;
-import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
 import org.keycloak.testsuite.runonserver.RunOnServerException;
 import org.keycloak.testsuite.util.LDAPRule;
 import org.keycloak.testsuite.util.LDAPTestUtils;
@@ -56,13 +45,6 @@ public class LDAPHardcodedAttributeTest extends AbstractLDAPTest {
 
    @Rule
    public ExpectedException exceptionRule = ExpectedException.none();
-
-   @Deployment
-   @TargetsContainer(AUTH_SERVER_CURRENT)
-   public static WebArchive deploy() {
-      return RunOnServerDeployment.create(UserResource.class, AbstractLDAPTest.class).addPackages(true,
-            "org.keycloak.testsuite", "org.keycloak.testsuite.federation.ldap");
-   }
 
    @Override
    protected LDAPRule getLDAPRule() {
