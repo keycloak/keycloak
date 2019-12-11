@@ -22,6 +22,7 @@ import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.services.messages.Messages;
 
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
@@ -52,5 +53,10 @@ public class PasswordForm extends UsernamePasswordForm {
     @Override
     protected Response createLoginForm(LoginFormsProvider form) {
         return form.createLoginPassword();
+    }
+
+    @Override
+    protected String getDefaultChallengeMessage(AuthenticationFlowContext context){
+        return Messages.INVALID_PASSWORD;
     }
 }
