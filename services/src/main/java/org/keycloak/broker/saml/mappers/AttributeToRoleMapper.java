@@ -27,6 +27,7 @@ import org.keycloak.dom.saml.v2.assertion.AssertionType;
 import org.keycloak.dom.saml.v2.assertion.AttributeStatementType;
 import org.keycloak.dom.saml.v2.assertion.AttributeType;
 import org.keycloak.models.IdentityProviderMapperModel;
+import org.keycloak.models.IdentityProviderSyncMode;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
@@ -35,8 +36,11 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.provider.ProviderConfigProperty;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -51,6 +55,7 @@ public class AttributeToRoleMapper extends AbstractIdentityProviderMapper {
     public static final String ATTRIBUTE_NAME = "attribute.name";
     public static final String ATTRIBUTE_FRIENDLY_NAME = "attribute.friendly.name";
     public static final String ATTRIBUTE_VALUE = "attribute.value";
+    private static final Set<IdentityProviderSyncMode> IDENTITY_PROVIDER_SYNC_MODES = new HashSet<>(Arrays.asList(IdentityProviderSyncMode.values()));
 
     static {
         ProviderConfigProperty property;
@@ -81,6 +86,11 @@ public class AttributeToRoleMapper extends AbstractIdentityProviderMapper {
     }
 
     public static final String PROVIDER_ID = "saml-role-idp-mapper";
+
+    @Override
+    public boolean supportsSyncMode(IdentityProviderSyncMode syncMode) {
+        return IDENTITY_PROVIDER_SYNC_MODES.contains(syncMode);
+    }
 
     @Override
     public List<ProviderConfigProperty> getConfigProperties() {

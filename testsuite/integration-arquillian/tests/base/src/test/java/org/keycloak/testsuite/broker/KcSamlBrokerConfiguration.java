@@ -5,6 +5,8 @@
  */
 package org.keycloak.testsuite.broker;
 
+import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.IdentityProviderSyncMode;
 import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.protocol.saml.SamlConfigAttributes;
 import org.keycloak.protocol.saml.SamlProtocol;
@@ -187,7 +189,7 @@ public class KcSamlBrokerConfiguration implements BrokerConfiguration {
     }
 
     @Override
-    public IdentityProviderRepresentation setUpIdentityProvider(SuiteContext suiteContext) {
+    public IdentityProviderRepresentation setUpIdentityProvider(SuiteContext suiteContext, IdentityProviderSyncMode syncMode) {
         IdentityProviderRepresentation idp = createIdentityProvider(IDP_SAML_ALIAS, IDP_SAML_PROVIDER_ID);
 
         idp.setTrustEmail(true);
@@ -196,6 +198,7 @@ public class KcSamlBrokerConfiguration implements BrokerConfiguration {
 
         Map<String, String> config = idp.getConfig();
 
+        config.put(IdentityProviderModel.SYNC_MODE, syncMode.toString());
         config.put(SINGLE_SIGN_ON_SERVICE_URL, getAuthRoot(suiteContext) + "/auth/realms/" + REALM_PROV_NAME + "/protocol/saml");
         config.put(SINGLE_LOGOUT_SERVICE_URL, getAuthRoot(suiteContext) + "/auth/realms/" + REALM_PROV_NAME + "/protocol/saml");
         config.put(NAME_ID_POLICY_FORMAT, "urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress");

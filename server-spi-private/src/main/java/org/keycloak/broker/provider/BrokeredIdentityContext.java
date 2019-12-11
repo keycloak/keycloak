@@ -161,6 +161,11 @@ public class BrokeredIdentityContext {
         getContextData().put(Constants.USER_ATTRIBUTES_PREFIX + attributeName, list);
     }
 
+    // Remove an attribute attribute, which would otherwise be available on "Update profile" page and in authenticators
+    public void removeUserAttribute(String attributeName) {
+        getContextData().remove(Constants.USER_ATTRIBUTES_PREFIX + attributeName);
+    }
+
     public void setUserAttribute(String attributeName, List<String> attributeValues) {
         getContextData().put(Constants.USER_ATTRIBUTES_PREFIX + attributeName, attributeValues);
     }

@@ -25,6 +25,7 @@ import org.keycloak.broker.oidc.mappers.AbstractJsonUserAttributeMapper;
  */
 public class GitHubUserAttributeMapper extends AbstractJsonUserAttributeMapper {
 
+	public static final String PROVIDER_ID = "github-user-attribute-mapper";
 	private static final String[] cp = new String[] { GitHubIdentityProviderFactory.PROVIDER_ID };
 
 	@Override
@@ -34,7 +35,7 @@ public class GitHubUserAttributeMapper extends AbstractJsonUserAttributeMapper {
 
 	@Override
 	public String getId() {
-		return "github-user-attribute-mapper";
+		return PROVIDER_ID;
 	}
 
 }

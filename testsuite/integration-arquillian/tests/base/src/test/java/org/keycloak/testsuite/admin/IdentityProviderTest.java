@@ -32,6 +32,10 @@ import org.keycloak.dom.saml.v2.metadata.KeyTypes;
 import org.keycloak.dom.saml.v2.metadata.SPSSODescriptorType;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
+import org.keycloak.models.IdentityProviderMapperModel;
+import org.keycloak.models.IdentityProviderMapperSyncMode;
+import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.IdentityProviderSyncMode;
 import org.keycloak.models.utils.StripSecretsUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.idm.AdminEventRepresentation;
@@ -140,6 +144,7 @@ public class IdentityProviderTest extends AbstractAdminTest {
     public void testCreate() {
         IdentityProviderRepresentation newIdentityProvider = createRep("new-identity-provider", "oidc");
 
+        newIdentityProvider.getConfig().put(IdentityProviderModel.SYNC_MODE, "IMPORT");
         newIdentityProvider.getConfig().put("clientId", "clientId");
         newIdentityProvider.getConfig().put("clientSecret", "some secret value");
 
@@ -156,6 +161,7 @@ public class IdentityProviderTest extends AbstractAdminTest {
         assertNotNull(representation.getInternalId());
         assertEquals("new-identity-provider", representation.getAlias());
         assertEquals("oidc", representation.getProviderId());
+        assertEquals("IMPORT", representation.getConfig().get(IdentityProviderMapperModel.SYNC_MODE));
         assertEquals("clientId", representation.getConfig().get("clientId"));
         assertEquals(ComponentRepresentation.SECRET_VALUE, representation.getConfig().get("clientSecret"));
         assertTrue(representation.isEnabled());
@@ -243,6 +249,7 @@ public class IdentityProviderTest extends AbstractAdminTest {
     public void testCreateWithBasicAuth() {
         IdentityProviderRepresentation newIdentityProvider = createRep("new-identity-provider", "oidc");
 
+        newIdentityProvider.getConfig().put(IdentityProviderModel.SYNC_MODE, "IMPORT");
         newIdentityProvider.getConfig().put("clientId", "clientId");
         newIdentityProvider.getConfig().put("clientSecret", "some secret value");
         newIdentityProvider.getConfig().put("clientAuthMethod",OIDCLoginProtocol.CLIENT_SECRET_BASIC);
@@ -260,6 +267,7 @@ public class IdentityProviderTest extends AbstractAdminTest {
         assertNotNull(representation.getInternalId());
         assertEquals("new-identity-provider", representation.getAlias());
         assertEquals("oidc", representation.getProviderId());
+        assertEquals("IMPORT", representation.getConfig().get(IdentityProviderMapperModel.SYNC_MODE));
         assertEquals("clientId", representation.getConfig().get("clientId"));
         assertEquals(ComponentRepresentation.SECRET_VALUE, representation.getConfig().get("clientSecret"));
         assertEquals(OIDCLoginProtocol.CLIENT_SECRET_BASIC, representation.getConfig().get("clientAuthMethod"));
@@ -278,6 +286,7 @@ public class IdentityProviderTest extends AbstractAdminTest {
     public void testCreateWithJWT() {
         IdentityProviderRepresentation newIdentityProvider = createRep("new-identity-provider", "oidc");
 
+        newIdentityProvider.getConfig().put(IdentityProviderModel.SYNC_MODE, "IMPORT");
         newIdentityProvider.getConfig().put("clientId", "clientId");
         newIdentityProvider.getConfig().put("clientAuthMethod", OIDCLoginProtocol.PRIVATE_KEY_JWT);
 
@@ -294,6 +303,7 @@ public class IdentityProviderTest extends AbstractAdminTest {
         assertNotNull(representation.getInternalId());
         assertEquals("new-identity-provider", representation.getAlias());
         assertEquals("oidc", representation.getProviderId());
+        assertEquals("IMPORT", representation.getConfig().get(IdentityProviderMapperModel.SYNC_MODE));
         assertEquals("clientId", representation.getConfig().get("clientId"));
         assertNull(representation.getConfig().get("clientSecret"));
         assertEquals(OIDCLoginProtocol.PRIVATE_KEY_JWT, representation.getConfig().get("clientAuthMethod"));
@@ -306,6 +316,7 @@ public class IdentityProviderTest extends AbstractAdminTest {
     public void testUpdate() {
         IdentityProviderRepresentation newIdentityProvider = createRep("update-identity-provider", "oidc");
 
+        newIdentityProvider.getConfig().put(IdentityProviderModel.SYNC_MODE, "IMPORT");
         newIdentityProvider.getConfig().put("clientId", "clientId");
         newIdentityProvider.getConfig().put("clientSecret", "some secret value");
 
@@ -676,6 +687,7 @@ public class IdentityProviderTest extends AbstractAdminTest {
         mapper.setIdentityProviderMapper("oidc-hardcoded-role-idp-mapper");
         Map<String, String> config = new HashMap<>();
         config.put("role", "offline_access");
+        config.put(IdentityProviderMapperModel.SYNC_MODE, IdentityProviderMapperSyncMode.INHERIT.toString());
         mapper.setConfig(config);
 
         // createRep and add mapper
@@ -692,6 +704,7 @@ public class IdentityProviderTest extends AbstractAdminTest {
 
         // get mapper
         mapper = provider.getMapperById(id);
+        Assert.assertEquals("INHERIT", mappers.get(0).getConfig().get(IdentityProviderMapperModel.SYNC_MODE));
         Assert.assertNotNull("mapperById not null", mapper);
         Assert.assertEquals("mapper id", id, mapper.getId());
         Assert.assertNotNull("mapper.config exists", mapper.getConfig());
@@ -734,6 +747,7 @@ public class IdentityProviderTest extends AbstractAdminTest {
         mapper.setName("my_mapper");
         mapper.setIdentityProviderMapper("oidc-hardcoded-role-idp-mapper");
         Map<String, String> config = new HashMap<>();
+        config.put(IdentityProviderMapperModel.SYNC_MODE, IdentityProviderMapperSyncMode.INHERIT.toString());
         config.put("role", "");
         mapper.setConfig(config);
 
@@ -743,7 +757,7 @@ public class IdentityProviderTest extends AbstractAdminTest {
 
         List<IdentityProviderMapperRepresentation> mappers = provider.getMappers();
         assertEquals(1, mappers.size());
-        assertEquals(0, mappers.get(0).getConfig().size());
+        assertEquals(1, mappers.get(0).getConfig().size());
 
         mapper = provider.getMapperById(mapperId);
         mapper.getConfig().put("role", "offline_access");
@@ -751,8 +765,9 @@ public class IdentityProviderTest extends AbstractAdminTest {
         provider.update(mapperId, mapper);
 
         mappers = provider.getMappers();
+        assertEquals("INHERIT", mappers.get(0).getConfig().get(IdentityProviderMapperModel.SYNC_MODE));
         assertEquals(1, mappers.size());
-        assertEquals(1, mappers.get(0).getConfig().size());
+        assertEquals(2, mappers.get(0).getConfig().size());
         assertEquals("offline_access", mappers.get(0).getConfig().get("role"));
     }
 
@@ -768,6 +783,7 @@ public class IdentityProviderTest extends AbstractAdminTest {
         mapper.setName("my_mapper");
         mapper.setIdentityProviderMapper("oidc-hardcoded-role-idp-mapper");
         Map<String, String> config = new HashMap<>();
+        config.put(IdentityProviderMapperModel.SYNC_MODE, IdentityProviderMapperSyncMode.INHERIT.toString());
         config.put("role", "offline_access");
         mapper.setConfig(config);
 

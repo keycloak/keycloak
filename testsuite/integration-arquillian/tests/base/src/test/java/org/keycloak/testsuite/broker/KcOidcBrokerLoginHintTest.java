@@ -13,6 +13,7 @@ import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.admin.client.resource.UsersResource;
+import org.keycloak.models.IdentityProviderSyncMode;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.Assert;
@@ -30,11 +31,11 @@ public class KcOidcBrokerLoginHintTest extends AbstractBrokerTest {
     private class KcOidcBrokerConfigurationWithLoginHint extends KcOidcBrokerConfiguration {
         
         @Override
-        public IdentityProviderRepresentation setUpIdentityProvider(SuiteContext suiteContext) {
+        public IdentityProviderRepresentation setUpIdentityProvider(SuiteContext suiteContext, IdentityProviderSyncMode syncMode) {
             IdentityProviderRepresentation idp = createIdentityProvider(IDP_OIDC_ALIAS, IDP_OIDC_PROVIDER_ID);
 
             Map<String, String> config = idp.getConfig();
-            applyDefaultConfiguration(suiteContext, config);
+            applyDefaultConfiguration(suiteContext, config, syncMode);
             config.put("loginHint", "true");
             return idp;
         }

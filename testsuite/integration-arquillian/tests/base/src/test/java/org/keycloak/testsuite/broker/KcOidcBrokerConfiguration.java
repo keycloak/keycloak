@@ -1,7 +1,10 @@
 package org.keycloak.testsuite.broker;
 
+import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.IdentityProviderSyncMode;
 import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.mappers.HardcodedClaim;
 import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
 import org.keycloak.protocol.oidc.mappers.UserAttributeMapper;
 import org.keycloak.protocol.oidc.mappers.UserPropertyMapper;
@@ -29,6 +32,9 @@ public class KcOidcBrokerConfiguration implements BrokerConfiguration {
 
     protected static final String ATTRIBUTE_TO_MAP_NAME = "user-attribute";
     protected static final String ATTRIBUTE_TO_MAP_NAME_2 = "user-attribute-2";
+    public static final String USER_INFO_CLAIM = "user-claim";
+    public static final String HARDOCDED_CLAIM = "test";
+    public static final String HARDOCDED_VALUE = "value";
 
     @Override
     public RealmRepresentation createProviderRealm() {
@@ -131,7 +137,18 @@ public class KcOidcBrokerConfiguration implements BrokerConfiguration {
         userAttrMapperConfig2.put(OIDCAttributeMapperHelper.INCLUDE_IN_USERINFO, "true");
         userAttrMapperConfig2.put(ProtocolMapperUtils.MULTIVALUED, "true");
 
-        client.setProtocolMappers(Arrays.asList(emailMapper, userAttrMapper, userAttrMapper2, nestedAttrMapper, dottedAttrMapper));
+        ProtocolMapperRepresentation hardcodedJsonClaim = new ProtocolMapperRepresentation();
+        hardcodedJsonClaim.setName("json-mapper");
+        hardcodedJsonClaim.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+        hardcodedJsonClaim.setProtocolMapper(HardcodedClaim.PROVIDER_ID);
+
+        Map<String, String> hardcodedJsonClaimMapperConfig = hardcodedJsonClaim.getConfig();
+        hardcodedJsonClaimMapperConfig.put(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME, KcOidcBrokerConfiguration.USER_INFO_CLAIM);
+        hardcodedJsonClaimMapperConfig.put(OIDCAttributeMapperHelper.JSON_TYPE, "JSON");
+        hardcodedJsonClaimMapperConfig.put(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN, "true");
+        hardcodedJsonClaimMapperConfig.put(HardcodedClaim.CLAIM_VALUE, "{\"" + HARDOCDED_CLAIM + "\": \"" + HARDOCDED_VALUE + "\"}");
+
+        client.setProtocolMappers(Arrays.asList(emailMapper, userAttrMapper, userAttrMapper2, nestedAttrMapper, dottedAttrMapper, hardcodedJsonClaim));
 
         return Collections.singletonList(client);
     }
@@ -156,16 +173,17 @@ public class KcOidcBrokerConfiguration implements BrokerConfiguration {
     }
 
     @Override
-    public IdentityProviderRepresentation setUpIdentityProvider(SuiteContext suiteContext) {
+    public IdentityProviderRepresentation setUpIdentityProvider(SuiteContext suiteContext, IdentityProviderSyncMode syncMode) {
         IdentityProviderRepresentation idp = createIdentityProvider(IDP_OIDC_ALIAS, IDP_OIDC_PROVIDER_ID);
 
         Map<String, String> config = idp.getConfig();
-        applyDefaultConfiguration(suiteContext, config);
+        applyDefaultConfiguration(suiteContext, config, syncMode);
 
         return idp;
     }
 
-    protected void applyDefaultConfiguration(final SuiteContext suiteContext, final Map<String, String> config) {
+    protected void applyDefaultConfiguration(final SuiteContext suiteContext, final Map<String, String> config, IdentityProviderSyncMode syncMode) {
+        config.put(IdentityProviderModel.SYNC_MODE, syncMode.toString());
         config.put("clientId", CLIENT_ID);
         config.put("clientSecret", CLIENT_SECRET);
         config.put("prompt", "login");

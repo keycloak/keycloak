@@ -1166,6 +1166,7 @@
       "alias" : "google1",
       "enabled": true,
       "config": {
+        "syncMode": "IMPORT",
         "clientId": "googleId",
         "clientSecret": "googleSecret"
       }

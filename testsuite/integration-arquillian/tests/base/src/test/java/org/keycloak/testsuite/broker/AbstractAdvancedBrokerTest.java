@@ -1,23 +1,13 @@
 package org.keycloak.testsuite.broker;
 
-import java.net.URI;
-import java.util.Collections;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Collectors;
-
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientRequestFilter;
-import javax.ws.rs.client.WebTarget;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.Response;
-
 import org.junit.Test;
 import org.keycloak.admin.client.resource.IdentityProviderResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.common.util.Time;
+import org.keycloak.models.IdentityProviderMapperModel;
+import org.keycloak.models.IdentityProviderMapperSyncMode;
+import org.keycloak.models.IdentityProviderSyncMode;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
@@ -34,6 +24,19 @@ import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.openqa.selenium.TimeoutException;
+
+import javax.ws.rs.client.Client;
+import javax.ws.rs.client.ClientRequestFilter;
+import javax.ws.rs.client.WebTarget;
+import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.Response;
+import java.net.URI;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.not;
@@ -63,21 +66,25 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
 
 
     protected void createRoleMappersForConsumerRealm() {
+        createRoleMappersForConsumerRealm(IdentityProviderMapperSyncMode.FORCE);
+    }
+
+    protected void createRoleMappersForConsumerRealm(IdentityProviderMapperSyncMode syncMode) {
         log.debug("adding mappers to identity provider in realm " + bc.consumerRealmName());
 
         RealmResource realm = adminClient.realm(bc.consumerRealmName());
 
         IdentityProviderResource idpResource = realm.identityProviders().get(bc.getIDPAlias());
-        for (IdentityProviderMapperRepresentation mapper : createIdentityProviderMappers()) {
+        for (IdentityProviderMapperRepresentation mapper : createIdentityProviderMappers(syncMode)) {
             mapper.setIdentityProviderAlias(bc.getIDPAlias());
             Response resp = idpResource.addMapper(mapper);
             resp.close();
         }
     }
 
-    protected abstract Iterable<IdentityProviderMapperRepresentation> createIdentityProviderMappers();
+    protected abstract Iterable<IdentityProviderMapperRepresentation> createIdentityProviderMappers(IdentityProviderMapperSyncMode syncMode);
 
-
+    protected abstract void createAdditionalMapperWithCustomSyncMode(IdentityProviderMapperSyncMode syncMode);
 
     /**
      * Refers to in old test suite: org.keycloak.testsuite.broker.AbstractKeycloakIdentityProviderTest#testAccountManagementLinkIdentity
@@ -315,18 +322,35 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
         assertEquals("Account is disabled, contact your administrator.", errorPage.getError());
     }
 
-
-
-
-
-
     // KEYCLOAK-3987
     @Test
-    public void grantNewRoleFromToken() {
+    public void mapperDoesNotGrantNewRoleFromTokenWithSyncModeImport() {
+        testMapperAssigningRoles(IdentityProviderMapperSyncMode.IMPORT, false);
+    }
+
+    @Test
+    public void mapperGrantsNewRoleFromTokenWithInheritedSyncModeForce() {
+        RealmResource realm = adminClient.realm(bc.consumerRealmName());
+        realm.identityProviders().get(bc.getIDPAlias())
+                .update(bc.setUpIdentityProvider(suiteContext, IdentityProviderSyncMode.FORCE));
+
+        testMapperAssigningRoles(IdentityProviderMapperSyncMode.INHERIT, true);
+    }
+
+    @Test
+    public void mapperDoesNotGrantNewRoleFromTokenWithInheritedSyncModeImport() {
+        RealmResource realm = adminClient.realm(bc.consumerRealmName());
+        realm.identityProviders().get(bc.getIDPAlias())
+                .update(bc.setUpIdentityProvider(suiteContext, IdentityProviderSyncMode.IMPORT));
+
+        testMapperAssigningRoles(IdentityProviderMapperSyncMode.INHERIT, false);
+    }
+
+    private void testMapperAssigningRoles(IdentityProviderMapperSyncMode anImport, boolean isAssigned) {
         createRolesForRealm(bc.providerRealmName());
         createRolesForRealm(bc.consumerRealmName());
 
-        createRoleMappersForConsumerRealm();
+        createRoleMappersForConsumerRealm(anImport);
 
         RoleRepresentation managerRole = adminClient.realm(bc.providerRealmName()).roles().get(ROLE_MANAGER).toRepresentation();
         RoleRepresentation userRole = adminClient.realm(bc.providerRealmName()).roles().get(ROLE_USER).toRepresentation();
@@ -336,7 +360,9 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
 
         logInAsUserInIDPForFirstTime();
 
-        Set<String> currentRoles = userResource.roles().realmLevel().listAll().stream()
+        UserResource consumerUserResource = adminClient.realm(bc.consumerRealmName()).users().get(
+                adminClient.realm(bc.consumerRealmName()).users().search(bc.getUserLogin()).get(0).getId());
+        Set<String> currentRoles = consumerUserResource.roles().realmLevel().listAll().stream()
                 .map(RoleRepresentation::getName)
                 .collect(Collectors.toSet());
 
@@ -350,15 +376,63 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
 
         logInAsUserInIDP();
 
-        currentRoles = userResource.roles().realmLevel().listAll().stream()
+        currentRoles = consumerUserResource.roles().realmLevel().listAll().stream()
                 .map(RoleRepresentation::getName)
                 .collect(Collectors.toSet());
-        assertThat(currentRoles, hasItems(ROLE_MANAGER, ROLE_USER));
+        if (isAssigned) {
+            assertThat(currentRoles, hasItems(ROLE_MANAGER, ROLE_USER));
+        } else {
+            assertThat(currentRoles, hasItems(ROLE_MANAGER));
+            assertThat(currentRoles, not(hasItems(ROLE_USER)));
+        }
 
-        logoutFromRealm(bc.providerRealmName());
         logoutFromRealm(bc.consumerRealmName());
+        logoutFromRealm(bc.providerRealmName());
     }
 
+    @Test
+    public void differentMappersCanHaveDifferentSyncModes() {
+        createRolesForRealm(bc.providerRealmName());
+        createRolesForRealm(bc.consumerRealmName());
+
+        createRoleMappersForConsumerRealm(IdentityProviderMapperSyncMode.INHERIT);
+        createAdditionalMapperWithCustomSyncMode(IdentityProviderMapperSyncMode.FORCE);
+
+
+        RoleRepresentation managerRole = adminClient.realm(bc.providerRealmName()).roles().get(ROLE_MANAGER).toRepresentation();
+        RoleRepresentation userRole = adminClient.realm(bc.providerRealmName()).roles().get(ROLE_USER).toRepresentation();
+        RoleRepresentation friendlyManagerRole = adminClient.realm(bc.providerRealmName()).roles().get(ROLE_FRIENDLY_MANAGER).toRepresentation();
+
+        UserResource userResource = adminClient.realm(bc.providerRealmName()).users().get(userId);
+        userResource.roles().realmLevel().add(Collections.singletonList(managerRole));
+
+        logInAsUserInIDPForFirstTime();
+
+        UserResource consumerUserResource = adminClient.realm(bc.consumerRealmName()).users().get(
+                adminClient.realm(bc.consumerRealmName()).users().search(bc.getUserLogin()).get(0).getId());
+        Set<String> currentRoles = consumerUserResource.roles().realmLevel().listAll().stream()
+                .map(RoleRepresentation::getName)
+                .collect(Collectors.toSet());
+
+        assertThat(currentRoles, hasItems(ROLE_MANAGER));
+        assertThat(currentRoles, not(hasItems(ROLE_USER, ROLE_FRIENDLY_MANAGER)));
+
+        logoutFromRealm(bc.consumerRealmName());
+
+
+        userResource.roles().realmLevel().add(Arrays.asList(userRole, friendlyManagerRole));
+
+        logInAsUserInIDP();
+
+        currentRoles = consumerUserResource.roles().realmLevel().listAll().stream()
+                .map(RoleRepresentation::getName)
+                .collect(Collectors.toSet());
+        assertThat(currentRoles, hasItems(ROLE_MANAGER, ROLE_FRIENDLY_MANAGER));
+        assertThat(currentRoles, not(hasItems(ROLE_USER)));
+
+        logoutFromRealm(bc.consumerRealmName());
+        logoutFromRealm(bc.providerRealmName());
+    }
 
     // KEYCLOAK-4016
     @Test
