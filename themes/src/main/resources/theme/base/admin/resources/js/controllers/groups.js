@@ -144,10 +144,10 @@ module.controller('GroupListCtrl', function($scope, $route, $q, realm, Groups, G
 
     $scope.remove = function(selected) {
         if (selected === null) return;
-        if (selected.hasChild) {
-            Notifications.error("The group has children and cannot be deleted!");
-            return;
-        }
+//        if (selected.hasChild) {
+//            Notifications.error("The group has children and cannot be deleted!");
+//            return;
+//        }
         Dialog.confirmDelete(selected.name, 'group', function() {
             Group.remove({ realm: realm.realm, groupId : selected.id }, function() {
                 $route.reload();
@@ -344,7 +344,7 @@ module.controller('GroupDetailCtrl', function(Dialog, $scope, realm, group, Grou
     }
 
     $scope.addDefaltAttribute = function(){
-        var keys = ['unitCode', 'parentCode',  'shortName', 'unitLevel'];
+        var keys = ['code', 'parentCode',  'shortName', 'level'];
         var attrs = $scope.group.attributes;
         for(var i=0; i< keys.length; i++){
              if (!attrs[keys[i]]) {

@@ -83,7 +83,7 @@ public class GroupResource {
     public GroupRepresentation getGroup() {
         this.auth.groups().requireView(group);
 
-        GroupRepresentation rep = ModelToRepresentation.toGroupHierarchy(group, true);
+        GroupRepresentation rep = ModelToRepresentation.toRepresentation(group, true);
 
         rep.setAccess(auth.groups().getAccess(group));
 
@@ -109,9 +109,9 @@ public class GroupResource {
     @DELETE
     public void deleteGroup() {
         this.auth.groups().requireManage(group);
-        if(group.isHasChild()){
-            throw new RuntimeException("Group has children and cannot be deleted!");
-        }
+//        if(group.isHasChild()){
+//            throw new RuntimeException("Group has children and cannot be deleted!");
+//        }
         realm.removeGroup(group);
         GroupModel parent = group.getParent();
         if (parent != null) {

@@ -20,10 +20,10 @@
             <tr ng-repeat="(key, value) in group.attributes">
                 <td>{{key}}</td>
                 <td>
-                    <span ng-if="key=='unitCode'">代码</span>
+                    <span ng-if="key=='code'">代码</span>
                     <span ng-if="key=='parentCode'">父级代码</span>
                     <span ng-if="key=='shortName'">简称</span>
-                    <span ng-if="key=='unitLevel'">级别</span>
+                    <span ng-if="key=='evel'">级别</span>
                 </td>
                 <td><input ng-model="group.attributes[key]" class="form-control" type="text" name="{{key}}" id="attribute-{{key}}" /></td>
                 <td class="kc-action-cell" data-ng-click="removeAttribute(key)">{{:: 'delete' | translate}}</td>

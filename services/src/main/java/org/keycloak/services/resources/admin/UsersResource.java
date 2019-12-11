@@ -266,4 +266,17 @@ public class UsersResource {
         return ModelToRepresentation.toRepresentation(session, realm, user);
     }
 
+
+    @GET
+    @NoCache
+    @Path("idcard/{idcard}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public UserRepresentation getUserByIdcard(@PathParam("idcard") String idcard) {
+        UserModel user = session.users().getUserByIdcard(idcard, realm);
+        if (user == null) {
+            if (auth.users().canQuery()) throw new NotFoundException("User not found");
+            else throw new ForbiddenException();
+        }
+        return ModelToRepresentation.toRepresentation(session, realm, user);
+    }
 }
