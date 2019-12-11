@@ -37,9 +37,6 @@ do
               shift
           fi
           ;;
-    exit 1
-          fi
-          ;;
       --)
           shift
           break;;
