@@ -1,6 +1,7 @@
 package org.keycloak.testsuite.broker;
 
 import org.keycloak.admin.client.resource.UsersResource;
+import org.keycloak.models.IdentityProviderSyncMode;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.Assert;
@@ -75,8 +76,9 @@ public class KcOidcBrokerPromptParameterTest extends AbstractBrokerTest {
     }
 
     private class KcOidcBrokerConfiguration2 extends KcOidcBrokerConfiguration {
-        protected void applyDefaultConfiguration(final SuiteContext suiteContext, final Map<String, String> config) {
-            super.applyDefaultConfiguration(suiteContext, config);
+        @Override
+        protected void applyDefaultConfiguration(final SuiteContext suiteContext, final Map<String, String> config, IdentityProviderSyncMode syncMode) {
+            super.applyDefaultConfiguration(suiteContext, config, syncMode);
             config.remove("prompt");
         }
     }

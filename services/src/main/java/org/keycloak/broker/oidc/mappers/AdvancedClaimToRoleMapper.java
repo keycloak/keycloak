@@ -23,6 +23,7 @@ import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.ConfigConstants;
 import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.models.IdentityProviderMapperModel;
+import org.keycloak.models.IdentityProviderSyncMode;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
@@ -31,8 +32,11 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.provider.ProviderConfigProperty;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke, Benjamin Weimer</a>
@@ -44,6 +48,7 @@ public class AdvancedClaimToRoleMapper extends AbstractClaimMapper {
     public static final String ARE_CLAIM_VALUES_REGEX_PROPERTY_NAME = "are.claim.values.regex";
 
     public static final String[] COMPATIBLE_PROVIDERS = {KeycloakOIDCIdentityProviderFactory.PROVIDER_ID, OIDCIdentityProviderFactory.PROVIDER_ID};
+    private static final Set<IdentityProviderSyncMode> IDENTITY_PROVIDER_SYNC_MODES = new HashSet<>(Arrays.asList(IdentityProviderSyncMode.values()));
 
     private static final List<ProviderConfigProperty> configProperties = new ArrayList<ProviderConfigProperty>();
 
@@ -70,6 +75,10 @@ public class AdvancedClaimToRoleMapper extends AbstractClaimMapper {
 
     public static final String PROVIDER_ID = "oidc-advanced-role-idp-mapper";
 
+    @Override
+    public boolean supportsSyncMode(IdentityProviderSyncMode syncMode) {
+        return IDENTITY_PROVIDER_SYNC_MODES.contains(syncMode);
+    }
 
     @Override
     public List<ProviderConfigProperty> getConfigProperties() {
@@ -107,7 +116,7 @@ public class AdvancedClaimToRoleMapper extends AbstractClaimMapper {
     }
 
     @Override
-    public void updateBrokeredUser(KeycloakSession session, RealmModel realm, UserModel user, IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
+    public void updateBrokeredUserLegacy(KeycloakSession session, RealmModel realm, UserModel user, IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
         String roleName = mapperModel.getConfig().get(ConfigConstants.ROLE);
         if (!hasAllClaimValues(mapperModel, context)) {
             RoleModel role = KeycloakModelUtils.getRoleFromString(realm, roleName);
@@ -116,6 +125,21 @@ public class AdvancedClaimToRoleMapper extends AbstractClaimMapper {
         }
 
     }
+
+    @Override
+    public void updateBrokeredUser(KeycloakSession session, RealmModel realm, UserModel user, IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
+        String roleName = mapperModel.getConfig().get(ConfigConstants.ROLE);
+        RoleModel role = KeycloakModelUtils.getRoleFromString(realm, roleName);
+        if (role == null) {
+            throw new IdentityBrokerException("Unable to find role: " + roleName);
+        }
+        if (!hasAllClaimValues(mapperModel, context)) {
+            user.deleteRoleMapping(role);
+        } else {
+            user.grantRole(role);
+        }
+    }
+
 
     @Override
     public String getHelpText() {

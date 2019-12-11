@@ -21,6 +21,8 @@ import java.util.Map;
 
 import org.junit.Test;
 import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.IdentityProviderSyncMode;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.Assert;
@@ -226,8 +228,9 @@ public class KcOidcBrokerPromptNoneRedirectTest extends AbstractInitializedBaseB
          * Override the default configuration to unset the {@code prompt} parameter and specify that the IDP accepts forwarded
          * auth requests with {@code prompt=none}.
          */
-        protected void applyDefaultConfiguration(final SuiteContext suiteContext, final Map<String, String> config) {
-            super.applyDefaultConfiguration(suiteContext, config);
+        @Override
+        protected void applyDefaultConfiguration(final SuiteContext suiteContext, final Map<String, String> config, IdentityProviderSyncMode syncMode) {
+            super.applyDefaultConfiguration(suiteContext, config, syncMode);
             config.remove("prompt");
             config.put("acceptsPromptNoneForwardFromClient", "true");
         }

@@ -14,6 +14,8 @@ import org.keycloak.admin.client.resource.IdentityProviderResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.broker.provider.HardcodedUserSessionAttributeMapper;
+import org.keycloak.models.IdentityProviderMapperModel;
+import org.keycloak.models.IdentityProviderSyncMode;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
@@ -582,6 +584,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         hardCodedSessionNoteMapper.setIdentityProviderAlias(bc.getIDPAlias());
         hardCodedSessionNoteMapper.setIdentityProviderMapper(HardcodedUserSessionAttributeMapper.PROVIDER_ID);
         hardCodedSessionNoteMapper.setConfig(ImmutableMap.<String, String>builder()
+                .put(IdentityProviderMapperModel.SYNC_MODE, IdentityProviderSyncMode.IMPORT.toString())
                 .put(HardcodedUserSessionAttributeMapper.ATTRIBUTE_VALUE, "sessionvalue")
                 .put(HardcodedUserSessionAttributeMapper.ATTRIBUTE, "user-session-attr")
                 .build());

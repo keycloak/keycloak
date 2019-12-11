@@ -3,6 +3,7 @@ package org.keycloak.testsuite.broker;
 import org.keycloak.broker.saml.SAMLIdentityProviderConfig;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.dom.saml.v2.protocol.AuthnRequestType;
+import org.keycloak.models.IdentityProviderSyncMode;
 import org.keycloak.protocol.saml.SamlConfigAttributes;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
@@ -112,8 +113,8 @@ public class KcSamlSignedBrokerTest extends AbstractBrokerTest {
         }
 
         @Override
-        public IdentityProviderRepresentation setUpIdentityProvider(SuiteContext suiteContext) {
-            IdentityProviderRepresentation result = super.setUpIdentityProvider(suiteContext);
+        public IdentityProviderRepresentation setUpIdentityProvider(SuiteContext suiteContext, IdentityProviderSyncMode syncMode) {
+            IdentityProviderRepresentation result = super.setUpIdentityProvider(suiteContext, syncMode);
 
             String providerCert = KeyUtils.getActiveKey(adminClient.realm(providerRealmName()).keys().getKeyMetadata(), Algorithm.RS256).getCertificate();
             Assert.assertThat(providerCert, Matchers.notNullValue());

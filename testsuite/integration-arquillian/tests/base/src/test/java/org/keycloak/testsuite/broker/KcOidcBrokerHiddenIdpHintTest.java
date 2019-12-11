@@ -18,6 +18,7 @@ package org.keycloak.testsuite.broker;
 
 import java.util.Map;
 import org.junit.Test;
+import org.keycloak.models.IdentityProviderSyncMode;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
 
@@ -43,11 +44,11 @@ public class KcOidcBrokerHiddenIdpHintTest extends AbstractInitializedBaseBroker
     private class KcOidcHiddenBrokerConfiguration extends KcOidcBrokerConfiguration {
         
         @Override
-        public IdentityProviderRepresentation setUpIdentityProvider(SuiteContext suiteContext) {
+        public IdentityProviderRepresentation setUpIdentityProvider(SuiteContext suiteContext, IdentityProviderSyncMode syncMode) {
             IdentityProviderRepresentation idp = createIdentityProvider(IDP_OIDC_ALIAS, IDP_OIDC_PROVIDER_ID);
 
             Map<String, String> config = idp.getConfig();
-            applyDefaultConfiguration(suiteContext, config);
+            applyDefaultConfiguration(suiteContext, config, syncMode);
             config.put("hideOnLoginPage", "true");
             return idp;
         }

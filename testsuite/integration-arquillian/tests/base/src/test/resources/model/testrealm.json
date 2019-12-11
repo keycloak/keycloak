@@ -24,6 +24,7 @@
             "alias" : "google1",
             "enabled": true,
             "config": {
+                "syncMode": "IMPORT",
                 "clientId": "googleId",
                 "clientSecret": "googleSecret"
             }
@@ -33,6 +34,7 @@
             "alias" : "facebook1",
             "enabled": true,
             "config": {
+                "syncMode": "IMPORT",
                 "clientId": "facebookId",
                 "clientSecret": "facebookSecret"
             }
@@ -42,6 +44,7 @@
             "alias" : "twitter1",
             "enabled": true,
             "config": {
+                "syncMode": "IMPORT",
                 "clientId": "twitterId",
                 "clientSecret": "twitterSecret"
             }

@@ -13,6 +13,7 @@ import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.common.Profile;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.IdentityProviderSyncMode;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -370,7 +371,10 @@ public class SocialLoginTest extends AbstractKeycloakTest {
     }
 
     public IdentityProviderRepresentation buildIdp(Provider provider) {
-        IdentityProviderRepresentation idp = IdentityProviderBuilder.create().alias(provider.id()).providerId(provider.id()).build();
+        IdentityProviderRepresentation idp = IdentityProviderBuilder.create()
+                .alias(provider.id())
+                .providerId(provider.id())
+                .build();
         idp.setEnabled(true);
         idp.setStoreToken(true);
         idp.getConfig().put("clientId", getConfig(provider, "clientId"));

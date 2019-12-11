@@ -23,6 +23,7 @@ import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.ConfigConstants;
 import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.models.IdentityProviderMapperModel;
+import org.keycloak.models.IdentityProviderSyncMode;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
@@ -32,7 +33,10 @@ import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.JsonWebToken;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -44,6 +48,7 @@ public class ExternalKeycloakRoleToRoleMapper extends AbstractClaimMapper {
 
     private static final List<ProviderConfigProperty> configProperties = new ArrayList<ProviderConfigProperty>();
     private static final String EXTERNAL_ROLE = "external.role";
+    private static final Set<IdentityProviderSyncMode> IDENTITY_PROVIDER_SYNC_MODES = new HashSet<>(Arrays.asList(IdentityProviderSyncMode.values()));
 
     static {
         ProviderConfigProperty property;
@@ -64,6 +69,10 @@ public class ExternalKeycloakRoleToRoleMapper extends AbstractClaimMapper {
 
     public static final String PROVIDER_ID = "keycloak-oidc-role-to-role-idp-mapper";
 
+    @Override
+    public boolean supportsSyncMode(IdentityProviderSyncMode syncMode) {
+        return IDENTITY_PROVIDER_SYNC_MODES.contains(syncMode);
+    }
 
     @Override
     public List<ProviderConfigProperty> getConfigProperties() {
@@ -92,16 +101,13 @@ public class ExternalKeycloakRoleToRoleMapper extends AbstractClaimMapper {
 
     @Override
     public void importNewUser(KeycloakSession session, RealmModel realm, UserModel user, IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
-        RoleModel role = hasRole(realm, mapperModel, context);
-        if (role != null) {
-            user.grantRole(role);
+        if (hasRole(realm, mapperModel, context)) {
+            user.grantRole(searchRole(realm, mapperModel));
         }
     }
 
-    private RoleModel hasRole(RealmModel realm,IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
+    private boolean hasRole(RealmModel realm, IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
         JsonWebToken token = (JsonWebToken)context.getContextData().get(KeycloakOIDCIdentityProvider.VALIDATED_ACCESS_TOKEN);
-        //if (token == null) return;
-        String roleName = mapperModel.getConfig().get(ConfigConstants.ROLE);
         String[] parseRole = KeycloakModelUtils.parseRole(mapperModel.getConfig().get(EXTERNAL_ROLE));
         String externalRoleName = parseRole[1];
         String claimName = null;
@@ -111,19 +117,28 @@ public class ExternalKeycloakRoleToRoleMapper extends AbstractClaimMapper {
             claimName = "resource_access." + parseRole[0] + ".roles";
         }
         Object claim = getClaimValue(token, claimName);
-        if (valueEquals(externalRoleName, claim)) {
-            RoleModel role = KeycloakModelUtils.getRoleFromString(realm, roleName);
-            if (role == null) throw new IdentityBrokerException("Unable to find role: " + roleName);
-            return role;
-        }
-        return null;
+        return valueEquals(externalRoleName, claim);
+    }
+
+    private RoleModel searchRole(RealmModel realm, IdentityProviderMapperModel mapperModel) {
+        String roleName = mapperModel.getConfig().get(ConfigConstants.ROLE);
+        RoleModel role = KeycloakModelUtils.getRoleFromString(realm, roleName);
+        if (role == null) throw new IdentityBrokerException("Unable to find role: " + roleName);
+        return role;
     }
 
     @Override
+    public void updateBrokeredUserLegacy(KeycloakSession session, RealmModel realm, UserModel user, IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
+        // The legacy mapper actually did nothing although it pretended to do something
+    }
+
+
+    @Override
     public void updateBrokeredUser(KeycloakSession session, RealmModel realm, UserModel user, IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
-        RoleModel role = hasRole(realm, mapperModel, context);
-        if (role == null) {
-            user.deleteRoleMapping(role);
+        if (hasRole(realm, mapperModel, context)) {
+            user.grantRole(searchRole(realm, mapperModel));
+        } else {
+            user.deleteRoleMapping(searchRole(realm, mapperModel));
         }
     }
 

@@ -128,6 +128,21 @@
                 </div>
                 <kc-tooltip>{{:: 'post-broker-login-flow.tooltip' | translate}}</kc-tooltip>
             </div>
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="syncMode">{{:: 'sync-mode' | translate}}</label>
+                <div class="col-md-6">
+                    <div>
+                        <select class="form-control" id="syncMode"
+                                ng-model="identityProvider.config.syncMode"
+                                required>
+                            <option id="syncMode_import" name="syncMode" value="IMPORT">{{:: 'sync-mode.import' | translate}}</option>
+                            <option id="syncMode_legacy" name="syncMode" value="LEGACY">{{:: 'sync-mode.legacy' | translate}}</option>
+                            <option id="syncMode_force" name="syncMode" value="FORCE">{{:: 'sync-mode.force' | translate}}</option>
+                        </select>
+                    </div>
+                </div>
+                <kc-tooltip>{{:: 'sync-mode.tooltip' | translate}}</kc-tooltip>
+            </div>
         </fieldset>
 
         <div class="form-group">
