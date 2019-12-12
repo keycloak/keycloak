@@ -102,6 +102,8 @@ public class RequestPlaceHolderResolver implements PlaceHolderResolver {
 
             if (contentType == null) {
                 contentType = "";
+            } else if (contentType.indexOf(';') != -1){
+                contentType = contentType.substring(0, contentType.indexOf(';')).trim();
             }
 
             InputStream body = request.getInputStream(true);
