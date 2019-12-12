@@ -1546,10 +1546,38 @@ module.controller('ResourceServerPolicyRoleDetailCtrl', function($scope, $route,
 
         onInit : function() {
             $scope.uiSelection = {selected: {}, available: {}};
+            $scope.roles = [];
 
             Role.query({realm: $route.current.params.realm}, function(data) {
-                $scope.uiSelection.available.roles = data;
+                $scope.roles = data;
             });
+
+            $scope.rolesUiSelect = function(query) {
+                $scope.uiSelection.available.roles = [];
+                query = query.trim()
+                if ('' == query) {
+                    return;
+                }
+                $scope.roles.forEach( role => {
+                    if (role != '' && role.name != '' && role.name.includes(query)
+                        && ! $scope.selectedRoles.find( selectedRole => !selectedRole.clientRole && selectedRole.id === role.id ) ) {
+                        $scope.uiSelection.available.roles.push(role);
+                    }
+                });
+            };
+
+            $scope.clientRolesUiSelect = function(query) {
+                $scope.uiSelection.available.clientRoles = [];
+                query = query.trim()
+                if ('' == query) {
+                    return;
+                }
+                $scope.clientRoles.forEach( role => {
+                    if (role != '' && role.name != '' && role.name.includes(query)) {
+                        $scope.uiSelection.available.clientRoles.push(role);
+                    }
+                });
+            };
 
             Client.query({realm: $route.current.params.realm}, function (data) {
                 $scope.clients = data;
@@ -1574,19 +1602,19 @@ module.controller('ResourceServerPolicyRoleDetailCtrl', function($scope, $route,
                 $scope.selectedRoles.push(role);
 
                 var clientRoles = [];
-                if ($scope.uiSelection.available.clientRoles) {
-                    for (i = 0; i < $scope.uiSelection.available.clientRoles.length; i++) {
-                        if ($scope.uiSelection.available.clientRoles[i].id != role.id) {
-                            clientRoles.push($scope.uiSelection.available.clientRoles[i]);
+                if ($scope.clientRoles) {
+                    for (i = 0; i < $scope.clientRoles.length; i++) {
+                        if ($scope.clientRoles[i].id != role.id) {
+                            clientRoles.push($scope.clientRoles[i]);
                         }
                     }
-                    $scope.uiSelection.available.clientRoles = clientRoles;
+                    $scope.clientRoles = clientRoles;
                 }
             }
 
             $scope.removeFromList = function(role) {
-                if ($scope.uiSelection.available.clientRoles && $scope.selectedClient && $scope.selectedClient.id == role.containerId) {
-                    $scope.uiSelection.available.clientRoles.push(role);
+                if ($scope.clientRoles && $scope.selectedClient && $scope.selectedClient.id == role.containerId) {
+                    $scope.clientRoles.push(role);
                 }
                 var index = $scope.selectedRoles.indexOf(role);
                 if (index != -1) {
@@ -1596,7 +1624,7 @@ module.controller('ResourceServerPolicyRoleDetailCtrl', function($scope, $route,
 
             $scope.selectClient = function() {
                 if (!$scope.selectedClient) {
-                    $scope.uiSelection.available.clientRoles = [];
+                    $scope.clientRoles = [];
                     return;
                 }
                 ClientRole.query({realm: $route.current.params.realm, client: $scope.selectedClient.id}, function(data) {
@@ -1618,7 +1646,7 @@ module.controller('ResourceServerPolicyRoleDetailCtrl', function($scope, $route,
                             roles.push(data[j]);
                         }
                     }
-                    $scope.uiSelection.available.clientRoles = roles;
+                    $scope.clientRoles = roles;
                 });
             }
         },
@@ -2619,6 +2647,19 @@ module.controller('PolicyEvaluateCtrl', function($scope, $http, $route, $locatio
         $scope.showResult = false;
         $scope.showRpt = false;
     }
+
+    $scope.rolesUiSelect = function(query) {
+        $scope.uiSelection.available.roles = [];
+        query = query.trim()
+        if ('' == query) {
+            return;
+        }
+        roles.forEach( role => {
+            if (role != '' && role.name != '' && role.name.includes(query)) {
+                $scope.uiSelection.available.roles.push(role);
+            }
+        });
+    };
 
     $scope.usersUiSelect = function(query) {
         $scope.uiSelection.available.users = [];

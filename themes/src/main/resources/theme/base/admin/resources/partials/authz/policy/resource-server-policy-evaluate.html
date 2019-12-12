@@ -82,9 +82,12 @@
                             <ui-select multiple close-on-select="false" ng-model="authzRequest.roleIds" theme="bootstrap" id="roles"
                                     data-ng-required="!authzRequest.userId || authzRequest.userId == null">
                                 <ui-select-match placeholder="{{:: 'authz-any-role' | translate}}...">{{$item.name}}</ui-select-match>
-                                <ui-select-choices repeat="role.name as role in roles | filter:$select.search">
-                                    {{role.name}}
+                                <ui-select-choices refresh="rolesUiSelect($select.search)" refresh-delay="0" repeat="role.name as role in uiSelection.available.roles">
+                                    <div ng-bind-html="role.name | highlight: $select.search"></div>
                                 </ui-select-choices>
+                                <ui-select-no-choice>
+                                    {{:: 'authz-select-min-character-hint' | translate}}
+                                </ui-select-no-choice>
                             </ui-select>
                         </div>
 
