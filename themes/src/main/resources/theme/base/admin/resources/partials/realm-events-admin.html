@@ -45,7 +45,7 @@
                         <div class="form-group">
                             <label class="col-sm-2 control-label" for="adminEnabledEventResourceTypes">{{:: 'resource-types' | translate}}</label>
                             <div class="col-sm-5" onkeypress="return false;" ng-paste="disablePaste($event)">
-                                <ui-select data-ng-model="query.resourceType" id="adminEnabledEventResourceTypes" theme="bootstrap" multiple close-on-select="false">
+                                <ui-select data-ng-model="query.resourceTypes" id="adminEnabledEventResourceTypes" theme="bootstrap" multiple close-on-select="false">
                                     <ui-select-match placeholder="{{:: 'select-resource-types.placeholder' | translate}}...">{{$item}}</ui-select-match>
                                     <ui-select-choices repeat="resource as resource in adminEnabledEventResourceTypesOptions | filter:$select.search">
                                         {{resource}}
