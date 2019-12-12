@@ -292,7 +292,7 @@ public class AccountRestService {
         representation.setInUse(inUseClients.contains(model.getClientId()));
         representation.setOfflineAccess(offlineClients.contains(model.getClientId()));
         representation.setBaseUrl(model.getBaseUrl());
-        UserConsentModel consentModel = consents.get(client.getClientId());
+        UserConsentModel consentModel = consents.get(model.getClientId());
         if(consentModel != null) {
             representation.setConsent(modelToRepresentation(consentModel));
         }

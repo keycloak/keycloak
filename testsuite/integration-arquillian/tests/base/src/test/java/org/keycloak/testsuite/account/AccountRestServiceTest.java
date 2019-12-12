@@ -363,7 +363,12 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         Map<String, ClientRepresentation> apps = applications.stream().collect(Collectors.toMap(x -> x.getClientId(), x -> x));
         Assert.assertThat(apps.keySet(), containsInAnyOrder(appId));
 
-        assertClientRep(apps.get(appId), null, "A third party application", true, false, false, "http://localhost:8180/auth/realms/master/app/auth");
+        ClientRepresentation app = apps.get(appId);
+        assertClientRep(app, null, "A third party application", true, false, false, "http://localhost:8180/auth/realms/master/app/auth");
+        assertFalse(app.getConsent().getGrantedScopes().isEmpty());
+        ConsentScopeRepresentation grantedScope = app.getConsent().getGrantedScopes().get(0);
+        assertEquals(clientScopeRepresentation.getId(), grantedScope.getId());
+        assertEquals(clientScopeRepresentation.getName(), grantedScope.getName());
     }
 
     private void assertClientRep(ClientRepresentation clientRep, String name, String description, boolean userConsentRequired, boolean inUse, boolean offlineAccess, String baseUrl) {
