@@ -34,6 +34,8 @@ import javax.ws.rs.ext.Provider;
 public class ObjectMapperResolver implements ContextResolver<ObjectMapper> {
     protected ObjectMapper mapper = new ObjectMapper();
 
+    public ObjectMapperResolver() {}
+
     public ObjectMapperResolver(boolean indent) {
         mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
         if (indent) {

@@ -17,7 +17,11 @@
         <!-- Quarkus -->
         <dependency>
             <groupId>io.quarkus</groupId>
-            <artifactId>quarkus-undertow</artifactId>
+            <artifactId>quarkus-vertx</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-vertx-web</artifactId>
         </dependency>
         <dependency>
             <groupId>io.quarkus</groupId>
