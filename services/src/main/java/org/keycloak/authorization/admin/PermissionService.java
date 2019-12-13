@@ -45,22 +45,22 @@ public class PermissionService extends PolicyService {
     protected PolicyTypeService doCreatePolicyTypeResource(String type) {
         return new PolicyTypeService(type, resourceServer, authorization, auth, adminEvent) {
             @Override
-            protected List<Object> doSearch(Integer firstResult, Integer maxResult, Map<String, String[]> filters) {
+            protected List<Object> doSearch(Integer firstResult, Integer maxResult, String fields, Map<String, String[]> filters) {
                 filters.put("permission", new String[] {Boolean.TRUE.toString()});
                 filters.put("type", new String[] {type});
-                return super.doSearch(firstResult, maxResult, filters);
+                return super.doSearch(firstResult, maxResult, fields, filters);
             }
         };
     }
 
     @Override
-    protected List<Object> doSearch(Integer firstResult, Integer maxResult, Map<String, String[]> filters) {
+    protected List<Object> doSearch(Integer firstResult, Integer maxResult, String fields, Map<String, String[]> filters) {
         filters.put("permission", new String[] {Boolean.TRUE.toString()});
-        return super.doSearch(firstResult, maxResult, filters);
+        return super.doSearch(firstResult, maxResult, fields, filters);
     }
 
     @Override
-    protected AbstractPolicyRepresentation toRepresentation(Policy policy, AuthorizationProvider authorization) {
-        return ModelToRepresentation.toRepresentation(policy, authorization, false, false);
+    protected AbstractPolicyRepresentation toRepresentation(Policy policy, String fields, AuthorizationProvider authorization) {
+        return ModelToRepresentation.toRepresentation(policy, authorization, false, false, fields != null && fields.equals("*"));
     }
 }

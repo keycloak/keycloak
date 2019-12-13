@@ -146,7 +146,7 @@ public class PolicyService {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
-    public Response findByName(@QueryParam("name") String name) {
+    public Response findByName(@QueryParam("name") String name, @QueryParam("fields") String fields) {
         if (auth != null) {
             this.auth.realm().requireViewAuthorization();
         }
@@ -163,7 +163,7 @@ public class PolicyService {
             return Response.status(Status.OK).build();
         }
 
-        return Response.ok(toRepresentation(model, authorization)).build();
+        return Response.ok(toRepresentation(model, fields, authorization)).build();
     }
 
     @GET
@@ -176,6 +176,7 @@ public class PolicyService {
                             @QueryParam("scope") String scope,
                             @QueryParam("permission") Boolean permission,
                             @QueryParam("owner") String owner,
+                            @QueryParam("fields") String fields,
                             @QueryParam("first") Integer firstResult,
                             @QueryParam("max") Integer maxResult) {
         if (auth != null) {
@@ -253,18 +254,18 @@ public class PolicyService {
         }
 
         return Response.ok(
-                doSearch(firstResult, maxResult, search))
+                doSearch(firstResult, maxResult, fields, search))
                 .build();
     }
 
-    protected AbstractPolicyRepresentation toRepresentation(Policy model, AuthorizationProvider authorization) {
-        return ModelToRepresentation.toRepresentation(model, authorization, true, false);
+    protected AbstractPolicyRepresentation toRepresentation(Policy model, String fields, AuthorizationProvider authorization) {
+        return ModelToRepresentation.toRepresentation(model, authorization, true, false, fields != null && fields.equals("*"));
     }
 
-    protected List<Object> doSearch(Integer firstResult, Integer maxResult, Map<String, String[]> filters) {
+    protected List<Object> doSearch(Integer firstResult, Integer maxResult, String fields, Map<String, String[]> filters) {
         PolicyStore policyStore = authorization.getStoreFactory().getPolicyStore();
         return policyStore.findByResourceServer(filters, resourceServer.getId(), firstResult != null ? firstResult : -1, maxResult != null ? maxResult : Constants.DEFAULT_MAX_RESULTS).stream()
-                .map(policy -> toRepresentation(policy, authorization))
+                .map(policy -> toRepresentation(policy, fields, authorization))
                 .collect(Collectors.toList());
     }
 
