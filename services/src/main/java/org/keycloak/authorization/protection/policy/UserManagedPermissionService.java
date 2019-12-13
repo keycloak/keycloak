@@ -117,7 +117,7 @@ public class UserManagedPermissionService {
     @Produces("application/json")
     public Response findById(@PathParam("policyId") String policyId) {
         checkRequest(getAssociatedResourceId(policyId), null);
-        return PolicyTypeResourceService.class.cast(delegate.getResource(policyId)).findById();
+        return PolicyTypeResourceService.class.cast(delegate.getResource(policyId)).findById(null);
     }
 
     @GET
@@ -128,7 +128,7 @@ public class UserManagedPermissionService {
                          @QueryParam("scope") String scope,
                          @QueryParam("first") Integer firstResult,
                          @QueryParam("max") Integer maxResult) {
-        return  delegate.findAll(null, name, "uma", resource, scope, true, identity.getId(), firstResult, maxResult);
+        return  delegate.findAll(null, name, "uma", resource, scope, true, identity.getId(), null, firstResult, maxResult);
     }
 
     private Policy getPolicy(@PathParam("policyId") String policyId) {
