@@ -459,7 +459,7 @@ public class AuthorizationTokenService {
                         requestedResources.add(ownerResource);
                     }
 
-                    if (!identity.isResourceServer()) {
+                    if (!identity.isResourceServer() || !identity.getId().equals(resourceServer.getId())) {
                         List<PermissionTicket> tickets = storeFactory.getPermissionTicketStore().findGranted(resourceName, identity.getId(), resourceServer.getId());
                         for (PermissionTicket permissionTicket : tickets) {
                             requestedResources.add(permissionTicket.getResource());
