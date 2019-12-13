@@ -24,6 +24,8 @@ import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
+import java.util.List;
+
 /**
  * @author tkyjovsk
  * @author mhajas
@@ -83,19 +85,40 @@ public class AdminEvents extends Events {
             @FindBy(id = "ipAddress")
             private WebElement ipAddressInput;
 
-            @FindBy(xpath = "//div[@id='s2id_adminEnabledEventOperations']/ul")
+            @FindBy(xpath = "//div[@id='adminEnabledEventOperations']/div[not(@id) and not(@class)]/input")
             private WebElement operationTypesInput;
 
-            @FindBy(xpath = "//div[@id='select2-drop']")
+            @FindBy(xpath = "//div[@id='adminEnabledEventOperations']/div[not(@id) and not(@class)]/span")
+            private WebElement operationTypesInputSelected;
+
+            @FindBy(xpath = "//div[@id='adminEnabledEventOperations']/ul[contains(@class, 'ui-select-choices')]")
             private WebElement operationTypesValues;
+
+            @FindBy(xpath = "//div[@id='adminEnabledEventResourceTypes']/div[not(@id) and not(@class)]/input")
+            private WebElement resourceTypesInput;
+
+            @FindBy(xpath = "//div[@id='adminEnabledEventResourceTypes']/div[not(@id) and not(@class)]/span")
+            private WebElement resourceTypesInputSelected;
+
+            @FindBy(xpath = "//div[@id='adminEnabledEventResourceTypes']/ul[contains(@class, 'ui-select-choices')]")
+            private WebElement resourceTypesValues;
 
             public void addOperationType(String type) {
                 operationTypesInput.click();
-                operationTypesValues.findElement(By.xpath("//div[text() = '" + type + "']")).click();
+                operationTypesValues.findElement(By.xpath("./li/div[contains(@class, 'ui-select-choices-row')]/span[normalize-space(text())='"+type+"']")).click();
             }
 
             public void removeOperationType(String type) {
-                operationTypesInput.findElement(By.xpath("//div[text()='" + type + "']/../a")).click();
+                operationTypesInputSelected.findElement(By.xpath("//span[text()='" + type + "']/../span[contains(@class, 'ui-select-match-close')]")).click();
+            }
+
+            public void addResourceType(String type) {
+                resourceTypesInput.click();
+                resourceTypesValues.findElement(By.xpath("./li/div[contains(@class, 'ui-select-choices-row')]/span[normalize-space(text())='"+type+"']")).click();
+            }
+
+            public void removeResourceType(String type) {
+                resourceTypesInputSelected.findElement(By.xpath("//span[text()='" + type + "']/../span[contains(@class, 'ui-select-match-close')]")).click();
             }
 
             public void setResourcePathInput(String value) {

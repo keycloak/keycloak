@@ -39,6 +39,7 @@ import javax.ws.rs.core.Response;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.keycloak.testsuite.auth.page.login.Login.OIDC;
 import static org.keycloak.testsuite.console.clients.AbstractClientTest.createClientRep;
 
@@ -94,6 +95,15 @@ public class AdminEventsTest extends AbstractConsoleTest {
         adminEventsPage.table().reset();
         adminEventsPage.table().filterForm().addOperationType("UPDATE");
         adminEventsPage.table().update();
+        adminEventsPage.table().filterForm().removeOperationType("UPDATE");
+        adminEventsPage.table().update();
+
+        resultList = adminEventsPage.table().rows();
+        assertNotEquals(1, resultList.size());
+
+        adminEventsPage.table().reset();
+        adminEventsPage.table().filterForm().addOperationType("UPDATE");
+        adminEventsPage.table().update();
 
         resultList = adminEventsPage.table().rows();
         assertEquals(1, resultList.size());
@@ -110,6 +120,23 @@ public class AdminEventsTest extends AbstractConsoleTest {
         resultList.get(0).findElement(By.xpath("//td[text()='DELETE']"));
         resultList.get(0).findElement(By.xpath("//td[text()='clients/" + id + "']"));
         resultList.get(0).findElement(By.xpath("//td[text()='CLIENT']"));
+
+
+        adminEventsPage.table().reset();
+        adminEventsPage.table().filterForm().addResourceType("AUTH_FLOW");
+        adminEventsPage.table().update();
+
+        resultList = adminEventsPage.table().rows();
+        assertEquals(0, resultList.size());
+
+        adminEventsPage.table().reset();
+        adminEventsPage.table().filterForm().addResourceType("AUTH_FLOW");
+        adminEventsPage.table().update();
+        adminEventsPage.table().filterForm().removeResourceType("AUTH_FLOW");
+        adminEventsPage.table().update();
+
+        resultList = adminEventsPage.table().rows();
+        assertNotEquals(1, resultList.size());
     }
     
     public ClientsResource clientsResource() {
