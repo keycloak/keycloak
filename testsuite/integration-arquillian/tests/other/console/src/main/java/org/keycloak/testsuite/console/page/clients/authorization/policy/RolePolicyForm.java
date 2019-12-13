@@ -54,13 +54,13 @@ public class RolePolicyForm extends Form {
     @FindBy(xpath = "//i[contains(@class,'pficon-delete')]")
     private WebElement deleteButton;
 
-    @FindBy(id = "s2id_roles")
+    @FindBy(id = "roles")
     private RoleMultipleSelect2 realmRoleSelect;
 
     @FindBy(id = "clients")
     private Select clientsSelect;
 
-    @FindBy(id = "s2id_clientRoles")
+    @FindBy(id = "clientRoles")
     private ClientRoleSelect clientRoleSelect;
 
     @FindBy(xpath = "//div[@class='modal-dialog']")

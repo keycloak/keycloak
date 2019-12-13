@@ -52,7 +52,7 @@ public class ClientPolicyForm extends Form {
     @FindBy(xpath = "//i[contains(@class,'pficon-delete')]")
     private WebElement deleteButton;
 
-    @FindBy(id = "s2id_clients")
+    @FindBy(id = "clients")
     private ClientSelect clientsInput;
 
     @FindBy(xpath = "//div[@class='modal-dialog']")

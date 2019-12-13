@@ -52,7 +52,7 @@ public class UserPolicyForm extends Form {
     @FindBy(xpath = "//i[contains(@class,'pficon-delete')]")
     private WebElement deleteButton;
 
-    @FindBy(id = "s2id_users")
+    @FindBy(id = "users")
     private UserSelect usersInput;
 
     @FindBy(xpath = "//div[@class='modal-dialog']")

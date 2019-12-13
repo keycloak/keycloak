@@ -182,6 +182,10 @@ th.w-40 {
 
 /*********** Select 2 ***********/
 
+.input-group .ui-select-container.dropdown {
+    overflow: auto
+}
+
 .select2-container-multi .select2-choices .select2-search-field {
     height: 26px;
 }

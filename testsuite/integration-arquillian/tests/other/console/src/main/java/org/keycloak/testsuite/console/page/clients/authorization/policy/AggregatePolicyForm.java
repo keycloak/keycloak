@@ -54,7 +54,7 @@ public class AggregatePolicyForm extends Form {
     @FindBy(xpath = "//i[contains(@class,'pficon-delete')]")
     private WebElement deleteButton;
 
-    @FindBy(id = "s2id_policies")
+    @FindBy(id = "policies")
     private PolicySelect policySelect;
 
     @FindBy(xpath = "//div[@class='modal-dialog']")

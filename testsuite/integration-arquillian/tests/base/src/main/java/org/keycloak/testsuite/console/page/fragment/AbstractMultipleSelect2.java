@@ -46,10 +46,10 @@ public abstract class AbstractMultipleSelect2<R> {
     @Drone
     private WebDriver driver;
 
-    @FindBy(xpath = "//input[contains(@class,'select2-focused')]")
+    @FindBy(xpath = "//input[contains(@class,'ui-select-search')]")
     private WebElement search;
 
-    @FindBy(xpath = "//div[contains(@class,'select2-result-label')]")
+    @FindBy(xpath = "//div[contains(@class,'ui-select-choices-row')]")
     private List<WebElement> result;
 
     public void update(Set<R> values) {
