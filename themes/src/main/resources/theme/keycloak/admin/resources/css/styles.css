@@ -182,15 +182,17 @@ th.w-40 {
 
 /*********** Select 2 ***********/
 
-.select2-container {
-    width: 100%;
-}
-
 .select2-container-multi .select2-choices .select2-search-field {
     height: 26px;
 }
 
+.input-group .ui-select-container .form-control {
+    width: 100% !important;
+}
+
+
 /*********** html select ********/
+
 .overflow-select {
     overflow: auto;
 }
