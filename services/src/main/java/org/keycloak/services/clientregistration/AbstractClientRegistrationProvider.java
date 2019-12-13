@@ -30,6 +30,7 @@ import org.keycloak.services.clientregistration.policy.RegistrationAuth;
 import org.keycloak.services.managers.ClientManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.validation.ValidationMessages;
+import org.keycloak.validation.ClientValidationUtil;
 
 import javax.ws.rs.core.Response;
 
@@ -80,6 +81,11 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
             client = ModelToRepresentation.toRepresentation(clientModel, session);
 
             client.setSecret(clientModel.getSecret());
+
+            ClientValidationUtil.validate(session, clientModel, true, c -> {
+                session.getTransactionManager().setRollbackOnly();
+                throw  new ErrorResponseException(ErrorCodes.INVALID_CLIENT_METADATA, c.getError(), Response.Status.BAD_REQUEST);
+            });
 
             String registrationAccessToken = ClientRegistrationTokenUtils.updateRegistrationAccessToken(session, clientModel, registrationAuth);
             client.setRegistrationAccessToken(registrationAccessToken);
@@ -139,6 +145,11 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
 
         RepresentationToModel.updateClient(rep, client);
         RepresentationToModel.updateClientProtocolMappers(rep, client);
+
+        ClientValidationUtil.validate(session, client, false, c -> {
+            session.getTransactionManager().setRollbackOnly();
+            throw  new ErrorResponseException(ErrorCodes.INVALID_CLIENT_METADATA, c.getError(), Response.Status.BAD_REQUEST);
+        });
 
         rep = ModelToRepresentation.toRepresentation(client, session);
 

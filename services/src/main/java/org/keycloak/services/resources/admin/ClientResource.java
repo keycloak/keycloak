@@ -24,6 +24,7 @@ import org.keycloak.authorization.admin.AuthorizationService;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.Time;
+import org.keycloak.events.Errors;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.AuthenticatedClientSessionModel;
@@ -63,6 +64,7 @@ import org.keycloak.services.validation.ClientValidator;
 import org.keycloak.services.validation.PairwiseClientValidator;
 import org.keycloak.services.validation.ValidationMessages;
 import org.keycloak.utils.ProfileHelper;
+import org.keycloak.validation.ClientValidationUtil;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -151,10 +153,16 @@ public class ClientResource {
 
         try {
             updateClientFromRep(rep, client, session);
+
+            ClientValidationUtil.validate(session, client, false, c -> {
+                session.getTransactionManager().setRollbackOnly();
+                throw new ErrorResponseException(Errors.INVALID_INPUT ,c.getError(), Response.Status.BAD_REQUEST);
+            });
+
             adminEvent.operation(OperationType.UPDATE).resourcePath(session.getContext().getUri()).representation(rep).success();
             return Response.noContent().build();
         } catch (ModelDuplicateException e) {
-            return ErrorResponse.exists("Client " + rep.getClientId() + " already exists");
+            return ErrorResponse.exists("Client already exists");
         }
     }
 
