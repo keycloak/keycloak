@@ -89,6 +89,7 @@ import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
+import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RealmBuilder;
@@ -1983,6 +1984,58 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         this.expectedException.reportMissingExceptionWithMessage("should fail, session invalidated");
 
         authzClient.authorization().authorize(request);
+    }
+
+    @Test
+    public void testPermissionsAcrossResourceServers() throws Exception {
+        String rsAId;
+        try (Response response = getRealm().clients().create(ClientBuilder.create().clientId("rs-a").secret("secret").serviceAccount().authorizationServicesEnabled(true).build())) {
+            rsAId = ApiUtil.getCreatedId(response);
+        }
+        String rsBId;
+        try (Response response = getRealm().clients().create(ClientBuilder.create().clientId("rs-b").secret("secret").serviceAccount().authorizationServicesEnabled(true).build())) {
+            rsBId = ApiUtil.getCreatedId(response);
+        }
+        ClientResource rsB = getRealm().clients().get(rsBId);
+
+        rsB.authorization().resources().create(new ResourceRepresentation("Resource A"));
+
+        JSPolicyRepresentation grantPolicy = new JSPolicyRepresentation();
+
+        grantPolicy.setName("Grant Policy");
+        grantPolicy.setCode("$evaluation.grant();");
+
+        rsB.authorization().policies().js().create(grantPolicy);
+
+        ResourcePermissionRepresentation permission = new ResourcePermissionRepresentation();
+
+        permission.setName("Resource A Permission");
+        permission.addResource("Resource A");
+        permission.addPolicy(grantPolicy.getName());
+
+        rsB.authorization().permissions().resource().create(permission);
+
+        AuthzClient authzClient = getAuthzClient(AUTHZ_CLIENT_CONFIG);
+        Configuration config = authzClient.getConfiguration();
+
+        config.setResource("rs-a");
+
+        authzClient = AuthzClient.create(config);
+        AccessTokenResponse accessTokenResponse = authzClient.obtainAccessToken();
+        AccessToken accessToken = toAccessToken(accessTokenResponse.getToken());
+
+        config.setResource("rs-b");
+
+        AuthorizationRequest request = new AuthorizationRequest();
+
+        request.addPermission("Resource A");
+
+        AuthorizationResponse response = authzClient.authorization(accessTokenResponse.getToken()).authorize(request);
+
+        assertNotNull(response.getToken());
+        Collection<Permission> permissions = toAccessToken(response.getToken()).getAuthorization().getPermissions();
+        assertEquals(1, permissions.size());
+        assertEquals("Resource A", permissions.iterator().next().getResourceName());
     }
 
     private void testRptRequestWithResourceName(String configFile) {
