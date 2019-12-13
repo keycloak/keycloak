@@ -16,17 +16,14 @@
  */
 package org.keycloak.services.resources.admin;
 
-import static java.lang.Boolean.TRUE;
-
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.authorization.admin.AuthorizationService;
-import org.keycloak.common.Profile;
+import org.keycloak.events.Errors;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
@@ -43,6 +40,7 @@ import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluato
 import org.keycloak.services.validation.ClientValidator;
 import org.keycloak.services.validation.PairwiseClientValidator;
 import org.keycloak.services.validation.ValidationMessages;
+import org.keycloak.validation.ClientValidationUtil;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DefaultValue;
@@ -56,10 +54,11 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriInfo;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
+
+import static java.lang.Boolean.TRUE;
 
 /**
  * Base resource class for managing a realm's clients.
@@ -188,6 +187,11 @@ public class ClientsResource {
                     authorizationService.resourceServer().importSettings(authorizationSettings);
                 }
             }
+
+            ClientValidationUtil.validate(session, clientModel, true, c -> {
+                session.getTransactionManager().setRollbackOnly();
+                throw new ErrorResponseException(Errors.INVALID_INPUT, c.getError(), Response.Status.BAD_REQUEST);
+            });
 
             return Response.created(session.getContext().getUri().getAbsolutePathBuilder().path(clientModel.getId()).build()).build();
         } catch (ModelDuplicateException e) {

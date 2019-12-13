@@ -58,6 +58,7 @@ public interface Errors {
     String INVALID_FORM = "invalid_form";
     String INVALID_CONFIG = "invalid_config";
     String EXPIRED_CODE = "expired_code";
+    String INVALID_INPUT = "invalid_input";
 
     String REGISTRATION_DISABLED = "registration_disabled";
     String RESET_CREDENTIAL_DISABLED = "reset_credential_disabled";
