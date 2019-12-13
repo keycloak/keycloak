@@ -104,6 +104,67 @@ public class ClientTest extends AbstractAdminTest {
     }
 
     @Test
+    public void createClientValidation() {
+        ClientRepresentation rep = new ClientRepresentation();
+        rep.setClientId("my-app");
+        rep.setDescription("my-app description");
+        rep.setEnabled(true);
+
+        rep.setRootUrl("invalid");
+        createClientExpectingValidationError(rep, "Invalid URL in rootUrl");
+
+        rep.setRootUrl(null);
+        rep.setBaseUrl("invalid");
+        createClientExpectingValidationError(rep, "Invalid URL in baseUrl");
+    }
+
+    @Test
+    public void updateClientValidation() {
+        ClientRepresentation rep = createClient();
+
+        rep.setClientId("my-app");
+        rep.setDescription("my-app description");
+        rep.setEnabled(true);
+
+        rep.setRootUrl("invalid");
+        updateClientExpectingValidationError(rep, "Invalid URL in rootUrl");
+
+        rep.setRootUrl(null);
+        rep.setBaseUrl("invalid");
+        updateClientExpectingValidationError(rep, "Invalid URL in baseUrl");
+
+        ClientRepresentation stored = realm.clients().get(rep.getId()).toRepresentation();
+        assertNull(stored.getRootUrl());
+        assertNull(stored.getBaseUrl());
+    }
+
+    private void createClientExpectingValidationError(ClientRepresentation rep, String expectedError) {
+        Response response = realm.clients().create(rep);
+
+        assertEquals(400, response.getStatus());
+        OAuth2ErrorRepresentation error = response.readEntity(OAuth2ErrorRepresentation.class);
+        assertEquals("invalid_input", error.getError());
+        assertEquals(expectedError, error.getErrorDescription());
+
+        assertNull(response.getLocation());
+
+        response.close();
+    }
+
+    private void updateClientExpectingValidationError(ClientRepresentation rep, String expectedError) {
+        try {
+            realm.clients().get(rep.getId()).update(rep);
+            fail("Expected exception");
+        } catch (BadRequestException e) {
+            Response response = e.getResponse();
+            assertEquals(400, response.getStatus());
+            OAuth2ErrorRepresentation error = response.readEntity(OAuth2ErrorRepresentation.class);
+            assertEquals("invalid_input", error.getError());
+            assertEquals(expectedError, error.getErrorDescription());
+        }
+    }
+
+    @Test
     public void removeClient() {
         String id = createClient().getId();
 
