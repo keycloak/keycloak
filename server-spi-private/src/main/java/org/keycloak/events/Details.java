@@ -50,8 +50,6 @@ public interface Details {
     String SCOPE = "scope";
     String REQUESTED_ISSUER = "requested_issuer";
     String REQUESTED_SUBJECT = "requested_subject";
-    String CLIENT_SESSION_STATE = "client_session_state";
-    String CLIENT_SESSION_HOST = "client_session_host";
     String RESTART_AFTER_TIMEOUT = "restart_after_timeout";
 
     String CONSENT = "consent";

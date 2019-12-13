@@ -537,13 +537,11 @@ public class TokenEndpoint {
             String adapterSessionHost = formParams.getFirst(AdapterConstants.CLIENT_SESSION_HOST);
             logger.debugf("Adapter Session '%s' saved in ClientSession for client '%s'. Host is '%s'", adapterSessionId, client.getClientId(), adapterSessionHost);
 
-            event.detail(AdapterConstants.CLIENT_SESSION_STATE, adapterSessionId);
             String oldClientSessionState = clientSession.getNote(AdapterConstants.CLIENT_SESSION_STATE);
             if (!adapterSessionId.equals(oldClientSessionState)) {
                 clientSession.setNote(AdapterConstants.CLIENT_SESSION_STATE, adapterSessionId);
             }
 
-            event.detail(AdapterConstants.CLIENT_SESSION_HOST, adapterSessionHost);
             String oldClientSessionHost = clientSession.getNote(AdapterConstants.CLIENT_SESSION_HOST);
             if (!Objects.equals(adapterSessionHost, oldClientSessionHost)) {
                 clientSession.setNote(AdapterConstants.CLIENT_SESSION_HOST, adapterSessionHost);
