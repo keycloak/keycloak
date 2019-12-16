@@ -46,19 +46,25 @@ public class Config extends Events {
     }
 
     public class ConfigForm extends Form {
-        @FindBy(id = "s2id_autogen1")
-        private WebElement eventListenersInput;
+        @FindBy(xpath = "//div[@id='eventsListeners']/div[not(@id) and not(@class)]/input")
+        private WebElement eventsListenersInput;
 
-        @FindBy(xpath = "//div[@id='s2id_autogen1']/..//select")
-        private Select eventListenersSelect;
+        @FindBy(xpath = "//div[@id='eventsListeners']/div[not(@id) and not(@class)]/span")
+        private WebElement eventsListenersInputSelected;
+
+        @FindBy(xpath = "//div[@id='eventsListeners']/ul[contains(@class, 'ui-select-choices')]")
+        private WebElement eventsListenersOptions;
 
         @FindBy(xpath = ".//div[@class='onoffswitch' and ./input[@id='enabled']]")
         private OnOffSwitch SaveEvents;
 
-        @FindBy(xpath = "//div[@id='s2id_enabledEventTypes']//input")
+        @FindBy(xpath = "//div[@id='enabledEventTypes']/div[not(@id) and not(@class)]/input")
         private WebElement savedTypesInput;
 
-        @FindBy(xpath = "//div[@id='select2-drop']/ul")
+        @FindBy(xpath = "//div[@id='enabledEventTypes']/div[not(@id) and not(@class)]/span")
+        private WebElement savedTypesInputSelected;
+
+        @FindBy(xpath = "//div[@id='enabledEventTypes']/ul[contains(@class, 'ui-select-choices')]")
         private WebElement savedTypesOptions;
 
         @FindBy(id = "expiration")
@@ -80,12 +86,12 @@ public class Config extends Events {
         private WebElement clearAdminEventsButton;
 
         public void addEventListener(String listener) {
-            eventListenersInput.click();
-            eventListenersSelect.selectByVisibleText(listener);
+            eventsListenersInput.click();
+            eventsListenersOptions.findElement(By.xpath("./li/div[contains(@class, 'ui-select-choices-row')]/span[normalize-space(text())='" + listener + "']")).click();
         }
 
         public void removeEventListener(String listener) {
-            eventListenersInput.findElement(By.xpath("//div[text()='" + listener + "']/../a")).click();
+            eventsListenersInputSelected.findElement(By.xpath("//span[text()='" + listener + "']/../span[contains(@class, 'ui-select-match-close')]")).click();
         }
 
         public void setSaveEvents(boolean value) {
@@ -94,11 +100,11 @@ public class Config extends Events {
 
         public void addSaveType(String type) {
             savedTypesInput.click();
-            savedTypesOptions.findElement(By.xpath("//div[text()='" + type + "']")).click();
+            savedTypesOptions.findElement(By.xpath("./li/div[contains(@class, 'ui-select-choices-row')]/span[normalize-space(text())='"+type+"']")).click();
         }
 
         public void removeSaveType(String type) {
-            savedTypesInput.findElement(By.xpath("//div[text()='" + type + "']/../a")).click();
+            savedTypesInputSelected.findElement(By.xpath("//span[text()='" + type + "']/../span[contains(@class, 'ui-select-match-close')]")).click();
         }
 
         public void clearLoginEvents() {

@@ -23,6 +23,18 @@ public class ConfigTest extends AbstractConsoleTest {
     }
 
     @Test
+    public void configEventListenersTest() {
+        configPage.form().addEventListener("email");
+        configPage.form().removeEventListener("jboss-logging");
+        configPage.form().save();
+        assertAlertSuccess();
+
+        RealmRepresentation realm = testRealmResource().toRepresentation();
+        assertFalse(realm.getEventsListeners().contains("jboss-logging"));
+        assertTrue(realm.getEventsListeners().contains("email"));
+    }
+
+    @Test
     public void configLoginEventsTest() {
         configPage.form().setSaveEvents(true);
         // IE webdriver has problem with clicking not visible (scrolling is needed) items in the menu,
