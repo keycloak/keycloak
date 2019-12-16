@@ -649,6 +649,28 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
     }
 
     @Test
+    public void listApplicationsFiltered() throws Exception {
+        oauth.clientId("in-use-client");
+        OAuthClient.AccessTokenResponse tokenResponse = oauth.doGrantAccessTokenRequest("secret1", "view-applications-access", "password");
+        Assert.assertNull(tokenResponse.getErrorDescription());
+
+        TokenUtil token = new TokenUtil("view-applications-access", "password");
+        List<ClientRepresentation> applications = SimpleHttp
+                .doGet(getAccountUrl("applications"), httpClient)
+                .header("Accept", "application/json")
+                .param("name", "In Use")
+                .auth(token.getToken())
+                .asJson(new TypeReference<List<ClientRepresentation>>() {
+                });
+        assertFalse(applications.isEmpty());
+
+        Map<String, ClientRepresentation> apps = applications.stream().collect(Collectors.toMap(x -> x.getClientId(), x -> x));
+        Assert.assertThat(apps.keySet(), containsInAnyOrder("in-use-client"));
+
+        assertClientRep(apps.get("in-use-client"), "In Use Client", null, false, true, false, null, inUseClientAppUri);
+    }
+
+    @Test
     public void listApplicationsOfflineAccess() throws Exception {
         oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
         oauth.clientId("offline-client");
@@ -751,30 +773,6 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         TokenUtil token = new TokenUtil("no-account-access", "password");
         SimpleHttp.Response response = SimpleHttp
                 .doGet(getAccountUrl("applications"), httpClient)
-                .header("Accept", "application/json")
-                .auth(token.getToken())
-                .asResponse();
-        assertEquals(403, response.getStatus());
-    }
-
-    @Test
-    public void getWebConsoleApplication() throws IOException {
-        TokenUtil token = new TokenUtil("view-applications-access", "password");
-        String appId = "security-admin-console";
-        ClientRepresentation webConsole = SimpleHttp
-                .doGet(getAccountUrl("applications/" + appId), httpClient)
-                .header("Accept", "application/json")
-                .auth(token.getToken())
-                .asJson(ClientRepresentation.class);
-        assertEquals(appId, webConsole.getClientId());
-    }
-
-    @Test
-    public void getWebConsoleApplicationWithoutPermission() throws IOException {
-        TokenUtil token = new TokenUtil("no-account-access", "password");
-        String appId = "security-admin-console";
-        SimpleHttp.Response response = SimpleHttp
-                .doGet(getAccountUrl("applications/" + appId), httpClient)
                 .header("Accept", "application/json")
                 .auth(token.getToken())
                 .asResponse();
