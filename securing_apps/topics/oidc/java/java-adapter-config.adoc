@@ -146,7 +146,6 @@ credentials::
   Currently password and jwt is supported. This is _REQUIRED_ only for clients with 'Confidential' access type.
 
 connection-pool-size::
-  Adapters will make separate HTTP invocations to the {project_name} server to turn an access code into an access token.
   This config option defines how many connections to the {project_name} server should be pooled.
   This is _OPTIONAL_.
   The default value is `20`.
