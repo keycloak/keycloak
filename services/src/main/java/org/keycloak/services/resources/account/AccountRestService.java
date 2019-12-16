@@ -56,6 +56,7 @@ import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
@@ -258,39 +259,6 @@ public class AccountRestService {
     }
 
     // TODO Federated identities
-
-    /**
-     * Returns the applications with the given id in the specified realm.
-     *
-     * @param clientId client id to search for
-     * @return application with the provided id
-     */
-    @Path("/applications/{clientId}")
-    @GET
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response getApplication(final @PathParam("clientId") String clientId) {
-        checkAccountApiEnabled();
-        auth.requireOneOf(AccountRoles.MANAGE_ACCOUNT, AccountRoles.VIEW_APPLICATIONS);
-        ClientModel client = realm.getClientByClientId(clientId);
-        if (client == null || client.isBearerOnly() || client.getBaseUrl() == null) {
-            return Cors.add(request, Response.status(Response.Status.NOT_FOUND).entity("No client with clientId: " + clientId + " found.")).build();
-        }
-
-        List<String> inUseClients = new LinkedList<>();
-        if(!session.sessions().getUserSessions(realm, client).isEmpty()) {
-            inUseClients.add(clientId);
-        }
-
-        List<String> offlineClients = new LinkedList<>();
-        if(session.sessions().getOfflineSessionsCount(realm, client) > 0) {
-            offlineClients.add(clientId);
-        }
-
-        UserConsentModel consentModel = session.users().getConsentByClient(realm, user.getId(), client.getId());
-        Map<String, UserConsentModel> consentModels = Collections.singletonMap(client.getClientId(), consentModel);
-
-        return Cors.add(request, Response.ok(modelToRepresentation(client, inUseClients, offlineClients, consentModels))).build();
-    }
 
     private ClientRepresentation modelToRepresentation(ClientModel model, List<String> inUseClients, List<String> offlineClients, Map<String, UserConsentModel> consents) {
         ClientRepresentation representation = new ClientRepresentation();
@@ -497,7 +465,7 @@ public class AccountRestService {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
-    public Response applications() {
+    public Response applications(@QueryParam("name") String name) {
         checkAccountApiEnabled();
         auth.requireOneOf(AccountRoles.MANAGE_ACCOUNT, AccountRoles.VIEW_APPLICATIONS);
 
@@ -540,10 +508,21 @@ public class AccountRestService {
             if (client.isBearerOnly() || client.getBaseUrl() == null || client.getBaseUrl().isEmpty()) {
                 continue;
             }
-            apps.add(modelToRepresentation(client, inUseClients, offlineClients, consentModels));
+            else if (matches(client, name)) {
+                apps.add(modelToRepresentation(client, inUseClients, offlineClients, consentModels));
+            }
         }
 
         return Cors.add(request, Response.ok(apps)).auth().allowedOrigins(auth.getToken()).build();
+    }
+
+    private boolean matches(ClientModel client, String name) {
+        if(name == null)
+            return true;
+        else if(client.getName() == null)
+            return false;
+        else
+            return client.getName().toLowerCase().contains(name.toLowerCase());
     }
 
     // TODO Logs
