@@ -88,6 +88,11 @@ public class LoginEventsTest extends AbstractConsoleTest {
         resultList.get(0).findElement(By.xpath("//td[text()='Error']/../td[text()='invalid_user_credentials']"));
         resultList.get(0).findElement(By.xpath("//td[text()='IP Address']/../td[text()='127.0.0.1' or text()='0:0:0:0:0:0:0:1']"));
 
+        loginEventsPage.table().filterForm().removeEventType("LOGIN_ERROR");
+        loginEventsPage.table().update();
 
+        resultList = loginEventsPage.table().rows();
+
+        assertEquals(3, resultList.size());
     }
 }

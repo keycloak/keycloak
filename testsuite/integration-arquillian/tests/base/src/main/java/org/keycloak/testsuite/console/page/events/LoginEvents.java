@@ -74,19 +74,22 @@ public class LoginEvents extends Events {
             @FindBy(id = "user")
             private WebElement userInput;
 
-            @FindBy(xpath = "//div[@id='s2id_eventTypes']/ul")
+            @FindBy(xpath = "//div[@id='eventTypes']/div[not(@id) and not(@class)]/input")
             private WebElement eventTypeInput;
 
-            @FindBy(xpath = "//div[@id='select2-drop']")
-            private WebElement eventTypeValues;
+            @FindBy(xpath = "//div[@id='eventTypes']/div[not(@id) and not(@class)]/span")
+            private WebElement eventTypeInputSelected;
+
+            @FindBy(xpath = "//div[@id='eventTypes']/ul[contains(@class, 'ui-select-choices')]")
+            private WebElement eventTypeOptions;
 
             public void addEventType(String type) {
                 eventTypeInput.click();
-                eventTypeValues.findElement(By.xpath("//div[text()='" + type + "']")).click();
+                eventTypeOptions.findElement(By.xpath("./li/div[contains(@class, 'ui-select-choices-row')]/span[normalize-space(text())='" + type + "']")).click();
             }
 
-            public void removeOperationType(String type) {
-                eventTypeInput.findElement(By.xpath("//div[text()='" + type + "']/../a]")).click();
+            public void removeEventType(String type) {
+                eventTypeInputSelected.findElement(By.xpath("//span[text()='" + type + "']/../span[contains(@class, 'ui-select-match-close')]")).click();
             }
 
             public void setClientInput(String value) {
