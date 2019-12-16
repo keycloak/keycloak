@@ -86,7 +86,7 @@ public class WebAuthnRegister implements RequiredActionProvider, CredentialRegis
     @Override
     public void requiredActionChallenge(RequiredActionContext context) {
         UserModel userModel = context.getUser();
-        String userid = userModel.getId();
+        String userid = Base64Url.encode(userModel.getId().getBytes());
         String username = userModel.getUsername();
         Challenge challenge = new DefaultChallenge();
         String challengeValue = Base64Url.encode(challenge.getValue());
