@@ -1203,8 +1203,7 @@ module.controller('ResourceServerPolicyScopeDetailCtrl', function($scope, $route
                     }, function(scopes) {
                         $scope.uiSelection.selected.scopes = [];
                         for (i = 0; i < scopes.length; i++) {
-                            scopes[i].text = scopes[i].name;
-                            $scope.uiSelection.selected.scopes.push(scopes[i].id);
+                            $scope.uiSelection.selected.scopes.push(scopes[i]);
                         }
                         var copy = angular.copy($scope.uiSelection.selected.scopes);
                         $scope.$watch('uiSelection.selected.scopes', function() {
@@ -1228,7 +1227,6 @@ module.controller('ResourceServerPolicyScopeDetailCtrl', function($scope, $route
                     }, function(scopes) {
                         $scope.uiSelection.selected.scopes = [];
                         for (i = 0; i < scopes.length; i++) {
-                            scopes[i].text = scopes[i].name;
                             $scope.uiSelection.selected.scopes.push(scopes[i]);
                         }
                         var copy = angular.copy($scope.uiSelection.selected.scopes);
@@ -1270,11 +1268,7 @@ module.controller('ResourceServerPolicyScopeDetailCtrl', function($scope, $route
             var scopes = [];
 
             for (i = 0; i < $scope.uiSelection.selected.scopes.length; i++) {
-                if ($scope.uiSelection.selected.scopes[i].id) {
-                    scopes.push($scope.uiSelection.selected.scopes[i].id);
-                } else {
-                    scopes.push($scope.uiSelection.selected.scopes[i]);
-                }
+                scopes.push($scope.uiSelection.selected.scopes[i].id);
             }
 
             $scope.policy.scopes = scopes;
@@ -1301,7 +1295,6 @@ module.controller('ResourceServerPolicyScopeDetailCtrl', function($scope, $route
                     client: client.id,
                     id: scopeId,
                 }, function (data) {
-                    data.text = data.name;
                     if (!$scope.policy.scopes) {
                         $scope.uiSelection.selected.scopes = [];
                     }
@@ -1318,11 +1311,7 @@ module.controller('ResourceServerPolicyScopeDetailCtrl', function($scope, $route
             var scopes = [];
 
             for (i = 0; i < $scope.uiSelection.selected.scopes.length; i++) {
-                if ($scope.uiSelection.selected.scopes[i].id) {
-                    scopes.push($scope.uiSelection.selected.scopes[i].id);
-                } else {
-                    scopes.push($scope.uiSelection.selected.scopes[i]);
-                }
+                scopes.push($scope.uiSelection.selected.scopes[i].id);
             }
 
             $scope.policy.scopes = scopes;

@@ -69,7 +69,7 @@
                     <ui-select data-ng-model="resource.scopes" id="scopes" theme="bootstrap" close-on-select="false" multiple>
                         <ui-select-match placeholder="{{:: 'authz-select-scope' | translate}}...">{{$item.name}}</ui-select-match>
                         <ui-select-choices minimum-input-length="1" refresh="scopesUiSelect($select.search)" refresh-delay="500"
-                                repeat="scope as scope in uiSelection.available.scopes | filter:$select.search">
+                                repeat="scope as scope in uiSelection.available.scopes">
                             {{scope.name}}
                         </ui-select-choices>
                         <ui-select-no-choice>
