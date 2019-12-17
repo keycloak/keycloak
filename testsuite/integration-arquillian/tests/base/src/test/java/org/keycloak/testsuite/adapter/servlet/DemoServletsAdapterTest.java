@@ -670,26 +670,6 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
     }
 
     @Test
-    public void testVersion() {
-        String serverVersion = adminClient.serverInfo().getInfo().getSystemInfo().getVersion();
-
-        assertNotNull(serverVersion);
-
-        Client client = ClientBuilder.newClient();
-
-        VersionRepresentation version2 = client.target(securePortal.toString()).path(AdapterConstants.K_VERSION).request().get(VersionRepresentation.class);
-        assertNotNull(version2);
-        assertNotNull(version2.getVersion());
-        assertNotNull(version2.getBuildTime());
-
-        log.info("version is " + version2.getVersion());
-        if (!suiteContext.isAdapterCompatTesting()) {
-            assertEquals(serverVersion, version2.getVersion());
-        }
-        client.close();
-    }
-
-    @Test
     public void testAuthenticated() {
         // test login to customer-portal which does a bearer request to customer-db
         securePortal.navigateTo();

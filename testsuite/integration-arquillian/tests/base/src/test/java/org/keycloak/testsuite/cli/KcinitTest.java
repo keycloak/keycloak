@@ -17,22 +17,12 @@
 
 package org.keycloak.testsuite.cli;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import javax.mail.internet.MimeMessage;
-
-import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.graphene.page.Page;
-import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
-import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.authentication.requiredactions.TermsAndConditions;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.ResourceServer;
@@ -47,6 +37,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -60,11 +51,16 @@ import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.actions.DummyRequiredActionFactory;
 import org.keycloak.testsuite.authentication.PushButtonAuthenticatorFactory;
 import org.keycloak.testsuite.pages.LoginPage;
-import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
 import org.keycloak.testsuite.util.GreenMailRule;
 import org.keycloak.testsuite.util.MailUtils;
 import org.keycloak.utils.TotpUtils;
 import org.openqa.selenium.By;
+
+import javax.mail.internet.MimeMessage;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Test that clients can override auth flows
@@ -85,13 +81,6 @@ public class KcinitTest extends AbstractTestRealmKeycloakTest {
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
     }
-
-    @Deployment
-    public static WebArchive deploy() {
-        return RunOnServerDeployment.create(UserResource.class)
-                .addPackages(true, "org.keycloak.testsuite");
-    }
-
 
     @Before
     public void setupFlows() {
@@ -176,7 +165,7 @@ public class KcinitTest extends AbstractTestRealmKeycloakTest {
             realm.updateAuthenticationFlow(copy);
             execution = new AuthenticationExecutionModel();
             execution.setParentFlow(browser.getId());
-            execution.setRequirement(AuthenticationExecutionModel.Requirement.ALTERNATIVE);
+            execution.setRequirement(AuthenticationExecutionModel.Requirement.REQUIRED);
             execution.setFlowId(copy.getId());
             execution.setPriority(30);
             execution.setAuthenticatorFlow(true);
@@ -630,7 +619,9 @@ public class KcinitTest extends AbstractTestRealmKeycloakTest {
             testingClient.server().run(session -> {
                 RealmModel realm = session.realms().getRealmByName("test");
                 UserModel user = session.users().getUserByUsername("wburke", realm);
-                session.userCredentialManager().disableCredentialType(realm, user, CredentialModel.OTP);
+                for (CredentialModel c: session.userCredentialManager().getStoredCredentialsByType(realm, user, OTPCredentialModel.TYPE)){
+                    session.userCredentialManager().removeStoredCredential(realm, user, c.getId());
+                }
             });
         }
 

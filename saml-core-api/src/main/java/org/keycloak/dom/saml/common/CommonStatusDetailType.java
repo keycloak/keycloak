@@ -42,7 +42,7 @@ import java.util.List;
  */
 public class CommonStatusDetailType implements Serializable {
 
-    protected List<Object> any = new ArrayList<Object>();
+    protected List<Object> any = new ArrayList<>();
 
     /**
      * Add status detail

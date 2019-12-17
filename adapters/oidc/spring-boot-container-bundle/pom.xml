@@ -4,7 +4,7 @@
     <parent>
       <artifactId>keycloak-parent</artifactId>
       <groupId>org.keycloak</groupId>
-      <version>8.0.0-SNAPSHOT</version>
+      <version>9.0.0-SNAPSHOT</version>
       <relativePath>../../../pom.xml</relativePath>
     </parent>
     <artifactId>spring-boot-container-bundle</artifactId>
@@ -22,7 +22,7 @@
         </dependency>
          <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-jetty93-adapter</artifactId>
+            <artifactId>keycloak-jetty94-adapter</artifactId>
             <scope>compile</scope>
         </dependency>
     </dependencies>
@@ -43,7 +43,7 @@
                                 <includes>
                                     <include>org.keycloak:keycloak-tomcat-adapter</include>
                                     <include>org.keycloak:keycloak-undertow-adapter</include>
-                                    <include>org.keycloak:keycloak-jetty93-adapter</include>
+                                    <include>org.keycloak:keycloak-jetty94-adapter</include>
                                     <include>org.keycloak:keycloak-tomcat-core-adapter</include>
                                     <include>org.keycloak:keycloak-tomcat-adapter-spi</include>
                                     <include>org.keycloak:keycloak-undertow-adapter</include>

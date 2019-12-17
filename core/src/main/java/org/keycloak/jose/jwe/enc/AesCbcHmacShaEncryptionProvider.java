@@ -20,6 +20,7 @@ package org.keycloak.jose.jwe.enc;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.security.InvalidKeyException;
 import java.security.Key;
@@ -67,7 +68,7 @@ public abstract class AesCbcHmacShaEncryptionProvider implements JWEEncryptionPr
 
         byte[] cipherBytes = encryptBytes(contentBytes, initializationVector, aesKey);
 
-        byte[] aad = jwe.getBase64Header().getBytes("UTF-8");
+        byte[] aad = jwe.getBase64Header().getBytes(StandardCharsets.UTF_8);
         byte[] authenticationTag = computeAuthenticationTag(aad, initializationVector, cipherBytes, hmacShaKey);
 
         jwe.setEncryptedContentInfo(initializationVector, cipherBytes, authenticationTag);
@@ -91,7 +92,7 @@ public abstract class AesCbcHmacShaEncryptionProvider implements JWEEncryptionPr
             throw new IllegalStateException("Length of aes key should be " + expectedAesKeyLength +", but was " + aesKey.getEncoded().length);
         }
 
-        byte[] aad = jwe.getBase64Header().getBytes("UTF-8");
+        byte[] aad = jwe.getBase64Header().getBytes(StandardCharsets.UTF_8);
         byte[] authenticationTag = computeAuthenticationTag(aad, jwe.getInitializationVector(), jwe.getEncryptedContent(), hmacShaKey);
 
         byte[] expectedAuthTag = jwe.getAuthenticationTag();

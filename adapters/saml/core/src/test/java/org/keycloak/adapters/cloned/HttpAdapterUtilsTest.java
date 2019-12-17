@@ -8,9 +8,11 @@ package org.keycloak.adapters.cloned;
 import java.io.InputStream;
 import java.security.cert.X509Certificate;
 import java.util.List;
+import javax.xml.crypto.XMLStructure;
 import javax.xml.crypto.dsig.keyinfo.KeyInfo;
 import javax.xml.crypto.dsig.keyinfo.KeyName;
 import javax.xml.crypto.dsig.keyinfo.X509Data;
+import org.hamcrest.Matcher;
 import static org.hamcrest.CoreMatchers.*;
 import org.junit.Test;
 import static org.junit.Assert.*;
@@ -25,7 +27,7 @@ import org.keycloak.saml.common.exceptions.ParsingException;
  */
 public class HttpAdapterUtilsTest {
 
-    private <T> T getContent(List<Object> objects, Class<T> clazz) {
+    private <T> T getContent(List<?> objects, Class<T> clazz) {
         for (Object o : objects) {
             if (clazz.isInstance(o)) {
                 return (T) o;
@@ -49,10 +51,14 @@ public class HttpAdapterUtilsTest {
         X509Data x509data;
         X509Certificate x509certificate;
 
+        Matcher<Iterable<? super XMLStructure>> x509DataMatcher = hasItem(instanceOf(X509Data.class));
+        Matcher<Iterable<? super XMLStructure>> keyNameMatcher = hasItem(instanceOf(KeyName.class));
+
         ki = res.get(KeycloakSamlAdapterV1QNames.ATTR_SIGNING.getQName().getLocalPart()).get(0);
         assertThat(ki.getContent().size(), equalTo(2));
-        assertThat((List<Object>) ki.getContent(), hasItem(instanceOf(X509Data.class)));
-        assertThat((List<Object>) ki.getContent(), hasItem(instanceOf(KeyName.class)));
+
+        assertThat((Iterable<? super XMLStructure>) ki.getContent(), x509DataMatcher);
+        assertThat((Iterable<? super XMLStructure>) ki.getContent(), keyNameMatcher);
 
         keyName = getContent(ki.getContent(), KeyName.class);
         assertThat(keyName.getName(), equalTo("rJkJlvowmv1Id74GznieaAC5jU5QQp_ILzuG-GsweTI"));
@@ -65,8 +71,8 @@ public class HttpAdapterUtilsTest {
 
         ki = res.get(KeycloakSamlAdapterV1QNames.ATTR_SIGNING.getQName().getLocalPart()).get(1);
         assertThat(ki.getContent().size(), equalTo(2));
-        assertThat((List<Object>) ki.getContent(), hasItem(instanceOf(X509Data.class)));
-        assertThat((List<Object>) ki.getContent(), hasItem(instanceOf(KeyName.class)));
+        assertThat((Iterable<? super XMLStructure>) ki.getContent(), x509DataMatcher);
+        assertThat((Iterable<? super XMLStructure>) ki.getContent(), keyNameMatcher);
 
         keyName = getContent(ki.getContent(), KeyName.class);
         assertThat(keyName.getName(), equalTo("BzYc4GwL8HVrAhNyNdp-lTah2DvU9jU03kby9Ynohr4"));

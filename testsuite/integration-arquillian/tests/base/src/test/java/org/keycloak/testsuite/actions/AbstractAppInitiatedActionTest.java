@@ -16,11 +16,11 @@
  */
 package org.keycloak.testsuite.actions;
 
-import javax.ws.rs.core.UriBuilder;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.utils.URLEncodedUtils;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
 import org.junit.Rule;
-
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
@@ -28,6 +28,11 @@ import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.util.WaitUtils;
+
+import javax.ws.rs.core.UriBuilder;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.List;
 
 /**
  * @author Stan Silvert
@@ -50,13 +55,8 @@ public abstract class AbstractAppInitiatedActionTest extends AbstractTestRealmKe
     }
     
     protected void doAIA() {
-        doAIA(false);
-    }
-    
-    protected void doAIA(boolean silentCancel) {
         UriBuilder builder = OIDCLoginProtocolService.authUrl(authServerPage.createUriBuilder());
         String uri = builder.queryParam("kc_action", this.aiaAction)
-                            .queryParam("silent_cancel", Boolean.toString(silentCancel))
                             .queryParam("response_type", "code")
                             .queryParam("client_id", "test-app")
                             .queryParam("scope", "openid")
@@ -65,15 +65,25 @@ public abstract class AbstractAppInitiatedActionTest extends AbstractTestRealmKe
         driver.navigate().to(uri);
         WaitUtils.waitForPageToLoad();
     }
-    
-    protected void assertRedirectSuccess() {
+
+    protected void assertKcActionStatus(String expectedStatus) {
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
-    }
-    
-    protected void assertCancelMessage() {
-        String url = this.driver.getCurrentUrl();
-        Assert.assertTrue("Expected 'error=interaction_required' in url", url.contains("error=interaction_required"));
-        Assert.assertTrue("Expected 'error_description=User+cancelled+aplication-initiated+action.' in url", url.contains("error_description=User+cancelled+aplication-initiated+action."));
+
+        URI url = null;
+        try {
+            url = new URI(this.driver.getCurrentUrl());
+        } catch (URISyntaxException e) {
+            throw new RuntimeException(e);
+        }
+        List<NameValuePair> pairs = URLEncodedUtils.parse(url, "UTF-8");
+        String kcActionStatus = null;
+        for (NameValuePair p : pairs) {
+            if (p.getName().equals("kc_action_status")) {
+                kcActionStatus = p.getValue();
+                break;
+            }
+        }
+        Assert.assertEquals(expectedStatus, kcActionStatus);
     }
     
     protected void assertSilentCancelMessage() {

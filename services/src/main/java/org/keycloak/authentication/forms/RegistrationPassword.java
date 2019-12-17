@@ -31,11 +31,11 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.models.utils.FormMessage;
 import org.keycloak.policy.PasswordPolicyManagerProvider;
 import org.keycloak.policy.PolicyError;
 import org.keycloak.provider.ProviderConfigProperty;
-import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.validation.Validation;
 
@@ -91,9 +91,6 @@ public class RegistrationPassword implements FormAction, FormActionFactory {
     public void success(FormContext context) {
         MultivaluedMap<String, String> formData = context.getHttpRequest().getDecodedFormParameters();
         String password = formData.getFirst(RegistrationPage.FIELD_PASSWORD);
-        UserCredentialModel credentials = new UserCredentialModel();
-        credentials.setType(CredentialRepresentation.PASSWORD);
-        credentials.setValue(password);
         UserModel user = context.getUser();
         try {
             context.getSession().userCredentialManager().updateCredential(context.getRealm(), user, UserCredentialModel.password(formData.getFirst("password"), false));
@@ -140,7 +137,7 @@ public class RegistrationPassword implements FormAction, FormActionFactory {
 
     @Override
     public String getReferenceCategory() {
-        return UserCredentialModel.PASSWORD;
+        return PasswordCredentialModel.TYPE;
     }
 
     @Override

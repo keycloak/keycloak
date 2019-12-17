@@ -21,6 +21,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.regex.Pattern;
 import org.jboss.logging.Logger;
+import org.keycloak.common.Version;
 import org.keycloak.migration.migrators.MigrateTo1_2_0;
 import org.keycloak.migration.migrators.MigrateTo1_3_0;
 import org.keycloak.migration.migrators.MigrateTo1_4_0;
@@ -45,6 +46,8 @@ import org.keycloak.migration.migrators.MigrateTo4_0_0;
 import org.keycloak.migration.migrators.MigrateTo4_2_0;
 import org.keycloak.migration.migrators.MigrateTo4_6_0;
 import org.keycloak.migration.migrators.MigrateTo6_0_0;
+import org.keycloak.migration.migrators.MigrateTo8_0_0;
+import org.keycloak.migration.migrators.MigrateTo9_0_0;
 import org.keycloak.migration.migrators.Migration;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -81,30 +84,34 @@ public class MigrationModelManager {
             new MigrateTo4_0_0(),
             new MigrateTo4_2_0(),
             new MigrateTo4_6_0(),
-            new MigrateTo6_0_0()
+            new MigrateTo6_0_0(),
+            new MigrateTo8_0_0(),
+            new MigrateTo9_0_0()
     };
 
     public static void migrate(KeycloakSession session) {
-        ModelVersion latest = migrations[migrations.length-1].getVersion();
         MigrationModel model = session.realms().getMigrationModel();
-        ModelVersion stored = null;
-        if (model.getStoredVersion() != null) {
-            stored = new ModelVersion(model.getStoredVersion());
-            if (latest.equals(stored)) {
-                return;
-            }
-        }
 
-        for (Migration m : migrations) {
-            if (stored == null || stored.lessThan(m.getVersion())) {
-                if (stored != null) {
-                    logger.debugf("Migrating older model to %s", m.getVersion());
+        ModelVersion currentVersion = new ModelVersion(Version.VERSION_KEYCLOAK);
+        ModelVersion latestUpdate = migrations[migrations.length-1].getVersion();
+        ModelVersion databaseVersion = model.getStoredVersion() != null ? new ModelVersion(model.getStoredVersion()) : null;
+
+        if (databaseVersion == null || databaseVersion.lessThan(latestUpdate)) {
+            for (Migration m : migrations) {
+                if (databaseVersion == null || databaseVersion.lessThan(m.getVersion())) {
+                    if (databaseVersion != null) {
+                        logger.debugf("Migrating older model to %s", m.getVersion());
+                    }
+                    m.migrate(session);
                 }
-                m.migrate(session);
             }
         }
 
-        model.setStoredVersion(latest.toString());
+        if (databaseVersion == null || databaseVersion.lessThan(currentVersion)) {
+            model.setStoredVersion(currentVersion.toString());
+        }
+
+        Version.RESOURCES_VERSION = model.getResourcesTag();
     }
 
     public static final ModelVersion RHSSO_VERSION_7_0_KEYCLOAK_VERSION = new ModelVersion("1.9.8");
@@ -124,6 +131,9 @@ public class MigrationModelManager {
         ModelVersion stored = null;
         if (rep.getKeycloakVersion() != null) {
             stored = convertRHSSOVersionToKeycloakVersion(rep.getKeycloakVersion());
+            if (stored == null) {
+                stored = new ModelVersion(rep.getKeycloakVersion());
+            }
         }
         if (stored == null) {
             stored = migrations[0].getVersion();

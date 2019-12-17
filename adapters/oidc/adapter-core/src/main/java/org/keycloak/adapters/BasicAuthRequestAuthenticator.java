@@ -50,7 +50,7 @@ public class BasicAuthRequestAuthenticator extends BearerTokenRequestAuthenticat
 
     public AuthOutcome authenticate(HttpFacade exchange)  {
         List<String> authHeaders = exchange.getRequest().getHeaders("Authorization");
-        if (authHeaders == null || authHeaders.size() == 0) {
+        if (authHeaders == null || authHeaders.isEmpty()) {
             challenge = challengeResponse(exchange, OIDCAuthenticationError.Reason.NO_AUTHORIZATION_HEADER, null, null);
             return AuthOutcome.NOT_ATTEMPTED;
         }
@@ -58,7 +58,7 @@ public class BasicAuthRequestAuthenticator extends BearerTokenRequestAuthenticat
         tokenString = null;
         for (String authHeader : authHeaders) {
             String[] split = authHeader.trim().split("\\s+");
-            if (split == null || split.length != 2) continue;
+            if (split.length != 2) continue;
             if (!split[0].equalsIgnoreCase("Basic")) continue;
             tokenString = split[1];
         }

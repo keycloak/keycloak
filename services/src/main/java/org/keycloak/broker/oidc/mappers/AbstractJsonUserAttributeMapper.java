@@ -26,6 +26,7 @@ import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
 import org.keycloak.provider.ProviderConfigProperty;
 
 import java.util.ArrayList;
@@ -165,51 +166,51 @@ public abstract class AbstractJsonUserAttributeMapper extends AbstractIdentityPr
 		return value;
 	}
 
+
 	public static Object getJsonValue(JsonNode baseNode, String fieldPath) {
 		logger.debug("Going to process JsonNode path " + fieldPath + " on data " + baseNode);
 		if (baseNode != null) {
 
-			int idx = fieldPath.indexOf(JSON_PATH_DELIMITER);
-
-			String currentFieldName = fieldPath;
-			if (idx > 0) {
-				currentFieldName = fieldPath.substring(0, idx).trim();
-				if (currentFieldName.isEmpty()) {
-					logger.debug("JSON path is invalid " + fieldPath);
-					return null;
-				}
-			}
-
-			String currentNodeName = currentFieldName;
-			int arrayIndex = -1;
-			if (currentFieldName.endsWith("]")) {
-				int bi = currentFieldName.indexOf("[");
-				if (bi == -1) {
-					logger.debug("Invalid array index construct in " + currentFieldName);
-					return null;
-				}
-				try {
-				String is = currentFieldName.substring(bi+1, currentFieldName.length() - 1).trim();
-					arrayIndex = Integer.parseInt(is);
-				} catch (Exception e) {
-					logger.debug("Invalid array index construct in " + currentFieldName);
-					return null;
-				}
-				currentNodeName = currentFieldName.substring(0,bi).trim();
-			}
-
-			JsonNode currentNode = baseNode.get(currentNodeName);
-			if (arrayIndex > -1 && currentNode.isArray()) {
-				logger.debug("Going to take array node at index " + arrayIndex);
-				currentNode = currentNode.get(arrayIndex);
-			}
-
-			if (currentNode == null) {
-				logger.debug("JsonNode not found for name " + currentFieldName);
+			List<String> fields = OIDCAttributeMapperHelper.splitClaimPath(fieldPath);
+			if (fields.isEmpty() || fieldPath.endsWith(".")) {
+				logger.debug("JSON path is invalid " + fieldPath);
 				return null;
 			}
 
-			if (idx < 0) {
+			JsonNode currentNode = baseNode;
+			for (String currentFieldName : fields) {
+
+				// if array path, retrieve field name and index
+				String currentNodeName = currentFieldName;
+				int arrayIndex = -1;
+				if (currentFieldName.endsWith("]")) {
+					int bi = currentFieldName.indexOf("[");
+					if (bi == -1) {
+						logger.debug("Invalid array index construct in " + currentFieldName);
+						return null;
+					}
+					try {
+						String is = currentFieldName.substring(bi + 1, currentFieldName.length() - 1).trim();
+						arrayIndex = Integer.parseInt(is);
+						if( arrayIndex < 0) throw new ArrayIndexOutOfBoundsException();
+					} catch (Exception e) {
+						logger.debug("Invalid array index construct in " + currentFieldName);
+						return null;
+					}
+					currentNodeName = currentFieldName.substring(0, bi).trim();
+				}
+
+				currentNode = currentNode.get(currentNodeName);
+				if (arrayIndex > -1 && currentNode.isArray()) {
+					logger.debug("Going to take array node at index " + arrayIndex);
+					currentNode = currentNode.get(arrayIndex);
+				}
+
+				if (currentNode == null) {
+					logger.debug("JsonNode not found for name " + currentFieldName);
+					return null;
+				}
+
 				if (currentNode.isArray()) {
 					List<String> values = new ArrayList<>();
 					for (JsonNode childNode : currentNode) {
@@ -222,20 +223,22 @@ public abstract class AbstractJsonUserAttributeMapper extends AbstractIdentityPr
 					if (values.isEmpty()) {
 						return null;
 					}
-					return arrayIndex == idx? values : null;
-				}
-				if (currentNode.isNull()) {
+					return values ; 
+				} else if (currentNode.isNull()) {
+
 					logger.debug("JsonNode is null node for name " + currentFieldName);
 					return null;
-				} else if (!currentNode.isValueNode()) {
-					return currentNode;
+				} else if (currentNode.isValueNode()) {
+					String ret = currentNode.asText();
+					if (ret != null && !ret.trim().isEmpty())
+						return ret.trim();
+					else
+						return null;
+
 				}
-				String ret = currentNode.asText();
-				if (ret != null && !ret.trim().isEmpty())
-					return ret.trim();
-			} else {
-				return getJsonValue(currentNode, fieldPath.substring(idx + 1));
+
 			}
+			return currentNode;
 		}
 		return null;
 	}

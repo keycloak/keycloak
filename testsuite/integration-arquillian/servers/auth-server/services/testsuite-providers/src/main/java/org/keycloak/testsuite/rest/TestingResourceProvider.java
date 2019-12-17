@@ -18,9 +18,9 @@
 package org.keycloak.testsuite.rest;
 
 import org.jboss.resteasy.annotations.cache.NoCache;
-import org.jboss.resteasy.spi.BadRequestException;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.common.Profile;
+import org.keycloak.common.util.HtmlUtils;
 import org.keycloak.common.util.Time;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.events.Event;
@@ -31,7 +31,6 @@ import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.events.admin.AdminEventQuery;
 import org.keycloak.events.admin.AuthDetails;
 import org.keycloak.events.admin.OperationType;
-import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
@@ -71,7 +70,6 @@ import org.keycloak.testsuite.rest.resource.TestCacheResource;
 import org.keycloak.testsuite.rest.resource.TestJavascriptResource;
 import org.keycloak.testsuite.rest.resource.TestLDAPResource;
 import org.keycloak.testsuite.rest.resource.TestingExportImportResource;
-import org.keycloak.testsuite.runonserver.ModuleUtil;
 import org.keycloak.testsuite.runonserver.FetchOnServer;
 import org.keycloak.testsuite.runonserver.RunOnServer;
 import org.keycloak.testsuite.runonserver.SerializationUtil;
@@ -79,6 +77,7 @@ import org.keycloak.timer.TimerProvider;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.MediaType;
 
+import javax.ws.rs.BadRequestException;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.NotFoundException;
@@ -91,7 +90,10 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Cookie;
 import javax.ws.rs.core.Response;
-
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.text.ParseException;
@@ -101,6 +103,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -782,8 +785,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
     @Produces(MediaType.TEXT_PLAIN_UTF_8)
     public String runOnServer(String runOnServer) throws Exception {
         try {
-            ClassLoader cl = ModuleUtil.isModules() ? ModuleUtil.getClassLoader() : getClass().getClassLoader();
-            Object r = SerializationUtil.decode(runOnServer, cl);
+            Object r = SerializationUtil.decode(runOnServer, TestClassLoader.getInstance());
 
             if (r instanceof FetchOnServer) {
                 Object result = ((FetchOnServer) r).run(session);
@@ -807,9 +809,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
     public String runModelTestOnServer(@QueryParam("testClassName") String testClassName,
                                        @QueryParam("testMethodName") String testMethodName) throws Exception {
         try {
-            ClassLoader cl = ModuleUtil.isModules() ? ModuleUtil.getClassLoader() : getClass().getClassLoader();
-
-            Class testClass = cl.loadClass(testClassName);
+            Class testClass = TestClassLoader.getInstance().loadClass(testClassName);
             Method testMethod = testClass.getDeclaredMethod(testMethodName, KeycloakSession.class);
 
             Object test = testClass.newInstance();
@@ -831,6 +831,25 @@ public class TestingResourceProvider implements RealmResourceProvider {
         return new TestJavascriptResource();
     }
 
+    private void setFeatureInProfileFile(File file, Profile.Feature featureProfile, String newState) {
+        Properties properties = new Properties();
+        if (file.isFile() && file.exists()) {
+            try (FileInputStream fis = new FileInputStream(file)) {
+                properties.load(fis);
+            } catch (IOException e) {
+                throw new RuntimeException("Unable to read profile.properties file");
+            }
+        }
+
+        properties.setProperty("feature." + featureProfile.toString().toLowerCase(), newState);
+
+        try (FileOutputStream fos = new FileOutputStream(file)) {
+            properties.store(fos, null);
+        } catch (IOException e) {
+            throw new RuntimeException("Unable to write to profile.properties file");
+        }
+    }
+
     @POST
     @Path("/enable-feature/{feature}")
     @Consumes(MediaType.APPLICATION_JSON)
@@ -848,6 +867,13 @@ public class TestingResourceProvider implements RealmResourceProvider {
             return Response.ok().build();
 
         System.setProperty("keycloak.profile.feature." + featureProfile.toString().toLowerCase(), "enabled");
+
+        String jbossServerConfigDir = System.getProperty("jboss.server.config.dir");
+        // If we are in jboss-based container, we need to write profile.properties file, otherwise the change in system property will disappear after restart
+        if (jbossServerConfigDir != null) {
+            setFeatureInProfileFile(new File(jbossServerConfigDir, "profile.properties"), featureProfile, "enabled");
+        }
+
         Profile.init();
 
         if (Profile.isFeatureEnabled(featureProfile))
@@ -873,6 +899,13 @@ public class TestingResourceProvider implements RealmResourceProvider {
             return Response.ok().build();
 
         System.getProperties().remove("keycloak.profile.feature." + featureProfile.toString().toLowerCase());
+
+        String jbossServerConfigDir = System.getProperty("jboss.server.config.dir");
+        // If we are in jboss-based container, we need to write profile.properties file, otherwise the change in system property will disappear after restart
+        if (jbossServerConfigDir != null) {
+            setFeatureInProfileFile(new File(jbossServerConfigDir, "profile.properties"), featureProfile, "disabled");
+        }
+
         Profile.init();
 
         if (!Profile.isFeatureEnabled(featureProfile))
@@ -880,6 +913,65 @@ public class TestingResourceProvider implements RealmResourceProvider {
         else
             return Response.status(Response.Status.NOT_FOUND).build();
     }
+
+
+    /**
+     * This will send POST request to specified URL with specified form parameters. It's not easily possible to "trick" web driver to send POST
+     * request with custom parameters, which are not directly available in the form.
+     *
+     * See URLUtils.sendPOSTWithWebDriver for more details
+     *
+     * @param postRequestUrl Absolute URL. It can include query parameters etc. The POST request will be send to this URL
+     * @param encodedFormParameters Encoded parameters in the form of "param1=value1:param2=value2"
+     * @return
+     */
+    @GET
+    @Path("/simulate-post-request")
+    @Produces(MediaType.TEXT_HTML_UTF_8)
+    public Response simulatePostRequest(@QueryParam("postRequestUrl") String postRequestUrl,
+                                         @QueryParam("encodedFormParameters") String encodedFormParameters) {
+        Map<String, String> params = new HashMap<>();
+
+        // Parse parameters to use in the POST request
+        for (String param : encodedFormParameters.split("&")) {
+            String[] paramParts = param.split("=");
+            String value = paramParts.length == 2 ? paramParts[1] : "";
+            params.put(paramParts[0], value);
+        }
+
+        // Send the POST request "manually"
+        StringBuilder builder = new StringBuilder();
+
+        builder.append("<HTML>");
+        builder.append("  <HEAD>");
+        builder.append("    <TITLE>OIDC Form_Post Response</TITLE>");
+        builder.append("  </HEAD>");
+        builder.append("  <BODY Onload=\"document.forms[0].submit()\">");
+
+        builder.append("    <FORM METHOD=\"POST\" ACTION=\"" + postRequestUrl + "\">");
+
+        for (Map.Entry<String, String> param : params.entrySet()) {
+            builder.append("  <INPUT TYPE=\"HIDDEN\" NAME=\"")
+                    .append(param.getKey())
+                    .append("\" VALUE=\"")
+                    .append(HtmlUtils.escapeAttribute(param.getValue()))
+                    .append("\" />");
+        }
+
+        builder.append("      <NOSCRIPT>");
+        builder.append("        <P>JavaScript is disabled. We strongly recommend to enable it. Click the button below to continue .</P>");
+        builder.append("        <INPUT name=\"continue\" TYPE=\"SUBMIT\" VALUE=\"CONTINUE\" />");
+        builder.append("      </NOSCRIPT>");
+        builder.append("    </FORM>");
+        builder.append("  </BODY>");
+        builder.append("</HTML>");
+
+        return Response.status(Response.Status.OK)
+                .type(javax.ws.rs.core.MediaType.TEXT_HTML_TYPE)
+                .entity(builder.toString()).build();
+
+    }
+
 
     private RealmModel getRealmByName(String realmName) {
         RealmProvider realmProvider = session.getProvider(RealmProvider.class);

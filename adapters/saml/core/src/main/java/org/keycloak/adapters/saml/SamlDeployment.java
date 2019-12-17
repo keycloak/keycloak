@@ -168,6 +168,13 @@ public interface SamlDeployment {
 
     Set<String> getRoleAttributeNames();
 
+    /**
+     * Obtains the {@link RoleMappingsProvider} that was configured for the SP.
+     *
+     * @return a reference to the configured {@link RoleMappingsProvider}.
+     */
+    RoleMappingsProvider getRoleMappingsProvider();
+
     enum PrincipalNamePolicy {
         FROM_NAME_ID,
         FROM_ATTRIBUTE
@@ -175,5 +182,7 @@ public interface SamlDeployment {
     PrincipalNamePolicy getPrincipalNamePolicy();
     String getPrincipalAttributeName();
     boolean isAutodetectBearerOnly();
+
+    boolean isKeepDOMAssertion();
 
 }

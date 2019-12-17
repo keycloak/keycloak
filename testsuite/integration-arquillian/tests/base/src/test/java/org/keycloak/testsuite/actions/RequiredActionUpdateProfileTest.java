@@ -38,6 +38,8 @@ import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginUpdateProfileEditUsernameAllowedPage;
 import org.keycloak.testsuite.util.UserBuilder;
 
+import static org.junit.Assert.assertFalse;
+
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
@@ -92,6 +94,7 @@ public class RequiredActionUpdateProfileTest extends AbstractTestRealmKeycloakTe
         loginPage.login("test-user@localhost", "password");
 
         updateProfilePage.assertCurrent();
+        assertFalse(updateProfilePage.isCancelDisplayed());
 
         updateProfilePage.update("New first", "New last", "new@email.com", "test-user@localhost");
 

@@ -19,8 +19,6 @@ package org.keycloak.testsuite.admin.realm;
 
 import org.apache.commons.io.IOUtils;
 import org.hamcrest.Matchers;
-import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -28,8 +26,10 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.common.util.Time;
+import org.keycloak.events.EventType;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
+import org.keycloak.events.log.JBossLoggingEventListenerProviderFactory;
 import org.keycloak.models.Constants;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.saml.SamlProtocol;
@@ -39,6 +39,7 @@ import org.keycloak.representations.idm.AdminEventRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
+import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -49,8 +50,9 @@ import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
 import org.keycloak.testsuite.auth.page.AuthRealm;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
-import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
+import org.keycloak.testsuite.events.EventsListenerProviderFactory;
 import org.keycloak.testsuite.runonserver.RunHelpers;
+import org.keycloak.testsuite.updaters.Creator;
 import org.keycloak.testsuite.util.AdminEventPaths;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.CredentialBuilder;
@@ -60,6 +62,7 @@ import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.utils.tls.TLSUtils;
 import org.keycloak.util.JsonSerialization;
 
+import javax.ws.rs.BadRequestException;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
@@ -70,24 +73,21 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import javax.ws.rs.BadRequestException;
+import java.util.stream.Collectors;
 
-import static org.junit.Assert.*;
-import org.keycloak.events.EventType;
-import org.keycloak.events.log.JBossLoggingEventListenerProviderFactory;
-import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
-import org.keycloak.testsuite.events.EventsListenerProviderFactory;
-import org.keycloak.testsuite.updaters.Creator;
+import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class RealmTest extends AbstractAdminTest {
-
-    @Deployment
-    public static WebArchive deploy() {
-        return RunOnServerDeployment.create();
-    }
 
     @Rule
     public AssertEvents events = new AssertEvents(this);
@@ -131,12 +131,14 @@ public class RealmTest extends AbstractAdminTest {
             Assert.assertEquals(1, adminClient.realm("master").clients().findByClientId("new-realm").size());
 
             ClientRepresentation adminConsoleClient = adminClient.realm("new").clients().findByClientId(Constants.ADMIN_CONSOLE_CLIENT_ID).get(0);
-            assertEquals("/auth/admin/new/console/index.html", adminConsoleClient.getBaseUrl());
-            assertEquals("/auth/admin/new/console/*", adminConsoleClient.getRedirectUris().get(0));
+            assertEquals(Constants.AUTH_ADMIN_URL_PROP, adminConsoleClient.getRootUrl());
+            assertEquals("/admin/new/console/", adminConsoleClient.getBaseUrl());
+            assertEquals("/admin/new/console/*", adminConsoleClient.getRedirectUris().get(0));
 
             ClientRepresentation accountClient = adminClient.realm("new").clients().findByClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID).get(0);
-            assertEquals("/auth/realms/new/account", accountClient.getBaseUrl());
-            assertEquals("/auth/realms/new/account/*", accountClient.getRedirectUris().get(0));
+            assertEquals(Constants.AUTH_BASE_URL_PROP, accountClient.getRootUrl());
+            assertEquals("/realms/new/account/", accountClient.getBaseUrl());
+            assertEquals("/realms/new/account/*", accountClient.getRedirectUris().get(0));
         } finally {
             adminClient.realms().realm(rep.getRealm()).remove();
         }
@@ -150,6 +152,9 @@ public class RealmTest extends AbstractAdminTest {
         adminClient.realms().create(rep);
 
         Assert.assertNames(adminClient.realms().findAll(), "master", AuthRealm.TEST, REALM_NAME, "new-realm");
+
+        List<String> clients = adminClient.realms().realm("new-realm").clients().findAll().stream().map(ClientRepresentation::getClientId).collect(Collectors.toList());
+        assertThat(clients, containsInAnyOrder("account", "account-console", "admin-cli", "broker", "realm-management", "security-admin-console"));
 
         adminClient.realms().realm("new-realm").remove();
 
@@ -661,7 +666,7 @@ public class RealmTest extends AbstractAdminTest {
         GlobalRequestResult globalRequestResult = realm.pushRevocation();
         assertAdminEvents.assertEvent(realmId, OperationType.ACTION, "push-revocation", globalRequestResult, ResourceType.REALM);
 
-        assertThat(globalRequestResult.getSuccessRequests(), Matchers.containsInAnyOrder(oauth.AUTH_SERVER_ROOT + "/realms/master/app/admin"));
+        assertThat(globalRequestResult.getSuccessRequests(), containsInAnyOrder(oauth.AUTH_SERVER_ROOT + "/realms/master/app/admin"));
         assertNull(globalRequestResult.getFailedRequests());
 
         PushNotBeforeAction adminPushNotBefore = testingClient.testApp().getAdminPushNotBefore();
@@ -683,8 +688,8 @@ public class RealmTest extends AbstractAdminTest {
         GlobalRequestResult globalRequestResult = realm.pushRevocation();
         assertAdminEvents.assertEvent(realmId, OperationType.ACTION, "push-revocation", globalRequestResult, ResourceType.REALM);
 
-        assertThat(globalRequestResult.getSuccessRequests(), Matchers.containsInAnyOrder(oauth.AUTH_SERVER_ROOT + "/realms/master/app/admin"));
-        assertThat(globalRequestResult.getFailedRequests(), Matchers.containsInAnyOrder(oauth.AUTH_SERVER_ROOT + "/realms/master/saml-app/saml"));
+        assertThat(globalRequestResult.getSuccessRequests(), containsInAnyOrder(oauth.AUTH_SERVER_ROOT + "/realms/master/app/admin"));
+        assertThat(globalRequestResult.getFailedRequests(), containsInAnyOrder(oauth.AUTH_SERVER_ROOT + "/realms/master/saml-app/saml"));
 
         PushNotBeforeAction adminPushNotBefore = testingClient.testApp().getAdminPushNotBefore();
         assertEquals(time, adminPushNotBefore.getNotBefore());
@@ -750,7 +755,8 @@ public class RealmTest extends AbstractAdminTest {
         System.out.println(sessionStats.size());
 
         oauth.doLogin("testuser", "password");
-        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(oauth.getCurrentQuery().get(OAuth2Constants.CODE), "secret");
+        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(oauth.getCurrentQuery().get(OAuth2Constants.CODE),
+            "secret");
         assertEquals(200, tokenResponse.getStatusCode());
 
         sessionStats = realm.getClientSessionStats();
@@ -758,6 +764,13 @@ public class RealmTest extends AbstractAdminTest {
         assertEquals(1, sessionStats.size());
         assertEquals("test-app", sessionStats.get(0).get("clientId"));
         assertEquals("1", sessionStats.get(0).get("active"));
+
+        String clientUuid = sessionStats.get(0).get("id");
+        realm.clients().get(clientUuid).remove();
+
+        sessionStats = realm.getClientSessionStats();
+
+        assertEquals(0, sessionStats.size());
     }
 
     private void setupTestAppAndUser() {

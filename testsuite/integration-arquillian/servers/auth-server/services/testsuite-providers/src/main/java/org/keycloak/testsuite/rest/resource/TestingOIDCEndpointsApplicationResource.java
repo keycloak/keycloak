@@ -18,8 +18,9 @@
 package org.keycloak.testsuite.rest.resource;
 
 import org.jboss.resteasy.annotations.cache.NoCache;
-import org.jboss.resteasy.spi.BadRequestException;
+import javax.ws.rs.BadRequestException;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.common.util.Base64;
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.crypto.Algorithm;
@@ -27,6 +28,7 @@ import org.keycloak.crypto.AsymmetricSignatureSignerContext;
 import org.keycloak.crypto.KeyType;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
+import org.keycloak.crypto.ServerECDSASignatureSignerContext;
 import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.jose.jwe.JWEConstants;
 import org.keycloak.jose.jwk.JSONWebKeySet;
@@ -144,6 +146,19 @@ public class TestingOIDCEndpointsApplicationResource {
         return res;
     }
 
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("/get-keys-as-base64")
+    public Map<String, String> getKeysAsBase64() {
+        // It seems that PemUtils.decodePrivateKey, decodePublicKey can only treat RSA type keys, not EC type keys. Therefore, these are not used.
+        String privateKeyPem = Base64.encodeBytes(clientData.getSigningKeyPair().getPrivate().getEncoded());
+        String publicKeyPem = Base64.encodeBytes(clientData.getSigningKeyPair().getPublic().getEncoded());
+
+        Map<String, String> res = new HashMap<>();
+        res.put(PRIVATE_KEY, privateKeyPem);
+        res.put(PUBLIC_KEY, publicKeyPem);
+        return res;
+    }
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
@@ -200,7 +215,16 @@ public class TestingOIDCEndpointsApplicationResource {
             keyWrapper.setAlgorithm(clientData.getSigningKeyAlgorithm());
             keyWrapper.setKid(kid);
             keyWrapper.setPrivateKey(privateKey);
-            SignatureSignerContext signer = new AsymmetricSignatureSignerContext(keyWrapper);
+            SignatureSignerContext signer;
+            switch (clientData.getSigningKeyAlgorithm()) {
+                case Algorithm.ES256:
+                case Algorithm.ES384:
+                case Algorithm.ES512:
+                    signer = new ServerECDSASignatureSignerContext(keyWrapper);
+                    break;
+                default:
+                    signer = new AsymmetricSignatureSignerContext(keyWrapper);
+            }
             clientData.setOidcRequest(new JWSBuilder().kid(kid).jsonContent(oidcRequest).sign(signer));
         }
     }

@@ -91,7 +91,7 @@ public class CookieTokenStore {
 
             log.debug("Token Verification succeeded!");
             RefreshableKeycloakSecurityContext secContext = new RefreshableKeycloakSecurityContext(deployment, tokenStore, accessTokenString, accessToken, idTokenString, idToken, refreshTokenString);
-            return new KeycloakPrincipal<RefreshableKeycloakSecurityContext>(AdapterUtils.getPrincipalName(deployment, accessToken), secContext);
+            return new KeycloakPrincipal<>(AdapterUtils.getPrincipalName(deployment, accessToken), secContext);
         } catch (VerificationException ve) {
             log.warn("Failed verify token", ve);
             return null;

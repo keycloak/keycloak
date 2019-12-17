@@ -17,14 +17,11 @@
 
 package org.keycloak.testsuite.federation.sync;
 
-import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.logging.Logger;
-import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Assert;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
-import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
@@ -35,8 +32,6 @@ import org.keycloak.storage.user.SynchronizationResult;
 import org.keycloak.testsuite.AbstractAuthTest;
 import org.keycloak.testsuite.auth.page.AuthRealm;
 import org.keycloak.testsuite.federation.DummyUserFederationProviderFactory;
-import org.keycloak.testsuite.federation.storage.ComponentExportImportTest;
-import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
 import org.keycloak.timer.TimerProvider;
 
 import java.util.HashMap;
@@ -52,13 +47,6 @@ import java.util.concurrent.TimeUnit;
 public class SyncFederationTest extends AbstractAuthTest {
 
     private static final Logger log = Logger.getLogger(SyncFederationTest.class);
-
-    @Deployment
-    public static WebArchive deploy() {
-        return RunOnServerDeployment.create(ComponentExportImportTest.class, AbstractAuthTest.class, RealmResource.class)
-                .addPackages(true, "org.keycloak.testsuite");
-    }
-
 
     /**
      * Test that period sync is triggered when creating a synchronized User Storage Provider

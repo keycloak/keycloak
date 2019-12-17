@@ -19,7 +19,11 @@ import org.keycloak.testsuite.util.WaitUtils;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
 import static org.keycloak.testsuite.util.WaitUtils.pause;
 import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
@@ -66,12 +70,12 @@ public class SessionSpringBootTest extends AbstractSpringBootTest {
         testRealmLoginPage.form().login(USER_LOGIN, USER_PASSWORD);
 
         sessionPage.assertIsCurrent();
-        assertThat(sessionPage.getCounter()).isEqualTo(0);
+        assertThat(sessionPage.getCounter(), is(equalTo(0)));
 
         driver.navigate().to(SERVLET_URL);
         waitForPageToLoad();
 
-        assertThat(sessionPage.getCounter()).isEqualTo(1);
+        assertThat(sessionPage.getCounter(), is(equalTo(1)));
     }
 
     @Before
@@ -102,13 +106,13 @@ public class SessionSpringBootTest extends AbstractSpringBootTest {
 
         secondBrowserSessionPage.assertIsCurrent();
 
-        assertThat(secondBrowserSessionPage.getCounter()).isEqualTo(0);
+        assertThat(secondBrowserSessionPage.getCounter(), is(equalTo(0)));
 
         // Counter increased now
         driver2.navigate().to(SERVLET_URL);
         waitForPageToLoad(); // driver2 will be used because of DroneUtils.addWebDriver()
 
-        assertThat(secondBrowserSessionPage.getCounter()).isEqualTo(1);
+        assertThat(secondBrowserSessionPage.getCounter(), is(equalTo(1)));
 
         DroneUtils.removeWebDriver(); // From now driver will be used instead of driver2
 
@@ -128,7 +132,7 @@ public class SessionSpringBootTest extends AbstractSpringBootTest {
         waitForPageToLoad();
 
         secondBrowserSessionPage.assertIsCurrent();
-        assertThat(secondBrowserSessionPage.getCounter()).isEqualTo(2);
+        assertThat(secondBrowserSessionPage.getCounter(), is(equalTo(2)));
 
         driver2.navigate().to(logoutPage(SERVLET_URL));
         waitForPageToLoad();
@@ -148,7 +152,7 @@ public class SessionSpringBootTest extends AbstractSpringBootTest {
             }
         }
 
-        assertThat(clientResource).isNotNull();
+        assertThat(clientResource, is(notNullValue()));
 
         clientResource.toRepresentation().setAdminUrl("");
         int origTokenLifespan = realmRep.getAccessCodeLifespan();
@@ -171,7 +175,7 @@ public class SessionSpringBootTest extends AbstractSpringBootTest {
         testRealmLoginPage.form().login(USER_LOGIN, USER_PASSWORD);
 
         sessionPage.assertIsCurrent();
-        assertThat(sessionPage.getCounter()).isEqualTo(0);
+        assertThat(sessionPage.getCounter(), is(equalTo(0)));
 
         clientResource.toRepresentation().setAdminUrl(BASE_URL);
         realmRep.setAccessCodeLifespan(origTokenLifespan);
@@ -195,7 +199,7 @@ public class SessionSpringBootTest extends AbstractSpringBootTest {
         waitForPageToLoad();
 
         sessionPage.assertIsCurrent();
-        assertThat(sessionPage.getCounter()).isEqualTo(2);
+        assertThat(sessionPage.getCounter(), is(equalTo(2)));
 
         driver.navigate().to(logoutPage(SERVLET_URL));
         waitForPageToLoad();

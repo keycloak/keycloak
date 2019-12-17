@@ -49,7 +49,9 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.services.filters.KeycloakSessionServletFilter;
 import org.keycloak.services.managers.ApplianceBootstrap;
 import org.keycloak.services.resources.KeycloakApplication;
+import org.keycloak.testsuite.JsonConfigProviderFactory;
 import org.keycloak.testsuite.KeycloakServer;
+import org.keycloak.testsuite.TestKeycloakSessionServletFilter;
 import org.keycloak.testsuite.utils.tls.TLSUtils;
 import org.keycloak.testsuite.utils.undertow.UndertowDeployerHelper;
 import org.keycloak.testsuite.utils.undertow.UndertowWarClassLoader;
@@ -68,7 +70,7 @@ import org.xnio.SslClientAuthMode;
 public class KeycloakOnUndertow implements DeployableContainer<KeycloakOnUndertowConfiguration> {
 
     protected final Logger log = Logger.getLogger(this.getClass());
-    
+
     private KeycloakUndertowJaxrsServer undertow;
     private KeycloakOnUndertowConfiguration configuration;
     private KeycloakSessionFactory sessionFactory;
@@ -86,10 +88,9 @@ public class KeycloakOnUndertow implements DeployableContainer<KeycloakOnUnderto
         di.setClassLoader(getClass().getClassLoader());
         di.setContextPath("/auth");
         di.setDeploymentName("Keycloak");
-        di.addInitParameter(KeycloakApplication.KEYCLOAK_EMBEDDED, "true");
         if (configuration.getKeycloakConfigPropertyOverridesMap() != null) {
             try {
-                di.addInitParameter(KeycloakApplication.SERVER_CONTEXT_CONFIG_PROPERTY_OVERRIDES,
+                di.addInitParameter(JsonConfigProviderFactory.SERVER_CONTEXT_CONFIG_PROPERTY_OVERRIDES,
                   JsonSerialization.writeValueAsString(configuration.getKeycloakConfigPropertyOverridesMap()));
             } catch (IOException ex) {
                 throw new RuntimeException(ex);
@@ -99,7 +100,7 @@ public class KeycloakOnUndertow implements DeployableContainer<KeycloakOnUnderto
         di.setDefaultServletConfig(new DefaultServletConfig(true));
         di.addWelcomePage("theme/keycloak/welcome/resources/index.html");
 
-        FilterInfo filter = Servlets.filter("SessionFilter", KeycloakSessionServletFilter.class);
+        FilterInfo filter = Servlets.filter("SessionFilter", TestKeycloakSessionServletFilter.class);
         di.addFilter(filter);
         di.addFilterUrlMapping("SessionFilter", "/*", DispatcherType.REQUEST);
         filter.setAsyncSupported(true);

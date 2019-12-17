@@ -16,6 +16,7 @@
     </#if>
 
     <script type="text/javascript">
+        var authServerUrl = '${authServerUrl}';
         var authUrl = '${authUrl}';
         var consoleBaseUrl = '${consoleBaseUrl}';
         var resourceUrl = '${resourceUrl}';
@@ -100,14 +101,8 @@
 
         <span class="pficon pficon-ok" ng-show="notification.type == 'success'"></span>
         <span class="pficon pficon-info" ng-show="notification.type == 'info'"></span>
-        <span class="pficon-layered" ng-show="notification.type == 'danger'">
-            <span class="pficon pficon-error-octagon"></span>
-            <span class="pficon pficon-error-exclamation"></span>
-        </span>
-        <span class="pficon-layered" ng-show="notification.type == 'warning'">
-            <span class="pficon pficon-warning-triangle"></span>
-            <span class="pficon pficon-warning-exclamation"></span>
-        </span>
+        <span class="pficon pficon-warning-triangle-o" ng-show="notification.type == 'warning'"></span>
+        <span class="pficon pficon-error-circle-o" ng-show="notification.type == 'danger'"></span>
         <strong>{{notification.header}}</strong> {{notification.message}}
     </div>
 </div>

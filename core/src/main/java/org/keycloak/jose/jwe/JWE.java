@@ -18,7 +18,7 @@
 package org.keycloak.jose.jwe;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.security.spec.KeySpec;
 
 import org.keycloak.common.util.Base64;
@@ -222,14 +222,8 @@ public class JWE {
     }
 
     public static String encryptUTF8(String password, String saltString, String payload) {
-        byte[] bytes = null;
-        try {
-            bytes = payload.getBytes("UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException(e);
-        }
+        byte[] bytes = payload.getBytes(StandardCharsets.UTF_8);
         return encrypt(password, saltString, bytes);
-
     }
 
 
@@ -276,11 +270,7 @@ public class JWE {
 
     public static String decryptUTF8(String password, String saltString, String encodedJwe) {
         byte[] payload = decrypt(password, saltString, encodedJwe);
-        try {
-            return new String(payload, "UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException(e);
-        }
+        return new String(payload, StandardCharsets.UTF_8);
     }
 
 }

@@ -31,6 +31,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.util.DroneUtils.getCurrentDriver;
+import static org.keycloak.testsuite.util.UIUtils.doesElementClassContain;
 import static org.keycloak.testsuite.util.UIUtils.getTextFromElement;
 import static org.keycloak.testsuite.util.UIUtils.isElementVisible;
 import static org.keycloak.testsuite.util.WaitUtils.PAGELOAD_TIMEOUT_MILLIS;
@@ -87,13 +88,7 @@ public abstract class AbstractPatternFlyAlert {
     }
 
     protected boolean checkAlertType(String type) {
-        try {
-            new WebDriverWait(driver, 1).until(ExpectedConditions.attributeContains(alertRoot, "class", "alert-" + type));
-        }
-        catch (TimeoutException e) {
-            return false;
-        }
-        return true;
+        return doesElementClassContain(alertRoot, "alert-" + type);
     }
 
 }

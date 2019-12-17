@@ -19,10 +19,12 @@ package org.keycloak.testsuite.client;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLSession;
+import javax.ws.rs.core.Response;
 
 import org.jboss.resteasy.client.jaxrs.ResteasyClient;
 import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
 import org.jboss.resteasy.client.jaxrs.ResteasyWebTarget;
+import org.keycloak.common.Profile;
 import org.keycloak.testsuite.client.resources.TestApplicationResource;
 import org.keycloak.testsuite.client.resources.TestExampleCompanyResource;
 import org.keycloak.testsuite.client.resources.TestSamlApplicationResource;
@@ -30,6 +32,8 @@ import org.keycloak.testsuite.client.resources.TestingResource;
 import org.keycloak.testsuite.runonserver.*;
 import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.util.JsonSerialization;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
@@ -71,12 +75,31 @@ public class KeycloakTestingClient implements AutoCloseable {
         return target.path("/realms/" + realm).proxy(TestingResource.class);
     }
 
+    public void enableFeature(Profile.Feature feature) {
+        try (Response response = testing().enableFeature(feature.toString())) {
+            assertEquals(200, response.getStatus());
+        }
+    }
+
+    public void disableFeature(Profile.Feature feature) {
+        try (Response response = testing().disableFeature(feature.toString())) {
+            assertEquals(200, response.getStatus());
+        }
+    }
+
     public TestApplicationResource testApp() { return target.proxy(TestApplicationResource.class); }
 
     public TestSamlApplicationResource testSamlApp() { return target.proxy(TestSamlApplicationResource.class); }
 
     public TestExampleCompanyResource testExampleCompany() { return target.proxy(TestExampleCompanyResource.class); }
 
+    /**
+     * Allows running code on the server-side for white-box testing. When using be careful what imports your test class
+     * has and also what classes are used within the function sent to the server. Classes have to be either available
+     * server-side or defined in @{@link org.keycloak.testsuite.arquillian.TestClassProvider#PERMITTED_PACKAGES}
+     *
+     * @return
+     */
     public Server server() {
         return new Server("master");
     }
@@ -135,7 +158,6 @@ public class KeycloakTestingClient implements AutoCloseable {
                 }
             }
         }
-
 
         public void runModelTest(String testClassName, String testMethodName) throws RunOnServerException {
             String result = testing(realm != null ? realm : "master").runModelTestOnServer(testClassName, testMethodName);

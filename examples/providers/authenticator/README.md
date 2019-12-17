@@ -17,7 +17,7 @@ Example Custom Authenticator
 
 6. In your copy, click the "Actions" menu item and "Add Execution".  Pick Secret Question
 
-7. Next you have to register the required action that you created. Click on the Required Actions tab in the Authenticaiton menu.
+7. Next you have to register the required action that you created. Click on the Required Actions tab in the Authentication menu.
    Click on the Register button and choose your new Required Action.
    Your new required action should now be displayed and enabled in the required actions list.
 

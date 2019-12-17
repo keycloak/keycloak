@@ -24,7 +24,7 @@
     <parent>
         <groupId>org.keycloak</groupId>
         <artifactId>keycloak-testsuite-pom</artifactId>
-        <version>8.0.0-SNAPSHOT</version>
+        <version>9.0.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     
@@ -42,8 +42,8 @@
         <app.server>undertow</app.server>
 
         <!-- Wildfly deprecated versions -->
-        <wildfly.deprecated.version>16.0.0.Final</wildfly.deprecated.version>
-        <wildfly.deprecated.wildfly.core.version>8.0.0.Final</wildfly.deprecated.wildfly.core.version>
+        <wildfly.deprecated.version>17.0.1.Final</wildfly.deprecated.version>
+        <wildfly.deprecated.wildfly.core.version>9.0.2.Final</wildfly.deprecated.wildfly.core.version>
         <wildfly.deprecated.arquillian.wildfly.container>2.1.1.Final</wildfly.deprecated.arquillian.wildfly.container>
 
         <!--component versions-->
@@ -412,15 +412,14 @@
                 <keycloak.connectionsJpa.database>keycloak</keycloak.connectionsJpa.database>
                 <keycloak.connectionsJpa.user>keycloak</keycloak.connectionsJpa.user>
                 <keycloak.connectionsJpa.password>keycloak</keycloak.connectionsJpa.password>
-                <!-- Disable SSL is needed when using newer JDBC drivers like mysql 8.0.12 to avoid warnings in the log -->
-                <keycloak.connectionsJpa.url>jdbc:mysql://${auth.server.db.host}/${keycloak.connectionsJpa.database}?useSSL=false</keycloak.connectionsJpa.url>
+                <keycloak.connectionsJpa.url>jdbc:mysql://${auth.server.db.host}/${keycloak.connectionsJpa.database}?allowPublicKeyRetrieval=true</keycloak.connectionsJpa.url>
                 <!-- JDBC properties point to "default" JDBC driver for the particular DB -->
                 <!-- For EAP testing, it is recommended to override those with system properties pointing to GAV of more appropriate JDBC driver -->
                 <!-- for the particular EAP version -->
                 <jdbc.mvn.groupId>mysql</jdbc.mvn.groupId>
                 <jdbc.mvn.artifactId>mysql-connector-java</jdbc.mvn.artifactId>
                 <jdbc.mvn.version>${mysql.version}</jdbc.mvn.version>
-                <docker.database.image>mysql:5.7.25</docker.database.image>
+                <docker.database.image>mysql:8.0.18</docker.database.image>
                 <docker.database.port>3306</docker.database.port>
                 <docker.database.skip>false</docker.database.skip>
                 <docker.database.cmd>mysqld</docker.database.cmd>
@@ -436,7 +435,7 @@
                 <jdbc.mvn.groupId>mysql</jdbc.mvn.groupId>
                 <jdbc.mvn.artifactId>mysql-connector-java</jdbc.mvn.artifactId>
                 <jdbc.mvn.version>${mysql.version}</jdbc.mvn.version>
-                <dballocator.type>mysql57</dballocator.type>
+                <dballocator.type>mysql80</dballocator.type>
                 <dballocator.skip>false</dballocator.skip>
             </properties>
         </profile>
@@ -454,7 +453,7 @@
                 <jdbc.mvn.groupId>org.postgresql</jdbc.mvn.groupId>
                 <jdbc.mvn.artifactId>postgresql</jdbc.mvn.artifactId>
                 <jdbc.mvn.version>${postgresql.version}</jdbc.mvn.version>
-                <docker.database.image>postgres:10.1</docker.database.image>
+                <docker.database.image>postgres:11.5</docker.database.image>
                 <docker.database.port>5432</docker.database.port>
                 <docker.database.skip>false</docker.database.skip>
                 <docker.database.cmd>postgres</docker.database.cmd>
@@ -470,7 +469,7 @@
                 <jdbc.mvn.groupId>org.postgresql</jdbc.mvn.groupId>
                 <jdbc.mvn.artifactId>postgresql</jdbc.mvn.artifactId>
                 <jdbc.mvn.version>${postgresql.version}</jdbc.mvn.version>
-                <dballocator.type>postgresql96</dballocator.type>
+                <dballocator.type>postgresql115</dballocator.type>
                 <dballocator.skip>false</dballocator.skip>
             </properties>
         </profile>
@@ -546,7 +545,7 @@
             </properties>
         </profile>
         <profile>
-            <id>db-allocator-db-mssql2016</id>
+            <id>db-allocator-db-mssql2017</id>
             <properties>
                 <!-- JDBC properties point to "default" JDBC driver for the particular DB -->
                 <!-- For EAP testing, it is recommended to override those with system properties pointing to GAV of more appropriate JDBC driver -->
@@ -554,7 +553,7 @@
                 <jdbc.mvn.groupId>com.microsoft.sqlserver</jdbc.mvn.groupId>
                 <jdbc.mvn.artifactId>mssql-jdbc</jdbc.mvn.artifactId>
                 <jdbc.mvn.version>${mssql.version}</jdbc.mvn.version>
-                <dballocator.type>mssql2016</dballocator.type>
+                <dballocator.type>mssql2017</dballocator.type>
                 <dballocator.skip>false</dballocator.skip>
             </properties>
         </profile>

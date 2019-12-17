@@ -37,7 +37,10 @@ import java.util.concurrent.*;
 import java.util.function.BiConsumer;
 import org.apache.commons.lang3.concurrent.BasicThreadFactory;
 import org.hamcrest.Matchers;
+import static org.hamcrest.Matchers.contains;
 import static org.junit.Assert.*;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.not;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -255,8 +258,8 @@ public class ComponentsTest extends AbstractAdminTest {
 
         // Check secret not leaked in admin events
         event = testingClient.testing().pollAdminEvent();
-        assertFalse(event.getRepresentation().contains("some secret value!!"));
-        assertTrue(event.getRepresentation().contains(ComponentRepresentation.SECRET_VALUE));
+        assertThat(event.getRepresentation(), not(containsString("some secret value!!")));
+        assertThat(event.getRepresentation(), containsString(ComponentRepresentation.SECRET_VALUE));
 
         // Check secret value is not set to '*********'
         details = testingClient.testing(REALM_NAME).getTestComponentDetails();
@@ -271,6 +274,17 @@ public class ComponentsTest extends AbstractAdminTest {
 
         ComponentRepresentation returned3 = components.query().stream().filter(c -> c.getId().equals(returned2.getId())).findFirst().get();
         assertEquals(ComponentRepresentation.SECRET_VALUE, returned3.getConfig().getFirst("secret"));
+
+
+        returned2.getConfig().putSingle("secret", "${vault.value}");
+        components.component(id).update(returned2);
+
+        // Check secret value is updated
+        details = testingClient.testing(REALM_NAME).getTestComponentDetails();
+        assertThat(details.get("mycomponent").getConfig().get("secret"), contains("${vault.value}"));
+
+        ComponentRepresentation returned4 = components.query().stream().filter(c -> c.getId().equals(returned2.getId())).findFirst().get();
+        assertThat(returned4.getConfig().get("secret"), contains("${vault.value}"));
     }
 
     @Test

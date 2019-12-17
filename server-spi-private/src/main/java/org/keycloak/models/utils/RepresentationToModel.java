@@ -19,6 +19,7 @@ package org.keycloak.models.utils;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -48,15 +49,14 @@ import org.keycloak.authorization.store.ResourceServerStore;
 import org.keycloak.authorization.store.ResourceStore;
 import org.keycloak.authorization.store.ScopeStore;
 import org.keycloak.authorization.store.StoreFactory;
-import org.keycloak.common.Profile;
 import org.keycloak.common.enums.SslRequired;
-import org.keycloak.common.util.Base64;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.UriUtils;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.keys.KeyProvider;
 import org.keycloak.migration.MigrationProvider;
+import org.keycloak.migration.migrators.MigrateTo8_0_0;
 import org.keycloak.migration.migrators.MigrationUtils;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
@@ -84,8 +84,12 @@ import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
-import org.keycloak.models.cache.UserCache;
-import org.keycloak.models.credential.PasswordUserCredentialModel;
+import org.keycloak.models.WebAuthnPolicy;
+import org.keycloak.models.credential.OTPCredentialModel;
+import org.keycloak.models.credential.PasswordCredentialModel;
+import org.keycloak.models.credential.dto.OTPCredentialData;
+import org.keycloak.models.credential.dto.OTPSecretData;
+import org.keycloak.models.credential.dto.PasswordCredentialData;
 import org.keycloak.policy.PasswordPolicyNotMetException;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.idm.ApplicationRepresentation;
@@ -260,6 +264,55 @@ public class RepresentationToModel {
             newRealm.setPasswordPolicy(PasswordPolicy.parse(session, rep.getPasswordPolicy()));
         if (rep.getOtpPolicyType() != null) newRealm.setOTPPolicy(toPolicy(rep));
         else newRealm.setOTPPolicy(OTPPolicy.DEFAULT_POLICY);
+
+        WebAuthnPolicy webAuthnPolicy = new WebAuthnPolicy();
+
+        String webAuthnPolicyRpEntityName = rep.getWebAuthnPolicyRpEntityName();
+        if (webAuthnPolicyRpEntityName == null || webAuthnPolicyRpEntityName.isEmpty())
+            webAuthnPolicyRpEntityName = Constants.DEFAULT_WEBAUTHN_POLICY_RP_ENTITY_NAME;
+        webAuthnPolicy.setRpEntityName(webAuthnPolicyRpEntityName);
+
+        List<String> webAuthnPolicySignatureAlgorithms = rep.getWebAuthnPolicySignatureAlgorithms();
+        if (webAuthnPolicySignatureAlgorithms == null || webAuthnPolicySignatureAlgorithms.isEmpty())
+            webAuthnPolicySignatureAlgorithms = Arrays.asList(Constants.DEFAULT_WEBAUTHN_POLICY_SIGNATURE_ALGORITHMS.split(","));
+        webAuthnPolicy.setSignatureAlgorithm(webAuthnPolicySignatureAlgorithms);
+
+        String webAuthnPolicyRpId = rep.getWebAuthnPolicyRpId();
+        if (webAuthnPolicyRpId == null || webAuthnPolicyRpId.isEmpty())
+            webAuthnPolicyRpId = "";
+        webAuthnPolicy.setRpId(webAuthnPolicyRpId);
+
+        String webAuthnPolicyAttestationConveyancePreference = rep.getWebAuthnPolicyAttestationConveyancePreference();
+        if (webAuthnPolicyAttestationConveyancePreference == null || webAuthnPolicyAttestationConveyancePreference.isEmpty())
+            webAuthnPolicyAttestationConveyancePreference = Constants.DEFAULT_WEBAUTHN_POLICY_NOT_SPECIFIED;
+        webAuthnPolicy.setAttestationConveyancePreference(webAuthnPolicyAttestationConveyancePreference);
+
+        String webAuthnPolicyAuthenticatorAttachment = rep.getWebAuthnPolicyAuthenticatorAttachment();
+        if (webAuthnPolicyAuthenticatorAttachment == null || webAuthnPolicyAuthenticatorAttachment.isEmpty())
+            webAuthnPolicyAuthenticatorAttachment = Constants.DEFAULT_WEBAUTHN_POLICY_NOT_SPECIFIED;
+        webAuthnPolicy.setAuthenticatorAttachment(webAuthnPolicyAuthenticatorAttachment);
+
+        String webAuthnPolicyRequireResidentKey = rep.getWebAuthnPolicyRequireResidentKey();
+        if (webAuthnPolicyRequireResidentKey == null || webAuthnPolicyRequireResidentKey.isEmpty())
+            webAuthnPolicyRequireResidentKey = Constants.DEFAULT_WEBAUTHN_POLICY_NOT_SPECIFIED;
+        webAuthnPolicy.setRequireResidentKey(webAuthnPolicyRequireResidentKey);
+
+        String webAuthnPolicyUserVerificationRequirement = rep.getWebAuthnPolicyUserVerificationRequirement();
+        if (webAuthnPolicyUserVerificationRequirement == null || webAuthnPolicyUserVerificationRequirement.isEmpty())
+            webAuthnPolicyUserVerificationRequirement = Constants.DEFAULT_WEBAUTHN_POLICY_NOT_SPECIFIED;
+        webAuthnPolicy.setUserVerificationRequirement(webAuthnPolicyUserVerificationRequirement);
+
+        Integer webAuthnPolicyCreateTimeout = rep.getWebAuthnPolicyCreateTimeout();
+        if (webAuthnPolicyCreateTimeout != null) webAuthnPolicy.setCreateTimeout(webAuthnPolicyCreateTimeout);
+        else webAuthnPolicy.setCreateTimeout(0);
+
+        Boolean webAuthnPolicyAvoidSameAuthenticatorRegister = rep.isWebAuthnPolicyAvoidSameAuthenticatorRegister();
+        if (webAuthnPolicyAvoidSameAuthenticatorRegister != null) webAuthnPolicy.setAvoidSameAuthenticatorRegister(webAuthnPolicyAvoidSameAuthenticatorRegister);
+
+        List<String> webAuthnPolicyAcceptableAaguids = rep.getWebAuthnPolicyAcceptableAaguids();
+        if (webAuthnPolicyAcceptableAaguids != null) webAuthnPolicy.setAcceptableAaguids(webAuthnPolicyAcceptableAaguids);
+
+        newRealm.setWebAuthnPolicy(webAuthnPolicy);
 
         Map<String, String> mappedFlows = importAuthenticationFlows(newRealm, rep);
         if (rep.getRequiredActions() != null) {
@@ -609,8 +662,7 @@ public class RepresentationToModel {
             for (AuthenticationFlowRepresentation flowRep : rep.getAuthenticationFlows()) {
                 AuthenticationFlowModel model = newRealm.getFlowByAlias(flowRep.getAlias());
                 for (AuthenticationExecutionExportRepresentation exeRep : flowRep.getAuthenticationExecutions()) {
-                    AuthenticationExecutionModel execution = toModel(newRealm, exeRep);
-                    execution.setParentFlow(model.getId());
+                    AuthenticationExecutionModel execution = toModel(newRealm, model, exeRep);
                     newRealm.addAuthenticatorExecution(execution);
                 }
             }
@@ -828,6 +880,35 @@ public class RepresentationToModel {
         }
     }
 
+    private static void convertDeprecatedCredentialsFormat(UserRepresentation user) {
+        if (user.getCredentials() != null) {
+            for (CredentialRepresentation cred : user.getCredentials()) {
+                try {
+                    if ((cred.getCredentialData() == null || cred.getSecretData() == null) && cred.getValue() == null) {
+                        logger.warnf("Using deprecated 'credentials' format in JSON representation for user '%s'. It will be removed in future versions", user.getUsername());
+
+                        if (PasswordCredentialModel.TYPE.equals(cred.getType()) || PasswordCredentialModel.PASSWORD_HISTORY.equals(cred.getType())) {
+                            PasswordCredentialData credentialData = new PasswordCredentialData(cred.getHashIterations(), cred.getAlgorithm());
+                            cred.setCredentialData(JsonSerialization.writeValueAsString(credentialData));
+                            // Created this manually to avoid conversion from Base64 and back
+                            cred.setSecretData("{\"value\":\"" + cred.getHashedSaltedValue() + "\",\"salt\":\"" + cred.getSalt() + "\"}");
+                            cred.setPriority(10);
+                        } else if (OTPCredentialModel.TOTP.equals(cred.getType()) || OTPCredentialModel.HOTP.equals(cred.getType())) {
+                            OTPCredentialData credentialData = new OTPCredentialData(cred.getType(), cred.getDigits(), cred.getCounter(), cred.getPeriod(), cred.getAlgorithm());
+                            OTPSecretData secretData = new OTPSecretData(cred.getHashedSaltedValue());
+                            cred.setCredentialData(JsonSerialization.writeValueAsString(credentialData));
+                            cred.setSecretData(JsonSerialization.writeValueAsString(secretData));
+                            cred.setPriority(20);
+                            cred.setType(OTPCredentialModel.TYPE);
+                        }
+                    }
+                } catch (IOException ioe) {
+                    throw new RuntimeException(ioe);
+                }
+            }
+        }
+    }
+
     public static void renameRealm(RealmModel realm, String name) {
         if (name.equals(realm.getName())) return;
 
@@ -960,6 +1041,55 @@ public class RepresentationToModel {
         if (rep.getDefaultRoles() != null) {
             realm.updateDefaultRoles(rep.getDefaultRoles().toArray(new String[rep.getDefaultRoles().size()]));
         }
+
+        WebAuthnPolicy webAuthnPolicy = new WebAuthnPolicy();
+
+        String webAuthnPolicyRpEntityName = rep.getWebAuthnPolicyRpEntityName();
+        if (webAuthnPolicyRpEntityName == null || webAuthnPolicyRpEntityName.isEmpty())
+            webAuthnPolicyRpEntityName = Constants.DEFAULT_WEBAUTHN_POLICY_RP_ENTITY_NAME;
+        webAuthnPolicy.setRpEntityName(webAuthnPolicyRpEntityName);
+
+        List<String> webAuthnPolicySignatureAlgorithms = rep.getWebAuthnPolicySignatureAlgorithms();
+        if (webAuthnPolicySignatureAlgorithms == null || webAuthnPolicySignatureAlgorithms.isEmpty())
+            webAuthnPolicySignatureAlgorithms = Arrays.asList(Constants.DEFAULT_WEBAUTHN_POLICY_SIGNATURE_ALGORITHMS.split(","));
+        webAuthnPolicy.setSignatureAlgorithm(webAuthnPolicySignatureAlgorithms);
+
+        String webAuthnPolicyRpId = rep.getWebAuthnPolicyRpId();
+        if (webAuthnPolicyRpId == null || webAuthnPolicyRpId.isEmpty())
+            webAuthnPolicyRpId = "";
+        webAuthnPolicy.setRpId(webAuthnPolicyRpId);
+
+        String webAuthnPolicyAttestationConveyancePreference = rep.getWebAuthnPolicyAttestationConveyancePreference();
+        if (webAuthnPolicyAttestationConveyancePreference == null || webAuthnPolicyAttestationConveyancePreference.isEmpty())
+            webAuthnPolicyAttestationConveyancePreference = Constants.DEFAULT_WEBAUTHN_POLICY_NOT_SPECIFIED;
+        webAuthnPolicy.setAttestationConveyancePreference(webAuthnPolicyAttestationConveyancePreference);
+
+        String webAuthnPolicyAuthenticatorAttachment = rep.getWebAuthnPolicyAuthenticatorAttachment();
+        if (webAuthnPolicyAuthenticatorAttachment == null || webAuthnPolicyAuthenticatorAttachment.isEmpty())
+            webAuthnPolicyAuthenticatorAttachment = Constants.DEFAULT_WEBAUTHN_POLICY_NOT_SPECIFIED;
+        webAuthnPolicy.setAuthenticatorAttachment(webAuthnPolicyAuthenticatorAttachment);
+
+        String webAuthnPolicyRequireResidentKey = rep.getWebAuthnPolicyRequireResidentKey();
+        if (webAuthnPolicyRequireResidentKey == null || webAuthnPolicyRequireResidentKey.isEmpty())
+            webAuthnPolicyRequireResidentKey = Constants.DEFAULT_WEBAUTHN_POLICY_NOT_SPECIFIED;
+        webAuthnPolicy.setRequireResidentKey(webAuthnPolicyRequireResidentKey);
+
+        String webAuthnPolicyUserVerificationRequirement = rep.getWebAuthnPolicyUserVerificationRequirement();
+        if (webAuthnPolicyUserVerificationRequirement == null || webAuthnPolicyUserVerificationRequirement.isEmpty())
+            webAuthnPolicyUserVerificationRequirement = Constants.DEFAULT_WEBAUTHN_POLICY_NOT_SPECIFIED;
+        webAuthnPolicy.setUserVerificationRequirement(webAuthnPolicyUserVerificationRequirement);
+
+        Integer webAuthnPolicyCreateTimeout = rep.getWebAuthnPolicyCreateTimeout();
+        if (webAuthnPolicyCreateTimeout != null) webAuthnPolicy.setCreateTimeout(webAuthnPolicyCreateTimeout);
+        else webAuthnPolicy.setCreateTimeout(0);
+
+        Boolean webAuthnPolicyAvoidSameAuthenticatorRegister = rep.isWebAuthnPolicyAvoidSameAuthenticatorRegister();
+        if (webAuthnPolicyAvoidSameAuthenticatorRegister != null) webAuthnPolicy.setAvoidSameAuthenticatorRegister(webAuthnPolicyAvoidSameAuthenticatorRegister);
+
+        List<String> webAuthnPolicyAcceptableAaguids = rep.getWebAuthnPolicyAcceptableAaguids();
+        webAuthnPolicy.setAcceptableAaguids(webAuthnPolicyAcceptableAaguids);
+
+        realm.setWebAuthnPolicy(webAuthnPolicy);
 
         if (rep.getSmtpServer() != null) {
             Map<String, String> config = new HashMap(rep.getSmtpServer());
@@ -1247,22 +1377,24 @@ public class RepresentationToModel {
             addClientScopeToClient(realm, client, clientTemplateName, true);
         }
 
-        if (resourceRep.getDefaultClientScopes() != null) {
+        if (resourceRep.getDefaultClientScopes() != null || resourceRep.getOptionalClientScopes() != null) {
             // First remove all default/built in client scopes
             for (ClientScopeModel clientScope : client.getClientScopes(true, false).values()) {
                 client.removeClientScope(clientScope);
             }
 
+            // First remove all default/built in client scopes
+            for (ClientScopeModel clientScope : client.getClientScopes(false, false).values()) {
+                client.removeClientScope(clientScope);
+            }
+        }
+
+        if (resourceRep.getDefaultClientScopes() != null) {
             for (String clientScopeName : resourceRep.getDefaultClientScopes()) {
                 addClientScopeToClient(realm, client, clientScopeName, true);
             }
         }
         if (resourceRep.getOptionalClientScopes() != null) {
-            // First remove all default/built in client scopes
-            for (ClientScopeModel clientScope : client.getClientScopes(false, false).values()) {
-                client.removeClientScope(clientScope);
-            }
-
             for (String clientScopeName : resourceRep.getOptionalClientScopes()) {
                 addClientScopeToClient(realm, client, clientScopeName, false);
             }
@@ -1575,7 +1707,11 @@ public class RepresentationToModel {
         }
         if (userRep.getRequiredActions() != null) {
             for (String requiredAction : userRep.getRequiredActions()) {
-                user.addRequiredAction(UserModel.RequiredAction.valueOf(requiredAction.toUpperCase()));
+                try {
+                    user.addRequiredAction(UserModel.RequiredAction.valueOf(requiredAction.toUpperCase()));
+                } catch (IllegalArgumentException iae) {
+                    user.addRequiredAction(requiredAction);
+                }
             }
         }
         createCredentials(userRep, session, newRealm, user, false);
@@ -1620,108 +1756,38 @@ public class RepresentationToModel {
     }
 
     public static void createCredentials(UserRepresentation userRep, KeycloakSession session, RealmModel realm, UserModel user, boolean adminRequest) {
+        convertDeprecatedCredentialsFormat(userRep);
         if (userRep.getCredentials() != null) {
             for (CredentialRepresentation cred : userRep.getCredentials()) {
-                updateCredential(session, realm, user, cred, adminRequest);
-            }
-        }
-    }
-
-    // Detect if it is "plain-text" or "hashed" representation and update model according to it
-    private static void updateCredential(KeycloakSession session, RealmModel realm, UserModel user, CredentialRepresentation cred, boolean adminRequest) {
-        if (cred.getValue() != null) {
-            PasswordUserCredentialModel plainTextCred = convertCredential(cred);
-            plainTextCred.setAdminRequest(adminRequest);
-            
-            //if called from import we need to change realm in context to load password policies from the newly created realm
-            RealmModel origRealm = session.getContext().getRealm();
-            try {
-                session.getContext().setRealm(realm);
-                session.userCredentialManager().updateCredential(realm, user, plainTextCred);
-            } catch (ModelException ex) {
-                throw new PasswordPolicyNotMetException(ex.getMessage(), user.getUsername(), ex);
-            } finally {
-                session.getContext().setRealm(origRealm);
-            }
-        } else {
-            CredentialModel hashedCred = new CredentialModel();
-            hashedCred.setType(cred.getType());
-            hashedCred.setDevice(cred.getDevice());
-            if (cred.getHashIterations() != null) hashedCred.setHashIterations(cred.getHashIterations());
-            try {
-                if (cred.getSalt() != null) hashedCred.setSalt(Base64.decode(cred.getSalt()));
-            } catch (IOException ioe) {
-                throw new RuntimeException(ioe);
-            }
-            hashedCred.setValue(cred.getHashedSaltedValue());
-            if (cred.getCounter() != null) hashedCred.setCounter(cred.getCounter());
-            if (cred.getDigits() != null) hashedCred.setDigits(cred.getDigits());
-
-            if (cred.getAlgorithm() != null) {
-
-                // Could happen when migrating from some early version
-                if ((UserCredentialModel.PASSWORD.equals(cred.getType()) || UserCredentialModel.PASSWORD_HISTORY.equals(cred.getType())) &&
-                        (cred.getAlgorithm().equals(HmacOTP.HMAC_SHA1))) {
-                    hashedCred.setAlgorithm("pbkdf2");
+                if (cred.getId() != null && session.userCredentialManager().getStoredCredentialById(realm, user, cred.getId()) != null) {
+                    continue;
+                }
+                if (cred.getValue() != null && !cred.getValue().isEmpty()) {
+                    RealmModel origRealm = session.getContext().getRealm();
+                    try {
+                        session.getContext().setRealm(realm);
+                        session.userCredentialManager().updateCredential(realm, user, UserCredentialModel.password(cred.getValue(), false));
+                    } catch (ModelException ex) {
+                        throw new PasswordPolicyNotMetException(ex.getMessage(), user.getUsername(), ex);
+                    } finally {
+                        session.getContext().setRealm(origRealm);
+                    }
                 } else {
-                    hashedCred.setAlgorithm(cred.getAlgorithm());
+                    session.userCredentialManager().createCredentialThroughProvider(realm, user, toModel(cred));
                 }
-
-            } else {
-                if (UserCredentialModel.PASSWORD.equals(cred.getType()) || UserCredentialModel.PASSWORD_HISTORY.equals(cred.getType())) {
-                    hashedCred.setAlgorithm("pbkdf2");
-                } else if (UserCredentialModel.isOtp(cred.getType())) {
-                    hashedCred.setAlgorithm(HmacOTP.HMAC_SHA1);
-                }
-            }
-
-            if (cred.getPeriod() != null) hashedCred.setPeriod(cred.getPeriod());
-            if (cred.getDigits() == null && UserCredentialModel.isOtp(cred.getType())) {
-                hashedCred.setDigits(6);
-            }
-            if (cred.getPeriod() == null && UserCredentialModel.TOTP.equals(cred.getType())) {
-                hashedCred.setPeriod(30);
-            }
-            hashedCred.setCreatedDate(cred.getCreatedDate());
-            session.userCredentialManager().createCredential(realm, user, hashedCred);
-            UserCache userCache = session.userCache();
-            if (userCache != null) {
-                userCache.evict(realm, user);
             }
         }
-    }
-
-    public static PasswordUserCredentialModel convertCredential(CredentialRepresentation cred) {
-        PasswordUserCredentialModel credential = new PasswordUserCredentialModel();
-        credential.setType(cred.getType());
-        credential.setValue(cred.getValue());
-        return credential;
     }
 
     public static CredentialModel toModel(CredentialRepresentation cred) {
         CredentialModel model = new CredentialModel();
-        model.setHashIterations(cred.getHashIterations());
         model.setCreatedDate(cred.getCreatedDate());
         model.setType(cred.getType());
-        model.setDigits(cred.getDigits());
-        model.setConfig(cred.getConfig());
-        model.setDevice(cred.getDevice());
-        model.setAlgorithm(cred.getAlgorithm());
-        model.setCounter(cred.getCounter());
-        model.setPeriod(cred.getPeriod());
-        if (cred.getSalt() != null) {
-            try {
-                model.setSalt(Base64.decode(cred.getSalt()));
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        }
-        model.setValue(cred.getValue());
-        if (cred.getHashedSaltedValue() != null) {
-            model.setValue(cred.getHashedSaltedValue());
-        }
+        model.setUserLabel(cred.getUserLabel());
+        model.setSecretData(cred.getSecretData());
+        model.setCredentialData(cred.getCredentialData());
+        model.setId(cred.getId());
         return model;
-
     }
 
     // Role mappings
@@ -1884,7 +1950,7 @@ public class RepresentationToModel {
 
     }
 
-    public static AuthenticationExecutionModel toModel(RealmModel realm, AuthenticationExecutionExportRepresentation rep) {
+    private static AuthenticationExecutionModel toModel(RealmModel realm, AuthenticationFlowModel parentFlow, AuthenticationExecutionExportRepresentation rep) {
         AuthenticationExecutionModel model = new AuthenticationExecutionModel();
         if (rep.getAuthenticatorConfig() != null) {
             AuthenticatorConfigModel config = realm.getAuthenticatorConfigByAlias(rep.getAuthenticatorConfig());
@@ -1897,7 +1963,15 @@ public class RepresentationToModel {
             model.setFlowId(flow.getId());
         }
         model.setPriority(rep.getPriority());
-        model.setRequirement(AuthenticationExecutionModel.Requirement.valueOf(rep.getRequirement()));
+        try {
+            model.setRequirement(AuthenticationExecutionModel.Requirement.valueOf(rep.getRequirement()));
+            model.setParentFlow(parentFlow.getId());
+        } catch (IllegalArgumentException iae) {
+            //retro-compatible for previous OPTIONAL being changed to CONDITIONAL
+            if ("OPTIONAL".equals(rep.getRequirement())){
+                MigrateTo8_0_0.migrateOptionalAuthenticationExecution(realm, parentFlow, model, false);
+            }
+        }
         return model;
     }
 

@@ -30,6 +30,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.services.managers.UserSessionManager;
 import org.keycloak.services.resources.admin.permissions.AdminPermissions;
+import org.keycloak.services.util.ResolveRelative;
 import org.keycloak.storage.StorageId;
 
 import java.util.ArrayList;
@@ -47,7 +48,6 @@ public class ApplicationsBean {
     private List<ApplicationEntry> applications = new LinkedList<>();
 
     public ApplicationsBean(KeycloakSession session, RealmModel realm, UserModel user) {
-
         Set<ClientModel> offlineClients = new UserSessionManager(session).findClientsWithOfflineToken(realm, user);
 
         for (ClientModel client : getApplications(session, realm, user)) {
@@ -90,7 +90,7 @@ public class ApplicationsBean {
                 additionalGrants.add("${offlineToken}");
             }
 
-            applications.add(new ApplicationEntry(realmRolesAvailable, resourceRolesAvailable, client, clientScopesGranted, additionalGrants));
+            applications.add(new ApplicationEntry(session, realmRolesAvailable, resourceRolesAvailable, client, clientScopesGranted, additionalGrants));
         }
     }
 
@@ -142,14 +142,16 @@ public class ApplicationsBean {
 
     public static class ApplicationEntry {
 
+        private KeycloakSession session;
         private final List<RoleModel> realmRolesAvailable;
         private final MultivaluedHashMap<String, ClientRoleEntry> resourceRolesAvailable;
         private final ClientModel client;
         private final List<String> clientScopesGranted;
         private final List<String> additionalGrants;
 
-        public ApplicationEntry(List<RoleModel> realmRolesAvailable, MultivaluedHashMap<String, ClientRoleEntry> resourceRolesAvailable,
+        public ApplicationEntry(KeycloakSession session, List<RoleModel> realmRolesAvailable, MultivaluedHashMap<String, ClientRoleEntry> resourceRolesAvailable,
                                 ClientModel client, List<String> clientScopesGranted, List<String> additionalGrants) {
+            this.session = session;
             this.realmRolesAvailable = realmRolesAvailable;
             this.resourceRolesAvailable = resourceRolesAvailable;
             this.client = client;
@@ -170,44 +172,7 @@ public class ApplicationsBean {
         }
 
         public String getEffectiveUrl() {
-            String rootUrl = getClient().getRootUrl();
-            String baseUrl = getClient().getBaseUrl();
-            
-            if (rootUrl == null) rootUrl = "";
-            if (baseUrl == null) baseUrl = "";
-            
-            if (rootUrl.equals("") && baseUrl.equals("")) {
-                return "";
-            }
-            
-            if (rootUrl.equals("") && !baseUrl.equals("")) {
-                return baseUrl;
-            }
-            
-            if (!rootUrl.equals("") && baseUrl.equals("")) {
-                return rootUrl;
-            }
-            
-            if (isBaseUrlRelative() && !rootUrl.equals("")) {
-                return concatUrls(rootUrl, baseUrl);
-            }
-            
-            return baseUrl;
-        }
-        
-        private String concatUrls(String u1, String u2) {
-            if (u1.endsWith("/")) u1 = u1.substring(0, u1.length() - 1);
-            if (u2.startsWith("/")) u2 = u2.substring(1);
-            return u1 + "/" + u2;
-        }
-        
-        private boolean isBaseUrlRelative() {
-            String baseUrl = getClient().getBaseUrl();
-            if (baseUrl.equals("")) return false;
-            if (baseUrl.startsWith("/")) return true;
-            if (baseUrl.startsWith("./")) return true;
-            if (baseUrl.startsWith("../")) return true;
-            return false;
+            return ResolveRelative.resolveRelativeUri(session, getClient().getRootUrl(), getClient().getBaseUrl());
         }
         
         public ClientModel getClient() {

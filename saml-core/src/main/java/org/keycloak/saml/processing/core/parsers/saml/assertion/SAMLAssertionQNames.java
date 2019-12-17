@@ -95,15 +95,15 @@ public enum SAMLAssertionQNames implements HasQName {
 
     private final QName qName;
 
-    private SAMLAssertionQNames(String localName) {
+    SAMLAssertionQNames(String localName) {
         this(JBossSAMLURIConstants.ASSERTION_NSURI, localName);
     }
 
-    private SAMLAssertionQNames(HasQName source) {
+    SAMLAssertionQNames(HasQName source) {
         this.qName = source.getQName();
     }
 
-    private SAMLAssertionQNames(JBossSAMLURIConstants nsUri, String localName) {
+    SAMLAssertionQNames(JBossSAMLURIConstants nsUri, String localName) {
         this.qName = new QName(nsUri == null ? null : nsUri.get(), localName);
     }
 

@@ -1,0 +1,108 @@
+//
+// Bootstrap-select
+// --------------------------------------------------
+
+.bootstrap-select.btn-group {
+  &.form-control {
+    margin-bottom: 0;
+  }
+  .btn {
+    // TODO Create global variable for validation state box shadows?
+    $input-validation-focus-box-shadow: rgba($color-pf-black, (7.5/100));
+    &:hover {
+      border-color: $input-border-hover;
+    }
+    .caret {
+      margin-top: -4px;
+    }
+    @include form-control-outline();
+    .has-error & {
+      border-color: $state-danger-text;
+      &:focus {
+        // TODO Create global variable for validation state box shadows?
+        $state-danger-input-focus: lighten($state-danger-text, 20%);
+        $shadow: unquote("inset 0 1px 1px #{$input-validation-focus-box-shadow}, 0 0 6px #{$state-danger-input-focus}");
+        border-color: darken($state-danger-text, 10%);
+        @include box-shadow($shadow);
+      }
+    }
+    .has-success & {
+      border-color: $state-success-text;
+      &:focus {
+        // TODO Create global variable for validation state box shadows?
+        $state-success-input-focus: lighten($state-success-text, 20%);
+        $shadow: unquote("inset 0 1px 1px #{$input-validation-focus-box-shadow}, 0 0 6px #{$state-success-input-focus}");
+        border-color: darken($state-success-text, 10%);
+        @include box-shadow($shadow);
+      }
+    }
+    .has-warning & {
+      border-color: $state-warning-text;
+      &:focus {
+        // TODO Create global variable for validation state box shadows?
+        $state-warning-input-focus: lighten($state-warning-text, 20%);
+        $shadow: unquote("inset 0 1px 1px #{$input-validation-focus-box-shadow}, 0 0 6px #{$state-warning-input-focus}");
+        border-color: darken($state-warning-text, 10%);
+        @include box-shadow($shadow);
+      }
+    }
+    @include transition(unquote("border-color ease-in-out .15s, box-shadow ease-in-out .15s"));
+  }
+  .dropdown-menu { // Also see navbar.less
+    > .active > a {
+      &,
+      &:active {
+        background-color: $dropdown-link-hover-bg !important;
+        border-color: $dropdown-link-hover-border-color !important;
+        color: $gray-dark !important;
+        small {
+          color: $gray-light !important;
+        }
+      }
+    }
+    > .disabled > a {
+      color: $gray-light !important;
+    }
+    > .selected > a {
+      background-color: $dropdown-link-active-bg !important;
+      border-color: $dropdown-link-active-border-color !important;
+      color: $color-pf-white !important;
+      small {
+        color: rgba($color-pf-white, (50/100)) !important;
+      }
+    }
+    .divider {
+      background: $dropdown-divider-bg !important;
+      margin: $dropdown-divider-margin !important;
+    }
+    dt {
+      color: $color-pf-black-500;
+      font-weight:normal;
+      padding: 1px 10px;
+    }
+    li {
+      & > a.opt {
+        padding: 1px 10px;
+      }
+      & a {
+        &:active small {
+          color: rgba($color-pf-white, (50/100)) !important;
+        }
+        &:hover,
+        &:focus {
+          small {
+            color: $gray-light;
+          }
+        }
+      }
+      &:not(.disabled) {
+        a:hover,
+        a:focus {
+          small {
+            color: $gray-light;
+          }
+        }
+      }
+    }
+  }
+}

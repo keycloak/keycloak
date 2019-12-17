@@ -36,7 +36,7 @@ import java.util.Map;
 
 public class NamespaceContext implements javax.xml.namespace.NamespaceContext {
 
-    private Map<String, String> nsMap = new HashMap<String, String>();
+    private Map<String, String> nsMap = new HashMap<>();
 
     public NamespaceContext() {
     }

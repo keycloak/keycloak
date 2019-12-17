@@ -23,7 +23,7 @@ import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+
 import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
 import org.keycloak.storage.StorageId;
 import org.keycloak.storage.client.AbstractReadOnlyClientStorageAdapter;
@@ -36,6 +36,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.List;
 import java.util.stream.Collectors;
 
 /**
@@ -74,6 +75,14 @@ public class HardcodedClientStorageProvider implements ClientStorageProvider, Cl
     @Override
     public void close() {
 
+    }
+
+    @Override
+    public List<ClientModel> searchClientsByClientId(String clientId, Integer firstResult, Integer maxResults, RealmModel realm) {
+        if (clientId != null && this.clientId.toLowerCase().contains(clientId.toLowerCase())) {
+            return Collections.singletonList(new ClientAdapter(realm));
+        }
+        return Collections.EMPTY_LIST;
     }
 
     public class ClientAdapter extends AbstractReadOnlyClientStorageAdapter {

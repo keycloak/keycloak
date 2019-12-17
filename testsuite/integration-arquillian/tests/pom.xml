@@ -24,7 +24,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian</artifactId>
-        <version>8.0.0-SNAPSHOT</version>
+        <version>9.0.0-SNAPSHOT</version>
     </parent>
 
     <packaging>pom</packaging>
@@ -155,13 +155,16 @@
         <github.username/>
         <github.secretToken/>
         <ieDriverArch>Win32</ieDriverArch>
+        <ieDriverVersion/>
         <js.browser>phantomjs</js.browser>
         <js.chromeArguments>--headless</js.chromeArguments>
         <htmlUnitBrowserVersion>chrome</htmlUnitBrowserVersion>
         <firefox_binary/> <!-- the path is set automatically based on the OS -->
         <firefoxLegacyDriver>false</firefoxLegacyDriver>
+        <firefoxDriverVersion/>
         <chromeBinary/>
         <chromeArguments/>
+        <chromeDriverVersion/>
 
         <appium.platformName/>
         <appium.deviceName/>
@@ -175,7 +178,6 @@
         <backends.console.output>true</backends.console.output>
 
         <testsuite.constants>${project.build.directory}/dependency/test-constants.properties</testsuite.constants>
-        <testsuite.ui.layout>0</testsuite.ui.layout> <!-- this is to tell the UI tests what type of layout to expect (doesn't setup the layout, just what to expect); 0 == desktop layout, 1 == smartphone layout, 2 == tablet layout -->
 
         <skip.add.user.json>false</skip.add.user.json>
         <skip.clean.second.cache>true</skip.clean.second.cache>
@@ -221,6 +223,25 @@
                                 <outputDirectory>${containers.home}</outputDirectory>
                                 <overWriteIfNewer>true</overWriteIfNewer>
                                 <skip>${auth.server.jboss.skip.unpack}</skip>
+                            </configuration>
+                        </execution>
+                        <execution>
+                            <id>unpack-undertow-server</id>
+                            <phase>generate-test-resources</phase>
+                            <goals>
+                                <goal>unpack</goal>
+                            </goals>
+                            <configuration>
+                                <artifactItems>
+                                    <artifactItem>
+                                        <groupId>org.keycloak.testsuite</groupId>
+                                        <artifactId>integration-arquillian-servers-auth-server-undertow</artifactId>
+                                        <version>${project.version}</version>
+                                        <type>jar</type>
+                                        <outputDirectory>${containers.home}/auth-server-undertow</outputDirectory>
+                                    </artifactItem>
+                                </artifactItems>
+                                <includes>*.jks,*.crt,*.truststore,*.crl,*.key,certs/clients/*</includes>
                             </configuration>
                         </execution>
                         <execution>
@@ -472,7 +493,6 @@
                             <kie.maven.settings>${kie.maven.settings}</kie.maven.settings>
 
                             <testsuite.constants>${testsuite.constants}</testsuite.constants>
-                            <testsuite.ui.layout>${testsuite.ui.layout}</testsuite.ui.layout>
                             <cli.log.output>${cli.log.output}</cli.log.output>
                             <test.intermittent>${test.intermittent}</test.intermittent>
 
@@ -486,12 +506,15 @@
                             <github.username>${github.username}</github.username>
                             <github.secretToken>${github.secretToken}</github.secretToken>
                             <ieDriverArch>${ieDriverArch}</ieDriverArch>
+                            <ieDriverVersion>${ieDriverVersion}</ieDriverVersion>
 
                             <firefox_binary>${firefox_binary}</firefox_binary>
                             <chromeBinary>${chromeBinary}</chromeBinary>
                             <chromeArguments>${chromeArguments}</chromeArguments>
+                            <chromeDriverVersion>${chromeDriverVersion}</chromeDriverVersion>
 
                             <firefoxLegacyDriver>${firefoxLegacyDriver}</firefoxLegacyDriver>
+                            <firefoxDriverVersion>${firefoxDriverVersion}</firefoxDriverVersion>
 
                             <appium.platformName>${appium.platformName}</appium.platformName>
                             <appium.deviceName>${appium.deviceName}</appium.deviceName>
@@ -1539,12 +1562,6 @@
                     <groupId>org.keycloak.testsuite</groupId>
                     <artifactId>integration-arquillian-servers-auth-server-undertow</artifactId>
                     <version>${project.version}</version>
-                </dependency>
-
-                <dependency>
-                    <groupId>org.jboss.arquillian.container</groupId>
-                    <artifactId>undertow-embedded</artifactId>
-                    <version>${undertow-embedded.version}</version>
                 </dependency>
 
                 <dependency>

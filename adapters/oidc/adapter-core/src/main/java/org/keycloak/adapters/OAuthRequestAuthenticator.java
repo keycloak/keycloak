@@ -336,7 +336,7 @@ public class OAuthRequestAuthenticator {
         } catch (ServerRequest.HttpFailure failure) {
             log.error("failed to turn code into token");
             log.error("status from server: " + failure.getStatus());
-            if (failure.getError() != null) {
+            if (failure.getError() != null && !failure.getError().trim().isEmpty()) {
                 log.error("   " + failure.getError());
             }
             return challenge(403, OIDCAuthenticationError.Reason.CODE_TO_TOKEN_FAILURE, null);

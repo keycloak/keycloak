@@ -23,8 +23,9 @@ import org.junit.BeforeClass;
 import org.keycloak.common.Profile;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.ProfileAssume;
-import org.keycloak.testsuite.auth.page.account2.WelcomeScreen;
 import org.keycloak.testsuite.ui.AbstractUiTest;
+import org.keycloak.testsuite.ui.account2.page.PageNotFound;
+import org.keycloak.testsuite.ui.account2.page.WelcomeScreen;
 
 import java.util.List;
 
@@ -39,6 +40,9 @@ public abstract class AbstractAccountTest extends AbstractUiTest {
     @Page
     protected WelcomeScreen accountWelcomeScreen;
 
+    @Page
+    protected PageNotFound pageNotFound;
+
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
         super.addTestRealms(testRealms);
@@ -47,8 +51,9 @@ public abstract class AbstractAccountTest extends AbstractUiTest {
     }
 
     @BeforeClass
-    public static void enabled() {
+    public static void assumeProfilesEnabled() {
         ProfileAssume.assumeFeatureEnabled(Profile.Feature.ACCOUNT2);
+        ProfileAssume.assumeFeatureEnabled(Profile.Feature.ACCOUNT_API);
     }
 
     @Before

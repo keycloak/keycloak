@@ -81,7 +81,29 @@
     setCollapseHeights();
 
     // Update on window resizing
-    $(window).resize(setCollapseHeights);
+    $(window).on('resize', setCollapseHeights);
 
   };
+
+  $.fn.initFixedAccordion = function () {
+    var fixedAccordion = this, initOpen;
+
+    fixedAccordion.on('show.bs.collapse','.collapse', function (event) {
+      $(event.target.parentNode).addClass('panel-open');
+    });
+
+    fixedAccordion.on('hide.bs.collapse','.collapse', function (event) {
+      $(event.target.parentNode).removeClass('panel-open');
+    });
+
+    fixedAccordion.find('.panel').each(function (index, item) {
+      $(item).removeClass('panel-open');
+    });
+
+    initOpen = $(fixedAccordion.find('.collapse.in'))[0];
+    if (initOpen) {
+      $(initOpen.parentNode).addClass('panel-open');
+    }
+  };
+
 }(jQuery));

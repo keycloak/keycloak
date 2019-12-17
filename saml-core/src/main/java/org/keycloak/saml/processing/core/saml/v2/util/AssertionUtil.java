@@ -480,7 +480,7 @@ public class AssertionUtil {
      * @return
      */
     public static List<String> getRoles(AssertionType assertion, List<String> roleKeys) {
-        List<String> roles = new ArrayList<String>();
+        List<String> roles = new ArrayList<>();
         Set<StatementAbstractType> statements = assertion.getStatements();
         for (StatementAbstractType statement : statements) {
             if (statement instanceof AttributeStatementType) {
@@ -519,7 +519,7 @@ public class AssertionUtil {
      * @return
      */
     public static List<String> getRoles(SAML11AssertionType assertion, List<String> roleKeys) {
-        List<String> roles = new ArrayList<String>();
+        List<String> roles = new ArrayList<>();
         List<SAML11StatementAbstractType> statements = assertion.getStatements();
         for (SAML11StatementAbstractType statement : statements) {
             if (statement instanceof SAML11AttributeStatementType) {

@@ -5,6 +5,7 @@ import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.policy.provider.PolicyProvider;
 import org.keycloak.authorization.policy.provider.PolicyProviderFactory;
+import org.keycloak.common.Profile;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
@@ -56,17 +57,17 @@ public class JSPolicyProviderFactory implements PolicyProviderFactory<JSPolicyRe
 
     @Override
     public void onCreate(Policy policy, JSPolicyRepresentation representation, AuthorizationProvider authorization) {
-        updatePolicy(policy, representation.getCode());
+        updatePolicy(policy, representation.getCode(), authorization);
     }
 
     @Override
     public void onUpdate(Policy policy, JSPolicyRepresentation representation, AuthorizationProvider authorization) {
-        updatePolicy(policy, representation.getCode());
+        updatePolicy(policy, representation.getCode(), authorization);
     }
 
     @Override
     public void onImport(Policy policy, PolicyRepresentation representation, AuthorizationProvider authorization) {
-        updatePolicy(policy, representation.getConfig().get("code"));
+        updatePolicy(policy, representation.getConfig().get("code"), authorization);
     }
 
     @Override
@@ -96,6 +97,11 @@ public class JSPolicyProviderFactory implements PolicyProviderFactory<JSPolicyRe
         return "js";
     }
 
+    @Override
+    public boolean isInternal() {
+        return !Profile.isFeatureEnabled(Profile.Feature.UPLOAD_SCRIPTS);
+    }
+
     private EvaluatableScriptAdapter getEvaluatableScript(final AuthorizationProvider authz, final Policy policy) {
         return scriptCache.computeIfAbsent(policy.getId(), id -> {
             final ScriptingProvider scripting = authz.getKeycloakSession().getProvider(ScriptingProvider.class);
@@ -104,7 +110,7 @@ public class JSPolicyProviderFactory implements PolicyProviderFactory<JSPolicyRe
         });
     }
 
-    private ScriptModel getScriptModel(final Policy policy, final RealmModel realm, final ScriptingProvider scripting) {
+    protected ScriptModel getScriptModel(final Policy policy, final RealmModel realm, final ScriptingProvider scripting) {
         String scriptName = policy.getName();
         String scriptCode = policy.getConfig().get("code");
         String scriptDescription = policy.getDescription();
@@ -113,8 +119,15 @@ public class JSPolicyProviderFactory implements PolicyProviderFactory<JSPolicyRe
         return scripting.createScript(realm.getId(), ScriptModel.TEXT_JAVASCRIPT, scriptName, scriptCode, scriptDescription);
     }
 
-    private void updatePolicy(Policy policy, String code) {
+    private void updatePolicy(Policy policy, String code, AuthorizationProvider authorization) {
         scriptCache.remove(policy.getId());
+        if (!Profile.isFeatureEnabled(Profile.Feature.UPLOAD_SCRIPTS) && !authorization.getKeycloakSession().getAttributeOrDefault("ALLOW_CREATE_POLICY", false) && !isDeployed()) {
+            throw new RuntimeException("Script upload is disabled");
+        }
         policy.putConfig("code", code);
+    }
+
+    protected boolean isDeployed() {
+        return false;
     }
 }

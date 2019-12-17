@@ -167,6 +167,22 @@
                 <kc-tooltip>{{:: 'user-info-url.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group clearfix">
+                <label class="col-md-2 control-label" for="clientAuth"><span class="required">*</span> {{:: 'client-auth' | translate}}</label>
+                <div class="col-md-6">
+                    <div>
+                        <select class="form-control" id="clientAuth"
+                                ng-model="identityProvider.config.clientAuthMethod"
+                                required>
+                            <option id="clientAuth_post" name="clientAuth" value="client_secret_post" selected>{{:: 'client-auth.client_secret_post' | translate}}</option>
+                            <option id="clientAuth_basic" name="clientAuth" value="client_secret_basic">{{:: 'client-auth.client_secret_basic' | translate}}</option>
+                            <option id="clientAuth_secret_jwt" name="clientAuth" value="client_secret_jwt">{{:: 'client-auth.client_secret_jwt' | translate}}</option>
+                            <option id="clientAuth_privatekey_jwt" name="clientAuth" value="private_key_jwt">{{:: 'client-auth.private_key_jwt' | translate}}</option>
+                        </select>
+                    </div>
+                </div>
+                <kc-tooltip>{{:: 'client-auth.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group clearfix">
                 <label class="col-md-2 control-label" for="clientId"><span class="required">*</span> {{:: 'client-id' | translate}}</label>
                 <div class="col-md-6">
                     <input class="form-control" id="clientId" type="text" ng-model="identityProvider.config.clientId" required>
@@ -174,9 +190,9 @@
                 <kc-tooltip>{{:: 'identity-provider.client-id.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group clearfix">
-                <label class="col-md-2 control-label" for="clientSecret"><span class="required">*</span> {{:: 'client-secret' | translate}}</label>
+                <label class="col-md-2 control-label" for="clientSecret"><span data-ng-show="identityProvider.config.clientAuthMethod != 'private_key_jwt'" class="required">*</span> {{:: 'client-secret' | translate}}</label>
                 <div class="col-md-6">
-                    <input class="form-control" id="clientSecret" kc-password ng-model="identityProvider.config.clientSecret" required>
+                    <input class="form-control" id="clientSecret" kc-password ng-model="identityProvider.config.clientSecret" ng-required="identityProvider.config.clientAuthMethod != 'private_key_jwt'">
                 </div>
                 <kc-tooltip>{{:: 'client-secret.tooltip' | translate}}</kc-tooltip>
             </div>

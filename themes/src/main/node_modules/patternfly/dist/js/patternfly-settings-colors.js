@@ -1,6 +1,9 @@
 (function (window) {
   'use strict';
 
+  // Ensure we are assigning these to the patternfly property of the window argument, and not the implicit global patternfly
+  var patternfly = window.patternfly;
+
   // Util: PatternFly Palette colors
   patternfly.pfPaletteColors = {
     black:         '#030303',
@@ -84,5 +87,5 @@
     red400:        '#470000',
     red500:        '#2c0000'
   };
-})(window);
+})(typeof window !== 'undefined' ? window : global);
 

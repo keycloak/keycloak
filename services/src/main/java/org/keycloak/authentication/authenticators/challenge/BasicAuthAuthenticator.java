@@ -49,14 +49,22 @@ public class BasicAuthAuthenticator extends AbstractUsernameFormAuthenticator im
         String authorizationHeader = getAuthorizationHeader(context);
 
         if (authorizationHeader == null) {
-            context.challenge(challenge(context, null));
+            if (context.getExecution().isRequired()) {
+                context.challenge(challenge(context, null));
+            } else {
+                context.attempted();
+            }
             return;
         }
 
         String[] challenge = getChallenge(authorizationHeader);
 
         if (challenge == null) {
-            context.challenge(challenge(context, null));
+            if (context.getExecution().isRequired()) {
+                context.challenge(challenge(context, null));
+            } else {
+                context.attempted();
+            }
             return;
         }
 

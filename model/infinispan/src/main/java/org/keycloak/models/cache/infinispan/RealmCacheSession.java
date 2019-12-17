@@ -469,7 +469,7 @@ public class RealmCacheSession implements CacheRealmProvider {
 
     private List<RealmModel> getRealms(List<RealmModel> backendRealms) {
         // Return cache delegates to ensure cache invalidated during write operations
-        List<RealmModel> cachedRealms = new LinkedList<RealmModel>();
+        List<RealmModel> cachedRealms = new LinkedList<>();
         for (RealmModel realm : backendRealms) {
             RealmModel cached = getRealm(realm.getId());
             cachedRealms.add(cached);
@@ -537,40 +537,13 @@ public class RealmCacheSession implements CacheRealmProvider {
     }
 
     @Override
+    public List<ClientModel> getClients(RealmModel realm, Integer firstResult, Integer maxResults) {
+        return getClientDelegate().getClients(realm, firstResult, maxResults);
+    }
+
+    @Override
     public List<ClientModel> getClients(RealmModel realm) {
-        String cacheKey = getRealmClientsQueryCacheKey(realm.getId());
-        boolean queryDB = invalidations.contains(cacheKey) || listInvalidations.contains(realm.getId());
-        if (queryDB) {
-            return getClientDelegate().getClients(realm);
-        }
-
-        ClientListQuery query = cache.get(cacheKey, ClientListQuery.class);
-        if (query != null) {
-            logger.tracev("getClients cache hit: {0}", realm.getName());
-        }
-
-        if (query == null) {
-            Long loaded = cache.getCurrentRevision(cacheKey);
-            List<ClientModel> model = getClientDelegate().getClients(realm);
-            if (model == null) return null;
-            Set<String> ids = new HashSet<>();
-            for (ClientModel client : model) ids.add(client.getId());
-            query = new ClientListQuery(loaded, cacheKey, realm, ids);
-            logger.tracev("adding realm clients cache miss: realm {0} key {1}", realm.getName(), cacheKey);
-            cache.addRevisioned(query, startupRevision);
-            return model;
-        }
-        List<ClientModel> list = new LinkedList<>();
-        for (String id : query.getClients()) {
-            ClientModel client = session.realms().getClientById(id, realm);
-            if (client == null) {
-                // TODO: Handle with cluster invalidations too
-                invalidations.add(cacheKey);
-                return getRealmDelegate().getClients(realm);
-            }
-            list.add(client);
-        }
-        return list;
+        return getClientDelegate().getClients(realm);
     }
 
 
@@ -875,6 +848,11 @@ public class RealmCacheSession implements CacheRealmProvider {
     }
 
     @Override
+    public Long getClientsCount(RealmModel realm) {
+        return getRealmDelegate().getClientsCount(realm);
+    }
+
+    @Override
     public Long getGroupsCountByNameContaining(RealmModel realm, String search) {
         return getRealmDelegate().getGroupsCountByNameContaining(realm, search);
     }
@@ -1112,6 +1090,10 @@ public class RealmCacheSession implements CacheRealmProvider {
         return adapter;
     }
 
+    @Override
+    public List<ClientModel> searchClientsByClientId(String clientId, Integer firstResult, Integer maxResults, RealmModel realm) {
+        return getClientDelegate().searchClientsByClientId(clientId, firstResult, maxResults, realm);
+    }
 
     @Override
     public ClientModel getClientByClientId(String clientId, RealmModel realm) {

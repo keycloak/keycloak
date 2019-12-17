@@ -102,15 +102,15 @@ public enum SAMLProtocolQNames implements HasQName {
 
     private final QName qName;
 
-    private SAMLProtocolQNames(String localName) {
+    SAMLProtocolQNames(String localName) {
         this(JBossSAMLURIConstants.PROTOCOL_NSURI, localName);
     }
 
-    private SAMLProtocolQNames(HasQName source) {
+    SAMLProtocolQNames(HasQName source) {
         this.qName = source.getQName();
     }
 
-    private SAMLProtocolQNames(JBossSAMLURIConstants nsUri, String localName) {
+    SAMLProtocolQNames(JBossSAMLURIConstants nsUri, String localName) {
         this.qName = new QName(nsUri == null ? null : nsUri.get(), localName);
     }
 

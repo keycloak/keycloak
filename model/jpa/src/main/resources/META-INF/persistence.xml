@@ -23,7 +23,6 @@
         <class>org.keycloak.models.jpa.entities.ClientEntity</class>
         <class>org.keycloak.models.jpa.entities.ClientAttributeEntity</class>
         <class>org.keycloak.models.jpa.entities.CredentialEntity</class>
-        <class>org.keycloak.models.jpa.entities.CredentialAttributeEntity</class>
         <class>org.keycloak.models.jpa.entities.RealmEntity</class>
         <class>org.keycloak.models.jpa.entities.RealmAttributeEntity</class>
         <class>org.keycloak.models.jpa.entities.RequiredCredentialEntity</class>
@@ -80,7 +79,6 @@
         <class>org.keycloak.storage.jpa.entity.FederatedUserConsentEntity</class>
         <class>org.keycloak.storage.jpa.entity.FederatedUserConsentClientScopeEntity</class>
         <class>org.keycloak.storage.jpa.entity.FederatedUserCredentialEntity</class>
-        <class>org.keycloak.storage.jpa.entity.FederatedUserCredentialAttributeEntity</class>
         <class>org.keycloak.storage.jpa.entity.FederatedUserGroupMembershipEntity</class>
         <class>org.keycloak.storage.jpa.entity.FederatedUserRequiredActionEntity</class>
         <class>org.keycloak.storage.jpa.entity.FederatedUserRoleMappingEntity</class>

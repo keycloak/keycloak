@@ -25,6 +25,7 @@ import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
+import javax.persistence.Lob;
 import javax.persistence.ManyToOne;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
@@ -38,9 +39,7 @@ import java.util.Collection;
  * @version $Revision: 1 $
  */
 @NamedQueries({
-        @NamedQuery(name="credentialByUser", query="select cred from CredentialEntity cred where cred.user = :user"),
-        @NamedQuery(name="credentialByUserAndType", query="select cred from CredentialEntity cred where cred.user = :user and cred.type = :type"),
-        @NamedQuery(name="credentialByNameAndType", query="select cred from CredentialEntity cred where cred.user = :user and cred.type = :type and cred.device = :device"),
+        @NamedQuery(name="credentialByUser", query="select cred from CredentialEntity cred where cred.user = :user order by cred.priority"),
         @NamedQuery(name="deleteCredentialsByRealm", query="delete from CredentialEntity cred where cred.user IN (select u from UserEntity u where u.realmId=:realmId)"),
         @NamedQuery(name="deleteCredentialsByRealmAndLink", query="delete from CredentialEntity cred where cred.user IN (select u from UserEntity u where u.realmId=:realmId and u.federationLink=:link)")
 
@@ -55,14 +54,10 @@ public class CredentialEntity {
 
     @Column(name="TYPE")
     protected String type;
-    @Column(name="VALUE")
-    protected String value;
-    @Column(name="DEVICE")
-    protected String device;
-    @Column(name="SALT")
-    protected byte[] salt;
-    @Column(name="HASH_ITERATIONS")
-    protected int hashIterations;
+
+    @Column(name="USER_LABEL")
+    protected String userLabel;
+
     @Column(name="CREATED_DATE")
     protected Long createdDate;
     
@@ -70,121 +65,84 @@ public class CredentialEntity {
     @JoinColumn(name="USER_ID")
     protected UserEntity user;
 
-    @Column(name="COUNTER")
-    protected int counter;
+    @Column(name="SECRET_DATA")
+    protected String secretData;
 
-    @Column(name="ALGORITHM")
-    protected String algorithm;
-    @Column(name="DIGITS")
-    protected int digits;
-    @Column(name="PERIOD")
-    protected int period;
+    @Column(name="CREDENTIAL_DATA")
+    protected String credentialData;
 
-    @OneToMany(cascade = CascadeType.REMOVE, fetch = FetchType.EAGER, orphanRemoval = true, mappedBy="credential")
-    protected Collection<CredentialAttributeEntity> credentialAttributes = new ArrayList<>();
+    @Column(name="PRIORITY")
+    protected int priority;
+
+    @Deprecated // Needed just for backwards compatibility when migrating old credentials
+    @Column(name="SALT")
+    protected byte[] salt;
 
     public String getId() {
         return id;
     }
-
     public void setId(String id) {
         this.id = id;
-    }
-
-    public String getValue() {
-        return value;
-    }
-
-    public void setValue(String value) {
-        this.value = value;
     }
 
     public String getType() {
         return type;
     }
-
     public void setType(String type) {
         this.type = type;
     }
 
-    public String getDevice() {
-        return device;
+    public String getUserLabel() {
+        return userLabel;
     }
-
-    public void setDevice(String device) {
-        this.device = device;
+    public void setUserLabel(String userLabel) {
+        this.userLabel = userLabel;
     }
 
     public UserEntity getUser() {
         return user;
     }
-
     public void setUser(UserEntity user) {
         this.user = user;
     }
 
+    @Deprecated
     public byte[] getSalt() {
         return salt;
     }
 
+    @Deprecated
     public void setSalt(byte[] salt) {
         this.salt = salt;
-    }
-
-    public int getHashIterations() {
-        return hashIterations;
-    }
-
-    public void setHashIterations(int hashIterations) {
-        this.hashIterations = hashIterations;
     }
 
     public Long getCreatedDate() {
         return createdDate;
     }
-
     public void setCreatedDate(Long createdDate) {
         this.createdDate = createdDate;
     }
 
-    public int getCounter() {
-        return counter;
+    public String getSecretData() {
+        return secretData;
+    }
+    public void setSecretData(String secretData) {
+        this.secretData = secretData;
     }
 
-    public void setCounter(int counter) {
-        this.counter = counter;
+    public String getCredentialData() {
+        return credentialData;
+    }
+    public void setCredentialData(String credentialData) {
+        this.credentialData = credentialData;
     }
 
-    public String getAlgorithm() {
-        return algorithm;
+    public int getPriority() {
+        return priority;
     }
 
-    public void setAlgorithm(String algorithm) {
-        this.algorithm = algorithm;
-    }
-
-    public int getDigits() {
-        return digits;
-    }
-
-    public void setDigits(int digits) {
-        this.digits = digits;
-    }
-
-    public int getPeriod() {
-        return period;
-    }
-
-    public void setPeriod(int period) {
-        this.period = period;
-    }
-
-    public Collection<CredentialAttributeEntity> getCredentialAttributes() {
-        return credentialAttributes;
-    }
-
-    public void setCredentialAttributes(Collection<CredentialAttributeEntity> credentialAttributes) {
-        this.credentialAttributes = credentialAttributes;
+    public void setPriority(int priority) {
+        this.priority = priority;
     }
 
     @Override

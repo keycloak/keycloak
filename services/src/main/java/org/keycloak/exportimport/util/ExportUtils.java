@@ -41,7 +41,6 @@ import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.store.PolicyStore;
 import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.common.Version;
-import org.keycloak.common.util.Base64;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.credential.CredentialModel;
@@ -569,19 +568,7 @@ public class ExportUtils {
     }
 
     public static CredentialRepresentation exportCredential(CredentialModel userCred) {
-        CredentialRepresentation credRep = new CredentialRepresentation();
-        credRep.setType(userCred.getType());
-        credRep.setDevice(userCred.getDevice());
-        credRep.setHashedSaltedValue(userCred.getValue());
-        if (userCred.getSalt() != null) credRep.setSalt(Base64.encodeBytes(userCred.getSalt()));
-        credRep.setHashIterations(userCred.getHashIterations());
-        credRep.setCounter(userCred.getCounter());
-        credRep.setAlgorithm(userCred.getAlgorithm());
-        credRep.setDigits(userCred.getDigits());
-        credRep.setCreatedDate(userCred.getCreatedDate());
-        credRep.setConfig(userCred.getConfig());
-        credRep.setPeriod(userCred.getPeriod());
-        return credRep;
+        return ModelToRepresentation.toRepresentation(userCred);
     }
 
     // Streaming API

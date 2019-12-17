@@ -34,7 +34,7 @@ public class KeyInfoTools {
      * @param clazz
      * @return The object or {@code null} if not found.
      */
-    public static <T> T getContent(Iterable<Object> objects, Class<T> clazz) {
+    public static <T> T getContent(Iterable<?> objects, Class<T> clazz) {
         if (objects == null) {
             return null;
         }

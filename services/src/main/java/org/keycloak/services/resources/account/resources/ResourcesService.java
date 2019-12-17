@@ -27,7 +27,6 @@ import javax.ws.rs.core.Link;
 import javax.ws.rs.core.Response;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -57,14 +56,24 @@ public class ResourcesService extends AbstractResourceService {
      * Returns a list of {@link Resource} where the {@link #user} is the resource owner.
      *
      * @param first the first result
-     * @param max the max result              
+     * @param max   the max result
      * @return a list of {@link Resource} where the {@link #user} is the resource owner
      */
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    public Response getResources(@QueryParam("first") Integer first, @QueryParam("max") Integer max) {
-        return queryResponse((f, m) -> resourceStore.findByOwner(user.getId(), null, f, m)
-                .stream().map(resource -> new Resource(resource, user, provider)), first, max);
+    public Response getResources(@QueryParam("name") String name,
+            @QueryParam("first") Integer first,
+            @QueryParam("max") Integer max) {
+        Map<String, String[]> filters = new HashMap<>();
+
+        filters.put("owner", new String[] { user.getId() });
+
+        if (name != null) {
+            filters.put("name", new String[] { name });
+        }
+
+        return queryResponse((f, m) -> resourceStore.findByResourceServer(filters, null, f, m).stream()
+                .map(resource -> new Resource(resource, user, provider)), first, max);
     }
 
     /**
@@ -77,8 +86,10 @@ public class ResourcesService extends AbstractResourceService {
     @GET
     @Path("shared-with-me")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response getSharedWithMe(@QueryParam("first") Integer first, @QueryParam("max") Integer max) {
-        return queryResponse((f, m) -> toPermissions(ticketStore.findGrantedResources(auth.getUser().getId(), f, m), false)
+    public Response getSharedWithMe(@QueryParam("name") String name,
+            @QueryParam("first") Integer first,
+            @QueryParam("max") Integer max) {
+        return queryResponse((f, m) -> toPermissions(ticketStore.findGrantedResources(auth.getUser().getId(), name, f, m), false)
                 .stream(), first, max);
     }
 
@@ -189,10 +200,12 @@ public class ResourcesService extends AbstractResourceService {
                     .rel("next").build());
         }
 
-        links.add(Link.fromUri(
-                KeycloakUriBuilder.fromUri(request.getUri().getRequestUri()).replaceQuery("first={first}&max={max}")
-                        .build(nextPage ? first : first - max, max))
-                .rel("prev").build());
+        if (first > 0) {
+            links.add(Link.fromUri(
+                    KeycloakUriBuilder.fromUri(request.getUri().getRequestUri()).replaceQuery("first={first}&max={max}")
+                            .build(nextPage ? first : first - max, max))
+                    .rel("prev").build());
+        }
 
         return links.toArray(new Link[links.size()]);
     }

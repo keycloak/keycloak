@@ -47,7 +47,7 @@ public class MultivaluedHashMap<K, V> extends HashMap<K, List<V>>
 
    public void putSingle(K key, V value)
    {
-      List<V> list = new ArrayList<V>();
+      List<V> list = new ArrayList<>();
       list.add(value);
       put(key, list);
    }
@@ -101,11 +101,11 @@ public class MultivaluedHashMap<K, V> extends HashMap<K, List<V>>
    {
       List<V> list = get(key);
       if (list == null)
-         put(key, list = new ArrayList<V>());
+         put(key, list = new ArrayList<>());
       return list;
    }
 
-   public void addAll(MultivaluedHashMap<K, V> other)
+   public final void addAll(MultivaluedHashMap<K, V> other)
    {
       for (Map.Entry<K, List<V>> entry : other.entrySet())
       {
@@ -121,15 +121,11 @@ public class MultivaluedHashMap<K, V> extends HashMap<K, List<V>>
          return false;
       }
       for (Map.Entry<K, List<V>> e : entrySet()) {
-         List<V> olist = omap.get(e.getKey());
-         if (e.getValue().size() != olist.size()) {
-            return false;
-         }
-         for (V v : e.getValue()) {
-            if (!olist.contains(v)) {
-               return false;
-            }
-         }
+          List<V> list = e.getValue();
+          List<V> olist = omap.get(e.getKey());
+          if (!(list.size() == olist.size() && list.containsAll(olist) && olist.containsAll(list))) {
+              return false;
+          }
       }
       return true;
    }

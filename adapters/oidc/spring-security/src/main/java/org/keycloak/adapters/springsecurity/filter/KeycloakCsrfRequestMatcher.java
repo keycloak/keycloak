@@ -37,8 +37,7 @@ public class KeycloakCsrfRequestMatcher implements RequestMatcher {
             AdapterConstants.K_LOGOUT,
             AdapterConstants.K_PUSH_NOT_BEFORE,
             AdapterConstants.K_QUERY_BEARER_TOKEN,
-            AdapterConstants.K_TEST_AVAILABLE,
-            AdapterConstants.K_VERSION
+            AdapterConstants.K_TEST_AVAILABLE
     );
 
     private Pattern allowedMethods = Pattern.compile("^(GET|HEAD|TRACE|OPTIONS)$");

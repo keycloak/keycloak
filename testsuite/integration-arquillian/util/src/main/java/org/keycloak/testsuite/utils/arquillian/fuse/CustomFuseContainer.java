@@ -198,7 +198,12 @@ public class CustomFuseContainer<T extends KarafManagedContainerConfiguration> e
 
     @Override
     public void stop() throws LifecycleException {
-        super.stop();
+        try {
+            super.stop();
+        } catch (LifecycleException ex) {
+            log.info("Couldn't uninstall arquillian bundle. This should be non-blocking issue, proceeding with destroying karaf process.");
+        }
+
         destroyKarafProcess();
     }
 

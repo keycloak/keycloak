@@ -20,3 +20,4 @@ org.keycloak.authentication.requiredactions.UpdateProfile
 org.keycloak.authentication.requiredactions.UpdateTotp
 org.keycloak.authentication.requiredactions.VerifyEmail
 org.keycloak.authentication.requiredactions.TermsAndConditions
+org.keycloak.authentication.requiredactions.WebAuthnRegisterFactory

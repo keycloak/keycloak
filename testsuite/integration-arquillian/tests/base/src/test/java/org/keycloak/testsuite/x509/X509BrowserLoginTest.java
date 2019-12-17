@@ -450,7 +450,7 @@ public class X509BrowserLoginTest extends AbstractX509AuthenticationTest {
             Assert.assertEquals("", loginPage.getPassword());
 
             // KEYCLOAK-2024
-            Assert.assertEquals("Account is disabled, contact admin.", loginPage.getError());
+            Assert.assertEquals("Account is disabled, contact your administrator.", loginPage.getError());
 
             events.expectLogin()
                     .user(userId)

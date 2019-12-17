@@ -40,7 +40,9 @@ import org.keycloak.models.jpa.entities.RoleEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
 import javax.persistence.EntityManager;
+import javax.persistence.LockModeType;
 import javax.persistence.TypedQuery;
+
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -116,7 +118,8 @@ public class JpaRealmProvider implements RealmProvider {
         for (String id : entities) {
             RealmModel realm = session.realms().getRealm(id);
             if (realm != null) realms.add(realm);
-
+            em.flush();
+            em.clear();
         }
         return realms;
     }
@@ -135,7 +138,7 @@ public class JpaRealmProvider implements RealmProvider {
 
     @Override
     public boolean removeRealm(String id) {
-        RealmEntity realm = em.find(RealmEntity.class, id);
+        RealmEntity realm = em.find(RealmEntity.class, id, LockModeType.PESSIMISTIC_WRITE);
         if (realm == null) {
             return false;
         }
@@ -289,7 +292,6 @@ public class JpaRealmProvider implements RealmProvider {
             list.add(session.realms().getRoleById(id, realm));
         }
         return list;
-
     }
 
     @Override
@@ -382,6 +384,13 @@ public class JpaRealmProvider implements RealmProvider {
     }
 
     @Override
+    public Long getClientsCount(RealmModel realm) {
+        return em.createNamedQuery("getRealmClientsCount", Long.class)
+                .setParameter("realm", realm.getId())
+                .getSingleResult();
+    }
+
+    @Override
     public Long getGroupsCountByNameContaining(RealmModel realm, String search) {
         return (long) searchForGroupByName(realm, search, null, null).size();
     }
@@ -467,7 +476,7 @@ public class JpaRealmProvider implements RealmProvider {
         for (GroupModel subGroup : group.getSubGroups()) {
             session.realms().removeGroup(realm, subGroup);
         }
-        GroupEntity groupEntity = em.find(GroupEntity.class, group.getId());
+        GroupEntity groupEntity = em.find(GroupEntity.class, group.getId(), LockModeType.PESSIMISTIC_WRITE);
         if ((groupEntity == null) || (!groupEntity.getRealm().getId().equals(realm.getId()))) {
             return false;
         }
@@ -509,8 +518,6 @@ public class JpaRealmProvider implements RealmProvider {
         subGroup.setParent(null);
     }
 
-
-
     @Override
     public ClientModel addClient(RealmModel realm, String clientId) {
         return addClient(realm, KeycloakModelUtils.generateId(), clientId);
@@ -543,8 +550,14 @@ public class JpaRealmProvider implements RealmProvider {
     }
 
     @Override
-    public List<ClientModel> getClients(RealmModel realm) {
+    public List<ClientModel> getClients(RealmModel realm, Integer firstResult, Integer maxResults) {
         TypedQuery<String> query = em.createNamedQuery("getClientIdsByRealm", String.class);
+        if (firstResult != null && firstResult > 0) {
+            query.setFirstResult(firstResult);
+        }
+        if (maxResults != null && maxResults > 0) {
+            query.setMaxResults(maxResults);
+        }
         query.setParameter("realm", realm.getId());
         List<String> clients = query.getResultList();
         if (clients.isEmpty()) return Collections.EMPTY_LIST;
@@ -554,7 +567,11 @@ public class JpaRealmProvider implements RealmProvider {
             if (client != null) list.add(client);
         }
         return Collections.unmodifiableList(list);
+    }
 
+    @Override
+    public List<ClientModel> getClients(RealmModel realm) {
+        return this.getClients(realm, null, null);
     }
 
     @Override
@@ -579,6 +596,22 @@ public class JpaRealmProvider implements RealmProvider {
     }
 
     @Override
+    public List<ClientModel> searchClientsByClientId(String clientId, Integer firstResult, Integer maxResults, RealmModel realm) {
+        TypedQuery<String> query = em.createNamedQuery("searchClientsByClientId", String.class);
+        if (firstResult != null && firstResult > 0) {
+            query.setFirstResult(firstResult);
+        }
+        if (maxResults != null && maxResults > 0) {
+            query.setMaxResults(maxResults);
+        }
+        query.setParameter("clientId", clientId);
+        query.setParameter("realm", realm.getId());
+        List<String> results = query.getResultList();
+        if (results.isEmpty()) return Collections.EMPTY_LIST;
+        return results.stream().map(id -> session.realms().getClientById(id, realm)).collect(Collectors.toList());
+    }
+
+    @Override
     public boolean removeClient(String id, RealmModel realm) {
         final ClientModel client = getClientById(id, realm);
         if (client == null) return false;
@@ -590,7 +623,7 @@ public class JpaRealmProvider implements RealmProvider {
             removeRole(realm, role);
         }
 
-        ClientEntity clientEntity = ((ClientAdapter)client).getEntity();
+        ClientEntity clientEntity = em.find(ClientEntity.class, id, LockModeType.PESSIMISTIC_WRITE);
 
         session.getKeycloakSessionFactory().publish(new RealmModel.ClientRemovedEvent() {
             @Override
@@ -686,7 +719,7 @@ public class JpaRealmProvider implements RealmProvider {
 
     @Override
     public void removeClientInitialAccessModel(RealmModel realm, String id) {
-        ClientInitialAccessEntity entity = em.find(ClientInitialAccessEntity.class, id);
+        ClientInitialAccessEntity entity = em.find(ClientInitialAccessEntity.class, id, LockModeType.PESSIMISTIC_WRITE);
         if (entity != null) {
             em.remove(entity);
             em.flush();

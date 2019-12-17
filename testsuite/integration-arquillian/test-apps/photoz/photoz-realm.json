@@ -111,7 +111,6 @@
     {
       "username": "service-account-photoz-restful-api",
       "enabled": true,
-      "email": "service-account-photoz-restful-api@placeholder.org",
       "serviceAccountClientId": "photoz-restful-api",
       "clientRoles": {
         "photoz-restful-api" : ["uma_protection"]

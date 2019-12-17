@@ -81,6 +81,7 @@ import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorC
 import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel.MappingSourceType.SUBJECTDN;
 import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel.MappingSourceType.SUBJECTDN_CN;
 import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel.MappingSourceType.SUBJECTDN_EMAIL;
+import org.keycloak.testsuite.util.ContainerAssume;
 
 /**
  * @author <a href="mailto:brat000012001@gmail.com">Peter Nalyvayko</a>
@@ -142,6 +143,7 @@ public abstract class AbstractX509AuthenticationTest extends AbstractTestRealmKe
     @Before
     public void validateConfiguration() {
         Assume.assumeTrue(AUTH_SERVER_SSL_REQUIRED);
+        ContainerAssume.assumeNotAuthServerRemote();
     }
 
 

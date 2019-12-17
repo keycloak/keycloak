@@ -24,6 +24,6 @@ package org.keycloak.models;
  */
 public interface KeycloakSessionTask {
 
-    public void run(KeycloakSession session);
+    void run(KeycloakSession session);
 
 }

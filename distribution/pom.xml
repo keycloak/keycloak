@@ -20,7 +20,7 @@
     <parent>
         <artifactId>keycloak-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>8.0.0-SNAPSHOT</version>
+        <version>9.0.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -45,6 +45,18 @@
         <module>server-overlay</module>
     </modules>
 
+    <repositories>
+        <!-- Needed for org.picketlink:picketlink-api -->
+        <repository>
+            <id>jboss-enterprise-maven-repository</id>
+            <name>JBoss Enterprise Maven Repository</name>
+            <url>https://maven.repository.redhat.com/ga/</url>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>
+    </repositories>
+
     <profiles>
         <profile>
             <id>distribution-downloads</id>
@@ -52,6 +64,12 @@
                 <module>api-docs-dist</module>
                 <module>examples-dist</module>
                 <module>downloads</module>
+            </modules>
+        </profile>
+        <profile>
+            <id>quarkus</id>
+            <modules>
+                <module>server-x</module>
             </modules>
         </profile>
     </profiles>

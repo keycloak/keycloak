@@ -40,7 +40,7 @@ import java.util.regex.Pattern;
 public class JsonParserTest {
 
     @Test
-    public void regex() throws Exception {
+    public void regex() {
         Pattern p = Pattern.compile(".*(?!\\.pdf)");
         if (p.matcher("foo.pdf").matches()) {
             System.out.println(".pdf no match");

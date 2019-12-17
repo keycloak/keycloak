@@ -17,16 +17,13 @@
 
 package org.keycloak.testsuite.forms;
 
-import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.graphene.page.Page;
-import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.ClientsResource;
-import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.authentication.authenticators.browser.UsernamePasswordFormFactory;
 import org.keycloak.authentication.authenticators.challenge.BasicAuthOTPAuthenticatorFactory;
 import org.keycloak.events.Details;
@@ -35,8 +32,10 @@ import org.keycloak.models.AuthenticationFlowBindings;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
@@ -46,7 +45,6 @@ import org.keycloak.testsuite.authentication.PushButtonAuthenticatorFactory;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
-import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
 import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.util.BasicAuthHelper;
 import org.openqa.selenium.By;
@@ -57,7 +55,6 @@ import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Form;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
-
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
@@ -90,12 +87,6 @@ public class FlowOverrideTest extends AbstractTestRealmKeycloakTest {
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
-    }
-
-    @Deployment
-    public static WebArchive deploy() {
-        return RunOnServerDeployment.create(UserResource.class)
-                .addPackages(true, "org.keycloak.testsuite");
     }
 
     @Before
@@ -399,8 +390,11 @@ public class FlowOverrideTest extends AbstractTestRealmKeycloakTest {
     @Test
     public void testDirectGrantHttpChallengeOTP() {
         UserRepresentation user = adminClient.realm("test").users().search("test-user@localhost").get(0);
-        UserRepresentation userUpdated = UserBuilder.edit(user).totpSecret("totpSecret").otpEnabled().build();
-        adminClient.realm("test").users().get(user.getId()).update(userUpdated);
+        UserRepresentation userUpdate = UserBuilder.edit(user).totpSecret("totpSecret").otpEnabled().build();
+        adminClient.realm("test").users().get(user.getId()).update(userUpdate);
+
+        CredentialRepresentation totpCredential = adminClient.realm("test").users()
+                .get(user.getId()).credentials().stream().filter(c -> OTPCredentialModel.TYPE.equals(c.getType())).findFirst().get();
 
         setupBruteForce();
 
@@ -439,7 +433,7 @@ public class FlowOverrideTest extends AbstractTestRealmKeycloakTest {
         response.close();
 
         clearBruteForce();
-        adminClient.realm("test").users().get(user.getId()).removeTotp();
+        adminClient.realm("test").users().get(user.getId()).removeCredential(totpCredential.getId());
     }
 
     @Test

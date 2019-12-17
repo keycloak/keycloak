@@ -18,11 +18,7 @@
 package org.keycloak.testsuite.model;
 
 
-import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.arquillian.container.test.api.TargetsContainer;
-import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Test;
-import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
@@ -30,19 +26,15 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.cache.infinispan.ClientAdapter;
 import org.keycloak.models.cache.infinispan.RealmAdapter;
-import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
+import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
+import org.keycloak.testsuite.Assert;
 
 import java.util.List;
 import java.util.Set;
 
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
-import static org.keycloak.testsuite.arquillian.DeploymentTargetModifier.AUTH_SERVER_CURRENT;
-
-
-import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
-import org.keycloak.testsuite.Assert;
-import org.keycloak.representations.idm.RealmRepresentation;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -50,16 +42,6 @@ import org.keycloak.representations.idm.RealmRepresentation;
  */
 
 public class CacheTest extends AbstractTestRealmKeycloakTest {
-
-	@Deployment
-	@TargetsContainer(AUTH_SERVER_CURRENT)
-	public static WebArchive deploy() {
-		return RunOnServerDeployment.create(UserResource.class, CacheTest.class)
-				.addPackages(true,
-						"org.keycloak.testsuite",
-						"org.keycloak.testsuite.model");
-	}
-
 
 	private ClientModel testApp = null;
 	private int grantedRolesCount=0;

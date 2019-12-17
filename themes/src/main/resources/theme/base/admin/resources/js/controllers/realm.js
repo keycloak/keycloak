@@ -252,6 +252,7 @@ module.controller('RealmDetailCtrl', function($scope, Current, Realm, realm, ser
     $scope.serverInfo = serverInfo;
     $scope.realmName = realm.realm;
     $scope.disableRename = realm.realm == masterRealm;
+    $scope.authServerUrl = authServerUrl;
 
     if (Current.realm == null || Current.realm.realm != realm.realm) {
         for (var i = 0; i < Current.realms.length; i++) {
@@ -397,6 +398,19 @@ module.controller('RealmOtpPolicyCtrl', function($scope, Current, Realm, realm, 
     genericRealmUpdate($scope, Current, Realm, realm, serverInfo, $http, $route, Dialog, Notifications, "/realms/" + realm.realm + "/authentication/otp-policy");
 });
 
+module.controller('RealmWebAuthnPolicyCtrl', function($scope, Current, Realm, realm, serverInfo, $http, $route, Dialog, Notifications) {
+
+    $scope.deleteAcceptableAaguid = function(index) {
+        $scope.realm.webAuthnPolicyAcceptableAaguids.splice(index, 1);
+    }
+
+    $scope.addAcceptableAaguid = function() {
+        $scope.realm.webAuthnPolicyAcceptableAaguids.push($scope.newAcceptableAaguid);
+        $scope.newAcceptableAaguid = "";
+    }
+
+    genericRealmUpdate($scope, Current, Realm, realm, serverInfo, $http, $route, Dialog, Notifications, "/realms/" + realm.realm + "/authentication/webauthn-policy");
+});
 
 module.controller('RealmThemeCtrl', function($scope, Current, Realm, realm, serverInfo, $http, $route, Dialog, Notifications) {
     genericRealmUpdate($scope, Current, Realm, realm, serverInfo, $http, $route, Dialog, Notifications, "/realms/" + realm.realm + "/theme-settings");
@@ -568,7 +582,7 @@ module.controller('RealmPasswordPolicyCtrl', function($scope, Realm, realm, $htt
     };
 });
 
-module.controller('RealmDefaultRolesCtrl', function ($scope, Realm, realm, clients, roles, Notifications, ClientRole, Client) {
+module.controller('RealmDefaultRolesCtrl', function ($scope, $route, Realm, realm, roles, Notifications, ClientRole, Client) {
 
     console.log('RealmDefaultRolesCtrl');
 
@@ -577,14 +591,6 @@ module.controller('RealmDefaultRolesCtrl', function ($scope, Realm, realm, clien
     $scope.availableRealmRoles = [];
     $scope.selectedRealmRoles = [];
     $scope.selectedRealmDefRoles = [];
-
-    $scope.clients = angular.copy(clients);
-    for (var i = 0; i < clients.length; i++) {
-        if (clients[i].name == 'account') {
-            $scope.client = $scope.clients[i];
-            break;
-        }
-    }
 
     $scope.availableClientRoles = [];
     $scope.selectedClientRoles = [];
@@ -646,24 +652,28 @@ module.controller('RealmDefaultRolesCtrl', function ($scope, Realm, realm, clien
         });
     };
 
-    $scope.changeClient = function () {
-
+    $scope.changeClient = function (client) {
+        $scope.selectedClient = client;
         $scope.selectedClientRoles = [];
         $scope.selectedClientDefRoles = [];
+        if (!client || !client.id) {
+            $scope.selectedClient = null;
+            return;
+        }
 
         // Populate available roles for selected client
-        if ($scope.client) {
-            var appDefaultRoles = ClientRole.query({realm: $scope.realm.realm, client: $scope.client.id}, function () {
-
-                if (!$scope.client.hasOwnProperty('defaultRoles') || $scope.client.defaultRoles === null) {
-                    $scope.client.defaultRoles = [];
+        if ($scope.selectedClient) {
+            ClientRole.query({realm: $scope.realm.realm, client: $scope.selectedClient.id}, function (appDefaultRoles) {
+                if (!$scope.selectedClient.hasOwnProperty('defaultRoles') || $scope.selectedClient.defaultRoles === null) {
+                    $scope.selectedClient.defaultRoles = [];
                 }
 
                 $scope.availableClientRoles = [];
-
+                console.log('default roles', appDefaultRoles);
                 for (var i = 0; i < appDefaultRoles.length; i++) {
+                    
                     var roleName = appDefaultRoles[i].name;
-                    if ($scope.client.defaultRoles.indexOf(roleName) < 0) {
+                    if ($scope.selectedClient.defaultRoles.indexOf(roleName) < 0) {
                         $scope.availableClientRoles.push(roleName);
                     }
                 }
@@ -679,9 +689,9 @@ module.controller('RealmDefaultRolesCtrl', function ($scope, Realm, realm, clien
         for (var i = 0; i < $scope.selectedClientRoles.length; i++) {
             var role = $scope.selectedClientRoles[i];
 
-            var idx = $scope.client.defaultRoles.indexOf(role);
+            var idx = $scope.selectedClient.defaultRoles.indexOf(role);
             if (idx < 0) {
-                $scope.client.defaultRoles.push(role);
+                $scope.selectedClient.defaultRoles.push(role);
             }
 
             idx = $scope.availableClientRoles.indexOf(role);
@@ -694,11 +704,16 @@ module.controller('RealmDefaultRolesCtrl', function ($scope, Realm, realm, clien
         $scope.selectedClientRoles = [];
 
         // Update/save the selected client with new default roles.
+        delete $scope.selectedClient.text;
         Client.update({
             realm: $scope.realm.realm,
-            client: $scope.client.id
-        }, $scope.client, function () {
+            client: $scope.selectedClient.id
+        }, $scope.selectedClient, function () {
             Notifications.success("Your changes have been saved to the client.");
+            Client.get({realm: realm.realm, client: $scope.selectedClient.id}, function(response) {
+                response.text = response.clientId;
+                $scope.changeClient(response);
+            });
         });
     };
 
@@ -707,9 +722,9 @@ module.controller('RealmDefaultRolesCtrl', function ($scope, Realm, realm, clien
         // Remove selected roles from the app default roles and add them to app available roles (move from right to left).
         for (var i = 0; i < $scope.selectedClientDefRoles.length; i++) {
             var role = $scope.selectedClientDefRoles[i];
-            var idx = $scope.client.defaultRoles.indexOf(role);
+            var idx = $scope.selectedClient.defaultRoles.indexOf(role);
             if (idx != -1) {
-                $scope.client.defaultRoles.splice(idx, 1);
+                $scope.selectedClient.defaultRoles.splice(idx, 1);
             }
             idx = $scope.availableClientRoles.indexOf(role);
             if (idx < 0) {
@@ -720,14 +735,20 @@ module.controller('RealmDefaultRolesCtrl', function ($scope, Realm, realm, clien
         $scope.selectedClientDefRoles = [];
 
         // Update/save the selected client with new default roles.
+        delete $scope.selectedClient.text;
         Client.update({
             realm: $scope.realm.realm,
-            client: $scope.client.id
-        }, $scope.client, function () {
+            client: $scope.selectedClient.id
+        }, $scope.selectedClient, function () {
             Notifications.success("Your changes have been saved to the client.");
+            Client.get({realm: realm.realm, client: $scope.selectedClient.id}, function(response) {
+                response.text = response.clientId;
+                $scope.changeClient(response);
+            });
         });
     };
 
+    clientSelectControl($scope, $route.current.params.realm, Client);
 });
 
 
@@ -1459,7 +1480,7 @@ module.controller('RoleListCtrl', function($scope, $route, Dialog, Notifications
 });
 
 
-module.controller('RoleDetailCtrl', function($scope, realm, role, roles, clients,
+module.controller('RoleDetailCtrl', function($scope, realm, role, roles, Client, $route,
                                              Role, ClientRole, RoleById, RoleRealmComposites, RoleClientComposites,
                                              $http, $location, Dialog, Notifications, RealmRoleRemover, ComponentUtils) {
     $scope.realm = realm;
@@ -1528,7 +1549,7 @@ module.controller('RoleDetailCtrl', function($scope, realm, role, roles, clients
         }
     }
 
-    roleControl($scope, realm, role, roles, clients,
+    roleControl($scope, $route, realm, role, roles, Client,
         ClientRole, RoleById, RoleRealmComposites, RoleClientComposites,
         $http, $location, Notifications, Dialog, ComponentUtils);
 });

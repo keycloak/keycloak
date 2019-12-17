@@ -18,12 +18,6 @@
     <deployment>
         <dependencies>
             <module name="org.keycloak.keycloak-server-subsystem.dependencies"/>
-            <!-- Kie requires access to kie.conf files from META-INF -->
-            <module name="org.kie">
-                <imports>
-                    <include path="META-INF"/>
-                </imports>
-            </module>
         </dependencies>
         <exclude-subsystems>
             <subsystem name="webservices"/>

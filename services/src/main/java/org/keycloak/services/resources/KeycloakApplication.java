@@ -17,14 +17,10 @@
 package org.keycloak.services.resources;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.jboss.dmr.ModelNode;
 import org.jboss.logging.Logger;
-import org.jboss.resteasy.core.Dispatcher;
-import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.Config;
-import org.keycloak.common.util.SystemEnvProperties;
+import org.keycloak.common.util.Resteasy;
+import org.keycloak.config.ConfigProviderFactory;
 import org.keycloak.exportimport.ExportImportManager;
 import org.keycloak.migration.MigrationModelManager;
 import org.keycloak.models.KeycloakSession;
@@ -39,6 +35,8 @@ import org.keycloak.models.dblock.DBLockProvider;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.PostMigrationEvent;
 import org.keycloak.models.utils.RepresentationToModel;
+import org.keycloak.platform.Platform;
+import org.keycloak.platform.PlatformProvider;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.DefaultKeycloakSessionFactory;
@@ -54,7 +52,6 @@ import org.keycloak.services.scheduled.ClearExpiredEvents;
 import org.keycloak.services.scheduled.ClearExpiredUserSessions;
 import org.keycloak.services.scheduled.ClusterAwareScheduledTaskRunner;
 import org.keycloak.services.scheduled.ScheduledTaskRunner;
-import org.keycloak.services.util.JsonConfigProvider;
 import org.keycloak.services.util.ObjectMapperResolver;
 import org.keycloak.timer.TimerProvider;
 import org.keycloak.transaction.JtaTransactionManagerLookup;
@@ -64,20 +61,15 @@ import javax.servlet.ServletContext;
 import javax.transaction.SystemException;
 import javax.transaction.Transaction;
 import javax.ws.rs.core.Application;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.UriInfo;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URI;
-import java.net.URL;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
-import java.util.Properties;
+import java.util.NoSuchElementException;
+import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -87,38 +79,33 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @version $Revision: 1 $
  */
 public class KeycloakApplication extends Application {
-    // This param name is defined again in Keycloak Server Subsystem class
-    // org.keycloak.subsystem.server.extension.KeycloakServerDeploymentProcessor.  We have this value in
-    // two places to avoid dependency between Keycloak Subsystem and Keycloak Services module.
-    public static final String KEYCLOAK_CONFIG_PARAM_NAME = "org.keycloak.server-subsystem.Config";
 
-    public static final String KEYCLOAK_EMBEDDED = "keycloak.embedded";
-
-    public static final String SERVER_CONTEXT_CONFIG_PROPERTY_OVERRIDES = "keycloak.server.context.config.property-overrides";
+    public static final AtomicBoolean BOOTSTRAP_ADMIN_USER = new AtomicBoolean(false);
 
     private static final Logger logger = Logger.getLogger(KeycloakApplication.class);
 
-    protected boolean embedded = false;
+    protected final PlatformProvider platform = Platform.getPlatform();
 
     protected Set<Object> singletons = new HashSet<Object>();
     protected Set<Class<?>> classes = new HashSet<Class<?>>();
 
     protected KeycloakSessionFactory sessionFactory;
-    protected String contextPath;
 
-    public KeycloakApplication(@Context ServletContext context, @Context Dispatcher dispatcher) {
+    public KeycloakApplication() {
+
         try {
-            if ("true".equals(context.getInitParameter(KEYCLOAK_EMBEDDED))) {
-                embedded = true;
-            }
 
-            loadConfig(context);
+            logger.debugv("PlatformProvider: {0}", platform.getClass().getName());
+            logger.debugv("RestEasy provider: {0}", Resteasy.getProvider().getClass().getName());
 
-            this.contextPath = context.getContextPath();
+            ServletContext context = Resteasy.getContextData(ServletContext.class);
+
+            loadConfig();
+
             this.sessionFactory = createSessionFactory();
 
-            dispatcher.getDefaultContextObjects().put(KeycloakApplication.class, this);
-            ResteasyProviderFactory.pushContext(KeycloakApplication.class, this); // for injection
+            Resteasy.pushDefaultContextObject(KeycloakApplication.class, this);
+            Resteasy.pushContext(KeycloakApplication.class, this); // for injection
             context.setAttribute(KeycloakSessionFactory.class.getName(), this.sessionFactory);
 
             singletons.add(new RobotsResource());
@@ -131,53 +118,62 @@ public class KeycloakApplication extends Application {
             classes.add(KeycloakErrorHandler.class);
 
             singletons.add(new ObjectMapperResolver(Boolean.parseBoolean(System.getProperty("keycloak.jsonPrettyPrint", "false"))));
+            singletons.add(new WelcomeResource());
 
-            ExportImportManager[] exportImportManager = new ExportImportManager[1];
+            platform.onStartup(this::startup);
+            platform.onShutdown(this::shutdown);
 
-            KeycloakModelUtils.runJobInTransaction(sessionFactory, new KeycloakSessionTask() {
-
-                @Override
-                public void run(KeycloakSession lockSession) {
-                    DBLockManager dbLockManager = new DBLockManager(lockSession);
-                    dbLockManager.checkForcedUnlock();
-                    DBLockProvider dbLock = dbLockManager.getDBLock();
-                    dbLock.waitForLock(DBLockProvider.Namespace.KEYCLOAK_BOOT);
-                    try {
-                        exportImportManager[0] = migrateAndBootstrap();
-                    } finally {
-                        dbLock.releaseLock();
-                    }
-                }
-
-            });
-
-
-            if (exportImportManager[0].isRunExport()) {
-                exportImportManager[0].runExport();
-            }
-
-            AtomicBoolean bootstrapAdminUser = new AtomicBoolean(false);
-            KeycloakModelUtils.runJobInTransaction(sessionFactory, new KeycloakSessionTask() {
-
-                @Override
-                public void run(KeycloakSession session) {
-                    boolean shouldBootstrapAdmin = new ApplianceBootstrap(session).isNoMasterUser();
-                    bootstrapAdminUser.set(shouldBootstrapAdmin);
-                }
-
-            });
-
-            sessionFactory.publish(new PostMigrationEvent());
-
-            singletons.add(new WelcomeResource(bootstrapAdminUser.get()));
-
-            setupScheduledTasks(sessionFactory);
         } catch (Throwable t) {
-            if (!embedded) {
-                exit(1);
-            }
-            throw t;
+            platform.exit(t);
         }
+
+    }
+
+    protected void startup() {
+
+        ExportImportManager[] exportImportManager = new ExportImportManager[1];
+
+        KeycloakModelUtils.runJobInTransaction(sessionFactory, new KeycloakSessionTask() {
+
+            @Override
+            public void run(KeycloakSession lockSession) {
+                DBLockManager dbLockManager = new DBLockManager(lockSession);
+                dbLockManager.checkForcedUnlock();
+                DBLockProvider dbLock = dbLockManager.getDBLock();
+                dbLock.waitForLock(DBLockProvider.Namespace.KEYCLOAK_BOOT);
+                try {
+                    exportImportManager[0] = migrateAndBootstrap();
+                } finally {
+                    dbLock.releaseLock();
+                }
+            }
+
+        });
+
+
+        if (exportImportManager[0].isRunExport()) {
+            exportImportManager[0].runExport();
+        }
+
+        KeycloakModelUtils.runJobInTransaction(sessionFactory, new KeycloakSessionTask() {
+
+            @Override
+            public void run(KeycloakSession session) {
+                boolean shouldBootstrapAdmin = new ApplianceBootstrap(session).isNoMasterUser();
+                BOOTSTRAP_ADMIN_USER.set(shouldBootstrapAdmin);
+            }
+
+        });
+
+        sessionFactory.publish(new PostMigrationEvent());
+
+        setupScheduledTasks(sessionFactory);
+
+    }
+
+    protected void shutdown() {
+        if (sessionFactory != null)
+            sessionFactory.close();
     }
 
     // Migrate model, bootstrap master realm, import realms and create admin user. This is done with acquired dbLock
@@ -215,7 +211,7 @@ public class KeycloakApplication extends Application {
             }
 
             if (createMasterRealm) {
-                applianceBootstrap.createMasterRealm(contextPath);
+                applianceBootstrap.createMasterRealm();
             }
             session.getTransactionManager().commit();
         } catch (RuntimeException re) {
@@ -253,73 +249,18 @@ public class KeycloakApplication extends Application {
         }
     }
 
-    public String getContextPath() {
-        return contextPath;
-    }
+    protected void loadConfig() {
 
-    /**
-     * Get base URI of WAR distribution, not JAX-RS
-     *
-     * @param uriInfo
-     * @return
-     */
-    public URI getBaseUri(UriInfo uriInfo) {
-        return uriInfo.getBaseUriBuilder().replacePath(getContextPath()).build();
-    }
+        ServiceLoader<ConfigProviderFactory> loader = ServiceLoader.load(ConfigProviderFactory.class, KeycloakApplication.class.getClassLoader());
 
-    public static void loadConfig(ServletContext context) {
         try {
-            JsonNode node = null;
-
-            String dmrConfig = loadDmrConfig(context);
-            if (dmrConfig != null) {
-                node = new ObjectMapper().readTree(dmrConfig);
-                ServicesLogger.LOGGER.loadingFrom("standalone.xml or domain.xml");
-            }
-
-            String configDir = System.getProperty("jboss.server.config.dir");
-            if (node == null && configDir != null) {
-                File f = new File(configDir + File.separator + "keycloak-server.json");
-                if (f.isFile()) {
-                    ServicesLogger.LOGGER.loadingFrom(f.getAbsolutePath());
-                    node = new ObjectMapper().readTree(f);
-                }
-            }
-
-            if (node == null) {
-                URL resource = Thread.currentThread().getContextClassLoader().getResource("META-INF/keycloak-server.json");
-                if (resource != null) {
-                    ServicesLogger.LOGGER.loadingFrom(resource);
-                    node = new ObjectMapper().readTree(resource);
-                }
-            }
-
-            if (node != null) {
-                Map<String, String> propertyOverridesMap = new HashMap<>();
-                String propertyOverrides = context.getInitParameter(SERVER_CONTEXT_CONFIG_PROPERTY_OVERRIDES);
-                if (context.getInitParameter(SERVER_CONTEXT_CONFIG_PROPERTY_OVERRIDES) != null) {
-                    JsonNode jsonObj = new ObjectMapper().readTree(propertyOverrides);
-                    jsonObj.fields().forEachRemaining(e -> propertyOverridesMap.put(e.getKey(), e.getValue().asText()));
-                }
-                Properties properties = new SystemEnvProperties(propertyOverridesMap);
-                Config.init(new JsonConfigProvider(node, properties));
-            } else {
-                throw new RuntimeException("Keycloak config not found.");
-            }
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to load config", e);
+            ConfigProviderFactory factory = loader.iterator().next();
+            logger.debugv("ConfigProvider: {0}", factory.getClass().getName());
+            Config.init(factory.create().orElseThrow(() -> new RuntimeException("Failed to load Keycloak configuration")));
+        } catch (NoSuchElementException e) {
+            throw new RuntimeException("No valid ConfigProvider found");
         }
-    }
-    
-    private static String loadDmrConfig(ServletContext context) {
-        String dmrConfig = context.getInitParameter(KEYCLOAK_CONFIG_PARAM_NAME);
-        if (dmrConfig == null) return null;
 
-        ModelNode dmrConfigNode = ModelNode.fromString(dmrConfig);
-        if (dmrConfigNode.asPropertyList().isEmpty()) return null;
-        
-        // note that we need to resolve expressions BEFORE we convert to JSON
-        return dmrConfigNode.resolve().toJSONString(true);
     }
 
     public static KeycloakSessionFactory createSessionFactory() {
@@ -382,7 +323,6 @@ public class KeycloakApplication extends Application {
 
             try {
                 RealmManager manager = new RealmManager(session);
-                manager.setContextPath(getContextPath());
 
                 if (rep.getId() != null && manager.getRealm(rep.getId()) != null) {
                     ServicesLogger.LOGGER.realmExists(rep.getRealm(), from);
@@ -475,15 +415,6 @@ public class KeycloakApplication extends Application {
         } catch (IOException e) {
             throw new RuntimeException("Failed to parse json", e);
         }
-    }
-
-    private void exit(int status) {
-        new Thread() {
-            @Override
-            public void run() {
-                System.exit(status);
-            }
-        }.start();
     }
 
 }

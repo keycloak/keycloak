@@ -16,9 +16,12 @@
  */
 package org.keycloak.testsuite.adapter.example.authorization;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.keycloak.common.Profile.Feature.UPLOAD_SCRIPTS;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
 import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 import static org.keycloak.testsuite.utils.io.IOUtil.loadJson;
@@ -71,16 +74,19 @@ import org.keycloak.representations.idm.authorization.ResourceServerRepresentati
 import org.keycloak.testsuite.adapter.page.PhotozClientAuthzTestApp;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.AppServerTestEnricher;
+import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
 import org.keycloak.testsuite.auth.page.login.OAuthGrant;
 import org.keycloak.testsuite.util.DroneUtils;
 import org.keycloak.testsuite.util.JavascriptBrowser;
+import org.keycloak.testsuite.util.Matchers;
 import org.keycloak.testsuite.util.javascript.JavascriptTestExecutorWithAuthorization;
 import org.keycloak.util.JsonSerialization;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
+import org.openqa.selenium.support.ui.WebDriverWait;
 import org.wildfly.extras.creaper.core.online.CliException;
 import org.wildfly.extras.creaper.core.online.OnlineManagementClient;
 import org.wildfly.extras.creaper.core.online.operations.admin.Administration;
@@ -88,6 +94,7 @@ import org.wildfly.extras.creaper.core.online.operations.admin.Administration;
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
+@EnableFeature(value = UPLOAD_SCRIPTS, skipRestart = true)
 public abstract class AbstractBasePhotozExampleAdapterTest extends AbstractPhotozJavascriptExecutorTest {
 
     protected static final String RESOURCE_SERVER_ID = "photoz-restful-api";
@@ -194,11 +201,11 @@ public abstract class AbstractBasePhotozExampleAdapterTest extends AbstractPhoto
     }
 
     protected void assertWasDenied(Map<String, Object> response) {
-        assertThat(response.get("status")).isEqualTo(401L);
+        assertThat(response.get("status"), is(equalTo(401L)));
     }
 
     protected void assertWasNotDenied(Map<String, Object> response) {
-        assertThat(response.get("status")).isEqualTo(200L);
+        assertThat(response.get("status"), is(equalTo(200L)));
     }
     
     private void importResourceServerSettings() throws FileNotFoundException {
@@ -237,6 +244,8 @@ public abstract class AbstractBasePhotozExampleAdapterTest extends AbstractPhoto
                 .login(this::assertOnLoginPage)
                 .loginFormWithScopesWithPossibleConsentPage(user, this::assertOnTestAppUrl, oAuthGrantPage, scopes)
                 .init(defaultArguments(), this::assertSuccessfullyLoggedIn);
+
+        new WebDriverWait(jsDriver, 10).until(this::isLoaded);
     }
 
     public boolean isLoaded(WebDriver w) {

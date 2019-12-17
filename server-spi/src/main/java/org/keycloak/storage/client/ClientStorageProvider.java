@@ -20,7 +20,6 @@ import org.keycloak.models.GroupModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.provider.Provider;
-import org.keycloak.storage.client.ClientLookupProvider;
 
 /**
  * Base interface for components that want to provide an alternative storage mechanism for clients

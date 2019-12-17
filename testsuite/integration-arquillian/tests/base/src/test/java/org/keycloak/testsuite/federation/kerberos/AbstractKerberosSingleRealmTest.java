@@ -70,7 +70,7 @@ public abstract class AbstractKerberosSingleRealmTest extends AbstractKerberosTe
         Response response = spnegoLogin("hnelson", "secret");
         updateKerberosAuthExecutionRequirement(oldRequirement);
 
-        Assert.assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
+        Assert.assertEquals(302, response.getStatus());
     }
 
 

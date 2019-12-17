@@ -18,48 +18,121 @@
 package org.keycloak.testsuite.console.idp;
 
 import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Ignore;
+import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.testsuite.console.AbstractConsoleTest;
-import org.keycloak.testsuite.console.page.idp.IdentityProviderSettings;
-import org.keycloak.testsuite.model.Provider;
-import org.keycloak.testsuite.model.SocialProvider;
+import org.keycloak.testsuite.console.page.idp.CreateIdentityProvider;
+import org.keycloak.testsuite.console.page.idp.IdentityProvider;
+import org.keycloak.testsuite.console.page.idp.IdentityProviders;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlEquals;
 
 /**
  *
  * @author Petr Mensik
+ * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
 public class IdentityProviderTest extends AbstractConsoleTest {
-    
     @Page
-    private IdentityProviderSettings idpSettingsPage;
+    private IdentityProviders identityProvidersPage;
 
-//	@Test
-    public void testAddNewProvider() {
-        idpSettingsPage.addNewProvider(new Provider(SocialProvider.FACEBOOK, "klic", "secret"));
-        assertAlertSuccess();
-    }
+    @Page
+    private IdentityProvider identityProviderPage;
 
-//	@Test(expected = NoSuchElementException.class)
-    public void testDuplicitProvider() {
-        idpSettingsPage.addNewProvider(new Provider(SocialProvider.FACEBOOK, "a", "b"));
-    }
+    @Page
+    private CreateIdentityProvider createIdentityProviderPage;
 
-//	@Test
-//    public void testEditProvider() {
-//        page.goToPage(SETTINGS_SOCIAL);
-//        page.editProvider(SocialProvider.FACEBOOK, new Provider(SocialProvider.FACEBOOK, "abc", "def"));
-//    }
-
-//	@Test
-    public void testDeleteProvider() {
-
+    @Before
+    public void beforeIdentityProviderTest() {
+        identityProvidersPage.navigateTo();
     }
 
     @Test
-    @Ignore
-    public void testAddMultipleProviders() {
+    public void passwordMasking() {
+        createIdentityProviderPage.setProviderId("google");
+        identityProviderPage.setIds("google", "google");
+
+        identityProvidersPage.addProvider("google");
+        assertCurrentUrlEquals(createIdentityProviderPage);
+
+        createIdentityProviderPage.form().setClientId("test-google");
+        createIdentityProviderPage.form().setClientSecret("secret");
+        assertEyeButtonIsEnabled();
+        assertPasswordIsMasked();
+        createIdentityProviderPage.form().clientSecret().clickEyeButton();
+        assertPasswordIsUnmasked();
+        createIdentityProviderPage.form().save();
+        assertAlertSuccess();
+        driver.navigate().refresh();
+        assertCurrentUrlEquals(identityProviderPage);
+
+        assertEyeButtonIsDisabled();
+        assertPasswordIsMasked();
+        identityProviderPage.form().setClientSecret("123456");
+        assertEyeButtonIsEnabled();
+        assertPasswordIsMasked();
+        identityProviderPage.form().setClientSecret("${vault.fallout4}");
+        assertEyeButtonIsDisabled();
+        assertPasswordIsUnmasked();
+        identityProviderPage.form().save();
+        assertAlertSuccess();
+        driver.navigate().refresh();
+        assertCurrentUrlEquals(identityProviderPage);
+
+        assertEyeButtonIsDisabled();
+        assertPasswordIsUnmasked();
+        identityProviderPage.form().setClientSecret("123456");
+        assertEyeButtonIsEnabled();
+        assertPasswordIsUnmasked();
+        identityProviderPage.form().clientSecret().clickEyeButton();
+        assertPasswordIsMasked();
     }
+
+    private void assertEyeButtonIsDisabled() {
+        assertTrue("Eye button is not disabled", identityProviderPage.form().clientSecret().isEyeButtonDisabled());
+    }
+
+    private void assertEyeButtonIsEnabled() {
+        assertFalse("Eye button is not enabled", identityProviderPage.form().clientSecret().isEyeButtonDisabled());
+    }
+
+    private void assertPasswordIsMasked() {
+        assertTrue("Password is not masked", identityProviderPage.form().clientSecret().isMasked());
+    }
+
+    private void assertPasswordIsUnmasked() {
+        assertFalse("Password is not unmasked", identityProviderPage.form().clientSecret().isMasked());
+    }
+    
+//    @Page
+//    private IdentityProviderSettings idpSettingsPage;
+//
+////	@Test
+//    public void testAddNewProvider() {
+//        idpSettingsPage.addNewProvider(new Provider(SocialProvider.FACEBOOK, "klic", "secret"));
+//        assertAlertSuccess();
+//    }
+//
+////	@Test(expected = NoSuchElementException.class)
+//    public void testDuplicitProvider() {
+//        idpSettingsPage.addNewProvider(new Provider(SocialProvider.FACEBOOK, "a", "b"));
+//    }
+//
+////	@Test
+////    public void testEditProvider() {
+////        page.goToPage(SETTINGS_SOCIAL);
+////        page.editProvider(SocialProvider.FACEBOOK, new Provider(SocialProvider.FACEBOOK, "abc", "def"));
+////    }
+//
+////	@Test
+//    public void testDeleteProvider() {
+//
+//    }
+//
+//    @Test
+//    @Ignore
+//    public void testAddMultipleProviders() {
+//    }
 }

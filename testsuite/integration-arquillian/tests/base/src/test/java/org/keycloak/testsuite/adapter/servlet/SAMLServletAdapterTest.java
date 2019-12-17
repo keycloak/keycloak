@@ -18,11 +18,12 @@
 package org.keycloak.testsuite.adapter.servlet;
 
 import static javax.ws.rs.core.Response.Status.OK;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 import static org.keycloak.OAuth2Constants.PASSWORD;
+import static org.keycloak.testsuite.admin.Users.getPasswordOf;
 import static org.keycloak.testsuite.admin.Users.setPasswordFor;
-import static org.keycloak.testsuite.AbstractAuthTest.createUserRepresentation;
-import static org.keycloak.testsuite.adapter.AbstractServletsAdapterTest.samlServletDeployment;
+import static org.keycloak.testsuite.auth.page.AuthRealm.DEMO;
 import static org.keycloak.testsuite.auth.page.AuthRealm.SAMLSERVLETDEMO;
 import static org.keycloak.testsuite.saml.AbstractSamlTest.REALM_PRIVATE_KEY;
 import static org.keycloak.testsuite.saml.AbstractSamlTest.REALM_PUBLIC_KEY;
@@ -38,10 +39,13 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.io.StringReader;
 import java.net.URI;
 import java.net.URL;
 import java.security.KeyPair;
 import java.security.PublicKey;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateFactory;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -131,6 +135,7 @@ import org.keycloak.saml.common.util.DocumentUtil;
 import org.keycloak.saml.common.util.XmlKeyInfoKeyNameTransformer;
 import org.keycloak.saml.processing.core.parsers.saml.SAMLParser;
 import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
+import org.keycloak.saml.processing.core.saml.v2.util.AssertionUtil;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.testsuite.adapter.page.*;
 import org.keycloak.testsuite.admin.ApiUtil;
@@ -189,6 +194,9 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
     protected Employee2Servlet employee2ServletPage;
 
     @Page
+    protected EmployeeDomServlet employeeDomServletPage;
+
+    @Page
     protected EmployeeSigServlet employeeSigServletPage;
 
     @Page
@@ -202,6 +210,9 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
 
     @Page
     protected EmployeeSigFrontServlet employeeSigFrontServletPage;
+
+    @Page
+    protected EmployeeRoleMappingServlet employeeRoleMappingPage;
 
     @Page
     protected SalesMetadataServlet salesMetadataServletPage;
@@ -303,6 +314,11 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
         return samlServletDeployment(Employee2Servlet.DEPLOYMENT_NAME, SendUsernameServlet.class);
     }
 
+    @Deployment(name = EmployeeDomServlet.DEPLOYMENT_NAME)
+    protected static WebArchive employeedom() {
+        return samlServletDeployment(EmployeeDomServlet.DEPLOYMENT_NAME, SendUsernameServlet.class);
+    }
+
     @Deployment(name = EmployeeSigServlet.DEPLOYMENT_NAME)
     protected static WebArchive employeeSig() {
         return samlServletDeployment(EmployeeSigServlet.DEPLOYMENT_NAME, SendUsernameServlet.class);
@@ -326,6 +342,11 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
     @Deployment(name = EmployeeSigFrontServlet.DEPLOYMENT_NAME)
     protected static WebArchive employeeSigFront() {
         return samlServletDeployment(EmployeeSigFrontServlet.DEPLOYMENT_NAME, SendUsernameServlet.class);
+    }
+
+    @Deployment(name = EmployeeRoleMappingServlet.DEPLOYMENT_NAME)
+    protected static WebArchive employeeRoleMapping() {
+        return samlServletDeployment(EmployeeRoleMappingServlet.DEPLOYMENT_NAME, "employee-role-mapping/WEB-INF/web.xml", SendUsernameServlet.class);
     }
 
     @Deployment(name = SalesMetadataServlet.DEPLOYMENT_NAME)
@@ -1412,6 +1433,10 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
         waitUntilElement(By.xpath("//body")).text().contains("phone: 617");
         waitUntilElement(By.xpath("//body")).text().contains("friendlyAttribute phone: null");
 
+        driver.navigate().to(employee2ServletPage.getUriBuilder().clone().path("getAssertionFromDocument").build().toURL());
+        waitForPageToLoad();
+        Assert.assertEquals("", driver.getPageSource());
+
         employee2ServletPage.logout();
         checkLoggedOut(employee2ServletPage, testRealmSAMLPostLoginPage);
 
@@ -1474,6 +1499,25 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
         validateXMLWithSchema(driver.getPageSource(), "/adapter-test/keycloak-saml/metadata-schema/saml-schema-metadata-2.0.xsd");
     }
 
+    @Test
+    public void testDOMAssertion() throws Exception {
+        assertSuccessfulLogin(employeeDomServletPage, bburkeUser, testRealmSAMLPostLoginPage, "principal=bburke");
+        assertSuccessfullyLoggedIn(employeeDomServletPage, "principal=bburke");
+
+        driver.navigate().to(employeeDomServletPage.getUriBuilder().clone().path("getAssertionFromDocument").build().toURL());
+        waitForPageToLoad();
+        String xml = driver.getPageSource();
+        Assert.assertNotEquals("", xml);
+        Document doc = DocumentUtil.getDocument(new StringReader(xml));
+        String certBase64 = DocumentUtil.getElement(doc, new QName("http://www.w3.org/2000/09/xmldsig#", "X509Certificate")).getTextContent();
+        CertificateFactory cf = CertificateFactory.getInstance("X.509");
+        Certificate cert = cf.generateCertificate(new ByteArrayInputStream(Base64.decode(certBase64)));
+        PublicKey pubkey = cert.getPublicKey();
+        Assert.assertTrue(AssertionUtil.isSignatureValid(doc.getDocumentElement(), pubkey));
+
+        employeeDomServletPage.logout();
+        checkLoggedOut(employeeDomServletPage, testRealmSAMLPostLoginPage);
+    }
 
     @Test
     public void spMetadataValidation() throws Exception {
@@ -1537,6 +1581,27 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
                 final Node nameIdNode = nodeList.item(0);
                 nameIdNode.getParentNode().removeChild(nameIdNode);
 
+                return responseDoc;
+            })
+            .build()
+
+          .navigateTo(employee2ServletPage.toString())
+
+          .execute(r -> {
+              Assert.assertThat(r, statusCodeIsHC(Response.Status.OK));
+              Assert.assertThat(r, bodyHC(containsString("principal=")));
+          });
+    }
+
+    @Test
+    public void testDestinationUnset() throws Exception {
+        new SamlClientBuilder()
+          .navigateTo(employee2ServletPage.toString())
+          .processSamlResponse(Binding.POST).build()
+          .login().user(bburkeUser).build()
+          .processSamlResponse(Binding.POST)
+            .transformDocument(responseDoc -> {
+                responseDoc.getDocumentElement().removeAttribute("Destination");
                 return responseDoc;
             })
             .build()
@@ -1659,8 +1724,8 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
 
         //printDocument(authnRequestMessage.getSOAPPart().getContent(), System.out);
 
-        Iterator<SOAPHeaderElement> it = authnRequestMessage.getSOAPHeader().<SOAPHeaderElement>getChildElements(new QName("urn:oasis:names:tc:SAML:2.0:profiles:SSO:ecp", "Request"));
-        SOAPHeaderElement ecpRequestHeader = it.next();
+        Iterator<javax.xml.soap.Node> it = authnRequestMessage.getSOAPHeader().<SOAPHeaderElement>getChildElements(new QName("urn:oasis:names:tc:SAML:2.0:profiles:SSO:ecp", "Request"));
+        SOAPHeaderElement ecpRequestHeader = (SOAPHeaderElement)it.next();
         NodeList idpList = ecpRequestHeader.getElementsByTagNameNS("urn:oasis:names:tc:SAML:2.0:protocol", "IDPList");
 
         Assert.assertThat("No IDPList returned from Service Provider", idpList.getLength(), is(1));
@@ -1746,13 +1811,13 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
                 .get();
 
         SOAPMessage authnRequestMessage = MessageFactory.newInstance().createMessage(null, new ByteArrayInputStream(authnRequestResponse.readEntity(byte[].class)));
-        Iterator<SOAPHeaderElement> it = authnRequestMessage.getSOAPHeader().<SOAPHeaderElement>getChildElements(new QName("urn:liberty:paos:2003-08", "Request"));
+        Iterator<javax.xml.soap.Node> it = authnRequestMessage.getSOAPHeader().<SOAPHeaderElement>getChildElements(new QName("urn:liberty:paos:2003-08", "Request"));
 
         it.next();
 
         it = authnRequestMessage.getSOAPHeader().<SOAPHeaderElement>getChildElements(new QName("urn:oasis:names:tc:SAML:2.0:profiles:SSO:ecp", "Request"));
-        SOAPHeaderElement ecpRequestHeader = it.next();
-        NodeList idpList = ecpRequestHeader.getElementsByTagNameNS("urn:oasis:names:tc:SAML:2.0:protocol", "IDPList");
+        javax.xml.soap.Node ecpRequestHeader = it.next();
+        NodeList idpList = ((SOAPHeaderElement)ecpRequestHeader).getElementsByTagNameNS("urn:oasis:names:tc:SAML:2.0:protocol", "IDPList");
 
         Assert.assertThat("No IDPList returned from Service Provider", idpList.getLength(), is(1));
 
@@ -1793,6 +1858,44 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
         StatusCodeType statusCode = responseType.getStatus().getStatusCode();
 
         Assert.assertThat(statusCode.getStatusCode().getValue().toString(), is(not(JBossSAMLURIConstants.STATUS_SUCCESS.get())));
+    }
+
+    /**
+     * Tests that the adapter is using the configured role mappings provider to map the roles extracted from the assertion
+     * into roles that exist in the application domain. For this test a {@link org.keycloak.adapters.saml.PropertiesBasedRoleMapper}
+     * has been setup in the adapter, performing the mappings as specified in the {@code role-mappings.properties} file.
+     *
+     * @throws Exception if an error occurs while running the test.
+     */
+    @Test
+    public void testAdapterRoleMappings() throws Exception {
+        // bburke user is missing required coordinator role, which is only available via mapping of the supervisor role.
+        assertForbiddenLogin(employeeRoleMappingPage, bburkeUser.getUsername(), getPasswordOf(bburkeUser),
+                testRealmSAMLPostLoginPage, "bburke@redhat.com");
+        employeeRoleMappingPage.logout();
+        checkLoggedOut(employeeRoleMappingPage, testRealmSAMLPostLoginPage);
+
+        // assign the supervisor role to user bburke - it should be mapped to coordinator next time he logs in.
+        UserRepresentation bburke = adminClient.realm(DEMO).users().search("bburke", 0, 1).get(0);
+        ClientRepresentation clientRepresentation = adminClient.realm(DEMO)
+                .clients().findByClientId("http://localhost:8280/employee-role-mapping/").get(0);
+        RoleRepresentation role = adminClient.realm(DEMO).clients().get(clientRepresentation.getId())
+                .roles().get("supervisor").toRepresentation();
+
+        adminClient.realm(DEMO).users().get(bburke.getId()).roles()
+                .clientLevel(clientRepresentation.getId()).add(Collections.singletonList(role));
+
+        // now check for the set of expected mapped roles: supervisor should have been mapped to coordinator, team-lead should
+        // have been added to bburke, and user should have been discarded; manager and employed unchanged from mappings.
+        assertSuccessfulLogin(employeeRoleMappingPage, bburkeUser, testRealmSAMLPostLoginPage, "bburke@redhat.com");
+        assertThat(employeeRoleMappingPage.rolesList(), hasItems("manager", "coordinator", "team-lead", "employee"));
+        assertThat(employeeRoleMappingPage.rolesList(), not(hasItems("supervisor", "user")));
+
+        employeeRoleMappingPage.logout();
+        checkLoggedOut(employeeRoleMappingPage, testRealmSAMLPostLoginPage);
+
+        adminClient.realm(DEMO).users().get(bburke.getId()).roles().clientLevel(clientRepresentation.getId()).remove(Collections.singletonList(role));
+
     }
 
     public static void printDocument(Source doc, OutputStream out) throws IOException, TransformerException {
@@ -1848,11 +1951,12 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
         }
     }
 
-    private void setRolesToCheck(String roles) {
+    private void setRolesToCheck(String roles) throws Exception {
         employee2ServletPage.navigateTo();
         assertCurrentUrlStartsWith(testRealmSAMLPostLoginPage);
         testRealmSAMLPostLoginPage.form().login(bburkeUser);
-        driver.navigate().to(employee2ServletPage.toString() + "/setCheckRoles?roles=" + roles);
+        driver.navigate().to(employee2ServletPage.getUriBuilder().clone().path("setCheckRoles").queryParam("roles", roles).build().toURL());
+        WaitUtils.waitUntilElement(By.tagName("body")).text().contains("These roles will be checked:");
         employee2ServletPage.logout();
     }
 

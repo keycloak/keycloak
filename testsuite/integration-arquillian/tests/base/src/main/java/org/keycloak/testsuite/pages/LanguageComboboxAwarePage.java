@@ -17,9 +17,11 @@
 
 package org.keycloak.testsuite.pages;
 
+import org.junit.Assert;
 import org.keycloak.testsuite.util.DroneUtils;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.openqa.selenium.By;
+import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -34,6 +36,9 @@ public abstract class LanguageComboboxAwarePage extends AbstractPage {
     @FindBy(id = "kc-locale-dropdown")
     private WebElement localeDropdown;
 
+    @FindBy(id = "kc-back")
+    private WebElement backButton;
+
     public String getLanguageDropdownText() {
         return languageText.getText();
     }
@@ -43,5 +48,21 @@ public abstract class LanguageComboboxAwarePage extends AbstractPage {
         String url = langLink.getAttribute("href");
         DroneUtils.getCurrentDriver().navigate().to(url);
         WaitUtils.waitForPageToLoad();
+    }
+
+
+    // If false, we don't expect form "Back" button available on the page. If true, we expect that it is available on the page
+    public void assertBackButtonAvailability(boolean expectedAvailability) {
+        try {
+            driver.findElement(By.id("kc-back"));
+            Assert.assertTrue(expectedAvailability);
+        } catch (NoSuchElementException nse) {
+            Assert.assertFalse(expectedAvailability);
+        }
+    }
+
+
+    public void clickBackButton() {
+        backButton.click();
     }
 }

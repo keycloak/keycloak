@@ -22,8 +22,10 @@ import org.junit.Test;
 import org.keycloak.models.AuthenticationExecutionModel.Requirement;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.models.utils.TimeBasedOTP;
+import org.keycloak.representations.idm.AuthenticationExecutionInfoRepresentation;
 import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
+import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.testsuite.admin.ApiUtil;
@@ -35,20 +37,14 @@ import org.keycloak.testsuite.pages.PageUtils;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.keycloak.authentication.authenticators.browser.ConditionalOtpFormAuthenticator.DEFAULT_OTP_OUTCOME;
-import static org.keycloak.authentication.authenticators.browser.ConditionalOtpFormAuthenticator.FORCE;
-import static org.keycloak.authentication.authenticators.browser.ConditionalOtpFormAuthenticator.FORCE_OTP_FOR_HTTP_HEADER;
-import static org.keycloak.authentication.authenticators.browser.ConditionalOtpFormAuthenticator.FORCE_OTP_ROLE;
-import static org.keycloak.authentication.authenticators.browser.ConditionalOtpFormAuthenticator.OTP_CONTROL_USER_ATTRIBUTE;
-import static org.keycloak.authentication.authenticators.browser.ConditionalOtpFormAuthenticator.SKIP;
-import static org.keycloak.authentication.authenticators.browser.ConditionalOtpFormAuthenticator.SKIP_OTP_FOR_HTTP_HEADER;
-import static org.keycloak.authentication.authenticators.browser.ConditionalOtpFormAuthenticator.SKIP_OTP_ROLE;
+import static org.keycloak.authentication.authenticators.browser.ConditionalOtpFormAuthenticator.*;
 import static org.keycloak.models.UserModel.RequiredAction.CONFIGURE_TOTP;
 import static org.keycloak.representations.idm.CredentialRepresentation.PASSWORD;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
@@ -109,7 +105,7 @@ public class CustomAuthFlowOTPTest extends AbstractCustomAccountManagementTest {
         realm.setBrowserFlow("browser");
         testRealmResource().update(realm);
 
-        updateRequirement("browser", "auth-otp-form", Requirement.REQUIRED);
+        updateRequirement("browser", Requirement.REQUIRED, (authExec) -> authExec.getDisplayName().equals("Browser - Conditional OTP"));
         testRealmAccountManagementPage.navigateTo();
         testRealmLoginPage.form().login(testUser);
         assertTrue(loginConfigTotpPage.isCurrent());
@@ -337,6 +333,34 @@ public class CustomAuthFlowOTPTest extends AbstractCustomAccountManagementTest {
         assertCurrentUrlStartsWith(testLoginOneTimeCodePage);
     }
 
+    @Test
+    public void conditionalOTPRoleForceViaGroup() {
+        //prepare config - role, default to skip
+        Map<String, String> config = new HashMap<>();
+        config.put(FORCE_OTP_ROLE, "otp_role");
+        config.put(DEFAULT_OTP_OUTCOME, SKIP);
+
+        setConditionalOTPForm(config);
+
+        //create otp group with role included
+        GroupRepresentation group = getOrCreateOTPRoleInGroup();
+
+        //add group to user
+        testRealmResource().users().get(testUser.getId()).joinGroup(group.getId());
+
+        //test OTP is required
+        testRealmAccountManagementPage.navigateTo();
+        testRealmLoginPage.form().login(testUser);
+
+        assertTrue(loginConfigTotpPage.isCurrent());
+
+        configureOTP();
+        testRealmLoginPage.form().login(testUser);
+
+        //verify that the page is login page, not totp setup
+        assertCurrentUrlStartsWith(testLoginOneTimeCodePage);
+    }
+
     private RoleRepresentation getOrCreateOTPRole() {
         try {
             return testRealmResource().roles().get("otp_role").toRepresentation();
@@ -346,6 +370,18 @@ public class CustomAuthFlowOTPTest extends AbstractCustomAccountManagementTest {
             //obtain id
             return testRealmResource().roles().get("otp_role").toRepresentation();
         }
+    }
+
+    private GroupRepresentation getOrCreateOTPRoleInGroup() {
+        GroupRepresentation group = new GroupRepresentation();
+        group.setName("otp_group");
+        RoleRepresentation role  = getOrCreateOTPRole();
+        testRealmResource().groups().add(group);
+        // obtain id
+        GroupRepresentation groupRep = testRealmResource().groups().groups("otp_group",0,1).get(0);
+        testRealmResource().groups().group(groupRep.getId()).roles().realmLevel().add(Arrays.asList(role));
+        // reread
+        return testRealmResource().groups().groups("otp_group",0,1).get(0);
     }
 
     @Test

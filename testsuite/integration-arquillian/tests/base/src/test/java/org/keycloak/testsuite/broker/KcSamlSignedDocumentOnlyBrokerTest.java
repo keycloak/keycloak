@@ -11,7 +11,7 @@ import java.util.Map;
 
 import static org.keycloak.testsuite.broker.BrokerTestConstants.*;
 
-public class KcSamlSignedDocumentOnlyBrokerTest extends KcSamlBrokerTest {
+public class KcSamlSignedDocumentOnlyBrokerTest extends AbstractBrokerTest {
 
     public static class KcSamlSignedBrokerConfiguration extends KcSamlBrokerConfiguration {
 

@@ -18,7 +18,7 @@
 package org.keycloak.services.util;
 
 import org.jboss.resteasy.spi.HttpResponse;
-import org.jboss.resteasy.spi.ResteasyProviderFactory;
+import org.keycloak.common.util.Resteasy;
 
 /**
  * IE requires P3P header to allow loading cookies from iframes when domain differs from main page (see KEYCLOAK-2828 for more details)
@@ -28,7 +28,7 @@ import org.jboss.resteasy.spi.ResteasyProviderFactory;
 public class P3PHelper {
 
     public static void addP3PHeader() {
-        HttpResponse response = ResteasyProviderFactory.getContextData(HttpResponse.class);
+        HttpResponse response = Resteasy.getContextData(HttpResponse.class);
         response.getOutputHeaders().putSingle("P3P", "CP=\"This is not a P3P policy!\"");
     }
 

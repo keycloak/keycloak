@@ -87,7 +87,7 @@ if [ $1 == "server-group3" ]; then
 fi
 
 if [ $1 == "server-group4" ]; then
-    run-server-tests org.keycloak.testsuite.k*.**.*Test,org.keycloak.testsuite.m*.**.*Test,org.keycloak.testsuite.o*.**.*Test,org.keycloak.testsuite.s*.**.*Test,org.keycloak.testsuite.u*.**.*Test
+    run-server-tests org.keycloak.testsuite.k*.**.*Test,org.keycloak.testsuite.m*.**.*Test,org.keycloak.testsuite.o*.**.*Test,org.keycloak.testsuite.s*.**.*Test,org.keycloak.testsuite.t*.**.*Test,org.keycloak.testsuite.u*.**.*Test
 fi
 
 if [ $1 == "adapter-tests" ]; then

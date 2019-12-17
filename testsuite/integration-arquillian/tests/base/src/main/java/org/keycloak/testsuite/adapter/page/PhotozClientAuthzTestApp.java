@@ -261,7 +261,7 @@ public class PhotozClientAuthzTestApp extends AbstractPageWithInjectedUrl {
     }
     
     public void assertError() {
-        assertEquals("We're sorry...", driver.findElement(By.id("kc-page-title")).getText());
+        assertEquals("We are sorry...", driver.findElement(By.id("kc-page-title")).getText());
     }
 
     public void accountDenyResource(String name) {

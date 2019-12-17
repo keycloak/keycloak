@@ -16,14 +16,7 @@
  */
 package org.keycloak.testsuite.oidc;
 
-import java.io.UnsupportedEncodingException;
-import java.security.PrivateKey;
-import java.util.List;
-import java.util.Map;
-
-import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.graphene.page.Page;
-import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -55,12 +48,16 @@ import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.OAuthGrantPage;
-import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
 import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.OAuthClient.AccessTokenResponse;
 import org.keycloak.testsuite.util.TokenSignatureUtil;
 import org.keycloak.util.TokenUtil;
+
+import java.io.UnsupportedEncodingException;
+import java.security.PrivateKey;
+import java.util.List;
+import java.util.Map;
 
 public class IdTokenEncryptionTest extends AbstractTestRealmKeycloakTest {
 
@@ -81,11 +78,6 @@ public class IdTokenEncryptionTest extends AbstractTestRealmKeycloakTest {
 
     @Page
     protected ErrorPage errorPage;
-
-    @Deployment
-    public static WebArchive deploy() {
-        return RunOnServerDeployment.create(OIDCAdvancedRequestParamsTest.class, AbstractTestRealmKeycloakTest.class);
-    }
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {

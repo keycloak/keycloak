@@ -43,7 +43,7 @@ import java.util.List;
  */
 public class AudienceRestrictionType extends ConditionAbstractType implements Serializable {
 
-    protected List<URI> audience = new ArrayList<URI>();
+    protected List<URI> audience = new ArrayList<>();
 
     /**
      * Add an audience

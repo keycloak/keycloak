@@ -104,7 +104,7 @@ public class SAML2LogoutRequestBuilder implements SamlProtocolExtensionsAwareBui
         return document;
     }
 
-    private LogoutRequestType createLogoutRequest() throws ConfigurationException {
+    public LogoutRequestType createLogoutRequest() throws ConfigurationException {
         LogoutRequestType lort = SAML2Request.createLogoutRequest(issuer);
 
         lort.setNameID(nameId);

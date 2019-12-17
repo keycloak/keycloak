@@ -17,7 +17,7 @@
 package org.keycloak.services.resources.admin;
 
 import org.jboss.resteasy.annotations.cache.NoCache;
-import org.jboss.resteasy.spi.NotFoundException;
+import javax.ws.rs.NotFoundException;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
@@ -74,17 +74,18 @@ public class GroupsResource {
     @Produces(MediaType.APPLICATION_JSON)
     public List<GroupRepresentation> getGroups(@QueryParam("search") String search,
                                                @QueryParam("first") Integer firstResult,
-                                               @QueryParam("max") Integer maxResults) {
+                                               @QueryParam("max") Integer maxResults,
+                                               @QueryParam("full") @DefaultValue("false") boolean fullRepresentation) {
         auth.groups().requireList();
 
         List<GroupRepresentation> results;
 
         if (Objects.nonNull(search)) {
-            results = ModelToRepresentation.searchForGroupByName(realm, search.trim(), firstResult, maxResults);
+            results = ModelToRepresentation.searchForGroupByName(realm, fullRepresentation, search.trim(), firstResult, maxResults);
         } else if(Objects.nonNull(firstResult) && Objects.nonNull(maxResults)) {
-            results = ModelToRepresentation.toGroupHierarchy(realm, false, firstResult, maxResults);
+            results = ModelToRepresentation.toGroupHierarchy(realm, fullRepresentation, firstResult, maxResults);
         } else {
-            results = ModelToRepresentation.toGroupHierarchy(realm, false);
+            results = ModelToRepresentation.toGroupHierarchy(realm, fullRepresentation);
         }
 
         return results;
@@ -140,7 +141,7 @@ public class GroupsResource {
     public Response addTopLevelGroup(GroupRepresentation rep) {
         auth.groups().requireManage();
 
-        List<GroupRepresentation> search = ModelToRepresentation.searchForGroupByName(realm, rep.getName(), 0, 1);
+        List<GroupRepresentation> search = ModelToRepresentation.searchForGroupByName(realm, false, rep.getName(), 0, 1);
         if (search != null && !search.isEmpty() && Objects.equals(search.get(0).getName(), rep.getName())) {
             return ErrorResponse.exists("Top level group named '" + rep.getName() + "' already exists.");
         }

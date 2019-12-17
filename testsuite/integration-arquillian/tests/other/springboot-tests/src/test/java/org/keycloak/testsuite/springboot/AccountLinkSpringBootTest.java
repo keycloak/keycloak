@@ -1,5 +1,6 @@
 package org.keycloak.testsuite.springboot;
 
+import org.hamcrest.Matchers;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
 import org.junit.Before;
@@ -35,7 +36,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.CoreMatchers.startsWith;
+import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.empty;
+import static org.junit.Assert.assertThat;
 import static org.keycloak.models.AccountRoles.MANAGE_ACCOUNT;
 import static org.keycloak.models.AccountRoles.MANAGE_ACCOUNT_LINKS;
 import static org.keycloak.testsuite.admin.ApiUtil.createUserAndResetPasswordWithAdminClient;
@@ -168,7 +178,7 @@ public class AccountLinkSpringBootTest extends AbstractSpringBootTest {
     public void testErrorConditions() throws Exception {
         RealmResource realm = adminClient.realms().realm(REALM_NAME);
         List<FederatedIdentityRepresentation> links = realm.users().get(childUserId).getFederatedIdentity();
-        assertThat(links).isEmpty();
+        assertThat(links, is(empty()));
 
         ClientRepresentation client = adminClient.realms().realm(REALM_NAME).clients().findByClientId(CLIENT_ID).get(0);
 
@@ -188,7 +198,7 @@ public class AccountLinkSpringBootTest extends AbstractSpringBootTest {
         navigateTo(linkUrl);
         assertCurrentUrlStartsWith(testRealmLoginPage);
         testRealmLoginPage.form().login(CHILD_USERNAME_1, CHILD_PASSWORD_1);
-        assertThat(driver.getCurrentUrl()).contains("link_error=not_logged_in");
+        assertThat(driver.getCurrentUrl(), containsString("link_error=not_logged_in"));
 
         logoutAll();
 
@@ -199,12 +209,12 @@ public class AccountLinkSpringBootTest extends AbstractSpringBootTest {
 
         linkingPage.assertIsCurrent();
 
-        assertThat(linkingPage.getErrorMessage()).isEqualToIgnoringCase("account linked");
+        assertThat(linkingPage.getErrorMessage().toLowerCase(), containsString("account linked"));
 
         // now test CSRF with bad hash.
         navigateTo(linkUrl);
 
-        assertThat(driver.getPageSource()).contains("We're sorry...");
+        assertThat(driver.getPageSource(), containsString("We are sorry..."));
 
         logoutAll();
 
@@ -228,7 +238,7 @@ public class AccountLinkSpringBootTest extends AbstractSpringBootTest {
         testRealmLoginPage.form().login(CHILD_USERNAME_1, CHILD_PASSWORD_1);
 
         linkingPage.assertIsCurrent();
-        assertThat(linkingPage.getErrorMessage()).isEqualToIgnoringCase("account linked");
+        assertThat(linkingPage.getErrorMessage().toLowerCase(), containsString("account linked"));
 
         UriBuilder linkBuilder = UriBuilder.fromUri(LINKING_URL);
         String clientLinkUrl = linkBuilder.clone()
@@ -236,14 +246,14 @@ public class AccountLinkSpringBootTest extends AbstractSpringBootTest {
                 .queryParam("provider", PARENT_REALM).build().toString();
 
         navigateTo(clientLinkUrl);
-        assertThat(driver.getCurrentUrl()).contains("error=not_allowed");
+        assertThat(driver.getCurrentUrl(), containsString("error=not_allowed"));
 
         logoutAll();
 
         // add MANAGE_ACCOUNT_LINKS scope should pass.
 
         links = realm.users().get(childUserId).getFederatedIdentity();
-        assertThat(links).isEmpty();
+        assertThat(links, is(empty()));
 
         roles = new LinkedList<>();
         roles.add(manageLinks);
@@ -259,15 +269,15 @@ public class AccountLinkSpringBootTest extends AbstractSpringBootTest {
 
         testRealmLoginPage.setAuthRealm(REALM_NAME); // clean
 
-        assertThat(driver.getCurrentUrl()).startsWith(linkBuilder.toTemplate());
-        assertThat(driver.getPageSource()).contains("Account linked");
+        assertThat(driver.getCurrentUrl(), startsWith(linkBuilder.toTemplate()));
+        assertThat(driver.getPageSource(), containsString("Account linked"));
 
         links = realm.users().get(childUserId).getFederatedIdentity();
-        assertThat(links).isNotEmpty();
+        assertThat(links, is(not(empty())));
 
         realm.users().get(childUserId).removeFederatedIdentity(PARENT_REALM);
         links = realm.users().get(childUserId).getFederatedIdentity();
-        assertThat(links).isEmpty();
+        assertThat(links, is(empty()));
 
         clientResource.getScopeMappings().clientLevel(accountId).remove(roles);
 
@@ -277,14 +287,14 @@ public class AccountLinkSpringBootTest extends AbstractSpringBootTest {
         assertCurrentUrlStartsWith(testRealmLoginPage);
         testRealmLoginPage.form().login(CHILD_USERNAME_1, CHILD_PASSWORD_1);
 
-        assertThat(driver.getCurrentUrl()).contains("link_error=not_allowed");
+        assertThat(driver.getCurrentUrl(), containsString("link_error=not_allowed"));
 
         logoutAll();
 
         // add MANAGE_ACCOUNT scope should pass
 
         links = realm.users().get(childUserId).getFederatedIdentity();
-        assertThat(links).isEmpty();
+        assertThat(links, is(empty()));
 
         roles = new LinkedList<>();
         roles.add(manageAccount);
@@ -301,15 +311,15 @@ public class AccountLinkSpringBootTest extends AbstractSpringBootTest {
         testRealmLoginPage.setAuthRealm(REALM_NAME); // clean
 
 
-        assertThat(driver.getCurrentUrl()).startsWith(linkBuilder.toTemplate());
-        assertThat(driver.getPageSource()).contains("Account linked");
+        assertThat(driver.getCurrentUrl(), startsWith(linkBuilder.toTemplate()));
+        assertThat(driver.getPageSource(), containsString("Account linked"));
 
         links = realm.users().get(childUserId).getFederatedIdentity();
-        assertThat(links).isNotEmpty();
+        assertThat(links, is(not(empty())));
 
         realm.users().get(childUserId).removeFederatedIdentity(PARENT_REALM);
         links = realm.users().get(childUserId).getFederatedIdentity();
-        assertThat(links).isEmpty();
+        assertThat(links, is(empty()));
 
         clientResource.getScopeMappings().clientLevel(accountId).remove(roles);
 
@@ -319,7 +329,7 @@ public class AccountLinkSpringBootTest extends AbstractSpringBootTest {
         assertCurrentUrlStartsWith(testRealmLoginPage);
         testRealmLoginPage.form().login(CHILD_USERNAME_1, CHILD_PASSWORD_1);
 
-        assertThat(driver.getCurrentUrl()).contains("link_error=not_allowed");
+        assertThat(driver.getCurrentUrl(), containsString("link_error=not_allowed"));
 
         logoutAll();
 
@@ -330,7 +340,7 @@ public class AccountLinkSpringBootTest extends AbstractSpringBootTest {
         clientResource.update(client);
 
         links = realm.users().get(childUserId).getFederatedIdentity();
-        assertThat(links).isEmpty();
+        assertThat(links, is(empty()));
 
         logoutAll();
     }
@@ -339,7 +349,7 @@ public class AccountLinkSpringBootTest extends AbstractSpringBootTest {
     public void testAccountLink() throws Exception {
         RealmResource realm = adminClient.realms().realm(REALM_NAME);
         List<FederatedIdentityRepresentation> links = realm.users().get(childUserId).getFederatedIdentity();
-        assertThat(links).isEmpty();
+        assertThat(links, is(empty()));
 
         UriBuilder linkBuilder = UriBuilder.fromUri(LINKING_URL);
         String linkUrl = linkBuilder.clone()
@@ -349,7 +359,7 @@ public class AccountLinkSpringBootTest extends AbstractSpringBootTest {
         navigateTo(linkUrl);
         assertCurrentUrlStartsWith(testRealmLoginPage);
 
-        assertThat(driver.getPageSource()).contains(PARENT_REALM);
+        assertThat(driver.getPageSource(), containsString(PARENT_REALM));
         testRealmLoginPage.form().login(CHILD_USERNAME_1, CHILD_PASSWORD_1);
 
         testRealmLoginPage.setAuthRealm(PARENT_REALM);
@@ -360,8 +370,8 @@ public class AccountLinkSpringBootTest extends AbstractSpringBootTest {
         log.info("After linking: " + driver.getCurrentUrl());
         log.info(driver.getPageSource());
 
-        assertThat(driver.getCurrentUrl()).startsWith(linkBuilder.toTemplate());
-        assertThat(driver.getPageSource()).contains("Account linked");
+        assertThat(driver.getCurrentUrl(), startsWith(linkBuilder.toTemplate()));
+        assertThat(driver.getPageSource(), containsString("Account linked"));
 
         OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest(
                 REALM_NAME,
@@ -371,27 +381,27 @@ public class AccountLinkSpringBootTest extends AbstractSpringBootTest {
                 CLIENT_ID,
                 SECRET);
 
-        assertThat(response.getAccessToken()).isNotNull();
-        assertThat(response.getError()).isNull();
+        assertThat(response.getAccessToken(), is(notNullValue()));
+        assertThat(response.getError(), is(nullValue()));
 
 
         Client httpClient = ClientBuilder.newClient();
         String firstToken = getToken(response, httpClient);
-        assertThat(firstToken).isNotNull();
+        assertThat(firstToken, is(notNullValue()));
 
         navigateTo(linkUrl);
-        assertThat(driver.getPageSource()).contains("Account linked");
+        assertThat(driver.getPageSource(), containsString("Account linked"));
 
         String nextToken = getToken(response, httpClient);
-        assertThat(nextToken).isNotNull();
-        assertThat(firstToken).isNotEqualTo(nextToken);
+        assertThat(nextToken, is(notNullValue()));
+        assertThat(firstToken, is(not(equalTo(nextToken))));
 
         links = realm.users().get(childUserId).getFederatedIdentity();
-        assertThat(links).isNotEmpty();
+        assertThat(links, is(not(empty())));
 
         realm.users().get(childUserId).removeFederatedIdentity(PARENT_REALM);
         links = realm.users().get(childUserId).getFederatedIdentity();
-        assertThat(links).isEmpty();
+        assertThat(links, is(empty()));
 
         logoutAll();
     }
@@ -405,7 +415,7 @@ public class AccountLinkSpringBootTest extends AbstractSpringBootTest {
 
         try {
             List<FederatedIdentityRepresentation> links = realm.users().get(childUserId).getFederatedIdentity();
-            assertThat(links).isEmpty();
+            assertThat(links, is(empty()));
 
             UriBuilder linkBuilder = UriBuilder.fromUri(LINKING_URL);
             String linkUrl = linkBuilder.clone()
@@ -415,7 +425,7 @@ public class AccountLinkSpringBootTest extends AbstractSpringBootTest {
             assertCurrentUrlStartsWith(testRealmLoginPage);
 
             // should not be on login page.  This is what we are testing
-            assertThat(driver.getPageSource()).doesNotContain(PARENT_REALM);
+            assertThat(driver.getPageSource(), not(containsString(PARENT_REALM)));
 
             // now test that we can still link.
             testRealmLoginPage.form().login(CHILD_USERNAME_1, CHILD_PASSWORD_1);
@@ -429,15 +439,15 @@ public class AccountLinkSpringBootTest extends AbstractSpringBootTest {
             log.info("After linking: " + driver.getCurrentUrl());
             log.info(driver.getPageSource());
 
-            assertThat(driver.getCurrentUrl()).startsWith(linkBuilder.toTemplate());
-            assertThat(driver.getPageSource()).contains("Account linked");
+            assertThat(driver.getCurrentUrl(), startsWith(linkBuilder.toTemplate()));
+            assertThat(driver.getPageSource(), containsString("Account linked"));
 
             links = realm.users().get(childUserId).getFederatedIdentity();
-            assertThat(links).isNotEmpty();
+            assertThat(links, is(not(empty())));
 
             realm.users().get(childUserId).removeFederatedIdentity(PARENT_REALM);
             links = realm.users().get(childUserId).getFederatedIdentity();
-            assertThat(links).isEmpty();
+            assertThat(links, is(empty()));
 
             logoutAll();
 
@@ -471,7 +481,7 @@ public class AccountLinkSpringBootTest extends AbstractSpringBootTest {
 
             navigateTo(uri);
 
-            assertThat(driver.getPageSource()).contains("Could not send authentication request to identity provider.");
+            assertThat(driver.getPageSource(), containsString("Could not send authentication request to identity provider."));
         } finally {
             rep.setLinkOnly(false);
             realm.identityProviders().get(PARENT_REALM).update(rep);
@@ -482,7 +492,7 @@ public class AccountLinkSpringBootTest extends AbstractSpringBootTest {
     public void testAccountNotLinkedAutomatically() throws Exception {
         RealmResource realm = adminClient.realms().realm(REALM_NAME);
         List<FederatedIdentityRepresentation> links = realm.users().get(childUserId).getFederatedIdentity();
-        assertThat(links).isEmpty();
+        assertThat(links, is(empty()));
 
         // Login to account mgmt first
         profilePage.open(REALM_NAME);
@@ -510,16 +520,16 @@ public class AccountLinkSpringBootTest extends AbstractSpringBootTest {
 
         // Test I was not automatically linked.
         links = realm.users().get(childUserId).getFederatedIdentity();
-        assertThat(links).isEmpty();
+        assertThat(links, is(empty()));
 
         loginUpdateProfilePage.assertCurrent();
         loginUpdateProfilePage.update("Joe", "Doe", "joe@parent.com");
 
         errorPage.assertCurrent();
 
-        assertThat(errorPage.getError()).isEqualTo("You are already authenticated as different user '"
+        assertThat(errorPage.getError(), is(equalTo("You are already authenticated as different user '"
                 + CHILD_USERNAME_1
-                + "' in this session. Please logout first.");
+                + "' in this session. Please log out first.")));
 
         logoutAll();
 
@@ -532,7 +542,7 @@ public class AccountLinkSpringBootTest extends AbstractSpringBootTest {
     public void testAccountLinkingExpired() throws Exception {
         RealmResource realm = adminClient.realms().realm(REALM_NAME);
         List<FederatedIdentityRepresentation> links = realm.users().get(childUserId).getFederatedIdentity();
-        assertThat(links).isEmpty();
+        assertThat(links, is(empty()));
 
         // Login to account mgmt first
         profilePage.open(REALM_NAME);
@@ -563,10 +573,10 @@ public class AccountLinkSpringBootTest extends AbstractSpringBootTest {
 
         // Test I was not automatically linked
         links = realm.users().get(childUserId).getFederatedIdentity();
-        assertThat(links).isEmpty();
+        assertThat(links, is(empty()));
 
         errorPage.assertCurrent();
-        assertThat(errorPage.getError()).isEqualTo("Requested broker account linking, but current session is no longer valid.");
+        assertThat(errorPage.getError(), is(equalTo("Requested broker account linking, but current session is no longer valid.")));
 
         logoutAll();
 

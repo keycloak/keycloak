@@ -75,7 +75,7 @@ public class ClientRedirectTest extends AbstractTestRealmKeycloakTest {
         assertEquals("http://example.org/dummy/base-path", driver.getCurrentUrl());
 
         driver.get(getAuthServerRoot().toString() + "realms/test/clients/account/redirect");
-        assertEquals(getAuthServerRoot().toString() + "realms/test/account", driver.getCurrentUrl());
+        assertEquals(getAuthServerRoot().toString() + "realms/test/account/", driver.getCurrentUrl());
     }
 
     @Test

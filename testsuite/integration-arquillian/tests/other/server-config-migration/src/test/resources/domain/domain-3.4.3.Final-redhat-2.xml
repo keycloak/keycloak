@@ -1096,7 +1096,7 @@
                 <remote-destination host="localhost" port="25"/>
             </outbound-socket-binding>
         </socket-binding-group>
-        <!-- load-balancer-sockets should be removed in production systems and replaced with a better softare or hardare based one -->
+        <!-- load-balancer-sockets should be removed in production systems and replaced with a better software or hardware based one -->
         <socket-binding-group name="load-balancer-sockets" default-interface="public">
             <!-- Needed for server groups using the 'load-balancer' profile  -->
             <socket-binding name="http" port="${jboss.http.port:8080}"/>
@@ -1112,7 +1112,7 @@
             </jvm>
             <socket-binding-group ref="ha-sockets"/>
         </server-group>
-        <!-- load-balancer-group should be removed in production systems and replaced with a better softare or hardare based one -->
+        <!-- load-balancer-group should be removed in production systems and replaced with a better software or hardware based one -->
         <server-group name="load-balancer-group" profile="load-balancer">
             <jvm name="default">
                 <heap size="64m" max-size="512m"/>

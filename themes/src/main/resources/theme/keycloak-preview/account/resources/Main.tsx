@@ -23,11 +23,19 @@ import {HashRouter} from 'react-router-dom';
 import {App} from './app/App';
 import {ContentItem, ModulePageDef, flattenContent, initGroupAndItemIds, isExpansion, isModulePageDef} from './app/ContentPages';
 
+declare let isReactLoading: boolean;
+declare function toggleReact(): void;
+
 export interface MainProps {}
 export class Main extends React.Component<MainProps> {
     
     public constructor(props: MainProps) {
         super(props);
+    }
+
+    public componentDidMount(): void {
+        isReactLoading = false;
+        toggleReact();
     }
 
     public render(): React.ReactNode {

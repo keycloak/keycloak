@@ -18,7 +18,7 @@ package org.keycloak.services.resources.admin;
 
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
-import org.jboss.resteasy.spi.NotFoundException;
+import javax.ws.rs.NotFoundException;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.events.admin.OperationType;
@@ -142,8 +142,12 @@ public class UserStorageProviderResource {
             syncResult = syncManager.syncAllUsers(session.getKeycloakSessionFactory(), realm.getId(), providerModel);
         } else if ("triggerChangedUsersSync".equals(action)) {
             syncResult = syncManager.syncChangedUsers(session.getKeycloakSessionFactory(), realm.getId(), providerModel);
+        } else if (action == null || action == "") {
+            logger.debug("Missing action");
+            throw new BadRequestException("Missing action");
         } else {
-            throw new NotFoundException("Unknown action: " + action);
+            logger.debug("Unknown action: " + action);
+            throw new BadRequestException("Unknown action: " + action);
         }
 
         Map<String, Object> eventRep = new HashMap<>();

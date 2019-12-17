@@ -16,8 +16,6 @@
  */
 package org.keycloak.testsuite.federation.storage;
 
-import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -35,15 +33,14 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.AbstractAuthTest;
-import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
 
+import javax.ws.rs.NotFoundException;
 import java.io.File;
 import java.util.LinkedList;
 import java.util.List;
-
-import javax.ws.rs.NotFoundException;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -55,13 +52,6 @@ public class FederatedStorageExportImportTest extends AbstractAuthTest {
 
     private String exportFileAbsolutePath;
     private String exportDirAbsolutePath;
-
-
-    @Deployment
-    public static WebArchive deploy() {
-        return RunOnServerDeployment.create(ComponentExportImportTest.class, AbstractAuthTest.class, RealmResource.class)
-                .addPackages(true, "org.keycloak.testsuite");
-    }
 
     @Before
     public void setDirs() {
@@ -99,7 +89,7 @@ public class FederatedStorageExportImportTest extends AbstractAuthTest {
 
 
     @Test
-    public void testSingleFile() throws Exception {
+    public void testSingleFile() {
         ComponentExportImportTest.clearExportImportProperties(testingClient);
 
         final String userId = "f:1:path";
@@ -115,9 +105,8 @@ public class FederatedStorageExportImportTest extends AbstractAuthTest {
             session.userFederatedStorage().setSingleAttribute(realm, userId, "single1", "value1");
             session.userFederatedStorage().setAttribute(realm, userId, "list1", attrValues);
             session.userFederatedStorage().addRequiredAction(realm, userId, "UPDATE_PASSWORD");
-            CredentialModel credential = new CredentialModel();
-            FederatedStorageExportImportTest.getHashProvider(session, realm.getPasswordPolicy()).encode("password", realm.
-                    getPasswordPolicy().getHashIterations(), credential);
+            PasswordCredentialModel credential = FederatedStorageExportImportTest.getHashProvider(session, realm.getPasswordPolicy()).encodedCredential("password", realm.
+                    getPasswordPolicy().getHashIterations());
             session.userFederatedStorage().createCredential(realm, userId, credential);
             session.userFederatedStorage().grantRole(realm, userId, role);
             session.userFederatedStorage().joinGroup(realm, userId, group);
@@ -159,13 +148,13 @@ public class FederatedStorageExportImportTest extends AbstractAuthTest {
             Assert.assertTrue(session.userFederatedStorage().getGroups(realm, userId).contains(group));
             List<CredentialModel> creds = session.userFederatedStorage().getStoredCredentials(realm, userId);
             Assert.assertEquals(1, creds.size());
-            Assert.assertTrue(FederatedStorageExportImportTest.getHashProvider(session, realm.getPasswordPolicy()).verify("password", creds.get(0)));
+            Assert.assertTrue(FederatedStorageExportImportTest.getHashProvider(session, realm.getPasswordPolicy())
+                    .verify("password", PasswordCredentialModel.createFromCredentialModel(creds.get(0))));
         });
     }
 
-
     @Test
-    public void testDir() throws Exception {
+    public void testDir() {
         ComponentExportImportTest.clearExportImportProperties(testingClient);
 
         final String userId = "f:1:path";
@@ -181,9 +170,8 @@ public class FederatedStorageExportImportTest extends AbstractAuthTest {
             session.userFederatedStorage().setSingleAttribute(realm, userId, "single1", "value1");
             session.userFederatedStorage().setAttribute(realm, userId, "list1", attrValues);
             session.userFederatedStorage().addRequiredAction(realm, userId, "UPDATE_PASSWORD");
-            CredentialModel credential = new CredentialModel();
-            FederatedStorageExportImportTest.getHashProvider(session, realm.getPasswordPolicy()).encode("password", realm.
-                    getPasswordPolicy().getHashIterations(), credential);
+            PasswordCredentialModel credential = FederatedStorageExportImportTest.getHashProvider(session, realm.getPasswordPolicy()).encodedCredential("password", realm.
+                    getPasswordPolicy().getHashIterations());
             session.userFederatedStorage().createCredential(realm, userId, credential);
             session.userFederatedStorage().grantRole(realm, userId, role);
             session.userFederatedStorage().joinGroup(realm, userId, group);
@@ -228,7 +216,8 @@ public class FederatedStorageExportImportTest extends AbstractAuthTest {
             Assert.assertEquals(50, session.userFederatedStorage().getNotBeforeOfUser(realm, userId));
             List<CredentialModel> creds = session.userFederatedStorage().getStoredCredentials(realm, userId);
             Assert.assertEquals(1, creds.size());
-            Assert.assertTrue(FederatedStorageExportImportTest.getHashProvider(session, realm.getPasswordPolicy()).verify("password", creds.get(0)));
+            Assert.assertTrue(FederatedStorageExportImportTest.getHashProvider(session, realm.getPasswordPolicy())
+                    .verify("password", PasswordCredentialModel.createFromCredentialModel(creds.get(0))));
 
         });
 

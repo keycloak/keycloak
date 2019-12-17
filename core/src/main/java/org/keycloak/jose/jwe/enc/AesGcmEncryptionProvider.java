@@ -17,6 +17,7 @@
 
 package org.keycloak.jose.jwe.enc;
 
+import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.security.InvalidKeyException;
 import java.security.Key;
@@ -57,7 +58,7 @@ public abstract class AesGcmEncryptionProvider implements JWEEncryptionProvider 
         }
 
         // https://tools.ietf.org/html/rfc7516#appendix-A.1.5
-        byte[] aad = jwe.getBase64Header().getBytes("UTF-8");
+        byte[] aad = jwe.getBase64Header().getBytes(StandardCharsets.UTF_8);
 
         byte[] cipherBytes = encryptBytes(contentBytes, initializationVector, aesKey, aad);
         byte[] authenticationTag = getAuthenticationTag(cipherBytes);
@@ -79,7 +80,7 @@ public abstract class AesGcmEncryptionProvider implements JWEEncryptionProvider 
         }
 
         // https://tools.ietf.org/html/rfc7516#appendix-A.1.5
-        byte[] aad = jwe.getBase64Header().getBytes("UTF-8");
+        byte[] aad = jwe.getBase64Header().getBytes(StandardCharsets.UTF_8);
         byte[] decryptedTargetContent = getAeadDecryptedTargetContent(jwe);
         byte[] contentBytes = decryptBytes(decryptedTargetContent, jwe.getInitializationVector(), aesKey, aad);
 

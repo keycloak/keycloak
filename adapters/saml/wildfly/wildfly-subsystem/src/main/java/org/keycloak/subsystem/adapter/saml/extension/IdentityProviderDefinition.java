@@ -63,9 +63,15 @@ public class IdentityProviderDefinition extends SimpleResourceDefinition {
                     .setAllowNull(false)
                     .build();
 
+    static final ObjectTypeAttributeDefinition ALLOWED_CLOCK_SKEW =
+            ObjectTypeAttributeDefinition.Builder.of(Constants.Model.ALLOWED_CLOCK_SKEW,
+                    AllowedClockSkew.ATTRIBUTES)
+                    .setAllowNull(true)
+                    .build();
+
     static final SimpleAttributeDefinition[] ATTRIBUTES = {SIGNATURES_REQUIRED, SIGNATURE_ALGORITHM, SIGNATURE_CANONICALIZATION_METHOD};
 
-    static final SimpleAttributeDefinition[] ALL_ATTRIBUTES = {SIGNATURES_REQUIRED, SIGNATURE_ALGORITHM, SIGNATURE_CANONICALIZATION_METHOD, SINGLE_SIGN_ON, SINGLE_LOGOUT};
+    static final SimpleAttributeDefinition[] ALL_ATTRIBUTES = {SIGNATURES_REQUIRED, SIGNATURE_ALGORITHM, SIGNATURE_CANONICALIZATION_METHOD, SINGLE_SIGN_ON, SINGLE_LOGOUT, ALLOWED_CLOCK_SKEW};
 
     static final HashMap<String, SimpleAttributeDefinition> ATTRIBUTE_MAP = new HashMap<>();
 

@@ -18,12 +18,16 @@
 package org.keycloak.testsuite.oauth;
 
 import org.apache.http.HttpResponse;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.message.BasicNameValuePair;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.OAuthErrorException;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
 import org.keycloak.crypto.Algorithm;
@@ -52,6 +56,8 @@ import org.keycloak.testsuite.util.TokenSignatureUtil;
 import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.util.UserManager;
 
+import java.io.UnsupportedEncodingException;
+import java.util.LinkedList;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
@@ -65,6 +71,8 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
     private static String userId;
 
     private static String userId2;
+
+    private static String userIdMultipleOTPs;
 
     private final TimeBasedOTP totp = new TimeBasedOTP();
 
@@ -124,6 +132,15 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
                 .build();
         realm.user(user2);
 
+        userIdMultipleOTPs = KeycloakModelUtils.generateId();
+        UserBuilder userBuilderMultipleOTPs = UserBuilder.create()
+                .id(userIdMultipleOTPs)
+                .username("direct-login-multiple-otps")
+                .password("password")
+                .totpSecret("firstOTPIsPreferredCredential");
+        for (int i = 2; i <= 10; i++) userBuilderMultipleOTPs.totpSecret(String.format("%s-th OTP authenticator", i));
+        realm.user(userBuilderMultipleOTPs.build());
+
         testRealms.add(realm.build());
     }
 
@@ -145,6 +162,19 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
     @Test
     public void grantAccessTokenWithTotp() throws Exception {
         grantAccessToken(userId2, "direct-login-otp", "resource-owner", totp.generateTOTP("totpSecret"));
+    }
+
+    @Test
+    public void grantAccessTokenWithMultipleTotp() throws Exception {
+        // Confirm user can login with 1-th OTP since it's the preferred credential
+        grantAccessToken(userIdMultipleOTPs, "direct-login-multiple-otps", "resource-owner", totp.generateTOTP("firstOTPIsPreferredCredential"));
+        // For remaining OTP tokens HTTP 401 "Unauthorized" is the allowed / expected response
+        oauth.clientId("resource-owner");
+        for (int i = 2; i <= 10; i++) {
+            String otp = totp.generateTOTP(String.format("%s-th OTP authenticator", i));
+            OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret", "direct-login-multiple-otps", "password", otp);
+            assertEquals(401, response.getStatusCode());
+        }
     }
 
     @Test
@@ -386,7 +416,7 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
 
         assertEquals(400, response.getStatusCode());
 
-        assertEquals("invalid_grant", response.getError());
+        assertEquals(OAuthErrorException.UNAUTHORIZED_CLIENT, response.getError());
 
         events.expectLogin()
                 .client("resource-owner")
@@ -586,4 +616,27 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
         }
     }
 
+    @Test
+    public void grantAccessTokenUnsupportedGrantType() throws Exception {
+        oauth.clientId("resource-owner");
+
+        try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
+            HttpPost post = new HttpPost(oauth.getResourceOwnerPasswordCredentialGrantUrl());
+            List<NameValuePair> parameters = new LinkedList<>();
+            parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, "unsupported_grant_type"));
+            UrlEncodedFormEntity formEntity;
+            try {
+                formEntity = new UrlEncodedFormEntity(parameters, "UTF-8");
+            } catch (UnsupportedEncodingException e) {
+                throw new RuntimeException(e);
+            }
+            post.setEntity(formEntity);
+            OAuthClient.AccessTokenResponse response = new OAuthClient.AccessTokenResponse(client.execute(post));
+
+            assertEquals(400, response.getStatusCode());
+
+            assertEquals(OAuthErrorException.UNSUPPORTED_GRANT_TYPE, response.getError());
+            assertEquals("Unsupported grant_type", response.getErrorDescription());
+        }
+    }
 }

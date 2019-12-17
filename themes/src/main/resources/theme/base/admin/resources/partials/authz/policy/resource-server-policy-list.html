@@ -76,7 +76,7 @@
                     <span ng-if="!policy.details || !policy.details.loaded" class="fa fa-angle-right"></span>
                     <span ng-if="policy.details && policy.details.loaded" class="fa fa-angle-right fa-angle-down"></span>
                 </td>
-                <td><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/authz/resource-server/policy/{{policy.type}}/{{policy.id}}">{{policy.name}}</a></td>
+                <td><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/authz/resource-server/policy/{{policy.type.endsWith('.js') ? 'js': policy.type}}/{{policy.id}}">{{policy.name}}</a></td>
                 <td>{{policy.description}}</td>
                 <td>{{policy.type}}</td>
                 <td align="center">

@@ -16,6 +16,7 @@
  */
 package org.keycloak.testsuite.pages;
 
+import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -29,6 +30,9 @@ public class LoginConfigTotpPage extends AbstractPage {
 
     @FindBy(id = "totp")
     private WebElement totpInput;
+
+    @FindBy(id = "userLabel")
+    private WebElement totpLabelInput;
 
     @FindBy(css = "input[type=\"submit\"]")
     private WebElement submitButton;
@@ -47,6 +51,12 @@ public class LoginConfigTotpPage extends AbstractPage {
 
     public void configure(String totp) {
         totpInput.sendKeys(totp);
+        submitButton.click();
+    }
+
+    public void configure(String totp, String userLabel) {
+        totpInput.sendKeys(totp);
+        totpLabelInput.sendKeys(userLabel);
         submitButton.click();
     }
 
@@ -80,6 +90,14 @@ public class LoginConfigTotpPage extends AbstractPage {
 
     public String getError() {
         return loginErrorMessage.getText();
+    }
+
+    public boolean isCancelDisplayed() {
+        try {
+            return cancelAIAButton.isDisplayed();
+        } catch (NoSuchElementException e) {
+            return false;
+        }
     }
 
 }

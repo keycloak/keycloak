@@ -18,6 +18,7 @@
 package org.keycloak.models;
 
 import org.jboss.logging.Logger;
+import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.models.utils.Base32;
 import org.keycloak.models.utils.HmacOTP;
 
@@ -66,7 +67,7 @@ public class OTPPolicy implements Serializable {
         this.period = period;
     }
 
-    public static OTPPolicy DEFAULT_POLICY = new OTPPolicy(UserCredentialModel.TOTP, HmacOTP.HMAC_SHA1, 0, 6, 1, 30);
+    public static OTPPolicy DEFAULT_POLICY = new OTPPolicy(OTPCredentialModel.TOTP, HmacOTP.HMAC_SHA1, 0, 6, 1, 30);
 
     public String getAlgorithmKey() {
         return algToKeyUriAlg.containsKey(algorithm) ? algToKeyUriAlg.get(algorithm) : algorithm;
@@ -148,9 +149,9 @@ public class OTPPolicy implements Serializable {
                                 + "&algorithm=" + algToKeyUriAlg.get(algorithm) //
                                 + "&issuer=" + issuerName;
 
-            if (type.equals(UserCredentialModel.HOTP)) {
+            if (type.equals(OTPCredentialModel.HOTP)) {
                 parameters += "&counter=" + initialCounter;
-            } else if (type.equals(UserCredentialModel.TOTP)) {
+            } else if (type.equals(OTPCredentialModel.TOTP)) {
                 parameters += "&period=" + period;
             }
 
@@ -194,11 +195,7 @@ public class OTPPolicy implements Serializable {
                 return false;
             }
 
-            if (policy.getType().equals("totp") && policy.getPeriod() != 30) {
-                return false;
-            }
-
-            return true;
+            return policy.getType().equals("totp") && policy.getPeriod() == 30;
         }
     }
 

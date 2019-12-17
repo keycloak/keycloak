@@ -89,7 +89,7 @@ public class AdapterInstallationConfigTest extends AbstractClientRegistrationTes
         AdapterConfig config = reg.getAdapterConfig(client.getClientId());
         assertNotNull(config);
 
-        assertEquals(suiteContext.getAuthServerInfo().getContextRoot() + "/auth", config.getAuthServerUrl());
+        assertEquals(suiteContext.getAuthServerInfo().getContextRoot() + "/auth/", config.getAuthServerUrl());
         assertEquals("test", config.getRealm());
 
         assertEquals(1, config.getCredentials().size());

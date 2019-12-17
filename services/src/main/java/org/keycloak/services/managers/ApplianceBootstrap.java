@@ -55,7 +55,7 @@ public class ApplianceBootstrap {
         return session.users().getUsersCount(realm) == 0;
     }
 
-    public boolean createMasterRealm(String contextPath) {
+    public boolean createMasterRealm() {
         if (!isNewInstall()) {
             throw new IllegalStateException("Can't create default realm as realms already exists");
         }
@@ -64,7 +64,6 @@ public class ApplianceBootstrap {
         ServicesLogger.LOGGER.initializingAdminRealm(adminRealmName);
 
         RealmManager manager = new RealmManager(session);
-        manager.setContextPath(contextPath);
         RealmModel realm = manager.createRealm(adminRealmName, adminRealmName);
         realm.setName(adminRealmName);
         realm.setDisplayName(Version.NAME);
@@ -103,9 +102,7 @@ public class ApplianceBootstrap {
         UserModel adminUser = session.users().addUser(realm, username);
         adminUser.setEnabled(true);
 
-        UserCredentialModel usrCredModel = new UserCredentialModel();
-        usrCredModel.setType(UserCredentialModel.PASSWORD);
-        usrCredModel.setValue(password);
+        UserCredentialModel usrCredModel = UserCredentialModel.password(password);
         session.userCredentialManager().updateCredential(realm, adminUser, usrCredModel);
 
         RoleModel adminRole = realm.getRole(AdminRoles.ADMIN);

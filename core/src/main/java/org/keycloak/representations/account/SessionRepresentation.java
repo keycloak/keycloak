@@ -13,6 +13,8 @@ public class SessionRepresentation {
     private int lastAccess;
     private int expires;
     private List<ClientRepresentation> clients;
+    private String browser;
+    private Boolean current;
 
     public String getId() {
         return id;
@@ -60,5 +62,21 @@ public class SessionRepresentation {
 
     public void setClients(List<ClientRepresentation> clients) {
         this.clients = clients;
+    }
+
+    public void setBrowser(String browser) {
+        this.browser = browser;
+    }
+
+    public String getBrowser() {
+        return browser;
+    }
+
+    public Boolean getCurrent() {
+        return current;
+    }
+
+    public void setCurrent(Boolean current) {
+        this.current = current;
     }
 }

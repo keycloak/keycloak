@@ -24,6 +24,7 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.message.BasicNameValuePair;
+import org.hamcrest.collection.IsArrayContaining;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
@@ -34,7 +35,9 @@ import org.keycloak.admin.client.resource.ClientScopeResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.common.enums.SslRequired;
+import org.keycloak.common.util.Base64Url;
 import org.keycloak.crypto.Algorithm;
+import org.keycloak.crypto.ECDSASignatureProvider;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.jose.jws.JWSHeader;
@@ -94,6 +97,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 import static org.keycloak.testsuite.admin.ApiUtil.findClientByClientId;
@@ -1139,6 +1143,40 @@ public class AccessTokenTest extends AbstractKeycloakTest {
     @Test
     public void accessTokenRequest_ClientES512_RealmRS256() throws Exception {
         conductAccessTokenRequest(Algorithm.HS256, Algorithm.ES512, Algorithm.RS256);
+    }
+
+    @Test
+    public void validateECDSASignatures() {
+        validateTokenECDSASignature(Algorithm.ES256);
+        validateTokenECDSASignature(Algorithm.ES384);
+        validateTokenECDSASignature(Algorithm.ES512);
+    }
+
+    private void validateTokenECDSASignature(String expectedAlg) {
+        assertThat(ECDSASignatureProvider.ECDSA.values(), IsArrayContaining.hasItemInArray(ECDSASignatureProvider.ECDSA.valueOf(expectedAlg)));
+
+        try {
+            TokenSignatureUtil.changeRealmTokenSignatureProvider(adminClient, expectedAlg);
+            TokenSignatureUtil.changeClientAccessTokenSignatureProvider(ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), expectedAlg);
+            validateTokenSignatureLength(ECDSASignatureProvider.ECDSA.valueOf(expectedAlg).getSignatureLength());
+        } finally {
+            TokenSignatureUtil.changeRealmTokenSignatureProvider(adminClient, Algorithm.RS256);
+            TokenSignatureUtil.changeClientAccessTokenSignatureProvider(ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), Algorithm.RS256);
+        }
+    }
+
+    private void validateTokenSignatureLength(int expectedLength) {
+        oauth.doLogin("test-user@localhost", "password");
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
+
+        String token = response.getAccessToken();
+        oauth.verifyToken(token);
+
+        String encodedSignature = token.split("\\.",3)[2];
+        byte[] signature = Base64Url.decode(encodedSignature);
+        Assert.assertEquals(expectedLength, signature.length);
+        oauth.openLogout();
     }
 
     private void conductAccessTokenRequest(String expectedRefreshAlg, String expectedAccessAlg, String expectedIdTokenAlg) throws Exception {

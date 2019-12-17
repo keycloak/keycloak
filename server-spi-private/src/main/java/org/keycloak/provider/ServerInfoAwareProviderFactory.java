@@ -32,6 +32,6 @@ public interface ServerInfoAwareProviderFactory {
      * 
      * @return Map with keys describing value and relevant values itself
      */
-    public Map<String, String> getOperationalInfo();
+    Map<String, String> getOperationalInfo();
 
 }

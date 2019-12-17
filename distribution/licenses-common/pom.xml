@@ -20,7 +20,7 @@
     <parent>
         <artifactId>keycloak-distribution-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>8.0.0-SNAPSHOT</version>
+        <version>9.0.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>keycloak-distribution-licenses-common</artifactId>
@@ -33,7 +33,7 @@
                 <targetPath>keycloak-licenses-common</targetPath>
                 <directory>../../</directory>
                 <includes>
-                    <include>License.html</include>
+                    <include>LICENSE.txt</include>
                 </includes>
             </resource>
             <resource>

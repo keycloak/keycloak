@@ -17,22 +17,22 @@
 
 package org.keycloak.credential.hash;
 
-import org.keycloak.credential.CredentialModel;
 import org.keycloak.models.PasswordPolicy;
+import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.provider.Provider;
 
 /**
  * @author <a href="mailto:me@tsudot.com">Kunal Kerkar</a>
  */
 public interface PasswordHashProvider extends Provider {
-    boolean policyCheck(PasswordPolicy policy, CredentialModel credential);
+    boolean policyCheck(PasswordPolicy policy, PasswordCredentialModel credential);
 
-    void encode(String rawPassword, int iterations, CredentialModel credential);
+    PasswordCredentialModel encodedCredential(String rawPassword, int iterations);
 
     default
     String encode(String rawPassword, int iterations) {
         return rawPassword;
     }
 
-    boolean verify(String rawPassword, CredentialModel credential);
+    boolean verify(String rawPassword, PasswordCredentialModel credential);
 }

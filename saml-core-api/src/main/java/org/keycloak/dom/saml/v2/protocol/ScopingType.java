@@ -46,7 +46,7 @@ import java.util.List;
 public class ScopingType {
 
     protected IDPListType idpList;
-    protected List<URI> requesterID = new ArrayList<URI>();
+    protected List<URI> requesterID = new ArrayList<>();
 
     protected BigInteger proxyCount;
 

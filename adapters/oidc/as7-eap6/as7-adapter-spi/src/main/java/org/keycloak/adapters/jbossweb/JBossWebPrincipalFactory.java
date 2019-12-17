@@ -96,8 +96,7 @@ public class JBossWebPrincipalFactory extends GenericPrincipalFactory {
         SecurityContext sc = SecurityContextAssociation.getSecurityContext();
         Principal userPrincipal = getPrincipal(subject);
         sc.getUtil().createSubjectInfo(userPrincipal, account, subject);
-        List<String> rolesAsStringList = new ArrayList<String>();
-        rolesAsStringList.addAll(roleSet);
+        List<String> rolesAsStringList = new ArrayList<>(roleSet);
 
         try {
             return (GenericPrincipal) jbossWebPrincipalConstructor.newInstance(realm, userPrincipal.getName(), null, rolesAsStringList, userPrincipal, null, account, null, subject);

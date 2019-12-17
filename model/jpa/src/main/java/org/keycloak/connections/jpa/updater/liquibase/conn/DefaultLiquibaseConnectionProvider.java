@@ -23,6 +23,7 @@ import liquibase.changelog.DatabaseChangeLog;
 import liquibase.database.Database;
 import liquibase.database.DatabaseFactory;
 import liquibase.database.jvm.JdbcConnection;
+import liquibase.datatype.DataTypeFactory;
 import liquibase.exception.LiquibaseException;
 import liquibase.logging.LogFactory;
 import liquibase.logging.LogLevel;
@@ -34,6 +35,7 @@ import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.connections.jpa.updater.liquibase.LiquibaseJpaUpdaterProvider;
 import org.keycloak.connections.jpa.updater.liquibase.PostgresPlusDatabase;
+import org.keycloak.connections.jpa.updater.liquibase.MySQL8VarcharType;
 import org.keycloak.connections.jpa.updater.liquibase.UpdatedMariaDBDatabase;
 import org.keycloak.connections.jpa.updater.liquibase.UpdatedMySqlDatabase;
 import org.keycloak.connections.jpa.updater.liquibase.lock.CustomInsertLockRecordGenerator;
@@ -98,6 +100,9 @@ public class DefaultLiquibaseConnectionProvider implements LiquibaseConnectionPr
         // Adding newer version of MySQL/MariaDB support to liquibase
         DatabaseFactory.getInstance().register(new UpdatedMySqlDatabase());
         DatabaseFactory.getInstance().register(new UpdatedMariaDBDatabase());
+
+        // Adding CustomVarcharType for MySQL 8 and newer
+        DataTypeFactory.getInstance().register(MySQL8VarcharType.class);
 
         // Change command for creating lock and drop DELETE lock record from it
         SqlGeneratorFactory.getInstance().register(new CustomInsertLockRecordGenerator());

@@ -17,6 +17,7 @@
 package org.keycloak.broker.oidc;
 
 import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 
 /**
  * @author Pedro Igor
@@ -59,6 +60,14 @@ public class OAuth2IdentityProviderConfig extends IdentityProviderModel {
         getConfig().put("clientId", clientId);
     }
 
+    public String getClientAuthMethod() {
+        return getConfig().getOrDefault("clientAuthMethod", OIDCLoginProtocol.CLIENT_SECRET_POST);
+    }
+
+    public void setClientAuthMethod(String clientAuth) {
+        getConfig().put("clientAuthMethod", clientAuth);
+    }
+
     public String getClientSecret() {
         return getConfig().get("clientSecret");
     }
@@ -81,6 +90,18 @@ public class OAuth2IdentityProviderConfig extends IdentityProviderModel {
 
     public void setLoginHint(boolean loginHint) {
         getConfig().put("loginHint", String.valueOf(loginHint));
+    }
+    
+    public boolean isJWTAuthentication() {
+        if (getClientAuthMethod().equals(OIDCLoginProtocol.CLIENT_SECRET_JWT)
+                || getClientAuthMethod().equals(OIDCLoginProtocol.PRIVATE_KEY_JWT)) {
+            return true;
+        }
+        return false;
+    }
+
+    public boolean isBasicAuthentication(){
+        return getClientAuthMethod().equals(OIDCLoginProtocol.CLIENT_SECRET_BASIC);
     }
 
     public boolean isUiLocales() {

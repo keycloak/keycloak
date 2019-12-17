@@ -43,7 +43,7 @@ import java.util.List;
  */
 public class TransformsType {
 
-    protected List<TransformType> transform = new ArrayList<TransformType>();
+    protected List<TransformType> transform = new ArrayList<>();
 
     public void add(TransformType tt) {
         this.transform.add(tt);

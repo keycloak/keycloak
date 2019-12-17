@@ -56,7 +56,7 @@ public class IdentityProviderRepresentation {
     protected boolean linkOnly;
     protected String firstBrokerLoginFlowAlias;
     protected String postBrokerLoginFlowAlias;
-    protected Map<String, String> config = new HashMap<String, String>();
+    protected Map<String, String> config = new HashMap<>();
 
     public String getInternalId() {
         return this.internalId;

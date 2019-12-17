@@ -20,7 +20,6 @@ package org.keycloak.jose.jwk;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.keycloak.common.util.PemUtils;
 
-import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 
 /**

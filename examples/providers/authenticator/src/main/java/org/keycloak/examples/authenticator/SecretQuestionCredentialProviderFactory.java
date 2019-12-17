@@ -25,9 +25,12 @@ import org.keycloak.models.KeycloakSession;
  * @version $Revision: 1 $
  */
 public class SecretQuestionCredentialProviderFactory implements CredentialProviderFactory<SecretQuestionCredentialProvider> {
+
+    public static final String PROVIDER_ID =  "secret-question";
+
     @Override
     public String getId() {
-        return "secret-question";
+        return PROVIDER_ID;
     }
 
     @Override

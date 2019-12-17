@@ -19,6 +19,7 @@ package org.keycloak.adapters.saml.config.parsers;
 
 import org.jboss.logging.Logger;
 import org.keycloak.adapters.saml.DefaultSamlDeployment;
+import org.keycloak.adapters.saml.RoleMappingsProviderUtils;
 import org.keycloak.adapters.saml.SamlDeployment;
 import org.keycloak.adapters.saml.config.IDP;
 import org.keycloak.adapters.saml.config.Key;
@@ -79,6 +80,7 @@ public class DeploymentBuilder {
         IDP idp = sp.getIdp();
         deployment.setSignatureCanonicalizationMethod(idp.getSignatureCanonicalizationMethod());
         deployment.setAutodetectBearerOnly(sp.isAutodetectBearerOnly());
+        deployment.setKeepDOMAssertion(sp.isKeepDOMAssertion());
         deployment.setSignatureAlgorithm(SignatureAlgorithm.RSA_SHA256);
         if (idp.getSignatureAlgorithm() != null) {
             deployment.setSignatureAlgorithm(SignatureAlgorithm.valueOf(idp.getSignatureAlgorithm()));
@@ -211,6 +213,10 @@ public class DeploymentBuilder {
         defaultIDP.setMetadataUrl(idp.getMetadataUrl());
         defaultIDP.setClient(new HttpClientBuilder().build(idp.getHttpClientConfig()));
         defaultIDP.refreshKeyLocatorConfiguration();
+
+        // set the role mappings provider.
+        deployment.setRoleMappingsProvider(RoleMappingsProviderUtils.bootstrapRoleMappingsProvider(deployment, resourceLoader,
+                sp.getRoleMappingsProviderConfig()));
 
         return deployment;
     }

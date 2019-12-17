@@ -16,23 +16,32 @@
  */
 package org.keycloak.testsuite.migration;
 
+import org.apache.commons.io.IOUtils;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
 import org.hamcrest.Matchers;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.RoleResource;
+import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.common.constants.KerberosConstants;
 import org.keycloak.component.PrioritizedComponentModel;
 import org.keycloak.keys.KeyProvider;
+import org.keycloak.models.AccountRoles;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.AuthenticationExecutionModel;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.LDAPConstants;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
+import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.AuthenticationExecutionExportRepresentation;
+import org.keycloak.representations.idm.AuthenticationExecutionInfoRepresentation;
 import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
@@ -53,17 +62,25 @@ import org.keycloak.testsuite.exportimport.ExportImportUtil;
 import org.keycloak.testsuite.runonserver.RunHelpers;
 import org.keycloak.testsuite.util.OAuthClient;
 
+import java.io.IOException;
+import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -102,7 +119,7 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
 
     protected void testMigratedMigrationData(boolean supportsAuthzService) {
         assertNames(migrationRealm.roles().list(), "offline_access", "uma_authorization", "migration-test-realm-role");
-        List<String> expectedClientIds = new ArrayList<>(Arrays.asList("account", "admin-cli", "broker", "migration-test-client", "realm-management", "security-admin-console"));
+        List<String> expectedClientIds = new ArrayList<>(Arrays.asList("account", "account-console", "admin-cli", "broker", "migration-test-client", "realm-management", "security-admin-console"));
 
         if (supportsAuthzService) {
             expectedClientIds.add("authz-servlet");
@@ -118,7 +135,7 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
 
     protected void testMigratedMasterData() {
         assertNames(masterRealm.roles().list(), "offline_access", "uma_authorization", "create-realm", "master-test-realm-role", "admin");
-        assertNames(masterRealm.clients().findAll(), "admin-cli", "security-admin-console", "broker", "account",
+        assertNames(masterRealm.clients().findAll(), "admin-cli", "security-admin-console", "broker", "account", "account-console",
                 "master-realm", "master-test-client", "Migration-realm", "Migration2-realm");
         String id = masterRealm.clients().findByClientId("master-test-client").get(0).getId();
         assertNames(masterRealm.clients().get(id).roles().list(), "master-test-client-role");
@@ -238,6 +255,72 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         testRealmDefaultClientScopes(migrationRealm);
         // check that the 'microprofile-jwt' scope was added to the migrated clients.
         testMicroprofileJWTScopeAddedToClient();
+    }
+
+    protected void testMigrationTo8_0_0() {
+        // Common
+        testAdminClientUrls(masterRealm);
+        testAdminClientUrls(migrationRealm);
+        testAccountClientUrls(masterRealm);
+        testAccountClientUrls(migrationRealm);
+
+        // MFA - Check that credentials were created for user and are available
+        testCredentialsMigratedToNewFormat();
+
+        // MFA - Check that authentication flows were migrated as expected
+        testOTPAuthenticatorsMigratedToConditionalFlow();
+
+        testResourceTag();
+    }
+
+    protected void testMigrationTo9_0_0() {
+        testAccountConsoleClient(masterRealm);
+        testAccountConsoleClient(migrationRealm);
+    }
+
+    private void testAdminClientUrls(RealmResource realm) {
+        ClientRepresentation adminConsoleClient = realm.clients().findByClientId(Constants.ADMIN_CONSOLE_CLIENT_ID).get(0);
+
+        assertEquals(Constants.AUTH_ADMIN_URL_PROP, adminConsoleClient.getRootUrl());
+        String baseUrl = "/admin/" + realm.toRepresentation().getRealm() + "/console/";
+        assertEquals(baseUrl, adminConsoleClient.getBaseUrl());
+        assertEquals(baseUrl + "*", adminConsoleClient.getRedirectUris().iterator().next());
+        assertEquals(1, adminConsoleClient.getRedirectUris().size());
+        assertEquals("+", adminConsoleClient.getWebOrigins().iterator().next());
+        assertEquals(1, adminConsoleClient.getWebOrigins().size());
+    }
+
+    private void testAccountClientUrls(RealmResource realm) {
+        ClientRepresentation accountConsoleClient = realm.clients().findByClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID).get(0);
+
+        assertEquals(Constants.AUTH_BASE_URL_PROP, accountConsoleClient.getRootUrl());
+        String baseUrl = "/realms/" + realm.toRepresentation().getRealm() + "/account/";
+        assertEquals(baseUrl, accountConsoleClient.getBaseUrl());
+        assertEquals(baseUrl + "*", accountConsoleClient.getRedirectUris().iterator().next());
+        assertEquals(1, accountConsoleClient.getRedirectUris().size());
+    }
+
+    private void testAccountConsoleClient(RealmResource realm) {
+        ClientRepresentation accountConsoleClient = realm.clients().findByClientId(Constants.ACCOUNT_CONSOLE_CLIENT_ID).get(0);
+
+        assertEquals(Constants.AUTH_BASE_URL_PROP, accountConsoleClient.getRootUrl());
+        assertEquals("/realms/" + realm.toRepresentation().getRealm() + "/account/", accountConsoleClient.getBaseUrl());
+        assertTrue(accountConsoleClient.isPublicClient());
+        assertFalse(accountConsoleClient.isFullScopeAllowed());
+        assertTrue(accountConsoleClient.isStandardFlowEnabled());
+        assertFalse(accountConsoleClient.isDirectAccessGrantsEnabled());
+
+        ClientResource clientResource = realm.clients().get(accountConsoleClient.getId());
+
+        MappingsRepresentation scopes = clientResource.getScopeMappings().getAll();
+        assertNull(scopes.getRealmMappings());
+        assertEquals(1, scopes.getClientMappings().size());
+        assertEquals(1, scopes.getClientMappings().get(ACCOUNT_MANAGEMENT_CLIENT_ID).getMappings().size());
+        assertEquals(MANAGE_ACCOUNT, scopes.getClientMappings().get(ACCOUNT_MANAGEMENT_CLIENT_ID).getMappings().get(0).getName());
+
+        List<ProtocolMapperRepresentation> mappers = clientResource.getProtocolMappers().getMappers();
+        assertEquals(1, mappers.size());
+        assertEquals("oidc-audience-resolve-mapper", mappers.get(0).getProtocolMapper());
     }
 
     private void testDecisionStrategySetOnResourceServer() {
@@ -379,7 +462,7 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         ClientsResource clients = migrationRealm.clients();
         ClientRepresentation clientRepresentation = clients.findByClientId("authz-servlet").get(0);
         ResourceRepresentation resource = clients.get(clientRepresentation.getId()).authorization().resources().findByName("Protected Resource").get(0);
-        org.junit.Assert.assertThat(resource.getUris(), Matchers.containsInAnyOrder("/*"));
+        org.junit.Assert.assertThat(resource.getUris(), containsInAnyOrder("/*"));
     }
 
     protected void testAuthorizationServices(RealmResource... realms) {
@@ -573,6 +656,83 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         }
     }
 
+    protected void testCredentialsMigratedToNewFormat() {
+        log.info("testing user's credentials migrated to new format with secretData and credentialData");
+
+        // Try to login with password+otp after the migration
+        try {
+            oauth.realm(MIGRATION);
+            oauth.clientId("migration-test-client");
+
+            TimeBasedOTP otpGenerator = new TimeBasedOTP("HmacSHA1", 8, 40, 1);
+            String otp = otpGenerator.generateTOTP("dSdmuHLQhkm54oIm0A0S");
+
+            // Try invalid password first
+            OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("b2c07929-69e3-44c6-8d7f-76939000b3e4",
+                    "migration-test-user", "password", otp);
+            Assert.assertNull(response.getAccessToken());
+            Assert.assertNotNull(response.getError());
+
+            // Try invalid OTP then
+            response = oauth.doGrantAccessTokenRequest("b2c07929-69e3-44c6-8d7f-76939000b3e4",
+                    "migration-test-user", "password2", "invalid");
+            Assert.assertNull(response.getAccessToken());
+            Assert.assertNotNull(response.getError());
+
+            // Try successful login now
+            response = oauth.doGrantAccessTokenRequest("b2c07929-69e3-44c6-8d7f-76939000b3e4",
+                    "migration-test-user", "password2", otp);
+            Assert.assertNull(response.getError());
+            AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
+            assertEquals("migration-test-user", accessToken.getPreferredUsername());
+        } catch (Exception e) {
+            throw new AssertionError("Failed to login with user 'migration-test-user' after migration", e);
+        }
+    }
+
+
+    protected void testOTPAuthenticatorsMigratedToConditionalFlow() {
+        log.info("testing optional authentication executions migrated");
+
+        testOTPExecutionMigratedToConditionalFlow("browser", "forms - auth-otp-form - Conditional","OTP Form");
+        testOTPExecutionMigratedToConditionalFlow("direct grant", "direct grant - direct-grant-validate-otp - Conditional","OTP");
+        testOTPExecutionMigratedToConditionalFlow("reset credentials", "reset credentials - reset-otp - Conditional","Reset OTP");
+        testOTPExecutionMigratedToConditionalFlow("first broker login", "Verify Existing Account by Re-authentication - auth-otp-form - Conditional","OTP Form");
+    }
+
+
+    private void testOTPExecutionMigratedToConditionalFlow(String topFlowAlias, String expectedOTPSubflowAlias, String expectedOTPExecutionDisplayName) {
+        List<AuthenticationExecutionInfoRepresentation> authExecutions = migrationRealm.flows().getExecutions(topFlowAlias);
+
+        int counter = -1;
+        AuthenticationExecutionInfoRepresentation subflowExecution = null;
+        for (AuthenticationExecutionInfoRepresentation ex : authExecutions) {
+            counter++;
+            if (expectedOTPSubflowAlias.equals(ex.getDisplayName())) {
+                subflowExecution = ex;
+                break;
+            }
+        }
+
+        if (subflowExecution == null) {
+            throw new AssertionError("Not found subflow with displayName '" + expectedOTPSubflowAlias + "' in the flow " + topFlowAlias);
+        }
+
+        Assert.assertEquals(AuthenticationExecutionModel.Requirement.CONDITIONAL.toString(), subflowExecution.getRequirement());
+
+        AuthenticationExecutionInfoRepresentation childEx1 = authExecutions.get(counter + 1);
+        Assert.assertEquals("Condition - user configured", childEx1.getDisplayName());
+        Assert.assertEquals(AuthenticationExecutionModel.Requirement.REQUIRED.toString(), childEx1.getRequirement());
+        Assert.assertEquals(0, childEx1.getIndex());
+        Assert.assertEquals(subflowExecution.getLevel() + 1, childEx1.getLevel());
+
+        AuthenticationExecutionInfoRepresentation childEx2 = authExecutions.get(counter + 2);
+        Assert.assertEquals(expectedOTPExecutionDisplayName, childEx2.getDisplayName());
+        Assert.assertEquals(AuthenticationExecutionModel.Requirement.REQUIRED.toString(), childEx2.getRequirement());
+        Assert.assertEquals(1, childEx2.getIndex());
+        Assert.assertEquals(subflowExecution.getLevel() + 1, childEx2.getLevel());
+    }
+
     protected void testMigrationTo2_x() throws Exception {
         testMigrationTo2_0_0();
         testMigrationTo2_1_0();
@@ -609,9 +769,28 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         testMigrationTo6_0_0();
     }
 
+    protected void testMigrationTo8_x() {
+        testMigrationTo8_0_0();
+    }
+    protected void testMigrationTo9_x() {
+        testMigrationTo9_0_0();
+    }
+
     protected void testMigrationTo7_x(boolean supportedAuthzServices) {
         if (supportedAuthzServices) {
             testDecisionStrategySetOnResourceServer();
+        }
+    }
+
+    protected void testResourceTag() {
+        try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
+            URI url = suiteContext.getAuthServerInfo().getUriBuilder().path("/auth").build();
+            String response = SimpleHttp.doGet(url.toString(), client).asString();
+            Matcher m = Pattern.compile("resources/([^/]*)/welcome").matcher(response);
+            assertTrue(m.find());
+            assertTrue(m.group(1).matches("[\\da-z]{5}"));
+        } catch (IOException e) {
+            fail(e.getMessage());
         }
     }
 }

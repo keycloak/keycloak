@@ -19,6 +19,7 @@ package org.keycloak.testsuite.adapter.example.authorization;
 import java.io.File;
 import java.io.IOException;
 
+import org.hamcrest.MatcherAssert;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Test;
@@ -26,7 +27,11 @@ import org.keycloak.testsuite.arquillian.AppServerTestEnricher;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
 
-import static org.assertj.core.api.Java6Assertions.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
+
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -55,10 +60,10 @@ public class PermissiveModeAdapterTest extends AbstractBaseServletAuthzAdapterTe
             driver.navigate().to(getResourceServerUrl() + "/enforcing/resource");
 
             if (AppServerTestEnricher.isEAP6AppServer() || AppServerTestEnricher.isTomcatAppServer()) {
-                assertThat(driver.getPageSource()).contains("HTTP Status 404");
+                assertThat(driver.getPageSource(), containsString("HTTP Status 404"));
             } else {
-                assertThat(driver.getTitle()).isEqualTo("Error");
-                assertThat(driver.getPageSource()).contains("Not Found");
+                assertThat(driver.getTitle(), is(equalTo("Error")));
+                assertThat(driver.getPageSource(), containsString("Not Found"));
             }
 
             driver.navigate().to(getResourceServerUrl() + "/protected/admin");

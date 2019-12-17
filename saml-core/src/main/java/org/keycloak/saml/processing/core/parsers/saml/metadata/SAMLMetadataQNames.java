@@ -90,15 +90,15 @@ public enum SAMLMetadataQNames implements HasQName {
 
     private final QName qName;
 
-    private SAMLMetadataQNames(String localName) {
+    SAMLMetadataQNames(String localName) {
         this.qName = new QName(JBossSAMLURIConstants.METADATA_NSURI.get(), localName);
     }
 
-    private SAMLMetadataQNames(HasQName source) {
+    SAMLMetadataQNames(HasQName source) {
         this.qName = source.getQName();
     }
 
-    private SAMLMetadataQNames(JBossSAMLURIConstants nsUri, String localName) {
+    SAMLMetadataQNames(JBossSAMLURIConstants nsUri, String localName) {
         this.qName = new QName(nsUri == null ? null : nsUri.get(), localName);
     }
 

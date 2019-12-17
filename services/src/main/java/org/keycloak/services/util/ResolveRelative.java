@@ -17,6 +17,10 @@
 
 package org.keycloak.services.util;
 
+import org.keycloak.models.Constants;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.urls.UrlType;
+
 import javax.ws.rs.core.UriBuilder;
 import java.net.URI;
 
@@ -25,19 +29,30 @@ import java.net.URI;
  * @version $Revision: 1 $
  */
 public class ResolveRelative {
-    public static String resolveRelativeUri(URI requestUri, String rootUrl, String url) {
-        if (url == null || !url.startsWith("/")) return url;
-        if (rootUrl != null) {
-            return rootUrl + url;
-        } else if (requestUri != null) {
-            UriBuilder builder = UriBuilder.fromPath(url).host(requestUri.getHost());
-            builder.scheme(requestUri.getScheme());
-            if (requestUri.getPort() != -1) {
-                builder.port(requestUri.getPort());
-            }
-            return builder.build().toString();
+    public static String resolveRelativeUri(KeycloakSession session, String rootUrl, String url) {
+        if (url == null || !url.startsWith("/")) {
+            return url;
+        } else if (rootUrl != null) {
+            return resolveRootUrl(session, rootUrl) + url;
         } else {
-            return null;
+            return session.getContext().getUri().getBaseUriBuilder().replacePath(url).build().toString();
         }
+    }
+
+    public static String resolveRootUrl(KeycloakSession session, String rootUrl) {
+        if (rootUrl != null) {
+            if (rootUrl.equals(Constants.AUTH_BASE_URL_PROP)) {
+                rootUrl = session.getContext().getUri(UrlType.FRONTEND).getBaseUri().toString();
+                if (rootUrl.endsWith("/")) {
+                    rootUrl = rootUrl.substring(0, rootUrl.length() - 1);
+                }
+            } else if (rootUrl.equals(Constants.AUTH_ADMIN_URL_PROP)) {
+                rootUrl = session.getContext().getUri(UrlType.ADMIN).getBaseUri().toString();
+                if (rootUrl.endsWith("/")) {
+                    rootUrl = rootUrl.substring(0, rootUrl.length() - 1);
+                }
+            }
+        }
+        return rootUrl;
     }
 }

@@ -23,7 +23,6 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 
-import java.util.Collection;
 import java.util.Map;
 
 /**

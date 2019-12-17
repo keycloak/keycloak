@@ -1,15 +1,16 @@
 package org.keycloak.testsuite.authz;
 
-import org.junit.BeforeClass;
+import org.keycloak.common.Profile;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.testsuite.AbstractKeycloakTest;
-import org.keycloak.testsuite.ProfileAssume;
+import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 
 /**
  * @author mhajas
  */
+@EnableFeature(value = Profile.Feature.UPLOAD_SCRIPTS, skipRestart = true)
 public abstract class AbstractAuthzTest extends AbstractKeycloakTest {
 
     protected AccessToken toAccessToken(String rpt) {

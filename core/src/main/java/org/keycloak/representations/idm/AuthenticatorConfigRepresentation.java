@@ -29,7 +29,7 @@ public class AuthenticatorConfigRepresentation implements Serializable {
 
     private String id;
     private String alias;
-    private Map<String, String> config = new HashMap<String, String>();
+    private Map<String, String> config = new HashMap<>();
 
     public String getId() {
         return id;

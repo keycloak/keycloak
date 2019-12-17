@@ -18,7 +18,7 @@ package org.keycloak.services.resources.admin;
 
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
-import org.jboss.resteasy.spi.NotFoundException;
+import javax.ws.rs.NotFoundException;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.models.AdminRoles;
@@ -131,7 +131,6 @@ public class RealmsAdminResource {
     @Consumes(MediaType.APPLICATION_JSON)
     public Response importRealm(final RealmRepresentation rep) {
         RealmManager realmManager = new RealmManager(session);
-        realmManager.setContextPath(keycloak.getContextPath());
         AdminPermissions.realms(session, auth).requireCreateRealm();
 
         logger.debugv("importRealm: {0}", rep.getRealm());

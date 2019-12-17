@@ -24,6 +24,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.truststore.HostnameVerificationPolicy;
 import org.keycloak.truststore.JSSETruststoreConfigurator;
+import org.keycloak.vault.VaultStringSecret;
 
 import javax.mail.Address;
 import javax.mail.MessagingException;
@@ -135,7 +136,9 @@ public class DefaultEmailSenderProvider implements EmailSenderProvider {
 
             transport = session.getTransport("smtp");
             if (auth) {
-                transport.connect(config.get("user"), config.get("password"));
+                try (VaultStringSecret vaultStringSecret = this.session.vault().getStringSecret(config.get("password"))) {
+                    transport.connect(config.get("user"), vaultStringSecret.get().orElse(config.get("password")));
+                }
             } else {
                 transport.connect();
             }

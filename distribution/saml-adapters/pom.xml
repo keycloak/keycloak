@@ -20,7 +20,7 @@
     <parent>
         <artifactId>keycloak-distribution-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>8.0.0-SNAPSHOT</version>
+        <version>9.0.0-SNAPSHOT</version>
     </parent>
 
     <name>SAML Adapters Distribution Parent</name>
@@ -32,7 +32,6 @@
 
     <modules>
         <module>wildfly-adapter</module>
-        <module>as7-eap6-adapter</module>
     </modules>
 
     <profiles>
@@ -51,6 +50,15 @@
                 <module>tomcat7-adapter-zip</module>
             </modules>
         </profile>
+        <profile>
+             <id>AS7</id>
+             <activation>
+                 <jdk>(,9]</jdk>
+             </activation>
+             <modules>
+                 <module>as7-eap6-adapter</module>
+             </modules>
+         </profile>
     </profiles>
 
 </project>

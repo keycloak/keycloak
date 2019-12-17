@@ -1,0 +1,19 @@
+.hint-block-pf {
+  background-color: $color-pf-blue-50;
+  color: $color-pf-blue-600;
+  padding: 10px 15px 15px;
+  .hint-block-pf-title {
+    font-size: 16px;
+    font-weight: 500;
+    line-height: 1.1;
+    margin-bottom: 10px;
+  }
+  .hint-block-pf-body {
+    font-size: 13px;
+    font-weight: 300;
+    line-height: 1.4;
+  }
+  > .btn {
+    margin-top: 30px;
+  }
+}

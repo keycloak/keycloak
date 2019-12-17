@@ -5,7 +5,7 @@
     <parent>
         <artifactId>integration-arquillian-test-apps</artifactId>
         <groupId>org.keycloak.testsuite</groupId>
-        <version>8.0.0-SNAPSHOT</version>
+        <version>9.0.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -16,6 +16,8 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <java.version>1.8</java.version>
         <jetty.version>${jetty94.version}</jetty.version>
+
+        <springboot-version>1.5</springboot-version>
 
         <spring-boot-adapter-jetty>false</spring-boot-adapter-jetty>
         <spring.boot.tomcat.adapter.artifactId>keycloak-tomcat-adapter</spring.boot.tomcat.adapter.artifactId>
@@ -52,7 +54,8 @@
                 <activeByDefault>true</activeByDefault>
 
                 <property>
-                    <name>!springboot21</name>
+                    <name>springboot-version</name>
+                    <value>1.5</value>
                 </property>
             </activation>
 
@@ -374,12 +377,46 @@
 
             <activation>
                 <property>
-                    <name>springboot21</name>
+                    <name>springboot-version</name>
+                    <value>2.1</value>
                 </property>
             </activation>
 
             <properties>
                 <spring-boot.version>${spring-boot21.version}</spring-boot.version>
+            </properties>
+
+            <dependencyManagement>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.eclipse.jetty</groupId>
+                        <artifactId>jetty-bom</artifactId>
+                        <version>${jetty.version}</version>
+                        <type>pom</type>
+                    </dependency>
+                </dependencies>
+            </dependencyManagement>
+
+            <dependencies>
+                <dependency>
+                    <groupId>org.keycloak</groupId>
+                    <artifactId>keycloak-spring-boot-2-adapter</artifactId>
+                </dependency>
+            </dependencies>
+        </profile>
+
+        <profile>
+            <id>spring.boot.2.2</id>
+
+            <activation>
+                <property>
+                    <name>springboot-version</name>
+                    <value>2.2</value>
+                </property>
+            </activation>
+
+            <properties>
+                <spring-boot.version>${spring-boot22.version}</spring-boot.version>
             </properties>
 
             <dependencyManagement>

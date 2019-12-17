@@ -30,7 +30,7 @@ import org.keycloak.provider.ProviderFactory;
  * @version $Revision: 1 $
  */
 public interface IdentityProviderMapper extends Provider, ProviderFactory<IdentityProviderMapper>,ConfiguredProvider {
-    public static final String ANY_PROVIDER = "*";
+    String ANY_PROVIDER = "*";
 
     String[] getCompatibleProviders();
     String getDisplayCategory();

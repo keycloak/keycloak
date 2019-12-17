@@ -16,6 +16,7 @@
  */
 package org.keycloak.testsuite.pages;
 
+import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -68,4 +69,13 @@ public class LoginPasswordUpdatePage extends LanguageComboboxAwarePage {
     public String getFeedbackMessage() {
         return feedbackMessage.getText();
     }
+
+    public boolean isCancelDisplayed() {
+        try {
+            return cancelAIAButton.isDisplayed();
+        } catch (NoSuchElementException e) {
+            return false;
+        }
+    }
+
 }

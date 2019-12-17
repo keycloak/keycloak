@@ -39,6 +39,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import javax.persistence.LockModeType;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -256,6 +257,7 @@ public class ClientScopeAdapter implements ClientScopeModel, JpaModel<ClientScop
     @Override
     public void deleteScopeMapping(RoleModel role) {
         TypedQuery<ClientScopeRoleMappingEntity> query = getRealmScopeMappingQuery(role);
+        query.setLockMode(LockModeType.PESSIMISTIC_WRITE);
         List<ClientScopeRoleMappingEntity> results = query.getResultList();
         if (results.size() == 0) return;
         for (ClientScopeRoleMappingEntity entity : results) {

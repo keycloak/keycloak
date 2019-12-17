@@ -19,7 +19,7 @@ package org.keycloak.models.utils;
 
 import org.keycloak.common.util.Base64;
 
-import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
@@ -45,16 +45,8 @@ public class SHAPasswordEncoder {
     public String encode(String rawPassword) {
         MessageDigest messageDigest = getMessageDigest();
 
-        String encodedPassword = null;
-
-        try {
-            byte[] digest = messageDigest.digest(rawPassword.getBytes("UTF-8"));
-            encodedPassword = Base64.encodeBytes(digest);
-        } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException("Credential could not be encoded");
-        }
-
-        return encodedPassword;
+        byte[] digest = messageDigest.digest(rawPassword.getBytes(StandardCharsets.UTF_8));
+        return Base64.encodeBytes(digest);
     }
 
     public boolean verify(String rawPassword, String encodedPassword) {

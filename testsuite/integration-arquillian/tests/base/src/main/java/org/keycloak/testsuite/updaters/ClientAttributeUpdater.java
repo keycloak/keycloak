@@ -68,6 +68,9 @@ public class ClientAttributeUpdater extends ServerResourceUpdater<ClientAttribut
 
     public ClientAttributeUpdater setAttribute(String name, String value) {
         this.rep.getAttributes().put(name, value);
+        if (value != null && !this.origRep.getAttributes().containsKey(name)) {
+            this.origRep.getAttributes().put(name, null);
+        }
         return this;
     }
 

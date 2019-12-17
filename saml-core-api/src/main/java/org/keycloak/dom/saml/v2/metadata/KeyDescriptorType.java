@@ -49,7 +49,7 @@ public class KeyDescriptorType {
 
     protected Element keyInfo;
 
-    protected List<EncryptionMethodType> encryptionMethod = new ArrayList<EncryptionMethodType>();
+    protected List<EncryptionMethodType> encryptionMethod = new ArrayList<>();
 
     protected KeyTypes use;
 

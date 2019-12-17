@@ -17,12 +17,26 @@
 
 package org.keycloak.storage.ldap;
 
+import java.lang.reflect.Method;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import javax.naming.directory.SearchControls;
+
 import org.keycloak.component.ComponentModel;
 import org.keycloak.component.ComponentValidationException;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.reflection.Property;
+import org.keycloak.models.utils.reflection.PropertyCriteria;
+import org.keycloak.models.utils.reflection.PropertyQueries;
 import org.keycloak.storage.ldap.idm.model.LDAPDn;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
 import org.keycloak.storage.ldap.idm.query.Condition;
@@ -31,14 +45,6 @@ import org.keycloak.storage.ldap.idm.query.internal.LDAPQueryConditionsBuilder;
 import org.keycloak.storage.ldap.idm.store.ldap.LDAPIdentityStore;
 import org.keycloak.storage.ldap.mappers.LDAPStorageMapper;
 import org.keycloak.storage.ldap.mappers.membership.MembershipType;
-
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import javax.naming.directory.SearchControls;
 
 /**
  * Allow to directly call some operations against LDAPIdentityStore.
@@ -156,6 +162,11 @@ public class LDAPUtils {
         }
 
         ldapProvider.getLdapIdentityStore().add(ldapObject);
+        return ldapObject;
+    }
+
+    public static LDAPObject updateLDAPGroup(LDAPStorageProvider ldapProvider, LDAPObject ldapObject) {
+        ldapProvider.getLdapIdentityStore().update(ldapObject);
         return ldapObject;
     }
 
@@ -288,9 +299,40 @@ public class LDAPUtils {
     public static void fillRangedAttribute(LDAPStorageProvider ldapProvider, LDAPObject ldapObject, String name) {
         LDAPObject newObject = ldapObject;
         while (!newObject.isRangeComplete(name)) {
-            LDAPQuery q = createLdapQueryForRangeAttribute(ldapProvider, ldapObject, name);
-            newObject = q.getFirstResult();
-            ldapObject.populateRangedAttribute(newObject, name);
+            try (LDAPQuery q = createLdapQueryForRangeAttribute(ldapProvider, ldapObject, name)) {
+                newObject = q.getFirstResult();
+                ldapObject.populateRangedAttribute(newObject, name);
+            }
         }
+    }
+
+    /**
+     * Return a map of the user model properties from the getter methods
+     * Map key are the attributes names in lower case
+     */
+    public static Map<String, Property<Object>> getUserModelProperties(){
+        
+        Map<String, Property<Object>> userModelProps = PropertyQueries.createQuery(UserModel.class)
+                .addCriteria(new PropertyCriteria() {
+
+                    @Override
+                    public boolean methodMatches(Method m) {
+                        if ((m.getName().startsWith("get") || m.getName().startsWith("is"))
+                                && m.getParameterTypes().length > 0) {
+                            return false;
+                        }
+
+                        return true;
+                    }
+
+                }).getResultList();
+
+        // Convert to be keyed by lower-cased attribute names
+        Map<String, Property<Object>> userModelProperties = new HashMap<>();
+        for (Map.Entry<String, Property<Object>> entry : userModelProps.entrySet()) {
+            userModelProperties.put(entry.getKey().toLowerCase(), entry.getValue());
+        }
+
+        return userModelProperties;
     }
 }

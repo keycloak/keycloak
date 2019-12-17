@@ -51,15 +51,15 @@ import java.util.List;
  */
 public class IDPSSODescriptorType extends SSODescriptorType {
 
-    protected List<EndpointType> singleSignOnService = new ArrayList<EndpointType>();
+    protected List<EndpointType> singleSignOnService = new ArrayList<>();
 
-    protected List<EndpointType> nameIDMappingService = new ArrayList<EndpointType>();
+    protected List<EndpointType> nameIDMappingService = new ArrayList<>();
 
-    protected List<EndpointType> assertionIDRequestService = new ArrayList<EndpointType>();
+    protected List<EndpointType> assertionIDRequestService = new ArrayList<>();
 
-    protected List<String> attributeProfile = new ArrayList<String>();
+    protected List<String> attributeProfile = new ArrayList<>();
 
-    protected List<AttributeType> attribute = new ArrayList<AttributeType>();
+    protected List<AttributeType> attribute = new ArrayList<>();
 
     protected Boolean wantAuthnRequestsSigned = false;
 

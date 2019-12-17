@@ -11,17 +11,24 @@
   "author": "Stan Silvert",
   "license": "Apache-2.0",
   "dependencies": {
-    "@patternfly/patternfly": "^2.6.6",
-    "@patternfly/react-core": "^3.16.10",
+    "@patternfly/patternfly": "^2.26.5",
+    "@patternfly/react-core": "^3.35.0",
+    "@types/node": "^12.7.2",
     "axios": "^0.19.0",
     "moment": "^2.22.2",
+    "object-keys": "^1.1.1",
+    "parse-link-header": "^1.0.1",
+    "punycode": "^2.1.1",
+    "querystring": "^0.2.0",
     "react": "^16.8.5",
     "react-dom": "^16.8.5",
     "react-router-dom": "^4.3.1",
     "systemjs": "^0.20.17",
-    "systemjs-plugin-babel": "0.0.25"
+    "systemjs-plugin-babel": "0.0.25",
+    "url": "^0.11.0"
   },
   "devDependencies": {
+    "@types/parse-link-header": "^1.0.0",
     "@types/react": "^16.8.8",
     "@types/react-dom": "^16.8.3",
     "@types/react-router-dom": "^4.3.1",

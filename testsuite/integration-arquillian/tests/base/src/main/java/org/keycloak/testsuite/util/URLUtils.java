@@ -2,6 +2,7 @@ package org.keycloak.testsuite.util;
 
 
 import org.jboss.logging.Logger;
+import org.keycloak.common.util.KeycloakUriBuilder;
 import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.ie.InternetExplorerDriver;
@@ -131,6 +132,28 @@ public final class URLUtils {
             }
         }
         return true;
+    }
+
+
+    /**
+     * This will send POST request to specified URL with specified form parameters. It's not easily possible to "trick" web driver to send POST
+     * request with custom parameters, which are not directly available in the form.
+     *
+     * See URLUtils.sendPOSTWithWebDriver for more details
+     *
+     * @param postRequestUrl Absolute URL. It can include query parameters etc. The POST request will be send to this URL
+     * @param encodedFormParameters Encoded parameters in the form of "param1=value1&param2=value2"
+     * @return
+     */
+    public static void sendPOSTRequestWithWebDriver(String postRequestUrl, String encodedFormParameters) {
+        WebDriver driver = getCurrentDriver();
+
+        URI uri = KeycloakUriBuilder.fromUri(OAuthClient.AUTH_SERVER_ROOT + "/realms/master/testing/simulate-post-request")
+                .queryParam("postRequestUrl", postRequestUrl)
+                .queryParam("encodedFormParameters", encodedFormParameters)
+                .build();
+
+        driver.navigate().to(uri.toString());
     }
 
 }

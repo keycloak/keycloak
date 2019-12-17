@@ -39,9 +39,10 @@ public class AbstractJsonUserAttributeMapperTest {
 
 	private JsonNode getJsonNode() throws IOException {
 		if (baseNode == null)
-			baseNode = mapper.readTree("{ \"value1\" : \"v1 \",\"value_null\" : null,\"value_empty\" : \"\", \"value_b\" : true, \"value_i\" : 454, " + " \"value_array\":[\"a1\",\"a2\"], " +" \"nest1\": {\"value1\": \" fgh \",\"value_null\" : null,\"value_empty\" : \"\", \"nest2\":{\"value_b\" : false, \"value_i\" : 43}}, "+ " \"nesta\": { \"a\":[{\"av1\": \"vala1\"},{\"av1\": \"vala2\"}]}"+" }");
+			baseNode = mapper.readTree("{ \"dotted.claim\": \"claimValue\", \"nested.claim\" : { \"claim.with.dots\" : \"nested.claim.with.dots\"}, \"value1\" : \"v1 \",\"value_null\" : null,\"value_empty\" : \"\", \"value_b\" : true, \"value_i\" : 454, " + " \"value_array\":[\"a1\",\"a2\"], " +" \"nest1\": {\"value1\": \" fgh \",\"value_null\" : null,\"value_empty\" : \"\", \"nest2\":{\"value_b\" : false, \"value_i\" : 43}}, "+ " \"nesta\": { \"a\":[{\"av1\": \"vala1\"},{\"av1\": \"vala2\"}]}"+" }");
 		return baseNode;
 	}
+
 
 	@Test
 	public void getJsonValue_invalidPath() throws IOException {
@@ -68,6 +69,8 @@ public class AbstractJsonUserAttributeMapperTest {
 
 		Assert.assertEquals("true", AbstractJsonUserAttributeMapper.getJsonValue(getJsonNode(), "value_b"));
 		Assert.assertEquals("454", AbstractJsonUserAttributeMapper.getJsonValue(getJsonNode(), "value_i"));
+		Assert.assertEquals("claimValue", AbstractJsonUserAttributeMapper.getJsonValue(getJsonNode(), "dotted\\.claim"));
+		Assert.assertEquals("nested.claim.with.dots", AbstractJsonUserAttributeMapper.getJsonValue(getJsonNode(), "nested\\.claim.claim\\.with\\.dots"));
 
 	}
 
@@ -75,28 +78,28 @@ public class AbstractJsonUserAttributeMapperTest {
 	public void getJsonValue_nestedSimpleValues() throws JsonProcessingException, IOException {
 		// JsonNode if path points to JSON object
 		Assert.assertEquals(mapper.readTree("{\n"
-                    + "		\"value1\": \" fgh \",\n"
-                    + "		\"value_null\" : null,\n"
-                    + "		\"value_empty\" : \"\",\n"
-                    + "		\"nest2\":{\n"
-                    + "			\"value_b\" : false,\n"
-                    + "			\"value_i\" : 43\n"
-                    + "		}\n"
-                    + "	}"), AbstractJsonUserAttributeMapper.getJsonValue(getJsonNode(), "nest1"));
-                Assert.assertEquals(mapper.readTree("{\n"
-                    + "			\"value_b\" : false,\n"
-                    + "			\"value_i\" : 43\n"
-                    + "		}"), AbstractJsonUserAttributeMapper.getJsonValue(getJsonNode(), "nest1.nest2"));
+			+ "		\"value1\": \" fgh \",\n"
+			+ "		\"value_null\" : null,\n"
+			+ "		\"value_empty\" : \"\",\n"
+			+ "		\"nest2\":{\n"
+			+ "			\"value_b\" : false,\n"
+			+ "			\"value_i\" : 43\n"
+			+ "		}\n"
+			+ "	}"), AbstractJsonUserAttributeMapper.getJsonValue(getJsonNode(), "nest1"));
+		Assert.assertEquals(mapper.readTree("{\n"
+			+ "			\"value_b\" : false,\n"
+			+ "			\"value_i\" : 43\n"
+			+ "		}"), AbstractJsonUserAttributeMapper.getJsonValue(getJsonNode(), "nest1.nest2"));
 		Assert.assertEquals(mapper.readTree("{\"av1\": \"vala1\"}"), AbstractJsonUserAttributeMapper.getJsonValue(getJsonNode(), "nesta.a[0]"));
 
-                //unknown field returns null
-                Assert.assertEquals(null, AbstractJsonUserAttributeMapper.getJsonValue(getJsonNode(), "nest1.value_unknown"));
-                Assert.assertEquals(null, AbstractJsonUserAttributeMapper.getJsonValue(getJsonNode(), "nest1.nest2.value_unknown"));
+		//unknown field returns null
+		Assert.assertEquals(null, AbstractJsonUserAttributeMapper.getJsonValue(getJsonNode(), "nest1.value_unknown"));
+		Assert.assertEquals(null, AbstractJsonUserAttributeMapper.getJsonValue(getJsonNode(), "nest1.nest2.value_unknown"));
 
 		// we check value is trimmed also!
 		Assert.assertEquals("fgh", AbstractJsonUserAttributeMapper.getJsonValue(getJsonNode(), "nest1.value1"));
 		// test for KEYCLOAK-4202 bug (null value handling)
-        Assert.assertEquals(null, AbstractJsonUserAttributeMapper.getJsonValue(getJsonNode(), "nest1.value_null"));
+		Assert.assertEquals(null, AbstractJsonUserAttributeMapper.getJsonValue(getJsonNode(), "nest1.value_null"));
 		Assert.assertEquals(null, AbstractJsonUserAttributeMapper.getJsonValue(getJsonNode(), "nest1.value_empty"));
 
 		Assert.assertEquals("false", AbstractJsonUserAttributeMapper.getJsonValue(getJsonNode(), "nest1.nest2.value_b"));

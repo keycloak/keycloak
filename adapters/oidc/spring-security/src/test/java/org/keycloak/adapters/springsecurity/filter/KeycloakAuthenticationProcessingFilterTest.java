@@ -27,6 +27,7 @@ import org.keycloak.adapters.OidcKeycloakAccount;
 import org.keycloak.adapters.spi.HttpFacade;
 import org.keycloak.adapters.springsecurity.KeycloakAuthenticationException;
 import org.keycloak.adapters.springsecurity.account.KeycloakRole;
+import org.keycloak.adapters.springsecurity.authentication.KeycloakAuthenticationEntryPoint;
 import org.keycloak.adapters.springsecurity.authentication.KeycloakAuthenticationFailureHandler;
 import org.keycloak.adapters.springsecurity.token.KeycloakAuthenticationToken;
 import org.keycloak.common.enums.SslRequired;
@@ -50,8 +51,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.never;
@@ -107,6 +106,7 @@ public class KeycloakAuthenticationProcessingFilterTest {
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
         request = spy(new MockHttpServletRequest());
+        request.setRequestURI("http://host");
         filter = new KeycloakAuthenticationProcessingFilter(authenticationManager);
         keycloakFailureHandler = new KeycloakAuthenticationFailureHandler();
 
@@ -151,6 +151,7 @@ public class KeycloakAuthenticationProcessingFilterTest {
 
     @Test
     public void testSuccessfulAuthenticationInteractive() throws Exception {
+        request.setRequestURI("http://host" + KeycloakAuthenticationEntryPoint.DEFAULT_LOGIN_URI + "?query");
         Authentication authentication = new KeycloakAuthenticationToken(keycloakAccount, true, authorities);
         filter.successfulAuthentication(request, response, chain, authentication);
 

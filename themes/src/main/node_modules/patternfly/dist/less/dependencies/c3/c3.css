@@ -22,6 +22,10 @@
 .c3-chart-arc path {
   stroke: #fff; }
 
+.c3-chart-arc rect {
+  stroke: white;
+  stroke-width: 1; }
+
 .c3-chart-arc text {
   fill: #fff;
   font-size: 13px; }
@@ -151,7 +155,7 @@
 
 .c3-chart-arcs .c3-chart-arcs-background {
   fill: #e0e0e0;
-  stroke: none; }
+  stroke: #FFF; }
 
 .c3-chart-arcs .c3-chart-arcs-gauge-unit {
   fill: #000;

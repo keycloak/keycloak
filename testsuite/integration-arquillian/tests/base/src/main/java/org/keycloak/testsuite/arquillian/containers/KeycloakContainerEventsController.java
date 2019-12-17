@@ -18,15 +18,9 @@ package org.keycloak.testsuite.arquillian.containers;
 
 import org.apache.commons.io.FileUtils;
 import org.jboss.arquillian.config.descriptor.api.ContainerDef;
-import org.jboss.arquillian.container.impl.client.container.ContainerDeployController;
 import org.jboss.arquillian.container.spi.Container;
 import org.jboss.arquillian.container.spi.ContainerRegistry;
-import org.jboss.arquillian.container.spi.client.deployment.Deployment;
-import org.jboss.arquillian.container.spi.client.deployment.DeploymentScenario;
 import org.jboss.arquillian.container.spi.event.ContainerMultiControlEvent;
-import org.jboss.arquillian.container.spi.event.DeployDeployment;
-import org.jboss.arquillian.container.spi.event.DeployManagedDeployments;
-import org.jboss.arquillian.container.spi.event.DeploymentEvent;
 import org.jboss.arquillian.container.spi.event.StartClassContainers;
 import org.jboss.arquillian.container.spi.event.StartSuiteContainers;
 import org.jboss.arquillian.container.spi.event.StopClassContainers;
@@ -35,7 +29,6 @@ import org.jboss.arquillian.container.spi.event.StopSuiteContainers;
 import org.jboss.arquillian.container.spi.event.UnDeployManagedDeployments;
 import org.jboss.arquillian.container.test.impl.client.ContainerEventController;
 import org.jboss.arquillian.core.api.Event;
-import org.jboss.arquillian.core.api.Injector;
 import org.jboss.arquillian.core.api.Instance;
 import org.jboss.arquillian.core.api.annotation.Inject;
 import org.jboss.arquillian.core.api.annotation.Observes;
@@ -49,7 +42,6 @@ import org.jboss.shrinkwrap.api.exporter.ZipExporter;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.keycloak.common.Profile;
 import org.keycloak.helpers.DropAllServlet;
-import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
 import org.keycloak.testsuite.arquillian.ContainerInfo;
 import org.keycloak.testsuite.arquillian.annotation.RestartContainer;
 import org.wildfly.extras.creaper.commands.deployments.Deploy;
@@ -67,9 +59,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Optional;
 import java.util.Properties;
+import org.keycloak.testsuite.util.ContainerAssume;
 
 /**
  * Changes behaviour of original ContainerEventController to stop manual containers 
@@ -87,6 +79,8 @@ public class KeycloakContainerEventsController extends ContainerEventController 
 
     @Inject
     private Event<ContainerMultiControlEvent> container;
+    @Inject
+    private Instance<ContainerRegistry> containerRegistry;
 
     @Override
     public void execute(@Observes AfterSuite event) {
@@ -109,6 +103,10 @@ public class KeycloakContainerEventsController extends ContainerEventController 
     @Override
     public void execute(BeforeClass event) {
         if (event.getTestClass().isAnnotationPresent(RestartContainer.class)) {
+
+            // stop executing the test - remote container cannot be restarted
+            ContainerAssume.assumeNotAuthServerRemote();
+
             RestartContainer restartContainer = event.getTestClass().getAnnotation(RestartContainer.class);
 
             beforeOriginalContainerStop(restartContainer);
@@ -142,14 +140,6 @@ public class KeycloakContainerEventsController extends ContainerEventController 
         if (restartContainer.withoutKeycloakAddUserFile()) {
             copyKeycloakAddUserFile();
         }
-
-        if (restartContainer.enableFeatures().length != 0) {
-            changeStateOfFeatures(restartContainer, false);
-            // Auth-server has to be restarted again. If not, the features will not to be disabled.
-            container.fire(new StopManualContainers());
-            container.fire(new StopSuiteContainers());
-            container.fire(new StartSuiteContainers());
-        }
     }
 
     /**
@@ -159,10 +149,6 @@ public class KeycloakContainerEventsController extends ContainerEventController 
     protected void beforeNewContainerStart(RestartContainer restartContainer) {
         if (restartContainer.withoutKeycloakAddUserFile()) {
             removeKeycloakAddUserFile();
-        }
-
-        if (restartContainer.enableFeatures().length != 0) {
-            changeStateOfFeatures(restartContainer, true);
         }
     }
 
@@ -263,131 +249,6 @@ public class KeycloakContainerEventsController extends ContainerEventController 
                 }
                 adminUserJsonFile.delete();
             }
-        }
-    }
-
-    /**
-     * Change state of features, which are contained in {@code enableFeatures} param.
-     * This method either enable or disable features.
-     * If auth-server is JBossBased, then the features are either enabled or disabled via {@code profile.properties}.
-     *
-     * @param restartContainer to pass more information from test annotation.
-     * @param enableFeatures   if the features will be enabled or disabled.
-     */
-    private void changeStateOfFeatures(RestartContainer restartContainer, boolean enableFeatures) {
-        Optional<Container> authServerOptional = containerRegistry.get().getContainers().stream()
-                .filter(f -> f.getName().startsWith("auth-server-")).findFirst();
-
-        if (authServerOptional.isPresent()) {
-            Container authServer = authServerOptional.get();
-            boolean isJbossBased = new ContainerInfo(authServer).isJBossBased();
-
-            if (isJbossBased) {
-                ContainerDef conf = authServer.getContainerConfiguration();
-                String jbossHome = conf.getContainerProperty("jbossHome");
-                Path fileProps = null;
-                if (jbossHome != null) {
-                    try {
-                        Path dir = Paths.get(jbossHome + "/standalone/configuration");
-                        fileProps = dir.resolve("profile.properties");
-
-                        if (enableFeatures) {
-                            Path file = Files.createFile(fileProps);
-                            Properties props = new Properties();
-                            Arrays.stream(restartContainer.enableFeatures()).forEach(f -> props.setProperty("feature." + f.toString().toLowerCase(), "enabled"));
-                            PrintWriter pw = new PrintWriter(file.toFile());
-                            props.list(pw);
-                            pw.close();
-                        } else {
-                            Files.deleteIfExists(fileProps);
-                        }
-                    } catch (FileAlreadyExistsException ex) {
-                        changeFeaturesInExistingProps(restartContainer, fileProps, true);
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                }
-            } else {
-                if (enableFeatures) {
-                    Arrays.stream(restartContainer.enableFeatures())
-                            .forEach(f -> System.setProperty("keycloak.profile.feature." + f.toString().toLowerCase(), "enabled"));
-                } else {
-                    Arrays.stream(restartContainer.enableFeatures())
-                            .forEach(f -> System.getProperties().remove("keycloak.profile.feature." + f.toString().toLowerCase()));
-                }
-            }
-            Profile.init();
-        }
-    }
-
-    /**
-     * If exists {@code profile.properties} file, then another properties are only appended to the file.
-     *
-     * @param restartContainer to pass more information from test annotation
-     * @param file             path to profile.properties
-     * @param enableFeatures   if features will be enabled or disabled
-     */
-    private void changeFeaturesInExistingProps(RestartContainer restartContainer, Path file, boolean enableFeatures) {
-        Profile.Feature[] features = restartContainer.enableFeatures();
-        String state = enableFeatures ? "enabled" : "disabled";
-
-        if (features.length != 0) {
-            Properties props = new Properties();
-            try {
-                props.load(Files.newBufferedReader(file));
-                Arrays.stream(features).forEach(f -> props.setProperty("feature." + f.toString().toLowerCase(), state));
-                props.store(Files.newBufferedWriter(file), "");
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-    }
-
-    /*
-     * Coppied from org.jboss.arquillian.container.impl.client.container.ContainerDeployController
-     * 
-     * Overrides a condition that container cannot be in manual mode, and deploys the deployment
-     * if the container is started
-     */
-    @Inject
-    private Instance<Injector> injector;
-    @Inject
-    private Instance<DeploymentScenario> deploymentScenario;
-    @Inject
-    private Instance<ContainerRegistry> containerRegistry;
-
-    public void deployManaged(@Observes DeployManagedDeployments event) throws Exception {
-        forEachManagedDeployment(new ContainerDeployController.Operation<Container, Deployment>() {
-            @Inject
-            private Event<DeploymentEvent> event;
-
-            @Override
-            public void perform(Container container, Deployment deployment) throws Exception {
-                if (container.getState().equals(Container.State.STARTED)) {
-                    event.fire(new DeployDeployment(container, deployment));
-                }
-            }
-        });
-    }
-
-    private void forEachManagedDeployment(ContainerDeployController.Operation<Container, Deployment> operation) throws Exception {
-        DeploymentScenario scenario = this.deploymentScenario.get();
-        if (scenario == null) {
-            return;
-        }
-        forEachDeployment(scenario.managedDeploymentsInDeployOrder(), operation);
-    }
-
-    private void forEachDeployment(List<Deployment> deployments, ContainerDeployController.Operation<Container, Deployment> operation)
-        throws Exception {
-        injector.get().inject(operation);
-        ContainerRegistry containerRegistry = this.containerRegistry.get();
-        if (containerRegistry == null) {
-            return;
-        }
-        for (Deployment deployment : deployments) {
-            Container container = containerRegistry.getContainer(deployment.getDescription().getTarget());
-            operation.perform(container, deployment);
         }
     }
 }

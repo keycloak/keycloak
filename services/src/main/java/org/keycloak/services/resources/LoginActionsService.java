@@ -101,8 +101,6 @@ import java.net.URI;
 import java.util.Map;
 
 import static org.keycloak.authentication.actiontoken.DefaultActionToken.ACTION_TOKEN_BASIC_CHECKS;
-import static org.keycloak.services.managers.AuthenticationManager.IS_AIA_REQUEST;
-import static org.keycloak.services.managers.AuthenticationManager.IS_SILENT_CANCEL;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -868,13 +866,13 @@ public class LoginActionsService {
 
         for (String clientScopeId : authSession.getClientScopes()) {
             ClientScopeModel clientScope = KeycloakModelUtils.findClientScopeById(realm, client, clientScopeId);
-            if (clientScope != null && clientScope.isDisplayOnConsentScreen()) {
-                if (!grantedConsent.isClientScopeGranted(clientScope)) {
+            if (clientScope != null) {
+                if (!grantedConsent.isClientScopeGranted(clientScope) && clientScope.isDisplayOnConsentScreen()) {
                     grantedConsent.addGrantedClientScope(clientScope);
                     updateConsentRequired = true;
                 }
             } else {
-                logger.warnf("Client scope with ID '%s' not found", clientScopeId);
+                logger.warnf("Client scope or client with ID '%s' not found", clientScopeId);
             }
         }
 
@@ -993,9 +991,10 @@ public class LoginActionsService {
 
         Response response;
         
-        if (isCancelAppInitiatedAction(authSession, context)) {
+        if (isCancelAppInitiatedAction(factory.getId(), authSession, context)) {
             provider.initiatedActionCanceled(session, authSession);
-            context.cancelAIA();
+            AuthenticationManager.setKcActionStatus(factory.getId(), RequiredActionContext.KcActionStatus.CANCELLED, authSession);
+            context.success();
         } else {
             provider.processAction(context);
         }
@@ -1011,16 +1010,13 @@ public class LoginActionsService {
             authSession.removeRequiredAction(factory.getId());
             authSession.getAuthenticatedUser().removeRequiredAction(factory.getId());
             authSession.removeAuthNote(AuthenticationProcessor.CURRENT_AUTHENTICATION_EXECUTION);
+            AuthenticationManager.setKcActionStatus(factory.getId(), RequiredActionContext.KcActionStatus.SUCCESS, authSession);
 
             response = AuthenticationManager.nextActionAfterAuthentication(session, authSession, clientConnection, request, session.getContext().getUri(), event);
         } else if (context.getStatus() == RequiredActionContext.Status.CHALLENGE) {
             response = context.getChallenge();
         } else if (context.getStatus() == RequiredActionContext.Status.FAILURE) {
             response = interruptionResponse(context, authSession, action, Error.CONSENT_DENIED);
-        } else if (isSilentAIACancel(authSession, context)) {
-            response = interruptionResponse(context, authSession, action, Error.CANCELLED_AIA_SILENT);
-        } else if (context.getStatus() == RequiredActionContext.Status.CANCELED_AIA) {
-            response = interruptionResponse(context, authSession, action, Error.CANCELLED_AIA);
         } else {
             throw new RuntimeException("Unreachable");
         }
@@ -1041,21 +1037,13 @@ public class LoginActionsService {
         return protocol.sendError(authSession, error);
     }
     
-    private boolean isCancelAppInitiatedAction(AuthenticationSessionModel authSession, RequiredActionContextResult context) {
-        MultivaluedMap<String, String> formData = context.getHttpRequest().getDecodedFormParameters();
-        
-        boolean userRequestedCancelAIA = formData.getFirst(CANCEL_AIA) != null;
-        boolean isAIARequest = authSession.getClientNote(IS_AIA_REQUEST) != null;
-        
-        return isAIARequest && userRequestedCancelAIA;
-    }
-    
-    private boolean isSilentAIACancel(AuthenticationSessionModel authSession, RequiredActionContextResult context) {
-        String silentCancel = authSession.getClientNote(IS_SILENT_CANCEL);
-        boolean isSilentCancel = "true".equalsIgnoreCase(silentCancel);
-        boolean isAIACancel = isCancelAppInitiatedAction(authSession, context);
-        
-        return isSilentCancel && isAIACancel;
+    private boolean isCancelAppInitiatedAction(String providerId, AuthenticationSessionModel authSession, RequiredActionContextResult context) {
+        if (providerId.equals(authSession.getClientNote(Constants.KC_ACTION_EXECUTING))) {
+            MultivaluedMap<String, String> formData = context.getHttpRequest().getDecodedFormParameters();
+            boolean userRequestedCancelAIA = formData.getFirst(CANCEL_AIA) != null;
+            return userRequestedCancelAIA;
+        }
+        return false;
     }
 
 }

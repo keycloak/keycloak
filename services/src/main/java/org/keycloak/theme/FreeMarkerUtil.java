@@ -51,7 +51,6 @@ public class FreeMarkerUtil {
         
         try {
             Template template;
-            cache = null;
             if (cache != null) {
                 String key = theme.getName() + "/" + templateName;
                 template = cache.get(key);

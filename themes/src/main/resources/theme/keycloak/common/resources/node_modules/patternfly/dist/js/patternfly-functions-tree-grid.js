@@ -7,7 +7,10 @@
 
     if (typeof parent === "string") {
       if (isNaN(parent)) {
-        parent = rows.closest(parent);
+        parent = $(parent);
+        if (parent.length > 1) {
+          parent = rows.closest(parent);
+        }
       } else {
         parent = $(rows[parseInt(parent, 10)]);
       }

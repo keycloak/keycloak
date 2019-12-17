@@ -9,7 +9,6 @@ import java.util.List;
 import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.RealmResource;
-import org.keycloak.common.util.Time;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 
@@ -48,10 +47,10 @@ public class KcOidcBrokerWithConsentTest extends AbstractInitializedBaseBrokerTe
     public void testConsentDeniedWithExpiredClientSession() {
         driver.navigate().to(getAccountUrl(bc.consumerRealmName()));
         log.debug("Clicking social " + bc.getIDPAlias());
-        accountLoginPage.clickSocial(bc.getIDPAlias());
+        loginPage.clickSocial(bc.getIDPAlias());
         waitForPage(driver, "log in to", true);
         log.debug("Logging in");
-        accountLoginPage.login(bc.getUserLogin(), bc.getUserPassword());
+        loginPage.login(bc.getUserLogin(), bc.getUserPassword());
 
         // Set time offset
         invokeTimeOffset(60);
@@ -61,7 +60,7 @@ public class KcOidcBrokerWithConsentTest extends AbstractInitializedBaseBrokerTe
             grantPage.cancel();
 
             // Assert login page with "You took too long to login..." message
-            org.junit.Assert.assertEquals("You took too long to login. Login process starting from beginning.", accountLoginPage.getError());
+            org.junit.Assert.assertEquals("Your login attempt timed out. Login will start from the beginning.", loginPage.getError());
 
         } finally {
             invokeTimeOffset(0);
@@ -87,7 +86,7 @@ public class KcOidcBrokerWithConsentTest extends AbstractInitializedBaseBrokerTe
             grantPage.cancel();
 
             // Assert login page with "You took too long to login..." message
-            Assert.assertEquals("You took too long to login. Login process starting from beginning.", accountLoginPage.getError());
+            Assert.assertEquals("Your login attempt timed out. Login will start from the beginning.", loginPage.getError());
 
         } finally {
             invokeTimeOffset(0);
@@ -103,12 +102,12 @@ public class KcOidcBrokerWithConsentTest extends AbstractInitializedBaseBrokerTe
         createUser(bc.consumerRealmName(), "consumer", "password", "FirstName", "LastName", "consumer@localhost.com");
 
         driver.navigate().to(getAccountUrl(bc.consumerRealmName()));
-        accountLoginPage.login("consumer", "password");
+        loginPage.login("consumer", "password");
 
         accountPage.federatedIdentity();
         accountFederatedIdentityPage.clickAddProvider(bc.getIDPAlias());
 
-        this.accountLoginPage.login(bc.getUserLogin(), bc.getUserPassword());
+        this.loginPage.login(bc.getUserLogin(), bc.getUserPassword());
 
         // Set time offset
         invokeTimeOffset(60);
@@ -125,7 +124,7 @@ public class KcOidcBrokerWithConsentTest extends AbstractInitializedBaseBrokerTe
             // Try to link one more time
             accountFederatedIdentityPage.clickAddProvider(bc.getIDPAlias());
 
-            this.accountLoginPage.login(bc.getUserLogin(), bc.getUserPassword());
+            this.loginPage.login(bc.getUserLogin(), bc.getUserPassword());
 
             invokeTimeOffset(120);
 
@@ -167,12 +166,12 @@ public class KcOidcBrokerWithConsentTest extends AbstractInitializedBaseBrokerTe
         createUser(bc.consumerRealmName(), "consumer", "password", "FirstName", "LastName", "consumer@localhost.com");
 
         driver.navigate().to(getAccountUrl(bc.consumerRealmName()));
-        accountLoginPage.login("consumer", "password");
+        loginPage.login("consumer", "password");
 
         accountPage.federatedIdentity();
 
         accountFederatedIdentityPage.clickAddProvider(bc.getIDPAlias());
-        this.accountLoginPage.login(bc.getUserLogin(), bc.getUserPassword());
+        this.loginPage.login(bc.getUserLogin(), bc.getUserPassword());
 
         // User rejected consent
         grantPage.assertCurrent();
