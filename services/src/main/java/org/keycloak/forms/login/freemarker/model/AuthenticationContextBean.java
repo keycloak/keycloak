@@ -23,6 +23,7 @@ import java.util.List;
 
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationSelectionOption;
+import org.keycloak.authentication.authenticators.browser.AbstractUsernameFormAuthenticator;
 import org.keycloak.forms.login.LoginFormsPages;
 
 /**
@@ -44,5 +45,24 @@ public class AuthenticationContextBean {
 
     public boolean showTryAnotherWayLink() {
         return getAuthenticationSelections().size() > 1 && page != LoginFormsPages.LOGIN_SELECT_AUTHENTICATOR;
+    }
+
+
+    public boolean showUsername() {
+        return context != null && context.getUser() != null && context.getAuthenticationSession() != null;
+    }
+
+
+    // NOTE: This is called "attemptedUsername" as we won't necessarily display the username of the user, but the "attempted username", which he
+    // used on the login screen (which could be eventually email or something else)
+    public String getAttemptedUsername() {
+        String username = context.getAuthenticationSession().getAuthNote(AbstractUsernameFormAuthenticator.ATTEMPTED_USERNAME);
+
+        // Fallback to real username of the user just if attemptedUsername doesn't exists
+        if (username == null) {
+            username = context.getUser().getUsername();
+        }
+
+        return username;
     }
 }

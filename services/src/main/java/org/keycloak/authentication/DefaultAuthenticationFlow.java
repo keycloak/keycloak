@@ -101,7 +101,7 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
 
         // User clicked on "try another way" link
         if (inputData.containsKey("tryAnotherWay")) {
-            logger.info("User clicked on try another way");
+            logger.trace("User clicked on link 'Try Another Way'");
 
             List<AuthenticationSelectionOption> selectionOptions = createAuthenticationSelectionList(model);
 
