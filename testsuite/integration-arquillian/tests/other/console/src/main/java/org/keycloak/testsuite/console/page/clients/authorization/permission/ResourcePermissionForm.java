@@ -70,10 +70,10 @@ public class ResourcePermissionForm extends Form {
     @FindBy(xpath = "//div[@class='modal-dialog']")
     protected ModalDialog modalDialog;
 
-    @FindBy(id = "s2id_policies")
+    @FindBy(id = "policies")
     private PolicySelect policySelect;
 
-    @FindBy(id = "s2id_resources")
+    @FindBy(id = "resources")
     private MultipleStringSelect2 resourceSelect;
 
     @FindBy(id = "create-policy")
