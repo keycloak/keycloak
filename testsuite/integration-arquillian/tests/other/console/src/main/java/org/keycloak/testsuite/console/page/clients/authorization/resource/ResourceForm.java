@@ -69,7 +69,7 @@ public class ResourceForm extends Form {
     @FindBy(xpath = "//div[@class='modal-dialog']")
     protected ModalDialog modalDialog;
 
-    @FindBy(id = "s2id_scopes")
+    @FindBy(id = "scopes")
     private ScopesInput scopesInput;
 
     public void populate(ResourceRepresentation expected) {
@@ -93,26 +93,38 @@ public class ResourceForm extends Form {
 
         UIUtils.setTextInputValue(iconUri, expected.getIconUri());
 
-        Set<ScopeRepresentation> scopes = expected.getScopes();
+        Set<ScopeRepresentation> expectedScopes = expected.getScopes();
+        Set<ScopeRepresentation> selectedScopes = scopesInput.getSelected();
 
-        for (ScopeRepresentation scope : scopes) {
-            scopesInput.select(scope.getName());
-        }
+        // Select
+        for (ScopeRepresentation expectedScope : expectedScopes) {
+            boolean shallBeSelected = true;
 
-        Set<ScopeRepresentation> selection = scopesInput.getSelected();
-
-        for (ScopeRepresentation selected : selection) {
-            boolean isSelected = false;
-
-            for (ScopeRepresentation scope : scopes) {
-                if (selected.getName().equals(scope.getName())) {
-                    isSelected = true;
+            for (ScopeRepresentation selectedScope : selectedScopes) {
+                if (selectedScope.getName().equals(expectedScope.getName())) {
+                    shallBeSelected = false;
                     break;
                 }
             }
 
-            if (!isSelected) {
-                scopesInput.unSelect(selected.getName(), driver);
+            if (shallBeSelected) {
+                scopesInput.select(expectedScope.getName());
+            }
+        }
+
+        // Deselect
+        for (ScopeRepresentation selectedScope : selectedScopes) {
+            boolean shallBeDeselected = true;
+
+            for (ScopeRepresentation expectedScope : expectedScopes) {
+                if (selectedScope.getName().equals(expectedScope.getName())) {
+                    shallBeDeselected = false;
+                    break;
+                }
+            }
+
+            if (shallBeDeselected) {
+                scopesInput.unSelect(selectedScope.getName());
             }
         }
 
@@ -148,46 +160,35 @@ public class ResourceForm extends Form {
         @Root
         private WebElement root;
 
-        @FindBy(xpath = "//input[contains(@class,'select2-input')]")
-        private WebElement search;
+        @FindBy(xpath = "./div[not(@id) and not(@class)]/input")
+        private WebElement scopeInput;
 
-        @FindBy(xpath = "//div[contains(@class,'select2-result-label')]")
-        private List<WebElement> result;
+        @FindBy(xpath = "./ul[contains(@class, 'ui-select-choices')]")
+        private WebElement scopeOptions;
 
-        @FindBy(xpath = "//li[contains(@class,'select2-search-choice')]")
-        private List<WebElement> selection;
+        @FindBy(xpath = "./div[not(@id) and not(@class)]/span[contains(@class, 'ui-select-match')]")
+        private WebElement scopeSelected;
+
 
         public void select(String name) {
-            UIUtils.setTextInputValue(search, name);
+            UIUtils.setTextInputValue(scopeInput, name);
             pause(1000);
-            for (WebElement result : result) {
-                if (result.isDisplayed() && UIUtils.getTextFromElement(result).equalsIgnoreCase(name)) {
-                    result.click();
-                    return;
-                }
-            }
+            scopeOptions.findElement(By.xpath("./li/div[contains(@class, 'ui-select-choices-row')]/span[normalize-space(text())='" + name + "']")).click();
         }
 
         public Set<ScopeRepresentation> getSelected() {
             HashSet<ScopeRepresentation> values = new HashSet<>();
+            List<WebElement> selection = scopeSelected.findElements(By.xpath("./span/span[contains(@class, 'ui-select-match-item')]/span[not(@class) and text()]"));
 
             for (WebElement selected : selection) {
-                values.add(new ScopeRepresentation(getTextFromElement(selected.findElements(tagName("div")).get(0))));
+                values.add(new ScopeRepresentation(getTextFromElement(selected)));
             }
 
             return values;
         }
 
-        public void unSelect(String name, WebDriver driver) {
-            for (WebElement selected : selection) {
-                if (name.equals(getTextFromElement(selected.findElements(tagName("div")).get(0)))) {
-                    WebElement element = selected.findElement(By.xpath("//a[contains(@class,'select2-search-choice-close')]"));
-                    JavascriptExecutor executor = (JavascriptExecutor) driver;
-                    executor.executeScript("arguments[0].click();", element);
-                    pause(1000);
-                    return;
-                }
-            }
+        public void unSelect(String name) {
+            scopeSelected.findElement(By.xpath(".//span[text()='" + name + "']/../span[contains(@class, 'ui-select-match-close')]")).click();
         }
     }
 }
