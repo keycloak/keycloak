@@ -200,11 +200,7 @@ experience. To correct this, you could:
 * In the "Bindings" menu, change the reset credential flow from "Reset Credentials" to "Reset Credentials for password-less"
 
 ifeval::[{project_community}==true]
-=== Executions
-
-Executions can be used
-
-.Script Authenticator
+=== Script Authenticator
 A _script_ authenticator allows to define custom authentication logic via JavaScript.
 Custom authenticators. In order to make use of this feature, it must be explicitly enabled:
 [source]
