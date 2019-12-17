@@ -5,6 +5,11 @@ This section discusses a number of things you need to configure before you can p
 in front of your clustered {project_name} deployment.  It also covers configuring the built-in load balancer that
 was <<_clustered-domain-example, Clustered Domain Example>>.
 
+The following diagram illustrates the use of a load balancer. In this example, the load balancer serves as a reverse proxy between three clients and a cluster of three {project_name} servers.
+
+[[load-balancer-diagram]]
+.Example Load Balancer Diagram
+image:{project_images}/load_balancer.png[]
 
 ==== Identifying Client IP Addresses
 

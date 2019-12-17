@@ -1,0 +1,612 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="760"
+   height="511.5"
+   viewBox="0 0 760 511.5"
+   version="1.1"
+   id="svg196"
+   sodipodi:docname="load_balancer.svg"
+   inkscape:version="0.92.4 (unknown)">
+  <metadata
+     id="metadata200">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <sodipodi:namedview
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1"
+     objecttolerance="10"
+     gridtolerance="10"
+     guidetolerance="10"
+     inkscape:pageopacity="0"
+     inkscape:pageshadow="2"
+     inkscape:window-width="1919"
+     inkscape:window-height="1013"
+     id="namedview198"
+     showgrid="false"
+     inkscape:zoom="2"
+     inkscape:cx="381"
+     inkscape:cy="255.75"
+     inkscape:window-x="0"
+     inkscape:window-y="27"
+     inkscape:window-maximized="0"
+     inkscape:current-layer="svg196" />
+  <defs
+     id="defs4">
+    <style
+       id="style2">
+      .a {
+        fill: #e8e8e8;
+      }
+
+      .b {
+        font-size: 10px;
+        fill: #f3f3f3;
+        font-family: RedHatText-Regular, Red Hat Text;
+      }
+
+      .c, .d, .e, .f, .k, .l, .m {
+        fill: none;
+      }
+
+      .d, .e, .f {
+        stroke: #06c;
+      }
+
+      .d, .e, .f, .j, .k, .l, .m {
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+
+      .e {
+        stroke-dasharray: 2.991 2.991;
+      }
+
+      .f {
+        stroke-dasharray: 3.036 3.036;
+      }
+
+      .g, .j {
+        fill: #fff;
+      }
+
+      .h {
+        font-size: 14px;
+      }
+
+      .h, .i, .n {
+        fill: #151515;
+      }
+
+      .h, .o {
+        font-family: RedHatText-Bold, Red Hat Text;
+        font-weight: 700;
+      }
+
+      .i {
+        font-size: 11px;
+        font-family: RedHatText-Medium, Red Hat Text;
+        font-weight: 500;
+      }
+
+      .j, .k, .l {
+        stroke: #5b5b5b;
+      }
+
+      .j, .l {
+        stroke-width: 1.5px;
+      }
+
+      .k {
+        stroke-width: 2px;
+      }
+
+      .m {
+        stroke: #151515;
+      }
+
+      .o {
+        font-size: 12px;
+        fill: #06c;
+      }
+    </style>
+  </defs>
+  <title
+     id="title6">1</title>
+  <rect
+     class="a"
+     y="24"
+     width="760"
+     height="447.5"
+     id="rect8" />
+  <g
+     id="g14">
+    <text
+       class="b"
+       transform="translate(679.802 494.517)"
+       id="text10">70_RHSSO_0320</text>
+    <rect
+       class="c"
+       y="471.5"
+       width="760"
+       height="40"
+       id="rect12" />
+  </g>
+  <g
+     id="g32">
+    <polyline
+       class="d"
+       points="730 440 730 441.5 728.5 441.5"
+       id="polyline16" />
+    <line
+       class="e"
+       x1="725.509"
+       y1="441.5"
+       x2="32.996"
+       y2="441.5"
+       id="line18" />
+    <polyline
+       class="d"
+       points="31.5 441.5 30 441.5 30 440"
+       id="polyline20" />
+    <line
+       class="f"
+       x1="30"
+       y1="436.964"
+       x2="30"
+       y2="232.018"
+       id="line22" />
+    <polyline
+       class="d"
+       points="30 230.5 30 229 31.5 229"
+       id="polyline24" />
+    <line
+       class="e"
+       x1="34.491"
+       y1="229"
+       x2="727.004"
+       y2="229"
+       id="line26" />
+    <polyline
+       class="d"
+       points="728.5 229 730 229 730 230.5"
+       id="polyline28" />
+    <line
+       class="f"
+       x1="730"
+       y1="233.536"
+       x2="730"
+       y2="438.482"
+       id="line30" />
+  </g>
+  <rect
+     class="g"
+     x="50"
+     y="309"
+     width="660"
+     height="112.5"
+     id="rect34" />
+  <text
+     class="h"
+     transform="translate(65 335.788)"
+     id="text36">Cluster</text>
+  <g
+     id="g42">
+    <text
+       class="i"
+       transform="translate(345.62 206.887)"
+       id="text38">Public access</text>
+    <path
+       class="j"
+       d="M397.621,174.656a15.65,15.65,0,0,0-29.291-7.676,11.753,11.753,0,1,0-2.02,23.331h31.311a7.828,7.828,0,0,0,0-15.655Z"
+       id="path40" />
+  </g>
+  <g
+     id="g58">
+    <text
+       class="i"
+       transform="translate(560.805 109.669)"
+       id="text44">Client</text>
+    <g
+       id="g56">
+      <rect
+         class="j"
+         x="551.933"
+         y="55.895"
+         width="48.5"
+         height="37.18"
+         id="rect46" />
+      <line
+         class="k"
+         x1="594.837"
+         y1="61.476"
+         x2="594.837"
+         y2="61.476"
+         id="line48" />
+      <line
+         class="k"
+         x1="591.106"
+         y1="61.476"
+         x2="591.106"
+         y2="61.476"
+         id="line50" />
+      <line
+         class="k"
+         x1="587.375"
+         y1="61.476"
+         x2="587.375"
+         y2="61.476"
+         id="line52" />
+      <line
+         class="l"
+         x1="557.529"
+         y1="61.476"
+         x2="572.452"
+         y2="61.476"
+         id="line54" />
+    </g>
+  </g>
+  <g
+     id="g64">
+    <line
+       class="m"
+       x1="380"
+       y1="114.669"
+       x2="380"
+       y2="147.493"
+       id="line60" />
+    <polygon
+       class="n"
+       points="375.013 146.034 380 154.669 384.986 146.034 375.013 146.034"
+       id="polygon62" />
+  </g>
+  <g
+     id="g70">
+    <line
+       class="m"
+       x1="380"
+       y1="211.887"
+       x2="380"
+       y2="244.461"
+       id="line66" />
+    <polygon
+       class="n"
+       points="375.013 243.002 380 251.637 384.986 243.002 375.013 243.002"
+       id="polygon68" />
+  </g>
+  <g
+     id="g86">
+    <text
+       class="i"
+       transform="translate(364.622 109.669)"
+       id="text72">Client</text>
+    <g
+       id="g84">
+      <rect
+         class="j"
+         x="355.75"
+         y="55.895"
+         width="48.5"
+         height="37.18"
+         id="rect74" />
+      <line
+         class="k"
+         x1="398.654"
+         y1="61.476"
+         x2="398.654"
+         y2="61.476"
+         id="line76" />
+      <line
+         class="k"
+         x1="394.923"
+         y1="61.476"
+         x2="394.923"
+         y2="61.476"
+         id="line78" />
+      <line
+         class="k"
+         x1="391.192"
+         y1="61.476"
+         x2="391.192"
+         y2="61.476"
+         id="line80" />
+      <line
+         class="l"
+         x1="361.346"
+         y1="61.476"
+         x2="376.269"
+         y2="61.476"
+         id="line82" />
+    </g>
+  </g>
+  <g
+     id="g92">
+    <polyline
+       class="m"
+       points="183.817 114.669 183.817 129.669 365 129.669 365 147.493"
+       id="polyline88" />
+    <polygon
+       class="n"
+       points="360.013 146.034 365 154.669 369.986 146.034 360.013 146.034"
+       id="polygon90" />
+  </g>
+  <g
+     id="g98">
+    <polyline
+       class="m"
+       points="576.183 114.669 576.183 129.669 395 129.669 395 147.493"
+       id="polyline94" />
+    <polygon
+       class="n"
+       points="390.014 146.034 395 154.669 399.986 146.034 390.014 146.034"
+       id="polygon96" />
+  </g>
+  <g
+     id="g104">
+    <line
+       class="m"
+       x1="380"
+       y1="293.25"
+       x2="380"
+       y2="351.074"
+       id="line100" />
+    <polygon
+       class="n"
+       points="375.013 349.615 380 358.25 384.986 349.615 375.013 349.615"
+       id="polygon102" />
+  </g>
+  <g
+     id="g110">
+    <polyline
+       class="m"
+       points="395 293.25 395 333.25 576.183 333.25 576.183 351.074"
+       id="polyline106" />
+    <polygon
+       class="n"
+       points="571.196 349.615 576.183 358.25 581.169 349.615 571.196 349.615"
+       id="polygon108" />
+  </g>
+  <g
+     id="g116">
+    <polyline
+       class="m"
+       points="365 293.25 365 333.25 183.817 333.25 183.817 351.074"
+       id="polyline112" />
+    <polygon
+       class="n"
+       points="178.83 349.615 183.817 358.25 188.803 349.615 178.83 349.615"
+       id="polygon114" />
+  </g>
+  <g
+     id="g132">
+    <text
+       class="i"
+       transform="translate(168.439 109.669)"
+       id="text118">Client</text>
+    <g
+       id="g130">
+      <rect
+         class="j"
+         x="159.567"
+         y="55.895"
+         width="48.5"
+         height="37.18"
+         id="rect120" />
+      <line
+         class="k"
+         x1="202.471"
+         y1="61.476"
+         x2="202.471"
+         y2="61.476"
+         id="line122" />
+      <line
+         class="k"
+         x1="198.74"
+         y1="61.476"
+         x2="198.74"
+         y2="61.476"
+         id="line124" />
+      <line
+         class="k"
+         x1="195.009"
+         y1="61.476"
+         x2="195.009"
+         y2="61.476"
+         id="line126" />
+      <line
+         class="l"
+         x1="165.163"
+         y1="61.476"
+         x2="180.086"
+         y2="61.476"
+         id="line128" />
+    </g>
+  </g>
+  <g
+     id="g154">
+    <text
+       class="i"
+       transform="translate(343.469 285.095)"
+       id="text134">Load balancer</text>
+    <g
+       id="g152">
+      <rect
+         class="j"
+         x="352.5"
+         y="254.75"
+         width="55"
+         height="13.75"
+         id="rect136" />
+      <line
+         class="k"
+         x1="401.621"
+         y1="260.647"
+         x2="401.621"
+         y2="260.647"
+         id="line138" />
+      <line
+         class="l"
+         x1="358.393"
+         y1="260.113"
+         x2="358.393"
+         y2="263.077"
+         id="line140" />
+      <line
+         class="l"
+         x1="364.286"
+         y1="260.113"
+         x2="364.286"
+         y2="263.077"
+         id="line142" />
+      <line
+         class="l"
+         x1="370.179"
+         y1="260.113"
+         x2="370.179"
+         y2="263.077"
+         id="line144" />
+      <line
+         class="l"
+         x1="376.071"
+         y1="260.113"
+         x2="376.071"
+         y2="263.077"
+         id="line146" />
+      <line
+         class="l"
+         x1="381.964"
+         y1="260.113"
+         x2="381.964"
+         y2="263.077"
+         id="line148" />
+      <line
+         class="l"
+         x1="387.857"
+         y1="260.113"
+         x2="387.857"
+         y2="263.077"
+         id="line150" />
+    </g>
+  </g>
+  <g
+     id="g166">
+    <text
+       class="i"
+       transform="translate(145.834,391.47)"
+       id="text156"
+       style="font-weight:500;font-size:11px;font-family:RedHatText-Medium, 'Red Hat Text';fill:#151515">Keycloak server</text>
+    <g
+       id="g164">
+      <rect
+         class="j"
+         x="156.249"
+         y="361.125"
+         width="55"
+         height="13.75"
+         id="rect158" />
+      <line
+         class="k"
+         x1="205.37"
+         y1="367.022"
+         x2="205.37"
+         y2="367.022"
+         id="line160" />
+      <line
+         class="l"
+         x1="162.985"
+         y1="368.982"
+         x2="171.235"
+         y2="368.982"
+         id="line162" />
+    </g>
+  </g>
+  <g
+     id="g178">
+    <text
+       class="i"
+       transform="translate(342.085,391.47)"
+       id="text168"
+       style="font-weight:500;font-size:11px;font-family:RedHatText-Medium, 'Red Hat Text';fill:#151515">Keycloak server</text>
+    <g
+       id="g176">
+      <rect
+         class="j"
+         x="352.5"
+         y="361.125"
+         width="55"
+         height="13.75"
+         id="rect170" />
+      <line
+         class="k"
+         x1="401.62"
+         y1="367.022"
+         x2="401.62"
+         y2="367.022"
+         id="line172" />
+      <line
+         class="l"
+         x1="359.235"
+         y1="368.982"
+         x2="367.485"
+         y2="368.982"
+         id="line174" />
+    </g>
+  </g>
+  <g
+     id="g190">
+    <text
+       class="i"
+       transform="translate(538.335,391.47)"
+       id="text180"
+       style="font-weight:500;font-size:11px;font-family:RedHatText-Medium, 'Red Hat Text';fill:#151515">Keycloak server</text>
+    <g
+       id="g188">
+      <rect
+         class="j"
+         x="548.75"
+         y="361.125"
+         width="55"
+         height="13.75"
+         id="rect182" />
+      <line
+         class="k"
+         x1="597.871"
+         y1="367.022"
+         x2="597.871"
+         y2="367.022"
+         id="line184" />
+      <line
+         class="l"
+         x1="555.485"
+         y1="368.982"
+         x2="563.735"
+         y2="368.982"
+         id="line186" />
+    </g>
+  </g>
+  <rect
+     class="a"
+     x="57.468"
+     y="217.149"
+     width="112.617"
+     height="20.477"
+     id="rect192" />
+  <text
+     class="o"
+     transform="translate(65 232.624)"
+     id="text194">Private network</text>
+</svg>
