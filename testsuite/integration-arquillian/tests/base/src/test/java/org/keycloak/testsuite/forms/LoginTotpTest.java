@@ -160,4 +160,26 @@ public class LoginTotpTest extends AbstractTestRealmKeycloakTest {
                 .removeDetail(Details.CONSENT)
                 .assertEvent();
     }
+
+
+    @Test
+    public void loginWithTotp_testAttemptedUsernameAndResetLogin() throws Exception {
+        loginPage.open();
+
+        // Assert attempted-username NOT available
+        loginPage.assertAttemptedUsernameAvailability(false);
+
+        loginPage.login("test-user@localhost", "password");
+
+        Assert.assertTrue(loginTotpPage.isCurrent());
+
+        // Assert attempted-username available
+        loginPage.assertAttemptedUsernameAvailability(true);
+        Assert.assertEquals("test-user@localhost", loginPage.getAttemptedUsername());
+
+        // Reset login and assert back on the login screen
+        loginTotpPage.clickResetLogin();
+
+        loginPage.assertCurrent();
+    }
 }

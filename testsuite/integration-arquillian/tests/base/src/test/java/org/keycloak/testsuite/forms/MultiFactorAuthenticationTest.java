@@ -288,4 +288,53 @@ public class MultiFactorAuthenticationTest extends AbstractTestRealmKeycloakTest
         }
     }
 
+
+    // In a sub-flow with alternative credential executors, check the username of the user is shown on the login screen.
+    // Also test the "reset login" link/icon .
+    @Test
+    public void testUsernameLabelAndResetLogin() {
+        try {
+            configureBrowserFlowWithAlternativeCredentials();
+
+            // The "attempted username" with username not yet available on the login screen
+            loginUsernameOnlyPage.open();
+            loginUsernameOnlyPage.assertAttemptedUsernameAvailability(false);
+
+            loginUsernameOnlyPage.login("user-with-one-configured-otp");
+
+            // On the password page, username should be shown as we know the user
+            passwordPage.assertCurrent();
+            passwordPage.assertAttemptedUsernameAvailability(true);
+            Assert.assertEquals("user-with-one-configured-otp", passwordPage.getAttemptedUsername());
+            passwordPage.clickTryAnotherWayLink();
+
+            // On the select-authenticator page, username should be shown as we know the user
+            selectAuthenticatorPage.assertCurrent();
+            selectAuthenticatorPage.assertAttemptedUsernameAvailability(true);
+            Assert.assertEquals("user-with-one-configured-otp", passwordPage.getAttemptedUsername());
+
+            // Reset login
+            selectAuthenticatorPage.clickResetLogin();
+
+            // Should be back on the login page
+            loginUsernameOnlyPage.assertCurrent();
+
+            // Use email as username. The email should be shown instead of username on the screens
+            loginUsernameOnlyPage.assertAttemptedUsernameAvailability(false);
+            loginUsernameOnlyPage.login("otp1@redhat.com");
+
+            // On the password page, the email of user should be shown
+            passwordPage.assertCurrent();
+            passwordPage.assertAttemptedUsernameAvailability(true);
+            Assert.assertEquals("otp1@redhat.com", passwordPage.getAttemptedUsername());
+
+            // Login
+            passwordPage.login("password");
+            events.expectLogin().user(testRealm().users().search("user-with-one-configured-otp").get(0).getId())
+                    .detail(Details.USERNAME, "otp1@redhat.com").assertEvent();
+        } finally {
+            BrowserFlowTest.revertFlows(testRealm(), "browser - alternative");
+        }
+    }
+
 }

@@ -69,6 +69,16 @@
               </div>
           </#if>
 
+            <#if auth?has_content && auth.showUsername() >
+                <div class="${properties.kcFormGroupClass!}">
+                    <label id="attempted-username">${auth.attemptedUsername}</label>
+                    <a href="${url.loginRestartFlowUrl}" id="reset-login">Reset Login</a>
+                </div>
+
+                <hr />
+
+            </#if>
+
           <#nested "form">
 
           <#if auth?has_content && auth.showTryAnotherWayLink() >
