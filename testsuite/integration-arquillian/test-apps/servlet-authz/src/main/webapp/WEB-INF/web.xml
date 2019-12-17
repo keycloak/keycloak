@@ -23,6 +23,16 @@
                 <url-pattern>/public-html.html</url-pattern>
             </web-resource-collection>
         </security-constraint>
+	
+	<filter>
+		<filter-name>TestFilter</filter-name>
+		<filter-class>org.keycloak.testsuite.servletauthz.TestFilter</filter-class>
+	</filter>
+	
+	<filter-mapping>
+		<filter-name>TestFilter</filter-name>
+		<url-pattern>/protected/filter/*</url-pattern>
+	</filter-mapping>
 
 	<login-config>
 		<auth-method>KEYCLOAK</auth-method>

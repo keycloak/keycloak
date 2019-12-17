@@ -18,7 +18,9 @@
 
 package org.keycloak.adapters.elytron;
 
+import io.undertow.server.HttpServerExchange;
 import io.undertow.server.handlers.CookieImpl;
+import io.undertow.servlet.handlers.ServletRequestContext;
 import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.adapters.AdapterDeploymentContext;
 import org.keycloak.adapters.AdapterTokenStore;
@@ -38,6 +40,10 @@ import org.wildfly.security.http.Scope;
 
 import javax.security.auth.callback.CallbackHandler;
 import javax.security.cert.X509Certificate;
+import javax.servlet.ServletInputStream;
+import javax.servlet.ServletRequest;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletRequestWrapper;
 
 import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
@@ -248,7 +254,26 @@ class ElytronHttpFacade implements OIDCHttpFacade {
                 }
 
                 if (buffered) {
-                    return inputStream = new BufferedInputStream(request.getInputStream());
+                    HttpScope exchangeScope = getScope(Scope.EXCHANGE);
+                    HttpServerExchange exchange = ProtectedHttpServerExchange.class.cast(exchangeScope.getAttachment(UNDERTOW_EXCHANGE)).getExchange();
+                    ServletRequestContext context = exchange.getAttachment(ServletRequestContext.ATTACHMENT_KEY);
+                    ServletRequest servletRequest = context.getServletRequest();
+
+                    inputStream = new BufferedInputStream(exchange.getInputStream());
+
+                    context.setServletRequest(new HttpServletRequestWrapper((HttpServletRequest) servletRequest) {
+                        @Override
+                        public ServletInputStream getInputStream() {
+                            inputStream.mark(0);
+                            return new ServletInputStream() {
+                                @Override
+                                public int read() throws IOException {
+                                    return inputStream.read();
+                                }
+                            };
+                        }
+                    });
+                    return inputStream;
                 }
 
                 return request.getInputStream();
