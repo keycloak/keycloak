@@ -37,7 +37,7 @@ public class SingleStringSelect2 extends AbstractMultipleSelect2<String> {
 
     @Override
     protected List<WebElement> getSelectedElements() {
-        return getRoot().findElements(By.xpath(".//span[contains(@class,'select2-chosen')]"));
+        return getRoot().findElements(By.xpath("./div[contains(@class, 'ui-select-match')]/span[contains(@class, 'ui-select-toggle')]/span[contains(@class, 'ui-select-match-text') and text()]"));
     }
 
     @Override
@@ -51,10 +51,8 @@ public class SingleStringSelect2 extends AbstractMultipleSelect2<String> {
     @Override
     protected BiFunction<WebElement, String, Boolean> deselect() {
         return (selected, value) -> {
-            if (identity().apply(value).equals(selected.getText())) {
-                WebElement element = selected.findElement(By.xpath(".//a[contains(@class,'select2-search-choice-close')]"));
-                JavascriptExecutor executor = (JavascriptExecutor) getDriver();
-                executor.executeScript("arguments[0].click();", element);
+            if (selected.getText().equals(value)) {
+                WebElement element = selected.findElement(By.xpath("./../a/i[contains(@class, 'glyphicon-remove')]"));
                 WaitUtils.pause(500);
                 return true;
             }

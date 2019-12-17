@@ -67,19 +67,19 @@ public class ScopePermissionForm extends Form {
     @FindBy(xpath = "//div[@class='modal-dialog']")
     protected ModalDialog modalDialog;
 
-    @FindBy(id = "s2id_policies")
+    @FindBy(id = "policies")
     private PolicySelect policySelect;
 
-    @FindBy(id = "s2id_scopes")
+    @FindBy(id = "scopes")
     private MultipleStringSelect2 scopeSelect;
 
-    @FindBy(id = "s2id_resourceScopes")
+    @FindBy(id = "resourceScopes")
     private MultipleStringSelect2 resourceScopeSelect;
 
-    @FindBy(id = "s2id_resources")
-    private ResourceSelect resourceSelect;
+    @FindBy(id = "resources")
+    private SingleStringSelect2 resourceSelect;
 
-    @FindBy(className = "select2-search-choice-close")
+    @FindBy(xpath = "//div[@id='resources']//i[contains(@class, 'glyphicon-remove')]")
     private WebElement resourceSelectRemoveChoice;
 
     @FindBy(id = "create-policy")
@@ -146,13 +146,6 @@ public class ScopePermissionForm extends Form {
         representation.getScopes().addAll(resourceScopeSelect.getSelected());
 
         return representation;
-    }
-
-    public class ResourceSelect extends SingleStringSelect2 {
-        @Override
-        protected Function<WebElement, String> representation() {
-            return super.representation().andThen(s -> "".equals(s) || s.contains("Any resource...") ? null : s);
-        }
     }
 
     public void createPolicy(AbstractPolicyRepresentation expected) {

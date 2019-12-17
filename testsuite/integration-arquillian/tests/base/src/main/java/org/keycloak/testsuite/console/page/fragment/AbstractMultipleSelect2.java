@@ -46,10 +46,10 @@ public abstract class AbstractMultipleSelect2<R> {
     @Drone
     private WebDriver driver;
 
-    @FindBy(xpath = "//input[contains(@class,'ui-select-search')]")
+    @FindBy(xpath = ".//input[contains(@class,'ui-select-search')]")
     private WebElement search;
 
-    @FindBy(xpath = "//div[contains(@class,'ui-select-choices-row')]")
+    @FindBy(xpath = ".//div[contains(@class,'ui-select-choices-row')]")
     private List<WebElement> result;
 
     public void update(Set<R> values) {
@@ -134,15 +134,15 @@ public abstract class AbstractMultipleSelect2<R> {
 
     protected BiFunction<WebElement, R, Boolean> deselect() {
         return (selected, value) -> {
-            WebElement selection = selected.findElements(By.tagName("div")).get(0);
-            if (identity().apply(value).equals(selection.getText())) {
-                WebElement element = selected.findElement(By.xpath(".//a[contains(@class,'select2-search-choice-close')]"));
-                JavascriptExecutor executor = (JavascriptExecutor) driver;
-                executor.executeScript("arguments[0].click();", element);
-                pause(500);
-                return true;
+            List<WebElement> matchedSelections = selected.findElements(By.xpath(".//span[text()='" + value + "']/../span[contains(@class, 'ui-select-match-close')]"));
+            if (matchedSelections.size() != 1) {
+                return false;
             }
-            return false;
+
+            matchedSelections.get(0).click();
+            pause(500);
+
+            return true;
         };
     }
 

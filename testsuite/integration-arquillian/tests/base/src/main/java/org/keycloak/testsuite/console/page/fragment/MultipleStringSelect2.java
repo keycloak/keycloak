@@ -34,20 +34,13 @@ public class MultipleStringSelect2 extends AbstractMultipleSelect2<String> {
 
     @Override
     protected List<WebElement> getSelectedElements() {
-        return getRoot().findElements(By.xpath(".//li[contains(@class,'select2-search-choice')]"));
+        return getRoot().findElements(By.xpath(".//div[not(@id) and not(@class)]/span[contains(@class, 'ui-select-match')]/span"));
     }
 
     @Override
     protected Function<WebElement, String> representation() {
         return webElement -> {
-            List<WebElement> element = webElement.findElements(By.tagName("div"));
-
-            if (element.isEmpty()) {
-                return null;
-            }
-
-            String value = element.get(0).getText();
-
+            String value = webElement.findElement(By.xpath("./span[contains(@class, 'ui-select-match-item')]/span[not(@class) and text()]")).getText();
             return "".equals(value) ? null : value;
         };
     }
