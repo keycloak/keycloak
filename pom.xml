@@ -1718,6 +1718,7 @@
                         <configuration>
                             <additionalparam>-Xdoclint:none</additionalparam>
                             <failOnError>false</failOnError>
+                            <excludePackageNames>cx.*:org.freedesktop*:org.jvnet*</excludePackageNames>
                         </configuration>
                     </plugin>
                 </plugins>
