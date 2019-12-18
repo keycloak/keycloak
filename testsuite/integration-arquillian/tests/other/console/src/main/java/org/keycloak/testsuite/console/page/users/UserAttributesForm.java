@@ -41,7 +41,7 @@ public class UserAttributesForm extends Form {
     @FindBy(xpath = ".//div[@class='onoffswitch' and ./input[@id='emailVerified']]")
     private OnOffSwitch emailVerifiedSwitch;
 
-    @FindBy(id = "s2id_reqActions")
+    @FindBy(id = "reqActions")
     private MultipleStringSelect2 requiredUserActionsSelect;
 
     @FindBy(xpath = "//button[@data-ng-click='unlockUser()']")
