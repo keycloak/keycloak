@@ -104,7 +104,7 @@ public class CreateClientMappersForm extends Form {
         @FindBy(xpath = ".//button[@class='close']")
         private WebElement closeButton;
 
-        @FindBy(id = "s2id_clients")
+        @FindBy(id = "clients")
         private ClientSelectModal clientsInput;
 
         public void closeRoleSelectorModalDialog() {
