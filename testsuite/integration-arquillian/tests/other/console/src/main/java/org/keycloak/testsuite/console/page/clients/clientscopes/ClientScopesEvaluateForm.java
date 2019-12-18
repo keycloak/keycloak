@@ -22,8 +22,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.keycloak.testsuite.console.page.clients.authorization.policy.ClientSelectModal;
 import org.keycloak.testsuite.console.page.fragment.DataTable;
+import org.keycloak.testsuite.console.page.fragment.SingleStringSelect2;
 import org.keycloak.testsuite.page.Form;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.openqa.selenium.By;
@@ -83,8 +83,7 @@ public class ClientScopesEvaluateForm extends Form {
     private WebElement accessTokenTextArea;
 
     @FindBy(id = "users")
-    private ClientSelectModal clientsInput;
-
+    private SingleStringSelect2 usersInput;
 
 
     public Set<String> getAvailableClientScopes() {
@@ -104,9 +103,8 @@ public class ClientScopesEvaluateForm extends Form {
         ClientScopesSetupForm.addMissingScopes(availableClientScopesSelect, addAppliedClientScopesButton, scopes);
     }
 
-
     public void selectUser(String username) {
-        clientsInput.select(username);
+        usersInput.select(username);
     }
 
 

@@ -1,6 +1,7 @@
 package org.keycloak.testsuite.console.page.roles;
 
 import org.keycloak.representations.idm.RoleRepresentation.Composites;
+import org.keycloak.testsuite.console.page.fragment.SingleStringSelect2;
 import org.keycloak.testsuite.page.Form;
 import org.keycloak.testsuite.util.UIUtils;
 import org.openqa.selenium.By;
@@ -34,7 +35,7 @@ public class RoleCompositeRoles extends Form {
     protected Select assignedRealmRolesSelect;
 
     @FindBy(id = "clients")
-    protected Select clientSelect;
+    protected SingleStringSelect2 clientSelect;
     @FindBy(id = "available-client")
     protected Select availableClientRolesSelect;
     @FindBy(id = "assigned-client")
@@ -55,8 +56,8 @@ public class RoleCompositeRoles extends Form {
         composites.setRealm(getSelectValues(assignedRealmRolesSelect));
         // client roles
         Map<String, List<String>> clientRoles = new HashMap<>();
-        for (String client : getSelectValues(clientSelect)) {
-            clientSelect.selectByVisibleText(client);
+        for (String client : clientSelect.getSelected()) {
+            selectClientRole(client);
             clientRoles.put(client, new ArrayList<>(getSelectValues(assignedClientRolesSelect)));
         }
         composites.setClient(clientRoles);
@@ -67,7 +68,7 @@ public class RoleCompositeRoles extends Form {
         if (composites != null) {
             setRealmRoles(composites.getRealm());
             for (String client : composites.getClient().keySet()) {
-                clientSelect.selectByVisibleText(client);
+                selectClientRole(client);
                 setClientRoles(composites.getClient().get(client));
             }
         }
@@ -167,7 +168,7 @@ public class RoleCompositeRoles extends Form {
 
     public void selectClientRole(String client) {
         waitUntilElement(By.id("clients")).is().present();
-        clientSelect.selectByVisibleText(client);
+        clientSelect.select(client);
     }
 
     public void addAvailableClientRole(String... roles) {

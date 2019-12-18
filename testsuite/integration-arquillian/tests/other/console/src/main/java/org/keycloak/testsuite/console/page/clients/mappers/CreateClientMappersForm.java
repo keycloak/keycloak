@@ -1,8 +1,8 @@
 package org.keycloak.testsuite.console.page.clients.mappers;
 
 import org.jboss.arquillian.drone.api.annotation.Drone;
-import org.keycloak.testsuite.console.page.clients.authorization.policy.ClientSelectModal;
 import org.keycloak.testsuite.console.page.fragment.OnOffSwitch;
+import org.keycloak.testsuite.console.page.fragment.SingleStringSelect2;
 import org.keycloak.testsuite.page.Form;
 import org.keycloak.testsuite.util.UIUtils;
 import org.keycloak.testsuite.util.WaitUtils;
@@ -105,7 +105,7 @@ public class CreateClientMappersForm extends Form {
         private WebElement closeButton;
 
         @FindBy(id = "clients")
-        private ClientSelectModal clientsInput;
+        private SingleStringSelect2 clientsInput;
 
         public void closeRoleSelectorModalDialog() {
             closeButton.click();

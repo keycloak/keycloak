@@ -62,7 +62,6 @@ public class ClientScopeTest extends AbstractClientTest {
     }
     
     @Test
-    @Ignore //phantomjs sometimes doens't enable "Add Selected >>" button when role is selected
     public void clientScopeTest() {
         assertTrue(found.isFullScopeAllowed());
         clientScopePage.scopeForm().setFullScopeAllowed(false);
