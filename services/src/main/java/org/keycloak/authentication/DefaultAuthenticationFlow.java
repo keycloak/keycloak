@@ -30,6 +30,7 @@ import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.util.AuthenticationFlowHistoryHelper;
 import org.keycloak.services.util.AuthenticationFlowURLHelper;
 import org.keycloak.sessions.AuthenticationSessionModel;
+import org.keycloak.sessions.CommonClientSessionModel;
 
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
@@ -374,7 +375,20 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
         ConditionalAuthenticator authenticator = (ConditionalAuthenticator) createAuthenticator(factory);
         AuthenticationProcessor.Result context = processor.createAuthenticatorContext(model, authenticator, executionList);
 
-        return !authenticator.matchCondition(context);
+       boolean matchCondition;
+
+        // Retrieve previous evaluation result if any, else evaluate and store result for future re-evaluation
+        if (processor.isEvaluatedTrue(model)) {
+            matchCondition = true;
+        } else if (processor.isEvaluatedFalse(model)) {
+            matchCondition = false;
+        } else {
+            matchCondition = authenticator.matchCondition(context);
+            processor.getAuthenticationSession().setExecutionStatus(model.getId(),
+                    matchCondition ? AuthenticationSessionModel.ExecutionStatus.EVALUATED_TRUE : AuthenticationSessionModel.ExecutionStatus.EVALUATED_FALSE);
+        }
+
+        return !matchCondition;
     }
 
     private boolean isSetupRequired(AuthenticationExecutionModel model) {

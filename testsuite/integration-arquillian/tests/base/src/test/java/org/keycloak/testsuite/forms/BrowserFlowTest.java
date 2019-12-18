@@ -41,6 +41,8 @@ import org.keycloak.testsuite.pages.LoginUsernameOnlyPage;
 import org.keycloak.testsuite.pages.PasswordPage;
 import org.keycloak.testsuite.util.FlowUtil;
 import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.authentication.ConditionalUserAttributeValueFactory;
+import org.keycloak.testsuite.authentication.SetUserAttributeAuthenticatorFactory;
 import org.keycloak.testsuite.util.URLUtils;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
@@ -441,6 +443,63 @@ public class BrowserFlowTest extends AbstractTestRealmKeycloakTest {
             Assert.assertFalse(loginTotpPage.isCurrent());
         } finally {
             revertFlows("browser - rule");
+        }
+    }
+
+    private void configureBrowserFlowWithConditionalSubFlowWithChangingConditionWhileFlowEvaluation() {
+        final String newFlowAlias = "browser - changing condition";
+        testingClient.server("test").run(session -> FlowUtil.inCurrentRealm(session).copyBrowserFlow(newFlowAlias));
+        testingClient.server("test").run(session -> FlowUtil.inCurrentRealm(session)
+                .selectFlow(newFlowAlias)
+                .inForms(forms -> forms
+                        .clear()
+                        .addAuthenticatorExecution(Requirement.REQUIRED, UsernameFormFactory.PROVIDER_ID)
+                        .addSubFlowExecution(Requirement.CONDITIONAL, subFlow -> {
+                            // Add authenticators to this flow: 1 conditional authenticator and a basic authenticator executions
+                            subFlow.addAuthenticatorExecution(Requirement.REQUIRED, ConditionalUserAttributeValueFactory.PROVIDER_ID,
+                                    config -> {
+                                        config.getConfig().put(ConditionalUserAttributeValueFactory.CONF_ATTRIBUTE_NAME, "attribute");
+                                        config.getConfig().put(ConditionalUserAttributeValueFactory.CONF_ATTRIBUTE_EXPECTED_VALUE, "value");
+                                        config.getConfig().put(ConditionalUserAttributeValueFactory.CONF_NOT, Boolean.toString(true));
+                                    });
+
+                            // Set the attribute value
+                            subFlow.addAuthenticatorExecution(Requirement.REQUIRED, SetUserAttributeAuthenticatorFactory.PROVIDER_ID,
+                                    config -> {
+                                        config.getConfig().put(SetUserAttributeAuthenticatorFactory.CONF_ATTR_NAME, "attribute");
+                                        config.getConfig().put(SetUserAttributeAuthenticatorFactory.CONF_ATTR_VALUE, "value");
+                                    });
+
+
+                            // Requires Password
+                            subFlow.addAuthenticatorExecution(Requirement.REQUIRED, PasswordFormFactory.PROVIDER_ID);
+
+                            // Requires TOTP
+                            subFlow.addAuthenticatorExecution(Requirement.REQUIRED, OTPFormAuthenticatorFactory.PROVIDER_ID);
+                        }))
+                .defineAsBrowserFlow()
+        );
+    }
+
+    // Configure a conditional authenticator with a condition which change while the flow evaluation
+    // In such case, all the required authenticator inside the subflow should be evaluated even if the condition has changed
+    @Test
+    public void testConditionalAuthenticatorWithConditionalSubFlowWithChangingConditionWhileFlowEvaluation() {
+        try {
+            configureBrowserFlowWithConditionalSubFlowWithChangingConditionWhileFlowEvaluation();
+
+            // provides username
+            loginUsernameOnlyPage.open();
+            loginUsernameOnlyPage.login("user-with-two-configured-otp");
+
+            // The conditional sub flow is executed only if a specific user attribute is not set.
+            // This sub flow will set the user attribute and displays password form.
+            passwordPage.assertCurrent();
+            passwordPage.login("password");
+
+            Assert.assertTrue(oneTimeCodePage.isOtpLabelPresent());
+        } finally {
+            revertFlows("browser - changing condition");
         }
     }
 
@@ -965,7 +1024,7 @@ public class BrowserFlowTest extends AbstractTestRealmKeycloakTest {
             testRealm().flows().removeRequiredAction(WebAuthnRegisterFactory.PROVIDER_ID);
             UserRepresentation user = testRealm().users().search("test-user@localhost").get(0);
             user.setRequiredActions(Collections.emptyList());
-            testRealm().users().get(user.getId()).update(user);;
+            testRealm().users().get(user.getId()).update(user);
         }
     }
 

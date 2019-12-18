@@ -685,6 +685,18 @@ public class AuthenticationProcessor {
         return status == AuthenticationSessionModel.ExecutionStatus.SUCCESS;
     }
 
+    public boolean isEvaluatedTrue(AuthenticationExecutionModel model) {
+        AuthenticationSessionModel.ExecutionStatus status = authenticationSession.getExecutionStatus().get(model.getId());
+        if (status == null) return false;
+        return status == AuthenticationSessionModel.ExecutionStatus.EVALUATED_TRUE;
+    }
+
+    public boolean isEvaluatedFalse(AuthenticationExecutionModel model) {
+        AuthenticationSessionModel.ExecutionStatus status = authenticationSession.getExecutionStatus().get(model.getId());
+        if (status == null) return false;
+        return status == AuthenticationSessionModel.ExecutionStatus.EVALUATED_FALSE;
+    }
+
     public Response handleBrowserExceptionList(AuthenticationFlowException e) {
         LoginFormsProvider forms = session.getProvider(LoginFormsProvider.class).setAuthenticationSession(authenticationSession);
         ServicesLogger.LOGGER.failedAuthentication(e);
