@@ -82,7 +82,7 @@ public class ClientScopesEvaluateForm extends Form {
     @FindBy(tagName = "textarea")
     private WebElement accessTokenTextArea;
 
-    @FindBy(id = "s2id_users")
+    @FindBy(id = "users")
     private ClientSelectModal clientsInput;
 
 
