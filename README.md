@@ -11,7 +11,7 @@ Contributing to Keycloak Documentation
 
 See our [Contributor's Guide](internal_resources/contributing.adoc). The directory also includes a set of templates and other resources to help you get started.
 
-If you want to file a bug report or tell us about any other issue with this documentation, you are invited to please use our [issue tracker](https://issues.jboss.org/projects/KEYCLOAK/).
+If you want to file a bug report or tell us about any other issue with this documentation, you are invited to please use our [issue tracker](https://issues.redhat.com/projects/KEYCLOAK/).
 
 
 Building Keycloak Documentation

@@ -258,7 +258,7 @@ Cross-Datacenter Replication changes::
   * You don't need to configure security anymore in the {jdgserver_name} server configuration file.
 ifeval::[{project_community}==true]
   * There is a need to remove `transaction` element from the configuration of replicated caches in the {jdgserver_name} server
-  configuration file. This is needed because of the infinispan bug https://issues.jboss.org/browse/ISPN-9323.
+  configuration file. This is needed because of the infinispan bug https://issues.redhat.com/browse/ISPN-9323.
 endif::[]
 
 === Migration to 4.3.0

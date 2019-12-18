@@ -321,7 +321,7 @@ Issues related to authorization may exist just for some other versions of {jdgse
                 ...
 ```
 +
-It is currently required to have different configuration files for the JDG servers on both sites as the Infinispan subsystem does not support replacing site names with expressions. See link:https://issues.jboss.org/browse/WFLY-9458[this issue] for more details.
+It is currently required to have different configuration files for the JDG servers on both sites as the Infinispan subsystem does not support replacing site names with expressions. See link:https://issues.redhat.com/browse/WFLY-9458[this issue] for more details.
 
 . Start server `jdg1`:
 +
@@ -716,7 +716,7 @@ The difference between `WARN` and `IGNORE` is, that with `IGNORE` warnings are n
 
 The default configuration is using transaction in NON_DURABLE_XA mode with acquire timeout 0. This means that transaction will fail-fast if there is another transaction in progress for the same key.
 
-The reason to switch this to 0 instead of default 10 seconds was to avoid possible deadlock issues. With {project_name}, it can happen that the same entity (typically session entity or loginFailure) is updated concurrently from both sites. This can cause deadlock under some circumstances, which will cause the transaction to be blocked for 10 seconds. See link:https://issues.jboss.org/browse/JDG-1318[this JIRA report] for details.
+The reason to switch this to 0 instead of default 10 seconds was to avoid possible deadlock issues. With {project_name}, it can happen that the same entity (typically session entity or loginFailure) is updated concurrently from both sites. This can cause deadlock under some circumstances, which will cause the transaction to be blocked for 10 seconds. See link:https://issues.redhat.com/browse/JDG-1318[this JIRA report] for details.
 
 With timeout 0, the transaction will immediately fail and then will be retried from {project_name} if backup `failure-policy` with the value `FAIL` is configured. As long as the second concurrent transaction is finished, the retry will usually be successful and the entity will have applied updates from both concurrent transactions.
 
@@ -863,7 +863,7 @@ of redirects in your browser and you see the errors like this in the {project_na
 +
 it probably means that your load balancer needs to be set to support sticky sessions. Make sure that the provided route name used during startup of {project_name} server (Property `jboss.node.name`) contains the correct name used by the load balancer server to identify the current server.
 
-* If the {jdgserver_name} `work` cache grows indefinitely, you may be experiencing https://issues.jboss.org/browse/JDG-987[this {jdgserver_name} issue],
+* If the {jdgserver_name} `work` cache grows indefinitely, you may be experiencing https://issues.redhat.com/browse/JDG-987[this {jdgserver_name} issue],
 which is caused by cache items not being properly expired. In that case, update the cache declaration with an empty `<expiration />` tag like this:
 +
 ```xml
@@ -882,7 +882,7 @@ which is caused by cache items not being properly expired. In that case, update 
 ```
 +
 you can just ignore them. To avoid the warning, the caches on {jdgserver_name} server side could be changed to transactional caches, but this is not recommended as it can cause some
-other issues caused by the bug https://issues.jboss.org/browse/ISPN-9323. So for now, the warnings just need to be ignored.
+other issues caused by the bug https://issues.redhat.com/browse/ISPN-9323. So for now, the warnings just need to be ignored.
 
 * If you see errors in the {jdgserver_name} server log like:
 +

@@ -75,7 +75,7 @@ When contributing, follow this procedure. Enter commands from the command line o
 . Make your changes
 . (Optional) Enter `git status` now or at any time to see what branch you are on, what files you have changed, and whether those files are staged to be committed.
 . Enter `git add -A` to stage your changes to the commit you are about to make.
-. Enter `git commit -m 'KEYCLOAK-XXXX include meaningful information about changes'` where `KEYCLOAK-XXXX` refers to the link:https://issues.jboss.org/projects/KEYCLOAK/issues[Jira issue] being fixed in this commit (if any) and where you add a short sentence that clearly describes what the commit contains.
+. Enter `git commit -m 'KEYCLOAK-XXXX include meaningful information about changes'` where `KEYCLOAK-XXXX` refers to the link:https://issues.redhat.com/projects/KEYCLOAK/issues[Jira issue] being fixed in this commit (if any) and where you add a short sentence that clearly describes what the commit contains.
 . Follow the steps in the link:https://github.com/keycloak/keycloak-documentation/blob/master/README.md[README] to create a test build locally and confirm that your changes look correct. Make more changes and repeat steps to here, as needed.
 . Enter `git push origin {branchname}` to push your changes to your fork in GitHub.
 . Use the GitHub web interface to create a pull request. First, navigate to your branch in the web UI and click *Compare*. This will show you a diff of the changes. Examine them one more time. If necessary, make more changes locally and repeat the steps to here. When you are ready, click *Create a pull request*. Enter a title and a description with enough detail for reviewers to know what you have changed and why. Click *Submit*.

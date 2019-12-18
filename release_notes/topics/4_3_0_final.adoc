@@ -19,7 +19,7 @@ changes we did were related with trying to optimize the policy evaluation path b
 as soon as they happen. We also introduced a policy decision cache on a per request basis, avoiding redundant decisions from policies
 previously evaluated.
 
-We are also working on other layers of cache which should give a much better experience. See https://issues.jboss.org/browse/KEYCLOAK-7952[KEYCLOAK-7952].
+We are also working on other layers of cache which should give a much better experience. See https://issues.redhat.com/browse/KEYCLOAK-7952[KEYCLOAK-7952].
 
 = Choosing the response mode when obtaining permissions from the server
 
