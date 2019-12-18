@@ -445,7 +445,7 @@ module.controller('RealmThemeCtrl', function($scope, Current, Realm, realm, serv
 
             $scope.supportedLocalesOptions = supportedLocales;
 
-            if (!$scope.realm.supportedLocales) {
+            if (!$scope.realm.supportedLocales || $scope.realm.supportedLocales.length == 0) {
                 $scope.realm.supportedLocales = supportedLocales;
             } else {
                 for (var i = 0; i < $scope.realm.supportedLocales.length; i++) {
