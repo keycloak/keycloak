@@ -22,7 +22,7 @@
                         <ui-select data-ng-model="eventsConfig.eventsListeners" id="eventsListeners" theme="bootstrap" multiple close-on-select="true">
                             <ui-select-match placeholder="{{:: 'select-an-action.placeholder' | translate}}...">{{$item}}</ui-select-match>
                             <ui-select-choices repeat="listener as listener in eventListeners | filter:$select.search">
-                                {{listener}}
+                                <div ng-bind-html="listener | highlight: $select.search"/>
                              </ui-select-choices>
                         </ui-select>
                     </div>
@@ -47,7 +47,7 @@
                         <ui-select data-ng-model="eventsConfig.enabledEventTypes" id="enabledEventTypes" theme="bootstrap" multiple close-on-select="true">
                             <ui-select-match placeholder="{{:: 'select-event-types.placeholder' | translate}}...">{{$item}}</ui-select-match>
                             <ui-select-choices repeat="type as type in eventSelectOptions | filter:$select.search">
-                                {{type}}
+                                <div ng-bind-html="type | highlight: $select.search"/>
                              </ui-select-choices>
                         </ui-select>
                     </div>

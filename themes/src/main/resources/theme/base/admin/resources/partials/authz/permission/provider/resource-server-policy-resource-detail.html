@@ -44,7 +44,7 @@
                         <ui-select-match placeholder="{{:: 'authz-select-resource' | translate}}..." allow-clear="true">{{$select.selected.name}}</ui-select-match>
                         <ui-select-choices minimum-input-length="1" refresh="resourcesUiSelect($select.search)" refresh-delay="500"
                                 repeat="resource as resource in uiSelection.available.resources track by resource._id">
-                            {{resource.name}}
+                            <div ng-bind-html="resource.name | highlight: $select.search"/>
                         </ui-select-choices>
                         <ui-select-no-choice>
                            {{:: 'authz-select-min-character-hint' | translate}}
@@ -79,7 +79,7 @@
                                                 <ui-select-match placeholder="{{:: 'authz-select-a-policy' | translate}}..." allow-clear="true">{{$select.selected.name}}</ui-select-match>
                                                 <ui-select-choices minimum-input-length="1" refresh="policiesUiSelect($select.search)" refresh-delay="500"
                                                         repeat="policy as policy in uiSelection.available.policies">
-                                                    {{policy.name}}
+                                                    <div ng-bind-html="policy.name | highlight: $select.search"/>
                                                 </ui-select-choices>
                                                 <ui-select-no-choice>
                                                     {{:: 'authz-select-min-character-hint' | translate}}

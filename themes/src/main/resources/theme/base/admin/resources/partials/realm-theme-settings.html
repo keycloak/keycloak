@@ -68,7 +68,7 @@
                     <ui-select multiple close-on-select="true" ng-model="realm.supportedLocales" theme="bootstrap" sortable="true" id="supportedLocales">
                         <ui-select-match placeholder="{{:: 'supported-locales.placeholder' | translate}}">{{$item}}</ui-select-match>
                         <ui-select-choices repeat="locale in supportedLocalesOptions | filter:$select.search">
-                            {{locale}}
+                            <div ng-bind-html="locale | highlight: $select.search"/>
                         </ui-select-choices>
                     </ui-select>
                 </div>

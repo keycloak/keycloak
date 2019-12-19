@@ -104,7 +104,7 @@
                     <ui-select multiple close-on-select="true" ng-model="user.requiredActions" theme="bootstrap" id="reqActions">
                         <ui-select-match placeholder="{{:: 'select-an-action.placeholder' | translate}}">{{$item.name}}</ui-select-match>
                         <ui-select-choices repeat="action.alias as action in userReqActionList | filter:$select.search">
-                            {{action.name}}
+                            <div ng-bind-html="action.name | highlight: $select.search"/>
                         </ui-select-choices>
                     </ui-select>
                 </div>

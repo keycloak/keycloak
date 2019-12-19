@@ -37,7 +37,7 @@
                                 <ui-select data-ng-model="query.operationTypes" id="adminEnabledEventOperations" theme="bootstrap" multiple close-on-select="true">
                                     <ui-select-match placeholder="{{:: 'select-operations.placeholder' | translate}}...">{{$item}}</ui-select-match>
                                     <ui-select-choices repeat="operation as operation in adminEnabledEventOperationsOptions | filter:$select.search">
-                                        {{operation}}
+                                        <div ng-bind-html="operation | highlight: $select.search"/>
                                      </ui-select-choices>
                                 </ui-select>
                             </div>
@@ -48,7 +48,7 @@
                                 <ui-select data-ng-model="query.resourceTypes" id="adminEnabledEventResourceTypes" theme="bootstrap" multiple close-on-select="true">
                                     <ui-select-match placeholder="{{:: 'select-resource-types.placeholder' | translate}}...">{{$item}}</ui-select-match>
                                     <ui-select-choices repeat="resource as resource in adminEnabledEventResourceTypesOptions | filter:$select.search">
-                                        {{resource}}
+                                        <div ng-bind-html="resource | highlight: $select.search"/>
                                      </ui-select-choices>
                                 </ui-select>
                             </div>

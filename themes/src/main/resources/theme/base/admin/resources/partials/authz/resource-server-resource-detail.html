@@ -70,7 +70,7 @@
                         <ui-select-match placeholder="{{:: 'authz-select-scope' | translate}}...">{{$item.name}}</ui-select-match>
                         <ui-select-choices minimum-input-length="1" refresh="scopesUiSelect($select.search)" refresh-delay="500"
                                 repeat="scope as scope in uiSelection.available.scopes">
-                            {{scope.name}}
+                            <div ng-bind-html="scope.name | highlight: $select.search"/>
                         </ui-select-choices>
                         <ui-select-no-choice>
                             {{:: 'authz-select-min-character-hint' | translate}}

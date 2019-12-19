@@ -58,7 +58,7 @@
                             data-ng-required="selectedRoles.length == 0">
                         <ui-select-match placeholder="{{:: 'select-a-role' | translate}}..." allow-clear="true">{{$select.selected.name}}</ui-select-match>
                         <ui-select-choices refresh="rolesUiSelect($select.search)" refresh-delay="0" repeat="role as role in uiSelection.available.roles">
-                            <div ng-bind-html="role.name | highlight: $select.search"></div>
+                            <div ng-bind-html="role.name | highlight: $select.search"/>
                         </ui-select-choices>
                         <ui-select-no-choice>
                             {{:: 'authz-select-min-character-hint' | translate}}
@@ -115,7 +115,7 @@
                             data-ng-disabled="!selectedClient" data-ng-required="selectedRoles.length == 0">
                         <ui-select-match placeholder="{{:: 'select-a-role' | translate}}..." allow-clear="true">{{$select.selected.name}}</ui-select-match>
                         <ui-select-choices refresh="clientRolesUiSelect($select.search)" refresh-delay="0" repeat="role as role in uiSelection.available.clientRoles">
-                            <div ng-bind-html="role.name | highlight: $select.search"></div>
+                            <div ng-bind-html="role.name | highlight: $select.search"/>
                         </ui-select-choices>
                         <ui-select-no-choice>
                             {{:: 'authz-select-min-character-hint' | translate}}

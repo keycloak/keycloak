@@ -40,7 +40,7 @@
                             data-ng-required="selectedUsers.length == 0">
                         <ui-select-match placeholder="{{:: 'authz-select-user' | translate}}..." allow-clear="true">{{$select.selected.username}}</ui-select-match>
                         <ui-select-choices minimum-input-length="1" refresh="usersUiSelect($select.search)" refresh-delay="500" repeat="user as user in uiSelection.available.users">
-                            {{user.username}}
+                            <div ng-bind-html="user.username | highlight: $select.search"/>
                         </ui-select-choices>
                         <ui-select-no-choice>
                             {{:: 'authz-select-min-character-hint' | translate}}

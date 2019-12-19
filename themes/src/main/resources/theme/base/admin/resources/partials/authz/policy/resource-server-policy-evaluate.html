@@ -63,7 +63,7 @@
                                     data-ng-required="!authzRequest.roleIds || authzRequest.roleIds.length == 0">
                                 <ui-select-match placeholder="{{:: 'authz-select-user' | translate}}..." allow-clear="true">{{$select.selected.username}}</ui-select-match>
                                 <ui-select-choices minimum-input-length="1" refresh="usersUiSelect($select.search)" refresh-delay="500" repeat="user as user in uiSelection.available.users">
-                                    {{user.username}}
+                                    <div ng-bind-html="user.username | highlight: $select.search"/>
                                 </ui-select-choices>
                                 <ui-select-no-choice>
                                     {{:: 'authz-select-min-character-hint' | translate}}
@@ -83,7 +83,7 @@
                                     data-ng-required="!authzRequest.userId || authzRequest.userId == null" data-ng-change="uiSelection.available.roles=[];">
                                 <ui-select-match placeholder="{{:: 'authz-any-role' | translate}}...">{{$item.name}}</ui-select-match>
                                 <ui-select-choices refresh="rolesUiSelect($select.search)" refresh-delay="0" repeat="role.name as role in uiSelection.available.roles">
-                                    <div ng-bind-html="role.name | highlight: $select.search"></div>
+                                    <div ng-bind-html="role.name | highlight: $select.search"/>
                                 </ui-select-choices>
                                 <ui-select-no-choice>
                                     {{:: 'authz-select-min-character-hint' | translate}}
@@ -186,8 +186,9 @@
                                     id="newResource" theme="bootstrap"
                                     data-ng-required="!applyResourceType && authzRequest.resources.length == 0 && !authzRequest.entitlements">
                                 <ui-select-match placeholder="{{:: 'authz-select-resource' | translate}}..." allow-clear="true">{{$select.selected.name}}</ui-select-match>
-                                <ui-select-choices minimum-input-length="1" refresh="resourcesUiSelect($select.search)" refresh-delay="500" repeat="resource as resource in uiSelection.available.resources track by resource._id">
-                                    {{resource.name}}
+                                <ui-select-choices minimum-input-length="1" refresh="resourcesUiSelect($select.search)" refresh-delay="500"
+                                        repeat="resource as resource in uiSelection.available.resources track by resource._id">
+                                    <div ng-bind-html="resource.name | highlight: $select.search"/>
                                 </ui-select-choices>
                                 <ui-select-no-choice>
                                     {{:: 'authz-select-min-character-hint' | translate}}
@@ -215,7 +216,7 @@
                             <ui-select data-ng-model="uiSelection.selected.newScopes" close-on-select="true" id="reqActions" theme="bootstrap" multiple data-ng-change="uiSelection.available.scopes=[];">
                                 <ui-select-match placeholder="{{:: 'authz-any-scope' | translate}}..." allow-clear="true">{{$item.name}}</ui-select-match>
                                 <ui-select-choices minimum-input-length="1" refresh="scopesUiSelect($select.search)" refresh-delay="500" repeat="scope as scope in uiSelection.available.scopes">
-                                    {{scope.name}}
+                                    <div ng-bind-html="scope.name | highlight: $select.search"/>
                                 </ui-select-choices>
                                 <ui-select-no-choice>
                                     {{:: 'authz-select-min-character-hint' | translate}}
@@ -232,7 +233,7 @@
                             <ui-select data-ng-model="uiSelection.selected.newScopes" close-on-select="true" id="newResource.scopes" theme="bootstrap" multiple>
                                 <ui-select-match placeholder="{{:: 'authz-any-scope' | translate}}...">{{$item.name}}</ui-select-match>
                                 <ui-select-choices repeat="scope.name as scope in scopes">
-                                    {{scope.name}}
+                                    <div ng-bind-html="scope.name | highlight: $select.search"/>
                                 </ui-select-choices>
                             </ui-select>
                         </div>
