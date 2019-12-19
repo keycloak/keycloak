@@ -65,7 +65,7 @@
                 <label class="col-md-2 control-label" for="supportedLocales" class="control-label two-lines">{{:: 'supported-locales' | translate}}</label>
 
                 <div class="col-md-6">
-                    <ui-select multiple close-on-select="false" ng-model="realm.supportedLocales" theme="bootstrap" sortable="true" id="supportedLocales">
+                    <ui-select multiple close-on-select="true" ng-model="realm.supportedLocales" theme="bootstrap" sortable="true" id="supportedLocales">
                         <ui-select-match placeholder="{{:: 'supported-locales.placeholder' | translate}}">{{$item}}</ui-select-match>
                         <ui-select-choices repeat="locale in supportedLocalesOptions | filter:$select.search">
                             {{locale}}

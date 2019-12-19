@@ -17,7 +17,7 @@
             </select>
         </div>
         <div class="col-md-6" data-ng-if="option.type == 'MultivaluedList'">
-            <ui-select data-ng-model="config[ option.name ]" theme="bootstrap" multiple close-on-select="false">
+            <ui-select data-ng-model="config[ option.name ]" theme="bootstrap" multiple close-on-select="true">
                 <ui-select-match placeholder="{{:: 'selectMultiple' | translate}}...">{{$item}}</ui-select-match>
                 <ui-select-choices repeat="item as item in option.options | filter:$select.search">
                     {{item}}

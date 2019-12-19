@@ -50,7 +50,7 @@
             <div class="form-group clearfix" data-ng-show="uiSelection.selected.newResource">
                 <label class="col-md-2 control-label" for="resourceScopes">{{:: 'authz-scopes' | translate}} <span class="required">*</span></label>
                 <div class="col-md-6">
-                    <ui-select data-ng-model="uiSelection.selected.scopes" id="resourceScopes" theme="bootstrap" multiple close-on-select="false"
+                    <ui-select data-ng-model="uiSelection.selected.scopes" id="resourceScopes" theme="bootstrap" multiple close-on-select="true"
                             data-ng-required="uiSelection.selected.newResource != null">
                         <ui-select-match placeholder="{{:: 'authz-any-scope' | translate}}...">{{$item.name}}</ui-select-match>
                         <ui-select-choices repeat="scope as scope in uiSelection.available.resourceScopes | filter:$select.search">
@@ -64,8 +64,8 @@
                 <label class="col-md-2 control-label" for="scopes">{{:: 'authz-scopes' | translate}} <span class="required">*</span></label>
 
                 <div class="col-md-6">
-                    <ui-select data-ng-model="uiSelection.selected.scopes" id="scopes" theme="bootstrap" multiple close-on-select="false"
-                            data-ng-required="uiSelection.selected.newResource == null">
+                    <ui-select data-ng-model="uiSelection.selected.scopes" id="scopes" theme="bootstrap" multiple close-on-select="true"
+                            data-ng-required="uiSelection.selected.newResource == null" data-ng-change="uiSelection.available.scopes=[];">
                         <ui-select-match placeholder="{{:: 'authz-any-scope' | translate}}...">{{$item.name}}</ui-select-match>
                         <ui-select-choices minimum-input-length="1" refresh="scopesUiSelect($select.search)" refresh-delay="500"
                                 repeat="scope as scope in uiSelection.available.scopes">

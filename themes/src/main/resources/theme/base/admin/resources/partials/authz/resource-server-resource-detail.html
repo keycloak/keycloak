@@ -66,7 +66,7 @@
                 <label class="col-md-2 control-label" for="scopes">{{:: 'authz-scopes' | translate}}</label>
 
                 <div class="col-md-6">
-                    <ui-select data-ng-model="resource.scopes" id="scopes" theme="bootstrap" close-on-select="false" multiple>
+                    <ui-select data-ng-model="resource.scopes" id="scopes" theme="bootstrap" close-on-select="true" multiple data-ng-change="uiSelection.available.scopes=[];">
                         <ui-select-match placeholder="{{:: 'authz-select-scope' | translate}}...">{{$item.name}}</ui-select-match>
                         <ui-select-choices minimum-input-length="1" refresh="scopesUiSelect($select.search)" refresh-delay="500"
                                 repeat="scope as scope in uiSelection.available.scopes">

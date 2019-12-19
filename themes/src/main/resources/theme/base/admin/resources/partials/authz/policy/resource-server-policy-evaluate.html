@@ -79,8 +79,8 @@
                                                                                            data-ng-show="!authzRequest.userId || authzRequest.userId == null">*</span></label>
 
                         <div class="col-md-6">
-                            <ui-select multiple close-on-select="false" ng-model="authzRequest.roleIds" theme="bootstrap" id="roles"
-                                    data-ng-required="!authzRequest.userId || authzRequest.userId == null">
+                            <ui-select multiple close-on-select="true" ng-model="authzRequest.roleIds" theme="bootstrap" id="roles"
+                                    data-ng-required="!authzRequest.userId || authzRequest.userId == null" data-ng-change="uiSelection.available.roles=[];">
                                 <ui-select-match placeholder="{{:: 'authz-any-role' | translate}}...">{{$item.name}}</ui-select-match>
                                 <ui-select-choices refresh="rolesUiSelect($select.search)" refresh-delay="0" repeat="role.name as role in uiSelection.available.roles">
                                     <div ng-bind-html="role.name | highlight: $select.search"></div>
@@ -212,7 +212,7 @@
                         <label class="col-md-2 control-label" for="uiSelection.selected.newResource.scopes">{{:: 'authz-scopes' | translate}}</label>
 
                         <div class="col-md-6">
-                            <ui-select data-ng-model="uiSelection.selected.newScopes" close-on-select="false" id="reqActions" theme="bootstrap" multiple>
+                            <ui-select data-ng-model="uiSelection.selected.newScopes" close-on-select="true" id="reqActions" theme="bootstrap" multiple data-ng-change="uiSelection.available.scopes=[];">
                                 <ui-select-match placeholder="{{:: 'authz-any-scope' | translate}}..." allow-clear="true">{{$item.name}}</ui-select-match>
                                 <ui-select-choices minimum-input-length="1" refresh="scopesUiSelect($select.search)" refresh-delay="500" repeat="scope as scope in uiSelection.available.scopes">
                                     {{scope.name}}
@@ -229,7 +229,7 @@
                         <label class="col-md-2 control-label" for="uiSelection.selected.newResource.scopes">{{:: 'authz-scopes' | translate}}</label>
 
                         <div class="col-md-6">
-                            <ui-select data-ng-model="uiSelection.selected.newScopes" close-on-select="false" id="newResource.scopes" theme="bootstrap" multiple>
+                            <ui-select data-ng-model="uiSelection.selected.newScopes" close-on-select="true" id="newResource.scopes" theme="bootstrap" multiple>
                                 <ui-select-match placeholder="{{:: 'authz-any-scope' | translate}}...">{{$item.name}}</ui-select-match>
                                 <ui-select-choices repeat="scope.name as scope in scopes">
                                     {{scope.name}}
