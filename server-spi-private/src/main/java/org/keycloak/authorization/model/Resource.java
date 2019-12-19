@@ -29,6 +29,8 @@ import java.util.Set;
  */
 public interface Resource {
 
+    String EXACT_NAME = "EXACT_NAME";
+
     /**
      * Returns the unique identifier for this instance.
      *

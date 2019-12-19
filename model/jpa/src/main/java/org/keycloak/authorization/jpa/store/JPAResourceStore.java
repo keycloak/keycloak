@@ -217,9 +217,9 @@ public class JPAResourceStore implements ResourceStore {
                 predicates.add(root.get(name).in(value));
             } else if ("scope".equals(name)) {
                 predicates.add(root.join("scopes").get("id").in(value));
-            } else if ("ownerManagedAccess".equals(name)) {
+            } else if ("ownerManagedAccess".equals(name) && value.length > 0) {
                 predicates.add(builder.equal(root.get(name), Boolean.valueOf(value[0])));
-            } else if ("uri".equals(name)) {
+            } else if ("uri".equals(name) && value.length > 0 && value[0] != null) {
                 predicates.add(builder.lower(root.join("uris")).in(value[0].toLowerCase()));
             } else if ("uri_not_null".equals(name)) {
                 // predicates.add(builder.isNotEmpty(root.get("uris"))); looks like there is a bug in hibernate and this line doesn't work: https://hibernate.atlassian.net/browse/HHH-6686
@@ -228,8 +228,13 @@ public class JPAResourceStore implements ResourceStore {
                 predicates.add(builder.notEqual(urisSize, 0));
             } else if ("owner".equals(name)) {
                 predicates.add(root.get(name).in(value));
-            } else {
-                predicates.add(builder.like(builder.lower(root.get(name)), "%" + value[0].toLowerCase() + "%"));
+            } else if (!Resource.EXACT_NAME.equals(name)) {
+                if ("name".equals(name) && attributes.containsKey(Resource.EXACT_NAME) && Boolean.valueOf(attributes.get(Resource.EXACT_NAME)[0]) 
+                        && value.length > 0 && value[0] != null) {
+                    predicates.add(builder.equal(builder.lower(root.get(name)), value[0].toLowerCase()));
+                } else if (value.length > 0 &&  value[0] != null) {
+                    predicates.add(builder.like(builder.lower(root.get(name)), "%" + value[0].toLowerCase() + "%"));
+                }
             }
         });
 

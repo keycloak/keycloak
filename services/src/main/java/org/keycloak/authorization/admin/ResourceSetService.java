@@ -335,10 +335,11 @@ public class ResourceSetService {
                          @QueryParam("type") String type,
                          @QueryParam("scope") String scope,
                          @QueryParam("matchingUri") Boolean matchingUri,
+                         @QueryParam("exactName") Boolean exactName,
                          @QueryParam("deep") Boolean deep,
                          @QueryParam("first") Integer firstResult,
                          @QueryParam("max") Integer maxResult) {
-        return find(id, name, uri, owner, type, scope, matchingUri, deep, firstResult, maxResult, (BiFunction<Resource, Boolean, ResourceRepresentation>) (resource, deep1) -> toRepresentation(resource, resourceServer, authorization, deep1));
+        return find(id, name, uri, owner, type, scope, matchingUri, exactName, deep, firstResult, maxResult, (BiFunction<Resource, Boolean, ResourceRepresentation>) (resource, deep1) -> toRepresentation(resource, resourceServer, authorization, deep1));
     }
 
     public Response find(@QueryParam("_id") String id,
@@ -348,6 +349,7 @@ public class ResourceSetService {
                          @QueryParam("type") String type,
                          @QueryParam("scope") String scope,
                          @QueryParam("matchingUri") Boolean matchingUri,
+                         @QueryParam("exactName") Boolean exactName,
                          @QueryParam("deep") Boolean deep,
                          @QueryParam("first") Integer firstResult,
                          @QueryParam("max") Integer maxResult,
@@ -368,6 +370,10 @@ public class ResourceSetService {
 
         if (name != null && !"".equals(name.trim())) {
             search.put("name", new String[] {name});
+            
+            if (exactName != null && exactName) {
+                search.put(Resource.EXACT_NAME, new String[] {Boolean.TRUE.toString()});
+            }
         }
 
         if (uri != null && !"".equals(uri.trim())) {
