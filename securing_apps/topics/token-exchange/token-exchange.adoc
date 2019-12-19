@@ -7,6 +7,11 @@
 :tech_feature_setting: -Dkeycloak.profile.feature.token_exchange=enabled
 include::../templates/techpreview.adoc[]
 
+[NOTE]
+====
+In order to use token exchange you should also enable the `admin_fine_grained_authz` feature. Please, take a look at link:{installguide_profile_link}[{installguide_profile_name}]. 
+====
+
 In {project_name}, token exchange is the process of using a set of credentials or token to obtain an entirely different token.
 A client may want to invoke on a less trusted application so it may want to downgrade the current token it has.
 A client may want to exchange a {project_name} token for a token stored for a linked social provider account.
