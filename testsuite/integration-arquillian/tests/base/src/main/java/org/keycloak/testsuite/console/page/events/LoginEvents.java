@@ -85,7 +85,7 @@ public class LoginEvents extends Events {
 
             public void addEventType(String type) {
                 eventTypeInput.click();
-                eventTypeOptions.findElement(By.xpath("./li/div[contains(@class, 'ui-select-choices-row')]/span[normalize-space(text())='" + type + "']")).click();
+                eventTypeOptions.findElement(By.xpath("./li/div[contains(@class, 'ui-select-choices-row')]//div[normalize-space(text())='" + type + "']")).click();
             }
 
             public void removeEventType(String type) {

@@ -105,7 +105,7 @@ public class AdminEvents extends Events {
 
             public void addOperationType(String type) {
                 operationTypesInput.click();
-                operationTypesValues.findElement(By.xpath("./li/div[contains(@class, 'ui-select-choices-row')]/span[normalize-space(text())='"+type+"']")).click();
+                operationTypesValues.findElement(By.xpath("./li/div[contains(@class, 'ui-select-choices-row')]//div[normalize-space(text())='"+type+"']")).click();
             }
 
             public void removeOperationType(String type) {
@@ -114,7 +114,7 @@ public class AdminEvents extends Events {
 
             public void addResourceType(String type) {
                 resourceTypesInput.click();
-                resourceTypesValues.findElement(By.xpath("./li/div[contains(@class, 'ui-select-choices-row')]/span[normalize-space(text())='"+type+"']")).click();
+                resourceTypesValues.findElement(By.xpath("./li/div[contains(@class, 'ui-select-choices-row')]//div[normalize-space(text())='"+type+"']")).click();
             }
 
             public void removeResourceType(String type) {

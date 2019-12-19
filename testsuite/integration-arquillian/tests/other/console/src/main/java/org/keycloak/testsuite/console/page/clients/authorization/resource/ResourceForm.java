@@ -173,7 +173,7 @@ public class ResourceForm extends Form {
         public void select(String name) {
             UIUtils.setTextInputValue(scopeInput, name);
             pause(1000);
-            scopeOptions.findElement(By.xpath("./li/div[contains(@class, 'ui-select-choices-row')]/span[normalize-space(text())='" + name + "']")).click();
+            scopeOptions.findElement(By.xpath("./li/div[contains(@class, 'ui-select-choices-row')]//span[normalize-space(text())='" + name + "']")).click();
         }
 
         public Set<ScopeRepresentation> getSelected() {

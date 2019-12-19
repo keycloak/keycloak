@@ -87,7 +87,7 @@ public class Config extends Events {
 
         public void addEventListener(String listener) {
             eventsListenersInput.click();
-            eventsListenersOptions.findElement(By.xpath("./li/div[contains(@class, 'ui-select-choices-row')]/span[normalize-space(text())='" + listener + "']")).click();
+            eventsListenersOptions.findElement(By.xpath("./li/div[contains(@class, 'ui-select-choices-row')]//div[normalize-space(text())='" + listener + "']")).click();
         }
 
         public void removeEventListener(String listener) {
@@ -100,7 +100,7 @@ public class Config extends Events {
 
         public void addSaveType(String type) {
             savedTypesInput.click();
-            savedTypesOptions.findElement(By.xpath("./li/div[contains(@class, 'ui-select-choices-row')]/span[normalize-space(text())='"+type+"']")).click();
+            savedTypesOptions.findElement(By.xpath("./li/div[contains(@class, 'ui-select-choices-row')]//div[normalize-space(text())='"+type+"']")).click();
         }
 
         public void removeSaveType(String type) {
