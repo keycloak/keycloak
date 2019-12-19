@@ -33,7 +33,7 @@ import { InfoAltIcon, CheckIcon, LinkIcon, BuilderImageIcon } from '@patternfly/
 import { ContentPage } from '../ContentPage';
 import { ContinueCancelModal } from '../../widgets/ContinueCancelModal';
 import { AccountServiceClient } from '../../account-service/account.service';
-import {Msg} from '../../widgets/Msg';
+import { Msg } from '../../widgets/Msg';
 
 declare const locale: string;
 
@@ -122,11 +122,11 @@ export class ApplicationsPage extends React.Component<ApplicationsPageProps, App
                   <DataListItemCells
                     dataListCells={[
                       <DataListCell width={2} key={'app-' + appIndex}>
-                        <BuilderImageIcon size='sm'/> {application.clientName ? application.clientName : application.clientId}
+                        <BuilderImageIcon size='sm' /> {application.clientName ? application.clientName : application.clientId}
                       </DataListCell>,
                       <DataListCell width={2} key={'internal-' + appIndex}>
                         {application.userConsentRequired ? Msg.localize('thirdPartyApp') : Msg.localize('internalApp')}
-                          {application.offlineAccess ? ', ' + Msg.localize('offlineAccess') : ''}
+                        {application.offlineAccess ? ', ' + Msg.localize('offlineAccess') : ''}
                       </DataListCell>,
                       <DataListCell width={2} key={'status-' + appIndex}>
                         {application.inUse ? Msg.localize('inUse') : Msg.localize('notInUse')}
@@ -144,52 +144,54 @@ export class ApplicationsPage extends React.Component<ApplicationsPageProps, App
                   isHidden={!this.state.isRowOpen[appIndex]}
                 >
                   <Grid sm={12} md={12} lg={12}>
-                  <div className='pf-c-content'>
-                    <GridItem><strong>{Msg.localize('client') + ': '}</strong> {application.clientId}</GridItem>
-                    {application.description &&
-                      <GridItem><strong>{Msg.localize('description') + ': '}</strong> {application.description}</GridItem>
-                    }
-                    <GridItem><strong>{Msg.localize('baseUrl') + ': '}</strong> {application.baseUrl}</GridItem>
-                    {application.consent &&
-                      <React.Fragment>
-                        <GridItem span={12}>
-                          <strong>Has access to:</strong>
-                        </GridItem>
-                        {application.consent.grantedScopes.map((scope: GrantedScope, scopeIndex: number) => {
-                          return (
-                            <React.Fragment key={'scope-' + scopeIndex} >
-                              <GridItem offset={1}><CheckIcon /> {scope.name}</GridItem>
-                            </React.Fragment>
-                          )
-                        })}
-                        <GridItem><strong>{Msg.localize('accessGrantedOn') + ': '}</strong>
-                          {new Intl.DateTimeFormat(locale, {
-                            year: 'numeric',
-                            month: 'long',
-                            day: 'numeric',
-                            hour: 'numeric',
-                            minute: 'numeric',
-                            second: 'numeric'
-                          }).format(application.consent.createDate)}
-                        </GridItem>
-                      </React.Fragment>
-                    }
-              </div>
-              </Grid>
+                    <div className='pf-c-content'>
+                      <GridItem><strong>{Msg.localize('client') + ': '}</strong> {application.clientId}</GridItem>
+                      {application.description &&
+                        <GridItem><strong>{Msg.localize('description') + ': '}</strong> {application.description}</GridItem>
+                      }
+                      <GridItem><strong>{Msg.localize('baseUrl') + ': '}</strong> {application.baseUrl}</GridItem>
+                      {application.consent &&
+                        <React.Fragment>
+                          <GridItem span={12}>
+                            <strong>Has access to:</strong>
+                          </GridItem>
+                          {application.consent.grantedScopes.map((scope: GrantedScope, scopeIndex: number) => {
+                            return (
+                              <React.Fragment key={'scope-' + scopeIndex} >
+                                <GridItem offset={1}><CheckIcon /> {scope.name}</GridItem>
+                              </React.Fragment>
+                            )
+                          })}
+                          <GridItem><strong>{Msg.localize('accessGrantedOn') + ': '}</strong>
+                            {new Intl.DateTimeFormat(locale, {
+                              year: 'numeric',
+                              month: 'long',
+                              day: 'numeric',
+                              hour: 'numeric',
+                              minute: 'numeric',
+                              second: 'numeric'
+                            }).format(application.consent.createDate)}
+                          </GridItem>
+                        </React.Fragment>
+                      }
+                    </div>
+                  </Grid>
                   <Grid gutter='sm'>
                     <hr />
-                    <GridItem>
-                      <React.Fragment>
-                        <ContinueCancelModal
-                          buttonTitle={Msg.localize('removeButton')} // required
-                          buttonVariant='secondary' // defaults to 'primary'
-                          modalTitle={Msg.localize('removeModalTitle')} // required
-                          modalMessage={Msg.localize('removeModalMessage', [application.clientId])}
-                          modalContinueButtonLabel={Msg.localize('confirmButton')} // defaults to 'Continue'
-                          onContinue={() => this.removeConsent(application.clientId)} // required
-                        />
-                      </React.Fragment>
-                    </GridItem>
+                    {application.consent &&
+                      <GridItem>
+                        <React.Fragment>
+                          <ContinueCancelModal
+                            buttonTitle={Msg.localize('removeButton')} // required
+                            buttonVariant='secondary' // defaults to 'primary'
+                            modalTitle={Msg.localize('removeModalTitle')} // required
+                            modalMessage={Msg.localize('removeModalMessage', [application.clientId])}
+                            modalContinueButtonLabel={Msg.localize('confirmButton')} // defaults to 'Continue'
+                            onContinue={() => this.removeConsent(application.clientId)} // required
+                          />
+                        </React.Fragment>
+                      </GridItem>
+                    }
                     <GridItem><InfoAltIcon /> {Msg.localize('infoMessage')}</GridItem>
                   </Grid>
                 </DataListContent>
