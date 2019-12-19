@@ -95,12 +95,6 @@ public abstract class AbstractMultipleSelect2<R> {
         for (WebElement result : result) {
             if (result.getText().equalsIgnoreCase(id)) {
                 clickLink(result);
-
-                // Send escape as a workaround to close option list in multi selects.
-                // Otherwise, other elements might be hidden (e.g. RequiredUserActionsTest -> submit button)
-                if (search.isDisplayed()) {
-                    search.sendKeys(Keys.ESCAPE);
-                }
                 return;
             }
         }
