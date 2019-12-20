@@ -201,56 +201,9 @@ experience. To correct this, you could:
 
 ifeval::[{project_community}==true]
 === Script Authenticator
-A _script_ authenticator allows to define custom authentication logic via JavaScript.
-Custom authenticators. In order to make use of this feature, it must be explicitly enabled:
-[source]
-----
-bin/standalone.sh|bat -Dkeycloak.profile.feature.scripts=enabled
-----
-For more information, see the link:{installguide_profile_link}[{installguide_profile_name}] section.
 
-Authentication scripts must at least provide one of the following functions:
-`authenticate(..)` which is called from `Authenticator#authenticate(AuthenticationFlowContext)`
-`action(..)` which is called from `Authenticator#action(AuthenticationFlowContext)`
+Ability to upload scripts through the Admin Console and REST endpoints is deprecated.
 
-Custom `Authenticator` should at least provide the `authenticate(..)` function.
-The following script `javax.script.Bindings` are available for convenient use within script code.
+For more details see link:{developerguide_jsproviders_link}[{developerguide_jsproviders_name}].
 
-`script`::
-  the `ScriptModel` to access script metadata
-`realm`::
-  the `RealmModel`
-`user`::
-  the current `UserModel`
-`session`::
-  the active `KeycloakSession`
-`authenticationSession`::
-  the current `AuthenticationSessionModel`
-`httpRequest`::
-  the current `org.jboss.resteasy.spi.HttpRequest`
-`LOG`::
-a `org.jboss.logging.Logger` scoped to `ScriptBasedAuthenticator`
-
-Note that additional context information can be extracted from the `context` argument passed
-to the `authenticate(context)` `action(context)` function.
-
-[source,javascript]
-----
-AuthenticationFlowError = Java.type("org.keycloak.authentication.AuthenticationFlowError");
-
-function authenticate(context) {
-
-  LOG.info(script.name + " --> trace auth for: " + user.username);
-
-  if (   user.username === "tester"
-      && user.getAttribute("someAttribute")
-      && user.getAttribute("someAttribute").contains("someValue")) {
-
-      context.failure(AuthenticationFlowError.INVALID_USER);
-      return;
-  }
-
-  context.success();
-}
-----
 endif::[]

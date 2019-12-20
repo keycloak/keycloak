@@ -308,11 +308,57 @@ public class EjbExampleUserStorageProviderFactory
 
 {project_name} has the ability to execute scripts during runtime in order to allow administrators to customize specific functionalities:
 
-* OpenID Connect Script Protocol Mapper
-* OpenID Connect Script Authenticator
+* Authenticator
 * JavaScript Policy
+* OpenID Connect Protocol Mapper
 
-==== Create a JAR with the scripts you want to deploy
+==== Authenticator
+
+Authentication scripts must provide at least one of the following functions:
+`authenticate(..)`, which is called from `Authenticator#authenticate(AuthenticationFlowContext)`
+`action(..)`, which is called from `Authenticator#action(AuthenticationFlowContext)`
+
+Custom `Authenticator` should at least provide the `authenticate(..)` function.
+You can use the `javax.script.Bindings` script within the code.
+
+`script`::
+the `ScriptModel` to access script metadata
+`realm`::
+the `RealmModel`
+`user`::
+the current `UserModel`
+`session`::
+the active `KeycloakSession`
+`authenticationSession`::
+the current `AuthenticationSessionModel`
+`httpRequest`::
+the current `org.jboss.resteasy.spi.HttpRequest`
+`LOG`::
+a `org.jboss.logging.Logger` scoped to `ScriptBasedAuthenticator`
+
+NOTE: You can extract additional context information from the `context` argument passed to the `authenticate(context)` `action(context)` function.
+
+[source,javascript]
+----
+AuthenticationFlowError = Java.type("org.keycloak.authentication.AuthenticationFlowError");
+
+function authenticate(context) {
+
+  LOG.info(script.name + " --> trace auth for: " + user.username);
+
+  if (   user.username === "tester"
+      && user.getAttribute("someAttribute")
+      && user.getAttribute("someAttribute").contains("someValue")) {
+
+      context.failure(AuthenticationFlowError.INVALID_USER);
+      return;
+  }
+
+  context.success();
+}
+----
+
+==== Create a JAR with the scripts to deploy
 
 NOTE: JAR files are regular ZIP files with a `.jar` extension.
 
@@ -391,19 +437,14 @@ Once you have a JAR file with a descriptor and the scripts you want to deploy, y
 
 ==== Using {project_name} Administration Console to upload scripts
 
-By default, the {project_name} Administration Console won't allow administrators to upload scripts to the server. The reason is that
-script execution can potentially harm the system due to the execution of malicious scripts. In order to prevent different types of
-attacks and lower the risks when running scripts at runtime, administrators should prefer deploying scripts directly to the server using a JAR file.
+NOTE: Ability to upload scripts through the admin console is deprecated and will be removed in a future version of {project_name}
 
-By deploying scripts directly into the server, we expect that scripts go through a proper code analysis in order to find possible
-vulnerabilities that can be introduced by any script deployed to the server.
+Administrators cannot upload scripts to the server. This behavior prevents potential harm to the system in case
+malicious scripts are accidentally executed. Administrators should always deploy scripts directly to the server using a
+JAR file to prevent attacks when you run scripts at runtime.
 
-However, it should still be possible to upload scripts to the server through the {project_name} Administration Console. For that,
-you must set the following system property when booting the server:
-
-```bash
-    -Dkeycloak.profile.feature.upload_scripts=enabled
-```
+Ability to upload scripts can be explicitly enabled. This should be used with great care and plans should be created to
+deploy all scripts directly to the server as soon as possible.
 
 For more details about how to enable the `upload_scripts` feature. Please, take a look at the link:{installguide_profile_link}[{installguide_profile_name}].
 
