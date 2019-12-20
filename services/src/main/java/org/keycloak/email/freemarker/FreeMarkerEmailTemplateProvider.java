@@ -38,6 +38,7 @@ import org.keycloak.email.freemarker.beans.EventBean;
 import org.keycloak.email.freemarker.beans.ProfileBean;
 import org.keycloak.events.Event;
 import org.keycloak.events.EventType;
+import org.keycloak.forms.login.freemarker.model.UrlBean;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakUriInfo;
 import org.keycloak.models.RealmModel;
@@ -46,7 +47,6 @@ import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.theme.FreeMarkerException;
 import org.keycloak.theme.FreeMarkerUtil;
 import org.keycloak.theme.Theme;
-import org.keycloak.forms.login.freemarker.model.UrlBean;
 import org.keycloak.theme.beans.LinkExpirationFormatterMethod;
 import org.keycloak.theme.beans.MessageFormatterMethod;
 
@@ -219,7 +219,7 @@ public class FreeMarkerEmailTemplateProvider implements EmailTemplateProvider {
                 textBody = freeMarker.processTemplate(attributes, textTemplate, theme);
             } catch (final FreeMarkerException e) {
                 textBody = null;
-                logger.warn("Failed to template plain text email.", e);
+                throw new EmailException("Failed to template plain text email.", e);
             }
             String htmlTemplate = String.format("html/%s", template);
             String htmlBody;
@@ -227,11 +227,7 @@ public class FreeMarkerEmailTemplateProvider implements EmailTemplateProvider {
                 htmlBody = freeMarker.processTemplate(attributes, htmlTemplate, theme);
             } catch (final FreeMarkerException e) {
                 htmlBody = null;
-                logger.warn("Failed to template html email.", e);
-            }
-
-            if (textBody == null && htmlBody == null) {
-            	throw new EmailException("Both plain text and html are empty!");
+                throw new EmailException("Failed to template html email.", e);
             }
 
             return new EmailTemplate(subject, textBody, htmlBody);
