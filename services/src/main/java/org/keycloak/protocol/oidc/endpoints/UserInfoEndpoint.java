@@ -59,6 +59,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -119,6 +120,12 @@ public class UserInfoEndpoint {
         return issueUserInfo(accessToken);
     }
 
+    private ErrorResponseException newUnauthorizedErrorResponseException(String oauthError, String errorMessage) {
+        // See: https://openid.net/specs/openid-connect-core-1_0.html#UserInfoError
+        response.getOutputHeaders().put(HttpHeaders.WWW_AUTHENTICATE, Collections.singletonList(String.format("Bearer realm=\"%s\", error=\"%s\", error_description=\"%s\"", realm.getName(), oauthError, errorMessage)));
+        return new ErrorResponseException(oauthError, errorMessage, Response.Status.UNAUTHORIZED);
+    }
+
     private Response issueUserInfo(String tokenString) {
         EventBuilder event = new EventBuilder(realm, session, clientConnection)
                 .event(EventType.USER_INFO_REQUEST)
@@ -140,7 +147,7 @@ public class UserInfoEndpoint {
             token = verifier.verify().getToken();
         } catch (VerificationException e) {
             event.error(Errors.INVALID_TOKEN);
-            throw new ErrorResponseException(OAuthErrorException.INVALID_TOKEN, "Token invalid: " + e.getMessage(), Response.Status.UNAUTHORIZED);
+            throw newUnauthorizedErrorResponseException(OAuthErrorException.INVALID_TOKEN, "Token verification failed");
         }
 
         ClientModel clientModel = realm.getClientByClientId(token.getIssuedFor());
@@ -179,7 +186,7 @@ public class UserInfoEndpoint {
         if (OIDCAdvancedConfigWrapper.fromClientModel(clientModel).isUseMtlsHokToken()) {
             if (!MtlsHoKTokenUtil.verifyTokenBindingWithClientCertificate(token, request, session)) {
                 event.error(Errors.NOT_ALLOWED);
-                throw new ErrorResponseException(OAuthErrorException.UNAUTHORIZED_CLIENT, "Client certificate missing, or its thumbprint and one in the refresh token did NOT match", Response.Status.UNAUTHORIZED);
+                throw newUnauthorizedErrorResponseException(OAuthErrorException.UNAUTHORIZED_CLIENT, "Client certificate missing, or its thumbprint and one in the refresh token did NOT match");
             }
         }
 
@@ -246,7 +253,7 @@ public class UserInfoEndpoint {
 
         if (userSession == null && offlineUserSession == null) {
             event.error(Errors.USER_SESSION_NOT_FOUND);
-            throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "User session not found or doesn't have client attached on it", Response.Status.UNAUTHORIZED);
+            throw newUnauthorizedErrorResponseException(OAuthErrorException.INVALID_REQUEST, "User session not found or doesn't have client attached on it");
         }
 
         if (userSession != null) {
@@ -256,13 +263,13 @@ public class UserInfoEndpoint {
         }
 
         event.error(Errors.SESSION_EXPIRED);
-        throw new ErrorResponseException(OAuthErrorException.INVALID_TOKEN, "Session expired", Response.Status.UNAUTHORIZED);
+        throw newUnauthorizedErrorResponseException(OAuthErrorException.INVALID_TOKEN, "Session expired");
     }
 
     private void checkTokenIssuedAt(AccessToken token, UserSessionModel userSession, EventBuilder event) throws ErrorResponseException {
         if (token.getIssuedAt() + 1 < userSession.getStarted()) {
             event.error(Errors.INVALID_TOKEN);
-            throw new ErrorResponseException(OAuthErrorException.INVALID_TOKEN, "Stale token", Response.Status.UNAUTHORIZED);
+            throw newUnauthorizedErrorResponseException(OAuthErrorException.INVALID_TOKEN, "Stale token");
         }
     }
 }
