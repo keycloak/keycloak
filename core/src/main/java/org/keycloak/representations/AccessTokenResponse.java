@@ -20,6 +20,8 @@ package org.keycloak.representations;
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import org.keycloak.json.AccessTokenResponseScopeDeserializer;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -59,6 +61,7 @@ public class AccessTokenResponse {
 
     // OIDC Financial API Read Only Profile : scope MUST be returned in the response from Token Endpoint
     @JsonProperty("scope")
+    @JsonDeserialize(using = AccessTokenResponseScopeDeserializer.class)
     protected String scope;
 
     public String getScope() {
