@@ -18,7 +18,7 @@ By default the database is automatically migrated when you start {project_name} 
 
 [[automatic-db-migration]]
 ==== Automatic Database Migration
-This process assumes that you are link:https://access.redhat.com/documentation/en-us/red_hat_jboss_middleware_for_openshift/3/html-single/red_hat_single_sign-on_for_openshift/index#Example-Deploying-SSO[running] some previous version of the {project_openshift_product_name} image, backed by MySQL or PostgreSQL database (deployed in ephemeral or persistent mode), running on a separate pod.
+This process assumes that you are link:{openshift_link}#Example-Deploying-SSO[running] some previous version of the {project_openshift_product_name} image, backed by MySQL or PostgreSQL database (deployed in ephemeral or persistent mode), running on a separate pod.
 
 [IMPORTANT]
 ====
@@ -97,7 +97,7 @@ See link:https://access.redhat.com/documentation/en-us/red_hat_single_sign-on/7.
 The database migration process handles the data schema update and performs manipulation of the data, therefore, stop all pods running the previous version of the {project_openshift_product_name} image before dynamic generation of the SQL migration file.
 ====
 
-This process assumes that you are link:https://access.redhat.com/documentation/en-us/red_hat_jboss_middleware_for_openshift/3/html-single/red_hat_single_sign-on_for_openshift/index#Example-Deploying-SSO[running] some previous version of the {project_openshift_product_name} image, backed by MySQL or PostgreSQL database (deployed in ephemeral or persistent mode), running on a separate pod.
+This process assumes that you are link:{openshift_link}#Example-Deploying-SSO[running] some previous version of the {project_openshift_product_name} image, backed by MySQL or PostgreSQL database (deployed in ephemeral or persistent mode), running on a separate pod.
 
 Perform the following to generate and get the SQL migration file for the database:
 
@@ -810,7 +810,7 @@ The following example uses both link:https://github.com/keycloak/keycloak-quicks
 
 [IMPORTANT]
 ====
-This guide assumes the {project_openshift_product_name} image has been previously link:https://access.redhat.com/documentation/en-us/red_hat_jboss_middleware_for_openshift/3/html-single/red_hat_single_sign-on_for_openshift/index#Example-Deploying-SSO[deployed using one of the following templates:]
+This guide assumes the {project_openshift_product_name} image has been previously link:{openshift_link}#Example-Deploying-SSO[deployed using one of the following templates:]
 
 * *_{project_templates_version}-mysql_*
 * *_{project_templates_version}-mysql-persistent_*
@@ -906,7 +906,7 @@ $ oc new-project eap-app-demo
 ----
 $ oc policy add-role-to-user view system:serviceaccount:$(oc project -q):default
 ----
-. The EAP template requires an link:https://access.redhat.com/documentation/en-us/red_hat_jboss_middleware_for_openshift/3/html-single/red_hat_single_sign-on_for_openshift/index#Configuring-Keystores[SSL keystore and a JGroups keystore]. This example uses `keytool`, a package included with the Java Development Kit, to generate self-signed certificates for these keystores.
+. The EAP template requires an link:{openshift_link}#Configuring-Keystores[SSL keystore and a JGroups keystore]. This example uses `keytool`, a package included with the Java Development Kit, to generate self-signed certificates for these keystores.
 .. Generate a secure key for the SSL keystore (this example uses `password` as password for the keystore).
 +
 [source,bash,subs="attributes+,macros+"]

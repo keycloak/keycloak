@@ -7,3 +7,4 @@ server_development=server_developer_guide
 server_installation=server_installation_and_configuration_guide
 upgrading=upgrading_guide
 release_notes=release_notes
+openshift=red_hat_single_sign-on_for_openshift

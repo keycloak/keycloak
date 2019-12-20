@@ -36,11 +36,9 @@ ifeval::[{project_community}==true]
 
 ==== Android
 * https://github.com/openid/AppAuth-Android[AppAuth] (generic)
-* https://github.com/aerogear/aerogear-android-authz[AeroGear] (generic)
 
 ==== iOS
 * https://github.com/openid/AppAuth-iOS[AppAuth] (generic)
-* https://github.com/aerogear/aerogear-ios-oauth2[AeroGear] (generic)
 
 ===== Apache HTTP Server
 * https://github.com/zmartzone/mod_auth_openidc[mod_auth_openidc]

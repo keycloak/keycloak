@@ -8,47 +8,6 @@ include::topics/templates/document-attributes-product.adoc[]
 
 = {releasenotes_name}
 
-ifeval::[{project_product_cd}==false]
+== {project_name_full} 7.3.0.GA
 
-== {project_name_full} 7.3
-
-include::topics/7_3_final.adoc[leveloffset=2]
-
-endif::[]
-
-ifeval::[{project_product_cd}==true]
-
-== {project_name_full} 8
-
-include::topics/8_0_0.adoc[leveloffset=2]
-
-== {project_name_full} 7
-
-include::topics/7_0_0.adoc[leveloffset=2]
-
-== {project_name_full} 6
-
-include::topics/6_0_0.adoc[leveloffset=2]
-
-== {project_name_full} 7.3.CD05
-
-include::topics/5_0_0.adoc[leveloffset=2]
-include::topics/4_8_0_final.adoc[leveloffset=2]
-include::topics/4_7_0_final.adoc[leveloffset=2]
-
-== {project_name_full} 7.3.CD04
-
-include::topics/4_6_0_final.adoc[leveloffset=2]
-include::topics/4_5_0_final.adoc[leveloffset=2]
-include::topics/4_4_0_final.adoc[leveloffset=2]
-
-== {project_name_full} 7.3.CD03
-
-include::topics/4_3_0_final.adoc[leveloffset=2]
-include::topics/4_2_0_final.adoc[leveloffset=2]
-include::topics/4_1_0_final.adoc[leveloffset=2]
-
-== {project_name_full} 7.3.CD02
-include::topics/4_0_0_final.adoc[leveloffset=2]
-include::topics/4_0_0_beta3.adoc[leveloffset=2]
-endif::[]
+include::topics/product/7_3_final.adoc[leveloffset=2]
