@@ -96,7 +96,7 @@ public class Keycloak implements AutoCloseable {
     }
 
     public static Keycloak getInstance(String serverUrl, String realm, String username, String password, String clientId, String clientSecret, SSLContext sslContext, ResteasyJackson2Provider customJacksonProvider) {
-        return getInstance(serverUrl, realm, username, password, clientId, clientSecret, sslContext, null, false, null);
+        return getInstance(serverUrl, realm, username, password, clientId, clientSecret, sslContext, customJacksonProvider, false, null);
     }
 
     public static Keycloak getInstance(String serverUrl, String realm, String username, String password, String clientId) {
