@@ -46,14 +46,12 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
-
 /**
  * Keycloak authentication base integration for Spring Boot - base to be extended for particular boot versions.
  */
 public class KeycloakBaseSpringBootConfiguration {
-
 	
-	protected KeycloakSpringBootProperties keycloakProperties;
+    protected KeycloakSpringBootProperties keycloakProperties;
 
     @Autowired
     public void setKeycloakSpringBootProperties(KeycloakSpringBootProperties keycloakProperties, KeycloakSpringBootConfigResolver resolver) {
@@ -109,7 +107,7 @@ public class KeycloakBaseSpringBootConfiguration {
             }
             deploymentInfo.addServletExtension(new KeycloakServletExtension());
         }
-      
+
         private List<io.undertow.servlet.api.SecurityConstraint> getSecurityConstraints() {
 
             List<io.undertow.servlet.api.SecurityConstraint> undertowSecurityConstraints = new ArrayList<io.undertow.servlet.api.SecurityConstraint>();
@@ -134,7 +132,7 @@ public class KeycloakBaseSpringBootConfiguration {
             return undertowSecurityConstraints;
         }
     }
-    
+
     static class KeycloakBaseJettyServerCustomizer {
 
         protected final KeycloakSpringBootProperties keycloakProperties;
