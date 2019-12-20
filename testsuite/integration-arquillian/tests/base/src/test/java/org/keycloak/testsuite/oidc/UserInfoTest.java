@@ -16,11 +16,13 @@
  */
 package org.keycloak.testsuite.oidc;
 
+import org.hamcrest.CoreMatchers;
 import org.hamcrest.Matchers;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.OAuthErrorException;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
@@ -71,6 +73,8 @@ import java.util.Collections;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThat;
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 import static org.keycloak.testsuite.util.OAuthClient.AUTH_SERVER_ROOT;
 
@@ -296,11 +300,17 @@ public class UserInfoTest extends AbstractKeycloakTest {
         try {
             AccessTokenResponse accessTokenResponse = executeGrantAccessTokenRequest(client);
 
-            testingClient.testing().removeUserSessions("test");
+            String realmName = "test";
+            testingClient.testing().removeUserSessions(realmName);
 
             Response response = UserInfoClientUtil.executeUserInfoRequest_getMethod(client, accessTokenResponse.getToken());
 
             assertEquals(Status.UNAUTHORIZED.getStatusCode(), response.getStatus());
+            String wwwAuthHeader = response.getHeaderString(HttpHeaders.WWW_AUTHENTICATE);
+            assertNotNull(wwwAuthHeader);
+            assertThat(wwwAuthHeader, CoreMatchers.containsString("Bearer"));
+            assertThat(wwwAuthHeader, CoreMatchers.containsString("realm=\"" + realmName + "\""));
+            assertThat(wwwAuthHeader, CoreMatchers.containsString("error=\"" + OAuthErrorException.INVALID_REQUEST + "\""));
 
             response.close();
 
@@ -328,6 +338,11 @@ public class UserInfoTest extends AbstractKeycloakTest {
             Response response = UserInfoClientUtil.executeUserInfoRequest_getMethod(client, accessTokenResponse.getToken());
 
             assertEquals(Status.UNAUTHORIZED.getStatusCode(), response.getStatus());
+
+            String wwwAuthHeader = response.getHeaderString(HttpHeaders.WWW_AUTHENTICATE);
+            assertNotNull(wwwAuthHeader);
+            assertThat(wwwAuthHeader, CoreMatchers.containsString("Bearer"));
+            assertThat(wwwAuthHeader, CoreMatchers.containsString("error=\"" + OAuthErrorException.INVALID_TOKEN + "\""));
 
             response.close();
 
@@ -366,6 +381,11 @@ public class UserInfoTest extends AbstractKeycloakTest {
             Response response = UserInfoClientUtil.executeUserInfoRequest_getMethod(client, accessTokenResponse.getAccessToken());
 
             assertEquals(Status.UNAUTHORIZED.getStatusCode(), response.getStatus());
+
+            String wwwAuthHeader = response.getHeaderString(HttpHeaders.WWW_AUTHENTICATE);
+            assertNotNull(wwwAuthHeader);
+            assertThat(wwwAuthHeader, CoreMatchers.containsString("Bearer"));
+            assertThat(wwwAuthHeader, CoreMatchers.containsString("error=\"" + OAuthErrorException.INVALID_TOKEN + "\""));
 
             response.close();
 
@@ -409,6 +429,11 @@ public class UserInfoTest extends AbstractKeycloakTest {
             response.close();
 
             assertEquals(Status.UNAUTHORIZED.getStatusCode(), response.getStatus());
+
+            String wwwAuthHeader = response.getHeaderString(HttpHeaders.WWW_AUTHENTICATE);
+            assertNotNull(wwwAuthHeader);
+            assertThat(wwwAuthHeader, CoreMatchers.containsString("Bearer"));
+            assertThat(wwwAuthHeader, CoreMatchers.containsString("error=\"" + OAuthErrorException.INVALID_TOKEN + "\""));
 
             events.expect(EventType.USER_INFO_REQUEST_ERROR)
                     .error(Errors.INVALID_TOKEN)
