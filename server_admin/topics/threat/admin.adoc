@@ -5,7 +5,7 @@ The {project_name} administrative REST API and the web console are exposed by de
 usage. If access to the admin console is not needed externally, we recommend not exposing the admin endpoints on the
 Internet.
 
-This can be achieve either directly in {project_name} or with a proxy such as Apache or nginx.
+This can be achieved either directly in {project_name} or with a proxy such as Apache or nginx.
 
 For the proxy option please follow the documentation for the proxy. You need to control access to any requests
 to `/auth/admin`.
