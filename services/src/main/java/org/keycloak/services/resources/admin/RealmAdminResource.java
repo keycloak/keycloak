@@ -947,10 +947,10 @@ public class RealmAdminResource {
      * @return
      * @throws Exception
      */
-    @Path("testSMTPConnection/{config}")
+    @Path("testSMTPConnection")
     @POST
     @NoCache
-    public Response testSMTPConnection(final @PathParam("config") String config) throws Exception {
+    public Response testSMTPConnection(final @FormParam("config") String config) throws Exception {
         Map<String, String> settings = readValue(config, new TypeReference<Map<String, String>>() {
         });
 

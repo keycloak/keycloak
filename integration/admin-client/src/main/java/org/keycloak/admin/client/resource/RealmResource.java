@@ -213,11 +213,11 @@ public interface RealmResource {
                                 @FormParam("bindDn") String bindDn, @FormParam("bindCredential") String bindCredential,
                                 @FormParam("useTruststoreSpi") String useTruststoreSpi, @FormParam("connectionTimeout") String connectionTimeout);
 
-    @Path("testSMTPConnection/{config}")
+    @Path("testSMTPConnection")
     @POST
     @NoCache
     @Consumes(MediaType.APPLICATION_JSON)
-    Response testSMTPConnection(final @PathParam("config") String config) throws Exception;
+    Response testSMTPConnection(@FormParam("config") String config);
 
     @Path("clear-realm-cache")
     @POST
