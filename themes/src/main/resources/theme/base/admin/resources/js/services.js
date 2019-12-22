@@ -440,13 +440,16 @@ module.factory('RealmLDAPConnectionTester', function($resource, $httpParamSerial
     });
 });
 
-module.factory('RealmSMTPConnectionTester', function($resource) {
-    return $resource(authUrl + '/admin/realms/:realm/testSMTPConnection/:config', {
-        realm : '@realm',
-        config : '@config'
+module.factory('RealmSMTPConnectionTester', function($resource, $httpParamSerializer) {
+    return $resource(authUrl + '/admin/realms/:realm/testSMTPConnection', {
+        realm : '@realm'
     }, {
         send: {
-            method: 'POST'
+            method: 'POST',
+            headers : { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
+            transformRequest: function (data) {
+                return $httpParamSerializer(data)
+            }
         }
     });
 });
