@@ -601,22 +601,22 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
     @Test
     public void reentrancyCallbackTest() {
         testExecutor.logInAndInit(defaultArguments(), testUser, this::assertSuccessfullyLoggedIn)
-                .executeAsyncScript(
-                        "var callback = arguments[arguments.length - 1];" +
-                        "keycloak.updateToken(60).success(function () {" +
-                        "       event(\"First callback\");" +
-                        "       keycloak.updateToken(60).success(function () {" +
-                        "          event(\"Second callback\");" +
-                        "          callback(\"Success\");" +
-                        "       });" +
-                        "    }" +
-                        ");"
-                        , (driver1, output, events) -> {
-                            waitUntilElement(events).text().contains("First callback");
-                            waitUntilElement(events).text().contains("Second callback");
-                            waitUntilElement(events).text().not().contains("Auth Logout");
-                        }
-                );
+            .executeAsyncScript(
+                "var callback = arguments[arguments.length - 1];" +
+                "keycloak.updateToken(60).then(function () {" +
+                "       event(\"First callback\");" +
+                "       keycloak.updateToken(60).then(function () {" +
+                "          event(\"Second callback\");" +
+                "          callback(\"Success\");" +
+                "       });" +
+                "    }" +
+                ");"
+                , (driver1, output, events) -> {
+                    waitUntilElement(events).text().contains("First callback");
+                    waitUntilElement(events).text().contains("Second callback");
+                    waitUntilElement(events).text().not().contains("Auth Logout");
+                }
+            );
     }
 
     @Test
@@ -644,5 +644,20 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
                 });
     }
 
+    @Test
+    public void testRefreshTokenWithDeprecatedPromiseHandles() {
+        String refreshWithDeprecatedHandles = "var callback = arguments[arguments.length - 1];" +
+                "   window.keycloak.updateToken(9999).success(function (refreshed) {" +
+            "            callback('Success handle');" +
+                "   }).catch(function () {" +
+                "       callback('Catch handle');" +
+                "   });";
 
+        testExecutor.init(defaultArguments(), this::assertInitNotAuth)
+                .executeAsyncScript(refreshWithDeprecatedHandles, assertOutputContains("Catch handle"))
+                .login(this::assertOnLoginPage)
+                .loginForm(testUser, this::assertOnTestAppUrl)
+                .init(defaultArguments(), this::assertSuccessfullyLoggedIn)
+                .executeAsyncScript(refreshWithDeprecatedHandles, assertOutputContains("Success handle"));
+    }
 }
