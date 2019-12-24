@@ -449,6 +449,19 @@ public class UserInfoTest extends AbstractKeycloakTest {
     }
 
     @Test
+    public void testUnsuccessfulUserInfoRequestWithEmptyAccessToken() {
+        Client client = ClientBuilder.newClient();
+
+        try {
+            Response response = UserInfoClientUtil.executeUserInfoRequest_getMethod(client, "");
+            response.close();
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+        } finally {
+            client.close();
+        }
+    }
+
+    @Test
     public void testUserInfoRequestWithSamlClient() throws Exception {
         // obtain an access token
         String accessToken = oauth.doGrantAccessTokenRequest("test", "test-user@localhost", "password", null, "saml-client", "secret").getAccessToken();
