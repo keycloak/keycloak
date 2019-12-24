@@ -301,7 +301,10 @@ public class TokenEndpoint {
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, "Code is expired", Response.Status.BAD_REQUEST);
         }
 
-        UserSessionModel userSession = clientSession.getUserSession();
+        UserSessionModel userSession = null;
+        if (clientSession != null) {
+            userSession = clientSession.getUserSession();
+        }
 
         if (userSession == null) {
             event.error(Errors.USER_SESSION_NOT_FOUND);
