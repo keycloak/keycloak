@@ -2092,12 +2092,6 @@ public class RepresentationToModel {
         RealmModel realm = authorization.getRealm();
 
         List<ResourceRepresentation> list =rep.getResources();
-        Collections.sort(list, new Comparator<ResourceRepresentation>() {
-            @Override
-            public int compare(ResourceRepresentation o1, ResourceRepresentation o2) {
-                return o1.getSort().compareTo(o2.getSort());
-            }
-        });
         for (ResourceRepresentation resource : list) {
             ResourceOwnerRepresentation owner = resource.getOwner();
 
