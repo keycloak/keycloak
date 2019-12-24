@@ -32,7 +32,6 @@ import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.JWKBuilder;
 import org.keycloak.representations.JsonWebToken;
-import org.keycloak.representations.VersionRepresentation;
 import org.keycloak.constants.AdapterConstants;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.representations.adapters.action.AdminAction;
@@ -83,9 +82,6 @@ public class PreAuthActionsHandler {
         } else if (requestUri.endsWith(AdapterConstants.K_PUSH_NOT_BEFORE)) {
             if (!resolveDeployment()) return true;
             handlePushNotBefore();
-            return true;
-        } else if (requestUri.endsWith(AdapterConstants.K_VERSION)) {
-            handleVersion();
             return true;
         } else if (requestUri.endsWith(AdapterConstants.K_TEST_AVAILABLE)) {
             if (!resolveDeployment()) return true;
@@ -244,25 +240,6 @@ public class PreAuthActionsHandler {
 
         }
         return true;
-    }
-
-    protected void handleVersion()  {
-        try {
-            facade.getResponse().setStatus(200);
-            KeycloakDeployment deployment = deploymentContext.resolveDeployment(facade);
-            if (deployment.isCors()) {
-                String origin = facade.getRequest().getHeader(CorsHeaders.ORIGIN);
-                if (origin == null) {
-                    log.debug("no origin header set in request");
-                } else {
-                    facade.getResponse().setHeader(CorsHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, origin);
-                }
-            }
-            facade.getResponse().setHeader("Content-Type", "application/json");
-            JsonSerialization.writeValueToStream(facade.getResponse().getOutputStream(), VersionRepresentation.SINGLETON);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
     }
 
     protected void handleJwksRequest() {

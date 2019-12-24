@@ -40,6 +40,7 @@ import javax.ws.rs.core.Form;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
@@ -155,7 +156,7 @@ public class KcinitDriver {
         }
         byte[] aesKey = null;
         try {
-            aesKey = Base64.decode(key.getBytes("UTF-8"));
+            aesKey = Base64.decode(key.getBytes(StandardCharsets.UTF_8));
         } catch (IOException e) {
             throw new RuntimeException("invalid " + KC_SESSION_KEY + "env var");
         }
@@ -163,7 +164,7 @@ public class KcinitDriver {
         JWE jwe = new JWE();
         final SecretKey aesSecret = new SecretKeySpec(aesKey, "AES");
         jwe.getKeyStorage()
-                .setEncryptionKey(aesSecret);
+                .setDecryptionKey(aesSecret);
         return jwe;
     }
 
@@ -177,11 +178,7 @@ public class KcinitDriver {
     public String encrypt(String payload) {
         JWE jwe = createJWE();
         JWEHeader jweHeader = new JWEHeader(JWEConstants.A128KW, JWEConstants.A128CBC_HS256, null);
-        try {
-            jwe.header(jweHeader).content(payload.getBytes("UTF-8"));
-        } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException("cannot encode payload as UTF-8");
-        }
+        jwe.header(jweHeader).content(payload.getBytes(StandardCharsets.UTF_8));
         try {
             return jwe.encodeJwe();
         } catch (JWEException e) {
@@ -195,7 +192,7 @@ public class KcinitDriver {
             jwe.verifyAndDecodeJwe(encoded);
             byte[] content = jwe.getContent();
             if (content == null) return null;
-            return new String(content, "UTF-8");
+            return new String(content, StandardCharsets.UTF_8);
         } catch (Exception ex) {
             throw new RuntimeException("cannot decrypt payload", ex);
 
@@ -244,12 +241,7 @@ public class KcinitDriver {
             System.exit(1);
 
         }
-        String encodedJwe = null;
-        try {
-            encodedJwe = new String(data, "UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
-        }
+        String encodedJwe = new String(data, StandardCharsets.UTF_8);
 
         if (encodedJwe.contains("realm")) {
             encrypted = false;
@@ -277,7 +269,7 @@ public class KcinitDriver {
         try {
             byte[] data = readFileRaw(fp);
             if (data == null) return null;
-            String file = new String(data, "UTF-8");
+            String file = new String(data, StandardCharsets.UTF_8);
             if (!encrypted) {
                 return file;
             }
@@ -306,7 +298,7 @@ public class KcinitDriver {
             String data = payload;
             if (encrypted) data = encrypt(payload);
             FileOutputStream fos = new FileOutputStream(fp);
-            fos.write(data.getBytes("UTF-8"));
+            fos.write(data.getBytes(StandardCharsets.UTF_8));
             fos.flush();
             fos.close();
         } catch (IOException e) {
@@ -400,11 +392,11 @@ public class KcinitDriver {
         }
 
         AdapterConfig config = new AdapterConfig();
-        config.setAuthServerUrl((String) getConfigProperties().get("server"));
-        config.setRealm((String) getConfigProperties().get("realm"));
-        config.setResource((String) getConfigProperties().get("client"));
+        config.setAuthServerUrl(getConfigProperties().get("server"));
+        config.setRealm(getConfigProperties().get("realm"));
+        config.setResource(getConfigProperties().get("client"));
         config.setSslRequired("external");
-        String secret = (String) getConfigProperties().get("secret");
+        String secret = getConfigProperties().get("secret");
         if (secret != null && !secret.trim().equals("")) {
             Map<String, Object> creds = new HashMap<>();
             creds.put("secret", secret);
@@ -487,7 +479,7 @@ public class KcinitDriver {
     }
 
 
-    private String getTokenResponse(String client) throws IOException {
+    private String getTokenResponse(String client) {
         File tokenFile = getTokenFilePath(client);
         try {
             return readFile(tokenFile);
@@ -613,7 +605,7 @@ public class KcinitDriver {
     }
 
     public String getProperty(String name) {
-        return (String) getConfigProperties().get(name);
+        return getConfigProperties().get(name);
     }
 
     protected boolean forceLogin() {

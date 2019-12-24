@@ -49,6 +49,7 @@ public class ProviderManager {
         logger.debugv("Provider loaders {0}", factories);
 
         loaders.add(new DefaultProviderLoader(info, baseClassLoader));
+        loaders.add(new DeploymentProviderLoader(info));
 
         if (resources != null) {
             for (String r : resources) {

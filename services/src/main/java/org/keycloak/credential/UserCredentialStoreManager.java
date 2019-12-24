@@ -24,6 +24,7 @@ import org.keycloak.models.UserCredentialManager;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.cache.CachedUserModel;
 import org.keycloak.models.cache.OnUserCache;
+import org.keycloak.models.cache.UserCache;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.storage.StorageId;
 import org.keycloak.storage.UserStorageManager;
@@ -36,6 +37,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -59,7 +61,6 @@ public class UserCredentialStoreManager implements UserCredentialManager, OnUser
     @Override
     public void updateCredential(RealmModel realm, UserModel user, CredentialModel cred) {
         getStoreForUser(user).updateCredential(realm, user, cred);
-
     }
 
     @Override
@@ -69,7 +70,9 @@ public class UserCredentialStoreManager implements UserCredentialManager, OnUser
 
     @Override
     public boolean removeStoredCredential(RealmModel realm, UserModel user, String id) {
-        return getStoreForUser(user).removeStoredCredential(realm, user, id);
+        boolean removalResult = getStoreForUser(user).removeStoredCredential(realm, user, id);
+        session.userCache().evict(realm, user);
+        return removalResult;
     }
 
     @Override
@@ -93,8 +96,38 @@ public class UserCredentialStoreManager implements UserCredentialManager, OnUser
     }
 
     @Override
+    public boolean moveCredentialTo(RealmModel realm, UserModel user, String id, String newPreviousCredentialId){
+        return getStoreForUser(user).moveCredentialTo(realm, user, id, newPreviousCredentialId);
+    }
+
+    @Override
     public boolean isValid(RealmModel realm, UserModel user, CredentialInput... inputs) {
         return isValid(realm, user, Arrays.asList(inputs));
+    }
+
+    @Override
+    public CredentialModel createCredentialThroughProvider(RealmModel realm, UserModel user, CredentialModel model){
+        List <CredentialProvider> credentialProviders = session.getKeycloakSessionFactory().getProviderFactories(CredentialProvider.class)
+                .stream()
+                .map(f -> session.getProvider(CredentialProvider.class, f.getId()))
+                .filter(provider -> provider.getType().equals(model.getType()))
+                .collect(Collectors.toList());
+        if (credentialProviders.isEmpty()) {
+            return null;
+        } else {
+            return credentialProviders.get(0).createCredential(realm, user, credentialProviders.get(0).getCredentialFromModel(model));
+        }
+    }
+
+    @Override
+    public void updateCredentialLabel(RealmModel realm, UserModel user, String credentialId, String userLabel){
+        CredentialModel credential = getStoredCredentialById(realm, user, credentialId);
+        credential.setUserLabel(userLabel);
+        getStoreForUser(user).updateCredential(realm, user, credential);
+        UserCache userCache = session.userCache();
+        if (userCache != null) {
+            userCache.evict(realm, user);
+        }
     }
 
     @Override
@@ -119,7 +152,7 @@ public class UserCredentialStoreManager implements UserCredentialManager, OnUser
         } else {
             if (user.getFederationLink() != null) {
                 UserStorageProvider provider = UserStorageManager.getStorageProvider(session, realm, user.getFederationLink());
-                if (provider != null && provider instanceof CredentialInputValidator) {
+                if (provider instanceof CredentialInputValidator) {
                     if (!UserStorageManager.isStorageProviderEnabled(realm, user.getFederationLink())) return false;
                     validate(realm, user, toValidate, ((CredentialInputValidator)provider));
                 }
@@ -172,7 +205,7 @@ public class UserCredentialStoreManager implements UserCredentialManager, OnUser
         } else {
             if (user.getFederationLink() != null) {
                 UserStorageProvider provider = UserStorageManager.getStorageProvider(session, realm, user.getFederationLink());
-                if (provider != null && provider instanceof CredentialInputUpdater) {
+                if (provider instanceof CredentialInputUpdater) {
                     if (!UserStorageManager.isStorageProviderEnabled(realm, user.getFederationLink())) return;
                     if (((CredentialInputUpdater) provider).updateCredential(realm, user, input)) return;
                 }
@@ -203,7 +236,7 @@ public class UserCredentialStoreManager implements UserCredentialManager, OnUser
         } else {
             if (user.getFederationLink() != null) {
                 UserStorageProvider provider = UserStorageManager.getStorageProvider(session, realm, user.getFederationLink());
-                if (provider != null && provider instanceof CredentialInputUpdater) {
+                if (provider instanceof CredentialInputUpdater) {
                     if (!UserStorageManager.isStorageProviderEnabled(realm, user.getFederationLink())) return;
                     ((CredentialInputUpdater) provider).disableCredentialType(realm, user, credentialType);
                 }
@@ -235,7 +268,7 @@ public class UserCredentialStoreManager implements UserCredentialManager, OnUser
         } else {
             if (user.getFederationLink() != null) {
                 UserStorageProvider provider = UserStorageManager.getStorageProvider(session, realm, user.getFederationLink());
-                if (provider != null && provider instanceof CredentialInputUpdater) {
+                if (provider instanceof CredentialInputUpdater) {
                     if (!UserStorageManager.isStorageProviderEnabled(realm, user.getFederationLink())) return Collections.EMPTY_SET;
                     types.addAll(((CredentialInputUpdater) provider).getDisableableCredentialTypes(realm, user));
                 }
@@ -265,7 +298,7 @@ public class UserCredentialStoreManager implements UserCredentialManager, OnUser
         } else {
             if (user.getFederationLink() != null) {
                 UserStorageProvider provider = UserStorageManager.getStorageProvider(session, realm, user.getFederationLink());
-                if (provider != null && provider instanceof CredentialInputValidator) {
+                if (provider instanceof CredentialInputValidator) {
                     if (!UserStorageManager.isStorageProviderEnabled(realm, user.getFederationLink())) return false;
                     if (((CredentialInputValidator) provider).isConfiguredFor(realm, user, type)) return true;
                 }

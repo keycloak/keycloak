@@ -25,6 +25,7 @@ import org.keycloak.common.util.PemUtils;
 import org.keycloak.crypto.JavaAlgorithm;
 import org.keycloak.util.JsonSerialization;
 
+import java.nio.charset.StandardCharsets;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.PrivateKey;
@@ -72,7 +73,7 @@ public class JWKTest {
         // Parse
         assertArrayEquals(publicKey.getEncoded(), publicKeyFromJwk.getEncoded());
 
-        byte[] data = "Some test string".getBytes("utf-8");
+        byte[] data = "Some test string".getBytes(StandardCharsets.UTF_8);
         byte[] sign = sign(data, JavaAlgorithm.RS256, keyPair.getPrivate());
         verify(data, sign, JavaAlgorithm.RS256, publicKeyFromJwk);
     }
@@ -116,7 +117,7 @@ public class JWKTest {
 
         assertArrayEquals(publicKey.getEncoded(), publicKeyFromJwk.getEncoded());
 
-        byte[] data = "Some test string".getBytes("utf-8");
+        byte[] data = "Some test string".getBytes(StandardCharsets.UTF_8);
         byte[] sign = sign(data, JavaAlgorithm.ES256, keyPair.getPrivate());
         verify(data, sign, JavaAlgorithm.ES256, publicKeyFromJwk);
     }

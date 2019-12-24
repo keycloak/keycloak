@@ -22,3 +22,4 @@ org.keycloak.services.clientregistration.policy.ClientRegistrationPolicySpi
 org.keycloak.authentication.actiontoken.ActionTokenHandlerSpi
 org.keycloak.services.x509.X509ClientCertificateLookupSpi
 org.keycloak.protocol.oidc.ext.OIDCExtSPI
+org.keycloak.protocol.saml.preprocessor.SamlAuthenticationPreprocessorSpi

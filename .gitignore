@@ -25,6 +25,10 @@ nb-configuration.xml
 catalog.xml
 nbproject
 
+# VS Code #
+###########
+*.code-workspace
+
 # Compiled source #
 ###################
 *.com

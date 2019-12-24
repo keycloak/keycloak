@@ -1,17 +1,7 @@
 package org.keycloak.testsuite.federation.storage;
 
-import java.io.File;
-import java.io.Serializable;
-import java.util.HashSet;
-import java.util.Properties;
-import java.util.Set;
-import javax.ws.rs.NotFoundException;
-import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Assert;
-import static org.junit.Assert.fail;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.common.util.MultivaluedHashMap;
@@ -24,12 +14,18 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.testsuite.AbstractAuthTest;
 import org.keycloak.testsuite.admin.ApiUtil;
-import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
-
 import org.keycloak.testsuite.client.KeycloakTestingClient;
 import org.keycloak.testsuite.federation.UserMapStorageFactory;
-import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
 import org.keycloak.testsuite.util.RealmBuilder;
+
+import javax.ws.rs.NotFoundException;
+import java.io.File;
+import java.util.HashSet;
+import java.util.Properties;
+import java.util.Set;
+
+import static org.junit.Assert.fail;
+import static org.keycloak.storage.UserStorageProviderModel.IMPORT_ENABLED;
 
 /**
  *
@@ -40,12 +36,6 @@ public class ComponentExportImportTest extends AbstractAuthTest {
     private static final String REALM_NAME = "exported-component";
 
     private File exportFile;
-
-    @Deployment
-    public static WebArchive deploy() {
-        return RunOnServerDeployment.create(ComponentExportImportTest.class, AbstractAuthTest.class, RealmResource.class)
-                .addPackages(true, "org.keycloak.testsuite");
-    }
 
     @Before
     public void setDirs() {
@@ -110,6 +100,7 @@ public class ComponentExportImportTest extends AbstractAuthTest {
         parentComponent.setConfig(new MultivaluedHashMap<>());
         parentComponent.getConfig().putSingle("priority", Integer.toString(0));
         parentComponent.getConfig().putSingle("attr", "value");
+        parentComponent.getConfig().putSingle(IMPORT_ENABLED, Boolean.toString(false));
         String parentComponentId = addComponent(parentComponent);
 
         ComponentRepresentation subcomponent = new ComponentRepresentation();
@@ -121,6 +112,7 @@ public class ComponentExportImportTest extends AbstractAuthTest {
         subcomponent.setConfig(new MultivaluedHashMap<>());
         subcomponent.getConfig().putSingle("priority", Integer.toString(0));
         subcomponent.getConfig().putSingle("attr", "value2");
+        subcomponent.getConfig().putSingle(IMPORT_ENABLED, Boolean.toString(false));
         String subcomponentId = addComponent(subcomponent);
 
         final String exportFilePath = exportFile.getAbsolutePath();

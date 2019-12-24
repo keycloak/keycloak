@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian-servers-auth-server</artifactId>
-        <version>8.0.0-SNAPSHOT</version>
+        <version>9.0.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -67,6 +67,9 @@
         <session.cache.owners>1</session.cache.owners>
         <offline.session.cache.owners>1</offline.session.cache.owners>
         <login.failure.cache.owners>1</login.failure.cache.owners>
+
+        <!-- Path to testsuite/test resources : Themes-->
+        <keycloak.base.test.resource>${project.parent.basedir}/../../../tests/base/src/test/resources</keycloak.base.test.resource>
     </properties>
 
     <profiles>
@@ -154,6 +157,21 @@
                         <artifactId>maven-resources-plugin</artifactId>
                         <executions>
                             <execution>
+                                <id>add-extending-theme</id>
+                                <phase>process-resources</phase>
+                                <goals>
+                                    <goal>copy-resources</goal>
+                                </goals>
+                                <configuration>
+                                    <outputDirectory>${auth.server.home}/themes</outputDirectory>
+                                    <resources>
+                                        <resource>
+                                            <directory>${keycloak.base.test.resource}/theme</directory>
+                                        </resource>
+                                    </resources>
+                                </configuration>
+                            </execution>
+                            <execution>
                                 <id>enable-jboss-mgmt-admin</id>
                                 <phase>process-resources</phase>
                                 <goals>
@@ -201,6 +219,31 @@
                                             <includes>
                                                 <include>certs/clients/test-user-san@localhost.cert.pem</include>
                                                 <include>certs/clients/test-user@localhost.key.pem</include>
+                                            </includes>
+                                        </resource>
+                                    </resources>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>copy-vault</id>
+                                <phase>process-resources</phase>
+                                <goals>
+                                    <goal>copy-resources</goal>
+                                </goals>
+                                <configuration>
+                                    <outputDirectory>${auth.server.home}/standalone/configuration/vault</outputDirectory>
+                                    <resources>
+                                        <resource>
+                                            <directory>${common.resources}/vault</directory>
+                                            <includes>
+                                                <include>master_smtp__key</include>
+                                                <include>test_smtp__key</include>
+                                                <include>consumer_oidc__idp</include>
+                                                <include>master_smtp__password</include>
+                                                <include>master_ldap__bindCredential</include>
+                                                <include>test_ldap__bindCredential</include>
+                                                <include>admin-client-test_ldap__bindCredential</include>
+                                                <include>credential-store.p12</include>
                                             </includes>
                                         </resource>
                                     </resources>
@@ -431,6 +474,9 @@
                                                 <property name="jdbc.mvn.groupId">${jdbc.mvn.groupId}</property>
                                                 <property name="jdbc.mvn.artifactId">${jdbc.mvn.artifactId}</property>
                                                 <property name="jdbc.mvn.version">${jdbc.mvn.version}</property>
+                                                <property name="keycloak.connectionsJpa.url">${keycloak.connectionsJpa.url}</property>
+                                                <property name="keycloak.connectionsJpa.user">${keycloak.connectionsJpa.user}</property>
+                                                <property name="keycloak.connectionsJpa.password">${keycloak.connectionsJpa.password}</property>
                                             </ant>
                                         </target>
                                     </configuration>

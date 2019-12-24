@@ -40,26 +40,27 @@ public class CachedClient extends AbstractRevisioned implements InRealm {
     protected String name;
     protected String description;
     protected String realm;
-    protected Set<String> redirectUris = new HashSet<String>();
+    protected Set<String> redirectUris = new HashSet<>();
     protected boolean enabled;
+    protected boolean alwaysDisplayInConsole;
     protected String clientAuthenticatorType;
     protected String secret;
     protected String registrationToken;
     protected String protocol;
-    protected Map<String, String> attributes = new HashMap<String, String>();
-    protected Map<String, String> authFlowBindings = new HashMap<String, String>();
+    protected Map<String, String> attributes = new HashMap<>();
+    protected Map<String, String> authFlowBindings = new HashMap<>();
     protected boolean publicClient;
     protected boolean fullScopeAllowed;
     protected boolean frontchannelLogout;
     protected int notBefore;
-    protected Set<String> scope = new HashSet<String>();
-    protected Set<String> webOrigins = new HashSet<String>();
-    protected Set<ProtocolMapperModel> protocolMappers = new HashSet<ProtocolMapperModel>();
+    protected Set<String> scope = new HashSet<>();
+    protected Set<String> webOrigins = new HashSet<>();
+    protected Set<ProtocolMapperModel> protocolMappers = new HashSet<>();
     protected boolean surrogateAuthRequired;
     protected String managementUrl;
     protected String rootUrl;
     protected String baseUrl;
-    protected List<String> defaultRoles = new LinkedList<String>();
+    protected List<String> defaultRoles = new LinkedList<>();
     protected boolean bearerOnly;
     protected boolean consentRequired;
     protected boolean standardFlowEnabled;
@@ -82,6 +83,7 @@ public class CachedClient extends AbstractRevisioned implements InRealm {
         description = model.getDescription();
         this.realm = realm.getId();
         enabled = model.isEnabled();
+        alwaysDisplayInConsole = model.isAlwaysDisplayInConsole();
         protocol = model.getProtocol();
         attributes.putAll(model.getAttributes());
         authFlowBindings.putAll(model.getAuthenticationFlowBindingOverrides());
@@ -145,6 +147,10 @@ public class CachedClient extends AbstractRevisioned implements InRealm {
 
     public boolean isEnabled() {
         return enabled;
+    }
+
+    public boolean isAlwaysDisplayInConsole() {
+        return alwaysDisplayInConsole;
     }
 
     public String getClientAuthenticatorType() {

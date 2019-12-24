@@ -19,6 +19,7 @@ package org.keycloak.testsuite.console.authorization;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.keycloak.common.Profile.Feature.UPLOAD_SCRIPTS;
 
 import java.util.UUID;
 
@@ -39,9 +40,9 @@ import org.keycloak.representations.idm.authorization.GroupPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.JSPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.Logic;
 import org.keycloak.representations.idm.authorization.RolePolicyRepresentation;
-import org.keycloak.representations.idm.authorization.RulePolicyRepresentation;
 import org.keycloak.representations.idm.authorization.TimePolicyRepresentation;
 import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
+import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.console.page.clients.authorization.policy.AggregatePolicy;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.GroupBuilder;
@@ -50,6 +51,7 @@ import org.keycloak.testsuite.util.UserBuilder;
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
+@EnableFeature(value = UPLOAD_SCRIPTS, skipRestart = true)
 public class AggregatePolicyManagementTest extends AbstractAuthorizationSettingsTest {
 
     @Before
@@ -183,6 +185,7 @@ public class AggregatePolicyManagementTest extends AbstractAuthorizationSettings
 
     @Test
     public void testCreateWithChildAndSelectedPolicy() {
+        authorizationPage.getDriver().navigate().refresh();
         AggregatePolicyRepresentation expected = new AggregatePolicyRepresentation();
 
         expected.setName("Test Child Create And Select Aggregate Policy");
@@ -227,22 +230,6 @@ public class AggregatePolicyManagementTest extends AbstractAuthorizationSettings
         childTimePolicy.setNotBefore("2018-01-01 00:00:00");
         policy.createPolicy(childTimePolicy);
         expected.addPolicy(childTimePolicy.getName());
-
-        if (Profile.isFeatureEnabled(Profile.Feature.AUTHZ_DROOLS_POLICY)) {
-            RulePolicyRepresentation rulePolicy = new RulePolicyRepresentation();
-
-            rulePolicy.setName(UUID.randomUUID().toString());
-            rulePolicy.setDescription("description");
-            rulePolicy.setArtifactGroupId("org.keycloak.testsuite");
-            rulePolicy.setArtifactId("photoz-authz-policy");
-            rulePolicy.setArtifactVersion(System.getProperty("project.version"));
-            rulePolicy.setModuleName("PhotozAuthzOwnerPolicy");
-            rulePolicy.setSessionName("MainOwnerSession");
-            rulePolicy.setScannerPeriod("1");
-            rulePolicy.setScannerPeriodUnit("Minutes");
-            policy.createPolicy(rulePolicy);
-            expected.addPolicy(rulePolicy.getName());
-        }
 
         GroupPolicyRepresentation childGroupPolicy = new GroupPolicyRepresentation();
 

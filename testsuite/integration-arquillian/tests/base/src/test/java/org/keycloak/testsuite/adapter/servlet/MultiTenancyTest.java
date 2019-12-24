@@ -95,6 +95,8 @@ public class MultiTenancyTest extends AbstractServletsAdapterTest {
 
         doTenantRequests("tenant1", false);
         doTenantRequests("tenant2", true);
+
+        logout("tenant1");
     }
     
     /**
@@ -125,6 +127,8 @@ public class MultiTenancyTest extends AbstractServletsAdapterTest {
         
         driver.navigate().to(tenantPage.getTenantRealmUrl("tenant2"));
         URLAssert.assertCurrentUrlStartsWith(authServerPage.toString());
+
+        logout("tenant1");
     }
     
     private void doTenantRequests(String tenant, boolean logout) {
@@ -149,5 +153,13 @@ public class MultiTenancyTest extends AbstractServletsAdapterTest {
             Assert.assertTrue(driver.getCurrentUrl().startsWith(tenantLoginUrl));
         }
         log.debug("---------------------------------------------------------------------------------------");
+    }
+
+    private void logout(String tenant) {
+        String tenantLoginUrl = OIDCLoginProtocolService.authUrl(UriBuilder.fromUri(authServerPage.getAuthRoot())).build(tenant).toString();
+        URL tenantUrl = tenantPage.getTenantRealmUrl(tenant);
+        driver.navigate().to(tenantUrl + "/logout");
+        Assert.assertFalse(driver.getPageSource().contains("Username: bburke@redhat.com"));
+        Assert.assertTrue(driver.getCurrentUrl().startsWith(tenantLoginUrl));
     }
 }

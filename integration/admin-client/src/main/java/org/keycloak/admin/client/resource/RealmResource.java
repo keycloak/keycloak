@@ -120,7 +120,7 @@ public interface RealmResource {
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
-    public List<EventRepresentation> getEvents(@QueryParam("type") List<String> types, @QueryParam("client") String client,
+    List<EventRepresentation> getEvents(@QueryParam("type") List<String> types, @QueryParam("client") String client,
             @QueryParam("user") String user, @QueryParam("dateFrom") String dateFrom, @QueryParam("dateTo") String dateTo,
             @QueryParam("ipAddress") String ipAddress, @QueryParam("first") Integer firstResult,
             @QueryParam("max") Integer maxResults);
@@ -146,31 +146,31 @@ public interface RealmResource {
     @GET
     @Path("events/config")
     @Produces(MediaType.APPLICATION_JSON)
-    public RealmEventsConfigRepresentation getRealmEventsConfig();
+    RealmEventsConfigRepresentation getRealmEventsConfig();
 
     @PUT
     @Path("events/config")
     @Consumes(MediaType.APPLICATION_JSON)
-    public void updateRealmEventsConfig(RealmEventsConfigRepresentation rep);
+    void updateRealmEventsConfig(RealmEventsConfigRepresentation rep);
 
     @GET
     @Path("group-by-path/{path: .*}")
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
-    public GroupRepresentation getGroupByPath(@PathParam("path") String path);
+    GroupRepresentation getGroupByPath(@PathParam("path") String path);
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Path("default-groups")
-    public List<GroupRepresentation> getDefaultGroups();
+    List<GroupRepresentation> getDefaultGroups();
 
     @PUT
     @Path("default-groups/{groupId}")
-    public void addDefaultGroup(@PathParam("groupId") String groupId);
+    void addDefaultGroup(@PathParam("groupId") String groupId);
 
     @DELETE
     @Path("default-groups/{groupId}")
-    public void removeDefaultGroup(@PathParam("groupId") String groupId);
+    void removeDefaultGroup(@PathParam("groupId") String groupId);
 
     @Path("identity-provider")
     IdentityProvidersResource identityProviders();

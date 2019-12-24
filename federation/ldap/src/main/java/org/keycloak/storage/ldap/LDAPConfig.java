@@ -22,6 +22,7 @@ import org.keycloak.models.LDAPConstants;
 import org.keycloak.storage.UserStorageProvider;
 
 import javax.naming.directory.SearchControls;
+
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
@@ -110,6 +111,11 @@ public class LDAPConfig {
         return Boolean.parseBoolean(validatePPolicy);
     }
 
+    public boolean isTrustEmail(){
+        String trustEmail = config.getFirst(LDAPConstants.TRUST_EMAIL);
+        return Boolean.parseBoolean(trustEmail);
+    }
+
     public String getConnectionPooling() {
         if(isStartTls()) {
             return null;
@@ -177,6 +183,10 @@ public class LDAPConfig {
 
     public boolean isObjectGUID() {
         return getUuidLDAPAttributeName().equalsIgnoreCase(LDAPConstants.OBJECT_GUID);
+    }
+
+    public boolean isEdirectoryGUID() {
+        return isEdirectory() && getUuidLDAPAttributeName().equalsIgnoreCase(LDAPConstants.NOVELL_EDIRECTORY_GUID);
     }
 
     public boolean isPagination() {
@@ -257,6 +267,10 @@ public class LDAPConfig {
         return true;
     }
 
+    public boolean isEdirectory() {
+        return LDAPConstants.VENDOR_NOVELL_EDIRECTORY.equalsIgnoreCase(getVendor());
+    }
+
     @Override
     public int hashCode() {
         return config.hashCode() * 13 + binaryAttributeNames.hashCode();
@@ -270,4 +284,5 @@ public class LDAPConfig {
                 .append(", binaryAttributes: ").append(binaryAttributeNames)
                 .toString();
     }
+
 }

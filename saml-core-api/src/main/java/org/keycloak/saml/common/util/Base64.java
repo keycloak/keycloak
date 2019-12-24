@@ -16,6 +16,7 @@
  */
 package org.keycloak.saml.common.util;
 
+import java.nio.charset.StandardCharsets;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -100,9 +101,6 @@ public class Base64 {
     /** The new line character (\n) as a byte. */
     private static final byte NEW_LINE = (byte) '\n';
 
-    /** Preferred encoding. */
-    private static final String PREFERRED_ENCODING = "UTF-8";
-
     /** The 64 valid Base64 values. */
     private static final byte[] ALPHABET;
     private static final byte[] _NATIVE_ALPHABET = /* May be something funny like EBCDIC */
@@ -118,7 +116,7 @@ public class Base64 {
     static {
         byte[] __bytes;
         try {
-            __bytes = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/".getBytes(PREFERRED_ENCODING);
+            __bytes = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/".getBytes(StandardCharsets.UTF_8.name());
         } // end try
         catch (java.io.UnsupportedEncodingException use) {
             __bytes = _NATIVE_ALPHABET; // Fall back to native encoding
@@ -330,12 +328,7 @@ public class Base64 {
         } // end finally
 
         // Return value according to relevant encoding.
-        try {
-            return new String(baos.toByteArray(), PREFERRED_ENCODING);
-        } // end try
-        catch (java.io.UnsupportedEncodingException uue) {
-            return new String(baos.toByteArray());
-        } // end catch
+        return new String(baos.toByteArray(), StandardCharsets.UTF_8);
 
     } // end encode
 
@@ -455,12 +448,7 @@ public class Base64 {
             } // end finally
 
             // Return value according to relevant encoding.
-            try {
-                return new String(baos.toByteArray(), PREFERRED_ENCODING);
-            } // end try
-            catch (java.io.UnsupportedEncodingException uue) {
-                return new String(baos.toByteArray());
-            } // end catch
+            return new String(baos.toByteArray(), StandardCharsets.UTF_8);
         } // end if: compress
 
         // Else, don't compress. Better not to use streams at all then.
@@ -493,12 +481,7 @@ public class Base64 {
             } // end if: some padding needed
 
             // Return value according to relevant encoding.
-            try {
-                return new String(outBuff, 0, e, PREFERRED_ENCODING);
-            } // end try
-            catch (java.io.UnsupportedEncodingException uue) {
-                return new String(outBuff, 0, e);
-            } // end catch
+            return new String(outBuff, 0, e, StandardCharsets.UTF_8);
 
         } // end else: don't compress
 
@@ -632,14 +615,7 @@ public class Base64 {
      * @since 1.4
      */
     public static byte[] decode(String s) {
-        byte[] bytes;
-        try {
-            bytes = s.getBytes(PREFERRED_ENCODING);
-        } // end try
-        catch (java.io.UnsupportedEncodingException uee) {
-            bytes = s.getBytes();
-        } // end catch
-        // </change>
+        byte[] bytes = s.getBytes(StandardCharsets.UTF_8);
 
         // Decode
         bytes = decode(bytes, 0, bytes.length);

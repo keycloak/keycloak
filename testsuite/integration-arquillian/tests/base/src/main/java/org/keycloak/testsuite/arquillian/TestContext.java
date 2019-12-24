@@ -28,6 +28,7 @@ import org.keycloak.admin.client.Keycloak;
 import org.keycloak.representations.idm.RealmRepresentation;
 import static org.keycloak.testsuite.arquillian.AppServerTestEnricher.getAppServerQualifiers;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
+import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.TestCleanup;
 import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
 
@@ -88,8 +89,17 @@ public final class TestContext {
         this.appServerBackendsInfo.addAll(appServerBackendsInfo);
     }
 
-    public Class getTestClass() {
+    public Class<?> getTestClass() {
         return testClass;
+    }
+
+    public void reconnectAdminClient() throws Exception {
+        if (adminClient != null && !adminClient.isClosed()) {
+            adminClient.close();
+        }
+
+        String authServerContextRoot = suiteContext.getAuthServerInfo().getContextRoot().toString();
+        adminClient = AdminClientUtil.createAdminClient(suiteContext.isAdapterCompatTesting(), authServerContextRoot);
     }
 
     public boolean isAdapterTest() {
@@ -139,6 +149,10 @@ public final class TestContext {
     }
 
     public KeycloakTestingClient getTestingClient() {
+        if (testingClient == null) {
+            String authServerContextRoot = suiteContext.getAuthServerInfo().getContextRoot().toString();
+            testingClient = KeycloakTestingClient.getInstance(authServerContextRoot + "/auth");
+        }
         return testingClient;
     }
 

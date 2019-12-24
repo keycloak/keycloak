@@ -23,7 +23,6 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.utils.RoleUtils;
 
 import javax.ws.rs.core.MultivaluedMap;
 import java.util.List;
@@ -278,8 +277,10 @@ public class ConditionalOtpFormAuthenticator extends OTPFormAuthenticator {
         }
 
         RoleModel role = getRoleFromString(realm, roleName);
-
-        return RoleUtils.hasRole(user.getRoleMappings(), role);
+        if (role != null) {
+            return user.hasRole(role);
+        }
+        return false;
     }
 
     private boolean isOTPRequired(KeycloakSession session, RealmModel realm, UserModel user) {

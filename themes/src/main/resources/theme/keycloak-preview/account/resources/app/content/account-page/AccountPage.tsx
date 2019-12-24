@@ -95,12 +95,12 @@ export class AccountPage extends React.Component<AccountPageProps, AccountPageSt
     
     private requiredFieldsHaveData(fieldName?: string, newValue?: string): boolean { 
         const fields: FormFields = {...this.state.formFields};
-        
         if (fieldName && newValue) {
             fields[fieldName] = newValue;
         }
         
         for (const field of Object.keys(fields)) {
+            if (field === 'emailVerified') continue;
             if (!fields[field]) return false;
         }
         
@@ -172,14 +172,16 @@ export class AccountPage extends React.Component<AccountPageProps, AccountPageSt
                         </TextInput>
                     </FormGroup>
                     <ActionGroup>
-                        <Button 
+                        <Button
+                            id="save-btn"
                             variant="primary"
                             isDisabled={!this.state.canSubmit && this.requiredFieldsHaveData()}
                             onClick={this.handleSubmit}
                         >
                             <Msg msgKey="doSave"/>                          
                         </Button>
-                        <Button 
+                        <Button
+                            id="cancel-btn"
                             variant="secondary"
                             onClick={this.handleCancel}
                         >

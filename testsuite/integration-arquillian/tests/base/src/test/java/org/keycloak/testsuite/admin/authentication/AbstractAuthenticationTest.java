@@ -49,7 +49,7 @@ public abstract class AbstractAuthenticationTest extends AbstractKeycloakTest {
     static final String REALM_NAME = "test";
 
     static final String REQUIRED = "REQUIRED";
-    static final String OPTIONAL = "OPTIONAL";
+    static final String CONDITIONAL = "CONDITIONAL";
     static final String DISABLED = "DISABLED";
     static final String ALTERNATIVE = "ALTERNATIVE";
 
@@ -83,7 +83,7 @@ public abstract class AbstractAuthenticationTest extends AbstractKeycloakTest {
     }
 
 
-    AuthenticationFlowRepresentation findFlowByAlias(String alias, List<AuthenticationFlowRepresentation> flows) {
+    public static AuthenticationFlowRepresentation findFlowByAlias(String alias, List<AuthenticationFlowRepresentation> flows) {
         for (AuthenticationFlowRepresentation flow : flows) {
             if (alias.equals(flow.getAlias())) {
                 return flow;

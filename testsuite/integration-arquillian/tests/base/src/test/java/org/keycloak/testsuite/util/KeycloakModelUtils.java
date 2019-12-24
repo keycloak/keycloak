@@ -55,7 +55,7 @@ public class KeycloakModelUtils {
 
     public static CredentialRepresentation generateSecret(ClientRepresentation client) {
         UserCredentialModel secret = UserCredentialModel.generateSecret();
-        client.setSecret(secret.getValue());
+        client.setSecret(secret.getChallengeResponse());
         return ModelToRepresentation.toRepresentation(secret);
     }
 }

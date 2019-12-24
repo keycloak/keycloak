@@ -18,9 +18,8 @@
 package org.keycloak.credential.hash;
 
 import org.keycloak.common.util.Base64;
-import org.keycloak.credential.CredentialModel;
 import org.keycloak.models.PasswordPolicy;
-import org.keycloak.models.UserCredentialModel;
+import org.keycloak.models.credential.PasswordCredentialModel;
 
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
@@ -53,31 +52,27 @@ public class Pbkdf2PasswordHashProvider implements PasswordHashProvider {
     }
 
     @Override
-    public boolean policyCheck(PasswordPolicy policy, CredentialModel credential) {
+    public boolean policyCheck(PasswordPolicy policy, PasswordCredentialModel credential) {
         int policyHashIterations = policy.getHashIterations();
         if (policyHashIterations == -1) {
             policyHashIterations = defaultIterations;
         }
 
-        return credential.getHashIterations() == policyHashIterations
-                && providerId.equals(credential.getAlgorithm())
+        return credential.getPasswordCredentialData().getHashIterations() == policyHashIterations
+                && providerId.equals(credential.getPasswordCredentialData().getAlgorithm())
                 && derivedKeySize == keySize(credential);
     }
 
     @Override
-    public void encode(String rawPassword, int iterations, CredentialModel credential) {
+    public PasswordCredentialModel encodedCredential(String rawPassword, int iterations) {
         if (iterations == -1) {
             iterations = defaultIterations;
         }
 
         byte[] salt = getSalt();
-        String encodedPassword = encode(rawPassword, iterations, salt, derivedKeySize);
+        String encodedPassword = encodedCredential(rawPassword, iterations, salt, derivedKeySize);
 
-        credential.setAlgorithm(providerId);
-        credential.setType(UserCredentialModel.PASSWORD);
-        credential.setSalt(salt);
-        credential.setHashIterations(iterations);
-        credential.setValue(encodedPassword);
+        return PasswordCredentialModel.createFromValues(providerId, salt, iterations, encodedPassword);
     }
 
     @Override
@@ -87,17 +82,17 @@ public class Pbkdf2PasswordHashProvider implements PasswordHashProvider {
         }
 
         byte[] salt = getSalt();
-        return encode(rawPassword, iterations, salt, derivedKeySize);
+        return encodedCredential(rawPassword, iterations, salt, derivedKeySize);
     }
 
     @Override
-    public boolean verify(String rawPassword, CredentialModel credential) {
-        return encode(rawPassword, credential.getHashIterations(), credential.getSalt(), keySize(credential)).equals(credential.getValue());
+    public boolean verify(String rawPassword, PasswordCredentialModel credential) {
+        return encodedCredential(rawPassword, credential.getPasswordCredentialData().getHashIterations(), credential.getPasswordSecretData().getSalt(), keySize(credential)).equals(credential.getPasswordSecretData().getValue());
     }
 
-    private int keySize(CredentialModel credential) {
+    private int keySize(PasswordCredentialModel credential) {
         try {
-            byte[] bytes = Base64.decode(credential.getValue());
+            byte[] bytes = Base64.decode(credential.getPasswordSecretData().getValue());
             return bytes.length * 8;
         } catch (IOException e) {
             throw new RuntimeException("Credential could not be decoded", e);
@@ -107,7 +102,7 @@ public class Pbkdf2PasswordHashProvider implements PasswordHashProvider {
     public void close() {
     }
 
-    private String encode(String rawPassword, int iterations, byte[] salt, int derivedKeySize) {
+    private String encodedCredential(String rawPassword, int iterations, byte[] salt, int derivedKeySize) {
         KeySpec spec = new PBEKeySpec(rawPassword.toCharArray(), salt, iterations, derivedKeySize);
 
         try {

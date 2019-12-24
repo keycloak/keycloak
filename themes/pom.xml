@@ -4,7 +4,7 @@
     <parent>
         <artifactId>keycloak-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>8.0.0-SNAPSHOT</version>
+        <version>9.0.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -134,46 +134,84 @@
             <id>npm-update</id>
             <build>
                 <plugins>
-                    <!-- Clean downloaded packages from NPM -->
-                    <plugin>
-                        <artifactId>maven-clean-plugin</artifactId>
-                        <configuration>
-                            <filesets>
-                                <fileset>
-                                    <directory>src/main/resources/node_modules</directory>
-                                </fileset>
-                                <fileset>
-                                    <directory>src/main/resources/theme/keycloak/common/resources/node_modules</directory>
-                                </fileset>
-                            </filesets>
-                        </configuration>
-                    </plugin>
                     <!-- Install NPM and download packages -->
                     <plugin>
                         <groupId>com.github.eirslett</groupId>
                         <artifactId>frontend-maven-plugin</artifactId>
-                        <version>1.6</version>
+                        <version>1.8.0</version>
                         <executions>
                             <execution>
                                 <id>install-node-and-npm</id>
+                                <phase>generate-resources</phase>
                                 <goals>
                                     <goal>install-node-and-npm</goal>
                                 </goals>
                             </execution>
                             <execution>
                                 <id>npm-install</id>
+                                <phase>generate-resources</phase>
                                 <goals>
                                     <goal>npm</goal>
                                 </goals>
                                 <configuration>
-                                    <arguments>install</arguments>
+                                    <arguments>install -P -E --no-optional --ignore-scripts --no-bin-links --no-shrinkwrap --no-package-lock</arguments>
                                 </configuration>
                             </execution>
                         </executions>
                         <configuration>
-                            <nodeVersion>v8.9.4</nodeVersion>
+                            <nodeVersion>v12.13.0</nodeVersion>
+                            <npmVersion>6.9.0</npmVersion>
                             <workingDirectory>src/main/resources</workingDirectory>
                         </configuration>
+                    </plugin>
+                    <!-- Clean downloaded packages from NPM -->
+                    <plugin>
+                        <artifactId>maven-clean-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>clean-all</id>
+                                <phase>initialize</phase>
+                                <goals>
+                                    <goal>clean</goal>
+                                </goals>
+                                <configuration>
+                                    <filesets>
+                                        <fileset>
+                                            <directory>src/main/resources/node_modules</directory>
+                                        </fileset>
+                                        <fileset>
+                                            <directory>src/main/resources/theme/keycloak/common/resources/node_modules</directory>
+                                        </fileset>
+                                    </filesets>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>clean-downloaded</id>
+                                <phase>generate-resources</phase>
+                                <goals>
+                                    <goal>clean</goal>
+                                </goals>
+                                <configuration>
+                                    <filesets>
+                                        <fileset>
+                                            <directory>src/main/node_modules/angular-translate/node_modules/</directory>
+                                        </fileset>
+                                        <fileset>
+                                            <directory>src/main/node_modules/patternfly/node_modules/</directory>
+                                        </fileset>
+                                        <fileset>
+                                            <directory>src/main/node_modules/rcue/node_modules/</directory>
+                                        </fileset>
+                                        <fileset>
+                                            <directory>src/main/node_modules/minimist</directory>
+                                        </fileset>
+                                        <fileset>
+                                            <directory>src/main/node_modules/mkdirp</directory>
+                                        </fileset>
+                                    </filesets>
+                                </configuration>
+                            </execution>
+                        </executions>
                     </plugin>
                     <!-- Copy files from NPM packages -->
                     <plugin>
@@ -193,8 +231,6 @@
                                         <resource>
                                             <directory>src/main/node_modules</directory>
                                             <excludes>
-                                                <exclude>minimist/**</exclude>
-                                                <exclude>mkdirp/**</exclude>
                                                 <exclude>**/*.json</exclude>
                                                 <exclude>**/*.json</exclude>
                                                 <exclude>**/*.markdown</exclude>

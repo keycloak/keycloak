@@ -34,7 +34,7 @@ public class TypedPropertyCriteria implements PropertyCriteria {
      * consider properties where its type is a superclass or superinterface of <code>propertyClass</code>. .</li> </ul>
      * </p>
      */
-    public static enum MatchOption {
+    public enum MatchOption {
         SUB_TYPE, SUPER_TYPE, ALL
     }
 

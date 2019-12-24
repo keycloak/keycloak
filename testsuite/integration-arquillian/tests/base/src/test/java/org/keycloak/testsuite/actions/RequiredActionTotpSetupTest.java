@@ -28,9 +28,11 @@ import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.models.utils.HmacOTP;
 import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.representations.idm.AuthenticationExecutionInfoRepresentation;
+import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
@@ -54,8 +56,10 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
+import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -80,13 +84,12 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
 
     @Before
     public void setOTPAuthRequired() {
-        for (AuthenticationExecutionInfoRepresentation execution : adminClient.realm("test").flows().getExecutions("browser")) {
-            String providerId = execution.getProviderId();
-            if ("auth-otp-form".equals(providerId)) {
-                execution.setRequirement(AuthenticationExecutionModel.Requirement.REQUIRED.name());
-                adminClient.realm("test").flows().updateExecutions("browser", execution);
-            }
-        }
+
+        adminClient.realm("test").flows().getExecutions("browser").
+                stream().filter(execution -> execution.getDisplayName().equals("Browser - Conditional OTP"))
+                .forEach(execution ->
+                {execution.setRequirement(AuthenticationExecutionModel.Requirement.REQUIRED.name());
+                adminClient.realm("test").flows().updateExecutions("browser", execution);});
 
         ApiUtil.removeUserByUsername(testRealm(), "test-user@localhost");
         UserRepresentation user = UserBuilder.create().enabled(true)
@@ -131,6 +134,10 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
         String userId = events.expectRegister("setupTotp", "email@mail.com").assertEvent().getUserId();
 
         assertTrue(totpPage.isCurrent());
+        assertFalse(totpPage.isCancelDisplayed());
+
+        // KEYCLOAK-11753 - Verify OTP label element present on "Configure OTP" required action form
+        driver.findElement(By.id("userLabel"));
 
         totpPage.configure(totp.generateTOTP(totpPage.getTotpSecret()));
 
@@ -194,6 +201,9 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
 
         assertTrue(pageSource.contains("Unable to scan?"));
         assertFalse(pageSource.contains("Scan barcode?"));
+
+        // KEYCLOAK-11753 - Verify OTP label element present on "Configure OTP" required action form
+        driver.findElement(By.id("userLabel"));
     }
 
     // KEYCLOAK-7081
@@ -252,6 +262,32 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
 
         assertFalse(pageSource.contains("Unable to scan?"));
         assertTrue(pageSource.contains("Scan barcode?"));
+    }
+
+    @Test
+    public void setupTotpRegisterVerifyCustomOtpLabelSetProperly() {
+        loginPage.open();
+        loginPage.clickRegister();
+        registerPage.register("firstName", "lastName", "setupTotpRegister@mail.com", "setupTotpRegister", "password", "password");
+
+        String userId = events.expectRegister("setupTotpRegister", "setupTotpRegister@mail.com").assertEvent().getUserId();
+
+        assertTrue(totpPage.isCurrent());
+
+        // KEYCLOAK-11753 - Verify OTP label element present on "Configure OTP" required action form
+        driver.findElement(By.id("userLabel"));
+
+        String customOtpLabel = "my-custom-otp-label";
+
+        // Set OTP label to a custom value
+        totpPage.configure(totp.generateTOTP(totpPage.getTotpSecret()), customOtpLabel);
+
+        // Open account page & verify OTP authenticator with requested label was created
+        accountTotpPage.open();
+        accountTotpPage.assertCurrent();
+
+        String pageSource = driver.getPageSource();
+        assertTrue(pageSource.contains(customOtpLabel));
     }
 
     @Test
@@ -398,7 +434,7 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
                     .otpLookAheadWindow(1)
                     .otpDigits(8)
                     .otpPeriod(30)
-                    .otpType(UserCredentialModel.TOTP)
+                    .otpType(OTPCredentialModel.TOTP)
                     .otpAlgorithm(HmacOTP.HMAC_SHA1)
                     .otpInitialCounter(0);
         adminClient.realm("test").update(realmRep);
@@ -450,7 +486,7 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
                     .otpLookAheadWindow(0)
                     .otpDigits(6)
                     .otpPeriod(30)
-                    .otpType(UserCredentialModel.HOTP)
+                    .otpType(OTPCredentialModel.HOTP)
                     .otpAlgorithm(HmacOTP.HMAC_SHA1)
                     .otpInitialCounter(0);
         adminClient.realm("test").update(realmRep);
@@ -479,8 +515,9 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
 
         loginPage.open();
         loginPage.login("test-user@localhost", "password");
-        String token = otpgen.generateHOTP(totpSecret, 1);
-        loginTotpPage.login(token);
+        loginTotpPage.assertCurrent();
+        loginTotpPage.login(otpgen.generateHOTP(totpSecret, 1));
+
 
         assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
@@ -495,7 +532,7 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
                     .otpLookAheadWindow(5)
                     .otpDigits(6)
                     .otpPeriod(30)
-                    .otpType(UserCredentialModel.HOTP)
+                    .otpType(OTPCredentialModel.HOTP)
                     .otpAlgorithm(HmacOTP.HMAC_SHA1)
                     .otpInitialCounter(0);
         adminClient.realm("test").update(realmRep);
@@ -503,9 +540,8 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
 
         loginPage.open();
         loginPage.login("test-user@localhost", "password");
-        token = otpgen.generateHOTP(totpSecret, 4);
         loginTotpPage.assertCurrent();
-        loginTotpPage.login(token);
+        loginTotpPage.login(otpgen.generateHOTP(totpSecret, 2));
 
         assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
@@ -517,7 +553,7 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
                 .otpLookAheadWindow(1)
                 .otpDigits(6)
                 .otpPeriod(30)
-                .otpType(UserCredentialModel.TOTP)
+                .otpType(OTPCredentialModel.TOTP)
                 .otpAlgorithm(HmacOTP.HMAC_SHA1)
                 .otpInitialCounter(0);
         adminClient.realm("test").update(realmRep);

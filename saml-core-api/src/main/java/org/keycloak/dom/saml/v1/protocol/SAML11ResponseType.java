@@ -34,7 +34,7 @@ import java.util.List;
  */
 public class SAML11ResponseType extends SAML11ResponseAbstractType {
 
-    protected List<SAML11AssertionType> assertions = new ArrayList<SAML11AssertionType>();
+    protected List<SAML11AssertionType> assertions = new ArrayList<>();
 
     protected SAML11StatusType status;
 

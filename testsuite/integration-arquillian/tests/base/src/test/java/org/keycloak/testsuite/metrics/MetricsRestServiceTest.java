@@ -53,19 +53,19 @@ public class MetricsRestServiceTest extends AbstractKeycloakTest {
 
         try (Response response = client.target("http://localhost:" + MGMT_PORT + "/health").request().get()) {
             Assert.assertThat(response, statusCodeIs(Status.OK));
-            Assert.assertThat(response, body(containsString("{\"outcome\":\"UP\",\"checks\":[]}")));
+            Assert.assertThat(response, body(containsString("{\"status\":\"UP\",\"checks\":[]}")));
         } finally {
             client.close();
         }
     }
 
     @Test
-    public void testMetricsEndpoint() {
+    public void  testMetricsEndpoint() {
         Client client = ClientBuilder.newClient();
 
         try (Response response = client.target("http://localhost:" + MGMT_PORT + "/metrics").request().get()) {
             Assert.assertThat(response, statusCodeIs(Status.OK));
-            Assert.assertThat(response, body(containsString("base:classloader_total_loaded_class_count")));
+            Assert.assertThat(response, body(containsString("base_memory_maxHeap_bytes")));
         } finally {
             client.close();
         }

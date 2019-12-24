@@ -29,7 +29,7 @@ class LicenseProcessMojo extends AbstractMojo {
         def outputDirectoryRaw = project.properties['outputDirectory'] ?: "${project.build.directory}/licenses"
         def xmlFileSource = project.properties['xmlFileSource'] ?: "${project.basedir}/src/main/resources/licenses/${project.properties['product.slot']}/licenses.xml"
         def licenseName = project.properties['licenseName'] ?: "Apache Software License 2.0"
-        def licenseUrl = project.properties['licenseUrl'] ?: "https://raw.githubusercontent.com/keycloak/keycloak/${project.version}/License.html"
+        def licenseUrl = project.properties['licenseUrl'] ?: "https://raw.githubusercontent.com/keycloak/keycloak/${project.version}/LICENSE.txt"
         def groupId = project.properties['groupId'] ?: "org.keycloak"
 
         Path outputDirectory = fs.getPath(outputDirectoryRaw)
@@ -59,7 +59,7 @@ class LicenseProcessMojo extends AbstractMojo {
 
                 def newFilename = "${artifact.groupId},${artifact.artifactId},${artifact.version},${licenseName}.txt"
                 Path newFile = licenseFileRoot.resolve(newFilename)
-                InputStream originalLicense = this.class.getResourceAsStream("keycloak-licenses-common/License.html")
+                InputStream originalLicense = this.class.getResourceAsStream("keycloak-licenses-common/LICENSE.txt")
                 log.info("==> ${newFilename}")
                 Files.copy(originalLicense, newFile, StandardCopyOption.REPLACE_EXISTING)
             }

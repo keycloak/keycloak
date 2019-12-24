@@ -120,7 +120,7 @@ public class AuthenticationExecutionModel implements Serializable {
 
     public enum Requirement {
         REQUIRED,
-        OPTIONAL,
+        CONDITIONAL,
         ALTERNATIVE,
         DISABLED
     }
@@ -128,8 +128,8 @@ public class AuthenticationExecutionModel implements Serializable {
     public boolean isRequired() {
         return requirement == Requirement.REQUIRED;
     }
-    public boolean isOptional() {
-        return requirement == Requirement.OPTIONAL;
+    public boolean isConditional() {
+        return requirement == Requirement.CONDITIONAL;
     }
     public boolean isAlternative() {
         return requirement == Requirement.ALTERNATIVE;
@@ -139,5 +139,22 @@ public class AuthenticationExecutionModel implements Serializable {
     }
     public boolean isEnabled() {
         return requirement != Requirement.DISABLED;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        AuthenticationExecutionModel that = (AuthenticationExecutionModel) o;
+
+        if (id == null || that.id == null) return false;
+        return id.equals(that.id);
+
+    }
+
+    @Override
+    public int hashCode() {
+        return id != null ? id.hashCode() : 0;
     }
 }

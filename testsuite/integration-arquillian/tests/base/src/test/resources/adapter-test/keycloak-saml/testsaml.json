@@ -33,7 +33,8 @@
             "realmRoles": ["manager", "user"],
             "applicationRoles": {
                 "http://localhost:8280/employee/": [ "employee" ],
-                "http://localhost:8280/employee2/": [ "empl.oyee", "employee" ]
+                "http://localhost:8280/employee2/": [ "empl.oyee", "employee" ],
+                "http://localhost:8280/employee-role-mapping/": ["employee"]
             }
         },
         {
@@ -625,6 +626,61 @@
             ]
         },
         {
+            "clientId": "http://localhost:8280/employee-dom/",
+            "enabled": true,
+            "protocol": "saml",
+            "fullScopeAllowed": true,
+            "baseUrl": "http://localhost:8080/employee-dom",
+            "redirectUris": [
+                "http://localhost:8080/employee-dom/*"
+            ],
+            "adminUrl": "http://localhost:8080/employee-dom",
+            "attributes": {
+                "saml.assertion.signature": "true",
+                "saml.server.signature": "true",
+                "saml.client.signature": "true",
+                "saml.signature.algorithm": "RSA_SHA256",
+                "saml.authnstatement": "true",
+                "saml.signing.certificate": "MIIC+zCCAeOgAwIBAgIEcFrChjANBgkqhkiG9w0BAQsFADAuMSwwKgYDVQQDEyNodHRwOi8vbG9jYWxob3N0OjgwODAvZW1wbG95ZWUtZG9tLzAeFw0xOTA3MDMwOTE1NDlaFw00NjExMTgwOTE1NDlaMC4xLDAqBgNVBAMTI2h0dHA6Ly9sb2NhbGhvc3Q6ODA4MC9lbXBsb3llZS1kb20vMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAmEbjaKmKCh2MXTVLMUXdbjKSdmXAOenuE2bDD0AlEaJmnJ5zU2JY6UuFflH3332n2YktaaCyTznwX1Zcf7GH3bm7xhV1HSmlbFpIY17M8QUOIGZEzvKSbT9gjRJSPIdE1JvZuqgzuXpRlRfC4eoH1VgS0Vmu4gwIRFnUUgqc5hW11AQVkGZs7TkEYbVEYneKMbQOKa1OzW+FAb7C13Yn19gSvGr3THE+7FGwxEJM6N6kr4xnxg4VpaXcsW4ijGI3CHPJA06MZ6LzXxCmz+8TOSLo5pV7GKgME9QR1lBSC2Cp0yDtHjqK6QCqApyHhP2xN8qzJhMIhffSSHq4GokhjwIDAQABoyEwHzAdBgNVHQ4EFgQUOVG/h7cr+T6LJ4dQIVALBknwF/AwDQYJKoZIhvcNAQELBQADggEBAI5Y1MPMHPsDRJBQke/+tkRO4PALbsAQtfvYDNmpBGzUNo2xU3n7PNzbWrcqubjLN0nqXloBTaeeHtrFGAejMCS5X8UOGLyXbKBm7hHJs5ZZASrm0FkUzyuJexWCbSAg0p7Z6wWw03dnV/A9LDFwTdGIYsnSzZ59/v3BUH89mavOwVuVJB5O2PysUob3urcv1tmv9eL5jAMc764ID1gLkydcNrmICa+aZ/FojfReyTtwWX0DoPflPvF/Xllp3jLg1HwSlD6fD2wO/MKawgBbE6xrAkg5bF01B25RadJJffx3hEtgxBzlo1EL4Ir+lJmM1vzuTq4c1wDYKku4Y0Qg5o0="
+            },
+            "protocolMappers": [
+                {
+                    "name": "email",
+                    "protocol": "saml",
+                    "protocolMapper": "saml-user-property-mapper",
+                    "consentRequired": false,
+                    "config": {
+                        "user.attribute": "email",
+                        "friendly.name": "email",
+                        "attribute.name": "urn:oid:1.2.840.113549.1.9.1",
+                        "attribute.nameformat": "URI Reference"
+                    }
+                },
+                {
+                    "name": "phone",
+                    "protocol": "saml",
+                    "protocolMapper": "saml-user-attribute-mapper",
+                    "consentRequired": false,
+                    "config": {
+                        "user.attribute": "phone",
+                        "attribute.name": "phone",
+                        "attribute.nameformat": "Basic"
+                    }
+                },
+                {
+                    "name": "role-list",
+                    "protocol": "saml",
+                    "protocolMapper": "saml-role-list-mapper",
+                    "consentRequired": false,
+                    "config": {
+                        "attribute.name": "Role",
+                        "attribute.nameformat": "Basic",
+                        "single": "false"
+                    }
+                }
+            ]
+        },
+        {
             "clientId": "http://localhost:8280/employee-sig-front/",
             "enabled": true,
             "protocol": "saml",
@@ -662,6 +718,57 @@
                 "saml.authnstatement": "true",
                 "saml.signing.certificate": "MIIB1DCCAT0CBgFJGP5dZDANBgkqhkiG9w0BAQsFADAwMS4wLAYDVQQDEyVodHRwOi8vbG9jYWxob3N0OjgwODAvc2FsZXMtcG9zdC1zaWcvMB4XDTE0MTAxNjEyNDQyM1oXDTI0MTAxNjEyNDYwM1owMDEuMCwGA1UEAxMlaHR0cDovL2xvY2FsaG9zdDo4MDgwL3NhbGVzLXBvc3Qtc2lnLzCBnzANBgkqhkiG9w0BAQEFAAOBjQAwgYkCgYEA1RvGu8RjemSJA23nnMksoHA37MqY1DDTxOECY4rPAd9egr7GUNIXE0y1MokaR5R2crNpN8RIRwR8phQtQDjXL82c6W+NLQISxztarQJ7rdNJIYwHY0d5ri1XRpDP8zAuxubPYiMAVYcDkIcvlbBpwh/dRM5I2eElRK+eSiaMkCUCAwEAATANBgkqhkiG9w0BAQsFAAOBgQCLms6htnPaY69k1ntm9a5jgwSn/K61cdai8R8B0ccY7zvinn9AfRD7fiROQpFyY29wKn8WCLrJ86NBXfgFUGyR5nLNHVy3FghE36N2oHy53uichieMxffE6vhkKJ4P8ChfJMMOZlmCPsQPDvjoAghHt4mriFiQgRdPgIy/zDjSNw=="
             }
+        },
+        {
+            "clientId": "http://localhost:8280/employee-role-mapping/",
+            "enabled": true,
+            "protocol": "saml",
+            "fullScopeAllowed": true,
+            "baseUrl": "http://localhost:8080/employee-role-mapping",
+            "redirectUris": [
+                "http://localhost:8080/employee-role-mapping/*"
+            ],
+            "adminUrl": "http://localhost:8080/employee-role-mapping",
+            "attributes": {
+                "saml.authnstatement": "true",
+                "saml_idp_initiated_sso_url_name" : "employee-role-mapping"
+            },
+            "protocolMappers": [
+                {
+                    "name": "email",
+                    "protocol": "saml",
+                    "protocolMapper": "saml-user-property-mapper",
+                    "consentRequired": false,
+                    "config": {
+                        "user.attribute": "email",
+                        "friendly.name": "email",
+                        "attribute.name": "urn:oid:1.2.840.113549.1.9.1",
+                        "attribute.nameformat": "URI Reference"
+                    }
+                },
+                {
+                    "name": "phone",
+                    "protocol": "saml",
+                    "protocolMapper": "saml-user-attribute-mapper",
+                    "consentRequired": false,
+                    "config": {
+                        "user.attribute": "phone",
+                        "attribute.name": "phone",
+                        "attribute.nameformat": "Basic"
+                    }
+                },
+                {
+                    "name": "role-list",
+                    "protocol": "saml",
+                    "protocolMapper": "saml-role-list-mapper",
+                    "consentRequired": false,
+                    "config": {
+                        "attribute.name": "Role",
+                        "attribute.nameformat": "Basic",
+                        "single": "false"
+                    }
+                }
+            ]
         }
     ],
     "groups" : [
@@ -716,7 +823,18 @@
                     "name": "empl.oyee",
                     "description": "Have Employee privileges with dots"
                 }
+            ],
+            "http://localhost:8280/employee-role-mapping/" : [
+                {
+                    "name": "employee",
+                    "description": "Have Employee privileges"
+                },
+                {
+                    "name": "supervisor",
+                    "description": "Have Supervisor privileges"
+                }
             ]
+
         }
     }
 }

@@ -25,7 +25,7 @@ import org.keycloak.util.JsonSerialization;
 
 import javax.crypto.SecretKey;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.security.PrivateKey;
 
 /**
@@ -76,11 +76,7 @@ public class JWSBuilder {
         if (kid != null) builder.append(",\"kid\" : \"").append(kid).append("\"");
         if (contentType != null) builder.append(",\"cty\":\"").append(contentType).append("\"");
         builder.append("}");
-        try {
-            return Base64Url.encode(builder.toString().getBytes("UTF-8"));
-        } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException(e);
-        }
+        return Base64Url.encode(builder.toString().getBytes(StandardCharsets.UTF_8));
     }
 
     protected String encodeAll(StringBuilder encoding, byte[] signature) {
@@ -115,7 +111,7 @@ public class JWSBuilder {
             encode(signer.getAlgorithm(), data, buffer);
             byte[] signature = null;
             try {
-                signature = signer.sign(buffer.toString().getBytes("UTF-8"));
+                signature = signer.sign(buffer.toString().getBytes(StandardCharsets.UTF_8));
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
@@ -134,12 +130,7 @@ public class JWSBuilder {
             StringBuilder buffer = new StringBuilder();
             byte[] data = marshalContent();
             encode(algorithm, data, buffer);
-            byte[] signature = null;
-            try {
-                signature = RSAProvider.sign(buffer.toString().getBytes("UTF-8"), algorithm, privateKey);
-            } catch (UnsupportedEncodingException e) {
-                throw new RuntimeException(e);
-            }
+            byte[] signature = RSAProvider.sign(buffer.toString().getBytes(StandardCharsets.UTF_8), algorithm, privateKey);
             return encodeAll(buffer, signature);
         }
 
@@ -163,12 +154,7 @@ public class JWSBuilder {
             StringBuilder buffer = new StringBuilder();
             byte[] data = marshalContent();
             encode(Algorithm.HS256, data, buffer);
-            byte[] signature = null;
-            try {
-                signature = HMACProvider.sign(buffer.toString().getBytes("UTF-8"), Algorithm.HS256, sharedSecret);
-            } catch (UnsupportedEncodingException e) {
-                throw new RuntimeException(e);
-            }
+            byte[] signature = HMACProvider.sign(buffer.toString().getBytes(StandardCharsets.UTF_8), Algorithm.HS256, sharedSecret);
             return encodeAll(buffer, signature);
         }
 
@@ -177,12 +163,7 @@ public class JWSBuilder {
             StringBuilder buffer = new StringBuilder();
             byte[] data = marshalContent();
             encode(Algorithm.HS384, data, buffer);
-            byte[] signature = null;
-            try {
-                signature = HMACProvider.sign(buffer.toString().getBytes("UTF-8"), Algorithm.HS384, sharedSecret);
-            } catch (UnsupportedEncodingException e) {
-                throw new RuntimeException(e);
-            }
+            byte[] signature = HMACProvider.sign(buffer.toString().getBytes(StandardCharsets.UTF_8), Algorithm.HS384, sharedSecret);
             return encodeAll(buffer, signature);
         }
 
@@ -191,12 +172,7 @@ public class JWSBuilder {
             StringBuilder buffer = new StringBuilder();
             byte[] data = marshalContent();
             encode(Algorithm.HS512, data, buffer);
-            byte[] signature = null;
-            try {
-                signature = HMACProvider.sign(buffer.toString().getBytes("UTF-8"), Algorithm.HS512, sharedSecret);
-            } catch (UnsupportedEncodingException e) {
-                throw new RuntimeException(e);
-            }
+            byte[] signature = HMACProvider.sign(buffer.toString().getBytes(StandardCharsets.UTF_8), Algorithm.HS512, sharedSecret);
             return encodeAll(buffer, signature);
         }
 
@@ -205,12 +181,7 @@ public class JWSBuilder {
             StringBuilder buffer = new StringBuilder();
             byte[] data = marshalContent();
             encode(Algorithm.HS256, data, buffer);
-            byte[] signature = null;
-            try {
-                signature = HMACProvider.sign(buffer.toString().getBytes("UTF-8"), Algorithm.HS256, sharedSecret);
-            } catch (UnsupportedEncodingException e) {
-                throw new RuntimeException(e);
-            }
+            byte[] signature = HMACProvider.sign(buffer.toString().getBytes(StandardCharsets.UTF_8), Algorithm.HS256, sharedSecret);
             return encodeAll(buffer, signature);
         }
 
@@ -219,12 +190,7 @@ public class JWSBuilder {
             StringBuilder buffer = new StringBuilder();
             byte[] data = marshalContent();
             encode(Algorithm.HS384, data, buffer);
-            byte[] signature = null;
-            try {
-                signature = HMACProvider.sign(buffer.toString().getBytes("UTF-8"), Algorithm.HS384, sharedSecret);
-            } catch (UnsupportedEncodingException e) {
-                throw new RuntimeException(e);
-            }
+            byte[] signature = HMACProvider.sign(buffer.toString().getBytes(StandardCharsets.UTF_8), Algorithm.HS384, sharedSecret);
             return encodeAll(buffer, signature);
         }
 
@@ -233,12 +199,7 @@ public class JWSBuilder {
             StringBuilder buffer = new StringBuilder();
             byte[] data = marshalContent();
             encode(Algorithm.HS512, data, buffer);
-            byte[] signature = null;
-            try {
-                signature = HMACProvider.sign(buffer.toString().getBytes("UTF-8"), Algorithm.HS512, sharedSecret);
-            } catch (UnsupportedEncodingException e) {
-                throw new RuntimeException(e);
-            }
+            byte[] signature = HMACProvider.sign(buffer.toString().getBytes(StandardCharsets.UTF_8), Algorithm.HS512, sharedSecret);
             return encodeAll(buffer, signature);
         }
     }

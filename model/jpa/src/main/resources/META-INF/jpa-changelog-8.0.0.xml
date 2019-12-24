@@ -1,0 +1,217 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!--
+  ~ * Copyright 2018 Red Hat, Inc. and/or its affiliates
+  ~ * and other contributors as indicated by the @author tags.
+  ~ *
+  ~ * Licensed under the Apache License, Version 2.0 (the "License");
+  ~ * you may not use this file except in compliance with the License.
+  ~ * You may obtain a copy of the License at
+  ~ *
+  ~ * http://www.apache.org/licenses/LICENSE-2.0
+  ~ *
+  ~ * Unless required by applicable law or agreed to in writing, software
+  ~ * distributed under the License is distributed on an "AS IS" BASIS,
+  ~ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ * See the License for the specific language governing permissions and
+  ~ * limitations under the License.
+  -->
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
+
+    <!--modifies the credentials to the new format, while copying the data as json in the new fields-->
+    <changeSet author="keycloak" id="8.0.0-adding-credential-columns">
+
+        <addColumn tableName="CREDENTIAL">
+            <column name="USER_LABEL" type="VARCHAR(255)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="SECRET_DATA" type="CLOB">
+                <constraints nullable="true"/>
+            </column>
+            <column name="CREDENTIAL_DATA" type="CLOB">
+                <constraints nullable="true"/>
+            </column>
+            <column name="PRIORITY" type="INT">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+
+        <addColumn tableName="FED_USER_CREDENTIAL">
+            <column name="USER_LABEL" type="VARCHAR(255)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="SECRET_DATA" type="CLOB">
+                <constraints nullable="true"/>
+            </column>
+            <column name="CREDENTIAL_DATA" type="CLOB">
+                <constraints nullable="true"/>
+            </column>
+            <column name="PRIORITY" type="INT">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <!--Update format of credential to fill secret_data and credential_data - used on all databases beside Oracle DB -->
+    <changeSet author="keycloak" id="8.0.0-updating-credential-data-not-oracle">
+        <preConditions onSqlOutput="TEST" onFail="MARK_RAN">
+            <not>
+                <dbms type="oracle" />
+            </not>
+        </preConditions>
+
+        <!-- SALT was saved in tinyblob in previous version. -->
+        <!-- Can't be automatically updated for all users to new format in single UPDATE statement, so existing users will be updated on-the-fly -->
+        <update tableName="CREDENTIAL">
+            <column name="PRIORITY" value="10" />
+            <column name="SECRET_DATA" valueComputed="CONCAT('{&quot;value&quot;:&quot;', VALUE, '&quot;,&quot;salt&quot;:&quot;__SALT__&quot;}')"/>
+            <column name="CREDENTIAL_DATA" valueComputed="CONCAT('{&quot;hashIterations&quot;:', HASH_ITERATIONS, ',&quot;algorithm&quot;:&quot;', ALGORITHM, '&quot;}')"/>
+            <where>TYPE = 'password' OR TYPE = 'password-history'</where>
+        </update>
+
+        <update tableName="CREDENTIAL">
+            <column name="PRIORITY" value="20" />
+            <column name="TYPE" value="otp" />
+            <column name="SECRET_DATA" valueComputed="CONCAT('{&quot;value&quot;:&quot;', VALUE, '&quot;}')"/>
+            <column name="CREDENTIAL_DATA" valueComputed="CONCAT('{&quot;subType&quot;:&quot;totp&quot;,&quot;digits&quot;:', DIGITS, ',&quot;period&quot;:', PERIOD, ',&quot;algorithm&quot;:&quot;', ALGORITHM, '&quot;}')"/>
+            <where>TYPE = 'totp'</where>
+        </update>
+
+        <update tableName="CREDENTIAL">
+            <column name="PRIORITY" value="20" />
+            <column name="TYPE" value="otp" />
+            <column name="SECRET_DATA" valueComputed="CONCAT('{&quot;value&quot;:&quot;', VALUE, '&quot;}')"/>
+            <column name="CREDENTIAL_DATA" valueComputed="CONCAT('{&quot;subType&quot;:&quot;hotp&quot;,&quot;digits&quot;:', DIGITS, ',&quot;counter&quot;:', COUNTER, ',&quot;algorithm&quot;:&quot;', ALGORITHM, '&quot;}')"/>
+            <where>TYPE = 'hotp'</where>
+        </update>
+
+        <!--Update format of fed_user_credential to fill secret_data and credential_data-->
+        <update tableName="FED_USER_CREDENTIAL">
+            <column name="PRIORITY" value="10" />
+            <column name="SECRET_DATA" valueComputed="CONCAT('{&quot;value&quot;:&quot;', VALUE, '&quot;,&quot;salt&quot;:&quot;__SALT__&quot;}')"/>
+            <column name="CREDENTIAL_DATA" valueComputed="CONCAT('{&quot;hashIterations&quot;:', HASH_ITERATIONS, ',&quot;algorithm&quot;:&quot;', ALGORITHM, '&quot;}')"/>
+            <where>TYPE = 'password' OR TYPE = 'password-history'</where>
+        </update>
+
+        <update tableName="FED_USER_CREDENTIAL">
+            <column name="PRIORITY" value="20" />
+            <column name="TYPE" value="otp" />
+            <column name="SECRET_DATA" valueComputed="CONCAT('{&quot;value&quot;:&quot;', VALUE, '&quot;}')"/>
+            <column name="CREDENTIAL_DATA" valueComputed="CONCAT('{&quot;subType&quot;:&quot;totp&quot;,&quot;digits&quot;:', DIGITS, ',&quot;period&quot;:', PERIOD, ',&quot;algorithm&quot;:&quot;', ALGORITHM, '&quot;}')"/>
+            <where>TYPE = 'totp'</where>
+        </update>
+
+        <update tableName="FED_USER_CREDENTIAL">
+            <column name="PRIORITY" value="20" />
+            <column name="TYPE" value="otp" />
+            <column name="SECRET_DATA" valueComputed="CONCAT('{&quot;value&quot;:&quot;', VALUE, '&quot;}')"/>
+            <column name="CREDENTIAL_DATA" valueComputed="CONCAT('{&quot;subType&quot;:&quot;hotp&quot;,&quot;digits&quot;:', DIGITS, ',&quot;counter&quot;:', COUNTER, ',&quot;algorithm&quot;:&quot;', ALGORITHM, '&quot;}')"/>
+            <where>TYPE = 'hotp'</where>
+        </update>
+
+    </changeSet>
+
+    <!--Update format of credential to fill secret_data and credential_data - used on Oracle DB. Oracle doesn't support CONCAT with more than 2 arguments -->
+    <changeSet author="keycloak" id="8.0.0-updating-credential-data-oracle">
+        <preConditions onSqlOutput="TEST" onFail="MARK_RAN">
+            <dbms type="oracle" />
+        </preConditions>
+
+        <!-- SALT was saved in tinyblob in previous version. -->
+        <!-- Can't be automatically updated for all users to new format in single UPDATE statement, so existing users will be updated on-the-fly -->
+        <update tableName="CREDENTIAL">
+            <column name="PRIORITY" value="10" />
+            <column name="SECRET_DATA" valueComputed="'{&quot;value&quot;:&quot;' || VALUE || '&quot;,&quot;salt&quot;:&quot;__SALT__&quot;}'"/>
+            <column name="CREDENTIAL_DATA" valueComputed="'{&quot;hashIterations&quot;:' || HASH_ITERATIONS || ',&quot;algorithm&quot;:&quot;' || ALGORITHM || '&quot;}'"/>
+            <where>TYPE = 'password' OR TYPE = 'password-history'</where>
+        </update>
+
+        <update tableName="CREDENTIAL">
+            <column name="PRIORITY" value="20" />
+            <column name="TYPE" value="otp" />
+            <column name="SECRET_DATA" valueComputed="'{&quot;value&quot;:&quot;' || VALUE || '&quot;}'"/>
+            <column name="CREDENTIAL_DATA" valueComputed="'{&quot;subType&quot;:&quot;totp&quot;,&quot;digits&quot;:' || DIGITS || ',&quot;period&quot;:' || PERIOD || ',&quot;algorithm&quot;:&quot;' || ALGORITHM || '&quot;}'"/>
+            <where>TYPE = 'totp'</where>
+        </update>
+
+        <update tableName="CREDENTIAL">
+            <column name="PRIORITY" value="20" />
+            <column name="TYPE" value="otp" />
+            <column name="SECRET_DATA" valueComputed="'{&quot;value&quot;:&quot;' || VALUE || '&quot;}'"/>
+            <column name="CREDENTIAL_DATA" valueComputed="'{&quot;subType&quot;:&quot;hotp&quot;,&quot;digits&quot;:' || DIGITS || ',&quot;counter&quot;:' || COUNTER || ',&quot;algorithm&quot;:&quot;' || ALGORITHM || '&quot;}'"/>
+            <where>TYPE = 'hotp'</where>
+        </update>
+
+        <!--Update format of fed_user_credential to fill secret_data and credential_data-->
+        <update tableName="FED_USER_CREDENTIAL">
+            <column name="PRIORITY" value="10" />
+            <column name="SECRET_DATA" valueComputed="'{&quot;value&quot;:&quot;' || VALUE || '&quot;,&quot;salt&quot;:&quot;__SALT__&quot;}'"/>
+            <column name="CREDENTIAL_DATA" valueComputed="'{&quot;hashIterations&quot;:' || HASH_ITERATIONS || ',&quot;algorithm&quot;:&quot;' || ALGORITHM || '&quot;}'"/>
+            <where>TYPE = 'password' OR TYPE = 'password-history'</where>
+        </update>
+
+        <update tableName="FED_USER_CREDENTIAL">
+            <column name="PRIORITY" value="20" />
+            <column name="TYPE" value="otp" />
+            <column name="SECRET_DATA" valueComputed="'{&quot;value&quot;:&quot;' || VALUE || '&quot;}'"/>
+            <column name="CREDENTIAL_DATA" valueComputed="'{&quot;subType&quot;:&quot;totp&quot;,&quot;digits&quot;:' || DIGITS || ',&quot;period&quot;:' || PERIOD || ',&quot;algorithm&quot;:&quot;' || ALGORITHM || '&quot;}'"/>
+            <where>TYPE = 'totp'</where>
+        </update>
+
+        <update tableName="FED_USER_CREDENTIAL">
+            <column name="PRIORITY" value="20" />
+            <column name="TYPE" value="otp" />
+            <column name="SECRET_DATA" valueComputed="'{&quot;value&quot;:&quot;' || VALUE || '&quot;}'"/>
+            <column name="CREDENTIAL_DATA" valueComputed="'{&quot;subType&quot;:&quot;hotp&quot;,&quot;digits&quot;:' || DIGITS || ',&quot;counter&quot;:' || COUNTER || ',&quot;algorithm&quot;:&quot;' || ALGORITHM || '&quot;}'"/>
+            <where>TYPE = 'hotp'</where>
+        </update>
+
+    </changeSet>
+
+    <changeSet author="keycloak" id="8.0.0-credential-cleanup">
+        <dropDefaultValue tableName="CREDENTIAL" columnName="COUNTER" />
+        <dropDefaultValue tableName="CREDENTIAL" columnName="DIGITS" />
+        <dropDefaultValue tableName="CREDENTIAL" columnName="PERIOD" />
+        <dropDefaultValue tableName="CREDENTIAL" columnName="ALGORITHM" />
+
+        <dropColumn tableName="CREDENTIAL" columnName="DEVICE"/>
+        <dropColumn tableName="CREDENTIAL" columnName="HASH_ITERATIONS"/>
+        <dropColumn tableName="CREDENTIAL" columnName="VALUE"/>
+        <dropColumn tableName="CREDENTIAL" columnName="COUNTER"/>
+        <dropColumn tableName="CREDENTIAL" columnName="DIGITS"/>
+        <dropColumn tableName="CREDENTIAL" columnName="PERIOD"/>
+        <dropColumn tableName="CREDENTIAL" columnName="ALGORITHM"/>
+
+        <!--credential attributes are now held within the json of secret_data and credential_data (not this it was used in any case)-->
+        <dropTable tableName="CREDENTIAL_ATTRIBUTE"/>
+
+        <dropDefaultValue tableName="FED_USER_CREDENTIAL" columnName="COUNTER" />
+        <dropDefaultValue tableName="FED_USER_CREDENTIAL" columnName="DIGITS" />
+        <dropDefaultValue tableName="FED_USER_CREDENTIAL" columnName="PERIOD" />
+        <dropDefaultValue tableName="FED_USER_CREDENTIAL" columnName="ALGORITHM" />
+
+        <dropColumn tableName="FED_USER_CREDENTIAL" columnName="DEVICE"/>
+        <dropColumn tableName="FED_USER_CREDENTIAL" columnName="HASH_ITERATIONS"/>
+        <dropColumn tableName="FED_USER_CREDENTIAL" columnName="VALUE"/>
+        <dropColumn tableName="FED_USER_CREDENTIAL" columnName="COUNTER"/>
+        <dropColumn tableName="FED_USER_CREDENTIAL" columnName="DIGITS"/>
+        <dropColumn tableName="FED_USER_CREDENTIAL" columnName="PERIOD"/>
+        <dropColumn tableName="FED_USER_CREDENTIAL" columnName="ALGORITHM"/>
+
+        <!--credential attributes are now held within the json of secret_data and credential_data (not this it was used in any case)-->
+        <dropTable tableName="FED_CREDENTIAL_ATTRIBUTE "/>
+
+    </changeSet>
+
+    <changeSet author="keycloak" id="8.0.0-resource-tag-support">
+        <addColumn tableName="MIGRATION_MODEL">
+            <column name="UPDATE_TIME" type="BIGINT" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+
+        <createIndex tableName="MIGRATION_MODEL" indexName="IDX_UPDATE_TIME">
+            <column name="UPDATE_TIME" type="BIGINT" />
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>

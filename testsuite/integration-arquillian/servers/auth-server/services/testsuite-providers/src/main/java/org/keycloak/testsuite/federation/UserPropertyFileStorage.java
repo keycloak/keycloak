@@ -25,6 +25,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.storage.StorageId;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.adapter.AbstractUserAdapter;
@@ -118,20 +119,20 @@ public class UserPropertyFileStorage implements UserLookupProvider, UserStorageP
 
     @Override
     public boolean supportsCredentialType(String credentialType) {
-        return credentialType.equals(UserCredentialModel.PASSWORD);
+        return credentialType.equals(PasswordCredentialModel.TYPE);
     }
 
     @Override
     public boolean isConfiguredFor(RealmModel realm, UserModel user, String credentialType) {
-        return credentialType.equals(UserCredentialModel.PASSWORD) && userPasswords.get(user.getUsername()) != null;
+        return credentialType.equals(PasswordCredentialModel.TYPE) && userPasswords.get(user.getUsername()) != null;
     }
 
     @Override
     public boolean isValid(RealmModel realm, UserModel user, CredentialInput input) {
         if (!(input instanceof UserCredentialModel)) return false;
-        if (input.getType().equals(UserCredentialModel.PASSWORD)) {
+        if (input.getType().equals(PasswordCredentialModel.TYPE)) {
             String pw = (String)userPasswords.get(user.getUsername());
-            return pw != null && pw.equals( ((UserCredentialModel)input).getValue());
+            return pw != null && pw.equals(input.getChallengeResponse());
         } else {
             return false;
         }

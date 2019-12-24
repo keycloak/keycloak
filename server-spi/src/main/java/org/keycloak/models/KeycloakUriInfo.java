@@ -17,8 +17,8 @@
 package org.keycloak.models;
 
 import org.jboss.resteasy.specimpl.ResteasyUriBuilder;
-import org.keycloak.models.KeycloakSession;
 import org.keycloak.urls.HostnameProvider;
+import org.keycloak.urls.UrlType;
 
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.PathSegment;
@@ -33,29 +33,38 @@ public class KeycloakUriInfo implements UriInfo {
     private final String hostname;
     private final String scheme;
     private final int port;
+    private final String contextPath;
 
     private URI absolutePath;
     private URI requestURI;
     private URI baseURI;
 
-    public KeycloakUriInfo(KeycloakSession session, UriInfo delegate) {
+    public KeycloakUriInfo(KeycloakSession session, UrlType type, UriInfo delegate) {
         this.delegate = delegate;
 
         HostnameProvider hostnameProvider = session.getProvider(HostnameProvider.class);
-        this.scheme = hostnameProvider.getScheme(delegate);
-        this.hostname = hostnameProvider.getHostname(delegate);
-        this.port = hostnameProvider.getPort(delegate);
-
+        this.scheme = hostnameProvider.getScheme(delegate, type);
+        this.hostname = hostnameProvider.getHostname(delegate, type);
+        this.port = hostnameProvider.getPort(delegate, type);
+        this.contextPath = hostnameProvider.getContextPath(delegate, type);
     }
 
     public UriInfo getDelegate() {
         return delegate;
     }
 
+    private UriBuilder initUriBuilder(UriBuilder b) {
+        b.scheme(scheme);
+        b.host(hostname);
+        b.port(port);
+        b.replacePath(contextPath);
+        return b;
+    }
+
     @Override
     public URI getRequestUri() {
         if (requestURI == null) {
-            requestURI = delegate.getRequestUriBuilder().scheme(scheme).host(hostname).port(port).build();
+            requestURI = delegate.getRequestUri();
         }
         return requestURI;
     }
@@ -68,7 +77,7 @@ public class KeycloakUriInfo implements UriInfo {
     @Override
     public URI getAbsolutePath() {
         if (absolutePath == null) {
-            absolutePath = delegate.getAbsolutePathBuilder().scheme(scheme).host(hostname).port(port).build();
+            absolutePath = delegate.getAbsolutePath();
         }
         return absolutePath;
     }
@@ -81,7 +90,7 @@ public class KeycloakUriInfo implements UriInfo {
     @Override
     public URI getBaseUri() {
         if (baseURI == null) {
-            baseURI = delegate.getBaseUriBuilder().scheme(scheme).host(hostname).port(port).build();
+            baseURI = initUriBuilder(delegate.getBaseUriBuilder()).build();
         }
         return baseURI;
     }

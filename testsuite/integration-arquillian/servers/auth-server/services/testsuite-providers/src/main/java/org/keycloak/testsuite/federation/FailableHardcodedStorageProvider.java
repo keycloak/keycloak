@@ -27,6 +27,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.models.utils.UserModelDelegate;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.user.ImportedUserValidation;
@@ -72,7 +73,7 @@ public class FailableHardcodedStorageProvider implements UserStorageProvider, Us
     @Override
     public boolean supportsCredentialType(String credentialType) {
         checkForceFail();
-        return CredentialModel.PASSWORD.equals(credentialType);
+        return PasswordCredentialModel.TYPE.equals(credentialType);
     }
 
     @Override
@@ -81,8 +82,8 @@ public class FailableHardcodedStorageProvider implements UserStorageProvider, Us
         if (!(input instanceof UserCredentialModel)) return false;
         if (!user.getUsername().equals(username)) throw new RuntimeException("UNKNOWN USER!");
 
-        if (input.getType().equals(UserCredentialModel.PASSWORD)) {
-            password = ((UserCredentialModel)input).getValue();
+        if (input.getType().equals(PasswordCredentialModel.TYPE)) {
+            password = input.getChallengeResponse();
             return true;
 
         } else {
@@ -105,16 +106,15 @@ public class FailableHardcodedStorageProvider implements UserStorageProvider, Us
     @Override
     public boolean isConfiguredFor(RealmModel realm, UserModel user, String credentialType) {
         checkForceFail();
-        return CredentialModel.PASSWORD.equals(credentialType);
+        return PasswordCredentialModel.TYPE.equals(credentialType);
     }
 
     @Override
-    public boolean isValid(RealmModel realm, UserModel user, CredentialInput input) {
+    public boolean isValid(RealmModel realm, UserModel user, CredentialInput credentialInput) {
         checkForceFail();
-        if (!(input instanceof UserCredentialModel)) return false;
         if (!user.getUsername().equals("billb")) throw new RuntimeException("UNKNOWN USER!");
-        if (input.getType().equals(UserCredentialModel.PASSWORD)) {
-            return password != null && password.equals( ((UserCredentialModel)input).getValue());
+        if (credentialInput.getType().equals(PasswordCredentialModel.TYPE)) {
+            return password != null && password.equals(credentialInput.getChallengeResponse());
         } else {
             return false;
         }

@@ -53,11 +53,16 @@ import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
+import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.*;
+import static org.keycloak.testsuite.auth.page.login.Login.OIDC;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -66,7 +71,7 @@ public class ClientTest extends AbstractAdminTest {
 
     @Test
     public void getClients() {
-        Assert.assertNames(realm.clients().findAll(), "account", "realm-management", "security-admin-console", "broker", Constants.ADMIN_CLI_CLIENT_ID);
+        Assert.assertNames(realm.clients().findAll(), "account", "account-console", "realm-management", "security-admin-console", "broker", Constants.ADMIN_CLI_CLIENT_ID);
     }
 
     private ClientRepresentation createClient() {
@@ -93,7 +98,7 @@ public class ClientTest extends AbstractAdminTest {
         String id = createClient().getId();
 
         assertNotNull(realm.clients().get(id));
-        Assert.assertNames(realm.clients().findAll(), "account", "realm-management", "security-admin-console", "broker", "my-app", Constants.ADMIN_CLI_CLIENT_ID);
+        Assert.assertNames(realm.clients().findAll(), "account", "account-console", "realm-management", "security-admin-console", "broker", "my-app", Constants.ADMIN_CLI_CLIENT_ID);
     }
 
     @Test
@@ -152,6 +157,35 @@ public class ClientTest extends AbstractAdminTest {
         List<ClientRepresentation> allClients = realm.clients().findAll();
         assertNotNull(allClients);
         assertFalse(allClients.isEmpty());
+    }
+
+    @Test
+    public void getAllClientsSearchAndPagination() {
+        Set<String> ids = new HashSet<>();
+        try {
+            for (int i = 1; i <= 10; i++) {
+                ClientRepresentation c = ClientBuilder.create().clientId("ccx-" + (i < 10 ? "0" + i : i)).build();
+                Response response = realm.clients().create(c);
+                ids.add(ApiUtil.getCreatedId(response));
+                response.close();
+            }
+
+            assertPaginatedClients(1, 10, realm.clients().findAll("ccx-", null, true, 0, 100));
+            assertPaginatedClients(1, 5, realm.clients().findAll("ccx-", null, true, 0, 5));
+            assertPaginatedClients(6, 10, realm.clients().findAll("ccx-", null, true, 5, 5));
+        } finally {
+            ids.stream().forEach(id -> realm.clients().get(id).remove());
+        }
+    }
+
+    private void assertPaginatedClients(int start, int end, List<ClientRepresentation> actual) {
+        List<String> expected = new LinkedList<>();
+        for (int i = start; i <= end; i++) {
+            expected.add("ccx-" + (i < 10 ? "0" + i : i));
+        }
+        List<String> a = actual.stream().map(rep -> rep.getClientId()).collect(Collectors.toList());
+        assertThat(a, is(expected));
+
     }
 
     @Test
@@ -231,6 +265,8 @@ public class ClientTest extends AbstractAdminTest {
         response.close();
         UserRepresentation userRep = realm.clients().get(id).getServiceAccountUser();
         assertEquals("service-account-serviceclient", userRep.getUsername());
+        // KEYCLOAK-11197 service accounts are no longer created with a placeholder e-mail.
+        assertNull(userRep.getEmail());
     }
 
     // KEYCLOAK-3421

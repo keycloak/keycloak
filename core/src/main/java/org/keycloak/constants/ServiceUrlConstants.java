@@ -31,5 +31,7 @@ public interface ServiceUrlConstants {
     public static final String CLIENTS_MANAGEMENT_REGISTER_NODE_PATH = "/realms/{realm-name}/clients-managements/register-node";
     public static final String CLIENTS_MANAGEMENT_UNREGISTER_NODE_PATH = "/realms/{realm-name}/clients-managements/unregister-node";
     public static final String JWKS_URL = "/realms/{realm-name}/protocol/openid-connect/certs";
+    public static final String DISCOVERY_URL = "/realms/{realm-name}/.well-known/openid-configuration";
+    String AUTHZ_DISCOVERY_URL = "/realms/{realm-name}/.well-known/uma2-configuration";
 
 }

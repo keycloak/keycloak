@@ -45,15 +45,15 @@ public class SAMLDataMarshallerTest {
     private static final String TEST_AUTHN_TYPE = "<saml:AuthnStatement xmlns:saml=\"urn:oasis:names:tc:SAML:2.0:assertion\" xmlns=\"urn:oasis:names:tc:SAML:2.0:assertion\" AuthnInstant=\"2015-11-06T11:00:33.923Z\" SessionIndex=\"fa0f4fd3-8a11-44f4-9acb-ee30c5bb8fe5\"><saml:AuthnContext><saml:AuthnContextClassRef>urn:oasis:names:tc:SAML:2.0:ac:classes:unspecified</saml:AuthnContextClassRef></saml:AuthnContext></saml:AuthnStatement>";
 
     @Test
-    public void testParseResponse() throws Exception {
+    public void testParseResponse() {
         SAMLDataMarshaller serializer = new SAMLDataMarshaller();
         ResponseType responseType = serializer.deserialize(TEST_RESPONSE, ResponseType.class);
 
         // test ResponseType
-        Assert.assertEquals(responseType.getID(), "ID_4804cf50-cd96-4b92-823e-89adaa0c78ba");
-        Assert.assertEquals(responseType.getDestination(), "http://localhost:8081/auth/realms/realm-with-broker/broker/kc-saml-idp-basic/endpoint");
-        Assert.assertEquals(responseType.getIssuer().getValue(), "http://localhost:8082/auth/realms/realm-with-saml-idp-basic");
-        Assert.assertEquals(responseType.getAssertions().get(0).getID(), "ID_29b196c2-d641-45c8-a423-8ed8e54d4cf9");
+        Assert.assertEquals("ID_4804cf50-cd96-4b92-823e-89adaa0c78ba", responseType.getID());
+        Assert.assertEquals("http://localhost:8081/auth/realms/realm-with-broker/broker/kc-saml-idp-basic/endpoint", responseType.getDestination());
+        Assert.assertEquals("http://localhost:8082/auth/realms/realm-with-saml-idp-basic", responseType.getIssuer().getValue());
+        Assert.assertEquals("ID_29b196c2-d641-45c8-a423-8ed8e54d4cf9", responseType.getAssertions().get(0).getID());
 
         // back to String
         String serialized = serializer.serialize(responseType);
@@ -61,13 +61,13 @@ public class SAMLDataMarshallerTest {
     }
 
     @Test
-    public void testParseAssertion() throws Exception {
+    public void testParseAssertion() {
         SAMLDataMarshaller serializer = new SAMLDataMarshaller();
         AssertionType assertion = serializer.deserialize(TEST_ASSERTION, AssertionType.class);
 
         // test assertion
-        Assert.assertEquals(assertion.getID(), "ID_29b196c2-d641-45c8-a423-8ed8e54d4cf9");
-        Assert.assertEquals(((NameIDType) assertion.getSubject().getSubType().getBaseID()).getValue(), "test-user");
+        Assert.assertEquals("ID_29b196c2-d641-45c8-a423-8ed8e54d4cf9", assertion.getID());
+        Assert.assertEquals("test-user", ((NameIDType) assertion.getSubject().getSubType().getBaseID()).getValue());
 
         // back to String
         String serialized = serializer.serialize(assertion);
@@ -75,13 +75,13 @@ public class SAMLDataMarshallerTest {
     }
 
     @Test
-    public void testParseAssertionWitNameId() throws Exception {
+    public void testParseAssertionWitNameId() {
         SAMLDataMarshaller serializer = new SAMLDataMarshaller();
         AssertionType assertion = serializer.deserialize(TEST_ASSERTION_WITH_NAME_ID, AssertionType.class);
 
         // test assertion
-        Assert.assertEquals(assertion.getID(), "ID_29b196c2-d641-45c8-a423-8ed8e54d4cf9");
-        Assert.assertEquals(((NameIDType) assertion.getSubject().getSubType().getBaseID()).getValue(), "test-user");
+        Assert.assertEquals("ID_29b196c2-d641-45c8-a423-8ed8e54d4cf9", assertion.getID());
+        Assert.assertEquals("test-user", ((NameIDType) assertion.getSubject().getSubType().getBaseID()).getValue());
 
         // back to String
         String serialized = serializer.serialize(assertion);
@@ -89,12 +89,12 @@ public class SAMLDataMarshallerTest {
     }
     
     @Test
-    public void testParseAuthnType() throws Exception {
+    public void testParseAuthnType() {
         SAMLDataMarshaller serializer = new SAMLDataMarshaller();
         AuthnStatementType authnStatement =  serializer.deserialize(TEST_AUTHN_TYPE, AuthnStatementType.class);
 
         // test authnStatement
-        Assert.assertEquals(authnStatement.getSessionIndex(), "fa0f4fd3-8a11-44f4-9acb-ee30c5bb8fe5");
+        Assert.assertEquals("fa0f4fd3-8a11-44f4-9acb-ee30c5bb8fe5", authnStatement.getSessionIndex());
 
         // back to String
         String serialized = serializer.serialize(authnStatement);

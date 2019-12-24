@@ -25,6 +25,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.storage.StorageId;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.adapter.AbstractUserAdapterFederatedStorage;
@@ -47,7 +48,7 @@ public class PassThroughFederatedUserStorageProvider implements
         CredentialInputUpdater
 {
 
-    public static final Set<String> CREDENTIAL_TYPES = Collections.singleton(UserCredentialModel.PASSWORD);
+    public static final Set<String> CREDENTIAL_TYPES = Collections.singleton(PasswordCredentialModel.TYPE);
     public static final String PASSTHROUGH_USERNAME = "passthrough";
     public static final String INITIAL_PASSWORD = "secret";
     private KeycloakSession session;
@@ -69,20 +70,19 @@ public class PassThroughFederatedUserStorageProvider implements
 
     @Override
     public boolean isConfiguredFor(RealmModel realm, UserModel user, String credentialType) {
-        if (!CredentialModel.PASSWORD.equals(credentialType)) return false;
+        if (!PasswordCredentialModel.TYPE.equals(credentialType)) return false;
         return true;
     }
 
     @Override
     public boolean isValid(RealmModel realm, UserModel user, CredentialInput input) {
-        UserCredentialModel password = (UserCredentialModel)input;
-        if (password.getType().equals(UserCredentialModel.PASSWORD)) {
-             if (INITIAL_PASSWORD.equals(password.getValue())) {
+        if (input.getType().equals(PasswordCredentialModel.TYPE)) {
+             if (INITIAL_PASSWORD.equals(input.getChallengeResponse())) {
                  return true;
              }
             List<CredentialModel> existing = session.userFederatedStorage().getStoredCredentialsByType(realm, user.getId(), "CLEAR_TEXT_PASSWORD");
             if (existing.isEmpty()) return false;
-            return existing.get(0).getConfig().getFirst("VALUE").equals(password.getValue());
+            return existing.get(0).getSecretData().equals("{\"value\":\"" + input.getChallengeResponse() + "\"}");
         }
         return false;
     }
@@ -90,18 +90,17 @@ public class PassThroughFederatedUserStorageProvider implements
     @Override
     public boolean updateCredential(RealmModel realm, UserModel user, CredentialInput input) {
         // testing federated credential attributes
-        UserCredentialModel password = (UserCredentialModel)input;
-        if (password.getType().equals(UserCredentialModel.PASSWORD)) {
+        if (input.getType().equals(PasswordCredentialModel.TYPE)) {
             List<CredentialModel> existing = session.userFederatedStorage().getStoredCredentialsByType(realm, user.getId(), "CLEAR_TEXT_PASSWORD");
             if (existing.isEmpty()) {
                 CredentialModel model = new CredentialModel();
                 model.setType("CLEAR_TEXT_PASSWORD");
-                model.getConfig().putSingle("VALUE", password.getValue());
+                model.setSecretData("{\"value\":\"" + input.getChallengeResponse() + "\"}");
                 session.userFederatedStorage().createCredential(realm, user.getId(), model);
             } else {
                 CredentialModel model = existing.get(0);
                 model.setType("CLEAR_TEXT_PASSWORD");
-                model.getConfig().putSingle("VALUE", password.getValue());
+                model.setSecretData("{\"value\":\"" + input.getChallengeResponse() + "\"}");
                 session.userFederatedStorage().updateCredential(realm, user.getId(), model);
 
             }

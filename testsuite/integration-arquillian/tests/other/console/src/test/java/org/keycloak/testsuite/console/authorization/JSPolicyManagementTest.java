@@ -18,15 +18,21 @@ package org.keycloak.testsuite.console.authorization;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.keycloak.common.Profile.Feature.UPLOAD_SCRIPTS;
 
+import javax.ws.rs.core.Response;
+
+import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.representations.idm.authorization.JSPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.Logic;
+import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.console.page.clients.authorization.policy.JSPolicy;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
+@EnableFeature(value = UPLOAD_SCRIPTS, skipRestart = true)
 public class JSPolicyManagementTest extends AbstractAuthorizationSettingsTest {
 
     @Test

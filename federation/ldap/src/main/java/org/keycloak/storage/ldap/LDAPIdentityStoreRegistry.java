@@ -55,7 +55,7 @@ public class LDAPIdentityStoreRegistry {
         if (context == null || !ldapConfig.equals(context.config)) {
             logLDAPConfig(session, ldapModel, ldapConfig);
 
-            LDAPIdentityStore store = createLdapIdentityStore(ldapConfig);
+            LDAPIdentityStore store = createLdapIdentityStore(session, ldapConfig);
             context = new LDAPIdentityStoreContext(ldapConfig, store);
             ldapStores.put(ldapModel.getId(), context);
         }
@@ -80,7 +80,7 @@ public class LDAPIdentityStoreRegistry {
     /**
      * Create LDAPIdentityStore to be cached in the local registry
      */
-    public static LDAPIdentityStore createLdapIdentityStore(LDAPConfig cfg) {
+    public static LDAPIdentityStore createLdapIdentityStore(KeycloakSession session, LDAPConfig cfg) {
         checkSystemProperty("com.sun.jndi.ldap.connect.pool.authentication", cfg.getConnectionPoolingAuthentication(), "none simple");
         checkSystemProperty("com.sun.jndi.ldap.connect.pool.initsize", cfg.getConnectionPoolingInitSize(), "1");
         checkSystemProperty("com.sun.jndi.ldap.connect.pool.maxsize", cfg.getConnectionPoolingMaxSize(), "1000");
@@ -89,7 +89,7 @@ public class LDAPIdentityStoreRegistry {
         checkSystemProperty("com.sun.jndi.ldap.connect.pool.protocol", cfg.getConnectionPoolingProtocol(), "plain");
         checkSystemProperty("com.sun.jndi.ldap.connect.pool.debug", cfg.getConnectionPoolingDebug(), "off");
 
-        return new LDAPIdentityStore(cfg);
+        return new LDAPIdentityStore(session, cfg);
     }
 
     private static void checkSystemProperty(String name, String cfgValue, String defaultValue) {

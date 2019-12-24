@@ -31,7 +31,6 @@ import org.keycloak.storage.client.ClientStorageProviderFactory;
 import org.keycloak.storage.client.ClientStorageProviderModel;
 
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
@@ -151,6 +150,18 @@ public class ClientStorageManager implements ClientProvider {
         return null;
     }
 
+    @Override
+    public List<ClientModel> searchClientsByClientId(String clientId, Integer firstResult, Integer maxResults, RealmModel realm) {
+        List<ClientModel> clients = session.clientLocalStorage().searchClientsByClientId(clientId,  firstResult, maxResults, realm);
+        if (clients != null) {
+            return clients;
+        }
+        for (ClientLookupProvider provider : getEnabledStorageProviders(session, realm, ClientLookupProvider.class)) {
+            clients = provider.searchClientsByClientId(clientId, firstResult, maxResults, realm);
+            if (clients != null) return clients;
+        }
+        return null;
+    }
 
     @Override
     public ClientModel addClient(RealmModel realm, String clientId) {
@@ -166,8 +177,13 @@ public class ClientStorageManager implements ClientProvider {
 
 
     @Override
+    public List<ClientModel> getClients(RealmModel realm, Integer firstResult, Integer maxResults) {
+       return session.clientLocalStorage().getClients(realm, firstResult, maxResults);
+    }
+
+    @Override
     public List<ClientModel> getClients(RealmModel realm) {
-       return session.clientLocalStorage().getClients(realm);
+        return session.clientLocalStorage().getClients(realm);
     }
 
     @Override
@@ -202,6 +218,11 @@ public class ClientStorageManager implements ClientProvider {
             return Collections.EMPTY_SET;
         }
         return session.clientLocalStorage().getClientRoles(realm, client);
+    }
+
+    @Override
+    public List<ClientModel> getAlwaysDisplayInConsoleClients(RealmModel realm) {
+        return session.clientLocalStorage().getAlwaysDisplayInConsoleClients(realm);
     }
 
     @Override

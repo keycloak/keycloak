@@ -33,21 +33,21 @@ import javax.ws.rs.core.MediaType;
 public interface ClientScopeResource {
 
     @Path("protocol-mappers")
-    public ProtocolMappersResource getProtocolMappers();
+    ProtocolMappersResource getProtocolMappers();
 
     @Path("/scope-mappings")
-    public RoleMappingResource getScopeMappings();
+    RoleMappingResource getScopeMappings();
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    public ClientScopeRepresentation toRepresentation();
+    ClientScopeRepresentation toRepresentation();
 
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
-    public void update(ClientScopeRepresentation rep);
+    void update(ClientScopeRepresentation rep);
 
     @DELETE
-    public void remove();
+    void remove();
 
 
 }

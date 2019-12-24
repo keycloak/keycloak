@@ -28,11 +28,13 @@ import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.Test;
+import org.keycloak.common.Profile;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.adapter.AbstractExampleAdapterTest;
 import org.keycloak.testsuite.adapter.page.AngularCorsProductTestApp;
 import org.keycloak.testsuite.adapter.page.CorsDatabaseServiceTestApp;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
+import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
 import org.keycloak.testsuite.auth.page.account.Account;
 import org.keycloak.testsuite.auth.page.login.OIDCLogin;
@@ -50,6 +52,8 @@ import java.util.regex.Pattern;
 import static junit.framework.TestCase.assertNotNull;
 import org.junit.Assume;
 import org.keycloak.testsuite.util.DroneUtils;
+
+import static org.keycloak.common.Profile.Feature.UPLOAD_SCRIPTS;
 import static org.keycloak.testsuite.utils.io.IOUtil.loadRealm;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
 import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
@@ -70,6 +74,7 @@ import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP)
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP6)
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP71)
+@EnableFeature(value = UPLOAD_SCRIPTS, skipRestart = true)
 public class CorsExampleAdapterTest extends AbstractExampleAdapterTest {
 
     public static final String CORS = "cors";
@@ -177,8 +182,6 @@ public class CorsExampleAdapterTest extends AbstractExampleAdapterTest {
         jsDriverAngularCorsProductPage.navigateTo();
         waitForPageToLoad();
 
-        jsDriverAngularCorsProductPage.loadVersion();
-        waitUntilElement(jsDriverAngularCorsProductPage.getOutput()).text().contains("Keycloak version: " + serverVersion);
     }
 
     @Nullable

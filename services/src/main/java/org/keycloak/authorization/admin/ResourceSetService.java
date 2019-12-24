@@ -202,9 +202,7 @@ public class ResourceSetService {
 
         storeFactory.getResourceStore().delete(id);
 
-        if (authorization.getRealm().isAdminEventsEnabled()) {
-            audit(toRepresentation(resource, resourceServer, authorization), OperationType.DELETE);
-        }
+        audit(toRepresentation(resource, resourceServer, authorization), OperationType.DELETE);
 
         return Response.noContent().build();
     }
@@ -527,12 +525,10 @@ public class ResourceSetService {
     }
 
     public void audit(ResourceRepresentation resource, String id, OperationType operation) {
-        if (authorization.getRealm().isAdminEventsEnabled()) {
-            if (id != null) {
-                adminEvent.operation(operation).resourcePath(session.getContext().getUri(), id).representation(resource).success();
-            } else {
-                adminEvent.operation(operation).resourcePath(session.getContext().getUri()).representation(resource).success();
-            }
+        if (id != null) {
+            adminEvent.operation(operation).resourcePath(session.getContext().getUri(), id).representation(resource).success();
+        } else {
+            adminEvent.operation(operation).resourcePath(session.getContext().getUri()).representation(resource).success();
         }
     }
 }

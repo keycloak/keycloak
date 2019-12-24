@@ -30,9 +30,9 @@ import java.util.List;
  */
 public class SAML11EvidenceType {
 
-    protected List<String> assertionIDReference = new ArrayList<String>();
+    protected List<String> assertionIDReference = new ArrayList<>();
 
-    protected List<SAML11AssertionType> assertions = new ArrayList<SAML11AssertionType>();
+    protected List<SAML11AssertionType> assertions = new ArrayList<>();
 
     public void add(String condition) {
         this.assertionIDReference.add(condition);

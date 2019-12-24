@@ -47,8 +47,8 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
- * @author Bill Burke
  * @resource Groups
+ * @author Bill Burke
  */
 public class GroupsResource {
 
@@ -76,7 +76,10 @@ public class GroupsResource {
     public List<GroupRepresentation> getGroups(@QueryParam("search") String search,
                                                @QueryParam("first") Integer firstResult,
                                                @QueryParam("max") Integer maxResults,
-                                               @QueryParam("parent") String parent) {
+                                               @QueryParam("parent") String parent,
+                                               @QueryParam("full") @DefaultValue("false") boolean fullRepresentation) {
+
+
         auth.groups().requireList();
 
         List<GroupRepresentation> results;
@@ -85,6 +88,9 @@ public class GroupsResource {
         maxResults = maxResults != null ? maxResults : Constants.DEFAULT_MAX_RESULTS;
 
         if (Objects.nonNull(search)) {
+            results = ModelToRepresentation.searchForGroupByName(realm, fullRepresentation, search.trim(), firstResult, maxResults);
+        } else if(Objects.nonNull(firstResult) && Objects.nonNull(maxResults)) {
+            results = ModelToRepresentation.toGroupHierarchy(realm, fullRepresentation, firstResult, maxResults);
             if (search.indexOf(":") != -1) {
                 String[] searchs = search.split(":");
                 results = ModelToRepresentation.searchForGroupByAttribute(realm, searchs[0], searchs[1], firstResult, maxResults, true);
@@ -112,7 +118,7 @@ public class GroupsResource {
         if (group == null) {
             throw new NotFoundException("Could not find group by id");
         }
-        GroupResource resource = new GroupResource(realm, group, session, this.auth, adminEvent);
+        GroupResource resource =  new GroupResource(realm, group, session, this.auth, adminEvent);
         ResteasyProviderFactory.getInstance().injectProperties(resource);
         return resource;
     }
@@ -150,7 +156,7 @@ public class GroupsResource {
     public Response addTopLevelGroup(GroupRepresentation rep) {
         auth.groups().requireManage();
 
-        List<GroupRepresentation> search = ModelToRepresentation.searchForGroupByName(realm, rep.getName(), 0, 1);
+        List<GroupRepresentation> search = ModelToRepresentation.searchForGroupByName(realm, false, rep.getName(), 0, 1);
         if (search != null && !search.isEmpty() && Objects.equals(search.get(0).getName(), rep.getName())) {
             return ErrorResponse.exists("Top level group named '" + rep.getName() + "' already exists.");
         }

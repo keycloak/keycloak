@@ -16,18 +16,22 @@
  */
 package org.keycloak.locale;
 
+import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.util.CookieHelper;
+import org.keycloak.storage.ReadOnlyException;
 
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.UriInfo;
 import java.util.Locale;
 
 public class DefaultLocaleSelectorProvider implements LocaleSelectorProvider {
+
+    private static final Logger logger = Logger.getLogger(DefaultLocaleSelectorProvider.class);
 
     protected static final String LOCALE_COOKIE = "KEYCLOAK_LOCALE";
     protected static final String KC_LOCALE_PARAM = "kc_locale";
@@ -153,7 +157,11 @@ public class DefaultLocaleSelectorProvider implements LocaleSelectorProvider {
 
     protected void updateUsersLocale(UserModel user, String locale) {
         if (!locale.equals(user.getFirstAttribute("locale"))) {
-            user.setSingleAttribute(UserModel.LOCALE, locale);
+            try {
+                user.setSingleAttribute(UserModel.LOCALE, locale);
+            } catch (ReadOnlyException e) {
+                logger.debug("Attempt to store 'locale' attribute to read only user model. Ignoring exception", e);
+            }
         }
     }
 

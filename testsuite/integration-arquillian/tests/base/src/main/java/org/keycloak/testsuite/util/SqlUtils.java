@@ -67,9 +67,9 @@ public class SqlUtils {
         executer.setUserid(dbUsername);
         executer.setUrl(dbUrl);
 
-        if (dbUrl.contains("mssql") || jdbcDriverClass.contains("mssql")) {
+        if (dbUrl.contains("mssql") || jdbcDriverClass.contains("mssql") || jdbcDriverClass.contains("sqlserver")) {
             log.info("Using alternative delimiter due the MSSQL");
-            executer.setDelimiter("go");
+            executer.setDelimiter("GO");
             SQLExec.DelimiterType dt = new SQLExec.DelimiterType();
             dt.setValue(SQLExec.DelimiterType.ROW);
             executer.setDelimiterType(dt);
@@ -87,6 +87,39 @@ public class SqlUtils {
             }
         }
 
-        executer.execute();
+        try {
+            executer.execute();
+        } catch (Exception e) {
+            try {
+                String sqlScript = IOUtils.toString(new FileInputStream(sqlFilePath), StandardCharsets.UTF_8);
+                log.errorf("Exception during manual migration. Content of the SQL file: \n%s\n", sqlScript);
+            } catch (Exception e2) {
+                log.error("Exception when trying to log content of SQL file", e2);
+            }
+
+            throw e;
+        }
+    }
+
+
+    // Run SQL script. JDBC driver must be on classpath! Execute application for example with arguments like:
+    // -DsqlFilePath=/tmp/keycloak-database-update.sql -Dkeycloak.connectionsJpa.password=keycloak -Dkeycloak.connectionsJpa.user=keycloak -Dkeycloak.connectionsJpa.driver=oracle.jdbc.driver.OracleDriver -Dkeycloak.connectionsJpa.url="jdbc:oracle:thin:@localhost:1251:xe"
+    public static void main(String[] args) {
+        String sqlFilePath = readProperty("sqlFilePath");
+        String jdbcDriverClass = readProperty("keycloak.connectionsJpa.driver");
+        String dbUrl = readProperty("keycloak.connectionsJpa.url");
+        String dbUsername = readProperty("keycloak.connectionsJpa.user");
+        String dbPassword = readProperty("keycloak.connectionsJpa.password");
+
+        runSqlScript(sqlFilePath, jdbcDriverClass, dbUrl, dbUsername, dbPassword);
+
+    }
+
+    private static String readProperty(String propertyName) {
+        String val = System.getProperty(propertyName);
+        if (val == null) {
+            throw new RuntimeException("Undefined system property: " + propertyName);
+        }
+        return val;
     }
 }

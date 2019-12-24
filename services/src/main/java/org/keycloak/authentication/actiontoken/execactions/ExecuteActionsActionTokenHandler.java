@@ -58,8 +58,8 @@ public class ExecuteActionsActionTokenHandler extends AbstractActionTokenHander<
           TokenUtils.checkThat(
             // either redirect URI is not specified or must be valid for the client
             t -> t.getRedirectUri() == null
-                 || RedirectUtils.verifyRedirectUri(tokenContext.getUriInfo(), t.getRedirectUri(),
-                      tokenContext.getRealm(), tokenContext.getAuthenticationSession().getClient()) != null,
+                 || RedirectUtils.verifyRedirectUri(tokenContext.getSession(), t.getRedirectUri(),
+                      tokenContext.getAuthenticationSession().getClient()) != null,
             Errors.INVALID_REDIRECT_URI,
             Messages.INVALID_REDIRECT_URI
           )
@@ -88,8 +88,7 @@ public class ExecuteActionsActionTokenHandler extends AbstractActionTokenHander<
                     .createInfoPage();
         }
 
-        String redirectUri = RedirectUtils.verifyRedirectUri(tokenContext.getUriInfo(), token.getRedirectUri(),
-          tokenContext.getRealm(), authSession.getClient());
+        String redirectUri = RedirectUtils.verifyRedirectUri(tokenContext.getSession(), token.getRedirectUri(), authSession.getClient());
 
         if (redirectUri != null) {
             authSession.setAuthNote(AuthenticationManager.SET_REDIRECT_URI_AFTER_REQUIRED_ACTIONS, "true");

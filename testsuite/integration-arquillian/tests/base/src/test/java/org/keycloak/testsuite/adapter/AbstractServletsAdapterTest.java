@@ -121,6 +121,12 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
                 .addClasses(servletClasses)
                 .addAsWebInfResource(jbossDeploymentStructure, JBOSS_DEPLOYMENT_STRUCTURE_XML);
 
+        // if a role-mappings.properties file exist in WEB-INF, include it in the deployment.
+        URL roleMappingsConfig = AbstractServletsAdapterTest.class.getResource(webInfPath + "role-mappings.properties");
+        if(roleMappingsConfig != null) {
+            deployment.addAsWebInfResource(roleMappingsConfig, "role-mappings.properties");
+        }
+
         String webXMLContent;
         try {
             webXMLContent = IOUtils.toString(webXML.openStream(), Charset.forName("UTF-8"))

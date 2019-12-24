@@ -54,6 +54,10 @@ public class UrlBean {
         return Urls.realmLoginRestartPage(baseURI, realm).toString();
     }
 
+    public boolean hasAction()  {
+        return actionuri != null;
+    }
+
     public String getRegistrationAction() {
         if (this.actionuri != null) {
             return this.actionuri.toString();
@@ -87,6 +91,10 @@ public class UrlBean {
 
     public String getFirstBrokerLoginUrl() {
         return Urls.firstBrokerLoginProcessor(baseURI, realm).toString();
+    }
+
+    public String getResourcesUrl() {
+        return Urls.themeRoot(baseURI).toString() + "/" + theme.getType().toString().toLowerCase() +"/" + theme.getName();
     }
 
     public String getOauthAction() {

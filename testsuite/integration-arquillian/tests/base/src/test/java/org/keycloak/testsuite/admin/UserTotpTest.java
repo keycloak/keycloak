@@ -24,18 +24,18 @@ import org.junit.Test;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
 import org.keycloak.events.admin.OperationType;
+import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.representations.idm.AdminEventRepresentation;
+import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.services.resources.account.AccountFormService;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.pages.AccountTotpPage;
 import org.keycloak.testsuite.pages.AccountUpdateProfilePage;
 import org.keycloak.testsuite.pages.LoginPage;
 
-import javax.ws.rs.core.UriBuilder;
 import java.util.List;
 
 
@@ -85,7 +85,9 @@ public class UserTotpTest extends AbstractTestRealmKeycloakTest {
         List<UserRepresentation> users = adminClient.realms().realm("test").users().search("test-user@localhost", null, null, null, 0, 1);
         String userId = users.get(0).getId();
         testingClient.testing().clearAdminEventQueue();
-        adminClient.realms().realm("test").users().get(userId).removeTotp();
+        CredentialRepresentation totpCredential = adminClient.realms().realm("test").users().get(userId).credentials()
+                .stream().filter(c -> OTPCredentialModel.TYPE.equals(c.getType())).findFirst().get();
+        adminClient.realms().realm("test").users().get(userId).removeCredential(totpCredential.getId());
 
         totpPage.open();
         Assert.assertFalse(driver.getPageSource().contains("pficon-delete"));
@@ -93,6 +95,6 @@ public class UserTotpTest extends AbstractTestRealmKeycloakTest {
         AdminEventRepresentation event = testingClient.testing().pollAdminEvent();
         Assert.assertNotNull(event);
         Assert.assertEquals(OperationType.ACTION.name(), event.getOperationType());
-        Assert.assertEquals("users/" + userId + "/remove-totp", event.getResourcePath());
+        Assert.assertEquals("users/" + userId + "/credentials/" + totpCredential.getId(), event.getResourcePath());
     }
 }

@@ -320,13 +320,8 @@ th.w-40 {
   width: 148px;
 }
 
-.navbar-pf .navbar-utility > li > a{
-  padding: 22px 30px 23px 40px!important;
-}
-/* @media (min-width: 768px) */
-.navbar-pf .navbar-utility li.dropdown > .dropdown-toggle .pficon-user {
-  top: 22px;
-  left:20px;
+.navbar-pf .navbar-utility .dropdown-toggle {
+    padding: 23px !important;
 }
 
 .clickable {
@@ -429,3 +424,63 @@ div[tree-model] li .deactivate_selected {
 div[tree-model] li .highlight {
     background-color: #aaddff;
 }
+
+/* Manage credentials */
+table.credentials-table {
+    margin-top: 0;
+    margin-bottom: 20px;
+}
+
+table.credentials-table td.kc-action-cell {
+    vertical-align: middle;
+}
+
+table.credentials-table input[type='text'] {
+    width: 100%;
+}
+
+td.credential-label-cell {
+    padding: 5px !important;
+}
+
+td.credential-data-cell {
+    padding: 0 !important;
+}
+
+td.credential-data-cell a {
+    margin-left: 5px;
+    line-height: 2.5em;
+    cursor: pointer;
+}
+
+td.credential-action-cell {
+    padding: 0px !important;
+}
+
+td.credential-action-cell div.kc-action-cell {
+    width: 100%;
+    height: 36px;
+    line-height: 34px;
+}
+
+td.credential-action-cell.expanded div.kc-action-cell {
+    border-bottom: 1px solid #d1d1d1;
+}
+
+table.credential-data-table {
+    margin-top: 0;
+}
+
+table.credential-data-table tr:first-child td {
+    border-top: 0;
+}
+
+table.credential-data-table td:first-child {
+    width: 150px;
+}
+
+table.credential-data-table td.key {
+    text-align: right;
+    font-weight: bold;
+}
+

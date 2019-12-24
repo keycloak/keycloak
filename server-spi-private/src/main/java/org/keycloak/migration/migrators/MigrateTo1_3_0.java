@@ -31,8 +31,6 @@ import org.keycloak.storage.UserStorageProviderModel;
 
 import javax.naming.directory.SearchControls;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

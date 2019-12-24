@@ -26,6 +26,12 @@ public class Messages {
 
     public static final String INVALID_USER = "invalidUserMessage";
 
+    public static final String INVALID_USERNAME = "invalidUsernameMessage";
+
+    public static final String INVALID_USERNAME_OR_EMAIL = "invalidUsernameOrEmailMessage";
+
+    public static final String INVALID_PASSWORD = "invalidPasswordMessage";
+
     public static final String INVALID_EMAIL = "invalidEmailMessage";
 
     public static final String ACCOUNT_DISABLED = "accountDisabledMessage";
@@ -176,6 +182,8 @@ public class Messages {
     public static final String IDENTITY_PROVIDER_NOT_UNIQUE = "identityProviderNotUniqueMessage";
 
     public static final String REALM_SUPPORTS_NO_CREDENTIALS = "realmSupportsNoCredentialsMessage";
+
+    public static final String CREDENTIAL_SETUP_REQUIRED ="credentialSetupRequired";
 
     public static final String READ_ONLY_USER = "readOnlyUserMessage";
 

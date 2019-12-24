@@ -87,6 +87,6 @@ public class AdapterUtils {
     }
 
     public static KeycloakPrincipal<RefreshableKeycloakSecurityContext> createPrincipal(KeycloakDeployment deployment, RefreshableKeycloakSecurityContext securityContext) {
-        return new KeycloakPrincipal<RefreshableKeycloakSecurityContext>(getPrincipalName(deployment, securityContext.getToken()), securityContext);
+        return new KeycloakPrincipal<>(getPrincipalName(deployment, securityContext.getToken()), securityContext);
     }
 }

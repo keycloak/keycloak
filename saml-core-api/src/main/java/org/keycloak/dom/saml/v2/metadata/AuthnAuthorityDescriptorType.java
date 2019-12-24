@@ -44,11 +44,11 @@ import java.util.List;
  */
 public class AuthnAuthorityDescriptorType extends RoleDescriptorType {
 
-    protected List<EndpointType> authnQueryService = new ArrayList<EndpointType>();
+    protected List<EndpointType> authnQueryService = new ArrayList<>();
 
-    protected List<EndpointType> assertionIDRequestService = new ArrayList<EndpointType>();
+    protected List<EndpointType> assertionIDRequestService = new ArrayList<>();
 
-    protected List<String> nameIDFormat = new ArrayList<String>();
+    protected List<String> nameIDFormat = new ArrayList<>();
 
     public AuthnAuthorityDescriptorType(List<String> protocolSupport) {
         super(protocolSupport);

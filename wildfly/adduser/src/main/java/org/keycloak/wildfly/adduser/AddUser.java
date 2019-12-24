@@ -34,6 +34,8 @@ import org.keycloak.credential.CredentialModel;
 import org.keycloak.credential.hash.PasswordHashProvider;
 import org.keycloak.credential.hash.PasswordHashProviderFactory;
 import org.keycloak.models.PasswordPolicy;
+import org.keycloak.models.credential.PasswordCredentialModel;
+import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -225,15 +227,9 @@ public class AddUser {
         PasswordHashProviderFactory hashProviderFactory = getHashProviderFactory(DEFAULT_HASH_ALGORITH);
         PasswordHashProvider hashProvider = hashProviderFactory.create(null);
 
-        CredentialModel credentialModel = new CredentialModel();
-        hashProvider.encode(password, iterations > 0 ? iterations : DEFAULT_HASH_ITERATIONS, credentialModel);
+        PasswordCredentialModel credentialModel = hashProvider.encodedCredential(password, iterations > 0 ? iterations : DEFAULT_HASH_ITERATIONS);
 
-        CredentialRepresentation credentials = new CredentialRepresentation();
-        credentials.setType(credentialModel.getType());
-        credentials.setAlgorithm(credentialModel.getAlgorithm());
-        credentials.setHashIterations(credentialModel.getHashIterations());
-        credentials.setSalt(Base64.encodeBytes(credentialModel.getSalt()));
-        credentials.setHashedSaltedValue(credentialModel.getValue());
+        CredentialRepresentation credentials = ModelToRepresentation.toRepresentation(credentialModel);
 
         user.getCredentials().add(credentials);
 

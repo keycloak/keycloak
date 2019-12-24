@@ -62,6 +62,10 @@ public interface ClientModel extends ClientScopeModel, RoleContainerModel,  Prot
 
     void setEnabled(boolean enabled);
 
+    boolean isAlwaysDisplayInConsole();
+
+    void setAlwaysDisplayInConsole(boolean alwaysDisplayInConsole);
+
     boolean isSurrogateAuthRequired();
 
     void setSurrogateAuthRequired(boolean surrogateAuthRequired);
@@ -127,10 +131,10 @@ public interface ClientModel extends ClientScopeModel, RoleContainerModel,  Prot
      *
      * @return
      */
-    public String getAuthenticationFlowBindingOverride(String binding);
-    public Map<String, String> getAuthenticationFlowBindingOverrides();
-    public void removeAuthenticationFlowBindingOverride(String binding);
-    public void setAuthenticationFlowBindingOverride(String binding, String flowId);
+    String getAuthenticationFlowBindingOverride(String binding);
+    Map<String, String> getAuthenticationFlowBindingOverrides();
+    void removeAuthenticationFlowBindingOverride(String binding);
+    void setAuthenticationFlowBindingOverride(String binding, String flowId);
 
     boolean isFrontchannelLogout();
     void setFrontchannelLogout(boolean flag);

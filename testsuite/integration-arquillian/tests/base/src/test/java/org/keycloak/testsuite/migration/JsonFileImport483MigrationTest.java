@@ -16,14 +16,9 @@
  */
 package org.keycloak.testsuite.migration;
 
-import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.arquillian.container.test.api.TargetsContainer;
-import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Test;
 import org.keycloak.exportimport.util.ImportUtils;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.testsuite.arquillian.DeploymentTargetModifier;
-import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
 import org.keycloak.testsuite.utils.io.IOUtil;
 import org.keycloak.util.JsonSerialization;
 
@@ -35,12 +30,6 @@ import java.util.Map;
  * Tests that we can import json file from previous version.  MigrationTest only tests DB.
  */
 public class JsonFileImport483MigrationTest extends AbstractJsonFileImportMigrationTest {
-
-    @Deployment
-    @TargetsContainer(DeploymentTargetModifier.AUTH_SERVER_CURRENT)
-    public static WebArchive deploy() {
-        return RunOnServerDeployment.create();
-    }
 
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
@@ -62,6 +51,8 @@ public class JsonFileImport483MigrationTest extends AbstractJsonFileImportMigrat
         testMigrationTo5_x();
         testMigrationTo6_x();
         testMigrationTo7_x(true);
+        testMigrationTo8_x();
+        testMigrationTo9_x();
     }
 
 }

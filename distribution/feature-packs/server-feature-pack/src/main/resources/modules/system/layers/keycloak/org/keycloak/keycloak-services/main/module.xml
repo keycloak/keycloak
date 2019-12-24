@@ -38,11 +38,10 @@
         <module name="org.keycloak.keycloak-saml-core-public" services="import"/>
         <module name="org.keycloak.keycloak-saml-core" services="import"/>
         <module name="org.keycloak.keycloak-services" export="true" services="import"/>
-        <module name="org.keycloak.keycloak-wildfly-extensions" services="import"/>
+        <module name="org.keycloak.keycloak-wildfly-extensions" export="true" services="import"/>
 
         <!-- Authorization -->
         <module name="org.keycloak.keycloak-authz-policy-common" services="import"/>
-        <module name="org.keycloak.keycloak-authz-policy-drools" services="import"/>
 
         <!-- Openshift Client Storage -->
         <module name="com.openshift.openshift-restclient-java" services="import"/>
@@ -72,5 +71,8 @@
         <module name="org.twitter4j"/>
         <module name="javax.transaction.api"/>
         <module name="sun.jdk"/>
+        <module name="com.webauthn4j.webauthn4j-core"/>
+        <module name="com.webauthn4j.webauthn4j-util"/>
+        <module name="javax.persistence.api"/>
     </dependencies>
 </module>

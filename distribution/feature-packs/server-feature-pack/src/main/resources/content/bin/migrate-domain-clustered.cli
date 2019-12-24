@@ -659,4 +659,40 @@ if (result == undefined) of /profile=$clusteredProfile/subsystem=jgroups/stack=u
     echo
 end-if
 
+if (result == "true") of /subsystem=keycloak-server/spi=truststore/provider=file:map-get(name=properties, key=disabled)
+    echo Disabling Truststore Provider
+    /subsystem=keycloak-server/spi=truststore/provider=file:write-attribute(name=enabled, value=false)
+    echo Removing deprecated option
+    /subsystem=keycloak-server/spi=truststore/provider=file:map-remove(name=properties, key=disabled)
+    echo
+end-if
+
+# Migrate from 7.0.0 to 8.0.0
+
+if ((result.time == 100L) && (result.unit == MILLISECONDS)) of /profile=$clusteredProfile/subsystem=ejb3/thread-pool=default:read-attribute(name=keepalive-time)
+    echo Changing thread pool keepalive of ejb3 subsystem
+    /profile=$clusteredProfile/subsystem=ejb3/thread-pool=default:write-attribute(name=keepalive-time.time, value=60)
+    /profile=$clusteredProfile/subsystem=ejb3/thread-pool=default:write-attribute(name=keepalive-time.unit,value=SECONDS)
+    echo
+end-if
+
+if (outcome == failed) of /profile=$clusteredProfile/subsystem=keycloak-server/spi=hostname/provider=default/:read-resource
+    echo Adding default hostname provider
+    /profile=$clusteredProfile/subsystem=keycloak-server/spi=hostname/provider=default/:add(properties={frontendUrl => "${keycloak.frontendUrl:}",forceBackendUrlToFrontendUrl => "false"},enabled=true)
+end-if
+
+if (result == request) of /profile=$clusteredProfile/subsystem=keycloak-server/spi=hostname/:read-attribute(name=default-provider)
+    echo Switching from request to default hostname provider
+
+    /profile=$clusteredProfile/subsystem=keycloak-server/spi=hostname/:write-attribute(name=default-provider,value=default)
+end-if
+
+if (result != fixed) of /profile=$clusteredProfile/subsystem=keycloak-server/spi=hostname/:read-attribute(name=default-provider)
+    try
+        /profile=$clusteredProfile/subsystem=keycloak-server/spi=hostname/provider=fixed:remove
+        echo Removed config for unused fixed hostname provider
+    catch
+    end-try
+end-if
+
 echo *** End Migration of /profile=$clusteredProfile ***

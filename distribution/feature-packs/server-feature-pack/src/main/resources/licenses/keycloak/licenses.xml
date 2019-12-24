@@ -540,6 +540,50 @@
         </license>
       </licenses>
     </dependency>
+    <dependency>
+      <groupId>com.webauthn4j</groupId>
+      <artifactId>webauthnj4-core</artifactId>
+      <version>0.9.14.RELEASE</version>
+      <licenses>
+        <license>
+          <name>Apache Software License 2.0</name>
+          <url>https://raw.githubusercontent.com/webauthn4j/webauthn4j/0.9.14.RELEASE/LICENSE.txt</url>
+        </license>
+      </licenses>
+    </dependency>
+    <dependency>
+      <groupId>com.webauthn4j</groupId>
+      <artifactId>webauthnj4-util</artifactId>
+      <version>0.9.14.RELEASE</version>
+      <licenses>
+        <license>
+          <name>Apache Software License 2.0</name>
+          <url>https://raw.githubusercontent.com/webauthn4j/webauthn4j/0.9.14.RELEASE/LICENSE.txt</url>
+        </license>
+      </licenses>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.kerby</groupId>
+      <artifactId>kerby-asn1</artifactId>
+      <version>2.0.0</version>
+      <licenses>
+        <license>
+          <name>Apache Software License 2.0</name>
+          <url>https://raw.githubusercontent.com/apache/directory-kerby/kerby-all-2.0.0/LICENSE</url>
+        </license>
+      </licenses>
+    </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.dataformat</groupId>
+      <artifactId>jackson-dataformat-cbor</artifactId>
+      <version>2.9.10</version>
+      <licenses>
+        <license>
+          <name>Apache Software License 2.0</name>
+          <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url> <!-- Source repo contains no license file -->
+        </license>
+      </licenses>
+    </dependency>
   </dependencies>
   <others>
     <other>
@@ -777,6 +821,18 @@
         <license>
           <name>MIT License</name>
           <url>https://raw.githubusercontent.com/smcllns/css-social-buttons/547237515694d05eaa38aeae3fb4d2eb4dee1ac9/README.md</url>
+        </license>
+      </licenses>
+    </other>
+    <other>
+      <description>rfc4648.js</description>
+      <locations>
+        <file>services/src/main/resources/theme-resources/resources/base64url.js</file>
+      </locations>
+      <licenses>
+        <license>
+          <name>MIT License</name>
+          <url>https://github.com/swansontec/rfc4648.js/blob/master/package.json</url>
         </license>
       </licenses>
     </other>

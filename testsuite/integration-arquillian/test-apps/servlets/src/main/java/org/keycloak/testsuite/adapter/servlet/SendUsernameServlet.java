@@ -39,10 +39,19 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.xml.datatype.XMLGregorianCalendar;
 import java.io.IOException;
+import java.io.StringWriter;
 import java.security.Principal;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
+import org.w3c.dom.Document;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -92,6 +101,25 @@ public class SendUsernameServlet {
 
         return Response.ok(getAttributes()).header(HttpHeaders.CONTENT_TYPE, MediaType.TEXT_HTML_TYPE + ";charset=UTF-8").build();
 
+    }
+
+    @GET
+    @Path("getAssertionFromDocument")
+    public Response getAssertionFromDocument() throws IOException, TransformerException {
+        sentPrincipal = httpServletRequest.getUserPrincipal();
+        DocumentBuilderFactory domFact = DocumentBuilderFactory.newInstance();
+        Document doc = ((SamlPrincipal) sentPrincipal).getAssertionDocument();
+        String xml = "";
+        if (doc != null) {
+            DOMSource domSource = new DOMSource(doc);
+            StringWriter writer = new StringWriter();
+            StreamResult result = new StreamResult(writer);
+            TransformerFactory tf = TransformerFactory.newInstance();
+            Transformer transformer = tf.newTransformer();
+            transformer.transform(domSource, result);
+            xml = writer.toString();
+        }
+        return Response.ok(xml).header(HttpHeaders.CONTENT_TYPE, MediaType.TEXT_PLAIN_TYPE + ";charset=UTF-8").build();
     }
 
     @GET
@@ -179,6 +207,7 @@ public class SendUsernameServlet {
 
         output += principal.getName() + "\n";
         output += getSessionInfo() + "\n";
+        output += getRoles() + "\n";
 
         return output;
     }
@@ -200,6 +229,15 @@ public class SendUsernameServlet {
         }
 
         return "Session doesn't exists";
+    }
+
+    private String getRoles() {
+        StringBuilder output = new StringBuilder("Roles: ");
+        for (String role : ((SamlPrincipal) httpServletRequest.getUserPrincipal()).getAttributes("Roles")) {
+            output.append(role).append(",");
+        }
+
+        return output.toString();
     }
 
     private String getErrorOutput(Integer statusCode) {

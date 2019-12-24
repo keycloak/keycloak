@@ -43,11 +43,11 @@ public class LogChecker {
         }
     }
 
-    public static TextFileChecker getJBossServerLogsChecker(boolean verbose, String jbossHome) throws IOException {
+    public static TextFileChecker getJBossServerLogsChecker(String jbossHome) throws IOException {
         String[] pathsToCheck = getJBossServerLogFiles(jbossHome);
         Path[] pathsArray = Arrays.stream(pathsToCheck).map(File::new).map(File::toPath).toArray(Path[]::new);
 
-        return new TextFileChecker(verbose, pathsArray);
+        return new TextFileChecker(pathsArray);
     }
 
 }

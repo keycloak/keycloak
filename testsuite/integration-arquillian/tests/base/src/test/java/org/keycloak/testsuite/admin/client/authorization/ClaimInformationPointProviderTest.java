@@ -248,6 +248,16 @@ public class ClaimInformationPointProviderTest extends AbstractKeycloakTest {
         assertEquals(2, claims.get("individualRoles").size());
         assertEquals("{\"roleSpec\":2342,\"roleId\":4234}", claims.get("individualRoles").get(0));
         assertEquals("{\"roleSpec\":4223,\"roleId\":523}", claims.get("individualRoles").get(1));
+
+        headers.put("Content-Type", Arrays.asList("application/json; charset=utf-8"));
+
+        httpFacade = createHttpFacade(headers, new ByteArrayInputStream(treeNode.toString().getBytes()));
+        claims = getClaimInformationProviderForPath("/claims-from-body-json-object", "claims").resolve(httpFacade);
+
+        assertEquals(1, claims.size());
+        assertEquals(2, claims.get("individualRoles").size());
+        assertEquals("{\"roleSpec\":2342,\"roleId\":4234}", claims.get("individualRoles").get(0));
+        assertEquals("{\"roleSpec\":4223,\"roleId\":523}", claims.get("individualRoles").get(1));
     }
 
     @Test

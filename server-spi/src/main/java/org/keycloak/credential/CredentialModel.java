@@ -17,9 +17,8 @@
 
 package org.keycloak.credential;
 
-import org.keycloak.common.util.MultivaluedHashMap;
-
 import java.io.Serializable;
+import java.util.Comparator;
 
 /**
  * Used just in cases when we want to "directly" update or retrieve the hash or salt of user credential (For example during export/import)
@@ -27,56 +26,50 @@ import java.io.Serializable;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class CredentialModel implements Serializable {
+
+    @Deprecated /** Use PasswordCredentialModel.TYPE instead **/
     public static final String PASSWORD = "password";
+
+    @Deprecated /** Use PasswordCredentialModel.PASSWORD_HISTORY instead **/
     public static final String PASSWORD_HISTORY = "password-history";
-    public static final String PASSWORD_TOKEN = "password-token";
+
+    @Deprecated /** Use OTPCredentialModel.TYPE instead **/
+    public static final String OTP = "otp";
+
+    @Deprecated /** Use OTPCredentialModel.TOTP instead **/
+    public static final String TOTP = "totp";
+
+    @Deprecated /** Use OTPCredentialModel.HOTP instead **/
+    public static final String HOTP = "hotp";
 
     // Secret is same as password but it is not hashed
     public static final String SECRET = "secret";
-    public static final String TOTP = "totp";
-    public static final String HOTP = "hotp";
     public static final String CLIENT_CERT = "cert";
     public static final String KERBEROS = "kerberos";
-    public static final String OTP = "otp";
-
 
 
     private String id;
     private String type;
-    private String value;
-    private String device;
-    private byte[] salt;
-    private int hashIterations;
+    private String userLabel;
     private Long createdDate;
 
-    // otp stuff
-    private int counter;
-    private String algorithm;
-    private int digits;
-    private int period;
-    private MultivaluedHashMap<String, String> config;
+    private String secretData;
+    private String credentialData;
 
     public CredentialModel shallowClone() {
         CredentialModel res = new CredentialModel();
         res.id = id;
         res.type = type;
-        res.value = value;
-        res.device = device;
-        res.salt = salt;
-        res.hashIterations = hashIterations;
+        res.userLabel = userLabel;
         res.createdDate = createdDate;
-        res.counter = counter;
-        res.algorithm = algorithm;
-        res.digits = digits;
-        res.period = period;
-        res.config = config;
+        res.secretData = secretData;
+        res.credentialData = credentialData;
         return res;
     }
 
     public String getId() {
         return id;
     }
-
     public void setId(String id) {
         this.id = id;
     }
@@ -84,88 +77,43 @@ public class CredentialModel implements Serializable {
     public String getType() {
         return type;
     }
-
     public void setType(String type) {
         this.type = type;
     }
 
-    public String getValue() {
-        return value;
+    public String getUserLabel() {
+        return userLabel;
     }
-
-    public void setValue(String value) {
-        this.value = value;
-    }
-
-    public String getDevice() {
-        return device;
-    }
-
-    public void setDevice(String device) {
-        this.device = device;
-    }
-
-    public byte[] getSalt() {
-        return salt;
-    }
-
-    public void setSalt(byte[] salt) {
-        this.salt = salt;
-    }
-
-    public int getHashIterations() {
-        return hashIterations;
-    }
-
-    public void setHashIterations(int iterations) {
-        this.hashIterations = iterations;
+    public void setUserLabel(String userLabel) {
+        this.userLabel = userLabel;
     }
 
     public Long getCreatedDate() {
         return createdDate;
     }
-
     public void setCreatedDate(Long createdDate) {
         this.createdDate = createdDate;
     }
 
-    public int getCounter() {
-        return counter;
+    public String getSecretData() {
+        return secretData;
+    }
+    public void setSecretData(String secretData) {
+        this.secretData = secretData;
     }
 
-    public void setCounter(int counter) {
-        this.counter = counter;
+    public String getCredentialData() {
+        return credentialData;
+    }
+    public void setCredentialData(String credentialData) {
+        this.credentialData = credentialData;
     }
 
-    public String getAlgorithm() {
-        return algorithm;
-    }
-
-    public void setAlgorithm(String algorithm) {
-        this.algorithm = algorithm;
-    }
-
-    public int getDigits() {
-        return digits;
-    }
-
-    public void setDigits(int digits) {
-        this.digits = digits;
-    }
-
-    public int getPeriod() {
-        return period;
-    }
-
-    public void setPeriod(int period) {
-        this.period = period;
-    }
-
-    public MultivaluedHashMap<String, String> getConfig() {
-        return config;
-    }
-
-    public void setConfig(MultivaluedHashMap<String, String> config) {
-        this.config = config;
+    public static Comparator<CredentialModel> comparingByStartDateDesc() {
+        return (o1, o2) -> { // sort by date descending
+            Long o1Date = o1.getCreatedDate() == null ? Long.MIN_VALUE : o1.getCreatedDate();
+            Long o2Date = o2.getCreatedDate() == null ? Long.MIN_VALUE : o2.getCreatedDate();
+            return (-o1Date.compareTo(o2Date));
+        };
     }
 }

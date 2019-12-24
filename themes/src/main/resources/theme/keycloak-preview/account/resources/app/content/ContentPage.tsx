@@ -15,12 +15,16 @@
  */
 
 import * as React from 'react';
+import {Button, Grid, GridItem, Title, Tooltip} from '@patternfly/react-core';
+import {RedoIcon} from '@patternfly/react-icons';
+
 import {Msg} from '../widgets/Msg';
 import {ContentAlert} from './ContentAlert';
 
 interface ContentPageProps {
     title: string; // Literal title or key into message bundle
     introMessage?: string; // Literal message or key into message bundle
+    onRefresh?: () => void;
     children: React.ReactNode;
 }
 
@@ -37,14 +41,18 @@ export class ContentPage extends React.Component<ContentPageProps> {
         return (
             <React.Fragment>
                 <ContentAlert/>
-                <section className="pf-c-page__main-section pf-m-light">
-                    <div className="pf-c-content">
-                      <h1><Msg msgKey={this.props.title}/></h1>
-                      <p>
-                        {this.props.introMessage && <Msg msgKey={this.props.introMessage}/>}
-                      </p>
-                    </div>
+                <section id="page-heading" className="pf-c-page__main-section pf-m-light">
+                    <Grid>
+                        <GridItem span={11}><Title headingLevel='h1' size='3xl'><strong><Msg msgKey={this.props.title}/></strong></Title></GridItem>
+                        {this.props.onRefresh && 
+                            <GridItem span={1}>
+                                <Tooltip content={<Msg msgKey='refreshPage'/>}><Button id='refresh-page' variant='plain' onClick={this.props.onRefresh}><RedoIcon size='sm'/></Button></Tooltip>
+                            </GridItem>
+                        }
+                        {this.props.introMessage && <GridItem span={12}> <Msg msgKey={this.props.introMessage}/></GridItem>}
+                    </Grid>
                 </section>
+                
                 <section className="pf-c-page__main-section">
                     {this.props.children}
                 </section>

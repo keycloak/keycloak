@@ -48,6 +48,9 @@ public class KeycloakProviderDeploymentProcessor implements DeploymentUnitProces
         }
 
         KeycloakDeploymentInfo info = KeycloakProviderDependencyProcessor.getKeycloakProviderDeploymentInfo(deploymentUnit);
+        
+        ScriptProviderDeploymentProcessor.deploy(deploymentUnit, info);
+        
         if (info.isProvider()) {
             logger.infov("Deploying Keycloak provider: {0}", deploymentUnit.getName());
             final Module module = deploymentUnit.getAttachment(Attachments.MODULE);

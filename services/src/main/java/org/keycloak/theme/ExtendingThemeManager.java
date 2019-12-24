@@ -20,6 +20,8 @@ package org.keycloak.theme;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.common.Version;
+import org.keycloak.common.util.StringPropertyReplacer;
+import org.keycloak.common.util.SystemEnvProperties;
 import org.keycloak.models.KeycloakSession;
 
 import java.io.IOException;
@@ -257,6 +259,10 @@ public class ExtendingThemeManager implements ThemeProvider {
                     messages.putAll(getMessages(baseBundlename, Locale.ENGLISH));
                 }
 
+                for (ThemeResourceProvider t : themeResourceProviders ){
+                    messages.putAll(t.getMessages(baseBundlename, locale));
+                }
+
                 ListIterator<Theme> itr = themes.listIterator(themes.size());
                 while (itr.hasPrevious()) {
                     Properties m = itr.previous().getMessages(baseBundlename, locale);
@@ -264,7 +270,7 @@ public class ExtendingThemeManager implements ThemeProvider {
                         messages.putAll(m);
                     }
                 }
-
+                
                 this.messages.putIfAbsent(baseBundlename, new ConcurrentHashMap<Locale, Properties>());
                 this.messages.get(baseBundlename).putIfAbsent(locale, messages);
 
@@ -285,6 +291,7 @@ public class ExtendingThemeManager implements ThemeProvider {
                         properties.putAll(p);
                     }
                 }
+                substituteProperties(properties);
                 this.properties = properties;
                 return properties;
             } else {
@@ -292,6 +299,14 @@ public class ExtendingThemeManager implements ThemeProvider {
             }
         }
 
+        /**
+         * Iterate over all string properties defined in "theme.properties" then substitute the value with system property or environment variables.
+         * See {@link StringPropertyReplacer#replaceProperties} for details about the different formats.
+         */
+        private void substituteProperties(final Properties properties) {
+            for (final String propertyName : properties.stringPropertyNames()) {
+                properties.setProperty(propertyName, StringPropertyReplacer.replaceProperties(properties.getProperty(propertyName), new SystemEnvProperties()));
+            }
+        }
     }
-
 }

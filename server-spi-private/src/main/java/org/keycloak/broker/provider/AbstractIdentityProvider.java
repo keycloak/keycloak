@@ -25,7 +25,6 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
-import org.keycloak.representations.AccessToken;
 import org.keycloak.sessions.AuthenticationSessionModel;
 
 import javax.ws.rs.core.MediaType;

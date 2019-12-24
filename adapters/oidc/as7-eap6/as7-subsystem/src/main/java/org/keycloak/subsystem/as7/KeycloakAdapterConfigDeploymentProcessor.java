@@ -91,7 +91,7 @@ public class KeycloakAdapterConfigDeploymentProcessor implements DeploymentUnitP
     private void addValve(JBossWebMetaData webMetaData) {
         List<ValveMetaData> valves = webMetaData.getValves();
         if (valves == null) {
-            valves = new ArrayList<ValveMetaData>(1);
+            valves = new ArrayList<>(1);
             webMetaData.setValves(valves);
         }
         ValveMetaData valve = new ValveMetaData();
@@ -110,7 +110,7 @@ public class KeycloakAdapterConfigDeploymentProcessor implements DeploymentUnitP
 
         List<ParamValueMetaData> contextParams = webMetaData.getContextParams();
         if (contextParams == null) {
-            contextParams = new ArrayList<ParamValueMetaData>();
+            contextParams = new ArrayList<>();
         }
 
         ParamValueMetaData param = new ParamValueMetaData();

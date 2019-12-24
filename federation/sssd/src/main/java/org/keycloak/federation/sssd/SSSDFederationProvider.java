@@ -26,11 +26,13 @@ import org.keycloak.federation.sssd.api.Sssd;
 import org.keycloak.federation.sssd.api.Sssd.User;
 import org.keycloak.federation.sssd.impl.PAMAuthenticator;
 import org.keycloak.models.*;
+import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.storage.user.ImportedUserValidation;
 import org.keycloak.storage.user.UserLookupProvider;
+import sun.security.util.Password;
 
 import java.util.Collections;
 import java.util.HashSet;
@@ -63,7 +65,7 @@ public class SSSDFederationProvider implements UserStorageProvider,
     }
 
     static {
-        supportedCredentialTypes.add(UserCredentialModel.PASSWORD);
+        supportedCredentialTypes.add(PasswordCredentialModel.TYPE);
     }
 
 
@@ -163,12 +165,12 @@ public class SSSDFederationProvider implements UserStorageProvider,
 
     @Override
     public boolean supportsCredentialType(String credentialType) {
-        return CredentialModel.PASSWORD.equals(credentialType);
+        return PasswordCredentialModel.TYPE.equals(credentialType);
     }
 
     @Override
     public boolean isConfiguredFor(RealmModel realm, UserModel user, String credentialType) {
-        return CredentialModel.PASSWORD.equals(credentialType);
+        return PasswordCredentialModel.TYPE.equals(credentialType);
     }
 
     @Override
@@ -176,7 +178,7 @@ public class SSSDFederationProvider implements UserStorageProvider,
         if (!supportsCredentialType(input.getType()) || !(input instanceof UserCredentialModel)) return false;
 
         UserCredentialModel cred = (UserCredentialModel)input;
-        PAMAuthenticator pam = factory.createPAMAuthenticator(user.getUsername(), cred.getValue());
+        PAMAuthenticator pam = factory.createPAMAuthenticator(user.getUsername(), cred.getChallengeResponse());
         return (pam.authenticate() != null);
     }
 

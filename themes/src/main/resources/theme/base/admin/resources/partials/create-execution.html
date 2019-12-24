@@ -13,7 +13,7 @@
                 <div>
                     <select class="form-control" id="provider"
                             ng-model="provider"
-                            ng-options="provider.displayName|capitalize for provider in providers">
+                            ng-options="provider.displayName|capitalize for provider in providers | orderBy:'displayName'">
                     </select>
                 </div>
             </div>

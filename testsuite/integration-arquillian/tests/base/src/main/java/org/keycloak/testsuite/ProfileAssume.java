@@ -36,7 +36,7 @@ public class ProfileAssume {
     private static Set<String> disabledFeatures;
     private static String profile;
 
-    static {
+    private static void updateProfile() {
         String host = System.getProperty("auth.server.host", "localhost");
         String port = System.getProperty("auth.server.http.port", "8180");
         boolean adapterCompatTesting = Boolean.parseBoolean(System.getProperty("testsuite.adapter.compat.testing"));
@@ -53,22 +53,31 @@ public class ProfileAssume {
     }
 
     public static void assumeFeatureEnabled(Profile.Feature feature) {
+        updateProfile();
         Assume.assumeTrue("Ignoring test as feature " + feature.name() + " is not enabled", isFeatureEnabled(feature));
     }
 
+    public static void assumeFeatureDisabled(Profile.Feature feature) {
+        Assume.assumeTrue("Ignoring test as feature " + feature.name() + " is disabled", !isFeatureEnabled(feature));
+    }
+
     public static void assumePreview() {
+        updateProfile();
         Assume.assumeTrue("Ignoring test as community/preview profile is not enabled", !profile.equals("product"));
     }
 
     public static void assumePreviewDisabled() {
+        updateProfile();
         Assume.assumeFalse("Ignoring test as community/preview profile is enabled", !profile.equals("product"));
     }
 
     public static void assumeCommunity() {
+        updateProfile();
         Assume.assumeTrue("Ignoring test as community profile is not enabled", profile.equals("community"));
     }
 
-    private static boolean isFeatureEnabled(Profile.Feature feature) {
+    public static boolean isFeatureEnabled(Profile.Feature feature) {
+        updateProfile();
         return !disabledFeatures.contains(feature.name());
     }
 }

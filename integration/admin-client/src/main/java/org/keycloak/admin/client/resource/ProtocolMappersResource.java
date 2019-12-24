@@ -38,34 +38,34 @@ public interface ProtocolMappersResource {
     @GET
     @Path("protocol/{protocol}")
     @Produces("application/json")
-    public List<ProtocolMapperRepresentation> getMappersPerProtocol(@PathParam("protocol") String protocol);
+    List<ProtocolMapperRepresentation> getMappersPerProtocol(@PathParam("protocol") String protocol);
 
     @Path("models")
     @POST
     @Consumes("application/json")
-    public Response createMapper(ProtocolMapperRepresentation rep);
+    Response createMapper(ProtocolMapperRepresentation rep);
 
     @Path("add-models")
     @POST
     @Consumes("application/json")
-    public void createMapper(List<ProtocolMapperRepresentation> reps);
+    void createMapper(List<ProtocolMapperRepresentation> reps);
 
     @GET
     @Path("models")
     @Produces("application/json")
-    public List<ProtocolMapperRepresentation> getMappers();
+    List<ProtocolMapperRepresentation> getMappers();
 
     @GET
     @Path("models/{id}")
     @Produces("application/json")
-    public ProtocolMapperRepresentation getMapperById(@PathParam("id") String id);
+    ProtocolMapperRepresentation getMapperById(@PathParam("id") String id);
 
     @PUT
     @Path("models/{id}")
     @Consumes("application/json")
-    public void update(@PathParam("id") String id, ProtocolMapperRepresentation rep);
+    void update(@PathParam("id") String id, ProtocolMapperRepresentation rep);
 
     @DELETE
     @Path("models/{id}")
-    public void delete(@PathParam("id") String id);
+    void delete(@PathParam("id") String id);
 }

@@ -6,7 +6,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian-test-apps</artifactId>
-        <version>8.0.0-SNAPSHOT</version>
+        <version>9.0.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>integration-arquillian-test-apps-photoz-parent</artifactId>
@@ -18,6 +18,5 @@
     <modules>
         <module>photoz-restful-api</module>
         <module>photoz-html5-client</module>
-        <module>photoz-authz-policy</module>
     </modules>
 </project>

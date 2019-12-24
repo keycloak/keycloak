@@ -39,12 +39,12 @@ public class SubsystemParsingTestCase extends AbstractSubsystemBaseTest {
 
     @Override
     protected String getSubsystemXml() throws IOException {
-        return readResource("keycloak-saml-1.1.xml");
+        return readResource("keycloak-saml-1.2.xml");
     }
 
     @Override
     protected String getSubsystemXsdPath() throws Exception {
-        return "schema/wildfly-keycloak-saml_1_1.xsd";
+        return "schema/wildfly-keycloak-saml_1_2.xsd";
     }
 
     @Override

@@ -12,7 +12,11 @@ import java.io.Closeable;
 import java.util.List;
 import java.util.UUID;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
 
 
 /**
@@ -31,13 +35,13 @@ public class SamlRelayStateTest extends AbstractSamlTest {
 
                 .login().user(bburkeUser).build()
                 .assertSamlRelayState(SamlClient.Binding.POST,
-                        relayState -> assertThat(relayState).isEqualTo(RELAY_STATE))
+                        relayState -> assertThat(relayState, is(equalTo(RELAY_STATE))))
 
                 .authnRequest(getAuthServerSamlEndpoint(REALM_NAME), SAML_CLIENT_ID_SALES_POST, SAML_ASSERTION_CONSUMER_URL_SALES_POST, SamlClient.Binding.POST)
                     .build()
                 .followOneRedirect()
                 .assertSamlRelayState(SamlClient.Binding.POST,
-                        relayState -> assertThat(relayState).isNull())
+                        relayState -> assertThat(relayState, is(nullValue())))
                 .execute();
     }
 
@@ -56,12 +60,12 @@ public class SamlRelayStateTest extends AbstractSamlTest {
 
                     .login().user(bburkeUser).build()
                     .assertSamlRelayState(SamlClient.Binding.REDIRECT,
-                            relayState -> assertThat(relayState).isEqualTo(RELAY_STATE))
+                            relayState -> assertThat(relayState, is(equalTo(RELAY_STATE))))
 
                     .authnRequest(getAuthServerSamlEndpoint(REALM_NAME), SAML_CLIENT_ID_SALES_POST, SAML_ASSERTION_CONSUMER_URL_SALES_POST, SamlClient.Binding.REDIRECT)
                         .build()
                     .assertSamlRelayState(SamlClient.Binding.REDIRECT,
-                            relayState -> assertThat(relayState).isNull())
+                            relayState -> assertThat(relayState, is(nullValue())))
                     .execute();
         }
     }
@@ -75,13 +79,13 @@ public class SamlRelayStateTest extends AbstractSamlTest {
                 .login().user(bburkeUser).build()
 
                 .assertSamlRelayState(SamlClient.Binding.POST,
-                        relayState -> assertThat(relayState).isEqualTo(RELAY_STATE))
+                        relayState -> assertThat(relayState, is(equalTo(RELAY_STATE))))
 
                 .idpInitiatedLogin(getAuthServerSamlEndpoint(REALM_NAME), "sales-post")
                     .build()
 
                 .assertSamlRelayState(SamlClient.Binding.POST,
-                        relayState -> assertThat(relayState).isNull())
+                        relayState -> assertThat(relayState, is(nullValue())))
                 .execute();
     }
 
@@ -100,13 +104,13 @@ public class SamlRelayStateTest extends AbstractSamlTest {
                     .login().user(bburkeUser).build()
 
                     .assertSamlRelayState(SamlClient.Binding.REDIRECT,
-                            relayState -> assertThat(relayState).isEqualTo(RELAY_STATE))
+                            relayState -> assertThat(relayState, is(equalTo(RELAY_STATE))))
 
                     .idpInitiatedLogin(getAuthServerSamlEndpoint(REALM_NAME), "sales-post")
                         .build()
 
                     .assertSamlRelayState(SamlClient.Binding.REDIRECT,
-                            relayState -> assertThat(relayState).isNull())
+                            relayState -> assertThat(relayState, is(nullValue())))
                     .execute();
         }
     }
@@ -123,7 +127,7 @@ public class SamlRelayStateTest extends AbstractSamlTest {
 
                 .login().user(bburkeUser).build()
                 .assertSamlRelayState(SamlClient.Binding.POST,
-                        relayState -> assertThat(relayState).isNull())
+                        relayState -> assertThat(relayState, is(nullValue())))
                 .execute();
     }
 
@@ -137,7 +141,7 @@ public class SamlRelayStateTest extends AbstractSamlTest {
                 .idpInitiatedLogin(getAuthServerSamlEndpoint(REALM_NAME), "sales-post").build()
                 .login().user(bburkeUser).build()
                 .assertSamlRelayState(SamlClient.Binding.POST,
-                        relayState -> assertThat(relayState).isNull())
+                        relayState -> assertThat(relayState, is(nullValue())))
                 .execute();
     }
 
@@ -154,8 +158,8 @@ public class SamlRelayStateTest extends AbstractSamlTest {
 
                 .login().user(bburkeUser).build()
                 .assertSamlRelayState(SamlClient.Binding.POST, relayState -> {
-                    assertThat(relayState).isNotNull();
-                    assertThat(relayState).isEqualTo(tl.get().toString());
+                    assertThat(relayState, is(notNullValue()));
+                    assertThat(relayState, is(equalTo(tl.get().toString())));
                 })
                 .getSteps();
 

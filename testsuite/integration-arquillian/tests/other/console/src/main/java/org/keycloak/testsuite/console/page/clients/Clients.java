@@ -20,6 +20,7 @@ package org.keycloak.testsuite.console.page.clients;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.testsuite.console.page.AdminConsoleRealm;
 import org.keycloak.testsuite.console.page.fragment.DataTable;
+import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -79,6 +80,22 @@ public class Clients extends AdminConsoleRealm {
 
         public void editClient(String clientId) {
             clickRowActionButton(getRowByLinkText(clientId), EDIT);
+        }
+
+        private void clickFooterButton(int index) {
+	      footer().findElements(By.tagName("button")).get(index).click();
+        }
+
+        public void clickNextPage() {
+            clickFooterButton(2);
+        }
+
+        public void clickPrevPage() {
+            clickFooterButton(1);
+        }
+
+        public void clickFirstPage() {
+            clickFooterButton(0);
         }
 
         public void deleteClient(String clientId) {

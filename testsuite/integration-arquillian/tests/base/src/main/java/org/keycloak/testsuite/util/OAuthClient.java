@@ -31,6 +31,7 @@ import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.message.BasicNameValuePair;
+import org.jboss.arquillian.drone.webdriver.htmlunit.DroneHtmlUnitDriver;
 import org.junit.Assert;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.TokenVerifier;
@@ -38,9 +39,14 @@ import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.KeystoreUtil;
 import org.keycloak.constants.AdapterConstants;
+import org.keycloak.crypto.Algorithm;
+import org.keycloak.crypto.AsymmetricSignatureSignerContext;
 import org.keycloak.crypto.AsymmetricSignatureVerifierContext;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
+import org.keycloak.crypto.ServerECDSASignatureSignerContext;
+import org.keycloak.crypto.ServerECDSASignatureVerifierContext;
+import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.JWKParser;
@@ -52,6 +58,7 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.RefreshToken;
@@ -72,8 +79,8 @@ import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.security.KeyStore;
+import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.util.Collections;
 import java.util.HashMap;
@@ -424,7 +431,7 @@ public class OAuthClient {
         return introspectTokenWithClientCredential(clientId, clientSecret, "refresh_token", tokenToIntrospect);
     }
 
-    public AccessTokenResponse doGrantAccessTokenRequest(String clientSecret, String username,  String password) throws Exception {
+    public AccessTokenResponse doGrantAccessTokenRequest(String clientSecret, String username, String password) throws Exception {
         return doGrantAccessTokenRequest(realm, username, password, null, clientId, clientSecret);
     }
 
@@ -434,6 +441,11 @@ public class OAuthClient {
 
     public AccessTokenResponse doGrantAccessTokenRequest(String realm, String username, String password, String totp,
                                                          String clientId, String clientSecret) throws Exception {
+        return doGrantAccessTokenRequest(realm, username, password, totp, clientId, clientSecret, null);
+    }
+
+    public AccessTokenResponse doGrantAccessTokenRequest(String realm, String username, String password, String totp,
+                                                         String clientId, String clientSecret, String userAgent) throws Exception {
         try (CloseableHttpClient client = httpClient.get()) {
             HttpPost post = new HttpPost(getResourceOwnerPasswordCredentialGrantUrl(realm));
 
@@ -442,7 +454,7 @@ public class OAuthClient {
             parameters.add(new BasicNameValuePair("username", username));
             parameters.add(new BasicNameValuePair("password", password));
             if (totp != null) {
-                parameters.add(new BasicNameValuePair("totp", totp));
+                parameters.add(new BasicNameValuePair("otp", totp));
 
             }
             if (clientSecret != null) {
@@ -464,6 +476,10 @@ public class OAuthClient {
             }
             if (scope != null) {
                 parameters.add(new BasicNameValuePair(OAuth2Constants.SCOPE, scope));
+            }
+
+            if (userAgent != null) {
+                post.addHeader("User-Agent", userAgent);
             }
 
             UrlEncodedFormEntity formEntity;
@@ -709,13 +725,40 @@ public class OAuthClient {
             String kid = verifier.getHeader().getKeyId();
             String algorithm = verifier.getHeader().getAlgorithm().name();
             KeyWrapper key = getRealmPublicKey(realm, algorithm, kid);
-            AsymmetricSignatureVerifierContext verifierContext = new AsymmetricSignatureVerifierContext(key);
+            AsymmetricSignatureVerifierContext verifierContext;
+            switch (algorithm) {
+                case Algorithm.ES256:
+                case Algorithm.ES384:
+                case Algorithm.ES512:
+                    verifierContext = new ServerECDSASignatureVerifierContext(key);
+                    break;
+                default:
+                    verifierContext = new AsymmetricSignatureVerifierContext(key);
+            }
             verifier.verifierContext(verifierContext);
             verifier.verify();
             return verifier.getToken();
         } catch (VerificationException e) {
             throw new RuntimeException("Failed to decode token", e);
         }
+    }
+
+    public SignatureSignerContext createSigner(PrivateKey privateKey, String kid, String algorithm) {
+        KeyWrapper keyWrapper = new KeyWrapper();
+        keyWrapper.setAlgorithm(algorithm);
+        keyWrapper.setKid(kid);
+        keyWrapper.setPrivateKey(privateKey);
+        SignatureSignerContext signer;
+        switch (algorithm) {
+            case Algorithm.ES256:
+            case Algorithm.ES384:
+            case Algorithm.ES512:
+                signer = new ServerECDSASignatureSignerContext(keyWrapper);
+                break;
+            default:
+                signer = new AsymmetricSignatureSignerContext(keyWrapper);
+        }
+        return signer;
     }
 
     public String getClientId() {
@@ -1099,6 +1142,7 @@ public class OAuthClient {
         private String refreshToken;
         // OIDC Financial API Read Only Profile : scope MUST be returned in the response from Token Endpoint
         private String scope;
+        private String sessionState;
 
         private String error;
         private String errorDescription;
@@ -1130,6 +1174,7 @@ public class OAuthClient {
                     tokenType = (String) responseJson.get("token_type");
                     expiresIn = (Integer) responseJson.get("expires_in");
                     refreshExpiresIn = (Integer) responseJson.get("refresh_expires_in");
+                    sessionState = (String) responseJson.get("session_state");
 
                     // OIDC Financial API Read Only Profile : scope MUST be returned in the response from Token Endpoint
                     if (responseJson.containsKey(OAuth2Constants.SCOPE)) {
@@ -1189,6 +1234,10 @@ public class OAuthClient {
             return scope;
         }
 
+        public String getSessionState() {
+            return sessionState;
+        }
+
         public Map<String, String> getHeaders() {
             return headers;
         }
@@ -1236,7 +1285,7 @@ public class OAuthClient {
                 KeyWrapper key = new KeyWrapper();
                 key.setKid(k.getKeyId());
                 key.setAlgorithm(k.getAlgorithm());
-                key.setVerifyKey(publicKey);
+                key.setPublicKey(publicKey);
                 key.setUse(KeyUse.SIG);
 
                 return key;
@@ -1249,6 +1298,17 @@ public class OAuthClient {
         publicKeys.clear();
     }
 
+    public void setBrowserHeader(String name, String value) {
+        if (driver instanceof DroneHtmlUnitDriver) {
+            DroneHtmlUnitDriver droneDriver = (DroneHtmlUnitDriver) this.driver;
+            droneDriver.getWebClient().removeRequestHeader(name);
+            droneDriver.getWebClient().addRequestHeader(name, value);
+        }
+    }
+
+    public WebDriver getDriver() {
+        return driver;
+    }
 
     private interface StateParamProvider {
 

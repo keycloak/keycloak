@@ -33,11 +33,6 @@ public class X509ClientCertificateAuthenticatorFactory  extends AbstractX509Clie
     public static final X509ClientCertificateAuthenticator SINGLETON =
             new X509ClientCertificateAuthenticator();
 
-    public static final AuthenticationExecutionModel.Requirement[] REQUIREMENT_CHOICES = {
-            AuthenticationExecutionModel.Requirement.ALTERNATIVE,
-            AuthenticationExecutionModel.Requirement.DISABLED
-    };
-
 
     @Override
     public String getHelpText() {

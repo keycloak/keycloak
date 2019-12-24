@@ -62,7 +62,7 @@ public class CredentialValidationOutput {
         throw new IllegalStateException("Not supported yet");
     }
 
-    public static enum Status {
+    public enum Status {
         AUTHENTICATED, FAILED, CONTINUE
     }
 }

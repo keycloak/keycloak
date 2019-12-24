@@ -35,9 +35,9 @@ public class MigrationVersionTest {
     @Test
     public void testVersion() {
         ModelVersion version_100Beta1 = new ModelVersion("1.0.0.Beta1-SNAPSHOT");
-        Assert.assertEquals(version_100Beta1.getMajor(), 1);
-        Assert.assertEquals(version_100Beta1.getMinor(), 0);
-        Assert.assertEquals(version_100Beta1.getMicro(), 0);
+        Assert.assertEquals(1, version_100Beta1.getMajor());
+        Assert.assertEquals(0, version_100Beta1.getMinor());
+        Assert.assertEquals(0, version_100Beta1.getMicro());
         Assert.assertTrue(version_100Beta1.isSnapshot());
         ModelVersion version_100CR1 = new ModelVersion("1.0.0.CR1");
         ModelVersion version_100 = new ModelVersion("1.0.0");
@@ -51,17 +51,17 @@ public class MigrationVersionTest {
         ModelVersion version_140 = new ModelVersion("1.4.0");
 
         ModelVersion version_211CR1 = new ModelVersion("2.1.1.CR1");
-        Assert.assertEquals(version_211CR1.getMajor(), 2);
-        Assert.assertEquals(version_211CR1.getMinor(), 1);
-        Assert.assertEquals(version_211CR1.getMicro(), 1);
-        Assert.assertEquals(version_211CR1.getQualifier(), "CR1");
+        Assert.assertEquals(2, version_211CR1.getMajor());
+        Assert.assertEquals(1, version_211CR1.getMinor());
+        Assert.assertEquals(1, version_211CR1.getMicro());
+        Assert.assertEquals("CR1", version_211CR1.getQualifier());
         Assert.assertFalse(version_211CR1.isSnapshot());
         ModelVersion version_211 = new ModelVersion("2.1.1");
 
         ModelVersion version50Snapshot = new ModelVersion("5.0.0-SNAPSHOT");
-        Assert.assertEquals(version50Snapshot.getMajor(), 5);
-        Assert.assertEquals(version50Snapshot.getMinor(), 0);
-        Assert.assertEquals(version50Snapshot.getMicro(), 0);
+        Assert.assertEquals(5, version50Snapshot.getMajor());
+        Assert.assertEquals(0, version50Snapshot.getMinor());
+        Assert.assertEquals(0, version50Snapshot.getMicro());
         Assert.assertNull(version50Snapshot.getQualifier());
         Assert.assertTrue(version50Snapshot.isSnapshot());
 

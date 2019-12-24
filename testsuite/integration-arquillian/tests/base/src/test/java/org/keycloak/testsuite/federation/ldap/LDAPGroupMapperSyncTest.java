@@ -17,17 +17,21 @@
 
 package org.keycloak.testsuite.federation.ldap;
 
-import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.arquillian.container.test.api.TargetsContainer;
-import org.jboss.shrinkwrap.api.spec.WebArchive;
+import org.jboss.logging.Logger;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.FixMethodOrder;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
-import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.component.ComponentModel;
+import org.keycloak.models.GroupModel;
+import org.keycloak.models.LDAPConstants;
+import org.keycloak.models.ModelException;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.SynchronizationResultRepresentation;
 import org.keycloak.storage.ldap.LDAPStorageProvider;
@@ -38,22 +42,16 @@ import org.keycloak.storage.ldap.mappers.membership.MembershipType;
 import org.keycloak.storage.ldap.mappers.membership.group.GroupLDAPStorageMapper;
 import org.keycloak.storage.ldap.mappers.membership.group.GroupLDAPStorageMapperFactory;
 import org.keycloak.storage.ldap.mappers.membership.group.GroupMapperConfig;
-import org.keycloak.models.GroupModel;
-import org.keycloak.models.LDAPConstants;
-import org.keycloak.models.ModelException;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserModel;
-import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.storage.user.SynchronizationResult;
-import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
 import org.keycloak.testsuite.util.LDAPRule;
 import org.keycloak.testsuite.util.LDAPTestUtils;
 
 import javax.ws.rs.BadRequestException;
+import java.util.Date;
 import java.util.List;
 import java.util.Set;
 
-import static org.keycloak.testsuite.arquillian.DeploymentTargetModifier.AUTH_SERVER_CURRENT;
+import static org.keycloak.testsuite.util.LDAPTestUtils.getGroupDescriptionLDAPAttrName;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -61,19 +59,13 @@ import static org.keycloak.testsuite.arquillian.DeploymentTargetModifier.AUTH_SE
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class LDAPGroupMapperSyncTest extends AbstractLDAPTest {
 
+    private static Logger logger = Logger.getLogger(LDAPGroupMapperSyncTest.class);
+
+    public static final String TEST_LDAP_GROUPS_SYNC_LINEAR_TIME_GROUPS_COUNT = "test.ldap.groups.sync.linear.time.groups.count";
+    public static final String TEST_LDAP_GROUPS_SYNC_LINEAR_TIME_TEST_PERIOD = "test.ldap.groups.sync.linear.time.test.period";
 
     @ClassRule
     public static LDAPRule ldapRule = new LDAPRule();
-
-    @Deployment
-    @TargetsContainer(AUTH_SERVER_CURRENT)
-    public static WebArchive deploy() {
-        return RunOnServerDeployment.create(UserResource.class, AbstractLDAPTest.class)
-                .addPackages(true,
-                        "org.keycloak.testsuite",
-                        "org.keycloak.testsuite.federation.ldap");
-    }
-
 
     @Override
     protected LDAPRule getLDAPRule() {
@@ -125,9 +117,7 @@ public class LDAPGroupMapperSyncTest extends AbstractLDAPTest {
         testingClient.server().run(session -> {
             LDAPTestContext ctx = LDAPTestContext.init(session);
             RealmModel realm = ctx.getRealm();
-
             String descriptionAttrName = LDAPTestUtils.getGroupDescriptionLDAPAttrName(ctx.getLdapProvider());
-
             ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(realm, ctx.getLdapModel(), "groupsMapper");
             LDAPStorageProvider ldapProvider = LDAPTestUtils.getLdapProvider(session, ctx.getLdapModel());
             GroupLDAPStorageMapper groupMapper = LDAPTestUtils.getGroupMapper(mapperModel, ldapProvider, realm);
@@ -144,11 +134,35 @@ public class LDAPGroupMapperSyncTest extends AbstractLDAPTest {
                 Assert.assertTrue(expected.getMessage().contains("Recursion detected"));
             }
 
-            // Update group mapper to skip preserve inheritance and check it will pass now
+        });
+
+        // Update group mapper to skip preserve inheritance
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(ctx.getRealm(), ctx.getLdapModel(), "groupsMapper");
             LDAPTestUtils.updateGroupMapperConfigOptions(mapperModel, GroupMapperConfig.PRESERVE_GROUP_INHERITANCE, "false");
-            realm.updateComponent(mapperModel);
+            ctx.getRealm().updateComponent(mapperModel);
+
+        });
+
+        // Run the LDAP sync again and check it will pass now
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel realm = ctx.getRealm();
+
+            ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(ctx.getRealm(), ctx.getLdapModel(), "groupsMapper");
 
             new GroupLDAPStorageMapperFactory().create(session, mapperModel).syncDataFromFederationProviderToKeycloak(realm);
+        });
+
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel realm = ctx.getRealm();
+
+            String descriptionAttrName = LDAPTestUtils.getGroupDescriptionLDAPAttrName(ctx.getLdapProvider());
+            ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(ctx.getRealm(), ctx.getLdapModel(), "groupsMapper");
+            LDAPStorageProvider ldapProvider = LDAPTestUtils.getLdapProvider(session, ctx.getLdapModel());
+            GroupLDAPStorageMapper groupMapper = LDAPTestUtils.getGroupMapper(mapperModel, ldapProvider, realm);
 
             // Assert groups are imported to keycloak. All are at top level
             GroupModel kcGroup1 = KeycloakModelUtils.findGroupByPath(realm, "/group1");
@@ -162,11 +176,18 @@ public class LDAPGroupMapperSyncTest extends AbstractLDAPTest {
             Assert.assertEquals("group12 - description", kcGroup12.getFirstAttribute(descriptionAttrName));
 
             // Cleanup - remove recursive mapping in LDAP
+            LDAPObject group1 = groupMapper.loadLDAPGroupByName("group1");
+            LDAPObject group12 = groupMapper.loadLDAPGroupByName("group12");
             LDAPUtils.deleteMember(ldapProvider, MembershipType.DN, LDAPConstants.MEMBER, "not-used", group12, group1);
 
-            // Cleanup - revert group mapper config
+        });
+
+        // Cleanup - revert (non-default) group mapper config
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(ctx.getRealm(), ctx.getLdapModel(), "groupsMapper");
             LDAPTestUtils.updateGroupMapperConfigOptions(mapperModel, GroupMapperConfig.PRESERVE_GROUP_INHERITANCE, "true");
-            realm.updateComponent(mapperModel);
+            ctx.getRealm().updateComponent(mapperModel);
 
         });
     }
@@ -183,6 +204,11 @@ public class LDAPGroupMapperSyncTest extends AbstractLDAPTest {
             ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(realm, ctx.getLdapModel(), "groupsMapper");
             LDAPStorageProvider ldapProvider = LDAPTestUtils.getLdapProvider(session, ctx.getLdapModel());
             GroupLDAPStorageMapper groupMapper = LDAPTestUtils.getGroupMapper(mapperModel, ldapProvider, realm);
+
+            // KEYCLOAK-11415 - This test requires the group mapper to be configured with preserve group inheritance
+            // set to 'true' (the default setting). If preservation of group inheritance isn't configured, some of
+            // the previous test(s) failed to cleanup properly. Check the requirement as part of running the test
+            Assert.assertEquals(mapperModel.getConfig().getFirst("preserve.group.inheritance"), "true");
 
             // Sync groups with inheritance
             SynchronizationResult syncResult = new GroupLDAPStorageMapperFactory().create(session, mapperModel).syncDataFromFederationProviderToKeycloak(realm);
@@ -222,6 +248,7 @@ public class LDAPGroupMapperSyncTest extends AbstractLDAPTest {
         });
     }
 
+
     @Test
     public void test03_syncWithDropNonExistingGroups() throws Exception {
         testingClient.server().run(session -> {
@@ -230,6 +257,11 @@ public class LDAPGroupMapperSyncTest extends AbstractLDAPTest {
 
             ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(realm, ctx.getLdapModel(), "groupsMapper");
             LDAPStorageProvider ldapProvider = LDAPTestUtils.getLdapProvider(session, ctx.getLdapModel());
+
+            // KEYCLOAK-11415 - This test requires the group mapper to be configured with preserve group inheritance
+            // set to 'true' (the default setting). If preservation of group inheritance isn't configured, some of
+            // the previous test(s) failed to cleanup properly. Check the requirement as part of running the test
+            Assert.assertEquals(mapperModel.getConfig().getFirst("preserve.group.inheritance"), "true");
 
             // Sync groups with inheritance
             SynchronizationResult syncResult = new GroupLDAPStorageMapperFactory().create(session, mapperModel).syncDataFromFederationProviderToKeycloak(realm);
@@ -275,9 +307,17 @@ public class LDAPGroupMapperSyncTest extends AbstractLDAPTest {
     }
 
 
-
     @Test
     public void test04_syncNoPreserveGroupInheritanceWithLazySync() throws Exception {
+        // Update group mapper to skip preserve inheritance
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(ctx.getRealm(), ctx.getLdapModel(), "groupsMapper");
+            LDAPTestUtils.updateGroupMapperConfigOptions(mapperModel, GroupMapperConfig.PRESERVE_GROUP_INHERITANCE, "false");
+            ctx.getRealm().updateComponent(mapperModel);
+
+        });
+
         testingClient.server().run(session -> {
             LDAPTestContext ctx = LDAPTestContext.init(session);
             RealmModel realm = ctx.getRealm();
@@ -285,10 +325,6 @@ public class LDAPGroupMapperSyncTest extends AbstractLDAPTest {
             ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(realm, ctx.getLdapModel(), "groupsMapper");
             LDAPStorageProvider ldapProvider = LDAPTestUtils.getLdapProvider(session, ctx.getLdapModel());
             GroupLDAPStorageMapper groupMapper = LDAPTestUtils.getGroupMapper(mapperModel, ldapProvider, realm);
-
-            // Update group mapper to skip preserve inheritance
-            LDAPTestUtils.updateGroupMapperConfigOptions(mapperModel, GroupMapperConfig.PRESERVE_GROUP_INHERITANCE, "false");
-            realm.updateComponent(mapperModel);
 
             // Add user to LDAP and put him as member of group11
             LDAPTestUtils.removeAllLDAPUsers(ldapProvider, realm);
@@ -324,6 +360,15 @@ public class LDAPGroupMapperSyncTest extends AbstractLDAPTest {
             john.leaveGroup(group11);
 
         });
+
+        // Cleanup - revert (non-default) group mapper config
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(ctx.getRealm(), ctx.getLdapModel(), "groupsMapper");
+            LDAPTestUtils.updateGroupMapperConfigOptions(mapperModel, GroupMapperConfig.PRESERVE_GROUP_INHERITANCE, "true");
+            ctx.getRealm().updateComponent(mapperModel);
+
+        });
     }
 
 
@@ -337,6 +382,100 @@ public class LDAPGroupMapperSyncTest extends AbstractLDAPTest {
             Assert.fail("Should throw 400");
         } catch (BadRequestException e) {
         }
+    }
+
+
+    // KEYCLOAK-8253 - Test if synchronization of large number of LDAP groups takes linear time
+    @Ignore("This test is not suitable for regular CI testing due to higher time / performance demand")
+    @Test
+    public void test06_ldapGroupsSyncHasLinearTimeComplexity() throws Exception {
+        // Count of LDAP groups to test the duration of the sync operation. Defaults to 30k unless overridden via system property
+        final int GROUPS_COUNT = (System.getProperties().containsKey(TEST_LDAP_GROUPS_SYNC_LINEAR_TIME_GROUPS_COUNT)) ?
+                Integer.valueOf(System.getProperty(TEST_LDAP_GROUPS_SYNC_LINEAR_TIME_GROUPS_COUNT)) : 30000;
+        // Period on how often (per how many groups) to perform the LDAP groups sync test & report the results back.
+        // Defaults to 1k unless overridden via system property
+        final int TEST_PERIOD = (System.getProperties().containsKey(TEST_LDAP_GROUPS_SYNC_LINEAR_TIME_TEST_PERIOD)) ?
+                Integer.valueOf(System.getProperty(TEST_LDAP_GROUPS_SYNC_LINEAR_TIME_TEST_PERIOD)) : 1000;
+
+        // Reset 'batchSizeForSync' configuration option to the default value of 'LDAPConstants.BATCH_SIZE_FOR_SYNC'
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            ctx.getLdapModel().put(LDAPConstants.BATCH_SIZE_FOR_SYNC, Integer.toString(1000));
+            ctx.getRealm().updateComponent(ctx.getLdapModel());
+
+            // Set group mapper to skip preservation of inheritance to test group creation
+            ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(ctx.getRealm(), ctx.getLdapModel(), "groupsMapper");
+            LDAPTestUtils.updateGroupMapperConfigOptions(mapperModel, GroupMapperConfig.PRESERVE_GROUP_INHERITANCE, "false");
+            ctx.getRealm().updateComponent(mapperModel);
+
+        });
+
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel appRealm = ctx.getRealm();
+
+            ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(appRealm, ctx.getLdapModel(), "groupsMapper");
+            String descriptionAttrName = getGroupDescriptionLDAPAttrName(ctx.getLdapProvider());
+            LDAPStorageProvider ldapProvider = LDAPTestUtils.getLdapProvider(session, ctx.getLdapModel());
+            GroupLDAPStorageMapper groupMapper = LDAPTestUtils.getGroupMapper(mapperModel, ldapProvider, appRealm);
+
+            // Remove all LDAP groups
+            LDAPTestUtils.removeAllLDAPGroups(session, appRealm, ctx.getLdapModel(), "groupsMapper");
+
+            /* The following for loop doesn't really test true time it took to synchronize N * TEST_PERIOD LDAP groups.
+             * Instead of that, in this test only time of syncing last TEST_PERIOD groups is reported. The previously
+             *  created groups, existing as the result of (N-1)-th iteration are "just" updated.
+             *  Also see NOTE: and the subsequent for loop, commented out, below for details.
+             */
+            Long elapsedTime = new Long(0);
+            for (int i = 1; i <= GROUPS_COUNT; i++) {
+                LDAPTestUtils.createLDAPGroup(session,
+                                              appRealm,
+                                              ctx.getLdapModel(),
+                                              String.format("group-%s", i),
+                                              descriptionAttrName,
+                                              String.format("Testing group-%s, created at: %s", i, new Date().toString())
+                );
+                if (i != 0 && i % TEST_PERIOD == 0) {
+                    // Start the timer
+                    elapsedTime = new Date().getTime();
+                    // Sync the LDAP groups
+                    groupMapper.syncDataFromFederationProviderToKeycloak(appRealm);
+                    elapsedTime = new Date().getTime() - elapsedTime;
+                    logger.debugf("Synced %s LDAP groups in %s ms", Long.valueOf(i), elapsedTime);
+                }
+            }
+
+            /* NOTE: The nested for loop below would be better test to check duration of groups syncing,
+             *       since it would delete the LDAP groups created in (N - 1)-th iteration, create count
+             *       of LDAP required by N-th iteration, and report back the syncing time. But it is commented
+             *       out, because in the current form Apache DS always returns HTTP 505 Internal Server error for
+             *       upon reaching 3k groups - in 3-th iteration of the main for loop
+             *
+            long elapsedTime = new Long(0);
+            for (int i = 1; i <= GROUPS_COUNT; i++) {
+                int groupsPerIteration = i * TEST_PERIOD;
+                logger.debugf("Creating %s LDAP groups", groupsPerIteration);
+                for (int j = 1; j <= groupsPerIteration; j++) {
+                    LDAPTestUtils.createLDAPGroup(session,
+                                                  appRealm,
+                                                  ctx.getLdapModel(),
+                                                  String.format("group-%s", j),
+                                                  descriptionAttrName,
+                                                  String.format("Testing group-%s, created at: %s", j, new Date().toString())
+                    );
+                }
+                logger.debugf("Done creating %s LDAP groups!", groupsPerIteration);
+                elapsedTime = new Date().getTime();
+                groupMapper.syncDataFromFederationProviderToKeycloak(appRealm);
+                logger.debugf("Synced %s LDAP groups in %s ms", groupsPerIteration, new Date().getTime() - elapsedTime);
+                if (appRealm.getTopLevelGroups().size() != 0) {
+                    LDAPTestUtils.removeAllLDAPGroups(session, appRealm, ctx.getLdapModel(), "groupsMapper");
+                }
+            }*/
+
+        });
+
     }
 
 }

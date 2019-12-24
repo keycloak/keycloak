@@ -25,7 +25,10 @@ public class JSPolicyRepresentation extends AbstractPolicyRepresentation {
 
     @Override
     public String getType() {
-        return "js";
+        if (super.getType() == null) {
+            return "js";
+        }
+        return super.getType();
     }
 
     public String getCode() {

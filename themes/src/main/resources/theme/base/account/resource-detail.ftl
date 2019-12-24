@@ -121,6 +121,7 @@
                                 <form action="${url.getResourceGrant(authorization.resource.id)}" name="revokeForm-${authorization.resource.id}-${permission.requester.username}" method="post">
                                     <input type="hidden" name="action" value="revoke">
                                     <input type="hidden" name="requester" value="${permission.requester.username}">
+                                    <input type="hidden" id="stateChecker" name="stateChecker" value="${stateChecker}">
                                     <tr>
                                         <td>
                                             <#if permission.requester.email??>${permission.requester.email}<#else>${permission.requester.username}</#if>
@@ -188,6 +189,7 @@
                                 <form action="${url.getResourceGrant(authorization.resource.id)}" name="revokePolicyForm-${authorization.resource.id}-${permission.id}" method="post">
                                     <input type="hidden" name="action" value="revokePolicy">
                                     <input type="hidden" name="permission_id" value="${permission.id}"/>
+                                    <input type="hidden" id="stateChecker" name="stateChecker" value="${stateChecker}">
                                     <tr>
                                         <td>
                                             <#if permission.description??>
@@ -239,6 +241,7 @@
     <div class="row">
         <div class="col-md-10">
             <form action="${url.getResourceShare(authorization.resource.id)}" name="shareForm" method="post">
+                <input type="hidden" id="stateChecker" name="stateChecker" value="${stateChecker}">
                 <div class="col-sm-3 col-md-3">
                     <label for="password" class="control-label">${msg("username")} or ${msg("email")} </label> <span class="required">*</span>
                 </div>

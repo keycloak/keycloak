@@ -21,6 +21,7 @@ package org.keycloak.authorization.admin;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -104,11 +105,8 @@ public class PolicyEvaluationService {
             if (givenAttributes != null) {
                 givenAttributes.forEach((key, entryValue) -> {
                     if (entryValue != null) {
-                        List<String> values = new ArrayList();
-
-                        for (String value : entryValue.split(",")) {
-                            values.add(value);
-                        }
+                        List<String> values = new ArrayList<>();
+                        Collections.addAll(values, entryValue.split(","));
 
                         claims.put(key, values);
                     }
@@ -140,11 +138,8 @@ public class PolicyEvaluationService {
                 if (givenAttributes != null) {
                     givenAttributes.forEach((key, entryValue) -> {
                         if (entryValue != null) {
-                            List<String> values = new ArrayList();
-
-                            for (String value : entryValue.split(",")) {
-                                values.add(value);
-                            }
+                            List<String> values = new ArrayList<>();
+                            Collections.addAll(values, entryValue.split(","));
 
                             attributes.put(key, values);
                         }
@@ -166,7 +161,7 @@ public class PolicyEvaluationService {
             Set<ScopeRepresentation> givenScopes = resource.getScopes();
 
             if (givenScopes == null) {
-                givenScopes = new HashSet();
+                givenScopes = new HashSet<>();
             }
 
             ScopeStore scopeStore = storeFactory.getScopeStore();

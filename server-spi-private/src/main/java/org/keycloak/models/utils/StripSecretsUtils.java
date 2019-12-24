@@ -23,7 +23,6 @@ import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ComponentExportRepresentation;
 import org.keycloak.representations.idm.ComponentRepresentation;
-import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -32,11 +31,24 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class StripSecretsUtils {
+
+    private static final Pattern VAULT_VALUE = Pattern.compile("^\\$\\{vault\\.(.+?)}$");
+
+    private static String maskNonVaultValue(String value) {
+        return value == null
+          ? null
+          : (VAULT_VALUE.matcher(value).matches()
+             ? value
+             : ComponentRepresentation.SECRET_VALUE
+            );
+    }
 
     public static ComponentRepresentation strip(KeycloakSession session, ComponentRepresentation rep) {
         Map<String, ProviderConfigProperty> configProperties = ComponentUtil.getComponentConfigProperties(session, rep);
@@ -50,7 +62,11 @@ public class StripSecretsUtils {
             ProviderConfigProperty configProperty = configProperties.get(next.getKey());
             if (configProperty != null) {
                 if (configProperty.isSecret()) {
-                    next.setValue(Collections.singletonList(ComponentRepresentation.SECRET_VALUE));
+                    if (next.getValue() == null || next.getValue().isEmpty()) {
+                        next.setValue(Collections.singletonList(ComponentRepresentation.SECRET_VALUE));
+                    } else {
+                        next.setValue(next.getValue().stream().map(StripSecretsUtils::maskNonVaultValue).collect(Collectors.toList()));
+                    }
                 }
             } else {
                 itr.remove();
@@ -61,14 +77,14 @@ public class StripSecretsUtils {
 
     public static RealmRepresentation strip(RealmRepresentation rep) {
         if (rep.getSmtpServer() != null && rep.getSmtpServer().containsKey("password")) {
-            rep.getSmtpServer().put("password", ComponentRepresentation.SECRET_VALUE);
+            rep.getSmtpServer().put("password", maskNonVaultValue(rep.getSmtpServer().get("password")));
         }
         return rep;
     }
 
     public static IdentityProviderRepresentation strip(IdentityProviderRepresentation rep) {
         if (rep.getConfig() != null && rep.getConfig().containsKey("clientSecret")) {
-            rep.getConfig().put("clientSecret", ComponentRepresentation.SECRET_VALUE);
+            rep.getConfig().put("clientSecret", maskNonVaultValue(rep.getConfig().get("clientSecret")));
         }
         return rep;
     }
@@ -122,7 +138,7 @@ public class StripSecretsUtils {
 
     public static ClientRepresentation strip(ClientRepresentation rep) {
         if (rep.getSecret() != null) {
-            rep.setSecret(ComponentRepresentation.SECRET_VALUE);
+            rep.setSecret(maskNonVaultValue(rep.getSecret()));
         }
         return rep;
     }
@@ -139,7 +155,11 @@ public class StripSecretsUtils {
             ProviderConfigProperty configProperty = configProperties.get(next.getKey());
             if (configProperty != null) {
                 if (configProperty.isSecret()) {
-                    next.setValue(Collections.singletonList(ComponentRepresentation.SECRET_VALUE));
+                    if (next.getValue() == null || next.getValue().isEmpty()) {
+                        next.setValue(Collections.singletonList(ComponentRepresentation.SECRET_VALUE));
+                    } else {
+                        next.setValue(next.getValue().stream().map(StripSecretsUtils::maskNonVaultValue).collect(Collectors.toList()));
+                    }
                 }
             } else {
                 itr.remove();

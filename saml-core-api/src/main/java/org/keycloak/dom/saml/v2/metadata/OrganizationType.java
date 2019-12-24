@@ -47,11 +47,11 @@ public class OrganizationType extends TypeWithOtherAttributes {
 
     protected ExtensionsType extensions;
 
-    protected List<LocalizedNameType> organizationName = new ArrayList<LocalizedNameType>();
+    protected List<LocalizedNameType> organizationName = new ArrayList<>();
 
-    protected List<LocalizedNameType> organizationDisplayName = new ArrayList<LocalizedNameType>();
+    protected List<LocalizedNameType> organizationDisplayName = new ArrayList<>();
 
-    protected List<LocalizedURIType> organizationURL = new ArrayList<LocalizedURIType>();
+    protected List<LocalizedURIType> organizationURL = new ArrayList<>();
 
     /**
      * Add an organization name

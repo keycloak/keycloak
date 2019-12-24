@@ -22,6 +22,7 @@
     isLinkedAccountsEnabled: boolean;
     isEventsEnabled: boolean;
     isMyResourcesEnabled: boolean;
+    isTotpConfigured: boolean;
  }
 
 

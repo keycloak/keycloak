@@ -42,7 +42,7 @@ import java.util.List;
  */
 public class SignaturePropertyType {
 
-    protected List<Object> content = new ArrayList<Object>();
+    protected List<Object> content = new ArrayList<>();
     protected String target;
     protected String id;
 

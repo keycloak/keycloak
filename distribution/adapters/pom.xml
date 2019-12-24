@@ -20,7 +20,7 @@
     <parent>
         <artifactId>keycloak-distribution-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>8.0.0-SNAPSHOT</version>
+        <version>9.0.0-SNAPSHOT</version>
     </parent>
 
     <name>Adapters Distribution Parent</name>
@@ -31,7 +31,6 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>as7-eap6-adapter</module>
         <module>fuse-adapter-zip</module>
         <module>js-adapter-zip</module>
         <module>osgi</module>
@@ -55,5 +54,14 @@
                 <module>js-adapter-npm-zip</module>
             </modules>
         </profile>
+        <profile>
+             <id>AS7</id>
+             <activation>
+                 <jdk>(,9]</jdk>
+             </activation>
+             <modules>
+                 <module>as7-eap6-adapter</module>
+             </modules>
+         </profile>
     </profiles>
 </project>

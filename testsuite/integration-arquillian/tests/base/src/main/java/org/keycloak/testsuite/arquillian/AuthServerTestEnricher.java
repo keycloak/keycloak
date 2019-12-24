@@ -40,11 +40,13 @@ import org.keycloak.common.util.StringPropertyReplacer;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.error.KeycloakErrorHandler;
 import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
+import org.keycloak.testsuite.arquillian.annotation.EnableVault;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
 import org.keycloak.testsuite.util.LogChecker;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.SqlUtils;
 import org.keycloak.testsuite.util.SystemInfoHelper;
+import org.keycloak.testsuite.util.VaultUtils;
 import org.wildfly.extras.creaper.commands.undertow.AddUndertowListener;
 import org.wildfly.extras.creaper.commands.undertow.RemoveUndertowListener;
 import org.wildfly.extras.creaper.commands.undertow.SslVerifyClient;
@@ -344,6 +346,19 @@ public class AuthServerTestEnricher {
         } catch (Exception e) {
             // It is expected that server startup fails with migration-mode-manual
             if (e instanceof LifecycleException && handleManualMigration()) {
+                log.info("Set log file checker to end of file.");
+                try {
+                    // this will mitigate possible issues in manual server update tests
+                    // when the auth server started with not updated DB
+                    // e.g. Caused by: org.keycloak.ServerStartupError: Database not up-to-date, please migrate database with
+                    if (suiteContext.getServerLogChecker() == null) {
+                        setServerLogChecker();
+                    }
+                    suiteContext.getServerLogChecker()
+                        .updateLastCheckedPositionsOfAllFilesToEndOfFile();
+                } catch (IOException ioe) {
+                    log.warn("Server log checker failed to update position:", ioe);
+                }
                 log.info("Starting server again after manual DB migration was finished");
                 startContainerEvent.fire(new StartContainer(suiteContext.getAuthServerInfo().getArquillianContainer()));
                 return;
@@ -392,7 +407,7 @@ public class AuthServerTestEnricher {
     }
 
 
-    private static final Pattern RECOGNIZED_ERRORS = Pattern.compile("ERROR|SEVERE|Exception ");
+    private static final Pattern RECOGNIZED_ERRORS = Pattern.compile("ERROR \\[|SEVERE \\[|Exception ");
     private static final Pattern IGNORED = Pattern.compile("Jetty ALPN support not found|org.keycloak.events");
 
     private static final boolean isRecognizedErrorLog(String logText) {
@@ -408,23 +423,47 @@ public class AuthServerTestEnricher {
         }
     }
 
+    private void setServerLogChecker() throws IOException {
+        String jbossHomePath = suiteContext.getAuthServerInfo().getProperties().get("jbossHome");
+        suiteContext.setServerLogChecker(LogChecker.getJBossServerLogsChecker(jbossHomePath));
+    }
+
     public void checkServerLogs(@Observes(precedence = -1) BeforeSuite event) throws IOException, InterruptedException {
         if (! suiteContext.getAuthServerInfo().isJBossBased()) {
             suiteContext.setServerLogChecker(new TextFileChecker());    // checks nothing
             return;
         }
-
-        boolean checkLog = Boolean.parseBoolean(System.getProperty("auth.server.log.check", "true"));
-        String jbossHomePath = suiteContext.getAuthServerInfo().getProperties().get("jbossHome");
-        if (checkLog) {
-            LogChecker.getJBossServerLogsChecker(true, jbossHomePath).checkFiles(AuthServerTestEnricher::failOnRecognizedErrorInLog);
+        if (suiteContext.getServerLogChecker() == null) {
+            setServerLogChecker();
         }
-        suiteContext.setServerLogChecker(LogChecker.getJBossServerLogsChecker(false, jbossHomePath));
+        boolean checkLog = Boolean.parseBoolean(System.getProperty("auth.server.log.check", "true"));
+        if (checkLog) {
+            suiteContext.getServerLogChecker()
+                .checkFiles(true, AuthServerTestEnricher::failOnRecognizedErrorInLog);
+        }
     }
 
-    public void initializeTestContext(@Observes(precedence = 2) BeforeClass event) {
+    public void restartAuthServer() throws Exception {
+        if (AuthServerTestEnricher.AUTH_SERVER_CONTAINER.equals("auth-server-remote")) {
+            OnlineManagementClient client = getManagementClient();
+            Administration administration = new Administration(client);
+            administration.reload();
+            client.close();
+        } else {
+            stopContainerEvent.fire(new StopContainer(suiteContext.getAuthServerInfo().getArquillianContainer()));
+            startContainerEvent.fire(new StartContainer(suiteContext.getAuthServerInfo().getArquillianContainer()));
+        }
+    }
+
+    public void initializeTestContext(@Observes(precedence = 2) BeforeClass event) throws Exception {
         TestContext testContext = new TestContext(suiteContext, event.getTestClass().getJavaClass());
         testContextProducer.set(testContext);
+
+        if (event.getTestClass().isAnnotationPresent(EnableVault.class)) {
+            VaultUtils.enableVault(suiteContext, event.getTestClass().getAnnotation(EnableVault.class).providerId());
+            restartAuthServer();
+            testContext.reconnectAdminClient();
+        }
     }
 
     public void initializeTLS(@Observes(precedence = 3) BeforeClass event) throws Exception {
@@ -505,6 +544,10 @@ public class AuthServerTestEnricher {
         suiteContext.getServerLogChecker().updateLastCheckedPositionsOfAllFilesToEndOfFile();
     }
 
+    public void startTestClassProvider(@Observes(precedence = 100) BeforeSuite beforeSuite) {
+        new TestClassProvider().start();
+    }
+
     private static final Pattern UNEXPECTED_UNCAUGHT_ERROR = Pattern.compile(
       KeycloakErrorHandler.class.getSimpleName()
         + ".*"
@@ -522,11 +565,11 @@ public class AuthServerTestEnricher {
 
     public void afterTest(@Observes(precedence = -1) After event) throws IOException {
         if (event.getTestMethod().getAnnotation(UncaughtServerErrorExpected.class) == null) {
-            suiteContext.getServerLogChecker().checkFiles(this::checkForNoUnexpectedUncaughtError);
+            suiteContext.getServerLogChecker().checkFiles(false, this::checkForNoUnexpectedUncaughtError);
         }
     }
 
-    public void afterClass(@Observes(precedence = 1) AfterClass event) {
+    public void afterClass(@Observes(precedence = 1) AfterClass event) throws Exception {
         //check if a test accidentally left the auth-server not running
         ContainerController controller = containerConroller.get();
         if (!controller.isStarted(suiteContext.getAuthServerInfo().getQualifier())) {
@@ -540,6 +583,12 @@ public class AuthServerTestEnricher {
         KeycloakTestingClient testingClient = testContext.getTestingClient();
 
         removeTestRealms(testContext, adminClient);
+
+        if (event.getTestClass().isAnnotationPresent(EnableVault.class)) {
+            VaultUtils.disableVault(suiteContext, event.getTestClass().getAnnotation(EnableVault.class).providerId());
+            restartAuthServer();
+            testContext.reconnectAdminClient();
+        }
 
         if (adminClient != null) {
             adminClient.close();

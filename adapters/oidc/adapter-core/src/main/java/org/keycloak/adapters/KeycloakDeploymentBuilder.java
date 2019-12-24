@@ -162,7 +162,6 @@ public class KeycloakDeploymentBuilder {
             });
         }
 
-        log.debug("Use authServerUrl: " + deployment.getAuthServerBaseUrl() + ", tokenUrl: " + deployment.getTokenUrl() + ", relativeUrls: " + deployment.getRelativeUrls());
         return deployment;
     }
 

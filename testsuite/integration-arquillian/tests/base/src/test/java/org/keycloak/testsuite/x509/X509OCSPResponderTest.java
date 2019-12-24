@@ -134,8 +134,8 @@ public class X509OCSPResponderTest extends AbstractX509AuthenticationTest {
                         .setOCSPResponder("http://" + OCSP_RESPONDER_HOST + ":" + OCSP_RESPONDER_PORT + "/oscp")
                         .setOCSPResponderCertificate(
                                 IOUtils.toString(this.getClass().getResourceAsStream(OcspHandler.OCSP_RESPONDER_CERT_PATH), Charsets.UTF_8)
-                                        .replace("-----BEGIN CERTIFICATE-----\n", "")
-                                        .replace("\n-----END CERTIFICATE-----", ""))
+                                        .replace("-----BEGIN CERTIFICATE-----", "")
+                                        .replace("-----END CERTIFICATE-----", ""))
                         .setUserIdentityMapperType(USERNAME_EMAIL);
         AuthenticatorConfigRepresentation cfg = newConfig("x509-directgrant-config", config.getConfig());
         String cfgId = createConfig(directGrantExecution.getId(), cfg);

@@ -17,6 +17,8 @@
 package org.keycloak.adapters;
 
 import org.junit.Test;
+import org.keycloak.common.util.KeycloakUriBuilder;
+import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 import org.keycloak.representations.adapters.config.AdapterConfig;
 
 import static org.junit.Assert.assertEquals;
@@ -30,31 +32,32 @@ import static org.junit.Assert.assertTrue;
 public class KeycloakDeploymentTest {
     @Test
     public void shouldNotEnableOAuthQueryParamWhenIgnoreIsTrue() {
-        KeycloakDeployment keycloakDeployment = new KeycloakDeployment();
+        KeycloakDeployment keycloakDeployment = new KeycloakDeploymentMock();
         keycloakDeployment.setIgnoreOAuthQueryParameter(true);
         assertFalse(keycloakDeployment.isOAuthQueryParameterEnabled());
     }
 
     @Test
     public void shouldEnableOAuthQueryParamWhenIgnoreIsFalse() {
-        KeycloakDeployment keycloakDeployment = new KeycloakDeployment();
+        KeycloakDeployment keycloakDeployment = new KeycloakDeploymentMock();
         keycloakDeployment.setIgnoreOAuthQueryParameter(false);
         assertTrue(keycloakDeployment.isOAuthQueryParameterEnabled());
     }
 
     @Test
     public void shouldEnableOAuthQueryParamWhenIgnoreNotSet() {
-        KeycloakDeployment keycloakDeployment = new KeycloakDeployment();
+        KeycloakDeployment keycloakDeployment = new KeycloakDeploymentMock();
 
         assertTrue(keycloakDeployment.isOAuthQueryParameterEnabled());
     }
 
     @Test
     public void stripDefaultPorts() {
-        KeycloakDeployment keycloakDeployment = new KeycloakDeployment();
+        KeycloakDeployment keycloakDeployment = new KeycloakDeploymentMock();
         keycloakDeployment.setRealm("test");
         AdapterConfig config = new AdapterConfig();
         config.setAuthServerUrl("http://localhost:80/auth");
+
         keycloakDeployment.setAuthServerBaseUrl(config);
 
         assertEquals("http://localhost/auth", keycloakDeployment.getAuthServerBaseUrl());
@@ -65,4 +68,19 @@ public class KeycloakDeploymentTest {
         assertEquals("https://localhost/auth", keycloakDeployment.getAuthServerBaseUrl());
     }
 
+    class KeycloakDeploymentMock extends KeycloakDeployment {
+
+        @Override
+        protected OIDCConfigurationRepresentation getOidcConfiguration(String discoveryUrl) throws Exception {
+            String base = KeycloakUriBuilder.fromUri(discoveryUrl).replacePath("/auth").build().toString();
+
+            OIDCConfigurationRepresentation rep = new OIDCConfigurationRepresentation();
+            rep.setAuthorizationEndpoint(base + "/realms/test/authz");
+            rep.setTokenEndpoint(base + "/realms/test/tokens");
+            rep.setIssuer(base + "/realms/test");
+            rep.setJwksUri(base + "/realms/test/jwks");
+            rep.setLogoutEndpoint(base + "/realms/test/logout");
+            return rep;
+        }
+    }
 }

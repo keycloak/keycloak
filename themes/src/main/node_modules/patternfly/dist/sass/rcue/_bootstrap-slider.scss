@@ -1,0 +1,66 @@
+//
+// Bootstrap slider
+// --------------------------------------------------
+// https://github.com/seiyria/bootstrap-slider
+
+
+// Overwrites and fixes to Bootstrap slider
+
+// https //github.com/seiyria/bootstrap-slider/issues/797
+.slider-tick-label-container {
+  display: flex;
+  justify-content: space-between;
+  margin-left: 0!important;
+}
+
+.slider-tick-label {
+  width: auto !important;
+}
+
+.slider {
+  .tooltip {
+    top: -10px;
+  }
+}
+.slider-track {
+  background-color: $color-pf-black-200;
+  box-shadow: inset 0 2px 3px rgba(0, 0, 0, .1), 0 0px 2px $color-pf-black-200;
+  border: 1px solid $color-pf-black-400;
+}
+
+.slider-selection {
+  @include gradient-vertical($slider-secondary-top, $slider-secondary-bottom);
+}
+
+.slider-handle {
+  width: $slider-line-height;
+  height: $slider-line-height;
+  border: 1px solid $color-pf-black-400; //THIS!
+}
+
+.slider-tick {
+  background-color: transparent !important;
+  background-image:
+    radial-gradient(rgba(0, 0, 0, .3), rgba(0, 0, 0, .3) 2px, transparent 2px) !important;
+  @include box-shadow(none);
+}
+
+
+// Styles to create the pf slider
+.slider-pf {
+  display: flex;
+  align-items: center;
+
+  * {
+    margin-right: 10px;
+
+    &:last-child {
+      margin: 0;
+    }
+  }
+
+  .slider {
+    width: auto;
+    flex: 1 1 100%;
+  }
+}

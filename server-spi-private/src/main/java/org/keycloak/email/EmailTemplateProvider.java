@@ -33,15 +33,15 @@ public interface EmailTemplateProvider extends Provider {
 
     String IDENTITY_PROVIDER_BROKER_CONTEXT = "identityProviderBrokerCtx";
     
-    public EmailTemplateProvider setAuthenticationSession(AuthenticationSessionModel authenticationSession);
+    EmailTemplateProvider setAuthenticationSession(AuthenticationSessionModel authenticationSession);
 
-    public EmailTemplateProvider setRealm(RealmModel realm);
+    EmailTemplateProvider setRealm(RealmModel realm);
 
-    public EmailTemplateProvider setUser(UserModel user);
+    EmailTemplateProvider setUser(UserModel user);
 
-    public EmailTemplateProvider setAttribute(String name, Object value);
+    EmailTemplateProvider setAttribute(String name, Object value);
 
-    public void sendEvent(Event event) throws EmailException;
+    void sendEvent(Event event) throws EmailException;
 
     /**
      * Reset password sent from forgot password link on login
@@ -50,7 +50,7 @@ public interface EmailTemplateProvider extends Provider {
      * @param expirationInMinutes
      * @throws EmailException
      */
-    public void sendPasswordReset(String link, long expirationInMinutes) throws EmailException;
+    void sendPasswordReset(String link, long expirationInMinutes) throws EmailException;
 
     /**
      * Test SMTP connection with current logged in user
@@ -59,7 +59,7 @@ public interface EmailTemplateProvider extends Provider {
      * @param user SMTP recipient
      * @throws EmailException
      */
-    public void sendSmtpTestEmail(Map<String, String> config, UserModel user) throws EmailException;
+    void sendSmtpTestEmail(Map<String, String> config, UserModel user) throws EmailException;
 
     /**
      * Send to confirm that user wants to link his account with identity broker link
@@ -73,9 +73,9 @@ public interface EmailTemplateProvider extends Provider {
      * @param expirationInMinutes
      * @throws EmailException
      */
-    public void sendExecuteActions(String link, long expirationInMinutes) throws EmailException;
+    void sendExecuteActions(String link, long expirationInMinutes) throws EmailException;
 
-    public void sendVerifyEmail(String link, long expirationInMinutes) throws EmailException;
+    void sendVerifyEmail(String link, long expirationInMinutes) throws EmailException;
 
     /**
      * Send formatted email

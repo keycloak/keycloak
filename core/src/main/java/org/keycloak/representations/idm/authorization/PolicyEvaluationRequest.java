@@ -23,8 +23,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import org.keycloak.representations.idm.authorization.ResourceRepresentation;
-
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */

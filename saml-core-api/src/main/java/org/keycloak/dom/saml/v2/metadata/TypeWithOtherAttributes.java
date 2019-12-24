@@ -29,7 +29,7 @@ import java.util.Map;
  */
 public abstract class TypeWithOtherAttributes {
 
-    protected Map<QName, String> otherAttributes = new HashMap<QName, String>();
+    protected Map<QName, String> otherAttributes = new HashMap<>();
 
     /**
      * Add other attribute

@@ -27,19 +27,19 @@ import org.keycloak.models.RealmModel;
  */
 public interface CommonClientSessionModel {
 
-    public String getRedirectUri();
-    public void setRedirectUri(String uri);
+    String getRedirectUri();
+    void setRedirectUri(String uri);
 
-    public RealmModel getRealm();
-    public ClientModel getClient();
+    RealmModel getRealm();
+    ClientModel getClient();
 
-    public String getAction();
-    public void setAction(String action);
+    String getAction();
+    void setAction(String action);
 
-    public String getProtocol();
-    public void setProtocol(String method);
+    String getProtocol();
+    void setProtocol(String method);
 
-    public static enum Action {
+    enum Action {
         OAUTH_GRANT,
         AUTHENTICATE,
         LOGGED_OUT,
@@ -47,12 +47,14 @@ public interface CommonClientSessionModel {
         REQUIRED_ACTIONS
     }
 
-    public enum ExecutionStatus {
+    enum ExecutionStatus {
         FAILED,
         SUCCESS,
         SETUP_REQUIRED,
         ATTEMPTED,
         SKIPPED,
-        CHALLENGED
+        CHALLENGED,
+        EVALUATED_TRUE,
+        EVALUATED_FALSE
     }
 }

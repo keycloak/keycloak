@@ -35,7 +35,7 @@ import java.util.List;
  */
 public class SAML11ConditionsType extends CommonConditionsType {
 
-    public List<SAML11ConditionAbstractType> conditions = new ArrayList<SAML11ConditionAbstractType>();
+    public List<SAML11ConditionAbstractType> conditions = new ArrayList<>();
 
     public void add(SAML11ConditionAbstractType condition) {
         this.conditions.add(condition);

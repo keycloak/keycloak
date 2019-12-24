@@ -21,10 +21,11 @@ import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.HttpResponse;
-import org.jboss.resteasy.spi.NotFoundException;
+import javax.ws.rs.NotFoundException;
 import org.keycloak.Config;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.Version;
+import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
@@ -33,6 +34,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
+import org.keycloak.protocol.oidc.utils.WebOriginsUtils;
 import org.keycloak.services.Urls;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.AuthenticationManager;
@@ -42,6 +44,7 @@ import org.keycloak.theme.BrowserSecurityHeaderSetup;
 import org.keycloak.theme.FreeMarkerException;
 import org.keycloak.theme.FreeMarkerUtil;
 import org.keycloak.theme.Theme;
+import org.keycloak.urls.UrlType;
 import org.keycloak.utils.MediaType;
 
 import javax.ws.rs.GET;
@@ -51,6 +54,8 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriBuilder;
+import javax.ws.rs.core.UriInfo;
 import javax.ws.rs.ext.Providers;
 import java.io.IOException;
 import java.net.URI;
@@ -169,9 +174,7 @@ public class AdminConsole {
         if (consoleApp == null) {
             throw new NotFoundException("Could not find admin console client");
         }
-        return new ClientManager(new RealmManager(session)).toInstallationRepresentation(realm, consoleApp, session.getContext().getAuthServerUrl());
-
-    }
+        return new ClientManager(new RealmManager(session)).toInstallationRepresentation(realm, consoleApp, session.getContext().getUri().getBaseUri());    }
 
     /**
      * Permission information
@@ -255,10 +258,10 @@ public class AdminConsole {
     @GET
     @NoCache
     public Response logout() {
-        URI redirect = AdminRoot.adminConsoleUrl(session.getContext().getUri()).build(realm.getName());
+        URI redirect = AdminRoot.adminConsoleUrl(session.getContext().getUri(UrlType.ADMIN)).build(realm.getName());
 
         return Response.status(302).location(
-                OIDCLoginProtocolService.logoutUrl(session.getContext().getUri()).queryParam("redirect_uri", redirect.toString()).build(realm.getName())
+                OIDCLoginProtocolService.logoutUrl(session.getContext().getUri(UrlType.ADMIN)).queryParam("redirect_uri", redirect.toString()).build(realm.getName())
         ).build();
     }
 
@@ -274,19 +277,30 @@ public class AdminConsole {
      */
     @GET
     @NoCache
-    public Response getMainPage() throws URISyntaxException, IOException, FreeMarkerException {
-        if (!session.getContext().getUri().getRequestUri().getPath().endsWith("/")) {
-            return Response.status(302).location(session.getContext().getUri().getRequestUriBuilder().path("/").build()).build();
+    public Response getMainPage() throws IOException, FreeMarkerException {
+        if (!session.getContext().getUri(UrlType.ADMIN).getRequestUri().getPath().endsWith("/")) {
+            return Response.status(302).location(session.getContext().getUri(UrlType.ADMIN).getRequestUriBuilder().path("/").build()).build();
         } else {
             Theme theme = AdminRoot.getTheme(session, realm);
 
             Map<String, Object> map = new HashMap<>();
 
-            URI baseUri = session.getContext().getUri().getBaseUri();
+            URI adminBaseUri = session.getContext().getUri(UrlType.ADMIN).getBaseUri();
+            String adminBaseUrl = adminBaseUri.toString();
+            if (adminBaseUrl.endsWith("/")) {
+                adminBaseUrl = adminBaseUrl.substring(0, adminBaseUrl.length() - 1);
+            }
 
-            map.put("authUrl", session.getContext().getContextPath());
-            map.put("consoleBaseUrl", Urls.adminConsoleRoot(baseUri, realm.getName()).getPath());
-            map.put("resourceUrl", Urls.themeRoot(baseUri).getPath() + "/admin/" + theme.getName());
+            URI authServerBaseUri = session.getContext().getUri(UrlType.FRONTEND).getBaseUri();
+            String authServerBaseUrl = authServerBaseUri.toString();
+            if (authServerBaseUrl.endsWith("/")) {
+                authServerBaseUrl = authServerBaseUrl.substring(0, authServerBaseUrl.length() - 1);
+            }
+
+            map.put("authServerUrl", authServerBaseUrl);
+            map.put("authUrl", adminBaseUrl);
+            map.put("consoleBaseUrl", Urls.adminConsoleRoot(adminBaseUri, realm.getName()).getPath());
+            map.put("resourceUrl", Urls.themeRoot(adminBaseUri).getPath() + "/admin/" + theme.getName());
             map.put("masterRealm", Config.getAdminRealm());
             map.put("resourceVersion", Version.RESOURCES_VERSION);
             map.put("properties", theme.getProperties());
@@ -294,7 +308,16 @@ public class AdminConsole {
             FreeMarkerUtil freeMarkerUtil = new FreeMarkerUtil();
             String result = freeMarkerUtil.processTemplate(map, "index.ftl", theme);
             Response.ResponseBuilder builder = Response.status(Response.Status.OK).type(MediaType.TEXT_HTML_UTF_8).language(Locale.ENGLISH).entity(result);
-            BrowserSecurityHeaderSetup.headers(builder, realm);
+
+            BrowserSecurityHeaderSetup.Options headerOptions = null;
+
+            // Replace CSP if admin is hosted on different URL
+            if (!adminBaseUri.equals(authServerBaseUri)) {
+                headerOptions = BrowserSecurityHeaderSetup.Options.create().allowFrameSrc(UriBuilder.fromUri(authServerBaseUri).replacePath("").build().toString()).build();
+            }
+
+            BrowserSecurityHeaderSetup.headers(builder, realm, headerOptions);
+
             return builder.build();
         }
     }
@@ -302,7 +325,7 @@ public class AdminConsole {
     @GET
     @Path("{indexhtml: index.html}") // this expression is a hack to get around jaxdoclet generation bug.  Doesn't like index.html
     public Response getIndexHtmlRedirect() {
-        return Response.status(302).location(session.getContext().getUri().getRequestUriBuilder().path("../").build()).build();
+        return Response.status(302).location(session.getContext().getUri(UrlType.ADMIN).getRequestUriBuilder().path("../").build()).build();
     }
 
     @GET

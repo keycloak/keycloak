@@ -22,7 +22,6 @@ import org.keycloak.saml.common.constants.GeneralConstants;
 import org.keycloak.saml.common.exceptions.ConfigurationException;
 import org.keycloak.saml.common.exceptions.ParsingException;
 import org.keycloak.saml.common.exceptions.ProcessingException;
-import org.w3c.dom.DOMConfiguration;
 import org.w3c.dom.DOMException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -40,10 +39,8 @@ import javax.xml.transform.Source;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactoryConfigurationError;
-import javax.xml.transform.dom.DOMResult;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
-import javax.xml.xpath.XPathException;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -69,26 +66,6 @@ public class DocumentUtil {
     public static final String feature_external_general_entities = "http://xml.org/sax/features/external-general-entities";
     public static final String feature_external_parameter_entities = "http://xml.org/sax/features/external-parameter-entities";
     public static final String feature_disallow_doctype_decl = "http://apache.org/xml/features/disallow-doctype-decl";
-
-    /**
-     * Check whether a node belongs to a document
-     *
-     * @param doc
-     * @param node
-     *
-     * @return
-     */
-    public static boolean containsNode(Document doc, Node node) {
-        if (node.getNodeType() == Node.ELEMENT_NODE) {
-            Element elem = (Element) node;
-            NodeList nl = doc.getElementsByTagNameNS(elem.getNamespaceURI(), elem.getLocalName());
-            if (nl != null && nl.getLength() > 0)
-                return true;
-            else
-                return false;
-        }
-        throw new UnsupportedOperationException();
-    }
 
     /**
      * Create a new document
@@ -242,32 +219,6 @@ public class DocumentUtil {
     }
 
     /**
-     * Marshall a DOM Element as string
-     *
-     * @param element
-     *
-     * @return
-     *
-     * @throws TransformerFactoryConfigurationError
-     * @throws TransformerException
-     */
-    public static String getDOMElementAsString(Element element) throws ProcessingException, ConfigurationException {
-        Source source = new DOMSource(element);
-        StringWriter sw = new StringWriter();
-
-        Result streamResult = new StreamResult(sw);
-        // Write the DOM document to the file
-        Transformer xformer = TransformerUtil.getTransformer();
-        try {
-            xformer.transform(source, streamResult);
-        } catch (TransformerException e) {
-            throw logger.processingError(e);
-        }
-
-        return sw.toString();
-    }
-
-    /**
      * <p> Get an element from the document given its {@link QName} </p> <p> First an attempt to get the element based
      * on its namespace is made, failing which an element with the localpart ignoring any namespace is returned. </p>
      *
@@ -349,83 +300,6 @@ public class DocumentUtil {
     }
 
     /**
-     * Stream a DOM Node as a String
-     *
-     * @param node
-     *
-     * @return
-     *
-     * @throws ProcessingException
-     * @throws TransformerFactoryConfigurationError
-     * @throws TransformerException
-     */
-    public static String getNodeAsString(Node node) throws ConfigurationException, ProcessingException {
-        Source source = new DOMSource(node);
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-
-        Result streamResult = new StreamResult(baos);
-        // Write the DOM document to the stream
-        Transformer transformer = TransformerUtil.getTransformer();
-        try {
-            transformer.transform(source, streamResult);
-        } catch (TransformerException e) {
-            throw logger.processingError(e);
-        }
-
-        return new String(baos.toByteArray(), GeneralConstants.SAML_CHARSET);
-    }
-
-    /**
-     * Given a document, return a Node with the given node name and an attribute with a particular attribute value
-     *
-     * @param document
-     * @param nsURI
-     * @param nodeName
-     * @param attributeName
-     * @param attributeValue
-     *
-     * @return
-     *
-     * @throws XPathException
-     * @throws TransformerFactoryConfigurationError
-     * @throws TransformerException
-     */
-    public static Node getNodeWithAttribute(Document document, final String nsURI, String nodeName, String attributeName,
-                                            String attributeValue) throws XPathException, TransformerFactoryConfigurationError, TransformerException {
-        NodeList nl = document.getElementsByTagNameNS(nsURI, nodeName);
-        int len = nl != null ? nl.getLength() : 0;
-
-        for (int i = 0; i < len; i++) {
-            Node n = nl.item(i);
-            if (n.getNodeType() != Node.ELEMENT_NODE)
-                continue;
-            Element el = (Element) n;
-            String attrValue = el.getAttributeNS(nsURI, attributeName);
-            if (attributeValue.equals(attrValue))
-                return el;
-            // Take care of attributes with null NS
-            attrValue = el.getAttribute(attributeName);
-            if (attributeValue.equals(attrValue))
-                return el;
-        }
-        return null;
-    }
-
-    /**
-     * DOM3 method: Normalize the document with namespaces
-     *
-     * @param doc
-     *
-     * @return
-     */
-    public static Document normalizeNamespaces(Document doc) {
-        DOMConfiguration docConfig = doc.getDomConfig();
-        docConfig.setParameter("namespaces", Boolean.TRUE);
-        doc.normalizeDocument();
-        return doc;
-    }
-
-    /**
      * Get a {@link Source} given a {@link Document}
      *
      * @param doc
@@ -451,37 +325,6 @@ public class DocumentUtil {
         } catch (Exception ignore) {
         }
         return str;
-    }
-
-    /**
-     * Log the nodes in the document
-     *
-     * @param doc
-     */
-    public static void logNodes(Document doc) {
-        visit(doc, 0);
-    }
-
-    public static Node getNodeFromSource(Source source) throws ProcessingException, ConfigurationException {
-        try {
-            Transformer transformer = TransformerUtil.getTransformer();
-            DOMResult result = new DOMResult();
-            TransformerUtil.transform(transformer, source, result);
-            return result.getNode();
-        } catch (ParsingException te) {
-            throw logger.processingError(te);
-        }
-    }
-
-    public static Document getDocumentFromSource(Source source) throws ProcessingException, ConfigurationException {
-        try {
-            Transformer transformer = TransformerUtil.getTransformer();
-            DOMResult result = new DOMResult();
-            TransformerUtil.transform(transformer, source, result);
-            return (Document) result.getNode();
-        } catch (ParsingException te) {
-            throw logger.processingError(te);
-        }
     }
 
     private static void visit(Node node, int level) {

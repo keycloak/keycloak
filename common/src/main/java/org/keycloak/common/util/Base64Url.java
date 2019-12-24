@@ -25,14 +25,38 @@ package org.keycloak.common.util;
 public class Base64Url {
     public static String encode(byte[] bytes) {
         String s = Base64.encodeBytes(bytes);
-        s = s.split("=")[0]; // Remove any trailing '='s
+        return encodeBase64ToBase64Url(s);
+    }
+
+    public static byte[] decode(String s) {
+        s = encodeBase64UrlToBase64(s);
+        try {
+            // KEYCLOAK-2479 : Avoid to try gzip decoding as for some objects, it may display exception to STDERR. And we know that object wasn't encoded as GZIP
+            return Base64.decode(s, Base64.DONT_GUNZIP);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+
+    /**
+     * @param base64 String in base64 encoding
+     * @return String in base64Url encoding
+     */
+    public static String encodeBase64ToBase64Url(String base64) {
+        String s = base64.split("=")[0]; // Remove any trailing '='s
         s = s.replace('+', '-'); // 62nd char of encoding
         s = s.replace('/', '_'); // 63rd char of encoding
         return s;
     }
 
-    public static byte[] decode(String s) {
-        s = s.replace('-', '+'); // 62nd char of encoding
+
+    /**
+     * @param base64Url String in base64Url encoding
+     * @return String in base64 encoding
+     */
+    public static String encodeBase64UrlToBase64(String base64Url) {
+        String s = base64Url.replace('-', '+'); // 62nd char of encoding
         s = s.replace('_', '/'); // 63rd char of encoding
         switch (s.length() % 4) // Pad with trailing '='s
         {
@@ -48,12 +72,8 @@ public class Base64Url {
                 throw new RuntimeException(
                         "Illegal base64url string!");
         }
-        try {
-            // KEYCLOAK-2479 : Avoid to try gzip decoding as for some objects, it may display exception to STDERR. And we know that object wasn't encoded as GZIP
-            return Base64.decode(s, Base64.DONT_GUNZIP);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+
+        return s;
     }
 
 

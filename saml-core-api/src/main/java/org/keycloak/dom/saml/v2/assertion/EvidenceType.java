@@ -47,7 +47,7 @@ import java.util.List;
  */
 public class EvidenceType implements Serializable {
 
-    protected List<ChoiceType> evidences = new ArrayList<ChoiceType>();
+    protected List<ChoiceType> evidences = new ArrayList<>();
 
     /**
      * Add an evidence

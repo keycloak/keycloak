@@ -12,7 +12,7 @@ import static org.junit.Assert.assertEquals;
 public class KeyUtilsTest {
 
     @Test
-    public void loadSecretKey() throws Exception {
+    public void loadSecretKey() {
         byte[] secretBytes = new byte[32];
         ThreadLocalRandom.current().nextBytes(secretBytes);
         SecretKeySpec expected = new SecretKeySpec(secretBytes, "HmacSHA256");

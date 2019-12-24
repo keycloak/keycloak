@@ -43,6 +43,6 @@ public class LoginError extends LoginBase {
 
     @Override
     public boolean isCurrent() {
-        return getTitleText().equals("We're sorry...");
+        return getTitleText().equals("We are sorry...");
     }
 }

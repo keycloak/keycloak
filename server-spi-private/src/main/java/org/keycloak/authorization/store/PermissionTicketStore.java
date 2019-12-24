@@ -115,11 +115,12 @@ public interface PermissionTicketStore {
      * Returns a list of {@link Resource} granted to the given {@code requester}
      * 
      * @param requester the requester
+     * @param name the keyword to query resources by name or null if any resource
      * @param first first  result
      * @param max max result
      * @return a list of {@link Resource} granted to the given {@code requester}
      */
-    List<Resource> findGrantedResources(String requester, int first, int max);
+    List<Resource> findGrantedResources(String requester, String name, int first, int max);
 
     /**
      * Returns a list of {@link Resource} granted by the owner to other users

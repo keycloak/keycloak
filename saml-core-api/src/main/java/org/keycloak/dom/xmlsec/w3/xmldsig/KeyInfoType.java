@@ -51,7 +51,7 @@ public class KeyInfoType {
 
     protected String id;
 
-    protected List<Object> contentList = new ArrayList<Object>();
+    protected List<Object> contentList = new ArrayList<>();
 
     public void addContent(Object content) {
         this.contentList.add(content);

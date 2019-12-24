@@ -41,6 +41,68 @@
         These examples are included for development testing purposes.  For official documentation, see <a href="https://www.patternfly.org" class="alert-link">https://www.patternfly.org</a> and <a href="http://getbootstrap.com" class="alert-link">http://getbootstrap.com</a>.
       </div>
       <hr>
+<h2 id="left-aligned">Left-aligned labels</h2>
+<h3 id="left-aligned_required-and-optional-fields">Required and Optional Fields</h3>
+<form class="form-horizontal form-horizontal-pf-align-left required-pf" role="form">
+  <p class="fields-status-pf">The fields marked with <span class="required-pf">*</span> are required.</p>
+  <div class="form-group">
+    <label class="col-sm-2 control-label required-pf" for="leftaligned1">Field One <a tabindex="0" role="button" data-toggle="popover" data-trigger="focus" data-html="true" title="" class="popover-pf-info" data-content="Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et <a href='#'>dolore magna aliqua</a>." data-placement="top"><span class="pficon pficon-info"></span></a></label>
+    <div class="col-sm-10">
+      <input type="text" class="form-control" id="leftaligned1" required>
+    </div>
+  </div>
+  <div class="form-group">
+    <label for="leftaligned2" class="col-sm-2 control-label">Field Two</label>
+    <div class="col-sm-10">
+      <input type="text" class="form-control" id="leftaligned2">
+    </div>
+  </div>
+  <div class="form-group">
+    <label for="leftaligned3" class="col-sm-2 control-label required-pf">Field Three</label>
+    <div class="col-sm-10">
+      <input type="text" class="form-control" id="leftaligned3" required>
+    </div>
+  </div>
+  <div class="form-group">
+    <label for="exampleInputFile" class="col-sm-2 control-label">File input</label>
+    <div class="col-sm-10">
+    <input type="file" id="exampleInputFile1">
+    <p class="help-block">Example block-level help text here.</p>
+    </div>
+  </div>
+  <div class="form-group">
+    <div class="col-sm-offset-2 col-sm-10">
+      <button type="submit" class="btn btn-default" disabled>Action</button>
+    </div>
+  </div>
+</form>
+<h3 id="left-aligned_all_fields_required">All fields required.</h3>
+<form class="form-horizontal form-horizontal-pf-align-left" role="form">
+  <p class="fields-status-pf">All fields are required.</p>
+  <div class="form-group">
+    <label class="col-sm-2 control-label" for="leftaligned4">Field One <a tabindex="0" role="button" data-toggle="popover" data-trigger="focus" data-html="true" title="" class="popover-pf-info" data-content="Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et <a href='#'>dolore magna aliqua</a>." data-placement="top"><span class="pficon pficon-info"></span></a></label>
+    <div class="col-sm-10">
+      <input type="text" class="form-control" id="leftaligned4" required>
+    </div>
+  </div>
+  <div class="form-group">
+    <label for="leftaligned5" class="col-sm-2 control-label">Field Two</label>
+    <div class="col-sm-10">
+      <input type="text" class="form-control" id="leftaligned5" required>
+    </div>
+  </div>
+  <div class="form-group">
+    <label for="leftaligned6" class="col-sm-2 control-label">Field Three</label>
+    <div class="col-sm-10">
+      <input type="text" class="form-control" id="leftaligned6" required>
+    </div>
+  </div>
+  <div class="form-group">
+    <div class="col-sm-offset-2 col-sm-10">
+      <button type="submit" class="btn btn-default" disabled>Action</button>
+    </div>
+  </div>
+</form>
       <h2 id="right-aligned">Right-aligned labels</h2>
 
       <h3 id="right-aligned_basic-form">Basic Form</h3>
@@ -100,12 +162,11 @@
           </div>
         </div>
       </form>
-
       <h3 id="right-aligned_required-and-optional-fields">Required and Optional Fields</h3>
       <form class="form-horizontal" role="form">
         <p class="fields-status-pf">The fields marked with <span class="required-pf">*</span> are required.</p>
         <div class="form-group">
-          <label for="input4" class="col-sm-2 control-label required-pf">Field One</label>
+          <label class="col-sm-2 control-label required-pf" for="input4">Field One <a tabindex="0" role="button" data-toggle="popover" data-trigger="focus" data-html="true" title="" class="popover-pf-info" data-content="Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et <a href='#'>dolore magna aliqua</a>." data-placement="top"><span class="pficon pficon-info"></span></a></label>
           <div class="col-sm-10">
             <input type="text" class="form-control" id="input4" required>
           </div>
@@ -237,10 +298,10 @@
       </form>
 
       <h3 id="top-aligned_required-and-optional-fields">Required and Optional Fields</h3>
-      <form role="form">
+      <form role="form" >
         <p class="fields-status-pf">The fields marked with <span class="required-pf">*</span> are required.</p>
         <div class="form-group">
-          <label for="input13" class="required-pf">Field One</label>
+          <label class="required-pf" for="input13">Field One <a tabindex="0" role="button" data-toggle="popover"  data-trigger="focus" data-html="true" title="" class="popover-pf-info" data-content="Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et <a href='#'>dolore magna aliqua</a>." data-placement="top"><span class="pficon pficon-info"></span></a></label>
           <input type="text" class="form-control" id="input13" required>
         </div>
         <div class="form-group">
@@ -869,6 +930,15 @@
           <option>5</option>
         </select>
       </div>
+      <script>
+        // Initialize Popovers
+        $(document).ready(function() {
+          $('[data-toggle=popover]').popovers()
+            .on('hidden.bs.popover', function (e) {
+              $(e.target).data('bs.popover').inState.click = false;
+            });
+        });
+      </script>
 
     </div><!-- /container -->
   </body>

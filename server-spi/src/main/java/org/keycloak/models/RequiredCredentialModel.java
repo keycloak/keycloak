@@ -17,6 +17,9 @@
 
 package org.keycloak.models;
 
+import org.keycloak.models.credential.OTPCredentialModel;
+import org.keycloak.models.credential.PasswordCredentialModel;
+
 import java.io.Serializable;
 import java.util.Collections;
 import java.util.HashMap;
@@ -76,9 +79,9 @@ public class RequiredCredentialModel implements Serializable {
     public static final RequiredCredentialModel KERBEROS;
 
     static {
-        Map<String, RequiredCredentialModel> map = new HashMap<String, RequiredCredentialModel>();
+        Map<String, RequiredCredentialModel> map = new HashMap<>();
         PASSWORD = new RequiredCredentialModel();
-        PASSWORD.setType(UserCredentialModel.PASSWORD);
+        PASSWORD.setType(PasswordCredentialModel.TYPE);
         PASSWORD.setInput(true);
         PASSWORD.setSecret(true);
         PASSWORD.setFormLabel("password");
@@ -90,7 +93,7 @@ public class RequiredCredentialModel implements Serializable {
         SECRET.setFormLabel("secret");
         map.put(SECRET.getType(), SECRET);
         TOTP = new RequiredCredentialModel();
-        TOTP.setType(UserCredentialModel.TOTP);
+        TOTP.setType(OTPCredentialModel.TYPE);
         TOTP.setInput(true);
         TOTP.setSecret(false);
         TOTP.setFormLabel("authenticatorCode");

@@ -30,12 +30,12 @@ import javax.ws.rs.core.MediaType;
  */
 public interface ComponentResource {
     @GET
-    public ComponentRepresentation toRepresentation();
+    ComponentRepresentation toRepresentation();
 
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
-    public void update(ComponentRepresentation rep);
+    void update(ComponentRepresentation rep);
 
     @DELETE
-    public void remove();
+    void remove();
 }

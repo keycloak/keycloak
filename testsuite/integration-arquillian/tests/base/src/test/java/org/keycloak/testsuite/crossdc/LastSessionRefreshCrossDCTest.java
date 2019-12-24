@@ -18,63 +18,29 @@
 package org.keycloak.testsuite.crossdc;
 
 
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
-
-import javax.ws.rs.NotFoundException;
-
 import org.hamcrest.Matchers;
-import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.arquillian.container.test.api.TargetsContainer;
-import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.common.util.Retry;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.AuthenticationManager;
-import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.Assert;
-import org.keycloak.common.util.Retry;
 import org.keycloak.testsuite.arquillian.InfinispanStatistics;
 import org.keycloak.testsuite.arquillian.annotation.JmxInfinispanCacheStatistics;
-import org.keycloak.testsuite.client.KeycloakTestingClient;
-import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
 import org.keycloak.testsuite.util.OAuthClient;
+
+import javax.ws.rs.NotFoundException;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class LastSessionRefreshCrossDCTest extends AbstractAdminCrossDCTest {
-
-    @Deployment(name = "dc0")
-    @TargetsContainer(QUALIFIER_AUTH_SERVER_DC_0_NODE_1)
-    public static WebArchive deployDC0() {
-        return RunOnServerDeployment.create(
-                LastSessionRefreshCrossDCTest.class,
-                AbstractAdminCrossDCTest.class,
-                AbstractCrossDCTest.class,
-                AbstractTestRealmKeycloakTest.class,
-                KeycloakTestingClient.class,
-                InfinispanStatistics.class
-        );
-    }
-
-    @Deployment(name = "dc1")
-    @TargetsContainer(QUALIFIER_AUTH_SERVER_DC_1_NODE_1)
-    public static WebArchive deployDC1() {
-        return RunOnServerDeployment.create(
-                LastSessionRefreshCrossDCTest.class,
-                AbstractAdminCrossDCTest.class,
-                AbstractCrossDCTest.class,
-                AbstractTestRealmKeycloakTest.class,
-                KeycloakTestingClient.class,
-                InfinispanStatistics.class
-        );
-    }
-
 
     @Test
     public void testRevokeRefreshToken(@JmxInfinispanCacheStatistics(dc=DC.FIRST, managementPortProperty = "cache.server.management.port", cacheName=InfinispanConnectionProvider.USER_SESSION_CACHE_NAME) InfinispanStatistics sessionCacheDc1Stats,

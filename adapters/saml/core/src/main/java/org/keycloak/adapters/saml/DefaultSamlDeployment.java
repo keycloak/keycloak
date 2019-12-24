@@ -308,12 +308,14 @@ public class DefaultSamlDeployment implements SamlDeployment {
     private PrivateKey decryptionKey;
     private KeyPair signingKeyPair;
     private Set<String> roleAttributeNames;
+    private RoleMappingsProvider roleMappingsProvider;
     private PrincipalNamePolicy principalNamePolicy = PrincipalNamePolicy.FROM_NAME_ID;
     private String principalAttributeName;
     private String logoutPage;
     private SignatureAlgorithm signatureAlgorithm;
     private String signatureCanonicalizationMethod;
     private boolean autodetectBearerOnly;
+    private boolean keepDOMAssertion;
 
     @Override
     public boolean turnOffChangeSessionIdOnLogin() {
@@ -376,6 +378,11 @@ public class DefaultSamlDeployment implements SamlDeployment {
     }
 
     @Override
+    public RoleMappingsProvider getRoleMappingsProvider() {
+        return this.roleMappingsProvider;
+    }
+
+    @Override
     public PrincipalNamePolicy getPrincipalNamePolicy() {
         return principalNamePolicy;
     }
@@ -425,6 +432,10 @@ public class DefaultSamlDeployment implements SamlDeployment {
         this.roleAttributeNames = roleAttributeNames;
     }
 
+    public void setRoleMappingsProvider(final RoleMappingsProvider provider) {
+        this.roleMappingsProvider = provider;
+    }
+
     public void setPrincipalNamePolicy(PrincipalNamePolicy principalNamePolicy) {
         this.principalNamePolicy = principalNamePolicy;
     }
@@ -467,5 +478,14 @@ public class DefaultSamlDeployment implements SamlDeployment {
 
     public void setAutodetectBearerOnly(boolean autodetectBearerOnly) {
         this.autodetectBearerOnly = autodetectBearerOnly;
+    }
+
+    @Override
+    public boolean isKeepDOMAssertion() {
+        return keepDOMAssertion;
+    }
+
+    public void setKeepDOMAssertion(Boolean keepDOMAssertion) {
+        this.keepDOMAssertion = keepDOMAssertion != null && keepDOMAssertion;
     }
 }

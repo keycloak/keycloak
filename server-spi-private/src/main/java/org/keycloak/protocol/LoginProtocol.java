@@ -37,7 +37,7 @@ import javax.ws.rs.core.UriInfo;
  */
 public interface LoginProtocol extends Provider {
 
-    public static enum Error {
+    enum Error {
 
         /**
          * Login cancelled by the user

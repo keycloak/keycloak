@@ -20,6 +20,7 @@ package org.keycloak.theme;
 import org.keycloak.models.BrowserSecurityHeaders;
 import org.keycloak.models.RealmModel;
 
+import javax.swing.text.html.Option;
 import javax.ws.rs.core.Response;
 import java.util.Map;
 
@@ -29,15 +30,50 @@ import java.util.Map;
  */
 public class BrowserSecurityHeaderSetup {
 
-    public static Response.ResponseBuilder headers(Response.ResponseBuilder builder, RealmModel realm) {
-        return headers(builder, realm.getBrowserSecurityHeaders());
+    public static class Options {
+
+        private String allowedFrameSrc;
+
+        public static Options create() {
+            return new Options();
+        }
+
+        public Options allowFrameSrc(String source) {
+            allowedFrameSrc = source;
+            return this;
+        }
+
+        public Options build() {
+            return this;
+        }
     }
 
-    public static Response.ResponseBuilder headers(Response.ResponseBuilder builder, Map<String, String> headers) {
+    public static Response.ResponseBuilder headers(Response.ResponseBuilder builder, RealmModel realm) {
+        return headers(builder, realm.getBrowserSecurityHeaders(), null);
+    }
+
+
+    public static Response.ResponseBuilder headers(Response.ResponseBuilder builder, RealmModel realm, Options options) {
+        return headers(builder, realm.getBrowserSecurityHeaders(), options);
+    }
+
+    public static Response.ResponseBuilder headers(Response.ResponseBuilder builder) {
+        return headers(builder, BrowserSecurityHeaders.defaultHeaders, null);
+    }
+
+    private static Response.ResponseBuilder headers(Response.ResponseBuilder builder, Map<String, String> headers, Options options) {
         for (Map.Entry<String, String> entry : headers.entrySet()) {
-            String headerName = BrowserSecurityHeaders.headerAttributeMap.get(entry.getKey());
-            if (headerName != null && entry.getValue() != null && entry.getValue().length() > 0) {
-                builder.header(headerName, entry.getValue());
+            String header = BrowserSecurityHeaders.headerAttributeMap.get(entry.getKey());
+            String value = entry.getValue();
+
+            if (options != null) {
+                if (header.equals(BrowserSecurityHeaders.CONTENT_SECURITY_POLICY) && value.equals(BrowserSecurityHeaders.CONTENT_SECURITY_POLICY_DEFAULT) && options.allowedFrameSrc != null) {
+                    value = "frame-src " + options.allowedFrameSrc + "; frame-ancestors 'self'; object-src 'none';";
+                }
+            }
+
+            if (header != null && value != null && !value.isEmpty()) {
+                builder.header(header, value);
             }
         }
         return builder;

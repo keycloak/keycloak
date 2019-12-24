@@ -670,8 +670,15 @@ if (outcome == failed) of /subsystem=microprofile-metrics-smallrye/:read-resourc
     /subsystem=microprofile-metrics-smallrye/:add
     /subsystem=microprofile-metrics-smallrye/:write-attribute(name=security-enabled,value=false)
     /subsystem=microprofile-metrics-smallrye/:write-attribute(name=exposed-subsystems,value=[*])
-    /subsystem=microprofile-metrics-smallrye/:write-attribute(name=prefix,value=${wildfly.metrics.prefix:wildfly})
     echo
+end-if
+
+if (result == "Keycloak") of :read-attribute(name=product-name)
+    echo Adding microprofile-metrics-smallrye subsystem prefix attribute to Keycloak
+    /subsystem=microprofile-metrics-smallrye/:write-attribute(name=prefix,value=${wildfly.metrics.prefix:wildfly})
+else
+    echo Adding microprofile-metrics-smallrye subsystem prefix attribute to RH-SSO
+    /subsystem=microprofile-metrics-smallrye/:write-attribute(name=prefix,value=${wildfly.metrics.prefix:jboss})
 end-if
 
 # Migrate from 6.0.1 to 7.0.0
@@ -717,6 +724,54 @@ if (result == undefined) of /subsystem=jgroups/stack=udp/protocol=FD_SOCK/:read-
     echo Adding socket-binding for FD_SOCK protocol for udp stack in jgroups subsystem
     /subsystem=jgroups/stack=udp/protocol=FD_SOCK/:write-attribute(name=socket-binding,value=jgroups-udp-fd)
     echo
+end-if
+
+if (result == "true") of /subsystem=keycloak-server/spi=truststore/provider=file:map-get(name=properties, key=disabled)
+    echo Disabling Truststore Provider
+    /subsystem=keycloak-server/spi=truststore/provider=file:write-attribute(name=enabled, value=false)
+    echo Removing deprecated option
+    /subsystem=keycloak-server/spi=truststore/provider=file:map-remove(name=properties, key=disabled)
+    echo
+end-if
+
+# Migrate from 7.0.0 to 8.0.0
+
+if ((result.time == 100L) && (result.unit == MILLISECONDS)) of /subsystem=ejb3/thread-pool=default:read-attribute(name=keepalive-time)
+    echo Changing thread pool keepalive of ejb3 subsystem
+    /subsystem=ejb3/thread-pool=default:write-attribute(name=keepalive-time.time, value=60)
+    /subsystem=ejb3/thread-pool=default:write-attribute(name=keepalive-time.unit,value=SECONDS)
+    echo
+end-if
+
+if (result == UP) of /subsystem=microprofile-health-smallrye:read-attribute(name=empty-liveness-checks-status)
+    echo Adding empty-liveness-checks-status attribute to microprofile-health-smallrye subsystem
+    /subsystem=microprofile-health-smallrye:write-attribute(name=empty-liveness-checks-status, value=${env.MP_HEALTH_EMPTY_LIVENESS_CHECKS_STATUS:UP})
+    echo
+end-if
+
+if (result == UP) of /subsystem=microprofile-health-smallrye:read-attribute(name=empty-readiness-checks-status)
+    echo Adding empty-readiness-checks-status attribute to microprofile-health-smallrye subsystem
+    /subsystem=microprofile-health-smallrye:write-attribute(name=empty-readiness-checks-status, value=${env.MP_HEALTH_EMPTY_READINESS_CHECKS_STATUS:UP})
+    echo
+end-if
+
+if (outcome == failed) of /subsystem=keycloak-server/spi=hostname/provider=default/:read-resource
+    echo Adding default hostname provider
+    /subsystem=keycloak-server/spi=hostname/provider=default/:add(properties={frontendUrl => "${keycloak.frontendUrl:}",forceBackendUrlToFrontendUrl => "false"},enabled=true)
+end-if
+
+if (result == request) of /subsystem=keycloak-server/spi=hostname/:read-attribute(name=default-provider)
+    echo Switching from request to default hostname provider
+
+    /subsystem=keycloak-server/spi=hostname/:write-attribute(name=default-provider,value=default)
+end-if
+
+if (result != fixed) of /subsystem=keycloak-server/spi=hostname/:read-attribute(name=default-provider)
+    try
+        /subsystem=keycloak-server/spi=hostname/provider=fixed:remove
+        echo Removed config for unused fixed hostname provider
+    catch
+    end-try
 end-if
 
 echo *** End Migration ***

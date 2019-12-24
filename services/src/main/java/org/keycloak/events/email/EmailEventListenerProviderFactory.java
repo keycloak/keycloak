@@ -34,12 +34,12 @@ import java.util.Set;
  */
 public class EmailEventListenerProviderFactory implements EventListenerProviderFactory {
 
-    private static final Set<EventType> SUPPORTED_EVENTS = new HashSet<EventType>();
+    private static final Set<EventType> SUPPORTED_EVENTS = new HashSet<>();
     static {
         Collections.addAll(SUPPORTED_EVENTS, EventType.LOGIN_ERROR, EventType.UPDATE_PASSWORD, EventType.REMOVE_TOTP, EventType.UPDATE_TOTP);
     }
 
-    private Set<EventType> includedEvents = new HashSet<EventType>();
+    private Set<EventType> includedEvents = new HashSet<>();
 
     @Override
     public EventListenerProvider create(KeycloakSession session) {

@@ -155,7 +155,7 @@ public class SAMLIdentityProviderFactory extends AbstractIdentityProviderFactory
             throw new RuntimeException("Could not parse IdP SAML Metadata", pe);
         }
 
-        return new HashMap<String, String>();
+        return new HashMap<>();
     }
 
     @Override

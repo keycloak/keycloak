@@ -43,7 +43,7 @@ public class AdminConsoleLandingPageTest extends AbstractKeycloakTest {
 
         String authUrl = body.substring(body.indexOf("var authUrl = '") + 15);
         authUrl = authUrl.substring(0, authUrl.indexOf("'"));
-        Assert.assertEquals("/auth", authUrl);
+        Assert.assertEquals(suiteContext.getAuthServerInfo().getContextRoot() + "/auth", authUrl);
 
         String resourceUrl = body.substring(body.indexOf("var resourceUrl = '") + 19);
         resourceUrl = resourceUrl.substring(0, resourceUrl.indexOf("'"));
@@ -67,7 +67,7 @@ public class AdminConsoleLandingPageTest extends AbstractKeycloakTest {
         while(m.find()) {
             String url = m.group(1);
             if (url.contains("keycloak.js")) {
-                Assert.assertTrue(url, url.startsWith("/auth/js/"));
+                Assert.assertTrue(url, url.startsWith(suiteContext.getAuthServerInfo().getContextRoot() + "/auth/js/"));
             } else {
                 Assert.assertTrue(url, url.startsWith("/auth/resources/"));
             }

@@ -23,6 +23,14 @@
                 </div>
             </div>
 
+            <div class="form-group" data-ng-show="serverInfo.listProviderIds('hostname').includes('default')">
+                <label class="col-md-2 control-label" for="name">{{:: 'realm-detail.frontendUrl' | translate}}</label>
+                <div class="col-md-6">
+                    <input class="form-control" type="text" id="frontendUrl" name="frontendUrl" data-ng-model="realm.attributes.frontendUrl">
+                </div>
+                <kc-tooltip>{{:: 'realm-detail.frontendUrl.tooltip' | translate}}</kc-tooltip>
+            </div>
+
             <div class="form-group" data-ng-show="serverInfo.listProviderIds('hostname').includes('fixed')">
                 <label class="col-md-2 control-label" for="name">{{:: 'realm-detail.hostname' | translate}}</label>
                 <div class="col-md-6">
@@ -50,9 +58,9 @@
             <div class="form-group">
                 <label class="col-md-2 control-label">{{:: 'endpoints' | translate}}</label>
                 <div class="col-md-6">
-                    <a class="form-control" ng-href="{{authUrl}}/realms/{{realm.realm}}/.well-known/openid-configuration" target="_blank">{{:: 'realm-detail.protocol-endpoints.oidc' | translate}}</a>
+                    <a class="form-control" ng-href="{{authServerUrl}}/realms/{{realm.realm}}/.well-known/openid-configuration" target="_blank">{{:: 'realm-detail.protocol-endpoints.oidc' | translate}}</a>
                     
-                    <a class="form-control" ng-href="{{authUrl}}/realms/{{realm.realm}}/protocol/saml/descriptor" target="_blank">{{:: 'realm-detail.protocol-endpoints.saml' | translate}}</a>
+                    <a class="form-control" ng-href="{{authServerUrl}}/realms/{{realm.realm}}/protocol/saml/descriptor" target="_blank">{{:: 'realm-detail.protocol-endpoints.saml' | translate}}</a>
                 </div>
                 <kc-tooltip>{{:: 'realm-detail.protocol-endpoints.tooltip' | translate}}</kc-tooltip>
             </div>

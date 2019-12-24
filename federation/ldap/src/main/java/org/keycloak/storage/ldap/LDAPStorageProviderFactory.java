@@ -149,6 +149,10 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
                 .type(ProviderConfigProperty.BOOLEAN_TYPE)
                 .defaultValue("false")
                 .add()
+                .property().name(LDAPConstants.TRUST_EMAIL)
+                .type(ProviderConfigProperty.BOOLEAN_TYPE)
+                .defaultValue("false")
+                .add()
                 .property().name(LDAPConstants.USE_TRUSTSTORE_SPI)
                 .type(ProviderConfigProperty.STRING_TYPE)
                 .defaultValue("ldapsOnly")
@@ -406,13 +410,24 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
             mapperModel = KeycloakModelUtils.createComponentModel("MSAD account controls", model.getId(), MSADUserAccountControlStorageMapperFactory.PROVIDER_ID,LDAPStorageMapper.class.getName());
             realm.addComponentModel(mapperModel);
         }
-        checkKerberosCredential(session, realm, model);
+        String allowKerberosCfg = model.getConfig().getFirst(KerberosConstants.ALLOW_KERBEROS_AUTHENTICATION);
+        if (Boolean.valueOf(allowKerberosCfg)) {
+            CredentialHelper.setOrReplaceAuthenticationRequirement(session, realm, CredentialRepresentation.KERBEROS,
+                    AuthenticationExecutionModel.Requirement.ALTERNATIVE, AuthenticationExecutionModel.Requirement.DISABLED);
+        }
     }
 
     @Override
     public void onUpdate(KeycloakSession session, RealmModel realm, ComponentModel oldModel, ComponentModel newModel) {
-        checkKerberosCredential(session, realm, newModel);
-
+        boolean allowKerberosCfgOld = Boolean.valueOf(oldModel.getConfig().getFirst(KerberosConstants.ALLOW_KERBEROS_AUTHENTICATION));
+        boolean allowKerberosCfgNew = Boolean.valueOf(newModel.getConfig().getFirst(KerberosConstants.ALLOW_KERBEROS_AUTHENTICATION));
+        if (!allowKerberosCfgOld && allowKerberosCfgNew) {
+            CredentialHelper.setOrReplaceAuthenticationRequirement(session, realm, CredentialRepresentation.KERBEROS,
+                    AuthenticationExecutionModel.Requirement.ALTERNATIVE, AuthenticationExecutionModel.Requirement.DISABLED);
+        } else if(allowKerberosCfgOld && !allowKerberosCfgNew) {
+            CredentialHelper.setOrReplaceAuthenticationRequirement(session, realm, CredentialRepresentation.KERBEROS,
+                    AuthenticationExecutionModel.Requirement.DISABLED, AuthenticationExecutionModel.Requirement.ALTERNATIVE);
+        } // else: keep current settings
     }
 
     @Override
@@ -467,6 +482,7 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
             @Override
             public void run(KeycloakSession session) {
                 RealmModel realm = session.realms().getRealm(realmId);
+                session.getContext().setRealm(realm);
                 session.getProvider(UserStorageProvider.class, model);
                 List<ComponentModel> mappers = realm.getComponents(model.getId(), LDAPStorageMapper.class.getName());
                 for (ComponentModel mapperModel : mappers) {
@@ -508,6 +524,13 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
         return syncResult;
     }
 
+    /**
+     *  !! This function must be called from try-with-resources block, otherwise Vault secrets may be leaked !!
+     * @param sessionFactory
+     * @param realmId
+     * @param model
+     * @return
+     */
     private LDAPQuery createQuery(KeycloakSessionFactory sessionFactory, final String realmId, final ComponentModel model) {
         class QueryHolder {
             LDAPQuery query;
@@ -518,6 +541,8 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
 
             @Override
             public void run(KeycloakSession session) {
+                session.getContext().setRealm(session.realms().getRealm(realmId));
+
                 LDAPStorageProvider ldapFedProvider = (LDAPStorageProvider)session.getProvider(UserStorageProvider.class, model);
                 RealmModel realm = session.realms().getRealm(realmId);
                 queryHolder.query = LDAPUtils.createQueryForUserSearch(ldapFedProvider, realm);
@@ -546,6 +571,7 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
                     public void run(KeycloakSession session) {
                         LDAPStorageProvider ldapFedProvider = (LDAPStorageProvider)session.getProvider(UserStorageProvider.class, fedModel);
                         RealmModel currentRealm = session.realms().getRealm(realmId);
+                        session.getContext().setRealm(currentRealm);
 
                         String username = LDAPUtils.getUsername(ldapUser, ldapFedProvider.getLdapIdentityStore().getConfig());
                         exists.value = true;
@@ -595,6 +621,8 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
                         public void run(KeycloakSession session) {
                             LDAPStorageProvider ldapFedProvider = (LDAPStorageProvider)session.getProvider(UserStorageProvider.class, fedModel);
                             RealmModel currentRealm = session.realms().getRealm(realmId);
+                            session.getContext().setRealm(currentRealm);
+
                             String username = null;
                             try {
                                 username = LDAPUtils.getUsername(ldapUser, ldapFedProvider.getLdapIdentityStore().getConfig());
@@ -632,16 +660,6 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
 
     protected KerberosUsernamePasswordAuthenticator createKerberosUsernamePasswordAuthenticator(CommonKerberosConfig kerberosConfig) {
         return new KerberosUsernamePasswordAuthenticator(kerberosConfig);
-    }
-
-    public static boolean checkKerberosCredential(KeycloakSession session, RealmModel realm, ComponentModel model) {
-        String allowKerberosCfg = model.getConfig().getFirst(KerberosConstants.ALLOW_KERBEROS_AUTHENTICATION);
-        if (Boolean.valueOf(allowKerberosCfg)) {
-            CredentialHelper.setOrReplaceAuthenticationRequirement(session, realm, CredentialRepresentation.KERBEROS,
-                    AuthenticationExecutionModel.Requirement.ALTERNATIVE, AuthenticationExecutionModel.Requirement.DISABLED);
-            return true;
-        }
-        return false;
     }
 
  }

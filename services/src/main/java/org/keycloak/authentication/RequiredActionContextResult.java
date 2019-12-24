@@ -18,7 +18,6 @@
 package org.keycloak.authentication;
 
 import org.jboss.resteasy.spi.HttpRequest;
-import org.keycloak.OAuth2Constants;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.util.Time;
 import org.keycloak.events.EventBuilder;
@@ -135,11 +134,6 @@ public class RequiredActionContextResult implements RequiredActionContext {
     @Override
     public void ignore() {
         status = Status.IGNORE;
-    }
-    
-    @Override
-    public void cancelAIA() {
-        status = Status.CANCELED_AIA;
     }
 
     @Override

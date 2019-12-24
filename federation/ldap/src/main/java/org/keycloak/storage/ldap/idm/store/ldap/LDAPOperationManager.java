@@ -19,6 +19,7 @@ package org.keycloak.storage.ldap.idm.store.ldap;
 
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.Time;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.ModelException;
 import org.keycloak.storage.ldap.LDAPConfig;
@@ -29,7 +30,6 @@ import org.keycloak.storage.ldap.mappers.LDAPOperationDecorator;
 import javax.naming.AuthenticationException;
 import javax.naming.Binding;
 import javax.naming.Context;
-import javax.naming.InitialContext;
 import javax.naming.NameAlreadyBoundException;
 import javax.naming.NamingEnumeration;
 import javax.naming.NamingException;
@@ -71,12 +71,12 @@ public class LDAPOperationManager {
 
     private static final Logger perfLogger = Logger.getLogger(LDAPOperationManager.class, "perf");
 
+    private final KeycloakSession session;
     private final LDAPConfig config;
-    private final Map<String, Object> connectionProperties;
 
-    public LDAPOperationManager(LDAPConfig config) throws NamingException {
+    public LDAPOperationManager(KeycloakSession session, LDAPConfig config) {
+        this.session = session;
         this.config = config;
-        this.connectionProperties = Collections.unmodifiableMap(createConnectionProperties());
     }
 
     /**
@@ -290,8 +290,7 @@ public class LDAPOperationManager {
 
         // Very 1st page. Pagination context is not yet present
         if (identityQuery.getPaginationContext() == null) {
-            LdapContext ldapContext = createLdapContext();
-            identityQuery.initPagination(ldapContext);
+            identityQuery.initPagination();
         }
 
         try {
@@ -389,7 +388,7 @@ public class LDAPOperationManager {
 
                 byte[] objectGUID = (byte[]) attributes.get(LDAPConstants.OBJECT_GUID).get();
 
-                filter = "(&(objectClass=*)(" + getUuidAttributeName() + LDAPConstants.EQUAL + LDAPUtil.convertObjectGUIToByteString(objectGUID) + "))";
+                filter = "(&(objectClass=*)(" + getUuidAttributeName() + LDAPConstants.EQUAL + LDAPUtil.convertObjectGUIDToByteString(objectGUID) + "))";
             } catch (NamingException ne) {
                 filter = null;
             }
@@ -492,27 +491,36 @@ public class LDAPOperationManager {
      *
      */
     public void authenticate(String dn, String password) throws AuthenticationException {
-        InitialLdapContext authCtx = null;
+
+        if (password == null || password.isEmpty()) {
+            throw new AuthenticationException("Empty password used");
+        }
+
+        LdapContext authCtx = null;
+        StartTlsResponse tlsResponse = null;
 
         try {
-            if (password == null || password.isEmpty()) {
-                throw new AuthenticationException("Empty password used");
-            }
 
-            Hashtable<String, Object> env = new Hashtable<String, Object>(this.connectionProperties);
+            Hashtable<Object, Object> env = LDAPContextManager.getNonAuthConnectionProperties(config);
 
             // Never use connection pool to prevent password caching
             env.put("com.sun.jndi.ldap.connect.pool", "false");
 
             if(!this.config.isStartTls()) {
-                env.put(Context.SECURITY_AUTHENTICATION, this.config.getAuthType());
+                env.put(Context.SECURITY_AUTHENTICATION, "simple");
                 env.put(Context.SECURITY_PRINCIPAL, dn);
                 env.put(Context.SECURITY_CREDENTIALS, password);
             }
 
             authCtx = new InitialLdapContext(env, null);
-            startTLS(authCtx, this.config.getAuthType(), dn, password);
+            if (config.isStartTls()) {
+                tlsResponse = LDAPContextManager.startTLS(authCtx, "simple", dn, password.toCharArray());
 
+                // Exception should be already thrown by LDAPContextManager.startTLS if "startTLS" could not be established, but rather do some additional check
+                if (tlsResponse == null) {
+                    throw new AuthenticationException("Null TLS Response returned from the authentication");
+                }
+            }
         } catch (AuthenticationException ae) {
             if (logger.isDebugEnabled()) {
                 logger.debugf(ae, "Authentication failed for DN [%s]", dn);
@@ -523,38 +531,21 @@ public class LDAPOperationManager {
             logger.errorf(e, "Unexpected exception when validating password of DN [%s]", dn);
             throw new AuthenticationException("Unexpected exception when validating password of user");
         } finally {
+            if (tlsResponse != null) {
+                try {
+                    tlsResponse.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+
             if (authCtx != null) {
                 try {
                     authCtx.close();
                 } catch (NamingException e) {
-
+                    e.printStackTrace();
                 }
             }
-        }
-    }
-
-    private void startTLS(LdapContext ldapContext, String authType, String bindDN, String bindCredentials) throws NamingException {
-        if(this.config.isStartTls()) {
-            try {
-                StartTlsResponse tls = (StartTlsResponse) ldapContext.extendedOperation(new StartTlsRequest());
-                tls.negotiate();
-
-                char[] bindCredential = null;
-
-                ldapContext.addToEnvironment(Context.SECURITY_AUTHENTICATION, authType);
-
-                if (bindCredentials != null) {
-                    bindCredential = bindCredentials.toCharArray();
-                }
-
-                if (!LDAPConstants.AUTH_TYPE_NONE.equals(authType)) {
-                    ldapContext.addToEnvironment(Context.SECURITY_PRINCIPAL, bindDN);
-                    ldapContext.addToEnvironment(Context.SECURITY_CREDENTIALS, bindCredential);
-                }
-            } catch (Exception e) {
-                logger.error("Could not negotiate TLS", e);
-            }
-            ldapContext.lookup("");
         }
     }
 
@@ -598,7 +589,7 @@ public class LDAPOperationManager {
                         .toString();
             }
 
-        }, null, decorator);
+        }, decorator);
     }
 
     public void modifyAttributes(final String dn, final ModificationItem[] mods, LDAPOperationDecorator decorator) {
@@ -671,140 +662,45 @@ public class LDAPOperationManager {
     }
 
     public String decodeEntryUUID(final Object entryUUID) {
-        String id;
-        if (this.config.isObjectGUID() && entryUUID instanceof byte[]) {
-            id = LDAPUtil.decodeObjectGUID((byte[]) entryUUID);
-        } else {
-            id = entryUUID.toString();
-        }
-
-        return id;
-    }
-
-    private LdapContext createLdapContext() throws NamingException {
-        if(!config.isStartTls()) {
-            return new InitialLdapContext(new Hashtable<Object, Object>(this.connectionProperties), null);
-        } else {
-            LdapContext ldapContext = new InitialLdapContext(new Hashtable<Object, Object>(this.connectionProperties), null);
-            startTLS(ldapContext, this.config.getAuthType(), this.config.getBindDN(), this.config.getBindCredential());
-            return ldapContext;
-        }
-    }
-
-    private Map<String, Object> createConnectionProperties() {
-        HashMap<String, Object> env = new HashMap<String, Object>();
-
-        env.put(Context.INITIAL_CONTEXT_FACTORY, this.config.getFactoryName());
-
-        if(!this.config.isStartTls()) {
-            String authType = this.config.getAuthType();
-
-            env.put(Context.SECURITY_AUTHENTICATION, authType);
-
-            String bindDN = this.config.getBindDN();
-
-            char[] bindCredential = null;
-
-            if (this.config.getBindCredential() != null) {
-                bindCredential = this.config.getBindCredential().toCharArray();
+        if (entryUUID instanceof byte[]) {
+            if (this.config.isObjectGUID()) {
+                return LDAPUtil.decodeObjectGUID((byte[]) entryUUID);
             }
-
-            if (!LDAPConstants.AUTH_TYPE_NONE.equals(authType)) {
-                env.put(Context.SECURITY_PRINCIPAL, bindDN);
-                env.put(Context.SECURITY_CREDENTIALS, bindCredential);
+            if (this.config.isEdirectory() && this.config.isEdirectoryGUID()) {
+                return LDAPUtil.decodeGuid((byte[]) entryUUID);
             }
         }
-        String url = this.config.getConnectionUrl();
-
-        if (url != null) {
-            env.put(Context.PROVIDER_URL, url);
-        } else {
-            logger.warn("LDAP URL is null. LDAPOperationManager won't work correctly");
-        }
-
-        String useTruststoreSpi = this.config.getUseTruststoreSpi();
-        LDAPConstants.setTruststoreSpiIfNeeded(useTruststoreSpi, url, env);
-
-        String connectionPooling = this.config.getConnectionPooling();
-        if (connectionPooling != null) {
-            env.put("com.sun.jndi.ldap.connect.pool", connectionPooling);
-        }
-
-        String connectionTimeout = config.getConnectionTimeout();
-        if (connectionTimeout != null && !connectionTimeout.isEmpty()) {
-            env.put("com.sun.jndi.ldap.connect.timeout", connectionTimeout);
-        }
-
-        String readTimeout = config.getReadTimeout();
-        if (readTimeout != null && !readTimeout.isEmpty()) {
-            env.put("com.sun.jndi.ldap.read.timeout", readTimeout);
-        }
-
-        // Just dump the additional properties
-        Properties additionalProperties = this.config.getAdditionalConnectionProperties();
-        if (additionalProperties != null) {
-            for (Object key : additionalProperties.keySet()) {
-                env.put(key.toString(), additionalProperties.getProperty(key.toString()));
-            }
-        }
-
-        StringBuilder binaryAttrsBuilder = new StringBuilder();
-        if (this.config.isObjectGUID()) {
-            binaryAttrsBuilder.append(LDAPConstants.OBJECT_GUID).append(" ");
-        }
-        for (String attrName : config.getBinaryAttributeNames()) {
-            binaryAttrsBuilder.append(attrName).append(" ");
-        }
-
-        String binaryAttrs = binaryAttrsBuilder.toString().trim();
-        if (!binaryAttrs.isEmpty()) {
-            env.put("java.naming.ldap.attributes.binary", binaryAttrs);
-        }
-
-        if (logger.isDebugEnabled()) {
-            Map<String, Object> copyEnv = new HashMap<>(env);
-            if (copyEnv.containsKey(Context.SECURITY_CREDENTIALS)) {
-                copyEnv.put(Context.SECURITY_CREDENTIALS, "**************************************");
-            }
-            logger.debugf("Creating LdapContext using properties: [%s]", copyEnv);
-        }
-
-        return env;
+        return entryUUID.toString();
     }
 
     private <R> R execute(LdapOperation<R> operation) throws NamingException {
-        return execute(operation, null, null);
+        return execute(operation, null);
+    }
+
+    private <R> R execute(LdapOperation<R> operation, LDAPOperationDecorator decorator) throws NamingException {
+        try (LDAPContextManager ldapContextManager = LDAPContextManager.create(session, config)) {
+            return execute(operation, ldapContextManager.getLdapContext(), decorator);
+        }
     }
 
     private <R> R execute(LdapOperation<R> operation, LdapContext context, LDAPOperationDecorator decorator) throws NamingException {
-        // We won't manage LDAP context (create and close) in case that existing context was passed as an argument to this method
-        boolean manageContext = context == null;
+        if (context == null) {
+            throw new IllegalArgumentException("Ldap context cannot be null");
+        }
 
         Long start = null;
 
+        if (perfLogger.isDebugEnabled()) {
+            start = Time.currentTimeMillis();
+        }
+
         try {
-            if (perfLogger.isDebugEnabled()) {
-                start = Time.currentTimeMillis();
-            }
-
-            if (manageContext) {
-                context = createLdapContext();
-            }
-
             if (decorator != null) {
                 decorator.beforeLDAPOperation(context, operation);
             }
 
             return operation.execute(context);
         } finally {
-            if (context != null && manageContext) {
-                try {
-                    context.close();
-                } catch (NamingException ne) {
-                    logger.error("Could not close Ldap context.", ne);
-                }
-            }
-
             if (perfLogger.isDebugEnabled()) {
                 long took = Time.currentTimeMillis() - start;
 

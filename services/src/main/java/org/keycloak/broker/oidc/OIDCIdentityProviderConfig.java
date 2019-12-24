@@ -103,7 +103,7 @@ public class OIDCIdentityProviderConfig extends OAuth2IdentityProviderConfig {
 
     public boolean isDisableUserInfoService() {
         String disableUserInfo = getConfig().get("disableUserInfo");
-        return disableUserInfo == null ? false : Boolean.valueOf(disableUserInfo);
+        return Boolean.parseBoolean(disableUserInfo);
     }
 
     public void setDisableUserInfoService(boolean disable) {

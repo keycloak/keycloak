@@ -22,7 +22,7 @@ import org.junit.Test;
 import org.keycloak.client.admin.cli.common.AttributeOperation;
 import org.keycloak.client.admin.cli.common.CmdStdinContext;
 
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -67,7 +67,7 @@ public class MergeAttributesTest {
                 "  }\n" +
                 "}";
 
-        ObjectNode localNode = MAPPER.readValue(localJSON.getBytes(Charset.forName("utf-8")), ObjectNode.class);
+        ObjectNode localNode = MAPPER.readValue(localJSON.getBytes(StandardCharsets.UTF_8), ObjectNode.class);
         CmdStdinContext<JsonNode> ctx = new CmdStdinContext<>();
         ctx.setResult(localNode);
 
@@ -89,7 +89,7 @@ public class MergeAttributesTest {
                 "  }\n" +
                 "}";
 
-        ObjectNode remoteNode = MAPPER.readValue(remoteJSON.getBytes(Charset.forName("utf-8")), ObjectNode.class);
+        ObjectNode remoteNode = MAPPER.readValue(remoteJSON.getBytes(StandardCharsets.UTF_8), ObjectNode.class);
         CmdStdinContext<ObjectNode> ctxremote = new CmdStdinContext<>();
         ctxremote.setResult(remoteNode);
 

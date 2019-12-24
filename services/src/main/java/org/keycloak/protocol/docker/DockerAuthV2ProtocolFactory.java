@@ -3,7 +3,6 @@ package org.keycloak.protocol.docker;
 import org.keycloak.common.Profile;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
@@ -12,7 +11,6 @@ import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.docker.mapper.AllowAllDockerProtocolMapper;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.representations.idm.ClientScopeRepresentation;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -30,7 +28,7 @@ public class DockerAuthV2ProtocolFactory extends AbstractLoginProtocolFactory im
         addAllRequestedScopeMapper.setName(AllowAllDockerProtocolMapper.PROVIDER_ID);
         addAllRequestedScopeMapper.setProtocolMapper(AllowAllDockerProtocolMapper.PROVIDER_ID);
         addAllRequestedScopeMapper.setProtocol(DockerAuthV2Protocol.LOGIN_PROTOCOL);
-        addAllRequestedScopeMapper.setConfig(Collections.EMPTY_MAP);
+        addAllRequestedScopeMapper.setConfig(Collections.emptyMap());
         builtins.put(AllowAllDockerProtocolMapper.PROVIDER_ID, addAllRequestedScopeMapper);
         defaultBuiltins.add(addAllRequestedScopeMapper);
     }

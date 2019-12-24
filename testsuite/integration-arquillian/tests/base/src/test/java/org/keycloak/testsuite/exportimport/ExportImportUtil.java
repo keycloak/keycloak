@@ -25,7 +25,6 @@ import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientScopeResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
-import org.keycloak.authentication.AuthenticationFlow;
 import org.keycloak.common.constants.KerberosConstants;
 import org.keycloak.models.Constants;
 import org.keycloak.models.LDAPConstants;
@@ -111,7 +110,7 @@ public class ExportImportUtil {
         Assert.assertEquals(0, userRsc.getFederatedIdentity().size());
 
         List<ClientRepresentation> resources = realmRsc.clients().findAll();
-        Assert.assertEquals(9, resources.size());
+        Assert.assertEquals(10, resources.size());
 
         // Test applications imported
         ClientRepresentation application = ApiUtil.findClientByClientId(realmRsc, "Application").toRepresentation();
@@ -122,7 +121,7 @@ public class ExportImportUtil {
         Assert.assertNotNull(otherApp);
         Assert.assertNull(nonExisting);
         List<ClientRepresentation> clients = realmRsc.clients().findAll();
-        Assert.assertEquals(9, clients.size());
+        Assert.assertEquals(10, clients.size());
         Assert.assertTrue(hasClient(clients, application));
         Assert.assertTrue(hasClient(clients, otherApp));
         Assert.assertTrue(hasClient(clients, accountApp));

@@ -96,7 +96,7 @@ public class HardcodedClaim extends AbstractOIDCProtocolMapper implements OIDCAc
         mapper.setName(name);
         mapper.setProtocolMapper(PROVIDER_ID);
         mapper.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
-        Map<String, String> config = new HashMap<String, String>();
+        Map<String, String> config = new HashMap<>();
         config.put(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME, hardcodedName);
         config.put(CLAIM_VALUE, hardcodedValue);
         config.put(OIDCAttributeMapperHelper.JSON_TYPE, claimType);

@@ -33,7 +33,7 @@
     </description>
     <groupId>org.keycloak</groupId>
     <artifactId>keycloak-parent</artifactId>
-    <version>8.0.0-SNAPSHOT</version>
+    <version>9.0.0-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <properties>
@@ -41,70 +41,75 @@
 
         <product.build-time>${timestamp}</product.build-time>
 
-        <wildfly.version>17.0.1.Final</wildfly.version>
-        <wildfly.build-tools.version>1.2.10.Final</wildfly.build-tools.version>
-        <eap.version>7.3.0.CD17-redhat-00003</eap.version>
+        <wildfly.version>18.0.1.Final</wildfly.version>
+        <wildfly.build-tools.version>1.2.12.Final</wildfly.build-tools.version>
+        <eap.version>7.3.0.CD18-redhat-00002</eap.version>
         <eap.build-tools.version>1.2.10.Final</eap.build-tools.version>
-        <wildfly.core.version>9.0.2.Final</wildfly.core.version>
+        <wildfly.core.version>10.0.3.Final</wildfly.core.version>
 
         <jboss.as.version>7.2.0.Final</jboss.as.version>
+        <jboss.as.subsystem.test.version>7.5.22.Final-redhat-1</jboss.as.subsystem.test.version>
 
         <!-- Versions used mostly for Undertow server, aligned with WildFly -->
         <jboss.aesh.version>0.66.19</jboss.aesh.version>
-        <aesh.version>2.3</aesh.version>
+        <aesh.version>2.4</aesh.version>
         <apache.httpcomponents.version>4.5.4</apache.httpcomponents.version>
         <apache.httpcomponents.httpcore.version>4.4.5</apache.httpcomponents.httpcore.version>
         <apache.mime4j.version>0.6</apache.mime4j.version>
         <jboss.dmr.version>1.5.0.Final</jboss.dmr.version>
         <bouncycastle.version>1.60</bouncycastle.version>
-        <cxf.version>3.3.2</cxf.version>
-        <cxf.jetty.version>3.3.2</cxf.jetty.version>
-        <cxf.jaxrs.version>3.3.2</cxf.jaxrs.version>
-        <cxf.undertow.version>3.3.2</cxf.undertow.version>
+        <cxf.version>3.3.3</cxf.version>
+        <cxf.jetty.version>3.3.3</cxf.jetty.version>
+        <cxf.jaxrs.version>3.3.3</cxf.jaxrs.version>
+        <cxf.undertow.version>3.3.3</cxf.undertow.version>
         <dom4j.version>2.1.1</dom4j.version>
         <github.relaxng.version>2.3.1</github.relaxng.version>
         <h2.version>1.4.193</h2.version>
-        <javax.persistence.version>2.2</javax.persistence.version>
-        <hibernate.core.version>5.3.10.Final</hibernate.core.version>
-        <hibernate.c3p0.version>5.3.10.Final</hibernate.c3p0.version>
-        <infinispan.version>9.4.14.Final</infinispan.version>
-        <jackson.version>2.9.9</jackson.version>
-        <javax.mail.version>1.6.2</javax.mail.version>
-        <jboss.logging.version>3.4.0.Final</jboss.logging.version>
+        <jakarta.persistence.version>2.2.3</jakarta.persistence.version>
+        <hibernate.core.version>5.3.13.Final</hibernate.core.version>
+        <hibernate.c3p0.version>5.3.13.Final</hibernate.c3p0.version>
+        <infinispan.version>9.4.16.Final</infinispan.version>
+        <jackson.version>2.9.10</jackson.version>
+        <jackson.databind.version>2.9.10.1</jackson.databind.version>
+        <jakarta.mail.version>1.6.4</jakarta.mail.version>
+        <jboss.logging.version>3.4.1.Final</jboss.logging.version>
         <jboss.logging.tools.version>2.2.0.Final</jboss.logging.tools.version>
-        <jboss-jaxrs-api_2.1_spec>1.0.2.Final</jboss-jaxrs-api_2.1_spec>
-        <jboss-transaction-api_1.2_spec>1.1.1.Final</jboss-transaction-api_1.2_spec>
-        <jboss.spec.javax.xml.bind.jboss-jaxb-api_2.3_spec.version>1.0.1.Final</jboss.spec.javax.xml.bind.jboss-jaxb-api_2.3_spec.version>
-        <jboss.spec.javax.servlet.jsp.jboss-jsp-api_2.3_spec.version>1.0.3.Final</jboss.spec.javax.servlet.jsp.jboss-jsp-api_2.3_spec.version>
+        <jboss-jaxrs-api_2.1_spec>2.0.0.Final</jboss-jaxrs-api_2.1_spec>
+        <jboss-transaction-api_1.3_spec>2.0.0.Final</jboss-transaction-api_1.3_spec>
+        <jboss.spec.javax.xml.bind.jboss-jaxb-api_2.3_spec.version>2.0.0.Final</jboss.spec.javax.xml.bind.jboss-jaxb-api_2.3_spec.version>
+        <jboss.spec.javax.servlet.jsp.jboss-jsp-api_2.3_spec.version>2.0.0.Final</jboss.spec.javax.servlet.jsp.jboss-jsp-api_2.3_spec.version>
         <log4j.version>1.2.17</log4j.version>
-        <resteasy.version>3.7.0.Final</resteasy.version>
-        <resteasy.undertow.version>3.7.0.Final</resteasy.undertow.version>
+        <resteasy.version>3.9.1.Final</resteasy.version>
+        <resteasy.undertow.version>3.9.1.Final</resteasy.undertow.version>
         <owasp.html.sanitizer.version>20180219.1</owasp.html.sanitizer.version>
         <slf4j-api.version>1.7.22</slf4j-api.version>
         <slf4j.version>1.7.22</slf4j.version>
         <sun.istack.version>3.0.7</sun.istack.version>
-        <sun.jaxb.version>2.3.1</sun.jaxb.version>
+        <sun.xml.bind.version>2.3.1</sun.xml.bind.version>
+        <javax.xml.bind.jaxb.version>2.3.1</javax.xml.bind.jaxb.version>
+        <sun.xml.ws.version>2.3.1</sun.xml.ws.version>
+        <sun.activation.version>1.2.1</sun.activation.version>
         <org.glassfish.jaxb.xsom.version>2.3.1</org.glassfish.jaxb.xsom.version>
-        <undertow.version>2.0.21.Final</undertow.version>
-        <elytron.version>1.9.1.Final</elytron.version>
-        <elytron.undertow-server.version>1.5.0.Final</elytron.undertow-server.version>
+        <undertow.version>2.0.27.Final</undertow.version>
+        <elytron.version>1.10.4.Final</elytron.version>
+        <elytron.undertow-server.version>1.6.0.Final</elytron.undertow-server.version>
         <jetty92.version>9.2.4.v20141103</jetty92.version>
         <jetty93.version>9.3.9.v20160517</jetty93.version>
         <jetty94.version>9.4.2.v20170220</jetty94.version>
         <woodstox.version>5.0.3</woodstox.version>
-        <xmlsec.version>2.1.3</xmlsec.version>
-        <glassfish.json.version>1.1.2</glassfish.json.version>
+        <xmlsec.version>2.1.4</xmlsec.version>
+        <glassfish.json.version>1.1.6</glassfish.json.version>
         <wildfly.common.version>1.5.1.Final</wildfly.common.version>
+        <ua-parser.version>1.4.3</ua-parser.version>        
         <picketbox.version>5.0.3.Final</picketbox.version>
         <google.guava.version>25.0-jre</google.guava.version>
-
-        <!-- Authorization Drools Policy Provider -->
-        <version.org.drools>7.11.0.Final</version.org.drools>
 
         <!-- Openshift -->
         <version.com.openshift.openshift-restclient-java>6.1.3.Final</version.com.openshift.openshift-restclient-java>
 
         <!-- Others -->
+        <commons-lang.version>2.6</commons-lang.version>
+        <commons-lang3.version>3.9</commons-lang3.version>
         <apacheds.version>2.0.0-M21</apacheds.version>
         <apacheds.codec.version>1.0.0-M33</apacheds.codec.version>
         <google.zxing.version>3.2.1</google.zxing.version>
@@ -112,12 +117,12 @@
 
         <jetty9.version>${jetty92.version}</jetty9.version>
         <liquibase.version>3.5.5</liquibase.version>
-        <mysql.version>8.0.16</mysql.version>
+        <mysql.version>8.0.18</mysql.version>
         <osgi.version>4.2.0</osgi.version>
         <pax.web.version>7.1.0</pax.web.version>
-        <postgresql.version>9.3-1100-jdbc41</postgresql.version>
+        <postgresql.version>42.2.8</postgresql.version>
         <mariadb.version>2.2.4</mariadb.version>
-        <mssql.version>7.0.0.jre8</mssql.version>
+        <mssql.version>7.4.1.jre8</mssql.version>
         <servlet.api.30.version>1.0.2.Final</servlet.api.30.version>
         <servlet.api.40.version>1.0.0.Final</servlet.api.40.version>
         <twitter4j.version>4.0.4</twitter4j.version>
@@ -140,7 +145,7 @@
         <jmeter.analysis.plugin.version>1.0.4</jmeter.analysis.plugin.version>
         <minify.plugin.version>1.7.6</minify.plugin.version>
         <osgi.bundle.plugin.version>2.3.7</osgi.bundle.plugin.version>
-        <wildfly.plugin.version>1.1.0.Final</wildfly.plugin.version>
+        <wildfly.plugin.version>1.2.1.Final</wildfly.plugin.version>
         <nexus.staging.plugin.version>1.6.5</nexus.staging.plugin.version>
         <frontend.plugin.version>1.5</frontend.plugin.version>
         <docker.maven.plugin.version>0.28.0</docker.maven.plugin.version>
@@ -149,7 +154,7 @@
         <surefire.memory.Xms>512m</surefire.memory.Xms>
         <surefire.memory.Xmx>2048m</surefire.memory.Xmx>
         <surefire.memory.metaspace>96m</surefire.memory.metaspace>
-        <surefire.memory.metaspace.max>256m</surefire.memory.metaspace.max>
+        <surefire.memory.metaspace.max>512m</surefire.memory.metaspace.max>
         <surefire.memory.settings>-Xms${surefire.memory.Xms} -Xmx${surefire.memory.Xmx} -XX:MetaspaceSize=${surefire.memory.metaspace} -XX:MaxMetaspaceSize=${surefire.memory.metaspace.max}</surefire.memory.settings>
 
         <!-- Tomcat versions -->
@@ -160,6 +165,13 @@
         <!-- Spring Boot versions, used for tests -->
         <spring-boot15.version>1.5.20.RELEASE</spring-boot15.version>
         <spring-boot21.version>2.1.3.RELEASE</spring-boot21.version>
+        <spring-boot22.version>2.2.0.RELEASE</spring-boot22.version>
+
+        <!-- webauthn support -->
+        <webauthn4j.version>0.9.14.RELEASE</webauthn4j.version>
+        <org.apache.kerby.kerby-asn1.version>2.0.0</org.apache.kerby.kerby-asn1.version>
+        
+        <mvel.version>2.4.0.Final</mvel.version>
 
     </properties>
 
@@ -252,9 +264,34 @@
                 <version>${sun.istack.version}</version>
             </dependency>
             <dependency>
+                <groupId>javax.xml.bind</groupId>
+                <artifactId>jaxb-api</artifactId>
+                <version>${javax.xml.bind.jaxb.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.sun.xml.ws</groupId>
+                <artifactId>rt</artifactId>
+                <version>${sun.xml.ws.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>com.fasterxml.woodstox</groupId>
+                        <artifactId>woodstox-core</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.glassfish.jaxb</groupId>
+                        <artifactId>txw2</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
                 <groupId>com.sun.xml.bind.external</groupId>
                 <artifactId>rngom</artifactId>
-                <version>${sun.jaxb.version}</version>
+                <version>${sun.xml.bind.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.sun.activation</groupId>
+                <artifactId>jakarta.activation</artifactId>
+                <version>${sun.activation.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.glassfish.jaxb</groupId>
@@ -272,14 +309,19 @@
                 <version>${bouncycastle.version}</version>
             </dependency>
             <dependency>
-                <groupId>javax.mail</groupId>
-                <artifactId>javax.mail-api</artifactId>
-                <version>${javax.mail.version}</version>
+                <groupId>com.github.ua-parser</groupId>
+                <artifactId>uap-java</artifactId>
+                <version>${ua-parser.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>jakarta.mail</groupId>
+                <artifactId>jakarta.mail-api</artifactId>
+                <version>${jakarta.mail.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.jboss.spec.javax.transaction</groupId>
-                <artifactId>jboss-transaction-api_1.2_spec</artifactId>
-                <version>${jboss-transaction-api_1.2_spec}</version>
+                <artifactId>jboss-transaction-api_1.3_spec</artifactId>
+                <version>${jboss-transaction-api_1.3_spec}</version>
             </dependency>
             <dependency>
                 <groupId>org.jboss.spec.javax.ws.rs</groupId>
@@ -373,7 +415,7 @@
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-databind</artifactId>
-                <version>${jackson.version}</version>
+                <version>${jackson.databind.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
@@ -450,9 +492,9 @@
                 <scope>test</scope>
             </dependency>
             <dependency>
-                <groupId>javax.persistence</groupId>
-                <artifactId>javax.persistence-api</artifactId>
-                <version>${javax.persistence.version}</version>
+                <groupId>jakarta.persistence</groupId>
+                <artifactId>jakarta.persistence-api</artifactId>
+                <version>${jakarta.persistence.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.h2database</groupId>
@@ -495,7 +537,7 @@
             </dependency>
             <dependency>
                 <groupId>org.glassfish</groupId>
-                <artifactId>javax.json</artifactId>
+                <artifactId>jakarta.json</artifactId>
                 <version>${glassfish.json.version}</version>
             </dependency>
 
@@ -516,6 +558,12 @@
                 <groupId>com.google.zxing</groupId>
                 <artifactId>javase</artifactId>
                 <version>${google.zxing.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>com.beust</groupId>
+                        <artifactId>jcommander</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
 
             <dependency>
@@ -535,6 +583,7 @@
                 <groupId>org.subethamail</groupId>
                 <artifactId>subethasmtp</artifactId>
                 <version>${subethasmtp.version}</version>
+                <scope>test</scope>
             </dependency>
 
             <!-- Apache DS -->
@@ -607,6 +656,7 @@
                 <groupId>mysql</groupId>
                 <artifactId>mysql-connector-java</artifactId>
                 <version>${mysql.version}</version>
+                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.apache.httpcomponents</groupId>
@@ -941,11 +991,6 @@
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-servlet-oauth-client</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-spring-boot-adapter-core</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -1139,11 +1184,6 @@
             <dependency>
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-authz-client</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-authz-policy-drools</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -1405,19 +1445,44 @@
                 <version>${project.version}</version>
                 <type>zip</type>
             </dependency>
+            <!-- webauthn support -->
+            <dependency>
+                <groupId>com.webauthn4j</groupId>
+                <artifactId>webauthn4j-core</artifactId>
+                <version>${webauthn4j.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.webauthn4j</groupId>
+                <artifactId>webauthn4j-util</artifactId>
+                <version>${webauthn4j.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.kerby</groupId>
+                <artifactId>kerby-asn1</artifactId>
+                <version>${org.apache.kerby.kerby-asn1.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.dataformat</groupId>
+                <artifactId>jackson-dataformat-cbor</artifactId>
+                <version>${jackson.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>commons-lang</groupId>
+                <artifactId>commons-lang</artifactId>
+                <version>${commons-lang.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-lang3</artifactId>
+                <version>${commons-lang3.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.mvel</groupId>
+                <artifactId>mvel2</artifactId>
+                <version>${mvel.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
-
-    <repositories>
-        <!-- for org.jboss.web:jbossweb -->
-        <repository>
-            <id>jboss</id>
-            <url>https://repository.jboss.org/nexus/content/groups/public/</url>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-        </repository>
-    </repositories>
 
     <build>
         <pluginManagement>
@@ -1454,6 +1519,7 @@
                     <configuration>
                         <forkMode>once</forkMode>
                         <argLine>-Djava.awt.headless=true ${surefire.memory.settings}</argLine>
+                        <runOrder>alphabetical</runOrder>
                     </configuration>
                 </plugin>
                 <plugin>
@@ -1652,6 +1718,7 @@
                         <configuration>
                             <additionalparam>-Xdoclint:none</additionalparam>
                             <failOnError>false</failOnError>
+                            <excludePackageNames>cx.*:org.freedesktop*:org.jvnet*</excludePackageNames>
                         </configuration>
                     </plugin>
                 </plugins>
@@ -1669,5 +1736,22 @@
                 </plugins>
             </build>
         </profile>
+
+        <profile>
+            <id>quarkus</id>
+            <modules>
+                <module>quarkus</module>
+            </modules>
+            <dependencyManagement>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.keycloak</groupId>
+                        <artifactId>keycloak-quarkus-server</artifactId>
+                        <version>${project.version}</version>
+                    </dependency>
+                </dependencies>
+            </dependencyManagement>
+        </profile>
+
     </profiles>
 </project>

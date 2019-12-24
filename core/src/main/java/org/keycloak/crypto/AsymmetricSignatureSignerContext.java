@@ -46,7 +46,7 @@ public class AsymmetricSignatureSignerContext implements SignatureSignerContext 
     public byte[] sign(byte[] data) throws SignatureException {
         try {
             Signature signature = Signature.getInstance(JavaAlgorithm.getJavaAlgorithm(key.getAlgorithm()));
-            signature.initSign((PrivateKey) key.getSignKey());
+            signature.initSign((PrivateKey) key.getPrivateKey());
             signature.update(data);
             return signature.sign();
         } catch (Exception e) {

@@ -17,10 +17,8 @@
 
 package org.keycloak.migration.migrators;
 
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Set;
 
 import org.keycloak.Config;
 import org.keycloak.OAuth2Constants;

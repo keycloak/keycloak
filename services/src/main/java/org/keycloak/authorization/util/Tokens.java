@@ -18,15 +18,11 @@
 
 package org.keycloak.authorization.util;
 
-import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.representations.AccessToken;
-import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.AuthenticationManager.AuthResult;
-
-import javax.ws.rs.core.Response.Status;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
