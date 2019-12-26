@@ -36,7 +36,10 @@ import org.keycloak.protocol.oidc.mappers.UserSessionNoteMapper;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.authorization.AggregatePolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ClientPolicyRepresentation;
+import org.keycloak.representations.idm.authorization.RolePolicyRepresentation;
+import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionManagement;
 import org.keycloak.services.resources.admin.permissions.AdminPermissions;
@@ -112,6 +115,7 @@ public class ClientTokenExchangeTest extends AbstractKeycloakTest {
         assertNotNull(target);
 
         RoleModel impersonateRole = management.getRealmManagementClient().getRole(ImpersonationConstants.IMPERSONATION_ROLE);
+        RoleModel impersonateRealmRole = realm.addRole("realm-impersonator");
 
         ClientModel clientExchanger = realm.addClient("client-exchanger");
         clientExchanger.setClientId("client-exchanger");
@@ -124,6 +128,19 @@ public class ClientTokenExchangeTest extends AbstractKeycloakTest {
         clientExchanger.addScopeMapping(impersonateRole);
         clientExchanger.addProtocolMapper(UserSessionNoteMapper.createUserSessionNoteMapper(IMPERSONATOR_ID));
         clientExchanger.addProtocolMapper(UserSessionNoteMapper.createUserSessionNoteMapper(IMPERSONATOR_USERNAME));
+
+        // A client to get the initial access token before impersonation by exchange
+        ClientModel initialAccessToken = realm.addClient("initial-access-token");
+        initialAccessToken.setClientId("initial-access-token");
+        initialAccessToken.setPublicClient(false);
+        initialAccessToken.setDirectAccessGrantsEnabled(true);
+        initialAccessToken.setEnabled(true);
+        initialAccessToken.setSecret("secret");
+        initialAccessToken.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+        initialAccessToken.setFullScopeAllowed(false);
+        initialAccessToken.addScopeMapping(impersonateRealmRole);
+        initialAccessToken.addProtocolMapper(UserSessionNoteMapper.createUserSessionNoteMapper(IMPERSONATOR_ID));
+        initialAccessToken.addProtocolMapper(UserSessionNoteMapper.createUserSessionNoteMapper(IMPERSONATOR_USERNAME));
 
         ClientModel illegal = realm.addClient("illegal");
         illegal.setClientId("illegal");
@@ -201,6 +218,37 @@ public class ClientTokenExchangeTest extends AbstractKeycloakTest {
         UserModel bad = session.users().addUser(realm, "bad-impersonator");
         bad.setEnabled(true);
         session.userCredentialManager().updateCredential(realm, bad, UserCredentialModel.password("password"));
+
+        // permissions for fine-grained impersonation
+        UserModel fineImpersonator = session.users().addUser(realm, "fine-grained-impersonator");
+        fineImpersonator.setEnabled(true);
+        session.userCredentialManager().updateCredential(realm, fineImpersonator, UserCredentialModel.password("password"));
+        fineImpersonator.grantRole(impersonateRealmRole);
+
+
+        RolePolicyRepresentation roleImpersonatorRep = new RolePolicyRepresentation();
+        roleImpersonatorRep.setName("roleImpersonator");
+        roleImpersonatorRep.addRole("realm-impersonator");
+        Policy roleImpersonatorPolicy = management.authz().getStoreFactory().getPolicyStore().create(roleImpersonatorRep, server);
+
+        ClientPolicyRepresentation requireClientExchangeRep = new ClientPolicyRepresentation();
+        requireClientExchangeRep.setName("requireClientExchanger");
+        requireClientExchangeRep.addClient("client-exchanger");
+        Policy requireClientExchangePolicy = management.authz().getStoreFactory().getPolicyStore().create(requireClientExchangeRep, server);
+
+        AggregatePolicyRepresentation aggregatePolicyRep = new AggregatePolicyRepresentation();
+        aggregatePolicyRep.setName("aggregatePolicy");
+        aggregatePolicyRep.addPolicy("roleImpersonator", "requireClientExchanger");
+        Policy aggregatePolicy = management.authz().getStoreFactory().getPolicyStore().create(aggregatePolicyRep, server);
+
+        management.users().adminImpersonatingPermission().addAssociatedPolicy(aggregatePolicy);
+
+        UserPolicyRepresentation userImpersonatedRep = new UserPolicyRepresentation();
+        userImpersonatedRep.setName("userImpersonated");
+        userImpersonatedRep.addUser("impersonated-user");
+        Policy userImpersonatedPolicy = management.authz().getStoreFactory().getPolicyStore().create(userImpersonatedRep, server);
+        management.users().userImpersonatedPermission().addAssociatedPolicy(userImpersonatedPolicy);
+
     }
 
     @Override
@@ -371,6 +419,80 @@ public class ClientTokenExchangeTest extends AbstractKeycloakTest {
             response.close();
         }
 
+
+    }
+
+    @Test
+    @UncaughtServerErrorExpected
+    public void testFineGrainedImpersonation() throws Exception {
+        testingClient.server().run(ClientTokenExchangeTest::setupRealm);
+
+        oauth.realm(TEST);
+        oauth.clientId("initial-access-token");
+
+        Client httpClient = ClientBuilder.newClient();
+
+        WebTarget exchangeUrl = httpClient.target(OAuthClient.AUTH_SERVER_ROOT)
+                .path("/realms")
+                .path(TEST)
+                .path("protocol/openid-connect/token");
+        System.out.println("Exchange url: " + exchangeUrl.getUri().toString());
+
+        OAuthClient.AccessTokenResponse tokenResponse = oauth.doGrantAccessTokenRequest("secret", "fine-grained-impersonator", "password");
+        String accessToken = tokenResponse.getAccessToken();
+        TokenVerifier<AccessToken> accessTokenVerifier = TokenVerifier.create(accessToken, AccessToken.class);
+        AccessToken token = accessTokenVerifier.parse().getToken();
+        Assert.assertEquals(token.getPreferredUsername(), "fine-grained-impersonator");
+        Assert.assertTrue(token.getRealmAccess() == null || !token.getRealmAccess().isUserInRole("example"));
+
+        // client-exchanger can impersonate from token "fine-grained-impersonator" to user "impersonated-user"
+        {
+            Response response = exchangeUrl.request()
+                    .header(HttpHeaders.AUTHORIZATION, BasicAuthHelper.createHeader("client-exchanger", "secret"))
+                    .post(Entity.form(
+                            new Form()
+                                    .param(OAuth2Constants.GRANT_TYPE, OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE)
+                                    .param(OAuth2Constants.SUBJECT_TOKEN, accessToken)
+                                    .param(OAuth2Constants.SUBJECT_TOKEN_TYPE, OAuth2Constants.ACCESS_TOKEN_TYPE)
+                                    .param(OAuth2Constants.REQUESTED_SUBJECT, "impersonated-user")
+
+                    ));
+            org.junit.Assert.assertEquals(200, response.getStatus());
+            AccessTokenResponse accessTokenResponse = response.readEntity(AccessTokenResponse.class);
+            response.close();
+
+            String exchangedTokenString = accessTokenResponse.getToken();
+            TokenVerifier<AccessToken> verifier = TokenVerifier.create(exchangedTokenString, AccessToken.class);
+            AccessToken exchangedToken = verifier.parse().getToken();
+            Assert.assertEquals("client-exchanger", exchangedToken.getIssuedFor());
+            Assert.assertNull(exchangedToken.getAudience());
+            Assert.assertEquals("impersonated-user", exchangedToken.getPreferredUsername());
+            Assert.assertNull(exchangedToken.getRealmAccess());
+
+            Object impersonatorRaw = exchangedToken.getOtherClaims().get("impersonator");
+            Assert.assertThat(impersonatorRaw, instanceOf(Map.class));
+            Map impersonatorClaim = (Map) impersonatorRaw;
+
+            Assert.assertEquals(token.getSubject(), impersonatorClaim.get("id"));
+            Assert.assertEquals("fine-grained-impersonator", impersonatorClaim.get("username"));
+        }
+
+        // "legal" must be refused by the fine-grained policy
+        {
+            Response response = exchangeUrl.request()
+                    .header(HttpHeaders.AUTHORIZATION, BasicAuthHelper.createHeader("legal", "secret"))
+                    .post(Entity.form(
+                            new Form()
+                                    .param(OAuth2Constants.GRANT_TYPE, OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE)
+                                    .param(OAuth2Constants.SUBJECT_TOKEN, accessToken)
+                                    .param(OAuth2Constants.SUBJECT_TOKEN_TYPE, OAuth2Constants.ACCESS_TOKEN_TYPE)
+                                    .param(OAuth2Constants.REQUESTED_SUBJECT, "impersonated-user")
+
+                    ));
+
+            Assert.assertEquals(403, response.getStatus());
+            response.close();
+        }
 
     }
 

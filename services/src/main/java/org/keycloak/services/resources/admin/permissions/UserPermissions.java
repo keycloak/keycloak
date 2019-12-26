@@ -398,7 +398,26 @@ class UserPermissions implements UserPermissionEvaluator, UserPermissionManageme
             return false;
         }
 
-        return canImpersonate(new DefaultEvaluationContext(identity, session));
+
+        EvaluationContext context;
+
+        ClientModel client = root.adminAuth().getClient();
+
+        if (client!=null) {
+        context = new DefaultEvaluationContext(identity, session) {
+            @Override
+            public Map<String, Collection<String>> getBaseAttributes() {
+                Map<String, Collection<String>> attributes = super.getBaseAttributes();
+                attributes.put("kc.client.id", Arrays.asList(client.getClientId()));
+                return attributes;
+            }
+
+        };
+        } else {
+            context = new DefaultEvaluationContext(identity, session);
+        }
+
+        return canImpersonate(context);
     }
 
     @Override
