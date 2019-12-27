@@ -83,7 +83,9 @@ public class DefaultLocaleSelectorProvider implements LocaleSelectorProvider {
 
         final LocaleSelection userProfileSelection = getUserProfileSelection(realm, user);
         if (userProfileSelection != null) {
-            updateLocaleCookie(realm, userProfileSelection.getLocaleString(), uriInfo);
+            if (requestHeaders != null) {
+                updateLocaleCookie(realm, userProfileSelection.getLocaleString(), uriInfo);
+            }
             return userProfileSelection.getLocale();
         }
 
