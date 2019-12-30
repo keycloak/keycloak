@@ -2038,6 +2038,60 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         assertEquals("Resource A", permissions.iterator().next().getResourceName());
     }
 
+    @Test
+    public void testClientToClientPermissionRequest() throws Exception {
+        ClientResource client = getClient(getRealm(), RESOURCE_SERVER_TEST);
+        AuthorizationResource authorization = client.authorization();
+
+        JSPolicyRepresentation policy = new JSPolicyRepresentation();
+
+        policy.setName(KeycloakModelUtils.generateId());
+        policy.setCode("$evaluation.grant();");
+
+        authorization.policies().js().create(policy).close();
+
+        ResourceRepresentation resource = new ResourceRepresentation();
+
+        resource.setName("Sensors");
+
+        try (Response response = authorization.resources().create(resource)) {
+            response.readEntity(ResourceRepresentation.class);
+        }
+
+        ResourcePermissionRepresentation permission = new ResourcePermissionRepresentation();
+
+        permission.setName("View Sensor");
+        permission.addPolicy(policy.getName());
+
+        authorization.permissions().resource().create(permission).close();
+
+        ClientRepresentation otherClient = new ClientRepresentation();
+
+        otherClient.setClientId("serviceB");
+        otherClient.setServiceAccountsEnabled(true);
+        otherClient.setSecret("secret");
+        otherClient.setPublicClient(false);
+
+        getRealm().clients().create(otherClient);
+
+        Map<String, Object> credentials = new HashMap<>();
+
+        credentials.put("secret", "secret");
+
+        AuthzClient authzClient = AuthzClient
+                .create(new Configuration(suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth",
+                        getRealm().toRepresentation().getRealm(), otherClient.getClientId(),
+                        credentials, getAuthzClient(AUTHZ_CLIENT_CONFIG).getConfiguration().getHttpClient()));
+
+        AuthorizationRequest request = new AuthorizationRequest();
+
+        request.setAudience(RESOURCE_SERVER_TEST);
+
+        AuthorizationResponse response = authzClient.authorization().authorize(request);
+
+        assertNotNull(response.getToken());
+    }
+
     private void testRptRequestWithResourceName(String configFile) {
         Metadata metadata = new Metadata();
 
