@@ -47,8 +47,8 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
- * @resource Groups
  * @author Bill Burke
+ * @resource Groups
  */
 public class GroupsResource {
 
@@ -88,14 +88,11 @@ public class GroupsResource {
         maxResults = maxResults != null ? maxResults : Constants.DEFAULT_MAX_RESULTS;
 
         if (Objects.nonNull(search)) {
-            results = ModelToRepresentation.searchForGroupByName(realm, fullRepresentation, search.trim(), firstResult, maxResults);
-        } else if(Objects.nonNull(firstResult) && Objects.nonNull(maxResults)) {
-            results = ModelToRepresentation.toGroupHierarchy(realm, fullRepresentation, firstResult, maxResults);
             if (search.indexOf(":") != -1) {
                 String[] searchs = search.split(":");
-                results = ModelToRepresentation.searchForGroupByAttribute(realm, searchs[0], searchs[1], firstResult, maxResults, true);
+                results = ModelToRepresentation.searchForGroupByAttribute(realm, searchs[0], searchs[1], firstResult, maxResults, fullRepresentation);
             } else {
-                results = ModelToRepresentation.searchForGroupByName(realm, search.trim(), firstResult, maxResults, true);
+                results = ModelToRepresentation.searchForGroupByName(realm, fullRepresentation, search.trim(), firstResult, maxResults);
             }
         } else if (Objects.nonNull(parent)) {
             results = ModelToRepresentation.toSubGroupsByParent(realm, parent);
@@ -118,7 +115,7 @@ public class GroupsResource {
         if (group == null) {
             throw new NotFoundException("Could not find group by id");
         }
-        GroupResource resource =  new GroupResource(realm, group, session, this.auth, adminEvent);
+        GroupResource resource = new GroupResource(realm, group, session, this.auth, adminEvent);
         ResteasyProviderFactory.getInstance().injectProperties(resource);
         return resource;
     }

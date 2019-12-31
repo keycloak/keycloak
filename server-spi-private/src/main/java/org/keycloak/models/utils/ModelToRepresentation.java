@@ -74,6 +74,9 @@ public class ModelToRepresentation {
         rep.setId(group.getId());
         rep.setName(group.getName());
         rep.setPath(buildGroupPath(group));
+        rep.setHasChild(group.isHasChild());
+        rep.setAttributes(group.getAttributes());
+        rep.setUserCount(group.getUserCount());
         if (!full) return rep;
         // Role mappings
         Set<RoleModel> roles = group.getRoleMappings();
@@ -111,6 +114,27 @@ public class ModelToRepresentation {
         return user.getGroups(search, first, max).stream()
                 .map(group -> toRepresentation(group, full))
                 .collect(Collectors.toList());
+    }
+
+
+    public static List<GroupRepresentation> searchForGroupByName(RealmModel realm, String search, Integer first, Integer max, boolean full) {
+        List<GroupRepresentation> result = new LinkedList<>();
+        List<GroupModel> groups = realm.searchForGroupByName(search, first, max);
+        if (Objects.isNull(groups)) return result;
+        for (GroupModel group : groups) {
+            result.add(toRepresentation(group, true));
+        }
+        return result;
+    }
+
+    public static List<GroupRepresentation> searchForGroupByAttribute(RealmModel realm, String attrName, String attrValue, Integer first, Integer max, boolean full) {
+        List<GroupRepresentation> result = new LinkedList<>();
+        List<GroupModel> groups = realm.searchGroupByAttributeNameAndValue(attrName, attrValue, first, max);
+        if (Objects.isNull(groups)) return result;
+        for (GroupModel group : groups) {
+            result.add(toRepresentation(group, true));
+        }
+        return result;
     }
 
     public static List<GroupRepresentation> toGroupHierarchy(RealmModel realm, boolean full, Integer first, Integer max) {

@@ -137,7 +137,7 @@ public class ValidateIdcardFirstName extends AbstractDirectGrantAuthenticator {
 
     public static final AuthenticationExecutionModel.Requirement[] REQUIREMENT_CHOICES = {
             AuthenticationExecutionModel.Requirement.ALTERNATIVE,
-            AuthenticationExecutionModel.Requirement.OPTIONAL
+            AuthenticationExecutionModel.Requirement.REQUIRED
 
     };
 

@@ -55,7 +55,7 @@ public class UserAttributeUpdater extends ServerResourceUpdater<UserAttributeUpd
         super(resource,
           () -> {
             UserRepresentation r = resource.toRepresentation();
-            r.setGroups(resource.groups().stream().map(GroupRepresentation::getPath).collect(Collectors.toList()));
+            r.setGroups(resource.groups());
             return r;
           },
           resource::update
@@ -69,7 +69,7 @@ public class UserAttributeUpdater extends ServerResourceUpdater<UserAttributeUpd
     @Override
     protected void performUpdate(UserRepresentation from, UserRepresentation to) {
         super.performUpdate(from, to);
-        updateViaAddRemove(from.getGroups(), to.getGroups(), this::getConversionForGroupPathToId, resource::joinGroup, resource::leaveGroup);
+        //updateViaAddRemove(from.getGroups(), to.getGroups(), this::getConversionForGroupPathToId, resource::joinGroup, resource::leaveGroup);
     }
 
     private Function<String, String> getConversionForGroupPathToId() {
@@ -124,7 +124,7 @@ public class UserAttributeUpdater extends ServerResourceUpdater<UserAttributeUpd
      * @return
      */
     public UserAttributeUpdater setGroups(String... groups) {
-        rep.setGroups(Arrays.asList(groups));
+        //rep.setGroups(Arrays.asList(groups));
         return this;
     }
 }
