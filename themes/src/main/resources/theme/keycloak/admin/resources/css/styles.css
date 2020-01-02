@@ -194,6 +194,22 @@ th.w-40 {
     width: 100% !important;
 }
 
+.glyphicon-remove:before {
+    content: "x";
+}
+
+.glyphicon-remove:hover {
+    opacity: 0.9;
+}
+
+.glyphicon-remove {
+    opacity: 0.6;
+    font-family: "Open Sans";
+    font-weight: 650;
+    font-size: 1.2em;
+    color: #000000;
+}
+
 
 /*********** html select ********/
 
