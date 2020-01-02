@@ -210,6 +210,10 @@ th.w-40 {
     color: #000000;
 }
 
+.ui-select-no-choice > li {
+    padding-left: 6px;
+}
+
 
 /*********** New Menu ***********/
 
