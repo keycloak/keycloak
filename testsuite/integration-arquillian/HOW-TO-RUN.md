@@ -347,7 +347,7 @@ Run the test (Update according to your DB connection, versions etc):
 
     mvn -B -f testsuite/integration-arquillian/pom.xml \
       clean install \
-      -Pjpa,auth-server-wildfly,db-mysql,auth-server-migration \
+      -Pjpa,auth-server-wildfly,db-mariadb,auth-server-migration \
       -Dauth.server.jboss.startup.timeout=900 \
       -Dtest=MigrationTest \
       -Dmigration.mode=auto \
@@ -355,10 +355,7 @@ Run the test (Update according to your DB connection, versions etc):
       -Dprevious.product.unpacked.folder.name=keycloak-$OLD_KEYCLOAK_VERSION \
       -Dmigration.import.file.name=migration-realm-$OLD_KEYCLOAK_VERSION.json \
       -Dauth.server.ssl.required=false \
-      -Djdbc.mvn.version.legacy=5.1.38 \
-      -Djdbc.mvn.groupId=mysql \
-      -Djdbc.mvn.artifactId=mysql-connector-java \
-      -Djdbc.mvn.version=8.0.12
+      -Djdbc.mvn.version.legacy=2.2.4
 
 
 For the available versions of old keycloak server, you can take a look to [this directory](tests/base/src/test/resources/migration-test) .
