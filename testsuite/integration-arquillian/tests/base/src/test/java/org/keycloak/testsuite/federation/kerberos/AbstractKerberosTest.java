@@ -25,6 +25,7 @@ import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Consumer;
 
 import javax.naming.Context;
 import javax.naming.NamingException;
@@ -337,18 +338,25 @@ public abstract class AbstractKerberosTest extends AbstractAuthTest {
 
 
     protected void updateProviderEditMode(UserStorageProvider.EditMode editMode) {
-        List<ComponentRepresentation> reps = testRealmResource().components().query("test", UserStorageProvider.class.getName());
-        Assert.assertEquals(1, reps.size());
-        ComponentRepresentation kerberosProvider = reps.get(0);
-        kerberosProvider.getConfig().putSingle(LDAPConstants.EDIT_MODE, editMode.toString());
-        testRealmResource().components().component(kerberosProvider.getId()).update(kerberosProvider);
+        updateUserStorageProvider(kerberosProvider -> kerberosProvider.getConfig().putSingle(LDAPConstants.EDIT_MODE, editMode.toString()));
     }
 
     protected void updateProviderValidatePasswordPolicy(Boolean validatePasswordPolicy) {
+        updateUserStorageProvider(kerberosProvider -> kerberosProvider.getConfig().putSingle(LDAPConstants.VALIDATE_PASSWORD_POLICY, validatePasswordPolicy.toString()));
+    }
+
+
+    /**
+     * Update UserStorage provider (Kerberos provider or LDAP provider with Kerberos enabled) with specified updater and save it
+     *
+     */
+    protected void updateUserStorageProvider(Consumer<ComponentRepresentation> updater) {
         List<ComponentRepresentation> reps = testRealmResource().components().query("test", UserStorageProvider.class.getName());
         Assert.assertEquals(1, reps.size());
         ComponentRepresentation kerberosProvider = reps.get(0);
-        kerberosProvider.getConfig().putSingle(LDAPConstants.VALIDATE_PASSWORD_POLICY, validatePasswordPolicy.toString());
+
+        updater.accept(kerberosProvider);
+
         testRealmResource().components().component(kerberosProvider.getId()).update(kerberosProvider);
     }
 
