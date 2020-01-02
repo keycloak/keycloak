@@ -1035,7 +1035,10 @@ public class AuthenticationManager {
 
 
     public static void setClientScopesInSession(AuthenticationSessionModel authSession) {
-        ClientModel client = authSession.getClient();
+        setClientScopesInSession(authSession, authSession.getClient());
+    }
+
+    public static void setClientScopesInSession(AuthenticationSessionModel authSession, ClientModel client) {
         UserModel user = authSession.getAuthenticatedUser();
 
         // todo scope param protocol independent

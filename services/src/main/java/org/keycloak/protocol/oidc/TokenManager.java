@@ -414,6 +414,10 @@ public class TokenManager {
 
 
     public static ClientSessionContext attachAuthenticationSession(KeycloakSession session, UserSessionModel userSession, AuthenticationSessionModel authSession) {
+        return attachAuthenticationSession(session, userSession, authSession, null);
+    }
+    
+    public static ClientSessionContext attachAuthenticationSession(KeycloakSession session, UserSessionModel userSession, AuthenticationSessionModel authSession, ClientModel resource) {
         ClientModel client = authSession.getClient();
 
         AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessionByClient(client.getId());
@@ -441,7 +445,14 @@ public class TokenManager {
         // Remove authentication session now
         new AuthenticationSessionManager(session).removeAuthenticationSession(userSession.getRealm(), authSession, true);
 
-        ClientSessionContext clientSessionCtx = DefaultClientSessionContext.fromClientSessionAndClientScopeIds(clientSession, clientScopeIds, session);
+        ClientSessionContext clientSessionCtx;
+
+        if (resource == null) {
+            clientSessionCtx = DefaultClientSessionContext.fromClientSessionAndClientScopeIds(clientSession, clientScopeIds, session);
+        } else {
+            clientSessionCtx = DefaultClientSessionContext.fromClientSessionAndClientScopeIds(clientSession, clientScopeIds, session, resource);
+        }
+
         return clientSessionCtx;
     }
 
