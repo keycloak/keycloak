@@ -16,6 +16,7 @@
 
 package org.keycloak.authentication.requiredactions;
 
+import com.webauthn4j.validator.attestation.trustworthiness.certpath.CertPathTrustworthinessValidator;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.Config.Scope;
 import org.keycloak.authentication.DisplayTypeRequiredActionFactory;
@@ -39,15 +40,19 @@ public class WebAuthnRegisterFactory implements RequiredActionFactory, DisplayTy
         WebAuthnRegister webAuthnRegister = null;
         TruststoreProvider truststoreProvider = session.getProvider(TruststoreProvider.class);
         if (truststoreProvider == null || truststoreProvider.getTruststore() == null) {
-            webAuthnRegister = new WebAuthnRegister(session, new NullCertPathTrustworthinessValidator());
+            webAuthnRegister = createProvider(session, new NullCertPathTrustworthinessValidator());
         } else {
             KeyStoreTrustAnchorsProvider trustAnchorsProvider = new KeyStoreTrustAnchorsProvider();
             trustAnchorsProvider.setKeyStore(truststoreProvider.getTruststore());
             TrustAnchorsResolverImpl resolverImpl = new TrustAnchorsResolverImpl(trustAnchorsProvider);
             TrustAnchorCertPathTrustworthinessValidator trustValidator = new TrustAnchorCertPathTrustworthinessValidator(resolverImpl);
-            webAuthnRegister = new WebAuthnRegister(session, trustValidator);
+            webAuthnRegister = createProvider(session, trustValidator);
         }
         return webAuthnRegister;
+    }
+
+    protected WebAuthnRegister createProvider(KeycloakSession session, CertPathTrustworthinessValidator trustValidator) {
+         return new WebAuthnRegister(session, trustValidator);
     }
 
     @Override

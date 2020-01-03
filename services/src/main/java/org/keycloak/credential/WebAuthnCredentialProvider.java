@@ -40,6 +40,9 @@ import com.webauthn4j.validator.WebAuthnAuthenticationContextValidator;
 import org.keycloak.models.credential.WebAuthnCredentialModel;
 import org.keycloak.models.credential.dto.WebAuthnCredentialData;
 
+/**
+ * Credential provider for WebAuthn 2-factor credential of the user
+ */
 public class WebAuthnCredentialProvider implements CredentialProvider<WebAuthnCredentialModel>, CredentialInputValidator {
 
     private static final Logger logger = Logger.getLogger(WebAuthnCredentialProvider.class);
@@ -98,7 +101,7 @@ public class WebAuthnCredentialProvider implements CredentialProvider<WebAuthnCr
         String credentialPublicKey = credentialPublicKeyConverter.convertToDatabaseColumn(webAuthnModel.getAttestedCredentialData().getCOSEKey());
         long counter = webAuthnModel.getCount();
 
-        WebAuthnCredentialModel model = WebAuthnCredentialModel.create(userLabel, aaguid, credentialId, null, credentialPublicKey, counter);
+        WebAuthnCredentialModel model = WebAuthnCredentialModel.create(getType(), userLabel, aaguid, credentialId, null, credentialPublicKey, counter);
 
         model.setId(webAuthnModel.getCredentialDBId());
 
@@ -114,7 +117,7 @@ public class WebAuthnCredentialProvider implements CredentialProvider<WebAuthnCr
 
         WebAuthnCredentialData credData = webAuthnCredential.getWebAuthnCredentialData();
 
-        WebAuthnCredentialModelInput auth = new WebAuthnCredentialModelInput();
+        WebAuthnCredentialModelInput auth = new WebAuthnCredentialModelInput(getType());
 
         byte[] credentialId = null;
         try {
@@ -142,7 +145,7 @@ public class WebAuthnCredentialProvider implements CredentialProvider<WebAuthnCr
 
     @Override
     public boolean supportsCredentialType(String credentialType) {
-        return WebAuthnCredentialModelInput.WEBAUTHN_CREDENTIAL_TYPE.equals(credentialType);
+        return getType().equals(credentialType);
     }
 
     @Override
@@ -204,12 +207,12 @@ public class WebAuthnCredentialProvider implements CredentialProvider<WebAuthnCr
 
     @Override
     public String getType() {
-        return WebAuthnCredentialModel.TYPE;
+        return WebAuthnCredentialModel.TYPE_TWOFACTOR;
     }
 
 
     private List<WebAuthnCredentialModelInput> getWebAuthnCredentialModelList(RealmModel realm, UserModel user) {
-        List<CredentialModel> credentialModels = session.userCredentialManager().getStoredCredentialsByType(realm, user, WebAuthnCredentialModel.TYPE);
+        List<CredentialModel> credentialModels = session.userCredentialManager().getStoredCredentialsByType(realm, user, getType());
 
         return credentialModels.stream()
                 .map(this::getCredentialInputFromCredentialModel)

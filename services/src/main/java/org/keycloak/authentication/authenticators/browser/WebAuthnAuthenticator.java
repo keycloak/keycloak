@@ -35,16 +35,17 @@ import org.keycloak.authentication.requiredactions.WebAuthnRegisterFactory;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.UriUtils;
 import org.keycloak.credential.CredentialProvider;
-import org.keycloak.credential.OTPCredentialProvider;
 import org.keycloak.credential.WebAuthnCredentialModelInput;
 import org.keycloak.credential.WebAuthnCredentialProvider;
 import org.keycloak.credential.WebAuthnCredentialProviderFactory;
+import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.forms.login.freemarker.model.WebAuthnAuthenticatorsBean;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.WebAuthnPolicy;
 import org.keycloak.models.credential.WebAuthnCredentialModel;
 
 import javax.ws.rs.core.MultivaluedMap;
@@ -52,6 +53,9 @@ import javax.ws.rs.core.Response;
 import java.util.Collections;
 import java.util.List;
 
+/**
+ * Authenticator for WebAuthn authentication, which will be typically used when WebAuthn is used as second factor.
+ */
 public class WebAuthnAuthenticator implements Authenticator, CredentialValidator<WebAuthnCredentialProvider> {
 
     private static final Logger logger = Logger.getLogger(WebAuthnAuthenticator.class);
@@ -69,7 +73,8 @@ public class WebAuthnAuthenticator implements Authenticator, CredentialValidator
         context.getAuthenticationSession().setAuthNote(WebAuthnConstants.AUTH_CHALLENGE_NOTE, challengeValue);
         form.setAttribute(WebAuthnConstants.CHALLENGE, challengeValue);
 
-        String rpId = context.getRealm().getWebAuthnPolicy().getRpId();
+        WebAuthnPolicy policy = getWebAuthnPolicy(context);
+        String rpId = policy.getRpId();
         if (rpId == null || rpId.isEmpty()) rpId =  context.getUriInfo().getBaseUri().getHost();
         form.setAttribute(WebAuthnConstants.RP_ID, rpId);
 
@@ -77,7 +82,7 @@ public class WebAuthnAuthenticator implements Authenticator, CredentialValidator
         boolean isUserIdentified = false;
         if (user != null) {
             // in 2 Factor Scenario where the user has already been identified
-            WebAuthnAuthenticatorsBean authenticators = new WebAuthnAuthenticatorsBean(context.getSession(), context.getRealm(), user);
+            WebAuthnAuthenticatorsBean authenticators = new WebAuthnAuthenticatorsBean(context.getSession(), context.getRealm(), user, getCredentialType());
             if (authenticators.getAuthenticators().isEmpty()) {
                 // require the user to register webauthn authenticator
                 return;
@@ -91,14 +96,25 @@ public class WebAuthnAuthenticator implements Authenticator, CredentialValidator
         form.setAttribute(WebAuthnConstants.IS_USER_IDENTIFIED, Boolean.toString(isUserIdentified));
 
         // read options from policy
-        String userVerificationRequirement = context.getRealm().getWebAuthnPolicy().getUserVerificationRequirement();
+        String userVerificationRequirement = policy.getUserVerificationRequirement();
         form.setAttribute(WebAuthnConstants.USER_VERIFICATION, userVerificationRequirement);
 
         context.challenge(form.createLoginWebAuthn());
     }
 
+    protected WebAuthnPolicy getWebAuthnPolicy(AuthenticationFlowContext context) {
+        return context.getRealm().getWebAuthnPolicy();
+    }
+
+    protected String getCredentialType() {
+        return WebAuthnCredentialModel.TYPE_TWOFACTOR;
+    }
+
+
     public void action(AuthenticationFlowContext context) {
         MultivaluedMap<String, String> params = context.getHttpRequest().getDecodedFormParameters();
+
+        context.getEvent().detail(Details.CREDENTIAL_TYPE, getCredentialType());
 
         // receive error from navigator.credentials.get()
         String errorMsgFromWebAuthnApi = params.getFirst(WebAuthnConstants.ERROR);
@@ -121,7 +137,7 @@ public class WebAuthnAuthenticator implements Authenticator, CredentialValidator
 
         String userId = params.getFirst(WebAuthnConstants.USER_HANDLE);
         boolean isUVFlagChecked = false;
-        String userVerificationRequirement = context.getRealm().getWebAuthnPolicy().getUserVerificationRequirement();
+        String userVerificationRequirement = getWebAuthnPolicy(context).getUserVerificationRequirement();
         if (WebAuthnConstants.OPTION_REQUIRED.equals(userVerificationRequirement)) isUVFlagChecked = true;
 
         // existing User Handle means that the authenticator used Resident Key supported public key credential
@@ -158,7 +174,7 @@ public class WebAuthnAuthenticator implements Authenticator, CredentialValidator
                 isUVFlagChecked
         );
 
-        WebAuthnCredentialModelInput cred = new WebAuthnCredentialModelInput();
+        WebAuthnCredentialModelInput cred = new WebAuthnCredentialModelInput(getCredentialType());
         cred.setAuthenticationContext(authenticationContext);
 
         boolean result = false;
@@ -171,7 +187,7 @@ public class WebAuthnAuthenticator implements Authenticator, CredentialValidator
         String encodedCredentialID = Base64Url.encode(credentialId);
         if (result) {
             String isUVChecked = Boolean.toString(isUVFlagChecked);
-            logger.infov("WebAuthn Authentication successed. isUserVerificationChecked = {0}, PublicKeyCredentialID = {1}", isUVChecked, encodedCredentialID);
+            logger.debugv("WebAuthn Authentication successed. isUserVerificationChecked = {0}, PublicKeyCredentialID = {1}", isUVChecked, encodedCredentialID);
             context.setUser(user);
             context.getEvent()
                 .detail("web_authn_authenticator_user_verification_checked", isUVChecked)
@@ -191,7 +207,7 @@ public class WebAuthnAuthenticator implements Authenticator, CredentialValidator
     }
 
     public boolean configuredFor(KeycloakSession session, RealmModel realm, UserModel user) {
-        return session.userCredentialManager().isConfiguredFor(realm, user, WebAuthnCredentialModel.TYPE);
+        return session.userCredentialManager().isConfiguredFor(realm, user, getCredentialType());
     }
 
     public void setRequiredActions(KeycloakSession session, RealmModel realm, UserModel user) {
@@ -219,8 +235,8 @@ public class WebAuthnAuthenticator implements Authenticator, CredentialValidator
     private static final String ERR_NO_AUTHENTICATORS_REGISTERED = "No WebAuthn Authenticator registered.";
     private static final String ERR_WEBAUTHN_API_GET = "Failed to authenticate by the WebAuthn Authenticator";
     private static final String ERR_DIFFERENT_USER_AUTHENTICATED = "First authenticated user is not the one authenticated by the WebAuthn authenticator.";
-    private static final String ERR_WEBAUTHN_VERIFICATION_FAIL = "WetAuthn Authentication result is invalid.";
-    private static final String ERR_WEBAUTHN_AUTHENTICATED_USER_NOT_FOUND = "Unknown user authenticated by the WebAuthen Authenticator";
+    private static final String ERR_WEBAUTHN_VERIFICATION_FAIL = "WebAuthn Authentication result is invalid.";
+    private static final String ERR_WEBAUTHN_AUTHENTICATED_USER_NOT_FOUND = "Unknown user authenticated by the WebAuthn Authenticator";
 
     private void setErrorResponse(AuthenticationFlowContext context, final String errorCase, final String errorMessage) {
         Response errorResponse = null;
