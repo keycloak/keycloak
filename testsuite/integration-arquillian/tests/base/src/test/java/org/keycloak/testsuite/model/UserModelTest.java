@@ -323,6 +323,7 @@ public class UserModelTest extends AbstractTestRealmKeycloakTest {
 
             user.setSingleAttribute("key1", "value1");
             user.setSingleAttribute("key2", "value2");
+            user.setSingleAttribute("key3", null); //KEYCLOAK-7014
 
             // Overwrite the first attribute
             user.setSingleAttribute("key1", "value3");

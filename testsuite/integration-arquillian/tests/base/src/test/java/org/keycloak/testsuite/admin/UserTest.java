@@ -35,7 +35,6 @@ import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.Constants;
 import org.keycloak.models.PasswordPolicy;
-import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.models.utils.ModelToRepresentation;
@@ -85,7 +84,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
-
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
@@ -95,6 +95,8 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.keycloak.testsuite.Assert.assertNames;
+import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
+import org.keycloak.testsuite.updaters.Creator;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 
@@ -714,6 +716,19 @@ public class UserTest extends AbstractAdminTest {
 
         user1 = realm.users().get(user1Id).toRepresentation();
         assertNull(user1.getAttributes());
+    }
+
+    @Test
+    public void testImportUserWithNullAttribute() {
+        RealmRepresentation rep = loadJson(getClass().getResourceAsStream("/import/testrealm-user-null-attr.json"), RealmRepresentation.class);
+
+        try (Creator<RealmResource> c = Creator.create(adminClient, rep)) {
+            List<UserRepresentation> users = c.resource().users().list();
+            // there should be only one user
+            assertThat(users, hasSize(1));
+            // test there are only 2 attributes imported from json file, attribute "key3" : [ null ] shoudn't be imported
+            assertThat(users.get(0).getAttributes().size(), equalTo(2));
+        }
     }
 
     private void assertAttributeValue(String expectedValue, List<String> attrValues) {
