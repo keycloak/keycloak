@@ -100,7 +100,7 @@ public class UserInfoEndpoint {
     @GET
     @NoCache
     public Response issueUserInfoGet(@Context final HttpHeaders headers) {
-        String accessToken = this.appAuthManager.extractAuthorizationHeaderToken(headers);
+        String accessToken = this.appAuthManager.extractAuthorizationHeaderTokenOrReturnNull(headers);
         return issueUserInfo(accessToken);
     }
 
@@ -110,7 +110,7 @@ public class UserInfoEndpoint {
     public Response issueUserInfoPost() {
         // Try header first
         HttpHeaders headers = request.getHttpHeaders();
-        String accessToken = this.appAuthManager.extractAuthorizationHeaderToken(headers);
+        String accessToken = this.appAuthManager.extractAuthorizationHeaderTokenOrReturnNull(headers);
 
         // Fallback to form parameter
         if (accessToken == null) {
