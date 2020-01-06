@@ -5,10 +5,9 @@ import org.junit.Test;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 
+import static org.hamcrest.CoreMatchers.not;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -154,11 +153,12 @@ public class PlainTextVaultProviderTest {
 
         //when
         VaultRawSecret secretAfterFirstRead = provider.obtainSecret(secretName);
+        assertThat(secretAfterFirstRead, secretContains("secret"));
         secretAfterFirstRead.close();
         VaultRawSecret secretAfterSecondRead = provider.obtainSecret(secretName);
 
         //then
-        assertThat(secretAfterFirstRead, secretContains("secret"));
+        assertThat(secretAfterFirstRead, not(secretContains("secret")));
         assertThat(secretAfterSecondRead, secretContains("secret"));
     }
 }

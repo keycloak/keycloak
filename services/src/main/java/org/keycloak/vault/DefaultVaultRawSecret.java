@@ -26,6 +26,8 @@ import java.util.concurrent.ThreadLocalRandom;
  */
 public class DefaultVaultRawSecret implements VaultRawSecret {
 
+    private static final ByteBuffer EMPTY_BUFFER = ByteBuffer.allocate(0);
+
     private static final VaultRawSecret EMPTY_VAULT_SECRET = new VaultRawSecret() {
         @Override
         public Optional<ByteBuffer> get() {
@@ -42,7 +44,7 @@ public class DefaultVaultRawSecret implements VaultRawSecret {
         }
     };
 
-    private final ByteBuffer rawSecret;
+    private ByteBuffer rawSecret;
 
     private byte[] secretArray;
 
@@ -80,9 +82,12 @@ public class DefaultVaultRawSecret implements VaultRawSecret {
     public void close() {
         if (rawSecret.hasArray()) {
             ThreadLocalRandom.current().nextBytes(rawSecret.array());
-        } else if (this.secretArray != null) {
+        }
+        if (this.secretArray != null) {
             ThreadLocalRandom.current().nextBytes(this.secretArray);
+            this.secretArray = null;    // dispose of secretArray
         }
         rawSecret.clear();
+        rawSecret = EMPTY_BUFFER;
     }
 }
