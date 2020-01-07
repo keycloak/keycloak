@@ -28,16 +28,16 @@ endif::[]
 
 
 ifeval::[{project_community}==true]
-==== C#
+===== C#
 * https://github.com/dylanplecki/KeycloakOwinAuthentication[OWIN] (community)
 
-==== Python
+===== Python
 * https://pypi.org/project/oic/[oidc] (generic)
 
-==== Android
+===== Android
 * https://github.com/openid/AppAuth-Android[AppAuth] (generic)
 
-==== iOS
+===== iOS
 * https://github.com/openid/AppAuth-iOS[AppAuth] (generic)
 
 ===== Apache HTTP Server
