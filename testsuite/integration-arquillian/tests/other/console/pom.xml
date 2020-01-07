@@ -106,6 +106,7 @@
                     <configuration>
                         <systemProperties>
                             <keycloak.theme.dir>${keycloak.theme.dir}</keycloak.theme.dir>
+                            <keycloak.profile.feature.account2>enabled</keycloak.profile.feature.account2>
                         </systemProperties>
                     </configuration>
                 </plugin>

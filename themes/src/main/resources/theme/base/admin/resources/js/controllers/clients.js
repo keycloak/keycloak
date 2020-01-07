@@ -683,7 +683,7 @@ module.controller('ClientRoleDetailCtrl', function($scope, $route, realm, client
     $scope.create = !role.name;
 
     $scope.changed = $scope.create;
-
+    
     $scope.save = function() {
         convertAttributeValuesToLists();
         if ($scope.create) {
@@ -967,6 +967,7 @@ module.controller('ClientInstallationCtrl', function($scope, realm, client, serv
 
 
 module.controller('ClientDetailCtrl', function($scope, realm, client, flows, $route, serverInfo, Client, ClientDescriptionConverter, Components, ClientStorageOperations, $location, $modal, Dialog, Notifications, TimeUnit2) {
+    $scope.serverInfo = serverInfo;
     $scope.flows = [];
     $scope.clientFlows = [];
     var emptyFlow = {
@@ -1279,6 +1280,7 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, flows, $ro
         } else if ($scope.accessType == "bearer-only") {
             $scope.clientEdit.bearerOnly = true;
             $scope.clientEdit.publicClient = false;
+            $scope.clientEdit.alwaysDisplayInConsole = false;
         }
     };
 
