@@ -174,6 +174,8 @@ public class BaseWriter {
                     	writeNameIDTypeAttributeValue((NameIDType) attributeValue);
                     } else
                         throw logger.writerUnsupportedAttributeValueError(attributeValue.getClass().getName());
+                } else {
+                    writeStringAttributeValue(null);
                 }
             }
         }
@@ -191,7 +193,13 @@ public class BaseWriter {
         StaxUtil.writeNameSpace(writer, JBossSAMLURIConstants.XSI_PREFIX.get(), JBossSAMLURIConstants.XSI_NSURI.get());
         StaxUtil.writeNameSpace(writer, "xs", JBossSAMLURIConstants.XMLSCHEMA_NSURI.get());
         StaxUtil.writeAttribute(writer, "xsi", JBossSAMLURIConstants.XSI_NSURI.get(), "type", "xs:string");
-        StaxUtil.writeCharacters(writer, attributeValue);
+
+        if (attributeValue == null) {
+            StaxUtil.writeAttribute(writer, "xsi", JBossSAMLURIConstants.XSI_NSURI.get(), "nil", "true");
+        } else {
+            StaxUtil.writeCharacters(writer, attributeValue);
+        }
+
         StaxUtil.writeEndElement(writer);
     }
 
