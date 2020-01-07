@@ -20,7 +20,6 @@ verification via SAML descriptor of the IDP when
 ----
 
 connectionPoolSize::
-  Adapters will make separate HTTP invocations to the {project_name} server to turn an access code into an access token.
   This config option defines how many connections to the {project_name} server should be pooled.
   This is _OPTIONAL_.
   The default value is `10`.
