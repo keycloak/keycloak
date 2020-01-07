@@ -17,7 +17,7 @@
 
     <properties>
         <aopalliance.version>1.0</aopalliance.version>
-        <xstream.version>1.4.10</xstream.version>
+        <xstream.version>1.4.11.1</xstream.version>
         <antlr-runtime.version>3.5.2</antlr-runtime.version>
         <ant.version>1.8.4</ant.version>
         <ant-launcher.version>1.8.4</ant-launcher.version>
