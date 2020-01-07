@@ -148,4 +148,7 @@ public class ProtocolMapperUtils {
         return priority;
     }
 
+    public static boolean isEnabled(KeycloakSession session, ProtocolMapperModel mapper) {
+        return session.getKeycloakSessionFactory().getProviderFactory(ProtocolMapper.class, mapper.getProtocolMapper()) != null;
+    }
 }
