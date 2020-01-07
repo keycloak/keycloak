@@ -13,3 +13,7 @@ Pagination support was added to clients in the Admin Console and REST API. Thank
 A new built-in vault provider that reads secrets from a keystore-backed Elytron credential store has been added as a WildFly
 extension. The creation and management of the credential store is handled by Elytron using either the `elytron` subsystem or the
 `elytron-tool.sh` script.
+
+== Other improvements
+
+* Authorization Header token is only considered now when type is Bearer on Gatekeeper. Thanks to https://github.com/HansK-p[HansK-p]
