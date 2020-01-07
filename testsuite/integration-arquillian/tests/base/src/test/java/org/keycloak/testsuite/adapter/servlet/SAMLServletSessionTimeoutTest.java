@@ -79,21 +79,11 @@ public class SAMLServletSessionTimeoutTest extends AbstractSAMLServletAdapterTes
         return ob;
     }
 
-    private SamlClientBuilder beginAuthenticationAndLogin() {
-        return new SamlClientBuilder()
-                .navigateTo(employee2ServletPage.buildUri())
-                .processSamlResponse(SamlClient.Binding.POST) // Process AuthnResponse
-                .build()
-
-                .login().user(bburkeUser)
-                .build();
-    }
-
     @Test
     public void employee2TestSAMLRefreshingSession() {
         sessionNotOnOrAfter.set(null);
 
-        beginAuthenticationAndLogin()
+        beginAuthenticationAndLogin(employee2ServletPage, SamlClient.Binding.POST)
                 .processSamlResponse(SamlClient.Binding.POST) // Update response with SessionNotOnOrAfter
                     .transformObject(this::addSessionNotOnOrAfter)
                     .build()
@@ -125,7 +115,7 @@ public class SAMLServletSessionTimeoutTest extends AbstractSAMLServletAdapterTes
     public void employee2TestSAMLSessionTimeoutOnBothSides() {
         sessionNotOnOrAfter.set(null);
 
-        beginAuthenticationAndLogin()
+        beginAuthenticationAndLogin(employee2ServletPage, SamlClient.Binding.POST)
                 .processSamlResponse(SamlClient.Binding.POST) // Update response with SessionNotOnOrAfter
                     .transformObject(this::addSessionNotOnOrAfter)
                     .build()
@@ -158,7 +148,7 @@ public class SAMLServletSessionTimeoutTest extends AbstractSAMLServletAdapterTes
         try(AutoCloseable c = new RealmAttributeUpdater(adminClient.realm(REALM_NAME))
                 .updateWith(r -> r.setSsoSessionMaxLifespan(SESSION_LENGTH_IN_SECONDS))
                 .update()) {
-            beginAuthenticationAndLogin()
+            beginAuthenticationAndLogin(employee2ServletPage, SamlClient.Binding.POST)
                     .processSamlResponse(SamlClient.Binding.POST) // Process response
                         .transformObject(ob -> { // Check sessionNotOnOrAfter is present and it has correct value
                             assertThat(ob, Matchers.isSamlResponse(JBossSAMLURIConstants.STATUS_SUCCESS));
