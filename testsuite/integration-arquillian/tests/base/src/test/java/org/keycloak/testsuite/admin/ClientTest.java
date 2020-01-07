@@ -556,6 +556,7 @@ public class ClientTest extends AbstractAdminTest {
         if (client.getClientId() != null) Assert.assertEquals(client.getClientId(), storedClient.getClientId());
         if (client.getName() != null) Assert.assertEquals(client.getName(), storedClient.getName());
         if (client.isEnabled() != null) Assert.assertEquals(client.isEnabled(), storedClient.isEnabled());
+        if (client.isAlwaysDisplayInConsole() != null) Assert.assertEquals(client.isAlwaysDisplayInConsole(), storedClient.isAlwaysDisplayInConsole());
         if (client.isBearerOnly() != null) Assert.assertEquals(client.isBearerOnly(), storedClient.isBearerOnly());
         if (client.isPublicClient() != null) Assert.assertEquals(client.isPublicClient(), storedClient.isPublicClient());
         if (client.isFullScopeAllowed() != null) Assert.assertEquals(client.isFullScopeAllowed(), storedClient.isFullScopeAllowed());

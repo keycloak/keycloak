@@ -47,7 +47,7 @@ public class ClientSettingsTest extends AbstractClientTest {
     private ClientSettings clientSettingsPage;
 
     private ClientRepresentation newClient;
-
+    
     @Test
     public void crudOIDCPublic() {
         newClient = createClientRep("oidc-public", OIDC);
@@ -61,6 +61,7 @@ public class ClientSettingsTest extends AbstractClientTest {
         // update & verify
         newClient.setClientId("oidc-public-updated");
         newClient.setName("updatedName");
+        newClient.setAlwaysDisplayInConsole(true);
         
         List<String> redirectUris = new ArrayList<>();
         redirectUris.add("http://example2.test/app/*");
@@ -76,6 +77,7 @@ public class ClientSettingsTest extends AbstractClientTest {
         
         clientSettingsPage.form().setClientId("oidc-public-updated");
         clientSettingsPage.form().setName("updatedName");
+        clientSettingsPage.form().setAlwaysDisplayInConsole(true);
         clientSettingsPage.form().setRedirectUris(redirectUris);
         clientSettingsPage.form().setWebOrigins(webOrigins);
         clientSettingsPage.form().save();

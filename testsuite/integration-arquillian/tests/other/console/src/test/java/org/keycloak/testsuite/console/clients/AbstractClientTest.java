@@ -105,6 +105,7 @@ public abstract class AbstractClientTest extends AbstractConsoleTest {
         assertEqualsStringAttributes(c1.getClientId(), c2.getClientId());
         assertEqualsStringAttributes(c1.getName(), c2.getName());
         assertEqualsBooleanAttributes(c1.isEnabled(), c2.isEnabled());
+        assertEqualsBooleanAttributes(c1.isAlwaysDisplayInConsole(), c2.isAlwaysDisplayInConsole());
         assertEqualsStringAttributes(c1.getBaseUrl(), c2.getBaseUrl());
         assertEqualsBooleanAttributes(c1.isConsentRequired(), c2.isConsentRequired());
         assertEqualsStringAttributes(c1.getProtocol(), c2.getProtocol());
