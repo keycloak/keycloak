@@ -273,7 +273,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
             RoleModel manageAccountRole = accountService.getRole(AccountRoles.MANAGE_ACCOUNT);
 
             // Ensure user has role and client has "role scope" for this role
-            ClientSessionContext ctx = DefaultClientSessionContext.fromClientSessionScopeParameter(clientSession);
+            ClientSessionContext ctx = DefaultClientSessionContext.fromClientSessionScopeParameter(clientSession, session);
             Set<RoleModel> userAccountRoles = ctx.getRoles();
 
             if (!userAccountRoles.contains(manageAccountRole)) {

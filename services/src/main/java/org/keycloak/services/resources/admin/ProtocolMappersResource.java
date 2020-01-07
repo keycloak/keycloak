@@ -16,6 +16,8 @@
  */
 package org.keycloak.services.resources.admin;
 
+import static org.keycloak.protocol.ProtocolMapperUtils.isEnabled;
+
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import javax.ws.rs.NotFoundException;
@@ -102,7 +104,7 @@ public class ProtocolMappersResource {
 
         List<ProtocolMapperRepresentation> mappers = new LinkedList<ProtocolMapperRepresentation>();
         for (ProtocolMapperModel mapper : client.getProtocolMappers()) {
-            if (mapper.getProtocol().equals(protocol)) mappers.add(ModelToRepresentation.toRepresentation(mapper));
+            if (isEnabled(session, mapper) && mapper.getProtocol().equals(protocol)) mappers.add(ModelToRepresentation.toRepresentation(mapper));
         }
         return mappers;
     }
@@ -166,7 +168,9 @@ public class ProtocolMappersResource {
 
         List<ProtocolMapperRepresentation> mappers = new LinkedList<ProtocolMapperRepresentation>();
         for (ProtocolMapperModel mapper : client.getProtocolMappers()) {
-            mappers.add(ModelToRepresentation.toRepresentation(mapper));
+            if (isEnabled(session, mapper)) {
+                mappers.add(ModelToRepresentation.toRepresentation(mapper));
+            }
         }
         return mappers;
     }

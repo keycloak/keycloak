@@ -18,6 +18,7 @@ package org.keycloak.testsuite.script;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.keycloak.common.Profile.Feature.SCRIPTS;
 import static org.keycloak.testsuite.admin.ApiUtil.findClientResourceByClientId;
 import static org.keycloak.testsuite.arquillian.DeploymentTargetModifier.AUTH_SERVER_CURRENT;
@@ -37,7 +38,6 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.ClientResource;
-import org.keycloak.common.Profile;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.mappers.ScriptBasedOIDCProtocolMapper;
 import org.keycloak.representations.AccessToken;
@@ -45,7 +45,6 @@ import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.provider.ScriptProviderDescriptor;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
-import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.util.ContainerAssume;
 import org.keycloak.testsuite.util.OAuthClient;
@@ -54,7 +53,7 @@ import org.keycloak.util.JsonSerialization;
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-public class DeployedScriptMapperTest extends AbstractTestRealmKeycloakTest {
+public class UndeployedScriptMapperNotAvailableTest extends AbstractTestRealmKeycloakTest {
 
     private static final String SCRIPT_DEPLOYMENT_NAME = "scripts.jar";
 
@@ -95,18 +94,11 @@ public class DeployedScriptMapperTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
-    public void testScriptMapperNotAvailable() {
-        assertFalse(adminClient.serverInfo().getInfo().getProtocolMapperTypes().get(OIDCLoginProtocol.LOGIN_PROTOCOL).stream()
-                .anyMatch(
-                        mapper -> ScriptBasedOIDCProtocolMapper.PROVIDER_ID.equals(mapper.getId())));
-    }
-
-    @Test
     @EnableFeature(SCRIPTS)
-    public void testTokenScriptMapping() {
-        {
-            ClientResource app = findClientResourceByClientId(adminClient.realm("test"), "test-app");
+    public void testMapperNotRecognizedWhenDisabled() throws Exception {
+        ClientResource app = findClientResourceByClientId(adminClient.realm("test"), "test-app");
 
+        {
             ProtocolMapperRepresentation mapper = createScriptMapper("test-script-mapper1", "computed-via-script",
                     "computed-via-script", "String", true, true, "'hello_' + user.username", false);
 
@@ -114,16 +106,9 @@ public class DeployedScriptMapperTest extends AbstractTestRealmKeycloakTest {
 
             app.getProtocolMappers().createMapper(mapper).close();
         }
-        {
-            OAuthClient.AccessTokenResponse response = browserLogin("password", "test-user@localhost", "password");
-            AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
 
-            assertEquals("hello_test-user@localhost", accessToken.getOtherClaims().get("computed-via-script"));
-        }
-    }
-
-    private OAuthClient.AccessTokenResponse browserLogin(String clientSecret, String username, String password) {
-        OAuthClient.AuthorizationEndpointResponse authzEndpointResponse = oauth.doLogin(username, password);
-        return oauth.doAccessTokenRequest(authzEndpointResponse.getCode(), clientSecret);
+        deployer.undeploy(SCRIPT_DEPLOYMENT_NAME);
+        assertTrue(app.getProtocolMappers().getMappers().isEmpty());
+        assertTrue(app.getProtocolMappers().getMappersPerProtocol(app.toRepresentation().getProtocol()).isEmpty());
     }
 }
