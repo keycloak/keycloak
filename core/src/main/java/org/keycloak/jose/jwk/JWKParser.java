@@ -104,7 +104,7 @@ public class JWKParser {
             ECPoint point = new ECPoint(x, y);
             ECPublicKeySpec pubKeySpec = new ECPublicKeySpec(point, params);
 
-            KeyFactory kf = KeyFactory.getInstance("ECDSA");
+            KeyFactory kf = KeyFactory.getInstance("EC");
             return kf.generatePublic(pubKeySpec);
         } catch (Exception e) {
             throw new RuntimeException(e);
