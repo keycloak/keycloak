@@ -25,6 +25,7 @@ import org.keycloak.representations.idm.UserSessionRepresentation;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
@@ -67,6 +68,19 @@ public interface UserResource {
     List<GroupRepresentation> groups(@QueryParam("search") String search,
                                      @QueryParam("first") Integer firstResult,
                                      @QueryParam("max") Integer maxResults);
+    
+    @Path("groups")
+    @GET
+    List<GroupRepresentation> groups(@QueryParam("first") Integer firstResult,
+                                     @QueryParam("max") Integer maxResults,
+                                     @QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation);
+    
+    @Path("groups")
+    @GET
+    List<GroupRepresentation> groups(@QueryParam("search") String search,
+                                     @QueryParam("first") Integer firstResult,
+                                     @QueryParam("max") Integer maxResults,
+                                     @QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation);
 
     @Path("groups/{groupId}")
     @PUT

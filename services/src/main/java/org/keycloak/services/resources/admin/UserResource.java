@@ -78,6 +78,7 @@ import org.keycloak.utils.ProfileHelper;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.NotSupportedException;
@@ -825,16 +826,17 @@ public class UserResource {
     @Produces(MediaType.APPLICATION_JSON)
     public List<GroupRepresentation> groupMembership(@QueryParam("search") String search,
                                                      @QueryParam("first") Integer firstResult,
-                                                     @QueryParam("max") Integer maxResults) {
+                                                     @QueryParam("max") Integer maxResults,
+                                                     @QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation) {
         auth.users().requireView(user);
         List<GroupRepresentation> results;
 
         if (Objects.nonNull(search) && Objects.nonNull(firstResult) && Objects.nonNull(maxResults)) {
-            results = ModelToRepresentation.searchForGroupByName(user, false, search.trim(), firstResult, maxResults);
+            results = ModelToRepresentation.searchForGroupByName(user, !briefRepresentation, search.trim(), firstResult, maxResults);
         } else if(Objects.nonNull(firstResult) && Objects.nonNull(maxResults)) {
-            results = ModelToRepresentation.toGroupHierarchy(user, false, firstResult, maxResults);
+            results = ModelToRepresentation.toGroupHierarchy(user, !briefRepresentation, firstResult, maxResults);
         } else {
-            results = ModelToRepresentation.toGroupHierarchy(user, false);
+            results = ModelToRepresentation.toGroupHierarchy(user, !briefRepresentation);
         }
 
         return results;
