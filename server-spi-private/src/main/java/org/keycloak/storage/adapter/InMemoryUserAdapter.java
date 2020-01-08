@@ -47,6 +47,7 @@ public class InMemoryUserAdapter implements UserModel {
     private String email;
     private boolean emailVerified;
     private boolean enabled;
+    private Long loginTimestamp;
 
     private String realmId;
 
@@ -383,7 +384,18 @@ public class InMemoryUserAdapter implements UserModel {
     @Override
     public void setModifyTimestamp(Long modifyTimestamp) {
         checkReadonly();
-        this.modifyTimestamp=modifyTimestamp;
+        this.modifyTimestamp = modifyTimestamp;
+    }
+
+    @Override
+    public Long getLoginTimestamp() {
+        return this.loginTimestamp;
+    }
+
+    @Override
+    public void setLoginTimestamp(Long loginTimestamp) {
+        checkReadonly();
+        this.loginTimestamp = loginTimestamp;
     }
 
     @Override

@@ -39,6 +39,7 @@ public class CachedRole extends AbstractRevisioned implements InRealm {
     final protected boolean composite;
     final protected Set<String> composites = new HashSet<>();
     private final LazyLoader<RoleModel, MultivaluedHashMap<String, String>> attributes;
+    final protected long userCount;
 
     public CachedRole(Long revision, RoleModel model, RealmModel realm) {
         super(revision, model.getId());
@@ -52,6 +53,7 @@ public class CachedRole extends AbstractRevisioned implements InRealm {
             }
         }
         attributes = new DefaultLazyLoader<>(roleModel -> new MultivaluedHashMap<>(roleModel.getAttributes()), MultivaluedHashMap::new);
+        this.userCount=model.getUserCount();
     }
 
     public String getName() {
@@ -76,5 +78,9 @@ public class CachedRole extends AbstractRevisioned implements InRealm {
 
     public MultivaluedHashMap<String, String> getAttributes(Supplier<RoleModel> roleModel) {
         return attributes.get(roleModel);
+    }
+
+    public long getUserCount() {
+        return userCount;
     }
 }

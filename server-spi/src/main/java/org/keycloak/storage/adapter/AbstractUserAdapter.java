@@ -392,6 +392,16 @@ public abstract class AbstractUserAdapter implements UserModel {
     }
 
     @Override
+    public Long getLoginTimestamp() {
+        return null;
+    }
+
+    @Override
+    public void setLoginTimestamp(Long loginTimestamp) {
+
+    }
+
+    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || !(o instanceof UserModel)) return false;

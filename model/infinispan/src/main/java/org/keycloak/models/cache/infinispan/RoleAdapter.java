@@ -227,6 +227,12 @@ public class RoleAdapter implements RoleModel {
     }
 
     @Override
+    public Long getUserCount() {
+        if (isUpdated()) return updated.getUserCount();
+        return cached.getUserCount();
+    }
+
+    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof RoleModel)) return false;

@@ -58,6 +58,7 @@ public class UserRepresentation {
     protected List<UserConsentRepresentation> clientConsents;
     protected Integer notBefore;
     protected String idcard;
+    protected Long loginTimestamp;
 
     @Deprecated
     protected Map<String, List<String>> applicationRoles;
@@ -291,5 +292,13 @@ public class UserRepresentation {
 
     public void setIdcard(String idcard) {
         this.idcard = idcard;
+    }
+
+    public Long getLoginTimestamp() {
+        return loginTimestamp;
+    }
+
+    public void setLoginTimestamp(Long loginTimestamp) {
+        this.loginTimestamp = loginTimestamp;
     }
 }

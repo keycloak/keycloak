@@ -939,4 +939,9 @@ public class UserCacheSession implements UserCache {
             return getUserById(userId, realm);
         }
     }
+
+    @Override
+    public void updateLoginTimestamp(UserModel userModel) {
+        getDelegate().updateLoginTimestamp(userModel);
+    }
 }

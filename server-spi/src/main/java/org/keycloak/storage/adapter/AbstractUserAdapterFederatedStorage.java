@@ -54,6 +54,7 @@ public abstract class AbstractUserAdapterFederatedStorage implements UserModel {
     public static String ENABLED_ATTRIBUTE = "ENABLED";
     public static String IDCARD_ATTRIBUTE = "IDCARD";
     public static String MODIFY_TIMESTAMP_ATTRIBUTE = "MODIFY_TIMESTAMP";
+    public static String LOGIN_TIMESTAMP_ATTRIBUTE = "LOGIN_TIMESTAMP";
 
 
     protected KeycloakSession session;
@@ -463,12 +464,29 @@ public abstract class AbstractUserAdapterFederatedStorage implements UserModel {
         else return Long.valueOf(val);
     }
 
+
     @Override
     public void setModifyTimestamp(Long modifyTimestamp) {
         if (modifyTimestamp == null) {
             setSingleAttribute(MODIFY_TIMESTAMP_ATTRIBUTE, null);
         } else {
             setSingleAttribute(MODIFY_TIMESTAMP_ATTRIBUTE, Long.toString(modifyTimestamp));
+        }
+    }
+
+    @Override
+    public Long getLoginTimestamp() {
+        String val = getFirstAttribute(LOGIN_TIMESTAMP_ATTRIBUTE);
+        if (val == null) return null;
+        else return Long.valueOf(val);
+    }
+
+    @Override
+    public void setLoginTimestamp(Long loginTimestamp) {
+        if (loginTimestamp == null) {
+            setSingleAttribute(LOGIN_TIMESTAMP_ATTRIBUTE, null);
+        } else {
+            setSingleAttribute(LOGIN_TIMESTAMP_ATTRIBUTE, Long.toString(loginTimestamp));
         }
     }
 

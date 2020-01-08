@@ -296,4 +296,9 @@ public class GroupAdapter implements GroupModel {
     }
 
 
+    @Override
+    public Long getUserAllCount() {
+        if (isUpdated()) return updated.getUserAllCount();
+        return cached.getUserAllCount();
+    }
 }

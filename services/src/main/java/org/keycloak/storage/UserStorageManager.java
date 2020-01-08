@@ -782,4 +782,9 @@ public class UserStorageManager implements UserProvider, OnUserCache, OnCreateCo
         }
         return null;
     }
+
+    @Override
+    public void updateLoginTimestamp(UserModel userModel) {
+        localStorage().updateLoginTimestamp(userModel);
+    }
 }

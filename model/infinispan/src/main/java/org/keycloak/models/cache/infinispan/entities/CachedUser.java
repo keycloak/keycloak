@@ -54,6 +54,7 @@ public class CachedUser extends AbstractExtendableRevisioned implements InRealm 
     private final LazyLoader<UserModel, Set<String>> groups;
     private String idcard;
     private Long modifyTimestamp;
+    private Long loginTimestamp;
 
     public CachedUser(Long revision, RealmModel realm, UserModel user, int notBefore) {
         super(revision, user.getId());
@@ -74,6 +75,7 @@ public class CachedUser extends AbstractExtendableRevisioned implements InRealm 
         this.attributes = new DefaultLazyLoader<>(userModel -> new MultivaluedHashMap<>(userModel.getAttributes()), MultivaluedHashMap::new);
         this.roleMappings = new DefaultLazyLoader<>(userModel -> userModel.getRoleMappings().stream().map(RoleModel::getId).collect(Collectors.toSet()), Collections::emptySet);
         this.groups = new DefaultLazyLoader<>(userModel -> userModel.getGroups().stream().map(GroupModel::getId).collect(Collectors.toCollection(LinkedHashSet::new)), LinkedHashSet::new);
+        this.loginTimestamp=user.getLoginTimestamp();
     }
 
     public String getRealm() {
@@ -150,5 +152,9 @@ public class CachedUser extends AbstractExtendableRevisioned implements InRealm 
 
     public void setModifyTimestamp(Long modifyTimestamp) {
         this.modifyTimestamp = modifyTimestamp;
+    }
+
+    public Long getLoginTimestamp() {
+        return loginTimestamp;
     }
 }

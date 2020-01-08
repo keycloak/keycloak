@@ -555,6 +555,9 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
         FlowStatus status = result.getStatus();
         switch (status) {
             case SUCCESS:
+                UserModel authUser = processor.getAuthenticationSession().getAuthenticatedUser();
+                processor.session.users().updateLoginTimestamp(authUser);
+
                 logger.debugv("authenticator SUCCESS: {0}", execution.getAuthenticator());
                 if (isAction) {
                     new AuthenticationFlowHistoryHelper(processor).pushExecution(execution.getId());

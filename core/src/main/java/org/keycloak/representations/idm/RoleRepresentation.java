@@ -38,6 +38,7 @@ public class RoleRepresentation {
     private Boolean clientRole;
     private String containerId;
     protected Map<String, List<String>> attributes;
+    private Long userCount;
 
     public static class Composites {
         protected Set<String> realm;
@@ -148,6 +149,14 @@ public class RoleRepresentation {
 
     public void setAttributes(Map<String, List<String>> attributes) {
         this.attributes = attributes;
+    }
+
+    public Long getUserCount() {
+        return userCount;
+    }
+
+    public void setUserCount(Long userCount) {
+        this.userCount = userCount;
     }
 
     public RoleRepresentation singleAttribute(String name, String value) {

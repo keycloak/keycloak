@@ -558,6 +558,16 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
     }
 
     @Override
+    public Long getLoginTimestamp() {
+        return user.getLoginTimestamp();
+    }
+
+    @Override
+    public void setLoginTimestamp(Long loginTimestamp) {
+        user.setLoginTimestamp(loginTimestamp);
+    }
+
+    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || !(o instanceof UserModel)) return false;

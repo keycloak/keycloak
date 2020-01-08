@@ -312,8 +312,8 @@ public class UserAdapter implements CachedUserModel {
         if (cached.getRoleMappings(modelSupplier).contains(role.getId())) return true;
 
         Set<RoleModel> mappings = getRoleMappings();
-        for (RoleModel mapping: mappings) {
-           if (mapping.hasRole(role)) return true;
+        for (RoleModel mapping : mappings) {
+            if (mapping.hasRole(role)) return true;
         }
         return RoleUtils.hasRoleFromGroup(getGroups(), role, true);
     }
@@ -402,6 +402,7 @@ public class UserAdapter implements CachedUserModel {
     private UserModel getUserModel() {
         return userProviderCache.getDelegate().getUserById(cached.getId(), realm);
     }
+
     @Override
     public String getIdcard() {
         if (updated != null) return updated.getIdcard();
@@ -418,6 +419,18 @@ public class UserAdapter implements CachedUserModel {
     public Long getModifyTimestamp() {
         if (updated != null) return updated.getModifyTimestamp();
         return cached.getModifyTimestamp();
+    }
+
+    @Override
+    public Long getLoginTimestamp() {
+        if (updated != null) return updated.getLoginTimestamp();
+        return cached.getLoginTimestamp();
+    }
+
+    @Override
+    public void setLoginTimestamp(Long loginTimestamp) {
+        getDelegateForUpdate();
+        updated.setLoginTimestamp(loginTimestamp);
     }
 
     @Override

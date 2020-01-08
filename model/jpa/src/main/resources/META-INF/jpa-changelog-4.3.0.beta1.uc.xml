@@ -115,4 +115,12 @@
         </addColumn>
     </changeSet>
 
+    <changeSet author="liubinwang@govnet.com.cn" id="9.0.beta1">
+        <addColumn tableName="USER_ENTITY">
+            <column name="LOGIN_TIMESTAMP" type="BIGINT">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
 </databaseChangeLog>

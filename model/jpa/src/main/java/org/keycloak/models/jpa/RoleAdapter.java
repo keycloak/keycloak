@@ -237,4 +237,12 @@ public class RoleAdapter implements RoleModel, JpaModel<RoleEntity> {
         }
         return em.getReference(RoleEntity.class, model.getId());
     }
+
+    @Override
+    public Long getUserCount() {
+        Long count = em.createNamedQuery("getCountByRole", Long.class)
+                .setParameter("roleId", getId())
+                .getSingleResult();
+        return count;
+    }
 }

@@ -159,6 +159,10 @@ public interface UserModel extends RoleMapperModel {
 
     void setModifyTimestamp(Long modifyTimestamp);
 
+    Long getLoginTimestamp();
+
+    void setLoginTimestamp(Long loginTimestamp);
+
     enum RequiredAction {
         VERIFY_EMAIL, UPDATE_PROFILE, CONFIGURE_TOTP, UPDATE_PASSWORD, TERMS_AND_CONDITIONS
     }

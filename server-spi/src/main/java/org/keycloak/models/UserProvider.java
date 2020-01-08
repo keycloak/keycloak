@@ -98,4 +98,6 @@ public interface UserProvider extends Provider,
 
     void preRemove(RealmModel realm, ComponentModel component);
 
+    void updateLoginTimestamp(UserModel userModel);
+
 }

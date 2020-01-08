@@ -70,6 +70,8 @@ public interface GroupModel extends RoleMapperModel {
 
     Long getUserCount();
 
+    Long getUserAllCount();
+
     boolean isHasChild();
 
     void setHasChild(boolean hasChild);

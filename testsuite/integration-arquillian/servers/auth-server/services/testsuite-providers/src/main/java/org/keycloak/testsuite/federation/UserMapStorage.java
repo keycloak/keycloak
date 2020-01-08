@@ -141,6 +141,9 @@ public class UserMapStorage implements UserLookupProvider, UserStorageProvider, 
                 public String getFederationLink() {
                     return model.getId();
                 }
+
+
+
             };
         }
 

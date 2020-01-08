@@ -954,4 +954,11 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
         if (results.size() == 0) return null;
         return new UserAdapter(session, realm, em, results.get(0));
     }
+
+    @Override
+    public void updateLoginTimestamp(UserModel userModel) {
+        UserEntity entity=em.find(UserEntity.class,userModel.getId());
+        if (entity == null) return;
+        entity.setLoginTimestamp(Time.currentTimeMillis());
+    }
 }

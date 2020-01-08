@@ -37,6 +37,7 @@ public class GroupRepresentation {
     private Map<String, Boolean> access;
     protected boolean hasChild;
     protected Long userCount;
+    protected Long userAllCount;
 
     public String getId() {
         return id;
@@ -123,5 +124,13 @@ public class GroupRepresentation {
 
     public void setUserCount(Long userCount) {
         this.userCount = userCount;
+    }
+
+    public Long getUserAllCount() {
+        return userAllCount;
+    }
+
+    public void setUserAllCount(Long userAllCount) {
+        this.userAllCount = userAllCount;
     }
 }

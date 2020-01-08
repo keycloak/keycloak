@@ -909,4 +909,12 @@ public class UserResource {
         }
     }
 
+    @PUT
+    @Path("enable")
+    @NoCache
+    public void enable(){
+        auth.users().requireManage(user);
+        user.setEnabled(!user.isEnabled());
+    }
+
 }

@@ -77,6 +77,7 @@ public class ModelToRepresentation {
         rep.setHasChild(group.isHasChild());
         rep.setAttributes(group.getAttributes());
         rep.setUserCount(group.getUserCount());
+        rep.setUserAllCount(group.getUserAllCount());
         if (!full) return rep;
         // Role mappings
         Set<RoleModel> roles = group.getRoleMappings();
@@ -197,7 +198,7 @@ public class ModelToRepresentation {
         rep.setDisableableCredentialTypes(session.userCredentialManager().getDisableableCredentialTypes(realm, user));
         rep.setFederationLink(user.getFederationLink());
         rep.setIdcard(user.getIdcard());
-
+        rep.setLoginTimestamp(user.getLoginTimestamp());
         rep.setNotBefore(session.users().getNotBeforeOfUser(realm, user));
 
         Set<String> requiredActions = user.getRequiredActions();
@@ -209,6 +210,12 @@ public class ModelToRepresentation {
             Map<String, List<String>> attrs = new HashMap<>(user.getAttributes());
             rep.setAttributes(attrs);
         }
+
+        List<GroupRepresentation> groups = new LinkedList<>();
+        for (GroupModel group : user.getGroups()) {
+            groups.add(toRepresentation(group, false));
+        }
+        rep.setGroups(groups);
 
         return rep;
     }
@@ -224,7 +231,7 @@ public class ModelToRepresentation {
         rep.setEnabled(user.isEnabled());
         rep.setEmailVerified(user.isEmailVerified());
         rep.setFederationLink(user.getFederationLink());
-
+        rep.setLoginTimestamp(user.getLoginTimestamp());
         return rep;
     }
 
@@ -278,6 +285,7 @@ public class ModelToRepresentation {
         rep.setClientRole(role.isClientRole());
         rep.setContainerId(role.getContainerId());
         rep.setAttributes(role.getAttributes());
+        rep.setUserCount(role.getUserCount());
         return rep;
     }
 
@@ -289,6 +297,7 @@ public class ModelToRepresentation {
         rep.setComposite(role.isComposite());
         rep.setClientRole(role.isClientRole());
         rep.setContainerId(role.getContainerId());
+        rep.setUserCount(role.getUserCount());
         return rep;
     }
 

@@ -64,4 +64,6 @@ public interface RoleModel {
     List<String> getAttribute(String name);
 
     Map<String, List<String>> getAttributes();
+
+    Long getUserCount();
 }

@@ -31,19 +31,14 @@ import org.keycloak.models.utils.RoleUtils;
 
 import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import javax.persistence.LockModeType;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class GroupAdapter implements GroupModel , JpaModel<GroupEntity> {
+public class GroupAdapter implements GroupModel, JpaModel<GroupEntity> {
 
     protected GroupEntity group;
     protected EntityManager em;
@@ -90,7 +85,7 @@ public class GroupAdapter implements GroupModel , JpaModel<GroupEntity> {
 
     public static GroupEntity toEntity(GroupModel model, EntityManager em) {
         if (model instanceof GroupAdapter) {
-            return ((GroupAdapter)model).getEntity();
+            return ((GroupAdapter) model).getEntity();
         }
         return em.getReference(GroupEntity.class, model.getId());
     }
@@ -100,8 +95,7 @@ public class GroupAdapter implements GroupModel , JpaModel<GroupEntity> {
         if (parent == null) group.setParent(null);
         else if (parent.getId().equals(getId())) {
             return;
-        }
-        else {
+        } else {
             GroupEntity parentEntity = toEntity(parent, em);
             group.setParent(parentEntity);
         }
@@ -109,9 +103,27 @@ public class GroupAdapter implements GroupModel , JpaModel<GroupEntity> {
 
     @Override
     public Long getUserCount() {
+        return getUserCount(getId());
+    }
+
+
+    private Long getUserCount(String id) {
         Long count = em.createNamedQuery("getCountByGroup", Long.class)
-                .setParameter("groupId", getId())
+                .setParameter("groupId", id)
                 .getSingleResult();
+        return count;
+    }
+
+    @Override
+    public Long getUserAllCount() {
+        TypedQuery<String> query = em.createNamedQuery("getGroupIdsByParent", String.class);
+        query.setParameter("parent", group);
+        List<String> ids = query.getResultList();
+        Set<GroupModel> set = new HashSet<>();
+        Long count = getUserCount(getId());
+        for (String id : ids) {
+            count += getUserCount(id);
+        }
         return count;
     }
 
@@ -322,9 +334,9 @@ public class GroupAdapter implements GroupModel , JpaModel<GroupEntity> {
         for (RoleModel role : roleMappings) {
             RoleContainerModel container = role.getContainer();
             if (container instanceof ClientModel) {
-                ClientModel appModel = (ClientModel)container;
+                ClientModel appModel = (ClientModel) container;
                 if (appModel.getId().equals(app.getId())) {
-                   roles.add(role);
+                    roles.add(role);
                 }
             }
         }
@@ -344,7 +356,6 @@ public class GroupAdapter implements GroupModel , JpaModel<GroupEntity> {
     public int hashCode() {
         return getId().hashCode();
     }
-
 
 
 }

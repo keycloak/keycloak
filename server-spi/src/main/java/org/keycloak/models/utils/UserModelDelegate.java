@@ -267,6 +267,16 @@ public class UserModelDelegate implements UserModel {
     }
 
     @Override
+    public Long getLoginTimestamp() {
+        return delegate.getLoginTimestamp();
+    }
+
+    @Override
+    public void setLoginTimestamp(Long loginTimestamp) {
+        delegate.setLoginTimestamp(loginTimestamp);
+    }
+
+    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof UserModel)) return false;
