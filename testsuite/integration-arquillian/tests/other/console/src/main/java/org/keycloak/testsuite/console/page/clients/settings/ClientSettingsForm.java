@@ -157,6 +157,10 @@ public class ClientSettingsForm extends CreateClientForm {
         alwaysDisplayInConsole.setOn(enabled);
     }
 
+    public boolean isAlwaysDisplayInConsoleVisible() {
+        return alwaysDisplayInConsole.isVisible();
+    }
+
     public boolean isConsentRequired() {
         return consentRequiredSwitch.isOn();
     }
