@@ -214,6 +214,10 @@ th.w-40 {
     padding-left: 6px;
 }
 
+.ui-select-bootstrap .ui-select-toggle > .caret {
+    margin-top: -5px !important;
+}
+
 
 /*********** html select ********/
 
