@@ -90,53 +90,31 @@
       </licenses>
     </dependency>
     <dependency>
-      <groupId>commons-codec</groupId>
-      <artifactId>commons-codec</artifactId>
-      <version>1.9</version>
-      <licenses>
-        <license>
-          <name>Apache Software License 2.0</name>
-          <url>https://raw.githubusercontent.com/apache/commons-codec/1.9/LICENSE.txt</url>
-        </license>
-      </licenses>
-    </dependency>
-    <dependency>
-      <groupId>commons-logging</groupId>
-      <artifactId>commons-logging</artifactId>
-      <version>1.2</version>
-      <licenses>
-        <license>
-          <name>Apache Software License 2.0</name>
-          <url>https://raw.githubusercontent.com/apache/commons-logging/LOGGING_1_2/LICENSE.txt</url>
-        </license>
-      </licenses>
-    </dependency>
-    <dependency>
       <groupId>org.apache.httpcomponents</groupId>
       <artifactId>httpclient</artifactId>
-      <version>4.5.2</version>
+      <version>4.5.4</version>
       <licenses>
         <license>
           <name>Apache Software License 2.0</name>
-          <url>https://git-wip-us.apache.org/repos/asf?p=httpcomponents-client.git;a=blob_plain;f=LICENSE.txt;hb=4.5</url>
+          <url>https://git-wip-us.apache.org/repos/asf?p=httpcomponents-client.git;a=blob_plain;f=LICENSE.txt;hb=refs/tags/rel/v4.5.4</url>
         </license>
       </licenses>
     </dependency>
     <dependency>
       <groupId>org.apache.httpcomponents</groupId>
       <artifactId>httpcore</artifactId>
-      <version>4.4.4</version>
+      <version>4.4.5</version>
       <licenses>
         <license>
           <name>Apache Software License 2.0</name>
-          <url>https://git-wip-us.apache.org/repos/asf?p=httpcomponents-core.git;a=blob_plain;f=LICENSE.txt;hb=4.4.1</url>
+          <url>https://git-wip-us.apache.org/repos/asf?p=httpcomponents-core.git;a=blob_plain;f=LICENSE.txt;hb=refs/tags/rel/v4.4.5</url>
         </license>
       </licenses>
     </dependency>
     <dependency>
       <groupId>org.jboss.logging</groupId>
       <artifactId>jboss-logging</artifactId>
-      <version>3.4.0.Final</version>
+      <version>3.4.1.Final</version>
       <licenses>
         <license>
           <name>Apache Software License 2.0</name>

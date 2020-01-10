@@ -232,7 +232,6 @@
             </activation>
 
             <properties>
-                <build-tools.version>${eap.build-tools.version}</build-tools.version>
                 <feature.parent>org.jboss.eap:wildfly-feature-pack</feature.parent>
             </properties>
 
