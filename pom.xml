@@ -69,6 +69,7 @@
         <hibernate.core.version>5.3.13.Final</hibernate.core.version>
         <hibernate.c3p0.version>5.3.13.Final</hibernate.c3p0.version>
         <infinispan.version>9.4.16.Final</infinispan.version>
+        <!-- Will be used in the product. Upstream versions are overridden in the community profile -->
         <jackson.version>2.9.10</jackson.version>
         <jackson.databind.version>2.9.10.1</jackson.databind.version>
         <jakarta.mail.version>1.6.4</jakarta.mail.version>
@@ -1623,6 +1624,8 @@
                 <product.name-html>\u003Cdiv class="kc-logo-text"\u003E\u003Cspan\u003EKeycloak\u003C\u002Fspan\u003E\u003C\u002Fdiv\u003E</product.name-html>
                 <product.version>${project.version}</product.version>
                 <product.default-profile>community</product.default-profile>
+                <jackson.version>2.9.10</jackson.version>
+                <jackson.databind.version>2.9.10.1</jackson.databind.version>
             </properties>
         </profile>
 
