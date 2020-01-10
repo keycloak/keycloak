@@ -1547,12 +1547,24 @@ module.controller('ResourceServerPolicyRoleDetailCtrl', function($scope, $route,
                 if ('' == query) {
                     return;
                 }
-                $scope.roles.forEach( role => {
-                    if (role != '' && role.name != '' && role.name.includes(query)
-                        && ! $scope.selectedRoles.find( selectedRole => !selectedRole.clientRole && selectedRole.id === role.id ) ) {
-                        $scope.uiSelection.available.roles.push(role);
+                var localIndex;
+                for (localIndex = 0; localIndex<$scope.roles.length; localIndex++) {
+                    var currentRole = $scope.roles[localIndex];
+                    if (currentRole != '' && currentRole.name != '' && currentRole.name.indexOf(query) !== -1) {
+                        var localIndex2;
+                        var foundRole = false;
+                        for (localIndex2 = 0; localIndex2 < $scope.selectedRoles.length; localIndex2++) {
+                            var selectedRole = $scope.selectedRoles[localIndex2];
+                            if (!selectedRole.clientRole && selectedRole.id === currentRole.id) {
+                                foundRole = true;
+                                break;
+                            }
+                        }
+                        if (!foundRole) {
+                            $scope.uiSelection.available.roles.push(currentRole);
+                        }
                     }
-                });
+                }
             };
 
             $scope.clientRolesUiSelect = function(query) {
@@ -1561,11 +1573,13 @@ module.controller('ResourceServerPolicyRoleDetailCtrl', function($scope, $route,
                 if ('' == query) {
                     return;
                 }
-                $scope.clientRoles.forEach( role => {
-                    if (role != '' && role.name != '' && role.name.includes(query)) {
-                        $scope.uiSelection.available.clientRoles.push(role);
+                var localIndex;
+                for (localIndex = 0; localIndex<$scope.clientRoles.length; localIndex++) {
+                    var currentRole = $scope.clientRoles[localIndex];
+                    if (currentRole != '' && currentRole.name != '' && currentRole.name.indexOf(query) !== -1) {
+                        $scope.uiSelection.available.clientRoles.push(currentRole);
                     }
-                });
+                }
             };
 
             Client.query({realm: $route.current.params.realm}, function (data) {
@@ -2643,11 +2657,13 @@ module.controller('PolicyEvaluateCtrl', function($scope, $http, $route, $locatio
         if ('' == query) {
             return;
         }
-        roles.forEach( role => {
-            if (role != '' && role.name != '' && role.name.includes(query)) {
-                $scope.uiSelection.available.roles.push(role);
+        var localIndex;
+        for (localIndex = 0; localIndex<roles.length; localIndex++) {
+            var currentRole = roles[localIndex];
+            if (currentRole != '' && currentRole.name != '' && currentRole.name.indexOf(query) !== -1) {
+                $scope.uiSelection.available.roles.push(currentRole);
             }
-        });
+        }
     };
 
     $scope.usersUiSelect = function(query) {
