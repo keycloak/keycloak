@@ -55,7 +55,6 @@ import org.keycloak.theme.beans.MessageFormatterMethod;
  */
 public class FreeMarkerEmailTemplateProvider implements EmailTemplateProvider {
 
-    private static final Logger logger = Logger.getLogger(FreeMarkerEmailTemplateProvider.class);
     protected KeycloakSession session;
     /**
      * authenticationSession can be null for some email sendings, it is filled only for email sendings performed as part of the authentication session (email verification, password reset, broker link
@@ -218,7 +217,6 @@ public class FreeMarkerEmailTemplateProvider implements EmailTemplateProvider {
             try {
                 textBody = freeMarker.processTemplate(attributes, textTemplate, theme);
             } catch (final FreeMarkerException e) {
-                textBody = null;
                 throw new EmailException("Failed to template plain text email.", e);
             }
             String htmlTemplate = String.format("html/%s", template);
@@ -226,7 +224,6 @@ public class FreeMarkerEmailTemplateProvider implements EmailTemplateProvider {
             try {
                 htmlBody = freeMarker.processTemplate(attributes, htmlTemplate, theme);
             } catch (final FreeMarkerException e) {
-                htmlBody = null;
                 throw new EmailException("Failed to template html email.", e);
             }
 
