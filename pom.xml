@@ -37,14 +37,13 @@
     <packaging>pom</packaging>
 
     <properties>
-        <product.rhsso.version>7.3.0.GA</product.rhsso.version>
+        <product.rhsso.version>7.4.0.GA</product.rhsso.version>
 
         <product.build-time>${timestamp}</product.build-time>
 
         <wildfly.version>18.0.1.Final</wildfly.version>
         <wildfly.build-tools.version>1.2.12.Final</wildfly.build-tools.version>
-        <eap.version>7.3.0.CD18-redhat-00002</eap.version>
-        <eap.build-tools.version>1.2.10.Final</eap.build-tools.version>
+        <eap.version>7.3.0.GA-redhat-00002</eap.version>
         <wildfly.core.version>10.0.3.Final</wildfly.core.version>
 
         <jboss.as.version>7.2.0.Final</jboss.as.version>
@@ -66,22 +65,23 @@
         <github.relaxng.version>2.3.1</github.relaxng.version>
         <h2.version>1.4.193</h2.version>
         <jakarta.persistence.version>2.2.3</jakarta.persistence.version>
-        <hibernate.core.version>5.3.13.Final</hibernate.core.version>
-        <hibernate.c3p0.version>5.3.13.Final</hibernate.c3p0.version>
+        <hibernate.core.version>5.3.14.Final</hibernate.core.version>
+        <hibernate.c3p0.version>5.3.14.Final</hibernate.c3p0.version>
         <infinispan.version>9.4.16.Final</infinispan.version>
         <!-- Will be used in the product. Upstream versions are overridden in the community profile -->
-        <jackson.version>2.9.10</jackson.version>
-        <jackson.databind.version>2.9.10.1</jackson.databind.version>
+        <jackson.version>2.10.0</jackson.version>
+        <jackson.databind.version>${jackson.version}</jackson.databind.version>
         <jakarta.mail.version>1.6.4</jakarta.mail.version>
         <jboss.logging.version>3.4.1.Final</jboss.logging.version>
         <jboss.logging.tools.version>2.2.0.Final</jboss.logging.tools.version>
-        <jboss-jaxrs-api_2.1_spec>2.0.0.Final</jboss-jaxrs-api_2.1_spec>
+        <jboss-jaxrs-api_2.1_spec>2.0.1.Final</jboss-jaxrs-api_2.1_spec>
         <jboss-transaction-api_1.3_spec>2.0.0.Final</jboss-transaction-api_1.3_spec>
         <jboss.spec.javax.xml.bind.jboss-jaxb-api_2.3_spec.version>2.0.0.Final</jboss.spec.javax.xml.bind.jboss-jaxb-api_2.3_spec.version>
         <jboss.spec.javax.servlet.jsp.jboss-jsp-api_2.3_spec.version>2.0.0.Final</jboss.spec.javax.servlet.jsp.jboss-jsp-api_2.3_spec.version>
         <log4j.version>1.2.17</log4j.version>
-        <resteasy.version>3.9.1.Final</resteasy.version>
-        <resteasy.undertow.version>3.9.1.Final</resteasy.undertow.version>
+        <!-- Will be used in the product. Upstream versions are overridden in the community profile -->
+        <resteasy.version>3.9.3.Final</resteasy.version>
+        <resteasy.undertow.version>${resteasy.version}</resteasy.undertow.version>
         <owasp.html.sanitizer.version>20180219.1</owasp.html.sanitizer.version>
         <slf4j-api.version>1.7.22</slf4j-api.version>
         <slf4j.version>1.7.22</slf4j.version>
@@ -91,7 +91,7 @@
         <sun.xml.ws.version>2.3.1</sun.xml.ws.version>
         <sun.activation.version>1.2.1</sun.activation.version>
         <org.glassfish.jaxb.xsom.version>2.3.1</org.glassfish.jaxb.xsom.version>
-        <undertow.version>2.0.27.Final</undertow.version>
+        <undertow.version>2.0.28.Final</undertow.version>
         <elytron.version>1.10.4.Final</elytron.version>
         <elytron.undertow-server.version>1.6.0.Final</elytron.undertow-server.version>
         <jetty92.version>9.2.4.v20141103</jetty92.version>
@@ -1626,6 +1626,8 @@
                 <product.default-profile>community</product.default-profile>
                 <jackson.version>2.9.10</jackson.version>
                 <jackson.databind.version>2.9.10.1</jackson.databind.version>
+                <resteasy.version>3.9.1.Final</resteasy.version>
+                <resteasy.undertow.version>${resteasy.version}</resteasy.undertow.version>
             </properties>
         </profile>
 

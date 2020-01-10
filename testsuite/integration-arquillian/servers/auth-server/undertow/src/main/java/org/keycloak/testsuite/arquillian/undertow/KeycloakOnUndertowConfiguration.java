@@ -37,7 +37,7 @@ public class KeycloakOnUndertowConfiguration extends UndertowContainerConfigurat
     private boolean remoteMode;
     private String route;
     private String keycloakConfigPropertyOverrides;
-    private Map<String, String> keycloakConfigPropertyOverridesMap;
+    private HashMap<String, Object> keycloakConfigPropertyOverridesMap;
 
     private int bindHttpPortOffset = 0;
     private int bindHttpsPortOffset = 0;
@@ -107,7 +107,7 @@ public class KeycloakOnUndertowConfiguration extends UndertowContainerConfigurat
         this.keycloakConfigPropertyOverrides = keycloakConfigPropertyOverrides;
     }
 
-    public Map<String, String> getKeycloakConfigPropertyOverridesMap() {
+    public Map<String, Object> getKeycloakConfigPropertyOverridesMap() {
         return keycloakConfigPropertyOverridesMap;
     }
 
