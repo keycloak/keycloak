@@ -31,6 +31,7 @@ import org.keycloak.testsuite.pages.AccountPasswordPage;
 import org.keycloak.testsuite.pages.AccountUpdateProfilePage;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
+import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
 import org.keycloak.testsuite.pages.OAuthGrantPage;
 import org.keycloak.testsuite.pages.RegisterPage;
 import org.keycloak.testsuite.util.LDAPRule;
@@ -63,6 +64,9 @@ public abstract class AbstractLDAPTest extends AbstractTestRealmKeycloakTest {
 
     @Page
     protected OAuthGrantPage grantPage;
+
+    @Page
+    protected LoginPasswordUpdatePage requiredActionChangePasswordPage;
 
 
 

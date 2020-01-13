@@ -79,7 +79,7 @@ public class UpdateTotp implements RequiredActionProvider, RequiredActionFactory
                     .createResponse(UserModel.RequiredAction.CONFIGURE_TOTP);
             context.challenge(challenge);
             return;
-        } else if (!CredentialValidation.validOTP(challengeResponse, credentialModel, policy.getLookAheadWindow())) {
+        } else if (!validateOTPCredential(context, challengeResponse, credentialModel, policy)) {
             Response challenge = context.form()
                     .setAttribute("mode", mode)
                     .setError(Messages.INVALID_TOTP)
@@ -91,7 +91,7 @@ public class UpdateTotp implements RequiredActionProvider, RequiredActionFactory
         CredentialModel createdCredential = otpCredentialProvider.createCredential(context.getRealm(), context.getUser(), credentialModel);
         UserCredentialModel credential = new UserCredentialModel(createdCredential.getId(), otpCredentialProvider.getType(), challengeResponse);
         //If the type is HOTP, call verify once to consume the OTP used for registration and increase the counter.
-        if (OTPCredentialModel.HOTP.equals(credentialModel.getOTPCredentialData().getSubType()) && !otpCredentialProvider.isValid(context.getRealm(), context.getUser(), credential)) {
+        if (OTPCredentialModel.HOTP.equals(credentialModel.getOTPCredentialData().getSubType()) && !context.getSession().userCredentialManager().isValid(context.getRealm(), context.getUser(), credential)) {
             Response challenge = context.form()
                     .setAttribute("mode", mode)
                     .setError(Messages.INVALID_TOTP)
@@ -100,6 +100,12 @@ public class UpdateTotp implements RequiredActionProvider, RequiredActionFactory
             return;
         }
         context.success();
+    }
+
+
+    // Use separate method, so it's possible to override in the custom provider
+    protected boolean validateOTPCredential(RequiredActionContext context, String token, OTPCredentialModel credentialModel, OTPPolicy policy) {
+        return CredentialValidation.validOTP(token, credentialModel, policy.getLookAheadWindow());
     }
 
 

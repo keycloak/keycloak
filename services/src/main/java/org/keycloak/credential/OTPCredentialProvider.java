@@ -17,6 +17,7 @@
 package org.keycloak.credential;
 
 import org.jboss.logging.Logger;
+import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.models.credential.dto.OTPCredentialData;
@@ -106,6 +107,10 @@ public class OTPCredentialProvider implements CredentialProvider<OTPCredentialMo
         }
         String challengeResponse = credentialInput.getChallengeResponse();
         if (challengeResponse == null) {
+            return false;
+        }
+        if (ObjectUtil.isBlank(credentialInput.getCredentialId())) {
+            logger.debugf("CredentialId is null when validating credential of user %s", user.getUsername());
             return false;
         }
 

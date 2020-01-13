@@ -104,6 +104,18 @@ public interface UserResource {
     @Produces(MediaType.APPLICATION_JSON)
     List<CredentialRepresentation> credentials();
 
+
+    /**
+     * Return credential types, which are provided by the user storage where user is stored. Returned values can contain for example "password", "otp" etc.
+     * This will always return empty list for "local" users, which are not backed by any user storage
+     *
+     * @return
+     */
+    @GET
+    @Path("configured-user-storage-credential-types")
+    @Produces(MediaType.APPLICATION_JSON)
+    List<String> getConfiguredUserStorageCredentialTypes();
+
     /**
      * Remove a credential for a user
      *

@@ -133,4 +133,12 @@ public interface UserCredentialManager extends UserCredentialStore {
      * @return
      */
     CredentialValidationOutput authenticate(KeycloakSession session, RealmModel realm, CredentialInput input);
+
+    /**
+     * Return credential types, which are provided by the user storage where user is stored. Returned values can contain for example "password", "otp" etc.
+     * This will always return empty list for "local" users, which are not backed by any user storage
+     *
+     * @return
+     */
+    List<String> getConfiguredUserStorageCredentialTypes(RealmModel realm, UserModel user);
 }

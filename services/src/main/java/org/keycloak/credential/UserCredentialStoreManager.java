@@ -285,28 +285,49 @@ public class UserCredentialStoreManager implements UserCredentialManager, OnUser
 
     @Override
     public boolean isConfiguredFor(RealmModel realm, UserModel user, String type) {
+        UserStorageCredentialConfigured userStorageConfigured = isConfiguredThroughUserStorage(realm, user, type);
+
+        // Check if we can rely just on userStorage to decide if credential is configured for the user or not
+        switch (userStorageConfigured) {
+            case CONFIGURED: return true;
+            case USER_STORAGE_DISABLED: return false;
+        }
+
+        // Check locally as a fallback
+        return isConfiguredLocally(realm, user, type);
+    }
+
+
+    private enum UserStorageCredentialConfigured {
+        CONFIGURED,
+        USER_STORAGE_DISABLED,
+        NOT_CONFIGURED
+    }
+
+
+    private UserStorageCredentialConfigured isConfiguredThroughUserStorage(RealmModel realm, UserModel user, String type) {
         if (!StorageId.isLocalStorage(user)) {
             String providerId = StorageId.resolveProviderId(user);
             UserStorageProvider provider = UserStorageManager.getStorageProvider(session, realm, providerId);
             if (provider instanceof CredentialInputValidator) {
-                if (!UserStorageManager.isStorageProviderEnabled(realm, providerId)) return false;
+                if (!UserStorageManager.isStorageProviderEnabled(realm, providerId)) return UserStorageCredentialConfigured.USER_STORAGE_DISABLED;
                 CredentialInputValidator validator = (CredentialInputValidator) provider;
                 if (validator.supportsCredentialType(type) && validator.isConfiguredFor(realm, user, type)) {
-                    return true;
+                    return UserStorageCredentialConfigured.CONFIGURED;
                 }
             }
         } else {
             if (user.getFederationLink() != null) {
                 UserStorageProvider provider = UserStorageManager.getStorageProvider(session, realm, user.getFederationLink());
                 if (provider instanceof CredentialInputValidator) {
-                    if (!UserStorageManager.isStorageProviderEnabled(realm, user.getFederationLink())) return false;
-                    if (((CredentialInputValidator) provider).isConfiguredFor(realm, user, type)) return true;
+                    if (!UserStorageManager.isStorageProviderEnabled(realm, user.getFederationLink())) return UserStorageCredentialConfigured.USER_STORAGE_DISABLED;
+                    if (((CredentialInputValidator) provider).isConfiguredFor(realm, user, type)) return UserStorageCredentialConfigured.CONFIGURED;
                 }
             }
 
         }
 
-        return isConfiguredLocally(realm, user, type);
+        return UserStorageCredentialConfigured.NOT_CONFIGURED;
     }
 
     @Override
@@ -348,6 +369,15 @@ public class UserCredentialStoreManager implements UserCredentialManager, OnUser
         for (OnUserCache validator : credentialProviders) {
             validator.onCache(realm, user, delegate);
         }
+    }
+
+    @Override
+    public List<String> getConfiguredUserStorageCredentialTypes(RealmModel realm, UserModel user) {
+        List<CredentialProvider> credentialProviders = getCredentialProviders(session, realm, CredentialProvider.class);
+
+        return credentialProviders.stream().map(CredentialProvider::getType)
+                .filter(credentialType -> UserStorageCredentialConfigured.CONFIGURED == isConfiguredThroughUserStorage(realm, user, credentialType))
+                .collect(Collectors.toList());
     }
 
     @Override
