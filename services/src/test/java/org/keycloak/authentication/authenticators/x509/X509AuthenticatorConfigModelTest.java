@@ -9,17 +9,15 @@ import org.junit.Test;
  * <br>
  *
  */
-public class X509AuthenticatorConfigModelTest
-{
+public class X509AuthenticatorConfigModelTest {
 
-  /**
-   * this test will verify that no exception occurs if no settings are stored for the timestamp validation
-   */
-  @Test
-  public void testTimestampValidationAttributeReturnsNull()
-  {
-    X509AuthenticatorConfigModel configModel = new X509AuthenticatorConfigModel();
-    Assert.assertNull(configModel.getConfig().get(AbstractX509ClientCertificateAuthenticator.TIMESTAMP_VALIDATION));
-    Assert.assertFalse(configModel.isCertValidationEnabled());
-  }
+    /**
+     * this test will verify that no exception occurs if no settings are stored for the timestamp validation
+     */
+    @Test
+    public void testTimestampValidationAttributeReturnsNull() {
+        X509AuthenticatorConfigModel configModel = new X509AuthenticatorConfigModel();
+        Assert.assertNull(configModel.getConfig().get(AbstractX509ClientCertificateAuthenticator.TIMESTAMP_VALIDATION));
+        Assert.assertFalse(configModel.isCertValidationEnabled());
+    }
 }
