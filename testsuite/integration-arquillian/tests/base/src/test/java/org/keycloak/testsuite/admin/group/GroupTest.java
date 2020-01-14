@@ -690,7 +690,7 @@ public class GroupTest extends AbstractGroupTest {
 		group.setAttributes(attributes);
         group = createGroup(realm, group);
         
-        List<GroupRepresentation> groups = groupsResource.groups("groupWithAttribute", 0, 20, true);
+        List<GroupRepresentation> groups = groupsResource.groups("groupWithAttribute", 0, 20, false);
         
         assertFalse(groups.isEmpty());
         assertTrue(groups.get(0).getAttributes().containsKey("attribute1"));

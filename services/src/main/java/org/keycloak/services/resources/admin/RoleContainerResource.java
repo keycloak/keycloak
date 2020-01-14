@@ -419,7 +419,7 @@ public class RoleContainerResource extends RoleResource {
      * @param roleName
      * @param firstResult
      * @param maxResults
-     * @param fullRepresentation if true, return a full representation of the GroupRepresentation objects
+     * @param briefRepresentation if false, return a full representation of the GroupRepresentation objects
      * @return
      */
     @Path("{role-name}/groups")
@@ -429,7 +429,7 @@ public class RoleContainerResource extends RoleResource {
     public  List<GroupRepresentation> getGroupsInRole(final @PathParam("role-name") String roleName, 
                                                     @QueryParam("first") Integer firstResult,
                                                     @QueryParam("max") Integer maxResults,
-                                                    @QueryParam("full") @DefaultValue("false") boolean fullRepresentation) {
+                                                    @QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation) {
         
         auth.roles().requireView(roleContainer);
         firstResult = firstResult != null ? firstResult : 0;
@@ -444,7 +444,7 @@ public class RoleContainerResource extends RoleResource {
         List<GroupModel> groupsModel = session.realms().getGroupsByRole(realm, role, firstResult, maxResults);
 
         return groupsModel.stream()
-        		.map(g -> ModelToRepresentation.toRepresentation(g, fullRepresentation))
+        		.map(g -> ModelToRepresentation.toRepresentation(g, !briefRepresentation))
         		.collect(Collectors.toList());
     }   
 }
