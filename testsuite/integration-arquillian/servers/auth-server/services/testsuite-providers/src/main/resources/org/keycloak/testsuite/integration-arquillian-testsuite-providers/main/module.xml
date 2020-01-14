@@ -43,5 +43,6 @@
         <module name="org.hibernate"/>
         <module name="org.javassist"/>
         <module name="org.jboss.modules"/>
+        <module name="org.apache.httpcomponents.core"/>
     </dependencies>
 </module>
