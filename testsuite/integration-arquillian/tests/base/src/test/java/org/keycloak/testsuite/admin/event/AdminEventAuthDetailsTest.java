@@ -43,6 +43,7 @@ import org.keycloak.testsuite.utils.tls.TLSUtils;
 
 import java.util.Collections;
 import java.util.List;
+import org.junit.After;
 
 import static org.keycloak.testsuite.auth.page.AuthRealm.ADMIN;
 import static org.keycloak.testsuite.auth.page.AuthRealm.MASTER;
@@ -97,6 +98,11 @@ public class AdminEventAuthDetailsTest extends AbstractAuthTest {
         RealmResource testRealm = adminClient.realm("test");
         realmUuid = testRealm.toRepresentation().getId();
         adminCliUuid = ApiUtil.findClientByClientId(testRealm, Constants.ADMIN_CLI_CLIENT_ID).toRepresentation().getId();
+    }
+
+    @After
+    public void cleanUp() {
+        adminClient.realm(MASTER).users().get(masterAdminUser2Id).remove();
     }
 
     @Test

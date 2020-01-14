@@ -569,19 +569,20 @@ public abstract class AbstractSamlAuthenticationHandler implements SamlAuthentic
     }
 
     private String getAttributeValue(Object attrValue) {
-        String value = null;
-        if (attrValue instanceof String) {
-            value = (String) attrValue;
+        if (attrValue == null) {
+            return "";
+        } else if (attrValue instanceof String) {
+            return (String) attrValue;
         } else if (attrValue instanceof Node) {
             Node roleNode = (Node) attrValue;
-            value = roleNode.getFirstChild().getNodeValue();
+            return roleNode.getFirstChild().getNodeValue();
         } else if (attrValue instanceof NameIDType) {
             NameIDType nameIdType = (NameIDType) attrValue;
-            value = nameIdType.getValue();
+            return nameIdType.getValue();
         } else {
             log.warn("Unable to extract unknown SAML assertion attribute value type: " + attrValue.getClass().getName());
         }
-        return value;
+        return null;
     }
 
     protected boolean isRole(AttributeType attribute) {

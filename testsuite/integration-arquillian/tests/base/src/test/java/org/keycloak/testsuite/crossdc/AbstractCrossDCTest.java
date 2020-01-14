@@ -21,12 +21,12 @@ import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
 import org.keycloak.testsuite.arquillian.ContainerInfo;
 import org.keycloak.testsuite.arquillian.LoadBalancerController;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.LoadBalancer;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import org.jboss.arquillian.container.test.api.ContainerController;
 import org.jboss.arquillian.test.api.ArquillianResource;
 import org.junit.After;
 import org.junit.Before;
@@ -34,13 +34,16 @@ import org.keycloak.testsuite.client.KeycloakTestingClient;
 
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.arquillian.CrossDCTestEnricher;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import org.keycloak.testsuite.arquillian.annotation.InitialDcState;
+
 
 /**
  * Abstract cross-data-centre test that defines primitives for handling cross-DC setup.
  * @author hmlnarik
  */
 @InitialDcState
+@AuthServerContainerExclude(AuthServer.REMOTE)
 public abstract class AbstractCrossDCTest extends AbstractTestRealmKeycloakTest {
 
     // Keep the following constants in sync with arquillian

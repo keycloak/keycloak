@@ -63,7 +63,7 @@ public class IdpUsernamePasswordForm extends UsernamePasswordForm {
             throw new AuthenticationFlowException("Not found serialized context in clientSession", AuthenticationFlowError.IDENTITY_PROVIDER_ERROR);
         }
 
-        formData.add(AuthenticationManager.FORM_USERNAME, existingUser.getUsername());
+        formData.putSingle(AuthenticationManager.FORM_USERNAME, existingUser.getUsername());
         return context.form()
                 .setFormData(formData)
                 .setAttribute(LoginFormsProvider.USERNAME_EDIT_DISABLED, true)

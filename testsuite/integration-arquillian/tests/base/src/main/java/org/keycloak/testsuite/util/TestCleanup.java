@@ -61,11 +61,12 @@ public class TestCleanup {
     }
 
 
-    public void addCleanup(Runnable r) {
+    public TestCleanup addCleanup(Runnable r) {
         genericCleanups.add(r);
+        return this;
     }
 
-    public void addCleanup(AutoCloseable c) {
+    public TestCleanup addCleanup(AutoCloseable c) {
         genericCleanups.add(() -> {
             try {
                 c.close();
@@ -73,6 +74,7 @@ public class TestCleanup {
                 // ignore
             }
         });
+        return this;
     }
 
     public void addUserId(String userId) {

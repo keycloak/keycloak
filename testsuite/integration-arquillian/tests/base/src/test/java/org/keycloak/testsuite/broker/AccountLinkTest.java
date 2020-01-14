@@ -21,9 +21,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.common.util.MultivaluedHashMap;
-import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.representations.idm.ComponentRepresentation;
-import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.storage.UserStorageProvider;
@@ -38,13 +36,14 @@ import java.util.List;
 
 import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.admin.ApiUtil.createUserAndResetPasswordWithAdminClient;
-import static org.keycloak.testsuite.admin.ApiUtil.createUserWithAdminClient;
-import static org.keycloak.testsuite.broker.BrokerTestConstants.REALM_PROV_NAME;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
+@AuthServerContainerExclude(AuthServer.REMOTE)
 public class AccountLinkTest extends AbstractKeycloakTest {
     public static final String CHILD_IDP = "child";
     public static final String PARENT_IDP = "parent-idp";

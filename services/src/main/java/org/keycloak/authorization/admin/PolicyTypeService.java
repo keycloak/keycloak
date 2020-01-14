@@ -87,13 +87,13 @@ public class PolicyTypeService extends PolicyService {
     }
 
     @Override
-    protected AbstractPolicyRepresentation toRepresentation(Policy policy, AuthorizationProvider authorization) {
+    protected AbstractPolicyRepresentation toRepresentation(Policy policy, String fields, AuthorizationProvider authorization) {
         return ModelToRepresentation.toRepresentation(policy, authorization, false, false);
     }
 
     @Override
-    protected List<Object> doSearch(Integer firstResult, Integer maxResult, Map<String, String[]> filters) {
+    protected List<Object> doSearch(Integer firstResult, Integer maxResult, String fields, Map<String, String[]> filters) {
         filters.put("type", new String[] {type});
-        return super.doSearch(firstResult, maxResult, filters);
+        return super.doSearch(firstResult, maxResult, fields, filters);
     }
 }

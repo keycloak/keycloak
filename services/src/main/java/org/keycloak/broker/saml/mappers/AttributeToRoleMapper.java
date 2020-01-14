@@ -36,6 +36,7 @@ import org.keycloak.provider.ProviderConfigProperty;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -121,7 +122,7 @@ public class AttributeToRoleMapper extends AbstractIdentityProviderMapper {
         if (name != null && name.trim().equals("")) name = null;
         String friendly = mapperModel.getConfig().get(ATTRIBUTE_FRIENDLY_NAME);
         if (friendly != null && friendly.trim().equals("")) friendly = null;
-        String desiredValue = mapperModel.getConfig().get(ATTRIBUTE_VALUE);
+        String desiredValue = Optional.ofNullable(mapperModel.getConfig().get(ATTRIBUTE_VALUE)).orElse("");
         AssertionType assertion = (AssertionType)context.getContextData().get(SAMLEndpoint.SAML_ASSERTION);
         for (AttributeStatementType statement : assertion.getAttributeStatements()) {
             for (AttributeStatementType.ASTChoiceType choice : statement.getAttributes()) {
@@ -129,7 +130,9 @@ public class AttributeToRoleMapper extends AbstractIdentityProviderMapper {
                 if (name != null && !name.equals(attr.getName())) continue;
                 if (friendly != null && !friendly.equals(attr.getFriendlyName())) continue;
                 for (Object val : attr.getAttributeValue()) {
-                    if (val.equals(desiredValue)) return true;
+                    val = Optional.ofNullable(val).orElse("");
+                    if (val.equals(desiredValue))
+                        return true;
                 }
             }
         }

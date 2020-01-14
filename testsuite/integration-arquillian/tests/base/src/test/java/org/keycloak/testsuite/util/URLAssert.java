@@ -41,6 +41,7 @@ import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.util.URLUtils.currentUrlDoesntStartWith;
 import static org.keycloak.testsuite.util.URLUtils.currentUrlEquals;
 import static org.keycloak.testsuite.util.URLUtils.currentUrlStartsWith;
+import static org.keycloak.testsuite.util.URLUtils.removeDefaultPorts;
 
 /**
  *
@@ -86,8 +87,8 @@ public class URLAssert {
    }
 
     public static void assertCurrentUrlStartsWith(final String url){
-        assertTrue("URL expected to begin with: " + url + " ; actual URL: " + DroneUtils.getCurrentDriver().getCurrentUrl(),
-        currentUrlStartsWith(url));
+        assertTrue("URL expected to begin with: " + removeDefaultPorts(url) + " ; actual URL: " + DroneUtils.getCurrentDriver().getCurrentUrl(),
+        currentUrlStartsWith(removeDefaultPorts(url)));
     }
 
     public static void waitUntilUrlStartsWith(String url, int timeOutInSeconds) {

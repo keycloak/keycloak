@@ -16,25 +16,27 @@
  */
 package org.keycloak.testsuite.migration;
 
-import org.apache.commons.io.IOUtils;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
-import org.hamcrest.Matchers;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.RoleResource;
+import org.keycloak.authentication.authenticators.broker.IdpConfirmLinkAuthenticatorFactory;
+import org.keycloak.authentication.authenticators.broker.IdpCreateUserIfUniqueAuthenticatorFactory;
+import org.keycloak.authentication.authenticators.broker.IdpEmailVerificationAuthenticatorFactory;
+import org.keycloak.authentication.authenticators.broker.IdpReviewProfileAuthenticatorFactory;
+import org.keycloak.authentication.authenticators.broker.IdpUsernamePasswordFormFactory;
+import org.keycloak.authentication.authenticators.browser.OTPFormAuthenticatorFactory;
+import org.keycloak.authentication.authenticators.conditional.ConditionalUserConfiguredAuthenticatorFactory;
 import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.common.constants.KerberosConstants;
 import org.keycloak.component.PrioritizedComponentModel;
 import org.keycloak.keys.KeyProvider;
-import org.keycloak.models.AccountRoles;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.AuthenticationExecutionModel;
-import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.LDAPConstants;
-import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.models.utils.TimeBasedOTP;
@@ -64,10 +66,8 @@ import org.keycloak.testsuite.util.OAuthClient;
 
 import java.io.IOException;
 import java.net.URI;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -80,7 +80,6 @@ import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 
-import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -277,6 +276,8 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         testAccountConsoleClient(masterRealm);
         testAccountConsoleClient(migrationRealm);
         testAlwaysDisplayInConsole();
+        testFirstBrokerLoginFlowMigrated(masterRealm);
+        testFirstBrokerLoginFlowMigrated(migrationRealm);
     }
 
     private void testAdminClientUrls(RealmResource realm) {
@@ -322,6 +323,59 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         List<ProtocolMapperRepresentation> mappers = clientResource.getProtocolMappers().getMappers();
         assertEquals(1, mappers.size());
         assertEquals("oidc-audience-resolve-mapper", mappers.get(0).getProtocolMapper());
+    }
+
+    private void testFirstBrokerLoginFlowMigrated(RealmResource realm) {
+        log.infof("Test that firstBrokerLogin flow was migrated in new realm '%s'", realm.toRepresentation().getRealm());
+
+        List<AuthenticationExecutionInfoRepresentation> authExecutions = realm.flows().getExecutions(DefaultAuthenticationFlows.FIRST_BROKER_LOGIN_FLOW);
+
+        testAuthenticationExecution(authExecutions.get(0), null,
+                IdpReviewProfileAuthenticatorFactory.PROVIDER_ID, AuthenticationExecutionModel.Requirement.REQUIRED, 0, 0);
+
+        testAuthenticationExecution(authExecutions.get(1), true,
+                null, AuthenticationExecutionModel.Requirement.REQUIRED, 0, 1);
+
+        testAuthenticationExecution(authExecutions.get(2), null,
+                IdpCreateUserIfUniqueAuthenticatorFactory.PROVIDER_ID, AuthenticationExecutionModel.Requirement.ALTERNATIVE, 1, 0);
+
+        testAuthenticationExecution(authExecutions.get(3), true,
+                null, AuthenticationExecutionModel.Requirement.ALTERNATIVE, 1, 1);
+
+        testAuthenticationExecution(authExecutions.get(4), null,
+                IdpConfirmLinkAuthenticatorFactory.PROVIDER_ID, AuthenticationExecutionModel.Requirement.REQUIRED, 2, 0);
+
+        testAuthenticationExecution(authExecutions.get(5), true,
+                null, AuthenticationExecutionModel.Requirement.REQUIRED, 2, 1);
+
+        testAuthenticationExecution(authExecutions.get(6), null,
+                IdpEmailVerificationAuthenticatorFactory.PROVIDER_ID, AuthenticationExecutionModel.Requirement.ALTERNATIVE, 3, 0);
+
+        testAuthenticationExecution(authExecutions.get(7), true,
+                null, AuthenticationExecutionModel.Requirement.ALTERNATIVE, 3, 1);
+
+        testAuthenticationExecution(authExecutions.get(8), null,
+                IdpUsernamePasswordFormFactory.PROVIDER_ID, AuthenticationExecutionModel.Requirement.REQUIRED, 4, 0);
+
+        testAuthenticationExecution(authExecutions.get(9), true,
+                null, AuthenticationExecutionModel.Requirement.CONDITIONAL, 4, 1);
+
+        // There won't be a requirement in the future, so this test would need to change
+        testAuthenticationExecution(authExecutions.get(10), null,
+                ConditionalUserConfiguredAuthenticatorFactory.PROVIDER_ID, AuthenticationExecutionModel.Requirement.REQUIRED, 5, 0);
+
+        testAuthenticationExecution(authExecutions.get(11), null,
+                OTPFormAuthenticatorFactory.PROVIDER_ID, AuthenticationExecutionModel.Requirement.REQUIRED, 5, 1);
+    }
+
+
+    private void testAuthenticationExecution(AuthenticationExecutionInfoRepresentation execution, Boolean expectedAuthenticationFlow, String expectedProviderId,
+                                             AuthenticationExecutionModel.Requirement expectedRequirement, int expectedLevel, int expectedIndex) {
+        Assert.assertEquals(execution.getAuthenticationFlow(), expectedAuthenticationFlow);
+        Assert.assertEquals(execution.getProviderId(), expectedProviderId);
+        Assert.assertEquals(execution.getRequirement(), expectedRequirement.toString());
+        Assert.assertEquals(execution.getLevel(), expectedLevel);
+        Assert.assertEquals(execution.getIndex(), expectedIndex);
     }
 
     private void testDecisionStrategySetOnResourceServer() {

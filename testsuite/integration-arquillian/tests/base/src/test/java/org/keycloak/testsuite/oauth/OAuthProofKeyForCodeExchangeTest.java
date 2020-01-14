@@ -21,6 +21,7 @@ import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.OAuthClient;
@@ -37,6 +38,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 import static org.keycloak.testsuite.admin.ApiUtil.findUserByUsername;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 
 //https://tools.ietf.org/html/rfc7636
 
@@ -83,6 +85,7 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
     }
 
     @Test
+    @AuthServerContainerExclude(AuthServer.REMOTE)
     public void accessTokenRequestWithoutPKCE() throws Exception {
     	// test case : success : A-1-1
         oauth.doLogin("test-user@localhost", "password");
@@ -148,6 +151,7 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
     }
     
     @Test
+    @AuthServerContainerExclude(AuthServer.REMOTE)
     public void accessTokenRequestInPKCEValidPlainCodeChallengeMethod() throws Exception {
     	// test case : success : A-1-3
     	oauth.codeChallenge(".234567890-234567890~234567890_234567890123");
@@ -194,6 +198,7 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
     }
     
     @Test
+    @AuthServerContainerExclude(AuthServer.REMOTE)
     public void accessTokenRequestInPKCEValidDefaultCodeChallengeMethod() throws Exception {
     	// test case : success : A-1-4
     	oauth.codeChallenge("1234567890123456789012345678901234567890123");
@@ -534,6 +539,10 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
     }
 
     @Test
+    @AuthServerContainerExclude(AuthServer.REMOTE) // unstable
+    //accessTokenRequestValidPlainCodeChallengeMethodPkceEnforced:561->expectSuccessfulResponseFromTokenEndpoint:465
+    //  Expected: (a value equal to or greater than <1799> and a value less than or equal to <1800>)
+    //  but: a value equal to or greater than <1799> <1798> was less than <1799>
     public void accessTokenRequestValidPlainCodeChallengeMethodPkceEnforced() throws Exception {
         try {
             setPkceActivationSettings("test-app", OAuth2Constants.PKCE_METHOD_PLAIN);

@@ -42,6 +42,7 @@ import org.w3c.dom.Document;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.Matchers.containsString;
 import static org.junit.Assert.assertThat;
+import static org.keycloak.testsuite.arquillian.AuthServerTestEnricher.AUTH_SERVER_PORT;
 import static org.keycloak.testsuite.saml.AbstractSamlTest.REALM_NAME;
 import static org.keycloak.testsuite.utils.io.IOUtil.documentToString;
 import static org.keycloak.testsuite.utils.io.IOUtil.setDocElementAttributeValue;

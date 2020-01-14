@@ -100,7 +100,7 @@ public class UserInfoEndpoint {
     @GET
     @NoCache
     public Response issueUserInfoGet(@Context final HttpHeaders headers) {
-        String accessToken = this.appAuthManager.extractAuthorizationHeaderToken(headers);
+        String accessToken = this.appAuthManager.extractAuthorizationHeaderTokenOrReturnNull(headers);
         return issueUserInfo(accessToken);
     }
 
@@ -110,7 +110,7 @@ public class UserInfoEndpoint {
     public Response issueUserInfoPost() {
         // Try header first
         HttpHeaders headers = request.getHttpHeaders();
-        String accessToken = this.appAuthManager.extractAuthorizationHeaderToken(headers);
+        String accessToken = this.appAuthManager.extractAuthorizationHeaderTokenOrReturnNull(headers);
 
         // Fallback to form parameter
         if (accessToken == null) {
@@ -194,7 +194,7 @@ public class UserInfoEndpoint {
         AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessionByClient(clientModel.getId());
 
         // Retrieve by latest scope parameter
-        ClientSessionContext clientSessionCtx = DefaultClientSessionContext.fromClientSessionScopeParameter(clientSession);
+        ClientSessionContext clientSessionCtx = DefaultClientSessionContext.fromClientSessionScopeParameter(clientSession, session);
 
         AccessToken userInfo = new AccessToken();
         tokenManager.transformUserInfoAccessToken(session, userInfo, userSession, clientSessionCtx);
@@ -231,7 +231,7 @@ public class UserInfoEndpoint {
 
         event.success();
 
-        return Cors.add(request, responseBuilder).auth().allowedOrigins(token).build();
+        return Cors.add(request, responseBuilder).auth().allowedOrigins(session, clientModel).build();
     }
 
 

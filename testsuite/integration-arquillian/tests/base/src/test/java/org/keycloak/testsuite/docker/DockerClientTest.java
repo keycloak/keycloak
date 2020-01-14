@@ -25,8 +25,12 @@ import java.util.Optional;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.junit.Assume.assumeTrue;
+import static org.keycloak.testsuite.arquillian.AuthServerTestEnricher.AUTH_SERVER_PORT;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import static org.keycloak.testsuite.util.WaitUtils.pause;
 
+@AuthServerContainerExclude(AuthServer.REMOTE)
 public class DockerClientTest extends AbstractKeycloakTest {
     public static final String REALM_ID = "docker-test-realm";
     public static final String CLIENT_ID = "docker-test-client";
@@ -61,7 +65,7 @@ public class DockerClientTest extends AbstractKeycloakTest {
         }
         Assert.assertNotNull("Could not resolve host machine's IP address for docker adapter, and 'host.ip' system poperty not set. Client will not be able to authenticate against the keycloak server!", hostIp);
 
-        authServerPort = AUTH_SERVER_SSL_REQUIRED ? System.getProperty("auth.server.https.port") : System.getProperty("auth.server.http.port");
+        authServerPort = AUTH_SERVER_PORT;
     }
 
     @Override

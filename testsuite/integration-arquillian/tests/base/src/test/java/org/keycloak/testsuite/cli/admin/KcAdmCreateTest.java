@@ -10,12 +10,15 @@ import org.keycloak.util.JsonSerialization;
 
 import java.io.IOException;
 import java.util.Arrays;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 
 import static org.keycloak.testsuite.cli.KcAdmExec.execute;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
  */
+@AuthServerContainerExclude(AuthServer.REMOTE)
 public class KcAdmCreateTest extends AbstractAdmCliTest {
 
     @Test

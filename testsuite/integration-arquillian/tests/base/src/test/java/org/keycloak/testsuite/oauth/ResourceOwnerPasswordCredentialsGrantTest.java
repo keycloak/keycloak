@@ -24,6 +24,7 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.message.BasicNameValuePair;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
@@ -57,6 +58,7 @@ import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.util.UserManager;
 
 import java.io.UnsupportedEncodingException;
+import java.security.Security;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -82,6 +84,7 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
     @Override
     public void beforeAbstractKeycloakTest() throws Exception {
         super.beforeAbstractKeycloakTest();
+        if (Security.getProvider("BC") == null) Security.addProvider(new BouncyCastleProvider());
     }
 
     @Override

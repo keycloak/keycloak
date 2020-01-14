@@ -17,6 +17,8 @@
 
 package org.keycloak.services.resources.admin;
 
+import static org.keycloak.protocol.ProtocolMapperUtils.isEnabled;
+
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
@@ -124,7 +126,7 @@ public class ClientScopeEvaluateResource {
         for (ClientScopeModel mapperContainer : clientScopes) {
             Set<ProtocolMapperModel> currentMappers = mapperContainer.getProtocolMappers();
             for (ProtocolMapperModel current : currentMappers) {
-                if (current.getProtocol().equals(client.getProtocol())) {
+                if (isEnabled(session, current) && current.getProtocol().equals(client.getProtocol())) {
                     ProtocolMapperEvaluationRepresentation rep = new ProtocolMapperEvaluationRepresentation();
                     rep.setMapperId(current.getId());
                     rep.setMapperName(current.getName());

@@ -52,6 +52,7 @@ import org.w3c.dom.NodeList;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertThat;
+import static org.keycloak.testsuite.arquillian.AuthServerTestEnricher.getAuthServerContextRoot;
 import static org.keycloak.testsuite.broker.BrokerTestConstants.*;
 import static org.keycloak.testsuite.util.Matchers.bodyHC;
 import static org.keycloak.testsuite.util.Matchers.isSamlResponse;
@@ -229,7 +230,7 @@ public class KcSamlSignedBrokerTest extends AbstractBrokerTest {
     // KEYCLOAK-5581
     @Test
     public void loginUserAllNamespacesInTopElement() {
-        AuthnRequestType loginRep = SamlClient.createLoginRequestDocument(AbstractSamlTest.SAML_CLIENT_ID_SALES_POST, AUTH_SERVER_SCHEME + "://localhost:" + AUTH_SERVER_PORT + "/sales-post/saml", null);
+        AuthnRequestType loginRep = SamlClient.createLoginRequestDocument(AbstractSamlTest.SAML_CLIENT_ID_SALES_POST, getAuthServerContextRoot() + "/sales-post/saml", null);
 
         Document doc;
         try {
@@ -424,7 +425,7 @@ public class KcSamlSignedBrokerTest extends AbstractBrokerTest {
           ?     bodyHC(containsString("Update Account Information"))
           : not(bodyHC(containsString("Update Account Information")));
 
-        AuthnRequestType loginRep = SamlClient.createLoginRequestDocument(AbstractSamlTest.SAML_CLIENT_ID_SALES_POST, AUTH_SERVER_SCHEME + "://localhost:" + AUTH_SERVER_PORT + "/sales-post/saml", null);
+        AuthnRequestType loginRep = SamlClient.createLoginRequestDocument(AbstractSamlTest.SAML_CLIENT_ID_SALES_POST, getAuthServerContextRoot() + "/sales-post/saml", null);
         Document doc = SAML2Request.convert(loginRep);
 
         withSignedEncryptedAssertions(() -> {

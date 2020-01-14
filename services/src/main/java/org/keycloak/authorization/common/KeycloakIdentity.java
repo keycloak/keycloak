@@ -55,6 +55,8 @@ public class KeycloakIdentity implements Identity {
     protected final RealmModel realm;
     protected final KeycloakSession keycloakSession;
     protected final Attributes attributes;
+    private final boolean resourceServer;
+    private final String id;
 
     public KeycloakIdentity(KeycloakSession keycloakSession) {
         this(Tokens.getAccessToken(keycloakSession), keycloakSession);
@@ -122,7 +124,7 @@ public class KeycloakIdentity implements Identity {
                 ClientModel client = realm.getClientByClientId(token.getIssuedFor());
                 AuthenticatedClientSessionModel clientSessionModel = userSession.getAuthenticatedClientSessions().get(client.getId());
 
-                ClientSessionContext clientSessionCtx = DefaultClientSessionContext.fromClientSessionScopeParameter(clientSessionModel);
+                ClientSessionContext clientSessionCtx = DefaultClientSessionContext.fromClientSessionScopeParameter(clientSessionModel, keycloakSession);
                 this.accessToken = new TokenManager().createClientAccessToken(keycloakSession, realm, client, userSession.getUser(), userSession, clientSessionCtx);
             }
 
@@ -136,6 +138,23 @@ public class KeycloakIdentity implements Identity {
 
             if (resourceAccess != null) {
                 resourceAccess.forEach((clientId, access) -> attributes.put("kc.client." + clientId + ".roles", access.getRoles()));
+            }
+
+            ClientModel clientModel = getTargetClient();
+            UserModel clientUser = null;
+
+            if (clientModel != null) {
+                clientUser = this.keycloakSession.users().getServiceAccount(clientModel);
+            }
+
+            UserModel userSession = getUserFromSessionState();
+
+            this.resourceServer = clientUser != null && userSession.getId().equals(clientUser.getId());
+
+            if (resourceServer) {
+                this.id = clientModel.getId();
+            } else {
+                this.id = userSession.getId();
             }
         } catch (Exception e) {
             throw new RuntimeException("Error while reading attributes from security token.", e);
@@ -198,6 +217,23 @@ public class KeycloakIdentity implements Identity {
             if (resourceAccess != null) {
                 resourceAccess.forEach((clientId, access) -> attributes.put("kc.client." + clientId + ".roles", access.getRoles()));
             }
+
+            ClientModel clientModel = getTargetClient();
+            UserModel clientUser = null;
+
+            if (clientModel != null) {
+                clientUser = this.keycloakSession.users().getServiceAccount(clientModel);
+            }
+
+            UserModel userSession = getUserFromSessionState();
+
+            this.resourceServer = clientUser != null && userSession.getId().equals(clientUser.getId());
+
+            if (resourceServer) {
+                this.id = clientModel.getId();
+            } else {
+                this.id = userSession.getId();
+            }
         } catch (Exception e) {
             throw new RuntimeException("Error while reading attributes from security token.", e);
         }
@@ -207,12 +243,7 @@ public class KeycloakIdentity implements Identity {
 
     @Override
     public String getId() {
-        if (isResourceServer()) {
-            ClientModel client = getTargetClient();
-            return client==null ? null : client.getId();
-        }
-
-        return this.getUserFromSessionState().getId();
+        return this.id;
     }
 
     @Override
@@ -225,19 +256,7 @@ public class KeycloakIdentity implements Identity {
     }
 
     public boolean isResourceServer() {
-        UserModel clientUser = null;
-
-        ClientModel clientModel = getTargetClient();
-
-        if (clientModel != null) {
-            clientUser = this.keycloakSession.users().getServiceAccount(clientModel);
-        }
-
-        if (clientUser == null) {
-            return false;
-        }
-
-        return this.getUserFromSessionState().getId().equals(clientUser.getId());
+        return this.resourceServer;
     }
 
     private ClientModel getTargetClient() {

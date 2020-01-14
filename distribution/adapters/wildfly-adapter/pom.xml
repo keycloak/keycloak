@@ -52,7 +52,7 @@
             <plugin>
                 <groupId>org.wildfly.build</groupId>
                 <artifactId>wildfly-server-provisioning-maven-plugin</artifactId>
-                <version>${build-tools.version}</version>
+                <version>${wildfly.build-tools.version}</version>
                 <executions>
                     <execution>
                         <id>server-provisioning</id>
@@ -115,7 +115,6 @@
                 </property>
             </activation>
             <properties>
-                <build-tools.version>${eap.build-tools.version}</build-tools.version>
                 <assemblyFile>assembly.xml</assemblyFile>
                 <profileExcludes>%regex[(docs/contrib.*)|(docs/examples.*)|(docs/schema.*)]</profileExcludes>
             </properties>

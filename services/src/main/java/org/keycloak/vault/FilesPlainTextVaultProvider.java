@@ -5,12 +5,9 @@ import org.jboss.logging.Logger;
 import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.lang.invoke.MethodHandles;
-import java.nio.MappedByteBuffer;
-import java.nio.channels.FileChannel;
+import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
-import java.util.EnumSet;
 import java.util.List;
 import java.util.Optional;
 
@@ -58,9 +55,9 @@ public class FilesPlainTextVaultProvider extends AbstractVaultProvider {
             return DefaultVaultRawSecret.forBuffer(Optional.empty());
         }
 
-        try (FileChannel fileChannel = (FileChannel) Files.newByteChannel(secretPath, EnumSet.of(StandardOpenOption.READ))) {
-            MappedByteBuffer mappedByteBuffer = fileChannel.map(FileChannel.MapMode.READ_ONLY, 0, fileChannel.size());
-            return DefaultVaultRawSecret.forBuffer(Optional.of(mappedByteBuffer));
+        try {
+            byte[] bytes = Files.readAllBytes(secretPath);
+            return DefaultVaultRawSecret.forBuffer(Optional.of(ByteBuffer.wrap(bytes)));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

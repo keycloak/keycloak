@@ -21,6 +21,8 @@ import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
@@ -36,6 +38,12 @@ public class AbstractPolicyRepresentation {
     private Logic logic = Logic.POSITIVE;
     private DecisionStrategy decisionStrategy = DecisionStrategy.UNANIMOUS;
     private String owner;
+    
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    private Set<ResourceRepresentation> resourcesData;
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    private Set<ScopeRepresentation> scopesData;
 
     public String getId() {
         return this.id;
@@ -161,5 +169,21 @@ public class AbstractPolicyRepresentation {
     @Override
     public int hashCode() {
         return Objects.hash(getId());
+    }
+
+    public <R> void setResourcesData(Set<ResourceRepresentation> resources) {
+        this.resourcesData = resources;
+    }
+
+    public Set<ResourceRepresentation> getResourcesData() {
+        return resourcesData;
+    }
+
+    public void setScopesData(Set<ScopeRepresentation> scopesData) {
+        this.scopesData = scopesData;
+    }
+
+    public Set<ScopeRepresentation> getScopesData() {
+        return scopesData;
     }
 }

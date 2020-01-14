@@ -712,9 +712,14 @@ public class LDAPStorageProvider implements UserStorageProvider,
 
                         return new CredentialValidationOutput(user, CredentialValidationOutput.Status.AUTHENTICATED, state);
                     }
-                }  else {
+                }  else if (spnegoAuthenticator.getResponseToken() != null) {
+                    // Case when SPNEGO handshake requires multiple steps
+                    logger.tracef("SPNEGO Handshake will continue");
                     state.put(KerberosConstants.RESPONSE_TOKEN, spnegoAuthenticator.getResponseToken());
                     return new CredentialValidationOutput(null, CredentialValidationOutput.Status.CONTINUE, state);
+                } else {
+                    logger.tracef("SPNEGO Handshake not successful");
+                    return CredentialValidationOutput.failed();
                 }
             }
         }

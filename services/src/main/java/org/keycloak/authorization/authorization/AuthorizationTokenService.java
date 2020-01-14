@@ -295,7 +295,7 @@ public class AuthorizationTokenService {
             AuthenticationManager.setClientScopesInSession(authSession);
             clientSessionCtx = TokenManager.attachAuthenticationSession(keycloakSession, userSessionModel, authSession);
         } else {
-            clientSessionCtx = DefaultClientSessionContext.fromClientSessionScopeParameter(clientSession);
+            clientSessionCtx = DefaultClientSessionContext.fromClientSessionScopeParameter(clientSession, keycloakSession);
         }
 
         TokenManager tokenManager = request.getTokenManager();

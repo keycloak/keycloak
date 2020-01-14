@@ -40,6 +40,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import static org.hamcrest.Matchers.is;
+import static org.keycloak.testsuite.arquillian.AuthServerTestEnricher.getAuthServerContextRoot;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -53,8 +54,7 @@ public class AssertEvents implements TestRule {
     public static final String DEFAULT_REALM = "test";
     public static final String DEFAULT_USERNAME = "test-user@localhost";
 
-    public static final String DEFAULT_HTTP_REDIRECT_URI = "http://localhost:8180/auth/realms/master/app/auth";
-    public static final String DEFAULT_HTTPS_REDIRECT_URI = "https://localhost:8543/auth/realms/master/app/auth";
+    public static final String DEFAULT_REDIRECT_URI = getAuthServerContextRoot() + "/auth/realms/master/app/auth";
 
     private AbstractKeycloakTest context;
 
@@ -101,7 +101,7 @@ public class AssertEvents implements TestRule {
                 //.detail(Details.USERNAME, DEFAULT_USERNAME)
                 //.detail(Details.AUTH_METHOD, OIDCLoginProtocol.LOGIN_PROTOCOL)
                 //.detail(Details.AUTH_TYPE, AuthorizationEndpoint.CODE_AUTH_TYPE)
-                .detail(Details.REDIRECT_URI, Matchers.anyOf(Matchers.equalTo(DEFAULT_HTTP_REDIRECT_URI), Matchers.equalTo(DEFAULT_HTTPS_REDIRECT_URI)))
+                .detail(Details.REDIRECT_URI, Matchers.equalTo(DEFAULT_REDIRECT_URI))
                 .detail(Details.CONSENT, Details.CONSENT_VALUE_NO_CONSENT_REQUIRED)
                 .session(isUUID());
     }
@@ -120,7 +120,7 @@ public class AssertEvents implements TestRule {
                 .detail(Details.CODE_ID, isCodeId())
                 .detail(Details.USERNAME, DEFAULT_USERNAME)
                 .detail(Details.AUTH_METHOD, "form")
-                .detail(Details.REDIRECT_URI, Matchers.anyOf(Matchers.equalTo(DEFAULT_HTTP_REDIRECT_URI), Matchers.equalTo(DEFAULT_HTTPS_REDIRECT_URI)))
+                .detail(Details.REDIRECT_URI, Matchers.equalTo(DEFAULT_REDIRECT_URI))
                 .session(isUUID());
     }
 
@@ -146,7 +146,7 @@ public class AssertEvents implements TestRule {
 
     public ExpectedEvent expectLogout(String sessionId) {
         return expect(EventType.LOGOUT).client((String) null)
-                .detail(Details.REDIRECT_URI, Matchers.anyOf(Matchers.equalTo(DEFAULT_HTTP_REDIRECT_URI), Matchers.equalTo(DEFAULT_HTTPS_REDIRECT_URI)))
+                .detail(Details.REDIRECT_URI, Matchers.equalTo(DEFAULT_REDIRECT_URI))
                 .session(sessionId);
     }
 
@@ -164,7 +164,7 @@ public class AssertEvents implements TestRule {
                 .detail(Details.USERNAME, username)
                 .detail(Details.EMAIL, email)
                 .detail(Details.REGISTER_METHOD, "form")
-                .detail(Details.REDIRECT_URI, Matchers.anyOf(Matchers.equalTo(DEFAULT_HTTP_REDIRECT_URI), Matchers.equalTo(DEFAULT_HTTPS_REDIRECT_URI)));
+                .detail(Details.REDIRECT_URI, Matchers.equalTo(DEFAULT_REDIRECT_URI));
     }
 
     public ExpectedEvent expectAccount(EventType event) {
@@ -176,7 +176,10 @@ public class AssertEvents implements TestRule {
                 .realm(defaultRealmId())
                 .client(DEFAULT_CLIENT_ID)
                 .user(defaultUserId())
-                .ipAddress(CoreMatchers.anyOf(is(DEFAULT_IP_ADDRESS), is(DEFAULT_IP_ADDRESS_V6), is(DEFAULT_IP_ADDRESS_V6_SHORT)))
+                .ipAddress(
+                        System.getProperty("auth.server.host", "localhost").contains("localhost")
+                        ? CoreMatchers.anyOf(is(DEFAULT_IP_ADDRESS), is(DEFAULT_IP_ADDRESS_V6), is(DEFAULT_IP_ADDRESS_V6_SHORT))
+                        : Matchers.any(String.class))
                 .session((String) null)
                 .event(event);
     }

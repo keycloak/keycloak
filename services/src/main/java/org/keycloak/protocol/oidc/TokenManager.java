@@ -181,7 +181,7 @@ public class TokenManager {
             MigrationUtils.migrateOldOfflineToken(session, realm, client, user);
         }
 
-        ClientSessionContext clientSessionCtx = DefaultClientSessionContext.fromClientSessionAndScopeParameter(clientSession, oldTokenScope);
+        ClientSessionContext clientSessionCtx = DefaultClientSessionContext.fromClientSessionAndScopeParameter(clientSession, oldTokenScope, session);
 
         // Check user didn't revoke granted consent
         if (!verifyConsentStillAvailable(session, user, client, clientSessionCtx.getClientScopes())) {
@@ -441,7 +441,7 @@ public class TokenManager {
         // Remove authentication session now
         new AuthenticationSessionManager(session).removeAuthenticationSession(userSession.getRealm(), authSession, true);
 
-        ClientSessionContext clientSessionCtx = DefaultClientSessionContext.fromClientSessionAndClientScopeIds(clientSession, clientScopeIds);
+        ClientSessionContext clientSessionCtx = DefaultClientSessionContext.fromClientSessionAndClientScopeIds(clientSession, clientScopeIds, session);
         return clientSessionCtx;
     }
 

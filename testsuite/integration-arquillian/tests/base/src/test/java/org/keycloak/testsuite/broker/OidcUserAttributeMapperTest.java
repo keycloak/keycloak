@@ -6,7 +6,6 @@ import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 
-
 public class OidcUserAttributeMapperTest extends AbstractUserAttributeMapperTest {
 
     @Override

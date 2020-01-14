@@ -21,6 +21,7 @@ import org.junit.Test;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.client.resources.TestExampleCompanyResource;
 import org.keycloak.testsuite.util.RealmBuilder;
 
@@ -28,9 +29,16 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
+
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
+@AuthServerContainerExclude(AuthServer.REMOTE)
+// This is testing custom SPI which is, in case of remote server, deployed on container as part of testsuite providers.
+// It looks like the problem is, that in the time of loading spis during keycloak deployment, the deployment of Testsuite providers
+// is not processed yet, hence the spi is not present yet, which results in nullpointer exception because service provided by the spi
+// is not loaded
 public class CustomExtensionTest extends AbstractKeycloakTest {
 
     @Override

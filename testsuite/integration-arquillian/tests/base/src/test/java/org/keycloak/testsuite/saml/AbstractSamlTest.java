@@ -12,6 +12,9 @@ import javax.ws.rs.core.UriBuilderException;
 import java.net.URI;
 import java.util.List;
 
+import static org.keycloak.testsuite.arquillian.AuthServerTestEnricher.AUTH_SERVER_PORT;
+import static org.keycloak.testsuite.arquillian.AuthServerTestEnricher.AUTH_SERVER_SCHEME;
+import static org.keycloak.testsuite.arquillian.AuthServerTestEnricher.AUTH_SERVER_SSL_REQUIRED;
 import static org.keycloak.testsuite.utils.io.IOUtil.loadRealm;
 
 /**

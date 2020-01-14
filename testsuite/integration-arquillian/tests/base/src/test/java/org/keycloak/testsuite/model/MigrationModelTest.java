@@ -9,10 +9,14 @@ import org.keycloak.migration.MigrationModel;
 import org.keycloak.models.jpa.entities.MigrationModelEntity;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 
 import javax.persistence.EntityManager;
 import java.util.List;
 
+import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.REMOTE;
+
+@AuthServerContainerExclude(REMOTE)
 public class MigrationModelTest extends AbstractKeycloakTest {
 
     @Override

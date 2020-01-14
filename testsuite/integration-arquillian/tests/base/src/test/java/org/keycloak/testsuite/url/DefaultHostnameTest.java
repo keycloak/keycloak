@@ -23,6 +23,7 @@ import org.keycloak.representations.idm.ClientInitialAccessPresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.ContainerAssume;
@@ -37,8 +38,10 @@ import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.REMOTE;
 import static org.keycloak.testsuite.util.OAuthClient.AUTH_SERVER_ROOT;
 
+@AuthServerContainerExclude(REMOTE)
 public class DefaultHostnameTest extends AbstractHostnameTest {
 
     @ArquillianResource
@@ -64,11 +67,6 @@ public class DefaultHostnameTest extends AbstractHostnameTest {
                 .attribute("frontendUrl", realmFrontEndUrl)
                 .build();
         testRealms.add(customHostname);
-    }
-
-    @BeforeClass
-    public static void enabled() {
-        ContainerAssume.assumeNotAuthServerRemote();
     }
 
     @Test

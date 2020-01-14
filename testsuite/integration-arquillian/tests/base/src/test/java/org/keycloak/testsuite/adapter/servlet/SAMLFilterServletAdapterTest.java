@@ -95,20 +95,6 @@ public class SAMLFilterServletAdapterTest extends SAMLServletAdapterTest {
     @Test
     @Override
     @Ignore
-    public void testErrorHandlingUnsigned() {
-
-    }
-
-    @Test
-    @Override
-    @Ignore
-    public void testErrorHandlingSigned() {
-
-    }
-
-    @Test
-    @Override
-    @Ignore
     public void multiTenant1SamlTest() throws Exception {
 
     }

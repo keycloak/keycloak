@@ -16,13 +16,23 @@
  */
 package org.keycloak.testsuite.adapter.example.authorization;
 
+import javax.ws.rs.client.Client;
+import javax.ws.rs.client.ClientBuilder;
+import javax.ws.rs.client.Entity;
+import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import java.io.File;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
+import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
+import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
 
 /**
@@ -62,6 +72,27 @@ public class ServletAuthzCIPAdapterTest extends AbstractServletAuthzAdapterTest 
             this.driver.navigate().to(getResourceServerUrl() + "/protected/context/context.jsp");
 
             assertWasDenied();
+        });
+    }
+
+    @Test
+    public void testReuseBodyAfterClaimProcessing() {
+        performTests(() -> {
+            OAuthClient.AccessTokenResponse response = oauth.realm("servlet-authz").clientId("servlet-authz-app")
+                    .doGrantAccessTokenRequest("secret", "alice", "alice");
+            Client client = ClientBuilder.newClient();
+            Map<String, String> body = new HashMap();
+            
+            body.put("test", "test-value");
+            
+            Response post = client.target(getResourceServerUrl() + "/protected/filter/body")
+                    .request()
+                    .header(HttpHeaders.AUTHORIZATION, "Bearer " + response.getAccessToken())
+                    .post(Entity.entity(body, MediaType.APPLICATION_JSON_TYPE));
+
+            body = post.readEntity(Map.class);
+
+            Assert.assertEquals("test-value", body.get("test"));
         });
     }
 }

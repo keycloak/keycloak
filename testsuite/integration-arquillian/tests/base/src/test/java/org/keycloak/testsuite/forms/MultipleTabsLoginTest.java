@@ -17,12 +17,10 @@
 
 package org.keycloak.testsuite.forms;
 
-import org.hamcrest.Matchers;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
-import org.keycloak.events.Details;
 import org.keycloak.models.Constants;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -32,7 +30,6 @@ import org.keycloak.testsuite.ActionURIUtils;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.InfoPage;
@@ -46,6 +43,9 @@ import org.keycloak.testsuite.pages.RegisterPage;
 import org.keycloak.testsuite.pages.VerifyEmailPage;
 import org.keycloak.testsuite.util.GreenMailRule;
 import org.keycloak.testsuite.util.UserBuilder;
+
+import static org.keycloak.testsuite.arquillian.AuthServerTestEnricher.getAuthServerContextRoot;
+import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
 
 /**
  * Tries to simulate testing with multiple browser tabs
@@ -274,7 +274,7 @@ public class MultipleTabsLoginTest extends AbstractTestRealmKeycloakTest {
     // KEYCLOAK-5797
     @Test
     public void loginWithDifferentClients() throws Exception {
-       String redirectUri = String.format("%s://localhost:%s/foo/bar/baz", AUTH_SERVER_SCHEME, AUTH_SERVER_PORT);
+       String redirectUri = String.format("%s/foo/bar/baz", getAuthServerContextRoot());
        // Open tab1 and start login here
        oauth.openLoginForm();
        loginPage.assertCurrent();
@@ -299,16 +299,15 @@ public class MultipleTabsLoginTest extends AbstractTestRealmKeycloakTest {
 
         // Go back to tab2 and finish login here. Should be on the root-url-client page
         driver.navigate().to(tab2Url);
-        String currentUrl = driver.getCurrentUrl();
-        Assert.assertThat(currentUrl, Matchers.startsWith(redirectUri));
+        assertCurrentUrlStartsWith(redirectUri);
     }
 
 
     // KEYCLOAK-5938
     @Test
     public void loginWithSameClientDifferentStatesLoginInTab1() throws Exception {
-        String redirectUri1 = String.format("%s://localhost:%s/auth/realms/master/app/auth/suffix1", AUTH_SERVER_SCHEME, AUTH_SERVER_PORT);
-        String redirectUri2 = String.format("%s://localhost:%s/auth/realms/master/app/auth/suffix2", AUTH_SERVER_SCHEME, AUTH_SERVER_PORT);
+        String redirectUri1 = String.format("%s/auth/realms/master/app/auth/suffix1", getAuthServerContextRoot());
+        String redirectUri2 = String.format("%s/auth/realms/master/app/auth/suffix2", getAuthServerContextRoot());
         // Open tab1 and start login here
         oauth.stateParamHardcoded("state1");
         oauth.redirectUri(redirectUri1);
@@ -333,7 +332,7 @@ public class MultipleTabsLoginTest extends AbstractTestRealmKeycloakTest {
         // Assert I am redirected to the appPage in tab1 and have state corresponding to tab1
         appPage.assertCurrent();
         String currentUrl = driver.getCurrentUrl();
-        Assert.assertThat(currentUrl, Matchers.startsWith(redirectUri1));
+        assertCurrentUrlStartsWith(redirectUri1);
         Assert.assertTrue(currentUrl.contains("state1"));
     }
 
@@ -341,8 +340,8 @@ public class MultipleTabsLoginTest extends AbstractTestRealmKeycloakTest {
     // KEYCLOAK-5938
     @Test
     public void loginWithSameClientDifferentStatesLoginInTab2() throws Exception {
-        String redirectUri1 = String.format("%s://localhost:%s/auth/realms/master/app/auth/suffix1", AUTH_SERVER_SCHEME, AUTH_SERVER_PORT);
-        String redirectUri2 = String.format("%s://localhost:%s/auth/realms/master/app/auth/suffix2", AUTH_SERVER_SCHEME, AUTH_SERVER_PORT);
+        String redirectUri1 = String.format("%s/auth/realms/master/app/auth/suffix1", getAuthServerContextRoot());
+        String redirectUri2 = String.format("%s/auth/realms/master/app/auth/suffix2", getAuthServerContextRoot());
         // Open tab1 and start login here
         oauth.stateParamHardcoded("state1");
         oauth.redirectUri(redirectUri1);
@@ -366,7 +365,7 @@ public class MultipleTabsLoginTest extends AbstractTestRealmKeycloakTest {
         // Assert I am redirected to the appPage in tab2 and have state corresponding to tab2
         appPage.assertCurrent();
         String currentUrl = driver.getCurrentUrl();
-        Assert.assertThat(currentUrl, Matchers.startsWith(redirectUri2));
+        assertCurrentUrlStartsWith(redirectUri2);
         Assert.assertTrue(currentUrl.contains("state2"));
     }
 }
