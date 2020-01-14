@@ -438,6 +438,51 @@ public class UserTest extends AbstractAdminTest {
         assertEquals(user.getFederationLink(), createdUser.getFederationLink());
     }
 
+    @Test
+    public void createUserWithoutUsername() {
+        UserRepresentation user = new UserRepresentation();
+        user.setEmail("user1@localhost");
+        Response response = realm.users().create(user);
+        assertEquals(400, response.getStatus());
+        ErrorRepresentation error = response.readEntity(ErrorRepresentation.class);
+        Assert.assertEquals("User name is missing", error.getErrorMessage());
+        response.close();
+    }
+
+    @Test
+    public void createUserWithEmptyUsername() {
+        UserRepresentation user = new UserRepresentation();
+        user.setUsername("");
+        user.setEmail("user2@localhost");
+        Response response = realm.users().create(user);
+        assertEquals(400, response.getStatus());
+        ErrorRepresentation error = response.readEntity(ErrorRepresentation.class);
+        Assert.assertEquals("User name is missing", error.getErrorMessage());
+        response.close();
+    }
+
+    @Test
+    public void createUserWithInvalidPolicyPassword() {
+        RealmRepresentation rep = realm.toRepresentation();
+        String passwordPolicy = rep.getPasswordPolicy();
+        rep.setPasswordPolicy("length(8)");
+        realm.update(rep);
+        UserRepresentation user = new UserRepresentation();
+        user.setUsername("user4");
+        user.setEmail("user4@localhost");
+        CredentialRepresentation rawPassword = new CredentialRepresentation();
+        rawPassword.setValue("ABCD");
+        rawPassword.setType(CredentialRepresentation.PASSWORD);
+        user.setCredentials(Arrays.asList(rawPassword));
+        Response response = realm.users().create(user);
+        assertEquals(400, response.getStatus());
+        ErrorRepresentation error = response.readEntity(ErrorRepresentation.class);
+        Assert.assertEquals("Password policy not met", error.getErrorMessage());
+        rep.setPasswordPolicy(passwordPolicy);
+        realm.update(rep);
+        response.close();
+    }
+
     private List<String> createUsers() {
         List<String> ids = new ArrayList<>();
 
