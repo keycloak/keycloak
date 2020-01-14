@@ -57,6 +57,7 @@ import javax.persistence.criteria.Root;
 import javax.persistence.criteria.Subquery;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -896,7 +897,9 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
         if (userEntity != null) {
 
             // user already in persistence context, no need to execute a query
-            results = userEntity.getCredentials().stream().filter(it -> type.equals(it.getType())).collect(Collectors.toList());
+            results = userEntity.getCredentials().stream().filter(it -> type.equals(it.getType()))
+                    .sorted(Comparator.comparingInt(CredentialEntity::getPriority))
+                    .collect(Collectors.toList());
             List<CredentialModel> rtn = new LinkedList<>();
             for (CredentialEntity entity : results) {
                 rtn.add(toModel(entity));

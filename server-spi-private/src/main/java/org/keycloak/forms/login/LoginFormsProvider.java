@@ -84,6 +84,8 @@ public interface LoginFormsProvider extends Provider {
 
     Response createOAuthGrant();
 
+    Response createSelectAuthenticator();
+
     Response createCode();
 
     Response createX509ConfirmPage();

@@ -26,6 +26,7 @@ import org.keycloak.authentication.RequiredActionProvider;
 import org.keycloak.authentication.requiredactions.UpdateTotp;
 import org.keycloak.credential.CredentialProvider;
 import org.keycloak.credential.OTPCredentialProvider;
+import org.keycloak.credential.OTPCredentialProviderFactory;
 import org.keycloak.events.Errors;
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.models.KeycloakSession;
@@ -44,6 +45,14 @@ import java.util.List;
  * @version $Revision: 1 $
  */
 public class OTPFormAuthenticator extends AbstractUsernameFormAuthenticator implements Authenticator, CredentialValidator<OTPCredentialProvider> {
+
+    // Freemarker attribute where selected OTP credential will be stored
+    public static final String SELECTED_OTP_CREDENTIAL_ID = "selectedOtpCredentialId";
+
+    // Label to be shown in the UI for the "unnamed" OTP credential, which doesn't have userLabel
+    public static final String UNNAMED = "unnamed";
+
+
     @Override
     public void action(AuthenticationFlowContext context) {
         validateOTP(context);
@@ -61,14 +70,14 @@ public class OTPFormAuthenticator extends AbstractUsernameFormAuthenticator impl
         MultivaluedMap<String, String> inputData = context.getHttpRequest().getDecodedFormParameters();
 
         String otp = inputData.getFirst("otp");
-        String credentialId = context.getSelectedCredentialId();
 
-        //TODO this is lazy for when there is no clearly defined credentialId available (for example direct grant or console OTP), replace with getting the credential from the name
+        String credentialId = inputData.getFirst("selectedCredentialId");
+
         if (credentialId == null || credentialId.isEmpty()) {
             credentialId = getCredentialProvider(context.getSession())
                     .getDefaultCredential(context.getSession(), context.getRealm(), context.getUser()).getId();
-            context.setSelectedCredentialId(credentialId);
         }
+        context.form().setAttribute(SELECTED_OTP_CREDENTIAL_ID, credentialId);
 
         UserModel userModel = context.getUser();
         if (!enabledUser(context, userModel)) {
@@ -131,7 +140,7 @@ public class OTPFormAuthenticator extends AbstractUsernameFormAuthenticator impl
 
     @Override
     public OTPCredentialProvider getCredentialProvider(KeycloakSession session) {
-        return (OTPCredentialProvider)session.getProvider(CredentialProvider.class, "keycloak-otp");
+        return (OTPCredentialProvider)session.getProvider(CredentialProvider.class, OTPCredentialProviderFactory.PROVIDER_ID);
     }
 
 }

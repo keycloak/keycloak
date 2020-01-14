@@ -27,6 +27,8 @@ import org.keycloak.utils.TotpUtils;
 import javax.ws.rs.core.UriBuilder;
 
 /**
+ * Used for UpdateTotp required action
+ *
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class TotpBean {

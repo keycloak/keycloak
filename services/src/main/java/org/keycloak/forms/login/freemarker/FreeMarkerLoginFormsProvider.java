@@ -19,6 +19,7 @@ package org.keycloak.forms.login.freemarker;
 import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.AuthenticationFlowContext;
+import org.keycloak.authentication.authenticators.browser.OTPFormAuthenticator;
 import org.keycloak.authentication.requiredactions.util.UpdateProfileContext;
 import org.keycloak.authentication.requiredactions.util.UserUpdateProfileContext;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
@@ -37,6 +38,7 @@ import org.keycloak.forms.login.freemarker.model.RegisterBean;
 import org.keycloak.forms.login.freemarker.model.RequiredActionUrlFormatterMethod;
 import org.keycloak.forms.login.freemarker.model.SAMLPostFormBean;
 import org.keycloak.forms.login.freemarker.model.TotpBean;
+import org.keycloak.forms.login.freemarker.model.TotpLoginBean;
 import org.keycloak.forms.login.freemarker.model.UrlBean;
 import org.keycloak.forms.login.freemarker.model.X509ConfirmBean;
 import org.keycloak.models.ClientModel;
@@ -213,6 +215,9 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
 
                 attributes.put("brokerContext", brokerContext);
                 attributes.put("idpAlias", idpAlias);
+                break;
+            case LOGIN_TOTP:
+                attributes.put("otpLogin", new TotpLoginBean(session, realm, user, (String) this.attributes.get(OTPFormAuthenticator.SELECTED_OTP_CREDENTIAL_ID)));
                 break;
             case REGISTER:
                 attributes.put("register", new RegisterBean(formData));
@@ -404,7 +409,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
 
             attributes.put("url", new UrlBean(realm, theme, baseUri, this.actionUri));
             attributes.put("requiredActionUrl", new RequiredActionUrlFormatterMethod(realm, baseUri));
-            attributes.put("auth", new AuthenticationContextBean(context, actionUri));
+            attributes.put("auth", new AuthenticationContextBean(context, actionUri, page));
             attributes.put(Constants.EXECUTION, execution);
 
             if (realm.isInternationalizationEnabled()) {
@@ -545,6 +550,11 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
     @Override
     public Response createOAuthGrant() {
         return createResponse(LoginFormsPages.OAUTH_GRANT);
+    }
+
+    @Override
+    public Response createSelectAuthenticator() {
+        return createResponse(LoginFormsPages.LOGIN_SELECT_AUTHENTICATOR);
     }
 
     @Override

@@ -32,9 +32,6 @@ public class OneTimeCode extends Authenticate {
     @FindBy(id = "otp")
     private WebElement otpInputField;
 
-    @FindBy(id = "authenticators-choice")
-    private WebElement authenticatorSelector;
-
     @FindBy(xpath = ".//label[@for='otp']")
     private WebElement otpInputLabel;
 
@@ -60,11 +57,6 @@ public class OneTimeCode extends Authenticate {
 
     public String getError() {
         return loginErrorMessage != null ? loginErrorMessage.getText() : null;
-    }
-
-    public void selectFactor(String name) {
-        Select select = new Select(authenticatorSelector);
-        select.selectByVisibleText(name);
     }
 
     @Override
