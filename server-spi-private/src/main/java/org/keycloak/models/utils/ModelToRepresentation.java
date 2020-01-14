@@ -78,6 +78,8 @@ public class ModelToRepresentation {
         rep.setAttributes(group.getAttributes());
         rep.setUserCount(group.getUserCount());
         rep.setUserAllCount(group.getUserAllCount());
+        Map<String, List<String>> attributes = group.getAttributes();
+        rep.setAttributes(attributes);
         if (!full) return rep;
         // Role mappings
         Set<RoleModel> roles = group.getRoleMappings();
@@ -95,8 +97,6 @@ public class ModelToRepresentation {
         }
         rep.setRealmRoles(realmRoleNames);
         rep.setClientRoles(clientRoleNames);
-        Map<String, List<String>> attributes = group.getAttributes();
-        rep.setAttributes(attributes);
         return rep;
     }
 
@@ -105,7 +105,7 @@ public class ModelToRepresentation {
         List<GroupModel> groups = realm.searchForGroupByName(search, first, max);
         if (Objects.isNull(groups)) return result;
         for (GroupModel group : groups) {
-            GroupRepresentation rep = toGroupHierarchy(group, full);
+            GroupRepresentation rep = toRepresentation(group, full);
             result.add(rep);
         }
         return result;
@@ -133,7 +133,7 @@ public class ModelToRepresentation {
         List<GroupModel> groups = realm.searchGroupByAttributeNameAndValue(attrName, attrValue, first, max);
         if (Objects.isNull(groups)) return result;
         for (GroupModel group : groups) {
-            result.add(toRepresentation(group, true));
+            result.add(toRepresentation(group, full));
         }
         return result;
     }
@@ -232,6 +232,11 @@ public class ModelToRepresentation {
         rep.setEmailVerified(user.isEmailVerified());
         rep.setFederationLink(user.getFederationLink());
         rep.setLoginTimestamp(user.getLoginTimestamp());
+        List<GroupRepresentation> groups = new LinkedList<>();
+        for (GroupModel group : user.getGroups()) {
+            groups.add(toRepresentation(group, false));
+        }
+        rep.setGroups(groups);
         return rep;
     }
 

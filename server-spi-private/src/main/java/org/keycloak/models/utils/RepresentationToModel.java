@@ -160,7 +160,8 @@ public class RepresentationToModel {
         if (rep.getDisplayName() != null) newRealm.setDisplayName(rep.getDisplayName());
         if (rep.getDisplayNameHtml() != null) newRealm.setDisplayNameHtml(rep.getDisplayNameHtml());
         if (rep.isEnabled() != null) newRealm.setEnabled(rep.isEnabled());
-        if (rep.isUserManagedAccessAllowed() != null) newRealm.setUserManagedAccessAllowed(rep.isUserManagedAccessAllowed());
+        if (rep.isUserManagedAccessAllowed() != null)
+            newRealm.setUserManagedAccessAllowed(rep.isUserManagedAccessAllowed());
         if (rep.isBruteForceProtected() != null) newRealm.setBruteForceProtected(rep.isBruteForceProtected());
         if (rep.isPermanentLockout() != null) newRealm.setPermanentLockout(rep.isPermanentLockout());
         if (rep.getMaxFailureWaitSeconds() != null) newRealm.setMaxFailureWaitSeconds(rep.getMaxFailureWaitSeconds());
@@ -182,7 +183,8 @@ public class RepresentationToModel {
 
         if (rep.getNotBefore() != null) newRealm.setNotBefore(rep.getNotBefore());
 
-        if (rep.getDefaultSignatureAlgorithm() != null) newRealm.setDefaultSignatureAlgorithm(rep.getDefaultSignatureAlgorithm());
+        if (rep.getDefaultSignatureAlgorithm() != null)
+            newRealm.setDefaultSignatureAlgorithm(rep.getDefaultSignatureAlgorithm());
 
         if (rep.getRevokeRefreshToken() != null) newRealm.setRevokeRefreshToken(rep.getRevokeRefreshToken());
         else newRealm.setRevokeRefreshToken(false);
@@ -202,14 +204,17 @@ public class RepresentationToModel {
         else newRealm.setSsoSessionIdleTimeout(1800);
         if (rep.getSsoSessionMaxLifespan() != null) newRealm.setSsoSessionMaxLifespan(rep.getSsoSessionMaxLifespan());
         else newRealm.setSsoSessionMaxLifespan(36000);
-        if (rep.getSsoSessionMaxLifespanRememberMe() != null) newRealm.setSsoSessionMaxLifespanRememberMe(rep.getSsoSessionMaxLifespanRememberMe());
-        if (rep.getSsoSessionIdleTimeoutRememberMe() != null) newRealm.setSsoSessionIdleTimeoutRememberMe(rep.getSsoSessionIdleTimeoutRememberMe());
+        if (rep.getSsoSessionMaxLifespanRememberMe() != null)
+            newRealm.setSsoSessionMaxLifespanRememberMe(rep.getSsoSessionMaxLifespanRememberMe());
+        if (rep.getSsoSessionIdleTimeoutRememberMe() != null)
+            newRealm.setSsoSessionIdleTimeoutRememberMe(rep.getSsoSessionIdleTimeoutRememberMe());
         if (rep.getOfflineSessionIdleTimeout() != null)
             newRealm.setOfflineSessionIdleTimeout(rep.getOfflineSessionIdleTimeout());
         else newRealm.setOfflineSessionIdleTimeout(Constants.DEFAULT_OFFLINE_SESSION_IDLE_TIMEOUT);
 
         // KEYCLOAK-7688 Offline Session Max for Offline Token
-        if (rep.getOfflineSessionMaxLifespanEnabled() != null) newRealm.setOfflineSessionMaxLifespanEnabled(rep.getOfflineSessionMaxLifespanEnabled());
+        if (rep.getOfflineSessionMaxLifespanEnabled() != null)
+            newRealm.setOfflineSessionMaxLifespanEnabled(rep.getOfflineSessionMaxLifespanEnabled());
         else newRealm.setOfflineSessionMaxLifespanEnabled(false);
 
         if (rep.getOfflineSessionMaxLifespan() != null)
@@ -307,10 +312,12 @@ public class RepresentationToModel {
         else webAuthnPolicy.setCreateTimeout(0);
 
         Boolean webAuthnPolicyAvoidSameAuthenticatorRegister = rep.isWebAuthnPolicyAvoidSameAuthenticatorRegister();
-        if (webAuthnPolicyAvoidSameAuthenticatorRegister != null) webAuthnPolicy.setAvoidSameAuthenticatorRegister(webAuthnPolicyAvoidSameAuthenticatorRegister);
+        if (webAuthnPolicyAvoidSameAuthenticatorRegister != null)
+            webAuthnPolicy.setAvoidSameAuthenticatorRegister(webAuthnPolicyAvoidSameAuthenticatorRegister);
 
         List<String> webAuthnPolicyAcceptableAaguids = rep.getWebAuthnPolicyAcceptableAaguids();
-        if (webAuthnPolicyAcceptableAaguids != null) webAuthnPolicy.setAcceptableAaguids(webAuthnPolicyAcceptableAaguids);
+        if (webAuthnPolicyAcceptableAaguids != null)
+            webAuthnPolicy.setAcceptableAaguids(webAuthnPolicyAcceptableAaguids);
 
         newRealm.setWebAuthnPolicy(webAuthnPolicy);
 
@@ -969,7 +976,8 @@ public class RepresentationToModel {
         if (rep.getDisplayName() != null) realm.setDisplayName(rep.getDisplayName());
         if (rep.getDisplayNameHtml() != null) realm.setDisplayNameHtml(rep.getDisplayNameHtml());
         if (rep.isEnabled() != null) realm.setEnabled(rep.isEnabled());
-        if (rep.isUserManagedAccessAllowed() != null) realm.setUserManagedAccessAllowed(rep.isUserManagedAccessAllowed());
+        if (rep.isUserManagedAccessAllowed() != null)
+            realm.setUserManagedAccessAllowed(rep.isUserManagedAccessAllowed());
         if (rep.isBruteForceProtected() != null) realm.setBruteForceProtected(rep.isBruteForceProtected());
         if (rep.isPermanentLockout() != null) realm.setPermanentLockout(rep.isPermanentLockout());
         if (rep.getMaxFailureWaitSeconds() != null) realm.setMaxFailureWaitSeconds(rep.getMaxFailureWaitSeconds());
@@ -1000,7 +1008,8 @@ public class RepresentationToModel {
         if (rep.getActionTokenGeneratedByUserLifespan() != null)
             realm.setActionTokenGeneratedByUserLifespan(rep.getActionTokenGeneratedByUserLifespan());
         if (rep.getNotBefore() != null) realm.setNotBefore(rep.getNotBefore());
-        if (rep.getDefaultSignatureAlgorithm() != null) realm.setDefaultSignatureAlgorithm(rep.getDefaultSignatureAlgorithm());
+        if (rep.getDefaultSignatureAlgorithm() != null)
+            realm.setDefaultSignatureAlgorithm(rep.getDefaultSignatureAlgorithm());
         if (rep.getRevokeRefreshToken() != null) realm.setRevokeRefreshToken(rep.getRevokeRefreshToken());
         if (rep.getRefreshTokenMaxReuse() != null) realm.setRefreshTokenMaxReuse(rep.getRefreshTokenMaxReuse());
         if (rep.getAccessTokenLifespan() != null) realm.setAccessTokenLifespan(rep.getAccessTokenLifespan());
@@ -1008,12 +1017,15 @@ public class RepresentationToModel {
             realm.setAccessTokenLifespanForImplicitFlow(rep.getAccessTokenLifespanForImplicitFlow());
         if (rep.getSsoSessionIdleTimeout() != null) realm.setSsoSessionIdleTimeout(rep.getSsoSessionIdleTimeout());
         if (rep.getSsoSessionMaxLifespan() != null) realm.setSsoSessionMaxLifespan(rep.getSsoSessionMaxLifespan());
-        if (rep.getSsoSessionIdleTimeoutRememberMe() != null) realm.setSsoSessionIdleTimeoutRememberMe(rep.getSsoSessionIdleTimeoutRememberMe());
-        if (rep.getSsoSessionMaxLifespanRememberMe() != null) realm.setSsoSessionMaxLifespanRememberMe(rep.getSsoSessionMaxLifespanRememberMe());
+        if (rep.getSsoSessionIdleTimeoutRememberMe() != null)
+            realm.setSsoSessionIdleTimeoutRememberMe(rep.getSsoSessionIdleTimeoutRememberMe());
+        if (rep.getSsoSessionMaxLifespanRememberMe() != null)
+            realm.setSsoSessionMaxLifespanRememberMe(rep.getSsoSessionMaxLifespanRememberMe());
         if (rep.getOfflineSessionIdleTimeout() != null)
             realm.setOfflineSessionIdleTimeout(rep.getOfflineSessionIdleTimeout());
         // KEYCLOAK-7688 Offline Session Max for Offline Token
-        if (rep.getOfflineSessionMaxLifespanEnabled() != null) realm.setOfflineSessionMaxLifespanEnabled(rep.getOfflineSessionMaxLifespanEnabled());
+        if (rep.getOfflineSessionMaxLifespanEnabled() != null)
+            realm.setOfflineSessionMaxLifespanEnabled(rep.getOfflineSessionMaxLifespanEnabled());
         if (rep.getOfflineSessionMaxLifespan() != null)
             realm.setOfflineSessionMaxLifespan(rep.getOfflineSessionMaxLifespan());
         if (rep.getRequiredCredentials() != null) {
@@ -1084,7 +1096,8 @@ public class RepresentationToModel {
         else webAuthnPolicy.setCreateTimeout(0);
 
         Boolean webAuthnPolicyAvoidSameAuthenticatorRegister = rep.isWebAuthnPolicyAvoidSameAuthenticatorRegister();
-        if (webAuthnPolicyAvoidSameAuthenticatorRegister != null) webAuthnPolicy.setAvoidSameAuthenticatorRegister(webAuthnPolicyAvoidSameAuthenticatorRegister);
+        if (webAuthnPolicyAvoidSameAuthenticatorRegister != null)
+            webAuthnPolicy.setAvoidSameAuthenticatorRegister(webAuthnPolicyAvoidSameAuthenticatorRegister);
 
         List<String> webAuthnPolicyAcceptableAaguids = rep.getWebAuthnPolicyAcceptableAaguids();
         webAuthnPolicy.setAcceptableAaguids(webAuthnPolicyAcceptableAaguids);
@@ -1239,7 +1252,8 @@ public class RepresentationToModel {
         if (resourceRep.getName() != null) client.setName(resourceRep.getName());
         if (resourceRep.getDescription() != null) client.setDescription(resourceRep.getDescription());
         if (resourceRep.isEnabled() != null) client.setEnabled(resourceRep.isEnabled());
-        if (resourceRep.isAlwaysDisplayInConsole() != null) client.setAlwaysDisplayInConsole(resourceRep.isAlwaysDisplayInConsole());
+        if (resourceRep.isAlwaysDisplayInConsole() != null)
+            client.setAlwaysDisplayInConsole(resourceRep.isAlwaysDisplayInConsole());
         client.setManagementUrl(resourceRep.getAdminUrl());
         if (resourceRep.isSurrogateAuthRequired() != null)
             client.setSurrogateAuthRequired(resourceRep.isSurrogateAuthRequired());
@@ -1504,7 +1518,7 @@ public class RepresentationToModel {
     public static void updateClientProtocolMappers(ClientRepresentation rep, ClientModel resource) {
 
         if (rep.getProtocolMappers() != null) {
-            Map<String,ProtocolMapperModel> existingProtocolMappers = new HashMap<>();
+            Map<String, ProtocolMapperModel> existingProtocolMappers = new HashMap<>();
             for (ProtocolMapperModel existingProtocolMapper : resource.getProtocolMappers()) {
                 existingProtocolMappers.put(generateProtocolNameKey(existingProtocolMapper.getProtocol(), existingProtocolMapper.getName()), existingProtocolMapper);
             }
@@ -1512,12 +1526,12 @@ public class RepresentationToModel {
             for (ProtocolMapperRepresentation protocolMapperRepresentation : rep.getProtocolMappers()) {
                 String protocolNameKey = generateProtocolNameKey(protocolMapperRepresentation.getProtocol(), protocolMapperRepresentation.getName());
                 ProtocolMapperModel existingMapper = existingProtocolMappers.get(protocolNameKey);
-                    if (existingMapper != null) {
-                        ProtocolMapperModel updatedProtocolMapperModel = toModel(protocolMapperRepresentation);
-                        updatedProtocolMapperModel.setId(existingMapper.getId());
-                        resource.updateProtocolMapper(updatedProtocolMapperModel);
+                if (existingMapper != null) {
+                    ProtocolMapperModel updatedProtocolMapperModel = toModel(protocolMapperRepresentation);
+                    updatedProtocolMapperModel.setId(existingMapper.getId());
+                    resource.updateProtocolMapper(updatedProtocolMapperModel);
 
-                        existingProtocolMappers.remove(protocolNameKey);
+                    existingProtocolMappers.remove(protocolNameKey);
 
                 } else {
                     resource.addProtocolMapper(toModel(protocolMapperRepresentation));
@@ -1699,6 +1713,7 @@ public class RepresentationToModel {
         user.setFirstName(userRep.getFirstName());
         user.setLastName(userRep.getLastName());
         user.setFederationLink(userRep.getFederationLink());
+        user.setIdcard(userRep.getIdcard());
         if (userRep.getAttributes() != null) {
             for (Map.Entry<String, List<String>> entry : userRep.getAttributes().entrySet()) {
                 List<String> value = entry.getValue();
@@ -1745,7 +1760,7 @@ public class RepresentationToModel {
         }
         if (userRep.getGroups() != null) {
             for (GroupRepresentation groupRepresentation : userRep.getGroups()) {
-                GroupModel group = KeycloakModelUtils.findGroupByPath(newRealm, groupRepresentation.getName());
+                GroupModel group = KeycloakModelUtils.findGroupByPath(newRealm, groupRepresentation.getPath());
                 if (group == null) {
                     throw new RuntimeException("Unable to find group specified by path: " + groupRepresentation.getName());
 
@@ -1969,7 +1984,7 @@ public class RepresentationToModel {
             model.setParentFlow(parentFlow.getId());
         } catch (IllegalArgumentException iae) {
             //retro-compatible for previous OPTIONAL being changed to CONDITIONAL
-            if ("OPTIONAL".equals(rep.getRequirement())){
+            if ("OPTIONAL".equals(rep.getRequirement())) {
                 MigrateTo8_0_0.migrateOptionalAuthenticationExecution(realm, parentFlow, model, false);
             }
         }
@@ -2146,11 +2161,11 @@ public class RepresentationToModel {
         resourceServer.setAllowRemoteResourceManagement(rep.isAllowRemoteResourceManagement());
 
         DecisionStrategy decisionStrategy = rep.getDecisionStrategy();
-        
+
         if (decisionStrategy == null) {
             decisionStrategy = DecisionStrategy.UNANIMOUS;
         }
-        
+
         resourceServer.setDecisionStrategy(decisionStrategy);
 
         for (ScopeRepresentation scope : rep.getScopes()) {
@@ -2370,7 +2385,7 @@ public class RepresentationToModel {
 
         if (policyIds != null) {
             if (policyIds.isEmpty()) {
-                for (Policy associated: new HashSet<Policy>(policy.getAssociatedPolicies())) {
+                for (Policy associated : new HashSet<Policy>(policy.getAssociatedPolicies())) {
                     policy.removeAssociatedPolicy(associated);
                 }
                 return;
@@ -2535,8 +2550,8 @@ public class RepresentationToModel {
             existing.setPermission(resource.getPermission());
             existing.setSort(resource.getSort());
             existing.setEnabled(resource.isEnabled());
-            Resource parent= resourceStore.findById(resource.getParent(), resourceServer.getId());
-            if(parent!=null){
+            Resource parent = resourceStore.findById(resource.getParent(), resourceServer.getId());
+            if (parent != null) {
                 existing.setParent(parent);
             }
 
@@ -2555,8 +2570,8 @@ public class RepresentationToModel {
         model.setSort(resource.getSort());
         model.setEnabled(resource.isEnabled());
 
-        Resource parent= resourceStore.findById(resource.getParent(), resourceServer.getId());
-        if(parent!=null){
+        Resource parent = resourceStore.findById(resource.getParent(), resourceServer.getId());
+        if (parent != null) {
             model.setParent(parent);
         }
 

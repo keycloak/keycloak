@@ -19,8 +19,10 @@ package org.keycloak.services.resources.admin;
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
+
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.NotFoundException;
+
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.Config;
 import org.keycloak.KeyPairVerifier;
@@ -1049,7 +1051,6 @@ public class RealmAdminResource {
     @Consumes(MediaType.APPLICATION_JSON)
     public Response partialImport(PartialImportRepresentation rep) {
         auth.realm().requireManageRealm();
-
         PartialImportManager partialImport = new PartialImportManager(rep, session, realm, adminEvent);
         return partialImport.saveResources();
     }
@@ -1105,7 +1106,7 @@ public class RealmAdminResource {
         auth.users().requireQuery();
 
         ExportOptions options = new ExportOptions(true, false, true);
-        return ExportUtils.exportUsers(session, realm, options,first, max);
+        return ExportUtils.exportUsers(session, realm, options, first, max);
     }
 
     /**
@@ -1167,12 +1168,12 @@ public class RealmAdminResource {
     @Path("credential-registrators")
     @NoCache
     @Produces(javax.ws.rs.core.MediaType.APPLICATION_JSON)
-    public List<String> getCredentialRegistrators(){
+    public List<String> getCredentialRegistrators() {
         auth.realm().requireViewRealm();
         return session.getContext().getRealm().getRequiredActionProviders().stream()
                 .filter(ra -> ra.isEnabled())
                 .map(RequiredActionProviderModel::getProviderId)
-                .filter(providerId ->  session.getProvider(RequiredActionProvider.class, providerId) instanceof CredentialRegistrator)
+                .filter(providerId -> session.getProvider(RequiredActionProvider.class, providerId) instanceof CredentialRegistrator)
                 .collect(Collectors.toList());
     }
 
