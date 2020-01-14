@@ -21,6 +21,7 @@ import org.jboss.resteasy.annotations.cache.NoCache;
 import javax.ws.rs.NotFoundException;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.common.ClientConnection;
+import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.Constants;
@@ -31,6 +32,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
+import org.keycloak.policy.PasswordPolicyNotMetException;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.ForbiddenException;
@@ -105,8 +107,13 @@ public class UsersResource {
     public Response createUser(final UserRepresentation rep) {
         auth.users().requireManage();
 
+        String username = rep.getUsername();
+        if (ObjectUtil.isBlank(username)) {
+            return ErrorResponse.error("User name is missing", Response.Status.BAD_REQUEST);
+        }
+
         // Double-check duplicated username and email here due to federation
-        if (session.users().getUserByUsername(rep.getUsername(), realm) != null) {
+        if (session.users().getUserByUsername(username, realm) != null) {
             return ErrorResponse.exists("User exists with same username");
         }
         if (rep.getEmail() != null && !realm.isDuplicateEmailsAllowed() && session.users().getUserByEmail(rep.getEmail(), realm) != null) {
@@ -114,7 +121,7 @@ public class UsersResource {
         }
 
         try {
-            UserModel user = session.users().addUser(realm, rep.getUsername());
+            UserModel user = session.users().addUser(realm, username);
             Set<String> emptySet = Collections.emptySet();
 
             UserResource.updateUserFromRep(user, rep, emptySet, realm, session, false);
@@ -131,12 +138,17 @@ public class UsersResource {
                 session.getTransactionManager().setRollbackOnly();
             }
             return ErrorResponse.exists("User exists with same username or email");
+        } catch (PasswordPolicyNotMetException e) {
+            if (session.getTransactionManager().isActive()) {
+                session.getTransactionManager().setRollbackOnly();
+            }
+            return ErrorResponse.error("Password policy not met", Response.Status.BAD_REQUEST);
         } catch (ModelException me){
             if (session.getTransactionManager().isActive()) {
                 session.getTransactionManager().setRollbackOnly();
             }
             logger.warn("Could not create user", me);
-            return ErrorResponse.exists("Could not create user");
+            return ErrorResponse.error("Could not create user", Response.Status.BAD_REQUEST);
         }
     }
     /**
