@@ -35,11 +35,13 @@ import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluato
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -186,13 +188,15 @@ public class ScopeMappedResource {
      * any composite roles associated with the client's scope and adds the roles to this lists.  The method is really
      * to show a comprehensive total view of realm-level roles associated with the client.
      *
+     * @param briefRepresentation if false, return roles with their attributes
+     * 
      * @return
      */
     @Path("realm/composite")
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
-    public List<RoleRepresentation> getCompositeRealmScopeMappings() {
+    public List<RoleRepresentation> getCompositeRealmScopeMappings(@QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation) {
         viewPermission.require();
 
         if (scopeContainer == null) {
@@ -200,13 +204,13 @@ public class ScopeMappedResource {
         }
 
         Set<RoleModel> roles = realm.getRoles();
-        return getComposite(scopeContainer, roles);
+        return getComposite(scopeContainer, roles, briefRepresentation);
     }
 
-    public static List<RoleRepresentation> getComposite(ScopeContainerModel client, Set<RoleModel> roles) {
+    public static List<RoleRepresentation> getComposite(ScopeContainerModel client, Set<RoleModel> roles, boolean briefRepresentation) {
         List<RoleRepresentation> composite = new ArrayList<RoleRepresentation>();
         for (RoleModel roleModel : roles) {
-            if (client.hasScope(roleModel)) composite.add(ModelToRepresentation.toBriefRepresentation(roleModel));
+            if (client.hasScope(roleModel)) composite.add(briefRepresentation ? ModelToRepresentation.toBriefRepresentation(roleModel) : ModelToRepresentation.toRepresentation(roleModel));
         }
         return composite;
     }

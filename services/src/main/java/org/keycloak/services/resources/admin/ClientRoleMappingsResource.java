@@ -37,10 +37,12 @@ import org.keycloak.storage.ReadOnlyException;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
@@ -110,20 +112,23 @@ public class ClientRoleMappingsResource {
      *
      * This recurses any composite roles
      *
+     * @param briefRepresentation if false, return roles with their attributes
+     *
      * @return
      */
     @Path("composite")
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
-    public List<RoleRepresentation> getCompositeClientRoleMappings() {
+    public List<RoleRepresentation> getCompositeClientRoleMappings(@QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation) {
         viewPermission.require();
-
 
         Set<RoleModel> roles = client.getRoles();
         List<RoleRepresentation> mapRep = new ArrayList<RoleRepresentation>();
         for (RoleModel roleModel : roles) {
-            if (user.hasRole(roleModel)) mapRep.add(ModelToRepresentation.toBriefRepresentation(roleModel));
+            if (user.hasRole(roleModel)) {
+                mapRep.add(briefRepresentation ? ModelToRepresentation.toBriefRepresentation(roleModel) : ModelToRepresentation.toRepresentation(roleModel));
+            }
         }
         return mapRep;
     }
