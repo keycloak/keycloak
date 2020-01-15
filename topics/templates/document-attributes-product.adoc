@@ -80,6 +80,7 @@
 :appserver_version: 7.2
 
 :appserver_doc_base_url: https://access.redhat.com/documentation/en-us/red_hat_jboss_enterprise_application_platform/{appserver_version}
+:appserver_config_guide_link: {appserver_doc_base_url}/html-single/configuration_guide
 :appserver_socket_name: JBoss EAP Configuration Guide
 :appserver_socket_link: {appserver_doc_base_url}/html-single/configuration_guide/#network_and_port_configuration
 :appserver_jgroups_name: JBoss EAP Configuration Guide
