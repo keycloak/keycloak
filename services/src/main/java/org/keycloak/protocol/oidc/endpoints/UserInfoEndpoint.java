@@ -35,6 +35,7 @@ import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionContext;
+import org.keycloak.protocol.oidc.TokenManager.NotBeforeCheck;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -137,6 +138,7 @@ public class UserInfoEndpoint {
         }
 
         AccessToken token;
+        ClientModel clientModel;
         try {
             TokenVerifier<AccessToken> verifier = TokenVerifier.create(tokenString, AccessToken.class).withDefaultChecks()
                     .realmUrl(Urls.realmIssuer(session.getContext().getUri().getBaseUri(), realm.getName()));
@@ -145,15 +147,19 @@ public class UserInfoEndpoint {
             verifier.verifierContext(verifierContext);
 
             token = verifier.verify().getToken();
+
+            clientModel = realm.getClientByClientId(token.getIssuedFor());
+            if (clientModel == null) {
+                event.error(Errors.CLIENT_NOT_FOUND);
+                throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "Client not found", Response.Status.BAD_REQUEST);
+            }
+
+            TokenVerifier.createWithoutSignature(token)
+                    .withChecks(NotBeforeCheck.forModel(clientModel))
+                    .verify();
         } catch (VerificationException e) {
             event.error(Errors.INVALID_TOKEN);
             throw newUnauthorizedErrorResponseException(OAuthErrorException.INVALID_TOKEN, "Token verification failed");
-        }
-
-        ClientModel clientModel = realm.getClientByClientId(token.getIssuedFor());
-        if (clientModel == null) {
-            event.error(Errors.CLIENT_NOT_FOUND);
-            throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "Client not found", Response.Status.BAD_REQUEST);
         }
 
 	    if (!clientModel.getProtocol().equals(OIDCLoginProtocol.LOGIN_PROTOCOL)) {

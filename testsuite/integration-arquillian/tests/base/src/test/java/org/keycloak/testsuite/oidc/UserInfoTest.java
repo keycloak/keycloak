@@ -402,6 +402,65 @@ public class UserInfoTest extends AbstractKeycloakTest {
     }
 
     @Test
+    public void testNotBeforeTokens() {
+        Client client = ClientBuilder.newClient();
+
+        try {
+            AccessTokenResponse accessTokenResponse = executeGrantAccessTokenRequest(client);
+
+            int time = Time.currentTime() + 60;
+
+            RealmResource realm = adminClient.realm("test");
+            RealmRepresentation rep = realm.toRepresentation();
+            rep.setNotBefore(time);
+            realm.update(rep);
+
+            Response response = UserInfoClientUtil.executeUserInfoRequest_getMethod(client, accessTokenResponse.getToken());
+
+            assertEquals(Status.UNAUTHORIZED.getStatusCode(), response.getStatus());
+
+            response.close();
+
+            events.expect(EventType.USER_INFO_REQUEST_ERROR)
+                    .error(Errors.INVALID_TOKEN)
+                    .user(Matchers.nullValue(String.class))
+                    .session(Matchers.nullValue(String.class))
+                    .detail(Details.AUTH_METHOD, Details.VALIDATE_ACCESS_TOKEN)
+                    .client((String) null)
+                    .assertEvent();
+
+            events.clear();
+            rep.setNotBefore(0);
+            realm.update(rep);
+
+            // do the same with client's notBefore
+            ClientResource clientResource = realm.clients().get(realm.clients().findByClientId("test-app").get(0).getId());
+            ClientRepresentation clientRep = clientResource.toRepresentation();
+            clientRep.setNotBefore(time);
+            clientResource.update(clientRep);
+
+            response = UserInfoClientUtil.executeUserInfoRequest_getMethod(client, accessTokenResponse.getToken());
+
+            assertEquals(Status.UNAUTHORIZED.getStatusCode(), response.getStatus());
+
+            response.close();
+
+            events.expect(EventType.USER_INFO_REQUEST_ERROR)
+                    .error(Errors.INVALID_TOKEN)
+                    .user(Matchers.nullValue(String.class))
+                    .session(Matchers.nullValue(String.class))
+                    .detail(Details.AUTH_METHOD, Details.VALIDATE_ACCESS_TOKEN)
+                    .client((String) null)
+                    .assertEvent();
+
+            clientRep.setNotBefore(0);
+            clientResource.update(clientRep);
+        } finally {
+            client.close();
+        }
+    }
+
+    @Test
     public void testSessionExpiredOfflineAccess() throws Exception {
         Client client = ClientBuilder.newClient();
 
