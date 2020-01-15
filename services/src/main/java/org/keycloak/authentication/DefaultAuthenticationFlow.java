@@ -26,10 +26,7 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.services.ServicesLogger;
-import org.keycloak.services.util.AuthenticationFlowHistoryHelper;
-import org.keycloak.services.util.AuthenticationFlowURLHelper;
 import org.keycloak.sessions.AuthenticationSessionModel;
-import org.keycloak.sessions.CommonClientSessionModel;
 
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
@@ -102,32 +99,6 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
         MultivaluedMap<String, String> inputData = processor.getRequest().getDecodedFormParameters();
         String authExecId = inputData.getFirst(Constants.AUTHENTICATION_EXECUTION);
 
-        //check if the user has selected the "back" option
-        if (inputData.containsKey("back")) {
-            AuthenticationSessionModel authSession = processor.getAuthenticationSession();
-
-            AuthenticationFlowHistoryHelper history = new AuthenticationFlowHistoryHelper(processor);
-            if (history.hasAnyExecution()) {
-
-                String executionId = history.pullExecution();
-                AuthenticationExecutionModel lastActionExecution = processor.getRealm().getAuthenticationExecutionById(executionId);
-
-                logger.debugf("Moving back to authentication execution '%s'", lastActionExecution.getAuthenticator());
-
-                recursiveClearExecutionStatusOfAllExecutionsAfterOurExecutionInclusive(lastActionExecution);
-
-                Response response = processSingleFlowExecutionModel(lastActionExecution, false);
-                if (response == null) {
-                    processor.getAuthenticationSession().removeAuthNote(AuthenticationProcessor.CURRENT_AUTHENTICATION_EXECUTION);
-                    return processFlow();
-                } else return response;
-            } else {
-                // This normally shouldn't happen as "back" button shouldn't be available on the form. If it is still triggered, we show "pageExpired" page
-                return new AuthenticationFlowURLHelper(processor.getSession(), processor.getRealm(), processor.getUriInfo())
-                        .showPageExpired(authSession);
-            }
-        }
-
         // User clicked on "try another way" link
         if (inputData.containsKey("tryAnotherWay")) {
             logger.info("User clicked on try another way");
@@ -152,11 +123,6 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
             );
 
             model = processor.getRealm().getAuthenticationExecutionById(authExecId);
-
-            // In case that new execution is a flow, we will add the 1st item from the selection (preferred credential) to the history, so when later click "back", we will return to it.
-            if (model.isAuthenticatorFlow()) {
-                new AuthenticationFlowHistoryHelper(processor).pushExecution(selectionOptions.get(0).getAuthExecId());
-            }
 
             Response response = processSingleFlowExecutionModel(model, false);
             if (response == null) {
@@ -553,10 +519,6 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
         switch (status) {
             case SUCCESS:
                 logger.debugv("authenticator SUCCESS: {0}", execution.getAuthenticator());
-                if (isAction) {
-                    new AuthenticationFlowHistoryHelper(processor).pushExecution(execution.getId());
-                }
-
                 processor.getAuthenticationSession().setExecutionStatus(execution.getId(), AuthenticationSessionModel.ExecutionStatus.SUCCESS);
                 return null;
             case FAILED:

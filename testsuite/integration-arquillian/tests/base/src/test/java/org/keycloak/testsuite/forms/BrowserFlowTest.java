@@ -7,7 +7,6 @@ import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.RealmResource;
-import org.keycloak.authentication.AuthenticationFlow;
 import org.keycloak.authentication.authenticators.browser.OTPFormAuthenticator;
 import org.keycloak.authentication.authenticators.browser.OTPFormAuthenticatorFactory;
 import org.keycloak.authentication.authenticators.browser.PasswordFormFactory;
@@ -36,7 +35,6 @@ import org.keycloak.testsuite.admin.authentication.AbstractAuthenticationTest;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.auth.page.login.OneTimeCode;
 import org.keycloak.testsuite.broker.SocialLoginTest;
-import org.keycloak.testsuite.client.KeycloakTestingClient;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginTotpPage;
@@ -47,7 +45,6 @@ import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.authentication.ConditionalUserAttributeValueFactory;
 import org.keycloak.testsuite.authentication.SetUserAttributeAuthenticatorFactory;
 import org.keycloak.testsuite.util.URLUtils;
-import org.keycloak.testsuite.util.WaitUtils;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
@@ -162,27 +159,6 @@ public class BrowserFlowTest extends AbstractTestRealmKeycloakTest {
         Assert.assertTrue(oneTimeCodePage.isOtpLabelPresent());
         loginTotpPage.assertCurrent();
         loginTotpPage.assertOtpCredentialSelectorAvailability(false);
-
-        oneTimeCodePage.sendCode(getOtpCode("DJmQfC73VGFhw7D4QJ8A"));
-        Assert.assertFalse(loginPage.isCurrent());
-        Assert.assertFalse(oneTimeCodePage.isOtpLabelPresent());
-    }
-
-    @Test
-    public void testBackButton() {
-        provideUsernamePassword("user-with-one-configured-otp");
-        Assert.assertTrue(oneTimeCodePage.isOtpLabelPresent());
-
-        // Assert "Back" button available on the TOTP page
-        loginTotpPage.assertBackButtonAvailability(true);
-        loginTotpPage.clickBackButton();
-
-        // Assert "Back" button not available on the Browser page
-        loginPage.assertCurrent();
-        loginPage.assertBackButtonAvailability(false);
-
-        // Login
-        loginPage.login("user-with-one-configured-otp", "password");
 
         oneTimeCodePage.sendCode(getOtpCode("DJmQfC73VGFhw7D4QJ8A"));
         Assert.assertFalse(loginPage.isCurrent());
