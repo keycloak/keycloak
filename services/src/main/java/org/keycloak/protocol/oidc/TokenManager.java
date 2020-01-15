@@ -22,8 +22,10 @@ import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.TokenCategory;
+import org.keycloak.TokenVerifier;
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.common.ClientConnection;
+import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.Time;
 import org.keycloak.crypto.HashProvider;
 import org.keycloak.crypto.SignatureProvider;
@@ -56,6 +58,7 @@ import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.IDToken;
+import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.managers.AuthenticationManager;
@@ -161,16 +164,13 @@ public class TokenManager {
             throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Unmatching clients", "Unmatching clients");
         }
 
-        if (oldToken.getIssuedAt() < client.getNotBefore()) {
+        try {
+            TokenVerifier.createWithoutSignature(oldToken)
+                    .withChecks(NotBeforeCheck.forModel(client), NotBeforeCheck.forModel(session, realm, user))
+                    .verify();
+        } catch (VerificationException e) {
             throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Stale token");
         }
-        if (oldToken.getIssuedAt() < realm.getNotBefore()) {
-            throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Stale token");
-        }
-        if (oldToken.getIssuedAt() < session.users().getNotBeforeOfUser(realm, user)) {
-            throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Stale token");
-        }
-
 
         // Setup clientScopes from refresh token to the context
         String oldTokenScope = oldToken.getScope();
@@ -207,16 +207,16 @@ public class TokenManager {
      * @throws OAuthErrorException
      */
     public boolean checkTokenValidForIntrospection(KeycloakSession session, RealmModel realm, AccessToken token) throws OAuthErrorException {
-        if (!token.isActive()) {
-            return false;
-        }
-
-        if (token.getIssuedAt() < realm.getNotBefore()) {
-            return false;
-        }
-
         ClientModel client = realm.getClientByClientId(token.getIssuedFor());
-        if (client == null || !client.isEnabled() || token.getIssuedAt() < client.getNotBefore()) {
+        if (client == null || !client.isEnabled()) {
+            return false;
+        }
+
+        try {
+            TokenVerifier.createWithoutSignature(token)
+                    .withChecks(NotBeforeCheck.forModel(client), TokenVerifier.IS_ACTIVE)
+                    .verify();
+        } catch (VerificationException e) {
             return false;
         }
 
@@ -248,9 +248,14 @@ public class TokenManager {
         if (!user.isEnabled()) {
             return false;
         }
-        if (token.getIssuedAt() < session.users().getNotBeforeOfUser(realm, user)) {
+        try {
+            TokenVerifier.createWithoutSignature(token)
+                    .withChecks(NotBeforeCheck.forModel(session ,realm, user))
+                    .verify();
+        } catch (VerificationException e) {
             return false;
         }
+
         if (token.getIssuedAt() + 1 < userSession.getStarted()) {
             return false;
         }
@@ -349,12 +354,12 @@ public class TokenManager {
             }
 
             if (checkExpiration) {
-                if (refreshToken.getExpiration() != 0 && refreshToken.isExpired()) {
-                    throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Refresh token expired");
-                }
-
-                if (refreshToken.getIssuedAt() < realm.getNotBefore()) {
-                    throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Stale refresh token");
+                try {
+                    TokenVerifier.createWithoutSignature(refreshToken)
+                            .withChecks(NotBeforeCheck.forModel(realm), TokenVerifier.IS_ACTIVE)
+                            .verify();
+                } catch (VerificationException e) {
+                    throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, e.getMessage());
                 }
             }
 
@@ -385,14 +390,12 @@ public class TokenManager {
 
     public IDToken verifyIDToken(KeycloakSession session, RealmModel realm, String encodedIDToken) throws OAuthErrorException {
         IDToken idToken = session.tokens().decode(encodedIDToken, IDToken.class);
-        if (idToken == null) {
-            throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Invalid IDToken");
-        }
-        if (idToken.isExpired()) {
-            throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "IDToken expired");
-        }
-        if (idToken.getIssuedAt() < realm.getNotBefore()) {
-            throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Stale IDToken");
+        try {
+            TokenVerifier.createWithoutSignature(idToken)
+                    .withChecks(NotBeforeCheck.forModel(realm), TokenVerifier.IS_ACTIVE)
+                    .verify();
+        } catch (VerificationException e) {
+            throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, e.getMessage());
         }
         return idToken;
     }
@@ -881,4 +884,44 @@ public class TokenManager {
         }
     }
 
+    public static class NotBeforeCheck implements TokenVerifier.Predicate<JsonWebToken> {
+
+        private final int notBefore;
+
+        public NotBeforeCheck(int notBefore) {
+            this.notBefore = notBefore;
+        }
+
+        @Override
+        public boolean test(JsonWebToken t) throws VerificationException {
+            if (t.getIssuedAt() < notBefore) {
+                throw new VerificationException("Stale token");
+            }
+
+            return true;
+        }
+
+        public static NotBeforeCheck forModel(ClientModel clientModel) {
+            if (clientModel != null) {
+
+                int notBeforeClient = clientModel.getNotBefore();
+                int notBeforeRealm = clientModel.getRealm().getNotBefore();
+
+                int notBefore = (notBeforeClient == 0 ? notBeforeRealm : (notBeforeRealm == 0 ? notBeforeClient :
+                        Math.min(notBeforeClient, notBeforeRealm)));
+
+                return new NotBeforeCheck(notBefore);
+            }
+
+            return new NotBeforeCheck(0);
+        }
+
+        public static NotBeforeCheck forModel(RealmModel realmModel) {
+            return new NotBeforeCheck(realmModel == null ? 0 : realmModel.getNotBefore());
+        }
+
+        public static NotBeforeCheck forModel(KeycloakSession session, RealmModel realmModel, UserModel userModel) {
+            return new NotBeforeCheck(session.users().getNotBeforeOfUser(realmModel, userModel));
+        }
+    }
 }
