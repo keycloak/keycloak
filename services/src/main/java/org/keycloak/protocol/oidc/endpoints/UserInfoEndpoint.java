@@ -35,7 +35,7 @@ import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionContext;
-import org.keycloak.models.TokenManager;
+import org.keycloak.protocol.oidc.TokenManager.NotBeforeCheck;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -131,6 +131,7 @@ public class UserInfoEndpoint {
         }
 
         AccessToken token;
+        ClientModel clientModel;
         try {
             TokenVerifier<AccessToken> verifier = TokenVerifier.create(tokenString, AccessToken.class).withDefaultChecks()
                     .realmUrl(Urls.realmIssuer(session.getContext().getUri().getBaseUri(), realm.getName()));
@@ -139,18 +140,22 @@ public class UserInfoEndpoint {
             verifier.verifierContext(verifierContext);
 
             token = verifier.verify().getToken();
+
+            clientModel = realm.getClientByClientId(token.getIssuedFor());
+            if (clientModel == null) {
+                event.error(Errors.CLIENT_NOT_FOUND);
+                throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "Client not found", Response.Status.BAD_REQUEST);
+            }
+
+            TokenVerifier.createWithoutSignature(token)
+                    .withChecks(NotBeforeCheck.forModel(clientModel))
+                    .verify();
         } catch (VerificationException e) {
             event.error(Errors.INVALID_TOKEN);
-            throw new ErrorResponseException(OAuthErrorException.INVALID_TOKEN, "Token invalid: " + e.getMessage(), Response.Status.UNAUTHORIZED);
+            throw new ErrorResponseException(OAuthErrorException.INVALID_TOKEN, "Stale token", Response.Status.UNAUTHORIZED);
         }
 
-        ClientModel clientModel = realm.getClientByClientId(token.getIssuedFor());
-        if (clientModel == null) {
-            event.error(Errors.CLIENT_NOT_FOUND);
-            throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "Client not found", Response.Status.BAD_REQUEST);
-        }
-
-	    if (!clientModel.getProtocol().equals(OIDCLoginProtocol.LOGIN_PROTOCOL)) {
+	if (!clientModel.getProtocol().equals(OIDCLoginProtocol.LOGIN_PROTOCOL)) {
             event.error(Errors.INVALID_CLIENT);
             throw new ErrorResponseException(Errors.INVALID_CLIENT, "Wrong client protocol.", Response.Status.BAD_REQUEST);
         }
