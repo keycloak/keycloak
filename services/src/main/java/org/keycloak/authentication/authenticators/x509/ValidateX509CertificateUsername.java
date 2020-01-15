@@ -29,7 +29,9 @@ import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.UserModel;
+import org.keycloak.services.ErrorPage;
 import org.keycloak.services.ServicesLogger;
+import org.keycloak.services.messages.Messages;
 
 /**
  * @author <a href="mailto:pnalyvayko@agi.com">Peter Nalyvayko</a>
@@ -37,7 +39,7 @@ import org.keycloak.services.ServicesLogger;
  * @date 7/31/2016
  */
 
-public class ValidateX509CertificateUsername extends AbstractX509ClientCertificateDirectGrantAuthenticator {
+public class ValidateX509CertificateUsername extends AbstractX509ClientCertificateAuthenticator {
 
     protected static ServicesLogger logger = ServicesLogger.LOGGER;
 
@@ -48,7 +50,7 @@ public class ValidateX509CertificateUsername extends AbstractX509ClientCertifica
         if (certs == null || certs.length == 0) {
             logger.debug("[ValidateX509CertificateUsername:authenticate] x509 client certificate is not available for mutual SSL.");
             context.getEvent().error(Errors.USER_NOT_FOUND);
-            Response challengeResponse = errorResponse(Response.Status.UNAUTHORIZED.getStatusCode(), "invalid_request", "X509 client certificate is missing.");
+            Response challengeResponse = ErrorPage.error(context.getSession(), context.getAuthenticationSession(), Response.Status.UNAUTHORIZED, Messages.X509_CERTIFICATE_MISSING);
             context.failure(AuthenticationFlowError.INVALID_USER, challengeResponse);
             return;
         }
@@ -63,7 +65,7 @@ public class ValidateX509CertificateUsername extends AbstractX509ClientCertifica
         if (config == null) {
             logger.warn("[ValidateX509CertificateUsername:authenticate] x509 Client Certificate Authentication configuration is not available.");
             context.getEvent().error(Errors.USER_NOT_FOUND);
-            Response challengeResponse = errorResponse(Response.Status.UNAUTHORIZED.getStatusCode(), "invalid_request", "Configuration is missing.");
+            Response challengeResponse = ErrorPage.error(context.getSession(), context.getAuthenticationSession(), Response.Status.UNAUTHORIZED, Messages.MISSING_CONFIGURATION);
             context.failure(AuthenticationFlowError.INVALID_USER, challengeResponse);
             return;
         }
@@ -76,8 +78,7 @@ public class ValidateX509CertificateUsername extends AbstractX509ClientCertifica
                     .validateExtendedKeyUsage();
         } catch(Exception e) {
             logger.error(e.getMessage(), e);
-            // TODO use specific locale to load error messages
-            Response challengeResponse = errorResponse(Response.Status.UNAUTHORIZED.getStatusCode(), "invalid_request", e.getMessage());
+            Response challengeResponse = ErrorPage.error(context.getSession(), context.getAuthenticationSession(), Response.Status.UNAUTHORIZED, Messages.AUTHENTICATION_FAILED, e.getMessage());
             context.failure(AuthenticationFlowError.INVALID_USER, challengeResponse);
             return;
         }
@@ -86,9 +87,7 @@ public class ValidateX509CertificateUsername extends AbstractX509ClientCertifica
         if (userIdentity == null) {
             context.getEvent().error(Errors.INVALID_USER_CREDENTIALS);
             logger.errorf("[ValidateX509CertificateUsername:authenticate] Unable to extract user identity from certificate.");
-            // TODO use specific locale to load error messages
-            String errorMessage = "Unable to extract user identity from specified certificate";
-            Response challengeResponse = errorResponse(Response.Status.UNAUTHORIZED.getStatusCode(), "invalid_request", errorMessage);
+            Response challengeResponse = ErrorPage.error(context.getSession(), context.getAuthenticationSession(), Response.Status.UNAUTHORIZED, Messages.X509_USER_IDENTITY_EXTRACT_ERROR);
             context.failure(AuthenticationFlowError.INVALID_USER, challengeResponse);
             return;
         }
@@ -100,28 +99,26 @@ public class ValidateX509CertificateUsername extends AbstractX509ClientCertifica
         }
         catch(ModelDuplicateException e) {
             logger.modelDuplicateException(e);
-            String errorMessage = String.format("X509 certificate authentication's failed. Reason: \"%s\"", e.getMessage());
-            Response challengeResponse = errorResponse(Response.Status.UNAUTHORIZED.getStatusCode(), "invalid_request", errorMessage);
+            Response challengeResponse = ErrorPage.error(context.getSession(), context.getAuthenticationSession(), Response.Status.UNAUTHORIZED, Messages.AUTHENTICATION_FAILED, e.getMessage());
             context.failure(AuthenticationFlowError.INVALID_USER, challengeResponse);
             return;
         }
         catch(Exception e) {
             logger.error(e.getMessage(), e);
-            String errorMessage = String.format("X509 certificate authentication's failed. Reason: \"%s\"", e.getMessage());
-            Response challengeResponse = errorResponse(Response.Status.UNAUTHORIZED.getStatusCode(), "invalid_request", errorMessage);
+            Response challengeResponse = ErrorPage.error(context.getSession(), context.getAuthenticationSession(), Response.Status.UNAUTHORIZED, Messages.AUTHENTICATION_FAILED, e.getMessage());
             context.failure(AuthenticationFlowError.INVALID_USER, challengeResponse);
             return;
         }
         if (user == null) {
             context.getEvent().error(Errors.INVALID_USER_CREDENTIALS);
-            Response challengeResponse = errorResponse(Response.Status.UNAUTHORIZED.getStatusCode(), "invalid_grant", "Invalid user credentials");
+            Response challengeResponse = ErrorPage.error(context.getSession(), context.getAuthenticationSession(), Response.Status.UNAUTHORIZED, Messages.INVALID_USER_CREDENTIALS);
             context.failure(AuthenticationFlowError.INVALID_USER, challengeResponse);
             return;
         }
         if (!user.isEnabled()) {
             context.getEvent().user(user);
             context.getEvent().error(Errors.USER_DISABLED);
-            Response challengeResponse = errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), "invalid_grant", "Account disabled");
+            Response challengeResponse = ErrorPage.error(context.getSession(), context.getAuthenticationSession(), Response.Status.UNAUTHORIZED, Messages.ACCOUNT_DISABLED);
             context.failure(AuthenticationFlowError.INVALID_USER, challengeResponse);
             return;
         }
@@ -129,7 +126,7 @@ public class ValidateX509CertificateUsername extends AbstractX509ClientCertifica
             if (context.getProtector().isTemporarilyDisabled(context.getSession(), context.getRealm(), user)) {
                 context.getEvent().user(user);
                 context.getEvent().error(Errors.USER_TEMPORARILY_DISABLED);
-                Response challengeResponse = errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), "invalid_grant", "Account temporarily disabled");
+                Response challengeResponse = ErrorPage.error(context.getSession(), context.getAuthenticationSession(), Response.Status.UNAUTHORIZED, Messages.ACCOUNT_TEMPORARILY_DISABLED);
                 context.failure(AuthenticationFlowError.INVALID_USER, challengeResponse);
                 return;
             }

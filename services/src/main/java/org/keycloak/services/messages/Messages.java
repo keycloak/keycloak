@@ -34,6 +34,8 @@ public class Messages {
 
     public static final String INVALID_EMAIL = "invalidEmailMessage";
 
+    public static final String INVALID_USER_CREDENTIALS = "invalidUserCredentialsMessage";
+
     public static final String ACCOUNT_DISABLED = "accountDisabledMessage";
 
     public static final String ACCOUNT_TEMPORARILY_DISABLED = "accountTemporarilyDisabledMessage";
@@ -57,6 +59,8 @@ public class Messages {
     public static final String MISSING_PASSWORD = "missingPasswordMessage";
 
     public static final String MISSING_TOTP = "missingTotpMessage";
+
+    public static final String MISSING_CONFIGURATION = "missingConfigurationMessage";
 
     public static final String NOTMATCH_PASSWORD = "notMatchPasswordMessage";
 
@@ -146,6 +150,8 @@ public class Messages {
     public static final String UNEXPECTED_ERROR_RETRIEVING_TOKEN = "unexpectedErrorRetrievingTokenMessage";
 
     public static final String IDENTITY_PROVIDER_AUTHENTICATION_FAILED = "identityProviderAuthenticationFailedMessage";
+
+    public static final String AUTHENTICATION_FAILED = "AuthenticationFailedMessage";
 
     public static final String UNEXPECTED_ERROR_HANDLING_RESPONSE = "unexpectedErrorHandlingResponseMessage";
 
@@ -238,4 +244,6 @@ public class Messages {
     public static final String DELEGATION_FAILED = "delegationFailedMessage";
     public static final String DELEGATION_FAILED_HEADER = "delegationFailedHeader";
 
+    public static final String X509_CERTIFICATE_MISSING = "authenticatorX509CertificateMissing";
+    public static final String X509_USER_IDENTITY_EXTRACT_ERROR = "authenticatorX509UserIdentityExtractError";
 }
