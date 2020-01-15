@@ -1738,6 +1738,16 @@ public class UserTest extends AbstractAdminTest {
         realm.flows().updateRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD.toString(), updatePasswordReqAction);
         assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, AdminEventPaths.authRequiredActionPath(UserModel.RequiredAction.UPDATE_PASSWORD.toString()), updatePasswordReqAction, ResourceType.REQUIRED_ACTION);
     }
+    
+    private RoleRepresentation getRoleByName(String name, List<RoleRepresentation> roles) {
+        for(RoleRepresentation role : roles) {
+            if(role.getName().equalsIgnoreCase(name)) {
+                return role;
+            }
+        }
+        
+        return null;
+    }
 
     @Test
     public void roleMappings() {
@@ -1747,18 +1757,26 @@ public class UserTest extends AbstractAdminTest {
         RealmRepresentation realmRep = RealmBuilder.edit(realm.toRepresentation()).testEventListener().build();
         realm.update(realmRep);
 
+        RoleRepresentation realmCompositeRole = RoleBuilder.create().name("realm-composite").singleAttribute("attribute1", "value1").build();
+        
         realm.roles().create(RoleBuilder.create().name("realm-role").build());
-        realm.roles().create(RoleBuilder.create().name("realm-composite").build());
+        realm.roles().create(realmCompositeRole);
+        realm.roles().get("realm-composite").update(realmCompositeRole);
         realm.roles().create(RoleBuilder.create().name("realm-child").build());
         realm.roles().get("realm-composite").addComposites(Collections.singletonList(realm.roles().get("realm-child").toRepresentation()));
+
 
         Response response = realm.clients().create(ClientBuilder.create().clientId("myclient").build());
         String clientUuid = ApiUtil.getCreatedId(response);
         response.close();
 
+        RoleRepresentation clientCompositeRole = RoleBuilder.create().name("client-composite").singleAttribute("attribute1", "value1").build();
+        
+        
         realm.clients().get(clientUuid).roles().create(RoleBuilder.create().name("client-role").build());
         realm.clients().get(clientUuid).roles().create(RoleBuilder.create().name("client-role2").build());
-        realm.clients().get(clientUuid).roles().create(RoleBuilder.create().name("client-composite").build());
+        realm.clients().get(clientUuid).roles().create(clientCompositeRole);
+        realm.clients().get(clientUuid).roles().get("client-composite").update(clientCompositeRole);
         realm.clients().get(clientUuid).roles().create(RoleBuilder.create().name("client-child").build());
         realm.clients().get(clientUuid).roles().get("client-composite").addComposites(Collections.singletonList(realm.clients().get(clientUuid).roles().get("client-child").toRepresentation()));
 
@@ -1793,10 +1811,22 @@ public class UserTest extends AbstractAdminTest {
         assertNames(roles.realmLevel().listAvailable(), "admin", "customer-user-premium", "realm-composite-role", "sample-realm-role", "attribute-role");
         assertNames(roles.realmLevel().listEffective(), "realm-role", "realm-composite", "realm-child", "user", "offline_access", Constants.AUTHZ_UMA_AUTHORIZATION);
 
+        // List realm effective role with full representation
+        List<RoleRepresentation> realmRolesFullRepresentations = roles.realmLevel().listEffective(false);
+        RoleRepresentation realmCompositeRoleFromList = getRoleByName("realm-composite", realmRolesFullRepresentations);
+        assertNotNull(realmCompositeRoleFromList);
+        assertTrue(realmCompositeRoleFromList.getAttributes().containsKey("attribute1"));
+        
         // List client roles
         assertNames(roles.clientLevel(clientUuid).listAll(), "client-role", "client-composite");
         assertNames(roles.clientLevel(clientUuid).listAvailable(), "client-role2");
         assertNames(roles.clientLevel(clientUuid).listEffective(), "client-role", "client-composite", "client-child");
+        
+        // List client effective role with full representation
+        List<RoleRepresentation> rolesFullRepresentations = roles.clientLevel(clientUuid).listEffective(false);
+        RoleRepresentation clientCompositeRoleFromList = getRoleByName("client-composite", rolesFullRepresentations);
+        assertNotNull(clientCompositeRoleFromList);
+        assertTrue(clientCompositeRoleFromList.getAttributes().containsKey("attribute1"));
 
         // Get mapping representation
         MappingsRepresentation all = roles.getAll();

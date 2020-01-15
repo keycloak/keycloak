@@ -21,10 +21,12 @@ import org.keycloak.representations.idm.RoleRepresentation;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import java.util.List;
 
@@ -45,6 +47,10 @@ public interface RoleScopeResource {
     @GET
     @Path("composite")
     List<RoleRepresentation> listEffective();
+    
+    @GET
+    @Path("composite")
+    List<RoleRepresentation> listEffective(@QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation);
 
     @POST
     void add(List<RoleRepresentation> rolesToAdd);

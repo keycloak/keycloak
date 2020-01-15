@@ -33,10 +33,12 @@ import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluato
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -115,17 +117,19 @@ public class ScopeMappedClientResource {
      *
      * Returns the roles for the client that are associated with the client's scope.
      *
+     * @param briefRepresentation if false, return roles with their attributes
+     * 
      * @return
      */
     @Path("composite")
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
-    public List<RoleRepresentation> getCompositeClientScopeMappings() {
+    public List<RoleRepresentation> getCompositeClientScopeMappings(@QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation) {
         viewPermission.require();
 
         Set<RoleModel> roles = scopedClient.getRoles();
-        return ScopeMappedResource.getComposite(scopeContainer, roles);
+        return ScopeMappedResource.getComposite(scopeContainer, roles, briefRepresentation);
     }
 
     /**
