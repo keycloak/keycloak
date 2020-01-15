@@ -71,17 +71,6 @@
 
           <#nested "form">
 
-          <#if auth?has_content && auth.showBackButton() >
-          <form id="kc-select-back-form" action="${url.loginAction}" method="post" <#if displayWide>class="${properties.kcContentWrapperClass!}"</#if>>
-              <div <#if displayWide>class="${properties.kcFormSocialAccountContentClass!} ${properties.kcFormSocialAccountClass!}"</#if>>
-                  <div class="${properties.kcFormGroupClass!}">
-                    <input class="${properties.kcButtonClass!} ${properties.kcButtonDefaultClass!} ${properties.kcButtonBlockClass!} ${properties.kcButtonLargeClass!}"
-                           name="back" id="kc-back" type="submit" value="${msg("doBack")}"/>
-                  </div>
-              </div>
-          </form>
-          </#if>
-
           <#if auth?has_content && auth.showTryAnotherWayLink() >
           <form id="kc-select-try-another-way-form" action="${url.loginAction}" method="post" <#if displayWide>class="${properties.kcContentWrapperClass!}"</#if>>
               <div <#if displayWide>class="${properties.kcFormSocialAccountContentClass!} ${properties.kcFormSocialAccountClass!}"</#if>>

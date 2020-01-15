@@ -122,33 +122,6 @@ public class ResetCredentialsAlternativeFlowsTest extends AbstractTestRealmKeycl
 
     // Test with default reset-credentials flow and alternative browser flow with separate username and password screen.
     //
-    // Click "Forget password" on browser flow passwordPAge and assert that button "Back" is not available as we switched to
-    // different flow (reset-credentials" flow).
-    @Test
-    public void testBackButtonWhenSwitchToResetCredentialsFlowFromAlternativeBrowserFlow() {
-        try {
-            MultiFactorAuthenticationTest.configureBrowserFlowWithAlternativeCredentials(testingClient);
-
-            // Provide username and then click "Forget password"
-            provideUsernameAndClickResetPassword("login-test");
-
-            // Click "back to login" link. Should be on password page of the browser flow (under URL "authenticate")
-            resetPasswordPage.backToLogin();
-            passwordPage.assertCurrent();
-            Assert.assertTrue(URLUtils.currentUrlMatches("/login-actions/authenticate"));
-            passwordPage.assertBackButtonAvailability(true);
-
-            // Click "back". Should be on usernameForm
-            passwordPage.clickBackButton();
-            loginUsernameOnlyPage.assertCurrent();
-        } finally {
-            revertFlows();
-        }
-    }
-
-
-    // Test with default reset-credentials flow and alternative browser flow with separate username and password screen.
-    //
     // Provide username and click "Forget password" on browser flow. Then provide non-existing username in reset-credentials 1st screen.
     // User should be cleared from authentication context and no email should be sent
     @Test
@@ -290,7 +263,6 @@ public class ResetCredentialsAlternativeFlowsTest extends AbstractTestRealmKeycl
         // Assert switched to the "reset-credentials" flow, but button "back" not available
         resetPasswordPage.assertCurrent();
         Assert.assertTrue(URLUtils.currentUrlMatches("/login-actions/reset-credentials"));
-        resetPasswordPage.assertBackButtonAvailability(false);
     }
 
 

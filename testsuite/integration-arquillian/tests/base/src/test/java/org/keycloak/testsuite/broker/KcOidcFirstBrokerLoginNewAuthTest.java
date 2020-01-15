@@ -186,52 +186,6 @@ public class KcOidcFirstBrokerLoginNewAuthTest extends AbstractInitializedBaseBr
     }
 
 
-    /**
-     * Tests the firstBrokerLogin flow configured to re-authenticate with PasswordForm authenticator.
-     * Do some testing with back button
-     */
-    @Test
-    public void testBackButtonWithOTPEnabled() {
-        configureBrokerFlowToReAuthenticationWithPasswordForm(bc.getIDPAlias(), "first broker login with password form");
-
-        // Create user and link him with TOTP
-        String consumerRealmUserId = createUser("consumer");
-        String totpSecret = addTOTPToUser("consumer");
-
-        loginWithBrokerAndConfirmLinkAccount();
-
-        // Login with password
-        Assert.assertTrue(passwordPage.isCurrent("consumer"));
-        passwordPage.login("password");
-
-        // Assert on TOTP page. Assert "Back" button available
-        loginTotpPage.assertCurrent();
-        loginTotpPage.assertBackButtonAvailability(true);
-
-        // Click "Back" 2 times. Should be on "Confirm account" page
-        loginTotpPage.clickBackButton();
-
-        Assert.assertTrue(passwordPage.isCurrent("consumer"));
-        passwordPage.assertBackButtonAvailability(true);
-        passwordPage.clickBackButton();
-
-        // Back button won't be available on "Confirm Link" page. It was the first authenticator
-        idpConfirmLinkPage.assertCurrent();
-        idpConfirmLinkPage.assertBackButtonAvailability(false);
-
-        // Authenticate
-        idpConfirmLinkPage.clickLinkAccount();
-
-        Assert.assertTrue(passwordPage.isCurrent("consumer"));
-        passwordPage.login("password");
-
-        loginTotpPage.assertCurrent();
-        loginTotpPage.login(totp.generateTOTP(totpSecret));
-
-        assertUserAuthenticatedInConsumer(consumerRealmUserId);
-    }
-
-
     // Add OTP to the user. Return TOTP secret
     private String addTOTPToUser(String username) {
 

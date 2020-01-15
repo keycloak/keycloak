@@ -409,7 +409,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
 
             attributes.put("url", new UrlBean(realm, theme, baseUri, this.actionUri));
             attributes.put("requiredActionUrl", new RequiredActionUrlFormatterMethod(realm, baseUri));
-            attributes.put("auth", new AuthenticationContextBean(context, actionUri, page));
+            attributes.put("auth", new AuthenticationContextBean(context, page));
             attributes.put(Constants.EXECUTION, execution);
 
             if (realm.isInternationalizationEnabled()) {
