@@ -40,6 +40,7 @@ public class LoginPasswordResetPage extends LanguageComboboxAwarePage {
     private WebElement backToLogin;
 
     public void changePassword(String username) {
+        usernameInput.clear();
         usernameInput.sendKeys(username);
 
         submitButton.click();

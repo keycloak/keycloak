@@ -58,14 +58,12 @@ public class LoginTotpPage extends LanguageComboboxAwarePage {
     }
 
     public boolean isCurrent() {
-        if (driver.getTitle().startsWith("Log in to ")) {
-            try {
-                driver.findElement(By.id("otp"));
-                return true;
-            } catch (Throwable t) {
-            }
+        try {
+            driver.findElement(By.id("otp"));
+            return true;
+        } catch (Throwable t) {
+            return false;
         }
-        return false;
     }
 
     @Override

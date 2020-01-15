@@ -57,11 +57,6 @@ public class PasswordPage extends LanguageComboboxAwarePage {
     }
 
     public boolean isCurrent(String realm) {
-        // Check the title
-        if (!DroneUtils.getCurrentDriver().getTitle().equals("Log in to " + realm) && !DroneUtils.getCurrentDriver().getTitle().equals("Anmeldung bei " + realm)) {
-            return false;
-        }
-
         // Check there is NO username field
         try {
             driver.findElement(By.id("username"));
@@ -72,6 +67,7 @@ public class PasswordPage extends LanguageComboboxAwarePage {
 
         // Check there is password field
         try {
+            driver.findElement(By.id("kc-attempted-username"));
             driver.findElement(By.id("password"));
         } catch (NoSuchElementException nfe) {
             return false;

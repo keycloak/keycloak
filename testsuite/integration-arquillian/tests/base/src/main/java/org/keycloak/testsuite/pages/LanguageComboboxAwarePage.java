@@ -42,7 +42,7 @@ public abstract class LanguageComboboxAwarePage extends AbstractPage {
     @FindBy(id = "try-another-way")
     private WebElement tryAnotherWayLink;
 
-    @FindBy(id = "attempted-username")
+    @FindBy(id = "kc-attempted-username")
     private WebElement attemptedUsernameLabel;
 
     // TODO: This won't be a link, but some kind of an icon once we do better design
@@ -82,7 +82,7 @@ public abstract class LanguageComboboxAwarePage extends AbstractPage {
 
     public static void assertAttemptedUsernameAvailability(WebDriver driver, boolean expectedAvailability) {
         try {
-            driver.findElement(By.id("attempted-username"));
+            driver.findElement(By.id("kc-attempted-username"));
             Assert.assertTrue(expectedAvailability);
         } catch (NoSuchElementException nse) {
             Assert.assertFalse(expectedAvailability);
