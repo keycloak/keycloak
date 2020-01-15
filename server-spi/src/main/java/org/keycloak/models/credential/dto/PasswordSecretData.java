@@ -15,24 +15,20 @@ public class PasswordSecretData {
     private final byte[] salt;
 
     @JsonCreator
-    public PasswordSecretData(@JsonProperty("value") String value, @JsonProperty("salt") String salt) {
-        this(value, decodeSalt(salt));
+    public PasswordSecretData(@JsonProperty("value") String value, @JsonProperty("salt") String salt) throws IOException {
+        if ("__SALT__".equals(salt)) {
+            this.value = value;
+            this.salt = null;
+        }
+        else {
+            this.value = value;
+            this.salt = Base64.decode(salt);
+        }
     }
 
     public PasswordSecretData(String value, byte[] salt) {
         this.value = value;
         this.salt = salt;
-    }
-
-    private static byte[] decodeSalt(String salt) {
-        try {
-            return Base64.decode(salt);
-        } catch (IOException ioe) {
-            // Could happen under some corner cases that value is still placeholder value "__SALT__" . For example when importing JSON from
-            // previous version and using custom hash provider without salt support.
-            logger.tracef("Can't base64 decode the salt %s . Fallback to null salt", salt);
-            return null;
-        }
     }
 
     public String getValue() {
