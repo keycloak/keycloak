@@ -66,10 +66,15 @@ The client has a secret, which needs to be known to both the adapter (applicatio
 ----
 "credentials": {
   "secret-jwt": {
-    "secret": "19666a4f-32dd-4049-b082-684c74115f28"
+    "secret": "19666a4f-32dd-4049-b082-684c74115f28",
+    "algorithm": "HS512"
   }
 }
 ----
+
+The "algorithm" field specifies the algorithm for Signed JWT using Client Secret. It needs to be one of the following values : HS256, HS384, and HS512. For details, please refer to https://tools.ietf.org/html/rfc7518#section-3.2[JSON Web Algorithms (JWA)].
+
+This "algorithm" field is optional so that HS256 is applied automatically if the "algorithm" field does not exist on the `keycloak.json` file.
 
 ===== Add Your Own Client Authentication Method
 
