@@ -116,6 +116,17 @@ div.kc-logo-text span {
     width: 100%;
 }
 
+#kc-attempted-username{
+    font-size: 20px;
+    font-family:inherit;
+    font-weight: normal;
+    padding-right:10px;
+}
+
+#kc-username{
+    text-align: center;
+}
+
 /* #kc-content-wrapper {
     overflow-y: hidden;
 } */
@@ -214,6 +225,47 @@ ul#kc-totp-supported-apps {
 
 #kc-social-providers li:first-of-type {
     margin-top: 0;
+}
+
+.kc-login-tooltip{
+    position:relative;
+    display: inline-block;
+}
+
+.kc-login-tooltip .kc-tooltip-text{
+    top:-3px;
+    left:160%;
+    background-color: black;
+    visibility: hidden;
+    color: #fff;
+
+    min-width:130px;
+    text-align: center;
+    border-radius: 2px;
+    box-shadow:0 1px 8px rgba(0,0,0,0.6);
+    padding: 5px;
+
+    position: absolute;
+    opacity:0;
+    transition:opacity 0.5s;
+}
+
+/* Show tooltip */
+.kc-login-tooltip:hover .kc-tooltip-text {
+    visibility: visible;
+    opacity:0.7;
+}
+
+/* Arrow for tooltip */
+.kc-login-tooltip .kc-tooltip-text::after {
+    content: " ";
+    position: absolute;
+    top: 15px;
+    right: 100%;
+    margin-top: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: transparent black transparent transparent;
 }
 
 .zocial,

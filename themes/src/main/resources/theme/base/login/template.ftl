@@ -52,10 +52,29 @@
                 </div>
             </div>
         </#if>
-        <h1 id="kc-page-title"><#nested "header"></h1>
+          <#if !(auth?has_content && auth.showUsername() && !auth.showResetCredentials())>
+              <h1 id="kc-page-title"><#nested "header"></h1>
+          <#else>
+              <#nested "show-username">
+          </#if>
       </header>
       <div id="kc-content">
         <div id="kc-content-wrapper">
+
+            <#if auth?has_content && auth.showUsername() && !auth.showResetCredentials()>
+                <div class="${properties.kcFormGroupClass!}">
+                    <div id="kc-username">
+                        <label id="kc-attempted-username">${auth.attemptedUsername}</label>
+                        <a id="reset-login" href="${url.loginRestartFlowUrl}">
+                            <div class="kc-login-tooltip">
+                                <i class="${properties.kcResetFlowIcon!}"></i>
+                                <span class="kc-tooltip-text">${msg("restartLoginTooltip")}</span>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+                <hr/>
+            </#if>
 
           <#-- App-initiated actions should not see warning messages about the need to complete the action -->
           <#-- during login.                                                                               -->
@@ -68,16 +87,6 @@
                   <span class="kc-feedback-text">${kcSanitize(message.summary)?no_esc}</span>
               </div>
           </#if>
-
-            <#if auth?has_content && auth.showUsername() >
-                <div class="${properties.kcFormGroupClass!}">
-                    <label id="attempted-username">${auth.attemptedUsername}</label>
-                    <a href="${url.loginRestartFlowUrl}" id="reset-login">Reset Login</a>
-                </div>
-
-                <hr />
-
-            </#if>
 
           <#nested "form">
 

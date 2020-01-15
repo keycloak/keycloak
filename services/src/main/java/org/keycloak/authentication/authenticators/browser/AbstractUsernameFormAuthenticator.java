@@ -191,12 +191,7 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
     public boolean validatePassword(AuthenticationFlowContext context, UserModel user, MultivaluedMap<String, String> inputData, boolean clearUser) {
         String password = inputData.getFirst(CredentialRepresentation.PASSWORD);
         if (password == null || password.isEmpty()) {
-            context.getEvent().user(user);
-            context.getEvent().error(Errors.INVALID_USER_CREDENTIALS);
-            Response challengeResponse = challenge(context, getDefaultChallengeMessage(context));
-            context.forceChallenge(challengeResponse);
-            context.clearUser();
-            return false;
+            return badPasswordHandler(context, user, clearUser,true);
         }
 
         if (isTemporarilyDisabledByBruteForce(context, user)) return false;
@@ -204,17 +199,26 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
         if (password != null && !password.isEmpty() && context.getSession().userCredentialManager().isValid(context.getRealm(), user, UserCredentialModel.password(password))) {
             return true;
         } else {
-            context.getEvent().user(user);
-            context.getEvent().error(Errors.INVALID_USER_CREDENTIALS);
-            Response challengeResponse = challenge(context, getDefaultChallengeMessage(context));
-            context.failureChallenge(AuthenticationFlowError.INVALID_CREDENTIALS, challengeResponse);
-            if (clearUser) {
-                context.clearUser();
-            }
-            return false;
+            return badPasswordHandler(context, user, clearUser,false);
         }
     }
 
+    // Set up AuthenticationFlowContext error.
+    private boolean badPasswordHandler(AuthenticationFlowContext context, UserModel user, boolean clearUser,boolean isEmptyPassword) {
+        context.getEvent().user(user);
+        context.getEvent().error(Errors.INVALID_USER_CREDENTIALS);
+        Response challengeResponse = challenge(context, getDefaultChallengeMessage(context));
+        if(isEmptyPassword) {
+            context.forceChallenge(challengeResponse);
+        }else{
+            context.failureChallenge(AuthenticationFlowError.INVALID_CREDENTIALS, challengeResponse);
+        }
+
+        if (clearUser) {
+            context.clearUser();
+        }
+        return false;
+    }
 
     protected boolean isTemporarilyDisabledByBruteForce(AuthenticationFlowContext context, UserModel user) {
         if (context.getRealm().isBruteForceProtected()) {

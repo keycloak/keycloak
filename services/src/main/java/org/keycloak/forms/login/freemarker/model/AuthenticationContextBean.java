@@ -49,7 +49,11 @@ public class AuthenticationContextBean {
 
 
     public boolean showUsername() {
-        return context != null && context.getUser() != null && context.getAuthenticationSession() != null;
+        return context != null && context.getUser() != null && context.getAuthenticationSession() != null && page!=LoginFormsPages.ERROR;
+    }
+
+    public boolean showResetCredentials() {
+        return showUsername() && page == LoginFormsPages.LOGIN_RESET_PASSWORD;
     }
 
 

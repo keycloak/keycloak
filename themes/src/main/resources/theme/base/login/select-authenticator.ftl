@@ -1,6 +1,6 @@
 <#import "template.ftl" as layout>
 <@layout.registrationLayout displayInfo=true; section>
-    <#if section = "header">
+    <#if section = "header" || section = "show-username">
         <script type="text/javascript">
             // Fill up the two hidden and submit the form
             function fillAndSubmit() {
