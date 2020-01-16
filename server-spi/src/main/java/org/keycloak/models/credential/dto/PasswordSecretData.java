@@ -16,7 +16,7 @@ public class PasswordSecretData {
 
     @JsonCreator
     public PasswordSecretData(@JsonProperty("value") String value, @JsonProperty("salt") String salt) throws IOException {
-        if ("__SALT__".equals(salt)) {
+        if (salt == null || "__SALT__".equals(salt)) {
             this.value = value;
             this.salt = null;
         }
