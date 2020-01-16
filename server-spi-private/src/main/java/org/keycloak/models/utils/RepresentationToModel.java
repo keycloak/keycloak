@@ -612,6 +612,23 @@ public class RepresentationToModel {
                 newGroup.setAttribute(attr.getKey(), attr.getValue());
             }
         }
+        if (parent == null) {
+            String path = group.getPath();
+            if (path != null) {
+                if (path.startsWith("/")) {
+                    path = path.substring(1);
+                }
+                if (path.endsWith("/")) {
+                    path = path.substring(0, path.length() - 1);
+                }
+                path = path.substring(0, path.lastIndexOf("/"));
+                String[] split = path.split("/");
+                String groupName = split[split.length - 1];
+                if (!group.getName().equals(groupName)) {
+                    parent = realm.getGroupByName(groupName);
+                }
+            }
+        }
         realm.moveGroup(newGroup, parent);
 
         if (group.getRealmRoles() != null) {

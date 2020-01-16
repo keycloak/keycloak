@@ -26,7 +26,8 @@ Once completed you will find distribution archives in `distribution`.
 To build only the server run:
 
     mvn -Pdistribution -pl distribution/server-dist -am -Dmaven.test.skip clean install
-
+    
+    注：不能打包mysql,打包完在module中添加mysql
 
 ## Starting Keycloak
 

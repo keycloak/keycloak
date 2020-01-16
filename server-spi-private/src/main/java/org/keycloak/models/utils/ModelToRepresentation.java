@@ -89,7 +89,7 @@ public class ModelToRepresentation {
             if (role.getContainer() instanceof RealmModel) {
                 realmRoleNames.add(role.getName());
             } else {
-                ClientModel client = (ClientModel)role.getContainer();
+                ClientModel client = (ClientModel) role.getContainer();
                 String clientId = client.getClientId();
                 List<String> currentClientRoles = clientRoleNames.computeIfAbsent(clientId, k -> new ArrayList<>());
                 currentClientRoles.add(role.getName());
@@ -396,9 +396,12 @@ public class ModelToRepresentation {
         if (realm.getBrowserFlow() != null) rep.setBrowserFlow(realm.getBrowserFlow().getAlias());
         if (realm.getRegistrationFlow() != null) rep.setRegistrationFlow(realm.getRegistrationFlow().getAlias());
         if (realm.getDirectGrantFlow() != null) rep.setDirectGrantFlow(realm.getDirectGrantFlow().getAlias());
-        if (realm.getResetCredentialsFlow() != null) rep.setResetCredentialsFlow(realm.getResetCredentialsFlow().getAlias());
-        if (realm.getClientAuthenticationFlow() != null) rep.setClientAuthenticationFlow(realm.getClientAuthenticationFlow().getAlias());
-        if (realm.getDockerAuthenticationFlow() != null) rep.setDockerAuthenticationFlow(realm.getDockerAuthenticationFlow().getAlias());
+        if (realm.getResetCredentialsFlow() != null)
+            rep.setResetCredentialsFlow(realm.getResetCredentialsFlow().getAlias());
+        if (realm.getClientAuthenticationFlow() != null)
+            rep.setClientAuthenticationFlow(realm.getClientAuthenticationFlow().getAlias());
+        if (realm.getDockerAuthenticationFlow() != null)
+            rep.setDockerAuthenticationFlow(realm.getDockerAuthenticationFlow().getAlias());
 
         List<String> defaultRoles = realm.getDefaultRoles();
         if (!defaultRoles.isEmpty()) {
@@ -863,7 +866,7 @@ public class ModelToRepresentation {
     public static <R extends AbstractPolicyRepresentation> R toRepresentation(Policy policy, AuthorizationProvider authorization, boolean genericRepresentation, boolean export) {
         return toRepresentation(policy, authorization, genericRepresentation, export, false);
     }
-    
+
     public static <R extends AbstractPolicyRepresentation> R toRepresentation(Policy policy, AuthorizationProvider authorization, boolean genericRepresentation, boolean export, boolean allFields) {
         PolicyProviderFactory providerFactory = authorization.getProviderFactory(policy.getType());
         R representation;
@@ -888,7 +891,7 @@ public class ModelToRepresentation {
         representation.setType(policy.getType());
         representation.setDecisionStrategy(policy.getDecisionStrategy());
         representation.setLogic(policy.getLogic());
-        
+
         if (allFields) {
             representation.setResourcesData(policy.getResources().stream().map(
                     resource -> toRepresentation(resource, resource.getResourceServer(), authorization, true)).collect(Collectors.toSet()));
@@ -952,10 +955,8 @@ public class ModelToRepresentation {
                 }
                 return scope;
             }).collect(Collectors.toSet()));
-
-            resource.setAttributes(new HashMap<>(model.getAttributes()));
         }
-
+        resource.setAttributes(new HashMap<>(model.getAttributes()));
         return resource;
     }
 
