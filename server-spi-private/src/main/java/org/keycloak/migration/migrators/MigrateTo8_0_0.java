@@ -62,17 +62,21 @@ public class MigrateTo8_0_0  implements Migration {
 
     protected void migrateRealmCommon(RealmModel realm) {
         ClientModel adminConsoleClient = realm.getClientByClientId(Constants.ADMIN_CONSOLE_CLIENT_ID);
-        adminConsoleClient.setRootUrl(Constants.AUTH_ADMIN_URL_PROP);
-        String adminConsoleBaseUrl = "/admin/" + realm.getName() + "/console/";
-        adminConsoleClient.setBaseUrl(adminConsoleBaseUrl);
-        adminConsoleClient.setRedirectUris(Collections.singleton(adminConsoleBaseUrl + "*"));
-        adminConsoleClient.setWebOrigins(Collections.singleton("+"));
+        if (adminConsoleClient != null) {
+            adminConsoleClient.setRootUrl(Constants.AUTH_ADMIN_URL_PROP);
+            String adminConsoleBaseUrl = "/admin/" + realm.getName() + "/console/";
+            adminConsoleClient.setBaseUrl(adminConsoleBaseUrl);
+            adminConsoleClient.setRedirectUris(Collections.singleton(adminConsoleBaseUrl + "*"));
+            adminConsoleClient.setWebOrigins(Collections.singleton("+"));
+        }
 
         ClientModel accountClient = realm.getClientByClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID);
-        accountClient.setRootUrl(Constants.AUTH_BASE_URL_PROP);
-        String accountClientBaseUrl = "/realms/" + realm.getName() + "/account/";
-        accountClient.setBaseUrl(accountClientBaseUrl);
-        accountClient.setRedirectUris(Collections.singleton(accountClientBaseUrl + "*"));
+        if (accountClient != null) {
+            accountClient.setRootUrl(Constants.AUTH_BASE_URL_PROP);
+            String accountClientBaseUrl = "/realms/" + realm.getName() + "/account/";
+            accountClient.setBaseUrl(accountClientBaseUrl);
+            accountClient.setRedirectUris(Collections.singleton(accountClientBaseUrl + "*"));
+        }
     }
 
     protected void migrateRealmMFA(KeycloakSession session, RealmModel realm, boolean jsn) {
