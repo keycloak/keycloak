@@ -46,6 +46,12 @@ There is a small window of time that is always added to the idle timeout before 
 |Offline Session Max
 |For <<_offline-access, offline access>>, this is the maximum time before the corresponding offline token is revoked.  This option controls the maximum time the offline token can remain active, regardless of user activity.
 
+|Client Session Idle
+|If the user is not active for longer than this timeout, refresh token requests will bump the idle timeout. It allows for the specification of a shorter idle timeout of refresh token than session idle timeout. And it can be overridden on individual clients. It is an optional configuration and if not set to a value bigger than 0 it uses the same idle timeout set in the SSO Session Idle configuration.
+
+|Client Session Max
+|The maximum time before a refresh token is expired and invalidated. It allows for the specification of a shorter timeout of refresh token than session timeout. And it can be overridden on individual clients. It is an optional configuration and if not set to a value bigger than 0 it uses the same idle timeout set in the SSO Session Max configuration.
+
 |Access Token Lifespan
 |When an OIDC access token is created, this value affects the expiration.
 
