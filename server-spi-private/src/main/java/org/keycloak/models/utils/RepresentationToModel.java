@@ -621,11 +621,14 @@ public class RepresentationToModel {
                 if (path.endsWith("/")) {
                     path = path.substring(0, path.length() - 1);
                 }
-                path = path.substring(0, path.lastIndexOf("/"));
-                String[] split = path.split("/");
-                String groupName = split[split.length - 1];
-                if (!group.getName().equals(groupName)) {
-                    parent = realm.getGroupByName(groupName);
+                int pIdx = path.lastIndexOf("/");
+                if (pIdx != -1) {
+                    path = path.substring(0, pIdx);
+                    String[] split = path.split("/");
+                    String groupName = split[split.length - 1];
+                    if (!group.getName().equals(groupName)) {
+                        parent = realm.getGroupByName(groupName);
+                    }
                 }
             }
         }
