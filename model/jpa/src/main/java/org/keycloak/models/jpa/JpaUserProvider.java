@@ -64,6 +64,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import javax.persistence.LockModeType;
 import javax.persistence.criteria.Expression;
 
@@ -731,9 +732,16 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
             }
         }
 
-        Set<String> userGroups = (Set<String>) session.getAttribute(UserModel.GROUPS);
+        Set<String> userGroups = (Set<String>) session.getAttribute(UserModel.SESSION_GROUPS);
+        Set<String> requestedUserGroups = Stream.of(attributes.getOrDefault(UserModel.GROUPS, "").split(","))
+            .map(String::trim).collect(Collectors.toSet());
+        if (userGroups == null) {
+            userGroups = requestedUserGroups;
+        } else if (!requestedUserGroups.isEmpty()) {
+            userGroups.retainAll(requestedUserGroups);
+        }
 
-        if (userGroups != null) {
+        if (!userGroups.isEmpty()) {
             Subquery subquery = queryBuilder.subquery(String.class);
             Root<UserGroupMembershipEntity> from = subquery.from(UserGroupMembershipEntity.class);
 

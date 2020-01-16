@@ -48,6 +48,7 @@ public interface UsersResource {
                                     @QueryParam("firstName") String firstName,
                                     @QueryParam("lastName") String lastName,
                                     @QueryParam("email") String email,
+                                    @QueryParam("groups") String groups,
                                     @QueryParam("first") Integer firstResult,
                                     @QueryParam("max") Integer maxResults,
                                     @QueryParam("briefRepresentation") Boolean briefRepresentation);

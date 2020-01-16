@@ -530,6 +530,32 @@ public class UserTest extends AbstractAdminTest {
     }
 
     @Test
+    public void searchByGroup() {
+        createUsers();
+
+        GroupRepresentation group = new GroupRepresentation();
+        group.setName("group-1");
+        try (Response response = realm.groups().add(group)) {
+            String groupId = ApiUtil.getCreatedId(response);
+            getCleanup().addGroupId(groupId);
+
+            assertAdminEvents.assertEvent("test", OperationType.CREATE, AdminEventPaths.groupPath(groupId), group, ResourceType.GROUP);
+
+            // Set ID to the original rep
+            group.setId(groupId);
+        }
+
+        String userId = realm.users().list().get(0).getId();
+
+        realm.users().get(userId).joinGroup("group-1");
+        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.userGroupPath(userId, "group-1"), group, ResourceType.GROUP_MEMBERSHIP);
+
+        List<UserRepresentation> usersInGroup1 = realm.users().search(null, null, null, null, "group-1", null, null, false);
+        assertEquals(1, usersInGroup1.size());
+        assertEquals(usersInGroup1.get(0).getId(), userId);
+    }
+
+    @Test
     public void searchById() {
         String expectedUserId = createUsers().get(0);
         List<UserRepresentation> users = realm.users().search("id:" + expectedUserId, null, null);

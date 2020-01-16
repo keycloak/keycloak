@@ -38,7 +38,6 @@ import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.ForbiddenException;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 import org.keycloak.services.resources.admin.permissions.UserPermissionEvaluator;
-import org.keycloak.util.JsonSerialization;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -51,7 +50,6 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -59,7 +57,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Base resource for managing users
@@ -193,6 +192,7 @@ public class UsersResource {
                                              @QueryParam("firstName") String first,
                                              @QueryParam("email") String email,
                                              @QueryParam("username") String username,
+                                             @QueryParam("groups") String groups,
                                              @QueryParam("first") Integer firstResult,
                                              @QueryParam("max") Integer maxResults,
                                              @QueryParam("briefRepresentation") Boolean briefRepresentation) {
@@ -213,7 +213,8 @@ public class UsersResource {
             } else {
                 userModels = session.users().searchForUser(search.trim(), realm, firstResult, maxResults);
             }
-        } else if (last != null || first != null || email != null || username != null) {
+            return toRepresentation(realm, userPermissionEvaluator, briefRepresentation, userModels);
+        } else if (last != null || first != null || email != null || username != null || groups != null) {
             Map<String, String> attributes = new HashMap<>();
             if (last != null) {
                 attributes.put(UserModel.LAST_NAME, last);
@@ -227,12 +228,13 @@ public class UsersResource {
             if (username != null) {
                 attributes.put(UserModel.USERNAME, username);
             }
+            if (groups != null) {
+                attributes.put(UserModel.GROUPS, groups);
+            }
             return searchForUser(attributes, realm, userPermissionEvaluator, briefRepresentation, firstResult, maxResults, true);
         } else {
             return searchForUser(new HashMap<>(), realm, userPermissionEvaluator, briefRepresentation, firstResult, maxResults, false);
         }
-
-        return toRepresentation(realm, userPermissionEvaluator, briefRepresentation, userModels);
     }
 
     @Path("count")
@@ -266,7 +268,7 @@ public class UsersResource {
         List<UserRepresentation> results = new ArrayList<>();
         boolean canViewGlobal = usersEvaluator.canView();
 
-        usersEvaluator.grantIfNoPermission(session.getAttribute(UserModel.GROUPS) != null);
+        usersEvaluator.grantIfNoPermission(session.getAttribute(UserModel.SESSION_GROUPS) != null);
 
         for (UserModel user : userModels) {
             if (!canViewGlobal) {
