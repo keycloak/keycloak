@@ -368,6 +368,13 @@ class GroupPermissions implements GroupPermissionEvaluator, GroupPermissionManag
     }
 
     @Override
+    public void requireManageMembers(GroupModel group) {
+        if (!canManageMembers(group)) {
+            throw new ForbiddenException();
+        }
+    }
+
+    @Override
     public Map<String, Boolean> getAccess(GroupModel group) {
         Map<String, Boolean> map = new HashMap<>();
         map.put("view", canView(group));
