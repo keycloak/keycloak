@@ -15,7 +15,7 @@ infrastructure settings for networking, databases, caches, and discovery.  This 
 in _.../standalone/configuration/standalone-ha.xml_.  There's a few things missing from this configuration.
 You can't run {project_name} in a cluster without configuring a shared database connection.  You also need to
 deploy some type of load balancer in front of the cluster.  The <<_clustering,clustering>> and
-<<_database,database>> sections of this guide walk you though these things.
+<<_database,database>> sections of this guide walk you through these things.
 
 .Standalone HA Config
 image:{project_images}/standalone-ha-config-file.png[]
