@@ -25,12 +25,14 @@ import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.Constants;
+import org.keycloak.models.GroupModel;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.policy.PasswordPolicyNotMetException;
@@ -107,7 +109,20 @@ public class UsersResource {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     public Response createUser(final UserRepresentation rep) {
-        auth.users().requireManage();
+        // if groups is part of the user rep, check if admin has manage_members and manage_membership on each group
+        if (rep.getGroups() != null) {
+            for (String groupPath : rep.getGroups()) {
+                GroupModel group = KeycloakModelUtils.findGroupByPath(realm, groupPath);
+                if (group != null) {
+                    auth.groups().requireManageMembers(group);
+                    auth.groups().requireManageMembership(group);
+                } else {
+                    return ErrorResponse.error(String.format("Group %s not found", groupPath), Response.Status.BAD_REQUEST);
+                }
+            }
+        } else {
+            auth.users().requireManage();
+        }
 
         String username = rep.getUsername();
         if(realm.isRegistrationEmailAsUsername()) {
