@@ -166,7 +166,6 @@ public class PasswordPolicyTest extends AbstractConsoleTest {
     }
 
     @Test
-    @Ignore("Disabled until KEYCLOAK-11922 is resolved.")
     public void testPasswordHistoryPolicy() {
         RealmRepresentation realm = testRealmResource().toRepresentation();
         realm.setPasswordPolicy("passwordHistory(2)");

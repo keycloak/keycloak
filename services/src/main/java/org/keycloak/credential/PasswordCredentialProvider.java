@@ -32,7 +32,6 @@ import org.keycloak.models.cache.UserCache;
 import org.keycloak.policy.PasswordPolicyManagerProvider;
 import org.keycloak.policy.PolicyError;
 
-import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -90,21 +89,46 @@ public class PasswordCredentialProvider implements CredentialProvider<PasswordCr
 
     @Override
     public CredentialModel createCredential(RealmModel realm, UserModel user, PasswordCredentialModel credentialModel) {
+
         PasswordPolicy policy = realm.getPasswordPolicy();
-        try {
-            expirePassword(realm, user, policy);
-            if (credentialModel.getCreatedDate() == null) {
-                credentialModel.setCreatedDate(Time.currentTimeMillis());
-            }
-            CredentialModel createdCredential = getCredentialStore().createCredential(realm, user, credentialModel);
-            UserCache userCache = session.userCache();
-            if (userCache != null) {
-                userCache.evict(realm, user);
-            }
-            return createdCredential;
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+        int expiredPasswordsPolicyValue = policy.getExpiredPasswords();
+
+        // 1) create new or reset existing password
+        CredentialModel createdCredential;
+        CredentialModel oldPassword = getPassword(realm, user);
+        if (credentialModel.getCreatedDate() == null) {
+            credentialModel.setCreatedDate(Time.currentTimeMillis());
         }
+        if (oldPassword == null) { // no password exists --> create new
+            createdCredential = getCredentialStore().createCredential(realm, user, credentialModel);
+        } else { // password exists --> update existing
+            credentialModel.setId(oldPassword.getId());
+            getCredentialStore().updateCredential(realm, user, credentialModel);
+            createdCredential = credentialModel;
+
+            // 2) add a password history item based on the old password
+            if (expiredPasswordsPolicyValue > 1) {
+                oldPassword.setId(null);
+                oldPassword.setType(PasswordCredentialModel.PASSWORD_HISTORY);
+                getCredentialStore().createCredential(realm, user, oldPassword);
+            }
+        }
+        
+        // 3) remove old password history items
+        List<CredentialModel> passwordHistoryList = getCredentialStore().getStoredCredentialsByType(realm, user, PasswordCredentialModel.PASSWORD_HISTORY);
+        final int passwordHistoryListMaxSize = Math.max(0, expiredPasswordsPolicyValue - 1);
+        if (passwordHistoryList.size() > passwordHistoryListMaxSize) {
+            passwordHistoryList.stream()
+                    .sorted(CredentialModel.comparingByStartDateDesc())
+                    .skip(passwordHistoryListMaxSize)
+                    .forEach(p -> getCredentialStore().removeStoredCredential(realm, user, p.getId()));
+        }
+
+        UserCache userCache = session.userCache();
+        if (userCache != null) {
+            userCache.evict(realm, user);
+        }
+        return createdCredential;
     }
 
     @Override
@@ -117,31 +141,6 @@ public class PasswordCredentialProvider implements CredentialProvider<PasswordCr
         return PasswordCredentialModel.createFromCredentialModel(model);
     }
 
-
-    protected void expirePassword(RealmModel realm, UserModel user, PasswordPolicy policy) throws IOException {
-
-        CredentialModel oldPassword = getPassword(realm, user);
-        if (oldPassword == null) return;
-        int expiredPasswordsPolicyValue = policy.getExpiredPasswords();
-        List<CredentialModel> list = getCredentialStore().getStoredCredentialsByType(realm, user, PasswordCredentialModel.PASSWORD_HISTORY);
-        if (expiredPasswordsPolicyValue > 1) {
-            // oldPassword will expire few lines below, and there is one active password,
-            // hence (expiredPasswordsPolicyValue - 2) passwords should be left in history
-            final int passwordsToLeave = expiredPasswordsPolicyValue - 2;
-            if (list.size() > passwordsToLeave) {
-                list.stream()
-                  .sorted(CredentialModel.comparingByStartDateDesc())
-                  .skip(passwordsToLeave)
-                  .forEach(p -> getCredentialStore().removeStoredCredential(realm, user, p.getId()));
-            }
-            oldPassword.setType(PasswordCredentialModel.PASSWORD_HISTORY);
-            getCredentialStore().updateCredential(realm, user, oldPassword);
-        } else {
-            list.stream().forEach(p -> getCredentialStore().removeStoredCredential(realm, user, p.getId()));
-            getCredentialStore().removeStoredCredential(realm, user, oldPassword.getId());
-        }
-
-    }
 
     protected PasswordHashProvider getHashProvider(PasswordPolicy policy) {
         PasswordHashProvider hash = session.getProvider(PasswordHashProvider.class, policy.getHashAlgorithm());
