@@ -37,7 +37,7 @@
                 </div>
                 <kc-tooltip>{{:: 'client.enabled.tooltip' | translate}}</kc-tooltip>
             </div>
-            <div class="form-group clearfix block" data-ng-show="serverInfo.featureEnabled('ACCOUNT2') && accessType !== 'bearer-only'">
+            <div class="form-group clearfix block" data-ng-show="serverInfo.featureEnabled('ACCOUNT2') && !(accessType === 'bearer-only' && protocol === 'openid-connect')">
                 <label class="col-md-2 control-label" for="alwaysDisplayInConsole">{{:: 'alwaysDisplayInConsole' | translate}}</label>
                 <div class="col-sm-6">
                     <input ng-model="clientEdit.alwaysDisplayInConsole" name="alwaysDisplayInConsole" id="alwaysDisplayInConsole" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}"/>
