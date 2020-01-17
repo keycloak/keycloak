@@ -92,6 +92,8 @@ It has no other task than sending the received tokens to the main application an
 
 Please keep in mind that this page at the specified location must be provided by the application itself and is _not_ part of the JavaScript adapter!
 
+WARNING: Starting with Chrome version 80 (released on February 2020), silent `check-sso` functionality will work only
+when the SSL / TLS connection is configured on the {project_name} side.
 
 To enable `login-required` set `onLoad` to `login-required` and pass to the init method:
 
@@ -153,6 +155,11 @@ This feature can be disabled by setting `checkLoginIframe: false` in the options
 
 You should not rely on looking at this cookie directly. Its format can change and it's also associated with the URL of the {project_name} server, not
 your application.
+
+WARNING: Starting with Chrome version 80 (released on February 2020), status iframe will only be able to see the special
+cookie over the SSL / TLS connection configured on the {project_name} side. Using an insecure connection may lead to redirecting
+to {project_name} every time iframe checks the status. You can avoid this behavior by disabling iframe
+or link:{installguide_link}#_setting_up_ssl[configuring the SSL / TLS] on the {project_name} side.
 
 [[_javascript_implicit_flow]]
 ==== Implicit and Hybrid Flow
