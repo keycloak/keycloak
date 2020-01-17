@@ -1,8 +1,0 @@
-@font-face {
-    font-family: 'text-security-{{shape}}';
-    src: url('text-security-{{shape}}.eot');
-    src: url('text-security-{{shape}}.eot?#iefix') format('embedded-opentype'),
-    url('text-security-{{shape}}.woff') format('woff'),
-    url('text-security-{{shape}}.ttf')  format('truetype'),
-    url('text-security-{{shape}}.svg#text-security') format('svg');
-}
