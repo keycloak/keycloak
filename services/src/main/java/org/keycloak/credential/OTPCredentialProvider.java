@@ -18,6 +18,7 @@ package org.keycloak.credential;
 
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.Time;
+import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.models.credential.dto.OTPCredentialData;
 import org.keycloak.models.credential.dto.OTPSecretData;
@@ -133,5 +134,18 @@ public class OTPCredentialProvider implements CredentialProvider<OTPCredentialMo
     @Override
     public String getType() {
         return OTPCredentialModel.TYPE;
+    }
+
+    @Override
+    public CredentialTypeMetadata getCredentialTypeMetadata() {
+        return CredentialTypeMetadata.builder()
+                .type(getType())
+                .category(CredentialTypeMetadata.Category.TWO_FACTOR)
+                .displayName("otp-display-name")
+                .helpText("otp-help-text")
+                .iconCssClass("kcAuthenticatorOTPClass")
+                .createAction(UserModel.RequiredAction.CONFIGURE_TOTP.toString())
+                .removeable(true)
+                .build();
     }
 }

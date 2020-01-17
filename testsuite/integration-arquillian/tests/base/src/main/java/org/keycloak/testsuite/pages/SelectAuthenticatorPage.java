@@ -8,7 +8,6 @@ import org.openqa.selenium.By;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
-import org.openqa.selenium.support.ui.Select;
 
 /**
  * Login page with the list of authentication mechanisms, which are available to the user (Password, OTP, WebAuthn...)
@@ -17,30 +16,64 @@ import org.openqa.selenium.support.ui.Select;
  */
 public class SelectAuthenticatorPage extends LanguageComboboxAwarePage {
 
+    // Corresponds to the PasswordForm
+    public static final String PASSWORD = "Password";
+
+    // Corresponds to the OTPFormAuthenticator
+    public static final String AUTHENTICATOR_APPLICATION = "Authenticator Application";
+
+
     @FindBy(id = "authenticators-choice")
     private WebElement authenticatorsSelect;
 
 
+    /**
+     * Return list of names like for example [ "Password", "Authenticator Application", "Security Key" ]
+     */
     public List<String> getAvailableLoginMethods() {
-        return new Select(authenticatorsSelect).getOptions()
-                .stream()
-                .map(WebElement::getText)
+        List<WebElement> rows = getLoginMethodsRows();
+
+        return rows.stream()
+                .map(this::getLoginMethodNameFromRow)
                 .collect(Collectors.toList());
     }
 
 
-    public String getSelectedLoginMethod() {
-        return new Select(authenticatorsSelect).getOptions()
-                .stream()
-                .filter(webElement -> webElement.getAttribute("selected") != null)
-                .findFirst()
-                .orElseThrow(() -> new AssertionError("Selected login method not found"))
-                .getText();
+    /**
+     *
+     * Selects the chosen login method (For example "Password") by click on it.
+     *
+     * @param loginMethodName name as displayed. For example "Password" or "Authenticator Application"
+     *
+     */
+    public void selectLoginMethod(String loginMethodName) {
+        getLoginMethodRowByName(loginMethodName).click();
+    }
+
+    /**
+     * Return help text corresponding to the named login method
+     *
+     * @param loginMethodName name as displayed. For example "Password" or "Authenticator Application"
+     * @return
+     */
+    public String getLoginMethodHelpText(String loginMethodName) {
+        return getLoginMethodRowByName(loginMethodName).findElement(By.className("list-group-item-text")).getText();
     }
 
 
-    public void selectLoginMethod(String loginMethod) {
-        new Select(authenticatorsSelect).selectByVisibleText(loginMethod);
+    private List<WebElement> getLoginMethodsRows() {
+        return driver.findElements(By.className("list-view-pf-main-info"));
+    }
+
+    private String getLoginMethodNameFromRow(WebElement loginMethodRow) {
+        return loginMethodRow.findElement(By.className("list-group-item-heading")).getText();
+    }
+
+    private WebElement getLoginMethodRowByName(String loginMethodName) {
+        return getLoginMethodsRows().stream()
+                .filter(loginMethodRow -> loginMethodName.equals(getLoginMethodNameFromRow(loginMethodRow)))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("Login method '" + loginMethodName + "' not found in the available authentication mechanisms"));
     }
 
 
@@ -53,7 +86,7 @@ public class SelectAuthenticatorPage extends LanguageComboboxAwarePage {
 
         // Check the authenticators-choice available
         try {
-            driver.findElement(By.id("authenticators-choice"));
+            driver.findElement(By.id("kc-select-credential-form"));
         } catch (NoSuchElementException nfe) {
             return false;
         }

@@ -21,12 +21,18 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.broker.provider.util.SimpleHttp;
+import org.keycloak.credential.CredentialTypeMetadata;
+import org.keycloak.models.UserModel;
+import org.keycloak.models.credential.OTPCredentialModel;
+import org.keycloak.models.credential.PasswordCredentialModel;
+import org.keycloak.models.credential.WebAuthnCredentialModel;
 import org.keycloak.representations.account.ClientRepresentation;
 import org.keycloak.representations.account.ConsentRepresentation;
 import org.keycloak.representations.account.ConsentScopeRepresentation;
 import org.keycloak.representations.account.SessionRepresentation;
 import org.keycloak.representations.account.UserRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
+import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.messages.Messages;
@@ -275,6 +281,81 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         passwordUpdate.setConfirmation(confirmation);
         int status = SimpleHttp.doPost(getAccountUrl("credentials/password"), httpClient).auth(tokenUtil.getToken()).json(passwordUpdate).asStatus();
         assertEquals(expectedStatus, status);
+    }
+
+    @Test
+    public void testCredentialsGet() throws IOException {
+        List<AccountCredentialResource.CredentialContainer> credentials = SimpleHttp.doGet(getAccountUrl("credentials"), httpClient)
+                .auth(tokenUtil.getToken()).asJson(new TypeReference<List<AccountCredentialResource.CredentialContainer>>() {});
+
+        Assert.assertEquals(3, credentials.size());
+
+        AccountCredentialResource.CredentialContainer password = getCredentialContainerByType(credentials, PasswordCredentialModel.TYPE);
+        assertCredentialContainerExpected(password, PasswordCredentialModel.TYPE, CredentialTypeMetadata.Category.PASSWORD.toString(),
+                "password", "password-help-text", "kcAuthenticatorPasswordClass", true,
+                null, UserModel.RequiredAction.UPDATE_PASSWORD.toString(), false, 1);
+
+        CredentialRepresentation password1 = password.getUserCredentials().get(0);
+        Assert.assertNull(password1.getSecretData());
+        Assert.assertNotNull(password1.getCredentialData());
+
+        AccountCredentialResource.CredentialContainer otp = getCredentialContainerByType(credentials, OTPCredentialModel.TYPE);
+        assertCredentialContainerExpected(otp, OTPCredentialModel.TYPE, CredentialTypeMetadata.Category.TWO_FACTOR.toString(),
+                "otp-display-name", "otp-help-text", "kcAuthenticatorOTPClass", true,
+                UserModel.RequiredAction.CONFIGURE_TOTP.toString(), null, true, 0);
+
+        AccountCredentialResource.CredentialContainer webauthn = getCredentialContainerByType(credentials, WebAuthnCredentialModel.TYPE);
+        assertCredentialContainerExpected(webauthn, WebAuthnCredentialModel.TYPE, CredentialTypeMetadata.Category.TWO_FACTOR.toString(),
+                "webauthn-display-name", "webauthn-help-text", "kcAuthenticatorWebAuthnClass", false,
+                "webauthn-register", null, true, 0);
+
+        // Test enabled-only
+        credentials = SimpleHttp.doGet(getAccountUrl("credentials?" + AccountCredentialResource.ENABLED_ONLY + "=true"), httpClient)
+                .auth(tokenUtil.getToken()).asJson(new TypeReference<List<AccountCredentialResource.CredentialContainer>>() {});
+
+        Assert.assertEquals(2, credentials.size());
+        Assert.assertNotNull(getCredentialContainerByType(credentials, PasswordCredentialModel.TYPE));
+        Assert.assertNotNull(getCredentialContainerByType(credentials, OTPCredentialModel.TYPE));
+        Assert.assertNull(getCredentialContainerByType(credentials, WebAuthnCredentialModel.TYPE));
+
+        // Test password-only
+        credentials = SimpleHttp.doGet(getAccountUrl("credentials?" + AccountCredentialResource.TYPE + "=password"), httpClient)
+                .auth(tokenUtil.getToken()).asJson(new TypeReference<List<AccountCredentialResource.CredentialContainer>>() {});
+        Assert.assertEquals(1, credentials.size());
+        password = credentials.get(0);
+        Assert.assertEquals(PasswordCredentialModel.TYPE, password.getType());
+        Assert.assertEquals(1, password.getUserCredentials().size());
+
+        // Test password-only and user-credentials
+        credentials = SimpleHttp.doGet(getAccountUrl("credentials?" + AccountCredentialResource.TYPE + "=password&" +
+                AccountCredentialResource.USER_CREDENTIALS + "=false"), httpClient)
+                .auth(tokenUtil.getToken()).asJson(new TypeReference<List<AccountCredentialResource.CredentialContainer>>() {});
+        Assert.assertEquals(1, credentials.size());
+        password = credentials.get(0);
+        Assert.assertEquals(PasswordCredentialModel.TYPE, password.getType());
+        Assert.assertNull(password.getUserCredentials());
+    }
+
+    private AccountCredentialResource.CredentialContainer getCredentialContainerByType(List<AccountCredentialResource.CredentialContainer> credentials, String type) {
+        return credentials.stream()
+                .filter(credentialContainer -> type.equals(credentialContainer.getType()))
+                .findFirst()
+                .orElseGet(() -> null);
+
+    }
+
+    private void assertCredentialContainerExpected(AccountCredentialResource.CredentialContainer credential, String type, String category, String displayName, String helpText, String iconCssClass,
+                                                   boolean enabled, String createAction, String updateAction, boolean removeable, int userCredentialsCount) {
+        Assert.assertEquals(type, credential.getType());
+        Assert.assertEquals(category, credential.getCategory());
+        Assert.assertEquals(displayName, credential.getDisplayName());
+        Assert.assertEquals(helpText, credential.getHelptext());
+        Assert.assertEquals(iconCssClass, credential.getIconCssClass());
+        Assert.assertEquals(enabled, credential.isEnabled());
+        Assert.assertEquals(createAction, credential.getCreateAction());
+        Assert.assertEquals(updateAction, credential.getUpdateAction());
+        Assert.assertEquals(removeable, credential.isRemoveable());
+        Assert.assertEquals(userCredentialsCount, credential.getUserCredentials().size());
     }
 
     public void testDeleteSessions() throws IOException {

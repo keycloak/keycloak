@@ -140,12 +140,9 @@ public class KcOidcFirstBrokerLoginNewAuthTest extends AbstractInitializedBaseBr
         // Just click "Try another way" to verify that both Password and OTP are available. But go back to Password then
         passwordPage.clickTryAnotherWayLink();
         selectAuthenticatorPage.assertCurrent();
-        Assert.assertNames(selectAuthenticatorPage.getAvailableLoginMethods(), "Password", "OTP");
+        Assert.assertNames(selectAuthenticatorPage.getAvailableLoginMethods(), SelectAuthenticatorPage.PASSWORD, SelectAuthenticatorPage.AUTHENTICATOR_APPLICATION);
 
-        // TODO: This is limitation of select, that it can't select the already present value. Should be improved when we change to select cart
-        selectAuthenticatorPage.selectLoginMethod("OTP");
-        loginTotpPage.clickTryAnotherWayLink();
-        selectAuthenticatorPage.selectLoginMethod("Password");
+        selectAuthenticatorPage.selectLoginMethod(SelectAuthenticatorPage.PASSWORD);
 
         // Login with password
         Assert.assertTrue(passwordPage.isCurrent("consumer"));
@@ -176,7 +173,7 @@ public class KcOidcFirstBrokerLoginNewAuthTest extends AbstractInitializedBaseBr
         // Click "Try another way", Select OTP and assert OTP form present
         passwordPage.clickTryAnotherWayLink();
         selectAuthenticatorPage.assertCurrent();
-        selectAuthenticatorPage.selectLoginMethod("OTP");
+        selectAuthenticatorPage.selectLoginMethod(SelectAuthenticatorPage.AUTHENTICATOR_APPLICATION);
 
         loginTotpPage.assertCurrent();
 

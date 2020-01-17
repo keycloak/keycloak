@@ -45,7 +45,6 @@ public abstract class LanguageComboboxAwarePage extends AbstractPage {
     @FindBy(id = "kc-attempted-username")
     private WebElement attemptedUsernameLabel;
 
-    // TODO: This won't be a link, but some kind of an icon once we do better design
     @FindBy(id = "reset-login")
     private WebElement resetLoginLink;
 

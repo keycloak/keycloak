@@ -65,9 +65,11 @@ interface UserCredential {
 interface CredentialContainer {
     category: CredCategory;
     type: CredType;
+    displayName: string;
     helptext?: string;
     createAction: string;
     updateAction: string;
+    iconCssClass: string;
     removeable: boolean;
     userCredentials: UserCredential[];
 }
@@ -176,17 +178,17 @@ class SigningInPage extends React.Component<SigningInPageProps, SigningInPageSta
         const userCredentials: UserCredential[] = credTypeMap.get(credType)!.userCredentials;
         const removeable: boolean = credTypeMap.get(credType)!.removeable;
         const updateAction: string = credTypeMap.get(credType)!.updateAction;
-        const type: string = credTypeMap.get(credType)!.type;
+        const displayName: string = credTypeMap.get(credType)!.displayName;
 
         if (userCredentials.length === 0) {
-            const localizedType = Msg.localize(type);
+            const localizedDisplayName = Msg.localize(displayName);
             return (
                 <DataListItem aria-labelledby='no-credentials-list-item'>
                     <DataListItemRow key='no-credentials-list-item-row'>
                         <DataListItemCells
                                     dataListCells={[
                                         <DataListCell/>,
-                                        <strong><Msg msgKey='notSetUp' params={[localizedType]}/></strong>,
+                                        <strong><Msg msgKey='notSetUp' params={[localizedDisplayName]}/></strong>,
                                         <DataListCell/>
                                     ]}/>
                     </DataListItemRow>
@@ -229,7 +231,7 @@ class SigningInPage extends React.Component<SigningInPageProps, SigningInPageSta
         if (!credContainer.createAction) return;
 
         const setupAction: AIACommand = new AIACommand(credContainer.createAction, this.props.location.pathname);
-        const credContainerType: string = Msg.localize(credContainer.type);
+        const credContainerDisplayName: string = Msg.localize(credContainer.displayName);
 
         return (
             <DataListItem aria-labelledby={'type-datalistitem-' + credContainer.type}>
@@ -238,7 +240,7 @@ class SigningInPage extends React.Component<SigningInPageProps, SigningInPageSta
                         dataListCells={[
                             <DataListCell width={5} key={'credTypeTitle-' + credContainer.type}>
                                 <Title headingLevel={TitleLevel.h3} size='2xl'>
-                                    <strong><Msg msgKey={credContainer.type}/></strong>
+                                    <strong><Msg msgKey={credContainer.displayName}/></strong>
                                 </Title>
                                 <Msg msgKey={credContainer.helptext}/>
                             </DataListCell>,
@@ -249,7 +251,7 @@ class SigningInPage extends React.Component<SigningInPageProps, SigningInPageSta
                             <span className="pf-c-button__icon">
                                 <i className="fas fa-plus-circle" aria-hidden="true"></i>
                             </span>
-                            <Msg msgKey='setUpNew' params={[credContainerType]}/>
+                            <Msg msgKey='setUpNew' params={[credContainerDisplayName]}/>
                         </button>
                     </DataListAction>
                 </DataListItemRow>
