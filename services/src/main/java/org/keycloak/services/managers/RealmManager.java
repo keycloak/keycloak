@@ -54,6 +54,7 @@ import org.keycloak.sessions.AuthenticationSessionProvider;
 import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.services.clientregistration.policy.DefaultClientRegistrationPolicies;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -470,6 +471,7 @@ public class RealmManager {
             client.setName("${client_" + Constants.BROKER_SERVICE_CLIENT_ID + "}");
             client.setFullScopeAllowed(false);
             client.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+            client.setRedirectUris(new HashSet(Arrays.asList("none")));
 
             for (String role : Constants.BROKER_SERVICE_ROLES) {
                 RoleModel roleModel = client.addRole(role);
