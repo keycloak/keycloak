@@ -387,7 +387,9 @@ public class ResourceSetService {
                          Integer firstResult,
                          Integer maxResult,
                          BiFunction<Resource, Boolean, ?> toRepresentation) {
-
+        if (this.resourceServer == null) {
+            return Response.ok().build();
+        }
         StoreFactory storeFactory = authorization.getStoreFactory();
         List<Resource> resources = storeFactory.getResourceStore().findTopLevel(this.resourceServer.getId(), firstResult != null ? firstResult : -1, maxResult != null ? maxResult : Constants.DEFAULT_MAX_RESULTS);
 

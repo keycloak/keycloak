@@ -76,7 +76,7 @@ public class JPAResourceStore implements ResourceStore {
 
 
     @Override
-    public Resource create(String id,String name, Resource parent, ResourceServer resourceServer, String owner) {
+    public Resource create(String id, String name, Resource parent, ResourceServer resourceServer, String owner) {
         ResourceEntity entity = new ResourceEntity();
         if (id == null) {
             entity.setId(KeycloakModelUtils.generateId());
@@ -87,7 +87,7 @@ public class JPAResourceStore implements ResourceStore {
         entity.setResourceServer(ResourceServerAdapter.toEntity(entityManager, resourceServer));
         entity.setOwner(owner);
         entity.setEnabled(true);
-        entity.setParent(ResourceAdapter.toEntity(entityManager,parent));
+        entity.setParent(ResourceAdapter.toEntity(entityManager, parent));
 
         this.entityManager.persist(entity);
         this.entityManager.flush();
@@ -165,7 +165,7 @@ public class JPAResourceStore implements ResourceStore {
 
         for (ResourceEntity entity : result) {
             Resource cached = resourceStore.findById(entity.getId(), resourceServerId);
-            
+
             if (cached != null) {
                 consumer.accept(cached);
             }
@@ -244,8 +244,12 @@ public class JPAResourceStore implements ResourceStore {
                 predicates.add(builder.notEqual(urisSize, 0));
             } else if ("owner".equals(name)) {
                 predicates.add(root.get(name).in(value));
+            } else if ("name".equals(name)) {
+                predicates.add(
+                        builder.or(builder.like(root.get(name), "%" + value[0] + "%"),
+                                builder.like(root.get("displayName"), "%" + value[0] + "%")));
             } else {
-                predicates.add(builder.like(builder.lower(root.get(name)), "%" + value[0].toLowerCase() + "%"));
+                predicates.add(builder.like(root.get(name), "%" + value[0] + "%"));
             }
         });
 
