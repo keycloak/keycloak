@@ -70,11 +70,11 @@
     <dependency>
       <groupId>org.freemarker</groupId>
       <artifactId>freemarker</artifactId>
-      <version>2.3.26.incubating-redhat-3</version>
+      <version>2.3.29.redhat-00001</version>
       <licenses>
         <license>
           <name>Apache Software License 2.0</name>
-          <url>https://git-wip-us.apache.org/repos/asf?p=freemarker.git;a=blob_plain;f=LICENSE;hb=v2.3.26</url>
+          <url>https://git-wip-us.apache.org/repos/asf?p=freemarker.git;a=blob_plain;f=LICENSE;hb=v2.3.29</url>
         </license>
       </licenses>
     </dependency>
