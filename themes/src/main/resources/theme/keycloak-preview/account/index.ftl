@@ -98,7 +98,7 @@
                 realm: realm,
                 clientId: 'account-console'
             });
-            keycloak.init({onLoad: 'check-sso'}).success(function(authenticated) {
+            keycloak.init({onLoad: 'check-sso', pkceMethod: 'S256'}).success(function(authenticated) {
                 isReactLoading = true;
                 toggleReact();
                 if (!keycloak.authenticated) {
