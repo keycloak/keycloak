@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2018 Red Hat, Inc. and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -34,15 +34,15 @@ import {
 } from '@patternfly/react-core';
 
 import {
-        AmazonIcon, 
-        ChromeIcon, 
-        EdgeIcon, 
-        FirefoxIcon, 
+        AmazonIcon,
+        ChromeIcon,
+        EdgeIcon,
+        FirefoxIcon,
         GlobeIcon,
-        InternetExplorerIcon, 
+        InternetExplorerIcon,
         OperaIcon,
         SafariIcon,
-        YandexInternationalIcon, 
+        YandexInternationalIcon,
 } from '@patternfly/react-icons';
 
 import {Msg} from '../../widgets/Msg';
@@ -50,7 +50,7 @@ import {ContinueCancelModal} from '../../widgets/ContinueCancelModal';
 import {KeycloakService} from '../../keycloak-service/keycloak.service';
 import {ContentPage} from '../ContentPage';
 import { ContentAlert } from '../ContentAlert';
- 
+
 declare const baseUrl: string;
 
 export interface DeviceActivityPageProps {
@@ -87,12 +87,12 @@ interface Client {
   clientId: string;
   clientName: string;
 }
- 
+
 /**
  * @author Stan Silvert ssilvert@redhat.com (C) 2019 Red Hat Inc.
  */
 export class DeviceActivityPage extends React.Component<DeviceActivityPageProps, DeviceActivityPageState> {
- 
+
     public constructor(props: DeviceActivityPageProps) {
         super(props);
 
@@ -124,11 +124,11 @@ export class DeviceActivityPage extends React.Component<DeviceActivityPageProps,
             console.log({response});
 
             let devices: Device[] = this.moveCurrentToTop(response.data);
-            
+
             this.setState({
               devices: devices
             });
-            
+
           });
     }
 
@@ -215,7 +215,7 @@ export class DeviceActivityPage extends React.Component<DeviceActivityPageProps,
     }
 
     public render(): React.ReactNode {
-      
+
       return (
         <ContentPage title="device-activity" onRefresh={this.fetchDevices.bind(this)}>
           <Stack gutter="md">
@@ -234,7 +234,7 @@ export class DeviceActivityPage extends React.Component<DeviceActivityPageProps,
                                   </div>
                                 </DataListCell>,
                                 <DataListCell key='signOutAllButton' width={1}>
-                                  {this.isShowSignOutAll(this.state.devices) && 
+                                  {this.isShowSignOutAll(this.state.devices) &&
                                     <ContinueCancelModal buttonTitle='signOutAllDevices'
                                                   buttonId='sign-out-all'
                                                   modalTitle='signOutAllDevices'
@@ -247,69 +247,65 @@ export class DeviceActivityPage extends React.Component<DeviceActivityPageProps,
                           />
                       </DataListItemRow>
                   </DataListItem>
-                  
+
                   <DataListItem aria-labelledby='sessions'>
+                  <DataListItemRow>
                     <Grid gutter='sm'>
-                    <GridItem span={12}/> {/* <-- top spacing */}
+                      <GridItem span={12} /> {/* <-- top spacing */}
                       {this.state.devices.map((device: Device, deviceIndex: number) => {
                         return (
                           <React.Fragment>
                             {device.sessions.map((session: Session, sessionIndex: number) => {
                               return (
                                 <React.Fragment key={'device-' + deviceIndex + '-session-' + sessionIndex}>
-                                  
-                                  <GridItem span={3}>
-                                   <Stack>
+
+                                  <GridItem md={3}>
+                                    <Stack>
                                       <StackItem isFilled={false}>
                                         <Bullseye>{this.findBrowserIcon(session)}</Bullseye>
                                       </StackItem>
-                                      {!this.state.devices[0].mobile &&
+                                      <StackItem isFilled={false}>
+                                        <Bullseye id={this.elementId('ip', session)}>{session.ipAddress}</Bullseye>
+                                      </StackItem>
+                                      {session.current &&
                                         <StackItem isFilled={false}>
-                                          <Bullseye id={this.elementId('ip', session)}>{session.ipAddress}</Bullseye>
-                                        </StackItem>
-                                      }
-                                      {session.current && 
-                                        <StackItem isFilled={false}>
-                                          <Bullseye id={this.elementId('current-badge', session)}><strong className='pf-c-badge pf-m-read'><Msg msgKey="currentSession"/></strong></Bullseye>
+                                          <Bullseye id={this.elementId('current-badge', session)}><strong className='pf-c-badge pf-m-read'><Msg msgKey="currentSession" /></strong></Bullseye>
                                         </StackItem>
                                       }
                                     </Stack>
                                   </GridItem>
-                                  <GridItem span={9}>
-                                    {!session.browser.toLowerCase().includes('unknown') &&
-                                      <p id={this.elementId('browser', session)}><strong>{session.browser} / {this.findOS(device)} {this.findOSVersion(device)}</strong></p>
-                                    }
-                                    {this.state.devices[0].mobile &&
-                                      <p id={this.elementId('ip', session)}><strong>{Msg.localize('ipAddress')} </strong> {session.ipAddress}</p>
-                                    }
+                                  <GridItem md={9}>
+                                  {!session.browser.toLowerCase().includes('unknown') &&
+                                    <p id={this.elementId('browser', session)}><strong>{session.browser} / {this.findOS(device)} {this.findOSVersion(device)}</strong></p>}
                                     <p id={this.elementId('last-access', session)}><strong>{Msg.localize('lastAccessedOn')}</strong> {this.time(session.lastAccess)}</p>
                                     <p id={this.elementId('clients', session)}><strong>{Msg.localize('clients')}</strong> {this.makeClientsString(session.clients)}</p>
                                     <p id={this.elementId('started', session)}><strong>{Msg.localize('startedAt')}</strong> {this.time(session.started)}</p>
                                     <p id={this.elementId('expires', session)}><strong>{Msg.localize('expiresAt')}</strong> {this.time(session.expires)}</p>
-                                    {!session.current && 
+                                    {!session.current &&
                                       <ContinueCancelModal buttonTitle='doSignOut'
-                                                          buttonId={this.elementId('sign-out', session)}
-                                                          modalTitle='doSignOut'
-                                                          buttonVariant='secondary'
-                                                          modalMessage='signOutWarning'                                        
-                                                          onContinue={() => this.signOutSession(device, session)}
+                                        buttonId={this.elementId('sign-out', session)}
+                                        modalTitle='doSignOut'
+                                        buttonVariant='secondary'
+                                        modalMessage='signOutWarning'
+                                        onContinue={() => this.signOutSession(device, session)}
                                       />
-                                    } 
-                                    
+                                    }
+
                                   </GridItem>
                                 </React.Fragment>
                               );
-                              
+
                             })}
                           </React.Fragment>
                         )
                       })}
-                    <GridItem span={12}/> {/* <-- bottom spacing */}
+                      <GridItem span={12} /> {/* <-- bottom spacing */}
                     </Grid>
-                  </DataListItem>
+                  </DataListItemRow>
+                </DataListItem>
               </DataList>
             </StackItem>
-            
+
           </Stack>
         </ContentPage>
         );
