@@ -203,12 +203,21 @@
 
 =========================================================================
 
-The Apache FreeMarker (incubating) source code contains the following
-binaries, which were created at the Apache FreeMarker (incubating)
-project, and hence are covered by the same license as the other source
-files of it:
+The source code contains the following binaries,
+which were created at the Apache FreeMarker project, and hence are
+covered by the same license as the other source files of it:
 
-    src/main/misc/overloadedNumberRules/prices.ods
-    src/manual/en_US/docgen-originals/figures/overview.odg
-
-=========================================================================
+  src/main/misc/overloadedNumberRules/prices.ods
+  src/manual/en_US/docgen-originals/figures/overview.odg
+  src/manual/en_US/docgen-originals/figures/model2sketch_with_alpha.png
+  src/manual/en_US/docgen-originals/figures/tree_with_alpha.png
+  src/manual/en_US/favicon.png
+  src/manual/en_US/figures/model2sketch.png
+  src/manual/en_US/figures/overview.png
+  src/manual/en_US/figures/tree.png
+  src/manual/en_US/logo.png
+  src/manual/zh_CN/favicon.png
+  src/manual/zh_CN/figures/model2sketch.png
+  src/manual/zh_CN/figures/overview.png
+  src/manual/zh_CN/figures/tree.png
+  src/manual/zh_CN/logo.png
