@@ -581,7 +581,7 @@
             </properties>
         </profile>
         <profile>
-            <id>db-allocator-db-oracle12cR1RAC</id>
+            <id>db-allocator-db-oracleRAC</id>
             <properties>
                 <!-- JDBC properties point to "default" JDBC driver for the particular DB -->
                 <!-- For EAP testing, it is recommended to override those with system properties pointing to GAV of more appropriate JDBC driver -->
@@ -589,7 +589,7 @@
                 <jdbc.mvn.groupId>com.oracle</jdbc.mvn.groupId>
                 <jdbc.mvn.artifactId>ojdbc8</jdbc.mvn.artifactId>
                 <jdbc.mvn.version>12.2.0.1</jdbc.mvn.version>
-                <dballocator.type>oracle12cR1RAC</dballocator.type>
+                <dballocator.type>oracle19cRAC</dballocator.type>
                 <dballocator.skip>false</dballocator.skip>
             </properties>
         </profile>
