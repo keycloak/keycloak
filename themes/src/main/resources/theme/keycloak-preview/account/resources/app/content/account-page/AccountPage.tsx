@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2018 Red Hat, Inc. and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,17 +15,17 @@
  */
 
 import * as React from 'react';
-import {AxiosResponse} from 'axios';
-import {ActionGroup, Button, Form, FormGroup, TextInput} from '@patternfly/react-core';
+import { AxiosResponse } from 'axios';
+import { ActionGroup, Button, Form, FormGroup, TextInput } from '@patternfly/react-core';
 
-import {AccountServiceClient} from '../../account-service/account.service';
-import {Features} from '../../widgets/features';
-import {Msg} from '../../widgets/Msg';
-import {ContentPage} from '../ContentPage';
-import {ContentAlert} from '../ContentAlert';
+import { AccountServiceClient } from '../../account-service/account.service';
+import { Features } from '../../widgets/features';
+import { Msg } from '../../widgets/Msg';
+import { ContentPage } from '../ContentPage';
+import { ContentAlert } from '../ContentAlert';
 
 declare const features: Features;
- 
+
 interface AccountPageProps {
 }
 
@@ -34,11 +34,10 @@ interface FormFields {
     readonly firstName?: string;
     readonly lastName?: string;
     readonly email?: string;
-    readonly emailVerified?: boolean;
 }
 
 interface AccountPageState {
-    readonly canSubmit: boolean;
+    readonly errors: FormFields;
     readonly formFields: FormFields;
 }
 
@@ -48,85 +47,97 @@ interface AccountPageState {
 export class AccountPage extends React.Component<AccountPageProps, AccountPageState> {
     private isRegistrationEmailAsUsername: boolean = features.isRegistrationEmailAsUsername;
     private isEditUserNameAllowed: boolean = features.isEditUserNameAllowed;
-    
+
     public state: AccountPageState = {
-        canSubmit: false,
-        formFields: {username: '',
-                     firstName: '',
-                     lastName: '',
-                     email: ''}
+        errors: {
+            username: '',
+            firstName: '',
+            lastName: '',
+            email: ''
+        },
+        formFields: {
+            username: '',
+            firstName: '',
+            lastName: '',
+            email: ''
+        }
     };
-    
+
     public constructor(props: AccountPageProps) {
         super(props);
         this.fetchPersonalInfo();
     }
-    
+
     private fetchPersonalInfo(): void {
         AccountServiceClient.Instance.doGet("/")
             .then((response: AxiosResponse<FormFields>) => {
-                this.setState({formFields: response.data});
-                console.log({response});
+                this.setState({ formFields: response.data });
+                console.log({ response });
             });
     }
-    
+
     private handleCancel = (): void => {
         this.fetchPersonalInfo();
     }
 
     private handleChange = (value: string, event: React.FormEvent<HTMLInputElement>) => {
-        const target: HTMLInputElement = event.currentTarget;
-        const name: string = target.name;
+        const target = event.currentTarget;
+        const name = target.name;
+
         this.setState({
-            canSubmit: this.requiredFieldsHaveData(name, value),
-            formFields: {...this.state.formFields, [name]:value}
+            errors: { ...this.state.errors, [name]: target.validationMessage },
+            formFields: { ...this.state.formFields, [name]: value }
         });
     }
-    
-    private handleSubmit = (): void => {
-        if (!this.requiredFieldsHaveData()) return;
-        const reqData: FormFields = {...this.state.formFields};
-        AccountServiceClient.Instance.doPost("/", {data: reqData})
-            .then(() => { // to use response, say ((response: AxiosResponse<FormFields>) => {
-                this.setState({canSubmit: false});
-                ContentAlert.success('accountUpdatedMessage');
+
+    private handleSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
+        event.preventDefault();
+        const form = event.target as HTMLFormElement;
+        const isValid = form.checkValidity();
+        if (isValid) {
+            const reqData: FormFields = { ...this.state.formFields };
+            AccountServiceClient.Instance.doPost("/", { data: reqData })
+                .then(() => { // to use response, say ((response: AxiosResponse<FormFields>) => {
+                    ContentAlert.success('accountUpdatedMessage');
+                });
+        } else {
+            const formData = new FormData(form);
+            const validationMessages = Array.from(formData.keys()).reduce((acc, key) => {
+                acc[key] = form.elements[key].validationMessage
+                return acc
+            }, {});
+            this.setState({
+                errors: { ...validationMessages },
+                formFields: this.state.formFields
             });
-    }
-    
-    private requiredFieldsHaveData(fieldName?: string, newValue?: string): boolean { 
-        const fields: FormFields = {...this.state.formFields};
-        if (fieldName && newValue) {
-            fields[fieldName] = newValue;
         }
-        
-        for (const field of Object.keys(fields)) {
-            if (field === 'emailVerified') continue;
-            if (!fields[field]) return false;
-        }
-        
-        return true;
+
     }
-    
+
     public render(): React.ReactNode {
         const fields: FormFields = this.state.formFields;
         return (
-            <ContentPage title="personalInfoHtmlTitle" 
-                     introMessage="personalSubMessage">
-                <Form isHorizontal>
-                    {!this.isRegistrationEmailAsUsername && 
+            <ContentPage title="personalInfoHtmlTitle"
+                introMessage="personalSubMessage">
+                <Form isHorizontal onSubmit={event => this.handleSubmit(event)}>
+                    {!this.isRegistrationEmailAsUsername &&
                         <FormGroup
                             label={Msg.localize('username')}
                             isRequired
                             fieldId="user-name"
-                        >
-                            {this.isEditUserNameAllowed && <this.UsernameInput/>}
-                            {!this.isEditUserNameAllowed && <this.RestrictedUsernameInput/>}
+                            helperTextInvalid={this.state.errors.username}
+                            isValid={this.state.errors.username === ''}
+                            >
+                            {this.isEditUserNameAllowed && <this.UsernameInput />}
+                            {!this.isEditUserNameAllowed && <this.RestrictedUsernameInput />}
                         </FormGroup>
                     }
                     <FormGroup
                         label={Msg.localize('email')}
                         isRequired
                         fieldId="email-address"
+                        helperTextInvalid={this.state.errors.email}
+                        isValid={this.state.errors.email === ''}
                     >
                         <TextInput
                             isRequired
@@ -135,14 +146,16 @@ export class AccountPage extends React.Component<AccountPageProps, AccountPageSt
                             name="email"
                             value={fields.email}
                             onChange={this.handleChange}
-                            isValid={fields.email !== ''}
-                            >
+                            isValid={this.state.errors.email === ''}
+                        >
                         </TextInput>
                     </FormGroup>
                     <FormGroup
                         label={Msg.localize('firstName')}
                         isRequired
                         fieldId="first-name"
+                        helperTextInvalid={this.state.errors.firstName}
+                        isValid={this.state.errors.firstName === ''}
                     >
                         <TextInput
                             isRequired
@@ -151,14 +164,16 @@ export class AccountPage extends React.Component<AccountPageProps, AccountPageSt
                             name="firstName"
                             value={fields.firstName}
                             onChange={this.handleChange}
-                            isValid={fields.firstName !== ''}
-                            >
+                            isValid={this.state.errors.firstName === ''}
+                        >
                         </TextInput>
                     </FormGroup>
                     <FormGroup
                         label={Msg.localize('lastName')}
                         isRequired
                         fieldId="last-name"
+                        helperTextInvalid={this.state.errors.lastName}
+                        isValid={this.state.errors.lastName === ''}
                     >
                         <TextInput
                             isRequired
@@ -167,32 +182,32 @@ export class AccountPage extends React.Component<AccountPageProps, AccountPageSt
                             name="lastName"
                             value={fields.lastName}
                             onChange={this.handleChange}
-                            isValid={fields.lastName !== ''}
-                            >
+                            isValid={this.state.errors.lastName === ''}
+                        >
                         </TextInput>
                     </FormGroup>
                     <ActionGroup>
                         <Button
+                            type="submit"
                             id="save-btn"
                             variant="primary"
-                            isDisabled={!this.state.canSubmit && this.requiredFieldsHaveData()}
-                            onClick={this.handleSubmit}
+                            isDisabled={Object.values(this.state.errors).filter(e => e !== '').length !== 0}
                         >
-                            <Msg msgKey="doSave"/>                          
+                            <Msg msgKey="doSave" />
                         </Button>
                         <Button
                             id="cancel-btn"
                             variant="secondary"
                             onClick={this.handleCancel}
                         >
-                            <Msg msgKey="doCancel"/>
+                            <Msg msgKey="doCancel" />
                         </Button>
                     </ActionGroup>
                 </Form>
             </ContentPage>
         );
     }
-    
+
     private UsernameInput = () => (
         <TextInput
             isRequired
@@ -201,11 +216,11 @@ export class AccountPage extends React.Component<AccountPageProps, AccountPageSt
             name="username"
             value={this.state.formFields.username}
             onChange={this.handleChange}
-            isValid={this.state.formFields.username !== ''}
-            >
+            isValid={this.state.errors.username === ''}
+        >
         </TextInput>
     );
-    
+
     private RestrictedUsernameInput = () => (
         <TextInput
             isDisabled
@@ -213,7 +228,7 @@ export class AccountPage extends React.Component<AccountPageProps, AccountPageSt
             id="user-name"
             name="username"
             value={this.state.formFields.username}
-            >
+        >
         </TextInput>
     );
 };

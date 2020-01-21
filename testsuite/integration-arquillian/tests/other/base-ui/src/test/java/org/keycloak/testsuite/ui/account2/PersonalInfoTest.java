@@ -59,14 +59,14 @@ public class PersonalInfoTest extends BaseAccountPageTest {
 
         assertTrue(personalInfoPage.valuesEqual(testUser));
         personalInfoPage.assertUsernameDisabled(false);
-        personalInfoPage.assertSaveDisabled(true);
+        personalInfoPage.assertSaveDisabled(false);
 
         personalInfoPage.setValues(testUser2, true);
         assertTrue(personalInfoPage.valuesEqual(testUser2));
         personalInfoPage.assertSaveDisabled(false);
         personalInfoPage.clickSave();
         personalInfoPage.alert().assertSuccess();
-        personalInfoPage.assertSaveDisabled(true);
+        personalInfoPage.assertSaveDisabled(false);
 
         personalInfoPage.navigateTo();
         personalInfoPage.valuesEqual(testUser2);
@@ -87,17 +87,18 @@ public class PersonalInfoTest extends BaseAccountPageTest {
         
         // clear username
         personalInfoPage.setUsername("");
-        personalInfoPage.assertSaveDisabled(false);
+        personalInfoPage.assertSaveDisabled(true);
         personalInfoPage.assertUsernameValid(false);
         personalInfoPage.setUsername("hsimpson");
         personalInfoPage.assertUsernameValid(true);
 
         // clear email
+        personalInfoPage.setEmail("edewit@");
+        personalInfoPage.assertEmailValid(false);
         personalInfoPage.setEmail("");
         personalInfoPage.assertEmailValid(false);
         personalInfoPage.setEmail("hsimpson@springfield.com");
         personalInfoPage.assertEmailValid(true);
-        // TODO test email validation (blocked by KEYCLOAK-8098)
 
         // clear first name
         personalInfoPage.setFirstName("");
