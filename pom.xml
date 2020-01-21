@@ -126,7 +126,7 @@
         <mssql.version>7.4.1.jre8</mssql.version>
         <servlet.api.30.version>1.0.2.Final</servlet.api.30.version>
         <servlet.api.40.version>1.0.0.Final</servlet.api.40.version>
-        <twitter4j.version>4.0.4</twitter4j.version>
+        <twitter4j.version>4.0.7</twitter4j.version>
         <jna.version>4.1.0</jna.version>
 
         <!-- Test -->

@@ -59,11 +59,11 @@
     <dependency>
       <groupId>org.twitter4j</groupId>
       <artifactId>twitter4j-core</artifactId>
-      <version>4.0.4.redhat-3</version>
+      <version>4.0.7.redhat-00002</version>
       <licenses>
         <license>
           <name>Apache Software License 2.0</name>
-          <url>https://raw.githubusercontent.com/yusuke/twitter4j/4.0.4/LICENSE.txt</url>
+          <url>https://raw.githubusercontent.com/yusuke/twitter4j/4.0.7/LICENSE.txt</url>
         </license>
       </licenses>
     </dependency>
