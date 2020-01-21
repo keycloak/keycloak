@@ -1232,9 +1232,10 @@ public class RealmAdapter implements CachedRealmModel {
         return cached.getExecutionsById().get(id);
     }
 
+    @Override
     public AuthenticationExecutionModel getAuthenticationExecutionByFlowId(String flowId) {
-        getDelegateForUpdate();
-        return updated.getAuthenticationExecutionByFlowId(flowId);
+        if (isUpdated()) return updated.getAuthenticationExecutionByFlowId(flowId);
+        return cached.getAuthenticationExecutionByFlowId(flowId);
     }
 
     @Override
