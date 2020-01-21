@@ -24,13 +24,14 @@ import org.jboss.arquillian.test.api.ArquillianResource;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
+import org.keycloak.TokenVerifier;
 import org.keycloak.admin.client.resource.GroupResource;
-import org.keycloak.admin.client.resource.GroupsResource;
 import org.keycloak.admin.client.resource.IdentityProviderResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.RoleMappingResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.admin.client.resource.UsersResource;
+import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.Base64;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.events.admin.OperationType;
@@ -40,6 +41,7 @@ import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.models.utils.ModelToRepresentation;
+import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
@@ -90,6 +92,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
@@ -103,8 +106,6 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.keycloak.testsuite.Assert.assertNames;
-import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
-import org.keycloak.testsuite.updaters.Creator;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 
@@ -885,6 +886,66 @@ public class UserTest extends AbstractAdminTest {
 
     @Test
     @AuthServerContainerExclude(AuthServer.REMOTE)
+    public void sendResetPasswordEmailWithCustomLifespan() throws IOException {
+        UserRepresentation userRep = new UserRepresentation();
+        userRep.setEnabled(true);
+        userRep.setUsername("user1");
+        userRep.setEmail("user1@test.com");
+
+        String id = createUser(userRep);
+
+        UserResource user = realm.users().get(id);
+        List<String> actions = new LinkedList<>();
+        actions.add(UserModel.RequiredAction.UPDATE_PASSWORD.name());
+
+        final int lifespan = (int) TimeUnit.HOURS.toSeconds(5);
+        user.executeActionsEmail(actions, lifespan);
+        assertAdminEvents.assertEvent(realmId, OperationType.ACTION, AdminEventPaths.userResourcePath(id) + "/execute-actions-email", ResourceType.USER);
+
+        Assert.assertEquals(1, greenMail.getReceivedMessages().length);
+
+        MimeMessage message = greenMail.getReceivedMessages()[0];
+
+        MailUtils.EmailBody body = MailUtils.getBody(message);
+
+        assertTrue(body.getText().contains("Update Password"));
+        assertTrue(body.getText().contains("your Admin-client-test account"));
+        assertTrue(body.getText().contains("This link will expire within 5 hours"));
+
+        assertTrue(body.getHtml().contains("Update Password"));
+        assertTrue(body.getHtml().contains("your Admin-client-test account"));
+        assertTrue(body.getHtml().contains("This link will expire within 5 hours"));
+
+        String link = MailUtils.getPasswordResetEmailLink(body);
+
+        String token = link.substring(link.indexOf("key=") + "key=".length());
+
+        try {
+            final AccessToken accessToken = TokenVerifier.create(token, AccessToken.class).getToken();
+            assertEquals(lifespan, accessToken.getExpiration() - accessToken.getIssuedAt());
+        } catch (VerificationException e) {
+            throw new IOException(e);
+        }
+
+
+        driver.navigate().to(link);
+
+        proceedPage.assertCurrent();
+        Assert.assertThat(proceedPage.getInfo(), Matchers.containsString("Update Password"));
+        proceedPage.clickProceedLink();
+        passwordUpdatePage.assertCurrent();
+
+        passwordUpdatePage.changePassword("new-pass", "new-pass");
+
+        assertEquals("Your account has been updated.", PageUtils.getPageTitle(driver));
+
+        driver.navigate().to(link);
+
+        assertEquals("We are sorry...", PageUtils.getPageTitle(driver));
+    }
+
+    @Test
+    @AuthServerContainerExclude(AuthServer.REMOTE)
     public void sendResetPasswordEmailSuccessTwoLinks() throws IOException {
         UserRepresentation userRep = new UserRepresentation();
         userRep.setEnabled(true);
@@ -1172,6 +1233,91 @@ public class UserTest extends AbstractAdminTest {
         MimeMessage message = greenMail.getReceivedMessages()[0];
 
         String link = MailUtils.getPasswordResetEmailLink(message);
+
+        driver.navigate().to(link);
+
+        proceedPage.assertCurrent();
+        Assert.assertThat(proceedPage.getInfo(), Matchers.containsString("Update Password"));
+        proceedPage.clickProceedLink();
+        passwordUpdatePage.assertCurrent();
+
+        passwordUpdatePage.changePassword("new-pass", "new-pass");
+
+        assertEquals("Your account has been updated.", driver.findElement(By.id("kc-page-title")).getText());
+
+        String pageSource = driver.getPageSource();
+
+        // check to make sure the back link is set.
+        Assert.assertTrue(pageSource.contains("http://myclient.com/home.html"));
+
+        driver.navigate().to(link);
+
+        assertEquals("We are sorry...", PageUtils.getPageTitle(driver));
+    }
+
+    @Test
+    @AuthServerContainerExclude(AuthServer.REMOTE)
+    public void sendResetPasswordEmailWithRedirectAndCustomLifespan() throws IOException {
+
+        UserRepresentation userRep = new UserRepresentation();
+        userRep.setEnabled(true);
+        userRep.setUsername("user1");
+        userRep.setEmail("user1@test.com");
+
+        String id = createUser(userRep);
+
+        UserResource user = realm.users().get(id);
+
+        ClientRepresentation client = new ClientRepresentation();
+        client.setClientId("myclient");
+        client.setRedirectUris(new LinkedList<>());
+        client.getRedirectUris().add("http://myclient.com/*");
+        client.setName("myclient");
+        client.setEnabled(true);
+        Response response = realm.clients().create(client);
+        String createdId = ApiUtil.getCreatedId(response);
+        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.clientResourcePath(createdId), client, ResourceType.CLIENT);
+
+
+        List<String> actions = new LinkedList<>();
+        actions.add(UserModel.RequiredAction.UPDATE_PASSWORD.name());
+
+        final int lifespan = (int) TimeUnit.DAYS.toSeconds(128);
+
+        try {
+            // test that an invalid redirect uri is rejected.
+            user.executeActionsEmail("myclient", "http://unregistered-uri.com/", lifespan, actions);
+            fail("Expected failure");
+        } catch (ClientErrorException e) {
+            assertEquals(400, e.getResponse().getStatus());
+
+            ErrorRepresentation error = e.getResponse().readEntity(ErrorRepresentation.class);
+            Assert.assertEquals("Invalid redirect uri.", error.getErrorMessage());
+        }
+
+
+        user.executeActionsEmail("myclient", "http://myclient.com/home.html", lifespan, actions);
+        assertAdminEvents.assertEvent(realmId, OperationType.ACTION, AdminEventPaths.userResourcePath(id) + "/execute-actions-email", ResourceType.USER);
+
+        Assert.assertEquals(1, greenMail.getReceivedMessages().length);
+
+        MimeMessage message = greenMail.getReceivedMessages()[0];
+
+        MailUtils.EmailBody body = MailUtils.getBody(message);
+
+        assertTrue(body.getText().contains("This link will expire within 128 days"));
+        assertTrue(body.getHtml().contains("This link will expire within 128 days"));
+
+        String link = MailUtils.getPasswordResetEmailLink(message);
+
+        String token = link.substring(link.indexOf("key=") + "key=".length());
+
+        try {
+            final AccessToken accessToken = TokenVerifier.create(token, AccessToken.class).getToken();
+            assertEquals(lifespan, accessToken.getExpiration() - accessToken.getIssuedAt());
+        } catch (VerificationException e) {
+            throw new IOException(e);
+        }
 
         driver.navigate().to(link);
 
