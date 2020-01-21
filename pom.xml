@@ -82,7 +82,7 @@
         <!-- Will be used in the product. Upstream versions are overridden in the community profile -->
         <resteasy.version>3.9.3.Final</resteasy.version>
         <resteasy.undertow.version>${resteasy.version}</resteasy.undertow.version>
-        <owasp.html.sanitizer.version>20180219.1</owasp.html.sanitizer.version>
+        <owasp.html.sanitizer.version>20191001.1</owasp.html.sanitizer.version>
         <slf4j-api.version>1.7.22</slf4j-api.version>
         <slf4j.version>1.7.22</slf4j.version>
         <sun.istack.version>3.0.7</sun.istack.version>
