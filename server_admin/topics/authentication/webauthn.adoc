@@ -25,7 +25,7 @@ An administrator carries out the following operations on the `Admin Console` :
 [[_webauthn-authenticator-setup]]
 ===== Adding WebAuthn Authentication to a Browser Flow
 
-* Select a realm, click on Authentication link, select the "Browser" flow
+* Select a realm, click on `Authentication` link, select the `Browser` flow
 * Make a copy of the built-in "Browser" flow. You may want to give the new flow a distinctive name, for example "WebAuthn Browser"
 * Using the drop down, select the copied flow
 * Delete the `WebAuthn Browser Browser - Conditional OTP` sub-flow using its `Actions` menu
@@ -33,7 +33,7 @@ An administrator carries out the following operations on the `Admin Console` :
 If you want to have WebAuthn required for all users:
 
 * Using the `Actions` menu of the `WebAuthn Browser Forms`, click on `Add execution`
-* Select `WebAuthn Authenticator` using the drop down and click on "Save"
+* Select `WebAuthn Authenticator` using the drop down and click on `Save`
 * Set its Requirement to _Required_.
 
 image:images/webauthn-browser-flow-required.png[]
@@ -47,12 +47,13 @@ Alternatively, you can have users log in with WebAuthn only if they have a WebAu
 the `WebAuthn Authenticator` execution:
 
 * Using the `Actions` menu of the `WebAuthn Browser Forms`, click on `Add flow`
-* Set the alias to "Conditional 2FA"
+* Set the alias to "Conditional 2FA" and click on `Save`
 * Set the Requirement of `Conditional 2FA` to _Conditional_
 * Using the `Actions` menu of the `Conditional 2FA`, click on `Add execution`
-* Select `Condition - User Configured` using the drop down and click on "Save"
+* Select `Condition - User Configured` using the drop down and click on `Save`
+* Set the Requirement of `Condition - User Configured` execution to _Required_
 * Using the `Actions` menu of the `Conditional 2FA`, click on `Add execution`
-* Select `WebAuthn Authenticator` using the drop down and click on "Save"
+* Select `WebAuthn Authenticator` using the drop down and click on `Save`
 * Set its Requirement to _Alternative_.
 
 image:images/webauthn-browser-flow-conditional.png[]
@@ -60,7 +61,7 @@ image:images/webauthn-browser-flow-conditional.png[]
 You can also allow the user to choose between using WebAuthn and OTP for his second factor:
 
 * Using the `Actions` menu of the `Conditional 2FA`, click on `Add execution`
-* Select `OTP Form` using the drop down and click on "Save"
+* Select `OTP Form` using the drop down and click on `Save`
 * Set its Requirement to _Alternative_.
 
 image:images/webauthn-browser-flow-conditional-with-OTP.png[]
@@ -174,7 +175,7 @@ they are required to register their WebAuthn authenticator automatically :
 - When the users log in, they are required to register their WebAuthn authenticator.
 - After successful registration, the user's browser asks the user to enter the text as their just registered WebAuthn authenticator's label.
 
-==== Passwordless WebAuthn
+==== Passwordless WebAuthn together with Two-Factor
 
 WebAuthn is often used for two-factor authentication, however it can be desired to use it also as first factor authentication. In this case,
 a user with `passwordless` WebAuthn credential will be able to authenticate to {project_name} without a password. {project_name} allows to use WebAuthn
@@ -203,23 +204,24 @@ be set to `Required` when you configure the passwordless policy.
 <<_webauthn-authenticator-setup, above>>, but
 we will configure it as follows:
 
-** The `WebAuthn Browser Forms` subflow will contain `Username Form` as the first authenticator. This setting means that the user
-will provide just his or her username as the first step.
+** The `WebAuthn Browser Forms` subflow will contain `Username Form` as the first authenticator. Delete the default `Username Password Form`
+authenticator and add the `Username Form` authenticator instead. This setting means that the user will provide just his or her username as the first step.
 
 ** There will be a required subflow, which can be named for example `Passwordless Or Two-factor` . This setting indicates that user can
 authenticate either with Passwordless WebAuthn credential or with Two-factor authentication.
 
-** Flow will contain `WebAuthn Passwordless Authenticator` as first alternative.
+** Flow will contain `WebAuthn Passwordless Authenticator` as the first alternative.
 
-** The second alternative will be a subflow named for example `Password And Two-factor Webauthn`. This subflow will contain `Password Form` and
-`WebAuthn Authenticator`.
+** The second alternative will be a subflow named for example `Password And Two-factor Webauthn`. This subflow will contain a `Password Form` and
+a `WebAuthn Authenticator`.
 
-The full configuration of the flow will look like this:
+The final configuration of the flow will look like the following:
 
 image:images/webauthn-passwordless-flow.png[]
 
-You can now add `WebAuthn Register Passwordless` as the required action to some user to test this. During the first authentication, the user will
-be still required to use the password and second-factor WebAuthn credential. However, once the user registers the credentials, that user will be able
+You can now add `WebAuthn Register Passwordless` as the required action to some user, already known to {project_name}, to test this.
+During the first authentication, the user will be still required to use the password and second-factor WebAuthn credential. However, once
+the user registers the credentials, that user will be able
 to choose during future authentications. If he uses  his or her WebAuthn Passwordless credential, he won't need to
 provide the password and second-factor WebAuthn credential at all.
 
