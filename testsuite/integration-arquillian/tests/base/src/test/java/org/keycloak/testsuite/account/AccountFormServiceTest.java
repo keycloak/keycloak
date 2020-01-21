@@ -918,17 +918,7 @@ public class AccountFormServiceTest extends AbstractTestRealmKeycloakTest {
         Assert.assertEquals("Your account has been updated.", profilePage.getSuccess());
     }
 
-    @Test
-    public void setupTotp() {
-        totpPage.open();
-        loginPage.login("test-user@localhost", "password");
-
-        events.expectLogin().client("account").detail(Details.REDIRECT_URI, getAccountRedirectUrl() + "?path=totp").assertEvent();
-
-        Assert.assertTrue(totpPage.isCurrent());
-
-        assertFalse(driver.getPageSource().contains("Remove Google"));
-
+    public void totpPageSetup() {
         String pageSource = driver.getPageSource();
 
         assertTrue(pageSource.contains("Install one of the following applications on your mobile"));
@@ -940,10 +930,10 @@ public class AccountFormServiceTest extends AbstractTestRealmKeycloakTest {
 
         assertTrue(pageSource.contains("Unable to scan?"));
         assertFalse(pageSource.contains("Scan barcode?"));
+    }
 
-        totpPage.clickManual();
-
-        pageSource = driver.getPageSource();
+    public void totpPageSetupManual() {
+        String pageSource = driver.getPageSource();
 
         assertTrue(pageSource.contains("Install one of the following applications on your mobile"));
         assertTrue(pageSource.contains("FreeOTP"));
@@ -954,6 +944,22 @@ public class AccountFormServiceTest extends AbstractTestRealmKeycloakTest {
 
         assertFalse(pageSource.contains("Unable to scan?"));
         assertTrue(pageSource.contains("Scan barcode?"));
+    }
+
+    @Test
+    public void setupTotp() {
+        totpPage.open();
+        loginPage.login("test-user@localhost", "password");
+
+        events.expectLogin().client("account").detail(Details.REDIRECT_URI, getAccountRedirectUrl() + "?path=totp").assertEvent();
+
+        Assert.assertTrue(totpPage.isCurrent());
+
+        assertFalse(driver.getPageSource().contains("Remove Google"));
+
+        totpPageSetup();
+
+        totpPage.clickManual();
 
         assertTrue(UIUtils.getTextFromElement(driver.findElement(By.id("kc-totp-secret-key"))).matches("[\\w]{4}( [\\w]{4}){7}"));
 
@@ -978,6 +984,8 @@ public class AccountFormServiceTest extends AbstractTestRealmKeycloakTest {
         totpPage.removeTotp();
 
         events.expectAccount(EventType.REMOVE_TOTP).assertEvent();
+        // KEYCLOAK-12163
+        totpPageSetupManual();
 
         accountPage.logOut();
 
