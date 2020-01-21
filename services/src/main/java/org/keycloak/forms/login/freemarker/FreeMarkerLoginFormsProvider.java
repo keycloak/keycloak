@@ -548,6 +548,11 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
     }
 
     @Override
+    public Response createWebAuthnErrorPage() {
+        return createResponse(LoginFormsPages.ERROR_WEBAUTHN);
+    }
+
+    @Override
     public Response createOAuthGrant() {
         return createResponse(LoginFormsPages.OAUTH_GRANT);
     }

@@ -58,6 +58,8 @@ public class Templates {
                 return "info.ftl";
             case ERROR:
                 return "error.ftl";
+            case ERROR_WEBAUTHN:
+                return "webauthn-error.ftl";
             case LOGIN_UPDATE_PROFILE:
                 return "login-update-profile.ftl";
             case CODE:
