@@ -38,9 +38,9 @@ public class ModelVersion {
     }
 
     public ModelVersion(String version) {
-        if (version.endsWith("-SNAPSHOT") || version.endsWith("-snapshot")) {
+        if (version.toUpperCase().contains("-SNAPSHOT")) {
             snapshot = true;
-            version = version.substring(0, version.length() - 9);
+            version = version.toUpperCase().split("-SNAPSHOT")[0];
         }
 
         String[] split = version.split("\\.");
