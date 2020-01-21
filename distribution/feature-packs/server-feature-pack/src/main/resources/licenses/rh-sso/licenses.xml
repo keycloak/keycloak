@@ -26,22 +26,22 @@
     <dependency>
       <groupId>com.google.zxing</groupId>
       <artifactId>core</artifactId>
-      <version>3.2.1.redhat-4</version>
+      <version>3.4.0.redhat-00001</version>
       <licenses>
         <license>
           <name>Apache Software License 2.0</name>
-          <url>https://raw.githubusercontent.com/zxing/zxing/zxing-3.2.1/COPYING</url>
+          <url>https://raw.githubusercontent.com/zxing/zxing/zxing-3.4.0/LICENSE</url>
         </license>
       </licenses>
     </dependency>
     <dependency>
       <groupId>com.google.zxing</groupId>
       <artifactId>javase</artifactId>
-      <version>3.2.1.redhat-4</version>
+      <version>3.4.0.redhat-00001</version>
       <licenses>
         <license>
           <name>Apache Software License 2.0</name>
-          <url>https://raw.githubusercontent.com/zxing/zxing/zxing-3.2.1/COPYING</url>
+          <url>https://raw.githubusercontent.com/zxing/zxing/zxing-3.4.0/LICENSE</url>
         </license>
       </licenses>
     </dependency>
