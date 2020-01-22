@@ -57,6 +57,145 @@ public class AccountCredentialResource {
 //        models.forEach(c -> c.setSecretData(null));
 //        return models.stream().map(ModelToRepresentation::toRepresentation).collect(Collectors.toList());
 //    }
+    
+    private static class CredentialContainer {
+        // ** These first three attributes can be ordinary UI text or a key into
+        //    a localized message bundle.  Typically, it will be a key, but
+        //    the UI will work just fine if you don't care about localization
+        //    and you want to just send UI text.
+        //
+        //    Also, the ${} shown in Apicurio is not needed.
+        private String category; // **
+        private String type; // **
+        private String helptext;  // **
+        private boolean enabled;
+        private String createAction;
+        private String updateAction;
+        private boolean removeable;
+        private List<CredentialModel> userCredentials;
+        
+        public CredentialContainer(String category, String type, String helptext, boolean enabled, String createAction, String updateAction, boolean removeable,List<CredentialModel> userCredentials) {
+            this.category = category;
+            this.type = type;
+            this.helptext = helptext;
+            this.enabled = enabled;
+            this.createAction = createAction;
+            this.updateAction = updateAction;
+            this.removeable = removeable;
+            this.userCredentials = userCredentials;
+        }
+
+        public String getCategory() {
+            return category;
+        }
+        
+        public String getType() {
+            return type;
+        }
+
+        public String getHelptext() {
+            return helptext;
+        }
+
+        public boolean isEnabled() {
+            return enabled;
+        }
+
+        public String getCreateAction() {
+            return createAction;
+        }
+
+        public String getUpdateAction() {
+            return updateAction;
+        }
+
+        public boolean isRemoveable() {
+            return removeable;
+        }
+
+        public List<CredentialModel> getUserCredentials() {
+            return userCredentials;
+        }
+        
+    }
+    
+    @GET
+    @NoCache
+    @Produces(javax.ws.rs.core.MediaType.APPLICATION_JSON)
+    public List<CredentialContainer> dummyCredentialTypes(){
+        auth.requireOneOf(AccountRoles.MANAGE_ACCOUNT, AccountRoles.VIEW_PROFILE);
+        List<CredentialModel> models = session.userCredentialManager().getStoredCredentials(realm, user);
+        
+        List<CredentialModel> passwordUserCreds = new java.util.ArrayList<>();
+        passwordUserCreds.add(models.get(0));
+        
+        List<CredentialModel> otpUserCreds = new java.util.ArrayList<>();
+        if (models.size() > 1) otpUserCreds.add(models.get(1));
+        if (models.size() > 2) otpUserCreds.add(models.get(2));
+        
+        List<CredentialModel> webauthnUserCreds = new java.util.ArrayList<>();
+        CredentialModel webauthnCred = new CredentialModel();
+        webauthnCred.setId("bogus-id");
+        webauthnCred.setUserLabel("yubikey key");
+        webauthnCred.setCreatedDate(1579122652382L);
+        webauthnUserCreds.add(webauthnCred);
+        
+        List<CredentialModel> webauthnStrongUserCreds = new java.util.ArrayList<>();
+        CredentialModel webauthnStrongCred = new CredentialModel();
+        webauthnStrongCred.setId("bogus-id-for-webauthnStrong");
+        webauthnStrongCred.setUserLabel("My very strong key with required PIN");
+        webauthnStrongCred.setCreatedDate(1579122652382L);
+        webauthnUserCreds.add(webauthnStrongCred);
+        
+        CredentialContainer password = new CredentialContainer(
+                                        "password",
+                                        "password",
+                                        "passwordHelptext",
+                                        true,
+                                        null, // no create action
+                                        "UPDATE_PASSWORD",
+                                        false,
+                                        passwordUserCreds
+                                        );
+        CredentialContainer otp = new CredentialContainer(
+                                        "two-factor",
+                                        "otp",
+                                        "otpHelptext",
+                                        true,
+                                        "CONFIGURE_TOTP", 
+                                        null, // no update action
+                                        true,
+                                        otpUserCreds
+                                        );
+        CredentialContainer webAuthn = new CredentialContainer(
+                                        "two-factor",
+                                        "webauthn",
+                                        "webauthnHelptext",
+                                        true,
+                                        "CONFIGURE_WEBAUTHN", 
+                                        null, // no update action
+                                        true,
+                                        webauthnUserCreds
+                                        );
+        CredentialContainer passwordless = new CredentialContainer(
+                                        "passwordless",
+                                        "webauthn-passwordless",
+                                        "webauthn-passwordlessHelptext",
+                                        true,
+                                        "CONFIGURE_WEBAUTHN_STRONG", 
+                                        null, // no update action
+                                        true,
+                                        webauthnStrongUserCreds
+                                        );
+        
+        List<CredentialContainer> dummyCreds = new java.util.ArrayList<>();
+        dummyCreds.add(password);
+        dummyCreds.add(otp);
+        dummyCreds.add(webAuthn);
+        dummyCreds.add(passwordless);
+        
+        return dummyCreds;
+    }
 //
 //
 //    @GET
@@ -72,17 +211,17 @@ public class AccountCredentialResource {
 //                .collect(Collectors.toList());
 //    }
 //
-//    /**
-//     * Remove a credential for a user
-//     *
-//     */
-//    @Path("{credentialId}")
-//    @DELETE
-//    @NoCache
-//    public void removeCredential(final @PathParam("credentialId") String credentialId) {
-//        auth.require(AccountRoles.MANAGE_ACCOUNT);
-//        session.userCredentialManager().removeStoredCredential(realm, user, credentialId);
-//    }
+    /**
+     * Remove a credential for a user
+     *
+     */
+    @Path("{credentialId}")
+    @DELETE
+    @NoCache
+    public void removeCredential(final @PathParam("credentialId") String credentialId) {
+        auth.require(AccountRoles.MANAGE_ACCOUNT);
+        session.userCredentialManager().removeStoredCredential(realm, user, credentialId);
+    }
 //
 //    /**
 //     * Update a credential label for a user

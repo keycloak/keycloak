@@ -1333,7 +1333,7 @@
              './icons/playstation-icon.js': '@empty',
              './icons/plug-icon.js': '@empty',
              './icons/plugged-icon.js': '@empty',
-             './icons/plus-circle-icon.js': '@empty',
+             //'./icons/plus-circle-icon.js': '@empty',
              './icons/plus-icon.js': '@empty',
              './icons/plus-square-icon.js': '@empty',
              './icons/podcast-icon.js': '@empty',
