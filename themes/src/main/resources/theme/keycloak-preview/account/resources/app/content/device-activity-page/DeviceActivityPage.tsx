@@ -158,7 +158,7 @@ export class DeviceActivityPage extends React.Component<DeviceActivityPageProps,
       return moment(time * 1000).format('LLLL');
     }
 
-    private elementId(item: string, session: Session) : string {
+    private elementId(item: string, session: Session): string {
         return `session-${session.id.substring(0,7)}-${item}`;
     }
 

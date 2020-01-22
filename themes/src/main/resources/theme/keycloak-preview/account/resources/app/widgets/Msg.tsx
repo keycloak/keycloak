@@ -19,7 +19,7 @@ import * as React from 'react';
 declare const l18nMsg: {[key: string]: string};
 
 export interface MsgProps {
-    readonly msgKey: string;
+    readonly msgKey: string | undefined;
     readonly params?: string[];
 }
  
@@ -35,7 +35,9 @@ export class Msg extends React.Component<MsgProps> {
         );
     }
     
-    public static localize(msgKey: string, params?: string[]): string {
+    public static localize(msgKey: string | undefined, params?: string[]): string {
+        if (msgKey === undefined) return '';
+        
         let message: string = l18nMsg[this.processKey(msgKey)];
         if (message === undefined) message = msgKey;
         

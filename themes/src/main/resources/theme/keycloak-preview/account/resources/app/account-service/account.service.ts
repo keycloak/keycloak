@@ -104,7 +104,7 @@ export class AccountServiceClient {
     }
 
     private makeConfig(endpoint: string, config: AxiosRequestConfig = {}): Promise<AxiosRequestConfig> {
-        return new Promise( (resolve: ConfigResolve, reject: ErrorReject) => {
+        return new Promise( (resolve: ConfigResolve) => {
             this.kcSvc.getToken()
                 .then( (token: string) => {
                     resolve( {

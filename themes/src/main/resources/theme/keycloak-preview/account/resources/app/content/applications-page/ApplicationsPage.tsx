@@ -29,7 +29,7 @@ import {
   GridItem,
 } from '@patternfly/react-core';
 
-import { InfoAltIcon, CheckIcon, LinkIcon, BuilderImageIcon } from '@patternfly/react-icons';
+import { InfoAltIcon, CheckIcon, BuilderImageIcon } from '@patternfly/react-icons';
 import { ContentPage } from '../ContentPage';
 import { ContinueCancelModal } from '../../widgets/ContinueCancelModal';
 import { AccountServiceClient } from '../../account-service/account.service';
@@ -110,6 +110,8 @@ export class ApplicationsPage extends React.Component<ApplicationsPageProps, App
       <ContentPage title={Msg.localize('applicationsPageTitle')}>
         <DataList id="applications-list" aria-label={Msg.localize('applicationsPageTitle')}>
           {this.state.applications.map((application: Application, appIndex: number) => {
+            const appUrl: string = application.userConsentRequired ? application.baseUrl : '/auth' + application.baseUrl;
+
             return (
               <DataListItem key={'application-' + appIndex} aria-labelledby="applications-list" isExpanded={this.state.isRowOpen[appIndex]}>
                 <DataListItemRow>
@@ -132,7 +134,10 @@ export class ApplicationsPage extends React.Component<ApplicationsPageProps, App
                         {application.inUse ? Msg.localize('inUse') : Msg.localize('notInUse')}
                       </DataListCell>,
                       <DataListCell width={4} key={'baseUrl-' + appIndex}>
-                        <a href={application.userConsentRequired ? application.baseUrl : '/auth' + application.baseUrl} target="_blank"><LinkIcon /> {application.baseUrl}</a>
+                        <button className="pf-c-button pf-m-link" type="button" onClick={() => window.open(appUrl)}>
+                          <span className="pf-c-button__icon">
+                            <i className="fas fa-link" aria-hidden="true"></i>
+                          </span>{application.baseUrl}</button>
                       </DataListCell>,
                     ]}
                   />
