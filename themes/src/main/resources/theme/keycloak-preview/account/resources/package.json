@@ -5,7 +5,7 @@
   "scripts": {
     "build": "tsc --noImplicitAny --strictNullChecks --jsx react -p ./ && npm run lint",
     "build:watch": "tsc --noImplicitAny --strictNullChecks --jsx react -p ./ -w",
-    "lint": "eslint --ignore-pattern *.d.ts ./**/*.ts*"
+    "lint": "eslint --ignore-pattern **/*.d.ts ./app/**/*.ts* ./Main.tsx"
   },
   "keywords": [],
   "author": "Stan Silvert",
