@@ -175,6 +175,7 @@ public class JpaUserCredentialStore implements UserCredentialStore {
         }
 
         em.remove(entity);
+        em.flush();
         return entity;
     }
 
