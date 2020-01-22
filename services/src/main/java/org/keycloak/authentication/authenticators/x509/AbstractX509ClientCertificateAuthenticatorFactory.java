@@ -140,6 +140,13 @@ public abstract class AbstractX509ClientCertificateAuthenticatorFactory implemen
         attributeOrPropertyValue.setHelpText("A name of user attribute to map the extracted user identity to existing user. The name must be a valid, existing user attribute if User Mapping Method is set to Custom Attribute Mapper. " +
                 "Multiple values are relevant when attribute mapping is related to multiple values, e.g. 'Certificate Serial Number and IssuerDN'");
 
+        ProviderConfigProperty timestampValidationValue = new ProviderConfigProperty();
+        timestampValidationValue.setType(BOOLEAN_TYPE);
+        timestampValidationValue.setName(TIMESTAMP_VALIDATION);
+        timestampValidationValue.setLabel("Check certificate validity");
+        timestampValidationValue.setDefaultValue(true);
+        timestampValidationValue.setHelpText("Will verify that the certificate has not expired yet and is already valid by checking the attributes 'notBefore' and 'notAfter'.");
+
         ProviderConfigProperty crlCheckingEnabled = new ProviderConfigProperty();
         crlCheckingEnabled.setType(BOOLEAN_TYPE);
         crlCheckingEnabled.setName(ENABLE_CRL);
@@ -206,6 +213,7 @@ public abstract class AbstractX509ClientCertificateAuthenticatorFactory implemen
                 regExp,
                 userMapperList,
                 attributeOrPropertyValue,
+                timestampValidationValue,
                 crlCheckingEnabled,
                 crlDPEnabled,
                 cRLRelativePath,
