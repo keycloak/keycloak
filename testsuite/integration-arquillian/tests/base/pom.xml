@@ -122,6 +122,10 @@
             <artifactId>mvel2</artifactId>
             <version>${mvel.version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.apache.maven.resolver</groupId>
+            <artifactId>maven-resolver-api</artifactId>
+        </dependency>
     </dependencies>
     
     <build>
@@ -718,9 +722,9 @@
                         </goals>
                         <configuration>
                             <rules>
-                                <requireProperty>	
-                                    <message>When running fuse tests 'additional.fuse.repos' is expected to be set.</message>	
-                                    <property>additional.fuse.repos</property>	
+                                <requireProperty>
+                                    <message>When running fuse tests 'additional.fuse.repos' is expected to be set.</message>
+                                    <property>additional.fuse.repos</property>
                                 </requireProperty>
                             </rules>
                         </configuration>
@@ -793,9 +797,9 @@
                         </goals>
                         <configuration>
                             <rules>
-                                <requireProperty>	
-                                    <message>When running fuse tests 'additional.fuse.repos' is expected to be set.</message>	
-                                    <property>additional.fuse.repos</property>	
+                                <requireProperty>
+                                    <message>When running fuse tests 'additional.fuse.repos' is expected to be set.</message>
+                                    <property>additional.fuse.repos</property>
                                 </requireProperty>
                             </rules>
                         </configuration>
