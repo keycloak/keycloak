@@ -171,8 +171,6 @@
         <!-- webauthn support -->
         <webauthn4j.version>0.9.14.RELEASE</webauthn4j.version>
         <org.apache.kerby.kerby-asn1.version>2.0.0</org.apache.kerby.kerby-asn1.version>
-        
-        <mvel.version>2.4.0.Final</mvel.version>
 
     </properties>
 
@@ -1476,11 +1474,6 @@
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-lang3</artifactId>
                 <version>${commons-lang3.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.mvel</groupId>
-                <artifactId>mvel2</artifactId>
-                <version>${mvel.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
