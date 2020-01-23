@@ -58,7 +58,7 @@ angular.element(document).ready(function () {
         location.reload();
     }
 
-    keycloakAuth.init({ onLoad: 'login-required' }).success(function () {
+    keycloakAuth.init({ onLoad: 'login-required', pkceMethod: 'S256' }).success(function () {
         auth.authz = keycloakAuth;
 
         if (auth.authz.idTokenParsed.locale) {
