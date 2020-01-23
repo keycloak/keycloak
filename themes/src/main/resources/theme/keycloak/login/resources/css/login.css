@@ -159,6 +159,16 @@ div.kc-logo-text span {
 
 /* TOTP */
 
+.subtitle {
+    text-align: right;
+    margin-top: 30px;
+    color: #909090;
+}
+
+.required {
+    color: #CB2915;
+}
+
 ol#kc-totp-settings {
     margin: 0;
     padding-left: 20px;

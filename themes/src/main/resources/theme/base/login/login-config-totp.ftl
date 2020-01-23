@@ -1,9 +1,10 @@
 <#import "template.ftl" as layout>
-<@layout.registrationLayout displayInfo=true; section>
+<@layout.registrationLayout displayInfo=true displayRequiredFields=true; section>
+
     <#if section = "header">
         ${msg("loginTotpTitle")}
-    <#elseif section = "form">
 
+    <#elseif section = "form">
 
     <ol id="kc-totp-settings">
         <li>
@@ -46,11 +47,15 @@
         </#if>
         <li>
             <p>${msg("loginTotpStep3")}</p>
+            <p>${msg("loginTotpStep3DeviceName")}</p>
         </li>
     </ol>
 
     <form action="${url.loginAction}" class="${properties.kcFormClass!}" id="kc-totp-settings-form" method="post">
         <div class="${properties.kcFormGroupClass!}">
+            <div class="${properties.kcInputWrapperClass!}">
+                <label for="totp" class="control-label">${msg("authenticatorCode")}</label> <span class="required">*</span>
+            </div>
             <div class="${properties.kcInputWrapperClass!}">
                 <input type="text" id="totp" name="totp" autocomplete="off" class="${properties.kcInputClass!}" />
             </div>
@@ -58,9 +63,9 @@
             <#if mode??><input type="hidden" id="mode" name="mode" value="${mode}"/></#if>
         </div>
 
-        <div class="${properties.kcFormGroupClass!}">
+        <div class="${properties.kcFormGroupClass!}" ${messagesPerField.printIfExists('userLabel',properties.kcFormGroupErrorClass!)}">
             <div class="${properties.kcInputWrapperClass!}">
-                <label for="userLabel" class="control-label">Device Name</label>
+                <label for="userLabel" class="control-label">${msg("loginTotpDeviceName")}</label> <#if totp.otpCredentials?size gte 1><span class="required">*</span></#if>
             </div>
 
             <div class="${properties.kcInputWrapperClass!}">
@@ -69,10 +74,19 @@
         </div>
 
         <#if isAppInitiatedAction??>
-        <input class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonLargeClass!}" type="submit" value="${msg("doSubmit")}" />
-        <button class="${properties.kcButtonClass!} ${properties.kcButtonDefaultClass!} ${properties.kcButtonLargeClass!} ${properties.kcButtonLargeClass!}" type="submit" name="cancel-aia" value="true" />${msg("doCancel")}</button>
+            <input type="submit"
+                   class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonLargeClass!}"
+                   id="saveTOTPBtn" value="${msg("doSubmit")}"
+            />
+            <button type="submit"
+                    class="${properties.kcButtonClass!} ${properties.kcButtonDefaultClass!} ${properties.kcButtonLargeClass!} ${properties.kcButtonLargeClass!}"
+                    id="cancelTOTPBtn" name="cancel-aia" value="true" />${msg("doCancel")}
+            </button>
         <#else>
-        <input class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonBlockClass!} ${properties.kcButtonLargeClass!}" type="submit" value="${msg("doSubmit")}" />
+            <input type="submit"
+                   class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonBlockClass!} ${properties.kcButtonLargeClass!}"
+                   id="saveTOTPBtn" value="${msg("doSubmit")}"
+            />
         </#if>
     </form>
     </#if>
