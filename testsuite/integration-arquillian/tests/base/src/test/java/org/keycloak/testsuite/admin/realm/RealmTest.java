@@ -68,13 +68,7 @@ import javax.ws.rs.BadRequestException;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -245,7 +239,7 @@ public class RealmTest extends AbstractAdminTest {
         }
         //test will fail on AssertionError when both BadRequestException and NotFoundException is not thrown
     }
-    
+
     //KEYCLOAK-6146
     @Test
     public void createRealmWithPasswordPolicyFromJsonWithValidPasswords() {
@@ -318,7 +312,7 @@ public class RealmTest extends AbstractAdminTest {
         recr.setAdminEventsDetailsEnabled(rep.isAdminEventsDetailsEnabled());
         return recr;
     }
-    
+
     private void checkRealmEventsConfigRepresentation(RealmEventsConfigRepresentation expected,
             RealmEventsConfigRepresentation actual) {
         assertEquals(expected.getEnabledEventTypes().size(), actual.getEnabledEventTypes().size());
@@ -330,15 +324,15 @@ public class RealmTest extends AbstractAdminTest {
         assertEquals(expected.isAdminEventsEnabled(), actual.isAdminEventsEnabled());
         assertEquals(expected.isAdminEventsDetailsEnabled(), actual.isAdminEventsDetailsEnabled());
     }
-    
+
     @Test
     public void updateRealmEventsConfig() {
         RealmEventsConfigRepresentation rep = realm.getRealmEventsConfig();
         RealmEventsConfigRepresentation repOrig = copyRealmEventsConfigRepresentation(rep);
-        
+
         // the "event-queue" listener should be enabled by default
         assertTrue("event-queue should be enabled initially", rep.getEventsListeners().contains(EventsListenerProviderFactory.PROVIDER_ID));
-        
+
         // first modification => remove "event-queue", should be sent to the queue
         rep.setEnabledEventTypes(Arrays.asList(EventType.LOGIN.name(), EventType.LOGIN_ERROR.name()));
         rep.setEventsListeners(Arrays.asList(JBossLoggingEventListenerProviderFactory.ID));
@@ -350,15 +344,15 @@ public class RealmTest extends AbstractAdminTest {
         assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, "events/config", rep, ResourceType.REALM);
         RealmEventsConfigRepresentation actual = realm.getRealmEventsConfig();
         checkRealmEventsConfigRepresentation(rep, actual);
-        
+
         // second modification => should not be sent cos event-queue was removed in the first mod
-        rep.setEnabledEventTypes(Arrays.asList(EventType.LOGIN.name(), 
+        rep.setEnabledEventTypes(Arrays.asList(EventType.LOGIN.name(),
                 EventType.LOGIN_ERROR.name(), EventType.CLIENT_LOGIN.name()));
         adminClient.realms().realm(REALM_NAME).updateRealmEventsConfig(rep);
         assertAdminEvents.assertEmpty();
         actual = realm.getRealmEventsConfig();
         checkRealmEventsConfigRepresentation(rep, actual);
-        
+
         // third modification => restore queue => should be sent and recovered
         adminClient.realms().realm(REALM_NAME).updateRealmEventsConfig(repOrig);
         assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, "events/config", repOrig, ResourceType.REALM);
@@ -446,10 +440,15 @@ public class RealmTest extends AbstractAdminTest {
     public void updateRealmAttributes() {
         // first change
         RealmRepresentation rep = new RealmRepresentation();
+        List<String> webAuthnPolicyAcceptableAaguids = new ArrayList<>();
+        webAuthnPolicyAcceptableAaguids.add("aaguid1");
+        webAuthnPolicyAcceptableAaguids.add("aaguid2");
+
         rep.setAttributes(new HashMap<>());
         rep.getAttributes().put("foo1", "bar1");
         rep.getAttributes().put("foo2", "bar2");
 
+        rep.setWebAuthnPolicyAcceptableAaguids(webAuthnPolicyAcceptableAaguids);
         rep.setBruteForceProtected(true);
         rep.setDisplayName("dn1");
 
@@ -457,17 +456,19 @@ public class RealmTest extends AbstractAdminTest {
         assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, Matchers.nullValue(String.class), rep, ResourceType.REALM);
 
         rep = realm.toRepresentation();
-
         assertEquals("bar1", rep.getAttributes().get("foo1"));
         assertEquals("bar2", rep.getAttributes().get("foo2"));
         assertTrue(rep.isBruteForceProtected());
         assertEquals("dn1", rep.getDisplayName());
+        assertEquals(webAuthnPolicyAcceptableAaguids, rep.getWebAuthnPolicyAcceptableAaguids());
 
         // second change
+        webAuthnPolicyAcceptableAaguids.clear();
         rep.setBruteForceProtected(false);
         rep.setDisplayName("dn2");
         rep.getAttributes().put("foo1", "bar11");
         rep.getAttributes().remove("foo2");
+        rep.setWebAuthnPolicyAcceptableAaguids(webAuthnPolicyAcceptableAaguids);
 
         realm.update(rep);
         assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, Matchers.nullValue(String.class), rep, ResourceType.REALM);
@@ -479,6 +480,7 @@ public class RealmTest extends AbstractAdminTest {
 
         assertEquals("bar11", rep.getAttributes().get("foo1"));
         assertFalse(rep.getAttributes().containsKey("foo2"));
+        assertTrue(rep.getWebAuthnPolicyAcceptableAaguids().isEmpty());
     }
 
     @Test
