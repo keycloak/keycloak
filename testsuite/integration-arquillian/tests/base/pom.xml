@@ -41,6 +41,7 @@
         <!--exclude cluster tests by default, enabled by 'auth-server-*-cluster' profiles in tests/pom.xml-->
         <exclude.cluster>**/cluster/**/*Test.java</exclude.cluster>
         <exclude.crossdc>**/crossdc/**/*Test.java</exclude.crossdc>
+        <mvel.version>2.4.0.Final</mvel.version>
     </properties>
     
     <dependencies>
@@ -119,6 +120,7 @@
         <dependency>
             <groupId>org.mvel</groupId>
             <artifactId>mvel2</artifactId>
+            <version>${mvel.version}</version>
         </dependency>
     </dependencies>
     

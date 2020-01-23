@@ -299,17 +299,6 @@
       </licenses>
     </dependency>
     <dependency>
-      <groupId>org.mvel</groupId>
-      <artifactId>mvel2</artifactId>
-      <version>2.4.0.Final</version>
-      <licenses>
-        <license>
-          <name>Apache Software License 2.0</name>
-          <url>https://raw.githubusercontent.com/mvel/mvel/mvel2-2.4.0.Final/LICENSE.txt</url>
-        </license>
-      </licenses>
-    </dependency>
-    <dependency>
       <groupId>com.google.inject.extensions</groupId>
       <artifactId>guice-servlet</artifactId>
       <version>4.0</version>
