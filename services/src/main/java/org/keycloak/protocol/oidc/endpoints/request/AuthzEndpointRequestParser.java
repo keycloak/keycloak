@@ -70,9 +70,7 @@ abstract class AuthzEndpointRequestParser {
         // https://tools.ietf.org/html/rfc7636#section-6.1
         KNOWN_REQ_PARAMS.add(OIDCLoginProtocol.CODE_CHALLENGE_PARAM);
         KNOWN_REQ_PARAMS.add(OIDCLoginProtocol.CODE_CHALLENGE_METHOD_PARAM);
-
     }
-
 
     public void parseRequest(AuthorizationEndpointRequest request) {
         String clientId = getParameter(OIDCLoginProtocol.CLIENT_ID_PARAM);
@@ -104,7 +102,6 @@ abstract class AuthzEndpointRequestParser {
         extractAdditionalReqParams(request.additionalReqParams);
     }
 
-
     protected void extractAdditionalReqParams(Map<String, String> additionalReqParams) {
         for (String paramName : keySet()) {
             if (!KNOWN_REQ_PARAMS.contains(paramName)) {
@@ -129,7 +126,6 @@ abstract class AuthzEndpointRequestParser {
     protected <T> T replaceIfNotNull(T previousVal, T newVal) {
         return newVal==null ? previousVal : newVal;
     }
-
 
     protected abstract String getParameter(String paramName);
 

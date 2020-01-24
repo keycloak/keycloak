@@ -33,6 +33,7 @@ import org.keycloak.services.messages.Messages;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import java.io.InputStream;
+import java.util.List;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -43,7 +44,13 @@ public class AuthorizationEndpointRequestParserProcessor {
         try {
             AuthorizationEndpointRequest request = new AuthorizationEndpointRequest();
 
-            new AuthzEndpointQueryStringParser(requestParams).parseRequest(request);
+            AuthzEndpointQueryStringParser parser = new AuthzEndpointQueryStringParser(requestParams);
+            parser.parseRequest(request);
+
+            if (parser.getInvalidRequestMessage() != null) {
+                request.invalidRequestMessage = parser.getInvalidRequestMessage();
+                return request;
+            }
 
             String requestParam = requestParams.getFirst(OIDCLoginProtocol.REQUEST_PARAM);
             String requestUriParam = requestParams.getFirst(OIDCLoginProtocol.REQUEST_URI_PARAM);
@@ -83,4 +90,15 @@ public class AuthorizationEndpointRequestParserProcessor {
             throw new ErrorPageException(session, Response.Status.BAD_REQUEST, Messages.INVALID_REQUEST);
         }
     }
+
+    public static String getClientId(EventBuilder event, KeycloakSession session, MultivaluedMap<String, String> requestParams) {
+        List<String> clientParam = requestParams.get(OIDCLoginProtocol.CLIENT_ID_PARAM);
+        if (clientParam != null && clientParam.size() == 1) {
+            return clientParam.get(0);
+        } else {
+            event.error(Errors.INVALID_REQUEST);
+            throw new ErrorPageException(session, Response.Status.BAD_REQUEST, Messages.INVALID_REQUEST);
+        }
+    }
+
 }
