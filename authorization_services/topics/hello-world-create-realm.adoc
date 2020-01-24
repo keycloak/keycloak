@@ -27,4 +27,4 @@ image:{project_images}/getting-started/hello-world/reset-user-pwd.png[alt="Set U
 
 . Complete the *New Password* and *Password Confirmation* fields with a password and click the *Temporary* switch to *OFF*.
 
-. Click *Reset Password* to set the user's password.
+. Click *Set Password* to set the user's password.
