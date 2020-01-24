@@ -119,7 +119,7 @@ public class RoleCompositeRoles extends Form {
     public static Set<String> getSelectValues(Select select) {
         Set<String> roles = new HashSet<>();
         for (WebElement option : select.getOptions()) {
-            roles.add(getTextFromElement(option));
+            roles.add(getTextFromElement(option).trim());
         }
         return roles;
     }
