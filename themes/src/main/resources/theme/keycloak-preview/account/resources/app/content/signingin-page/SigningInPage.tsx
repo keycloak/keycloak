@@ -125,6 +125,10 @@ class SigningInPage extends React.Component<SigningInPageProps, SigningInPageSta
         });
     }
 
+    public static credElementId(credType: CredType, credId: string, item: string): string {
+        return `${credType}-${item}-${credId.substring(0,8)}`;
+    }
+
     public render(): React.ReactNode {
         return (
             <ContentPage title="signingIn"
@@ -140,7 +144,7 @@ class SigningInPage extends React.Component<SigningInPageProps, SigningInPageSta
         return (<> {
             Array.from(this.state.credentialContainers.keys()).map(category => (
                 <StackItem key={category} isFilled>
-                    <Title headingLevel={TitleLevel.h2} size='2xl'>
+                    <Title id={`${category}-categ-title`} headingLevel={TitleLevel.h2} size='2xl'>
                         <strong><Msg msgKey={category}/></strong>
                     </Title>
                     <DataList aria-label='foo'>
@@ -178,6 +182,7 @@ class SigningInPage extends React.Component<SigningInPageProps, SigningInPageSta
         const credContainer: CredentialContainer = credTypeMap.get(credType)!;
         const userCredentials: UserCredential[] = credContainer.userCredentials;
         const removeable: boolean = credContainer.removeable;
+        const type: string = credContainer.type;
         const displayName: string = credContainer.displayName;
 
         if (userCredentials.length === 0) {
@@ -188,7 +193,7 @@ class SigningInPage extends React.Component<SigningInPageProps, SigningInPageSta
                         <DataListItemCells
                                     dataListCells={[
                                         <DataListCell key={'no-credentials-cell-0'}/>,
-                                        <strong key={'no-credentials-cell-1'}><Msg msgKey='notSetUp' params={[localizedDisplayName]}/></strong>,
+                                        <strong id={`${type}-not-set-up`} key={'no-credentials-cell-1'}><Msg msgKey='notSetUp' params={[localizedDisplayName]}/></strong>,
                                         <DataListCell key={'no-credentials-cell-2'}/>
                                     ]}/>
                     </DataListItemRow>
@@ -209,12 +214,12 @@ class SigningInPage extends React.Component<SigningInPageProps, SigningInPageSta
         return (
             <React.Fragment key='userCredentials'> {
                 userCredentials.map(credential => (
-                    <DataListItem key={'credential-list-item-' + credential.id} aria-labelledby={'credential-list-item-' + credential.userLabel}>
+                    <DataListItem id={`${SigningInPage.credElementId(type, credential.id, 'row')}`} key={'credential-list-item-' + credential.id} aria-labelledby={'credential-list-item-' + credential.userLabel}>
                         <DataListItemRow key={'userCredentialRow-' + credential.id}>
                             <DataListItemCells
                                 dataListCells={[
-                                    <DataListCell key={'userLabel-' + credential.id}>{credential.userLabel}</DataListCell>,
-                                    <DataListCell key={'created-' + credential.id}><strong><Msg msgKey='credentialCreatedAt'/>: </strong>{credential.strCreatedDate}</DataListCell>,
+                                    <DataListCell id={`${SigningInPage.credElementId(type, credential.id, 'label')}`} key={'userLabel-' + credential.id}>{credential.userLabel}</DataListCell>,
+                                    <DataListCell id={`${SigningInPage.credElementId(type, credential.id, 'created-at')}`} key={'created-' + credential.id}><strong><Msg msgKey='credentialCreatedAt'/>: </strong>{credential.strCreatedDate}</DataListCell>,
                                     <DataListCell key={'spacer-' + credential.id}/>
                                 ]}/>
 
@@ -246,15 +251,15 @@ class SigningInPage extends React.Component<SigningInPageProps, SigningInPageSta
                             dataListCells={[
                                 <DataListCell width={5} key={'credTypeTitle-' + credContainer.type}>
                                     <Title headingLevel={TitleLevel.h3} size='2xl'>
-                                        <strong><Msg msgKey={credContainer.displayName}/></strong>
+                                        <strong id={`${credContainer.type}-cred-title`}><Msg msgKey={credContainer.displayName}/></strong>
                                     </Title>
-                                    <Msg msgKey={credContainer.helptext}/>
+                                    <span id={`${credContainer.type}-cred-help`}><Msg msgKey={credContainer.helptext}/></span>
                                 </DataListCell>,
 
                             ]}/>
                         {credContainer.createAction &&
                         <DataListAction aria-labelledby='foo' aria-label='foo action' id={'setUpAction-' + credContainer.type}>
-                            <button className="pf-c-button pf-m-link" type="button" onClick={()=> setupAction.execute()}>
+                            <button id={`${credContainer.type}-set-up`} className="pf-c-button pf-m-link" type="button" onClick={()=> setupAction.execute()}>
                                 <span className="pf-c-button__icon">
                                     <i className="fas fa-plus-circle" aria-hidden="true"></i>
                                 </span>
@@ -280,7 +285,7 @@ class CredentialAction extends React.Component<CredentialActionProps> {
         if (this.props.updateAction) {
             return (
                 <DataListAction aria-labelledby='foo' aria-label='foo action' id={'updateAction-' + this.props.credential.id}>
-                    <Button variant='primary'onClick={()=> this.props.updateAction.execute()}><Msg msgKey='update'/></Button>
+                    <Button id={`${SigningInPage.credElementId(this.props.credential.type, this.props.credential.id, 'update')}`} variant='primary'onClick={()=> this.props.updateAction.execute()}><Msg msgKey='update'/></Button>
                 </DataListAction>
             )
         }
@@ -290,6 +295,7 @@ class CredentialAction extends React.Component<CredentialActionProps> {
             return (
                 <DataListAction aria-labelledby='foo' aria-label='foo action' id={'removeAction-' + this.props.credential.id }>
                     <ContinueCancelModal buttonTitle='remove'
+                                        buttonId={`${SigningInPage.credElementId(this.props.credential.type, this.props.credential.id, 'remove')}`}
                                         modalTitle={Msg.localize('removeCred', [userLabel])}
                                         modalMessage={Msg.localize('stopUsingCred', [userLabel])}
                                         onContinue={() => this.props.credRemover(this.props.credential.id, userLabel)}

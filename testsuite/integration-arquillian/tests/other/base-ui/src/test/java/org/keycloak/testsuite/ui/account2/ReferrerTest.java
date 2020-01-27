@@ -56,7 +56,7 @@ public class ReferrerTest extends AbstractAccountTest {
         testClient.setEnabled(true);
 
         testRealm.setClients(Collections.singletonList(testClient));
-        testRealm.setAccountTheme(LOCALIZED_THEME); // using localized custom theme for the fake client localized name
+        testRealm.setAccountTheme(LOCALIZED_THEME_PREVIEW); // using localized custom theme for the fake client localized name
     }
 
     @Test

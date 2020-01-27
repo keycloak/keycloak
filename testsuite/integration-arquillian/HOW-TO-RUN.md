@@ -427,6 +427,9 @@ mvn -f testsuite/integration-arquillian/tests/other/base-ui/pom.xml \
     -Pandroid \
     -Dappium.avd=Nexus_5X_API_27
 ```
+**Note:** Some of the tests are covering WebAuthn functionality. Such tests are ignored by default, to ensure that all
+tests in the Base UI testsuite are executed please use `-DchromeArguments=--enable-web-authentication-testing-api` as
+specified in [WebAuthn tests](#webauthn-tests).
 
 ## WebAuthN tests
 The WebAuthN tests, in Keycloak, can be only executed with Chrome browser, because the Chrome has feature _WebAuthenticationTestingApi_,
