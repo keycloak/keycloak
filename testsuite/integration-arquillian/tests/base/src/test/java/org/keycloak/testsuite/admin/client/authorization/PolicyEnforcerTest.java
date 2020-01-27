@@ -302,6 +302,17 @@ public class PolicyEnforcerTest extends AbstractKeycloakTest {
     }
 
     @Test
+    public void testEnforcementModeDisabled() {
+        KeycloakDeployment deployment = KeycloakDeploymentBuilder.build(getAdapterConfiguration("enforcer-disabled-enforce-mode.json"));
+        PolicyEnforcer policyEnforcer = deployment.getPolicyEnforcer();
+
+        OIDCHttpFacade httpFacade = createHttpFacade("/api/resource/public");
+        policyEnforcer.enforce(httpFacade);
+        TestResponse response = TestResponse.class.cast(httpFacade.getResponse());
+        assertEquals(401, response.getStatus());
+    }
+
+    @Test
     public void testDefaultWWWAuthenticateCorsHeader() {
         KeycloakDeployment deployment = KeycloakDeploymentBuilder.build(getAdapterConfiguration("enforcer-disabled-enforce-mode-path.json"));
 
