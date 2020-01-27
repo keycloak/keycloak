@@ -113,6 +113,10 @@ public class OTPSetup extends RequiredActions {
         return otpCounter.getText();
     }
 
+    public void setUserLabel(String value) {
+        form.setUserLabel(value);
+    }
+
     @Override
     public String getActionId() {
         return UserModel.RequiredAction.CONFIGURE_TOTP.name();

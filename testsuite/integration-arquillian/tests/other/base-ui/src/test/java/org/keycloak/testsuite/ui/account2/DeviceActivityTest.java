@@ -98,7 +98,7 @@ public class DeviceActivityTest extends BaseAccountPageTest {
 
         ));
 
-        realm.setAccountTheme(LOCALIZED_THEME); // using localized custom theme for the client localized name
+        realm.setAccountTheme(LOCALIZED_THEME_PREVIEW); // using localized custom theme for the client localized name
     }
 
     @Before
