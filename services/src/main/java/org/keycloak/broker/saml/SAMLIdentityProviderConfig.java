@@ -230,4 +230,27 @@ public class SAMLIdentityProviderConfig extends IdentityProviderModel {
             : xmlSigKeyInfoKeyNameTransformer.name());
     }
 
+    public int getAllowedClockSkew() {
+        int result = 0;
+        String allowedClockSkew = getConfig().get(ALLOWED_CLOCK_SKEW);
+        if (allowedClockSkew != null && !allowedClockSkew.isEmpty()) {
+            try {
+                result = Integer.parseInt(allowedClockSkew);
+                if (result < 0) {
+                    result = 0;
+                }
+            } catch (NumberFormatException e) {
+                // ignore it and use 0
+            }
+        }
+        return result;
+    }
+
+    public void setAllowedClockSkew(int allowedClockSkew) {
+        if (allowedClockSkew < 0) {
+            getConfig().remove(ALLOWED_CLOCK_SKEW);
+        } else {
+            getConfig().put(ALLOWED_CLOCK_SKEW, String.valueOf(allowedClockSkew));
+        }
+    }
 }

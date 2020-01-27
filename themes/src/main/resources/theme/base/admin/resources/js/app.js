@@ -3282,6 +3282,21 @@ module.directive('kcValidPage', function() {
    }
 });
 
+// Directive to parse/format strings into numbers
+module.directive('stringToNumber', function() {
+    return {
+        require: 'ngModel',
+        link: function(scope, element, attrs, ngModel) {
+            ngModel.$parsers.push(function(value) {
+                return (typeof value === 'undefined' || value === null)? '' : '' + value;
+            });
+            ngModel.$formatters.push(function(value) {
+                return parseFloat(value);
+            });
+        }
+    };
+});
+
 // filter used for paged tables
 module.filter('startFrom', function () {
     return function (input, start) {

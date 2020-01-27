@@ -28,6 +28,8 @@ import java.util.Map;
  */
 public class IdentityProviderModel implements Serializable {
 
+    public static final String ALLOWED_CLOCK_SKEW = "allowedClockSkew";
+
     private String internalId;
 
     /**
