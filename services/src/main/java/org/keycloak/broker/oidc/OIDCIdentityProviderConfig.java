@@ -111,12 +111,12 @@ public class OIDCIdentityProviderConfig extends OAuth2IdentityProviderConfig {
     }
 
     public int getAllowedClockSkew() {
-        String allowedClockSkew = getConfig().get("allowedClockSkew");
+        String allowedClockSkew = getConfig().get(ALLOWED_CLOCK_SKEW);
         if (allowedClockSkew == null || allowedClockSkew.isEmpty()) {
             return 0;
         }
         try {
-            return Integer.parseInt(getConfig().get("allowedClockSkew"));
+            return Integer.parseInt(getConfig().get(ALLOWED_CLOCK_SKEW));
         } catch (NumberFormatException e) {
             // ignore it and use default
             return 0;
