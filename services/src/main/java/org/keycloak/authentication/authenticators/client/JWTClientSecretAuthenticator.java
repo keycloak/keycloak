@@ -1,6 +1,21 @@
+/*
+ * Copyright 2018 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.keycloak.authentication.authenticators.client;
 
-import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -10,8 +25,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import javax.crypto.SecretKey;
-import javax.crypto.spec.SecretKeySpec;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 
@@ -21,7 +34,6 @@ import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.ClientAuthenticationFlowContext;
 import org.keycloak.common.util.Time;
 import org.keycloak.jose.jws.JWSInput;
-import org.keycloak.jose.jws.crypto.HMACProvider;
 import org.keycloak.models.AuthenticationExecutionModel.Requirement;
 import org.keycloak.models.SingleUseTokenStoreProvider;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -42,13 +54,12 @@ import org.keycloak.services.Urls;
  *
  * TODO: Try to create abstract superclass to be shared with {@link JWTClientAuthenticator}. Most of the code can be reused
  *
- * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
 public class JWTClientSecretAuthenticator extends AbstractClientAuthenticator {
-	private static final Logger logger = Logger.getLogger(JWTClientSecretAuthenticator.class);
-	
-    public static final String PROVIDER_ID = "client-secret-jwt";
 
+    private static final Logger logger = Logger.getLogger(JWTClientSecretAuthenticator.class);
+
+    public static final String PROVIDER_ID = "client-secret-jwt";
 
     @Override
     public void authenticateClient(ClientAuthenticationFlowContext context) {
@@ -56,7 +67,7 @@ public class JWTClientSecretAuthenticator extends AbstractClientAuthenticator {
 
         String clientAssertionType = params.getFirst(OAuth2Constants.CLIENT_ASSERTION_TYPE);
         String clientAssertion = params.getFirst(OAuth2Constants.CLIENT_ASSERTION);
-        
+
         if (clientAssertionType == null) {
             Response challengeResponse = ClientAuthUtil.errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), "invalid_client", "Parameter client_assertion_type is missing");
             context.challenge(challengeResponse);
@@ -75,7 +86,7 @@ public class JWTClientSecretAuthenticator extends AbstractClientAuthenticator {
             context.failure(AuthenticationFlowError.INVALID_CLIENT_CREDENTIALS, challengeResponse);
             return;
         }
-        
+
         try {
             JWSInput jws = new JWSInput(clientAssertion);
             JsonWebToken token = jws.readJsonContent(JsonWebToken.class);
@@ -99,22 +110,17 @@ public class JWTClientSecretAuthenticator extends AbstractClientAuthenticator {
                 context.failure(AuthenticationFlowError.CLIENT_DISABLED, null);
                 return;
             }
-            
+
             String clientSecretString = client.getSecret();
             if (clientSecretString == null) {
                 context.failure(AuthenticationFlowError.INVALID_CLIENT_CREDENTIALS, null);
                 return;
             }
 
-            // Get client secret and validate signature
-            // According to <a href="http://openid.net/specs/openid-connect-core-1_0.html#ClientAuthentication">OIDC's client authentication spec</a>,
-            // The HMAC (Hash-based Message Authentication Code) is calculated using the octets of the UTF-8 representation of the client_secret as the shared key. 
-            // Use "HmacSHA256" consulting <a href="https://docs.oracle.com/javase/jp/8/docs/api/javax/crypto/Mac.html">java8 api</a>.
-            SecretKey clientSecret = new SecretKeySpec(clientSecretString.getBytes(StandardCharsets.UTF_8), "HmacSHA256");
-
             boolean signatureValid;
             try {
-                signatureValid = HMACProvider.verify(jws, clientSecret);
+                JsonWebToken jwt = context.getSession().tokens().decodeClientJWT(clientAssertion, client, JsonWebToken.class);
+                signatureValid = jwt != null;
             } catch (RuntimeException e) {
                 Throwable cause = e.getCause() != null ? e.getCause() : e;
                 throw new RuntimeException("Signature on JWT token by client secret failed validation", cause);
@@ -124,7 +130,7 @@ public class JWTClientSecretAuthenticator extends AbstractClientAuthenticator {
             }
             // According to <a href="http://openid.net/specs/openid-connect-core-1_0.html#ClientAuthentication">OIDC's client authentication spec</a>,
             // JWT contents and verification in client_secret_jwt is the same as in private_key_jwt
-            
+
             // Allow both "issuer" or "token-endpoint" as audience
             String issuerUrl = Urls.realmIssuer(context.getUriInfo().getBaseUri(), realm.getName());
             String tokenUrl = OIDCLoginProtocolService.tokenUrl(context.getUriInfo().getBaseUriBuilder()).build(realm.getName()).toString();
@@ -163,7 +169,7 @@ public class JWTClientSecretAuthenticator extends AbstractClientAuthenticator {
             context.failure(AuthenticationFlowError.INVALID_CLIENT_CREDENTIALS, challengeResponse);
         }
     }
-    
+
     @Override
     public boolean isConfigurable() {
         return false;
@@ -177,14 +183,16 @@ public class JWTClientSecretAuthenticator extends AbstractClientAuthenticator {
 
     @Override
     public Map<String, Object> getAdapterConfiguration(ClientModel client) {
-    	// e.g.
-    	// "credentials": {
+        // e.g. client adapter's keycloak.json
+        // "credentials": {
         //   "secret-jwt": {
-        //     "secret": "234234-234234-234234"
-    	//   }
+        //     "secret": "234234-234234-234234",
+        //     "algorithm": "HS256"
+        //   }
         // }
         Map<String, Object> props = new HashMap<>();
         props.put("secret", client.getSecret());
+        // "algorithm" field is not saved because keycloak does not manage client's property of which algorithm is used for client secret signed JWT.
 
         Map<String, Object> config = new HashMap<>();
         config.put("secret-jwt", props);
@@ -227,6 +235,5 @@ public class JWTClientSecretAuthenticator extends AbstractClientAuthenticator {
     public List<ProviderConfigProperty> getConfigProperties() {
         return new LinkedList<>();
     }
-    
 
 }

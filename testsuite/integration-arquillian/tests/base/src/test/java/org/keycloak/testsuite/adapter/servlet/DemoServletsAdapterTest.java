@@ -39,7 +39,6 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
-import org.keycloak.representations.VersionRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -49,6 +48,7 @@ import org.keycloak.testsuite.adapter.AbstractServletsAdapterTest;
 import org.keycloak.testsuite.adapter.filter.AdapterActionsFilter;
 import org.keycloak.testsuite.adapter.page.BasicAuth;
 import org.keycloak.testsuite.adapter.page.ClientSecretJwtSecurePortal;
+import org.keycloak.testsuite.adapter.page.ClientSecretJwtSecurePortalValidAlg;
 import org.keycloak.testsuite.adapter.page.CustomerCookiePortal;
 import org.keycloak.testsuite.adapter.page.CustomerCookiePortalRoot;
 import org.keycloak.testsuite.adapter.page.CustomerDb;
@@ -72,6 +72,7 @@ import org.keycloak.testsuite.auth.page.login.OAuthGrant;
 import org.keycloak.testsuite.auth.page.login.OIDCLogin;
 import org.keycloak.testsuite.console.page.events.Config;
 import org.keycloak.testsuite.console.page.events.LoginEvents;
+import org.keycloak.testsuite.page.AbstractPageWithInjectedUrl;
 import org.keycloak.testsuite.util.FollowRedirectsEngine;
 import org.keycloak.testsuite.util.JavascriptBrowser;
 import org.keycloak.testsuite.util.Matchers;
@@ -112,7 +113,6 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
@@ -182,6 +182,8 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
     protected Config configPage;
     @Page
     private ClientSecretJwtSecurePortal clientSecretJwtSecurePortal;
+    @Page
+    private ClientSecretJwtSecurePortalValidAlg clientSecretJwtSecurePortalValidAlg;
     @Page
     private CustomerCookiePortal customerCookiePortal;
     @Page
@@ -268,6 +270,11 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
     @Deployment(name = ClientSecretJwtSecurePortal.DEPLOYMENT_NAME)
     protected static WebArchive clientSecretSecurePortal() {
         return servletDeployment(ClientSecretJwtSecurePortal.DEPLOYMENT_NAME, CallAuthenticatedServlet.class);
+    }
+
+    @Deployment(name = ClientSecretJwtSecurePortalValidAlg.DEPLOYMENT_NAME)
+    protected static WebArchive clientSecretSecurePortalValidAlg() {
+        return servletDeployment(ClientSecretJwtSecurePortalValidAlg.DEPLOYMENT_NAME, CallAuthenticatedServlet.class);
     }
 
     @Deployment(name = CustomerCookiePortalRoot.DEPLOYMENT_NAME)
@@ -1232,46 +1239,58 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
     @Test
     public void testClientAuthenticatedInClientSecretJwt() {
         // test login to customer-portal which does a bearer request to customer-db
-    	// JWS Client Assertion in client_secret_jwt
-    	// http://openid.net/specs/openid-connect-core-1_0.html#ClientAuthentication
+        // JWS Client Assertion in client_secret_jwt
+        // http://openid.net/specs/openid-connect-core-1_0.html#ClientAuthentication
         String targetClientId = "client-secret-jwt-secure-portal";
-  	         
-        expectResultOfClientAuthenticatedInClientSecretJwt(targetClientId);
+
+        expectResultOfClientAuthenticatedInClientSecretJwt(targetClientId, clientSecretJwtSecurePortal);
 
         // test logout
         String logoutUri = OIDCLoginProtocolService.logoutUrl(authServerPage.createUriBuilder())
                 .queryParam(OAuth2Constants.REDIRECT_URI, clientSecretJwtSecurePortal.toString()).build("demo").toString();
         driver.navigate().to(logoutUri);
     }
-    
+
     @Test
     public void testClientNotAuthenticatedInClientSecretJwtBySharedSecretOutOfSync() {
-    	// JWS Client Assertion in client_secret_jwt
-    	// http://openid.net/specs/openid-connect-core-1_0.html#ClientAuthentication
-    	String targetClientId = "client-secret-jwt-secure-portal";
-    	String expectedErrorString = "invalid_client_credentials";
-    	
+        // JWS Client Assertion in client_secret_jwt
+        // http://openid.net/specs/openid-connect-core-1_0.html#ClientAuthentication
+        String targetClientId = "client-secret-jwt-secure-portal";
+        String expectedErrorString = "invalid_client_credentials";
+
         ClientResource clientResource = ApiUtil.findClientResourceByClientId(testRealmResource(), targetClientId);
         ClientRepresentation client = clientResource.toRepresentation();
         client.setSecret("passwordChanged");
         clientResource.update(client);
-        
+
         expectResultOfClientNotAuthenticatedInClientSecretJwt(targetClientId, expectedErrorString);
     }
-    
+
     @Test
     public void testClientNotAuthenticatedInClientSecretJwtByAuthnMethodOutOfSync() {
-    	// JWS Client Assertion in client_secret_jwt
-    	// http://openid.net/specs/openid-connect-core-1_0.html#ClientAuthentication
-    	String targetClientId = "client-secret-jwt-secure-portal";
-    	String expectedErrorString = "invalid_client_credentials";
-    	
+        // JWS Client Assertion in client_secret_jwt
+        // http://openid.net/specs/openid-connect-core-1_0.html#ClientAuthentication
+        String targetClientId = "client-secret-jwt-secure-portal";
+        String expectedErrorString = "invalid_client_credentials";
+
         ClientResource clientResource = ApiUtil.findClientResourceByClientId(testRealmResource(), targetClientId);
         ClientRepresentation client = clientResource.toRepresentation();
         client.setClientAuthenticatorType("client-secret");
         clientResource.update(client);
-        
+
         expectResultOfClientNotAuthenticatedInClientSecretJwt(targetClientId, expectedErrorString);
+    }
+
+    @Test
+    public void testClientAuthenticatedInClientSecretJwtValidAlg() {
+        String targetClientId = "client-secret-jwt-secure-portal-valid-alg";
+
+        expectResultOfClientAuthenticatedInClientSecretJwt(targetClientId, clientSecretJwtSecurePortalValidAlg);
+
+        // test logout
+        String logoutUri = OIDCLoginProtocolService.logoutUrl(authServerPage.createUriBuilder())
+                .queryParam(OAuth2Constants.REDIRECT_URI, clientSecretJwtSecurePortalValidAlg.toString()).build("demo").toString();
+        driver.navigate().to(logoutUri);
     }
 
     @Test
@@ -1321,20 +1340,20 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
         customerCookiePortalRoot.navigateTo();
         assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
     }
-    
-    private void expectResultOfClientAuthenticatedInClientSecretJwt(String targetClientId) {
+
+    private void expectResultOfClientAuthenticatedInClientSecretJwt(String targetClientId, AbstractPageWithInjectedUrl portal) {
         RealmRepresentation realm = testRealmResource().toRepresentation();
         realm.setEventsEnabled(true);
         realm.setEnabledEventTypes(Arrays.asList("LOGIN", "CODE_TO_TOKEN"));
         realm.setEventsListeners(Arrays.asList("jboss-logging", "event-queue"));
         testRealmResource().update(realm); 
-        
-    	clientSecretJwtSecurePortal.navigateTo();
+
+        portal.navigateTo();
         assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
         testRealmLoginPage.form().login("bburke@redhat.com", "password");
-        
+
         String userId = ApiUtil.findUserByUsername(testRealmResource(), "bburke@redhat.com").getId();
-        
+
         assertEvents.expectLogin()
         .realm(realm.getId())
         .client(targetClientId)
@@ -1342,11 +1361,11 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
         .detail(Details.USERNAME, "bburke@redhat.com")
         .detail(Details.CONSENT, Details.CONSENT_VALUE_NO_CONSENT_REQUIRED)
         .detail(Details.REDIRECT_URI,
-                org.hamcrest.Matchers.anyOf(org.hamcrest.Matchers.equalTo(clientSecretJwtSecurePortal.getInjectedUrl().toString()),
-                        org.hamcrest.Matchers.equalTo(clientSecretJwtSecurePortal.getInjectedUrl().toString() + "/")))
+                org.hamcrest.Matchers.anyOf(org.hamcrest.Matchers.equalTo(portal.getInjectedUrl().toString()),
+                        org.hamcrest.Matchers.equalTo(portal.getInjectedUrl().toString() + "/")))
         .removeDetail(Details.CODE_ID)
         .assertEvent();
-        
+
         assertEvents.expectCodeToToken(null, null)
         .realm(realm.getId())
         .client(targetClientId)
@@ -1355,18 +1374,18 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
         .clearDetails()
         .assertEvent();
     }
-    
+
     private void expectResultOfClientNotAuthenticatedInClientSecretJwt(String targetClientId, String expectedErrorString) {
         RealmRepresentation realm = testRealmResource().toRepresentation();
         realm.setEventsEnabled(true);
         realm.setEnabledEventTypes(Arrays.asList("LOGIN", "CODE_TO_TOKEN_ERROR"));
         realm.setEventsListeners(Arrays.asList("jboss-logging", "event-queue"));
         testRealmResource().update(realm);
-    	
-    	clientSecretJwtSecurePortal.navigateTo();
+
+        clientSecretJwtSecurePortal.navigateTo();
         assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
         testRealmLoginPage.form().login("bburke@redhat.com", "password");
-        
+
         String userId = ApiUtil.findUserByUsername(testRealmResource(), "bburke@redhat.com").getId();
 
         assertEvents.expectLogin()

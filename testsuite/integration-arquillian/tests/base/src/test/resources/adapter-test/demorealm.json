@@ -351,6 +351,17 @@
                 "/client-secret-jwt-secure-portal/*"
             ],
             "secret": "234234-234234-234234"
+        },
+        {
+            "clientId": "client-secret-jwt-secure-portal-valid-alg",
+            "enabled": true,
+            "adminUrl": "/client-secret-jwt-secure-portal-valid-alg",
+            "baseUrl": "/client-secret-jwt-secure-portal-valid-alg",
+            "clientAuthenticatorType": "client-secret-jwt",
+            "redirectUris": [
+                "/client-secret-jwt-secure-portal-valid-alg/*"
+            ],
+            "secret": "234234-234234-234234"
         }
     ]
 }
