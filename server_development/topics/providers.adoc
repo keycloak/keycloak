@@ -381,21 +381,21 @@ The `META-INF/keycloak-scripts.json` is a file descriptor that provides metadata
     "authenticators": [
         {
             "name": "My Authenticator",
-            "fileName": "my-authenticator.js",
+            "fileName": "my-script-authenticator.js",
             "description": "My Authenticator from a JS file"
         }
     ],
     "policies": [
         {
             "name": "My Policy",
-            "fileName": "my-policy.js",
+            "fileName": "my-script-policy.js",
             "description": "My Policy from a JS file"
         }
     ],
     "mappers": [
         {
             "name": "My Mapper",
-            "fileName": "my-mapper.js",
+            "fileName": "my-script-mapper.js",
             "description": "My Mapper from a JS file"
         }
     ]
