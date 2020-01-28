@@ -20,6 +20,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.authentication.authenticators.browser.WebAuthnAuthenticatorFactory;
 import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.credential.CredentialTypeMetadata;
 import org.keycloak.models.UserModel;
@@ -31,12 +32,14 @@ import org.keycloak.representations.account.ConsentRepresentation;
 import org.keycloak.representations.account.ConsentScopeRepresentation;
 import org.keycloak.representations.account.SessionRepresentation;
 import org.keycloak.representations.account.UserRepresentation;
+import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.account.AccountCredentialResource;
+import org.keycloak.testsuite.admin.authentication.AbstractAuthenticationTest;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.TokenUtil;
 
@@ -46,6 +49,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+
+import javax.ws.rs.core.Response;
 
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.junit.Assert.*;
@@ -285,38 +290,41 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
 
     @Test
     public void testCredentialsGet() throws IOException {
+        configureBrowserFlowWithWebAuthnAuthenticator("browser-webauthn");
+
         List<AccountCredentialResource.CredentialContainer> credentials = SimpleHttp.doGet(getAccountUrl("credentials"), httpClient)
                 .auth(tokenUtil.getToken()).asJson(new TypeReference<List<AccountCredentialResource.CredentialContainer>>() {});
 
         Assert.assertEquals(3, credentials.size());
 
-        AccountCredentialResource.CredentialContainer password = getCredentialContainerByType(credentials, PasswordCredentialModel.TYPE);
+        AccountCredentialResource.CredentialContainer password = credentials.get(0);
         assertCredentialContainerExpected(password, PasswordCredentialModel.TYPE, CredentialTypeMetadata.Category.PASSWORD.toString(),
-                "password", "password-help-text", "kcAuthenticatorPasswordClass", true,
+                "password", "password-help-text", "kcAuthenticatorPasswordClass",
                 null, UserModel.RequiredAction.UPDATE_PASSWORD.toString(), false, 1);
 
         CredentialRepresentation password1 = password.getUserCredentials().get(0);
         Assert.assertNull(password1.getSecretData());
         Assert.assertNotNull(password1.getCredentialData());
 
-        AccountCredentialResource.CredentialContainer otp = getCredentialContainerByType(credentials, OTPCredentialModel.TYPE);
+        AccountCredentialResource.CredentialContainer otp = credentials.get(1);
         assertCredentialContainerExpected(otp, OTPCredentialModel.TYPE, CredentialTypeMetadata.Category.TWO_FACTOR.toString(),
-                "otp-display-name", "otp-help-text", "kcAuthenticatorOTPClass", true,
+                "otp-display-name", "otp-help-text", "kcAuthenticatorOTPClass",
                 UserModel.RequiredAction.CONFIGURE_TOTP.toString(), null, true, 0);
 
-        AccountCredentialResource.CredentialContainer webauthn = getCredentialContainerByType(credentials, WebAuthnCredentialModel.TYPE);
+        AccountCredentialResource.CredentialContainer webauthn = credentials.get(2);
         assertCredentialContainerExpected(webauthn, WebAuthnCredentialModel.TYPE, CredentialTypeMetadata.Category.TWO_FACTOR.toString(),
-                "webauthn-display-name", "webauthn-help-text", "kcAuthenticatorWebAuthnClass", false,
+                "webauthn-display-name", "webauthn-help-text", "kcAuthenticatorWebAuthnClass",
                 "webauthn-register", null, true, 0);
 
-        // Test enabled-only
-        credentials = SimpleHttp.doGet(getAccountUrl("credentials?" + AccountCredentialResource.ENABLED_ONLY + "=true"), httpClient)
+        // Test that WebAuthn won't be returned when removed from the authentication flow
+        removeWebAuthnFlow("browser-webauthn");
+
+        credentials = SimpleHttp.doGet(getAccountUrl("credentials"), httpClient)
                 .auth(tokenUtil.getToken()).asJson(new TypeReference<List<AccountCredentialResource.CredentialContainer>>() {});
 
         Assert.assertEquals(2, credentials.size());
-        Assert.assertNotNull(getCredentialContainerByType(credentials, PasswordCredentialModel.TYPE));
-        Assert.assertNotNull(getCredentialContainerByType(credentials, OTPCredentialModel.TYPE));
-        Assert.assertNull(getCredentialContainerByType(credentials, WebAuthnCredentialModel.TYPE));
+        Assert.assertEquals(PasswordCredentialModel.TYPE, credentials.get(0).getType());
+        Assert.assertNotNull(OTPCredentialModel.TYPE, credentials.get(1).getType());
 
         // Test password-only
         credentials = SimpleHttp.doGet(getAccountUrl("credentials?" + AccountCredentialResource.TYPE + "=password"), httpClient)
@@ -336,22 +344,29 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         Assert.assertNull(password.getUserCredentials());
     }
 
-    private AccountCredentialResource.CredentialContainer getCredentialContainerByType(List<AccountCredentialResource.CredentialContainer> credentials, String type) {
-        return credentials.stream()
-                .filter(credentialContainer -> type.equals(credentialContainer.getType()))
-                .findFirst()
-                .orElseGet(() -> null);
+    private void configureBrowserFlowWithWebAuthnAuthenticator(String newFlowAlias) {
+        HashMap<String, String> params = new HashMap<>();
+        params.put("newName", newFlowAlias);
+        Response response = testRealm().flows().copy("browser", params);
+        response.close();
 
+        params.put("provider", WebAuthnAuthenticatorFactory.PROVIDER_ID);
+        testRealm().flows().addExecution(newFlowAlias, params);
+    }
+
+    private void removeWebAuthnFlow(String flowToDeleteAlias) {
+        List<AuthenticationFlowRepresentation> flows = testRealm().flows().getFlows();
+        AuthenticationFlowRepresentation flowRepresentation = AbstractAuthenticationTest.findFlowByAlias(flowToDeleteAlias, flows);
+        testRealm().flows().deleteFlow(flowRepresentation.getId());
     }
 
     private void assertCredentialContainerExpected(AccountCredentialResource.CredentialContainer credential, String type, String category, String displayName, String helpText, String iconCssClass,
-                                                   boolean enabled, String createAction, String updateAction, boolean removeable, int userCredentialsCount) {
+                                                   String createAction, String updateAction, boolean removeable, int userCredentialsCount) {
         Assert.assertEquals(type, credential.getType());
         Assert.assertEquals(category, credential.getCategory());
         Assert.assertEquals(displayName, credential.getDisplayName());
         Assert.assertEquals(helpText, credential.getHelptext());
         Assert.assertEquals(iconCssClass, credential.getIconCssClass());
-        Assert.assertEquals(enabled, credential.isEnabled());
         Assert.assertEquals(createAction, credential.getCreateAction());
         Assert.assertEquals(updateAction, credential.getUpdateAction());
         Assert.assertEquals(removeable, credential.isRemoveable());

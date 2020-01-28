@@ -1,5 +1,6 @@
 package org.keycloak.services.resources.account;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.keycloak.authentication.Authenticator;
 import org.keycloak.authentication.AuthenticatorFactory;
@@ -30,6 +31,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -70,22 +72,22 @@ public class AccountCredentialResource {
         private String displayName;
         private String helptext;  // **
         private String iconCssClass;
-        private boolean enabled;
         private String createAction;
         private String updateAction;
         private boolean removeable;
         private List<CredentialRepresentation> userCredentials;
+        private CredentialTypeMetadata metadata;
 
         public CredentialContainer() {
         }
 
-        public CredentialContainer(CredentialTypeMetadata metadata, boolean enabled, List<CredentialRepresentation> userCredentials) {
+        public CredentialContainer(CredentialTypeMetadata metadata, List<CredentialRepresentation> userCredentials) {
+            this.metadata = metadata;
             this.type = metadata.getType();
             this.category = metadata.getCategory().toString();
             this.displayName = metadata.getDisplayName();
             this.helptext = metadata.getHelpText();
             this.iconCssClass = metadata.getIconCssClass();
-            this.enabled = enabled;
             this.createAction = metadata.getCreateAction();
             this.updateAction = metadata.getUpdateAction();
             this.removeable = metadata.isRemoveable();
@@ -112,10 +114,6 @@ public class AccountCredentialResource {
             return iconCssClass;
         }
 
-        public boolean isEnabled() {
-            return enabled;
-        }
-
         public String getCreateAction() {
             return createAction;
         }
@@ -131,15 +129,19 @@ public class AccountCredentialResource {
         public List<CredentialRepresentation> getUserCredentials() {
             return userCredentials;
         }
-        
+
+        @JsonIgnore
+        public CredentialTypeMetadata getMetadata() {
+            return metadata;
+        }
     }
 
 
     /**
-     * Retrieve the list of credentials available to the current logged in user
+     * Retrieve the list of credentials available to the current logged in user. It will return only credentials of enabled types,
+     * which user can use to authenticate in some authentication flow.
      *
      * @param type Allows to filter just single credential type, which will be specified as this parameter. If null, it will return all credential types
-     * @param enabledOnly if true, then it will return just enabled credential types. Defaults to false, so all credential types are returned by default.
      * @param userCredentials specifies if user credentials should be returned. Defaults to true.
      * @return
      */
@@ -147,7 +149,6 @@ public class AccountCredentialResource {
     @NoCache
     @Produces(javax.ws.rs.core.MediaType.APPLICATION_JSON)
     public List<CredentialContainer> credentialTypes(@QueryParam(TYPE) String type,
-                                                     @QueryParam(ENABLED_ONLY) Boolean enabledOnly,
                                                      @QueryParam(USER_CREDENTIALS) Boolean userCredentials) {
         auth.requireOneOf(AccountRoles.MANAGE_ACCOUNT, AccountRoles.VIEW_PROFILE);
 
@@ -176,8 +177,8 @@ public class AccountCredentialResource {
 
             boolean enabled = enabledCredentialTypes.contains(credentialProviderType);
 
-            // Filter by enabled-only
-            if (!enabled && enabledOnly != null && enabledOnly) {
+            // Filter disabled credential types
+            if (!enabled) {
                 continue;
             }
 
@@ -188,9 +189,11 @@ public class AccountCredentialResource {
                     .map(ModelToRepresentation::toRepresentation)
                     .collect(Collectors.toList());
 
-            CredentialContainer credType = new CredentialContainer(metadata, enabled, userCredentialModels);
+            CredentialContainer credType = new CredentialContainer(metadata, userCredentialModels);
             credentialTypes.add(credType);
         }
+
+        credentialTypes.sort(Comparator.comparing(CredentialContainer::getMetadata));
 
         return credentialTypes;
     }

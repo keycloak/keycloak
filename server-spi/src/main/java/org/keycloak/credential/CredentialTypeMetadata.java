@@ -21,7 +21,7 @@ package org.keycloak.credential;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class CredentialTypeMetadata {
+public class CredentialTypeMetadata implements Comparable<CredentialTypeMetadata> {
 
     public static final String DEFAULT_ICON_CSS_CLASS = "kcAuthenticatorDefaultClass";
 
@@ -43,20 +43,27 @@ public class CredentialTypeMetadata {
 
 
     public enum Category {
-        PASSWORD("password"),
-        TWO_FACTOR("two-factor"),
-        PASSWORDLESS("passwordless");
+        PASSWORD("password", 1),
+        TWO_FACTOR("two-factor", 2),
+        PASSWORDLESS("passwordless", 3);
 
         private String categoryName;
+        private int order;
 
-        Category(String categoryName) {
+        Category(String categoryName, int order) {
             this.categoryName = categoryName;
+            this.order = order;
         }
 
         @Override
         public String toString() {
             return categoryName;
         }
+
+        public int compareWith(Category that) {
+            return order - that.order;
+        }
+
     }
 
 
@@ -133,6 +140,16 @@ public class CredentialTypeMetadata {
 
     public static CredentialTypeMetadataBuilder builder() {
         return new CredentialTypeMetadataBuilder();
+    }
+
+    @Override
+    public int compareTo(CredentialTypeMetadata other) {
+        int categoryCompare = category == null ? (other.category == null ? 0 : 1) : (other.category == null ? -1 : category.compareWith(other.category));
+        if (categoryCompare != 0) return categoryCompare;
+
+        int typeCompare = type == null ? (other.type == null ? 0 : 1) : (other.type == null ? -1 : type.compareTo(other.type));
+        return typeCompare;
+
     }
 
     // BUILDER
