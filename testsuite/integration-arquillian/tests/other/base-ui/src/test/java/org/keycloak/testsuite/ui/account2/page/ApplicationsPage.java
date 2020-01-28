@@ -17,14 +17,88 @@
 
 package org.keycloak.testsuite.ui.account2.page;
 
+import org.keycloak.testsuite.util.UIUtils;
+import org.openqa.selenium.By;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.support.FindBy;
+
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
 public class ApplicationsPage extends AbstractLoggedInPage {
+    @FindBy(xpath = "//li[starts-with(@id,'application-client-id')]")
+    private List<WebElement> applications;
+
     @Override
     public String getPageId() {
         return "applications";
     }
 
-    // TODO implement this! (KEYCLOAK-12107)
+    public void toggleApplicationDetails(String clientId) {
+        WebElement expandButton = driver.findElement(By.xpath("//button[@id='application-toggle-" + clientId + "']"));
+        expandButton.click();
+    }
+
+    public List<ClientRepresentation> getApplications() {
+        ArrayList<ClientRepresentation> apps = new ArrayList<>();
+        for(WebElement app : applications) {
+            String clientId = app.getAttribute("id").replace("application-client-id-", "");
+            apps.add(toRepresentation(app, clientId));
+        }
+        return apps;
+    }
+
+    private ClientRepresentation toRepresentation(WebElement app, String clientId) {
+        String clientName = UIUtils.getTextFromElement(app.findElement(By.xpath("//div[@id='application-name-" + clientId + "']")));
+        boolean userConsentRequired = !UIUtils.getTextFromElement(app.findElement(By.xpath("//div[@id='application-internal-" + clientId + "']"))).equals("Internal");
+        boolean inUse = UIUtils.getTextFromElement(app.findElement(By.xpath("//div[@id='application-status-" + clientId + "']"))).equals("In use");
+        String baseURL = UIUtils.getTextFromElement(app.findElement(By.xpath("//div[@id='application-baseurl-" + clientId + "']")));
+        boolean applicationDetailsVisible = app.findElement(By.xpath("//section[@id='application-expandable-" + clientId + "']")).isDisplayed();
+        return new ClientRepresentation(clientId, clientName, userConsentRequired, inUse, baseURL, applicationDetailsVisible);
+    }
+
+    public class ClientRepresentation {
+        private final String clientId;
+        private final String clientName;
+        private final boolean userConsentRequired;
+        private final boolean inUse;
+        private final String baseUrl;
+        private final boolean applicationDetailsVisible;
+
+        public ClientRepresentation(String clientId, String clientName, boolean userConsentRequired, boolean inUse, String baseUrl, boolean applicationDetailsVisible) {
+            this.clientId = clientId;
+            this.clientName = clientName;
+            this.userConsentRequired = userConsentRequired;
+            this.inUse = inUse;
+            this.baseUrl = baseUrl;
+            this.applicationDetailsVisible = applicationDetailsVisible;
+        }
+
+        public String getClientId() {
+            return clientId;
+        }
+
+        public String getClientName() {
+            return clientName;
+        }
+
+        public boolean isUserConsentRequired() {
+            return userConsentRequired;
+        }
+
+        public boolean isInUse() {
+            return inUse;
+        }
+
+        public String getBaseUrl() {
+            return baseUrl;
+        }
+
+        public boolean isApplicationDetailsVisible() {
+            return applicationDetailsVisible;
+        }
+    }
 }
