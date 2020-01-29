@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2018 Red Hat, Inc. and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -40,7 +40,7 @@ declare const locale: string;
 declare const resourceUrl: string;
 
 const pFlyImages = resourceUrl + '/node_modules/@patternfly/patternfly/assets/images/';
-const brandImg = resourceUrl + '/app/assets/img/keycloak-logo-min.png';
+const brandImg = resourceUrl + '/public/logo.svg';
 const avatarImg = pFlyImages + 'img_avatar.svg';
 
 export interface AppProps {};
@@ -65,7 +65,7 @@ export class App extends React.Component<AppProps> {
 
         const Header = (
             <PageHeader
-                logo={<Brand src={brandImg} alt="Patternfly Logo" />}
+                logo={<Brand src={brandImg} alt="Logo" className="brand"/>}
                 toolbar={<PageToolbar/>}
                 avatar={<Avatar src={avatarImg} alt="Avatar image" />}
                 showNavToggle
@@ -73,11 +73,9 @@ export class App extends React.Component<AppProps> {
         );
 
         const Sidebar = <PageSidebar nav={<PageNav/>} />;
-        
-        const fullHeight = { height: '100%'};
-        
+
         return (
-            <span style={fullHeight}>
+            <span style={{ height: '100%'}}>
                 <Page header={Header} sidebar={Sidebar} isManagedSidebar>
                     <PageSection>
                         {makeRoutes()}
