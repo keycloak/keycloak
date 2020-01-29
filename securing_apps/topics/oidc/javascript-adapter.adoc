@@ -371,18 +371,18 @@ Called to initialize the adapter.
 Options is an Object, where:
 
 * useNonce - Adds a cryptographic nonce to verify that the authentication response matches the request (default is true).
-* onLoad - Specifies an action to do on load. Supported values are 'login-required' or 'check-sso'.
+* onLoad - Specifies an action to do on load. Supported values are `login-required` or `check-sso`.
 * silentCheckSsoRedirectUri - Set the redirect uri for silent authentication check if onLoad is set to 'check-sso'.
 * token - Set an initial value for the token.
 * refreshToken - Set an initial value for the refresh token.
 * idToken - Set an initial value for the id token (only together with token or refreshToken).
 * timeSkew - Set an initial value for skew between local time and {project_name} server in seconds (only together with token or refreshToken).
-* checkLoginIframe - Set to enable/disable monitoring login state (default is true).
+* checkLoginIframe - Set to enable/disable monitoring login state (default is `true`).
 * checkLoginIframeInterval - Set the interval to check login state (default is 5 seconds).
-* responseMode - Set the OpenID Connect response mode send to {project_name} server at login request. Valid values are query or fragment. Default value is fragment, which means that after successful authentication will {project_name} redirect to JavaScript application with OpenID Connect parameters added in URL fragment. This is generally safer and recommended over query.
-* flow - Set the OpenID Connect flow. Valid values are standard, implicit or hybrid.
+* responseMode - Set the OpenID Connect response mode send to {project_name} server at login request. Valid values are `query` or `fragment`. Default value is `fragment`, which means that after successful authentication will {project_name} redirect to JavaScript application with OpenID Connect parameters added in URL fragment. This is generally safer and recommended over `query`.
+* flow - Set the OpenID Connect flow. Valid values are `standard`, `implicit` or `hybrid`.
 * promiseType - If set to `native` all methods returning a promise will return a native JavaScript promise. If not set will return Keycloak specific promise objects.
-* enableLogging - Enables logging messages from Keycloak to the console (default is false).
+* enableLogging - Enables logging messages from Keycloak to the console (default is `false`).
 * pkceMethod - The method for Proof Key Code Exchange (https://tools.ietf.org/html/rfc7636[PKCE]) to use. Configuring this value enables the PKCE mechanism. Available options:
     - "S256" - The SHA256 based PKCE method
 
@@ -406,7 +406,7 @@ always be added to the list of scopes by the adapter. For example, if you enter 
 to {project_name} will contain the scope parameter `scope=openid address phone`.
 * idpHint - Used to tell {project_name} to skip showing the login page and automatically redirect to the specified identity
 provider instead. More info in the link:{adminguide_link}#_client_suggested_idp[Identity Provider documentation].
-* action - If value is 'register' then user is redirected to registration page, otherwise to login page.
+* action - If value is `register` then user is redirected to registration page, otherwise to login page.
 * locale - Sets the 'ui_locales' query param in compliance with https://openid.net/specs/openid-connect-core-1_0.html#AuthRequest[section 3.1.2.1 of the OIDC 1.0 specification].
 * kcLocale - Specifies the desired Keycloak locale for the UI.  This differs from the locale param in that it tells the Keycloak server to set a cookie and update the user's profile to a new preferred locale.
 * cordovaOptions - Specifies the arguments that are passed to the Cordova in-app-browser (if applicable). Options `hidden` and `location` are not affected by these arguments. All available options are defined at https://cordova.apache.org/docs/en/latest/reference/cordova-plugin-inappbrowser/. Example of use: `{ zoom: "no", hardwareback: "yes" }`;
