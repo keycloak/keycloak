@@ -70,6 +70,7 @@ import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.TokenUtil;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
 
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.Form;
@@ -90,6 +91,7 @@ import java.util.Map;
 import java.util.function.Supplier;
 
 import static org.keycloak.testsuite.admin.Users.getPasswordOf;
+import static org.keycloak.testsuite.util.UIUtils.clickLink;
 import static org.keycloak.testsuite.util.URLUtils.removeDefaultPorts;
 
 /**
@@ -234,6 +236,17 @@ public class OAuthClient {
 
     public AuthorizationEndpointResponse doLogin(String username, String password) {
         openLoginForm();
+        fillLoginForm(username, password);
+
+        return new AuthorizationEndpointResponse(this);
+    }
+
+    public AuthorizationEndpointResponse doLoginSocial(String brokerId, String username, String password) {
+        openLoginForm();
+        WaitUtils.waitForPageToLoad();
+
+        WebElement socialButton = findSocialButton(brokerId);
+        clickLink(socialButton);
         fillLoginForm(username, password);
 
         return new AuthorizationEndpointResponse(this);
@@ -1326,6 +1339,11 @@ public class OAuthClient {
         return driver;
     }
 
+    private WebElement findSocialButton(String providerId) {
+        String id = "zocial-" + providerId;
+        return DroneUtils.getCurrentDriver().findElement(By.id(id));
+    }
+    
     private interface StateParamProvider {
 
         String getState();
