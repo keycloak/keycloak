@@ -412,6 +412,20 @@ module.controller('RealmWebAuthnPolicyCtrl', function($scope, Current, Realm, re
     genericRealmUpdate($scope, Current, Realm, realm, serverInfo, $http, $route, Dialog, Notifications, "/realms/" + realm.realm + "/authentication/webauthn-policy");
 });
 
+module.controller('RealmWebAuthnPasswordlessPolicyCtrl', function($scope, Current, Realm, realm, serverInfo, $http, $route, Dialog, Notifications) {
+
+    $scope.deleteAcceptableAaguid = function(index) {
+        $scope.realm.webAuthnPolicyPasswordlessAcceptableAaguids.splice(index, 1);
+    }
+
+    $scope.addAcceptableAaguid = function() {
+        $scope.realm.webAuthnPolicyPasswordlessAcceptableAaguids.push($scope.newAcceptableAaguid);
+        $scope.newAcceptableAaguid = "";
+    }
+
+    genericRealmUpdate($scope, Current, Realm, realm, serverInfo, $http, $route, Dialog, Notifications, "/realms/" + realm.realm + "/authentication/webauthn-policy-passwordless");
+});
+
 module.controller('RealmThemeCtrl', function($scope, Current, Realm, realm, serverInfo, $http, $route, Dialog, Notifications) {
     genericRealmUpdate($scope, Current, Realm, realm, serverInfo, $http, $route, Dialog, Notifications, "/realms/" + realm.realm + "/theme-settings");
 

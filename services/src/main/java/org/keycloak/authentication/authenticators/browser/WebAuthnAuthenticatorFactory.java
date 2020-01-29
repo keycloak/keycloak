@@ -57,7 +57,7 @@ public class WebAuthnAuthenticatorFactory implements AuthenticatorFactory {
 
     @Override
     public String getHelpText() {
-        return "Authenticator for WebAuthn";
+        return "Authenticator for WebAuthn. Usually used for WebAuthn two-factor authentication";
     }
 
    

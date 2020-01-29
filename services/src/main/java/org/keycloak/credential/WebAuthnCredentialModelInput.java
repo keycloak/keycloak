@@ -26,13 +26,16 @@ import org.keycloak.models.credential.WebAuthnCredentialModel;
 
 public class WebAuthnCredentialModelInput implements CredentialInput {
 
-    public static final String WEBAUTHN_CREDENTIAL_TYPE = WebAuthnCredentialModel.TYPE;
-
     private AttestedCredentialData attestedCredentialData;
     private AttestationStatement attestationStatement;
     private WebAuthnAuthenticationContext authenticationContext;
     private long count;
     private String credentialDBId;
+    private final String credentialType;
+
+    public WebAuthnCredentialModelInput(String credentialType) {
+        this.credentialType = credentialType;
+    }
 
     @Override
     public String getCredentialId() {
@@ -46,12 +49,9 @@ public class WebAuthnCredentialModelInput implements CredentialInput {
 
     @Override
     public String getType() {
-        return WEBAUTHN_CREDENTIAL_TYPE;
+        return credentialType;
     }
 
-    public WebAuthnCredentialModelInput() {
-
-    }
 
     public AttestedCredentialData getAttestedCredentialData() {
         return attestedCredentialData;
@@ -93,8 +93,12 @@ public class WebAuthnCredentialModelInput implements CredentialInput {
         this.credentialDBId = credentialDBId;
     }
 
+    public String getCredentialType() {
+        return credentialType;
+    }
+
     public String toString() {
-        StringBuilder sb = new StringBuilder();
+        StringBuilder sb = new StringBuilder("Credential Type = " + credentialType + ",");
         if (credentialDBId != null)
             sb.append("Credential DB Id = ")
               .append(credentialDBId)

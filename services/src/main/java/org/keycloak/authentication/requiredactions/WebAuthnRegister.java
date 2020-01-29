@@ -37,6 +37,7 @@ import org.keycloak.credential.WebAuthnCredentialModelInput;
 import org.keycloak.credential.WebAuthnCredentialProvider;
 import org.keycloak.credential.WebAuthnCredentialProviderFactory;
 import org.keycloak.crypto.Algorithm;
+import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserModel;
@@ -67,16 +68,14 @@ import com.webauthn4j.validator.attestation.trustworthiness.ecdaa.DefaultECDAATr
 import com.webauthn4j.validator.attestation.trustworthiness.self.DefaultSelfAttestationTrustworthinessValidator;
 import org.keycloak.models.credential.WebAuthnCredentialModel;
 
+/**
+ * Required action for register WebAuthn 2-factor credential for the user
+ */
 public class WebAuthnRegister implements RequiredActionProvider, CredentialRegistrator {
 
     private static final Logger logger = Logger.getLogger(WebAuthnRegister.class);
     private KeycloakSession session;
     private CertPathTrustworthinessValidator certPathtrustValidator;
-
-    public WebAuthnRegister(KeycloakSession session) {
-        this.session = session;
-        this.certPathtrustValidator = new NullCertPathTrustworthinessValidator();
-    }
 
     public WebAuthnRegister(KeycloakSession session, CertPathTrustworthinessValidator certPathtrustValidator) {
         this.session = session;
@@ -95,7 +94,7 @@ public class WebAuthnRegister implements RequiredActionProvider, CredentialRegis
         // construct parameters for calling WebAuthn API navigator.credential.create()
 
         // mandatory
-        WebAuthnPolicy policy = context.getRealm().getWebAuthnPolicy();
+        WebAuthnPolicy policy = getWebAuthnPolicy(context);
         List<String> signatureAlgorithmsList = policy.getSignatureAlgorithm();
         String signatureAlgorithms = stringifySignatureAlgorithms(signatureAlgorithmsList);
         String rpEntityName = policy.getRpEntityName();
@@ -112,7 +111,7 @@ public class WebAuthnRegister implements RequiredActionProvider, CredentialRegis
 
         String excludeCredentialIds = "";
         if (avoidSameAuthenticatorRegister) {
-            List<CredentialModel> webAuthnCredentials = session.userCredentialManager().getStoredCredentialsByType(context.getRealm(), userModel, WebAuthnCredentialModel.TYPE);
+            List<CredentialModel> webAuthnCredentials = session.userCredentialManager().getStoredCredentialsByType(context.getRealm(), userModel, getCredentialType());
             List<String> webAuthnCredentialPubKeyIds = webAuthnCredentials.stream().map(credentialModel -> {
 
                 WebAuthnCredentialModel credModel = WebAuthnCredentialModel.createFromCredentialModel(credentialModel);
@@ -140,10 +139,24 @@ public class WebAuthnRegister implements RequiredActionProvider, CredentialRegis
         context.challenge(form);
     }
 
+    protected WebAuthnPolicy getWebAuthnPolicy(RequiredActionContext context) {
+        return context.getRealm().getWebAuthnPolicy();
+    }
+
+    protected String getCredentialType() {
+        return WebAuthnCredentialModel.TYPE_TWOFACTOR;
+    }
+
+    protected String getCredentialProviderId() {
+        return WebAuthnCredentialProviderFactory.PROVIDER_ID;
+    }
+
     @Override
     public void processAction(RequiredActionContext context) {
 
         MultivaluedMap<String, String> params = context.getHttpRequest().getDecodedFormParameters();
+
+        context.getEvent().detail(Details.CREDENTIAL_TYPE, getCredentialType());
 
         // receive error from navigator.credentials.create()
         String errorMsgFromWebAuthnApi = params.getFirst(WebAuthnConstants.ERROR);
@@ -152,7 +165,7 @@ public class WebAuthnRegister implements RequiredActionProvider, CredentialRegis
             return;
         }
 
-        WebAuthnPolicy policy = context.getRealm().getWebAuthnPolicy();
+        WebAuthnPolicy policy = getWebAuthnPolicy(context);
         String rpId = policy.getRpId();
         if (rpId == null || rpId.isEmpty()) rpId =  context.getUriInfo().getBaseUri().getHost();
         String label = params.getFirst(WebAuthnConstants.AUTHENTICATOR_LABEL);
@@ -176,20 +189,20 @@ public class WebAuthnRegister implements RequiredActionProvider, CredentialRegis
 
             checkAcceptedAuthenticator(response, policy);
 
-            WebAuthnCredentialModelInput credential = new WebAuthnCredentialModelInput();
+            WebAuthnCredentialModelInput credential = new WebAuthnCredentialModelInput(getCredentialType());
 
             credential.setAttestedCredentialData(response.getAttestationObject().getAuthenticatorData().getAttestedCredentialData());
             credential.setCount(response.getAttestationObject().getAuthenticatorData().getSignCount());
 
             // Save new webAuthn credential
-            WebAuthnCredentialProvider webAuthnCredProvider = (WebAuthnCredentialProvider) this.session.getProvider(CredentialProvider.class, WebAuthnCredentialProviderFactory.PROVIDER_ID);
+            WebAuthnCredentialProvider webAuthnCredProvider = (WebAuthnCredentialProvider) this.session.getProvider(CredentialProvider.class, getCredentialProviderId());
             WebAuthnCredentialModel newCredentialModel = webAuthnCredProvider.getCredentialModelFromCredentialInput(credential, label);
 
             webAuthnCredProvider.createCredential(context.getRealm(), context.getUser(), newCredentialModel);
 
             String aaguid = newCredentialModel.getWebAuthnCredentialData().getAaguid();
-            logger.debugv("WebAuthn credential registration success for user {0}. publicKeyCredentialId = {1}, publicKeyCredentialLabel = {2}, publicKeyCredentialAAGUID = {3}",
-                    context.getUser().getUsername(), publicKeyCredentialId, label, aaguid);
+            logger.debugv("WebAuthn credential registration success for user {0}. credentialType = {1}, publicKeyCredentialId = {2}, publicKeyCredentialLabel = {3}, publicKeyCredentialAAGUID = {4}",
+                    context.getUser().getUsername(), getCredentialType(), publicKeyCredentialId, label, aaguid);
             webAuthnCredProvider.dumpCredentialModel(newCredentialModel, credential);
 
             context.getEvent()

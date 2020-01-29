@@ -2017,6 +2017,18 @@ module.config([ '$routeProvider', function($routeProvider) {
             },
             controller : 'RealmWebAuthnPolicyCtrl'
         })
+        .when('/realms/:realm/authentication/webauthn-policy-passwordless', {
+            templateUrl : resourceUrl + '/partials/webauthn-policy-passwordless.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                serverInfo : function(ServerInfo) {
+                    return ServerInfo.delay;
+                }
+            },
+            controller : 'RealmWebAuthnPasswordlessPolicyCtrl'
+        })
         .when('/realms/:realm/authentication/flows/:flow/config/:provider/:config', {
             templateUrl : resourceUrl + '/partials/authenticator-config.html',
             resolve : {

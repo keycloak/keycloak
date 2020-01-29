@@ -634,6 +634,18 @@ public class RealmAdapter implements CachedRealmModel {
     }
 
     @Override
+    public WebAuthnPolicy getWebAuthnPolicyPasswordless() {
+        if (isUpdated()) return updated.getWebAuthnPolicyPasswordless();
+        return cached.getWebAuthnPasswordlessPolicy();
+    }
+
+    @Override
+    public void setWebAuthnPolicyPasswordless(WebAuthnPolicy policy) {
+        getDelegateForUpdate();
+        updated.setWebAuthnPolicyPasswordless(policy);
+    }
+
+    @Override
     public RoleModel getRoleById(String id) {
         if (isUpdated()) return updated.getRoleById(id);
         return cacheSession.getRoleById(id, this);
