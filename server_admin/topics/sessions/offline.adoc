@@ -8,9 +8,9 @@ The application can save this offline token in a database or on disk and can use
 This is useful if your application needs to do some "offline" actions on behalf of user even when the user is not online.
 An example is a periodic backup of some data every night.
 
-Your application is responsible for persisting the offline token in some storage (usually a database) and then using it to manually retrieve new access token from {project_name} server.
+Your application is responsible for persisting the offline token in some storage (usually a database) and then using it to retrieve new access token from {project_name} server.
 
-The difference between a classic Refresh token and an Offline token is, that an offline token will never expire by default and is not subject of `SSO Session Idle timeout` and `SSO Session Max lifespan` .
+The difference between a classic Refresh token and an Offline token is, that an offline token will never expire by default and is not subject of the `SSO Session Idle timeout` and `SSO Session Max lifespan`.
 The offline token is valid even after a user logout or server restart.
 However by default you do need to use the offline token for a refresh token action at least once per 30 days (this value, `Offline Session Idle timeout`, can be changed in the administration console in the `Tokens` tab under `Realm Settings`).
 Moreover, if you enable the option `Offline Session Max Limited`, then the offline token expires after 60 days regardless of using the offline token for a refresh token action (this value, `Offline Session Max`, can also be changed in the administration console in the Tokens tab under Realm Settings).

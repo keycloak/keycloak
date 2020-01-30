@@ -13,38 +13,38 @@ Let's walk through each of the items on this page.
 |===
 |Configuration|Description
 
+|Default Signature Algorithm
+|The default algorithm that is used to assign tokens for this realm.
+
 |Revoke Refresh Token
-|For OIDC clients that are doing the refresh token flow, this flag, if on, will revoke that refresh token and issue another with the request that the client has to use.
- This basically means that refresh tokens have a one time use.
+|For OIDC clients that are doing the refresh token flow, this flag, if on, will revoke that refresh token and issue another token with the request that the client has to use. The result is that each refresh token is used only once. 
 
 |SSO Session Idle
-|Also pertains to OIDC clients.  If the user is not active for longer than this timeout, the user session will be invalidated.  How is idle time checked?
-A client requesting authentication will bump the idle timeout.  Refresh token requests will also bump the idle timeout.
-There is a small window of time that is always added to the idle timeout before the session is actually invalidated (See note below).
+|Also pertains to OIDC clients.  If the user is not active for longer than this timeout, the user session will be invalidated.  The idle timeout is reset by a client requesting authentication or by a refresh token request.
+There is a small window of time that is always added to the idle timeout before the session  invalidation takes effect. See the note below.
 
 |SSO Session Max
-|Maximum time before a user session is expired and invalidated.  This is a hard number and time.  It controls the maximum time
- a user session can remain active, regardless of activity.
+|Maximum time before a user session is expired and invalidated. This option controls the maximum time that a user session can remain active, regardless of user activity.
 
 |SSO Session Idle Remember Me
-|Same as the standard SSO Session Idle configuration but specific to logins with remember me enabled. It allows for the specification of longer
- session idle timeouts when remember me is selected during the login process. It is an optional configuration and if not set to a value
- bigger than 0 it uses the same idle timeout set in the SSO Session Idle configuration.
+|Same as the standard SSO Session Idle configuration but specific to logins with Remember Me enabled. It allows for the specification of longer
+ session idle timeouts when Remember Me is selected during the login process. It is an optional configuration and if not set to a value
+greater than 0 it uses the same idle timeout as set in the SSO Session Idle configuration.
 
 |SSO Session Max Remember Me
-|Same as the standard SSO Session Max but specific to logins with remember me enabled. It allows for the specification of longer lived
- sessions when remember me is selected during the login process. It is an optional configuration and if not set to a value bigger than 0
- it uses the same session lifespan set in the SSO Session Max configuration.
+|Same as the standard SSO Session Max but specific to logins with Remember Me enabled. It allows for the specification of longer lived
+ sessions when Remember Me is selected during the login process. It is an optional configuration and if not set to a value greater than 0
+ it uses the same session lifespan as set in the SSO Session Max configuration.
 
 |Offline Session Idle
 |For <<_offline-access, offline access>>, this is the time the session is allowed to remain idle before the offline token is revoked.
-There is a small window of time that is always added to the idle timeout before the session is actually invalidated (See note below).
+There is a small window of time that is always added to the idle timeout before the session  invalidation takes effect. See the note below.
 
 |Offline Session Max Limited
-|For <<_offline-access, offline access>>, if this flag is on, Offline Session Max is enabled to control the maximum time the offline token can remain active, regardless of activity.
+|For <<_offline-access, offline access>>, if this flag is on, Offline Session Max is enabled to control the maximum time the offline token can remain active, regardless of user activity.
 
 |Offline Session Max
-|For <<_offline-access, offline access>>, this is the maximum time before the corresponding offline token is revoked. This is a hard number and time. It controls the maximum time the offline token can remain active, regardless of activity.
+|For <<_offline-access, offline access>>, this is the maximum time before the corresponding offline token is revoked.  This option controls the maximum time the offline token can remain active, regardless of user activity.
 
 |Access Token Lifespan
 |When an OIDC access token is created, this value affects the expiration.
@@ -68,7 +68,7 @@ There is a small window of time that is always added to the idle timeout before 
 |Maximum time before an action permit sent to a user by an admin is expired. This value is recommended to be long to allow admins send e-mails for users that are currently offline. The default timeout can be overridden right before issuing the token.
 
 |Override User-Initiated Action Lifespan
-|Permits the possibility of having independent timeouts per operation (e.g. e-mail verification, forgot password, user actions and Identity Provider E-mail Verification). This field is non mandatory and if nothing is specified it defaults to the value configured at _User-Initiated Action Lifespan_.
+|Permits the possibility of having independent timeouts per operation (for example, e-mail verification, forgot password, user actions and Identity Provider E-mail Verification). This field is optional. If nothing is specified, it defaults to the value configured at _User-Initiated Action Lifespan_.
 |===
 
 NOTE: For idle timeouts, there is a small window of time (2 minutes) during which the session is kept unexpired. For example, when you have
