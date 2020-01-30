@@ -57,9 +57,6 @@ import static org.keycloak.testsuite.federation.storage.UserStorageTest.addCompo
  */
 public class UserStorageOTPTest extends AbstractTestRealmKeycloakTest {
 
-    private String dummyProviderId;
-    private String testUserId;
-
 
     @Page
     protected LoginPage loginPage;
@@ -93,7 +90,7 @@ public class UserStorageOTPTest extends AbstractTestRealmKeycloakTest {
         dummyProvider.getConfig().putSingle("priority", Integer.toString(0));
         dummyProvider.getConfig().putSingle(IMPORT_ENABLED, Boolean.toString(false));
 
-        dummyProviderId = addComponent(testRealm(), getCleanup(), dummyProvider);
+        addComponent(testRealm(), getCleanup(), dummyProvider);
 
         UserRepresentation user = UserBuilder.create()
                 .username("test-user")
@@ -134,11 +131,6 @@ public class UserStorageOTPTest extends AbstractTestRealmKeycloakTest {
         appPage.assertCurrent();
         Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
-    }
-
-
-    private void authenticateUser() {
-
     }
 
 
