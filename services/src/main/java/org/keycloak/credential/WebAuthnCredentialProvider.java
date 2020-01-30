@@ -239,7 +239,11 @@ public class WebAuthnCredentialProvider implements CredentialProvider<WebAuthnCr
                 .iconCssClass("kcAuthenticatorWebAuthnClass")
                 .createAction(WebAuthnRegisterFactory.PROVIDER_ID)
                 .removeable(true)
-                .build();
+                .build(session);
+    }
+
+    protected KeycloakSession getKeycloakSession() {
+        return session;
     }
 
 }

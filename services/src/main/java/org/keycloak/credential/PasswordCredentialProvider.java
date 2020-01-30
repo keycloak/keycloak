@@ -305,6 +305,6 @@ public class PasswordCredentialProvider implements CredentialProvider<PasswordCr
                 .iconCssClass("kcAuthenticatorPasswordClass")
                 .updateAction(UserModel.RequiredAction.UPDATE_PASSWORD.toString())
                 .removeable(false)
-                .build();
+                .build(session);
     }
 }

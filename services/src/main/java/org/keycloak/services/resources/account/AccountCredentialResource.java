@@ -38,6 +38,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static org.keycloak.models.AuthenticationExecutionModel.Requirement.DISABLED;
+
 public class AccountCredentialResource {
 
     public static final String TYPE = "type";
@@ -142,7 +144,8 @@ public class AccountCredentialResource {
      * which user can use to authenticate in some authentication flow.
      *
      * @param type Allows to filter just single credential type, which will be specified as this parameter. If null, it will return all credential types
-     * @param userCredentials specifies if user credentials should be returned. Defaults to true.
+     * @param userCredentials specifies if user credentials should be returned. If true, they will be returned in the "userCredentials" attribute of
+     *                        particular credential. Defaults to true.
      * @return
      */
     @GET
@@ -204,8 +207,11 @@ public class AccountCredentialResource {
         Set<String> enabledCredentialTypes = new HashSet<>();
 
         for (AuthenticationFlowModel flow : realm.getAuthenticationFlows()) {
+            // Ignore DISABLED executions and flows
+            if (isFlowEffectivelyDisabled(flow)) continue;
+
             for (AuthenticationExecutionModel execution : realm.getAuthenticationExecutions(flow.getId())) {
-                if (execution.getAuthenticator() != null) {
+                if (execution.getAuthenticator() != null && DISABLED != execution.getRequirement()) {
                     AuthenticatorFactory authenticatorFactory = (AuthenticatorFactory) session.getKeycloakSessionFactory().getProviderFactory(Authenticator.class, execution.getAuthenticator());
                     if (authenticatorFactory != null && authenticatorFactory.getReferenceCategory() != null) {
                         enabledCredentialTypes.add(authenticatorFactory.getReferenceCategory());
@@ -223,9 +229,26 @@ public class AccountCredentialResource {
         return enabledCredentialTypes;
     }
 
+    // Returns true if flow is effectively disabled - either it's execution or some parent execution is disabled
+    private boolean isFlowEffectivelyDisabled(AuthenticationFlowModel flow) {
+        while (!flow.isTopLevel()) {
+            AuthenticationExecutionModel flowExecution = realm.getAuthenticationExecutionByFlowId(flow.getId());
+            if (flowExecution == null) return false; // Can happen under some corner cases
+            if (DISABLED == flowExecution.getRequirement()) return true;
+            if (flowExecution.getParentFlow() == null) return false;
+
+            // Check parent flow
+            flow = realm.getAuthenticationFlowById(flowExecution.getParentFlow());
+            if (flow == null) return false;
+        }
+
+        return false;
+    }
+
     /**
-     * Remove a credential for a user
+     * Remove a credential of current user
      *
+     * @param credentialId ID of the credential, which will be removed
      */
     @Path("{credentialId}")
     @DELETE
@@ -237,7 +260,10 @@ public class AccountCredentialResource {
 
 
     /**
-     * Update a credential label for a user
+     * Update a user label of specified credential of current user
+     *
+     * @param credentialId ID of the credential, which will be updated
+     * @param userLabel new user label
      */
     @PUT
     @Consumes(javax.ws.rs.core.MediaType.TEXT_PLAIN)

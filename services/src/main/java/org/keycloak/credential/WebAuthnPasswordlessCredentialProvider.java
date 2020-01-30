@@ -49,6 +49,6 @@ public class WebAuthnPasswordlessCredentialProvider extends WebAuthnCredentialPr
                 .iconCssClass("kcAuthenticatorWebAuthnPasswordlessClass")
                 .createAction(WebAuthnPasswordlessRegisterFactory.PROVIDER_ID)
                 .removeable(true)
-                .build();
+                .build(getKeycloakSession());
     }
 }

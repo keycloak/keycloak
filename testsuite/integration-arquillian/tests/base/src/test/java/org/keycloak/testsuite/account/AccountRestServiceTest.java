@@ -22,24 +22,34 @@ import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.authenticators.browser.WebAuthnAuthenticatorFactory;
 import org.keycloak.authentication.authenticators.browser.WebAuthnPasswordlessAuthenticatorFactory;
+import org.keycloak.authentication.requiredactions.WebAuthnPasswordlessRegisterFactory;
+import org.keycloak.authentication.requiredactions.WebAuthnRegister;
+import org.keycloak.authentication.requiredactions.WebAuthnRegisterFactory;
 import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.credential.CredentialTypeMetadata;
+import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.models.credential.WebAuthnCredentialModel;
+import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.representations.account.ClientRepresentation;
 import org.keycloak.representations.account.ConsentRepresentation;
 import org.keycloak.representations.account.ConsentScopeRepresentation;
 import org.keycloak.representations.account.SessionRepresentation;
 import org.keycloak.representations.account.UserRepresentation;
+import org.keycloak.representations.idm.AuthenticationExecutionInfoRepresentation;
+import org.keycloak.representations.idm.AuthenticationExecutionRepresentation;
 import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
+import org.keycloak.representations.idm.RequiredActionProviderSimpleRepresentation;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.account.AccountCredentialResource;
+import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.admin.authentication.AbstractAuthenticationTest;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.TokenUtil;
@@ -58,6 +68,7 @@ import static org.junit.Assert.*;
 import org.keycloak.services.resources.account.AccountCredentialResource.PasswordUpdate;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
+import org.keycloak.testsuite.util.WaitUtils;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -293,8 +304,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
     public void testCredentialsGet() throws IOException {
         configureBrowserFlowWithWebAuthnAuthenticator("browser-webauthn");
 
-        List<AccountCredentialResource.CredentialContainer> credentials = SimpleHttp.doGet(getAccountUrl("credentials"), httpClient)
-                .auth(tokenUtil.getToken()).asJson(new TypeReference<List<AccountCredentialResource.CredentialContainer>>() {});
+        List<AccountCredentialResource.CredentialContainer> credentials = getCredentials();
 
         Assert.assertEquals(4, credentials.size());
 
@@ -312,21 +322,47 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
                 "otp-display-name", "otp-help-text", "kcAuthenticatorOTPClass",
                 UserModel.RequiredAction.CONFIGURE_TOTP.toString(), null, true, 0);
 
+        // WebAuthn credentials will be returned, but createAction will be still null because requiredAction "webauthn register" not yet registered
         AccountCredentialResource.CredentialContainer webauthn = credentials.get(2);
         assertCredentialContainerExpected(webauthn, WebAuthnCredentialModel.TYPE_TWOFACTOR, CredentialTypeMetadata.Category.TWO_FACTOR.toString(),
                 "webauthn-display-name", "webauthn-help-text", "kcAuthenticatorWebAuthnClass",
-                "webauthn-register", null, true, 0);
+                null, null, true, 0);
 
         AccountCredentialResource.CredentialContainer webauthnPasswordless = credentials.get(3);
         assertCredentialContainerExpected(webauthnPasswordless, WebAuthnCredentialModel.TYPE_PASSWORDLESS, CredentialTypeMetadata.Category.PASSWORDLESS.toString(),
                 "webauthn-passwordless-display-name", "webauthn-passwordless-help-text", "kcAuthenticatorWebAuthnPasswordlessClass",
-                "webauthn-register-passwordless", null, true, 0);
+                null, null, true, 0);
+
+        // Register requiredActions for WebAuthn
+        RequiredActionProviderSimpleRepresentation requiredAction = new RequiredActionProviderSimpleRepresentation();
+        requiredAction.setId("12345");
+        requiredAction.setName(WebAuthnRegisterFactory.PROVIDER_ID);
+        requiredAction.setProviderId(WebAuthnRegisterFactory.PROVIDER_ID);
+        testRealm().flows().registerRequiredAction(requiredAction);
+
+        requiredAction = new RequiredActionProviderSimpleRepresentation();
+        requiredAction.setId("6789");
+        requiredAction.setName(WebAuthnPasswordlessRegisterFactory.PROVIDER_ID);
+        requiredAction.setProviderId(WebAuthnPasswordlessRegisterFactory.PROVIDER_ID);
+        testRealm().flows().registerRequiredAction(requiredAction);
+
+        // requiredActions should be available
+        credentials = getCredentials();
+        Assert.assertEquals(WebAuthnRegisterFactory.PROVIDER_ID, credentials.get(2).getCreateAction());
+        Assert.assertEquals(WebAuthnPasswordlessRegisterFactory.PROVIDER_ID, credentials.get(3).getCreateAction());
+
+        // disable WebAuthn passwordless required action. It won't be returned then
+        RequiredActionProviderRepresentation requiredActionRep = testRealm().flows().getRequiredAction(WebAuthnPasswordlessRegisterFactory.PROVIDER_ID);
+        requiredActionRep.setEnabled(false);
+        testRealm().flows().updateRequiredAction(WebAuthnRegisterFactory.PROVIDER_ID, requiredActionRep);
+
+        credentials = getCredentials();
+        Assert.assertNull(credentials.get(2).getCreateAction());
 
         // Test that WebAuthn won't be returned when removed from the authentication flow
         removeWebAuthnFlow("browser-webauthn");
 
-        credentials = SimpleHttp.doGet(getAccountUrl("credentials"), httpClient)
-                .auth(tokenUtil.getToken()).asJson(new TypeReference<List<AccountCredentialResource.CredentialContainer>>() {});
+        credentials = getCredentials();
 
         Assert.assertEquals(2, credentials.size());
         Assert.assertEquals(PasswordCredentialModel.TYPE, credentials.get(0).getType());
@@ -350,17 +386,91 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         Assert.assertNull(password.getUserCredentials());
     }
 
+    // Send REST request to get all credential containers and credentials of current user
+    private List<AccountCredentialResource.CredentialContainer> getCredentials() throws IOException {
+        return SimpleHttp.doGet(getAccountUrl("credentials"), httpClient)
+                .auth(tokenUtil.getToken()).asJson(new TypeReference<List<AccountCredentialResource.CredentialContainer>>() {});
+    }
+
+    @Test
+    public void testCredentialsGetDisabledOtp() throws IOException {
+        // Disable OTP in all built-in flows
+
+        // Disable parent subflow - that should treat OTP execution as disabled too
+        AuthenticationExecutionModel.Requirement currentBrowserReq = setExecutionRequirement(DefaultAuthenticationFlows.BROWSER_FLOW,
+                "Browser - Conditional OTP", AuthenticationExecutionModel.Requirement.DISABLED);
+
+        // Disable OTP directly in first-broker-login and direct-grant
+        AuthenticationExecutionModel.Requirement currentFBLReq = setExecutionRequirement(DefaultAuthenticationFlows.FIRST_BROKER_LOGIN_FLOW,
+                "OTP Form", AuthenticationExecutionModel.Requirement.DISABLED);
+        AuthenticationExecutionModel.Requirement currentDirectGrantReq = setExecutionRequirement(DefaultAuthenticationFlows.DIRECT_GRANT_FLOW,
+                "Direct Grant - Conditional OTP", AuthenticationExecutionModel.Requirement.DISABLED);
+        try {
+            // Test that OTP credential is not included. Only password
+            List<AccountCredentialResource.CredentialContainer> credentials = getCredentials();
+
+            Assert.assertEquals(1, credentials.size());
+            Assert.assertEquals(PasswordCredentialModel.TYPE, credentials.get(0).getType());
+
+            // Enable browser subflow. OTP should be available then
+            setExecutionRequirement(DefaultAuthenticationFlows.BROWSER_FLOW,
+                    "Browser - Conditional OTP", currentBrowserReq);
+            credentials = getCredentials();
+            Assert.assertEquals(2, credentials.size());
+            Assert.assertEquals(OTPCredentialModel.TYPE, credentials.get(1).getType());
+
+            // Disable browser subflow and enable FirstBrokerLogin. OTP should be available then
+            setExecutionRequirement(DefaultAuthenticationFlows.BROWSER_FLOW,
+                    "Browser - Conditional OTP", AuthenticationExecutionModel.Requirement.DISABLED);
+            setExecutionRequirement(DefaultAuthenticationFlows.FIRST_BROKER_LOGIN_FLOW,
+                    "OTP Form", currentFBLReq);
+            credentials = getCredentials();
+            Assert.assertEquals(2, credentials.size());
+            Assert.assertEquals(OTPCredentialModel.TYPE, credentials.get(1).getType());
+        } finally {
+            // Revert flows
+            setExecutionRequirement(DefaultAuthenticationFlows.BROWSER_FLOW,
+                    "Browser - Conditional OTP", currentBrowserReq);
+            setExecutionRequirement(DefaultAuthenticationFlows.DIRECT_GRANT_FLOW,
+                    "Direct Grant - Conditional OTP", currentDirectGrantReq);
+        }
+    }
+
+    // Sets new requirement and returns current requirement
+    private AuthenticationExecutionModel.Requirement setExecutionRequirement(String flowAlias, String executionDisplayName, AuthenticationExecutionModel.Requirement newRequirement) {
+        List<AuthenticationExecutionInfoRepresentation> executionInfos = testRealm().flows().getExecutions(flowAlias);
+        for (AuthenticationExecutionInfoRepresentation exInfo : executionInfos) {
+            if (executionDisplayName.equals(exInfo.getDisplayName())) {
+                AuthenticationExecutionModel.Requirement currentRequirement = AuthenticationExecutionModel.Requirement.valueOf(exInfo.getRequirement());
+                exInfo.setRequirement(newRequirement.toString());
+                testRealm().flows().updateExecutions(flowAlias, exInfo);
+                return currentRequirement;
+            }
+        }
+
+        throw new IllegalStateException("Not found execution '" + executionDisplayName + "' in flow '" + flowAlias + "'.");
+    }
+
     private void configureBrowserFlowWithWebAuthnAuthenticator(String newFlowAlias) {
         HashMap<String, String> params = new HashMap<>();
         params.put("newName", newFlowAlias);
         Response response = testRealm().flows().copy("browser", params);
         response.close();
+        String flowId = AbstractAuthenticationTest.findFlowByAlias(newFlowAlias, testRealm().flows().getFlows()).getId();
 
-        params.put("provider", WebAuthnAuthenticatorFactory.PROVIDER_ID);
-        testRealm().flows().addExecution(newFlowAlias, params);
+        AuthenticationExecutionRepresentation execution = new AuthenticationExecutionRepresentation();
+        execution.setParentFlow(flowId);
+        execution.setAuthenticator(WebAuthnAuthenticatorFactory.PROVIDER_ID);
+        execution.setRequirement(AuthenticationExecutionModel.Requirement.REQUIRED.toString());
+        response = testRealm().flows().addExecution(execution);
+        response.close();
 
-        params.put("provider", WebAuthnPasswordlessAuthenticatorFactory.PROVIDER_ID);
-        testRealm().flows().addExecution(newFlowAlias, params);
+        execution = new AuthenticationExecutionRepresentation();
+        execution.setParentFlow(flowId);
+        execution.setAuthenticator( WebAuthnPasswordlessAuthenticatorFactory.PROVIDER_ID);
+        execution.setRequirement(AuthenticationExecutionModel.Requirement.ALTERNATIVE.toString());
+        response = testRealm().flows().addExecution(execution);
+        response.close();
     }
 
     private void removeWebAuthnFlow(String flowToDeleteAlias) {

@@ -18,10 +18,17 @@
 
 package org.keycloak.credential;
 
+import org.jboss.logging.Logger;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.RequiredActionProviderModel;
+
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class CredentialTypeMetadata implements Comparable<CredentialTypeMetadata> {
+
+    private static final Logger logger = Logger.getLogger(CredentialTypeMetadata.class);
 
     public static final String DEFAULT_ICON_CSS_CLASS = "kcAuthenticatorDefaultClass";
 
@@ -122,18 +129,34 @@ public class CredentialTypeMetadata implements Comparable<CredentialTypeMetadata
         return iconCssClass;
     }
 
+    /**
+     * @return the providerID of the required action, which can be used by the user to create new credential of our type. Null if there is no
+     * action for creating credential. For example we're creating credential in case of "otp" type, but we're updating credential
+     * in case of type "password"
+     */
     public String getCreateAction() {
         return createAction;
     }
 
+    /**
+     * @return the providerID of the required action, which can be used by the user to update credential of our type. Null if there is no
+     * action for updating credential. For example we're creating credential in case of "otp" type, but we're updating credential
+     * in case of type "password"
+     */
     public String getUpdateAction() {
         return updateAction;
     }
 
+    /**
+     * @return true if user can remove some previously registered credentials of this type.
+     */
     public boolean isRemoveable() {
         return removeable;
     }
 
+    /**
+     * @return Category of this credential
+     */
     public Category getCategory() {
         return category;
     }
@@ -203,7 +226,7 @@ public class CredentialTypeMetadata implements Comparable<CredentialTypeMetadata
          *
          * @return metadata
          */
-        public CredentialTypeMetadata build() {
+        public CredentialTypeMetadata build(KeycloakSession session) {
             assertNotNull(instance.type, "type");
             assertNotNull(instance.displayName, "displayName");
             assertNotNull(instance.helpText, "helpText");
@@ -211,10 +234,13 @@ public class CredentialTypeMetadata implements Comparable<CredentialTypeMetadata
             assertNotNull(instance.removeable, "removeable");
             assertNotNull(instance.category, "category");
 
-            // Assume credential can't have both createAction and updateAction. Exactly 1 of them should be non-null
-            if (instance.createAction == null && instance.updateAction == null) {
-                throw new IllegalStateException("Both createAction and updateAction are null when building CredentialTypeMetadata for the credential type '" + instance.type);
+            if (!verifyRequiredAction(session, instance.createAction)) {
+                instance.createAction = null;
             }
+            if (!verifyRequiredAction(session, instance.updateAction)) {
+                instance.updateAction = null;
+            }
+            // Assume credential can't have both createAction and updateAction.
             if (instance.createAction != null && instance.updateAction != null) {
                 throw new IllegalStateException("Both createAction and updateAction are not null when building CredentialTypeMetadata for the credential type '" + instance.type);
             }
@@ -226,6 +252,27 @@ public class CredentialTypeMetadata implements Comparable<CredentialTypeMetadata
             if (input == null) {
                 throw new IllegalStateException("Field '" + fieldName + "' is null when building CredentialTypeMetadata for the credential type '" + instance.type);
             }
+        }
+
+        // Check if required action of specified providerId is registered in the realm and enabled
+        private boolean verifyRequiredAction(KeycloakSession session, String requiredActionProviderId) {
+            if (requiredActionProviderId == null) {
+                return false;
+            }
+
+            RealmModel realm = session.getContext().getRealm();
+            if (realm == null) {
+                logger.warnf("Realm was not set in context when trying to get credential metadata of provider '%s'", instance.type);
+                return false;
+            }
+
+            for (RequiredActionProviderModel requiredActionProvider : realm.getRequiredActionProviders()) {
+                if (requiredActionProviderId.equals(requiredActionProvider.getProviderId()) && requiredActionProvider.isEnabled()) {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
     }

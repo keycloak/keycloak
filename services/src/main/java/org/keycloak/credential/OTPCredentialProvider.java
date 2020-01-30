@@ -146,6 +146,6 @@ public class OTPCredentialProvider implements CredentialProvider<OTPCredentialMo
                 .iconCssClass("kcAuthenticatorOTPClass")
                 .createAction(UserModel.RequiredAction.CONFIGURE_TOTP.toString())
                 .removeable(true)
-                .build();
+                .build(session);
     }
 }
