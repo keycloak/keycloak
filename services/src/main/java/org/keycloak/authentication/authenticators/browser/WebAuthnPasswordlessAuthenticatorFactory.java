@@ -20,6 +20,7 @@ package org.keycloak.authentication.authenticators.browser;
 
 import org.keycloak.authentication.Authenticator;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.credential.WebAuthnCredentialModel;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -27,6 +28,11 @@ import org.keycloak.models.KeycloakSession;
 public class WebAuthnPasswordlessAuthenticatorFactory extends WebAuthnAuthenticatorFactory {
 
     public static final String PROVIDER_ID = "webauthn-authenticator-passwordless";
+
+    @Override
+    public String getReferenceCategory() {
+        return WebAuthnCredentialModel.TYPE_PASSWORDLESS;
+    }
 
     @Override
     public String getDisplayType() {

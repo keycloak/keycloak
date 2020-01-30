@@ -21,6 +21,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.authenticators.browser.WebAuthnAuthenticatorFactory;
+import org.keycloak.authentication.authenticators.browser.WebAuthnPasswordlessAuthenticatorFactory;
 import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.credential.CredentialTypeMetadata;
 import org.keycloak.models.UserModel;
@@ -295,7 +296,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         List<AccountCredentialResource.CredentialContainer> credentials = SimpleHttp.doGet(getAccountUrl("credentials"), httpClient)
                 .auth(tokenUtil.getToken()).asJson(new TypeReference<List<AccountCredentialResource.CredentialContainer>>() {});
 
-        Assert.assertEquals(3, credentials.size());
+        Assert.assertEquals(4, credentials.size());
 
         AccountCredentialResource.CredentialContainer password = credentials.get(0);
         assertCredentialContainerExpected(password, PasswordCredentialModel.TYPE, CredentialTypeMetadata.Category.PASSWORD.toString(),
@@ -312,9 +313,14 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
                 UserModel.RequiredAction.CONFIGURE_TOTP.toString(), null, true, 0);
 
         AccountCredentialResource.CredentialContainer webauthn = credentials.get(2);
-        assertCredentialContainerExpected(webauthn, WebAuthnCredentialModel.TYPE, CredentialTypeMetadata.Category.TWO_FACTOR.toString(),
+        assertCredentialContainerExpected(webauthn, WebAuthnCredentialModel.TYPE_TWOFACTOR, CredentialTypeMetadata.Category.TWO_FACTOR.toString(),
                 "webauthn-display-name", "webauthn-help-text", "kcAuthenticatorWebAuthnClass",
                 "webauthn-register", null, true, 0);
+
+        AccountCredentialResource.CredentialContainer webauthnPasswordless = credentials.get(3);
+        assertCredentialContainerExpected(webauthnPasswordless, WebAuthnCredentialModel.TYPE_PASSWORDLESS, CredentialTypeMetadata.Category.PASSWORDLESS.toString(),
+                "webauthn-passwordless-display-name", "webauthn-passwordless-help-text", "kcAuthenticatorWebAuthnPasswordlessClass",
+                "webauthn-register-passwordless", null, true, 0);
 
         // Test that WebAuthn won't be returned when removed from the authentication flow
         removeWebAuthnFlow("browser-webauthn");
@@ -351,6 +357,9 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         response.close();
 
         params.put("provider", WebAuthnAuthenticatorFactory.PROVIDER_ID);
+        testRealm().flows().addExecution(newFlowAlias, params);
+
+        params.put("provider", WebAuthnPasswordlessAuthenticatorFactory.PROVIDER_ID);
         testRealm().flows().addExecution(newFlowAlias, params);
     }
 

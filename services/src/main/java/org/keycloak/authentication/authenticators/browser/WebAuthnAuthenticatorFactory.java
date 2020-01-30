@@ -38,7 +38,7 @@ public class WebAuthnAuthenticatorFactory implements AuthenticatorFactory {
 
     @Override
     public String getReferenceCategory() {
-        return WebAuthnCredentialModel.TYPE;
+        return WebAuthnCredentialModel.TYPE_TWOFACTOR;
     }
 
     @Override
