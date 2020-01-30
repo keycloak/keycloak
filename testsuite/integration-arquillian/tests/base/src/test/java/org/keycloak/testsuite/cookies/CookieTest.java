@@ -26,11 +26,13 @@ import org.apache.http.protocol.BasicHttpContext;
 import org.apache.http.protocol.HttpContext;
 import org.apache.http.util.EntityUtils;
 import org.jboss.arquillian.graphene.page.Page;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.auth.page.AuthRealm;
 import org.keycloak.testsuite.pages.LoginPage;
+import org.keycloak.testsuite.util.ContainerAssume;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.OAuthClient.AuthorizationEndpointResponse;
 import org.keycloak.testsuite.util.RealmBuilder;
@@ -161,6 +163,8 @@ public class CookieTest extends AbstractKeycloakTest {
 
     @Test
     public void legacyCookiesTest() {
+        ContainerAssume.assumeAuthServerSSL();
+
         accountPage.navigateTo();
         assertCurrentUrlStartsWithLoginUrlOf(accountPage);
 
