@@ -153,6 +153,7 @@
                     <include>**/node_modules/@patternfly/patternfly/assets/fonts/webfonts/fa-solid-900.ttf</include>
                     <include>**/node_modules/@patternfly/patternfly/assets/fonts/webfonts/fa-solid-900.woff</include>
                     <include>**/node_modules/@patternfly/patternfly/assets/fonts/webfonts/fa-solid-900.ttf</include>
+                    <include>**/node_modules/@patternfly/patternfly/assets/fonts/webfonts/fa-solid-900.woff2</include>
                     <include>**/node_modules/@patternfly/patternfly/assets/images/img_avatar.svg</include>
                     <include>**/node_modules/@patternfly/patternfly/assets/pficon/pficon.woff2</include>
                     <include>**/node_modules/@patternfly/patternfly/patternfly.min.css</include>
@@ -352,6 +353,7 @@
                     <include>**/node_modules/@patternfly/react-icons/dist/umd/icons/opera-icon.js</include>
                     <include>**/node_modules/@patternfly/react-icons/dist/umd/icons/passport-icon.js</include>
                     <include>**/node_modules/@patternfly/react-icons/dist/umd/icons/paypal-icon.js</include>
+                    <include>**/node_modules/@patternfly/react-icons/dist/umd/icons/plus-circle-icon.js</include>
                     <include>**/node_modules/@patternfly/react-icons/dist/umd/icons/redo-icon.js</include>
                     <include>**/node_modules/@patternfly/react-icons/dist/umd/icons/remove2-icon.js</include>
                     <include>**/node_modules/@patternfly/react-icons/dist/umd/icons/safari-icon.js</include>
