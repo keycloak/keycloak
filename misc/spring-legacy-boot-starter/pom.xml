@@ -5,7 +5,7 @@
     <parent>
         <artifactId>keycloak-misc-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>8.0.1</version>
+        <version>8.0.2</version>
     </parent>
     <groupId>org.keycloak</groupId>
     <artifactId>keycloak-legacy-spring-boot-starter-parent</artifactId>
@@ -20,7 +20,7 @@
         <dependency>
           <groupId>org.keycloak.bom</groupId>
           <artifactId>keycloak-adapter-bom</artifactId>
-          <version>8.0.1</version>
+          <version>8.0.2</version>
           <type>pom</type>
           <scope>import</scope>
         </dependency>
