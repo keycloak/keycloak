@@ -68,4 +68,5 @@ public interface ConfigurableAuthenticatorFactory extends ConfiguredProvider {
      * @return
      */
     boolean isUserSetupAllowed();
+
 }

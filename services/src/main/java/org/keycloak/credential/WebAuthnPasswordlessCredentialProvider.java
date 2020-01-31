@@ -19,6 +19,7 @@
 package org.keycloak.credential;
 
 import com.webauthn4j.converter.util.CborConverter;
+import org.keycloak.authentication.requiredactions.WebAuthnPasswordlessRegisterFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.credential.WebAuthnCredentialModel;
 
@@ -36,5 +37,18 @@ public class WebAuthnPasswordlessCredentialProvider extends WebAuthnCredentialPr
     @Override
     public String getType() {
         return WebAuthnCredentialModel.TYPE_PASSWORDLESS;
+    }
+
+    @Override
+    public CredentialTypeMetadata getCredentialTypeMetadata() {
+        return CredentialTypeMetadata.builder()
+                .type(getType())
+                .category(CredentialTypeMetadata.Category.PASSWORDLESS)
+                .displayName("webauthn-passwordless-display-name")
+                .helpText("webauthn-passwordless-help-text")
+                .iconCssClass("kcAuthenticatorWebAuthnPasswordlessClass")
+                .createAction(WebAuthnPasswordlessRegisterFactory.PROVIDER_ID)
+                .removeable(true)
+                .build(getKeycloakSession());
     }
 }

@@ -27,6 +27,7 @@ import javax.ws.rs.core.Response;
 import org.jboss.logging.Logger;
 import org.keycloak.WebAuthnConstants;
 import org.keycloak.authentication.CredentialRegistrator;
+import org.keycloak.authentication.InitiatedActionSupport;
 import org.keycloak.authentication.RequiredActionContext;
 import org.keycloak.authentication.RequiredActionProvider;
 import org.keycloak.common.util.Base64Url;
@@ -80,6 +81,11 @@ public class WebAuthnRegister implements RequiredActionProvider, CredentialRegis
     public WebAuthnRegister(KeycloakSession session, CertPathTrustworthinessValidator certPathtrustValidator) {
         this.session = session;
         this.certPathtrustValidator = certPathtrustValidator;
+    }
+
+    @Override
+    public InitiatedActionSupport initiatedActionSupport() {
+        return InitiatedActionSupport.SUPPORTED;
     }
 
     @Override

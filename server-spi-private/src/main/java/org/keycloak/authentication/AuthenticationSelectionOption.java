@@ -1,16 +1,24 @@
 package org.keycloak.authentication;
 
+import org.keycloak.credential.CredentialProvider;
+import org.keycloak.credential.CredentialTypeMetadata;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.KeycloakSession;
 
 public class AuthenticationSelectionOption {
 
-    private final KeycloakSession session;
     private final AuthenticationExecutionModel authExec;
+    private final CredentialTypeMetadata credentialTypeMetadata;
 
     public AuthenticationSelectionOption(KeycloakSession session, AuthenticationExecutionModel authExec) {
-        this.session = session;
         this.authExec = authExec;
+        Authenticator authenticator = session.getProvider(Authenticator.class, authExec.getAuthenticator());
+        if (authenticator instanceof CredentialValidator) {
+            CredentialProvider credentialProvider = ((CredentialValidator) authenticator).getCredentialProvider(session);
+            credentialTypeMetadata = credentialProvider.getCredentialTypeMetadata();
+        } else {
+            credentialTypeMetadata = null;
+        }
     }
 
 
@@ -22,15 +30,18 @@ public class AuthenticationSelectionOption {
         return authExec.getId();
     }
 
-    public String getAuthExecName() {
-        return authExec.getAuthenticator();
+    public String getDisplayName() {
+        return credentialTypeMetadata == null ? authExec.getAuthenticator() + "-display-name" : credentialTypeMetadata.getDisplayName();
     }
 
-    public String getAuthExecDisplayName() {
-        // TODO: Retrieve the displayName for the authenticator from the AuthenticationFactory
-        // TODO: Retrieve icon CSS style
-        // TODO: Should be addressed as part of https://issues.redhat.com/browse/KEYCLOAK-12185
-        return getAuthExecName();
+    public String getHelpText() {
+        return credentialTypeMetadata == null ? authExec.getAuthenticator() + "-help-text" : credentialTypeMetadata.getHelpText();
+    }
+
+    public String getIconCssClass() {
+        // For now, we won't allow to retrieve "iconCssClass" from the AuthenticatorFactory. We will see in the future if we need
+        // this capability for authenticator factories, which authenticators don't implement credentialProvider
+        return credentialTypeMetadata == null ? CredentialTypeMetadata.DEFAULT_ICON_CSS_CLASS : credentialTypeMetadata.getIconCssClass();
     }
 
 

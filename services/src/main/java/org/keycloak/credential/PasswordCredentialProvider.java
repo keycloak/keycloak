@@ -17,6 +17,7 @@
 package org.keycloak.credential;
 
 import org.jboss.logging.Logger;
+import org.keycloak.authentication.requiredactions.WebAuthnRegisterFactory;
 import org.keycloak.common.util.Time;
 import org.keycloak.credential.hash.PasswordHashProvider;
 import org.keycloak.models.ModelException;
@@ -292,5 +293,18 @@ public class PasswordCredentialProvider implements CredentialProvider<PasswordCr
     @Override
     public String getType() {
         return PasswordCredentialModel.TYPE;
+    }
+
+    @Override
+    public CredentialTypeMetadata getCredentialTypeMetadata() {
+        return CredentialTypeMetadata.builder()
+                .type(getType())
+                .category(CredentialTypeMetadata.Category.PASSWORD)
+                .displayName("password")
+                .helpText("password-help-text")
+                .iconCssClass("kcAuthenticatorPasswordClass")
+                .updateAction(UserModel.RequiredAction.UPDATE_PASSWORD.toString())
+                .removeable(false)
+                .build(session);
     }
 }

@@ -1,12 +1,15 @@
 package org.keycloak.services.resources.account;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.jboss.resteasy.annotations.cache.NoCache;
-import org.keycloak.authentication.CredentialRegistrator;
-import org.keycloak.authentication.RequiredActionProvider;
+import org.keycloak.authentication.Authenticator;
+import org.keycloak.authentication.AuthenticatorFactory;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.credential.CredentialProvider;
+import org.keycloak.credential.CredentialTypeMetadata;
 import org.keycloak.credential.PasswordCredentialProvider;
 import org.keycloak.credential.PasswordCredentialProviderFactory;
+import org.keycloak.credential.UserCredentialStoreManager;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.models.*;
@@ -25,12 +28,24 @@ import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
+import static org.keycloak.models.AuthenticationExecutionModel.Requirement.DISABLED;
+
 public class AccountCredentialResource {
+
+    public static final String TYPE = "type";
+    public static final String ENABLED_ONLY = "enabled-only";
+    public static final String USER_CREDENTIALS = "user-credentials";
+
 
     private final KeycloakSession session;
     private final EventBuilder event;
@@ -46,42 +61,38 @@ public class AccountCredentialResource {
         realm = session.getContext().getRealm();
     }
 
-    // TODO: This is kept here for now and commented. The endpoints will be added by team cheetah during work on account console.
-    // This is here just to show what logic will need to be called in the new endpoints. We may need to remove it and/or change it
-//    @GET
-//    @NoCache
-//    @Produces(javax.ws.rs.core.MediaType.APPLICATION_JSON)
-//    public List<CredentialRepresentation> credentials(){
-//        auth.requireOneOf(AccountRoles.MANAGE_ACCOUNT, AccountRoles.VIEW_PROFILE);
-//        List<CredentialModel> models = session.userCredentialManager().getStoredCredentials(realm, user);
-//        models.forEach(c -> c.setSecretData(null));
-//        return models.stream().map(ModelToRepresentation::toRepresentation).collect(Collectors.toList());
-//    }
-    
-    private static class CredentialContainer {
-        // ** These first three attributes can be ordinary UI text or a key into
+
+    public static class CredentialContainer {
+        // ** category, displayName and helptext attributes can be ordinary UI text or a key into
         //    a localized message bundle.  Typically, it will be a key, but
         //    the UI will work just fine if you don't care about localization
         //    and you want to just send UI text.
         //
         //    Also, the ${} shown in Apicurio is not needed.
+        private String type;
         private String category; // **
-        private String type; // **
+        private String displayName;
         private String helptext;  // **
-        private boolean enabled;
+        private String iconCssClass;
         private String createAction;
         private String updateAction;
         private boolean removeable;
-        private List<CredentialModel> userCredentials;
-        
-        public CredentialContainer(String category, String type, String helptext, boolean enabled, String createAction, String updateAction, boolean removeable,List<CredentialModel> userCredentials) {
-            this.category = category;
-            this.type = type;
-            this.helptext = helptext;
-            this.enabled = enabled;
-            this.createAction = createAction;
-            this.updateAction = updateAction;
-            this.removeable = removeable;
+        private List<CredentialRepresentation> userCredentials;
+        private CredentialTypeMetadata metadata;
+
+        public CredentialContainer() {
+        }
+
+        public CredentialContainer(CredentialTypeMetadata metadata, List<CredentialRepresentation> userCredentials) {
+            this.metadata = metadata;
+            this.type = metadata.getType();
+            this.category = metadata.getCategory().toString();
+            this.displayName = metadata.getDisplayName();
+            this.helptext = metadata.getHelpText();
+            this.iconCssClass = metadata.getIconCssClass();
+            this.createAction = metadata.getCreateAction();
+            this.updateAction = metadata.getUpdateAction();
+            this.removeable = metadata.isRemoveable();
             this.userCredentials = userCredentials;
         }
 
@@ -93,12 +104,16 @@ public class AccountCredentialResource {
             return type;
         }
 
+        public String getDisplayName() {
+            return displayName;
+        }
+
         public String getHelptext() {
             return helptext;
         }
 
-        public boolean isEnabled() {
-            return enabled;
+        public String getIconCssClass() {
+            return iconCssClass;
         }
 
         public String getCreateAction() {
@@ -113,107 +128,127 @@ public class AccountCredentialResource {
             return removeable;
         }
 
-        public List<CredentialModel> getUserCredentials() {
+        public List<CredentialRepresentation> getUserCredentials() {
             return userCredentials;
         }
-        
+
+        @JsonIgnore
+        public CredentialTypeMetadata getMetadata() {
+            return metadata;
+        }
     }
-    
+
+
+    /**
+     * Retrieve the list of credentials available to the current logged in user. It will return only credentials of enabled types,
+     * which user can use to authenticate in some authentication flow.
+     *
+     * @param type Allows to filter just single credential type, which will be specified as this parameter. If null, it will return all credential types
+     * @param userCredentials specifies if user credentials should be returned. If true, they will be returned in the "userCredentials" attribute of
+     *                        particular credential. Defaults to true.
+     * @return
+     */
     @GET
     @NoCache
     @Produces(javax.ws.rs.core.MediaType.APPLICATION_JSON)
-    public List<CredentialContainer> dummyCredentialTypes(){
+    public List<CredentialContainer> credentialTypes(@QueryParam(TYPE) String type,
+                                                     @QueryParam(USER_CREDENTIALS) Boolean userCredentials) {
         auth.requireOneOf(AccountRoles.MANAGE_ACCOUNT, AccountRoles.VIEW_PROFILE);
-        List<CredentialModel> models = session.userCredentialManager().getStoredCredentials(realm, user);
-        
-        List<CredentialModel> passwordUserCreds = new java.util.ArrayList<>();
-        passwordUserCreds.add(models.get(0));
-        
-        List<CredentialModel> otpUserCreds = new java.util.ArrayList<>();
-        if (models.size() > 1) otpUserCreds.add(models.get(1));
-        if (models.size() > 2) otpUserCreds.add(models.get(2));
-        
-        List<CredentialModel> webauthnUserCreds = new java.util.ArrayList<>();
-        CredentialModel webauthnCred = new CredentialModel();
-        webauthnCred.setId("bogus-id");
-        webauthnCred.setUserLabel("yubikey key");
-        webauthnCred.setCreatedDate(1579122652382L);
-        webauthnUserCreds.add(webauthnCred);
-        
-        List<CredentialModel> webauthnStrongUserCreds = new java.util.ArrayList<>();
-        CredentialModel webauthnStrongCred = new CredentialModel();
-        webauthnStrongCred.setId("bogus-id-for-webauthnStrong");
-        webauthnStrongCred.setUserLabel("My very strong key with required PIN");
-        webauthnStrongCred.setCreatedDate(1579122652382L);
-        webauthnUserCreds.add(webauthnStrongCred);
-        
-        CredentialContainer password = new CredentialContainer(
-                                        "password",
-                                        "password",
-                                        "passwordHelptext",
-                                        true,
-                                        null, // no create action
-                                        "UPDATE_PASSWORD",
-                                        false,
-                                        passwordUserCreds
-                                        );
-        CredentialContainer otp = new CredentialContainer(
-                                        "two-factor",
-                                        "otp",
-                                        "otpHelptext",
-                                        true,
-                                        "CONFIGURE_TOTP", 
-                                        null, // no update action
-                                        true,
-                                        otpUserCreds
-                                        );
-        CredentialContainer webAuthn = new CredentialContainer(
-                                        "two-factor",
-                                        "webauthn",
-                                        "webauthnHelptext",
-                                        true,
-                                        "CONFIGURE_WEBAUTHN", 
-                                        null, // no update action
-                                        true,
-                                        webauthnUserCreds
-                                        );
-        CredentialContainer passwordless = new CredentialContainer(
-                                        "passwordless",
-                                        "webauthn-passwordless",
-                                        "webauthn-passwordlessHelptext",
-                                        true,
-                                        "CONFIGURE_WEBAUTHN_STRONG", 
-                                        null, // no update action
-                                        true,
-                                        webauthnStrongUserCreds
-                                        );
-        
-        List<CredentialContainer> dummyCreds = new java.util.ArrayList<>();
-        dummyCreds.add(password);
-        dummyCreds.add(otp);
-        dummyCreds.add(webAuthn);
-        dummyCreds.add(passwordless);
-        
-        return dummyCreds;
+
+        boolean filterUserCredentials = userCredentials != null && !userCredentials;
+
+        List<CredentialContainer> credentialTypes = new LinkedList<>();
+        List<CredentialProvider> credentialProviders = UserCredentialStoreManager.getCredentialProviders(session, realm, CredentialProvider.class);
+        Set<String> enabledCredentialTypes = getEnabledCredentialTypes(credentialProviders);
+
+        List<CredentialModel> models = filterUserCredentials ? null : session.userCredentialManager().getStoredCredentials(realm, user);
+
+        // Don't return secrets from REST endpoint
+        if (models != null) {
+            for (CredentialModel credential : models) {
+                credential.setSecretData(null);
+            }
+        }
+
+        for (CredentialProvider credentialProvider : credentialProviders) {
+            String credentialProviderType = credentialProvider.getType();
+
+            // Filter just by single type
+            if (type != null && !type.equals(credentialProviderType)) {
+                continue;
+            }
+
+            boolean enabled = enabledCredentialTypes.contains(credentialProviderType);
+
+            // Filter disabled credential types
+            if (!enabled) {
+                continue;
+            }
+
+            CredentialTypeMetadata metadata = credentialProvider.getCredentialTypeMetadata();
+
+            List<CredentialRepresentation> userCredentialModels = filterUserCredentials ? null : models.stream()
+                    .filter(credentialModel -> credentialProvider.getType().equals(credentialModel.getType()))
+                    .map(ModelToRepresentation::toRepresentation)
+                    .collect(Collectors.toList());
+
+            CredentialContainer credType = new CredentialContainer(metadata, userCredentialModels);
+            credentialTypes.add(credType);
+        }
+
+        credentialTypes.sort(Comparator.comparing(CredentialContainer::getMetadata));
+
+        return credentialTypes;
     }
-//
-//
-//    @GET
-//    @Path("registrators")
-//    @NoCache
-//    @Produces(javax.ws.rs.core.MediaType.APPLICATION_JSON)
-//    public List<String> getCredentialRegistrators(){
-//        auth.requireOneOf(AccountRoles.MANAGE_ACCOUNT, AccountRoles.VIEW_PROFILE);
-//
-//        return session.getContext().getRealm().getRequiredActionProviders().stream()
-//                .map(RequiredActionProviderModel::getProviderId)
-//                .filter(providerId ->  session.getProvider(RequiredActionProvider.class, providerId) instanceof CredentialRegistrator)
-//                .collect(Collectors.toList());
-//    }
-//
+
+    // Going through all authentication flows and their authentication executions to see if there is any authenticator of the corresponding
+    // credential type.
+    private Set<String> getEnabledCredentialTypes(List<CredentialProvider> credentialProviders) {
+        Set<String> enabledCredentialTypes = new HashSet<>();
+
+        for (AuthenticationFlowModel flow : realm.getAuthenticationFlows()) {
+            // Ignore DISABLED executions and flows
+            if (isFlowEffectivelyDisabled(flow)) continue;
+
+            for (AuthenticationExecutionModel execution : realm.getAuthenticationExecutions(flow.getId())) {
+                if (execution.getAuthenticator() != null && DISABLED != execution.getRequirement()) {
+                    AuthenticatorFactory authenticatorFactory = (AuthenticatorFactory) session.getKeycloakSessionFactory().getProviderFactory(Authenticator.class, execution.getAuthenticator());
+                    if (authenticatorFactory != null && authenticatorFactory.getReferenceCategory() != null) {
+                        enabledCredentialTypes.add(authenticatorFactory.getReferenceCategory());
+                    }
+                }
+            }
+        }
+
+        Set<String> credentialTypes = credentialProviders.stream()
+                .map(CredentialProvider::getType)
+                .collect(Collectors.toSet());
+
+        enabledCredentialTypes.retainAll(credentialTypes);
+
+        return enabledCredentialTypes;
+    }
+
+    // Returns true if flow is effectively disabled - either it's execution or some parent execution is disabled
+    private boolean isFlowEffectivelyDisabled(AuthenticationFlowModel flow) {
+        while (!flow.isTopLevel()) {
+            AuthenticationExecutionModel flowExecution = realm.getAuthenticationExecutionByFlowId(flow.getId());
+            if (flowExecution == null) return false; // Can happen under some corner cases
+            if (DISABLED == flowExecution.getRequirement()) return true;
+            if (flowExecution.getParentFlow() == null) return false;
+
+            // Check parent flow
+            flow = realm.getAuthenticationFlowById(flowExecution.getParentFlow());
+            if (flow == null) return false;
+        }
+
+        return false;
+    }
+
     /**
-     * Remove a credential for a user
+     * Remove a credential of current user
      *
+     * @param credentialId ID of the credential, which will be removed
      */
     @Path("{credentialId}")
     @DELETE
@@ -222,18 +257,23 @@ public class AccountCredentialResource {
         auth.require(AccountRoles.MANAGE_ACCOUNT);
         session.userCredentialManager().removeStoredCredential(realm, user, credentialId);
     }
-//
-//    /**
-//     * Update a credential label for a user
-//     */
-//    @PUT
-//    @Consumes(javax.ws.rs.core.MediaType.TEXT_PLAIN)
-//    @Path("{credentialId}/label")
-//    public void setLabel(final @PathParam("credentialId") String credentialId, String userLabel) {
-//        auth.require(AccountRoles.MANAGE_ACCOUNT);
-//        session.userCredentialManager().updateCredentialLabel(realm, user, credentialId, userLabel);
-//    }
-//
+
+
+    /**
+     * Update a user label of specified credential of current user
+     *
+     * @param credentialId ID of the credential, which will be updated
+     * @param userLabel new user label
+     */
+    @PUT
+    @Consumes(javax.ws.rs.core.MediaType.TEXT_PLAIN)
+    @Path("{credentialId}/label")
+    public void setLabel(final @PathParam("credentialId") String credentialId, String userLabel) {
+        auth.require(AccountRoles.MANAGE_ACCOUNT);
+        session.userCredentialManager().updateCredentialLabel(realm, user, credentialId, userLabel);
+    }
+
+    // TODO: This is kept here for now and commented.
 //    /**
 //     * Move a credential to a position behind another credential
 //     * @param credentialId The credential to move

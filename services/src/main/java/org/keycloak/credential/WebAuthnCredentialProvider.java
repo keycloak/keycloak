@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.jboss.logging.Logger;
+import org.keycloak.authentication.requiredactions.WebAuthnRegisterFactory;
 import org.keycloak.common.util.Base64;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.KeycloakSession;
@@ -226,6 +227,23 @@ public class WebAuthnCredentialProvider implements CredentialProvider<WebAuthnCr
             logger.debug("  Context Credential Info::");
             logger.debug(auth);
         }
+    }
+
+    @Override
+    public CredentialTypeMetadata getCredentialTypeMetadata() {
+        return CredentialTypeMetadata.builder()
+                .type(getType())
+                .category(CredentialTypeMetadata.Category.TWO_FACTOR)
+                .displayName("webauthn-display-name")
+                .helpText("webauthn-help-text")
+                .iconCssClass("kcAuthenticatorWebAuthnClass")
+                .createAction(WebAuthnRegisterFactory.PROVIDER_ID)
+                .removeable(true)
+                .build(session);
+    }
+
+    protected KeycloakSession getKeycloakSession() {
+        return session;
     }
 
 }
