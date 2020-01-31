@@ -617,7 +617,7 @@ public class UserResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     public List<CredentialRepresentation> credentials(){
-        auth.users().requireView(user);
+        auth.users().requireManage(user);
         List<CredentialModel> models = session.userCredentialManager().getStoredCredentials(realm, user);
         models.forEach(c -> c.setSecretData(null));
         return models.stream().map(ModelToRepresentation::toRepresentation).collect(Collectors.toList());
@@ -635,7 +635,9 @@ public class UserResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     public List<String> getConfiguredUserStorageCredentialTypes() {
-        auth.users().requireView(user);
+        // This has "requireManage" due the compatibility with "credentials()" endpoint. Strictly said, it is reading endpoint, not writing,
+        // so may be revisited if to rather use "requireView" here in the future.
+        auth.users().requireManage(user);
         return session.userCredentialManager().getConfiguredUserStorageCredentialTypes(realm, user);
     }
 
