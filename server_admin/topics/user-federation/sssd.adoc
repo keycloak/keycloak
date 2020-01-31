@@ -11,13 +11,13 @@ image:{project_images}/keycloak-sssd-freeipa-integration-overview.png[]
 Most of the communication between {project_name} and SSSD occurs through read-only D-Bus interfaces. For this reason, the only way to provision and update users is to use the FreeIPA/IdM administration interface. By default, like the LDAP federation provider, it is set up only to import username, email, first name, and last name.
 
 [NOTE]
-Groups and roles are automatically registered, but not synchronized, so any changes made by the {project_name} administrator directly in {project_name} is not synchronized with SSSD.
+Groups and roles are automatically registered, but not synchronized, so any changes made by the {project_name} administrator directly in {project_name} are not synchronized with SSSD.
 
 Information on how to configure the FreeIPA/IdM server follows.
 
 ==== FreeIPA/IdM Server
 
-As a matter of simplicity, a https://hub.docker.com/r/freeipa/freeipa-server/[FreeIPA Docker image] already available is used. To set up a server, see the https://www.freeipa.org/page/Quick_Start_Guide[FreeIPA documentation].
+For the sake of simplicity, a https://hub.docker.com/r/freeipa/freeipa-server/[FreeIPA Docker image] already available is used. To set up a server, see the https://www.freeipa.org/page/Quick_Start_Guide[FreeIPA documentation].
 
 Running a FreeIPA server with Docker requires this command:
 
@@ -34,7 +34,7 @@ After the container starts, change `/etc/hosts` to:
 
 If you do not make this change, you must set up a DNS server.
 
-So that the SSSD federation provider is started and running on {project_name} you must enroll your Linux machine in the IPA domain:
+You must enroll your Linux machine in the IPA domain so that the SSSD federation provider is started and running on {project_name}:
 
  ipa-client-install --mkhomedir -p admin -w password
 
@@ -95,11 +95,11 @@ Ensure everything is working as expected by running `dbus-send`:
 
   sudo dbus-send --print-reply --system --dest=org.freedesktop.sssd.infopipe /org/freedesktop/sssd/infopipe org.freedesktop.sssd.infopipe.GetUserGroups string:john
 
-You should be able to see the user's group. If this command returns a timeout or an error, it means that the federation provider will also not be able to retrieve anything on {project_name}.
+You should be able to see the user's group. If this command returns a timeout or an error, it means that the federation provider running on {project_name} will also be unable to retrieve anything.
 
 Most of the time this occurs because the machine was not enrolled in the FreeIPA IdM server or you do not have permission to access the SSSD service.
 
-If you do not have permission, ensure that the user running {project_name} is included in the `/etc/sssd/sssd.conf` file in the following section:
+If you do not have permission, ensure that the user running the {project_name} server is included in the `/etc/sssd/sssd.conf` file in the following section:
 
   [ifp]
   allowed_uids = root, your_username
@@ -140,7 +140,7 @@ Use `sssctl user-checks` command to validate your setup:
 
 === Configuring a Federated SSSD Store
 
-After installation, you need to configure a federated SSSD store.
+After the installation, you need to configure a federated SSSD store.
 
 To configure a federated SSSD store, complete the following steps:
 

@@ -5,17 +5,17 @@
 Many companies have existing user databases that hold information about users and their passwords or other credentials.
 In many cases, it is just not possible to migrate off of those existing stores to a pure {project_name} deployment.
 {project_name} can federate existing external user databases.
-Out of the box we have support for LDAP and Active Directory.  You can also code your own extension for any custom
-user databases you might have using our User Storage SPI.
+By default, we support LDAP and Active Directory, but you can also code your own extension for any custom
+user database using our User Storage SPI.
 
 The way it works is that when a user logs in, {project_name} will look into its own internal user store to find the user.
-If it can't find it there it will iterate
+If it cannot find it there, it will iterate
 over every User Storage provider you have configured for the realm until it finds a match.  Data from the external store is mapped into a common user model that is consumed by the {project_name}
 runtime.  This common user model can then be mapped to OIDC token claims and SAML assertion attributes.
 
 External user databases rarely have every piece of data needed to support all the features that {project_name} has.
-In this case, the User Storage Provider can opt to store some things locally in the {project_name} user store.
-Some providers even import the user locally and sync periodically with the external store.  All this depends on the capabilities of the provider and how its configured.  For example, your
+Therefore, the User Storage Provider can opt to store some things locally in the {project_name} user store.
+Some providers even import the user locally and sync periodically with the external store. This approach depends on the capabilities of the provider and how it is configured.  For example, your
 external user store may not support OTP.  Depending on the provider, this OTP can be handled and stored by {project_name}.
 
 === Adding a Provider
@@ -29,7 +29,7 @@ On the center, there is an `Add Provider` list box.  Choose the provider type yo
 
 === Dealing with Provider Failures
 
-If a User Storage Provider fails, that is, if your LDAP server is down, you may have trouble logging in and may not be able to view users in the admin console.
+If a User Storage Provider fails (for example, your LDAP server is down), you may have trouble logging in and may not be able to view users in the admin console.
 {project_name} does not catch failures when using a Storage Provider to lookup a user.  It will abort the invocation.  So, if you have a Storage Provider with a higher
 priority that fails during user lookup, the login or user query will fail entirely with an exception and abort.  It will not fail over to the next configured provider.
 
