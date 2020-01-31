@@ -594,6 +594,69 @@ There are two methods for passing the {project_name} adapter configuration to th
 
 See xref:Example-EAP-Manual[Example Workflow: Manually Configure an Application to Use {project_name} Authentication, Using SAML Client] for an end-to-end example of the manual {project_name} client registration method using a SAML client.
 
+=== Using {project_name} vault with OpenShift secrets
+Several fields in the {project_name} administration support obtaining the value
+ of a secret from an external vault, see link:{adminguide_link}#_vault-administration[{adminguide_name}].
+The following example shows how to set up the files plaintext vault in OpenShift 
+and set it up to be used for obtaining SMTP password.
+
+. Specify a directory for the vault using the *_SSO_VAULT_DIR_* environment variable. 
+You can introduce the *_SSO_VAULT_DIR_* environment variable directly in the environment in your deployment configuration. It can also be included in the template by addding the following snippets at the appropriate places in the template:
++
+[source,json,subs="attributes+,macros+"]
+----
+"parameters": [
+    ...
+    {
+        "displayName": "RH-SSO Vault Secret directory",
+        "description": "Path to the RH-SSO Vault directory.",
+        "name": "SSO_VAULT_DIR",
+        "value": "",
+        "required": false
+    }
+    ...
+]
+
+env: [
+    ...
+    {
+        "name": "SSO_VAULT_DIR",
+        "value": "${SSO_VAULT_DIR}"
+    }
+    ...
+]
+----
+
++
+[NOTE]
+====
+The files plaintext vault provider will be configured only when you set
+ *_SSO_VAULT_DIR_* environment variable.
+====
+
+. Create a secret in your OpenShift cluster:
++
+[source,bash,subs="attributes+,macros+"]
+----
+$ oc create secret generic rhsso-vault-secrets --from-literal=master_smtp-password=mySMTPPsswd
+----
+
+. Mount a volume to your deployment config using the `${SSO_VAULT_DIR}` as the path.
+For a deployment that is already running:
++
+[source,bash,subs="attributes+,macros+"]
+----
+oc set volume dc/sso --add --mount-path=${SSO_VAULT_DIR} --secret-name=rhsso-vault-secrets
+----
+
+. After a pod is created you can use a customized string within your {project_name} 
+configuration to refer to the secret. For example, for using `mySMTPPsswd` secret 
+created in this tutorial, you can use `${vault.smtp-password}` within the `master` 
+realm in the configuration of the smtp password and it will be replaced by `mySMTPPsswd` when used.
+
+
+
+
 === Limitations
 OpenShift does not currently accept OpenShift role mapping from external providers. If {project_name} is used as an authentication gateway for OpenShift, users created in {project_name} must have the roles added using the OpenShift Administrator `oc adm policy` command.
 
