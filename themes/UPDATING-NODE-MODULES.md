@@ -20,3 +20,7 @@ The node dependencies will be downloaded at build time, based on the content of 
     cd -
 
 You should verify the new set of packages don't break anything before commiting the new `package-lock.json`. Do not commit the `node_modules` directory for the new account console.
+
+## License Information
+
+Make sure to enter license information for new dependencies, as specified in `docs/dependency-license-information.md`. Javascript dependencies are included as `other` elements.
