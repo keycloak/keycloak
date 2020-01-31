@@ -7,6 +7,7 @@
 
 :project_name_full: Red Hat Single Sign-On
 :project_version: 7.4.0.GA
+:keycloak_upgrade_version: 9.0.x
 :project_versionDoc: 7.4
 :project_templates_base_url: https://raw.githubusercontent.com/jboss-container-images/redhat-sso-7-openshift-image/sso74-dev/templates
 :project_latest_image_tag: 1.0

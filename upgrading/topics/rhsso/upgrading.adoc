@@ -2,12 +2,13 @@
 
 == Upgrading {project_name} Server
 
-The upgrade process for the {project_name} server is different if you are upgrading to a different
-minor release or not.
+The upgrade or migration process for the {project_name} server depends on the previous version of the software.
 
-If you are upgrading to a new minor release, for example from 7.0.0 to 7.1.0, follow the steps in xref:_upgrading_minor[Minor Upgrades].
+* If you are upgrading to a new minor release, for example from 7.0.0 to 7.1.0, follow the steps in xref:_upgrading_minor[Minor Upgrades].
 
-If you are upgrading to a new micro release, for example from 7.1.0 to 7.1.1, follow the steps in xref:_upgrading_micro[Micro Upgrades].
+* If you are migrating from Keycloak {keycloak_upgrade_version}, follow the steps in xref:_upgrading_minor[Minor Upgrades].
+
+* If you are upgrading to a new micro release, for example from 7.1.0 to 7.1.1, follow the steps in xref:_upgrading_micro[Micro Upgrades].
 
 [[_upgrading_minor]]
 === Minor Upgrades

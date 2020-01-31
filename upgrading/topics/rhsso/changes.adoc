@@ -1,3 +1,4 @@
+[[_release_changes]]
 == Changes
 
 Review these changes carefully before upgrading.
