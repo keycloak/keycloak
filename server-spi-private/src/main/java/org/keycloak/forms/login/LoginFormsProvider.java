@@ -40,6 +40,12 @@ public interface LoginFormsProvider extends Provider {
 
     String USERNAME_EDIT_DISABLED = "usernameEditDisabled";
 
+    String REGISTRATION_DISABLED = "registrationDisabled";
+
+    String IDENTITY_PROVIDERS_DISABLED = "identityProvidersDisabled";
+
+    String IDENTITY_PROVIDERS_FILTERED = "identityProvidersFiltered";
+
 
     /**
      * Adds a script to the html header
@@ -100,15 +106,15 @@ public interface LoginFormsProvider extends Provider {
 
     /**
      * Set one global error message.
-     * 
+     *
      * @param message key of message
      * @param parameters to be formatted into message
      */
     LoginFormsProvider setError(String message, Object ... parameters);
-    
+
     /**
      * Set multiple error messages.
-     * 
+     *
      * @param messages to be set
      */
     LoginFormsProvider setErrors(List<FormMessage> messages);

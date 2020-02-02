@@ -78,6 +78,8 @@ public class Messages {
 
     public static final String FEDERATED_IDENTITY_CONFIRM_REAUTHENTICATE_MESSAGE = "federatedIdentityConfirmReauthenticateMessage";
 
+    public static final String FEDERATED_IDENTITY_CONFIRM_REAUTHENTICATE_NO_USER_MESSAGE = "federatedIdentityConfirmReauthenticateNoUserMessage";
+
     public static final String IDENTITY_PROVIDER_DIFFERENT_USER_MESSAGE = "identityProviderDifferentUserMessage";
 
     public static final String CONFIGURE_TOTP = "configureTotpMessage";

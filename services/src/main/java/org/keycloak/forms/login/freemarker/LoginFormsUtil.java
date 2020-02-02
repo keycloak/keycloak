@@ -25,6 +25,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 
 import javax.ws.rs.core.MultivaluedMap;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -42,11 +43,13 @@ public class LoginFormsUtil {
     public static List<IdentityProviderModel> filterIdentityProviders(List<IdentityProviderModel> providers, KeycloakSession session, RealmModel realm,
                                                                       Map<String, Object> attributes, MultivaluedMap<String, String> formData) {
 
-        Boolean usernameEditDisabled = (Boolean) attributes.get(LoginFormsProvider.USERNAME_EDIT_DISABLED);
-        if (usernameEditDisabled != null && usernameEditDisabled) {
+        Boolean identityProvidersFiltered = (Boolean) attributes.get(LoginFormsProvider.IDENTITY_PROVIDERS_FILTERED);
+        Boolean identityProvidersDisabled = (Boolean) attributes.get(LoginFormsProvider.IDENTITY_PROVIDERS_DISABLED);
+
+        if (identityProvidersFiltered != null && identityProvidersFiltered) {
             String username = formData.getFirst(UserModel.USERNAME);
             if (username == null) {
-                throw new IllegalStateException("USERNAME_EDIT_DISABLED but username not known");
+                throw new IllegalStateException("IDENTITY_PROVIDERS_FILTERED but username not known");
             }
 
             UserModel user = session.users().getUserByUsername(username, realm);
@@ -67,6 +70,8 @@ public class LoginFormsUtil {
                 }
             }
             return result;
+        } else if (identityProvidersDisabled != null && identityProvidersDisabled) {
+            return Collections.emptyList();
         } else {
             return providers;
         }

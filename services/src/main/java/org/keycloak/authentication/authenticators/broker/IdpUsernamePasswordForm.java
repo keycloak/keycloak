@@ -31,7 +31,10 @@ import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 
 /**
- * Same like classic username+password form, but username is "known" and user can't change it
+ * Same like classic username+password form, but for use in IdP linking.
+ *
+ * User identity is optionally established by the preceding idp-create-user-if-unique execution.
+ * If no identity had been established, the user will be prompted to enter login name.
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
@@ -39,7 +42,13 @@ public class IdpUsernamePasswordForm extends UsernamePasswordForm {
 
     @Override
     protected Response challenge(AuthenticationFlowContext context, MultivaluedMap<String, String> formData) {
-        UserModel existingUser = AbstractIdpAuthenticator.getExistingUser(context.getSession(), context.getRealm(), context.getAuthenticationSession());
+        UserModel existingUser = null;
+
+        try {
+            existingUser = AbstractIdpAuthenticator.getExistingUser(context.getSession(), context.getRealm(), context.getAuthenticationSession());
+        } catch(AuthenticationFlowException ex) {
+            log.debug("No existing user in authSession", ex);
+        }
 
         return setupForm(context, formData, existingUser)
                 .setStatus(Response.Status.OK)
@@ -48,13 +57,22 @@ public class IdpUsernamePasswordForm extends UsernamePasswordForm {
 
     @Override
     protected boolean validateForm(AuthenticationFlowContext context, MultivaluedMap<String, String> formData) {
-        UserModel existingUser = AbstractIdpAuthenticator.getExistingUser(context.getSession(), context.getRealm(), context.getAuthenticationSession());
-        context.setUser(existingUser);
+        UserModel existingUser = null;
+        try {
+            existingUser = AbstractIdpAuthenticator.getExistingUser(context.getSession(), context.getRealm(), context.getAuthenticationSession());
+        } catch (AuthenticationFlowException ex) {
+            log.debug("No existing user in authSession", ex);
+        }
 
         // Restore formData for the case of error
         setupForm(context, formData, existingUser);
 
-        return validatePassword(context, existingUser, formData);
+        if (existingUser != null) {
+            context.setUser(existingUser);
+            return validatePassword(context, existingUser, formData);
+        } else {
+            return validateUserAndPassword(context, formData);
+        }
     }
 
     protected LoginFormsProvider setupForm(AuthenticationFlowContext context, MultivaluedMap<String, String> formData, UserModel existingUser) {
@@ -63,10 +81,26 @@ public class IdpUsernamePasswordForm extends UsernamePasswordForm {
             throw new AuthenticationFlowException("Not found serialized context in clientSession", AuthenticationFlowError.IDENTITY_PROVIDER_ERROR);
         }
 
-        formData.putSingle(AuthenticationManager.FORM_USERNAME, existingUser.getUsername());
-        return context.form()
-                .setFormData(formData)
-                .setAttribute(LoginFormsProvider.USERNAME_EDIT_DISABLED, true)
-                .setInfo(Messages.FEDERATED_IDENTITY_CONFIRM_REAUTHENTICATE_MESSAGE, existingUser.getUsername(), serializedCtx.getIdentityProviderId());
+        String message;
+        Object[] args;
+        LoginFormsProvider form = context.form();
+
+        if (existingUser != null) {
+            formData.putSingle(AuthenticationManager.FORM_USERNAME, existingUser.getUsername());
+            message = Messages.FEDERATED_IDENTITY_CONFIRM_REAUTHENTICATE_MESSAGE;
+            args = new Object[]{existingUser.getUsername(), serializedCtx.getIdentityProviderId()};
+            form.setAttribute(LoginFormsProvider.USERNAME_EDIT_DISABLED, true)
+                .setAttribute(LoginFormsProvider.IDENTITY_PROVIDERS_FILTERED, true);
+        } else {
+            message = Messages.FEDERATED_IDENTITY_CONFIRM_REAUTHENTICATE_NO_USER_MESSAGE;
+            args = new Object[]{serializedCtx.getIdentityProviderId()};
+            form.setAttribute(LoginFormsProvider.IDENTITY_PROVIDERS_DISABLED, true);
+        }
+
+        form.setFormData(formData)
+            .setInfo(message, args)
+            .setAttribute(LoginFormsProvider.REGISTRATION_DISABLED, true);
+
+        return form;
     }
 }
