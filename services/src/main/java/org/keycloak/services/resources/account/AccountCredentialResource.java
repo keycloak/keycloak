@@ -348,6 +348,8 @@ public class AccountCredentialResource {
             return ErrorResponse.error(e.getMessage(), e.getParameters(), Response.Status.BAD_REQUEST);
         }
 
+        event.client(auth.getClient()).user(auth.getUser()).success();
+
         return Response.ok().build();
     }
 
