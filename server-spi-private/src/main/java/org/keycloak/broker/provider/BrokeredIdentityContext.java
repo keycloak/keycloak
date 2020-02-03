@@ -198,6 +198,11 @@ public class BrokeredIdentityContext {
         this.authenticationSession = authenticationSession;
     }
 
+    /**
+     * @deprecated use {@link #setFirstName(String)} and {@link #setLastName(String)} instead
+     * @param name
+     */
+    @Deprecated
     public void setName(String name) {
         if (name != null) {
             int i = name.lastIndexOf(' ');
