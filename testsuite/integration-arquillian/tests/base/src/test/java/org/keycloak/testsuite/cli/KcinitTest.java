@@ -569,8 +569,8 @@ public class KcinitTest extends AbstractTestRealmKeycloakTest {
             exe.sendLine("password");
             exe.waitForStderr("One Time Password:");
 
-            Pattern p = Pattern.compile("Open the application and enter the key\\s+(.+)\\s+Use the following configuration values");
-            //Pattern p = Pattern.compile("Open the application and enter the key");
+            Pattern p = Pattern.compile("Open the application and enter the key:\\s+(.+)\\s+Use the following configuration values");
+            //Pattern p = Pattern.compile("Open the application and enter the key:");
 
             String stderr = exe.stderrString();
             //System.out.println("***************");

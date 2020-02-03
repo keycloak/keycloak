@@ -38,6 +38,9 @@ import org.keycloak.services.validation.Validation;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 
+import java.util.Collections;
+import java.util.List;
+
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
@@ -88,6 +91,17 @@ public class UpdateTotp implements RequiredActionProvider, RequiredActionFactory
             return;
         }
         OTPCredentialProvider otpCredentialProvider = (OTPCredentialProvider) context.getSession().getProvider(CredentialProvider.class, "keycloak-otp");
+        final List<CredentialModel> otpCredentials = (otpCredentialProvider.isConfiguredFor(context.getRealm(), context.getUser()))
+            ? context.getSession().userCredentialManager().getStoredCredentialsByType(context.getRealm(), context.getUser(), OTPCredentialModel.TYPE)
+            : Collections.EMPTY_LIST;
+        if (otpCredentials.size() >= 1 && Validation.isBlank(userLabel)) {
+            Response challenge = context.form()
+                    .setAttribute("mode", mode)
+                    .setError(Messages.MISSING_TOTP_DEVICE_NAME)
+                    .createResponse(UserModel.RequiredAction.CONFIGURE_TOTP);
+            context.challenge(challenge);
+            return;
+        }
         CredentialModel createdCredential = otpCredentialProvider.createCredential(context.getRealm(), context.getUser(), credentialModel);
         UserCredentialModel credential = new UserCredentialModel(createdCredential.getId(), otpCredentialProvider.getType(), challengeResponse);
         //If the type is HOTP, call verify once to consume the OTP used for registration and increase the counter.
