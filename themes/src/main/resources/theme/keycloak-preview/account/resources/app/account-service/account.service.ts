@@ -100,7 +100,12 @@ export class AccountServiceClient {
             this.kcSvc.login();
         }
         console.log(error);
-        ContentAlert.danger(error.name + ': ' + error.message);
+
+        if (error != null && error.response != null && error.response.data != null && error.response.data.errorMessage) {
+            ContentAlert.danger(error.response.data.errorMessage);
+        } else {
+            ContentAlert.danger(error.name + ': ' + error.message);
+        }
     }
 
     private makeConfig(endpoint: string, config: AxiosRequestConfig = {}): Promise<AxiosRequestConfig> {
