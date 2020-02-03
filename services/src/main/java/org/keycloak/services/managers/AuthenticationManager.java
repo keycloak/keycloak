@@ -388,6 +388,10 @@ public class AuthenticationManager {
             return true;
         }
 
+        if (!client.isEnabled()) {
+            return false;
+        }
+
         try {
             setClientLogoutAction(logoutAuthSession, client.getId(), AuthenticationSessionModel.Action.LOGGING_OUT);
 
