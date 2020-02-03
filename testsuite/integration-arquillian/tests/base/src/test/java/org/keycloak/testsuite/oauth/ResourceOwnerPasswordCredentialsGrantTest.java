@@ -376,7 +376,7 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
 
         OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("invalid", "test-user@localhost", "password");
 
-        assertEquals(400, response.getStatusCode());
+        assertEquals(401, response.getStatusCode());
 
         assertEquals("unauthorized_client", response.getError());
 
@@ -395,7 +395,7 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
 
         OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest(null, "test-user@localhost", "password");
 
-        assertEquals(400, response.getStatusCode());
+        assertEquals(401, response.getStatusCode());
 
         assertEquals("unauthorized_client", response.getError());
 
