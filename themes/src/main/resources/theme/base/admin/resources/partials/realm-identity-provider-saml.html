@@ -142,6 +142,22 @@
                 </div>
                 <kc-tooltip>{{:: 'nameid-policy-format.tooltip' | translate}}</kc-tooltip>
             </div>
+            <div class="form-group clearfix">
+                <label class="col-md-2 control-label" for="principalType">{{:: 'saml.principal-type' | translate}}</label>
+                <div class="col-md-6">
+                    <select id="principalType" ng-model="identityProvider.config.principalType"
+                            ng-options="pType.type as pType.name for pType in principalTypes">
+                     </select>
+                </div>
+                <kc-tooltip>{{:: 'saml.principal-type.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group clearfix" data-ng-show="identityProvider.config.principalType.endsWith('ATTRIBUTE')">
+                <label class="col-md-2 control-label" for="principalAttribute">{{:: 'saml.principal-attribute' | translate}}</label>
+                <div class="col-md-6">
+                    <input class="form-control" id="principalAttribute" type="text" ng-model="identityProvider.config.principalAttribute" ng-required="identityProvider.config.principalType.endsWith('ATTRIBUTE')">
+                </div>
+                <kc-tooltip>{{:: 'saml.principal-attribute.tooltip' | translate}}</kc-tooltip>
+            </div>
             <div class="form-group">
                 <label class="col-md-2 control-label" for="postBindingResponse">{{:: 'http-post-binding-response' | translate}}</label>
                 <div class="col-md-6">
