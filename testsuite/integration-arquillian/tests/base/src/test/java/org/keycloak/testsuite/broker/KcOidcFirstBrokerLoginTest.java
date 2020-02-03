@@ -22,6 +22,28 @@ public class KcOidcFirstBrokerLoginTest extends AbstractFirstBrokerLoginTest {
         return KcOidcBrokerConfiguration.INSTANCE;
     }
 
+    /**
+     * KEYCLOAK-10932
+     */
+    @Test
+    public void loginWithFirstnameLastnamePopulatedFromClaims() {
+
+        updateExecutions(AbstractBrokerTest::disableUpdateProfileOnFirstLogin);
+
+        String firstname = "Firstname";
+        String lastname = "Lastname";
+        String username = "firstandlastname";
+        createUser(bc.providerRealmName(), username, BrokerTestConstants.USER_PASSWORD, firstname, lastname, "firstnamelastname@example.org");
+
+        driver.navigate().to(getAccountUrl(bc.consumerRealmName()));
+        logInWithIdp(bc.getIDPAlias(), username, BrokerTestConstants.USER_PASSWORD);
+
+        accountUpdateProfilePage.assertCurrent();
+
+        assertEquals(username, accountUpdateProfilePage.getUsername());
+        assertEquals(firstname, accountUpdateProfilePage.getFirstName());
+        assertEquals(lastname, accountUpdateProfilePage.getLastName());
+    }
 
     /**
      * Tests that duplication is detected and user wants to link federatedIdentity with existing account. He will confirm link by reauthentication
