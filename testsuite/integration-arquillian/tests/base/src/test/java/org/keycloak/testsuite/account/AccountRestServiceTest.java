@@ -27,6 +27,7 @@ import org.keycloak.authentication.requiredactions.WebAuthnRegister;
 import org.keycloak.authentication.requiredactions.WebAuthnRegisterFactory;
 import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.credential.CredentialTypeMetadata;
+import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.OTPCredentialModel;
@@ -44,6 +45,7 @@ import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.ErrorRepresentation;
+import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderSimpleRepresentation;
@@ -75,6 +77,7 @@ import org.keycloak.testsuite.util.WaitUtils;
  */
 @AuthServerContainerExclude(AuthServer.REMOTE)
 public class AccountRestServiceTest extends AbstractRestServiceTest {
+
     @Test
     public void testGetProfile() throws IOException {
         UserRepresentation user = SimpleHttp.doGet(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).asJson(UserRepresentation.class);
@@ -252,12 +255,16 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         //Get the time of lastUpdate
         AccountCredentialResource.PasswordDetails initialDetails = getPasswordDetails();
 
+        // ignore login event
+        events.poll();
+
         //Change the password
         updatePassword("password", "Str0ng3rP4ssw0rd", 200);
 
         //Get the new value for lastUpdate
         AccountCredentialResource.PasswordDetails updatedDetails = getPasswordDetails();
         assertTrue(initialDetails.getLastUpdate() < updatedDetails.getLastUpdate());
+        Assert.assertEquals(EventType.UPDATE_PASSWORD.name(), events.poll().getType());
 
         //Try to change password again; should fail as current password is incorrect
         updatePassword("password", "Str0ng3rP4ssw0rd", 400);
