@@ -194,6 +194,33 @@ public class UserTest extends AbstractAdminTest {
         createUser();
     }
 
+    /**
+     * See KEYCLOAK-11003
+     */
+    @Test
+    public void createUserWithTemporaryPasswordWithAdditionalPasswordUpdateShouldRemoveUpdatePasswordRequiredAction() {
+
+        String userId = createUser();
+
+        CredentialRepresentation credTmp = new CredentialRepresentation();
+        credTmp.setType(CredentialRepresentation.PASSWORD);
+        credTmp.setValue("temp");
+        credTmp.setTemporary(Boolean.TRUE);
+
+        realm.users().get(userId).resetPassword(credTmp);
+
+        CredentialRepresentation credPerm = new CredentialRepresentation();
+        credPerm.setType(CredentialRepresentation.PASSWORD);
+        credPerm.setValue("perm");
+        credPerm.setTemporary(null);
+
+        realm.users().get(userId).resetPassword(credPerm);
+
+        UserRepresentation userRep = realm.users().get(userId).toRepresentation();
+
+        Assert.assertFalse(userRep.getRequiredActions().contains(UserModel.RequiredAction.UPDATE_PASSWORD.name()));
+    }
+
     @Test
     public void createDuplicatedUser1() {
         createUser();

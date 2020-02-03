@@ -617,7 +617,12 @@ public class UserResource {
             throw new ErrorResponseException(e.getMessage(), MessageFormat.format(messages.getProperty(e.getMessage(), e.getMessage()), e.getParameters()),
                     Status.BAD_REQUEST);
         }
-        if (cred.isTemporary() != null && cred.isTemporary()) user.addRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
+        if (cred.isTemporary() != null && cred.isTemporary()) {
+            user.addRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
+        } else {
+            // Remove a potentially existing UPDATE_PASSWORD action when explicitly assigning a non-temporary password.
+            user.removeRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
+        }
 
         adminEvent.operation(OperationType.ACTION).resourcePath(session.getContext().getUri()).success();
     }
