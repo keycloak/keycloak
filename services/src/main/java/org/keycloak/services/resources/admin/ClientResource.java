@@ -684,7 +684,7 @@ public class ClientResource {
             }
         }
 
-        if (!rep.getClientId().equals(client.getClientId())) {
+        if (rep.getClientId() != null && !rep.getClientId().equals(client.getClientId())) {
             new ClientManager(new RealmManager(session)).clientIdChanged(client, rep.getClientId());
         }
 
