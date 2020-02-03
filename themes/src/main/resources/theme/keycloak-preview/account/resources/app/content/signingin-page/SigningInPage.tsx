@@ -67,8 +67,8 @@ interface CredentialContainer {
     type: CredType;
     displayName: string;
     helptext?: string;
-    createAction: string;
-    updateAction: string;
+    createAction?: string;
+    updateAction?: string;
     iconCssClass: string;
     removeable: boolean;
     userCredentials: UserCredential[];
@@ -175,21 +175,21 @@ class SigningInPage extends React.Component<SigningInPageProps, SigningInPageSta
     }
 
     private renderUserCredentials(credTypeMap: CredTypeMap, credType: CredType): React.ReactNode {
-        const userCredentials: UserCredential[] = credTypeMap.get(credType)!.userCredentials;
-        const removeable: boolean = credTypeMap.get(credType)!.removeable;
-        const updateAction: string = credTypeMap.get(credType)!.updateAction;
-        const displayName: string = credTypeMap.get(credType)!.displayName;
+        const credContainer: CredentialContainer = credTypeMap.get(credType)!;
+        const userCredentials: UserCredential[] = credContainer.userCredentials;
+        const removeable: boolean = credContainer.removeable;
+        const displayName: string = credContainer.displayName;
 
         if (userCredentials.length === 0) {
             const localizedDisplayName = Msg.localize(displayName);
             return (
-                <DataListItem aria-labelledby='no-credentials-list-item'>
+                <DataListItem key='no-credentials-list-item' aria-labelledby='no-credentials-list-item'>
                     <DataListItemRow key='no-credentials-list-item-row'>
                         <DataListItemCells
                                     dataListCells={[
-                                        <DataListCell/>,
-                                        <strong><Msg msgKey='notSetUp' params={[localizedDisplayName]}/></strong>,
-                                        <DataListCell/>
+                                        <DataListCell key={'no-credentials-cell-0'}/>,
+                                        <strong key={'no-credentials-cell-1'}><Msg msgKey='notSetUp' params={[localizedDisplayName]}/></strong>,
+                                        <DataListCell key={'no-credentials-cell-2'}/>
                                     ]}/>
                     </DataListItemRow>
                 </DataListItem>
@@ -202,12 +202,14 @@ class SigningInPage extends React.Component<SigningInPageProps, SigningInPageSta
         });
 
         let updateAIA: AIACommand;
-        if (updateAction) updateAIA = new AIACommand(updateAction, this.props.location.pathname);
+        if (credContainer.updateAction) {
+            updateAIA = new AIACommand(credContainer.updateAction, this.props.location.pathname);
+        }
 
         return (
             <React.Fragment key='userCredentials'> {
                 userCredentials.map(credential => (
-                    <DataListItem aria-labelledby={'credential-list-item-' + credential.userLabel}>
+                    <DataListItem key={'credential-list-item-' + credential.id} aria-labelledby={'credential-list-item-' + credential.userLabel}>
                         <DataListItemRow key={'userCredentialRow-' + credential.id}>
                             <DataListItemCells
                                 dataListCells={[
@@ -228,34 +230,40 @@ class SigningInPage extends React.Component<SigningInPageProps, SigningInPageSta
     }
 
     private renderCredTypeTitle(credContainer: CredentialContainer): React.ReactNode {
-        if (!credContainer.createAction) return;
+        if (credContainer.category === 'password') return;
 
-        const setupAction: AIACommand = new AIACommand(credContainer.createAction, this.props.location.pathname);
+        let setupAction: AIACommand;
+        if (credContainer.createAction) {
+            setupAction = new AIACommand(credContainer.createAction, this.props.location.pathname);
+        }
         const credContainerDisplayName: string = Msg.localize(credContainer.displayName);
 
         return (
-            <DataListItem aria-labelledby={'type-datalistitem-' + credContainer.type}>
-                <DataListItemRow key={'credTitleRow-' + credContainer.type}>
-                    <DataListItemCells
-                        dataListCells={[
-                            <DataListCell width={5} key={'credTypeTitle-' + credContainer.type}>
-                                <Title headingLevel={TitleLevel.h3} size='2xl'>
-                                    <strong><Msg msgKey={credContainer.displayName}/></strong>
-                                </Title>
-                                <Msg msgKey={credContainer.helptext}/>
-                            </DataListCell>,
+            <React.Fragment key={'credTypeTitle-' + credContainer.type}>
+                <DataListItem aria-labelledby={'type-datalistitem-' + credContainer.type}>
+                    <DataListItemRow key={'credTitleRow-' + credContainer.type}>
+                        <DataListItemCells
+                            dataListCells={[
+                                <DataListCell width={5} key={'credTypeTitle-' + credContainer.type}>
+                                    <Title headingLevel={TitleLevel.h3} size='2xl'>
+                                        <strong><Msg msgKey={credContainer.displayName}/></strong>
+                                    </Title>
+                                    <Msg msgKey={credContainer.helptext}/>
+                                </DataListCell>,
 
-                        ]}/>
-                    <DataListAction aria-labelledby='foo' aria-label='foo action' id={'setUpAction-' + credContainer.type}>
-                        <button className="pf-c-button pf-m-link" type="button" onClick={()=> setupAction.execute()}>
-                            <span className="pf-c-button__icon">
-                                <i className="fas fa-plus-circle" aria-hidden="true"></i>
-                            </span>
-                            <Msg msgKey='setUpNew' params={[credContainerDisplayName]}/>
-                        </button>
-                    </DataListAction>
-                </DataListItemRow>
-            </DataListItem>
+                            ]}/>
+                        {credContainer.createAction &&
+                        <DataListAction aria-labelledby='foo' aria-label='foo action' id={'setUpAction-' + credContainer.type}>
+                            <button className="pf-c-button pf-m-link" type="button" onClick={()=> setupAction.execute()}>
+                                <span className="pf-c-button__icon">
+                                    <i className="fas fa-plus-circle" aria-hidden="true"></i>
+                                </span>
+                                <Msg msgKey='setUpNew' params={[credContainerDisplayName]}/>
+                            </button>
+                        </DataListAction>}
+                    </DataListItemRow>
+                </DataListItem>
+            </React.Fragment>
         )
     }
 
@@ -289,6 +297,8 @@ class CredentialAction extends React.Component<CredentialActionProps> {
                 </DataListAction>
             )
         }
+
+        return (<></>)
     }
 }
 
