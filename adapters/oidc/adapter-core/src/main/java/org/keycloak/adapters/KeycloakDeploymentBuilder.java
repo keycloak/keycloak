@@ -132,12 +132,10 @@ public class KeycloakDeploymentBuilder {
         if (realmKeyPem == null && adapterConfig.isBearerOnly() && adapterConfig.getAuthServerUrl() == null) {
             throw new IllegalArgumentException("For bearer auth, you must set the realm-public-key or auth-server-url");
         }
-        if (realmKeyPem == null || !deployment.isBearerOnly() || deployment.isSSLEnabled() || deployment.isEnableBasicAuth() || deployment.isRegisterNodeAtStartup() || deployment.getRegisterNodePeriod() != -1) {
-            deployment.setClient(createHttpClientProducer(adapterConfig));
-        }
         if (adapterConfig.getAuthServerUrl() == null && (!deployment.isBearerOnly() || realmKeyPem == null)) {
             throw new RuntimeException("You must specify auth-server-url");
         }
+        deployment.setClient(createHttpClientProducer(adapterConfig));
         deployment.setAuthServerBaseUrl(adapterConfig);
         if (adapterConfig.getTurnOffChangeSessionIdOnLogin() != null) {
             deployment.setTurnOffChangeSessionIdOnLogin(adapterConfig.getTurnOffChangeSessionIdOnLogin());
