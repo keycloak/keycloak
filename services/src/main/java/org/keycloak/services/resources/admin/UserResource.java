@@ -27,8 +27,6 @@ import org.keycloak.common.ClientConnection;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.Time;
 import org.keycloak.credential.CredentialModel;
-import org.keycloak.credential.CredentialProvider;
-import org.keycloak.credential.PasswordCredentialProvider;
 import org.keycloak.email.EmailException;
 import org.keycloak.email.EmailTemplateProvider;
 import org.keycloak.events.Details;
@@ -47,6 +45,7 @@ import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserConsentModel;
+import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserLoginFailureModel;
 import org.keycloak.models.UserManager;
 import org.keycloak.models.UserModel;
@@ -80,7 +79,6 @@ import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
-import javax.ws.rs.NotFoundException;
 import javax.ws.rs.NotSupportedException;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
@@ -598,8 +596,7 @@ public class UserResource {
         }
 
         try {
-            PasswordCredentialProvider provider = (PasswordCredentialProvider)session.getProvider(CredentialProvider.class, "keycloak-password");
-            provider.createCredential(realm, user, cred.getValue());
+            session.userCredentialManager().updateCredential(realm, user, UserCredentialModel.password(cred.getValue(), false));
         } catch (IllegalStateException ise) {
             throw new BadRequestException("Resetting to N old passwords is not allowed.");
         } catch (ReadOnlyException mre) {
@@ -624,6 +621,24 @@ public class UserResource {
         List<CredentialModel> models = session.userCredentialManager().getStoredCredentials(realm, user);
         models.forEach(c -> c.setSecretData(null));
         return models.stream().map(ModelToRepresentation::toRepresentation).collect(Collectors.toList());
+    }
+
+
+    /**
+     * Return credential types, which are provided by the user storage where user is stored. Returned values can contain for example "password", "otp" etc.
+     * This will always return empty list for "local" users, which are not backed by any user storage
+     *
+     * @return
+     */
+    @GET
+    @Path("configured-user-storage-credential-types")
+    @NoCache
+    @Produces(MediaType.APPLICATION_JSON)
+    public List<String> getConfiguredUserStorageCredentialTypes() {
+        // This has "requireManage" due the compatibility with "credentials()" endpoint. Strictly said, it is reading endpoint, not writing,
+        // so may be revisited if to rather use "requireView" here in the future.
+        auth.users().requireManage(user);
+        return session.userCredentialManager().getConfiguredUserStorageCredentialTypes(realm, user);
     }
 
 

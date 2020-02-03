@@ -331,6 +331,46 @@ module.controller('UserTabCtrl', function($scope, $location, Dialog, Notificatio
     };
 });
 
+function loadUserStorageLink(realm, user, console, Components, UserStorageOperations, $scope, $location) {
+        if(user.federationLink) {
+            console.log("federationLink is not null. It is " + user.federationLink);
+
+            if ($scope.access.viewRealm) {
+                Components.get({realm: realm.realm, componentId: user.federationLink}, function (link) {
+                    $scope.federationLinkName = link.name;
+                    $scope.federationLink = "#/realms/" + realm.realm + "/user-storage/providers/" + link.providerId + "/" + link.id;
+                });
+            } else {
+                // KEYCLOAK-4328
+                UserStorageOperations.simpleName.get({realm: realm.realm, componentId: user.federationLink}, function (link) {
+                    $scope.federationLinkName = link.name;
+                    $scope.federationLink = $location.absUrl();
+                })
+            }
+
+        } else {
+            console.log("federationLink is null");
+        }
+
+        if(user.origin) {
+            if ($scope.access.viewRealm) {
+                Components.get({realm: realm.realm, componentId: user.origin}, function (link) {
+                    $scope.originName = link.name;
+                    $scope.originLink = "#/realms/" + realm.realm + "/user-storage/providers/" + link.providerId + "/" + link.id;
+                })
+            }
+            else {
+                // KEYCLOAK-4328
+                UserStorageOperations.simpleName.get({realm: realm.realm, componentId: user.origin}, function (link) {
+                    $scope.originName = link.name;
+                    $scope.originLink = $location.absUrl();
+                })
+             }
+        } else {
+            console.log("origin is null");
+        }
+};
+
 module.controller('UserDetailCtrl', function($scope, realm, user, BruteForceUser, User,
                                              Components,
                                              UserImpersonation, RequiredActions,
@@ -359,42 +399,9 @@ module.controller('UserDetailCtrl', function($scope, realm, user, BruteForceUser
                 }
             });
         };
-        if(user.federationLink) {
-            console.log("federationLink is not null. It is " + user.federationLink);
 
-            if ($scope.access.viewRealm) {
-                Components.get({realm: realm.realm, componentId: user.federationLink}, function (link) {
-                    $scope.federationLinkName = link.name;
-                    $scope.federationLink = "#/realms/" + realm.realm + "/user-storage/providers/" + link.providerId + "/" + link.id;
-                });
-            } else {
-                // KEYCLOAK-4328
-                UserStorageOperations.simpleName.get({realm: realm.realm, componentId: user.federationLink}, function (link) {
-                    $scope.federationLinkName = link.name;
-                    $scope.federationLink = $location.absUrl();
-                })
-            }
+        loadUserStorageLink(realm, user, console, Components, UserStorageOperations, $scope, $location);
 
-        } else {
-            console.log("federationLink is null");
-        }
-        if(user.origin) {
-            if ($scope.access.viewRealm) {
-                Components.get({realm: realm.realm, componentId: user.origin}, function (link) {
-                    $scope.originName = link.name;
-                    $scope.originLink = "#/realms/" + realm.realm + "/user-storage/providers/" + link.providerId + "/" + link.id;
-                })
-            }
-            else {
-                // KEYCLOAK-4328
-                UserStorageOperations.simpleName.get({realm: realm.realm, componentId: user.origin}, function (link) {
-                    $scope.originName = link.name;
-                    $scope.originLink = $location.absUrl();
-                })
-             }
-        } else {
-            console.log("origin is null");
-        }
         console.log('realm brute force? ' + realm.bruteForceProtected)
         $scope.temporarilyDisabled = false;
         var isDisabled = function () {
@@ -514,7 +521,8 @@ module.controller('UserDetailCtrl', function($scope, realm, user, BruteForceUser
     }
 });
 
-module.controller('UserCredentialsCtrl', function($scope, realm, user, $route, RequiredActions, User, UserExecuteActionsEmail, UserCredentials, Notifications, Dialog, TimeUnit2) {
+module.controller('UserCredentialsCtrl', function($scope, realm, user, $route, $location, RequiredActions, User, UserExecuteActionsEmail,
+                                                  UserCredentials, Notifications, Dialog, TimeUnit2, Components, UserStorageOperations) {
     console.log('UserCredentialsCtrl');
 
     $scope.hasPassword = false;
@@ -522,6 +530,16 @@ module.controller('UserCredentialsCtrl', function($scope, realm, user, $route, R
     $scope.showData = {};
 
     loadCredentials();
+
+    loadUserStorageLink(realm, user, console, Components, UserStorageOperations, $scope, $location);
+
+    $scope.getUserStorageProviderName = function() {
+        return user.federationLink ? $scope.federationLinkName : $scope.originName;
+    }
+
+    $scope.getUserStorageProviderLink = function() {
+        return user.federationLink ? $scope.federationLink : $scope.originLink;
+    }
 
     $scope.keys = function(object) {
         return object ? Object.keys(object) : [];
@@ -646,6 +664,14 @@ module.controller('UserCredentialsCtrl', function($scope, realm, user, $route, R
             });
         }, function(err) {
             Notifications.error("Error while loading user credentials. See console for more information.");
+            console.log(err);
+        });
+
+        UserCredentials.getConfiguredUserStorageCredentialTypes({ realm: realm.realm, userId: user.id }, null, function(userStorageCredentialTypes) {
+            $scope.userStorageCredentialTypes =  userStorageCredentialTypes;
+            $scope.hasPassword = $scope.hasPassword || userStorageCredentialTypes.lastIndexOf("password") > -1;
+        }, function(err) {
+            Notifications.error("Error while loading user storage credentials. See console for more information.");
             console.log(err);
         });
     }

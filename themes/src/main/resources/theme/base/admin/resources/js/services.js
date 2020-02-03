@@ -659,6 +659,11 @@ module.factory('UserCredentials', function($resource) {
         userId : '@userId'
     }).query;
 
+    credentials.getConfiguredUserStorageCredentialTypes = $resource(authUrl + '/admin/realms/:realm/users/:userId/configured-user-storage-credential-types', {
+        realm : '@realm',
+        userId : '@userId'
+    }).query;
+
     credentials.deleteCredential = $resource(authUrl + '/admin/realms/:realm/users/:userId/credentials/:credentialId', {
         realm : '@realm',
         userId : '@userId',

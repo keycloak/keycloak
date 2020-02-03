@@ -33,6 +33,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.services.messages.Messages;
 
 import javax.ws.rs.core.MultivaluedMap;
@@ -74,8 +75,9 @@ public class OTPFormAuthenticator extends AbstractUsernameFormAuthenticator impl
         String credentialId = inputData.getFirst("selectedCredentialId");
 
         if (credentialId == null || credentialId.isEmpty()) {
-            credentialId = getCredentialProvider(context.getSession())
-                    .getDefaultCredential(context.getSession(), context.getRealm(), context.getUser()).getId();
+            OTPCredentialModel defaultOtpCredential = getCredentialProvider(context.getSession())
+                    .getDefaultCredential(context.getSession(), context.getRealm(), context.getUser());
+            credentialId = defaultOtpCredential==null ? "" : defaultOtpCredential.getId();
         }
         context.form().setAttribute(SELECTED_OTP_CREDENTIAL_ID, credentialId);
 
@@ -90,7 +92,7 @@ public class OTPFormAuthenticator extends AbstractUsernameFormAuthenticator impl
             context.challenge(challengeResponse);
             return;
         }
-        boolean valid = getCredentialProvider(context.getSession()).isValid(context.getRealm(),context.getUser(),
+        boolean valid = context.getSession().userCredentialManager().isValid(context.getRealm(),context.getUser(),
                 new UserCredentialModel(credentialId, getCredentialProvider(context.getSession()).getType(), otp));
         if (!valid) {
             context.getEvent().user(userModel)
@@ -119,7 +121,7 @@ public class OTPFormAuthenticator extends AbstractUsernameFormAuthenticator impl
 
     @Override
     public boolean configuredFor(KeycloakSession session, RealmModel realm, UserModel user) {
-        return getCredentialProvider(session).isConfiguredFor(realm, user);
+        return session.userCredentialManager().isConfiguredFor(realm, user, getCredentialProvider(session).getType());
     }
 
     @Override
