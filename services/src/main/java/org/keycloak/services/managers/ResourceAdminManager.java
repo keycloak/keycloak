@@ -215,6 +215,11 @@ public class ResourceAdminManager {
 
 
     protected GlobalRequestResult logoutClient(RealmModel realm, ClientModel resource, int notBefore) {
+
+        if (!resource.isEnabled()) {
+            return new GlobalRequestResult();
+        }
+
         List<String> mgmtUrls = getAllManagementUrls(resource);
         if (mgmtUrls.isEmpty()) {
             logger.debug("No management URL or no registered cluster nodes for the client " + resource.getClientId());
