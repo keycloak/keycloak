@@ -308,7 +308,10 @@ public class AccountCredentialResource {
         PasswordDetails details = new PasswordDetails();
         if (password != null) {
             details.setRegistered(true);
-            details.setLastUpdate(password.getCreatedDate());
+            Long createdDate = password.getCreatedDate();
+            if (createdDate != null) {
+                details.setLastUpdate(createdDate);
+            }
         } else {
             details.setRegistered(false);
         }
