@@ -3,9 +3,6 @@
 
 This chapter walks you through the directory structure of the server distribution.
 
-.distribution directory structure
-image:{project_images}/files.png[alt="distribution"]
-
 Let's examine the purpose of some of the directories:
 
 _bin/_::
@@ -17,13 +14,13 @@ _domain/_::
 _modules/_::
   These are all the Java libraries used by the server.
 
-ifeval::[{project_community}==true]
-_providers/_::
-  If you are writing extensions to keycloak, you can put your extensions here.  See the link:{developerguide_link}[{developerguide_name}] for more information on this.
-endif::[]
-
 _standalone/_::
   This contains configuration files and working directory when running {project_name} in <<_standalone-mode,standalone mode>>.
+
+ifeval::[{project_community}==true]
+_standalone/deployments/_::
+  If you are writing extensions to keycloak, you can put your extensions here.  See the link:{developerguide_link}[{developerguide_name}] for more information on this.
+endif::[]
 
 _themes/_::
   This directory contains all the html, style sheets, JavaScript files, and images used to display any UI screen displayed by the server.
