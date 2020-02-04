@@ -103,7 +103,7 @@ public class HttpMethod<R> {
         } catch (HttpResponseException e) {
             throw e;
         } catch (Exception e) {
-            throw new RuntimeException("Error executing http method [" + builder + "]. Response : " + String.valueOf(bytes), e);
+            throw new RuntimeException("Error executing http method [" + builder.getMethod() + "]. Response : " + String.valueOf(bytes), e);
         }
     }
 
