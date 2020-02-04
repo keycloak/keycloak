@@ -110,6 +110,13 @@ public class InstallationTest extends AbstractClientTest {
     }
 
     @Test
+    public void testOidcJBossCli() {
+        String cli = oidcClient.getInstallationProvider("keycloak-oidc-jboss-subsystem-cli");
+        assertOidcInstallationConfig(cli);
+        assertThat(cli, containsString("/subsystem=keycloak/secure-deployment=\"WAR MODULE NAME.war\""));
+    }
+
+    @Test
     public void testOidcBearerOnlyJson() {
         String json = oidcBearerOnlyClient.getInstallationProvider("keycloak-oidc-keycloak-json");
         assertOidcInstallationConfig(json);
@@ -167,9 +174,18 @@ public class InstallationTest extends AbstractClientTest {
     public void testSamlAdapterXml() {
         String xml = samlClient.getInstallationProvider("keycloak-saml");
         assertThat(xml, containsString("<keycloak-saml-adapter>"));
-        assertThat(xml, containsString(SAML_NAME));
+        assertThat(xml, containsString("SPECIFY YOUR entityID!"));
         assertThat(xml, not(containsString(ApiUtil.findActiveKey(testRealmResource()).getCertificate())));
         assertThat(xml, containsString(samlUrl()));
+    }
+
+    @Test
+    public void testSamlAdapterCli() {
+        String cli = samlClient.getInstallationProvider("keycloak-saml-subsystem-cli");
+        assertThat(cli, containsString("/subsystem=keycloak-saml/secure-deployment=YOUR-WAR.war/"));
+        assertThat(cli, containsString("SPECIFY YOUR entityID!"));
+        assertThat(cli, not(containsString(ApiUtil.findActiveKey(testRealmResource()).getCertificate())));
+        assertThat(cli, containsString(samlUrl()));
     }
 
     @Test
@@ -184,7 +200,7 @@ public class InstallationTest extends AbstractClientTest {
     public void testSamlJBossXml() {
         String xml = samlClient.getInstallationProvider("keycloak-saml-subsystem");
         assertThat(xml, containsString("<secure-deployment"));
-        assertThat(xml, containsString(SAML_NAME));
+        assertThat(xml, containsString("SPECIFY YOUR entityID!"));
         assertThat(xml, not(containsString(ApiUtil.findActiveKey(testRealmResource()).getCertificate())));
         assertThat(xml, containsString(samlUrl()));
     }

@@ -53,12 +53,12 @@ public class KeycloakSamlSubsystemInstallation implements ClientInstallationProv
 
     @Override
     public String getDisplayType() {
-        return "Keycloak SAML Wildfly/JBoss Subsystem";
+        return "Keycloak SAML JBoss Subsystem XML";
     }
 
     @Override
     public String getHelpText() {
-        return "Keycloak SAML adapter Wildfly/JBoss subsystem xml.  Put this <subsystem xmlns=\"urn:jboss:domain:keycloak-saml:1.2\"> element of your standalone.xml file.";
+        return "Keycloak SAML adapter JBoss subsystem xml you must edit. Put this into <subsystem xmlns=\"urn:jboss:domain:keycloak-saml:1.2\"> element of your standalone.xml file.";
     }
 
     @Override

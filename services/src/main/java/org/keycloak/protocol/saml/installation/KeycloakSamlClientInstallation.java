@@ -49,7 +49,7 @@ public class KeycloakSamlClientInstallation implements ClientInstallationProvide
     }
 
     public static void baseXml(KeycloakSession session, RealmModel realm, ClientModel client, URI baseUri, SamlClient samlClient, StringBuilder buffer) {
-        buffer.append("    <SP entityID=\"").append(client.getClientId()).append("\"\n");
+        buffer.append("    <SP entityID=\"").append(client.getBaseUrl() == null ? "SPECIFY YOUR entityID!" : client.getBaseUrl()).append("\"\n");
         buffer.append("        sslPolicy=\"").append(realm.getSslRequired().name()).append("\"\n");
         buffer.append("        logoutPage=\"SPECIFY YOUR LOGOUT PAGE!\">\n");
         if (samlClient.requiresClientSignature() || samlClient.requiresEncryption()) {
@@ -128,7 +128,7 @@ public class KeycloakSamlClientInstallation implements ClientInstallationProvide
 
     @Override
     public String getHelpText() {
-        return "Keycloak SAML adapter configuration file.  Put this in WEB-INF directory of your WAR.";
+        return "Keycloak SAML adapter configuration file you must edit. Put this in WEB-INF directory of your WAR.";
     }
 
     @Override
