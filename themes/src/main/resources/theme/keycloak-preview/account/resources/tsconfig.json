@@ -11,5 +11,8 @@
     "strictNullChecks": true,
     "jsx": "react",
     "suppressImplicitAnyIndexErrors": true
-  }
+  },
+  "files": [
+    "../../../../../../../../adapters/oidc/js/src/main/resources/keycloak.d.ts"
+  ]
 }
