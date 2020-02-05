@@ -192,7 +192,7 @@ public class ServiceAccountTest extends AbstractKeycloakTest {
 
         OAuthClient.AccessTokenResponse response = oauth.doClientCredentialsGrantAccessTokenRequest("secret2");
 
-        assertEquals(400, response.getStatusCode());
+        assertEquals(401, response.getStatusCode());
 
         assertEquals("unauthorized_client", response.getError());
 
