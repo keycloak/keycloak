@@ -316,7 +316,7 @@
       <licenses>
         <license>
           <name>Eclipse Public License 1.0</name>
-          <url>http://git.eclipse.org/c/sisu/org.eclipse.sisu.inject.git/tree/LICENSE.txt?h=releases/0.3.2</url>
+          <url>http://git.eclipse.org/c/sisu/org.eclipse.sisu.inject.git/plain/LICENSE.txt?h=releases/0.3.2</url>
         </license>
       </licenses>
     </dependency>
@@ -327,7 +327,7 @@
       <licenses>
         <license>
           <name>Eclipse Public License 1.0</name>
-          <url>http://git.eclipse.org/c/sisu/org.eclipse.sisu.inject.git/tree/LICENSE.txt?h=releases/0.3.2</url>
+          <url>http://git.eclipse.org/c/sisu/org.eclipse.sisu.inject.git/plain/LICENSE.txt?h=releases/0.3.2</url>
         </license>
       </licenses>
     </dependency>
@@ -338,7 +338,7 @@
       <licenses>
         <license>
           <name>Eclipse Public License 1.0</name>
-          <url>https://www.eclipse.org/legal/epl-v10.html</url> <!-- Archived project: https://wiki.eclipse.org/Development_Resources/HOWTO/Archived_Phase -->
+          <url>https://www.eclipse.org/org/documents/epl-1.0/EPL-1.0.txt</url> <!-- Archived project: https://wiki.eclipse.org/Development_Resources/HOWTO/Archived_Phase -->
         </license>
       </licenses>
     </dependency>
@@ -349,7 +349,7 @@
       <licenses>
         <license>
           <name>Eclipse Public License 1.0</name>
-          <url>https://www.eclipse.org/legal/epl-v10.html</url> <!-- Archived project: https://wiki.eclipse.org/Development_Resources/HOWTO/Archived_Phase -->
+          <url>https://www.eclipse.org/org/documents/epl-1.0/EPL-1.0.txt</url> <!-- Archived project: https://wiki.eclipse.org/Development_Resources/HOWTO/Archived_Phase -->
         </license>
       </licenses>
     </dependency>
@@ -360,7 +360,7 @@
       <licenses>
         <license>
           <name>Eclipse Public License 1.0</name>
-          <url>https://www.eclipse.org/legal/epl-v10.html</url> <!-- Archived project: https://wiki.eclipse.org/Development_Resources/HOWTO/Archived_Phase -->
+          <url>https://www.eclipse.org/org/documents/epl-1.0/EPL-1.0.txt</url> <!-- Archived project: https://wiki.eclipse.org/Development_Resources/HOWTO/Archived_Phase -->
         </license>
       </licenses>
     </dependency>
@@ -371,7 +371,7 @@
       <licenses>
         <license>
           <name>Eclipse Public License 1.0</name>
-          <url>https://www.eclipse.org/legal/epl-v10.html</url> <!-- Archived project: https://wiki.eclipse.org/Development_Resources/HOWTO/Archived_Phase -->
+          <url>https://www.eclipse.org/org/documents/epl-1.0/EPL-1.0.txt</url> <!-- Archived project: https://wiki.eclipse.org/Development_Resources/HOWTO/Archived_Phase -->
         </license>
       </licenses>
     </dependency>
@@ -382,7 +382,7 @@
       <licenses>
         <license>
           <name>Eclipse Public License 1.0</name>
-          <url>https://www.eclipse.org/legal/epl-v10.html</url> <!-- Archived project: https://wiki.eclipse.org/Development_Resources/HOWTO/Archived_Phase -->
+          <url>https://www.eclipse.org/org/documents/epl-1.0/EPL-1.0.txt</url> <!-- Archived project: https://wiki.eclipse.org/Development_Resources/HOWTO/Archived_Phase -->
         </license>
       </licenses>
     </dependency>
@@ -393,7 +393,7 @@
       <licenses>
         <license>
           <name>Eclipse Public License 1.0</name>
-          <url>https://www.eclipse.org/legal/epl-v10.html</url> <!-- Archived project: https://wiki.eclipse.org/Development_Resources/HOWTO/Archived_Phase -->
+          <url>https://www.eclipse.org/org/documents/epl-1.0/EPL-1.0.txt</url> <!-- Archived project: https://wiki.eclipse.org/Development_Resources/HOWTO/Archived_Phase -->
         </license>
       </licenses>
     </dependency>
@@ -404,7 +404,7 @@
       <licenses>
         <license>
           <name>Eclipse Public License 1.0</name>
-          <url>https://www.eclipse.org/legal/epl-v10.html</url> <!-- Archived project: https://wiki.eclipse.org/Development_Resources/HOWTO/Archived_Phase -->
+          <url>https://www.eclipse.org/org/documents/epl-1.0/EPL-1.0.txt</url> <!-- Archived project: https://wiki.eclipse.org/Development_Resources/HOWTO/Archived_Phase -->
         </license>
       </licenses>
     </dependency>
@@ -415,7 +415,7 @@
       <licenses>
         <license>
           <name>Eclipse Public License 1.0</name>
-          <url>https://www.eclipse.org/legal/epl-v10.html</url> <!-- Archived project: https://wiki.eclipse.org/Development_Resources/HOWTO/Archived_Phase -->
+          <url>https://www.eclipse.org/org/documents/epl-1.0/EPL-1.0.txt</url> <!-- Archived project: https://wiki.eclipse.org/Development_Resources/HOWTO/Archived_Phase -->
         </license>
       </licenses>
     </dependency>
@@ -810,7 +810,7 @@
       <licenses>
         <license>
           <name>MIT License</name>
-          <url>https://github.com/swansontec/rfc4648.js/blob/master/package.json</url>
+          <url>https://raw.githubusercontent.com/swansontec/rfc4648.js/master/package.json</url>
         </license>
       </licenses>
     </other>
@@ -840,7 +840,7 @@
       <licenses>
         <license>
           <name>MIT License</name>
-          <url>https://github.com/blakeembrey/change-case/blob/v3.0.0/LICENSE</url>
+          <url>https://raw.githubusercontent.com/blakeembrey/change-case/v3.0.0/LICENSE</url>
         </license>
       </licenses>
     </other>
@@ -889,6 +889,18 @@
         <license>
           <name>MIT License</name>
           <url>https://raw.githubusercontent.com/davidtheclark/focus-trap/3.0.0/LICENSE</url>
+        </license>
+      </licenses>
+    </other>
+    <other>
+      <description>Moment.js</description>
+      <locations>
+        <file>themes/keycloak-preview/account/resources/node_modules/moment/min/moment-with-locales.min.js</file>
+      </locations>
+      <licenses>
+        <license>
+          <name>MIT License</name>
+          <url>https://raw.githubusercontent.com/moment/moment/2.22.2/LICENSE</url>
         </license>
       </licenses>
     </other>
@@ -955,17 +967,50 @@
       </licenses>
     </other>
     <other>
-      <description>Patternfly 4 React</description>
+      <description>Patternfly 4 React Core</description>
       <locations>
         <directory>themes/keycloak-preview/account/resources/node_modules/@patternfly/react-core</directory>
+      </locations>
+      <licenses>
+        <license>
+          <name>MIT License</name>
+          <url>https://raw.githubusercontent.com/patternfly/patternfly-react/%40patternfly/react-core%403.35.0/LICENSE</url>
+        </license>
+      </licenses>
+    </other>
+    <other>
+      <description>Patternfly 4 React Icons</description>
+      <locations>
         <directory>themes/keycloak-preview/account/resources/node_modules/@patternfly/react-icons</directory>
+      </locations>
+      <licenses>
+        <license>
+          <name>MIT License</name>
+          <url>https://raw.githubusercontent.com/patternfly/patternfly-react/%40patternfly/react-icons%403.11.0/LICENSE</url>
+        </license>
+      </licenses>
+    </other>
+    <other>
+      <description>Patternfly 4 React Styles</description>
+      <locations>
         <directory>themes/keycloak-preview/account/resources/node_modules/@patternfly/react-styles</directory>
+      </locations>
+      <licenses>
+        <license>
+          <name>MIT License</name>
+          <url>https://raw.githubusercontent.com/patternfly/patternfly-react/%40patternfly/react-styles%403.5.13/LICENSE</url>
+        </license>
+      </licenses>
+    </other>
+    <other>
+      <description>Patternfly 4 React Tokens</description>
+      <locations>
         <directory>themes/keycloak-preview/account/resources/node_modules/@patternfly/react-tokens</directory>
       </locations>
       <licenses>
         <license>
           <name>MIT License</name>
-          <url>https://github.com/patternfly/patternfly-react/blob/master/LICENSE</url>
+          <url>https://raw.githubusercontent.com/patternfly/patternfly-react/%40patternfly/react-tokens%402.6.16/LICENSE</url>
         </license>
       </licenses>
     </other>
