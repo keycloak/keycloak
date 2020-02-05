@@ -1,7 +1,8 @@
 package org.keycloak.documentation.test.utils;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.keycloak.documentation.test.Config;
 
 import java.io.File;
@@ -15,7 +16,7 @@ import java.util.regex.Pattern;
 
 public class LinkUtils {
 
-    private static final Logger logger = Logger.getLogger(LinkUtils.class);
+    private static final Logger logger = LogManager.getLogger(LinkUtils.class);
 
     private HttpUtils http = new HttpUtils();
     private Config config;

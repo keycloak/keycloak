@@ -2,7 +2,6 @@ package org.keycloak.documentation.test;
 
 import java.io.PrintStream;
 import java.io.PrintWriter;
-import java.util.List;
 import java.util.Set;
 
 public class Failures extends AssertionError {

@@ -1,7 +1,8 @@
 package org.keycloak.documentation.test.utils;
 
 import org.apache.commons.io.IOUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.StringWriter;
 import java.net.HttpURLConnection;
@@ -10,7 +11,7 @@ import java.net.URLDecoder;
 
 public class HttpUtils {
 
-    private static final Logger logger = Logger.getLogger(HttpUtils.class);
+    private static final Logger logger = LogManager.getLogger(HttpUtils.class);
 
     public boolean isValid(String url) {
         Response response = load(url, false, false);

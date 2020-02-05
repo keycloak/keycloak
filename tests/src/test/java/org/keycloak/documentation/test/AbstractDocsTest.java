@@ -1,7 +1,11 @@
 package org.keycloak.documentation.test;
 
-import org.apache.log4j.Logger;
-import org.junit.*;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.junit.AfterClass;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import org.keycloak.documentation.test.utils.DocUtils;
 import org.keycloak.documentation.test.utils.LinkUtils;
 
@@ -10,14 +14,13 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 public abstract class AbstractDocsTest {
 
-    private static final Logger log = Logger.getLogger(AbstractDocsTest.class);
+    private static final Logger log = LogManager.getLogger(AbstractDocsTest.class);
 
     protected static final Config config = new Config();
 
