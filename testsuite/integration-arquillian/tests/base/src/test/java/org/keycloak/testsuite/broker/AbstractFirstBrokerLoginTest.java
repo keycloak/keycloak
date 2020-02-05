@@ -112,6 +112,39 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         assertNumFederatedIdentities(existingUser, 1);
     }
 
+    /**
+     * KEYCLOAK-12870
+     */
+    @Test
+    public void testLinkAccountByReauthenticationWithLoginAndPassword() {
+        updateExecutions(AbstractBrokerTest::disableUpdateProfileOnFirstLogin);
+        updateExecutions(AbstractBrokerTest::disableExistingUser);
+        String existingUser = createUser("consumer");
+
+        driver.navigate().to(getAccountUrl(bc.consumerRealmName()));
+        logInWithBroker(bc);
+
+        assertEquals("Authenticate to link your account with " + bc.getIDPAlias(), loginPage.getInfoMessage());
+
+        try {
+            this.loginPage.findSocialButton(bc.getIDPAlias());
+            Assert.fail("Not expected to see social button with " + bc.getIDPAlias());
+        } catch (NoSuchElementException expected) {
+        }
+
+        try {
+            this.loginPage.clickRegister();
+            Assert.fail("Not expected to see register link");
+        } catch (NoSuchElementException expected) {
+        }
+
+        loginPage.login("consumer", "password");
+        waitForPage(driver, "keycloak account management", true);
+        accountUpdateProfilePage.assertCurrent();
+
+        assertNumFederatedIdentities(existingUser, 1);
+    }
+
 
     /**
      * Refers to in old test suite: org.keycloak.testsuite.broker.AbstractFirstBrokerLoginTest#testLinkAccountByReauthenticationWithPassword_browserButtons
