@@ -51,7 +51,7 @@ redirection-url: http://127.0.0.1:3000
 encryption-key: <ENCRYPTION_KEY>
 # the upstream endpoint which we should proxy request
 upstream-url: http://127.0.0.1:80
-# additional scopes to add to add to the default (openid+email+profile)
+# additional scopes to add to the default (openid+email+profile)
 scopes:
 - vpn-user
 # a collection of resource i.e. urls that you wish to protect
