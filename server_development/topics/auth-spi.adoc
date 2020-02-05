@@ -1,7 +1,7 @@
 [[_auth_spi]]
 == Authentication SPI
 
-{project_name} comes out of the box with a bunch of different authentication mechanisms: kerberos, password, and otp.
+{project_name} comes out of the box with a bunch of different authentication mechanisms: kerberos, password, otp and others.
 These mechanisms may not meet all of your requirements and you may want to plug in your own custom ones.
 {project_name} provides an authentication SPI that you can use to write new plugins.
 The admin console supports applying, ordering, and configuring these new mechanisms.
@@ -821,7 +821,8 @@ a different credential or execution.
 Adding an Authenticator to a flow must be done in the admin console.
 If you go to the Authentication menu item and go to the Flow tab, you will be able to view the currently defined flows.
 You cannot modify built in flows, so, to add the Authenticator we've created you have to copy an existing flow or create your own.
-I'm hoping the UI is intuitive enough so that you can figure out for yourself how to create a flow and add the Authenticator.
+I'm hoping the UI is intuitive enough so that you can figure out for yourself how to create a flow and add the Authenticator. For
+more details, see the `Authentication Flows` chapter in link:{adminguide_link}[{adminguide_name}] .
 
 After you've created your flow, you have to bind it to the login action you want to bind it to.
 If you go to the Authentication menu and go  to the Bindings tab you will see options to bind a flow to the browser, registration, or direct grant flow.

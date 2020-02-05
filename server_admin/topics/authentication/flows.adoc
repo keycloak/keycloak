@@ -24,19 +24,26 @@ flow is and does.
 The `Auth Type` column is the name of authentication or action that will be executed.  If an authentication is indented
 this means it is in a sub-flow and may or may not be executed depending on the behavior of its parent. The `Requirement`
 column is a set of radio buttons which define whether or not the action will execute. Let's describe what each radio
-button means in this context:
+button means in this context.
+
+[[_execution-requirements]]
+===== Execution requirements
 
 Required::
-  This authentication execution must execute successfully. If the user doesn't have that type of authentication mechanism
-  configured and there is a required action associated with that authentication type, then a required action will be attached
-  to that account.  For example, if you switch the `Browser - Conditional OTP` sub-flow to `Required`, users that don't have an OTP generator configured
-  will be asked to do so.
+  For a flow to be evaluated as successful, all required elements in the flow must evaluate as successful. This means that all _Required_ elements in the flow
+  must be sequentially executed, from top to bottom, unless one the the elements causes the flow to fail. However, this is only true for the current flow.
+  Any _Required_ element within a sub-flow is only processed if that sub-flow is entered.
 Alternative::
-  This means that at least one alternative authentication type must execute successfully at that level of the flow.
+  When a flow contains only _Alternative_ elements, only a single element must evaluate as successful for the flow to evaluate as successful.
+  Because the _Required_ flow elements within a flow are sufficient to mark a flow as successful, any _Alternative_ flow element within a flow
+  that contains _Required_ flow elements will never be executed. In this case, they are functionally _Disabled_.
 Disabled::
-  If disabled, the authentication type is not executed.
+  Any _Disabled_ element is not evaluated and does not count to mark a flow as successful.
 Conditional::
-  This requirement type can only be set on sub-flows, indicating that it will only be executed if its condition evaluates to true.
+  This requirement type can only be set on sub-flows. A _Conditional_ sub-flow can contain a "Condition" execution. These "Condition" executions must evaluate as
+  logical statements. If all "Condition" executions evaluate as _true_ then the _Conditional_ sub-flow acts as _Required_. If not, the _Conditional_ sub-flow
+  acts as _Disabled_. If no "Condition" execution is set, the _Conditional_ sub-flow acts as _Disabled_. If a flow contains "Condition" executions and is not set to
+  _Conditional_, the "Condition" executions are not evaluated, and can be considered functionally _Disabled_.
 
 This is better described in an example.  Let's walk through the `browser` authentication flow.
 
@@ -64,6 +71,7 @@ considerations when designing your own flow. A badly created flow could either l
 like, or simply result in an error.
 
 To create a flow, you can either:
+
 . Copy and then modify an existing flow. To do this select an existing flow (for example the `Browser` flow), and press the `Copy` button.
   This will then ask you to set a name for the new flow, before creating it.
 . Create a new flow from scratch. To do this press the `New` button. Since this is the more general case, we will use this for our example.
@@ -108,23 +116,8 @@ a single form for the user, like what is done for the built-in `Registration` fl
 depending on how the executions they contain evaluate (and this includes the evaluation of their contained sub-flows). And the logic of this evaluation
 depends on the Requirement of each execution and sub-flow.
 
-Fully understanding this requires a more complete explanation of how requirements work when evaluating a flow, and this also applies to sub-flows:
-
-Required::
-  For a flow to be evaluated as successful, all required elements in the flow must evaluate as successful. This means that all _Required_ elements in the flow
-  must be sequentially executed, from top to bottom, unless one the the elements causes the flow to fail. However, this is only true for the current flow.
-  Any _Required_ element within a sub-flow is only processed if that sub-flow is entered.
-Alternative::
-  When a flow contains only _Alternative_ elements, only a single element must evaluate as successful for the flow to evaluate as successful.
-  Because the _Required_ flow elements within a flow are sufficient to mark a flow as successful, any _Alternative_ flow element within a flow
-  that contains _Required_ flow elements will never be executed. In this case, they are functionally _Disabled_.
-Disabled::
-  Any _Disabled_ element is not evaluated and does not count to mark a flow as successful.
-Conditional::
-  This requirement type can only be set on sub-flows. A _Conditional_ sub-flow can contain a "Condition" execution. These "Condition" executions must evaluate as
-  logical statements. If all "Condition" executions evaluate as _true_ then the _Conditional_ sub-flow acts as _Required_. If not, the _Conditional_ sub-flow
-  acts as _Disabled_. If no "Condition" execution is set, the _Conditional_ sub-flow acts as _Disabled_. If a flow contains "Condition" executions and is not set to
-  _Conditional_, the "Condition" executions are not evaluated, and can be considered functionally _Disabled_.
+Fully understanding this requires a more complete explanation of how requirements work when evaluating a flow, and this also applies to sub-flows.
+Take a look at the <<_execution-requirements, execution requirements section>> above for more details.
 
 Note that after adding an execution, you should check that the Requirement is set to the correct value. Even if there is only a single possible Requirement, it
 can happen that it is not set.
@@ -163,7 +156,7 @@ so the flow should make sure that an attacker cannot just have to guess a passwo
 * Using the `Actions` menu on the right-hand side of the "Forms" subflow, select "Add flow". Choose an representative Alias, e.g. "Authentication".
   After pressing "Save", set its Requirement to _Required_.
 * Using the `Actions` menu on the right-hand side of the "Authentication" subflow, select "Add execution". Using the drop-down select
-  "Webauthn Authenticator". After pressing "Save", set its Requirement to _Alternative_.
+  "Webauthn Passwordless Authenticator". After pressing "Save", set its Requirement to _Alternative_.
 * Using the `Actions` menu on the right-hand side of the "Authentication" subflow, select "Add flow". Choose an representative Alias, e.g. "Password with OTP".
   After pressing "Save", set its Requirement to _Alternative_.
 * Using the `Actions` menu on the right-hand side of the "Password with OTP" subflow, select "Add execution". Using the drop-down select
@@ -179,14 +172,16 @@ image:images/Passwordless-browser-login.png[]
 
 After entering the username, the way this flow works is the following:
 
-* If the user has any WebAuthn credentials recorded, he will be able to use any of them to log in directly. This is the password-less login.
-  The user also has a drop-down allowing him to select "Password with OTP". He can do this because the "WebAuthn" execution and the "Password with OTP"
+* If the user has any WebAuthn passwordless credentials recorded, he will be able to use any of them to log in directly. This is the password-less login.
+  The user also has a way allowing him to select "Password with OTP". He can do this because the "WebAuthn Passwordless" execution and the "Password with OTP"
   flow are set to _Alternative_. Were they set to _Required_ the user would have to enter WebAuthn, password, and OTP.
-* If the user selects the "Password with OTP" from the drop-down, or if the user doesn't have any WebAuthn credentials, he will have to first enter his
+* If the user selects `Try another way` link on the screen with "WebAuthn passwordless" authentication, he can choose between "Password" and
+  "Security Key" (WebAuthn passwordless). When selecting password, the user will need to continue and login with his OTP as well.
+  If the user doesn't have any WebAuthn credentials, he will have to first enter his
   password, and then his OTP. If the user has no OTP credential, he will be asked to record one.
 
-It is important to note that since the WebAuthn execution is set to _Alternative_ instead of _Required_, this flow will never ask the user to register a WebAuthn credential. For a user
-to have a Webauthn credential, he must have a required action added to him by an administrator. This is done first by making sure that that the `Webauthn Register`
+It is important to note that since the WebAuthn Passwordless execution is set to _Alternative_ instead of _Required_, this flow will never ask the user to register a WebAuthn credential. For a user
+to have a Webauthn credential, he must have a required action added to him by an administrator. This is done first by making sure that that the `Webauthn Register Passwordless`
 required action is enabled in the realm (see the <<_webauthn,WebAuthn>> documentation), and then by setting the required action by using the `Credential Reset` part of a
 user's <<_user-credentials,Credentials>> management menu.
 
