@@ -64,17 +64,20 @@ import com.webauthn4j.validator.attestation.statement.packed.PackedAttestationSt
 import com.webauthn4j.validator.attestation.statement.tpm.TPMAttestationStatementValidator;
 import com.webauthn4j.validator.attestation.statement.u2f.FIDOU2FAttestationStatementValidator;
 import com.webauthn4j.validator.attestation.trustworthiness.certpath.CertPathTrustworthinessValidator;
-import com.webauthn4j.validator.attestation.trustworthiness.certpath.NullCertPathTrustworthinessValidator;
 import com.webauthn4j.validator.attestation.trustworthiness.ecdaa.DefaultECDAATrustworthinessValidator;
 import com.webauthn4j.validator.attestation.trustworthiness.self.DefaultSelfAttestationTrustworthinessValidator;
 import org.keycloak.models.credential.WebAuthnCredentialModel;
+
+import static org.keycloak.services.messages.Messages.*;
 
 /**
  * Required action for register WebAuthn 2-factor credential for the user
  */
 public class WebAuthnRegister implements RequiredActionProvider, CredentialRegistrator {
 
+    private static final String WEB_AUTHN_TITLE_ATTR = "webAuthnTitle";
     private static final Logger logger = Logger.getLogger(WebAuthnRegister.class);
+
     private KeycloakSession session;
     private CertPathTrustworthinessValidator certPathtrustValidator;
 
@@ -167,7 +170,7 @@ public class WebAuthnRegister implements RequiredActionProvider, CredentialRegis
         // receive error from navigator.credentials.create()
         String errorMsgFromWebAuthnApi = params.getFirst(WebAuthnConstants.ERROR);
         if (errorMsgFromWebAuthnApi != null && !errorMsgFromWebAuthnApi.isEmpty()) {
-            setErrorResponse(context, ERR_WEBAUTHN_API_CREATE, errorMsgFromWebAuthnApi);
+            setErrorResponse(context, WEBAUTHN_ERROR_REGISTER_VERIFICATION, errorMsgFromWebAuthnApi);
             return;
         }
 
@@ -218,11 +221,11 @@ public class WebAuthnRegister implements RequiredActionProvider, CredentialRegis
             context.success();
         } catch (WebAuthnException wae) {
             if (logger.isDebugEnabled()) logger.debug(wae.getMessage(), wae);
-            setErrorResponse(context, ERR_WEBAUTHN_API_CREATE, wae.getMessage());
+            setErrorResponse(context, WEBAUTHN_ERROR_REGISTRATION, wae.getMessage());
             return;
         } catch (Exception e) {
             if (logger.isDebugEnabled()) logger.debug(e.getMessage(), e);
-            setErrorResponse(context, ERR_WEBAUTHN_API_CREATE, e.getMessage());
+            setErrorResponse(context, WEBAUTHN_ERROR_REGISTRATION, e.getMessage());
             return;
         }
     }
@@ -326,25 +329,12 @@ public class WebAuthnRegister implements RequiredActionProvider, CredentialRegis
 
     private static final String ERR_LABEL = "web_authn_registration_error";
     private static final String ERR_DETAIL_LABEL = "web_authn_registration_error_detail";
-    private static final String ERR_WEBAUTHN_API_CREATE = "Failed to authenticate by the WebAuthn Authenticator";
-    private static final String ERR_WEBAUTHN_VERIFICATION_FAIL = "WetAuthn Registration result is invalid.";
-    private static final String ERR_REGISTRATION_FAIL = "Failed to register your WebAuthn Authenticator.";
+    private static final String REGISTRATION_ATTR = "webAuthnRegistration";
 
     private void setErrorResponse(RequiredActionContext context, final String errorCase, final String errorMessage) {
         Response errorResponse = null;
         switch (errorCase) {
-        case ERR_WEBAUTHN_API_CREATE:
-            logger.warnv("error returned from navigator.credentials.create(). {0}", errorMessage);
-            context.getEvent()
-                .detail(ERR_LABEL, errorCase)
-                .detail(ERR_DETAIL_LABEL, errorMessage)
-                .error(Errors.NOT_ALLOWED);
-            errorResponse = context.form()
-                .setError(errorCase)
-                .createErrorPage(Response.Status.BAD_REQUEST);
-            context.challenge(errorResponse);
-            break;
-        case ERR_WEBAUTHN_VERIFICATION_FAIL:
+        case WEBAUTHN_ERROR_REGISTER_VERIFICATION:
             logger.warnv("WebAuthn API .create() response validation failure. {0}", errorMessage);
             context.getEvent()
                 .detail(ERR_LABEL, errorCase)
@@ -352,10 +342,12 @@ public class WebAuthnRegister implements RequiredActionProvider, CredentialRegis
                 .error(Errors.INVALID_USER_CREDENTIALS);
             errorResponse = context.form()
                 .setError(errorCase)
-                .createErrorPage(Response.Status.BAD_REQUEST);
+                .setAttribute(WEB_AUTHN_TITLE_ATTR, WEBAUTHN_REGISTER_TITLE)
+                .setAttribute(REGISTRATION_ATTR,true)
+                .createWebAuthnErrorPage();
             context.challenge(errorResponse);
             break;
-        case ERR_REGISTRATION_FAIL:
+        case WEBAUTHN_ERROR_REGISTRATION:
             logger.warn(errorCase);
             context.getEvent()
                 .detail(ERR_LABEL, errorCase)
@@ -363,7 +355,9 @@ public class WebAuthnRegister implements RequiredActionProvider, CredentialRegis
                 .error(Errors.INVALID_REGISTRATION);
             errorResponse = context.form()
                 .setError(errorCase)
-                .createErrorPage(Response.Status.BAD_REQUEST);
+                .setAttribute(WEB_AUTHN_TITLE_ATTR, WEBAUTHN_REGISTER_TITLE)
+                .setAttribute(REGISTRATION_ATTR,true)
+                .createWebAuthnErrorPage();
             context.challenge(errorResponse);
             break;
         default:

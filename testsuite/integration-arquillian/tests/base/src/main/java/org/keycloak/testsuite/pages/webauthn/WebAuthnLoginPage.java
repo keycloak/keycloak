@@ -18,19 +18,11 @@
 package org.keycloak.testsuite.pages.webauthn;
 
 import org.keycloak.testsuite.pages.LanguageComboboxAwarePage;
-import org.openqa.selenium.By;
 
 /**
  * Page shown during WebAuthn login. Page is useful with Chrome testing API
  */
 public class WebAuthnLoginPage extends LanguageComboboxAwarePage {
-
-    // After click the button, the "navigator.credentials.get" will be called on the browser side, which should automatically
-    // login user with the chrome testing API
-    public void confirmWebAuthnLogin() {
-        driver.findElement(By.cssSelector("input[type=\"button\"]")).click();
-    }
-
 
     public boolean isCurrent() {
         return driver.getPageSource().contains("navigator.credentials.get");

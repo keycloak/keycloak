@@ -168,9 +168,7 @@ public class WebAuthnRegisterAndLoginTest extends AbstractTestRealmKeycloakTest 
             loginPage.open();
             loginPage.login(username, password);
 
-            // Confirm login on the WebAuthn login page
-            webAuthnLoginPage.assertCurrent();
-            webAuthnLoginPage.confirmWebAuthnLogin();
+            // User is authenticated by Chrome WebAuthN testing API
 
             appPage.assertCurrent();
             assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
@@ -249,26 +247,23 @@ public class WebAuthnRegisterAndLoginTest extends AbstractTestRealmKeycloakTest 
 
             CredentialRepresentation webAuthnCredential1 = rep.stream()
                     .filter(credential -> WebAuthnCredentialModel.TYPE_TWOFACTOR.equals(credential.getType()))
-                    .findFirst().get();
+                    .findFirst().orElse(null);
+
+            Assert.assertNotNull(webAuthnCredential1);
             Assert.assertEquals("label1", webAuthnCredential1.getUserLabel());
 
             CredentialRepresentation webAuthnCredential2 = rep.stream()
                     .filter(credential -> WebAuthnCredentialModel.TYPE_PASSWORDLESS.equals(credential.getType()))
-                    .findFirst().get();
+                    .findFirst().orElse(null);
+
+            Assert.assertNotNull(webAuthnCredential2);
             Assert.assertEquals("label2", webAuthnCredential2.getUserLabel());
 
             // Assert user needs to authenticate first with "webauthn" during login
             loginPage.open();
             loginPage.login("test-user@localhost", "password");
 
-            webAuthnLoginPage.assertCurrent();
-            Assert.assertTrue(driver.getPageSource().contains(regPubKeyCredentialId1));
-            webAuthnLoginPage.confirmWebAuthnLogin();
-
-            // Assert user needs to authenticate also with "webauthn-passwordless"
-            webAuthnLoginPage.assertCurrent();
-            Assert.assertTrue(driver.getPageSource().contains(regPubKeyCredentialId2));
-            webAuthnLoginPage.confirmWebAuthnLogin();
+            // User is authenticated by Chrome WebAuthN testing API
 
             // Assert user logged now
             appPage.assertCurrent();

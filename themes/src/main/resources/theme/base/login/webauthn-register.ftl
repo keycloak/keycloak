@@ -1,10 +1,12 @@
     <#import "template.ftl" as layout>
     <@layout.registrationLayout; section>
     <#if section = "title">
-     title
+        title
     <#elseif section = "header">
-    ${msg("loginTitleHtml", realm.name)}
+        <span class="${properties.kcWebAuthnKeyIcon}"></span>
+        ${kcSanitize(msg("webauthn-registration-title"))?no_esc}
     <#elseif section = "form">
+
     <form id="register" class="${properties.kcFormClass!}" action="${url.loginAction}" method="post">
         <div class="${properties.kcFormGroupClass!}">
             <input type="hidden" id="clientDataJSON" name="clientDataJSON"/>
