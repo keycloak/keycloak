@@ -511,6 +511,10 @@ a.zocial  {
     width: 100%;
 }
 
+.login-pf-page .card-pf{
+  margin-bottom: 10px;
+}
+
 #kc-form-login div.form-group:last-of-type,
 #kc-register-form div.form-group:last-of-type,
 #kc-update-profile-form div.form-group:last-of-type {

@@ -75,4 +75,5 @@ public interface Details {
     String X509_CERTIFICATE_ISSUER_DISTINGUISHED_NAME = "x509_cert_issuer_distinguished_name";
 
     String CREDENTIAL_TYPE = "credential_type";
+    String SELECTED_CREDENTIAL_ID = "selected_credential_id";
 }
