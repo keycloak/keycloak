@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <!--
-  ~ Copyright 2019 Red Hat, Inc. and/or its affiliates
+  ~ Copyright 2020 Red Hat, Inc. and/or its affiliates
   ~ and other contributors as indicated by the @author tags.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,28 +14,41 @@
   ~ distributed under the License is distributed on an "AS IS" BASIS,
   ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
   ~ See the License for the specific language governing permissions and
-  ~ limitations under the License.
+  ~ limitations under the License.autodetect
   -->
 
-<xs:schema version="1.0"
-           xmlns:xs="http://www.w3.org/2001/XMLSchema"
-           xmlns="urn:keycloak:saml:adapter"
-           targetNamespace="urn:keycloak:saml:adapter"
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           targetNamespace="urn:jboss:domain:keycloak-saml:1.3"
+           xmlns="urn:jboss:domain:keycloak-saml:1.3"
            elementFormDefault="qualified"
-           attributeFormDefault="unqualified">
+           attributeFormDefault="unqualified"
+           version="1.0">
 
-    <xs:element name="keycloak-saml-adapter" type="adapter-type"/>
-    <xs:complexType name="adapter-type">
+    <!-- The subsystem root element -->
+    <xs:element name="subsystem" type="subsystem-type"/>
+
+    <xs:complexType name="subsystem-type">
         <xs:annotation>
-            <xs:documentation>Keycloak SAML Adapter configuration file.</xs:documentation>
+            <xs:documentation>
+                <![CDATA[
+                    The Keycloak SAML adapter subsystem, used to register deployments managed by Keycloak SAML adapter
+                ]]>
+            </xs:documentation>
         </xs:annotation>
         <xs:all>
-            <xs:element name="SP" maxOccurs="1" minOccurs="0" type="sp-type">
-                <xs:annotation>
-                    <xs:documentation>Describes SAML service provider configuration.</xs:documentation>
-                </xs:annotation>
-            </xs:element>
+            <xs:element name="secure-deployment" minOccurs="0" type="secure-deployment-type"/>
         </xs:all>
+    </xs:complexType>
+
+    <xs:complexType name="secure-deployment-type">
+        <xs:all>
+            <xs:element name="SP" minOccurs="0" maxOccurs="1" type="sp-type"/>
+        </xs:all>
+        <xs:attribute name="name" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation>The name of the deployment</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
     </xs:complexType>
 
     <xs:complexType name="sp-type">
@@ -56,14 +69,14 @@
             <xs:element name="RoleIdentifiers" type="role-identifiers-type" minOccurs="0" maxOccurs="1">
                 <xs:annotation>
                     <xs:documentation>Defines what SAML attributes within the assertion received from the user should be used as role identifiers within the Java EE Security Context for the user.
-                    By default Role attribute values are converted to Java EE roles. Some IDPs send roles via a member or memberOf attribute assertion. You can define one or more Attribute elements to specify which SAML attributes must be converted into roles.</xs:documentation>
+                        By default Role attribute values are converted to Java EE roles. Some IDPs send roles via a member or memberOf attribute assertion. You can define one or more Attribute elements to specify which SAML attributes must be converted into roles.</xs:documentation>
                 </xs:annotation>
             </xs:element>
             <xs:element name="RoleMappingsProvider" type="role-mappings-provider-type" minOccurs="0" maxOccurs="1">
                 <xs:annotation>
                     <xs:documentation>Specifies the role mappings provider implementation that will be used to map the roles extracted from the SAML assertion into the final set of roles
-                    that will be assigned to the principal. A provider is typically used to map roles retrieved from third party IDPs into roles that exist in the JEE application environment. It can also
-                    assign extra roles to the assertion principal (for example, by connecting to an LDAP server to obtain more roles) or remove some of the roles that were set by the IDP.</xs:documentation>
+                        that will be assigned to the principal. A provider is typically used to map roles retrieved from third party IDPs into roles that exist in the JEE application environment. It can also
+                        assign extra roles to the assertion principal (for example, by connecting to an LDAP server to obtain more roles) or remove some of the roles that were set by the IDP.</xs:documentation>
                 </xs:annotation>
             </xs:element>
             <xs:element name="IDP" type="idp-type" minOccurs="1" maxOccurs="1">
@@ -73,49 +86,49 @@
             </xs:element>
         </xs:all>
         <xs:attribute name="entityID" type="xs:string" use="required">
-                <xs:annotation>
-                    <xs:documentation>This is the identifier for this client. The IDP needs this value to determine who the client is that is communicating with it.</xs:documentation>
-                </xs:annotation>
+            <xs:annotation>
+                <xs:documentation>This is the identifier for this client. The IDP needs this value to determine who the client is that is communicating with it.</xs:documentation>
+            </xs:annotation>
         </xs:attribute>
         <xs:attribute name="sslPolicy" type="ssl-policy-type" use="optional">
-                <xs:annotation>
-                    <xs:documentation>SSL policy the adapter will enforce.</xs:documentation>
-                </xs:annotation>
+            <xs:annotation>
+                <xs:documentation>SSL policy the adapter will enforce.</xs:documentation>
+            </xs:annotation>
         </xs:attribute>
         <xs:attribute name="nameIDPolicyFormat" type="xs:string" use="optional">
-                <xs:annotation>
-                    <xs:documentation>SAML clients can request a specific NameID Subject format. Fill in this value if you want a specific format. It must be a standard SAML format identifier, i.e. urn:oasis:names:tc:SAML:2.0:nameid-format:transient. By default, no special format is requested.</xs:documentation>
-                </xs:annotation>
+            <xs:annotation>
+                <xs:documentation>SAML clients can request a specific NameID Subject format. Fill in this value if you want a specific format. It must be a standard SAML format identifier, i.e. urn:oasis:names:tc:SAML:2.0:nameid-format:transient. By default, no special format is requested.</xs:documentation>
+            </xs:annotation>
         </xs:attribute>
         <xs:attribute name="logoutPage" type="xs:string" use="optional">
-                <xs:annotation>
-                    <xs:documentation>URL of the logout page.</xs:documentation>
-                </xs:annotation>
+            <xs:annotation>
+                <xs:documentation>URL of the logout page.</xs:documentation>
+            </xs:annotation>
         </xs:attribute>
         <xs:attribute name="forceAuthentication" type="xs:boolean" use="optional">
-                <xs:annotation>
-                    <xs:documentation>SAML clients can request that a user is re-authenticated even if they are already logged in at the IDP. Default value is false.</xs:documentation>
-                </xs:annotation>
+            <xs:annotation>
+                <xs:documentation>SAML clients can request that a user is re-authenticated even if they are already logged in at the IDP. Default value is false.</xs:documentation>
+            </xs:annotation>
         </xs:attribute>
         <xs:attribute name="keepDOMAssertion" type="xs:boolean" use="optional">
-                <xs:annotation>
-                    <xs:documentation>Attribute to inject the DOM representation of the assertion into the SamlPrincipal (respecting the original syntax). Default value is false</xs:documentation>
-                </xs:annotation>
+            <xs:annotation>
+                <xs:documentation>Attribute to inject the DOM representation of the assertion into the SamlPrincipal (respecting the original syntax). Default value is false</xs:documentation>
+            </xs:annotation>
         </xs:attribute>
         <xs:attribute name="isPassive" type="xs:boolean" use="optional">
-                <xs:annotation>
-                    <xs:documentation>SAML clients can request that a user is never asked to authenticate even if they are not logged in at the IDP. Set this to true if you want this. Do not use together with forceAuthentication as they are opposite. Default value is false.</xs:documentation>
-                </xs:annotation>
+            <xs:annotation>
+                <xs:documentation>SAML clients can request that a user is never asked to authenticate even if they are not logged in at the IDP. Set this to true if you want this. Do not use together with forceAuthentication as they are opposite. Default value is false.</xs:documentation>
+            </xs:annotation>
         </xs:attribute>
         <xs:attribute name="turnOffChangeSessionIdOnLogin" type="xs:boolean" use="optional">
-                <xs:annotation>
-                    <xs:documentation>The session id is changed by default on a successful login on some platforms to plug a security attack vector. Change this to true to disable this. It is recommended you do not turn it off. Default value is false.</xs:documentation>
-                </xs:annotation>
+            <xs:annotation>
+                <xs:documentation>The session id is changed by default on a successful login on some platforms to plug a security attack vector. Change this to true to disable this. It is recommended you do not turn it off. Default value is false.</xs:documentation>
+            </xs:annotation>
         </xs:attribute>
         <xs:attribute name="autodetectBearerOnly" type="xs:boolean" use="optional" default="false">
-                <xs:annotation>
-                  <xs:documentation>This should be set to true if your application serves both a web application and web services (e.g. SOAP or REST). It allows you to redirect unauthenticated users of the web application to the Keycloak login page, but send an HTTP 401 status code to unauthenticated SOAP or REST clients instead as they would not understand a redirect to the login page. Keycloak auto-detects SOAP or REST clients based on typical headers like X-Requested-With, SOAPAction or Accept. The default value is false.</xs:documentation>
-                </xs:annotation>
+            <xs:annotation>
+                <xs:documentation>This should be set to true if your application serves both a web application and web services (e.g. SOAP or REST). It allows you to redirect unauthenticated users of the web application to the Keycloak login page, but send an HTTP 401 status code to unauthenticated SOAP or REST clients instead as they would not understand a redirect to the login page. Keycloak auto-detects SOAP or REST clients based on typical headers like X-Requested-With, SOAPAction or Accept. The default value is false.</xs:documentation>
+            </xs:annotation>
         </xs:attribute>
     </xs:complexType>
 
@@ -128,6 +141,7 @@
             </xs:element>
         </xs:sequence>
     </xs:complexType>
+
     <xs:complexType name="key-type">
         <xs:all>
             <xs:element name="KeyStore" maxOccurs="1" minOccurs="0" type="key-store-type">
@@ -162,6 +176,7 @@
             </xs:annotation>
         </xs:attribute>
     </xs:complexType>
+
     <xs:complexType name="key-store-type">
         <xs:all>
             <xs:element name="PrivateKey" maxOccurs="1" minOccurs="0" type="private-key-type">
@@ -201,6 +216,7 @@
             </xs:annotation>
         </xs:attribute>
     </xs:complexType>
+
     <xs:complexType name="private-key-type">
         <xs:attribute name="alias" type="xs:string" use="required">
             <xs:annotation>
@@ -213,6 +229,7 @@
             </xs:annotation>
         </xs:attribute>
     </xs:complexType>
+
     <xs:complexType name="certificate-type">
         <xs:attribute name="alias" type="xs:string" use="required">
             <xs:annotation>
@@ -220,6 +237,7 @@
             </xs:annotation>
         </xs:attribute>
     </xs:complexType>
+
     <xs:complexType name="principal-name-mapping-type">
         <xs:attribute name="policy" type="principal-name-mapping-policy-type" use="required">
             <xs:annotation>
@@ -232,6 +250,7 @@
             </xs:annotation>
         </xs:attribute>
     </xs:complexType>
+
     <xs:simpleType name="principal-name-mapping-policy-type">
         <xs:restriction base="xs:string">
             <xs:enumeration value="FROM_NAME_ID">
@@ -246,6 +265,7 @@
             </xs:enumeration>
         </xs:restriction>
     </xs:simpleType>
+
     <xs:simpleType name="ssl-policy-type">
         <xs:restriction base="xs:string">
             <xs:enumeration value="ALL">
@@ -265,6 +285,7 @@
             </xs:enumeration>
         </xs:restriction>
     </xs:simpleType>
+
     <xs:simpleType name="signature-algorithm-type">
         <xs:restriction base="xs:string">
             <xs:enumeration value="RSA_SHA1"/>
@@ -273,12 +294,14 @@
             <xs:enumeration value="DSA_SHA1"/>
         </xs:restriction>
     </xs:simpleType>
+
     <xs:simpleType name="binding-type">
         <xs:restriction base="xs:string">
             <xs:enumeration value="POST"/>
             <xs:enumeration value="REDIRECT"/>
         </xs:restriction>
     </xs:simpleType>
+
     <xs:complexType name="role-identifiers-type">
         <xs:choice minOccurs="0" maxOccurs="unbounded">
             <xs:element name="Attribute" maxOccurs="unbounded" minOccurs="0" type="attribute-type">
@@ -288,6 +311,7 @@
             </xs:element>
         </xs:choice>
     </xs:complexType>
+
     <xs:complexType name="attribute-type">
         <xs:attribute name="name" type="xs:string" use="required">
             <xs:annotation>
@@ -295,6 +319,7 @@
             </xs:annotation>
         </xs:attribute>
     </xs:complexType>
+
     <xs:complexType name="role-mappings-provider-type">
         <xs:sequence>
             <xs:element name="Property" type="property-type" minOccurs="0" maxOccurs="unbounded">
@@ -309,6 +334,7 @@
             </xs:annotation>
         </xs:attribute>
     </xs:complexType>
+
     <xs:complexType name="property-type">
         <xs:attribute name="name" type="xs:string" use="required">
             <xs:annotation>
@@ -321,6 +347,7 @@
             </xs:annotation>
         </xs:attribute>
     </xs:complexType>
+
     <xs:complexType name="idp-type">
         <xs:sequence minOccurs="0" maxOccurs="unbounded">
             <xs:element name="SingleSignOnService" maxOccurs="1" minOccurs="1" type="sign-on-type">
@@ -380,6 +407,7 @@
             </xs:annotation>
         </xs:attribute>
     </xs:complexType>
+
     <xs:complexType name="sign-on-type">
         <xs:attribute name="signRequest" type="xs:boolean" use="optional">
             <xs:annotation>
@@ -515,6 +543,7 @@
             </xs:annotation>
         </xs:attribute>
     </xs:complexType>
+
     <xs:complexType name="allowed-clock-skew-type">
         <xs:annotation>
             <xs:documentation>The value is the allowed clock skew between the IDP and the SP.</xs:documentation>
@@ -537,4 +566,5 @@
             <xs:enumeration value="NANOSECONDS" />
         </xs:restriction>
     </xs:simpleType>
+
 </xs:schema>

@@ -1,5 +1,5 @@
 <!--
-  ~ Copyright 2019 Red Hat, Inc. and/or its affiliates
+  ~ Copyright 2020 Red Hat, Inc. and/or its affiliates
   ~ and other contributors as indicated by the @author tags.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,7 +15,7 @@
   ~ limitations under the License.
   -->
 
-<subsystem xmlns="urn:jboss:domain:keycloak-saml:1.2">
+<subsystem xmlns="urn:jboss:domain:keycloak-saml:1.3">
     <secure-deployment name="my-app.war">
         <SP entityID="http://localhost:8080/sales-post-enc/"
             sslPolicy="EXTERNAL"
@@ -24,7 +24,8 @@
             keepDOMAssertion="false"
             forceAuthentication="false"
             isPassive="true"
-            turnOffChangeSessionIdOnLogin="true">
+            turnOffChangeSessionIdOnLogin="true"
+            autodetectBearerOnly="false">
 
             <Keys>
                 <Key encryption="true" signing="true">
@@ -46,7 +47,11 @@
                 <Property name="properties.file.location" value="test-roles.properties"/>
                 <Property name="another.property" value="another.value"/>
             </RoleMappingsProvider>
-            <IDP entityID="idp" signaturesRequired="true" signatureAlgorithm="test" signatureCanonicalizationMethod="test">
+            <IDP entityID="idp"
+                 signaturesRequired="true"
+                 signatureAlgorithm="DSA_SHA1"
+                 signatureCanonicalizationMethod="test"
+                 metadataUrl="http://localhost:8080/metadata">
                 <SingleSignOnService signRequest="true"
                                      validateResponseSignature="true"
                                      validateAssertionSignature="true"
@@ -70,6 +75,14 @@
                         </KeyStore>
                     </Key>
                 </Keys>
+                <HttpClient allowAnyHostname="false"
+                        clientKeystore="/tmp/keystore.jks"
+                        clientKeystorePassword="testpwd1!@"
+                        connectionPoolSize="20"
+                        disableTrustManager="false"
+                        proxyUrl="http://localhost:9090/proxy"
+                        truststore="/tmp/truststore.jks"
+                        truststorePassword="trustpwd#*"/>
             </IDP>
         </SP>
     </secure-deployment>
