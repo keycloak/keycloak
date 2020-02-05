@@ -57,27 +57,27 @@ public class KeycloakUriInfo implements UriInfo {
         b.scheme(scheme);
         b.host(hostname);
         b.port(port);
-        b.replacePath(contextPath);
+        b.replacePath(contextPath);        
         return b;
     }
 
     @Override
     public URI getRequestUri() {
         if (requestURI == null) {
-            requestURI = delegate.getRequestUri();
+            requestURI = getRequestUriBuilder().build();
         }
         return requestURI;
     }
 
     @Override
     public UriBuilder getRequestUriBuilder() {
-        return UriBuilder.fromUri(getRequestUri());
+        return initUriBuilder(delegate.getRequestUriBuilder()).path(delegate.getPath());
     }
 
     @Override
     public URI getAbsolutePath() {
         if (absolutePath == null) {
-            absolutePath = delegate.getAbsolutePath();
+            absolutePath = getBaseUriBuilder().path(delegate.getPath()).build();
         }
         return absolutePath;
     }
@@ -90,14 +90,14 @@ public class KeycloakUriInfo implements UriInfo {
     @Override
     public URI getBaseUri() {
         if (baseURI == null) {
-            baseURI = initUriBuilder(delegate.getBaseUriBuilder()).build();
+            baseURI = getBaseUriBuilder().build();
         }
         return baseURI;
     }
 
     @Override
     public UriBuilder getBaseUriBuilder() {
-        return UriBuilder.fromUri(getBaseUri());
+        return initUriBuilder(delegate.getBaseUriBuilder());
     }
 
     @Override
