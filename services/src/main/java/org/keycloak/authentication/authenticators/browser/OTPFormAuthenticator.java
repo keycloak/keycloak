@@ -27,6 +27,7 @@ import org.keycloak.authentication.requiredactions.UpdateTotp;
 import org.keycloak.credential.CredentialProvider;
 import org.keycloak.credential.OTPCredentialProvider;
 import org.keycloak.credential.OTPCredentialProviderFactory;
+import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.models.KeycloakSession;
@@ -79,6 +80,8 @@ public class OTPFormAuthenticator extends AbstractUsernameFormAuthenticator impl
                     .getDefaultCredential(context.getSession(), context.getRealm(), context.getUser());
             credentialId = defaultOtpCredential==null ? "" : defaultOtpCredential.getId();
         }
+        context.getEvent().detail(Details.SELECTED_CREDENTIAL_ID, credentialId);
+
         context.form().setAttribute(SELECTED_OTP_CREDENTIAL_ID, credentialId);
 
         UserModel userModel = context.getUser();

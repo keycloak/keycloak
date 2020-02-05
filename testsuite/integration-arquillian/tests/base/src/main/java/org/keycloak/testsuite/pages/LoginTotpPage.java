@@ -20,11 +20,13 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.junit.Assert;
+import org.keycloak.common.util.Retry;
+import org.keycloak.testsuite.util.UIUtils;
+import org.keycloak.testsuite.util.WaitUtils;
 import org.openqa.selenium.By;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
-import org.openqa.selenium.support.ui.Select;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -42,9 +44,6 @@ public class LoginTotpPage extends LanguageComboboxAwarePage {
 
     @FindBy(className = "alert-error")
     private WebElement loginErrorMessage;
-
-    @FindBy(id = "selected-credential-id")
-    private WebElement selectedCredentialCombobox;
 
     public void login(String totp) {
         otpInput.clear();
@@ -75,7 +74,7 @@ public class LoginTotpPage extends LanguageComboboxAwarePage {
     // If false, we don't expect that credentials combobox is available. If true, we expect that it is available on the page
     public void assertOtpCredentialSelectorAvailability(boolean expectedAvailability) {
         try {
-            driver.findElement(By.id("selected-credential-id"));
+            driver.findElement(By.className("card-pf-view-single-select"));
             Assert.assertTrue(expectedAvailability);
         } catch (NoSuchElementException nse) {
             Assert.assertFalse(expectedAvailability);
@@ -84,29 +83,50 @@ public class LoginTotpPage extends LanguageComboboxAwarePage {
 
 
     public List<String> getAvailableOtpCredentials() {
-        return new Select(selectedCredentialCombobox).getOptions()
-                .stream()
-                .map(WebElement::getText)
-                .collect(Collectors.toList());
+        return driver.findElements(getXPathForLookupAllCards())
+                .stream().map(WebElement::getText).collect(Collectors.toList());
     }
 
 
     public String getSelectedOtpCredential() {
-        return new Select(selectedCredentialCombobox).getOptions()
-                .stream()
-                .filter(webElement -> webElement.getAttribute("selected") != null)
-                .findFirst()
-                .orElseThrow(() -> {
+        try {
+            WebElement selected = driver.findElement(getXPathForLookupActiveCard());
+            return selected.getText();
+        } catch (NoSuchElementException nse) {
+            // No selected element found
+            return null;
+        }
+    }
 
-                    return new AssertionError("Selected OTP credential not found");
+    private By getXPathForLookupAllCards() {
+        return By.xpath("//div[contains(@class, 'card-pf-view-single-select')]//h2");
+    }
 
-                })
-                .getText();
+    private By getXPathForLookupActiveCard() {
+        return By.xpath("//div[contains(@class, 'card-pf-view-single-select active')]//h2");
+    }
+
+    private By getXPathForLookupCardWithName(String credentialName) {
+        return By.xpath("//div[contains(@class, 'card-pf-view-single-select')]//h2[normalize-space() = '"+ credentialName +"']");
     }
 
 
     public void selectOtpCredential(String credentialName) {
-        new Select(selectedCredentialCombobox).selectByVisibleText(credentialName);
+        waitForElement(getXPathForLookupActiveCard());
+
+        WebElement webElement = driver.findElement(
+                getXPathForLookupCardWithName(credentialName));
+        UIUtils.clickLink(webElement);
+    }
+
+
+    // Workaround, but works with HtmlUnit (WaitUtils.waitForElement doesn't). Find better solution for the future...
+    private void waitForElement(By by) {
+        Retry.executeWithBackoff((currentCount) -> {
+
+            driver.findElement(by);
+
+        }, 10, 10);
     }
 
 }
