@@ -17,10 +17,8 @@ _modules/_::
 _standalone/_::
   This contains configuration files and working directory when running {project_name} in <<_standalone-mode,standalone mode>>.
 
-ifeval::[{project_community}==true]
 _standalone/deployments/_::
-  If you are writing extensions to keycloak, you can put your extensions here.  See the link:{developerguide_link}[{developerguide_name}] for more information on this.
-endif::[]
+  If you are writing extensions to {project_name}, you can put your extensions here.  See the link:{developerguide_link}[{developerguide_name}] for more information on this.
 
 _themes/_::
   This directory contains all the html, style sheets, JavaScript files, and images used to display any UI screen displayed by the server.
