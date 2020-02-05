@@ -165,6 +165,12 @@ public class WebAuthnRegister implements RequiredActionProvider, CredentialRegis
 
         MultivaluedMap<String, String> params = context.getHttpRequest().getDecodedFormParameters();
 
+        String isSetRetry = params.getFirst(WebAuthnConstants.IS_SET_RETRY);
+        if (isSetRetry != null && !isSetRetry.isEmpty()) {
+            requiredActionChallenge(context);
+            return;
+        }
+
         context.getEvent().detail(Details.CREDENTIAL_TYPE, getCredentialType());
 
         // receive error from navigator.credentials.create()
@@ -329,7 +335,6 @@ public class WebAuthnRegister implements RequiredActionProvider, CredentialRegis
 
     private static final String ERR_LABEL = "web_authn_registration_error";
     private static final String ERR_DETAIL_LABEL = "web_authn_registration_error_detail";
-    private static final String REGISTRATION_ATTR = "webAuthnRegistration";
 
     private void setErrorResponse(RequiredActionContext context, final String errorCase, final String errorMessage) {
         Response errorResponse = null;
@@ -343,7 +348,6 @@ public class WebAuthnRegister implements RequiredActionProvider, CredentialRegis
             errorResponse = context.form()
                 .setError(errorCase)
                 .setAttribute(WEB_AUTHN_TITLE_ATTR, WEBAUTHN_REGISTER_TITLE)
-                .setAttribute(REGISTRATION_ATTR,true)
                 .createWebAuthnErrorPage();
             context.challenge(errorResponse);
             break;
@@ -356,7 +360,6 @@ public class WebAuthnRegister implements RequiredActionProvider, CredentialRegis
             errorResponse = context.form()
                 .setError(errorCase)
                 .setAttribute(WEB_AUTHN_TITLE_ATTR, WEBAUTHN_REGISTER_TITLE)
-                .setAttribute(REGISTRATION_ATTR,true)
                 .createWebAuthnErrorPage();
             context.challenge(errorResponse);
             break;

@@ -6,10 +6,7 @@
 
         <script type="text/javascript">
             refreshPage = () => {
-                if ('${execution}' === "webauthn-register") {
-                    location.reload();
-                    return false;
-                }
+                document.getElementById('isSetRetry').value = 'retry';
                 document.getElementById('executionValue').value = '${execution}';
                 document.getElementById('kc-error-credential-form').submit();
             }
@@ -18,13 +15,14 @@
         <form id="kc-error-credential-form" class="${properties.kcFormClass!}" action="${url.loginAction}"
               method="post">
             <input type="hidden" id="executionValue" name="authenticationExecution"/>
+            <input type="hidden" id="isSetRetry" name="isSetRetry"/>
         </form>
 
         <#if authenticators??>
             <table class="table">
                 <thead>
                 <tr>
-                    <th>${kcSanitize(msg("webauthn-available-authenticators")?no_esc)}</th>
+                    <th>${kcSanitize(msg("webauthn-available-authenticators"))?no_esc}</th>
                 </tr>
                 </thead>
                 <tbody>
