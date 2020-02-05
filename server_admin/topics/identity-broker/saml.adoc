@@ -30,6 +30,12 @@ You must define the SAML configuration options as well.  They basically describe
 |NameID Policy Format
 |Specifies the URI reference corresponding to a name identifier format. Defaults to `urn:oasis:names:tc:SAML:2.0:nameid-format:persistent`.
 
+|Principal Type
+|Specifies which part of the SAML assertion will be used to identify and track external user identities. Can be either Subject NameID or SAML attribute (either by name or by friendly name).
+
+|Principal Attribute
+|If Principal is set to either "Attribute [Name]" or "Attribute [Friendly Name]", this field will specify the name or the friendly name of the identifying attribute, respectively.
+
 |HTTP-POST Binding Response
 |When this realm responds to any SAML requests sent by the external IDP, which SAML binding should be used?  If set to `off`, then the Redirect Binding will be used.
 
