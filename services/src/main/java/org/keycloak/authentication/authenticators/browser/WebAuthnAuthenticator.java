@@ -61,7 +61,6 @@ public class WebAuthnAuthenticator implements Authenticator, CredentialValidator
 
     private static final Logger logger = Logger.getLogger(WebAuthnAuthenticator.class);
     private KeycloakSession session;
-    private WebAuthnAuthenticatorsBean authenticators;
 
     public WebAuthnAuthenticator(KeycloakSession session) {
         this.session = session;
@@ -84,7 +83,7 @@ public class WebAuthnAuthenticator implements Authenticator, CredentialValidator
         boolean isUserIdentified = false;
         if (user != null) {
             // in 2 Factor Scenario where the user has already been identified
-            authenticators = new WebAuthnAuthenticatorsBean(context.getSession(), context.getRealm(), user, getCredentialType());
+            WebAuthnAuthenticatorsBean authenticators = new WebAuthnAuthenticatorsBean(context.getSession(), context.getRealm(), user, getCredentialType());
             if (authenticators.getAuthenticators().isEmpty()) {
                 // require the user to register webauthn authenticator
                 return;
@@ -287,8 +286,12 @@ public class WebAuthnAuthenticator implements Authenticator, CredentialValidator
 
     private Response createErrorResponse(AuthenticationFlowContext context, final String errorCase) {
         LoginFormsProvider provider = context.form().setError(errorCase);
-        if (authenticators != null && authenticators.getAuthenticators() != null) {
-            provider.setAttribute(WebAuthnConstants.ALLOWED_AUTHENTICATORS, authenticators);
+        UserModel user = context.getUser();
+        if (user != null) {
+            WebAuthnAuthenticatorsBean authenticators = new WebAuthnAuthenticatorsBean(context.getSession(), context.getRealm(), user, getCredentialType());
+            if (authenticators.getAuthenticators() != null) {
+                provider.setAttribute(WebAuthnConstants.ALLOWED_AUTHENTICATORS, authenticators);
+            }
         }
         return provider.createWebAuthnErrorPage();
     }
