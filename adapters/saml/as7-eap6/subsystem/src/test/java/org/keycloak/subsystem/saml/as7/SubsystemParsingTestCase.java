@@ -34,6 +34,6 @@ public class SubsystemParsingTestCase extends AbstractSubsystemBaseTest {
 
     @Override
     protected String getSubsystemXml() throws IOException {
-        return readResource("keycloak-saml-1.2.xml");
+        return readResource("keycloak-saml-1.3.xml");
     }
 }
