@@ -19,6 +19,7 @@ package org.keycloak.testsuite.page;
 
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.logging.Logger;
+import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
@@ -46,6 +47,12 @@ public class Form {
 
     public void save() {
         clickLink(save);
+        try {
+            AbstractPatternFlyAlert.waitUntilDisplayed();
+        }
+        catch (TimeoutException e) {
+            log.warn("Timeout waiting for alert to be displayed");
+        }
     }
 
     public void cancel() {

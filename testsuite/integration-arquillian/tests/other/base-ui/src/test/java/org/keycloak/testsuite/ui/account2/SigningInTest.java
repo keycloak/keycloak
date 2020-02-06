@@ -353,10 +353,10 @@ public class SigningInTest extends BaseAccountPageTest {
             assertTrue(userCredential.isPresent());
             assertEquals(countBeforeRemove, userCredential.getCredentialType().getUserCredentialsCount());
         });
+        signingInPage.alert().assertSuccess();
 
         assertFalse(userCredential.isPresent());
         assertEquals(countBeforeRemove - 1, userCredential.getCredentialType().getUserCredentialsCount());
-        signingInPage.alert().assertSuccess();
     }
 
     private void assertUserCredential(String expectedUserLabel, boolean removable, SigningInPage.UserCredential userCredential) {

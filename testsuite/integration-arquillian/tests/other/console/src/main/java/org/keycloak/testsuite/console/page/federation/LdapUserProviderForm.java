@@ -12,7 +12,7 @@ import org.openqa.selenium.support.ui.Select;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.keycloak.testsuite.util.UIUtils.clickLink;
+import static org.keycloak.testsuite.util.UIUtils.clickBtnAndWaitForAlert;
 import static org.keycloak.testsuite.util.UIUtils.getTextFromElement;
 import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
 
@@ -316,15 +316,15 @@ public class LdapUserProviderForm extends Form {
     }
 
     public void testConnection() {
-        clickLink(testConnectionButton);
+        clickBtnAndWaitForAlert(testConnectionButton);
     }
 
     public void testAuthentication() {
-        clickLink(testAuthenticationButton);
+        clickBtnAndWaitForAlert(testAuthenticationButton);
     }
 
     public void synchronizeAllUsers() {
         waitUntilElement(synchronizeAllUsersButton).is().present();
-        clickLink(synchronizeAllUsersButton);
+        clickBtnAndWaitForAlert(synchronizeAllUsersButton);
     }
 }

@@ -5,6 +5,8 @@ import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
+import static org.keycloak.testsuite.util.UIUtils.clickBtnAndWaitForAlert;
+
 /**
  * @author tkyjovsk
  * @author mhajas
@@ -34,7 +36,7 @@ public class RequiredActions extends Authentication {
         WebElement checkbox = requiredActionTable.findElement(By.id(id));
 
         if (checkbox.isEnabled() && checkbox.isSelected() != value) {
-            checkbox.click();
+            clickBtnAndWaitForAlert(checkbox);
         }
     }
 

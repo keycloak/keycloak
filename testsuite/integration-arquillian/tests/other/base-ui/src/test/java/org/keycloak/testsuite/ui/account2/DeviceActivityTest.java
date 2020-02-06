@@ -40,6 +40,8 @@ import java.util.Locale;
 import java.util.Map;
 
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.either;
+import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasProperty;
 import static org.hamcrest.Matchers.is;
@@ -196,7 +198,9 @@ public class DeviceActivityTest extends BaseAccountPageTest {
     public void timesTests() {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("EEEE, MMMM d, yyyy h:mm a", Locale.ENGLISH);
         LocalDateTime now = LocalDateTime.now();
+        LocalDateTime nowPlus1 = now.plusMinutes(1);
         String nowStr = now.format(formatter);
+        String nowStrPlus1 = nowPlus1.format(formatter);
 
         String sessionId = createSession(Browsers.CHROME);
 
@@ -219,7 +223,7 @@ public class DeviceActivityTest extends BaseAccountPageTest {
         assertTrue("Last access should be after started at", lastAccessed.isAfter(startedAt));
         assertTrue("Expires at should be after last access", expiresAt.isAfter(lastAccessed));
         assertTrue("Last accessed should be in the future", lastAccessed.isAfter(now));
-        assertEquals(nowStr, startedAtStr);
+        assertThat(startedAtStr, either(equalTo(nowStr)).or(equalTo(nowStrPlus1)));
 
         int ssoLifespan = testRealmResource().toRepresentation().getSsoSessionMaxLifespan();
         assertEquals(startedAt.plusSeconds(ssoLifespan), expiresAt);

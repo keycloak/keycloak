@@ -39,6 +39,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
+import static org.keycloak.testsuite.util.UIUtils.refreshPageAndWaitForLoad;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWithLoginUrlOf;
 
@@ -76,7 +77,7 @@ public class TokensTest extends AbstractRealmTest {
         loginToTestRealmConsoleAs(testUser);
         waitForTimeout(TIMEOUT + 2);
 
-        driver.navigate().refresh();
+        refreshPageAndWaitForLoad();
 
         log.debug(driver.getCurrentUrl());
         assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
@@ -90,11 +91,11 @@ public class TokensTest extends AbstractRealmTest {
         loginToTestRealmConsoleAs(testUser);
         waitForTimeout(TIMEOUT / 2);
 
-        driver.navigate().refresh();
+        refreshPageAndWaitForLoad();
         assertCurrentUrlStartsWith(testRealmAdminConsolePage); // assert still logged in (within lifespan)
 
         waitForTimeout(TIMEOUT / 2 + 2);
-        driver.navigate().refresh();
+        refreshPageAndWaitForLoad();
 
         log.debug(driver.getCurrentUrl());
         assertCurrentUrlStartsWithLoginUrlOf(testRealmPage); // assert logged out (lifespan exceeded)
