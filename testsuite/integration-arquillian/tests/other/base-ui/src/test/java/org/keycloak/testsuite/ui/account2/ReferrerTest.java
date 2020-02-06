@@ -18,6 +18,7 @@
 package org.keycloak.testsuite.ui.account2;
 
 import org.jboss.arquillian.graphene.page.Page;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -126,6 +127,7 @@ public class ReferrerTest extends AbstractAccountTest {
      * Test that i18n and referrer work well together
      */
     @Test
+    @Ignore // TODO remove this once KEYCLOAK-12936 is resolved
     public void i18nTest() {
         RealmRepresentation realm = testRealmResource().toRepresentation();
         configureInternationalizationForRealm(realm);

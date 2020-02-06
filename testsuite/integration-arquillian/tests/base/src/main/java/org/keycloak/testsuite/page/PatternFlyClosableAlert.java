@@ -17,7 +17,9 @@
 package org.keycloak.testsuite.page;
 
 import org.keycloak.testsuite.util.WaitUtils;
+import org.openqa.selenium.WebDriverException;
 import org.openqa.selenium.WebElement;
+import org.openqa.selenium.ie.InternetExplorerDriver;
 import org.openqa.selenium.support.FindBy;
 
 import static org.junit.Assert.assertEquals;
@@ -85,10 +87,20 @@ public class PatternFlyClosableAlert extends AbstractPatternFlyAlert {
     }
 
     public void close() {
-        closeButton.click();
-        WaitUtils.pause(500); // Sometimes, when a test is too fast,
-                                    // one of the consecutive alerts is not displayed;
-                                    // to prevent this we need to slow down a bit
+        try {
+            closeButton.click();
+            WaitUtils.pause(500); // Sometimes, when a test is too fast,
+                                        // one of the consecutive alerts is not displayed;
+                                        // to prevent this we need to slow down a bit
+        }
+        catch (WebDriverException e) {
+            if (driver instanceof InternetExplorerDriver) {
+                log.warn("Failed to close the alert; test is probably too slow and alert has already closed itself");
+            }
+            else {
+                throw e;
+            }
+        }
     }
 
 }

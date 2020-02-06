@@ -25,6 +25,8 @@ import org.openqa.selenium.support.FindBy;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
+
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
@@ -38,8 +40,9 @@ public class ApplicationsPage extends AbstractLoggedInPage {
     }
 
     public void toggleApplicationDetails(String clientId) {
-        WebElement expandButton = driver.findElement(By.xpath("//button[@id='application-toggle-" + clientId + "']"));
-        expandButton.click();
+        By selector = By.xpath("//button[@id='application-toggle-" + clientId + "']");
+        waitUntilElement(selector).is().clickable();
+        driver.findElement(selector).click();
     }
 
     public List<ClientRepresentation> getApplications() {
