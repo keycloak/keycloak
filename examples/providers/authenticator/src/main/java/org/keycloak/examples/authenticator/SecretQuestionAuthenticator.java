@@ -98,7 +98,7 @@ public class SecretQuestionAuthenticator implements Authenticator, CredentialVal
     public void addCookie(AuthenticationFlowContext context, String name, String value, String path, String domain, String comment, int maxAge, boolean secure, boolean httpOnly) {
         HttpResponse response = context.getSession().getContext().getContextObject(HttpResponse.class);
         StringBuffer cookieBuf = new StringBuffer();
-        ServerCookie.appendCookieValue(cookieBuf, 1, name, value, path, domain, comment, maxAge, secure, httpOnly);
+        ServerCookie.appendCookieValue(cookieBuf, 1, name, value, path, domain, comment, maxAge, secure, httpOnly, null);
         String cookie = cookieBuf.toString();
         response.getOutputHeaders().add(HttpHeaders.SET_COOKIE, cookie);
     }
@@ -107,11 +107,10 @@ public class SecretQuestionAuthenticator implements Authenticator, CredentialVal
     protected boolean validateAnswer(AuthenticationFlowContext context) {
         MultivaluedMap<String, String> formData = context.getHttpRequest().getDecodedFormParameters();
         String secret = formData.getFirst("secret_answer");
-        String credentialId = context.getSelectedCredentialId();
+        String credentialId = formData.getFirst("credentialId");
         if (credentialId == null || credentialId.isEmpty()) {
             credentialId = getCredentialProvider(context.getSession())
                     .getDefaultCredential(context.getSession(), context.getRealm(), context.getUser()).getId();
-            context.setSelectedCredentialId(credentialId);
         }
 
         UserCredentialModel input = new UserCredentialModel(credentialId, getType(context.getSession()), secret);
