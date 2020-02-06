@@ -134,32 +134,6 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
     }
 
     @Test
-    public void testLoginWithKCLocale() {
-        ProfileAssume.assumeCommunity();
-
-        RealmRepresentation testRealmRep = testRealmResource().toRepresentation();
-        testRealmRep.setInternationalizationEnabled(true);
-        testRealmRep.setDefaultLocale("en");
-        testRealmRep.setSupportedLocales(Stream.of("en", "de").collect(Collectors.toSet()));
-        testRealmResource().update(testRealmRep);
-        
-        testExecutor.init(defaultArguments(), this::assertInitNotAuth)
-                .login(this::assertOnLoginPage)
-                .loginForm(testUser, this::assertOnTestAppUrl)
-                .init(defaultArguments(), this::assertSuccessfullyLoggedIn)
-                .logout(this::assertOnTestAppUrl)
-
-                .init(defaultArguments(), this::assertInitNotAuth)
-                .login("{kcLocale: 'de'}", assertLocaleIsSet("de"))
-                .loginForm(testUser, this::assertOnTestAppUrl)
-                .init(defaultArguments(), this::assertSuccessfullyLoggedIn)
-                .logout(this::assertOnTestAppUrl)
-
-                .init(defaultArguments(), this::assertInitNotAuth)
-                .login("{kcLocale: 'en'}", assertLocaleIsSet("en"));
-    }
-
-    @Test
     public void testLoginWithPkceS256() {
         JSObjectBuilder pkceS256 = defaultArguments().pkceS256();
         testExecutor.init(pkceS256, this::assertInitNotAuth)

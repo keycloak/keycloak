@@ -439,10 +439,6 @@
                 url += '&ui_locales=' + encodeURIComponent(options.locale);
             }
 
-            if (options && options.kcLocale) {
-                url += '&kc_locale=' + encodeURIComponent(options.kcLocale);
-            }
-
             if (kc.pkceMethod) {
                 var codeVerifier = generateCodeVerifier(96);
                 callbackState.pkceCodeVerifier = codeVerifier;

@@ -22,3 +22,4 @@ org.keycloak.authentication.requiredactions.VerifyEmail
 org.keycloak.authentication.requiredactions.TermsAndConditions
 org.keycloak.authentication.requiredactions.WebAuthnRegisterFactory
 org.keycloak.authentication.requiredactions.WebAuthnPasswordlessRegisterFactory
+org.keycloak.authentication.requiredactions.UpdateUserLocaleAction

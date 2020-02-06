@@ -41,6 +41,7 @@ public class AuthorizationEndpointRequest {
     String idpHint;
     String action;
     String claims;
+    String uiLocales;
     Map<String, String> additionalReqParams = new HashMap<>();
 
     // https://tools.ietf.org/html/rfc7636#section-6.1
@@ -125,5 +126,9 @@ public class AuthorizationEndpointRequest {
 
     public String getInvalidRequestMessage() {
         return invalidRequestMessage;
+    }
+
+    public String getUiLocales() {
+        return uiLocales;
     }
 }
