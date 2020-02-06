@@ -1118,6 +1118,10 @@ public class AuthenticationManager {
                 logger.debugv("Requested action {0} does not support being invoked with kc_action", factory.getId());
                 setKcActionStatus(factory.getId(), RequiredActionContext.KcActionStatus.ERROR, authSession);
                 return null;
+            } else if (!model.isEnabled()) {
+                logger.debugv("Requested action {0} is disabled and can't be invoked with kc_action", factory.getId());
+                setKcActionStatus(factory.getId(), RequiredActionContext.KcActionStatus.ERROR, authSession);
+                return null;
             } else {
                 authSession.setClientNote(Constants.KC_ACTION_EXECUTING, factory.getId());
             }
