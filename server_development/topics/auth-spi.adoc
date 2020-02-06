@@ -605,11 +605,10 @@ return the "most preferred" credential of the correct type of the user,
 protected boolean validateAnswer(AuthenticationFlowContext context) {
     MultivaluedMap<String, String> formData = context.getHttpRequest().getDecodedFormParameters();
     String secret = formData.getFirst("secret_answer");
-    String credentialId = context.getSelectedCredentialId();
+    String credentialId = formData.getFirst("credentialId");
     if (credentialId == null || credentialId.isEmpty()) {
         credentialId = getCredentialProvider(context.getSession())
                 .getDefaultCredential(context.getSession(), context.getRealm(), context.getUser()).getId();
-        context.setSelectedCredentialId(credentialId);
     }
 
     UserCredentialModel input = new UserCredentialModel(credentialId, getType(context.getSession()), secret);
@@ -617,7 +616,7 @@ protected boolean validateAnswer(AuthenticationFlowContext context) {
 }
 ----
 
-The last thing to go over is the setCookie() method.
+Next method is the setCookie().
 This is an example of providing configuration for the Authenticator.
 In this case we want the max age of the cookie to be configurable.
 
@@ -643,6 +642,30 @@ We obtain an AuthenticatorConfigModel from the AuthenticationFlowContext.getAuth
 If configuration exists we pull the max age config out of it.
 We will see how we can define what should be configured when we talk about the AuthenticatorFactory implementation.
 The config values can be defined within the admin console if you set up config definitions in your AuthenticatorFactory implementation.
+
+[source,java]
+----
+@Override
+    public CredentialTypeMetadata getCredentialTypeMetadata() {
+        return CredentialTypeMetadata.builder()
+                .type(getType())
+                .category(CredentialTypeMetadata.Category.TWO_FACTOR)
+                .displayName(SecretQuestionCredentialProviderFactory.PROVIDER_ID)
+                .helpText("secret-question-text")
+                .createAction(SecretQuestionAuthenticatorFactory.PROVIDER_ID)
+                .removeable(false)
+                .build(session);
+    }
+----
+
+Last method in SecretQuestionCredentialProvider class is getCredentialTypeMetadata(), which is an abstract method of CredentialProvider
+interface. Each Credential provider has to provide and implement this method. The method returns an instance of CredentialTypeMetadata,
+which should at least include type and category of authenticator, displayName and removable item. In this example, the builder
+takes type of authenticator from method getType(), category is Two Factor (the authenticator can be used as second factor of authentication)
+and removable, which is set up to false (user can't remove some previously registered credentials).
+
+Other items of builder are helpText (will be shown to the user on various screens), createAction (the providerID of the required action,
+which can be used by the user to create new credential) or updateAction (same as createAction, but instead of creating the new credential, it will update the credential).
 
 ==== Implementing an AuthenticatorFactory
 
