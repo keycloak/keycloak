@@ -31,7 +31,7 @@ button means in this context.
 
 Required::
   For a flow to be evaluated as successful, all required elements in the flow must evaluate as successful. This means that all _Required_ elements in the flow
-  must be sequentially executed, from top to bottom, unless one the the elements causes the flow to fail. However, this is only true for the current flow.
+  must be sequentially executed, from top to bottom, unless one of the elements causes the flow to fail. However, this is only true for the current flow.
   Any _Required_ element within a sub-flow is only processed if that sub-flow is entered.
 Alternative::
   When a flow contains only _Alternative_ elements, only a single element must evaluate as successful for the flow to evaluate as successful.
@@ -117,7 +117,7 @@ depending on how the executions they contain evaluate (and this includes the eva
 depends on the Requirement of each execution and sub-flow.
 
 Fully understanding this requires a more complete explanation of how requirements work when evaluating a flow, and this also applies to sub-flows.
-Take a look at the <<_execution-requirements, execution requirements section>> above for more details.
+Refer to the <<_execution-requirements, execution requirements section>> above for more details.
 
 Note that after adding an execution, you should check that the Requirement is set to the correct value. Even if there is only a single possible Requirement, it
 can happen that it is not set.
@@ -172,16 +172,16 @@ image:images/Passwordless-browser-login.png[]
 
 After entering the username, the way this flow works is the following:
 
-* If the user has any WebAuthn passwordless credentials recorded, he will be able to use any of them to log in directly. This is the password-less login.
-  The user also has a way allowing him to select "Password with OTP". He can do this because the "WebAuthn Passwordless" execution and the "Password with OTP"
+* If the user has any WebAuthn passwordless credentials recorded, that user will be able to use any of them to log in directly. This is the password-less login.
+  The user can instead select "Password with OTP". The user can do this because the "WebAuthn Passwordless" execution and the "Password with OTP"
   flow are set to _Alternative_. Were they set to _Required_ the user would have to enter WebAuthn, password, and OTP.
-* If the user selects `Try another way` link on the screen with "WebAuthn passwordless" authentication, he can choose between "Password" and
-  "Security Key" (WebAuthn passwordless). When selecting password, the user will need to continue and login with his OTP as well.
-  If the user doesn't have any WebAuthn credentials, he will have to first enter his
+* If the user selects `Try another way` link on the screen with "WebAuthn passwordless" authentication, the user can choose between "Password" and
+  "Security Key" (WebAuthn passwordless). When selecting the password, the user will need to continue and log in with the assigned OTP as well.
+  If the user has no WebAuthn credentials, he will have to first enter his
   password, and then his OTP. If the user has no OTP credential, he will be asked to record one.
 
 It is important to note that since the WebAuthn Passwordless execution is set to _Alternative_ instead of _Required_, this flow will never ask the user to register a WebAuthn credential. For a user
-to have a Webauthn credential, he must have a required action added to him by an administrator. This is done first by making sure that that the `Webauthn Register Passwordless`
+to have a Webauthn credential, that user must have a required action added by an administrator. This is done first by making sure that the `Webauthn Register Passwordless`
 required action is enabled in the realm (see the <<_webauthn,WebAuthn>> documentation), and then by setting the required action by using the `Credential Reset` part of a
 user's <<_user-credentials,Credentials>> management menu.
 

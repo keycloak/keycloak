@@ -68,10 +68,10 @@ image:images/webauthn-browser-flow-conditional-with-OTP.png[]
 
 ==== Authenticate with WebAuthn Authenticator
 
-After registering their WebAuthn authenticator, the user carries out the following operations
+After registering a WebAuthn authenticator, the user carries out the following operations
 assuming that authentication flow configuration above with the conditional subflow using `WebAuthn Authenticator` was used:
 
-- Open the login form. User must authenticate with username and password.
+- Open the login form. The user must authenticate with a username and password.
 - The user's browser asks the user to authenticate by their WebAuthn authenticator.
 
 ==== Managing WebAuthn as an administrator
