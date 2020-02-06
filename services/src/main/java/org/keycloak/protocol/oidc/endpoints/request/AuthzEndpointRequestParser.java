@@ -94,6 +94,7 @@ abstract class AuthzEndpointRequestParser {
         request.claims = replaceIfNotNull(request.claims, getParameter(OIDCLoginProtocol.CLAIMS_PARAM));
         request.acr = replaceIfNotNull(request.acr, getParameter(OIDCLoginProtocol.ACR_PARAM));
         request.display = replaceIfNotNull(request.display, getParameter(OAuth2Constants.DISPLAY));
+        request.uiLocales = replaceIfNotNull(request.uiLocales, getParameter(OAuth2Constants.UI_LOCALES_PARAM));
 
         // https://tools.ietf.org/html/rfc7636#section-6.1
         request.codeChallenge = replaceIfNotNull(request.codeChallenge, getParameter(OIDCLoginProtocol.CODE_CHALLENGE_PARAM));

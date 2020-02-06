@@ -79,14 +79,10 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.is;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.keycloak.models.AccountRoles.MANAGE_ACCOUNT;
@@ -284,6 +280,8 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         testAccountClient(migrationRealm);
         testAdminClientPkce(masterRealm);
         testAdminClientPkce(migrationRealm);
+        testUserLocaleActionAdded(masterRealm);
+        testUserLocaleActionAdded(migrationRealm);
     }
 
     private void testAccountClient(RealmResource realm) {
@@ -724,17 +722,15 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
             log.info("Taking required actions from realm: " + realm.toRepresentation().getRealm());
             List<RequiredActionProviderRepresentation> actions = realm.flows().getRequiredActions();
 
-            // Checking if the actions are in alphabetical order
-            List<String> nameList = actions.stream().map(x -> x.getName()).collect(Collectors.toList());
-            log.debug("Obtained required actions: " + nameList);
-            List<String> sortedByName = nameList.stream().sorted().collect(Collectors.toList());
-            log.debug("Manually sorted required actions: " + sortedByName);
-            assertThat(nameList, is(equalTo(sortedByName)));
-
             // Checking the priority
             int priority = 10;
             for (RequiredActionProviderRepresentation action : actions) {
-                assertThat(action.getPriority(), is(equalTo(priority)));
+                if (action.getAlias().equals("update_user_locale")) {
+                    assertEquals(1000, action.getPriority());
+                } else {
+                    assertEquals(priority, action.getPriority());
+                }
+
                 priority += 10;
             }
         }
@@ -815,6 +811,18 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         Assert.assertEquals(AuthenticationExecutionModel.Requirement.REQUIRED.toString(), childEx2.getRequirement());
         Assert.assertEquals(1, childEx2.getIndex());
         Assert.assertEquals(subflowExecution.getLevel() + 1, childEx2.getLevel());
+    }
+
+    protected void testUserLocaleActionAdded(RealmResource realm) {
+        RequiredActionProviderRepresentation rep = realm.flows().getRequiredAction("update_user_locale");
+
+        assertNotNull(rep);
+        assertEquals("update_user_locale", rep.getAlias());
+        assertEquals("update_user_locale", rep.getProviderId());
+        assertEquals("Update User Locale", rep.getName());
+        assertEquals(1000, rep.getPriority());
+        assertTrue(rep.isEnabled());
+        assertFalse(rep.isDefaultAction());
     }
 
     protected void testMigrationTo2_x() throws Exception {

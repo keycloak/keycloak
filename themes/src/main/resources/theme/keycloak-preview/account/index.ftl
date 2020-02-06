@@ -29,7 +29,7 @@
             var features = {
                 isRegistrationEmailAsUsername : ${realm.registrationEmailAsUsername?c},
                 isEditUserNameAllowed : ${realm.editUsernameAllowed?c},
-                isInternationalizationEnabled : ${realm.internationalizationEnabled?c},
+                isInternationalizationEnabled : false,
                 isLinkedAccountsEnabled : ${realm.identityFederationEnabled?c},
                 isEventsEnabled : ${isEventsEnabled?c},
                 isMyResourcesEnabled : ${(realm.userManagedAccessAllowed && isAuthorizationEnabled)?c},
@@ -155,28 +155,6 @@
             </div>
             </#if>
 
-            <#if realm.internationalizationEnabled  && supportedLocales?size gt 1>
-            <div class="pf-c-page__header-tools-group pf-m-icons">
-              <div id="landing-locale-dropdown" class="pf-c-dropdown">
-                <button onclick="toggleLocaleDropdown();" class="pf-c-dropdown__toggle pf-m-plain" id="landing-locale-dropdown-button" aria-expanded="false" aria-haspopup="true">
-                    <span class="pf-c-dropdown__toggle-text">
-                          ${msg("locale_" + locale)}
-                    </span>
-                    <i class="fas fa-caret-down pf-c-dropdown__toggle-icon" aria-hidden="true"></i>
-                </button>
-                <ul id="landing-locale-dropdown-list" class="pf-c-dropdown__menu" aria-labeledby="landing-locale-dropdown-button" role="menu" hidden>
-                    <#list supportedLocales as locale, label>
-                        <#if referrer?has_content && referrer_uri?has_content>
-                        <li id="landing-locale-${locale}" role="none"><a href="${baseUrl}/?kc_locale=${locale}&referrer=${referrer}&referrer_uri=${referrer_uri}" role="menuitem" tabindex="0" aria-disabled="false" class="pf-c-dropdown__menu-item">${label}</a></li>
-                        <#else>
-                        <li id="landing-locale-${locale}" role="none"><a href="${baseUrl}/?kc_locale=${locale}" role="menuitem" tabindex="0" aria-disabled="false" class="pf-c-dropdown__menu-item">${label}</a></li>
-                        </#if>
-                    </#list>
-                </ul>
-              </div>
-            </div>
-            </#if>
-
             <div class="pf-c-page__header-tools-group pf-m-icons">
               <button id="landingSignInButton" tabindex="0" style="display:none" onclick="keycloak.login();" class="pf-c-button pf-m-primary" type="button">${msg("doLogIn")}</button>
               <button id="landingSignOutButton" tabindex="0" style="display:none" onclick="keycloak.logout();" class="pf-c-button pf-m-primary" type="button">${msg("doSignOut")}</button>
@@ -194,20 +172,6 @@
                             <a id="landingMobileReferrerLink" href="${referrer_uri}" role="menuitem" tabindex="0" aria-disabled="false" class="pf-c-dropdown__menu-item">${msg("backTo",referrerName)}</a>
                         </li>
                         </#if>
-
-                        <!-- locale selector for mobile -->
-                        <#if realm.internationalizationEnabled  && supportedLocales?size gt 1>
-                            <li role="none" aria-expanded="false" onclick="toggleMobileChooseLocale();"><a href="#" id="landing-mobile-local-toggle" class="pf-c-dropdown__menu-item">${msg("locale_" + locale)} <i id="landingMobileLocaleSelectedIcon" class="fas fa-angle-right pf-c-options-menu__menu-item-icon" aria-hidden="true"></i></a></li>
-                            <#list supportedLocales as locale, label>
-                                <#if referrer?has_content && referrer_uri?has_content>
-                                <li role="none" id="landing-mobile-locale-${locale}" style="display:none"><a href="${baseUrl}/?kc_locale=${locale}&referrer=${referrer}&referrer_uri=${referrer_uri}" role="menuitem" tabindex="0" aria-disabled="false" class="pf-c-dropdown__menu-item">${label}</a></li>
-                                <#else>
-                                <li role="none" id="landing-mobile-locale-${locale}" style="display:none"><a href="${baseUrl}/?kc_locale=${locale}" role="menuitem" tabindex="0" aria-disabled="false" class="pf-c-dropdown__menu-item">${label}</a></li>
-                                </#if>
-                            </#list>
-                            <li id="landingMobileLocaleSeparator" class="pf-c-dropdown__separator" role="separator" style="display:none"></li>
-                        </#if>
-                        <!-- end locale selector for mobile -->
 
                         <li id="landingSignInLink" role="none" style="display:none">
                             <a href="#" onclick="keycloak.login();" role="menuitem" tabindex="0" aria-disabled="false" class="pf-c-dropdown__menu-item">${msg("doLogIn")}</a>

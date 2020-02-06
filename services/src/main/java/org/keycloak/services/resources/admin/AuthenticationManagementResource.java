@@ -920,6 +920,7 @@ public class AuthenticationManagementResource {
     public static RequiredActionProviderRepresentation toRepresentation(RequiredActionProviderModel model) {
         RequiredActionProviderRepresentation rep = new RequiredActionProviderRepresentation();
         rep.setAlias(model.getAlias());
+        rep.setProviderId(model.getProviderId());
         rep.setName(model.getName());
         rep.setDefaultAction(model.isDefaultAction());
         rep.setPriority(model.getPriority());

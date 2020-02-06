@@ -26,6 +26,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.utils.DefaultRequiredActions;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.RealmRepresentation;
 
@@ -58,6 +59,7 @@ public class MigrateTo9_0_0 implements Migration {
         addAccountConsoleClient(realm);
         addAccountApiRoles(realm);
         enablePkceAdminAccountClients(realm);
+        DefaultRequiredActions.addUpdateLocaleAction(realm);
     }
 
     private void addAccountApiRoles(RealmModel realm) {

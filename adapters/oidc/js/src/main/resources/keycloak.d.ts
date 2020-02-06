@@ -214,13 +214,6 @@ declare namespace Keycloak {
                  * of the OIDC 1.0 specification.
 		 */
 		locale?: string;
-                
-                /**
-		 * Specifies the desired Keycloak locale for the UI.  This differs from
-                 * the locale param in that it tells the Keycloak server to set a cookie and update
-                 * the user's profile to a new preferred locale.
-		 */
-		kcLocale?: string;
 
 		/**
 		 * Specifies arguments that are passed to the Cordova in-app-browser (if applicable).
