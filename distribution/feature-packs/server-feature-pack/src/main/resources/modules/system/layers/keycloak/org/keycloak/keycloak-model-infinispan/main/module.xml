@@ -29,6 +29,7 @@
         <module name="org.keycloak.keycloak-core"/>
         <module name="org.keycloak.keycloak-server-spi"/>
         <module name="org.keycloak.keycloak-server-spi-private"/>
+        <module name="org.keycloak.keycloak-wildfly-extensions" export="true" services="import"/>
         <module name="org.infinispan"/>
         <module name="org.infinispan.commons"/>
         <module name="org.infinispan.persistence.remote"/>

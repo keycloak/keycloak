@@ -101,7 +101,7 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
             synchronized (this) {
                 if (cacheManager == null) {
                     EmbeddedCacheManager managedCacheManager = null;
-                    Iterator<ManagedCacheManagerProvider> providers = ServiceLoader.load(ManagedCacheManagerProvider.class)
+                    Iterator<ManagedCacheManagerProvider> providers = ServiceLoader.load(ManagedCacheManagerProvider.class, DefaultInfinispanConnectionProvider.class.getClassLoader())
                             .iterator();
 
                     if (providers.hasNext()) {
@@ -115,6 +115,9 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
                     }
                     
                     if (managedCacheManager == null) {
+                        if (!config.getBoolean("embedded", false)) {
+                            throw new RuntimeException("No " + ManagedCacheManagerProvider.class.getName() + " found. If running in embedded mode set the [embedded] property to this provider.");
+                        }
                         initEmbedded();
                     } else {
                         initContainerManaged(managedCacheManager);
