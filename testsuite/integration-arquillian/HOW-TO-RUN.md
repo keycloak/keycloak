@@ -147,6 +147,32 @@ run other/adapters/jboss/remote tests:
         -Dauth.server.ssl.required=false \
         -Dapp.server.ssl.required=false
 
+### Running tests against container not produced by the testsuite
+
+For running the testsuite, it is necessary to install/deploy so-called testsuite-providers. The testsuite rely on 
+testsuite-providers in many test scenarios for example for checking fired events, moving in time etc. When using
+keycloak from `integration-arquillian-servers-auth-server-wildfly-*.zip`, it should not be necessary to do any steps 
+because testsuite-providers are already included in this archive. However, when a clean keycloak is used, e.g. 
+openshift image, testsuite-providers jar file is deployed to the container in the beginning of test run. 
+To be able to deploy the jar to the container, arquillian has to have an access to the management port. 
+
+For example, to run testsuite against image in openshift, we need to first forward 9990 port from the running pod.
+```shell script
+oc port-forward "${POD}" 9990:9990
+```
+where ${POD} is a name of the pod
+
+Now just run testsuite against the image in openshift:
+```shell script
+mvn clean install -f testsuite/integration-arquillian/tests/base/pom.xml \
+    -Pauth-server-remote \
+    -Dauth.server.ssl.required=false \
+    -Dauth.server.host="${HOST}" \
+    -Dauth.server.http.port=80 \
+    -Dauth.server.management.host=127.0.0.1 \
+    -Dauth.server.management.port=9990
+```
+where ${HOST} is url of keycloak, for example: `keycloak-keycloak.192.168.42.91.nip.io`.
 
 ## Run adapter tests
 
