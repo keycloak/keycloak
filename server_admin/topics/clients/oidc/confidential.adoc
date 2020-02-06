@@ -69,5 +69,5 @@ use cases, it is sufficient to accept all certificates. In that case, you can us
 
 There are two ways for {project_name} to obtain the Client ID from the request. The first option is the `client_id`
 parameter in the query (described in Section 2.2 of the https://tools.ietf.org/html/rfc6749[OAuth 2.0 Specification]).
-The second option is to supply `client_id` as a query parameter.
+The second option is to supply `client_id` as a form parameter.
 
