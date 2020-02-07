@@ -139,7 +139,7 @@ public class PartialImportTest extends AbstractAuthTest {
         ClientRepresentation client = new ClientRepresentation();
         client.setClientId(CLIENT_SERVICE_ACCOUNT);
         client.setName(CLIENT_SERVICE_ACCOUNT);
-        client.setRootUrl("foo");
+        client.setRootUrl("http://localhost/foo");
         client.setProtocol("openid-connect");
         client.setPublicClient(false);
         client.setSecret("secret");
