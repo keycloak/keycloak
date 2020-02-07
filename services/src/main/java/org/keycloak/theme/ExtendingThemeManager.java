@@ -255,8 +255,10 @@ public class ExtendingThemeManager implements ThemeProvider {
             if (messages.get(baseBundlename) == null || messages.get(baseBundlename).get(locale) == null) {
                 Properties messages = new Properties();
 
-                if (!Locale.ENGLISH.equals(locale)) {
-                    messages.putAll(getMessages(baseBundlename, Locale.ENGLISH));
+                Locale parent = getParent(locale);
+
+                if (parent != null) {
+                    messages.putAll(getMessages(baseBundlename, parent));
                 }
 
                 for (ThemeResourceProvider t : themeResourceProviders ){
@@ -309,4 +311,21 @@ public class ExtendingThemeManager implements ThemeProvider {
             }
         }
     }
+
+    private static Locale getParent(Locale locale) {
+        if (Locale.ENGLISH.equals(locale)) {
+            return null;
+        }
+
+        if (locale.getVariant() != null && !locale.getVariant().isEmpty()) {
+            return new Locale(locale.getLanguage(), locale.getCountry());
+        }
+
+        if (locale.getCountry() != null && !locale.getCountry().isEmpty()) {
+            return new Locale(locale.getLanguage());
+        }
+
+        return Locale.ENGLISH;
+    }
+
 }
