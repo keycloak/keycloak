@@ -60,6 +60,9 @@ public class ValidateOTP extends AbstractDirectGrantAuthenticator implements Cre
 
         String otp = inputData.getFirst("otp");
 
+        // KEYCLOAK-12908 Backwards compatibility. If paramter "otp" is null, then assign "totp".
+        otp = (otp == null) ? inputData.getFirst("totp") : otp;
+
         // Always use default OTP credential in case of direct grant authentication
         String credentialId = getCredentialProvider(context.getSession())
                     .getDefaultCredential(context.getSession(), context.getRealm(), context.getUser()).getId();
