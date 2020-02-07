@@ -29,8 +29,6 @@ import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.Constants;
-import org.keycloak.models.UserModel;
-import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
@@ -70,9 +68,14 @@ import org.junit.Rule;
 import org.junit.rules.ExpectedException;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.models.AdminRoles;
+import org.keycloak.models.ModelDuplicateException;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import static org.keycloak.testsuite.Assert.assertNames;
 import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
+import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
 import org.keycloak.testsuite.auth.page.AuthRealm;
+import org.keycloak.testsuite.runonserver.RunOnServerException;
 import org.keycloak.testsuite.util.GroupBuilder;
 
 /**
@@ -186,6 +189,43 @@ public class GroupTest extends AbstractGroupTest {
         response = realm.groups().group(topGroup.getId()).subGroup(anotherlevel2Group);
         response.close();
         assertEquals(409, response.getStatus()); // conflict status 409 - same name not allowed
+    }
+
+    @Test
+    public void allowSameGroupNameAtDifferentLevel() throws Exception {
+        RealmResource realm = adminClient.realms().realm("test");
+
+        // creating "/test-group"
+        GroupRepresentation topGroup = new GroupRepresentation();
+        topGroup.setName("test-group");
+        topGroup = createGroup(realm, topGroup);
+
+        // creating "/test-group/test-group"
+        GroupRepresentation childGroup = new GroupRepresentation();
+        childGroup.setName("test-group");
+        try (Response response = realm.groups().group(topGroup.getId()).subGroup(childGroup)) {
+            assertEquals(201, response.getStatus());
+        }
+
+        assertNotNull(realm.getGroupByPath("/test-group/test-group"));
+    }
+
+    @Test
+    @UncaughtServerErrorExpected
+    public void doNotAllowSameGroupNameAtTopLevelInDatabase() throws Exception {
+        final String id = KeycloakModelUtils.generateId();
+        testingClient.server().run(session -> {
+            RealmModel realm = session.realms().getRealm("test");
+            realm.createGroup(id, "test-group");
+        });
+        getCleanup().addGroupId(id);
+        // unique key should work even in top groups
+        expectedException.expect(RunOnServerException.class);
+        expectedException.expectMessage(ModelDuplicateException.class.getName());
+        testingClient.server().run(session -> {
+            RealmModel realm = session.realms().getRealm("test");
+            realm.createGroup("test-group");
+        });
     }
 
     @Test

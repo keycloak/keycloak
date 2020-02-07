@@ -56,9 +56,19 @@ public interface RealmProvider extends Provider, ClientProvider {
 
     boolean removeGroup(RealmModel realm, GroupModel group);
 
-    GroupModel createGroup(RealmModel realm, String name);
+    default GroupModel createGroup(RealmModel realm, String name) {
+        return createGroup(realm, null, name, null);
+    }
 
-    GroupModel createGroup(RealmModel realm, String id, String name);
+    default GroupModel createGroup(RealmModel realm, String id, String name) {
+        return createGroup(realm, id, name, null);
+    }
+
+    default GroupModel createGroup(RealmModel realm, String name, GroupModel toParent) {
+        return createGroup(realm, null, name, toParent);
+    }
+
+    GroupModel createGroup(RealmModel realm, String id, String name, GroupModel toParent);
 
     void addTopLevelGroup(RealmModel realm, GroupModel subGroup);
 

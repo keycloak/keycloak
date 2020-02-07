@@ -164,7 +164,6 @@ public class GroupsResource {
             rep.setId(child.getId());
             adminEvent.operation(OperationType.CREATE).resourcePath(session.getContext().getUri(), child.getId());
         }
-        realm.moveGroup(child, null);
 
         adminEvent.representation(rep).success();
         return builder.build();

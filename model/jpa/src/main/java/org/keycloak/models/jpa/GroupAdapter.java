@@ -76,16 +76,13 @@ public class GroupAdapter implements GroupModel , JpaModel<GroupEntity> {
 
     @Override
     public GroupModel getParent() {
-        GroupEntity parent = group.getParent();
-        if (parent == null) return null;
-        return realm.getGroupById(parent.getId());
+        String parentId = this.getParentId();
+        return parentId == null? null : realm.getGroupById(parentId);
     }
 
     @Override
     public String getParentId() {
-        GroupEntity parent = group.getParent();
-        if (parent == null) return null;
-        return parent.getId();
+        return GroupEntity.TOP_PARENT_ID.equals(group.getParentId())? null : group.getParentId();
     }
 
     public static GroupEntity toEntity(GroupModel model, EntityManager em) {
@@ -97,13 +94,11 @@ public class GroupAdapter implements GroupModel , JpaModel<GroupEntity> {
 
     @Override
     public void setParent(GroupModel parent) {
-        if (parent == null) group.setParent(null);
-        else if (parent.getId().equals(getId())) {
-            return;
-        }
-        else {
+        if (parent == null) {
+            group.setParentId(GroupEntity.TOP_PARENT_ID);
+        } else if (!parent.getId().equals(getId())) {
             GroupEntity parentEntity = toEntity(parent, em);
-            group.setParent(parentEntity);
+            group.setParentId(parentEntity.getId());
         }
     }
 
@@ -126,7 +121,7 @@ public class GroupAdapter implements GroupModel , JpaModel<GroupEntity> {
     @Override
     public Set<GroupModel> getSubGroups() {
         TypedQuery<String> query = em.createNamedQuery("getGroupIdsByParent", String.class);
-        query.setParameter("parent", group);
+        query.setParameter("parent", group.getId());
         List<String> ids = query.getResultList();
         Set<GroupModel> set = new HashSet<>();
         for (String id : ids) {

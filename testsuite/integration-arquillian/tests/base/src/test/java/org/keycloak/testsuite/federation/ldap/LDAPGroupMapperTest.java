@@ -574,18 +574,13 @@ public class LDAPGroupMapperTest extends AbstractLDAPTest {
             RealmModel appRealm = ctx.getRealm();
 
             GroupModel group3 = appRealm.createGroup("group3");
-            session.realms().addTopLevelGroup(appRealm, group3);
-            GroupModel group31 = appRealm.createGroup("group31");
-            group3.addChild(group31);
-            GroupModel group32 = appRealm.createGroup("group32");
-            group3.addChild(group32);
+            GroupModel group31 = appRealm.createGroup("group31", group3);
+            GroupModel group32 = appRealm.createGroup("group32", group3);
 
             GroupModel group4 = appRealm.createGroup("group4");
-            session.realms().addTopLevelGroup(appRealm, group4);
 
-            GroupModel group14 = appRealm.createGroup("group14");
             GroupModel group1 = KeycloakModelUtils.findGroupByPath(appRealm, "/group1");
-            group1.addChild(group14);
+            GroupModel group14 = appRealm.createGroup("group14", group1);
 
         });
 

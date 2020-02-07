@@ -1947,13 +1947,8 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
     }
 
     @Override
-    public GroupModel createGroup(String name) {
-        return session.realms().createGroup(this, name);
-    }
-
-    @Override
-    public GroupModel createGroup(String id, String name) {
-        return session.realms().createGroup(this, id, name);
+    public GroupModel createGroup(String id, String name, GroupModel toParent) {
+        return session.realms().createGroup(this, id, name, toParent);
     }
 
     @Override

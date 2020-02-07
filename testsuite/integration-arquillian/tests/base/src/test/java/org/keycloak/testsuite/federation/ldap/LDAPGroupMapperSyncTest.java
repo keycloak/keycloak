@@ -276,9 +276,7 @@ public class LDAPGroupMapperSyncTest extends AbstractLDAPTest {
 
             // Create some new groups in keycloak
             GroupModel model1 = realm.createGroup("model1");
-            realm.moveGroup(model1, null);
-            GroupModel model2 = realm.createGroup("model2");
-            realm.moveGroup(model2, kcGroup1);
+            GroupModel model2 = realm.createGroup("model2", kcGroup1);
 
             // Sync groups again from LDAP. Nothing deleted
             syncResult = new GroupLDAPStorageMapperFactory().create(session, mapperModel).syncDataFromFederationProviderToKeycloak(realm);
