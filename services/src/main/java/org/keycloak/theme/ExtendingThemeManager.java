@@ -17,6 +17,7 @@
 
 package org.keycloak.theme;
 
+import org.apache.commons.lang.StringUtils;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.common.Version;
@@ -27,6 +28,7 @@ import org.keycloak.models.KeycloakSession;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -252,32 +254,88 @@ public class ExtendingThemeManager implements ThemeProvider {
 
         @Override
         public Properties getMessages(String baseBundlename, Locale locale) throws IOException {
-            if (messages.get(baseBundlename) == null || messages.get(baseBundlename).get(locale) == null) {
-                Properties messages = new Properties();
 
-                if (!Locale.ENGLISH.equals(locale)) {
-                    messages.putAll(getMessages(baseBundlename, Locale.ENGLISH));
-                }
+            Properties messages = getCachedMessages(baseBundlename, locale);
+            if (messages != null) {
+                return messages;
+            }
 
-                for (ThemeResourceProvider t : themeResourceProviders ){
-                    messages.putAll(t.getMessages(baseBundlename, locale));
+            messages = new Properties();
+
+            // Add english locale as fallback
+            List<Locale> locales = expandLocalesFromUnspecificToSpecificPrefixedWithFallback(locale, Locale.ENGLISH);
+
+            /*
+             * Populate the messages Properties with the translations for the expanded locales,
+             * starting with fallback Locale from the least specific Locale to the most specific locale.
+             */
+            for (Locale currentLocale : locales) {
+                for (ThemeResourceProvider t : themeResourceProviders) {
+                    messages.putAll(t.getMessages(baseBundlename, currentLocale));
                 }
 
                 ListIterator<Theme> itr = themes.listIterator(themes.size());
                 while (itr.hasPrevious()) {
-                    Properties m = itr.previous().getMessages(baseBundlename, locale);
+                    Properties m = itr.previous().getMessages(baseBundlename, currentLocale);
                     if (m != null) {
                         messages.putAll(m);
                     }
                 }
-                
-                this.messages.putIfAbsent(baseBundlename, new ConcurrentHashMap<Locale, Properties>());
-                this.messages.get(baseBundlename).putIfAbsent(locale, messages);
-
-                return messages;
-            } else {
-                return messages.get(baseBundlename).get(locale);
             }
+
+            this.messages.computeIfAbsent(baseBundlename, ignored -> new ConcurrentHashMap<>()).putIfAbsent(locale, messages);
+
+            return messages;
+        }
+
+        protected Properties getCachedMessages(String baseBundlename, Locale locale) {
+
+            ConcurrentHashMap<Locale, Properties> map = messages.get(baseBundlename);
+            if (map == null) {
+                return null;
+            }
+
+            return map.get(locale);
+        }
+
+        /**
+         * Returns a list of derived locales for a given locale by creating dedicated {@link Locale Locale's} for the language, country and variant components.
+         * If a fallback {@link Locale} is provided, then it is prefixed to the {@link Locale Locale's} list.
+         * If no fallback {@link Locale} is provided. {@link Locale#ENGLISH} is used as a fallback.
+         * An example {@link Locale Locale's} list could look like: {@code Locale(fallback-language), Locale(Language), Locale(Language, Country), Locale(Language, Country, Variant)}
+         * @param locale the reference {@link Locale}
+         * @param fallback the fallback {@link Locale}
+         * @return The expanded {@link Locale} {@link List}.
+         */
+        private List<Locale> expandLocalesFromUnspecificToSpecificPrefixedWithFallback(Locale locale, Locale fallback) {
+
+            Locale fallbackLocale = fallback;
+            if (fallbackLocale == null) {
+                fallbackLocale = Locale.ENGLISH;
+            }
+
+            if (locale == null || fallbackLocale.equals(locale)) {
+                return Collections.singletonList(fallbackLocale);
+            }
+
+            List<Locale> locales = new ArrayList<>();
+
+            locales.add(fallback);
+
+            String language = locale.getLanguage();
+            locales.add(new Locale(language));
+
+            String country = locale.getCountry();
+            if (!StringUtils.isEmpty(country)) {
+                locales.add(new Locale(language, country));
+            }
+
+            String variant = locale.getVariant();
+            if (!StringUtils.isEmpty(variant)) {
+                locales.add(new Locale(language, country, variant));
+            }
+
+            return locales;
         }
 
         @Override
