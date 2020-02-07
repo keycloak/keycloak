@@ -507,6 +507,12 @@ public class SAMLEndpoint {
 
         public Response handleSamlResponse(String samlResponse, String relayState, String clientId) {
             SAMLDocumentHolder holder = extractResponseDocument(samlResponse);
+            if (holder == null) {
+                event.event(EventType.IDENTITY_PROVIDER_RESPONSE);
+                event.detail(Details.REASON, "invalid_saml_document");
+                event.error(Errors.INVALID_SAML_RESPONSE);
+                return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_FEDERATED_IDENTITY_ACTION);
+            }
             StatusResponseType statusResponse = (StatusResponseType)holder.getSamlObject();
             // validate destination
             if (! destinationValidator.validate(session.getContext().getUri().getAbsolutePath(), statusResponse.getDestination())) {

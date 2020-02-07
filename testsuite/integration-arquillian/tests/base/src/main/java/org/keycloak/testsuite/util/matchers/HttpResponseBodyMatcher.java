@@ -34,16 +34,28 @@ public class HttpResponseBodyMatcher extends BaseMatcher<HttpResponse> {
 
     private final Matcher<String> matcher;
 
+    private ThreadLocal<String> lastEntity = new ThreadLocal<>();
+
     public HttpResponseBodyMatcher(Matcher<String> matcher) {
         this.matcher = matcher;
     }
 
     @Override
     public boolean matches(Object item) {
+        lastEntity.remove();
         try {
-            return (item instanceof HttpResponse) && this.matcher.matches(EntityUtils.toString(((HttpResponse) item).getEntity()));
+            lastEntity.set(EntityUtils.toString(((HttpResponse) item).getEntity()));
+            return (item instanceof HttpResponse) && this.matcher.matches(lastEntity.get());
         } catch (IOException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    public void describeMismatch(Object item, Description description) {
+        Description d = description.appendText("was ").appendValue(item);
+        if (lastEntity.get() != null) {
+            d.appendText(" with entity ").appendText(lastEntity.get());
         }
     }
 
