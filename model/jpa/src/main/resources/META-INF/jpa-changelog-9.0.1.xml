@@ -23,4 +23,26 @@
         </createIndex>
     </changeSet>
 
+    <changeSet author="keycloak" id="9.0.1-KEYCLOAK-12579-drop-constraints">
+        <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
+            <!-- sql server needs drop and re-create the constraint SIBLING_NAMES -->
+            <dbms type="mssql"/>
+        </preConditions>
+        <dropUniqueConstraint tableName="KEYCLOAK_GROUP" constraintName="SIBLING_NAMES"/>
+    </changeSet>
+
+    <changeSet author="keycloak" id="9.0.1-KEYCLOAK-12579-add-not-null-constraint">
+        <!-- Now the parent group cannot be NULL to make SIBLING_NAMES unique constraint work -->
+        <!-- Top level groups are now marked with the " " (one space) string -->
+        <addNotNullConstraint tableName="KEYCLOAK_GROUP" columnName="PARENT_GROUP" columnDataType="VARCHAR(36)" defaultNullValue=" "/>
+    </changeSet>
+
+    <changeSet author="keycloak" id="9.0.1-KEYCLOAK-12579-recreate-constraints">
+        <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
+            <!-- sql server needs drop and re-create the constraint SIBLING_NAMES -->
+            <dbms type="mssql"/>
+        </preConditions>
+        <addUniqueConstraint columnNames="REALM_ID,PARENT_GROUP,NAME" constraintName="SIBLING_NAMES" tableName="KEYCLOAK_GROUP"/>
+    </changeSet>
+
 </databaseChangeLog>

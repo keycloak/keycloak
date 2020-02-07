@@ -322,12 +322,11 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
             updateAttributesOfKCGroup(kcGroup, ldapGroups.get(kcGroup.getName()));
             syncResult.increaseUpdated();
         } else {
-            kcGroup = realm.createGroup(groupTreeEntry.getGroupName());
             if (kcParent == null) {
-                realm.moveGroup(kcGroup, null);
+                kcGroup = realm.createGroup(groupTreeEntry.getGroupName());
                 logger.debugf("Imported top-level group '%s' from LDAP", kcGroup.getName());
             } else {
-                realm.moveGroup(kcGroup, kcParent);
+                kcGroup = realm.createGroup(groupTreeEntry.getGroupName(), kcParent);
                 logger.debugf("Imported group '%s' from LDAP as child of group '%s'", kcGroup.getName(), kcParent.getName());
             }
 
@@ -406,7 +405,6 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
 
                 kcGroup = realm.createGroup(groupName);
                 updateAttributesOfKCGroup(kcGroup, ldapGroup);
-                realm.moveGroup(kcGroup, null);
             }
 
             // Could theoretically happen on some LDAP servers if 'memberof' style is used and 'memberof' attribute of user references non-existing group

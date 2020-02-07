@@ -1352,13 +1352,8 @@ public class RealmAdapter implements CachedRealmModel {
     }
 
     @Override
-    public GroupModel createGroup(String name) {
-        return cacheSession.createGroup(this, name);
-    }
-
-    @Override
-    public GroupModel createGroup(String id, String name) {
-        return cacheSession.createGroup(this, id, name);
+    public GroupModel createGroup(String id, String name, GroupModel toParent) {
+        return cacheSession.createGroup(this, id, name, toParent);
     }
 
     @Override
