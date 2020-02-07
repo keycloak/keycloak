@@ -57,7 +57,7 @@ interface UserCredential {
     id: string;
     type: string;
     userLabel: string;
-    createdDate: number;
+    createdDate?: number;
     strCreatedDate?: string;
 }
 
@@ -69,7 +69,6 @@ interface CredentialContainer {
     helptext?: string;
     createAction?: string;
     updateAction?: string;
-    iconCssClass: string;
     removeable: boolean;
     userCredentials: UserCredential[];
 }
@@ -185,7 +184,7 @@ class SigningInPage extends React.Component<SigningInPageProps, SigningInPageSta
         const type: string = credContainer.type;
         const displayName: string = credContainer.displayName;
 
-        if (userCredentials.length === 0) {
+        if (!userCredentials || userCredentials.length === 0) {
             const localizedDisplayName = Msg.localize(displayName);
             return (
                 <DataListItem key='no-credentials-list-item' aria-labelledby='no-credentials-list-item'>
@@ -203,7 +202,7 @@ class SigningInPage extends React.Component<SigningInPageProps, SigningInPageSta
 
         userCredentials.forEach(credential => {
             if (!credential.userLabel) credential.userLabel = Msg.localize(credential.type);
-            credential.strCreatedDate = moment(credential.createdDate).format('LLL');
+            if (credential.hasOwnProperty('createdDate') && credential.createdDate! > 0) credential.strCreatedDate = moment(credential.createdDate).format('LLL');
         });
 
         let updateAIA: AIACommand;
@@ -216,12 +215,7 @@ class SigningInPage extends React.Component<SigningInPageProps, SigningInPageSta
                 userCredentials.map(credential => (
                     <DataListItem id={`${SigningInPage.credElementId(type, credential.id, 'row')}`} key={'credential-list-item-' + credential.id} aria-labelledby={'credential-list-item-' + credential.userLabel}>
                         <DataListItemRow key={'userCredentialRow-' + credential.id}>
-                            <DataListItemCells
-                                dataListCells={[
-                                    <DataListCell id={`${SigningInPage.credElementId(type, credential.id, 'label')}`} key={'userLabel-' + credential.id}>{credential.userLabel}</DataListCell>,
-                                    <DataListCell id={`${SigningInPage.credElementId(type, credential.id, 'created-at')}`} key={'created-' + credential.id}><strong><Msg msgKey='credentialCreatedAt'/>: </strong>{credential.strCreatedDate}</DataListCell>,
-                                    <DataListCell key={'spacer-' + credential.id}/>
-                                ]}/>
+                            <DataListItemCells dataListCells={this.credentialRowCells(credential, type)}/>
 
                             <CredentialAction credential={credential}
                                               removeable={removeable}
@@ -234,8 +228,19 @@ class SigningInPage extends React.Component<SigningInPageProps, SigningInPageSta
             </React.Fragment>)
     }
 
+    private credentialRowCells(credential: UserCredential, type: string): React.ReactNode[] {
+        const credRowCells: React.ReactNode[] = [];
+        credRowCells.push(<DataListCell id={`${SigningInPage.credElementId(type, credential.id, 'label')}`} key={'userLabel-' + credential.id}>{credential.userLabel}</DataListCell>);
+        if (credential.strCreatedDate) {
+            credRowCells.push(<DataListCell id={`${SigningInPage.credElementId(type, credential.id, 'created-at')}`} key={'created-' + credential.id}><strong><Msg msgKey='credentialCreatedAt'/>: </strong>{credential.strCreatedDate}</DataListCell>);
+            credRowCells.push(<DataListCell key={'spacer-' + credential.id}/>);
+        }
+
+        return credRowCells;
+    }
+
     private renderCredTypeTitle(credContainer: CredentialContainer): React.ReactNode {
-        if (credContainer.category === 'password') return;
+        if (!credContainer.hasOwnProperty('helptext') && !credContainer.hasOwnProperty('createAction')) return;
 
         let setupAction: AIACommand;
         if (credContainer.createAction) {
