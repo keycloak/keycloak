@@ -41,8 +41,11 @@ public class DefaultClientValidationProvider implements ClientValidationProvider
     }
 
     private void validate(ClientModel client) throws ValidationException {
-        String resolvedRootUrl = ResolveRelative.resolveRootUrl(context.getSession(), client.getRootUrl());
-        String resolvedBaseUrl = ResolveRelative.resolveRelativeUri(context.getSession(), resolvedRootUrl, client.getBaseUrl());
+        // Use a fake URL for validating relative URLs as we may not be validating clients in the context of a request (import at startup)
+        String authServerUrl = "https://localhost/auth";
+
+        String resolvedRootUrl = ResolveRelative.resolveRootUrl(authServerUrl, authServerUrl, client.getRootUrl());
+        String resolvedBaseUrl = ResolveRelative.resolveRelativeUri(authServerUrl, authServerUrl, resolvedRootUrl, client.getBaseUrl());
 
         validateRootUrl(resolvedRootUrl);
         validateBaseUrl(resolvedBaseUrl);
