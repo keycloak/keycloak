@@ -3,7 +3,6 @@ package org.keycloak.testsuite.broker;
 import org.keycloak.admin.client.resource.IdentityProviderResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UsersResource;
-import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -63,27 +62,7 @@ public abstract class AbstractUserAttributeMapperTest extends AbstractBaseBroker
 
     @Before
     public void addClients() {
-        List<ClientRepresentation> clients = bc.createProviderClients(suiteContext);
-        if (clients != null) {
-            RealmResource providerRealm = adminClient.realm(bc.providerRealmName());
-            for (ClientRepresentation client : clients) {
-                log.debug("adding client " + client.getName() + " to realm " + bc.providerRealmName());
-
-                Response resp = providerRealm.clients().create(client);
-                resp.close();
-            }
-        }
-
-        clients = bc.createConsumerClients(suiteContext);
-        if (clients != null) {
-            RealmResource consumerRealm = adminClient.realm(bc.consumerRealmName());
-            for (ClientRepresentation client : clients) {
-                log.debug("adding client " + client.getName() + " to realm " + bc.consumerRealmName());
-
-                Response resp = consumerRealm.clients().create(client);
-                resp.close();
-            }
-        }
+        addClientsToProviderAndConsumer();
     }
 
     protected void createUserInProviderRealm(Map<String, List<String>> attributes) {

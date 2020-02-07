@@ -55,6 +55,7 @@ import org.keycloak.testsuite.util.MailServer;
 import org.keycloak.testsuite.util.UserBuilder;
 import org.openqa.selenium.TimeoutException;
 
+import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriBuilderException;
 import java.net.URI;
@@ -162,6 +163,28 @@ public abstract class AbstractBaseBrokerTest extends AbstractKeycloakTest {
         consumerRealm.update(master);
     }
 
+    protected void addClientsToProviderAndConsumer() {
+        List<ClientRepresentation> clients = bc.createProviderClients(suiteContext);
+        final RealmResource providerRealm = adminClient.realm(bc.providerRealmName());
+        for (ClientRepresentation client : clients) {
+            log.debug("adding client " + client.getClientId() + " to realm " + bc.providerRealmName());
+
+            final Response resp = providerRealm.clients().create(client);
+            resp.close();
+        }
+
+        clients = bc.createConsumerClients(suiteContext);
+        if (clients != null) {
+            RealmResource consumerRealm = adminClient.realm(bc.consumerRealmName());
+            for (ClientRepresentation client : clients) {
+                log.debug("adding client " + client.getClientId() + " to realm " + bc.consumerRealmName());
+
+                Response resp = consumerRealm.clients().create(client);
+                resp.close();
+            }
+        }
+    }
+
     @Before
     public void beforeBrokerTest() {
         importRealm(bc.createConsumerRealm());
@@ -195,24 +218,24 @@ public abstract class AbstractBaseBrokerTest extends AbstractKeycloakTest {
 
     protected void logInAsUserInIDP() {
         driver.navigate().to(getAccountUrl(bc.consumerRealmName()));
+        logInWithBroker(bc);
+    }
 
+    protected void logInWithBroker(BrokerConfiguration bc) {
         log.debug("Clicking social " + bc.getIDPAlias());
         loginPage.clickSocial(bc.getIDPAlias());
-
         waitForPage(driver, "log in to", true);
-
-        Assert.assertTrue("Driver should be on the provider realm page right now",
-                driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"));
-
         log.debug("Logging in");
         loginPage.login(bc.getUserLogin(), bc.getUserPassword());
     }
 
-
     /** Logs in the IDP and updates account information */
     protected void logInAsUserInIDPForFirstTime() {
         logInAsUserInIDP();
+        updateAccountInformation();
+    }
 
+    protected void updateAccountInformation() {
         waitForPage(driver, "update account information", false);
 
         Assert.assertTrue(updateAccountInformationPage.isCurrent());

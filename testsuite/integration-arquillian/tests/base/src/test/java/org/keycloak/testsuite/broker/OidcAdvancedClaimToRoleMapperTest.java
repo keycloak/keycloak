@@ -71,27 +71,7 @@ public class OidcAdvancedClaimToRoleMapperTest extends AbstractBaseBrokerTest {
 
     @Before
     public void addClients() {
-        List<ClientRepresentation> clients = bc.createProviderClients(suiteContext);
-        if (clients != null) {
-            RealmResource providerRealm = adminClient.realm(bc.providerRealmName());
-            for (ClientRepresentation client : clients) {
-                log.debug("adding client " + client.getName() + " to realm " + bc.providerRealmName());
-
-                Response resp = providerRealm.clients().create(client);
-                resp.close();
-            }
-        }
-
-        clients = bc.createConsumerClients(suiteContext);
-        if (clients != null) {
-            RealmResource consumerRealm = adminClient.realm(bc.consumerRealmName());
-            for (ClientRepresentation client : clients) {
-                log.debug("adding client " + client.getName() + " to realm " + bc.consumerRealmName());
-
-                Response resp = consumerRealm.clients().create(client);
-                resp.close();
-            }
-        }
+        addClientsToProviderAndConsumer();
     }
 
     @Test

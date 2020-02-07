@@ -338,7 +338,7 @@ public class TokenVerifier<T extends JsonWebToken> {
     }
 
     /**
-     * @deprecated This method is here only for backward compatibility with previous version of {@code TokenVerifier}.
+     *
      * @return This token verifier
      */
     public TokenVerifier<T> tokenType(String tokenType) {
