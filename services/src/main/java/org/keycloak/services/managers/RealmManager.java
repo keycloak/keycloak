@@ -41,6 +41,7 @@ import org.keycloak.models.utils.DefaultRequiredActions;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.protocol.ProtocolMapperUtils;
+import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
 import org.keycloak.protocol.oidc.mappers.AudienceResolveProtocolMapper;
@@ -170,6 +171,8 @@ public class RealmManager {
         adminConsole.setPublicClient(true);
         adminConsole.setFullScopeAllowed(false);
         adminConsole.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+
+        adminConsole.setAttribute(OIDCConfigAttributes.PKCE_CODE_CHALLENGE_METHOD, "S256");
     }
 
     protected void setupAdminConsoleLocaleMapper(RealmModel realm) {
@@ -461,6 +464,8 @@ public class RealmManager {
                 audienceMapper.setProtocolMapper(AudienceResolveProtocolMapper.PROVIDER_ID);
 
                 accountConsoleClient.addProtocolMapper(audienceMapper);
+
+                accountConsoleClient.setAttribute(OIDCConfigAttributes.PKCE_CODE_CHALLENGE_METHOD, "S256");
             }
         }
     }

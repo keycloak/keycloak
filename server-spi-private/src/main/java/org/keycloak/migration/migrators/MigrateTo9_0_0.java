@@ -57,6 +57,7 @@ public class MigrateTo9_0_0 implements Migration {
     protected void migrateRealmCommon(RealmModel realm) {
         addAccountConsoleClient(realm);
         addAccountApiRoles(realm);
+        enablePkceAdminAccountClients(realm);
     }
 
     private void addAccountApiRoles(RealmModel realm) {
@@ -100,4 +101,17 @@ public class MigrateTo9_0_0 implements Migration {
             client.addProtocolMapper(audienceMapper);
         }
     }
+
+    private void enablePkceAdminAccountClients(RealmModel realm) {
+        ClientModel adminConsole = realm.getClientByClientId(Constants.ADMIN_CONSOLE_CLIENT_ID);
+        if (adminConsole != null) {
+            adminConsole.setAttribute("pkce.code.challenge.method", "S256");
+        }
+
+        ClientModel accountConsole = realm.getClientByClientId(Constants.ACCOUNT_CONSOLE_CLIENT_ID);
+        if (accountConsole != null) {
+            accountConsole.setAttribute("pkce.code.challenge.method", "S256");
+        }
+    }
+
 }
