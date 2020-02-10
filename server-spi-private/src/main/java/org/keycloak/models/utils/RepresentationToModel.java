@@ -628,6 +628,9 @@ public class RepresentationToModel {
                     // Application role may already exists (for example if it is defaultRole)
                     RoleModel role = roleRep.getId() != null ? client.addRole(roleRep.getId(), roleRep.getName()) : client.addRole(roleRep.getName());
                     role.setDescription(roleRep.getDescription());
+                    if (roleRep.getAttributes() != null) {
+                        roleRep.getAttributes().forEach((key, value) -> role.setAttribute(key, value));
+                    }
                 }
             }
         }
