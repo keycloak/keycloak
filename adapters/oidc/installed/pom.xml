@@ -30,6 +30,29 @@
     <name>Keycloak Installed Application</name>
     <description/>
 
+    <properties>
+        <keycloak.osgi.export>
+            org.keycloak.adapters.installed
+        </keycloak.osgi.export>
+        <keycloak.osgi.import>
+            javax.crypto,
+            javax.crypto.spec,
+            javax.ws.rs.client,
+            javax.ws.rs.core,
+            org.jboss.resteasy.client.jaxrs,
+            org.keycloak,
+            org.keycloak.adapters,
+            org.keycloak.adapters.rotation,
+            org.keycloak.common,
+            org.keycloak.common.util,
+            org.keycloak.jose.jwe,
+            org.keycloak.representations,
+            org.keycloak.representations.adapters.config,
+            org.keycloak.representations.idm,
+            org.keycloak.util
+        </keycloak.osgi.import>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>org.keycloak</groupId>
@@ -73,5 +96,42 @@
         </dependency>
 
     </dependencies>
+
+    <build>
+        <plugins>
+            <!-- Adding OSGI metadata to the JAR without changing the packaging type. -->
+            <plugin>
+                <artifactId>maven-jar-plugin</artifactId>
+                <configuration>
+                    <archive>
+                        <manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
+                    </archive>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.felix</groupId>
+                <artifactId>maven-bundle-plugin</artifactId>
+                <extensions>true</extensions>
+                <executions>
+                    <execution>
+                        <id>bundle-manifest</id>
+                        <phase>process-classes</phase>
+                        <goals>
+                            <goal>manifest</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <instructions>
+                        <Bundle-ClassPath>.</Bundle-ClassPath>
+                        <Bundle-Name>${project.name}</Bundle-Name>
+                        <Bundle-SymbolicName>${project.groupId}.${project.artifactId}</Bundle-SymbolicName>
+                        <Import-Package>${keycloak.osgi.import}</Import-Package>
+                        <Export-Package>${keycloak.osgi.export}</Export-Package>
+                    </instructions>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 
 </project>
