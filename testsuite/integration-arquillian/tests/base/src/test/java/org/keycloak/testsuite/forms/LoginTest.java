@@ -801,9 +801,8 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void openLoginFormWithDifferentApplication() throws Exception {
-        // Login form shown after redirect from admin console
-        oauth.clientId(Constants.ADMIN_CONSOLE_CLIENT_ID);
-        oauth.redirectUri(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth/admin/test/console");
+        oauth.clientId("root-url-client");
+        oauth.redirectUri("http://localhost:8180/foo/bar/");
         oauth.openLoginForm();
 
         // Login form shown after redirect from app

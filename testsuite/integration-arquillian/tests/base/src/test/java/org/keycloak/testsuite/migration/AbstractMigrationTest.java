@@ -41,6 +41,7 @@ import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.models.utils.TimeBasedOTP;
+import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.AuthenticationExecutionExportRepresentation;
@@ -281,6 +282,8 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         testFirstBrokerLoginFlowMigrated(migrationRealm);
         testAccountClient(masterRealm);
         testAccountClient(migrationRealm);
+        testAdminClientPkce(masterRealm);
+        testAdminClientPkce(migrationRealm);
     }
 
     private void testAccountClient(RealmResource realm) {
@@ -312,6 +315,11 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         assertEquals(1, adminConsoleClient.getWebOrigins().size());
     }
 
+    private void testAdminClientPkce(RealmResource realm) {
+        ClientRepresentation adminConsoleClient = realm.clients().findByClientId(Constants.ADMIN_CONSOLE_CLIENT_ID).get(0);
+        assertEquals("S256", adminConsoleClient.getAttributes().get(OIDCConfigAttributes.PKCE_CODE_CHALLENGE_METHOD));
+    }
+
     private void testAccountClientUrls(RealmResource realm) {
         ClientRepresentation accountConsoleClient = realm.clients().findByClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID).get(0);
 
@@ -331,6 +339,7 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         assertFalse(accountConsoleClient.isFullScopeAllowed());
         assertTrue(accountConsoleClient.isStandardFlowEnabled());
         assertFalse(accountConsoleClient.isDirectAccessGrantsEnabled());
+        assertEquals("S256", accountConsoleClient.getAttributes().get(OIDCConfigAttributes.PKCE_CODE_CHALLENGE_METHOD));
 
         ClientResource clientResource = realm.clients().get(accountConsoleClient.getId());
 

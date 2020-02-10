@@ -38,6 +38,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.ActionURIUtils;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
+import org.keycloak.testsuite.oidc.PkceGenerator;
 import org.keycloak.testsuite.runonserver.ServerVersion;
 
 import java.io.IOException;
@@ -65,9 +66,11 @@ public class LoginStatusIframeEndpointTest extends AbstractKeycloakTest {
         try (CloseableHttpClient client = HttpClients.custom().setDefaultCookieStore(cookieStore).build()) {
             String redirectUri = URLEncoder.encode(suiteContext.getAuthServerInfo().getContextRoot() + "/auth/admin/master/console", "UTF-8");
 
+            PkceGenerator pkce = new PkceGenerator();
+
             HttpGet get = new HttpGet(
                     suiteContext.getAuthServerInfo().getContextRoot() + "/auth/realms/master/protocol/openid-connect/auth?response_type=code&client_id=" + Constants.ADMIN_CONSOLE_CLIENT_ID +
-                            "&redirect_uri=" + redirectUri);
+                            "&redirect_uri=" + redirectUri + "&scope=openid&code_challenge_method=S256&code_challenge=" + pkce.getCodeChallenge());
 
             CloseableHttpResponse response = client.execute(get);
             String s = IOUtils.toString(response.getEntity().getContent(), "UTF-8");
