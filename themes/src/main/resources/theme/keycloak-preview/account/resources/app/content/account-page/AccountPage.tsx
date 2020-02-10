@@ -47,8 +47,7 @@ interface AccountPageState {
 export class AccountPage extends React.Component<AccountPageProps, AccountPageState> {
     private isRegistrationEmailAsUsername: boolean = features.isRegistrationEmailAsUsername;
     private isEditUserNameAllowed: boolean = features.isEditUserNameAllowed;
-
-    public state: AccountPageState = {
+    private readonly DEFAULT_STATE: AccountPageState = {
         errors: {
             username: '',
             firstName: '',
@@ -63,6 +62,8 @@ export class AccountPage extends React.Component<AccountPageProps, AccountPageSt
         }
     };
 
+    public state: AccountPageState = this.DEFAULT_STATE;
+
     public constructor(props: AccountPageProps) {
         super(props);
         this.fetchPersonalInfo();
@@ -71,8 +72,8 @@ export class AccountPage extends React.Component<AccountPageProps, AccountPageSt
     private fetchPersonalInfo(): void {
         AccountServiceClient.Instance.doGet("/")
             .then((response: AxiosResponse<FormFields>) => {
-                this.setState({ formFields: response.data });
-                console.log({ response });
+                this.setState(this.DEFAULT_STATE);
+                this.setState({...{ formFields: response.data }});
             });
     }
 

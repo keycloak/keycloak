@@ -131,6 +131,16 @@ public class PersonalInfoTest extends BaseAccountPageTest {
     }
 
     @Test
+    public void cancelForm() {
+        setEditUsernameAllowed(false);
+
+        personalInfoPage.setValues(testUser2, false);
+        personalInfoPage.setEmail("hsimpson@springfield.com");
+        personalInfoPage.clickCancel();
+        personalInfoPage.valuesEqual(testUser2);
+    }
+
+    @Test
     public void disabledEditUsername() {
         setEditUsernameAllowed(false);
 
