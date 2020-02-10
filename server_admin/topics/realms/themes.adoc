@@ -30,3 +30,25 @@ Every UI screen is internationalized in {project_name}.  The default language is
 will be.  The next time a user logs in, they will be able to choose a language on the login page to use for the login screens,
 User Account Management UI, and Admin Console.  The link:{developerguide_link}[{developerguide_name}] explains
 how you can offer additional languages.
+
+
+[[_user_locale_selection]]
+===== User Locale selection
+
+In order to select the best possible locale for a user there is a locale selector provider that handles deciding what
+is the best locale on the information available. One thing to note here is that it is not always known who the user is.
+For this reason the previously authenticated users locale is remembered in a persisted cookie.
+
+The logic for selecting the locale uses the first of the following that is available:
+
+* User selected - when the user has selected a locale using the drop-down locale selector
+* User profile - when there is an authenticated user and the user has a preferred locale set
+* Client selected - passed by the client using for example ui_locales parameter
+* Cookie - last locale selected on the browser
+* Accepted language - locale from `Accept-Language` header
+* Realm default
+* If none of the above, fallback to English
+
+When a user is authenticated an action is triggered to update the locale in the persisted cookie mentioned earlier. If the
+user has actively switched the locale through the locale selector on the login pages the users locale is also updated at
+this point.

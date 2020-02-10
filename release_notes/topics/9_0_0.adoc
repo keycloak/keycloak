@@ -21,6 +21,13 @@ available authentication mechanisms for two-factor authentication. It should be 
 considering the fact that user can have more OTP or WebAuthn credentials. There is also better support for passwordless WebAuthn authentication.
 Finally, we did some work on defects related to the authentication flows.
 
+== Improved handling of user locale
+
+A number of improvements have been made to how the locale for the login page is selected, as well as when the locale
+is updated for a user.
+
+See the link:{adminguide_link}#_user_locale_selection[{adminguide_name}] for more details.
+
 == Other improvements
 
 * Authorization Header token is only considered now when type is Bearer on Gatekeeper. Thanks to https://github.com/HansK-p[HansK-p]

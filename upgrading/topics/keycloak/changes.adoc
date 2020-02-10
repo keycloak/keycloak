@@ -1,5 +1,14 @@
 == Migration Changes
 
+=== Migrating to 9.0.0
+
+===== Improved handling of user locale
+
+A number of improvements have been made to how the locale for the login page is selected, as well as when the locale
+is updated for a user.
+
+See the link:{adminguide_link}#_user_locale_selection[{adminguide_name}] for more details.
+
 === Migrating to 8.0.2
 
 ==== More Authentication flows changes
