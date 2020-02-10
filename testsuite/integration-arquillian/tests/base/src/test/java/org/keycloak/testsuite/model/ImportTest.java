@@ -83,19 +83,22 @@ public class ImportTest extends AbstractTestRealmKeycloakTest {
             // Need a new thread to not get context from thread processing request to run-on-server endpoint
             Thread t = new Thread(() -> {
                 try {
-                    KeycloakSession session2 = session.getKeycloakSessionFactory().create();
-                    session2.getContext().setRealm(session.getContext().getRealm());
-                    session2.getTransactionManager().begin();
+                    KeycloakSession ses = session.getKeycloakSessionFactory().create();
+                    ses.getContext().setRealm(session.getContext().getRealm());
+                    ses.getTransactionManager().begin();
 
-                    RealmModel realmModel = new RealmManager(session2).importRealm(testRealm);
+                    RealmModel realmModel = new RealmManager(ses).importRealm(testRealm);
 
-                    session2.getTransactionManager().commit();
+                    ses.getTransactionManager().commit();
+                    ses.close();
 
-                    session2.getTransactionManager().begin();
+                    ses = session.getKeycloakSessionFactory().create();
+
+                    ses.getTransactionManager().begin();
                     session.realms().removeRealm(realmModel.getId());
-                    session2.getTransactionManager().commit();
+                    ses.getTransactionManager().commit();
 
-                    session2.close();
+                    ses.close();
                 } catch (Throwable th) {
                     err.set(th);
                 }
