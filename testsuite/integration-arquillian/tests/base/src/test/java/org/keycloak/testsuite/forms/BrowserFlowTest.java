@@ -45,6 +45,7 @@ import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.authentication.ConditionalUserAttributeValueFactory;
 import org.keycloak.testsuite.authentication.SetUserAttributeAuthenticatorFactory;
 import org.keycloak.testsuite.util.URLUtils;
+import org.keycloak.testsuite.util.WaitUtils;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
@@ -62,6 +63,10 @@ import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.GOOGLE;
 
 public class BrowserFlowTest extends AbstractTestRealmKeycloakTest {
     private static final String INVALID_AUTH_CODE = "Invalid authenticator code.";
+
+    private static final String USER_WITH_ONE_OTP_OTP_SECRET = "DJmQfC73VGFhw7D4QJ8A";
+    private static final String USER_WITH_TWO_OTPS_OTP1_SECRET = "DJmQfC73VGFhw7D4QJ8A";
+    private static final String USER_WITH_TWO_OTPS_OTP2_SECRET = "ABCQfC73VGFhw7D4QJ8A";
 
     @ArquillianResource
     protected OAuthClient oauth;
@@ -160,16 +165,13 @@ public class BrowserFlowTest extends AbstractTestRealmKeycloakTest {
         loginTotpPage.assertCurrent();
         loginTotpPage.assertOtpCredentialSelectorAvailability(false);
 
-        oneTimeCodePage.sendCode(getOtpCode("DJmQfC73VGFhw7D4QJ8A"));
+        oneTimeCodePage.sendCode(getOtpCode(USER_WITH_ONE_OTP_OTP_SECRET));
         Assert.assertFalse(loginPage.isCurrent());
         Assert.assertFalse(oneTimeCodePage.isOtpLabelPresent());
     }
 
     @Test
     public void testUserWithTwoAdditionalFactors() {
-        final String firstKey = "DJmQfC73VGFhw7D4QJ8A";
-        final String secondKey = "ABCQfC73VGFhw7D4QJ8A";
-
         // Provide username and password
         provideUsernamePassword("user-with-two-configured-otp");
         Assert.assertTrue(oneTimeCodePage.isOtpLabelPresent());
@@ -181,17 +183,17 @@ public class BrowserFlowTest extends AbstractTestRealmKeycloakTest {
 
         // Select "second" factor (which is unnamed as it doesn't have userLabel) but try to connect with the OTP code from the "first" one
         loginTotpPage.selectOtpCredential(OTPFormAuthenticator.UNNAMED);
-        loginTotpPage.login(getOtpCode(firstKey));
+        loginTotpPage.login(getOtpCode(USER_WITH_TWO_OTPS_OTP1_SECRET));
         Assert.assertEquals(INVALID_AUTH_CODE, oneTimeCodePage.getError());
 
         // Select "first" factor but try to connect with the OTP code from the "second" one
         loginTotpPage.selectOtpCredential("first");
-        loginTotpPage.login(getOtpCode(secondKey));
+        loginTotpPage.login(getOtpCode(USER_WITH_TWO_OTPS_OTP2_SECRET));
         Assert.assertEquals(INVALID_AUTH_CODE, oneTimeCodePage.getError());
 
         // Select "second" factor and try to connect with its OTP code
         loginTotpPage.selectOtpCredential(OTPFormAuthenticator.UNNAMED);
-        loginTotpPage.login(getOtpCode(secondKey));
+        loginTotpPage.login(getOtpCode(USER_WITH_TWO_OTPS_OTP2_SECRET));
         Assert.assertFalse(oneTimeCodePage.isOtpLabelPresent());
     }
 
@@ -617,7 +619,7 @@ public class BrowserFlowTest extends AbstractTestRealmKeycloakTest {
             loginTotpPage.assertCurrent();
             loginTotpPage.assertOtpCredentialSelectorAvailability(false);
 
-            loginTotpPage.login(getOtpCode("DJmQfC73VGFhw7D4QJ8A"));
+            loginTotpPage.login(getOtpCode(USER_WITH_ONE_OTP_OTP_SECRET));
             Assert.assertFalse(loginTotpPage.isCurrent());
             events.expectLogin().user(testRealm().users().search("user-with-one-configured-otp").get(0).getId())
                     .detail(Details.USERNAME, "user-with-one-configured-otp").assertEvent();
@@ -683,7 +685,7 @@ public class BrowserFlowTest extends AbstractTestRealmKeycloakTest {
             loginTotpPage.assertCurrent();
             loginTotpPage.assertOtpCredentialSelectorAvailability(true);
 
-            loginTotpPage.login(getOtpCode("DJmQfC73VGFhw7D4QJ8A"));
+            loginTotpPage.login(getOtpCode(USER_WITH_TWO_OTPS_OTP1_SECRET));
             Assert.assertFalse(loginTotpPage.isCurrent());
             events.expectLogin().user(userId).detail(Details.USERNAME, "user-with-two-configured-otp").assertEvent();
         } finally {
@@ -1101,6 +1103,40 @@ public class BrowserFlowTest extends AbstractTestRealmKeycloakTest {
     }
 
     /**
+     * Test for KEYCLOAK-12858
+     *
+     * Flow is configured, so that once user provides username, there are 2 alternatives:
+     * - OTP
+     * - Subflow1, which contains another conditional subflow2, which requires user to authenticate with Password if he has password configured
+     *
+     * After login with password and fulfill the conditional subflow2, the subflow1 should be considered successful as well and the OTP authentication should not be needed
+     */
+    @Test
+    @AuthServerContainerExclude(REMOTE)
+    public void testLoginWithAlternativeOTPAndConditionalPassword(){
+        String newFlowAlias = "browser - copy 2";
+        configureBrowserFlowWithAlternativeOTPAndConditionalPassword(newFlowAlias);
+        try {
+
+            loginUsernameOnlyPage.open();
+            loginUsernameOnlyPage.assertCurrent();
+            loginUsernameOnlyPage.login("user-with-one-configured-otp");
+
+            // Assert that the login skipped the OTP authenticator and moved to the password
+            passwordPage.assertCurrent();
+            passwordPage.assertTryAnotherWayLinkAvailability(true);
+            passwordPage.login("password");
+
+            Assert.assertFalse(loginPage.isCurrent());
+            Assert.assertFalse(oneTimeCodePage.isOtpLabelPresent());
+            events.expectLogin().user(testRealm().users().search("user-with-one-configured-otp").get(0).getId())
+                    .detail(Details.USERNAME, "user-with-one-configured-otp").assertEvent();
+        } finally {
+            revertFlows(newFlowAlias);
+        }
+    }
+
+    /**
      * This flow contains:
      * UsernameForm REQUIRED
      * Subflow REQUIRED
@@ -1110,7 +1146,7 @@ public class BrowserFlowTest extends AbstractTestRealmKeycloakTest {
      *
      * The password form is in a sub-subflow, because otherwise credential preference mechanisms would take over and any
      * way go into the password form. Note that this flow only works for the test because WebAuthn is a isUserSetupAllowed
-     * flow that is not a CredentialValidator. When this changes, this flow will have to be modified to use another appropriate
+     * flow . When this changes, this flow will have to be modified to use another appropriate
      * authenticator.
      *
      * @param newFlowAlias
@@ -1126,6 +1162,38 @@ public class BrowserFlowTest extends AbstractTestRealmKeycloakTest {
                                 .addAuthenticatorExecution(Requirement.ALTERNATIVE, WebAuthnAuthenticatorFactory.PROVIDER_ID)
                                 .addSubFlowExecution(Requirement.ALTERNATIVE, sf -> sf
                                         .addAuthenticatorExecution(Requirement.ALTERNATIVE, PasswordFormFactory.PROVIDER_ID))
+                        )
+                ).defineAsBrowserFlow() // Activate this new flow
+        );
+    }
+
+    /**
+     * This flow contains:
+     * UsernameForm REQUIRED
+     * Subflow REQUIRED
+     * ** OTP ALTERNATIVE
+     * ** password-subflow ALTERNATIVE
+     * **** PasswordConditional subflow CONDITIONAL
+     * ****** ConditionalUserConfiguredOTP REQUIRED
+     * ****** Password REQUIRED
+     *
+     * @param newFlowAlias
+     */
+    private void configureBrowserFlowWithAlternativeOTPAndConditionalPassword(String newFlowAlias) {
+        testingClient.server("test").run(session -> FlowUtil.inCurrentRealm(session).copyBrowserFlow(newFlowAlias));
+        testingClient.server("test").run(session -> FlowUtil.inCurrentRealm(session)
+                .selectFlow(newFlowAlias)
+                .inForms(forms -> forms
+                        .clear()
+                        .addAuthenticatorExecution(Requirement.REQUIRED, UsernameFormFactory.PROVIDER_ID)
+                        .addSubFlowExecution(Requirement.REQUIRED, subflow -> subflow
+                                .addAuthenticatorExecution(Requirement.ALTERNATIVE, OTPFormAuthenticatorFactory.PROVIDER_ID)
+                                .addSubFlowExecution(Requirement.ALTERNATIVE, sf -> sf
+                                        .addSubFlowExecution(Requirement.CONDITIONAL, sf2 -> sf2
+                                                .addAuthenticatorExecution(Requirement.REQUIRED, ConditionalUserConfiguredAuthenticatorFactory.PROVIDER_ID)
+                                                .addAuthenticatorExecution(Requirement.REQUIRED, PasswordFormFactory.PROVIDER_ID)
+                                        )
+                                )
                         )
                 ).defineAsBrowserFlow() // Activate this new flow
         );

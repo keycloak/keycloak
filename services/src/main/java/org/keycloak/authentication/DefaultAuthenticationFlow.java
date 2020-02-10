@@ -32,6 +32,7 @@ import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -188,76 +189,6 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
 
 
     /**
-     * Clear execution status of targetExecution and also clear execution status of all the executions, which were triggered after this execution.
-     * This covers also "flow" executions and executions, which were set automatically
-     *
-     * @param targetExecution
-     */
-    private void recursiveClearExecutionStatusOfAllExecutionsAfterOurExecutionInclusive(AuthenticationExecutionModel targetExecution) {
-        RealmModel realm = processor.getRealm();
-        AuthenticationSessionModel authSession = processor.getAuthenticationSession();
-
-        // Clear execution status of our execution
-        authSession.getExecutionStatus().remove(targetExecution.getId());
-
-        // Find all the "sibling" executions after target execution including target execution. For those, we can recursively remove execution status
-        recursiveClearExecutionStatusOfAllSiblings(targetExecution);
-
-        // Find the parent flow. If corresponding execution of this parent flow already has "executionStatus" set, we should clear it and also clear
-        // the status for all the siblings after that execution
-        while (true) {
-            AuthenticationFlowModel parentFlow = realm.getAuthenticationFlowById(targetExecution.getParentFlow());
-            if (parentFlow.isTopLevel()) {
-                return;
-            }
-
-            AuthenticationExecutionModel flowExecution = realm.getAuthenticationExecutionByFlowId(parentFlow.getId());
-            if (authSession.getExecutionStatus().containsKey(flowExecution.getId())) {
-                authSession.getExecutionStatus().remove(flowExecution.getId());
-                recursiveClearExecutionStatusOfAllSiblings(flowExecution);
-                targetExecution = flowExecution;
-            } else {
-                return;
-            }
-
-        }
-    }
-
-
-    /**
-     * Recursively removes the execution status of all "sibling" executions after targetExecution.
-     *
-     * @param targetExecution
-     */
-    private void recursiveClearExecutionStatusOfAllSiblings(AuthenticationExecutionModel targetExecution) {
-        RealmModel realm = processor.getRealm();
-        AuthenticationFlowModel parentFlow = realm.getAuthenticationFlowById(targetExecution.getParentFlow());
-
-        logger.debugf("Recursively clearing executions in flow '%s', which are after execution '%s'", parentFlow.getAlias(), targetExecution.getId());
-
-        List<AuthenticationExecutionModel> siblingExecutions = realm.getAuthenticationExecutions(parentFlow.getId());
-        int index = siblingExecutions.indexOf(targetExecution);
-        siblingExecutions = siblingExecutions.subList(index + 1, siblingExecutions.size());
-
-        for (AuthenticationExecutionModel authExec : siblingExecutions) {
-            recursiveClearExecutionStatus(authExec);
-        }
-    }
-
-
-    /**
-     * Removes the execution status for an execution. If it is a flow, do the same for all sub-executions.
-     *
-     * @param execution the execution for which the status must be cleared
-     */
-    private void recursiveClearExecutionStatus(AuthenticationExecutionModel execution) {
-        processor.getAuthenticationSession().getExecutionStatus().remove(execution.getId());
-        if (execution.isAuthenticatorFlow()) {
-            processor.getRealm().getAuthenticationExecutions(execution.getFlowId()).forEach(this::recursiveClearExecutionStatus);
-        }
-    }
-
-    /**
      * This method makes sure that the parent flow's corresponding execution is considered successful if its contained
      * executions are successful.
      * The purpose is for when an execution is validated through an action, to make sure its parent flow can be successful
@@ -270,13 +201,23 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
         while (true) {
             List<AuthenticationExecutionModel> localExecutions = processor.getRealm().getAuthenticationExecutions(model.getParentFlow());
             AuthenticationExecutionModel parentFlowExecutionModel = processor.getRealm().getAuthenticationExecutionByFlowId(model.getParentFlow());
-            if (parentFlowExecutionModel != null &&
-                    ((model.isRequired() && localExecutions.stream().allMatch(processor::isSuccessful)) ||
-                            (model.isAlternative() && localExecutions.stream().anyMatch(processor::isSuccessful)))) {
-                processor.getAuthenticationSession().setExecutionStatus(parentFlowExecutionModel.getId(), AuthenticationSessionModel.ExecutionStatus.SUCCESS);
 
-                // Flow is successfully finished. Recursively check whether it's parent flow is now successful as well
-                model = parentFlowExecutionModel;
+            if (parentFlowExecutionModel != null) {
+                List<AuthenticationExecutionModel> requiredExecutions = new LinkedList<>();
+                List<AuthenticationExecutionModel> alternativeExecutions = new LinkedList<>();
+                fillListsOfExecutions(localExecutions, requiredExecutions, alternativeExecutions);
+
+                // Note: If we evaluate alternative execution, we will also doublecheck that there are not required elements in same subflow
+                if ((model.isRequired() && requiredExecutions.stream().allMatch(processor::isSuccessful)) ||
+                        (model.isAlternative() && alternativeExecutions.stream().anyMatch(processor::isSuccessful) && requiredExecutions.isEmpty())) {
+                    logger.debugf("Flow '%s' successfully finished after children executions success", logExecutionAlias(parentFlowExecutionModel));
+                    processor.getAuthenticationSession().setExecutionStatus(parentFlowExecutionModel.getId(), AuthenticationSessionModel.ExecutionStatus.SUCCESS);
+
+                    // Flow is successfully finished. Recursively check whether it's parent flow is now successful as well
+                    model = parentFlowExecutionModel;
+                } else {
+                    return model.getParentFlow();
+                }
             } else {
                 return model.getParentFlow();
             }
@@ -428,21 +369,22 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
 
 
     private Response processSingleFlowExecutionModel(AuthenticationExecutionModel model, boolean calledFromFlow) {
-        logger.debugv("check execution: {0} requirement: {1}", model.getAuthenticator(), model.getRequirement());
+        logger.debugf("check execution: '%s', requirement: '%s'", logExecutionAlias(model), model.getRequirement());
 
         if (isProcessed(model)) {
-            logger.debug("execution is processed");
+            logger.debugf("execution '%s' is processed", logExecutionAlias(model));
             return null;
         }
         //handle case where execution is a flow
         if (model.isAuthenticatorFlow()) {
-            logger.debug("execution is flow");
             AuthenticationFlow authenticationFlow = processor.createFlowExecution(model.getFlowId(), model);
             Response flowChallenge = authenticationFlow.processFlow();
             if (flowChallenge == null) {
                 if (authenticationFlow.isSuccessful()) {
+                    logger.debugf("Flow '%s' successfully finished", logExecutionAlias(model));
                     processor.getAuthenticationSession().setExecutionStatus(model.getId(), AuthenticationSessionModel.ExecutionStatus.SUCCESS);
                 } else {
+                    logger.debugf("Flow '%s' failed", logExecutionAlias(model));
                     processor.getAuthenticationSession().setExecutionStatus(model.getId(), AuthenticationSessionModel.ExecutionStatus.FAILED);
                 }
                 return null;
@@ -496,6 +438,22 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
         authenticator.authenticate(context);
 
         return processResult(context, false);
+    }
+
+    // Used for debugging purpose only. Log alias of authenticator (for non-flow executions) or alias of authenticationFlow (for flow executions)
+    private String logExecutionAlias(AuthenticationExecutionModel executionModel) {
+        if (executionModel.isAuthenticatorFlow()) {
+            // Resolve authenticationFlow model in case of debug logging. Otherwise don't lookup flowModel just because of logging and return only flowId
+            if (logger.isDebugEnabled()) {
+                AuthenticationFlowModel flowModel = processor.getRealm().getAuthenticationFlowById(executionModel.getFlowId());
+                if (flowModel != null) {
+                    return flowModel.getAlias() + " flow";
+                }
+            }
+            return executionModel.getFlowId() + " flow";
+        } else {
+            return executionModel.getAuthenticator();
+        }
     }
 
     /**
