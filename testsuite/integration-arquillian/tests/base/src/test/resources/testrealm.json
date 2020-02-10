@@ -473,7 +473,12 @@
         },
         {
           "name": "sample-client-role",
-          "description": "Sample client role"
+          "description": "Sample client role",
+          "attributes": {
+            "sample-client-role-attribute": [
+              "sample-client-role-attribute-value"
+            ]
+          }
         },
         {
           "name": "customer-admin-composite-role",
