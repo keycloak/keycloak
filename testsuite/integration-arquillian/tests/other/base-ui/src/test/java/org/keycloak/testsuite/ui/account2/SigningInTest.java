@@ -57,6 +57,7 @@ import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
 import static org.keycloak.testsuite.util.UIUtils.refreshPageAndWaitForLoad;
 import static org.keycloak.testsuite.util.WaitUtils.pause;
 import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
+import org.keycloak.testsuite.util.DroneUtils;
 
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
@@ -175,8 +176,7 @@ public class SigningInTest extends BaseAccountPageTest {
         passwordCred.clickUpdateBtn();
         updatePasswordPage.assertCurrent();
         updatePasswordPage.updatePasswords(newPwd, newPwd);
-        // TODO uncomment this once KEYCLOAK-12852 is resolved
-        // signingInPage.assertCurrent();
+        signingInPage.assertCurrent();
 
         assertUserCredential(PASSWORD_LABEL, false, passwordCred);
         assertNotEquals(previousCreatedAt, passwordCred.getCreatedAt());
@@ -189,8 +189,7 @@ public class SigningInTest extends BaseAccountPageTest {
         assertFalse(otpCredentialType.isSetUp());
         otpCredentialType.clickSetUpLink();
         otpSetupPage.cancel();
-        // TODO uncomment this once KEYCLOAK-12852 is resolved
-        // signingInPage.assertCurrent();
+        signingInPage.assertCurrent();
         assertFalse(otpCredentialType.isSetUp());
 
         assertEquals("Authenticator Application", otpCredentialType.getTitle());
@@ -287,8 +286,7 @@ public class SigningInTest extends BaseAccountPageTest {
         otpSetupPage.setTotp(code);
         otpSetupPage.setUserLabel(label);
         otpSetupPage.submit();
-        // TODO uncomment this once KEYCLOAK-12852 is resolved
-        // signingInPage.assertCurrent();
+        signingInPage.assertCurrent();
 
         return getNewestUserCredential(otpCredentialType);
     }
@@ -299,8 +297,7 @@ public class SigningInTest extends BaseAccountPageTest {
         credentialType.clickSetUpLink(true);
         webAuthnRegisterPage.registerWebAuthnCredential(label);
         waitForPageToLoad();
-        // TODO uncomment this once KEYCLOAK-12852 is resolved
-        // signingInPage.assertCurrent();
+        signingInPage.assertCurrent();
 
         return getNewestUserCredential(credentialType);
     }
