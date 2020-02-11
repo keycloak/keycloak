@@ -21,6 +21,7 @@ import java.net.URI;
 import java.util.Objects;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
+import org.jboss.logging.Logger;
 
 public class DBAllocatorServiceClient {
 
@@ -29,6 +30,7 @@ public class DBAllocatorServiceClient {
     private final Client restClient;
     private final URI allocatorServletURI;
     private final BackoffRetryPolicy retryPolicy;
+    private final Logger logger = Logger.getLogger(DBAllocatorServiceClient.class);
 
     public DBAllocatorServiceClient(String allocatorServletURI, BackoffRetryPolicy retryPolicy) {
         Objects.requireNonNull(allocatorServletURI, "DB Allocator URI must not be null");
@@ -68,6 +70,7 @@ public class DBAllocatorServiceClient {
                     .queryParam("expiry", expirationTimeUnit.toMinutes(expiration))
                     .request();
 
+            logger.info("Calling " + allocatorServletURI);
             Response response = retryPolicy.retryTillHttpOk(() -> target.get());
             Properties properties = new Properties();
             String content = response.readEntity(String.class);
