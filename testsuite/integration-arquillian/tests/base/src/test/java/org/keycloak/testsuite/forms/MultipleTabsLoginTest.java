@@ -23,6 +23,8 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.models.Constants;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
@@ -41,9 +43,12 @@ import org.keycloak.testsuite.pages.LoginUpdateProfilePage;
 import org.keycloak.testsuite.pages.OAuthGrantPage;
 import org.keycloak.testsuite.pages.RegisterPage;
 import org.keycloak.testsuite.pages.VerifyEmailPage;
+import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.GreenMailRule;
 import org.keycloak.testsuite.util.UserBuilder;
+import org.openqa.selenium.NoSuchElementException;
 
+import static org.junit.Assert.fail;
 import static org.keycloak.testsuite.arquillian.AuthServerTestEnricher.getAuthServerContextRoot;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
 
@@ -367,5 +372,53 @@ public class MultipleTabsLoginTest extends AbstractTestRealmKeycloakTest {
         String currentUrl = driver.getCurrentUrl();
         assertCurrentUrlStartsWith(redirectUri2);
         Assert.assertTrue(currentUrl.contains("state2"));
+    }
+
+    // KEYCLOAK-12161
+    @Test
+    public void testEmptyBaseUrl() throws Exception {
+        String clientUuid = KeycloakModelUtils.generateId();
+        ClientRepresentation emptyBaseclient = ClientBuilder.create()
+                .clientId("empty-baseurl-client")
+                .id(clientUuid)
+                .enabled(true)
+                .baseUrl("")
+                .addRedirectUri("*")
+                .secret("password")
+                .build();
+        testRealm().clients().create(emptyBaseclient);
+        getCleanup().addClientUuid(clientUuid);
+
+        oauth.clientId("empty-baseurl-client");
+        oauth.openLoginForm();
+        loginPage.assertCurrent();
+
+        loginPage.login("login-test", "password");
+        updatePasswordPage.assertCurrent();
+
+        String tab1Url = driver.getCurrentUrl();
+
+        // Simulate login in different browser tab tab2. I will be on loginPage again.
+        oauth.openLoginForm();
+        loginPage.assertCurrent();
+
+        // Login in tab2
+        loginPage.login("login-test", "password");
+        updatePasswordPage.assertCurrent();
+
+        updatePasswordPage.changePassword("password", "password");
+        updateProfilePage.update("John", "Doe3", "john@doe3.com");
+        appPage.assertCurrent();
+
+        // Try to go back to tab 1. We should have ALREADY_LOGGED_IN info page
+        driver.navigate().to(tab1Url);
+        infoPage.assertCurrent();
+        Assert.assertEquals("You are already logged in.", infoPage.getInfo());
+
+        try {
+            infoPage.clickBackToApplicationLink();
+            fail();
+        }
+        catch (NoSuchElementException ex) {}
     }
 }
