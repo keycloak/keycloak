@@ -410,7 +410,7 @@ public class TokenManager {
 
     public AccessToken createClientAccessToken(KeycloakSession session, RealmModel realm, ClientModel client, UserModel user, UserSessionModel userSession,
                                                ClientSessionContext clientSessionCtx) {
-        AccessToken token = initToken(realm, client, user, userSession, clientSessionCtx, session.getContext().getUri());
+        AccessToken token = initToken(session, realm, client, user, userSession, clientSessionCtx, session.getContext().getUri());
         token = transformAccessToken(session, token, userSession, clientSessionCtx);
         return token;
     }
@@ -587,7 +587,7 @@ public class TokenManager {
         }
     }
 
-    protected AccessToken initToken(RealmModel realm, ClientModel client, UserModel user, UserSessionModel session,
+    protected AccessToken initToken(KeycloakSession session, RealmModel realm, ClientModel client, UserModel user, UserSessionModel userSession,
                                     ClientSessionContext clientSessionCtx, UriInfo uriInfo) {
         AccessToken token = new AccessToken();
         token.id(KeycloakModelUtils.generateId());
@@ -606,16 +606,25 @@ public class TokenManager {
         String acr = (AuthenticationManager.isSSOAuthentication(clientSession)) ? "0" : "1";
         token.setAcr(acr);
 
-        String authTime = session.getNote(AuthenticationManager.AUTH_TIME);
+        String authTime = userSession.getNote(AuthenticationManager.AUTH_TIME);
         if (authTime != null) {
             token.setAuthTime(Integer.parseInt(authTime));
         }
 
-
-        token.setSessionState(session.getId());
-        token.expiration(getTokenExpiration(realm, client, session, clientSession));
+        token.setSessionState(userSession.getId());
+        token.expiration(getTokenExpiration(realm, client, userSession, clientSession));
+        token.notBefore(computeNotBefore(session, realm, client, user, userSession));
 
         return token;
+    }
+
+    private int computeNotBefore(KeycloakSession session, RealmModel realm, ClientModel client, UserModel user, UserSessionModel userSession) {
+        int notBefore = realm.getNotBefore();
+        if (client.getNotBefore() > notBefore) notBefore = client.getNotBefore();
+        int userNotBefore = session.users().getNotBeforeOfUser(realm, userSession.getUser());
+        if (userNotBefore > notBefore) notBefore = userNotBefore;
+
+        return notBefore;
     }
 
     private int getTokenExpiration(RealmModel realm, ClientModel client,  UserSessionModel userSession, AuthenticatedClientSessionModel clientSession) {
@@ -837,10 +846,7 @@ public class TokenManager {
                 }
             }
 
-            int notBefore = realm.getNotBefore();
-            if (client.getNotBefore() > notBefore) notBefore = client.getNotBefore();
-            int userNotBefore = session.users().getNotBeforeOfUser(realm, userSession.getUser());
-            if (userNotBefore > notBefore) notBefore = userNotBefore;
+            int notBefore = TokenManager.this.computeNotBefore(session, realm, client, userSession.getUser(), userSession);
             res.setNotBeforePolicy(notBefore);
 
             // OIDC Financial API Read Only Profile : scope MUST be returned in the response from Token Endpoint
@@ -850,7 +856,6 @@ public class TokenManager {
 
             return res;
         }
-
 
         private String generateOIDCHash(String input) {
             String signatureAlgorithm = session.tokens().signatureAlgorithm(TokenCategory.ID);
