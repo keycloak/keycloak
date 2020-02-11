@@ -464,17 +464,6 @@
       </licenses>
     </dependency>
     <dependency>
-      <groupId>com.thoughtworks.xstream</groupId>
-      <artifactId>xstream</artifactId>
-      <version>1.4.10</version>
-      <licenses>
-        <license>
-          <name>BSD 3-clause New or Revised License</name>
-          <url>https://raw.githubusercontent.com/x-stream/xstream/XSTREAM_1_4_10/LICENSE.txt</url>
-        </license>
-      </licenses>
-    </dependency>
-    <dependency>
       <groupId>org.kie</groupId>
       <artifactId>kie-api</artifactId>
       <version>7.11.0.Final</version>
