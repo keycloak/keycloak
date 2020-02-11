@@ -259,6 +259,7 @@ public class UserSessionProviderTest extends AbstractTestRealmKeycloakTest {
         RealmModel realm = session.realms().getRealmByName("test");
 
         KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession kcSession) -> {
+            inheritClientConnection(session, kcSession);
             createSessions(kcSession);
         });
         Map<String, Integer> clientSessionsKept = new HashMap<>();
@@ -300,6 +301,7 @@ public class UserSessionProviderTest extends AbstractTestRealmKeycloakTest {
     public void testRemoveUserSessionsByRealm(KeycloakSession session) {
         RealmModel realm = session.realms().getRealmByName("test");
         KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession kcSession) -> {
+            inheritClientConnection(session, kcSession);
             createSessions(kcSession);
         });
 
