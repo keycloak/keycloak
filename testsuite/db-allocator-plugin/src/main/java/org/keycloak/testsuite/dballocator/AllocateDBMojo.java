@@ -129,6 +129,7 @@ public class AllocateDBMojo extends AbstractMojo {
             return;
         }
 
+        logger.info("Total retries: " + totalRetries + "; backOffTime: " + backoffTimeSeconds);
         try {
             IncrementalBackoffRetryPolicy retryPolicy = new IncrementalBackoffRetryPolicy(totalRetries, backoffTimeSeconds, TimeUnit.SECONDS);
             DBAllocatorServiceClient client = new DBAllocatorServiceClient(dbAllocatorURI, retryPolicy);
