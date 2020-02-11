@@ -60,14 +60,14 @@ $ ./jboss-cli.sh --file=adapter-install-offline.cli
 > jboss-cli.bat --file=adapter-install-offline.cli
 ----
 
-.Wildfly 11 and Linux/Unix
+.Wildfly 11+ and Linux/Unix
 [source,bash,subs=+attributes]
 ----
 $ cd bin
 $ ./jboss-cli.sh --file=adapter-elytron-install-offline.cli
 ----
 
-.Wildfly 11 and Windows
+.Wildfly 11+ and Windows
 [source,bash,subs=+attributes]
 ----
 > cd bin
