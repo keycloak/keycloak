@@ -23,6 +23,7 @@ import org.jboss.arquillian.test.spi.execution.ExecutionDecision;
 import org.jboss.arquillian.test.spi.execution.TestExecutionDecider;
 import org.jboss.arquillian.core.api.Instance;
 import org.jboss.arquillian.core.api.annotation.Inject;
+import org.keycloak.testsuite.arquillian.AppServerTestEnricher;
 import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
 import org.keycloak.testsuite.arquillian.TestContext;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
@@ -39,6 +40,9 @@ public class AuthServerExcludeExecutionDecider implements TestExecutionDecider {
 
     @Override
     public ExecutionDecision decide(Method method) {
+        if (AppServerTestEnricher.isRemoteAppServer()) {
+            return ExecutionDecision.execute();
+        }
         TestContext testContext = testContextInstance.get();
 
         if (method.isAnnotationPresent(AuthServerContainerExclude.class)) {
