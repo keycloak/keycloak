@@ -54,6 +54,11 @@
             <artifactId>commons-csv</artifactId>
             <version>1.2</version>
         </dependency>
+        <dependency>
+            <groupId>org.keycloak.testsuite</groupId>
+            <artifactId>integration-arquillian-testsuite-providers</artifactId>
+            <version>${project.version}</version>
+        </dependency>
     </dependencies>
     
     <build>
