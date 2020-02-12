@@ -531,6 +531,34 @@ public class UserTest extends AbstractAdminTest {
     }
 
     @Test
+    public void searchByFirstNameNullForLastName() {
+        UserRepresentation user = new UserRepresentation();
+        user.setUsername("user1");
+        user.setFirstName("Erik");
+        user.setRequiredActions(Collections.emptyList());
+        user.setEnabled(true);
+
+        createUser(user);
+
+        List<UserRepresentation> users = realm.users().search("Erik", 0, 50);
+        assertEquals(1, users.size());
+    }
+
+    @Test
+    public void searchByLastNameNullForFirstName() {
+        UserRepresentation user = new UserRepresentation();
+        user.setUsername("user1");
+        user.setLastName("de Wit");
+        user.setRequiredActions(Collections.emptyList());
+        user.setEnabled(true);
+
+        createUser(user);
+
+        List<UserRepresentation> users = realm.users().search("wit", null, null);
+        assertEquals(1, users.size());
+    }
+
+    @Test
     public void searchById() {
         String expectedUserId = createUsers().get(0);
         List<UserRepresentation> users = realm.users().search("id:" + expectedUserId, null, null);
