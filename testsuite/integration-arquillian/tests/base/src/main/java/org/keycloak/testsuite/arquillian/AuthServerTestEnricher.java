@@ -173,6 +173,13 @@ public class AuthServerTestEnricher {
         return removeDefaultPorts(String.format("%s://%s:%s", scheme, host, port + clusterPortOffset));
     }
 
+    public static String getHttpAuthServerContextRoot() {
+        String host = System.getProperty("auth.server.host", "localhost");
+        int httpPort = Integer.parseInt(System.getProperty("auth.server.http.port")); // property must be set
+
+        return removeDefaultPorts(String.format("%s://%s:%s", "http", host, httpPort));
+    }
+
     public static String getAuthServerBrowserContextRoot() throws MalformedURLException {
         return getAuthServerBrowserContextRoot(new URL(getAuthServerContextRoot()));
     }
