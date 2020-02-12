@@ -349,8 +349,7 @@ public class AuthServerTestEnricher {
     public void deployProviders(@Observes(precedence = -1) AfterStart event) throws DeploymentException {
         if (isAuthServerRemote() && currentContainerName.contains("auth-server")) {
             this.testsuiteProvidersArchive = ShrinkWrap.create(ZipImporter.class, "testsuiteProviders.jar")
-                    .importFrom(Maven.resolver()
-                        .loadPomFromFile("pom.xml")
+                    .importFrom(Maven.configureResolverViaPlugin()
                         .resolve("org.keycloak.testsuite:integration-arquillian-testsuite-providers")
                         .withoutTransitivity()
                         .asSingleFile()
