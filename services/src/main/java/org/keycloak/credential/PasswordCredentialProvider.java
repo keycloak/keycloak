@@ -17,7 +17,6 @@
 package org.keycloak.credential;
 
 import org.jboss.logging.Logger;
-import org.keycloak.authentication.requiredactions.WebAuthnRegisterFactory;
 import org.keycloak.common.util.Time;
 import org.keycloak.credential.hash.PasswordHashProvider;
 import org.keycloak.models.ModelException;
@@ -296,14 +295,23 @@ public class PasswordCredentialProvider implements CredentialProvider<PasswordCr
     }
 
     @Override
-    public CredentialTypeMetadata getCredentialTypeMetadata() {
-        return CredentialTypeMetadata.builder()
+    public CredentialTypeMetadata getCredentialTypeMetadata(CredentialTypeMetadataContext metadataContext) {
+        CredentialTypeMetadata.CredentialTypeMetadataBuilder metadataBuilder = CredentialTypeMetadata.builder()
                 .type(getType())
-                .category(CredentialTypeMetadata.Category.PASSWORD)
-                .displayName("password")
+                .category(CredentialTypeMetadata.Category.BASIC_AUTHENTICATION)
+                .displayName("password-display-name")
                 .helpText("password-help-text")
-                .iconCssClass("kcAuthenticatorPasswordClass")
-                .updateAction(UserModel.RequiredAction.UPDATE_PASSWORD.toString())
+                .iconCssClass("kcAuthenticatorPasswordClass");
+
+        // Check if we are creating or updating password
+        UserModel user = metadataContext.getUser();
+        if (user != null && session.userCredentialManager().isConfiguredFor(session.getContext().getRealm(), user, getType())) {
+            metadataBuilder.updateAction(UserModel.RequiredAction.UPDATE_PASSWORD.toString());
+        } else {
+            metadataBuilder.createAction(UserModel.RequiredAction.UPDATE_PASSWORD.toString());
+        }
+
+        return metadataBuilder
                 .removeable(false)
                 .build(session);
     }

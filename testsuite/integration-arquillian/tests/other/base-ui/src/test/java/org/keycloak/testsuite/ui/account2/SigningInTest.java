@@ -36,6 +36,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderSimpleRepresentation;
 import org.keycloak.testsuite.WebAuthnAssume;
+import org.keycloak.testsuite.admin.Users;
 import org.keycloak.testsuite.auth.page.login.OTPSetup;
 import org.keycloak.testsuite.auth.page.login.UpdatePassword;
 import org.keycloak.testsuite.pages.webauthn.WebAuthnRegisterPage;
@@ -62,7 +63,7 @@ import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
 public class SigningInTest extends BaseAccountPageTest {
-    public static final String PASSWORD_LABEL = "Password";
+    public static final String PASSWORD_LABEL = "My Password";
     public static final String WEBAUTHN_FLOW_ID = "75e2390e-f296-49e6-acf8-6d21071d7e10";
 
     @Page
@@ -148,7 +149,7 @@ public class SigningInTest extends BaseAccountPageTest {
 
         assertEquals(3, signingInPage.getCategoriesCount());
 
-        assertEquals("Password", signingInPage.getCategoryTitle("password"));
+        assertEquals("Basic Authentication", signingInPage.getCategoryTitle("basic-authentication"));
         assertEquals("Two-Factor Authentication", signingInPage.getCategoryTitle("two-factor"));
         assertEquals("Passwordless", signingInPage.getCategoryTitle("passwordless"));
 
@@ -180,8 +181,35 @@ public class SigningInTest extends BaseAccountPageTest {
 
         assertUserCredential(PASSWORD_LABEL, false, passwordCred);
         assertNotEquals(previousCreatedAt, passwordCred.getCreatedAt());
+    }
 
-        // TODO KEYCLOAK-12875 try to update/set up password when user has no password configured
+    @Test
+    public void updatePasswordTestForUserWithoutPassword() {
+            // Remove password from the user through admin REST API
+            String passwordId = testUserResource().credentials().get(0).getId();
+            testUserResource().removeCredential(passwordId);
+
+            // Refresh the page
+            refreshPageAndWaitForLoad();
+
+            // Test user doesn't have password set
+            assertTrue(passwordCredentialType.isSetUpLinkVisible());
+            assertFalse(passwordCredentialType.isSetUp());
+
+            // Set password
+            passwordCredentialType.clickSetUpLink();
+            updatePasswordPage.assertCurrent();
+            String originalPassword = Users.getPasswordOf(testUser);
+            updatePasswordPage.updatePasswords(originalPassword, originalPassword);
+            // TODO uncomment this once KEYCLOAK-12852 is resolved
+            // signingInPage.assertCurrent();
+
+            // Credential set-up now
+            assertFalse(passwordCredentialType.isSetUpLinkVisible());
+            assertTrue(passwordCredentialType.isSetUp());
+            SigningInPage.UserCredential passwordCred =
+                    passwordCredentialType.getUserCredential(testUserResource().credentials().get(0).getId());
+            assertUserCredential(PASSWORD_LABEL, false, passwordCred);
     }
 
     @Test

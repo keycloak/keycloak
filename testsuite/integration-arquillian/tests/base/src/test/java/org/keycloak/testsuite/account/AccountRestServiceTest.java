@@ -20,10 +20,10 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.authentication.authenticators.browser.WebAuthnAuthenticatorFactory;
 import org.keycloak.authentication.authenticators.browser.WebAuthnPasswordlessAuthenticatorFactory;
 import org.keycloak.authentication.requiredactions.WebAuthnPasswordlessRegisterFactory;
-import org.keycloak.authentication.requiredactions.WebAuthnRegister;
 import org.keycloak.authentication.requiredactions.WebAuthnRegisterFactory;
 import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.credential.CredentialTypeMetadata;
@@ -45,7 +45,6 @@ import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.ErrorRepresentation;
-import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderSimpleRepresentation;
@@ -70,7 +69,6 @@ import static org.junit.Assert.*;
 import org.keycloak.services.resources.account.AccountCredentialResource.PasswordUpdate;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
-import org.keycloak.testsuite.util.WaitUtils;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -91,6 +89,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
     @Test
     public void testUpdateProfile() throws IOException {
         UserRepresentation user = SimpleHttp.doGet(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).asJson(UserRepresentation.class);
+        String originalUsername = user.getUsername();
         String originalFirstName = user.getFirstName();
         String originalLastName = user.getLastName();
         String originalEmail = user.getEmail();
@@ -157,6 +156,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
             realmRep.setEditUsernameAllowed(true);
             adminClient.realm("test").update(realmRep);
 
+            user.setUsername(originalUsername);
             user.setFirstName(originalFirstName);
             user.setLastName(originalLastName);
             user.setEmail(originalEmail);
@@ -316,8 +316,8 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         Assert.assertEquals(4, credentials.size());
 
         AccountCredentialResource.CredentialContainer password = credentials.get(0);
-        assertCredentialContainerExpected(password, PasswordCredentialModel.TYPE, CredentialTypeMetadata.Category.PASSWORD.toString(),
-                "password", "password-help-text", "kcAuthenticatorPasswordClass",
+        assertCredentialContainerExpected(password, PasswordCredentialModel.TYPE, CredentialTypeMetadata.Category.BASIC_AUTHENTICATION.toString(),
+                "password-display-name", "password-help-text", "kcAuthenticatorPasswordClass",
                 null, UserModel.RequiredAction.UPDATE_PASSWORD.toString(), false, 1);
 
         CredentialRepresentation password1 = password.getUserCredentials().get(0);
@@ -441,6 +441,32 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
             setExecutionRequirement(DefaultAuthenticationFlows.DIRECT_GRANT_FLOW,
                     "Direct Grant - Conditional OTP", currentDirectGrantReq);
         }
+    }
+
+    @Test
+    public void testCredentialsForUserWithoutPassword() throws IOException {
+        // This is just to call REST to ensure tokenUtil will authenticate user and create the tokens.
+        // We won't be able to authenticate later as user won't have password
+        List<AccountCredentialResource.CredentialContainer> credentials = getCredentials();
+
+        // Remove password from the user now
+        UserResource user = ApiUtil.findUserByUsernameId(testRealm(), "test-user@localhost");
+        for (CredentialRepresentation credential : user.credentials()) {
+            if (PasswordCredentialModel.TYPE.equals(credential.getType())) {
+                user.removeCredential(credential.getId());
+            }
+        }
+
+        // Get credentials. Ensure user doesn't have password credential and create action is UPDATE_PASSWORD
+        credentials = getCredentials();
+        AccountCredentialResource.CredentialContainer password = credentials.get(0);
+        assertCredentialContainerExpected(password, PasswordCredentialModel.TYPE, CredentialTypeMetadata.Category.BASIC_AUTHENTICATION.toString(),
+                "password-display-name", "password-help-text", "kcAuthenticatorPasswordClass",
+                UserModel.RequiredAction.UPDATE_PASSWORD.toString(), null, false, 0);
+
+        // Re-add the password to the user
+        ApiUtil.resetUserPassword(user, "password", false);
+
     }
 
     // Sets new requirement and returns current requirement

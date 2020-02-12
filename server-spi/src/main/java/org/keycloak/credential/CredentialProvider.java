@@ -50,5 +50,5 @@ public interface CredentialProvider<T extends CredentialModel> extends Provider 
         return getCredentialFromModel(models.get(0));
     }
 
-    CredentialTypeMetadata getCredentialTypeMetadata();
+    CredentialTypeMetadata getCredentialTypeMetadata(CredentialTypeMetadataContext metadataContext);
 }

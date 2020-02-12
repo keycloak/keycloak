@@ -7,6 +7,7 @@ import org.keycloak.authentication.AuthenticatorFactory;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.credential.CredentialProvider;
 import org.keycloak.credential.CredentialTypeMetadata;
+import org.keycloak.credential.CredentialTypeMetadataContext;
 import org.keycloak.credential.PasswordCredentialProvider;
 import org.keycloak.credential.PasswordCredentialProviderFactory;
 import org.keycloak.credential.UserCredentialStoreManager;
@@ -31,6 +32,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -185,12 +187,28 @@ public class AccountCredentialResource {
                 continue;
             }
 
-            CredentialTypeMetadata metadata = credentialProvider.getCredentialTypeMetadata();
+            CredentialTypeMetadataContext ctx = CredentialTypeMetadataContext.builder()
+                    .user(user)
+                    .build(session);
+            CredentialTypeMetadata metadata = credentialProvider.getCredentialTypeMetadata(ctx);
 
             List<CredentialRepresentation> userCredentialModels = filterUserCredentials ? null : models.stream()
                     .filter(credentialModel -> credentialProvider.getType().equals(credentialModel.getType()))
                     .map(ModelToRepresentation::toRepresentation)
                     .collect(Collectors.toList());
+
+            if (userCredentialModels != null && userCredentialModels.isEmpty() &&
+                    session.userCredentialManager().isConfiguredFor(realm, user, credentialProviderType)) {
+                // In case user is federated in the userStorage, he may have credential configured on the userStorage side. We're
+                // creating "dummy" credential representing the credential provided by userStorage
+                CredentialRepresentation credential = new CredentialRepresentation();
+                credential.setId(credentialProviderType + "-id");
+                credential.setType(credentialProviderType);
+                credential.setCreatedDate(-1L);
+                credential.setPriority(0);
+
+                userCredentialModels = Collections.singletonList(credential);
+            }
 
             CredentialContainer credType = new CredentialContainer(metadata, userCredentialModels);
             credentialTypes.add(credType);

@@ -230,7 +230,7 @@ public class WebAuthnCredentialProvider implements CredentialProvider<WebAuthnCr
     }
 
     @Override
-    public CredentialTypeMetadata getCredentialTypeMetadata() {
+    public CredentialTypeMetadata getCredentialTypeMetadata(CredentialTypeMetadataContext metadataContext) {
         return CredentialTypeMetadata.builder()
                 .type(getType())
                 .category(CredentialTypeMetadata.Category.TWO_FACTOR)

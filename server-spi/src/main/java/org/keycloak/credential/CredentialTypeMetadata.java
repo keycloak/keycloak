@@ -50,7 +50,7 @@ public class CredentialTypeMetadata implements Comparable<CredentialTypeMetadata
 
 
     public enum Category {
-        PASSWORD("password", 1),
+        BASIC_AUTHENTICATION("basic-authentication", 1),
         TWO_FACTOR("two-factor", 2),
         PASSWORDLESS("passwordless", 3);
 
