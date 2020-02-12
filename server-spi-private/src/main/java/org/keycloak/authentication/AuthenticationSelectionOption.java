@@ -2,6 +2,7 @@ package org.keycloak.authentication;
 
 import org.keycloak.credential.CredentialProvider;
 import org.keycloak.credential.CredentialTypeMetadata;
+import org.keycloak.credential.CredentialTypeMetadataContext;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.KeycloakSession;
 
@@ -15,7 +16,10 @@ public class AuthenticationSelectionOption {
         Authenticator authenticator = session.getProvider(Authenticator.class, authExec.getAuthenticator());
         if (authenticator instanceof CredentialValidator) {
             CredentialProvider credentialProvider = ((CredentialValidator) authenticator).getCredentialProvider(session);
-            credentialTypeMetadata = credentialProvider.getCredentialTypeMetadata();
+
+            CredentialTypeMetadataContext ctx = CredentialTypeMetadataContext.builder()
+                    .build(session);
+            credentialTypeMetadata = credentialProvider.getCredentialTypeMetadata(ctx);
         } else {
             credentialTypeMetadata = null;
         }

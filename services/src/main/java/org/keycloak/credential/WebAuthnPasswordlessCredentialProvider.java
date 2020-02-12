@@ -40,7 +40,7 @@ public class WebAuthnPasswordlessCredentialProvider extends WebAuthnCredentialPr
     }
 
     @Override
-    public CredentialTypeMetadata getCredentialTypeMetadata() {
+    public CredentialTypeMetadata getCredentialTypeMetadata(CredentialTypeMetadataContext metadataContext) {
         return CredentialTypeMetadata.builder()
                 .type(getType())
                 .category(CredentialTypeMetadata.Category.PASSWORDLESS)
