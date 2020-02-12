@@ -106,7 +106,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         }
 
         loginPage.login("password");
-        waitForPage(driver, "keycloak account management", true);
+        waitForAccountManagementTitle();
         accountUpdateProfilePage.assertCurrent();
 
         assertNumFederatedIdentities(existingUser, 1);
@@ -177,7 +177,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
 
         // Use correct password now
         loginPage.login("password");
-        waitForPage(driver, "keycloak account management", true);
+        waitForAccountManagementTitle();
         accountUpdateProfilePage.assertCurrent();
         assertNumFederatedIdentities(userId, 1);
     }
@@ -229,7 +229,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         this.passwordUpdatePage.assertCurrent();
         this.passwordUpdatePage.changePassword("password", "password");
 
-        waitForPage(driver, "keycloak account management", true);
+        waitForAccountManagementTitle();
         accountUpdateProfilePage.assertCurrent();
         assertNumFederatedIdentities(existingUser, 1);
     }
@@ -309,7 +309,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         driver.navigate().to(getAccountUrl(bc.consumerRealmName()));
         logInWithBroker(bc);
 
-        waitForPage(driver, "keycloak account management", true);
+        waitForAccountManagementTitle();
         accountUpdateProfilePage.assertCurrent();
     }
 
@@ -378,7 +378,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
 
         waitForPage(driver, "update password", false);
         updatePasswordPage.updatePasswords("password", "password");
-        waitForPage(driver, "keycloak account management", true);
+        waitForAccountManagementTitle();
         accountUpdateProfilePage.assertCurrent();
     }
 
@@ -420,7 +420,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         waitForPage(driver, "update account information", false);
         Assert.assertTrue(updateAccountInformationPage.isCurrent());
         updateAccountInformationPage.updateAccountInformation("test", "test@localhost.com", "FirstName", "LastName");
-        waitForPage(driver, "keycloak account management", true);
+        waitForAccountManagementTitle();
         accountUpdateProfilePage.assertCurrent();
     }
 
@@ -456,7 +456,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         updateAccountInformationPage.assertCurrent();
         updateAccountInformationPage.updateAccountInformation("FirstName", "LastName");
 
-        waitForPage(driver, "keycloak account management", true);
+        waitForAccountManagementTitle();
         accountUpdateProfilePage.assertCurrent();
         testingClient.server().run(assertHardCodedSessionNote());
     }
@@ -490,7 +490,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         }
 
         updateAccountInformationPage.updateAccountInformation("test@redhat.com", "FirstName", "LastName");
-        waitForPage(driver, "keycloak account management", true);
+        waitForAccountManagementTitle();
         accountUpdateProfilePage.assertCurrent();
 
         assertEquals(1, realm.users().search("test@redhat.com").size());
@@ -570,7 +570,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
                 "verify your email address", false);
 
         driver.navigate().to(verificationUrl.trim());
-        waitForPage(driver, "keycloak account management", true);
+        waitForAccountManagementTitle();
         accountUpdateProfilePage.assertCurrent();
     }
 
@@ -600,7 +600,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         log.debug("Logging in");
         loginPage.login("no-email", "password");
 
-        waitForPage(driver, "keycloak account management", true);
+        waitForAccountManagementTitle();
         accountUpdateProfilePage.assertCurrent();
 
         List<UserRepresentation> users = realm.users().search("no-email");
@@ -637,7 +637,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         updateAccountInformationPage.assertCurrent();
         updateAccountInformationPage.updateAccountInformation("FirstName", "LastName");
 
-        waitForPage(driver, "keycloak account management", true);
+        waitForAccountManagementTitle();
         accountUpdateProfilePage.assertCurrent();
 
         List<UserRepresentation> users = realm.users().search(bc.getUserLogin());
@@ -680,7 +680,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
                 "verify your email address", false);
 
         driver.navigate().to(verificationUrl.trim());
-        waitForPage(driver, "keycloak account management", true);
+        waitForAccountManagementTitle();
         accountUpdateProfilePage.assertCurrent();
 
         List<UserRepresentation> users = realm.users().search(bc.getUserLogin());
@@ -838,7 +838,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         waitForPage(driver, "update account information", false);
         updateAccountInformationPage.assertCurrent();
         updateAccountInformationPage.updateAccountInformation("FirstName", "LastName");
-        waitForPage(driver, "keycloak account management", true);
+        waitForAccountManagementTitle();
         accountUpdateProfilePage.assertCurrent();
 
         logoutFromRealm(bc.providerRealmName());
@@ -856,7 +856,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         waitForPage(driver, "update account information", false);
         updateAccountInformationPage.assertCurrent();
         updateAccountInformationPage.updateAccountInformation("FirstName", "LastName");
-        waitForPage(driver, "keycloak account management", true);
+        waitForAccountManagementTitle();
         accountUpdateProfilePage.assertCurrent();
 
         logoutFromRealm(bc.providerRealmName());
@@ -875,7 +875,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         updateAccountInformationPage.assertCurrent();
         updateAccountInformationPage.updateAccountInformation("no-email@localhost.com", "FirstName", "LastName");
 
-        waitForPage(driver, "keycloak account management", true);
+        waitForAccountManagementTitle();
         accountUpdateProfilePage.assertCurrent();
     }
 
@@ -897,7 +897,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         log.debug("Logging in");
         loginPage.login("all-info-set", "password");
 
-        waitForPage(driver, "keycloak account management", true);
+        waitForAccountManagementTitle();
         accountUpdateProfilePage.assertCurrent();
     }
 
@@ -911,7 +911,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
 
         driver.navigate().to(getAccountUrl(bc.consumerRealmName()));
         logInWithBroker(bc);
-        waitForPage(driver, "keycloak account management", true);
+        waitForAccountManagementTitle();
         accountUpdateProfilePage.assertCurrent();
     }
 

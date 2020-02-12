@@ -269,7 +269,7 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
 
             loginTotpPage.assertCurrent();
             loginTotpPage.login(totp.generateTOTP(totpSecret));
-            waitForPage(driver, "keycloak account management", true);
+            waitForAccountManagementTitle();
             accountUpdateProfilePage.assertCurrent();
 
             assertNumFederatedIdentities(consumerRealm.users().search(samlBrokerConfig.getUserLogin()).get(0).getId(), 2);

@@ -32,6 +32,8 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import org.keycloak.testsuite.pages.AccountApplicationsPage;
 import org.keycloak.testsuite.pages.AccountFederatedIdentityPage;
 import org.keycloak.testsuite.pages.AccountPasswordPage;
@@ -62,8 +64,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.keycloak.testsuite.admin.ApiUtil.createUserWithAdminClient;
 import static org.keycloak.testsuite.admin.ApiUtil.resetUserPassword;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import static org.keycloak.testsuite.broker.BrokerTestConstants.USER_EMAIL;
 import static org.keycloak.testsuite.broker.BrokerTestTools.encodeUrl;
 import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
@@ -275,10 +275,16 @@ public abstract class AbstractBaseBrokerTest extends AbstractKeycloakTest {
 
 
     protected void assertLoggedInAccountManagement() {
-        waitForPage(driver, "keycloak account management", true);
+        waitForAccountManagementTitle();
         Assert.assertTrue(accountUpdateProfilePage.isCurrent());
         Assert.assertEquals(accountUpdateProfilePage.getUsername(), bc.getUserLogin());
         Assert.assertEquals(accountUpdateProfilePage.getEmail(), bc.getUserEmail());
+    }
+
+    protected void waitForAccountManagementTitle() {
+        boolean isProduct = adminClient.serverInfo().getInfo().getProfileInfo().getName().equals("product");
+        String title = isProduct ? "rh-sso account management" : "keycloak account management";
+        waitForPage(driver, title, true);
     }
 
 
