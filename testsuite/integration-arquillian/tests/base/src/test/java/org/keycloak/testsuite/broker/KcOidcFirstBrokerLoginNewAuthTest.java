@@ -223,7 +223,7 @@ public class KcOidcFirstBrokerLoginNewAuthTest extends AbstractInitializedBaseBr
 
 
     private void assertUserAuthenticatedInConsumer(String consumerRealmUserId) {
-        waitForPage(driver, "keycloak account management", true);
+        waitForAccountManagementTitle();
         accountUpdateProfilePage.assertCurrent();
         assertNumFederatedIdentities(consumerRealmUserId, 1);
     }

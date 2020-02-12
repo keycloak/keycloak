@@ -41,7 +41,7 @@ public class KcOidcFirstBrokerLoginTest extends AbstractFirstBrokerLoginTest {
             driver.navigate().to(getAccountUrl(bc.consumerRealmName()));
 
             logInWithBroker(samlBrokerConfig);
-            waitForPage(driver, "keycloak account management", true);
+            waitForAccountManagementTitle();
             accountUpdateProfilePage.assertCurrent();
             logoutFromRealm(bc.consumerRealmName());
 
@@ -62,7 +62,7 @@ public class KcOidcFirstBrokerLoginTest extends AbstractFirstBrokerLoginTest {
 
             log.debug("Clicking social " + samlBrokerConfig.getIDPAlias());
             loginPage.clickSocial(samlBrokerConfig.getIDPAlias());
-            waitForPage(driver, "keycloak account management", true);
+            waitForAccountManagementTitle();
             accountUpdateProfilePage.assertCurrent();
 
             assertNumFederatedIdentities(consumerRealm.users().search(samlBrokerConfig.getUserLogin()).get(0).getId(), 2);
@@ -103,7 +103,7 @@ public class KcOidcFirstBrokerLoginTest extends AbstractFirstBrokerLoginTest {
             // User is federated after log in with the original broker
             log.debug("Clicking social " + samlBrokerConfig.getIDPAlias());
             loginPage.clickSocial(samlBrokerConfig.getIDPAlias());
-            waitForPage(driver, "keycloak account management", true);
+            waitForAccountManagementTitle();
             accountUpdateProfilePage.assertCurrent();
 
             assertNumFederatedIdentities(consumerRealm.users().search(samlBrokerConfig.getUserLogin()).get(0).getId(), 1);

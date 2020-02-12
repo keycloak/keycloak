@@ -142,7 +142,7 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
 
         driver.navigate().to(getAccountUrl(bc.consumerRealmName()));
         logInWithBroker(bc);
-        waitForPage(driver, "keycloak account management", true);
+        waitForAccountManagementTitle();
         accountUpdateProfilePage.assertCurrent();
         logoutFromRealm(bc.providerRealmName());
         logoutFromRealm(bc.consumerRealmName());
@@ -175,7 +175,7 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
         driver.navigate().to(getAccountUrl(bc.consumerRealmName()));
         logInWithBroker(bc);
         updatePasswordPage.updatePasswords("password", "password");
-        waitForPage(driver, "keycloak account management", true);
+        waitForAccountManagementTitle();
         accountUpdateProfilePage.assertCurrent();
 
         String username = bc.getUserLogin();
@@ -421,7 +421,7 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
                 driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"));
         log.debug("Logging in");
         loginPage.login(bc.getUserLogin(), bc.getUserPassword());
-        waitForPage(driver, "keycloak account management", true);
+        waitForAccountManagementTitle();
         accountUpdateProfilePage.assertCurrent();
     }
 
@@ -475,7 +475,7 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
             driver.navigate().to(getAccountUrl(bc.consumerRealmName()));
             loginPage.clickSocial(bc.getIDPAlias());
             loginPage.login("test-user", "password");
-            waitForPage(driver, "keycloak account management", true);
+            waitForAccountManagementTitle();
             accountUpdateProfilePage.assertCurrent();
 
             accountPage.password();
@@ -492,7 +492,7 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
             driver.navigate().to(getAccountUrl(bc.consumerRealmName()));
             loginPage.clickSocial(bc.getIDPAlias());
             loginPage.login("test-user-noemail", "password");
-            waitForPage(driver, "keycloak account management", true);
+            waitForAccountManagementTitle();
             accountUpdateProfilePage.assertCurrent();
 
             accountPage.password();
