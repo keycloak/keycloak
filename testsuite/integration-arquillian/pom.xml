@@ -309,6 +309,20 @@
                             </rules>
                         </configuration>
                     </execution>
+                    <execution>
+                        <id>enforce-maven-for-deploy-phase</id>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <phase>deploy</phase>
+                        <configuration>
+                            <rules>
+                                <requireMavenVersion>
+                                    <version>3.6.0</version>
+                                </requireMavenVersion>
+                            </rules>
+                        </configuration>
+                    </execution>
                 </executions>
             </plugin>
         </plugins>
