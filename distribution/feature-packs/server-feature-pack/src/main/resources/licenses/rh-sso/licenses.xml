@@ -4,11 +4,11 @@
     <dependency>
       <groupId>com.openshift</groupId>
       <artifactId>openshift-restclient-java</artifactId>
-      <version>6.1.3.Final</version>
+      <version>8.0.0.Final-redhat-00001</version>
       <licenses>
         <license>
           <name>Eclipse Public License 1.0</name>
-          <url>https://raw.githubusercontent.com/openshift/openshift-restclient-java/openshift-restclient-java-6.1.3.Final/license</url>
+          <url>https://raw.githubusercontent.com/openshift/openshift-restclient-java/openshift-restclient-java-8.0.0.Final/license</url>
         </license>
       </licenses>
     </dependency>
