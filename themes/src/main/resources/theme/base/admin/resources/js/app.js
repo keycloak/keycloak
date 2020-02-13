@@ -2704,7 +2704,7 @@ module.controller('RoleSelectorModalCtrl', function($scope, realm, config, confi
     }
 
     clientSelectControl($scope, realm.realm, Client);
-    
+
     $scope.selectedClient = null;
 
     $scope.changeClient = function(client) {
@@ -2752,7 +2752,7 @@ module.controller('ProviderConfigCtrl', function ($modal, $scope, $route, Compon
                     $scope.selectedClient.text = $scope.selectedClient.clientId;
                 }
             });
-        }   
+        }
     }
 
     $scope.openRoleSelector = function (configName, config) {
@@ -2953,7 +2953,7 @@ module.controller('ComponentConfigCtrl', function ($modal, $scope, $route, Clien
                     $scope.selectedClient.text = $scope.selectedClient.clientId;
                 }
             });
-        }   
+        }
     }
 
     $scope.changeClient = function(configName, config, client) {
@@ -3236,12 +3236,12 @@ module.controller('PagingCtrl', function ($scope) {
 // Provides a component for injection with utility methods for manipulating strings
 module.factory('KcStrings', function () {
     var instance = {};
-    
+
     // some IE versions do not support string.endsWith method, this method should be used as an alternative for cross-browser compatibility
     instance.endsWith = function(source, suffix) {
         return source.indexOf(suffix, source.length - suffix.length) !== -1;
     };
-    
+
     return instance;
 });
 
@@ -3332,9 +3332,12 @@ module.directive('kcPassword', function ($compile, Notifications) {
             }
 
             elem.addClass("password-conceal");
-            elem.attr("type","text");
+            elem.attr("readonly", "readonly");
+            elem.attr("type","password");
             elem.attr("autocomplete", "off");
-
+            elem.bind('focus', function() {
+                elem.removeAttr("readonly");
+            });
             var p = elem.parent();
 
             var inputGroup = $('<div class="input-group"></div>');
