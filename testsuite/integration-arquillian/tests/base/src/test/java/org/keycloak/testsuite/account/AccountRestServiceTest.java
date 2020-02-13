@@ -26,6 +26,7 @@ import org.keycloak.authentication.authenticators.browser.WebAuthnPasswordlessAu
 import org.keycloak.authentication.requiredactions.WebAuthnPasswordlessRegisterFactory;
 import org.keycloak.authentication.requiredactions.WebAuthnRegisterFactory;
 import org.keycloak.broker.provider.util.SimpleHttp;
+import org.keycloak.common.Profile;
 import org.keycloak.credential.CredentialTypeMetadata;
 import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticationExecutionModel;
@@ -50,7 +51,7 @@ import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderSimpleRepresentation;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.account.AccountCredentialResource;
-import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.admin.authentication.AbstractAuthenticationTest;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.TokenUtil;
@@ -309,6 +310,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
 
     @Test
     public void testCredentialsGet() throws IOException {
+        ProfileAssume.assumeFeatureEnabled(Profile.Feature.WEB_AUTHN);
         configureBrowserFlowWithWebAuthnAuthenticator("browser-webauthn");
 
         List<AccountCredentialResource.CredentialContainer> credentials = getCredentials();

@@ -34,12 +34,14 @@ import java.util.List;
 import java.util.Map;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
+import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 
 import static org.hamcrest.Matchers.is;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
  */
+@EnableFeature(value = Profile.Feature.WEB_AUTHN)
 public class ProvidersTest extends AbstractAuthenticationTest {
 
     @Test

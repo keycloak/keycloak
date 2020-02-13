@@ -52,7 +52,8 @@ public class Profile {
         OPENSHIFT_INTEGRATION(Type.PREVIEW),
         SCRIPTS(Type.PREVIEW),
         TOKEN_EXCHANGE(Type.PREVIEW),
-        UPLOAD_SCRIPTS(DEPRECATED);
+        UPLOAD_SCRIPTS(DEPRECATED),
+        WEB_AUTHN(Type.PREVIEW);
 
         private Type type;
 
