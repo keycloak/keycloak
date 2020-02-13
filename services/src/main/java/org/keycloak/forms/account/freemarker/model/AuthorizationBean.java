@@ -49,6 +49,7 @@ import org.keycloak.services.util.ResolveRelative;
  */
 public class AuthorizationBean {
 
+    private final KeycloakSession session;
     private final UserModel user;
     private final AuthorizationProvider authorization;
     private final UriInfo uriInfo;
@@ -59,6 +60,7 @@ public class AuthorizationBean {
     private Collection<ResourceBean> resourcesWaitingOthersApproval;
 
     public AuthorizationBean(KeycloakSession session, UserModel user, UriInfo uriInfo) {
+        this.session = session;
         this.user = user;
         this.uriInfo = uriInfo;
         authorization = session.getProvider(AuthorizationProvider.class);
@@ -383,7 +385,7 @@ public class AuthorizationBean {
         }
 
         public String getBaseUri() {
-            return ResolveRelative.resolveRelativeUri(null, clientModel.getRootUrl(), clientModel.getBaseUrl());
+            return ResolveRelative.resolveRelativeUri(session, clientModel.getRootUrl(), clientModel.getBaseUrl());
         }
     }
 
