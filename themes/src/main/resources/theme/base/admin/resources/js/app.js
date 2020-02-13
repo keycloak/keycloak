@@ -2704,7 +2704,7 @@ module.controller('RoleSelectorModalCtrl', function($scope, realm, config, confi
     }
 
     clientSelectControl($scope, realm.realm, Client);
-    
+
     $scope.selectedClient = null;
 
     $scope.changeClient = function(client) {
@@ -2752,7 +2752,7 @@ module.controller('ProviderConfigCtrl', function ($modal, $scope, $route, Compon
                     $scope.selectedClient.text = $scope.selectedClient.clientId;
                 }
             });
-        }   
+        }
     }
 
     $scope.openRoleSelector = function (configName, config) {
@@ -2953,7 +2953,7 @@ module.controller('ComponentConfigCtrl', function ($modal, $scope, $route, Clien
                     $scope.selectedClient.text = $scope.selectedClient.clientId;
                 }
             });
-        }   
+        }
     }
 
     $scope.changeClient = function(configName, config, client) {
@@ -3236,12 +3236,12 @@ module.controller('PagingCtrl', function ($scope) {
 // Provides a component for injection with utility methods for manipulating strings
 module.factory('KcStrings', function () {
     var instance = {};
-    
+
     // some IE versions do not support string.endsWith method, this method should be used as an alternative for cross-browser compatibility
     instance.endsWith = function(source, suffix) {
         return source.indexOf(suffix, source.length - suffix.length) !== -1;
     };
-    
+
     return instance;
 });
 
@@ -3306,8 +3306,10 @@ module.filter('startFrom', function () {
 module.directive('kcPassword', function ($compile, Notifications) {
     return {
         restrict: 'A',
-        link: function ($scope, elem, attr, ctrl) {
-            function toggleMask(evt) {
+        require: 'ngModel',
+        link: function ($scope, elem, _attr, ngModel) {
+            var value = elem.val();
+            function toggleMask() {
                 if(elem.hasClass('password-conceal')) {
                     view();
                 } else {
@@ -3317,6 +3319,7 @@ module.directive('kcPassword', function ($compile, Notifications) {
 
             function view() {
                 elem.removeClass('password-conceal');
+                elem.val(value);
 
                 var t = elem.next().children().first();
                 t.addClass('fa-eye-slash');
@@ -3325,6 +3328,8 @@ module.directive('kcPassword', function ($compile, Notifications) {
 
             function conceal() {
                 elem.addClass('password-conceal');
+                ngModel.$setViewValue(format(value));
+                ngModel.$render();
 
                 var t = elem.next().children().first();
                 t.removeClass('fa-eye-slash');
@@ -3341,7 +3346,57 @@ module.directive('kcPassword', function ($compile, Notifications) {
             var eye = $('<span class="input-group-addon btn btn-default"><span class="fa fa-eye"></span></span>')
                         .on('click', toggleMask);
 
-            $scope.$watch(attr.ngModel, function(v) {
+            elem.bind('keydown', function(event) {
+                if (event.keyCode === 8 || event.keyCode === 46) {
+                    const start = elem[0].selectionStart;
+                    const end = elem[0].selectionEnd;
+                    const cursor = start - (event.keyCode === 8 ? 1 : 0);
+                    const array = value.split('');
+                    array.splice(Math.max(cursor, 0), (start === end ? 1 : end - start));
+                    value = array.join('');
+                }
+            });
+            elem.bind('keyup', function () {
+                if (!elem.hasClass('password-conceal')) return;
+
+                const val = elem.val();
+                if (val.length < value.length) {
+                    value = '';
+                }
+                const index = elem[0].selectionStart - 1;
+                for (let index = 0; index < val.length; index++) {
+                    if (val[index] !== '•') {
+                        value = [value.slice(0, index), val[index], value.slice(index)].join('');
+                    }
+                }
+
+                const end = elem[0].selectionEnd;
+                ngModel.$setViewValue(format(value));
+                ngModel.$render();
+                elem[0].selectionStart = index + 1;
+                elem[0].selectionEnd = end;
+            });
+            const format = function (input) {
+                if (!input) return '';
+
+                let result = '';
+                for (let index = 0; index < input.length; index++) {
+                    result += '•';
+                }
+                return result;
+            };
+            ngModel.$formatters.push(format);
+
+            ngModel.$parsers.push(function(val) {
+                if (elem.hasClass('password-conceal')) {
+                    return value;
+                }
+                value = val;
+                return value;
+            });
+
+            $scope.$watch(ngModel, function(v) {
+
                 if (v && v == '**********') {
                     elem.next().addClass('disabled')
                 } else if (v && v.indexOf('${v') == 0) {
@@ -3350,7 +3405,9 @@ module.directive('kcPassword', function ($compile, Notifications) {
                 } else {
                     elem.next().removeClass('disabled')
                 }
-            })
+
+                return v;
+            });
 
             elem.detach().appendTo(inputGroup);
             inputGroup.append(eye);
