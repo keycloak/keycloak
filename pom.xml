@@ -106,7 +106,7 @@
         <google.guava.version>25.0-jre</google.guava.version>
 
         <!-- Openshift -->
-        <version.com.openshift.openshift-restclient-java>6.1.3.Final</version.com.openshift.openshift-restclient-java>
+        <version.com.openshift.openshift-restclient-java>8.0.0.Final</version.com.openshift.openshift-restclient-java>
 
         <!-- Others -->
         <commons-lang.version>2.6</commons-lang.version>
