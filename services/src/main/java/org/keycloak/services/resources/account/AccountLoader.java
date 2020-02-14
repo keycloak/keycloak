@@ -70,6 +70,10 @@ public class AccountLoader {
                 throw new NotAuthorizedException("Bearer token required");
             }
 
+            if (authResult.getUser().getServiceAccountClientLink() != null) {
+                throw new NotAuthorizedException("Service accounts are not allowed to access this service");
+            }
+
             Auth auth = new Auth(session.getContext().getRealm(), authResult.getToken(), authResult.getUser(), client, authResult.getSession(), false);
             AccountRestService accountRestService = new AccountRestService(session, auth, client, event);
             ResteasyProviderFactory.getInstance().injectProperties(accountRestService);
