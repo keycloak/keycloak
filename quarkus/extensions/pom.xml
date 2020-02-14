@@ -57,6 +57,11 @@
             <artifactId>quarkus-arc</artifactId>
             <type>jar</type>
         </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -73,6 +78,15 @@
                         </goals>
                     </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <environmentVariables>
+                        <KEYCLOAK_CAMEL_CASE_SCOPE_CAMEL_CASE_PROP>foobar</KEYCLOAK_CAMEL_CASE_SCOPE_CAMEL_CASE_PROP>
+                    </environmentVariables>
+                </configuration>
             </plugin>
         </plugins>
     </build>
