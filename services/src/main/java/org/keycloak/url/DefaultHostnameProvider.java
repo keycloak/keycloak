@@ -97,7 +97,7 @@ public class DefaultHostnameProvider implements HostnameProvider {
             realmUri = null;
 
             String realmFrontendUrl = session.getContext().getRealm().getAttribute("frontendUrl");
-            if (realmFrontendUrl != null) {
+            if (realmFrontendUrl != null && !realmFrontendUrl.isEmpty()) {
                 try {
                     realmUri = new URI(realmFrontendUrl);
                 } catch (URISyntaxException e) {

@@ -9,6 +9,7 @@ import org.jboss.arquillian.test.api.ArquillianResource;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.keycloak.admin.client.Keycloak;
+import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.client.registration.Auth;
 import org.keycloak.client.registration.ClientRegistration;
@@ -96,6 +97,26 @@ public class DefaultHostnameTest extends AbstractHostnameTest {
             assertAdminPage("frontendUrl", realmFrontEndUrl, realmFrontEndUrl);
         } finally {
             reset();
+        }
+    }
+
+    // KEYCLOAK-12953
+    @Test
+    public void emptyRealmFrontendUrl() throws URISyntaxException {
+        expectedBackendUrl = AUTH_SERVER_ROOT;
+        oauth.clientId("direct-grant");
+
+        RealmResource realmResource = realmsResouce().realm("frontendUrl");
+        RealmRepresentation rep = realmResource.toRepresentation();
+
+        try {
+            rep.getAttributes().put("frontendUrl", "");
+            realmResource.update(rep);
+
+            assertWellKnown("frontendUrl", AUTH_SERVER_ROOT);
+        } finally {
+            rep.getAttributes().put("frontendUrl", realmFrontEndUrl);
+            realmResource.update(rep);
         }
     }
 
