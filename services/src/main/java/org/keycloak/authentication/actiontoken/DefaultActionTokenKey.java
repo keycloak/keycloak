@@ -46,7 +46,7 @@ public class DefaultActionTokenKey extends JsonWebToken implements ActionTokenKe
     public DefaultActionTokenKey(String userId, String actionId, int absoluteExpirationInSecs, UUID actionVerificationNonce) {
         this.subject = userId;
         this.type = actionId;
-        this.expiration = absoluteExpirationInSecs;
+        this.exp = Long.valueOf(absoluteExpirationInSecs);
         this.actionVerificationNonce = actionVerificationNonce == null ? UUID.randomUUID() : actionVerificationNonce;
     }
 
