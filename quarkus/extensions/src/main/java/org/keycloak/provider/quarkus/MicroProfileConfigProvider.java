@@ -33,6 +33,11 @@ public class MicroProfileConfigProvider implements Config.ConfigProvider {
         this.config = ConfigProvider.getConfig();
     }
 
+    // for testing only
+    MicroProfileConfigProvider(ClassLoader cl) {
+        this.config = ConfigProvider.getConfig(cl);
+    }
+
     @Override
     public String getProvider(String spi) {
         return scope(spi).get("provider");
