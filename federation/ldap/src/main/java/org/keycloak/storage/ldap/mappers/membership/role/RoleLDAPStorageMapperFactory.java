@@ -19,6 +19,7 @@ package org.keycloak.storage.ldap.mappers.membership.role;
 
 import org.keycloak.component.ComponentModel;
 import org.keycloak.component.ComponentValidationException;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.RealmModel;
@@ -36,6 +37,7 @@ import org.keycloak.storage.ldap.mappers.membership.MembershipType;
 import org.keycloak.storage.ldap.mappers.membership.UserRolesRetrieveStrategy;
 import org.keycloak.storage.ldap.mappers.membership.group.GroupMapperConfig;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
@@ -259,6 +261,17 @@ public class RoleLDAPStorageMapperFactory extends AbstractLDAPStorageMapperFacto
             if (clientId == null || clientId.trim().isEmpty()) {
                 throw new ComponentValidationException("ldapErrorMissingClientId");
             }
+            ClientModel clientModel = realm.getClientByClientId(clientId);
+
+            if (clientModel == null) {
+                clientModel = realm.getClientById(clientId);
+            }
+
+            if (clientModel == null) {
+                throw new ComponentValidationException("ldapErrorMissingClientId");
+            }
+
+            config.getConfig().putSingle(RoleMapperConfig.CLIENT_ID, clientModel.getId());
         }
 
         LDAPUtils.validateCustomLdapFilter(config.getConfig().getFirst(RoleMapperConfig.ROLES_LDAP_FILTER));

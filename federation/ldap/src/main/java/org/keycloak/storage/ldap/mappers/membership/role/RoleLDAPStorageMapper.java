@@ -236,10 +236,17 @@ public class RoleLDAPStorageMapper extends AbstractLDAPStorageMapper implements 
             if (clientId == null) {
                 throw new ModelException("Using client roles mapping is requested, but parameter client.id not found!");
             }
+
             ClientModel client = realm.getClientByClientId(clientId);
+            
+            if (client == null) {
+                client = realm.getClientById(clientId);
+            }
+            
             if (client == null) {
                 throw new ModelException("Can't found requested client with clientId: " + clientId);
             }
+
             return client;
         }
     }

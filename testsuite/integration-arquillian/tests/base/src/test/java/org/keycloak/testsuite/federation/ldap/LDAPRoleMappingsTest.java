@@ -504,4 +504,98 @@ public class LDAPRoleMappingsTest extends AbstractLDAPTest {
 
         });
     }
+
+    @Test
+    public void testClientRoleMappingReferencingClientUID() {
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel appRealm = ctx.getRealm();
+
+            LDAPTestUtils.addOrUpdateRoleLDAPMappers(appRealm, ctx.getLdapModel(), LDAPGroupMapperMode.LDAP_ONLY);
+
+            ClientModel financeApp = appRealm.getClientByClientId("finance");
+
+            financeApp.setClientId("finance-new");
+
+            UserModel john = session.users().getUserByUsername("johnkeycloak", appRealm);
+            UserModel mary = session.users().getUserByUsername("marykeycloak", appRealm);
+
+            // 1 - Grant some roles in LDAP
+
+            // This role should already exists as it was imported from LDAP
+            RoleModel realmRole1 = appRealm.getRole("realmRole1");
+            john.grantRole(realmRole1);
+
+            // This role should already exists as it was imported from LDAP
+            RoleModel realmRole2 = appRealm.getRole("realmRole2");
+            mary.grantRole(realmRole2);
+
+            // This role may already exists from previous test (was imported from LDAP), but may not
+            RoleModel realmRole3 = appRealm.getRole("realmRole3");
+            if (realmRole3 == null) {
+                realmRole3 = appRealm.addRole("realmRole3");
+            }
+
+            john.grantRole(realmRole3);
+            mary.grantRole(realmRole3);
+
+            ClientModel accountApp = appRealm.getClientByClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID);
+            financeApp = appRealm.getClientByClientId(financeApp.getClientId());
+
+            RoleModel manageAccountRole = accountApp.getRole(AccountRoles.MANAGE_ACCOUNT);
+            RoleModel financeRole1 = financeApp.getRole("financeRole1");
+            john.grantRole(financeRole1);
+
+            // 2 - Check that role mappings are not in local Keycloak DB (They are in LDAP).
+
+            UserModel johnDb = session.userLocalStorage().getUserByUsername("johnkeycloak", appRealm);
+            Set<RoleModel> johnDbRoles = johnDb.getRoleMappings();
+            Assert.assertFalse(johnDbRoles.contains(realmRole1));
+            Assert.assertFalse(johnDbRoles.contains(realmRole2));
+            Assert.assertFalse(johnDbRoles.contains(realmRole3));
+            Assert.assertFalse(johnDbRoles.contains(financeRole1));
+            Assert.assertTrue(johnDbRoles.contains(manageAccountRole));
+
+            // 3 - Check that role mappings are in LDAP and hence available through federation
+
+            Set<RoleModel> johnRoles = john.getRoleMappings();
+            Assert.assertTrue(johnRoles.contains(realmRole1));
+            Assert.assertFalse(johnRoles.contains(realmRole2));
+            Assert.assertTrue(johnRoles.contains(realmRole3));
+            Assert.assertTrue(johnRoles.contains(financeRole1));
+            Assert.assertTrue(johnRoles.contains(manageAccountRole));
+
+            Set<RoleModel> johnRealmRoles = john.getRealmRoleMappings();
+            Assert.assertEquals(2, johnRealmRoles.size());
+            Assert.assertTrue(johnRealmRoles.contains(realmRole1));
+            Assert.assertTrue(johnRealmRoles.contains(realmRole3));
+
+            // account roles are not mapped in LDAP. Those are in Keycloak DB
+            Set<RoleModel> johnAccountRoles = john.getClientRoleMappings(accountApp);
+            Assert.assertTrue(johnAccountRoles.contains(manageAccountRole));
+
+            Set<RoleModel> johnFinanceRoles = john.getClientRoleMappings(financeApp);
+            Assert.assertEquals(1, johnFinanceRoles.size());
+            Assert.assertTrue(johnFinanceRoles.contains(financeRole1));
+
+            // 4 - Delete some role mappings and check they are deleted
+
+            john.deleteRoleMapping(realmRole3);
+            john.deleteRoleMapping(realmRole1);
+            john.deleteRoleMapping(financeRole1);
+            john.deleteRoleMapping(manageAccountRole);
+
+            johnRoles = john.getRoleMappings();
+            Assert.assertFalse(johnRoles.contains(realmRole1));
+            Assert.assertFalse(johnRoles.contains(realmRole2));
+            Assert.assertFalse(johnRoles.contains(realmRole3));
+            Assert.assertFalse(johnRoles.contains(financeRole1));
+            Assert.assertFalse(johnRoles.contains(manageAccountRole));
+
+            // Cleanup
+            mary.deleteRoleMapping(realmRole2);
+            mary.deleteRoleMapping(realmRole3);
+            john.grantRole(manageAccountRole);
+        });
+    }
 }
