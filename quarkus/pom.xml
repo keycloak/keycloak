@@ -31,8 +31,10 @@
     <packaging>pom</packaging>
 
     <properties>
-        <quarkus.version>1.0.1.Final</quarkus.version>
-        <resteasy.version>4.3.1.Final</resteasy.version>
+        <quarkus.version>1.2.1.Final</quarkus.version>
+        <resteasy.version>4.4.2.Final</resteasy.version>
+        <jackson.version>2.10.2</jackson.version>
+        <jackson.databind.version>${jackson.version}</jackson.databind.version>
 
         <surefire-plugin.version>2.22.0</surefire-plugin.version>
 
