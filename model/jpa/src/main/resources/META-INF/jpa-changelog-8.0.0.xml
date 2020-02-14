@@ -198,7 +198,7 @@
         <dropColumn tableName="FED_USER_CREDENTIAL" columnName="ALGORITHM"/>
 
         <!--credential attributes are now held within the json of secret_data and credential_data (not this it was used in any case)-->
-        <dropTable tableName="FED_CREDENTIAL_ATTRIBUTE "/>
+        <dropTable tableName="FED_CREDENTIAL_ATTRIBUTE"/>
 
     </changeSet>
 
