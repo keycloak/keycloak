@@ -203,6 +203,8 @@ public class DefaultTokenManager implements TokenManager {
         switch (category) {
             case ID:
                 return getCekManagementAlgorithm(OIDCConfigAttributes.ID_TOKEN_ENCRYPTED_RESPONSE_ALG);
+            case ACCESS:
+                return getCekManagementAlgorithm(OIDCConfigAttributes.ACCESS_TOKEN_ENCRYPTED_RESPONSE_ALG);
             default:
                 return null;
         }
@@ -223,6 +225,8 @@ public class DefaultTokenManager implements TokenManager {
         switch (category) {
             case ID:
                 return getEncryptAlgorithm(OIDCConfigAttributes.ID_TOKEN_ENCRYPTED_RESPONSE_ENC);
+            case ACCESS:
+                return getEncryptAlgorithm(OIDCConfigAttributes.ACCESS_TOKEN_ENCRYPTED_RESPONSE_ENC);
             default:
                 return null;
         }

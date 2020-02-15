@@ -74,6 +74,12 @@ public class OIDCClientRepresentation {
 
     private String id_token_encrypted_response_enc;
 
+    private String access_token_signed_response_alg;
+
+    private String access_token_encrypted_response_alg;
+
+    private String access_token_encrypted_response_enc;
+
     private String userinfo_signed_response_alg;
 
     private String userinfo_encrypted_response_alg;
@@ -293,6 +299,30 @@ public class OIDCClientRepresentation {
 
     public void setIdTokenEncryptedResponseEnc(String idTokenEncryptedResponseEnc) {
         this.id_token_encrypted_response_enc = idTokenEncryptedResponseEnc;
+    }
+
+    public String getAccessTokenSignedResponseAlg() {
+        return access_token_signed_response_alg;
+    }
+
+    public void setAccessTokenSignedResponseAlg(String accessTokenSignedResponseAlg) {
+        this.access_token_signed_response_alg = accessTokenSignedResponseAlg;
+    }
+
+    public String getAccessTokenEncryptedResponseAlg() {
+        return id_token_encrypted_response_alg;
+    }
+
+    public void setAccessTokenEncryptedResponseAlg(String accessTokenEncryptedResponseAlg) {
+        this.access_token_encrypted_response_alg = accessTokenEncryptedResponseAlg;
+    }
+
+    public String getAccessTokenEncryptedResponseEnc() {
+        return access_token_encrypted_response_enc;
+    }
+
+    public void setAccessTokenEncryptedResponseEnc(String accessTokenEncryptedResponseEnc) {
+        this.access_token_encrypted_response_enc = accessTokenEncryptedResponseEnc;
     }
 
     public String getUserinfoSignedResponseAlg() {

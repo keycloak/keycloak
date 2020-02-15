@@ -166,6 +166,29 @@ public class OIDCAdvancedConfigWrapper {
         setAttribute(OIDCConfigAttributes.TOKEN_ENDPOINT_AUTH_SIGNING_ALG, algName);
     }
 
+    public String getAccessTokenSignedResponseAlg() {
+        return getAttribute(OIDCConfigAttributes.ACCESS_TOKEN_SIGNED_RESPONSE_ALG);
+    }
+    public void setAccessTokenSignedResponseAlg(String algName) {
+        setAttribute(OIDCConfigAttributes.ACCESS_TOKEN_SIGNED_RESPONSE_ALG, algName);
+    }
+
+    public String getAccessTokenEncryptedResponseAlg() {
+        return getAttribute(OIDCConfigAttributes.ACCESS_TOKEN_ENCRYPTED_RESPONSE_ALG);
+    }
+
+    public void setAccessTokenEncryptedResponseAlg(String algName) {
+        setAttribute(OIDCConfigAttributes.ACCESS_TOKEN_ENCRYPTED_RESPONSE_ALG, algName);
+    }
+
+    public String getAccessTokenEncryptedResponseEnc() {
+        return getAttribute(OIDCConfigAttributes.ACCESS_TOKEN_ENCRYPTED_RESPONSE_ENC);
+    }
+
+    public void setAccessTokenEncryptedResponseEnc(String encName) {
+        setAttribute(OIDCConfigAttributes.ACCESS_TOKEN_ENCRYPTED_RESPONSE_ENC, encName);
+    }
+
     private String getAttribute(String attrKey) {
         if (clientModel != null) {
             return clientModel.getAttribute(attrKey);

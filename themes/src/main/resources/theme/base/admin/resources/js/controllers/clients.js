@@ -1249,6 +1249,9 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, flows, $ro
         }
 
         $scope.accessTokenSignedResponseAlg = $scope.client.attributes['access.token.signed.response.alg'];
+        $scope.accessTokenEncryptedResponseAlg = $scope.client.attributes['access.token.encrypted.response.alg'];
+        $scope.accessTokenEncryptedResponseEnc = $scope.client.attributes['access.token.encrypted.response.enc'];
+
         $scope.idTokenSignedResponseAlg = $scope.client.attributes['id.token.signed.response.alg'];
         $scope.idTokenEncryptedResponseAlg = $scope.client.attributes['id.token.encrypted.response.alg'];
         $scope.idTokenEncryptedResponseEnc = $scope.client.attributes['id.token.encrypted.response.enc'];
@@ -1369,6 +1372,14 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, flows, $ro
 
     $scope.changeAccessTokenSignedResponseAlg = function() {
         $scope.clientEdit.attributes['access.token.signed.response.alg'] = $scope.accessTokenSignedResponseAlg;
+    };
+
+    $scope.changeAccessTokenEncryptedResponseAlg = function() {
+        $scope.clientEdit.attributes['access.token.encrypted.response.alg'] = $scope.accessTokenEncryptedResponseAlg;
+    };
+
+    $scope.changeAccessTokenEncryptedResponseEnc = function() {
+        $scope.clientEdit.attributes['access.token.encrypted.response.enc'] = $scope.accessTokenEncryptedResponseEnc;
     };
 
     $scope.changeIdTokenSignedResponseAlg = function() {

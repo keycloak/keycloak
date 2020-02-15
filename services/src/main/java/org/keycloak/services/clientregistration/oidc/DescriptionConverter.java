@@ -139,6 +139,18 @@ public class DescriptionConverter {
 
         configWrapper.setTokenEndpointAuthSigningAlg(clientOIDC.getTokenEndpointAuthSigningAlg());
 
+        if (clientOIDC.getAccessTokenSignedResponseAlg() != null) {
+            configWrapper.setAccessTokenSignedResponseAlg(clientOIDC.getAccessTokenSignedResponseAlg());
+        }
+
+        if (clientOIDC.getAccessTokenEncryptedResponseAlg() != null) {
+            configWrapper.setAccessTokenEncryptedResponseAlg(clientOIDC.getAccessTokenEncryptedResponseAlg());
+        }
+
+        if (clientOIDC.getAccessTokenEncryptedResponseEnc() != null) {
+            configWrapper.setAccessTokenEncryptedResponseEnc(clientOIDC.getAccessTokenEncryptedResponseEnc());
+        }
+
         return client;
     }
 

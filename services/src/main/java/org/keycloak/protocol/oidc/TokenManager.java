@@ -89,7 +89,6 @@ import java.util.stream.Collectors;
  */
 public class TokenManager {
     private static final Logger logger = Logger.getLogger(TokenManager.class);
-    private static final String JWT = "JWT";
 
     public static class TokenValidation {
         public final UserModel user;
@@ -950,7 +949,7 @@ public class TokenManager {
             AccessTokenResponse res = new AccessTokenResponse();
 
             if (accessToken != null) {
-                String encodedToken = session.tokens().encode(accessToken);
+                String encodedToken = session.tokens().encodeAndEncrypt(accessToken);
                 res.setToken(encodedToken);
                 res.setTokenType("bearer");
                 res.setSessionState(accessToken.getSessionState());

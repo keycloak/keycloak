@@ -32,6 +32,7 @@ import org.keycloak.jose.jwe.JWEException;
 import org.keycloak.jose.jwe.alg.JWEAlgorithmProvider;
 import org.keycloak.jose.jwe.enc.JWEEncryptionProvider;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
+import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -54,12 +55,12 @@ import org.keycloak.testsuite.util.OAuthClient.AccessTokenResponse;
 import org.keycloak.testsuite.util.TokenSignatureUtil;
 import org.keycloak.util.TokenUtil;
 
-import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.security.PrivateKey;
 import java.util.List;
 import java.util.Map;
 
-public class IdTokenEncryptionTest extends AbstractTestRealmKeycloakTest {
+public class JwtTokenEncryptionTest extends AbstractTestRealmKeycloakTest {
 
     @Rule
     public AssertEvents events = new AssertEvents(this);
@@ -103,74 +104,74 @@ public class IdTokenEncryptionTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
-    public void testIdTokenEncryptionAlgRSA1_5EncA128CBC_HS256() {
+    public void testJwtTokenEncryptionAlgRSA1_5EncA128CBC_HS256() {
         // add key provider explicitly though DefaultKeyManager create fallback key provider if not exist
         TokenSignatureUtil.registerKeyProvider("P-256", adminClient, testContext);
-        testIdTokenSignatureAndEncryption(Algorithm.ES256, JWEConstants.RSA1_5, JWEConstants.A128CBC_HS256);
+        testJwtTokenSignatureAndEncryption(Algorithm.ES256, JWEConstants.RSA1_5, JWEConstants.A128CBC_HS256);
     }
 
     @Test
     public void testIdTokenEncryptionAlgRSA1_5EncA192CBC_HS384() {
-        testIdTokenSignatureAndEncryption(Algorithm.PS256, JWEConstants.RSA1_5, JWEConstants.A192CBC_HS384);
+        testJwtTokenSignatureAndEncryption(Algorithm.PS256, JWEConstants.RSA1_5, JWEConstants.A192CBC_HS384);
     }
 
     @Test
     public void testIdTokenEncryptionAlgRSA1_5EncA256CBC_HS512() {
-        testIdTokenSignatureAndEncryption(Algorithm.PS384, JWEConstants.RSA1_5, JWEConstants.A256CBC_HS512);
+        testJwtTokenSignatureAndEncryption(Algorithm.PS384, JWEConstants.RSA1_5, JWEConstants.A256CBC_HS512);
     }
 
     @Test
-    public void testIdTokenEncryptionAlgRSA1_5EncA128GCM() {
-        testIdTokenSignatureAndEncryption(Algorithm.RS384, JWEConstants.RSA1_5, JWEConstants.A128GCM);
+    public void testJwtTokenEncryptionAlgRSA1_5EncA128GCM() {
+        testJwtTokenSignatureAndEncryption(Algorithm.RS384, JWEConstants.RSA1_5, JWEConstants.A128GCM);
     }
 
     @Test
     public void testIdTokenEncryptionAlgRSA1_5EncA192GCM() {
-        testIdTokenSignatureAndEncryption(Algorithm.RS512, JWEConstants.RSA1_5, JWEConstants.A192GCM);
+        testJwtTokenSignatureAndEncryption(Algorithm.RS512, JWEConstants.RSA1_5, JWEConstants.A192GCM);
     }
 
     @Test
     public void testIdTokenEncryptionAlgRSA1_5EncA256GCM() {
-        testIdTokenSignatureAndEncryption(Algorithm.RS256, JWEConstants.RSA1_5, JWEConstants.A256GCM);
+        testJwtTokenSignatureAndEncryption(Algorithm.RS256, JWEConstants.RSA1_5, JWEConstants.A256GCM);
     }
 
     @Test
-    public void testIdTokenEncryptionAlgRSA_OAEPEncA128CBC_HS256() {
+    public void testJwtTokenEncryptionAlgRSA_OAEPEncA128CBC_HS256() {
         // add key provider explicitly though DefaultKeyManager create fallback key provider if not exist
         TokenSignatureUtil.registerKeyProvider("P-521", adminClient, testContext);
-        testIdTokenSignatureAndEncryption(Algorithm.ES512, JWEConstants.RSA_OAEP, JWEConstants.A128CBC_HS256);
+        testJwtTokenSignatureAndEncryption(Algorithm.ES512, JWEConstants.RSA_OAEP, JWEConstants.A128CBC_HS256);
     }
 
     @Test
     public void testIdTokenEncryptionAlgRSA_OAEPEncA192CBC_HS384() {
-        testIdTokenSignatureAndEncryption(Algorithm.PS256, JWEConstants.RSA_OAEP, JWEConstants.A192CBC_HS384);
+        testJwtTokenSignatureAndEncryption(Algorithm.PS256, JWEConstants.RSA_OAEP, JWEConstants.A192CBC_HS384);
     }
 
     @Test
     public void testIdTokenEncryptionAlgRSA_OAEPEncA256CBC_HS512() {
-        testIdTokenSignatureAndEncryption(Algorithm.PS512, JWEConstants.RSA_OAEP, JWEConstants.A256CBC_HS512);
+        testJwtTokenSignatureAndEncryption(Algorithm.PS512, JWEConstants.RSA_OAEP, JWEConstants.A256CBC_HS512);
     }
 
     @Test
-    public void testIdTokenEncryptionAlgRSA_OAEPEncA128GCM() {
+    public void testJwtTokenEncryptionAlgRSA_OAEPEncA128GCM() {
         // add key provider explicitly though DefaultKeyManager create fallback key provider if not exist
         TokenSignatureUtil.registerKeyProvider("P-256", adminClient, testContext);
-        testIdTokenSignatureAndEncryption(Algorithm.ES256, JWEConstants.RSA_OAEP, JWEConstants.A128GCM);
+        testJwtTokenSignatureAndEncryption(Algorithm.ES256, JWEConstants.RSA_OAEP, JWEConstants.A128GCM);
     }
 
     @Test
     public void testIdTokenEncryptionAlgRSA_OAEPEncA192GCM() {
-        testIdTokenSignatureAndEncryption(Algorithm.PS384, JWEConstants.RSA_OAEP, JWEConstants.A192GCM);
+        testJwtTokenSignatureAndEncryption(Algorithm.PS384, JWEConstants.RSA_OAEP, JWEConstants.A192GCM);
     }
 
     @Test
     public void testIdTokenEncryptionAlgRSA_OAEPEncA256GCM() {
-        testIdTokenSignatureAndEncryption(Algorithm.PS512, JWEConstants.RSA_OAEP, JWEConstants.A256GCM);
+        testJwtTokenSignatureAndEncryption(Algorithm.PS512, JWEConstants.RSA_OAEP, JWEConstants.A256GCM);
     }
 
-    private void testIdTokenSignatureAndEncryption(String sigAlgorithm, String algAlgorithm, String encAlgorithm) {
-        ClientResource clientResource = null;
-        ClientRepresentation clientRep = null;
+    private void testJwtTokenSignatureAndEncryption(String sigAlgorithm, String algAlgorithm, String encAlgorithm) {
+        ClientResource clientResource;
+        ClientRepresentation clientRep;
         try {
             // generate and register encryption key onto client
             TestOIDCEndpointsApplicationResource oidcClientEndpointsResource = testingClient.testApp().oidcClientEndpoints();
@@ -182,6 +183,10 @@ public class IdTokenEncryptionTest extends AbstractTestRealmKeycloakTest {
             OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setIdTokenSignedResponseAlg(sigAlgorithm);
             OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setIdTokenEncryptedResponseAlg(algAlgorithm);
             OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setIdTokenEncryptedResponseEnc(encAlgorithm);
+
+            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setAccessTokenSignedResponseAlg(sigAlgorithm);
+            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setAccessTokenEncryptedResponseAlg(algAlgorithm);
+            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setAccessTokenEncryptedResponseEnc(encAlgorithm);
             // use and set jwks_url
             OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setUseJwksUrl(true);
             String jwksUrl = TestApplicationResourceUrls.clientJwksUri();
@@ -194,9 +199,11 @@ public class IdTokenEncryptionTest extends AbstractTestRealmKeycloakTest {
             OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
 
             // parse JWE and JOSE Header
-            String jweStr = tokenResponse.getIdToken();
-            String[] parts = jweStr.split("\\.");
-            Assert.assertEquals(parts.length, 5);
+            String jweStrIdToken = tokenResponse.getIdToken();
+            String[] partsIdToken = jweStrIdToken.split("\\.");
+            Assert.assertEquals(partsIdToken.length, 5);
+
+            String jweStrAccessToken = tokenResponse.getAccessToken();
 
             // get decryption key
             // not publickey , use privateKey
@@ -206,14 +213,22 @@ public class IdTokenEncryptionTest extends AbstractTestRealmKeycloakTest {
             // verify and decrypt JWE
             JWEAlgorithmProvider algorithmProvider = getJweAlgorithmProvider(algAlgorithm);
             JWEEncryptionProvider encryptionProvider = getJweEncryptionProvider(encAlgorithm);
-            byte[] decodedString = TokenUtil.jweKeyEncryptionVerifyAndDecode(decryptionKEK, jweStr, algorithmProvider, encryptionProvider);
-            String idTokenString = new String(decodedString, "UTF-8");
+            byte[] decodedIdTokenString = TokenUtil.jweKeyEncryptionVerifyAndDecode(decryptionKEK, jweStrIdToken, algorithmProvider, encryptionProvider);
+            String idTokenString = new String(decodedIdTokenString, StandardCharsets.UTF_8);
 
-            // verify JWS
+            byte[] decodedAccessTokenString = TokenUtil.jweKeyEncryptionVerifyAndDecode(decryptionKEK, jweStrAccessToken, algorithmProvider, encryptionProvider);
+            String accessTokenString = new String(decodedAccessTokenString, StandardCharsets.UTF_8);
+
+            // verify IDToken JWS
             IDToken idToken = oauth.verifyIDToken(idTokenString);
             Assert.assertEquals("test-user@localhost", idToken.getPreferredUsername());
             Assert.assertEquals("test-app", idToken.getIssuedFor());
-        } catch (JWEException | UnsupportedEncodingException e) {
+
+            // verify AccessToken JWS
+            AccessToken accessToken = oauth.verifyToken(accessTokenString);
+            Assert.assertEquals("test-user@localhost", accessToken.getPreferredUsername());
+            Assert.assertEquals("test-app", accessToken.getIssuedFor());
+        } catch (JWEException e) {
             Assert.fail();
         } finally {
             clientResource = ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app");
@@ -222,6 +237,11 @@ public class IdTokenEncryptionTest extends AbstractTestRealmKeycloakTest {
             OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setIdTokenSignedResponseAlg(Algorithm.RS256);
             OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setIdTokenEncryptedResponseAlg(null);
             OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setIdTokenEncryptedResponseEnc(null);
+
+            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setAccessTokenSignedResponseAlg(Algorithm.RS256);
+            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setAccessTokenEncryptedResponseAlg(null);
+            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setAccessTokenEncryptedResponseEnc(null);
+
             // revert jwks_url settings
             OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setUseJwksUrl(false);
             OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setJwksUrl(null);
@@ -236,6 +256,7 @@ public class IdTokenEncryptionTest extends AbstractTestRealmKeycloakTest {
         }
         return jweAlgorithmProvider;
     }
+
     private JWEEncryptionProvider getJweEncryptionProvider(String encAlgorithm) {
         JWEEncryptionProvider jweEncryptionProvider = null;
         switch(encAlgorithm) {
@@ -255,9 +276,11 @@ public class IdTokenEncryptionTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     @UncaughtServerErrorExpected
-    public void testIdTokenEncryptionWithoutEncryptionKEK() {
-        ClientResource clientResource = null;
-        ClientRepresentation clientRep = null;
+    public void testJwtTokenEncryptionWithoutEncryptionKEK() {
+
+        ClientResource clientResource;
+        ClientRepresentation clientRep;
+
         try {
             // generate and register signing/verifying key onto client, not encryption key
             TestOIDCEndpointsApplicationResource oidcClientEndpointsResource = testingClient.testApp().oidcClientEndpoints();
