@@ -153,6 +153,18 @@ public class DescriptionConverter {
             configWrapper.setBackchannelLogoutRevokeOfflineTokens(clientOIDC.getBackchannelLogoutRevokeOfflineTokens());
         }
 
+        if (clientOIDC.getAccessTokenSignedResponseAlg() != null) {
+            configWrapper.setAccessTokenSignedResponseAlg(clientOIDC.getAccessTokenSignedResponseAlg());
+        }
+
+        if (clientOIDC.getAccessTokenEncryptedResponseAlg() != null) {
+            configWrapper.setAccessTokenEncryptedResponseAlg(clientOIDC.getAccessTokenEncryptedResponseAlg());
+        }
+
+        if (clientOIDC.getAccessTokenEncryptedResponseEnc() != null) {
+            configWrapper.setAccessTokenEncryptedResponseEnc(clientOIDC.getAccessTokenEncryptedResponseEnc());
+        }
+
         return client;
     }
 
@@ -248,9 +260,20 @@ public class DescriptionConverter {
         if (config.getTokenEndpointAuthSigningAlg() != null) {
             response.setTokenEndpointAuthSigningAlg(config.getTokenEndpointAuthSigningAlg());
         }
+
         response.setBackchannelLogoutUri(config.getBackchannelLogoutUrl());
         response.setBackchannelLogoutSessionRequired(config.isBackchannelLogoutSessionRequired());
         response.setBackchannelLogoutSessionRequired(config.getBackchannelLogoutRevokeOfflineTokens());
+
+        if (config.getAccessTokenSignedResponseAlg() != null) {
+            response.setAccessTokenSignedResponseAlg(config.getAccessTokenSignedResponseAlg());
+        }
+        if (config.getAccessTokenEncryptedResponseAlg() != null) {
+            response.setAccessTokenEncryptedResponseAlg(config.getAccessTokenEncryptedResponseAlg());
+        }
+        if (config.getAccessTokenEncryptedResponseEnc() != null) {
+            response.setAccessTokenEncryptedResponseEnc(config.getAccessTokenEncryptedResponseEnc());
+        }
 
         List<ProtocolMapperRepresentation> foundPairwiseMappers = PairwiseSubMapperUtils.getPairwiseSubMappers(client);
         SubjectType subjectType = foundPairwiseMappers.isEmpty() ? SubjectType.PUBLIC : SubjectType.PAIRWISE;

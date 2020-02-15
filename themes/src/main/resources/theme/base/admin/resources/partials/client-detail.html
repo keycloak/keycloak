@@ -432,6 +432,36 @@
             </div>
 
             <div class="form-group clearfix block">
+                <label class="col-md-2 control-label" for="accessTokenEncryptedResponseAlg">{{:: 'access-token-encrypted-response-alg' | translate}}</label>
+                <div class="col-sm-6">
+                    <div>
+                        <select class="form-control" id="accessTokenEncryptedResponseAlg"
+                                ng-change="changeAccessTokenEncryptedResponseAlg()"
+                                ng-model="accessTokenEncryptedResponseAlg">
+                            <option value=""></option>
+                            <option ng-repeat="provider in serverInfo.listProviderIds('cekmanagement')" value="{{provider}}">{{provider}}</option>
+                        </select>
+                    </div>
+                </div>
+                <kc-tooltip>{{:: 'access-token-encrypted-response-alg.tooltip' | translate}}</kc-tooltip>
+            </div>
+
+            <div class="form-group clearfix block">
+                <label class="col-md-2 control-label" for="accessTokenEncryptedResponseEnc">{{:: 'access-token-encrypted-response-enc' | translate}}</label>
+                <div class="col-sm-6">
+                    <div>
+                        <select class="form-control" id="accessTokenEncryptedResponseEnc"
+                                ng-change="changeAccessTokenEncryptedResponseEnc()"
+                                ng-model="accessTokenEncryptedResponseEnc">
+                            <option value=""></option>
+                            <option ng-repeat="provider in serverInfo.listProviderIds('contentencryption')" value="{{provider}}">{{provider}}</option>
+                        </select>
+                    </div>
+                </div>
+                <kc-tooltip>{{:: 'access-token-encrypted-response-enc.tooltip' | translate}}</kc-tooltip>
+            </div>
+
+            <div class="form-group clearfix block">
                 <label class="col-md-2 control-label" for="idTokenSignedResponseAlg">{{:: 'id-token-signed-response-alg' | translate}}</label>
                 <div class="col-sm-6">
                     <div>

@@ -138,6 +138,7 @@ public class OIDCAdvancedConfigWrapper {
     public String getIdTokenSignedResponseAlg() {
         return getAttribute(OIDCConfigAttributes.ID_TOKEN_SIGNED_RESPONSE_ALG);
     }
+
     public void setIdTokenSignedResponseAlg(String algName) {
         setAttribute(OIDCConfigAttributes.ID_TOKEN_SIGNED_RESPONSE_ALG, algName);
     }
@@ -192,6 +193,30 @@ public class OIDCAdvancedConfigWrapper {
     public void setBackchannelLogoutRevokeOfflineTokens(boolean backchannelLogoutRevokeOfflineTokens) {
         String val = String.valueOf(backchannelLogoutRevokeOfflineTokens);
         setAttribute(OIDCConfigAttributes.BACKCHANNEL_LOGOUT_REVOKE_OFFLINE_TOKENS, val);
+    }
+
+    public String getAccessTokenSignedResponseAlg() {
+        return getAttribute(OIDCConfigAttributes.ACCESS_TOKEN_SIGNED_RESPONSE_ALG);
+    }
+
+    public void setAccessTokenSignedResponseAlg(String algName) {
+        setAttribute(OIDCConfigAttributes.ACCESS_TOKEN_SIGNED_RESPONSE_ALG, algName);
+    }
+
+    public String getAccessTokenEncryptedResponseAlg() {
+        return getAttribute(OIDCConfigAttributes.ACCESS_TOKEN_ENCRYPTED_RESPONSE_ALG);
+    }
+
+    public void setAccessTokenEncryptedResponseAlg(String algName) {
+        setAttribute(OIDCConfigAttributes.ACCESS_TOKEN_ENCRYPTED_RESPONSE_ALG, algName);
+    }
+
+    public String getAccessTokenEncryptedResponseEnc() {
+        return getAttribute(OIDCConfigAttributes.ACCESS_TOKEN_ENCRYPTED_RESPONSE_ENC);
+    }
+
+    public void setAccessTokenEncryptedResponseEnc(String encName) {
+        setAttribute(OIDCConfigAttributes.ACCESS_TOKEN_ENCRYPTED_RESPONSE_ENC, encName);
     }
 
     private String getAttribute(String attrKey) {
