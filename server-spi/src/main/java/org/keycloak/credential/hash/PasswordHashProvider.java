@@ -17,6 +17,7 @@
 
 package org.keycloak.credential.hash;
 
+import org.keycloak.credential.CredentialModel;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.provider.Provider;
@@ -35,4 +36,32 @@ public interface PasswordHashProvider extends Provider {
     }
 
     boolean verify(String rawPassword, PasswordCredentialModel credential);
+
+    /**
+     * @deprecated Exists due the backwards compatibility. It is recommended to use {@link #policyCheck(PasswordPolicy, PasswordCredentialModel)}
+     */
+    @Deprecated
+    default boolean policyCheck(PasswordPolicy policy, CredentialModel credential) {
+        return policyCheck(policy, PasswordCredentialModel.createFromCredentialModel(credential));
+    }
+
+    /**
+     * @deprecated Exists due the backwards compatibility. It is recommended to use {@link #encodedCredential(String, int)}}
+     */
+    @Deprecated
+    default void encode(String rawPassword, int iterations, CredentialModel credential) {
+        PasswordCredentialModel passwordCred = encodedCredential(rawPassword, iterations);
+
+        credential.setCredentialData(passwordCred.getCredentialData());
+        credential.setSecretData(passwordCred.getSecretData());
+    }
+
+    /**
+     * @deprecated Exists due the backwards compatibility. It is recommended to use {@link #verify(String, PasswordCredentialModel)}
+     */
+    @Deprecated
+    default boolean verify(String rawPassword, CredentialModel credential) {
+        PasswordCredentialModel password = PasswordCredentialModel.createFromCredentialModel(credential);
+        return verify(rawPassword, password);
+    }
 }

@@ -15,34 +15,18 @@
  * limitations under the License.
  */
 
-package org.keycloak.storage.ldap.mappers;
+package org.keycloak.models.credential;
 
-import org.keycloak.provider.Provider;
-import org.keycloak.provider.ProviderFactory;
-import org.keycloak.provider.Spi;
+import org.keycloak.models.UserCredentialModel;
 
 /**
- * @author <a href="mailto:me@tsudot.com">Kunal Kerkar</a>
+ * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
+ *
+ * @deprecated Recommended to use {@link UserCredentialModel} as it contains all the functionality required by this class
  */
-public class LDAPStorageMapperSpi implements Spi {
+public class PasswordUserCredentialModel extends UserCredentialModel {
 
-    @Override
-    public boolean isInternal() {
-        return true;
-    }
-
-    @Override
-    public String getName() {
-        return "ldap-mapper";
-    }
-
-    @Override
-    public Class<? extends Provider> getProviderClass() {
-        return LDAPStorageMapper.class;
-    }
-
-    @Override
-    public Class<? extends ProviderFactory> getProviderFactoryClass() {
-        return LDAPStorageMapperFactory.class;
+    public PasswordUserCredentialModel(String credentialId, String type, String challengeResponse, boolean adminRequest) {
+        super(credentialId, type, challengeResponse, adminRequest);
     }
 }
