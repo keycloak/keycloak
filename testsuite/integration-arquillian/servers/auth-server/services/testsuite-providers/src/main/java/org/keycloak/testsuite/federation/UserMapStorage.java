@@ -27,6 +27,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.credential.PasswordUserCredentialModel;
 import org.keycloak.storage.ReadOnlyException;
 import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.storage.StorageId;
@@ -186,12 +187,15 @@ public class UserMapStorage implements UserLookupProvider, UserStorageProvider, 
 
     @Override
     public boolean isValid(RealmModel realm, UserModel user, CredentialInput input) {
-        if (!(input instanceof UserCredentialModel)) {
+        // Test "instanceof PasswordUserCredentialModel" on purpose. We want to test that the backwards compatibility
+        if (!(input instanceof PasswordUserCredentialModel)) {
             return false;
         }
         if (input.getType().equals(PasswordCredentialModel.TYPE)) {
             String pw = userPasswords.get(user.getUsername());
-            return pw != null && pw.equals(input.getChallengeResponse());
+
+            // Using "getValue" on purpose here, to test that backwards compatibility works as expected
+            return pw != null && pw.equals(((UserCredentialModel) input).getValue());
         } else {
             return false;
         }
