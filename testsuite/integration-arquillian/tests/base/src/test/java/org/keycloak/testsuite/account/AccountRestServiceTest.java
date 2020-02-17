@@ -75,6 +75,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.keycloak.common.Profile.Feature.ACCOUNT_API;
+import org.keycloak.testsuite.util.UserBuilder;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -320,6 +321,19 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
     public void testCredentialsGet() throws IOException {
         configureBrowserFlowWithWebAuthnAuthenticator("browser-webauthn");
 
+        // Register requiredActions for WebAuthn and WebAuthn Passwordless
+        RequiredActionProviderSimpleRepresentation requiredAction = new RequiredActionProviderSimpleRepresentation();
+        requiredAction.setId("12345");
+        requiredAction.setName(WebAuthnRegisterFactory.PROVIDER_ID);
+        requiredAction.setProviderId(WebAuthnRegisterFactory.PROVIDER_ID);
+        testRealm().flows().registerRequiredAction(requiredAction);
+
+        requiredAction = new RequiredActionProviderSimpleRepresentation();
+        requiredAction.setId("6789");
+        requiredAction.setName(WebAuthnPasswordlessRegisterFactory.PROVIDER_ID);
+        requiredAction.setProviderId(WebAuthnPasswordlessRegisterFactory.PROVIDER_ID);
+        testRealm().flows().registerRequiredAction(requiredAction);
+
         List<AccountCredentialResource.CredentialContainer> credentials = getCredentials();
 
         Assert.assertEquals(4, credentials.size());
@@ -342,47 +356,25 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         AccountCredentialResource.CredentialContainer webauthn = credentials.get(2);
         assertCredentialContainerExpected(webauthn, WebAuthnCredentialModel.TYPE_TWOFACTOR, CredentialTypeMetadata.Category.TWO_FACTOR.toString(),
                 "webauthn-display-name", "webauthn-help-text", "kcAuthenticatorWebAuthnClass",
-                null, null, true, 0);
+                WebAuthnRegisterFactory.PROVIDER_ID, null, true, 0);
 
         AccountCredentialResource.CredentialContainer webauthnPasswordless = credentials.get(3);
         assertCredentialContainerExpected(webauthnPasswordless, WebAuthnCredentialModel.TYPE_PASSWORDLESS, CredentialTypeMetadata.Category.PASSWORDLESS.toString(),
                 "webauthn-passwordless-display-name", "webauthn-passwordless-help-text", "kcAuthenticatorWebAuthnPasswordlessClass",
-                null, null, true, 0);
+                WebAuthnPasswordlessRegisterFactory.PROVIDER_ID, null, true, 0);
 
-        // Register requiredActions for WebAuthn
-        RequiredActionProviderSimpleRepresentation requiredAction = new RequiredActionProviderSimpleRepresentation();
-        requiredAction.setId("12345");
-        requiredAction.setName(WebAuthnRegisterFactory.PROVIDER_ID);
-        requiredAction.setProviderId(WebAuthnRegisterFactory.PROVIDER_ID);
-        testRealm().flows().registerRequiredAction(requiredAction);
-
-        requiredAction = new RequiredActionProviderSimpleRepresentation();
-        requiredAction.setId("6789");
-        requiredAction.setName(WebAuthnPasswordlessRegisterFactory.PROVIDER_ID);
-        requiredAction.setProviderId(WebAuthnPasswordlessRegisterFactory.PROVIDER_ID);
-        testRealm().flows().registerRequiredAction(requiredAction);
-
-        // requiredActions should be available
-        credentials = getCredentials();
-        Assert.assertEquals(WebAuthnRegisterFactory.PROVIDER_ID, credentials.get(2).getCreateAction());
-        Assert.assertEquals(WebAuthnPasswordlessRegisterFactory.PROVIDER_ID, credentials.get(3).getCreateAction());
-
-        // disable WebAuthn passwordless required action. It won't be returned then
-        RequiredActionProviderRepresentation requiredActionRep = testRealm().flows().getRequiredAction(WebAuthnPasswordlessRegisterFactory.PROVIDER_ID);
-        requiredActionRep.setEnabled(false);
-        testRealm().flows().updateRequiredAction(WebAuthnRegisterFactory.PROVIDER_ID, requiredActionRep);
+        // disable WebAuthn passwordless required action. User doesn't have WebAuthnPasswordless credential, so WebAuthnPasswordless credentialType won't be returned
+        setRequiredActionEnabledStatus(WebAuthnPasswordlessRegisterFactory.PROVIDER_ID, false);
 
         credentials = getCredentials();
-        Assert.assertNull(credentials.get(2).getCreateAction());
+        assertExpectedCredentialTypes(credentials, PasswordCredentialModel.TYPE, OTPCredentialModel.TYPE, WebAuthnCredentialModel.TYPE_TWOFACTOR);
 
         // Test that WebAuthn won't be returned when removed from the authentication flow
         removeWebAuthnFlow("browser-webauthn");
 
         credentials = getCredentials();
 
-        Assert.assertEquals(2, credentials.size());
-        Assert.assertEquals(PasswordCredentialModel.TYPE, credentials.get(0).getType());
-        Assert.assertNotNull(OTPCredentialModel.TYPE, credentials.get(1).getType());
+        assertExpectedCredentialTypes(credentials, PasswordCredentialModel.TYPE, OTPCredentialModel.TYPE);
 
         // Test password-only
         credentials = SimpleHttp.doGet(getAccountUrl("credentials?" + AccountCredentialResource.TYPE + "=password"), httpClient)
@@ -449,6 +441,59 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
                     "Browser - Conditional OTP", currentBrowserReq);
             setExecutionRequirement(DefaultAuthenticationFlows.DIRECT_GRANT_FLOW,
                     "Direct Grant - Conditional OTP", currentDirectGrantReq);
+        }
+    }
+
+    @Test
+    public void testCredentialsGetWithDisabledOtpRequiredAction() throws IOException {
+        // Assert OTP will be returned by default
+        List<AccountCredentialResource.CredentialContainer> credentials = getCredentials();
+        assertExpectedCredentialTypes(credentials, PasswordCredentialModel.TYPE, OTPCredentialModel.TYPE);
+
+        // Disable OTP required action
+        setRequiredActionEnabledStatus(UserModel.RequiredAction.CONFIGURE_TOTP.name(), false);
+
+        // Assert OTP won't be returned
+        credentials = getCredentials();
+        assertExpectedCredentialTypes(credentials, PasswordCredentialModel.TYPE);
+
+        // Add OTP credential to the user through admin REST API
+        UserResource adminUserResource = ApiUtil.findUserByUsernameId(testRealm(), "test-user@localhost");
+        org.keycloak.representations.idm.UserRepresentation userRep = UserBuilder.edit(adminUserResource.toRepresentation())
+                .totpSecret("abcdefabcdef")
+                .build();
+        adminUserResource.update(userRep);
+
+        // Assert OTP will be returned without requiredAction
+        credentials = getCredentials();
+        assertExpectedCredentialTypes(credentials, PasswordCredentialModel.TYPE, OTPCredentialModel.TYPE);
+        AccountCredentialResource.CredentialContainer otpCredential = credentials.get(1);
+        Assert.assertNull(otpCredential.getCreateAction());
+        Assert.assertNull(otpCredential.getUpdateAction());
+
+        // Revert - re-enable requiredAction and remove OTP credential from the user
+        setRequiredActionEnabledStatus(UserModel.RequiredAction.CONFIGURE_TOTP.name(), true);
+
+        String otpCredentialId = adminUserResource.credentials().stream()
+                .filter(credential -> OTPCredentialModel.TYPE.equals(credential.getType()))
+                .findFirst()
+                .get()
+                .getId();
+        adminUserResource.removeCredential(otpCredentialId);
+    }
+
+    private void setRequiredActionEnabledStatus(String requiredActionProviderId, boolean enabled) {
+        RequiredActionProviderRepresentation requiredActionRep = testRealm().flows().getRequiredAction(requiredActionProviderId);
+        requiredActionRep.setEnabled(enabled);
+        testRealm().flows().updateRequiredAction(requiredActionProviderId, requiredActionRep);
+    }
+
+    private void assertExpectedCredentialTypes(List<AccountCredentialResource.CredentialContainer> credentialTypes, String... expectedCredentialTypes) {
+        Assert.assertEquals(credentialTypes.size(), expectedCredentialTypes.length);
+        int i = 0;
+        for (AccountCredentialResource.CredentialContainer credential : credentialTypes) {
+            Assert.assertEquals(credential.getType(), expectedCredentialTypes[i]);
+            i++;
         }
     }
 
