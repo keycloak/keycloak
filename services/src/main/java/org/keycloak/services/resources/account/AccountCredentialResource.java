@@ -158,13 +158,13 @@ public class AccountCredentialResource {
                                                      @QueryParam(USER_CREDENTIALS) Boolean userCredentials) {
         auth.requireOneOf(AccountRoles.MANAGE_ACCOUNT, AccountRoles.VIEW_PROFILE);
 
-        boolean filterUserCredentials = userCredentials != null && !userCredentials;
+        boolean includeUserCredentials = userCredentials == null || userCredentials;
 
         List<CredentialContainer> credentialTypes = new LinkedList<>();
         List<CredentialProvider> credentialProviders = UserCredentialStoreManager.getCredentialProviders(session, realm, CredentialProvider.class);
         Set<String> enabledCredentialTypes = getEnabledCredentialTypes(credentialProviders);
 
-        List<CredentialModel> models = filterUserCredentials ? null : session.userCredentialManager().getStoredCredentials(realm, user);
+        List<CredentialModel> models = includeUserCredentials ? session.userCredentialManager().getStoredCredentials(realm, user) : null;
 
         // Don't return secrets from REST endpoint
         if (models != null) {
@@ -193,18 +193,27 @@ public class AccountCredentialResource {
                     .build(session);
             CredentialTypeMetadata metadata = credentialProvider.getCredentialTypeMetadata(ctx);
 
-            List<CredentialRepresentation> userCredentialModels = filterUserCredentials ? null : models.stream()
-                    .filter(credentialModel -> credentialProvider.getType().equals(credentialModel.getType()))
-                    .map(ModelToRepresentation::toRepresentation)
-                    .collect(Collectors.toList());
+            List<CredentialRepresentation> userCredentialModels = null;
+            if (includeUserCredentials) {
+                userCredentialModels = models.stream()
+                        .filter(credentialModel -> credentialProvider.getType().equals(credentialModel.getType()))
+                        .map(ModelToRepresentation::toRepresentation)
+                        .collect(Collectors.toList());
 
-            if (userCredentialModels != null && userCredentialModels.isEmpty() &&
-                    session.userCredentialManager().isConfiguredFor(realm, user, credentialProviderType)) {
-                // In case user is federated in the userStorage, he may have credential configured on the userStorage side. We're
-                // creating "dummy" credential representing the credential provided by userStorage
-                CredentialRepresentation credential = createUserStorageCredentialRepresentation(credentialProviderType);
+                if (userCredentialModels.isEmpty() &&
+                        session.userCredentialManager().isConfiguredFor(realm, user, credentialProviderType)) {
+                    // In case user is federated in the userStorage, he may have credential configured on the userStorage side. We're
+                    // creating "dummy" credential representing the credential provided by userStorage
+                    CredentialRepresentation credential = createUserStorageCredentialRepresentation(credentialProviderType);
 
-                userCredentialModels = Collections.singletonList(credential);
+                    userCredentialModels = Collections.singletonList(credential);
+                }
+
+                // In case that there are no userCredentials AND there are not required actions for setup new credential,
+                // we won't include credentialType as user won't be able to do anything with it
+                if (userCredentialModels.isEmpty() && metadata.getCreateAction() == null && metadata.getUpdateAction() == null) {
+                    continue;
+                }
             }
 
             CredentialContainer credType = new CredentialContainer(metadata, userCredentialModels);
