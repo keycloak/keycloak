@@ -18,6 +18,7 @@ package org.keycloak.testsuite.migration;
 
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.admin.client.resource.RealmResource;
@@ -44,6 +45,7 @@ import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.representations.RefreshToken;
 import org.keycloak.representations.idm.AuthenticationExecutionExportRepresentation;
 import org.keycloak.representations.idm.AuthenticationExecutionInfoRepresentation;
 import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
@@ -62,9 +64,12 @@ import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.arquillian.migration.MigrationContext;
 import org.keycloak.testsuite.exportimport.ExportImportUtil;
 import org.keycloak.testsuite.runonserver.RunHelpers;
 import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.WaitUtils;
+import org.keycloak.util.TokenUtil;
 
 import java.io.IOException;
 import java.net.URI;
@@ -126,7 +131,7 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         assertNames(migrationRealm.clients().findAll(), expectedClientIds.toArray(new String[expectedClientIds.size()]));
         String id2 = migrationRealm.clients().findByClientId("migration-test-client").get(0).getId();
         assertNames(migrationRealm.clients().get(id2).roles().list(), "migration-test-client-role");
-        assertNames(migrationRealm.users().search("", 0, 5), "migration-test-user");
+        assertNames(migrationRealm.users().search("", 0, 5), "migration-test-user", "offline-test-user");
         assertNames(migrationRealm.groups().groups(), "migration-test-group");
     }
 
@@ -178,10 +183,6 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         testLdapKerberosMigration_2_5_0();
         //https://github.com/keycloak/keycloak/pull/3630
         testDuplicateEmailSupport(masterRealm, migrationRealm);
-    }
-
-    protected void testMigrationTo2_5_1() throws Exception {
-        testOfflineTokenLogin();
     }
 
     /**
@@ -649,9 +650,32 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
 
         oauth.realm(MIGRATION);
         oauth.clientId("migration-test-client");
-        OAuthClient.AccessTokenResponse response = oauth.doRefreshTokenRequest(oldOfflineToken, "b2c07929-69e3-44c6-8d7f-76939000b3e4");
+        OAuthClient.AccessTokenResponse response = oauth.doRefreshTokenRequest(oldOfflineToken, "secret");
+
+        if (response.getError() != null) {
+            String errorMessage = String.format("Error when refreshing offline token. Error: %s, Error details: %s, offline token from previous version: %s",
+            response.getError(), response.getErrorDescription(), oldOfflineToken);
+            log.error(errorMessage);
+            Assert.fail(errorMessage);
+        }
+
         AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
-        assertEquals("migration-test-user", accessToken.getPreferredUsername());
+        assertEquals("offline-test-user", accessToken.getPreferredUsername());
+
+        // KEYCLOAK-10029 - Doublecheck that refresh token in the response is also offline token. Doublecheck that it can be used to another successful refresh
+        String newOfflineToken1 = response.getRefreshToken();
+        assertOfflineToken(newOfflineToken1);
+
+        response = oauth.doRefreshTokenRequest(newOfflineToken1, "secret");
+        String newOfflineToken2 = response.getRefreshToken();
+        assertOfflineToken(newOfflineToken2);
+    }
+
+    private void assertOfflineToken(String offlineToken) {
+        RefreshToken offlineTokenParsed = oauth.parseRefreshToken(offlineToken);
+        assertEquals(TokenUtil.TOKEN_TYPE_OFFLINE, offlineTokenParsed.getType());
+        assertEquals(0, offlineTokenParsed.getExpiration());
+        assertTrue(TokenUtil.hasScope(offlineTokenParsed.getScope(), OAuth2Constants.OFFLINE_ACCESS));
     }
 
     private void testRealmDefaultClientScopes(RealmResource realm) {
@@ -748,19 +772,19 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
             String otp = otpGenerator.generateTOTP("dSdmuHLQhkm54oIm0A0S");
 
             // Try invalid password first
-            OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("b2c07929-69e3-44c6-8d7f-76939000b3e4",
+            OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret",
                     "migration-test-user", "password", otp);
             Assert.assertNull(response.getAccessToken());
             Assert.assertNotNull(response.getError());
 
             // Try invalid OTP then
-            response = oauth.doGrantAccessTokenRequest("b2c07929-69e3-44c6-8d7f-76939000b3e4",
+            response = oauth.doGrantAccessTokenRequest("secret",
                     "migration-test-user", "password2", "invalid");
             Assert.assertNull(response.getAccessToken());
             Assert.assertNotNull(response.getError());
 
             // Try successful login now
-            response = oauth.doGrantAccessTokenRequest("b2c07929-69e3-44c6-8d7f-76939000b3e4",
+            response = oauth.doGrantAccessTokenRequest("secret",
                     "migration-test-user", "password2", otp);
             Assert.assertNull(response.getError());
             AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
@@ -769,7 +793,6 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
             throw new AssertionError("Failed to login with user 'migration-test-user' after migration", e);
         }
     }
-
 
     protected void testOTPAuthenticatorsMigratedToConditionalFlow() {
         log.info("testing optional authentication executions migrated");
@@ -831,7 +854,6 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         testMigrationTo2_2_0();
         testMigrationTo2_3_0();
         testMigrationTo2_5_0();
-        testMigrationTo2_5_1();
     }
 
     protected void testMigrationTo3_x() {

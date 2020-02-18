@@ -179,6 +179,7 @@ public class TokenManager {
         if (oldTokenScope == null && userSession.isOffline()) {
             logger.debugf("Migrating offline token of user '%s' for client '%s' of realm '%s'", user.getUsername(), client.getClientId(), realm.getName());
             MigrationUtils.migrateOldOfflineToken(session, realm, client, user);
+            oldTokenScope = OAuth2Constants.OFFLINE_ACCESS;
         }
 
         ClientSessionContext clientSessionCtx = DefaultClientSessionContext.fromClientSessionAndScopeParameter(clientSession, oldTokenScope, session);
