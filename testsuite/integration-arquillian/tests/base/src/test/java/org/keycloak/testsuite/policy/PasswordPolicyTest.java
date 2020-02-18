@@ -154,6 +154,7 @@ public class PasswordPolicyTest extends AbstractKeycloakTest {
 
             Assert.assertEquals(BlacklistPasswordPolicyProvider.ERROR_MESSAGE, policyManager.validate("jdoe", "blacklisted1").getMessage());
             Assert.assertEquals(BlacklistPasswordPolicyProvider.ERROR_MESSAGE, policyManager.validate("jdoe", "blacklisted2").getMessage());
+            Assert.assertEquals(BlacklistPasswordPolicyProvider.ERROR_MESSAGE, policyManager.validate("jdoe", "bLaCkLiSteD2").getMessage());
             assertNull(policyManager.validate("jdoe", "notblacklisted"));
         });
     }
