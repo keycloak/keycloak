@@ -1006,15 +1006,23 @@ public class AccountFormServiceTest extends AbstractTestRealmKeycloakTest {
         Assert.assertEquals("No access", errorPage.getError());
     }
 
-    private void setEventsEnabled() {
+    private void setEventsEnabled(boolean eventsEnabled) {
         RealmRepresentation testRealm = testRealm().toRepresentation();
-        testRealm.setEventsEnabled(true);
+        testRealm.setEventsEnabled(eventsEnabled);
         testRealm().update(testRealm);
+    }
+
+
+    @Test
+    public void viewLogNotEnabled() {
+        logPage.open();
+        assertTrue(errorPage.isCurrent());
+        assertEquals("Page not found", errorPage.getError());
     }
 
     @Test
     public void viewLog() {
-        setEventsEnabled();
+        setEventsEnabled(true);
 
         List<EventRepresentation> expectedEvents = new LinkedList<>();
 
@@ -1053,6 +1061,8 @@ public class AccountFormServiceTest extends AbstractTestRealmKeycloakTest {
                 Assert.fail("Event not found " + e.getType());
             }
         }
+
+        setEventsEnabled(false);
     }
 
     @Test
