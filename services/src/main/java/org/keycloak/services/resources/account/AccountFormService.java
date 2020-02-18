@@ -80,6 +80,7 @@ import org.keycloak.util.JsonSerialization;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.FormParam;
 import javax.ws.rs.GET;
+import javax.ws.rs.NotFoundException;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -287,6 +288,10 @@ public class AccountFormService extends AbstractSecuredLocalService {
     @Path("log")
     @GET
     public Response logPage() {
+        if (!realm.isEventsEnabled()) {
+            throw new NotFoundException();
+        }
+
         if (auth != null) {
             List<Event> events = eventStore.createQuery().type(Constants.EXPOSED_LOG_EVENTS).user(auth.getUser().getId()).maxResults(30).getResultList();
             for (Event e : events) {
