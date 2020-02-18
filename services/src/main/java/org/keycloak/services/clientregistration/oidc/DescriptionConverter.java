@@ -247,6 +247,16 @@ public class DescriptionConverter {
             response.setTokenEndpointAuthSigningAlg(config.getTokenEndpointAuthSigningAlg());
         }
 
+        if (config.getAccessTokenSignedResponseAlg() != null) {
+            response.setAccessTokenSignedResponseAlg(config.getAccessTokenSignedResponseAlg());
+        }
+        if (config.getAccessTokenEncryptedResponseAlg() != null) {
+            response.setAccessTokenEncryptedResponseAlg(config.getAccessTokenEncryptedResponseAlg());
+        }
+        if (config.getAccessTokenEncryptedResponseEnc() != null) {
+            response.setAccessTokenEncryptedResponseEnc(config.getAccessTokenEncryptedResponseEnc());
+        }
+
         List<ProtocolMapperRepresentation> foundPairwiseMappers = PairwiseSubMapperUtils.getPairwiseSubMappers(client);
         SubjectType subjectType = foundPairwiseMappers.isEmpty() ? SubjectType.PUBLIC : SubjectType.PAIRWISE;
         response.setSubjectType(subjectType.toString().toLowerCase());

@@ -60,6 +60,13 @@ import java.security.PrivateKey;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Tests for encrypted and signed ID-Tokens and Access-Tokens.
+ * <ul>
+ * <li><a href="https://issues.redhat.com/browse/KEYCLOAK-6768">Encrypted IDToken issue: KEYCLOAK-6768</a></li>
+ * <li><a href="https://issues.redhat.com/browse/KEYCLOAK-10761">Encrypted AccessToken issue: KEYCLOAK-10761</a></li>
+ * </ul>
+ */
 public class JwtTokenEncryptionTest extends AbstractTestRealmKeycloakTest {
 
     @Rule
@@ -292,6 +299,11 @@ public class JwtTokenEncryptionTest extends AbstractTestRealmKeycloakTest {
             OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setIdTokenSignedResponseAlg(Algorithm.RS256);
             OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setIdTokenEncryptedResponseAlg(JWEConstants.RSA1_5);
             OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setIdTokenEncryptedResponseEnc(JWEConstants.A128CBC_HS256);
+
+            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setAccessTokenSignedResponseAlg(Algorithm.RS256);
+            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setAccessTokenEncryptedResponseAlg(JWEConstants.RSA1_5);
+            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setAccessTokenEncryptedResponseEnc(JWEConstants.A128CBC_HS256);
+
             // use and set jwks_url
             OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setUseJwksUrl(true);
             String jwksUrl = TestApplicationResourceUrls.clientJwksUri();
@@ -311,6 +323,11 @@ public class JwtTokenEncryptionTest extends AbstractTestRealmKeycloakTest {
             OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setIdTokenSignedResponseAlg(Algorithm.RS256);
             OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setIdTokenEncryptedResponseAlg(null);
             OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setIdTokenEncryptedResponseEnc(null);
+
+            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setAccessTokenSignedResponseAlg(Algorithm.RS256);
+            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setAccessTokenEncryptedResponseAlg(null);
+            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setAccessTokenEncryptedResponseEnc(null);
+
             // Revert jwks_url settings
             OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setUseJwksUrl(false);
             OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setJwksUrl(null);

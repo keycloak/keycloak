@@ -310,7 +310,7 @@ public class OIDCClientRepresentation {
     }
 
     public String getAccessTokenEncryptedResponseAlg() {
-        return id_token_encrypted_response_alg;
+        return access_token_encrypted_response_alg;
     }
 
     public void setAccessTokenEncryptedResponseAlg(String accessTokenEncryptedResponseAlg) {
