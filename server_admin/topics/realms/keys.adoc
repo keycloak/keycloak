@@ -11,8 +11,7 @@ possible to regularly rotate the keys without any downtime or interruption to us
 When a realm is created a key pair and a self-signed certificate is automatically generated.
 
 To view the active keys for a realm select the realm in the admin console click on `Realm settings` then `Keys`. This
-will show the currently active keys for the realm. {project_name} currently only supports RSA signatures so there
-is only one active keypair. In the future as more signature algorithms are added there will be more active keypairs.
+will show the currently active keys for the realm.
 
 To view passive or disabled keys select `Passive` or `Disabled`. 
 A keypair can have the status `Active`, but still not be selected as the currently active keypair for the realm. 
