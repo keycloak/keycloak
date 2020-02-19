@@ -521,22 +521,22 @@
     <dependency>
       <groupId>com.webauthn4j</groupId>
       <artifactId>webauthnj4-core</artifactId>
-      <version>0.9.14.RELEASE</version>
+      <version>0.10.2.RELEASE</version>
       <licenses>
         <license>
           <name>Apache Software License 2.0</name>
-          <url>https://raw.githubusercontent.com/webauthn4j/webauthn4j/0.9.14.RELEASE/LICENSE.txt</url>
+          <url>https://raw.githubusercontent.com/webauthn4j/webauthn4j/0.10.2.RELEASE/LICENSE.txt</url>
         </license>
       </licenses>
     </dependency>
     <dependency>
       <groupId>com.webauthn4j</groupId>
       <artifactId>webauthnj4-util</artifactId>
-      <version>0.9.14.RELEASE</version>
+      <version>0.10.2.RELEASE</version>
       <licenses>
         <license>
           <name>Apache Software License 2.0</name>
-          <url>https://raw.githubusercontent.com/webauthn4j/webauthn4j/0.9.14.RELEASE/LICENSE.txt</url>
+          <url>https://raw.githubusercontent.com/webauthn4j/webauthn4j/0.10.2.RELEASE/LICENSE.txt</url>
         </license>
       </licenses>
     </dependency>
