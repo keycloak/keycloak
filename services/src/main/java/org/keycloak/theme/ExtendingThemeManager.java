@@ -285,20 +285,17 @@ public class ExtendingThemeManager implements ThemeProvider {
         @Override
         public Properties getProperties() throws IOException {
             if (properties == null) {
-                Properties properties = new Properties();
-                ListIterator<Theme> itr = themes.listIterator(themes.size());
-                while (itr.hasPrevious()) {
-                    Properties p = itr.previous().getProperties();
-                    if (p != null) {
-                        properties.putAll(p);
-                    }
-                }
-                substituteProperties(properties);
-                this.properties = properties;
-                return properties;
-            } else {
-                return properties;
+                properties = new Properties();
             }
+            ListIterator<Theme> itr = themes.listIterator(themes.size());
+            while (itr.hasPrevious()) {
+                Properties p = itr.previous().getProperties();
+                if (p != null) {
+                    properties.putAll(p);
+                }
+            }
+            substituteProperties(properties);
+            return properties;
         }
 
         /**

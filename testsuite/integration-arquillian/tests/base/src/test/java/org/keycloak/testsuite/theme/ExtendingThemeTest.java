@@ -25,7 +25,6 @@ public class ExtendingThemeTest extends AbstractKeycloakTest {
 
     @Before
     public void setUp() {
-        testingClient.server().run(session -> System.setProperty("existing_system_property", "Keycloak is awesome"));
     }
 
     @Override
@@ -39,6 +38,7 @@ public class ExtendingThemeTest extends AbstractKeycloakTest {
         ContainerAssume.assumeAuthServerUndertow();
         testingClient.server().run(session -> {
             try {
+                System.setProperty("existing_system_property", "Keycloak is awesome");
                 ThemeProvider extending = session.getProvider(ThemeProvider.class, "extending");
                 Theme theme = extending.getTheme(THEME_NAME, Theme.Type.LOGIN);
                 Assert.assertEquals("Keycloak is awesome", theme.getProperties().getProperty("system.property.found"));
@@ -46,6 +46,8 @@ public class ExtendingThemeTest extends AbstractKeycloakTest {
                 Assert.assertEquals("defaultValue", theme.getProperties().getProperty("system.property.missing.with.default"));
             } catch (IOException e) {
                 Assert.fail(e.getMessage());
+            } finally {
+                System.clearProperty("existing_system_property");
             }
         });
     }
@@ -70,6 +72,27 @@ public class ExtendingThemeTest extends AbstractKeycloakTest {
                 }
             } catch (IOException e) {
                 Assert.fail(e.getMessage());
+            }
+        });
+    }
+
+    //KEYCLOAK-12063
+    @Test
+    public void reloadTheme() {
+        testingClient.server().run(session -> {
+            try {
+                ThemeProvider extending = session.getProvider(ThemeProvider.class, "extending");
+                Theme theme = extending.getTheme(THEME_NAME, Theme.Type.LOGIN);
+                Assert.assertEquals("${existing_system_property}", theme.getProperties().getProperty("system.property.found"));
+
+                System.setProperty("existing_system_property", "Keycloak is awesome");
+
+                theme = extending.getTheme(THEME_NAME, Theme.Type.LOGIN);
+                Assert.assertEquals("Keycloak is awesome", theme.getProperties().getProperty("system.property.found"));
+            } catch (IOException e) {
+                Assert.fail(e.getMessage());
+            } finally {
+                System.clearProperty("existing_system_property");
             }
         });
     }
