@@ -1316,21 +1316,25 @@ public class AuthenticationManager {
 
     protected static void logSuccess(KeycloakSession session, AuthenticationSessionModel authSession) {
         RealmModel realm = session.getContext().getRealm();
-
         if (realm.isBruteForceProtected()) {
-            String username = authSession.getAuthNote(AbstractUsernameFormAuthenticator.ATTEMPTED_USERNAME);
-            // TODO: as above, need to handle non form success
-
-            if(username == null) {
-                return;
-            }
-
-            UserModel user = KeycloakModelUtils.findUserByNameOrEmail(session, realm, username);
+            UserModel user = lookupUserForBruteForceLog(session, realm, authSession);
             if (user != null) {
                 BruteForceProtector bruteForceProtector = session.getProvider(BruteForceProtector.class);
                 bruteForceProtector.successfulLogin(realm, user, session.getContext().getConnection());
             }
         }
+    }
+
+    public static UserModel lookupUserForBruteForceLog(KeycloakSession session, RealmModel realm, AuthenticationSessionModel authenticationSession) {
+        UserModel user = authenticationSession.getAuthenticatedUser();
+        if (user != null) return user;
+
+        String username = authenticationSession.getAuthNote(AbstractUsernameFormAuthenticator.ATTEMPTED_USERNAME);
+        if (username != null) {
+            return KeycloakModelUtils.findUserByNameOrEmail(session, realm, username);
+        }
+
+        return null;
     }
 
 }

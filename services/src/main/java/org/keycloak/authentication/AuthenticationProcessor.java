@@ -639,15 +639,9 @@ public class AuthenticationProcessor {
 
     public void logFailure() {
         if (realm.isBruteForceProtected()) {
-            String username = authenticationSession.getAuthNote(AbstractUsernameFormAuthenticator.ATTEMPTED_USERNAME);
-            // todo need to handle non form failures
-            if (username == null) {
-
-            } else {
-                UserModel user = KeycloakModelUtils.findUserByNameOrEmail(session, realm, username);
-                if (user != null) {
-                    getBruteForceProtector().failedLogin(realm, user, connection);
-                }
+            UserModel user = AuthenticationManager.lookupUserForBruteForceLog(session, realm, authenticationSession);
+            if (user != null) {
+                getBruteForceProtector().failedLogin(realm, user, connection);
             }
         }
     }

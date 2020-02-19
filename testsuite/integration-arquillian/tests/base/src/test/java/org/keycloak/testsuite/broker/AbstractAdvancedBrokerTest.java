@@ -28,6 +28,7 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.Urls;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.testsuite.Assert;
+import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.federation.DummyUserFederationProviderFactory;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.OAuthClient;
@@ -386,13 +387,7 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
 
         driver.navigate().to(getAccountUrl(bc.consumerRealmName()));
 
-        log.debug("Clicking social " + bc.getIDPAlias());
-        loginPage.clickSocial(bc.getIDPAlias());
-        waitForPage(driver, "log in to", true);
-        Assert.assertTrue("Driver should be on the provider realm page right now",
-                driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"));
-        log.debug("Logging in");
-        loginPage.login(bc.getUserLogin(), bc.getUserPassword());
+        logInWithBroker(bc);
 
         totpPage.assertCurrent();
         String totpSecret = totpPage.getTotpSecret();
@@ -401,28 +396,75 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
         assertNumFederatedIdentities(realm.users().search(bc.getUserLogin()).get(0).getId(), 1);
         logoutFromRealm(bc.consumerRealmName());
 
-        log.debug("Clicking social " + bc.getIDPAlias());
-        loginPage.clickSocial(bc.getIDPAlias());
-        waitForPage(driver, "log in to", true);
-        Assert.assertTrue("Driver should be on the provider realm page right now",
-                driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"));
-        log.debug("Logging in");
-        loginPage.login(bc.getUserLogin(), bc.getUserPassword());
+        logInWithBroker(bc);
 
         loginTotpPage.assertCurrent();
         loginTotpPage.login(totp.generateTOTP(totpSecret));
         logoutFromRealm(bc.consumerRealmName());
 
         testingClient.server(bc.consumerRealmName()).run(disablePostBrokerLoginFlow(bc.getIDPAlias()));
-        log.debug("Clicking social " + bc.getIDPAlias());
-        loginPage.clickSocial(bc.getIDPAlias());
-        waitForPage(driver, "log in to", true);
-        Assert.assertTrue("Driver should be on the provider realm page right now",
-                driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"));
-        log.debug("Logging in");
-        loginPage.login(bc.getUserLogin(), bc.getUserPassword());
+        logInWithBroker(bc);
         waitForAccountManagementTitle();
         accountUpdateProfilePage.assertCurrent();
+    }
+
+    // KEYCLOAK-12986
+    @Test
+    public void testPostBrokerLoginFlowWithOTP_bruteForceEnabled() {
+        updateExecutions(AbstractBrokerTest::disableUpdateProfileOnFirstLogin);
+        testingClient.server(bc.consumerRealmName()).run(configurePostBrokerLoginWithOTP(bc.getIDPAlias()));
+
+        // Enable brute force protector in cosumer realm
+        RealmResource realm = adminClient.realm(bc.consumerRealmName());
+        RealmRepresentation consumerRealmRep = realm.toRepresentation();
+        consumerRealmRep.setBruteForceProtected(true);
+        consumerRealmRep.setFailureFactor(2);
+        consumerRealmRep.setMaxDeltaTimeSeconds(20);
+        consumerRealmRep.setMaxFailureWaitSeconds(100);
+        consumerRealmRep.setWaitIncrementSeconds(5);
+        realm.update(consumerRealmRep);
+
+        try {
+            driver.navigate().to(getAccountUrl(bc.consumerRealmName()));
+
+            logInWithBroker(bc);
+
+            totpPage.assertCurrent();
+            String totpSecret = totpPage.getTotpSecret();
+            totpPage.configure(totp.generateTOTP(totpSecret));
+            assertNumFederatedIdentities(realm.users().search(bc.getUserLogin()).get(0).getId(), 1);
+            logoutFromRealm(bc.consumerRealmName());
+
+            logInWithBroker(bc);
+
+            loginTotpPage.assertCurrent();
+
+            // Login for 2 times with incorrect TOTP. This should temporarily disable the user
+            loginTotpPage.login("bad-totp");
+            Assert.assertEquals("Invalid authenticator code.", loginTotpPage.getError());
+
+            loginTotpPage.login("bad-totp");
+            Assert.assertEquals("Invalid authenticator code.", loginTotpPage.getError());
+
+            // Login with valid TOTP. I should not be able to login
+            loginTotpPage.login(totp.generateTOTP(totpSecret));
+            Assert.assertEquals("Invalid authenticator code.", loginTotpPage.getError());
+
+            // Clear login failures
+            String userId = ApiUtil.findUserByUsername(realm, bc.getUserLogin()).getId();
+            realm.attackDetection().clearBruteForceForUser(userId);
+
+            loginTotpPage.login(totp.generateTOTP(totpSecret));
+            waitForAccountManagementTitle();
+            logoutFromRealm(bc.consumerRealmName());
+        } finally {
+            testingClient.server(bc.consumerRealmName()).run(disablePostBrokerLoginFlow(bc.getIDPAlias()));
+
+            // Disable brute force protector
+            consumerRealmRep = realm.toRepresentation();
+            consumerRealmRep.setBruteForceProtected(false);
+            realm.update(consumerRealmRep);
+        }
     }
 
     /**
