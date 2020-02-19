@@ -1061,6 +1061,7 @@ public class AuthenticationProcessor {
     public void validateUser(UserModel authenticatedUser) {
         if (authenticatedUser == null) return;
         if (!authenticatedUser.isEnabled()) throw new AuthenticationFlowException(AuthenticationFlowError.USER_DISABLED);
+        if (authenticatedUser.getServiceAccountClientLink() != null) throw new AuthenticationFlowException(AuthenticationFlowError.UNKNOWN_USER);
     }
     
     protected Response authenticationComplete() {
