@@ -53,9 +53,7 @@ import org.keycloak.representations.info.ServerInfoRepresentation;
 import org.keycloak.representations.info.SpiInfoRepresentation;
 import org.keycloak.representations.info.SystemInfoRepresentation;
 import org.keycloak.representations.info.ThemeInfoRepresentation;
-import org.keycloak.storage.user.ImportSynchronization;
 import org.keycloak.theme.Theme;
-import org.keycloak.theme.ThemeProvider;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Produces;

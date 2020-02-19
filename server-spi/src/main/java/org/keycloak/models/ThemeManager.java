@@ -34,4 +34,6 @@ public interface ThemeManager {
      */
     Set<String> nameSet(Theme.Type type);
 
+    void clearCache();
+
 }

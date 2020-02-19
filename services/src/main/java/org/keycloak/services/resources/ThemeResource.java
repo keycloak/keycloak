@@ -23,7 +23,6 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.util.CacheControlUtil;
 import org.keycloak.theme.Theme;
-import org.keycloak.theme.ThemeProvider;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;

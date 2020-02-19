@@ -17,43 +17,63 @@
 
 package org.keycloak.theme;
 
+import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.ThemeManager;
 
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class ExtendingThemeManagerFactory implements ThemeProviderFactory {
+public class DefaultThemeManagerFactory {
+
+    private static final Logger log = Logger.getLogger(DefaultThemeManagerFactory.class);
 
     private ConcurrentHashMap<ThemeKey, Theme> themeCache;
 
-    @Override
-    public ThemeProvider create(KeycloakSession session) {
-        return new ExtendingThemeManager(session, themeCache);
-    }
-
-    @Override
-    public void init(Config.Scope config) {
+    public DefaultThemeManagerFactory() {
         if(Config.scope("theme").getBoolean("cacheThemes", true)) {
             themeCache = new ConcurrentHashMap<>();
         }
     }
 
-    @Override
-    public void postInit(KeycloakSessionFactory factory) {
-
+    public ThemeManager create(KeycloakSession session) {
+        return new DefaultThemeManager(this, session);
     }
 
-    @Override
-    public void close() {
+    public Theme getCachedTheme(String name, Theme.Type type) {
+        if (themeCache != null) {
+            DefaultThemeManagerFactory.ThemeKey key = DefaultThemeManagerFactory.ThemeKey.get(name, type);
+            return themeCache.get(key);
+        } else {
+            return null;
+        }
     }
 
-    @Override
-    public String getId() {
-        return "extending";
+    public Theme addCachedTheme(String name, Theme.Type type, Theme theme) {
+        if (theme == null) {
+            return null;
+        }
+
+        if (themeCache == null) {
+            return theme;
+        }
+
+        DefaultThemeManagerFactory.ThemeKey key = DefaultThemeManagerFactory.ThemeKey.get(name, type);
+        if (themeCache.putIfAbsent(key, theme) != null) {
+            theme = themeCache.get(key);
+        }
+
+        return theme;
+    }
+
+    public void clearCache() {
+        if (themeCache != null) {
+            themeCache.clear();
+            log.info("Cleared theme cache");
+        }
     }
 
     public static class ThemeKey {
