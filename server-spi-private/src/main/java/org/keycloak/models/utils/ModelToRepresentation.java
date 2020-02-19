@@ -1018,10 +1018,15 @@ public class ModelToRepresentation {
             representation.setResourceName(resource.getName());
             KeycloakSession keycloakSession = authorization.getKeycloakSession();
             RealmModel realm = authorization.getRealm();
-            UserModel owner = keycloakSession.users().getUserById(ticket.getOwner(), realm);
+            UserModel userOwner = keycloakSession.users().getUserById(ticket.getOwner(), realm);
             UserModel requester = keycloakSession.users().getUserById(ticket.getRequester(), realm);
             representation.setRequesterName(requester.getUsername());
-            representation.setOwnerName(owner.getUsername());
+            if (userOwner != null) {
+                representation.setOwnerName(userOwner.getUsername());
+            } else {
+                ClientModel clientOwner = realm.getClientById(ticket.getOwner());
+                representation.setOwnerName(clientOwner.getClientId());
+            }
         }
 
         Scope scope = ticket.getScope();
