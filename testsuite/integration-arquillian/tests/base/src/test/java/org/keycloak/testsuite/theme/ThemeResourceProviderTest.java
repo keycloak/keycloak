@@ -5,13 +5,11 @@ import org.junit.Test;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import org.keycloak.theme.Theme;
-import org.keycloak.theme.ThemeProvider;
 
 import java.io.IOException;
 import java.util.Locale;
-
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 
 @AuthServerContainerExclude(AuthServer.REMOTE)
 public class ThemeResourceProviderTest extends AbstractTestRealmKeycloakTest {
@@ -25,8 +23,7 @@ public class ThemeResourceProviderTest extends AbstractTestRealmKeycloakTest {
     public void getTheme() {
         testingClient.server().run(session -> {
             try {
-                ThemeProvider extending = session.getProvider(ThemeProvider.class, "extending");
-                Theme theme = extending.getTheme("base", Theme.Type.LOGIN);
+                Theme theme = session.theme().getTheme("base", Theme.Type.LOGIN);
                 Assert.assertNotNull(theme.getTemplate("test.ftl"));
             } catch (IOException e) {
                 Assert.fail(e.getMessage());
@@ -38,8 +35,7 @@ public class ThemeResourceProviderTest extends AbstractTestRealmKeycloakTest {
     public void getResourceAsStream() {
         testingClient.server().run(session -> {
             try {
-                ThemeProvider extending = session.getProvider(ThemeProvider.class, "extending");
-                Theme theme = extending.getTheme("base", Theme.Type.LOGIN);
+                Theme theme = session.theme().getTheme("base", Theme.Type.LOGIN);
                 Assert.assertNotNull(theme.getResourceAsStream("test.js"));
             } catch (IOException e) {
                 Assert.fail(e.getMessage());
@@ -51,8 +47,7 @@ public class ThemeResourceProviderTest extends AbstractTestRealmKeycloakTest {
     public void getMessages() {
         testingClient.server().run(session -> {
             try {
-                ThemeProvider extending = session.getProvider(ThemeProvider.class, "extending");
-                Theme theme = extending.getTheme("base", Theme.Type.LOGIN);
+                Theme theme = session.theme().getTheme("base", Theme.Type.LOGIN);
                 Assert.assertNotNull(theme.getMessages("messages", Locale.ENGLISH).get("test.keycloak-8818"));
                 Assert.assertNotEquals("Full name (Theme-resources)", theme.getMessages("messages", Locale.ENGLISH).get("fullName"));
             } catch (IOException e) {
@@ -68,8 +63,7 @@ public class ThemeResourceProviderTest extends AbstractTestRealmKeycloakTest {
     public void getMessagesLocaleResolving() {
         testingClient.server().run(session -> {
             try {
-                ThemeProvider extending = session.getProvider(ThemeProvider.class, "extending");
-                Theme theme = extending.getTheme("base", Theme.Type.LOGIN);
+                Theme theme = session.theme().getTheme("base", Theme.Type.LOGIN);
                 Assert.assertEquals("Test en_US_variant", theme.getMessages("messages", new Locale("en", "US", "variant")).get("test.keycloak-12926"));
                 Assert.assertEquals("Test en_US", theme.getMessages("messages", new Locale("en", "US")).get("test.keycloak-12926"));
                 Assert.assertEquals("Test en", theme.getMessages("messages", Locale.ENGLISH).get("test.keycloak-12926"));

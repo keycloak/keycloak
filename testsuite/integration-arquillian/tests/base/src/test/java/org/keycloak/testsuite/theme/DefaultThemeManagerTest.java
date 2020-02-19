@@ -8,7 +8,6 @@ import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.util.ContainerAssume;
 import org.keycloak.theme.Theme;
-import org.keycloak.theme.ThemeProvider;
 
 import java.io.IOException;
 import java.util.List;
@@ -19,13 +18,16 @@ import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerEx
  * @author <a href="mailto:vincent.letarouilly@gmail.com">Vincent Letarouilly</a>
  */
 @AuthServerContainerExclude(REMOTE)
-public class ExtendingThemeTest extends AbstractKeycloakTest {
+public class DefaultThemeManagerTest extends AbstractKeycloakTest {
 
     private static final String THEME_NAME = "environment-agnostic";
 
     @Before
     public void setUp() {
-        testingClient.server().run(session -> System.setProperty("existing_system_property", "Keycloak is awesome"));
+        testingClient.server().run(session -> {
+            System.setProperty("existing_system_property", "Keycloak is awesome");
+            session.theme().clearCache();
+        });
     }
 
     @Override
@@ -39,8 +41,7 @@ public class ExtendingThemeTest extends AbstractKeycloakTest {
         ContainerAssume.assumeAuthServerUndertow();
         testingClient.server().run(session -> {
             try {
-                ThemeProvider extending = session.getProvider(ThemeProvider.class, "extending");
-                Theme theme = extending.getTheme(THEME_NAME, Theme.Type.LOGIN);
+                Theme theme = session.theme().getTheme(THEME_NAME, Theme.Type.LOGIN);
                 Assert.assertEquals("Keycloak is awesome", theme.getProperties().getProperty("system.property.found"));
                 Assert.assertEquals("${missing_system_property}", theme.getProperties().getProperty("system.property.missing"));
                 Assert.assertEquals("defaultValue", theme.getProperties().getProperty("system.property.missing.with.default"));
@@ -55,8 +56,7 @@ public class ExtendingThemeTest extends AbstractKeycloakTest {
     public void environmentVariablesSubstitutionInThemeProperties() {
         testingClient.server().run(session -> {
             try {
-                ThemeProvider extending = session.getProvider(ThemeProvider.class, "extending");
-                Theme theme = extending.getTheme(THEME_NAME, Theme.Type.LOGIN);
+                Theme theme = session.theme().getTheme(THEME_NAME, Theme.Type.LOGIN);
                 Assert.assertEquals("${env.MISSING_ENVIRONMENT_VARIABLE}", theme.getProperties().getProperty("env.missing"));
                 Assert.assertEquals("defaultValue", theme.getProperties().getProperty("env.missingWithDefault"));
                 if (System.getenv().containsKey("HOMEPATH")) {
