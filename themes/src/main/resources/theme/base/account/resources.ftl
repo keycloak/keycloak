@@ -262,7 +262,7 @@
                                         <#if resource.displayName??>${resource.displayName}<#else>${resource.name}</#if>
                                     </td>
                                     <td>
-                                        <#if resource.owner.email??>${resource.owner.email}<#else>${resource.owner.username}</#if>
+                                        ${resource.ownerName}
                                     </td>
                                     <td>
                                         <#if resource.resourceServer.baseUri??>
@@ -362,7 +362,7 @@
                                                 <#if resource.displayName??>${resource.displayName}<#else>${resource.name}</#if>
                                             </td>
                                             <td>
-                                                <#if resource.owner.email??>${resource.owner.email}<#else>${resource.owner.username}</#if>
+                                                ${resource.ownerName}
                                             </td>
                                             <td>
                                                 <ul>
