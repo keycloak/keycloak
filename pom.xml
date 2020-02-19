@@ -43,7 +43,7 @@
 
         <wildfly.version>18.0.1.Final</wildfly.version>
         <wildfly.build-tools.version>1.2.12.Final</wildfly.build-tools.version>
-        <eap.version>7.3.0.GA-redhat-00003</eap.version>
+        <eap.version>7.3.0.GA-redhat-00004</eap.version>
         <wildfly.core.version>10.0.3.Final</wildfly.core.version>
 
         <jboss.as.version>7.2.0.Final</jboss.as.version>
@@ -80,7 +80,7 @@
         <jboss.spec.javax.servlet.jsp.jboss-jsp-api_2.3_spec.version>2.0.0.Final</jboss.spec.javax.servlet.jsp.jboss-jsp-api_2.3_spec.version>
         <log4j.version>1.2.17</log4j.version>
         <!-- Will be used in the product. Upstream versions are overridden in the community profile -->
-        <resteasy.version>3.9.3.Final</resteasy.version>
+        <resteasy.version>3.9.3.SP1</resteasy.version>
         <resteasy.undertow.version>${resteasy.version}</resteasy.undertow.version>
         <owasp.html.sanitizer.version>20191001.1</owasp.html.sanitizer.version>
         <slf4j-api.version>1.7.22</slf4j-api.version>
