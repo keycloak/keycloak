@@ -16,13 +16,16 @@
 
 package org.keycloak.authentication.authenticators.browser;
 
-import com.webauthn4j.data.WebAuthnAuthenticationContext;
+import com.webauthn4j.data.AuthenticationParameters;
+import com.webauthn4j.data.AuthenticationRequest;
 import com.webauthn4j.data.client.Origin;
 import com.webauthn4j.data.client.challenge.Challenge;
 import com.webauthn4j.data.client.challenge.DefaultChallenge;
 import com.webauthn4j.server.ServerProperty;
 import com.webauthn4j.util.exception.WebAuthnException;
+
 import org.jboss.logging.Logger;
+
 import org.keycloak.WebAuthnConstants;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationFlowError;
@@ -177,17 +180,24 @@ public class WebAuthnAuthenticator implements Authenticator, CredentialValidator
         if (WebAuthnConstants.OPTION_REQUIRED.equals(userVerificationRequirement)) isUVFlagChecked = true;
 
         UserModel user = session.users().getUserById(userId, context.getRealm());
-        WebAuthnAuthenticationContext authenticationContext = new WebAuthnAuthenticationContext(
+
+        AuthenticationRequest authenticationRequest = new AuthenticationRequest(
                 credentialId,
-                clientDataJSON,
                 authenticatorData,
-                signature,
+                clientDataJSON,
+                signature
+                );
+
+        AuthenticationParameters authenticationParameters = new AuthenticationParameters(
                 server,
+                null, // here authenticator cannot be fetched, set it afterwards in WebAuthnCredentialProvider.isValid()
                 isUVFlagChecked
-        );
+                );
 
         WebAuthnCredentialModelInput cred = new WebAuthnCredentialModelInput(getCredentialType());
-        cred.setAuthenticationContext(authenticationContext);
+
+        cred.setAuthenticationRequest(authenticationRequest);
+        cred.setAuthenticationParameters(authenticationParameters);
 
         boolean result = false;
         try {

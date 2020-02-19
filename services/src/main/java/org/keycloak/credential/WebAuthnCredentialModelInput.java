@@ -18,17 +18,18 @@ package org.keycloak.credential;
 
 import org.keycloak.common.util.Base64;
 
-import com.webauthn4j.data.WebAuthnAuthenticationContext;
+import com.webauthn4j.data.AuthenticationParameters;
+import com.webauthn4j.data.AuthenticationRequest;
 import com.webauthn4j.data.attestation.authenticator.AttestedCredentialData;
 import com.webauthn4j.data.attestation.authenticator.COSEKey;
 import com.webauthn4j.data.attestation.statement.AttestationStatement;
-import org.keycloak.models.credential.WebAuthnCredentialModel;
 
 public class WebAuthnCredentialModelInput implements CredentialInput {
 
     private AttestedCredentialData attestedCredentialData;
     private AttestationStatement attestationStatement;
-    private WebAuthnAuthenticationContext authenticationContext;
+    private AuthenticationParameters authenticationParameters; // not persisted because it can only be used on authentication operation.
+    private AuthenticationRequest authenticationRequest; // not persisted because it can only be used on authentication operation.
     private long count;
     private String credentialDBId;
     private final String credentialType;
@@ -65,12 +66,20 @@ public class WebAuthnCredentialModelInput implements CredentialInput {
         return count;
     }
 
-    public WebAuthnAuthenticationContext getAuthenticationContext() {
-        return authenticationContext;
+    public AuthenticationParameters getAuthenticationParameters() {
+        return authenticationParameters;
     }
 
-    public void setAuthenticationContext(WebAuthnAuthenticationContext authenticationContext) {
-        this.authenticationContext = authenticationContext;
+    public void setAuthenticationParameters(AuthenticationParameters authenticationParameters) {
+        this.authenticationParameters = authenticationParameters;
+    }
+
+    public AuthenticationRequest getAuthenticationRequest() {
+        return authenticationRequest;
+    }
+
+    public void setAuthenticationRequest(AuthenticationRequest authenticationRequest) {
+        this.authenticationRequest = authenticationRequest;
     }
 
     public void setAttestedCredentialData(AttestedCredentialData attestedCredentialData) {
@@ -127,10 +136,10 @@ public class WebAuthnCredentialModelInput implements CredentialInput {
               .append(credPubKey.getKeyType().name())
               .append(",");
         }
-        if (authenticationContext != null) {
+        if (authenticationRequest != null) {
             // only set on Authentication
             sb.append("Credential Id = ")
-              .append(Base64.encodeBytes(authenticationContext.getCredentialId()))
+              .append(Base64.encodeBytes(authenticationRequest.getCredentialId()))
               .append(",");
         }
         if (sb.length() > 0)

@@ -169,7 +169,7 @@
         <spring-boot22.version>2.2.0.RELEASE</spring-boot22.version>
 
         <!-- webauthn support -->
-        <webauthn4j.version>0.9.14.RELEASE</webauthn4j.version>
+        <webauthn4j.version>0.10.2.RELEASE</webauthn4j.version>
         <org.apache.kerby.kerby-asn1.version>2.0.0</org.apache.kerby.kerby-asn1.version>
 
     </properties>
