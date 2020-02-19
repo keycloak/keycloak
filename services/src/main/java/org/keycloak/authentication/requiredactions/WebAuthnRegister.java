@@ -16,6 +16,7 @@
 
 package org.keycloak.authentication.requiredactions;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.List;
@@ -94,7 +95,10 @@ public class WebAuthnRegister implements RequiredActionProvider, CredentialRegis
     @Override
     public void requiredActionChallenge(RequiredActionContext context) {
         UserModel userModel = context.getUser();
-        String userid = Base64Url.encode(userModel.getId().getBytes());
+        // Use standard UTF-8 charset to get bytes from string.
+        // Otherwise the platform's default charset is used and it might cause problems later when
+        // decoded on different system.
+        String userId = Base64Url.encode(userModel.getId().getBytes(StandardCharsets.UTF_8));
         String username = userModel.getUsername();
         Challenge challenge = new DefaultChallenge();
         String challengeValue = Base64Url.encode(challenge.getValue());
@@ -133,7 +137,7 @@ public class WebAuthnRegister implements RequiredActionProvider, CredentialRegis
 
         Response form = context.form()
                 .setAttribute(WebAuthnConstants.CHALLENGE, challengeValue)
-                .setAttribute(WebAuthnConstants.USER_ID, userid)
+                .setAttribute(WebAuthnConstants.USER_ID, userId)
                 .setAttribute(WebAuthnConstants.USER_NAME, username)
                 .setAttribute(WebAuthnConstants.RP_ENTITY_NAME, rpEntityName)
                 .setAttribute(WebAuthnConstants.SIGNATURE_ALGORITHMS, signatureAlgorithms)

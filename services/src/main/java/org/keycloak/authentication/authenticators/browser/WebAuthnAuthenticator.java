@@ -49,6 +49,7 @@ import org.keycloak.models.credential.WebAuthnCredentialModel;
 
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.List;
 
@@ -136,25 +137,24 @@ public class WebAuthnAuthenticator implements Authenticator, CredentialValidator
         byte[] authenticatorData = Base64Url.decode(params.getFirst(WebAuthnConstants.AUTHENTICATOR_DATA));
         byte[] signature = Base64Url.decode(params.getFirst(WebAuthnConstants.SIGNATURE));
 
-        String userId = params.getFirst(WebAuthnConstants.USER_HANDLE);
-        boolean isUVFlagChecked = false;
-        String userVerificationRequirement = getWebAuthnPolicy(context).getUserVerificationRequirement();
-        if (WebAuthnConstants.OPTION_REQUIRED.equals(userVerificationRequirement)) isUVFlagChecked = true;
-
+        final String userHandle = params.getFirst(WebAuthnConstants.USER_HANDLE);
+        final String userId;
         // existing User Handle means that the authenticator used Resident Key supported public key credential
-        if (userId == null || userId.isEmpty()) {
+        if (userHandle == null || userHandle.isEmpty()) {
             // Resident Key not supported public key credential was used
             // so rely on the user that has already been authenticated
             userId = context.getUser().getId();
         } else {
+            // decode using the same charset as it has been encoded (see: WebAuthnRegister.java)
+            userId = new String(Base64Url.decode(userHandle), StandardCharsets.UTF_8);
             if (context.getUser() != null) {
                 // Resident Key supported public key credential was used,
                 // so need to confirm whether the already authenticated user is equals to one authenticated by the webauthn authenticator
                 String firstAuthenticatedUserId = context.getUser().getId();
                 if (firstAuthenticatedUserId != null && !firstAuthenticatedUserId.equals(userId)) {
                     context.getEvent()
-                        .detail("first_authenticated_user_id", firstAuthenticatedUserId)
-                        .detail("web_authn_authenticator_authenticated_user_id", userId);
+                            .detail("first_authenticated_user_id", firstAuthenticatedUserId)
+                            .detail("web_authn_authenticator_authenticated_user_id", userId);
                     setErrorResponse(context, WEBAUTHN_ERROR_DIFFERENT_USER, null);
                     return;
                 }
@@ -165,6 +165,11 @@ public class WebAuthnAuthenticator implements Authenticator, CredentialValidator
                 // NOP
             }
         }
+
+        boolean isUVFlagChecked = false;
+        String userVerificationRequirement = getWebAuthnPolicy(context).getUserVerificationRequirement();
+        if (WebAuthnConstants.OPTION_REQUIRED.equals(userVerificationRequirement)) isUVFlagChecked = true;
+
         UserModel user = session.users().getUserById(userId, context.getRealm());
         WebAuthnAuthenticationContext authenticationContext = new WebAuthnAuthenticationContext(
                 credentialId,
