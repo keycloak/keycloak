@@ -18,20 +18,22 @@
 package org.keycloak.connections.jpa.updater.liquibase.conn;
 
 import liquibase.Liquibase;
-import liquibase.changelog.ChangeSet;
-import liquibase.changelog.DatabaseChangeLog;
 import liquibase.database.Database;
 import liquibase.database.DatabaseFactory;
 import liquibase.database.jvm.JdbcConnection;
 import liquibase.datatype.DataTypeFactory;
 import liquibase.exception.LiquibaseException;
-import liquibase.logging.LogFactory;
-import liquibase.logging.LogLevel;
+import liquibase.logging.LogService;
+import liquibase.logging.LogType;
+import liquibase.logging.LoggerContext;
+import liquibase.logging.core.AbstractLogger;
+import liquibase.logging.core.AbstractLoggerFactory;
 import liquibase.resource.ClassLoaderResourceAccessor;
 import liquibase.resource.ResourceAccessor;
 import liquibase.servicelocator.ServiceLocator;
 import liquibase.sqlgenerator.SqlGeneratorFactory;
 import org.jboss.logging.Logger;
+import org.jboss.logging.MDC;
 import org.keycloak.Config;
 import org.keycloak.connections.jpa.updater.liquibase.LiquibaseJpaUpdaterProvider;
 import org.keycloak.connections.jpa.updater.liquibase.PostgresPlusDatabase;
@@ -93,7 +95,7 @@ public class DefaultLiquibaseConnectionProvider implements LiquibaseConnectionPr
             sl.addPackageToScan(lockPackageName);
         }
 
-        LogFactory.setInstance(new LogWrapper());
+        LogService.setLoggerFactory(new WrapperLoggerFactory());
 
         // Adding PostgresPlus support to liquibase
         DatabaseFactory.getInstance().register(new PostgresPlusDatabase());
@@ -161,109 +163,89 @@ public class DefaultLiquibaseConnectionProvider implements LiquibaseConnectionPr
         return new Liquibase(changelogLocation, resourceAccessor, database);
     }
 
-    private static class LogWrapper extends LogFactory {
-
-        private static final liquibase.logging.Logger logger = new liquibase.logging.Logger() {
-            @Override
-            public void setName(String name) {
-            }
-
-            @Override
-            public void setLogLevel(String level) {
-            }
-
-            @Override
-            public void setLogLevel(LogLevel level) {
-            }
-
-            @Override
-            public void setLogLevel(String logLevel, String logFile) {
-            }
-
-            @Override
-            public void severe(String message) {
-                DefaultLiquibaseConnectionProvider.logger.error(message);
-            }
-
-            @Override
-            public void severe(String message, Throwable e) {
-                DefaultLiquibaseConnectionProvider.logger.error(message, e);
-            }
-
-            @Override
-            public void warning(String message) {
-                // Ignore this warning as cascaded drops doesn't work anyway with all DBs, which we need to support
-                if ("Database does not support drop with cascade".equals(message)) {
-                    DefaultLiquibaseConnectionProvider.logger.debug(message);
-                } else {
-                    DefaultLiquibaseConnectionProvider.logger.warn(message);
-                }
-            }
-
-            @Override
-            public void warning(String message, Throwable e) {
-                DefaultLiquibaseConnectionProvider.logger.warn(message, e);
-            }
-
-            @Override
-            public void info(String message) {
-                DefaultLiquibaseConnectionProvider.logger.debug(message);
-            }
-
-            @Override
-            public void info(String message, Throwable e) {
-                DefaultLiquibaseConnectionProvider.logger.debug(message, e);
-            }
-
-            @Override
-            public void debug(String message) {
-                if (DefaultLiquibaseConnectionProvider.logger.isTraceEnabled()) {
-                    DefaultLiquibaseConnectionProvider.logger.trace(message);
-                }
-            }
-
-            @Override
-            public LogLevel getLogLevel() {
-                if (DefaultLiquibaseConnectionProvider.logger.isTraceEnabled()) {
-                    return LogLevel.DEBUG;
-                } else if (DefaultLiquibaseConnectionProvider.logger.isDebugEnabled()) {
-                    return LogLevel.INFO;
-                } else {
-                    return LogLevel.WARNING;
-                }
-            }
-
-            @Override
-            public void debug(String message, Throwable e) {
-                DefaultLiquibaseConnectionProvider.logger.trace(message, e);
-            }
-
-            @Override
-            public void setChangeLog(DatabaseChangeLog databaseChangeLog) {
-            }
-
-            @Override
-            public void setChangeSet(ChangeSet changeSet) {
-            }
-
-            @Override
-            public int getPriority() {
-                return 0;
-            }
-
-            @Override
-            public void closeLogFile() {}
-        };
+    private class LogWrapper extends AbstractLogger {
 
         @Override
-        public liquibase.logging.Logger getLog(String name) {
-            return logger;
+        public void severe(LogType target, String message) {
+            logger.error(message);
         }
 
         @Override
-        public liquibase.logging.Logger getLog() {
-            return logger;
+        public void severe(LogType target, String message, Throwable e) {
+            logger.error(message, e);
         }
 
+        @Override
+        public void warning(LogType target, String message) {
+            logger.warn(message);
+        }
+
+        @Override
+        public void warning(LogType target, String message, Throwable e) {
+            logger.warn(message, e);
+        }
+
+        @Override
+        public void info(LogType logType, String message) {
+            logger.debug(message);
+        }
+
+        @Override
+        public void info(LogType target, String message, Throwable e) {
+            logger.debug(message, e);
+        }
+
+        @Override
+        public void debug(LogType target, String message) {
+            logger.trace(message);
+        }
+
+        @Override
+        public void debug(LogType target, String message, Throwable e) {
+            logger.trace(message, e);
+        }
+    }
+
+    private class WrapperLoggerFactory extends AbstractLoggerFactory {
+
+        @Override
+        public liquibase.logging.Logger getLog(Class clazz) {
+            return createLoggerImpl();
+        }
+
+        @Override
+        public LoggerContext pushContext(String key, Object object) {
+            return new WrapperLoggerContext(key, object);
+        }
+
+        protected liquibase.logging.Logger createLoggerImpl() {
+            return new LogWrapper();
+        }
+
+        @Override
+        public void close() {
+
+        }
+    }
+
+    private class WrapperLoggerContext implements LoggerContext {
+
+        private final String key;
+
+        public WrapperLoggerContext(String key, Object value) {
+            MDC.put(key, String.valueOf(value));
+            this.key = key;
+        }
+
+        @Override
+        public void showMoreProgress() {}
+
+        @Override
+        public void showMoreProgress(int percentComplete) {}
+
+        @Override
+        public void close() {
+            MDC.remove(key);
+        }
     }
 }
