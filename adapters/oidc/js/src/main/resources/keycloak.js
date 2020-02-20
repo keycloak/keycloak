@@ -1103,9 +1103,10 @@
                 oauthParams: {}
             }
             for (var i = 0; i < p.length; i++) {
-                var t = p[i].split('=');
-                if (supportedParams.indexOf(t[0]) !== -1) {
-                    result.oauthParams[t[0]] = t[1];
+                var split = p[i].indexOf("=");
+                var key = p[i].slice(0, split);
+                if (supportedParams.indexOf(key) !== -1) {
+                    result.oauthParams[key] = p[i].slice(split + 1);
                 } else {
                     if (result.paramsString !== '') {
                         result.paramsString += '&';

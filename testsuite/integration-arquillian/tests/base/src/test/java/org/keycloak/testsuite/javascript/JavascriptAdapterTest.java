@@ -475,6 +475,22 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
     }
 
     @Test
+    public void equalsSignInRedirectUrl() {
+        testAppUrl = authServerContextRootPage.toString().replace("localhost", NIP_IO_URL) + JAVASCRIPT_URL + "/index.html?test=bla=bla&super=man";
+        jsDriver.navigate().to(testAppUrl);
+
+        JSObjectBuilder arguments = defaultArguments();
+
+        testExecutor.init(arguments, this::assertInitNotAuth)
+                .login(this::assertOnLoginPage)
+                .loginForm(testUser, this::assertOnTestAppUrl)
+                .init(arguments, (driver1, output1, events2) -> {
+                    assertTrue(driver1.getCurrentUrl().contains("bla=bla"));
+                    assertSuccessfullyLoggedIn(driver1, output1, events2);
+                });
+    }
+
+    @Test
     public void spaceInRealmNameTest() {
         // Unfortunately this test doesn't work on phantomjs
         // it looks like phantomjs double encode %20 => %25%20
