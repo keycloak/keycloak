@@ -9,6 +9,14 @@ is updated for a user.
 
 See the link:{adminguide_link}#_user_locale_selection[{adminguide_name}] for more details.
 
+==== Deprecated methods in token representation Java classes
+
+In the year 2038 an `int` is no longer able to hold the value of seconds since 1970, as such we are working on updating these to
+`long` values. In token representation there is a further issue, which is an `int` will by default result in `0` in the
+JSON representation, while it should not be included.
+
+See JavaDocs for further details on exact methods that have been deprecated and replacement methods.
+
 === Migrating to 8.0.2
 
 ==== More Authentication flows changes
