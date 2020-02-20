@@ -25,7 +25,7 @@
     </resources>
 
     <dependencies>
-        <module name="org.apache.commons.logging"/>
-        <module name="javax.api"/>
+        <module name="org.slf4j"/>
+        <module name="javax.xml.bind.api"/>
     </dependencies>
 </module>

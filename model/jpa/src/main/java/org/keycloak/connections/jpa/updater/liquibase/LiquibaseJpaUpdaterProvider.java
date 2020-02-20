@@ -275,13 +275,8 @@ public class LiquibaseJpaUpdaterProvider implements JpaUpdaterProvider {
         Reflections.invokeMethod(true, resetServices, liquibase);
     }
 
-    @SuppressWarnings("unchecked")
-    private List<ChangeSet> getLiquibaseUnrunChangeSets(Liquibase liquibase) {
-        // TODO tracked as: https://issues.jboss.org/browse/KEYCLOAK-3730
-        // TODO: When https://liquibase.jira.com/browse/CORE-2919 is resolved, replace the following two lines with:
-        // List<ChangeSet> changeSets = liquibase.listUnrunChangeSets((Contexts) null, new LabelExpression(), false);
-        Method listUnrunChangeSets = Reflections.findDeclaredMethod(Liquibase.class, "listUnrunChangeSets", Contexts.class, LabelExpression.class, boolean.class);
-        return Reflections.invokeMethod(true, listUnrunChangeSets, List.class, liquibase, (Contexts) null, new LabelExpression(), false);
+    private List<ChangeSet> getLiquibaseUnrunChangeSets(Liquibase liquibase) throws LiquibaseException {
+        return liquibase.listUnrunChangeSets((Contexts) null, new LabelExpression(), false);
     }
 
     private Liquibase getLiquibaseForKeycloakUpdate(Connection connection, String defaultSchema) throws LiquibaseException {
