@@ -115,6 +115,23 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
     }
 
     @Test
+    public void testInvalidRedirectUri() {
+        ClientManager.realm(adminClient.realm("test")).clientId("test-app").addRedirectUris(oauth.getRedirectUri());
+
+        oauth.redirectUri(oauth.getRedirectUri() + "%20test");
+        oauth.openLoginForm();
+
+        assertTrue(errorPage.isCurrent());
+        assertEquals("Invalid parameter: redirect_uri", errorPage.getError());
+
+        oauth.redirectUri("ZAP%25n%25s%25n%25s%25n%25s%25n%25s%25n%25s%25n%25s%25n%25s%25n%25s%25n%25s%25n%25s%25n%25s%25n%25s%25n%25s%25n%25s%25n%25s%25n%25s%25n%25s%25n%25s%25n%25s%25n%25s%0A");
+        oauth.openLoginForm();
+
+        assertTrue(errorPage.isCurrent());
+        assertEquals("Invalid parameter: redirect_uri", errorPage.getError());
+    }
+
+    @Test
     public void authorizationRequestNoState() throws IOException {
         oauth.stateParamHardcoded(null);
 
