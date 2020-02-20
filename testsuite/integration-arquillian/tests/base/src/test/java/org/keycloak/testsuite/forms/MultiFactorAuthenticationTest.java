@@ -243,7 +243,7 @@ public class MultiFactorAuthenticationTest extends AbstractTestRealmKeycloakTest
     // Test for the case when user can authenticate either with: WebAuthn OR (Password AND OTP)
     // WebAuthn is not enabled for the user, so he needs to use password AND OTP
     @Test
-    @EnableFeature(value = Profile.Feature.WEB_AUTHN)
+    @EnableFeature(value = Profile.Feature.WEB_AUTHN, skipRestart = true)
     public void testAlternativeMechanismsInDifferentSubflows_firstMechanismUnavailable() {
         final String newFlowAlias = "browser - alternative mechanisms";
         testingClient.server("test").run(session -> FlowUtil.inCurrentRealm(session).copyBrowserFlow(newFlowAlias));

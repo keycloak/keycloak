@@ -322,7 +322,7 @@ public class ExecutionTest extends AbstractAuthenticationTest {
     }
 
     @Test
-    @EnableFeature(value= Profile.Feature.WEB_AUTHN)
+    @EnableFeature(value= Profile.Feature.WEB_AUTHN, skipRestart = true)
     @AuthServerContainerExclude(AuthServer.REMOTE)
     public void testRequirementsInExecution() {
         HashMap<String, String> params = new HashMap<>();

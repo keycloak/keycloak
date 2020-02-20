@@ -74,6 +74,7 @@ import org.keycloak.testsuite.rest.resource.TestingExportImportResource;
 import org.keycloak.testsuite.runonserver.FetchOnServer;
 import org.keycloak.testsuite.runonserver.RunOnServer;
 import org.keycloak.testsuite.runonserver.SerializationUtil;
+import org.keycloak.testsuite.util.FeatureDeployerUtil;
 import org.keycloak.timer.TimerProvider;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.MediaType;
@@ -867,6 +868,8 @@ public class TestingResourceProvider implements RealmResourceProvider {
         if (Profile.isFeatureEnabled(featureProfile))
             return Response.ok().build();
 
+        FeatureDeployerUtil.initBeforeChangeFeature(featureProfile);
+
         System.setProperty("keycloak.profile.feature." + featureProfile.toString().toLowerCase(), "enabled");
 
         String jbossServerConfigDir = System.getProperty("jboss.server.config.dir");
@@ -876,6 +879,8 @@ public class TestingResourceProvider implements RealmResourceProvider {
         }
 
         Profile.init();
+
+        FeatureDeployerUtil.deployFactoriesAfterFeatureEnabled(featureProfile);
 
         if (Profile.isFeatureEnabled(featureProfile))
             return Response.ok().build();
@@ -899,6 +904,8 @@ public class TestingResourceProvider implements RealmResourceProvider {
         if (!Profile.isFeatureEnabled(featureProfile))
             return Response.ok().build();
 
+        FeatureDeployerUtil.initBeforeChangeFeature(featureProfile);
+
         System.getProperties().remove("keycloak.profile.feature." + featureProfile.toString().toLowerCase());
 
         String jbossServerConfigDir = System.getProperty("jboss.server.config.dir");
@@ -908,6 +915,8 @@ public class TestingResourceProvider implements RealmResourceProvider {
         }
 
         Profile.init();
+
+        FeatureDeployerUtil.undeployFactoriesAfterFeatureDisabled(featureProfile);
 
         if (!Profile.isFeatureEnabled(featureProfile))
             return Response.ok().build();

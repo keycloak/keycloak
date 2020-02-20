@@ -26,6 +26,8 @@ import org.keycloak.provider.Spi;
  */
 public class AuthenticatorSpi implements Spi {
 
+    public static final String SPI_NAME = "authenticator";
+
     @Override
     public boolean isInternal() {
         return true;
@@ -33,7 +35,7 @@ public class AuthenticatorSpi implements Spi {
 
     @Override
     public String getName() {
-        return "authenticator";
+        return SPI_NAME;
     }
 
     @Override

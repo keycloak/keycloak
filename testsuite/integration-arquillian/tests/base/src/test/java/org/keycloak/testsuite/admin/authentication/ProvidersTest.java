@@ -41,7 +41,7 @@ import static org.hamcrest.Matchers.is;
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
  */
-@EnableFeature(value = Profile.Feature.WEB_AUTHN)
+@EnableFeature(value = Profile.Feature.WEB_AUTHN, skipRestart = true)
 public class ProvidersTest extends AbstractAuthenticationTest {
 
     @Test
@@ -138,9 +138,7 @@ public class ProvidersTest extends AbstractAuthenticationTest {
     @Test
     public void testInitialAuthenticationProviders() {
         List<Map<String, Object>> providers = authMgmtResource.getAuthenticatorProviders();
-        providers = sortProviders(providers);
-
-        compareProviders(sortProviders(expectedAuthProviders()), providers);
+        compareProviders(expectedAuthProviders(), providers);
     }
 
     private List<Map<String, Object>> expectedAuthProviders() {
@@ -236,7 +234,7 @@ public class ProvidersTest extends AbstractAuthenticationTest {
         for (Map<String, Object> item: list) {
             result.add(new HashMap(item));
         }
-        return result;
+        return sortProviders(result);
     }
 
     private void addProviderInfo(List<Map<String, Object>> list, String id, String displayName, String description) {
