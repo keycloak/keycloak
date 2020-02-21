@@ -25,6 +25,9 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
@@ -59,7 +62,32 @@ public class ScopePolicyProviderFactory implements PolicyProviderFactory<ScopePe
 
     @Override
     public ScopePermissionRepresentation toRepresentation(Policy policy, AuthorizationProvider authorization) {
-        return new ScopePermissionRepresentation();
+        ScopePermissionRepresentation representation = new ScopePermissionRepresentation();
+        representation.setResourceType(policy.getConfig().get("defaultResourceType"));
+        return representation;
+    }
+
+    @Override
+    public void onCreate(Policy policy, ScopePermissionRepresentation representation, AuthorizationProvider authorization) {
+        updateResourceType(policy, representation);
+    }
+
+    @Override
+    public void onUpdate(Policy policy, ScopePermissionRepresentation representation, AuthorizationProvider authorization) {
+        updateResourceType(policy, representation);
+    }
+
+    private void updateResourceType(Policy policy, ScopePermissionRepresentation representation) {
+        if (representation != null) {
+            Map<String, String> config = new HashMap(policy.getConfig());
+
+            config.compute("defaultResourceType", (key, value) -> {
+                String resourceType = representation.getResourceType();
+                return resourceType != null ? representation.getResourceType() : null;
+            });
+
+            policy.setConfig(config);
+        }
     }
 
     @Override
