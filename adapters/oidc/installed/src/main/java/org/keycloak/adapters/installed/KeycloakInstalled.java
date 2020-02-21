@@ -610,10 +610,6 @@ public class KeycloakInstalled {
         return sb.toString();
     }
 
-    KeycloakInstalled(int i) {
-
-    }
-
     class CallbackListener implements HttpHandler {
         private final CountDownLatch shutdownSignal = new CountDownLatch(1);
 
@@ -631,8 +627,11 @@ public class KeycloakInstalled {
             gracefulShutdownHandler = Handlers.gracefulShutdown(allowedMethodsHandler);
 
             server = Undertow.builder()
+                    .setIoThreads(1)
+                    .setWorkerThreads(1)
                     .addHttpListener(0, "localhost")
-                    .setHandler(gracefulShutdownHandler).build();
+                    .setHandler(gracefulShutdownHandler)
+                    .build();
 
             server.start();
         }
@@ -669,7 +668,7 @@ public class KeycloakInstalled {
         private void readQueryParameters(HttpServerExchange exchange) {
             code = getQueryParameterIfPresent(exchange, OAuth2Constants.CODE);
             error = getQueryParameterIfPresent(exchange, OAuth2Constants.ERROR);
-            errorDescription = getQueryParameterIfPresent(exchange, "error-description");
+            errorDescription = getQueryParameterIfPresent(exchange, OAuth2Constants.ERROR_DESCRIPTION);
             state = getQueryParameterIfPresent(exchange, OAuth2Constants.STATE);
         }
 
