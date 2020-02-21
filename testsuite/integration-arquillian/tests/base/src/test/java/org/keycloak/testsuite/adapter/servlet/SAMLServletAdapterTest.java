@@ -53,6 +53,8 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import javax.ws.rs.client.Client;
@@ -1160,18 +1162,15 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
         Assert.assertThat(pageSource, not(containsString("SAML response: null")));
     }
 
-    private static List<String> parseCommaSeparatedAttributes(String body, String attribute) {
-        int start = body.indexOf(attribute) + attribute.length();
-        if (start == -1) {
-            return Collections.emptyList();
+    private static String[] parseCommaSeparatedAttributes(String body, String attribute) {
+        Pattern pattern = Pattern.compile(Pattern.quote(attribute) + ":\\s*(.*)");
+        Matcher matcher = pattern.matcher(body);
+
+        if (matcher.find()) {
+            return matcher.group(1).split(",");
         }
-        int end = body.indexOf(System.getProperty("line.separator"), start);
-        if (end == -1) {
-            end = body.length();
-        }
-        String values = body.substring(start, end);
-        String[] parts = values.split(",");
-        return Arrays.asList(parts);
+
+        return new String[0];
     }
 
     @Test
@@ -1205,11 +1204,8 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
             waitForPageToLoad();
 
             String body = driver.findElement(By.xpath("//body")).getText();
-            List<String> values = parseCommaSeparatedAttributes(body, " group-attribute: ");
-            Assert.assertEquals(3, values.size());
-            Assert.assertTrue(values.contains("user-value1"));
-            Assert.assertTrue(values.contains("value1"));
-            Assert.assertTrue(values.contains("value2"));
+            String[] values = parseCommaSeparatedAttributes(body, "group-attribute");
+            assertThat(values, arrayContainingInAnyOrder("user-value1", "value1", "value2"));
 
             employee2ServletPage.logout();
             checkLoggedOut(employee2ServletPage, testRealmSAMLPostLoginPage);
@@ -1246,9 +1242,8 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
             waitForPageToLoad();
 
             String body = driver.findElement(By.xpath("//body")).getText();
-            List<String> values = parseCommaSeparatedAttributes(body, " group-attribute: ");
-            Assert.assertEquals(1, values.size());
-            Assert.assertTrue(values.contains("user-value1"));
+            String[] values = parseCommaSeparatedAttributes(body, "group-attribute");
+            assertThat(values, arrayContaining("user-value1"));
 
             employee2ServletPage.logout();
             checkLoggedOut(employee2ServletPage, testRealmSAMLPostLoginPage);
@@ -1291,11 +1286,8 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
             waitForPageToLoad();
 
             String body = driver.findElement(By.xpath("//body")).getText();
-            List<String> values = parseCommaSeparatedAttributes(body, " group-attribute: ");
-            Assert.assertEquals(3, values.size());
-            Assert.assertTrue(values.contains("value1"));
-            Assert.assertTrue(values.contains("value2"));
-            Assert.assertTrue(values.contains("value3"));
+            String[] values = parseCommaSeparatedAttributes(body, "group-attribute");
+            assertThat(values, arrayContainingInAnyOrder("value1", "value2","value3"));
 
             employee2ServletPage.logout();
             checkLoggedOut(employee2ServletPage, testRealmSAMLPostLoginPage);
@@ -1337,10 +1329,8 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
             waitForPageToLoad();
 
             String body = driver.findElement(By.xpath("//body")).getText();
-            List<String> values = parseCommaSeparatedAttributes(body, " group-attribute: ");
-            Assert.assertEquals(2, values.size());
-            Assert.assertTrue((values.contains("value1") && values.contains("value2"))
-                    || (values.contains("value2") && values.contains("value3")));
+            String[] values = parseCommaSeparatedAttributes(body, "group-attribute");
+            assertThat(values, anyOf(arrayContainingInAnyOrder("value1", "value2"), arrayContainingInAnyOrder("value2", "value3")));
 
             employee2ServletPage.logout();
             checkLoggedOut(employee2ServletPage, testRealmSAMLPostLoginPage);
