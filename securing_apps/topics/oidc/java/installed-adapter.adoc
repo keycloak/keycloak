@@ -55,7 +55,7 @@ The `KeycloakInstalled` adapter provides support for renewal of stale tokens.
 ===== Client Configuration
 
 The application needs to be configured as a `public` OpenID Connect client with
-`Standard Flow Enabled` and pass:[http://localhost:*] as an allowed `Valid Redirect URI`.
+`Standard Flow Enabled` and pass:[http://localhost] as an allowed `Valid Redirect URI`.
 
 TIP: The `KeycloakInstalled` adapter supports the `PKCE` [RFC 7636] mechanism to provide additional protection during 
 code to token exchanges in the `OIDC` protocol. PKCE can be enabled with the `"enable-pkce": true` setting 
