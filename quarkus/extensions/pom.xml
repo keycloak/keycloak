@@ -54,7 +54,7 @@
         </dependency>
         <dependency>
             <groupId>io.quarkus</groupId>
-            <artifactId>quarkus-arc</artifactId>
+            <artifactId>quarkus-agroal</artifactId>
             <type>jar</type>
         </dependency>
     </dependencies>
