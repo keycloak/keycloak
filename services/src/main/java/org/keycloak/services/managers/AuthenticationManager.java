@@ -33,6 +33,7 @@ import org.keycloak.authentication.RequiredActionContextResult;
 import org.keycloak.authentication.RequiredActionFactory;
 import org.keycloak.authentication.RequiredActionProvider;
 import org.keycloak.authentication.actiontoken.DefaultActionTokenKey;
+import org.keycloak.authentication.authenticators.browser.AbstractUsernameFormAuthenticator;
 import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.VerificationException;
@@ -797,6 +798,9 @@ public class AuthenticationManager {
             clientSession.removeNote(SSO_AUTH);
         }
 
+        // The user has successfully logged in and we can clear his/her previous login failure attempts.
+        logSuccess(session, authSession);
+
         return protocol.authenticated(authSession, userSession, clientSessionCtx);
 
     }
@@ -1303,6 +1307,25 @@ public class AuthenticationManager {
             authSession.setClientNote(Constants.KC_ACTION_STATUS, status.name().toLowerCase());
             authSession.removeClientNote(Constants.KC_ACTION);
             authSession.removeClientNote(Constants.KC_ACTION_EXECUTING);
+        }
+    }
+
+    protected static void logSuccess(KeycloakSession session, AuthenticationSessionModel authSession) {
+        RealmModel realm = session.getContext().getRealm();
+
+        if (realm.isBruteForceProtected()) {
+            String username = authSession.getAuthNote(AbstractUsernameFormAuthenticator.ATTEMPTED_USERNAME);
+            // TODO: as above, need to handle non form success
+
+            if(username == null) {
+                return;
+            }
+
+            UserModel user = KeycloakModelUtils.findUserByNameOrEmail(session, realm, username);
+            if (user != null) {
+                BruteForceProtector bruteForceProtector = session.getProvider(BruteForceProtector.class);
+                bruteForceProtector.successfulLogin(realm, user, session.getContext().getConnection());
+            }
         }
     }
 
