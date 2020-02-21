@@ -1205,7 +1205,7 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
             waitForPageToLoad();
 
             String body = driver.findElement(By.xpath("//body")).getText();
-            List<String> values = parseCommaSeparatedAttributes(body, " group-attribute: ");
+            List<String> values = parseCommaSeparatedAttributes(body, "group-attribute: ");
             Assert.assertEquals(3, values.size());
             Assert.assertTrue(values.contains("user-value1"));
             Assert.assertTrue(values.contains("value1"));
@@ -1246,7 +1246,7 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
             waitForPageToLoad();
 
             String body = driver.findElement(By.xpath("//body")).getText();
-            List<String> values = parseCommaSeparatedAttributes(body, " group-attribute: ");
+            List<String> values = parseCommaSeparatedAttributes(body, "group-attribute: ");
             Assert.assertEquals(1, values.size());
             Assert.assertTrue(values.contains("user-value1"));
 
@@ -1291,7 +1291,7 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
             waitForPageToLoad();
 
             String body = driver.findElement(By.xpath("//body")).getText();
-            List<String> values = parseCommaSeparatedAttributes(body, " group-attribute: ");
+            List<String> values = parseCommaSeparatedAttributes(body, "group-attribute: ");
             Assert.assertEquals(3, values.size());
             Assert.assertTrue(values.contains("value1"));
             Assert.assertTrue(values.contains("value2"));
@@ -1337,7 +1337,7 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
             waitForPageToLoad();
 
             String body = driver.findElement(By.xpath("//body")).getText();
-            List<String> values = parseCommaSeparatedAttributes(body, " group-attribute: ");
+            List<String> values = parseCommaSeparatedAttributes(body, "group-attribute: ");
             Assert.assertEquals(2, values.size());
             Assert.assertTrue((values.contains("value1") && values.contains("value2"))
                     || (values.contains("value2") && values.contains("value3")));
