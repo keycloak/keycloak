@@ -30,6 +30,7 @@ import org.keycloak.admin.client.token.TokenManager;
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSession;
+import javax.ws.rs.client.Client;
 
 import java.net.URI;
 
@@ -50,7 +51,8 @@ public class Keycloak implements AutoCloseable {
     private final TokenManager tokenManager;
     private final String authToken;
     private final ResteasyWebTarget target;
-    private final ResteasyClient client;
+    private final Client client;
+    private boolean closed = false;
 
     Keycloak(String serverUrl, String realm, String username, String password, String clientId, String clientSecret, String grantType, ResteasyClient resteasyClient, String authtoken) {
         config = new Config(serverUrl, realm, username, password, clientId, clientSecret, grantType);
@@ -58,7 +60,7 @@ public class Keycloak implements AutoCloseable {
         authToken = authtoken;
         tokenManager = authtoken == null ? new TokenManager(config, client) : null;
 
-        target = client.target(config.getServerUrl());
+        target = (ResteasyWebTarget) client.target(config.getServerUrl());
         target.register(newAuthFilter());
     }
 
@@ -67,7 +69,7 @@ public class Keycloak implements AutoCloseable {
     }
 
     private static ResteasyClient newRestEasyClient(ResteasyJackson2Provider customJacksonProvider, SSLContext sslContext, boolean disableTrustManager) {
-        ResteasyClientBuilder clientBuilder = new ResteasyClientBuilder()
+        ResteasyClientBuilder clientBuilder = ClientBuilderWrapper.create()
               .sslContext(sslContext)
               .connectionPoolSize(10);
 
@@ -141,7 +143,7 @@ public class Keycloak implements AutoCloseable {
      * @return
      */
     public <T> T proxy(Class<T> proxyClass, URI absoluteURI) {
-        return client.target(absoluteURI).register(newAuthFilter()).proxy(proxyClass);
+        return ((ResteasyWebTarget) client.target(absoluteURI)).register(newAuthFilter()).proxy(proxyClass);
     }
 
     /**
@@ -149,6 +151,7 @@ public class Keycloak implements AutoCloseable {
      */
     @Override
     public void close() {
+        closed = true;
         client.close();
     }
 
@@ -156,6 +159,6 @@ public class Keycloak implements AutoCloseable {
      * @return true if the underlying client is closed.
      */
     public boolean isClosed() {
-        return client.isClosed();
+        return closed;
     }
 }
