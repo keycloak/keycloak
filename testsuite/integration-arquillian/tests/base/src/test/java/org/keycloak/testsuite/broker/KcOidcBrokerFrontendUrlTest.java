@@ -76,7 +76,7 @@ public final class KcOidcBrokerFrontendUrlTest extends AbstractBrokerTest {
         }
 
         loginPage.login(bc.getUserLogin(), bc.getUserPassword());
-        waitForPage(driver, "keycloak account management", true);
+        waitForPage(driver, "account management", true);
         accountUpdateProfilePage.assertCurrent();
     }
 

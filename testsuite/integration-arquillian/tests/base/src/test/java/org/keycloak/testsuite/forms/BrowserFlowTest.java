@@ -47,7 +47,6 @@ import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.authentication.ConditionalUserAttributeValueFactory;
 import org.keycloak.testsuite.authentication.SetUserAttributeAuthenticatorFactory;
 import org.keycloak.testsuite.util.URLUtils;
-import org.keycloak.testsuite.util.WaitUtils;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
@@ -57,6 +56,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.function.Consumer;
 
+import static org.hamcrest.Matchers.containsString;
+import static org.junit.Assert.assertThat;
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.REMOTE;
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.GITHUB;
@@ -467,7 +468,7 @@ public class BrowserFlowTest extends AbstractTestRealmKeycloakTest {
             // Check that Keycloak is redirecting us to the Keycloak account management page
             WebElement aHref = driver.findElement(By.tagName("a"));
             driver.get(aHref.getAttribute("href"));
-            Assert.assertEquals("Keycloak Account Management", driver.getTitle());
+            assertThat(driver.getTitle(), containsString("Account Management"));
         } finally {
             revertFlows("browser - alternative non-interactive executor");
         }
