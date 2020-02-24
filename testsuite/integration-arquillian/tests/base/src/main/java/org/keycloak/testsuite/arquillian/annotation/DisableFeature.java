@@ -20,4 +20,5 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 public @interface DisableFeature {
     Profile.Feature value();
     boolean skipRestart() default false;
+    boolean onlyForProduct() default false;
 }

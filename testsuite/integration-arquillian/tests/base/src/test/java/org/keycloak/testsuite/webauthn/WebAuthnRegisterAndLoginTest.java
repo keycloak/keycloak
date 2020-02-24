@@ -61,7 +61,7 @@ import org.junit.Assume;
 import org.junit.BeforeClass;
 import static org.keycloak.testsuite.arquillian.AuthServerTestEnricher.AUTH_SERVER_SSL_REQUIRED;
 
-@EnableFeature(value = Profile.Feature.WEB_AUTHN, skipRestart = true)
+@EnableFeature(value = Profile.Feature.WEB_AUTHN, skipRestart = true, onlyForProduct = true)
 public class WebAuthnRegisterAndLoginTest extends AbstractTestRealmKeycloakTest {
 
     @Rule

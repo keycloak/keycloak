@@ -63,7 +63,7 @@ import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.GITHUB;
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.GITLAB;
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.GOOGLE;
 
-@EnableFeature(value = Profile.Feature.WEB_AUTHN, skipRestart = true)
+@EnableFeature(value = Profile.Feature.WEB_AUTHN, skipRestart = true, onlyForProduct = true)
 public class BrowserFlowTest extends AbstractTestRealmKeycloakTest {
     private static final String INVALID_AUTH_CODE = "Invalid authenticator code.";
 

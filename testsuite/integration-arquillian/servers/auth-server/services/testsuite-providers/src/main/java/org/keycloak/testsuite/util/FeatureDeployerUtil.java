@@ -87,6 +87,7 @@ public class FeatureDeployerUtil {
             KeycloakDeploymentInfo di = createDeploymentInfo(factories);
 
             manager = new ProviderManager(di, FeatureDeployerUtil.class.getClassLoader());
+            loadFactories(manager);
             deployersCache.put(feature, manager);
         }
         ProviderManagerRegistry.SINGLETON.undeploy(manager);
@@ -140,4 +141,10 @@ public class FeatureDeployerUtil {
         return providerFactories;
     }
 
+    private static void loadFactories(ProviderManager pm) {
+        KeycloakDeploymentInfo di = KeycloakDeploymentInfo.create().services();
+        ClassLoader classLoader = DefaultKeycloakSession.class.getClassLoader();
+        DefaultProviderLoader loader = new DefaultProviderLoader(di, classLoader);
+        loader.loadSpis().forEach(pm::load);
+    }
 }
