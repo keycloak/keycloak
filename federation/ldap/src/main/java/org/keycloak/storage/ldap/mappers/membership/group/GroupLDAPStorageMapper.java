@@ -579,6 +579,11 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
 
     @Override
     public List<UserModel> getGroupMembers(RealmModel realm, GroupModel kcGroup, int firstResult, int maxResults) {
+        if (config.getMode() == LDAPGroupMapperMode.IMPORT) {
+            // only results from Keycloak should be returned, or imported LDAP and KC items will duplicate
+            return Collections.emptyList();
+        }
+
         // TODO: with ranged search in AD we can improve the search using the specific range (not done for the moment)
         LDAPObject ldapGroup = loadLDAPGroupByName(kcGroup.getName());
         if (ldapGroup == null) {
