@@ -4,7 +4,15 @@
 
 {project_name} provides the limited support for https://www.w3.org/TR/webauthn/[W3C Web Authentication (WebAuthn)]. {project_name} works as a WebAuthn's https://www.w3.org/TR/webauthn/#rp-operations[Relying Party (RP)].
 
+ifeval::[{project_product}==true]
+:tech_feature_name: WebAuthn
+:tech_feature_setting: -Dkeycloak.profile.feature.web_authn=enabled
+include::../templates/techpreview.adoc[]
+endif::[]
+
+ifeval::[{project_community}==true]
 IMPORTANT: Please note that WebAuthn support is still in development and not yet complete, so we recommend that you use this feature experimentally. Also, this support's specification and user interfaces may change.
+endif::[]
 
 NOTE: Whether WebAuthn's operations succeed depends on a user's WebAuthn supporting authenticator, browser and platform. If you use this WebAuthn support, please clarify to what extent those entities support the WebAuthn specification.
 

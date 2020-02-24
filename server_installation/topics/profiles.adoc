@@ -60,6 +60,19 @@ endif::[]
 |Upload scripts through the {project_name} REST API
 |No
 |Deprecated
+
+|web_authn
+|W3C Web Authentication (WebAuthn)
+
+ifeval::[{project_community}==true]
+|Yes
+|Experimental
+endif::[]
+
+ifeval::[{project_product}==true]
+|No
+|Preview
+endif::[]
 |===
 
 To enable all preview features start the server with:
