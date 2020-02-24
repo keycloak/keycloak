@@ -195,10 +195,16 @@ public class UserResource {
     }
 
     public static void updateUserFromRep(UserModel user, UserRepresentation rep, Set<String> attrsToRemove, RealmModel realm, KeycloakSession session, boolean removeMissingRequiredActions) {
-        if (rep.getUsername() != null && realm.isEditUsernameAllowed()) {
+        if (rep.getUsername() != null && realm.isEditUsernameAllowed() && !realm.isRegistrationEmailAsUsername()) {
             user.setUsername(rep.getUsername());
         }
-        if (rep.getEmail() != null) user.setEmail(rep.getEmail());
+        if (rep.getEmail() != null) {
+            String email = rep.getEmail();
+            user.setEmail(email);
+            if(realm.isRegistrationEmailAsUsername()) {
+                user.setUsername(email);
+            }
+        }
         if (rep.getEmail() == "") user.setEmail(null);
         if (rep.getFirstName() != null) user.setFirstName(rep.getFirstName());
         if (rep.getLastName() != null) user.setLastName(rep.getLastName());

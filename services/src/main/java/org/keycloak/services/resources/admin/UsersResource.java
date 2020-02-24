@@ -108,6 +108,9 @@ public class UsersResource {
         auth.users().requireManage();
 
         String username = rep.getUsername();
+        if(realm.isRegistrationEmailAsUsername()) {
+            username = rep.getEmail();
+        }
         if (ObjectUtil.isBlank(username)) {
             return ErrorResponse.error("User name is missing", Response.Status.BAD_REQUEST);
         }

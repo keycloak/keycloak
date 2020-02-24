@@ -379,6 +379,7 @@ module.controller('UserDetailCtrl', function($scope, realm, user, BruteForceUser
     $scope.realm = realm;
     $scope.create = !user.id;
     $scope.editUsername = $scope.create || $scope.realm.editUsernameAllowed;
+    $scope.emailAsUsername = $scope.realm.registrationEmailAsUsername;
 
     if ($scope.create) {
         $scope.user = { enabled: true, attributes: {} }
