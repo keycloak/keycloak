@@ -1,7 +1,7 @@
 
 === Installing Distribution Files
 
-The Keycloak Server has three downloadable distributions:
+The Keycloak Server has two downloadable distributions:
 
 * 'keycloak-{project_version}.[zip|tar.gz]'
 * 'keycloak-overlay-{project_version}.[zip|tar.gz]'
