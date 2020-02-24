@@ -459,6 +459,18 @@ public class UserTest extends AbstractAdminTest {
     }
 
     @Test
+    public void createUserWithEmailAsUsername() {
+        switchRegistrationEmailAsUsername(true);
+
+        String id = createUser();
+        UserResource user = realm.users().get(id);
+        UserRepresentation userRep = user.toRepresentation();
+        assertEquals("user1@localhost", userRep.getUsername());
+
+        switchRegistrationEmailAsUsername(false);
+    }
+
+    @Test
     public void createUserWithEmptyUsername() {
         UserRepresentation user = new UserRepresentation();
         user.setUsername("");
@@ -1487,6 +1499,25 @@ public class UserTest extends AbstractAdminTest {
     }
 
     @Test
+    public void updateUserWithEmailAsUsername() {
+        switchRegistrationEmailAsUsername(true);
+
+        String id = createUser();
+
+        UserResource user = realm.users().get(id);
+        UserRepresentation userRep = user.toRepresentation();
+        assertEquals("user1@localhost", userRep.getUsername());
+
+        userRep.setEmail("user11@localhost");
+        updateUser(user, userRep);
+
+        userRep = realm.users().get(id).toRepresentation();
+        assertEquals("user11@localhost", userRep.getUsername());
+
+        switchRegistrationEmailAsUsername(false);
+    }
+
+    @Test
     public void updateUserWithNewUsernameNotPossible() {
         String id = createUser();
 
@@ -1805,6 +1836,13 @@ public class UserTest extends AbstractAdminTest {
     private void switchEditUsernameAllowedOn(boolean enable) {
         RealmRepresentation rep = realm.toRepresentation();
         rep.setEditUsernameAllowed(enable);
+        realm.update(rep);
+        assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, Matchers.nullValue(String.class), rep, ResourceType.REALM);
+    }
+
+    private void switchRegistrationEmailAsUsername(boolean enable) {
+        RealmRepresentation rep = realm.toRepresentation();
+        rep.setRegistrationEmailAsUsername(enable);
         realm.update(rep);
         assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, Matchers.nullValue(String.class), rep, ResourceType.REALM);
     }
