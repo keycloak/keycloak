@@ -172,11 +172,16 @@ public abstract class AbstractBaseBrokerTest extends AbstractKeycloakTest {
     }
 
 
-    protected String createUser(String username) {
-        UserRepresentation newUser = UserBuilder.create().username(username).email(USER_EMAIL).enabled(true).build();
+    protected String createUser(String username, String email) {
+        UserRepresentation newUser = UserBuilder.create().username(username).email(email).enabled(true).build();
         String userId = createUserWithAdminClient(adminClient.realm(bc.consumerRealmName()), newUser);
         resetUserPassword(adminClient.realm(bc.consumerRealmName()).users().get(userId), "password", false);
         return userId;
+    }
+
+
+    protected String createUser(String username) {
+        return createUser(username, USER_EMAIL);
     }
 
 

@@ -40,6 +40,8 @@ public interface LoginFormsProvider extends Provider {
 
     String USERNAME_EDIT_DISABLED = "usernameEditDisabled";
 
+    String REGISTRATION_DISABLED = "registrationDisabled";
+
 
     /**
      * Adds a script to the html header
