@@ -133,8 +133,6 @@ import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.storage.federated.UserFederatedStorageProvider;
 import org.keycloak.util.JsonSerialization;
-import org.keycloak.validation.ClientValidationContext;
-import org.keycloak.validation.ClientValidationProvider;
 import org.keycloak.validation.ClientValidationUtil;
 
 public class RepresentationToModel {
@@ -1482,7 +1480,7 @@ public class RepresentationToModel {
             }
         }
         if (rep.getAttributes() != null) {
-            for (Map.Entry<String, String> entry : rep.getAttributes().entrySet()) {
+            for (Map.Entry<String, String> entry : removeEmptyString(rep.getAttributes()).entrySet()) {
                 resource.setAttribute(entry.getKey(), entry.getValue());
             }
         }
@@ -1887,7 +1885,7 @@ public class RepresentationToModel {
         identityProviderModel.setAuthenticateByDefault(representation.isAuthenticateByDefault());
         identityProviderModel.setStoreToken(representation.isStoreToken());
         identityProviderModel.setAddReadTokenRoleOnCreate(representation.isAddReadTokenRoleOnCreate());
-        identityProviderModel.setConfig(new HashMap<>(representation.getConfig()));
+        identityProviderModel.setConfig(removeEmptyString(representation.getConfig()));
 
         String flowAlias = representation.getFirstBrokerLoginFlowAlias();
         if (flowAlias == null) {
@@ -2032,7 +2030,7 @@ public class RepresentationToModel {
 
     public static RequiredActionProviderModel toModel(RequiredActionProviderRepresentation rep) {
         RequiredActionProviderModel model = new RequiredActionProviderModel();
-        model.setConfig(rep.getConfig());
+        model.setConfig(removeEmptyString(rep.getConfig()));
         model.setPriority(rep.getPriority());
         model.setDefaultAction(rep.isDefaultAction());
         model.setEnabled(rep.isEnabled());
@@ -2723,7 +2721,7 @@ public class RepresentationToModel {
         }
     }
 
-    private static Map<String, String> removeEmptyString(Map<String, String> map) {
+    public static Map<String, String> removeEmptyString(Map<String, String> map) {
         if (map == null) {
             return null;
         }
