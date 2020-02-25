@@ -102,8 +102,9 @@ public class WebAuthnCredentialProvider implements CredentialProvider<WebAuthnCr
         String credentialId = Base64.encodeBytes(webAuthnModel.getAttestedCredentialData().getCredentialId());
         String credentialPublicKey = credentialPublicKeyConverter.convertToDatabaseColumn(webAuthnModel.getAttestedCredentialData().getCOSEKey());
         long counter = webAuthnModel.getCount();
+        String attestationStatementFormat = webAuthnModel.getAttestationStatementFormat();
 
-        WebAuthnCredentialModel model = WebAuthnCredentialModel.create(getType(), userLabel, aaguid, credentialId, null, credentialPublicKey, counter);
+        WebAuthnCredentialModel model = WebAuthnCredentialModel.create(getType(), userLabel, aaguid, credentialId, null, credentialPublicKey, counter, attestationStatementFormat);
 
         model.setId(webAuthnModel.getCredentialDBId());
 
@@ -140,6 +141,8 @@ public class WebAuthnCredentialProvider implements CredentialProvider<WebAuthnCr
         auth.setCount(count);
 
         auth.setCredentialDBId(credential.getId());
+
+        auth.setAttestationStatementFormat(credData.getAttestationStatementFormat());
 
         return auth;
     }

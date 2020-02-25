@@ -48,8 +48,8 @@ public class WebAuthnCredentialModel extends CredentialModel {
     }
 
     public static WebAuthnCredentialModel create(String credentialType, String userLabel, String aaguid, String credentialId,
-                                                 String attestationStatement, String credentialPublicKey, long counter) {
-        WebAuthnCredentialData credentialData = new WebAuthnCredentialData(aaguid, credentialId, counter, attestationStatement, credentialPublicKey);
+                                                     String attestationStatement, String credentialPublicKey, long counter, String attestationStatementFormat) {
+        WebAuthnCredentialData credentialData = new WebAuthnCredentialData(aaguid, credentialId, counter, attestationStatement, credentialPublicKey, attestationStatementFormat);
         WebAuthnSecretData secretData = new WebAuthnSecretData();
 
         WebAuthnCredentialModel credentialModel = new WebAuthnCredentialModel(credentialType, credentialData, secretData);

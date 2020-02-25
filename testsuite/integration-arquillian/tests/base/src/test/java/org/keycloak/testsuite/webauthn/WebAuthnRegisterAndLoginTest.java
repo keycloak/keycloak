@@ -31,6 +31,7 @@ import org.keycloak.common.util.RandomString;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
 import org.keycloak.models.credential.WebAuthnCredentialModel;
+import org.keycloak.models.credential.dto.WebAuthnCredentialData;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -47,12 +48,14 @@ import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.RegisterPage;
 import org.keycloak.testsuite.pages.webauthn.WebAuthnLoginPage;
 import org.keycloak.testsuite.pages.webauthn.WebAuthnRegisterPage;
+import org.keycloak.util.JsonSerialization;
 import org.keycloak.testsuite.WebAuthnAssume;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
 
 import static org.junit.Assert.assertEquals;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
@@ -166,6 +169,7 @@ public class WebAuthnRegisterAndLoginTest extends AbstractTestRealmKeycloakTest 
                 .assertEvent().getSessionId();
             // confirm user registered
             assertUserRegistered(userId, username.toLowerCase(), email.toLowerCase());
+            assertRegisteredCredentials(userId, ALL_ZERO_AAGUID, "none");
 
             // logout by user
             appPage.logout();
@@ -304,8 +308,27 @@ public class WebAuthnRegisterAndLoginTest extends AbstractTestRealmKeycloakTest 
         assertEquals("lastName", user.getLastName());
     }
 
+    private void assertRegisteredCredentials(String userId, String aaguid, String attestationStatementFormat) {
+        List<CredentialRepresentation> credentials = getCredentials(userId);
+        credentials.stream().forEach(i -> {
+            if (WebAuthnCredentialModel.TYPE_TWOFACTOR.equals(i.getType())) {
+                try {
+                    WebAuthnCredentialData data = JsonSerialization.readValue(i.getCredentialData(), WebAuthnCredentialData.class);
+                    assertEquals(aaguid, data.getAaguid());
+                    assertEquals(attestationStatementFormat, data.getAttestationStatementFormat());
+                } catch (IOException e) {
+                    Assert.fail();
+                }
+            }
+        });
+    }
+
     protected UserRepresentation getUser(String userId) {
         return testRealm().users().get(userId).toRepresentation();
+    }
+
+    protected List<CredentialRepresentation> getCredentials(String userId) {
+        return testRealm().users().get(userId).credentials();
     }
 
     private RealmRepresentation backupWebAuthnRealmSettings() {
