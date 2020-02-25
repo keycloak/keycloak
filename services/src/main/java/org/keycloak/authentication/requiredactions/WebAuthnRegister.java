@@ -223,6 +223,7 @@ public class WebAuthnRegister implements RequiredActionProvider, CredentialRegis
 
             credential.setAttestedCredentialData(registrationData.getAttestationObject().getAuthenticatorData().getAttestedCredentialData());
             credential.setCount(registrationData.getAttestationObject().getAuthenticatorData().getSignCount());
+            credential.setAttestationStatementFormat(registrationData.getAttestationObject().getFormat());
 
             // Save new webAuthn credential
             WebAuthnCredentialProvider webAuthnCredProvider = (WebAuthnCredentialProvider) this.session.getProvider(CredentialProvider.class, getCredentialProviderId());
