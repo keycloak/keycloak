@@ -60,7 +60,7 @@ Verify Existing Account By Email::
 
 Verify Existing Account By Re-authentication::
   This authenticator is used if email authenticator is disabled or not available (SMTP not configured for realm). It will display a login screen
-  where the user needs to authenticate with his password to link their {project_name} account with the Identity provider.
+  where the user needs to authenticate to link their {project_name} account with the Identity provider.
   User can also re-authenticate with some different identity provider, which is already linked to their {project_name} account.
   You can also force users to use OTP. Otherwise it's optional and used only if OTP is already set for the user account.
 
@@ -79,3 +79,15 @@ NOTE: The described setup uses two authenticators. This setup is the simplest on
 authenticators according to your needs. For example, you can add the Review Profile authenticator to the beginning of the flow if you still want
 end users to confirm their profile information. You can also add authentication mechanisms to this flow, forcing a user to verify his credentials. This
 would require a more complex flow, for example setting the "Automatically Set Existing User" and "Password Form" as "Required" in an "Alternative" sub-flow.
+
+==== Disabling Automatic User Creation
+The Default first login flow will look up a Keycloak account matching the external identity, and will then offer to link them; if there is no matching Keycloak account, it will automatically create one.
+This default behavior may be unsuitable for some setups, for example, when using read-only LDAP user store (which means all users are pre-created).
+In this case, automatic user creation should be turned off. To disable user creation:
+
+* open the `First Broker Login` flow configuration;
+* set `Create User If Unique` to `DISABLED`;
+* set `Confirm Link Existing Account` to `DISABLED`.
+
+This configuration also implies that Keycloak itself won't be able to determine which internal account would correspond to the external identity.
+Therefore, the `Verify Existing Account By Re-authentication` authenticator will ask the user to provide both username and password.
