@@ -48,6 +48,7 @@ import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
 import org.keycloak.testsuite.pages.RegisterPage;
 import org.keycloak.testsuite.pages.TermsAndConditionsPage;
 import org.keycloak.testsuite.rest.representation.AuthenticatorState;
+import org.keycloak.testsuite.updaters.Creator;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.ExecutionBuilder;
 import org.keycloak.testsuite.util.FlowBuilder;
@@ -58,12 +59,9 @@ import org.keycloak.testsuite.util.UserBuilder;
 import javax.ws.rs.core.Response;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import javax.ws.rs.core.Response.Status;
-import org.hamcrest.Matchers;
-import static org.hamcrest.Matchers.hasSize;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.keycloak.testsuite.util.Matchers.statusCodeIs;
@@ -259,8 +257,6 @@ public class CustomFlowTest extends AbstractFlowTest {
 
     @Test
     public void validateX509FlowUpdate() throws Exception {
-        String flowId = null;
-        AuthenticationManagementResource authMgmtResource = testRealm().flows();
         String flowAlias = "Browser Flow With Extra 2";
 
         AuthenticationFlowRepresentation flow = new AuthenticationFlowRepresentation();
@@ -270,23 +266,12 @@ public class CustomFlowTest extends AbstractFlowTest {
         flow.setTopLevel(true);
         flow.setBuiltIn(false);
 
-        try {
-            String executionId;
-            try (Response response = authMgmtResource.createFlow(flow)) {
-                Assert.assertThat("Create flow", response, statusCodeIs(Response.Status.CREATED));
-                AuthenticationFlowRepresentation newFlow = findFlowByAlias(flowAlias);
-                flowId = newFlow.getId();
-            }
+        try (Creator.Flow amr = Creator.create(testRealm(), flow)) {
+            AuthenticationManagementResource authMgmtResource = amr.resource();
 
-            //add execution - username-password form
-            Map<String, String> data = new HashMap<>();
-            data.put("provider", ValidateX509CertificateUsernameFactory.PROVIDER_ID);
-            authMgmtResource.addExecution(flowAlias, data);
-
-            List<AuthenticationExecutionInfoRepresentation> executions = authMgmtResource.getExecutions(flowAlias);
-            assertThat(executions, hasSize(1));
-            final AuthenticationExecutionInfoRepresentation execution = executions.get(0);
-            executionId = execution.getId();
+            //add execution - X509 username
+            final AuthenticationExecutionInfoRepresentation execution = amr.addExecution(ValidateX509CertificateUsernameFactory.PROVIDER_ID);
+            String executionId = execution.getId();
 
             Map<String, String> config = new HashMap<>();
             config.put(AbstractX509ClientCertificateAuthenticator.ENABLE_CRL, Boolean.TRUE.toString());
@@ -294,13 +279,20 @@ public class CustomFlowTest extends AbstractFlowTest {
             authConfig.setAlias("Config alias");
             authConfig.setConfig(config);
 
+            String acId;
             try (Response resp = authMgmtResource.newExecutionConfig(executionId, authConfig)) {
                 assertThat(resp, statusCodeIs(Status.CREATED));
+                acId = ApiUtil.getCreatedId(resp);
             }
-        } finally {
-            if (flowId != null) {
-                authMgmtResource.deleteFlow(flowId);
-            }
+
+            authConfig = authMgmtResource.getAuthenticatorConfig(acId);
+            authConfig.getConfig().put(AbstractX509ClientCertificateAuthenticator.ENABLE_CRL, Boolean.FALSE.toString());
+            authConfig.getConfig().put(AbstractX509ClientCertificateAuthenticator.CRL_RELATIVE_PATH, "");
+
+            authMgmtResource.updateAuthenticatorConfig(acId, authConfig);
+
+            // Saving the same options for the second time would fail for CRL_RELATIVE_PATH on Oracle due to "" == NULL weirdness
+            authMgmtResource.updateAuthenticatorConfig(acId, authConfig);
         }
     }
 

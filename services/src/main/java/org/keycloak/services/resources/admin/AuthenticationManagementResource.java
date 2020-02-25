@@ -1208,7 +1208,7 @@ public class AuthenticationManagementResource {
 
         }
         exists.setAlias(rep.getAlias());
-        exists.setConfig(rep.getConfig());
+        exists.setConfig(RepresentationToModel.removeEmptyString(rep.getConfig()));
         realm.updateAuthenticatorConfig(exists);
         adminEvent.operation(OperationType.UPDATE).resource(ResourceType.AUTHENTICATOR_CONFIG).resourcePath(session.getContext().getUri()).representation(rep).success();
     }
