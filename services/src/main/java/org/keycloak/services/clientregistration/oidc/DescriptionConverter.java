@@ -121,6 +121,10 @@ public class DescriptionConverter {
             else configWrapper.setUseMtlsHoKToken(false);
         }
 
+        if (clientOIDC.getTlsClientAuthSubjectDn() != null) {
+            configWrapper.setTlsClientAuthSubjectDn(clientOIDC.getTlsClientAuthSubjectDn());
+        }
+
         if (clientOIDC.getIdTokenSignedResponseAlg() != null) {
             configWrapper.setIdTokenSignedResponseAlg(clientOIDC.getIdTokenSignedResponseAlg());
         }
@@ -214,6 +218,9 @@ public class DescriptionConverter {
             response.setTlsClientCertificateBoundAccessTokens(Boolean.TRUE);
         } else {
             response.setTlsClientCertificateBoundAccessTokens(Boolean.FALSE);
+        }
+        if (config.getTlsClientAuthSubjectDn() != null) {
+            response.setTlsClientAuthSubjectDn(config.getTlsClientAuthSubjectDn());
         }
         if (config.getIdTokenSignedResponseAlg() != null) {
             response.setIdTokenSignedResponseAlg(config.getIdTokenSignedResponseAlg());

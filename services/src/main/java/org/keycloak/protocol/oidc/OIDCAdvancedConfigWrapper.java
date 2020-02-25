@@ -17,6 +17,7 @@
 
 package org.keycloak.protocol.oidc;
 
+import org.keycloak.authentication.authenticators.client.X509ClientAuthenticator;
 import org.keycloak.jose.jws.Algorithm;
 import org.keycloak.models.ClientModel;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -116,6 +117,14 @@ public class OIDCAdvancedConfigWrapper {
     public void setUseMtlsHoKToken(boolean useUtlsHokToken) {
         String val = String.valueOf(useUtlsHokToken);
         setAttribute(OIDCConfigAttributes.USE_MTLS_HOK_TOKEN, val);
+    }
+
+    public String getTlsClientAuthSubjectDn() {
+        return getAttribute(X509ClientAuthenticator.ATTR_SUBJECT_DN);
+     }
+
+    public void setTlsClientAuthSubjectDn(String tls_client_auth_subject_dn) {
+        setAttribute(X509ClientAuthenticator.ATTR_SUBJECT_DN, tls_client_auth_subject_dn);
     }
 
     public String getPkceCodeChallengeMethod() {

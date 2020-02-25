@@ -100,6 +100,8 @@ public class OIDCClientRepresentation {
     // https://tools.ietf.org/html/draft-ietf-oauth-mtls-08#section-6.5
     private Boolean tls_client_certificate_bound_access_tokens;
 
+    private String tls_client_auth_subject_dn;
+
     // OIDC Session Management
     private List<String> post_logout_redirect_uris;
 
@@ -446,4 +448,13 @@ public class OIDCClientRepresentation {
     public void setTlsClientCertificateBoundAccessTokens(Boolean tls_client_certificate_bound_access_tokens) {
         this.tls_client_certificate_bound_access_tokens = tls_client_certificate_bound_access_tokens;
     }
+
+    public String getTlsClientAuthSubjectDn() {
+            return tls_client_auth_subject_dn;
+        }
+
+    public void setTlsClientAuthSubjectDn(String tls_client_auth_subject_dn) {
+        this.tls_client_auth_subject_dn = tls_client_auth_subject_dn;
+    }
+
 }
