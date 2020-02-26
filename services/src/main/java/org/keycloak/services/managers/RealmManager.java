@@ -562,6 +562,9 @@ public class RealmManager {
 
                 if (Boolean.TRUE.equals(client.getAuthorizationServicesEnabled())) {
                     RepresentationToModel.createResourceServer(clientModel, session, true);
+                    if(!skipUserDependent) {
+                        RepresentationToModel.importAuthorizationSettings(client, clientModel, session);
+                    }
                 }
             }
         }
