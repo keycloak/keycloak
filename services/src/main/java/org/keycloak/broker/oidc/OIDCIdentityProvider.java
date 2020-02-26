@@ -541,6 +541,10 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
         if (!ignoreAudience && !token.hasAudience(getConfig().getClientId())) {
             throw new IdentityBrokerException("Wrong audience from token.");
         }
+        
+        if (!ignoreAudience && (token.getIssuedFor() != null && !getConfig().getClientId().equals(token.getIssuedFor()))) {
+            throw new IdentityBrokerException("Token not issued for client [" + getConfig().getClientId() + "]");
+        }
 
         String trustedIssuers = getConfig().getIssuer();
 
