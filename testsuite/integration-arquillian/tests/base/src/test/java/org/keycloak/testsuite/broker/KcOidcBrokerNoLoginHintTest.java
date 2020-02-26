@@ -15,7 +15,7 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.arquillian.SuiteContext;
 
-public class KcOidcBrokerNoLoginHintTest extends KcOidcBrokerLoginHintTest {
+public class KcOidcBrokerNoLoginHintTest extends AbstractBrokerTest {
 
     @Override
     protected BrokerConfiguration getBrokerConfiguration() {
