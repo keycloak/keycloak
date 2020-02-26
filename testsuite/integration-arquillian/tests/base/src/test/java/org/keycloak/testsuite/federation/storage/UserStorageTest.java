@@ -67,6 +67,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.keycloak.models.UserModel.RequiredAction.UPDATE_PROFILE;
+import org.keycloak.provider.ProviderFactory;
 import static org.keycloak.storage.UserStorageProviderModel.CACHE_POLICY;
 import static org.keycloak.storage.UserStorageProviderModel.EVICTION_DAY;
 import static org.keycloak.storage.UserStorageProviderModel.EVICTION_HOUR;
@@ -142,7 +143,7 @@ public class UserStorageTest extends AbstractAuthTest {
     }
 
     @After
-    public void removeTestUser() throws URISyntaxException, IOException {
+    public void afterTestCleanUp() throws URISyntaxException, IOException {
         testingClient.server().run(session -> {
             RealmModel realm = session.realms().getRealmByName("test");
             if (realm == null) {
@@ -154,6 +155,11 @@ public class UserStorageTest extends AbstractAuthTest {
                 session.userLocalStorage().removeUser(realm, user);
                 session.userCache().clear();
             }
+
+            //we need to clear userPasswords and userGroups from UserMapStorageFactory
+            UserMapStorageFactory userMapStorageFactory = (UserMapStorageFactory) session.getKeycloakSessionFactory().getProviderFactory(UserStorageProvider.class, UserMapStorageFactory.PROVIDER_ID);
+            Assert.assertNotNull(userMapStorageFactory);
+            userMapStorageFactory.clear();
         });
     }
 
