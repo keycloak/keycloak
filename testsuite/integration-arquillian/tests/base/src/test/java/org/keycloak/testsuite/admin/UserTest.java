@@ -21,6 +21,7 @@ import org.hamcrest.Matchers;
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.arquillian.test.api.ArquillianResource;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
@@ -137,6 +138,15 @@ public class UserTest extends AbstractAdminTest {
 
     @Page
     protected LoginPage loginPage;
+
+    @After
+    public void after() {
+        realm.identityProviders().findAll().stream()
+                .forEach(ip -> realm.identityProviders().get(ip.getAlias()).remove());
+
+        realm.groups().groups().stream()
+                .forEach(g -> realm.groups().group(g.getId()).remove());
+    }
 
     public String createUser() {
         return createUser("user1", "user1@localhost");
@@ -1951,7 +1961,6 @@ public class UserTest extends AbstractAdminTest {
     
     @Test
     public void testGetGroupsForUserFullRepresentation() {
-       
         RealmResource realm = adminClient.realms().realm("test");
         
         String userName = "averagejoe";
@@ -1976,5 +1985,110 @@ public class UserTest extends AbstractAdminTest {
             assertFalse(userGroups.isEmpty());
             assertTrue(userGroups.get(0).getAttributes().containsKey("attribute1"));
         }
+    }
+
+    @Test
+    public void groupMembershipPaginated() {
+        String userId = createUser(UserBuilder.create().username("user-a").build());
+
+        for (int i = 1; i <= 10; i++) {
+            GroupRepresentation group = new GroupRepresentation();
+            group.setName("group-" + i);
+            String groupId = createGroup(realm, group).getId();
+            realm.users().get(userId).joinGroup(groupId);
+            assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.userGroupPath(userId, groupId), group, ResourceType.GROUP_MEMBERSHIP);
+        }
+
+        List<GroupRepresentation> groups = realm.users().get(userId).groups(5, 6);
+        assertEquals(groups.size(), 5);
+        assertNames(groups, "group-5","group-6","group-7","group-8","group-9");
+    }
+
+    @Test
+    public void groupMembershipSearch() {
+        String userId = createUser(UserBuilder.create().username("user-b").build());
+
+        for (int i = 1; i <= 10; i++) {
+            GroupRepresentation group = new GroupRepresentation();
+            group.setName("group-" + i);
+            String groupId = createGroup(realm, group).getId();
+            realm.users().get(userId).joinGroup(groupId);
+            assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.userGroupPath(userId, groupId), group, ResourceType.GROUP_MEMBERSHIP);
+        }
+
+        List<GroupRepresentation> groups = realm.users().get(userId).groups("-3", 0, 10);
+        assertEquals(1, groups.size());
+        assertNames(groups, "group-3");
+
+        List<GroupRepresentation> groups2 = realm.users().get(userId).groups("1", 0, 10);
+        assertEquals(2, groups2.size());
+        assertNames(groups2, "group-1", "group-10");
+
+        List<GroupRepresentation> groups3 = realm.users().get(userId).groups("1", 2, 10);
+        assertEquals(0, groups3.size());
+
+        List<GroupRepresentation> groups4 = realm.users().get(userId).groups("gr", 2, 10);
+        assertEquals(8, groups4.size());
+
+        List<GroupRepresentation> groups5 = realm.users().get(userId).groups("Gr", 2, 10);
+        assertEquals(8, groups5.size());
+    }
+
+    @Test
+    public void createFederatedIdentities() {
+        String identityProviderAlias = "social-provider-id";
+        String username = "federated-identities";
+        String federatedUserId = "federated-user-id";
+
+        addSampleIdentityProvider();
+
+        UserRepresentation build = UserBuilder.create()
+                .username(username)
+                .federatedLink(identityProviderAlias, federatedUserId)
+                .build();
+
+        //when
+        String userId = createUser(build, false);
+        List<FederatedIdentityRepresentation> obtainedFederatedIdentities = realm.users().get(userId).getFederatedIdentity();
+
+        //then
+        assertEquals(1, obtainedFederatedIdentities.size());
+        assertEquals(federatedUserId, obtainedFederatedIdentities.get(0).getUserId());
+        assertEquals(username, obtainedFederatedIdentities.get(0).getUserName());
+        assertEquals(identityProviderAlias, obtainedFederatedIdentities.get(0).getIdentityProvider());
+    }
+
+    @Test
+    public void createUserWithGroups() {
+        String username = "user-with-groups";
+        String groupToBeAdded = "test-group";
+
+        createGroup(realm, GroupBuilder.create().name(groupToBeAdded).build());
+
+        UserRepresentation build = UserBuilder.create()
+                .username(username)
+                .addGroups(groupToBeAdded)
+                .build();
+
+        //when
+        String userId = createUser(build);
+        List<GroupRepresentation> obtainedGroups = realm.users().get(userId).groups();
+
+        //then
+        assertEquals(1, obtainedGroups.size());
+        assertEquals(groupToBeAdded, obtainedGroups.get(0).getName());
+    }
+
+    private GroupRepresentation createGroup(RealmResource realm, GroupRepresentation group) {
+        Response response = realm.groups().add(group);
+        String groupId = ApiUtil.getCreatedId(response);
+        getCleanup().addGroupId(groupId);
+        response.close();
+
+        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.groupPath(groupId), group, ResourceType.GROUP);
+
+        // Set ID to the original rep
+        group.setId(groupId);
+        return group;
     }
 }
