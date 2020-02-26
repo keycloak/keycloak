@@ -1,6 +1,7 @@
 package org.keycloak.admin.client;
 
-import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
+import javax.net.ssl.SSLContext;
+import javax.ws.rs.client.ClientBuilder;
 
 public class ClientBuilderWrapper {
 
@@ -17,9 +18,15 @@ public class ClientBuilderWrapper {
         }
     }
 
-    public static ResteasyClientBuilder create() {
+    public static ClientBuilder create(SSLContext sslContext, boolean disableTrustManager) {
         try {
-            return (ResteasyClientBuilder) clazz.newInstance();
+            Object o = clazz.newInstance();
+            clazz.getMethod("sslContext", SSLContext.class).invoke(o, sslContext);
+            clazz.getMethod("connectionPoolSize", int.class).invoke(o, 10);
+            if (disableTrustManager) {
+                clazz.getMethod("disableTrustManager").invoke(o);
+            }
+            return (ClientBuilder) o;
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
