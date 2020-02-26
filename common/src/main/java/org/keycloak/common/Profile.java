@@ -53,7 +53,8 @@ public class Profile {
         SCRIPTS(Type.PREVIEW),
         TOKEN_EXCHANGE(Type.PREVIEW),
         UPLOAD_SCRIPTS(DEPRECATED),
-        WEB_AUTHN(Type.DEFAULT, Type.PREVIEW);
+        WEB_AUTHN(Type.DEFAULT, Type.PREVIEW),
+        CLIENT_POLICIES(Type.PREVIEW);
 
         private Type typeProject;
         private Type typeProduct;

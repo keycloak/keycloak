@@ -44,6 +44,9 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.oidc.utils.AuthorizeClientUtil;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.services.CorsErrorResponseException;
+import org.keycloak.services.clientpolicy.ClientPolicyException;
+import org.keycloak.services.clientpolicy.DefaultClientPolicyManager;
+import org.keycloak.services.clientpolicy.TokenRevokeContext;
 import org.keycloak.services.managers.UserSessionCrossDCManager;
 import org.keycloak.services.managers.UserSessionManager;
 import org.keycloak.services.resources.Cors;
@@ -92,6 +95,13 @@ public class TokenRevocationEndpoint {
         checkClient();
 
         formParams = request.getDecodedFormParameters();
+
+        try {
+            session.clientPolicy().triggerOnEvent(new TokenRevokeContext(formParams));
+        } catch (ClientPolicyException cpe) {
+            event.error(cpe.getError());
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, cpe.getErrorDetail(), Response.Status.BAD_REQUEST);
+        }
 
         checkToken();
         checkIssuedFor();
