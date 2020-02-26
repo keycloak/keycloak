@@ -60,8 +60,8 @@ public class UserMapStorage implements UserLookupProvider, UserStorageProvider, 
 
     private static final Logger log = Logger.getLogger(UserMapStorage.class);
     
-    protected Map<String, String> userPasswords;
-    protected ConcurrentMap<String, Set<String>> userGroups;
+    protected final Map<String, String> userPasswords;
+    protected final ConcurrentMap<String, Set<String>> userGroups;
     protected ComponentModel model;
     protected KeycloakSession session;
     protected EditMode editMode;
