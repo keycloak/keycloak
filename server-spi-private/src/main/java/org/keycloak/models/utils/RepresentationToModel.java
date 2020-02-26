@@ -1745,12 +1745,7 @@ public class RepresentationToModel {
             }
         }
         createCredentials(userRep, session, newRealm, user, false);
-        if (userRep.getFederatedIdentities() != null) {
-            for (FederatedIdentityRepresentation identity : userRep.getFederatedIdentities()) {
-                FederatedIdentityModel mappingModel = new FederatedIdentityModel(identity.getIdentityProvider(), identity.getUserId(), identity.getUserName());
-                session.users().addFederatedIdentity(newRealm, user, mappingModel);
-            }
-        }
+        createFederatedIdentities(userRep, session, newRealm, user);
         createRoleMappings(userRep, user, newRealm);
         if (userRep.getClientConsents() != null) {
             for (UserConsentRepresentation consentRep : userRep.getClientConsents()) {
@@ -1770,8 +1765,12 @@ public class RepresentationToModel {
                 throw new RuntimeException("Unable to find client specified for service account link. Client: " + clientId);
             }
             user.setServiceAccountClientLink(client.getId());
-            ;
         }
+        createGroups(userRep, newRealm, user);
+        return user;
+    }
+
+    public static void createGroups(UserRepresentation userRep, RealmModel newRealm, UserModel user) {
         if (userRep.getGroups() != null) {
             for (String path : userRep.getGroups()) {
                 GroupModel group = KeycloakModelUtils.findGroupByPath(newRealm, path);
@@ -1782,7 +1781,15 @@ public class RepresentationToModel {
                 user.joinGroup(group);
             }
         }
-        return user;
+    }
+
+    public static void createFederatedIdentities(UserRepresentation userRep, KeycloakSession session, RealmModel realm, UserModel user) {
+        if (userRep.getFederatedIdentities() != null) {
+            for (FederatedIdentityRepresentation identity : userRep.getFederatedIdentities()) {
+                FederatedIdentityModel mappingModel = new FederatedIdentityModel(identity.getIdentityProvider(), identity.getUserId(), identity.getUserName());
+                session.users().addFederatedIdentity(realm, user, mappingModel);
+            }
+        }
     }
 
     public static void createCredentials(UserRepresentation userRep, KeycloakSession session, RealmModel realm, UserModel user, boolean adminRequest) {
