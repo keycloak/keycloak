@@ -46,7 +46,6 @@ public class ClientRegistrationPolicyManager {
         });
     }
 
-
     public static void triggerAfterRegister(ClientRegistrationContext context, RegistrationAuth authType, ClientModel client) {
         try {
             triggerPolicies(context.getSession(), context.getProvider(), authType, "after register client " + client.getClientId(), (ClientRegistrationPolicy policy) -> {

@@ -83,6 +83,10 @@ import org.keycloak.saml.common.util.DocumentUtil;
 import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.Urls;
+import org.keycloak.services.clientpolicy.ClientPolicyException;
+import org.keycloak.services.clientpolicy.DefaultClientPolicyManager;
+import org.keycloak.services.clientpolicy.TokenRefreshContext;
+import org.keycloak.services.clientpolicy.TokenRequestContext;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationSessionManager;
@@ -402,6 +406,13 @@ public class TokenEndpoint {
             checkParamsForPkceNotEnforcedClient(codeVerifier, codeChallenge, codeChallengeMethod, authUserId, authUsername);
         }
 
+        try {
+            session.clientPolicy().triggerOnEvent(new TokenRequestContext(formParams, parseResult));
+        } catch (ClientPolicyException cpe) {
+            event.error(cpe.getError());
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, cpe.getErrorDetail(), Response.Status.BAD_REQUEST);
+        }
+
         updateClientSession(clientSession);
         updateUserSessionFromClientAuth(userSession);
 
@@ -519,6 +530,13 @@ public class TokenEndpoint {
         String refreshToken = formParams.getFirst(OAuth2Constants.REFRESH_TOKEN);
         if (refreshToken == null) {
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "No refresh token", Response.Status.BAD_REQUEST);
+        }
+
+        try {
+            session.clientPolicy().triggerOnEvent(new TokenRefreshContext(formParams));
+        } catch (ClientPolicyException cpe) {
+            event.error(cpe.getError());
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, cpe.getErrorDetail(), Response.Status.BAD_REQUEST);
         }
 
         AccessTokenResponse res;

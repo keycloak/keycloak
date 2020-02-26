@@ -20,6 +20,7 @@ package org.keycloak.models;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.cache.UserCache;
 import org.keycloak.provider.Provider;
+import org.keycloak.services.clientpolicy.ClientPolicyManager;
 import org.keycloak.sessions.AuthenticationSessionProvider;
 import org.keycloak.storage.federated.UserFederatedStorageProvider;
 import org.keycloak.vault.VaultTranscriber;
@@ -201,4 +202,10 @@ public interface KeycloakSession {
      * Vault transcriber
      */
     VaultTranscriber vault();
+
+    /**
+     * Client Policy Manager
+     */
+    ClientPolicyManager clientPolicy();
+
 }
