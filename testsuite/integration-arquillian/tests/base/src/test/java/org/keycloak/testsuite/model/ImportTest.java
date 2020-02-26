@@ -22,7 +22,10 @@ import org.junit.Assert;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
+import org.keycloak.authorization.AuthorizationProvider;
+import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.policy.evaluation.Realm;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -116,6 +119,21 @@ public class ImportTest extends AbstractTestRealmKeycloakTest {
             if (err.get() != null) {
                 throw new RunOnServerException(err.get());
             }
+        });
+    }
+
+    // KEYCLOAK-12640
+    @Test
+    public void importAuthorizationSettings() throws Exception {
+        RealmRepresentation testRealm = loadJson(getClass().getResourceAsStream("/model/authz-bug.json"), RealmRepresentation.class);
+        adminClient.realms().create(testRealm);
+
+        testingClient.server().run(session -> {
+            RealmModel realm = session.realms().getRealmByName("authz-bug");
+            AuthorizationProvider authz = session.getProvider(AuthorizationProvider.class);
+            ClientModel client = realm.getClientByClientId("appserver");
+            ResourceServer resourceServer = authz.getStoreFactory().getResourceServerStore().findById(client.getId());
+            Assert.assertEquals("AFFIRMATIVE", resourceServer.getDecisionStrategy().name());
         });
     }
 
