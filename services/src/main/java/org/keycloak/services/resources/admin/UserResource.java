@@ -18,10 +18,7 @@ package org.keycloak.services.resources.admin;
 
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
-import javax.ws.rs.BadRequestException;
-import javax.ws.rs.NotFoundException;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
-import org.keycloak.authentication.RequiredActionProvider;
 import org.keycloak.authentication.actiontoken.execactions.ExecuteActionsActionToken;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.Profile;
@@ -50,11 +47,11 @@ import org.keycloak.models.UserLoginFailureModel;
 import org.keycloak.models.UserManager;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.utils.ImportUserActions;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
-import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
@@ -75,10 +72,12 @@ import org.keycloak.services.validation.Validation;
 import org.keycloak.storage.ReadOnlyException;
 import org.keycloak.utils.ProfileHelper;
 
+import javax.ws.rs.BadRequestException;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
+import javax.ws.rs.NotFoundException;
 import javax.ws.rs.NotSupportedException;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
@@ -214,31 +213,7 @@ public class UserResource {
 
         if (rep.getFederationLink() != null) user.setFederationLink(rep.getFederationLink());
 
-        List<String> reqActions = rep.getRequiredActions();
-
-        if (reqActions != null) {
-            Set<String> allActions = new HashSet<>();
-            for (ProviderFactory factory : session.getKeycloakSessionFactory().getProviderFactories(RequiredActionProvider.class)) {
-                allActions.add(factory.getId());
-            }
-            for (String action : allActions) {
-                if (reqActions.contains(action)) {
-                    user.addRequiredAction(action);
-                } else if (removeMissingRequiredActions) {
-                    user.removeRequiredAction(action);
-                }
-            }
-        }
-
-        List<CredentialRepresentation> credentials = rep.getCredentials();
-        if (credentials != null) {
-            for (CredentialRepresentation credential : credentials) {
-                if (CredentialRepresentation.PASSWORD.equals(credential.getType()) && credential.isTemporary() != null
-                        && credential.isTemporary()) {
-                    user.addRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
-                }
-            }
-        }
+        ImportUserActions.ADD_DEFAULT_ACTIONS_REMOVE_MISSING.addUserActions(rep, user, session);
 
         if (rep.getAttributes() != null) {
             for (Map.Entry<String, List<String>> attr : rep.getAttributes().entrySet()) {

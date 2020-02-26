@@ -17,21 +17,6 @@
 
 package org.keycloak.models.utils;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.ListIterator;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.OAuth2Constants;
@@ -137,6 +122,21 @@ import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.storage.federated.UserFederatedStorageProvider;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.validation.ClientValidationUtil;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 public class RepresentationToModel {
 
@@ -1716,14 +1716,28 @@ public class RepresentationToModel {
 
     // Users
 
-    public static UserModel createUser(KeycloakSession session, RealmModel newRealm, UserRepresentation userRep) {
+    public static UserModel createUser(KeycloakSession session, RealmModel newRealm, UserRepresentation userRep, ImportUserActions importUserActions) {
         convertDeprecatedSocialProviders(userRep);
 
-        // Import users just to user storage. Don't federate
-        UserModel user = session.userLocalStorage().addUser(newRealm, userRep.getId(), userRep.getUsername(), false, false);
-        user.setEnabled(userRep.isEnabled() != null && userRep.isEnabled());
+        boolean applyDefaults = importUserActions != ImportUserActions.AS_IS;
+        UserModel user = addUser(session, newRealm, userRep, applyDefaults);
+        if (userRep.isEnabled() != null) user.setEnabled(userRep.isEnabled());
         user.setCreatedTimestamp(userRep.getCreatedTimestamp());
-        user.setEmail(userRep.getEmail());
+        if (applyDefaults) {
+            if (userRep.getUsername() != null && newRealm.isEditUsernameAllowed() && !newRealm.isRegistrationEmailAsUsername()) {
+                user.setUsername(userRep.getUsername());
+            }
+            if (userRep.getEmail() != null) {
+                String email = userRep.getEmail();
+                user.setEmail(email);
+                if(newRealm.isRegistrationEmailAsUsername()) {
+                    user.setUsername(email);
+                }
+            }
+            if (userRep.getEmail() == "") user.setEmail(null);
+        } else {
+            user.setEmail(userRep.getEmail());
+        }
         if (userRep.isEmailVerified() != null) user.setEmailVerified(userRep.isEmailVerified());
         user.setFirstName(userRep.getFirstName());
         user.setLastName(userRep.getLastName());
@@ -1736,15 +1750,7 @@ public class RepresentationToModel {
                 }
             }
         }
-        if (userRep.getRequiredActions() != null) {
-            for (String requiredAction : userRep.getRequiredActions()) {
-                try {
-                    user.addRequiredAction(UserModel.RequiredAction.valueOf(requiredAction.toUpperCase()));
-                } catch (IllegalArgumentException iae) {
-                    user.addRequiredAction(requiredAction);
-                }
-            }
-        }
+        importUserActions.addUserActions(userRep, user, session);
         createCredentials(userRep, session, newRealm, user, false);
         if (userRep.getFederatedIdentities() != null) {
             for (FederatedIdentityRepresentation identity : userRep.getFederatedIdentities()) {
@@ -1771,7 +1777,6 @@ public class RepresentationToModel {
                 throw new RuntimeException("Unable to find client specified for service account link. Client: " + clientId);
             }
             user.setServiceAccountClientLink(client.getId());
-            ;
         }
         if (userRep.getGroups() != null) {
             for (String path : userRep.getGroups()) {
@@ -1784,6 +1789,18 @@ public class RepresentationToModel {
             }
         }
         return user;
+    }
+
+    private static UserModel addUser(KeycloakSession session, RealmModel newRealm, UserRepresentation userRep, boolean applyDefaults) {
+        if (applyDefaults) {
+            // In this case, we potentially can created a Federated User (which is tested in UserStorageConsentTest)
+            return session.users().addUser(newRealm, userRep.getUsername());
+        }
+        return session.userLocalStorage().addUser(newRealm, userRep.getId(), userRep.getUsername(), false, false);
+    }
+
+    public static UserModel createUser(KeycloakSession session, RealmModel newRealm, UserRepresentation userRep) {
+        return createUser(session, newRealm, userRep, ImportUserActions.AS_IS);
     }
 
     public static void createCredentials(UserRepresentation userRep, KeycloakSession session, RealmModel realm, UserModel user, boolean adminRequest) {
