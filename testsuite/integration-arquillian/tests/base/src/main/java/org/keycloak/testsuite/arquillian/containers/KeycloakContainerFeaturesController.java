@@ -72,11 +72,13 @@ public class KeycloakContainerFeaturesController {
         private Profile.Feature feature;
         private boolean skipRestart;
         private FeatureAction action;
+        private boolean onlyForProduct;
 
-        public UpdateFeature(Profile.Feature feature, boolean skipRestart, FeatureAction action) {
+        public UpdateFeature(Profile.Feature feature, boolean skipRestart, FeatureAction action, boolean onlyForProduct) {
             this.feature = feature;
             this.skipRestart = skipRestart;
             this.action = action;
+            this.onlyForProduct = onlyForProduct;
         }
 
         /**
@@ -120,6 +122,10 @@ public class KeycloakContainerFeaturesController {
     }
 
     private void updateFeatures(List<UpdateFeature> updateFeatures) throws Exception {
+        updateFeatures = updateFeatures.stream()
+                .filter(this::skipForProduct)
+                .collect(Collectors.toList());
+
         updateFeatures.forEach(UpdateFeature::performAction);
 
         if (updateFeatures.stream().anyMatch(updateFeature -> !updateFeature.skipRestart)) {
@@ -130,20 +136,25 @@ public class KeycloakContainerFeaturesController {
         updateFeatures.forEach(UpdateFeature::assertPerformed);
     }
 
+    // KEYCLOAK-12958 WebAuthn profile product/project
+    private boolean skipForProduct(UpdateFeature feature) {
+        return !feature.onlyForProduct || Profile.getName().equals("product");
+    }
+
     private void checkAnnotatedElementForFeatureAnnotations(AnnotatedElement annotatedElement, State state) throws Exception {
         List<UpdateFeature> updateFeatureList = new ArrayList<>(0);
 
         if (annotatedElement.isAnnotationPresent(EnableFeatures.class) || annotatedElement.isAnnotationPresent(EnableFeature.class)) {
             updateFeatureList.addAll(Arrays.stream(annotatedElement.getAnnotationsByType(EnableFeature.class))
                     .map(annotation -> new UpdateFeature(annotation.value(), annotation.skipRestart(),
-                            state == State.BEFORE ? FeatureAction.ENABLE : FeatureAction.DISABLE))
+                            state == State.BEFORE ? FeatureAction.ENABLE : FeatureAction.DISABLE, annotation.onlyForProduct()))
                     .collect(Collectors.toList()));
         }
 
         if (annotatedElement.isAnnotationPresent(DisableFeatures.class) || annotatedElement.isAnnotationPresent(DisableFeature.class)) {
             updateFeatureList.addAll(Arrays.stream(annotatedElement.getAnnotationsByType(DisableFeature.class))
                     .map(annotation -> new UpdateFeature(annotation.value(), annotation.skipRestart(),
-                            state == State.BEFORE ? FeatureAction.DISABLE : FeatureAction.ENABLE))
+                            state == State.BEFORE ? FeatureAction.DISABLE : FeatureAction.ENABLE, annotation.onlyForProduct()))
                     .collect(Collectors.toList()));
         }
 

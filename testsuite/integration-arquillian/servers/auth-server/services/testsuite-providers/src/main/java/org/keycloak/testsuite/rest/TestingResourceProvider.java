@@ -74,6 +74,7 @@ import org.keycloak.testsuite.rest.resource.TestingExportImportResource;
 import org.keycloak.testsuite.runonserver.FetchOnServer;
 import org.keycloak.testsuite.runonserver.RunOnServer;
 import org.keycloak.testsuite.runonserver.SerializationUtil;
+import org.keycloak.testsuite.util.FeatureDeployerUtil;
 import org.keycloak.timer.TimerProvider;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.MediaType;
@@ -867,6 +868,8 @@ public class TestingResourceProvider implements RealmResourceProvider {
         if (Profile.isFeatureEnabled(featureProfile))
             return Response.ok().build();
 
+        FeatureDeployerUtil.initBeforeChangeFeature(featureProfile);
+
         System.setProperty("keycloak.profile.feature." + featureProfile.toString().toLowerCase(), "enabled");
 
         String jbossServerConfigDir = System.getProperty("jboss.server.config.dir");
@@ -876,6 +879,8 @@ public class TestingResourceProvider implements RealmResourceProvider {
         }
 
         Profile.init();
+
+        FeatureDeployerUtil.deployFactoriesAfterFeatureEnabled(featureProfile);
 
         if (Profile.isFeatureEnabled(featureProfile))
             return Response.ok().build();
@@ -899,7 +904,9 @@ public class TestingResourceProvider implements RealmResourceProvider {
         if (!Profile.isFeatureEnabled(featureProfile))
             return Response.ok().build();
 
-        System.getProperties().remove("keycloak.profile.feature." + featureProfile.toString().toLowerCase());
+        FeatureDeployerUtil.initBeforeChangeFeature(featureProfile);
+
+        disableFeatureProperties(featureProfile);
 
         String jbossServerConfigDir = System.getProperty("jboss.server.config.dir");
         // If we are in jboss-based container, we need to write profile.properties file, otherwise the change in system property will disappear after restart
@@ -909,12 +916,25 @@ public class TestingResourceProvider implements RealmResourceProvider {
 
         Profile.init();
 
+        FeatureDeployerUtil.undeployFactoriesAfterFeatureDisabled(featureProfile);
+
         if (!Profile.isFeatureEnabled(featureProfile))
             return Response.ok().build();
         else
             return Response.status(Response.Status.NOT_FOUND).build();
     }
 
+    /**
+     * KEYCLOAK-12958
+     */
+    private void disableFeatureProperties(Profile.Feature feature) {
+        Profile.Type type = Profile.getName().equals("product") ? feature.getTypeProduct() : feature.getTypeProject();
+        if (type.equals(Profile.Type.DEFAULT)) {
+            System.setProperty("keycloak.profile.feature." + feature.toString().toLowerCase(), "disabled");
+        } else {
+            System.getProperties().remove("keycloak.profile.feature." + feature.toString().toLowerCase());
+        }
+    }
 
     /**
      * This will send POST request to specified URL with specified form parameters. It's not easily possible to "trick" web driver to send POST

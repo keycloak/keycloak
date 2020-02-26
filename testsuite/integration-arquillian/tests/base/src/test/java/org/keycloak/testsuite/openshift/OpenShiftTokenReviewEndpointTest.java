@@ -57,7 +57,7 @@ import static org.keycloak.testsuite.ProfileAssume.assumeFeatureEnabled;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 
 @AuthServerContainerExclude(AuthServer.REMOTE)
-@EnableFeature(OPENSHIFT_INTEGRATION)
+@EnableFeature(value = OPENSHIFT_INTEGRATION, skipRestart = true)
 public class OpenShiftTokenReviewEndpointTest extends AbstractTestRealmKeycloakTest {
 
     private static boolean flowConfigured;

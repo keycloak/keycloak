@@ -19,15 +19,17 @@ package org.keycloak.authentication.authenticators.browser;
 import org.keycloak.Config;
 import org.keycloak.authentication.Authenticator;
 import org.keycloak.authentication.AuthenticatorFactory;
+import org.keycloak.common.Profile;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.credential.WebAuthnCredentialModel;
+import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 
 import java.util.List;
 
-public class WebAuthnAuthenticatorFactory implements AuthenticatorFactory {
+public class WebAuthnAuthenticatorFactory implements AuthenticatorFactory, EnvironmentDependentProviderFactory {
 
     public static final String PROVIDER_ID = "webauthn-authenticator";
 
@@ -90,5 +92,10 @@ public class WebAuthnAuthenticatorFactory implements AuthenticatorFactory {
     @Override
     public String getId() {
         return PROVIDER_ID;
+    }
+
+    @Override
+    public boolean isSupported() {
+        return Profile.isFeatureEnabled(Profile.Feature.WEB_AUTHN);
     }
 }

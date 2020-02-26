@@ -67,7 +67,7 @@ import static org.keycloak.testsuite.admin.ApiUtil.findUserByUsername;
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
 @AuthServerContainerExclude(AuthServer.REMOTE)
-@EnableFeature(OPENSHIFT_INTEGRATION)
+@EnableFeature(value = OPENSHIFT_INTEGRATION, skipRestart = true)
 public final class OpenshiftClientStorageTest extends AbstractTestRealmKeycloakTest {
 
     private static Undertow OPENSHIFT_API_SERVER;

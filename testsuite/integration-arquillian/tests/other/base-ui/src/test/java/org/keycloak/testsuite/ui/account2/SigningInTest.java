@@ -24,6 +24,7 @@ import org.keycloak.authentication.authenticators.browser.WebAuthnAuthenticatorF
 import org.keycloak.authentication.authenticators.browser.WebAuthnPasswordlessAuthenticatorFactory;
 import org.keycloak.authentication.requiredactions.WebAuthnPasswordlessRegisterFactory;
 import org.keycloak.authentication.requiredactions.WebAuthnRegisterFactory;
+import org.keycloak.common.Profile;
 import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.models.credential.WebAuthnCredentialModel;
@@ -37,6 +38,7 @@ import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderSimpleRepresentation;
 import org.keycloak.testsuite.WebAuthnAssume;
 import org.keycloak.testsuite.admin.Users;
+import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.auth.page.login.OTPSetup;
 import org.keycloak.testsuite.auth.page.login.UpdatePassword;
 import org.keycloak.testsuite.pages.webauthn.WebAuthnRegisterPage;
@@ -62,6 +64,9 @@ import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
+@EnableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true)
+@EnableFeature(value = Profile.Feature.ACCOUNT_API, skipRestart = true)
+@EnableFeature(value = Profile.Feature.WEB_AUTHN, skipRestart = true, onlyForProduct = true)
 public class SigningInTest extends BaseAccountPageTest {
     public static final String PASSWORD_LABEL = "My Password";
     public static final String WEBAUTHN_FLOW_ID = "75e2390e-f296-49e6-acf8-6d21071d7e10";

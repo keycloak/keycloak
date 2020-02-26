@@ -22,8 +22,10 @@ import org.keycloak.Config.Scope;
 import org.keycloak.authentication.DisplayTypeRequiredActionFactory;
 import org.keycloak.authentication.RequiredActionFactory;
 import org.keycloak.authentication.RequiredActionProvider;
+import org.keycloak.common.Profile;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.truststore.TruststoreProvider;
 
 import com.webauthn4j.anchor.KeyStoreTrustAnchorsProvider;
@@ -31,7 +33,7 @@ import com.webauthn4j.anchor.TrustAnchorsResolverImpl;
 import com.webauthn4j.validator.attestation.trustworthiness.certpath.NullCertPathTrustworthinessValidator;
 import com.webauthn4j.validator.attestation.trustworthiness.certpath.TrustAnchorCertPathTrustworthinessValidator;
 
-public class WebAuthnRegisterFactory implements RequiredActionFactory, DisplayTypeRequiredActionFactory {
+public class WebAuthnRegisterFactory implements RequiredActionFactory, DisplayTypeRequiredActionFactory, EnvironmentDependentProviderFactory {
 
     public static final String PROVIDER_ID = "webauthn-register";
 
@@ -88,4 +90,8 @@ public class WebAuthnRegisterFactory implements RequiredActionFactory, DisplayTy
         return "Webauthn Register";
     }
 
+    @Override
+    public boolean isSupported() {
+        return Profile.isFeatureEnabled(Profile.Feature.WEB_AUTHN);
+    }
 }
