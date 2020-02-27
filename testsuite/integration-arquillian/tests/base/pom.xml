@@ -126,6 +126,11 @@
             <groupId>org.apache.maven.resolver</groupId>
             <artifactId>maven-resolver-api</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpcore-osgi</artifactId>
+            <version>${apache.httpcomponents.httpcore.version}</version>
+        </dependency>
     </dependencies>
     
     <build>
