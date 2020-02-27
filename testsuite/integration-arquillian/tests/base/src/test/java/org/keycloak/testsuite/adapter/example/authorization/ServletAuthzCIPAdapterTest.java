@@ -45,8 +45,6 @@ import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
 @AppServerContainer(ContainerConstants.APP_SERVER_UNDERTOW)
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP71)
 @AppServerContainer(ContainerConstants.APP_SERVER_TOMCAT7)
-@AppServerContainer(ContainerConstants.APP_SERVER_TOMCAT8)
-@AppServerContainer(ContainerConstants.APP_SERVER_TOMCAT9)
 public class ServletAuthzCIPAdapterTest extends AbstractServletAuthzAdapterTest {
 
     @Deployment(name = RESOURCE_SERVER_ID, managed = false)
@@ -56,6 +54,8 @@ public class ServletAuthzCIPAdapterTest extends AbstractServletAuthzAdapterTest 
     }
 
     @Test
+    @AppServerContainer(ContainerConstants.APP_SERVER_TOMCAT8)
+    @AppServerContainer(ContainerConstants.APP_SERVER_TOMCAT9)
     public void testClaimInformationPoint() {
         performTests(() -> {
             login("alice", "alice");
@@ -76,6 +76,7 @@ public class ServletAuthzCIPAdapterTest extends AbstractServletAuthzAdapterTest 
     }
 
     @Test
+    // This test doesn't work with Tomcat, because KEYCLOAK-11712 was done only for wildfly
     public void testReuseBodyAfterClaimProcessing() {
         performTests(() -> {
             OAuthClient.AccessTokenResponse response = oauth.realm("servlet-authz").clientId("servlet-authz-app")
