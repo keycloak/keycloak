@@ -543,7 +543,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
         }
         
         if (!ignoreAudience && (token.getIssuedFor() != null && !getConfig().getClientId().equals(token.getIssuedFor()))) {
-            throw new IdentityBrokerException("Token not issued for client [" + getConfig().getClientId() + "]");
+            throw new IdentityBrokerException("Token issued for does not match client id");
         }
 
         String trustedIssuers = getConfig().getIssuer();
