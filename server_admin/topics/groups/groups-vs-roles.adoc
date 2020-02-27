@@ -4,7 +4,7 @@
 
 In the IT world the concepts of Group and Role are often blurred and interchangeable.
 In {project_name}, Groups are just a collection of users that you can apply roles and attributes to in one place.
-Roles define a type of user and applications assign permission and access control to roles
+Roles define a type of user and applications assign permission and access control to roles.
 
 Aren't <<_composite-roles,Composite Roles>> also similar to Groups?
 Logically they provide the same exact functionality, but the difference is conceptual.
