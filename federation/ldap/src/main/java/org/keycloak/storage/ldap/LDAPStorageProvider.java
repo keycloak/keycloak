@@ -50,6 +50,7 @@ import org.keycloak.storage.StorageId;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.storage.adapter.InMemoryUserAdapter;
+import org.keycloak.storage.adapter.UpdateOnlyChangeUserModelDelegate;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
 import org.keycloak.storage.ldap.idm.query.Condition;
 import org.keycloak.storage.ldap.idm.query.EscapeStrategy;
@@ -149,10 +150,10 @@ public class LDAPStorageProvider implements UserStorageProvider,
             return null;
         }
 
-        return proxy(realm, local, ldapObject);
+        return proxy(realm, local, ldapObject, false);
     }
 
-    protected UserModel proxy(RealmModel realm, UserModel local, LDAPObject ldapObject) {
+    protected UserModel proxy(RealmModel realm, UserModel local, LDAPObject ldapObject, boolean newUser) {
         UserModel existing = userManager.getManagedProxiedUser(local.getId());
         if (existing != null) {
             return existing;
@@ -174,17 +175,17 @@ public class LDAPStorageProvider implements UserStorageProvider,
 
         switch (editMode) {
             case READ_ONLY:
-                if (model.isImportEnabled()) {
-                    proxied = new ReadonlyLDAPUserModelDelegate(local, this);
-                } else {
                     proxied = new ReadOnlyUserModelDelegate(local);
-                }
                 break;
             case WRITABLE:
-                proxied = new WritableLDAPUserModelDelegate(local, this, ldapObject);
-                break;
             case UNSYNCED:
-                proxied = new UnsyncedLDAPUserModelDelegate(local, this);
+                // Any attempt to write data, which are not supported by the LDAP schema, should fail
+                // This check is skipped when register new user as there are many "generic" attributes always written (EG. enabled, emailVerified) and those are usually unsupported by LDAP schema
+                if (!model.isImportEnabled() && !newUser) {
+                    UserModel readOnlyDelegate = new ReadOnlyUserModelDelegate(local, ModelException::new);
+                    proxied = new LDAPWritesOnlyUserModelDelegate(readOnlyDelegate, this);
+                }
+                break;
         }
 
         List<ComponentModel> mappers = realm.getComponents(model.getId(), LDAPStorageMapper.class.getName());
@@ -192,6 +193,10 @@ public class LDAPStorageProvider implements UserStorageProvider,
         for (ComponentModel mapperModel : sortedMappers) {
             LDAPStorageMapper ldapMapper = mapperManager.getMapper(mapperModel);
             proxied = ldapMapper.proxy(ldapObject, proxied, realm);
+        }
+
+        if (!model.isImportEnabled()) {
+            proxied = new UpdateOnlyChangeUserModelDelegate(proxied);
         }
 
         userManager.setManagedProxiedUser(proxied, ldapObject);
@@ -272,7 +277,7 @@ public class LDAPStorageProvider implements UserStorageProvider,
         user.setSingleAttribute(LDAPConstants.LDAP_ENTRY_DN, ldapUser.getDn().toString());
 
         // Add the user to the default groups and add default required actions
-        UserModel proxy = proxy(realm, user, ldapUser);
+        UserModel proxy = proxy(realm, user, ldapUser, true);
         DefaultRoles.addDefaultRoles(realm, proxy);
 
         for (GroupModel g : realm.getDefaultGroups()) {
@@ -534,7 +539,7 @@ public class LDAPStorageProvider implements UserStorageProvider,
         }
         logger.debugf("Imported new user from LDAP to Keycloak DB. Username: [%s], Email: [%s], LDAP_ID: [%s], LDAP Entry DN: [%s]", imported.getUsername(), imported.getEmail(),
                 ldapUser.getUuid(), userDN);
-        UserModel proxy = proxy(realm, imported, ldapUser);
+        UserModel proxy = proxy(realm, imported, ldapUser, false);
         return proxy;
     }
 
@@ -566,7 +571,7 @@ public class LDAPStorageProvider implements UserStorageProvider,
             LDAPUtils.checkUuid(ldapUser, ldapIdentityStore.getConfig());
             // If email attribute mapper is set to "Always Read Value From LDAP" the user may be in Keycloak DB with an old email address
             if (ldapUser.getUuid().equals(user.getFirstAttribute(LDAPConstants.LDAP_ID))) {
-                return proxy(realm, user, ldapUser);
+                return proxy(realm, user, ldapUser, false);
             }
             throw new ModelDuplicateException("User with username '" + ldapUsername + "' already exists in Keycloak. It conflicts with LDAP user with email '" + email + "'");
         }
@@ -757,7 +762,7 @@ public class LDAPStorageProvider implements UserStorageProvider,
             } else {
                 LDAPObject ldapObject = loadAndValidateUser(realm, user);
                 if (ldapObject != null) {
-                    return proxy(realm, user, ldapObject);
+                    return proxy(realm, user, ldapObject, false);
                 } else {
                     logger.warnf("User with username [%s] aready exists and is linked to provider [%s] but is not valid. Stale LDAP_ID on local user is: %s",
                             username,  model.getName(), user.getFirstAttribute(LDAPConstants.LDAP_ID));

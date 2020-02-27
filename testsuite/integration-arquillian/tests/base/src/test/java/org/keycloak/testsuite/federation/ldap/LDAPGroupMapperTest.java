@@ -241,11 +241,8 @@ public class LDAPGroupMapperTest extends AbstractLDAPTest {
             LDAPTestUtils.updateGroupMapperConfigOptions(mapperModel, GroupMapperConfig.MODE, LDAPGroupMapperMode.READ_ONLY.toString());
             appRealm.updateComponent(mapperModel);
 
-            UserModel mary = session.users().getUserByUsername("marykeycloak", appRealm);
-
             GroupModel group1 = KeycloakModelUtils.findGroupByPath(appRealm, "/group1");
             GroupModel group11 = KeycloakModelUtils.findGroupByPath(appRealm, "/group1/group11");
-            GroupModel group12 = KeycloakModelUtils.findGroupByPath(appRealm, "/group1/group12");
 
             // Add some group mappings directly into LDAP
             GroupLDAPStorageMapper groupMapper = LDAPTestUtils.getGroupMapper(mapperModel, ctx.getLdapProvider(), appRealm);
@@ -253,32 +250,93 @@ public class LDAPGroupMapperTest extends AbstractLDAPTest {
             LDAPObject maryLdap = ctx.getLdapProvider().loadLDAPUserByUsername(appRealm, "marykeycloak");
             groupMapper.addGroupMappingInLDAP(appRealm, group1, maryLdap);
             groupMapper.addGroupMappingInLDAP(appRealm, group11, maryLdap);
-
-            // Add some group mapping to model
-            mary.joinGroup(group12);
-
-            // Assert that mary has both LDAP and DB mapped groups
-            Set<GroupModel> maryGroups = mary.getGroups();
-            Assert.assertEquals(5, maryGroups.size());
-            Assert.assertTrue(maryGroups.contains(group1));
-            Assert.assertTrue(maryGroups.contains(group11));
-            Assert.assertTrue(maryGroups.contains(group12));
-
-            long groupCount = mary.getGroupsCount();
-            Assert.assertEquals(5, groupCount);
-
-            Set<GroupModel> maryGroupsWithGr = mary.getGroups("gr", 0, 10);
-            Assert.assertEquals(5, maryGroupsWithGr.size());
-
-            Set<GroupModel> maryGroupsWithGr2 = mary.getGroups("gr", 1, 10);
-            Assert.assertEquals(4, maryGroupsWithGr2.size());
-
-            Set<GroupModel> maryGroupsWithGr3 = mary.getGroups("gr", 0, 1);
-            Assert.assertEquals(1, maryGroupsWithGr3.size());
-
-            Set<GroupModel> maryGroupsWith12 = mary.getGroups("12", 0, 10);
-            Assert.assertEquals(2, maryGroupsWith12.size());
         });
+
+        if (importEnabled) {
+            testingClient.server().run(session -> {
+                LDAPTestContext ctx = LDAPTestContext.init(session);
+                RealmModel appRealm = ctx.getRealm();
+
+                UserModel mary = session.users().getUserByUsername("marykeycloak", appRealm);
+                GroupModel group1 = KeycloakModelUtils.findGroupByPath(appRealm, "/group1");
+                GroupModel group11 = KeycloakModelUtils.findGroupByPath(appRealm, "/group1/group11");
+                GroupModel group12 = KeycloakModelUtils.findGroupByPath(appRealm, "/group1/group12");
+
+                // Add some group mapping to model
+                mary.joinGroup(group12);
+
+                // Assert that mary has both LDAP and DB mapped groups
+                Set<GroupModel> maryGroups = mary.getGroups();
+                Assert.assertEquals(5, maryGroups.size());
+                Assert.assertTrue(maryGroups.contains(group1));
+                Assert.assertTrue(maryGroups.contains(group11));
+                Assert.assertTrue(maryGroups.contains(group12));
+
+                long groupCount = mary.getGroupsCount();
+                Assert.assertEquals(5, groupCount);
+
+                Set<GroupModel> maryGroupsWithGr = mary.getGroups("gr", 0, 10);
+                Assert.assertEquals(5, maryGroupsWithGr.size());
+
+                Set<GroupModel> maryGroupsWithGr2 = mary.getGroups("gr", 1, 10);
+                Assert.assertEquals(4, maryGroupsWithGr2.size());
+
+                Set<GroupModel> maryGroupsWithGr3 = mary.getGroups("gr", 0, 1);
+                Assert.assertEquals(1, maryGroupsWithGr3.size());
+
+                Set<GroupModel> maryGroupsWith12 = mary.getGroups("12", 0, 10);
+                Assert.assertEquals(2, maryGroupsWith12.size());
+            });
+        } else {
+            testingClient.server().run(session -> {
+                LDAPTestContext ctx = LDAPTestContext.init(session);
+                RealmModel appRealm = ctx.getRealm();
+
+                UserModel mary = session.users().getUserByUsername("marykeycloak", appRealm);
+                GroupModel group12 = KeycloakModelUtils.findGroupByPath(appRealm, "/group1/group12");
+
+                // Add some group mapping to model. This should fail with no-import mode for LDAP provider READ_ONLY mode for the group mapper
+                // as it is not allowed to update group mappings in LDAP nor in the DB
+                try {
+                    mary.joinGroup(group12);
+                    Assert.fail("Not expected to successfully add group12 in no-import mode and READ_ONLY mode of the group mapper");
+                } catch (ModelException me) {
+                    // Ignore
+                }
+            });
+
+            testingClient.server().run(session -> {
+                LDAPTestContext ctx = LDAPTestContext.init(session);
+                RealmModel appRealm = ctx.getRealm();
+
+                UserModel mary = session.users().getUserByUsername("marykeycloak", appRealm);
+                GroupModel group1 = KeycloakModelUtils.findGroupByPath(appRealm, "/group1");
+                GroupModel group11 = KeycloakModelUtils.findGroupByPath(appRealm, "/group1/group11");
+                GroupModel group12 = KeycloakModelUtils.findGroupByPath(appRealm, "/group1/group12");
+
+                // Assert that mary has both LDAP and DB mapped groups
+                Set<GroupModel> maryGroups = mary.getGroups();
+                Assert.assertEquals(4, maryGroups.size());
+                Assert.assertTrue(maryGroups.contains(group1));
+                Assert.assertTrue(maryGroups.contains(group11));
+                Assert.assertFalse(maryGroups.contains(group12));
+
+                long groupCount = mary.getGroupsCount();
+                Assert.assertEquals(4, groupCount);
+
+                Set<GroupModel> maryGroupsWithGr = mary.getGroups("gr", 0, 10);
+                Assert.assertEquals(4, maryGroupsWithGr.size());
+
+                Set<GroupModel> maryGroupsWithGr2 = mary.getGroups("gr", 1, 10);
+                Assert.assertEquals(3, maryGroupsWithGr2.size());
+
+                Set<GroupModel> maryGroupsWithGr3 = mary.getGroups("gr", 0, 1);
+                Assert.assertEquals(1, maryGroupsWithGr3.size());
+
+                Set<GroupModel> maryGroupsWith12 = mary.getGroups("12", 0, 10);
+                Assert.assertEquals(1, maryGroupsWith12.size());
+            });
+        }
 
         // Assert that access through DB will have just DB mapped groups
         if (importEnabled) {

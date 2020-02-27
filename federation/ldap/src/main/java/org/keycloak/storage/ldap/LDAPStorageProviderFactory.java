@@ -253,6 +253,7 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
     @Override
     public void validateConfiguration(KeycloakSession session, RealmModel realm, ComponentModel config) throws ComponentValidationException {
         LDAPConfig cfg = new LDAPConfig(config.getConfig());
+        UserStorageProviderModel userStorageModel = new UserStorageProviderModel(config);
         String customFilter = cfg.getCustomUserSearchFilter();
         LDAPUtils.validateCustomLdapFilter(customFilter);
 
@@ -276,6 +277,10 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
 
         if(cfg.isStartTls() && cfg.getConnectionPooling() != null) {
             throw new ComponentValidationException("ldapErrorCantEnableStartTlsAndConnectionPooling");
+        }
+
+        if (!userStorageModel.isImportEnabled() && cfg.getEditMode() == UserStorageProvider.EditMode.UNSYNCED) {
+            throw new ComponentValidationException("ldapErrorCantEnableUnsyncedAndImportOff");
         }
     }
 
