@@ -7,7 +7,7 @@
         <div class="form-group">
             <label class="col-md-2 control-label" for="alias">{{:: 'alias' | translate}} </label>
             <div class="col-sm-6">
-                <input class="form-control" type="text" id="alias" name="alias" data-ng-model="flow.alias" autofocus required>
+                <input kc-no-reserved-chars class="form-control" type="text" id="alias" name="alias" data-ng-model="flow.alias" autofocus required>
             </div>
             <kc-tooltip>{{:: 'flow.alias.tooltip' | translate}}</kc-tooltip>
         </div>

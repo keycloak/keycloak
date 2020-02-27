@@ -40,7 +40,7 @@ public class PatternFlyClosableAlert extends AbstractPatternFlyAlert {
     }
 
     public boolean isWarning() {
-        return checkAlertType("waring");
+        return checkAlertType("warning");
     }
 
     public boolean isDanger() {

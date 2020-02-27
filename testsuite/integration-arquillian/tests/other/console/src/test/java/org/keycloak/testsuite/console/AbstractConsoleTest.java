@@ -137,6 +137,10 @@ public abstract class AbstractConsoleTest extends AbstractAuthTest {
     public void assertAlertDanger() {
         alert.assertDanger();
     }
+    
+    public void assertAlertWarning() {
+        alert.assertWarning();
+    }
 
     public ConfigureMenu configure() {
         return adminConsoleRealmPage.configure();
