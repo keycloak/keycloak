@@ -90,16 +90,32 @@ public class FullNameLDAPStorageMapper extends AbstractLDAPStorageMapper {
 
             TxAwareLDAPUserModelDelegate txDelegate = new TxAwareLDAPUserModelDelegate(delegate, ldapProvider, ldapUser) {
 
+                // Per-transaction state. Useful due the fact that "setFirstName" and "setLastName" called within same transaction
+                private String firstName;
+                private String lastName;
+
+                @Override
+                public String getFirstName() {
+                    return firstName != null? firstName : super.getFirstName();
+                }
+
+                @Override
+                public String getLastName() {
+                    return lastName != null ? lastName : super.getLastName();
+                }
+
                 @Override
                 public void setFirstName(String firstName) {
-                    super.setFirstName(firstName);
+                    this.firstName = firstName;
                     setFullNameToLDAPObject();
+                    super.setFirstName(firstName);
                 }
 
                 @Override
                 public void setLastName(String lastName) {
-                    super.setLastName(lastName);
+                    this.lastName = lastName;
                     setFullNameToLDAPObject();
+                    super.setLastName(lastName);
                 }
 
                 private void setFullNameToLDAPObject() {
@@ -108,7 +124,8 @@ public class FullNameLDAPStorageMapper extends AbstractLDAPStorageMapper {
                         logger.tracef("Pushing full name attribute to LDAP. Full name: %s", fullName);
                     }
 
-                    ensureTransactionStarted();
+                    markUpdatedAttributeInTransaction(UserModel.FIRST_NAME);
+                    markUpdatedAttributeInTransaction(UserModel.LAST_NAME);
 
                     String ldapFullNameAttrName = getLdapFullNameAttrName();
                     ldapUser.setSingleAttribute(ldapFullNameAttrName, fullName);

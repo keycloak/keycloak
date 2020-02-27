@@ -119,7 +119,9 @@ public class LDAPConstants {
     public static final String EMPTY_ATTRIBUTE_VALUE = " ";
     public static final String EMPTY_MEMBER_ATTRIBUTE_VALUE = "cn=empty-membership-placeholder";
 
-    public static final String CUSTOM_ATTRIBUTE_ENABLED = "enabled";
+    public static final String ENABLED = "enabled";
+
+
     public static final String CUSTOM_ATTRIBUTE_CREATE_DATE = "createDate";
     public static final String CUSTOM_ATTRIBUTE_EXPIRY_DATE = "expiryDate";
     public static final String ENTRY_UUID = "entryUUID";

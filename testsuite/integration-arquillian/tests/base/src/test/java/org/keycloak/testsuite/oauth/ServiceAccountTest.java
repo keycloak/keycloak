@@ -304,7 +304,7 @@ public class ServiceAccountTest extends AbstractKeycloakTest {
         representation.setCredentials(Arrays.asList(password));
 
         this.expectedException.expect(Matchers.allOf(Matchers.instanceOf(ClientErrorException.class), 
-                Matchers.hasProperty("response", Matchers.hasProperty("status", Matchers.is(409)))));
+                Matchers.hasProperty("response", Matchers.hasProperty("status", Matchers.is(400)))));
         this.expectedException.reportMissingExceptionWithMessage("Should fail, should not be possible to manage credentials for service accounts");
 
         serviceAccount.update(representation);

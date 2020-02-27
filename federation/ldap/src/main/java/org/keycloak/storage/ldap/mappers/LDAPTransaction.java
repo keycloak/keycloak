@@ -17,9 +17,11 @@
 
 package org.keycloak.storage.ldap.mappers;
 
+import java.util.HashSet;
+import java.util.Set;
+
 import org.jboss.logging.Logger;
 import org.keycloak.models.AbstractKeycloakTransaction;
-import org.keycloak.models.KeycloakTransaction;
 import org.keycloak.storage.ldap.LDAPStorageProvider;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
 
@@ -32,6 +34,9 @@ public class LDAPTransaction extends AbstractKeycloakTransaction {
 
     private final LDAPStorageProvider ldapProvider;
     private final LDAPObject ldapUser;
+
+    // Tracks the attributes updated in this transaction
+    private final Set<String> updatedAttributes = new HashSet<>();
 
     public LDAPTransaction(LDAPStorageProvider ldapProvider, LDAPObject ldapUser) {
         this.ldapProvider = ldapProvider;
@@ -52,6 +57,41 @@ public class LDAPTransaction extends AbstractKeycloakTransaction {
     @Override
     protected void rollbackImpl() {
         logger.warn("Transaction rollback! Ignoring LDAP updates for object " + ldapUser.getDn().toString());
+    }
+
+    /**
+     * Add attribute, which will be updated in LDAP in this transaction
+     *
+     * @param attributeName model attribute name (For example "firstName", "lastName", "street")
+     */
+    public void addUpdatedAttribute(String attributeName) {
+        updatedAttributes.add(attributeName);
+    }
+
+    /**
+     * @param attributeName model attribute name (For example "firstName", "lastName", "street")
+     * @return true if attribute was updated in this transaction
+     */
+    public boolean isAttributeUpdated(String attributeName) {
+        return updatedAttributes.contains(attributeName);
+    }
+
+    /**
+     * Add required action, which will be updated in LDAP in this transaction
+     *
+     * @param requiredActionName
+     */
+    public void addUpdatedRequiredAction(String requiredActionName) {
+        updatedAttributes.add("requiredAction(" + requiredActionName + ")");
+    }
+
+    /**
+     *
+     * @param requiredActionName
+     * @return true if requiredAction was updated in this transaction
+     */
+    public boolean isRequiredActionUpdated(String requiredActionName) {
+        return updatedAttributes.contains("requiredAction(" + requiredActionName + ")");
     }
 
 }

@@ -218,10 +218,7 @@ public class LDAPIdentityStore implements IdentityStore {
 
             String newDn = newLdapDn.toString();
 
-            // TODO:mposolda
-            if (logger.isInfoEnabled()) {
-                logger.infof("Renaming LDAP Object. Old DN: [%s], New DN: [%s]", oldDn, newDn);
-            }
+            logger.debugf("Renaming LDAP Object. Old DN: [%s], New DN: [%s]", oldDn, newDn);
 
             // In case, that there is conflict (For example already existing "CN=John Anthony"), the different DN is returned
             newDn = this.operationManager.renameEntry(oldDn, newDn, true);

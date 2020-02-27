@@ -22,113 +22,127 @@ import org.keycloak.models.UserModel;
 import org.keycloak.storage.ReadOnlyException;
 
 import java.util.List;
+import java.util.function.Function;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
 public class ReadOnlyUserModelDelegate extends UserModelDelegate {
+
+    private final Function<String, RuntimeException> exceptionCreator;
+
     public ReadOnlyUserModelDelegate(UserModel delegate) {
+        this(delegate, ReadOnlyException::new);
+    }
+
+    public ReadOnlyUserModelDelegate(UserModel delegate, Function<String, RuntimeException> exceptionCreator) {
         super(delegate);
+        this.exceptionCreator = exceptionCreator;
     }
 
     @Override
     public void setUsername(String username) {
-        throw new ReadOnlyException();
+        throw readOnlyException("username");
     }
 
     @Override
     public void setEnabled(boolean enabled) {
-        throw new ReadOnlyException();
+        throw readOnlyException("enabled");
     }
 
     @Override
     public void setSingleAttribute(String name, String value) {
-        throw new ReadOnlyException();
+        throw readOnlyException("attribute(" + name + ")");
     }
 
     @Override
     public void setAttribute(String name, List<String> values) {
-        throw new ReadOnlyException();
+        throw readOnlyException("attribute(" + name + ")");
     }
 
     @Override
     public void removeAttribute(String name) {
-        throw new ReadOnlyException();
+        throw readOnlyException("attribute(" + name + ")");
     }
 
     @Override
     public void addRequiredAction(String action) {
-        throw new ReadOnlyException();
+        throw readOnlyException("required action " + action);
     }
 
     @Override
     public void removeRequiredAction(String action) {
-        throw new ReadOnlyException();
+        throw readOnlyException("required action " + action);
     }
 
     @Override
     public void addRequiredAction(RequiredAction action) {
-        throw new ReadOnlyException();
+        throw readOnlyException("required action " + action);
     }
 
     @Override
     public void removeRequiredAction(RequiredAction action) {
-        throw new ReadOnlyException();
+        throw readOnlyException("required action " + action);
     }
 
     @Override
     public void setFirstName(String firstName) {
-        throw new ReadOnlyException();
+        throw readOnlyException("firstName");
     }
 
     @Override
     public void setLastName(String lastName) {
-        throw new ReadOnlyException();
+        throw readOnlyException("lastName");
     }
 
     @Override
     public void setEmail(String email) {
-        throw new ReadOnlyException();
+        throw readOnlyException("email");
     }
 
     @Override
     public void setEmailVerified(boolean verified) {
-        throw new ReadOnlyException();
+        throw readOnlyException("emailVerified");
     }
 
     @Override
     public void deleteRoleMapping(RoleModel role) {
-        throw new ReadOnlyException();
+        throw readOnlyException("role mapping for role " + role.getName());
     }
 
     @Override
     public void setFederationLink(String link) {
-        throw new ReadOnlyException();
+        throw readOnlyException("federationLink");
     }
 
     @Override
     public void setServiceAccountClientLink(String clientInternalId) {
-        throw new ReadOnlyException();
+        throw readOnlyException("serviceAccountClientLink");
     }
 
     @Override
     public void setCreatedTimestamp(Long timestamp) {
-        throw new ReadOnlyException();
+        throw readOnlyException("createdTimestamp");
     }
 
     @Override
     public void joinGroup(GroupModel group) {
-        throw new ReadOnlyException();
+        throw readOnlyException("group mapping for group " + group.getName());
     }
 
     @Override
     public void leaveGroup(GroupModel group) {
-        throw new ReadOnlyException();
+        throw readOnlyException("group mapping for group " + group.getName());
     }
 
     @Override
     public void grantRole(RoleModel role) {
-        throw new ReadOnlyException();
+        throw readOnlyException("role mapping for role " + role.getName());
+    }
+
+    private RuntimeException readOnlyException(String detail) {
+        String message = String.format("Not possible to write '%s' when updating user '%s'", detail, getUsername());
+        return exceptionCreator.apply(message);
     }
 }
