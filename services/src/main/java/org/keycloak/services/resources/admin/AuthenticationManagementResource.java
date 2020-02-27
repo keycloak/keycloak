@@ -72,6 +72,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import static javax.ws.rs.core.Response.Status.NOT_FOUND;
+import org.keycloak.utils.ReservedCharValidator;
 
 /**
  * @resource Authentication Management
@@ -214,6 +215,8 @@ public class AuthenticationManagementResource {
         if (realm.getFlowByAlias(flow.getAlias()) != null) {
             return ErrorResponse.exists("Flow " + flow.getAlias() + " already exists");
         }
+        
+        ReservedCharValidator.validate(flow.getAlias());
 
         AuthenticationFlowModel createdModel = realm.addAuthenticationFlow(RepresentationToModel.toModel(flow));
 
@@ -788,6 +791,8 @@ public class AuthenticationManagementResource {
     @Consumes(MediaType.APPLICATION_JSON)
     public Response newExecutionConfig(@PathParam("executionId") String execution, AuthenticatorConfigRepresentation json) {
         auth.realm().requireManageRealm();
+        
+        ReservedCharValidator.validate(json.getAlias());
 
         AuthenticationExecutionModel model = realm.getAuthenticationExecutionById(execution);
         if (model == null) {
@@ -1137,6 +1142,8 @@ public class AuthenticationManagementResource {
     public Response createAuthenticatorConfig(AuthenticatorConfigRepresentation rep) {
         auth.realm().requireManageRealm();
 
+        ReservedCharValidator.validate(rep.getAlias());
+        
         AuthenticatorConfigModel config = realm.addAuthenticatorConfig(RepresentationToModel.toModel(rep));
         adminEvent.operation(OperationType.CREATE).resource(ResourceType.AUTHENTICATOR_CONFIG).resourcePath(session.getContext().getUri(), config.getId()).representation(rep).success();
         return Response.created(session.getContext().getUri().getAbsolutePathBuilder().path(config.getId()).build()).build();
@@ -1202,11 +1209,12 @@ public class AuthenticationManagementResource {
     public void updateAuthenticatorConfig(@PathParam("id") String id, AuthenticatorConfigRepresentation rep) {
         auth.realm().requireManageRealm();
 
+        ReservedCharValidator.validate(rep.getAlias());
         AuthenticatorConfigModel exists = realm.getAuthenticatorConfigById(id);
         if (exists == null) {
             throw new NotFoundException("Could not find authenticator config");
-
         }
+        
         exists.setAlias(rep.getAlias());
         exists.setConfig(RepresentationToModel.removeEmptyString(rep.getConfig()));
         realm.updateAuthenticatorConfig(exists);

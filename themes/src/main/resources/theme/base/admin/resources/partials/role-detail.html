@@ -14,7 +14,7 @@
                 <label class="col-md-2 control-label" for="name"><span class="required" data-ng-show="create">*</span> {{:: 'role-name' | translate}}</label>
 
                 <div class="col-md-6">
-                    <input class="form-control" type="text" id="name" name="name" data-ng-model="role.name" autofocus
+                    <input kc-no-reserved-chars class="form-control" type="text" id="name" name="name" data-ng-model="role.name" autofocus
                            required data-ng-readonly="!create">
                 </div>
             </div>

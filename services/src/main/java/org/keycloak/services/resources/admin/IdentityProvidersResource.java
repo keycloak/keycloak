@@ -55,6 +55,7 @@ import java.util.List;
 import java.util.Map;
 
 import static javax.ws.rs.core.Response.Status.BAD_REQUEST;
+import org.keycloak.utils.ReservedCharValidator;
 
 /**
  * @resource Identity Providers
@@ -134,6 +135,9 @@ public class IdentityProvidersResource {
         if (!(data.containsKey("providerId") && data.containsKey("fromUrl"))) {
             throw new BadRequestException();
         }
+        
+        ReservedCharValidator.validate((String)data.get("alias"));
+        
         String providerId = data.get("providerId").toString();
         String from = data.get("fromUrl").toString();
         InputStream inputStream = session.getProvider(HttpClientProvider.class).get(from);
@@ -182,6 +186,8 @@ public class IdentityProvidersResource {
     public Response create(IdentityProviderRepresentation representation) {
         this.auth.realm().requireManageIdentityProviders();
 
+        ReservedCharValidator.validate(representation.getAlias());
+        
         try {
             IdentityProviderModel identityProvider = RepresentationToModel.toModel(realm, representation, session);
             this.realm.addIdentityProvider(identityProvider);

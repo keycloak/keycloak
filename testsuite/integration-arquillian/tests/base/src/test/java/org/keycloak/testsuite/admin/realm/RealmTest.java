@@ -157,6 +157,13 @@ public class RealmTest extends AbstractAdminTest {
 
         Assert.assertNames(adminClient.realms().findAll(), "master", AuthRealm.TEST, REALM_NAME);
     }
+    
+    @Test(expected = BadRequestException.class)
+    public void createRealmRejectReservedChar() {
+        RealmRepresentation rep = new RealmRepresentation();
+        rep.setRealm("new-re;alm");
+        adminClient.realms().create(rep);
+    }
 
     /**
      * Checks attributes exposed as fields are not also included as attributes
@@ -379,6 +386,13 @@ public class RealmTest extends AbstractAdminTest {
         checkRealmEventsConfigRepresentation(repOrig, actual);
     }
 
+    @Test(expected = BadRequestException.class)
+    public void updateRealmWithReservedCharInName() {
+        RealmRepresentation rep = realm.toRepresentation();
+        rep.setRealm("fo#o");
+        realm.update(rep);
+    }
+    
     @Test
     public void updateRealm() {
         // first change

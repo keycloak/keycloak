@@ -87,6 +87,7 @@ import java.util.Map;
 import java.util.Properties;
 
 import static java.lang.Boolean.TRUE;
+import org.keycloak.utils.ReservedCharValidator;
 
 
 /**
@@ -565,6 +566,9 @@ public class ClientResource {
         if (node == null) {
             throw new BadRequestException("Node not found in params");
         }
+        
+        ReservedCharValidator.validate(node);
+        
         if (logger.isDebugEnabled()) logger.debug("Register node: " + node);
         client.registerNode(node, Time.currentTime());
         adminEvent.operation(OperationType.CREATE).resource(ResourceType.CLUSTER_NODE).resourcePath(session.getContext().getUri(), node).success();

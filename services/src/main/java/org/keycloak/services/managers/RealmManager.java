@@ -59,6 +59,7 @@ import org.keycloak.services.clientregistration.policy.DefaultClientRegistration
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import org.keycloak.utils.ReservedCharValidator;
 
 /**
  * Per request object
@@ -98,6 +99,7 @@ public class RealmManager {
 
     public RealmModel createRealm(String id, String name) {
         if (id == null) id = KeycloakModelUtils.generateId();
+        ReservedCharValidator.validate(name);
         RealmModel realm = model.createRealm(id, name);
         realm.setName(name);
 
@@ -505,6 +507,7 @@ public class RealmManager {
             id = KeycloakModelUtils.generateId();
         }
         RealmModel realm = model.createRealm(id, rep.getRealm());
+        ReservedCharValidator.validate(rep.getRealm());
         realm.setName(rep.getRealm());
 
         // setup defaults

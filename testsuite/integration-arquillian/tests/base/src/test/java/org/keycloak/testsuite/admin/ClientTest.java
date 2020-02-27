@@ -422,6 +422,16 @@ public class ClientTest extends AbstractAdminTest {
         return client;
     }
 
+    @Test (expected = BadRequestException.class)
+    public void testAddNodeWithReservedCharacter() {
+        testingClient.testApp().clearAdminActions();
+
+        ClientRepresentation client = createAppClient();
+        String id = client.getId();
+
+        realm.clients().get(id).registerNode(Collections.singletonMap("node", "foo#"));
+    }
+    
     @Test
     public void nodes() {
         testingClient.testApp().clearAdminActions();

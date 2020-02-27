@@ -124,6 +124,17 @@ public class IdentityProviderTest extends AbstractAdminTest {
     }
 
     @Test
+    public void testCreateWithReservedCharacterForAlias() {
+        IdentityProviderRepresentation newIdentityProvider = createRep("ne$&w-identity-provider", "oidc");
+
+        newIdentityProvider.getConfig().put("clientId", "clientId");
+        newIdentityProvider.getConfig().put("clientSecret", "some secret value");
+
+        Response response = realm.identityProviders().create(newIdentityProvider);
+        Assert.assertEquals(400, response.getStatus());
+    }
+    
+    @Test
     public void testCreate() {
         IdentityProviderRepresentation newIdentityProvider = createRep("new-identity-provider", "oidc");
 

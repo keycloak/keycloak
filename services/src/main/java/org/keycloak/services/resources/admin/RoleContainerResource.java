@@ -17,7 +17,6 @@
 
 package org.keycloak.services.resources.admin;
 
-import org.apache.commons.lang.StringUtils;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import javax.ws.rs.NotFoundException;
 import org.keycloak.events.admin.OperationType;
@@ -61,6 +60,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.keycloak.utils.ReservedCharValidator;
 
 /**
  * @resource Roles
@@ -136,6 +136,8 @@ public class RoleContainerResource extends RoleResource {
         if (rep.getName() == null) {
             throw new BadRequestException();
         }
+        
+        ReservedCharValidator.validate(rep.getName());
 
         try {
             RoleModel role = roleContainer.addRole(rep.getName());
