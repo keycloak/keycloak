@@ -36,6 +36,7 @@ import org.keycloak.services.DefaultKeycloakSessionFactory;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -107,11 +108,8 @@ public abstract class CustomKeycloakTask implements CustomSqlChange {
         try {
             String correctedTableName = database.correctObjectName("REALM", Table.class);
             if (SnapshotGeneratorFactory.getInstance().has(new Table().setName(correctedTableName), database)) {
-                ResultSet resultSet = connection.createStatement().executeQuery("SELECT ID FROM " + getTableName(correctedTableName));
-                try {
+                try (Statement st = connection.createStatement(); ResultSet resultSet = st.executeQuery("SELECT ID FROM " + getTableName(correctedTableName))) {
                     return (resultSet.next());
-                } finally {
-                    resultSet.close();
                 }
             } else {
                 return false;
