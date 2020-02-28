@@ -120,7 +120,6 @@ public class JpaRealmProvider implements RealmProvider {
             RealmModel realm = session.realms().getRealm(id);
             if (realm != null) realms.add(realm);
             em.flush();
-            em.clear();
         }
         return realms;
     }
