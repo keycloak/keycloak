@@ -160,7 +160,7 @@ openid-provider-proxy: http://proxy.example.com:8080
 
 ==== HTTP routing
 
-By default all requests will be proxyed on to the upstream, if you wish to ensure all requests are authentication you can use this:
+By default all requests will be proxyed on to the upstream, if you wish to ensure all requests are authenticated you can use this:
 
 [source,bash]
 ----
