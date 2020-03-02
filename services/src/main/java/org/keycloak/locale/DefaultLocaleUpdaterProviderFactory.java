@@ -16,25 +16,32 @@
  */
 package org.keycloak.locale;
 
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserModel;
-import org.keycloak.provider.Provider;
+import org.keycloak.Config;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
 
-import java.util.Locale;
+public class DefaultLocaleUpdaterProviderFactory implements LocaleUpdaterProviderFactory {
 
-public interface LocaleSelectorProvider extends Provider {
+    @Override
+    public LocaleUpdaterProvider create(KeycloakSession session) {
+        return new DefaultLocaleUpdaterProvider(session);
+    }
 
-    String LOCALE_COOKIE = "KEYCLOAK_LOCALE";
-    String KC_LOCALE_PARAM = "kc_locale";
+    @Override
+    public void init(Config.Scope config) {
+    }
 
-    String CLIENT_REQUEST_LOCALE = "locale_client_requested";
-    String USER_REQUEST_LOCALE = "locale_user_requested";
+    @Override
+    public void postInit(KeycloakSessionFactory factory) {
+    }
 
-    /**
-     * Resolve the locale which should be used for the request
-     * @param user
-     * @return
-     */
-    Locale resolveLocale(RealmModel realm, UserModel user);
+    @Override
+    public void close() {
+    }
+
+    @Override
+    public String getId() {
+        return "default";
+    }
 
 }

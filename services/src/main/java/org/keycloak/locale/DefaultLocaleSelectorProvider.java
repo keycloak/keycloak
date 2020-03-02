@@ -43,8 +43,7 @@ public class DefaultLocaleSelectorProvider implements LocaleSelectorProvider {
     }
 
     @Override
-    public Locale resolveLocale(UserModel user) {
-        RealmModel realm = session.getContext().getRealm();
+    public Locale resolveLocale(RealmModel realm, UserModel user) {
         HttpHeaders requestHeaders = session.getContext().getRequestHeaders();
         AuthenticationSessionModel session = this.session.getContext().getAuthenticationSession();
 
@@ -63,29 +62,6 @@ public class DefaultLocaleSelectorProvider implements LocaleSelectorProvider {
         }
 
         return Locale.ENGLISH;
-    }
-
-    public void updateUsersLocale(UserModel user, String locale) {
-        if (!locale.equals(user.getFirstAttribute("locale"))) {
-            try {
-                user.setSingleAttribute(UserModel.LOCALE, locale);
-                updateLocaleCookie(session.getContext().getRealm(), locale, session.getContext().getUri());
-            } catch (ReadOnlyException e) {
-                logger.debug("Attempt to store 'locale' attribute to read only user model. Ignoring exception", e);
-            }
-        }
-        logger.debugv("Setting locale for user {0} to {1}", user.getUsername(), locale);
-    }
-
-    public void updateLocaleCookie(RealmModel realm, String locale, UriInfo uriInfo) {
-        boolean secure = realm.getSslRequired().isRequired(uriInfo.getRequestUri().getHost());
-        CookieHelper.addCookie(LocaleSelectorProvider.LOCALE_COOKIE, locale, AuthenticationManager.getRealmCookiePath(realm, uriInfo), null, null, -1, secure, true);
-        logger.debugv("Updating locale cookie to {0}", locale);
-    }
-
-    public void expireLocaleCookie(RealmModel realm, UriInfo uriInfo) {
-        boolean secure = realm.getSslRequired().isRequired(uriInfo.getRequestUri().getHost());
-        CookieHelper.addCookie(LocaleSelectorProvider.LOCALE_COOKIE, "", AuthenticationManager.getRealmCookiePath(realm, uriInfo), null, "Expiring cookie", 0, secure, true);
     }
 
     private Locale getUserLocale(RealmModel realm, AuthenticationSessionModel session, UserModel user, HttpHeaders requestHeaders) {

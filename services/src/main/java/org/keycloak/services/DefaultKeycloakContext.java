@@ -129,7 +129,7 @@ public class DefaultKeycloakContext implements KeycloakContext {
 
     @Override
     public Locale resolveLocale(UserModel user) {
-        return session.getProvider(LocaleSelectorProvider.class).resolveLocale(user);
+        return session.getProvider(LocaleSelectorProvider.class).resolveLocale(getRealm(), user);
     }
     
     @Override

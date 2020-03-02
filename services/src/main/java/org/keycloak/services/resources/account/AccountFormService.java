@@ -40,6 +40,7 @@ import org.keycloak.forms.account.AccountPages;
 import org.keycloak.forms.account.AccountProvider;
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.locale.LocaleSelectorProvider;
+import org.keycloak.locale.LocaleUpdaterProvider;
 import org.keycloak.models.AccountRoles;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
@@ -225,8 +226,8 @@ public class AccountFormService extends AbstractSecuredLocalService {
 
             String locale = session.getContext().getUri().getQueryParameters().getFirst(LocaleSelectorProvider.KC_LOCALE_PARAM);
             if (locale != null) {
-                LocaleSelectorProvider localeSelectorProvider = session.getProvider(LocaleSelectorProvider.class);
-                localeSelectorProvider.updateUsersLocale(auth.getUser(), locale);
+                LocaleUpdaterProvider updater = session.getProvider(LocaleUpdaterProvider.class);
+                updater.updateUsersLocale(auth.getUser(), locale);
             }
 
             return account.createResponse(page);
