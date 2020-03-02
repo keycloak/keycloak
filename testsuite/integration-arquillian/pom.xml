@@ -561,6 +561,8 @@
         <profile>
             <id>db-mssql2017</id>
             <properties>
+                <exclude.test>**/concurrency/**/*Test.java</exclude.test>
+
                 <docker.database.image>microsoft/mssql-server-linux:2017-GA</docker.database.image>
                 <docker.database.port>1433</docker.database.port>
                 <docker.database.skip>false</docker.database.skip>
