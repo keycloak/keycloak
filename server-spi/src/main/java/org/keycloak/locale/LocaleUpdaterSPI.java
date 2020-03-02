@@ -16,25 +16,30 @@
  */
 package org.keycloak.locale;
 
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserModel;
 import org.keycloak.provider.Provider;
+import org.keycloak.provider.ProviderFactory;
+import org.keycloak.provider.Spi;
 
-import java.util.Locale;
+public class LocaleUpdaterSPI implements Spi {
 
-public interface LocaleSelectorProvider extends Provider {
+    @Override
+    public boolean isInternal() {
+        return false;
+    }
 
-    String LOCALE_COOKIE = "KEYCLOAK_LOCALE";
-    String KC_LOCALE_PARAM = "kc_locale";
+    @Override
+    public String getName() {
+        return "localeUpdater";
+    }
 
-    String CLIENT_REQUEST_LOCALE = "locale_client_requested";
-    String USER_REQUEST_LOCALE = "locale_user_requested";
+    @Override
+    public Class<? extends Provider> getProviderClass() {
+        return LocaleUpdaterProvider.class;
+    }
 
-    /**
-     * Resolve the locale which should be used for the request
-     * @param user
-     * @return
-     */
-    Locale resolveLocale(RealmModel realm, UserModel user);
+    @Override
+    public Class<? extends ProviderFactory> getProviderFactoryClass() {
+        return LocaleUpdaterProviderFactory.class;
+    }
 
 }

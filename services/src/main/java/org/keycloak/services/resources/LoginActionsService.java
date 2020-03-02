@@ -48,6 +48,8 @@ import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.exceptions.TokenNotActiveException;
 import org.keycloak.locale.LocaleSelectorProvider;
+import org.keycloak.locale.LocaleSelectorSPI;
+import org.keycloak.locale.LocaleUpdaterProvider;
 import org.keycloak.models.ActionTokenKeyModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.ClientModel;
@@ -269,8 +271,9 @@ public class LoginActionsService {
             String locale = session.getContext().getUri().getQueryParameters().getFirst(LocaleSelectorProvider.KC_LOCALE_PARAM);
             if (locale != null) {
                 authSession.setAuthNote(LocaleSelectorProvider.USER_REQUEST_LOCALE, locale);
-                LocaleSelectorProvider localeSelectorProvider = session.getProvider(LocaleSelectorProvider.class);
-                localeSelectorProvider.updateLocaleCookie(realm, locale, session.getContext().getUri());
+
+                LocaleUpdaterProvider localeUpdater = session.getProvider(LocaleUpdaterProvider.class);
+                localeUpdater.updateLocaleCookie(locale);
             }
         }
     }

@@ -5,6 +5,7 @@ import org.keycloak.authentication.RequiredActionContext;
 import org.keycloak.authentication.RequiredActionFactory;
 import org.keycloak.authentication.RequiredActionProvider;
 import org.keycloak.locale.LocaleSelectorProvider;
+import org.keycloak.locale.LocaleUpdaterProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.UserModel;
@@ -20,15 +21,17 @@ public class UpdateUserLocaleAction implements RequiredActionProvider, RequiredA
     public void evaluateTriggers(RequiredActionContext context) {
         String userRequestedLocale = context.getAuthenticationSession().getAuthNote(LocaleSelectorProvider.USER_REQUEST_LOCALE);
         if (userRequestedLocale != null) {
-            LocaleSelectorProvider provider = context.getSession().getProvider(LocaleSelectorProvider.class);
-            provider.updateUsersLocale(context.getUser(), userRequestedLocale);
+            LocaleUpdaterProvider updater = context.getSession().getProvider(LocaleUpdaterProvider.class);
+            updater.updateUsersLocale(context.getUser(), userRequestedLocale);
         } else {
             String userLocale = context.getUser().getFirstAttribute(UserModel.LOCALE);
-            LocaleSelectorProvider provider = context.getSession().getProvider(LocaleSelectorProvider.class);
+
             if (userLocale != null) {
-                provider.updateLocaleCookie(context.getRealm(), userLocale, context.getUriInfo());
+                LocaleUpdaterProvider updater = context.getSession().getProvider(LocaleUpdaterProvider.class);
+                updater.updateLocaleCookie(userLocale);
             } else {
-                provider.expireLocaleCookie(context.getRealm(), context.getUriInfo());
+                LocaleUpdaterProvider updater = context.getSession().getProvider(LocaleUpdaterProvider.class);
+                updater.expireLocaleCookie();
             }
         }
     }
