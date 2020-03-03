@@ -58,6 +58,8 @@ import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.authorization.util.Permissions;
 import org.keycloak.authorization.util.Tokens;
 import org.keycloak.common.util.Base64Url;
+import org.keycloak.events.Details;
+import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
@@ -125,6 +127,7 @@ public class AuthorizationTokenService {
                 identity = new KeycloakIdentity(authorization.getKeycloakSession(),
                         Tokens.getAccessToken(request.getSubjectToken(), authorization.getKeycloakSession()));
             } catch (Exception cause) {
+                fireErrorEvent(request.getEvent(), Errors.INVALID_TOKEN, cause);
                 throw new CorsErrorResponseException(request.getCors(), "unauthorized_client", "Invalid identity", Status.BAD_REQUEST);
             }
 
@@ -144,6 +147,7 @@ public class AuthorizationTokenService {
             try {
                 idToken = new TokenManager().verifyIDTokenSignature(keycloakSession, subjectToken);
             } catch (Exception cause) {
+                fireErrorEvent(request.getEvent(), Errors.INVALID_SIGNATURE, cause);
                 throw new CorsErrorResponseException(request.getCors(), "unauthorized_client", "Invalid signature", Status.BAD_REQUEST);
             }
 
@@ -152,6 +156,7 @@ public class AuthorizationTokenService {
             try {
                 identity = new KeycloakIdentity(keycloakSession, idToken);
             } catch (Exception cause) {
+                fireErrorEvent(request.getEvent(), Errors.INVALID_TOKEN, cause);
                 throw new CorsErrorResponseException(request.getCors(), "unauthorized_client", "Invalid identity", Status.BAD_REQUEST);
             }
 
@@ -165,6 +170,12 @@ public class AuthorizationTokenService {
         return INSTANCE;
     }
 
+    private static void fireErrorEvent(EventBuilder event, String error, Exception cause) {
+        event.detail(Details.REASON, cause == null || cause.getMessage() == null ? "<unknown>" : cause.getMessage())
+                .error(error);
+        logger.debug(event.getEvent().getType(), cause);
+    }
+    
     public Response authorize(KeycloakAuthorizationRequest request) {
         if (request == null) {
             throw new CorsErrorResponseException(request.getCors(), OAuthErrorException.INVALID_GRANT, "Invalid authorization request.", Status.BAD_REQUEST);
