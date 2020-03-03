@@ -62,6 +62,7 @@ import org.keycloak.authorization.client.Configuration;
 import org.keycloak.authorization.client.representation.TokenIntrospectionResponse;
 import org.keycloak.authorization.client.util.HttpResponseException;
 import org.keycloak.common.util.Base64Url;
+import org.keycloak.events.EventType;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.mappers.HardcodedClaim;
@@ -70,7 +71,9 @@ import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessToken.Authorization;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
+import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.authorization.AuthorizationRequest;
 import org.keycloak.representations.idm.authorization.AuthorizationRequest.Metadata;
@@ -1928,6 +1931,61 @@ public class EntitlementAPITest extends AbstractAuthzTest {
             assertEquals(400, HttpResponseException.class.cast(expected).getStatusCode());
             assertTrue(HttpResponseException.class.cast(expected).toString().contains("unauthorized_client"));
         }
+    }
+
+    @Test
+    public void testInvalidTokenSignature() throws Exception {
+        RealmEventsConfigRepresentation eventConfig = getRealm().getRealmEventsConfig();
+        
+        eventConfig.setEventsEnabled(true);
+        eventConfig.setEnabledEventTypes(Arrays.asList(EventType.PERMISSION_TOKEN_ERROR.name()));
+        
+        getRealm().updateRealmEventsConfig(eventConfig);
+        
+        ClientResource client = getClient(getRealm(), RESOURCE_SERVER_TEST);
+        AuthorizationResource authorization = client.authorization();
+
+        JSPolicyRepresentation policy = new JSPolicyRepresentation();
+
+        policy.setName(KeycloakModelUtils.generateId());
+        policy.setCode("$evaluation.grant();");
+
+        authorization.policies().js().create(policy).close();
+
+        ResourceRepresentation resource = new ResourceRepresentation();
+
+        resource.setName("Sensors");
+
+        try (Response response = authorization.resources().create(resource)) {
+            response.readEntity(ResourceRepresentation.class);
+        }
+
+        ResourcePermissionRepresentation permission = new ResourcePermissionRepresentation();
+
+        permission.setName("View Sensor");
+        permission.addPolicy(policy.getName());
+
+        authorization.permissions().resource().create(permission).close();
+
+        String accessToken = new OAuthClient().realm("authz-test").clientId(RESOURCE_SERVER_TEST).doGrantAccessTokenRequest("secret", "marta", "password").getAccessToken();
+        AuthzClient authzClient = getAuthzClient(AUTHZ_CLIENT_CONFIG);
+        AuthorizationRequest request = new AuthorizationRequest();
+
+        request.addPermission("Sensors");
+        request.setSubjectToken(accessToken + "i");
+
+        try {
+            authzClient.authorization().authorize(request);
+            fail("should fail, session invalidated");
+        } catch (Exception e) {
+            Throwable expected = e.getCause();
+            assertEquals(400, HttpResponseException.class.cast(expected).getStatusCode());
+            assertTrue(HttpResponseException.class.cast(expected).toString().contains("unauthorized_client"));
+        }
+
+        List<EventRepresentation> events = getRealm()
+                .getEvents(Arrays.asList(EventType.PERMISSION_TOKEN_ERROR.name()), null, null, null, null, null, null, null);
+        assertEquals(1, events.size());
     }
 
     @Test
