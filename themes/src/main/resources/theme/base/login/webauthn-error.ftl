@@ -37,10 +37,19 @@
             </table>
         </#if>
 
-        <div id="kc-error-message">
-            <input tabindex="4" onclick="refreshPage()" type="button"
-                   class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonBlockClass!} ${properties.kcButtonLargeClass!}"
-                   name="try-again" id="kc-try-again" value="${kcSanitize(msg("doTryAgain"))?no_esc}"/>
-        </div>
+        <input tabindex="4" onclick="refreshPage()" type="button"
+               class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonBlockClass!} ${properties.kcButtonLargeClass!}"
+               name="try-again" id="kc-try-again" value="${kcSanitize(msg("doTryAgain"))?no_esc}"
+        />
+
+        <#if isAppInitiatedAction??>
+            <form action="${url.loginAction}" class="${properties.kcFormClass!}" id="kc-webauthn-settings-form" method="post">
+                <button type="submit"
+                        class="${properties.kcButtonClass!} ${properties.kcButtonDefaultClass!} ${properties.kcButtonBlockClass!} ${properties.kcButtonLargeClass!}"
+                        id="cancelWebAuthnAIA" name="cancel-aia" value="true"/>${msg("doCancel")}
+                </button>
+            </form>
+        </#if>
+
     </#if>
 </@layout.registrationLayout>

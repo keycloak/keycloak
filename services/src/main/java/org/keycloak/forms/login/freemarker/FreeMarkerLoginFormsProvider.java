@@ -194,10 +194,6 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
         if (status != null) {
             attributes.put("statusCode", status.getStatusCode());
         }
-        
-        if (authenticationSession != null && authenticationSession.getClientNote(Constants.KC_ACTION_EXECUTING) != null) {
-            attributes.put("isAppInitiatedAction", true);
-        }
 
         switch (page) {
             case LOGIN_CONFIG_TOTP:
@@ -446,6 +442,10 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
         }
         if (realm != null && user != null && session != null) {
             attributes.put("authenticatorConfigured", new AuthenticatorConfiguredMethod(realm, user, session));
+        }
+
+        if (authenticationSession != null && authenticationSession.getClientNote(Constants.KC_ACTION_EXECUTING) != null) {
+            attributes.put("isAppInitiatedAction", true);
         }
     }
 

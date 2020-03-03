@@ -20,6 +20,9 @@ package org.keycloak.testsuite.pages.webauthn;
 import org.junit.Assert;
 import org.keycloak.testsuite.pages.AbstractPage;
 import org.openqa.selenium.Alert;
+import org.openqa.selenium.NoSuchElementException;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.support.FindBy;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
@@ -31,6 +34,23 @@ import org.openqa.selenium.support.ui.WebDriverWait;
  */
 public class WebAuthnRegisterPage extends AbstractPage {
 
+    // Available only with AIA
+    @FindBy(id = "registerWebAuthnAIA")
+    private WebElement registerAIAButton;
+
+    // Available only with AIA
+    @FindBy(id = "cancelWebAuthnAIA")
+    private WebElement cancelAIAButton;
+
+    public void confirmAIA() {
+        Assert.assertTrue("It only works with AIA", isAIA());
+        registerAIAButton.click();
+    }
+
+    public void cancelAIA() {
+        Assert.assertTrue("It only works with AIA", isAIA());
+        cancelAIAButton.click();
+    }
 
     public void registerWebAuthnCredential(String authenticatorLabel) {
         // label edit after registering authenicator by .create()
@@ -43,8 +63,20 @@ public class WebAuthnRegisterPage extends AbstractPage {
         promptDialog.accept();
     }
 
+    private boolean isAIA() {
+        try {
+            registerAIAButton.getText();
+            cancelAIAButton.getText();
+            return true;
+        } catch (NoSuchElementException e) {
+            return false;
+        }
+    }
 
     public boolean isCurrent() {
+        if (isAIA()) {
+            return true;
+        }
         // Cant verify the page in case that prompt is shown. Prompt is shown immediately when WebAuthnRegisterPage is displayed
         throw new UnsupportedOperationException();
     }

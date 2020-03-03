@@ -127,6 +127,10 @@ div.kc-logo-text span {
     text-align: center;
 }
 
+#kc-webauthn-settings-form{
+    padding-top:8px;
+}
+
 /* #kc-content-wrapper {
     overflow-y: hidden;
 } */
