@@ -3,8 +3,10 @@
 ==== Confidential Client Credentials
 
 If you've set the client's <<_access-type, access type>> to `confidential` in the client's
-`Settings` tab, a new `Credentials` tab will show up. As part of dealing with this
-type of client you have to configure the client's credentials.
+`Settings` tab, a new `Credentials` tab will show up. Note that the `Credentials` tab only 
+shows up after you've clicked the `Save` button at the bottom of the settings screen with a 
+`confidential` access type. As part of dealing with thistype of client you have to configure
+the client's credentials.
 
 .Credentials Tab
 image:{project_images}/client-credentials.png[]
