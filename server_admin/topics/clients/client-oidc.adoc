@@ -166,7 +166,7 @@ Please see https://tools.ietf.org/html/rfc7636[RFC 7636 Proof Key for Code Excha
 [[_jwe-id-token-encryption]]
 *Signed and Encrypted ID Token Support*
 
-{project_name} can encrypt ID token according to https://tools.ietf.org/html/rfc7516[Json Web Encryption (JWE)] specification. The administrator can determine whether encrypting ID token or not per client. This feature is disabled as default.
+{project_name} can encrypt ID token according to the https://tools.ietf.org/html/rfc7516[Json Web Encryption (JWE)] specification. The administrator can determine whether encrypting ID token or not per client. This feature is disabled as default.
 
 The key for encrypting ID token is called Content Encryption Key (CEK). {project_name} and a client need to negotiate which CEK is used and how to deliver it. The way to do so is called Key Management Mode.
 
@@ -181,17 +181,17 @@ The client needs to pass their public key for encrypting CEK onto {project_name}
 * set ON to `JWKS URL` switch
 * input the client's public key providing URL on `JWKS URL` textbox
 
-Key Encryption's algorithms are defined in https://tools.ietf.org/html/rfc7518#section-4.1[Json Web Algorithm (JWA)] specification. {project_name} supports RSAES-PKCS1-v1_5(RSA1_5) and RSAES OAEP using default parameters (RSA-OAEP). The detailed procedure to select this algorithm is as follows:
+Key Encryption's algorithms are defined in the https://tools.ietf.org/html/rfc7518#section-4.1[Json Web Algorithm (JWA)] specification. {project_name} supports RSAES-PKCS1-v1_5(RSA1_5) and RSAES OAEP using default parameters (RSA-OAEP). The detailed procedure to select this algorithm is as follows:
 
 * open the client's `Settings` tab
 * open `Advanced Settings`
 * select `RSA1_5` or `RSA-OAEP` from `ID Token Encryption Key Management Algorithm` pulldown menu
 
-ID token encryption algorithms by CEK are also defined in https://tools.ietf.org/html/rfc7518#section-5.1[JWA] specification. {project_name} supports AES_128_CBC_HMAC_SHA_256 authenticated encryption (A128CBC-HS256) and AES GCM using 128-bit key (A128GCM). The detailed procedure to select this algorithm is as follows:
+ID token encryption algorithms by CEK are also defined in the https://tools.ietf.org/html/rfc7518#section-5.1[JWA] specification. {project_name} supports AES_CBC_HMAC_SHA2 algorithms and AES GCM algorithms. The detailed procedure to select this algorithm is as follows:
 
 * open the client's `Settings` tab
 * open `Advanced Settings`
-* select `A128CBC-HS256` or `A128GCM` from `ID Token Encryption Content Encryption Algorithm` pulldown menu
+* select the algorithm from `ID Token Encryption Content Encryption Algorithm` pulldown menu
 
 
 
