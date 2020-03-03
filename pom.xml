@@ -57,6 +57,7 @@
             </properties>
             <modules>
                 <module>openshift</module>
+                <module>openshift-openj9</module>
             </modules>
         </profile>
         <profile>

@@ -8,7 +8,7 @@
 :project_name_full: Red Hat Single Sign-On
 :project_version: 7.4.0.GA
 :project_versionDoc: 7.4
-:project_templates_version: sso74
+:project_templates_base_url: https://raw.githubusercontent.com/jboss-container-images/redhat-sso-7-openshift-image/sso74-dev/templates
 :project_latest_image_tag: 1.0
 :project_doc_base_url: https://access.redhat.com/documentation/en-us/red_hat_single_sign-on/{project_versionDoc}/html-single
 :maven_repository: https://maven.repository.redhat.com/ga/
@@ -49,8 +49,14 @@
 :upgradingguide_link: {project_doc_base_url}/upgrading_guide/
 :releasenotes_name: Release Notes
 :releasenotes_link: {project_doc_base_url}/release_notes/
-:openshift_name: Red Hat Single Sign-On for OpenShift
-:openshift_link: {project_doc_base_url}/red_hat_single_sign-on_for_openshift/
+:openshift_openjdk_name: Red Hat Single Sign-On for OpenShift on OpenJDK
+:openshift_openjdk_link: {project_doc_base_url}/red_hat_single_sign-on_for_openshift/
+:openshift_openjdk_platforms: x86_64
+:openshift_openjdk_project_templates_version: sso74
+:openshift_openj9_name: Red Hat Single Sign-On for OpenShift on OpenJ9
+:openshift_openj9_link: {project_doc_base_url}/red_hat_single_sign-on_for_openshift_on_openj9/
+:openshift_openj9_platforms: s390x
+:openshift_openj9_project_templates_version: sso74-openj9
 :installguide_name: Server Installation and Configuration Guide
 :installguide_link: {project_doc_base_url}/server_installation_and_configuration_guide/
 :installguide_clustering_name: Clustering

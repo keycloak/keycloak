@@ -1,0 +1,19 @@
+:toc:
+:toclevels: 3
+:numbered:
+:linkattrs:
+
+include::topics/templates/document-attributes-product.adoc[]
+:project_templates_url: {project_templates_base_url}/openj9
+:project_templates_version: {openshift_openj9_project_templates_version}
+:openshift_name: {openshift_openj9_name}
+:openshift_link: {openshift_openj9_link}
+:openshift_image_platforms: {openshift_openj9_platforms}
+:openshift_name_other: {openshift_openjdk_name}
+:openshift_link_other: {openshift_openjdk_link}
+
+:openshift:
+
+= {openshift_openj9_name}
+
+include::topics.adoc[]
