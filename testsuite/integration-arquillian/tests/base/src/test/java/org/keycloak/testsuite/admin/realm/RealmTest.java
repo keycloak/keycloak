@@ -158,6 +158,25 @@ public class RealmTest extends AbstractAdminTest {
         Assert.assertNames(adminClient.realms().findAll(), "master", AuthRealm.TEST, REALM_NAME);
     }
 
+    /**
+     * Checks attributes exposed as fields are not also included as attributes
+     */
+    @Test
+    public void excludesFieldsFromAttributes() {
+        RealmRepresentation rep = new RealmRepresentation();
+        rep.setRealm("attributes");
+
+        adminClient.realms().create(rep);
+
+        try {
+            RealmRepresentation rep2 = adminClient.realm("attributes").toRepresentation();
+
+            assertTrue("Attributes was expected to be empty, but was: " + String.join(", ", rep2.getAttributes().keySet()), rep2.getAttributes().isEmpty());
+        } finally {
+            adminClient.realm("attributes").remove();
+        }
+    }
+
     @Test
     public void smtpPasswordSecret() {
         RealmRepresentation rep = RealmBuilder.create().testEventListener().testMail().build();
