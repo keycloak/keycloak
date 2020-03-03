@@ -239,7 +239,6 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
                 action = Action.CODE;
             }
         } catch (IllegalArgumentException iae) {
-            logger.error(iae.getMessage());
             event.error(Errors.INVALID_REQUEST);
             return redirectErrorToClient(OIDCResponseMode.QUERY, OAuthErrorException.UNSUPPORTED_RESPONSE_TYPE, null);
         }
