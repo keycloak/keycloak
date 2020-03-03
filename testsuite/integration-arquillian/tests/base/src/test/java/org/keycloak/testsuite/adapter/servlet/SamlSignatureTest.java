@@ -313,6 +313,7 @@ public class SamlSignatureTest extends AbstractAdapterTest {
         assertThat(response, Matchers.bodyHC(
           anyOf(
             containsString("INVALID_SIGNATURE"),
+            containsString("EXTRACTION_FAILURE"),
             containsString("There was an error")
           )
         ));
