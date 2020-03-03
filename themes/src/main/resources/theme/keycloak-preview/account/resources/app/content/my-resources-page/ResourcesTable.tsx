@@ -18,7 +18,6 @@ import * as React from 'react';
 import {AxiosResponse} from 'axios';
 
 import {
-    Badge,
     DataList,
     DataListItem,
     DataListItemRow,
@@ -29,27 +28,26 @@ import {
     Level,
     LevelItem,
     Stack,
-    StackItem
+    StackItem,
+    Button
   } from '@patternfly/react-core';
 
-import { EditAltIcon, Remove2Icon, UserCheckIcon } from '@patternfly/react-icons';
+import { Remove2Icon } from '@patternfly/react-icons';
 
 import {AccountServiceClient} from '../../account-service/account.service';
+import {PermissionRequest} from "./PermissionRequest";
 import {ShareTheResource} from "./ShareTheResource";
-import {Client, PaginatedResources, Permission, Resource} from "./MyResourcesPage";
+import {Permission, Resource} from "./MyResourcesPage";
 import { Msg } from '../../widgets/Msg';
+import { ContentAlert } from '../ContentAlert';
+import { ResourcesTableState, ResourcesTableProps, AbstractResourcesTable } from './AbstractResourceTable';
+import { EditTheResource } from './EditTheResource';
 
-export interface ResourcesTableState {
+export interface CollapsibleResourcesTableState extends ResourcesTableState {
     isRowOpen: boolean[];
-    permissions: Map<number, Permission[]>;
 }
 
-export interface ResourcesTableProps {
-    resources: PaginatedResources;
-    noResourcesMessage: string;
-}
-
-export class ResourcesTable extends React.Component<ResourcesTableProps, ResourcesTableState> {
+export class ResourcesTable extends AbstractResourcesTable<CollapsibleResourcesTableState> {
 
     public constructor(props: ResourcesTableProps) {
         super(props);
@@ -67,32 +65,13 @@ export class ResourcesTable extends React.Component<ResourcesTableProps, Resourc
     };
 
     private fetchPermissions(resource: Resource, row: number): void {
-        console.log('**** fetchPermissions');
         AccountServiceClient.Instance.doGet('resources/' + resource._id + '/permissions')
           .then((response: AxiosResponse<Permission[]>) => {
-            console.log('Fetching Permissions row: ' + row);
-            console.log({response});
             const newPermissions: Map<number, Permission[]> = new Map(this.state.permissions);
             newPermissions.set(row, response.data);
             this.setState({permissions: newPermissions});
           }
         );
-    }
-
-    private hasPermissions(row: number): boolean {
-        return (this.state.permissions.has(row)) && (this.state.permissions.get(row)!.length > 0);
-    }
-
-    private firstUser(row: number): string {
-        if (!this.hasPermissions(row)) return 'ERROR!!!!'; // should never happen
-
-        return this.state.permissions.get(row)![0].username;
-    }
-
-    private numOthers(row: number): number {
-        if (!this.hasPermissions(row)) return -1; // should never happen
-
-        return this.state.permissions.get(row)!.length - 1;
     }
 
     public sharedWithUsersMessage(row: number): React.ReactNode {
@@ -112,7 +91,7 @@ export class ResourcesTable extends React.Component<ResourcesTableProps, Resourc
 
     public render(): React.ReactNode {
         return (
-            <DataList aria-label={Msg.localize('resources')}>
+            <DataList aria-label={Msg.localize('resources')} id="resourcesList">
                 <DataListItem key='resource-header' aria-labelledby='resource-header'>
                     <DataListItemRow>
                         // invisible toggle allows headings to line up properly
@@ -138,7 +117,7 @@ export class ResourcesTable extends React.Component<ResourcesTableProps, Resourc
                         />
                     </DataListItemRow>
                 </DataListItem>
-                {(this.props.resources.data.length === 0) && <Msg msgKey={this.props.noResourcesMessage}/>}
+                {(this.props.resources.data.length === 0) && <Msg msgKey="notHaveAnyResource"/>}
                 {this.props.resources.data.map((resource: Resource, row: number) => {
                     return (
                     <DataListItem key={'resource-' + row} aria-labelledby={resource.name} isExpanded={this.state.isRowOpen[row]}>
@@ -158,7 +137,12 @@ export class ResourcesTable extends React.Component<ResourcesTableProps, Resourc
                                         <a href={resource.client.baseUrl}>{this.getClientName(resource.client)}</a>
                                     </DataListCell>,
                                     <DataListCell key={'permissionRequests-' + row} width={5}>
-                                    {resource.shareRequests.length > 0 && <a href={resource.client.baseUrl}><UserCheckIcon size='lg'/><Badge>{resource.shareRequests.length}</Badge></a>}
+                                        {resource.shareRequests.length > 0 &&
+                                            <PermissionRequest
+                                                resource={resource}
+                                                onClose={() => this.fetchPermissions(resource, row)}
+                                            ></PermissionRequest>
+                                        }
                                     </DataListCell>
                                 ]}
                             />
@@ -187,8 +171,18 @@ export class ResourcesTable extends React.Component<ResourcesTableProps, Resourc
                                                               onClose={this.fetchPermissions.bind(this)}
                                                               row={row}/>
                                         </LevelItem>
-                                        <LevelItem><EditAltIcon/> Edit</LevelItem>
-                                        <LevelItem><Remove2Icon/> Remove</LevelItem>
+                                        <LevelItem>
+                                            <EditTheResource resource={resource} permissions={this.state.permissions.get(row)!} row={row} onClose={this.fetchPermissions.bind(this)}/>
+                                        </LevelItem>
+                                        <LevelItem>
+                                            <Button
+                                                isDisabled={this.numOthers(row) < 0}
+                                                variant="link"
+                                                onClick={() => this.removeShare(resource, row)}
+                                            >
+                                                <Remove2Icon/> Remove
+                                            </Button>
+                                        </LevelItem>
                                         <LevelItem><span/></LevelItem>
                                     </Level>
                                 </StackItem>
@@ -196,16 +190,7 @@ export class ResourcesTable extends React.Component<ResourcesTableProps, Resourc
                         </DataListContent>
                     </DataListItem>
                 )})}
-                            
             </DataList>
         );
-    }
-
-    private getClientName(client: Client): string {
-        if (client.hasOwnProperty('name') && client.name !== null && client.name !== '') {
-            return Msg.localize(client.name!);
-        } else {
-            return client.clientId;
-        }
     }
 }

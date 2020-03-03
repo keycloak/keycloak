@@ -25,11 +25,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Link;
 import javax.ws.rs.core.Response;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -109,6 +105,30 @@ public class ResourcesService extends AbstractResourceService {
         return queryResponse(
                 (f, m) -> toPermissions(ticketStore.findGrantedOwnerResources(auth.getUser().getId(), f, m), true)
                         .stream(), first, max);
+    }
+
+    /**
+     */
+    @GET
+    @Path("pending-requests")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getPendingRequests() {
+        Map<String, String> filters = new HashMap<>();
+
+        filters.put(PermissionTicket.REQUESTER, user.getId());
+        filters.put(PermissionTicket.GRANTED, Boolean.FALSE.toString());
+
+        final List<PermissionTicket> permissionTickets = ticketStore.find(filters, null, -1, -1);
+
+        final List<ResourcePermission> resourceList = new ArrayList<>(permissionTickets.size());
+        for (PermissionTicket ticket : permissionTickets) {
+            ResourcePermission resourcePermission = new ResourcePermission(ticket.getResource(), provider);
+            resourcePermission.addScope(new Scope(ticket.getScope()));
+            resourceList.add(resourcePermission);
+        }
+
+        return queryResponse(
+                (f, m) -> resourceList.stream(), -1, resourceList.size());
     }
 
     @Path("{id}")
@@ -203,7 +223,7 @@ public class ResourcesService extends AbstractResourceService {
         if (first > 0) {
             links.add(Link.fromUri(
                     KeycloakUriBuilder.fromUri(request.getUri().getRequestUri()).replaceQuery("first={first}&max={max}")
-                            .build(nextPage ? first : first - max, max))
+                            .build(Math.max(first - max, 0), max))
                     .rel("prev").build());
         }
 
