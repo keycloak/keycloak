@@ -178,7 +178,11 @@ public class ResourcesRestServiceTest extends AbstractRestServiceTest {
         assertEquals(10, resources.size());
 
         resources = getMyResources(20, 10, response -> {
-            assertNextPageLink(response, "/realms/test/account/resources", 20, 10, true);
+            assertNextPageLink(response, "/realms/test/account/resources", 30, 10, true);
+        });
+
+        getMyResources(15, 5, response -> {
+            assertNextPageLink(response, "/realms/test/account/resources", 20, 5);
         });
 
         assertEquals(10, resources.size());
@@ -768,7 +772,7 @@ public class ResourcesRestServiceTest extends AbstractRestServiceTest {
                 if (link.contains("rel=\"next\"")) {
                     assertEquals("<" + authzClient.getConfiguration().getAuthServerUrl() + uri + "?first=" + nextPage + "&max=" + max + ">; rel=\"next\"", link);
                 } else {
-                    assertEquals("<" + authzClient.getConfiguration().getAuthServerUrl() + uri + "?first=" + (nextPage - max) + "&max=" + max + ">; rel=\"prev\"", link);
+                    assertEquals("<" + authzClient.getConfiguration().getAuthServerUrl() + uri + "?first=" + (nextPage - max * 2) + "&max=" + max + ">; rel=\"prev\"", link);
                 }
             }
         } catch (IOException e) {

@@ -229,7 +229,7 @@
                 </div>
               </div>
             </div>
-            <div class="pf-l-gallery__item" style="display:none" id="landingMyResourcesCard">
+            <div class="pf-l-gallery__item" id="landingMyResourcesCard">
               <div class="pf-c-card">
                 <div class="pf-c-card__header pf-c-content">
                     <h2><i class="pf-icon pf-icon-repository"></i>&nbsp${msg("myResources")}</h2>

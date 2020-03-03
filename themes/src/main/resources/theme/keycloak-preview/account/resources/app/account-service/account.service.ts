@@ -72,7 +72,6 @@ export class AccountServiceClient {
         return new Promise((resolve: AxiosResolve, reject: ErrorReject) => {
             this.makeConfig(endpoint, config)
                 .then((config: AxiosRequestConfig) => {
-                    console.log({config});
                     this.axiosRequest(config, resolve, reject);
                 }).catch( (error: AxiosError) => {
                     this.handleError(error);
