@@ -144,8 +144,6 @@ public class ClientsResource {
                         client.setClientId(clientModel.getClientId());
                         client.setDescription(clientModel.getDescription());
                         rep.add(client);
-                    } else {
-                        throw new ForbiddenException();
                     }
                 }
             }
