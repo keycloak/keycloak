@@ -164,6 +164,35 @@ public class PolicyEnforcerTest extends AbstractKeycloakTest {
     }
 
     @Test
+    public void testPathConfigurationPrecendenceWhenLazyLoadingPaths() {
+        KeycloakDeployment deployment = KeycloakDeploymentBuilder.build(getAdapterConfiguration("enforcer-paths.json"));
+        PolicyEnforcer policyEnforcer = deployment.getPolicyEnforcer();
+        OIDCHttpFacade httpFacade = createHttpFacade("/api/resourcea");
+        AuthorizationContext context = policyEnforcer.enforce(httpFacade);
+
+        assertFalse(context.isGranted());
+        assertEquals(403, TestResponse.class.cast(httpFacade.getResponse()).getStatus());
+
+        oauth.realm(REALM_NAME);
+        oauth.clientId("public-client-test");
+        oauth.doLogin("marta", "password");
+
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, null);
+        String token = response.getAccessToken();
+
+        httpFacade = createHttpFacade("/api/resourcea", token);
+
+        context = policyEnforcer.enforce(httpFacade);
+        assertTrue(context.isGranted());
+
+        httpFacade = createHttpFacade("/");
+
+        context = policyEnforcer.enforce(httpFacade);
+        assertTrue(context.isGranted());
+    }
+
+    @Test
     public void testResolvingClaimsOnce() {
         KeycloakDeployment deployment = KeycloakDeploymentBuilder.build(getAdapterConfiguration("enforcer-bearer-only-with-cip.json"));
         PolicyEnforcer policyEnforcer = deployment.getPolicyEnforcer();
@@ -559,7 +588,7 @@ public class PolicyEnforcerTest extends AbstractKeycloakTest {
         KeycloakDeployment deployment = KeycloakDeploymentBuilder.build(getAdapterConfiguration("enforcer-no-lazyload.json"));
         PolicyEnforcer policyEnforcer = deployment.getPolicyEnforcer();
 
-        assertEquals(204, policyEnforcer.getPaths().size());
+        assertEquals(205, policyEnforcer.getPaths().size());
 
         deployment = KeycloakDeploymentBuilder.build(getAdapterConfiguration("enforcer-lazyload.json"));
         policyEnforcer = deployment.getPolicyEnforcer();
@@ -641,6 +670,10 @@ public class PolicyEnforcerTest extends AbstractKeycloakTest {
             permission.addPolicy(policy.getName());
 
             clientResource.authorization().permissions().resource().create(permission).close();
+        }
+
+        if (clientResource.authorization().resources().findByName("Root").isEmpty()) {
+            createResource(clientResource, "Root", "/*");
         }
     }
 
