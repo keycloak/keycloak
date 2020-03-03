@@ -34,8 +34,7 @@ public class RefreshToken extends AccessToken {
     }
 
     /**
-     * Deep copies issuer, subject, issuedFor, sessionState, realmAccess, and resourceAccess
-     * from AccessToken.
+     * Deep copies issuer, subject, issuedFor, sessionState from AccessToken.
      *
      * @param token
      */
@@ -48,15 +47,6 @@ public class RefreshToken extends AccessToken {
         this.nonce = token.nonce;
         this.audience = new String[] { token.issuer };
         this.scope = token.scope;
-        if (token.realmAccess != null) {
-            realmAccess = token.realmAccess.clone();
-        }
-        if (token.resourceAccess != null) {
-            resourceAccess = new HashMap<>();
-            for (Map.Entry<String, Access> entry : token.resourceAccess.entrySet()) {
-                resourceAccess.put(entry.getKey(), entry.getValue().clone());
-            }
-        }
     }
 
     @Override
