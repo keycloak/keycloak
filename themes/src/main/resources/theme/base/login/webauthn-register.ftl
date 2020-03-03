@@ -7,132 +7,160 @@
         ${kcSanitize(msg("webauthn-registration-title"))?no_esc}
     <#elseif section = "form">
 
-    <form id="register" class="${properties.kcFormClass!}" action="${url.loginAction}" method="post">
-        <div class="${properties.kcFormGroupClass!}">
-            <input type="hidden" id="clientDataJSON" name="clientDataJSON"/>
-            <input type="hidden" id="attestationObject" name="attestationObject"/>
-            <input type="hidden" id="publicKeyCredentialId" name="publicKeyCredentialId"/>
-            <input type="hidden" id="authenticatorLabel" name="authenticatorLabel"/>
-            <input type="hidden" id="error" name="error"/>
-        </div>
-    </form>
-    <script type="text/javascript" src="${url.resourcesPath}/node_modules/jquery/dist/jquery.min.js"></script>
-    <script type="text/javascript" src="${url.resourcesPath}/js/base64url.js"></script>
-    <script type="text/javascript">
-        // mandatory parameters
-        let challenge = "${challenge}";
-        let userid = "${userid}";
-        let username = "${username}";
+        <form id="register" class="${properties.kcFormClass!}" action="${url.loginAction}" method="post">
+            <div class="${properties.kcFormGroupClass!}">
+                <input type="hidden" id="clientDataJSON" name="clientDataJSON"/>
+                <input type="hidden" id="attestationObject" name="attestationObject"/>
+                <input type="hidden" id="publicKeyCredentialId" name="publicKeyCredentialId"/>
+                <input type="hidden" id="authenticatorLabel" name="authenticatorLabel"/>
+                <input type="hidden" id="error" name="error"/>
+            </div>
+        </form>
 
-        let signatureAlgorithms = "${signatureAlgorithms}";
-        let pubKeyCredParams = getPubKeyCredParams(signatureAlgorithms);
+        <script type="text/javascript" src="${url.resourcesPath}/node_modules/jquery/dist/jquery.min.js"></script>
+        <script type="text/javascript" src="${url.resourcesPath}/js/base64url.js"></script>
+        <script type="text/javascript">
 
-        let rpEntityName = "${rpEntityName}";
-        let rp = {name: rpEntityName};
+            function registerSecurityKey() {
+                // mandatory parameters
+                let challenge = "${challenge}";
+                let userid = "${userid}";
+                let username = "${username}";
 
-        let publicKey = {
-            challenge: base64url.decode(challenge, { loose: true }),
-            rp: rp,
-            user: {
-                id:  base64url.decode(userid, { loose: true }),
-                name: username,
-                displayName: username
-            },
-            pubKeyCredParams: pubKeyCredParams,
-        }
+                let signatureAlgorithms = "${signatureAlgorithms}";
+                let pubKeyCredParams = getPubKeyCredParams(signatureAlgorithms);
 
-        // optional parameters
-        let rpId = "${rpId}";
-        publicKey.rp.id = rpId;
+                let rpEntityName = "${rpEntityName}";
+                let rp = {name: rpEntityName};
 
-        let attestationConveyancePreference = "${attestationConveyancePreference}";
-        if(attestationConveyancePreference !== 'not specified') publicKey.attestation = attestationConveyancePreference;
+                let publicKey = {
+                    challenge: base64url.decode(challenge, {loose: true}),
+                    rp: rp,
+                    user: {
+                        id: base64url.decode(userid, {loose: true}),
+                        name: username,
+                        displayName: username
+                    },
+                    pubKeyCredParams: pubKeyCredParams,
+                };
 
-        let authenticatorSelection = {};
-        let isAuthenticatorSelectionSpecified = false;
+                // optional parameters
+                let rpId = "${rpId}";
+                publicKey.rp.id = rpId;
 
-        let authenticatorAttachment = "${authenticatorAttachment}";
-        if(authenticatorAttachment !== 'not specified') {
-            authenticatorSelection.authenticatorAttachment = authenticatorAttachment;
-            isAuthenticatorSelectionSpecified = true;
-        }
+                let attestationConveyancePreference = "${attestationConveyancePreference}";
+                if (attestationConveyancePreference !== 'not specified') publicKey.attestation = attestationConveyancePreference;
 
-        let requireResidentKey = "${requireResidentKey}";
-        if(requireResidentKey !== 'not specified') {
-            if(requireResidentKey === 'Yes')
-                authenticatorSelection.requireResidentKey = true;
-            else
-                authenticatorSelection.requireResidentKey = false;
-            isAuthenticatorSelectionSpecified = true;
-        }
+                let authenticatorSelection = {};
+                let isAuthenticatorSelectionSpecified = false;
 
-        let userVerificationRequirement = "${userVerificationRequirement}";
-        if(userVerificationRequirement !== 'not specified') {
-            authenticatorSelection.userVerification = userVerificationRequirement;
-            isAuthenticatorSelectionSpecified = true;
-        }
+                let authenticatorAttachment = "${authenticatorAttachment}";
+                if (authenticatorAttachment !== 'not specified') {
+                    authenticatorSelection.authenticatorAttachment = authenticatorAttachment;
+                    isAuthenticatorSelectionSpecified = true;
+                }
 
-        if(isAuthenticatorSelectionSpecified) publicKey.authenticatorSelection = authenticatorSelection;
+                let requireResidentKey = "${requireResidentKey}";
+                if (requireResidentKey !== 'not specified') {
+                    if (requireResidentKey === 'Yes')
+                        authenticatorSelection.requireResidentKey = true;
+                    else
+                        authenticatorSelection.requireResidentKey = false;
+                    isAuthenticatorSelectionSpecified = true;
+                }
 
-        let createTimeout = ${createTimeout};
-        if(createTimeout != 0) publicKey.timeout = createTimeout * 1000;
+                let userVerificationRequirement = "${userVerificationRequirement}";
+                if (userVerificationRequirement !== 'not specified') {
+                    authenticatorSelection.userVerification = userVerificationRequirement;
+                    isAuthenticatorSelectionSpecified = true;
+                }
 
-        let excludeCredentialIds = "${excludeCredentialIds}";
-        let excludeCredentials = getExcludeCredentials(excludeCredentialIds);
-        if (excludeCredentials.length > 0) publicKey.excludeCredentials = excludeCredentials;
+                if (isAuthenticatorSelectionSpecified) publicKey.authenticatorSelection = authenticatorSelection;
 
-        navigator.credentials.create({publicKey})
-            .then(function(result) {
-                window.result = result;
-                let clientDataJSON = result.response.clientDataJSON;
-                let attestationObject = result.response.attestationObject;
-                let publicKeyCredentialId = result.rawId;
+                let createTimeout = ${createTimeout};
+                if (createTimeout != 0) publicKey.timeout = createTimeout * 1000;
 
-                $("#clientDataJSON").val(base64url.encode(new Uint8Array(clientDataJSON), { pad: false }));
-                $("#attestationObject").val(base64url.encode(new Uint8Array(attestationObject), { pad: false }));
-                $("#publicKeyCredentialId").val(base64url.encode(new Uint8Array(publicKeyCredentialId), { pad: false }));
+                let excludeCredentialIds = "${excludeCredentialIds}";
+                let excludeCredentials = getExcludeCredentials(excludeCredentialIds);
+                if (excludeCredentials.length > 0) publicKey.excludeCredentials = excludeCredentials;
 
-                let initLabel = "WebAuthn Authenticator (Default Label)";
-                let labelResult = window.prompt("Please input your registered authenticator's label", initLabel);
-                if (labelResult === null) labelResult = initLabel;
-                $("#authenticatorLabel").val(labelResult);
+                navigator.credentials.create({publicKey})
+                    .then(function (result) {
+                        window.result = result;
+                        let clientDataJSON = result.response.clientDataJSON;
+                        let attestationObject = result.response.attestationObject;
+                        let publicKeyCredentialId = result.rawId;
 
-                $("#register").submit();
+                        $("#clientDataJSON").val(base64url.encode(new Uint8Array(clientDataJSON), {pad: false}));
+                        $("#attestationObject").val(base64url.encode(new Uint8Array(attestationObject), {pad: false}));
+                        $("#publicKeyCredentialId").val(base64url.encode(new Uint8Array(publicKeyCredentialId), {pad: false}));
 
-            })
-            .catch(function(err) {
-                $("#error").val(err);
-                $("#register").submit();
+                        let initLabel = "WebAuthn Authenticator (Default Label)";
+                        let labelResult = window.prompt("Please input your registered authenticator's label", initLabel);
+                        if (labelResult === null) labelResult = initLabel;
+                        $("#authenticatorLabel").val(labelResult);
 
-            });
+                        $("#register").submit();
 
-        function getPubKeyCredParams(signatureAlgorithms) {
-            let pubKeyCredParams = [];
-            if(signatureAlgorithms === "") {
-                pubKeyCredParams.push({type: "public-key", alg: -7});
+                    })
+                    .catch(function (err) {
+                        $("#error").val(err);
+                        $("#register").submit();
+
+                    });
+            }
+
+            function getPubKeyCredParams(signatureAlgorithms) {
+                let pubKeyCredParams = [];
+                if (signatureAlgorithms === "") {
+                    pubKeyCredParams.push({type: "public-key", alg: -7});
+                    return pubKeyCredParams;
+                }
+                let signatureAlgorithmsList = signatureAlgorithms.split(',');
+
+                for (let i = 0; i < signatureAlgorithmsList.length; i++) {
+                    pubKeyCredParams.push({
+                        type: "public-key",
+                        alg: signatureAlgorithmsList[i]
+                    });
+                }
                 return pubKeyCredParams;
             }
-            let signatureAlgorithmsList = signatureAlgorithms.split(',');
 
-            for (let i = 0; i < signatureAlgorithmsList.length; i++) {
-                pubKeyCredParams.push({type: "public-key", alg: signatureAlgorithmsList[i]});
+            function getExcludeCredentials(excludeCredentialIds) {
+                let excludeCredentials = [];
+                if (excludeCredentialIds === "") return excludeCredentials;
+
+                let excludeCredentialIdsList = excludeCredentialIds.split(',');
+
+                for (let i = 0; i < excludeCredentialIdsList.length; i++) {
+                    excludeCredentials.push({
+                        type: "public-key",
+                        id: base64url.decode(excludeCredentialIdsList[i],
+                        {loose: true})
+                    });
+                }
+                return excludeCredentials;
             }
-            return pubKeyCredParams;
-        }
+        </script>
 
-        function getExcludeCredentials(excludeCredentialIds) {
-            let excludeCredentials = [];
-            if (excludeCredentialIds === "") return excludeCredentials;
-
-            let excludeCredentialIdsList = excludeCredentialIds.split(',');
-
-            for (let i = 0; i < excludeCredentialIdsList.length; i++) {
-                excludeCredentials.push({type: "public-key", id: base64url.decode(excludeCredentialIdsList[i], { loose: true })});
-            }
-            return excludeCredentials;
-        }
-
-    </script>
+        <#if !isSetRetry?has_content && isAppInitiatedAction?has_content>
+            <input type="submit"
+                   class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonBlockClass!} ${properties.kcButtonLargeClass!}"
+                   id="registerWebAuthnAIA" value="${msg("doRegister")}" onclick="registerSecurityKey()"
+            />
+            <form action="${url.loginAction}" class="${properties.kcFormClass!}" id="kc-webauthn-settings-form"
+                  method="post">
+                <button type="submit"
+                        class="${properties.kcButtonClass!} ${properties.kcButtonDefaultClass!} ${properties.kcButtonBlockClass!} ${properties.kcButtonLargeClass!}"
+                        id="cancelWebAuthnAIA" name="cancel-aia" value="true"/>${msg("doCancel")}
+                </button>
+            </form>
+        <#else>
+            <script>
+                registerSecurityKey();
+            </script>
+        </#if>
 
     </#if>
     </@layout.registrationLayout>

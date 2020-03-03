@@ -41,6 +41,8 @@ import org.keycloak.credential.WebAuthnCredentialProviderFactory;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
+import org.keycloak.forms.login.LoginFormsProvider;
+import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.WebAuthnPolicy;
@@ -135,6 +137,8 @@ public class WebAuthnRegister implements RequiredActionProvider, CredentialRegis
             excludeCredentialIds = stringifyExcludeCredentialIds(webAuthnCredentialPubKeyIds);
         }
 
+        String isSetRetry = context.getHttpRequest().getDecodedFormParameters().getFirst(WebAuthnConstants.IS_SET_RETRY);
+
         Response form = context.form()
                 .setAttribute(WebAuthnConstants.CHALLENGE, challengeValue)
                 .setAttribute(WebAuthnConstants.USER_ID, userId)
@@ -148,6 +152,7 @@ public class WebAuthnRegister implements RequiredActionProvider, CredentialRegis
                 .setAttribute(WebAuthnConstants.USER_VERIFICATION_REQUIREMENT, userVerificationRequirement)
                 .setAttribute(WebAuthnConstants.CREATE_TIMEOUT, createTimeout)
                 .setAttribute(WebAuthnConstants.EXCLUDE_CREDENTIAL_IDS, excludeCredentialIds)
+                .setAttribute(WebAuthnConstants.IS_SET_RETRY, isSetRetry)
                 .createForm("webauthn-register.ftl");
         context.challenge(form);
     }
