@@ -148,6 +148,10 @@ public abstract class AbstractSamlAuthenticationHandler implements SamlAuthentic
             postBinding = true;
             holder = SAMLRequestParser.parseRequestPostBinding(samlRequest);
         }
+        if (holder == null) {
+            log.error("Error parsing SAML document");
+            return AuthOutcome.FAILED;
+        }
         RequestAbstractType requestAbstractType = (RequestAbstractType) holder.getSamlObject();
         if (! destinationValidator.validate(requestUri, requestAbstractType.getDestination())) {
             log.error("expected destination '" + requestUri + "' got '" + requestAbstractType.getDestination() + "'");
@@ -187,6 +191,24 @@ public abstract class AbstractSamlAuthenticationHandler implements SamlAuthentic
         } else {
             postBinding = true;
             holder = extractPostBindingResponse(samlResponse);
+        }
+        if (holder == null) {
+            log.error("Error parsing SAML document");
+            challenge = new AuthChallenge() {
+                @Override
+                public boolean challenge(HttpFacade exchange) {
+                    SamlAuthenticationError error = new SamlAuthenticationError(SamlAuthenticationError.Reason.EXTRACTION_FAILURE);
+                    exchange.getRequest().setError(error);
+                    exchange.getResponse().sendError(403);
+                    return true;
+                }
+
+                @Override
+                public int getResponseCode() {
+                    return 403;
+                }
+            };
+            return AuthOutcome.FAILED;
         }
         final StatusResponseType statusResponse = (StatusResponseType) holder.getSamlObject();
         // validate destination
