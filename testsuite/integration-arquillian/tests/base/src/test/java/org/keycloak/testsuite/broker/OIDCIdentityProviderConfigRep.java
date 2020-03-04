@@ -27,7 +27,7 @@ import org.keycloak.representations.idm.IdentityProviderRepresentation;
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-class OIDCIdentityProviderConfigRep extends OIDCIdentityProviderConfig {
+public class OIDCIdentityProviderConfigRep extends OIDCIdentityProviderConfig {
 
     private final IdentityProviderRepresentation rep;
 

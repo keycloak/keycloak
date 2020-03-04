@@ -279,7 +279,7 @@ public class KcOIDCBrokerWithSignatureTest extends AbstractBaseBrokerTest {
 
         // Update identityProvider to some bad JWKS_URL
         OIDCIdentityProviderConfigRep cfg = new OIDCIdentityProviderConfigRep(idpRep);
-        cfg.setJwksUrl("http://localhost:43214/non-existent");
+        cfg.setJwksUrl("https://localhost:43214/non-existent");
         updateIdentityProvider(idpRep);
 
         // Check that key is not cached anymore

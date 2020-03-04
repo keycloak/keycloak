@@ -20,6 +20,11 @@ public class OpenshiftV3IdentityProviderFactory extends AbstractIdentityProvider
     }
 
     @Override
+    public OpenshiftV3IdentityProviderConfig createConfig() {
+        return new OpenshiftV3IdentityProviderConfig();
+    }
+
+    @Override
     public String getId() {
         return PROVIDER_ID;
     }

@@ -44,6 +44,11 @@ public class OIDCIdentityProviderFactory extends AbstractIdentityProviderFactory
     }
 
     @Override
+    public OIDCIdentityProviderConfig createConfig() {
+        return new OIDCIdentityProviderConfig();
+    }
+
+    @Override
     public String getId() {
         return PROVIDER_ID;
     }
@@ -60,7 +65,7 @@ public class OIDCIdentityProviderFactory extends AbstractIdentityProviderFactory
         } catch (IOException e) {
             throw new RuntimeException("failed to load openid connect metadata", e);
         }
-        OIDCIdentityProviderConfig config = new OIDCIdentityProviderConfig(new IdentityProviderModel());
+        OIDCIdentityProviderConfig config = new OIDCIdentityProviderConfig();
         config.setIssuer(rep.getIssuer());
         config.setLogoutUrl(rep.getLogoutEndpoint());
         config.setAuthorizationUrl(rep.getAuthorizationEndpoint());

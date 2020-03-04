@@ -54,4 +54,14 @@ public interface IdentityProviderFactory<T extends IdentityProvider> extends Pro
      * @return
      */
     Map<String, String> parseConfig(KeycloakSession session, InputStream inputStream);
+
+    /**
+     * <p>Creates a provider specific {@link IdentityProviderModel} instance.
+     * 
+     * <p>Providers may want to implement their own {@link IdentityProviderModel} type so that validations
+     * can be performed when managing the provider configuration
+     * 
+     * @return the provider specific instance
+     */
+    <C extends IdentityProviderModel> C createConfig();
 }

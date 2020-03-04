@@ -196,5 +196,15 @@ public class IdentityProviderModel implements Serializable {
     public void setDisplayName(String displayName) {
         this.displayName = displayName;
     }
-    
+
+    /**
+     * <p>Validates this configuration.
+     * 
+     * <p>Sub-classes can override this method in order to enforce provider specific validations.
+     * 
+     * @param realm the realm
+     */
+    public void validate(RealmModel realm) {
+        
+    }
 }

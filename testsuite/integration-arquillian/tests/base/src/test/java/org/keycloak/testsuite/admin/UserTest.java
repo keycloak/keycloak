@@ -708,7 +708,7 @@ public class UserTest extends AbstractAdminTest {
 
         IdentityProviderRepresentation rep = new IdentityProviderRepresentation();
         rep.setAlias("social-provider-id");
-        rep.setProviderId("social-provider-type");
+        rep.setProviderId("oidc");
 
         realm.identityProviders().create(rep);
         assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.identityProviderPath(rep.getAlias()), rep, ResourceType.IDENTITY_PROVIDER);

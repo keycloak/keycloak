@@ -16,6 +16,8 @@
  */
 package org.keycloak.services.resources.admin;
 
+import static javax.ws.rs.core.Response.Status.BAD_REQUEST;
+
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import javax.ws.rs.NotFoundException;
@@ -162,6 +164,8 @@ public class IdentityProviderResource {
             adminEvent.operation(OperationType.UPDATE).resourcePath(session.getContext().getUri()).representation(providerRep).success();
 
             return Response.noContent().build();
+        } catch (IllegalArgumentException e) {
+            return ErrorResponse.error("Invalid request", BAD_REQUEST);
         } catch (ModelDuplicateException e) {
             return ErrorResponse.exists("Identity Provider " + providerRep.getAlias() + " already exists");
         }
@@ -176,7 +180,7 @@ public class IdentityProviderResource {
             lookUpProviderIdByAlias(realm, providerRep);
         }
 
-        IdentityProviderModel updated = RepresentationToModel.toModel(realm, providerRep);
+        IdentityProviderModel updated = RepresentationToModel.toModel(realm, providerRep, session);
 
         if (updated.getConfig() != null && ComponentRepresentation.SECRET_VALUE.equals(updated.getConfig().get("clientSecret"))) {
             updated.getConfig().put("clientSecret", identityProviderModel.getConfig() != null ? identityProviderModel.getConfig().get("clientSecret") : null);
