@@ -1613,7 +1613,7 @@ For example:
 +
 [options="nowrap"]
 ----
-$ kcadm.sh get testLDAPConnection -q action=testConnection -q bindCredential=secret -q bindDn=uid=admin,ou=system -q connectionUrl=ldap://localhost:10389 -q useTruststoreSpi=ldapsOnly
+$ kcadm.sh create testLDAPConnection -s action=testConnection -s bindCredential=secret -s bindDn=uid=admin,ou=system -s connectionUrl=ldap://localhost:10389 -s useTruststoreSpi=ldapsOnly
 ----
 
 [discrete]
@@ -1626,7 +1626,7 @@ For example:
 +
 [options="nowrap"]
 ----
-$ kcadm.sh get testLDAPConnection -q action=testAuthentication -q bindCredential=secret -q bindDn=uid=admin,ou=system -q connectionUrl=ldap://localhost:10389 -q useTruststoreSpi=ldapsOnly
+$ kcadm.sh create testLDAPConnection -s action=testAuthentication -s bindCredential=secret -s bindDn=uid=admin,ou=system -s connectionUrl=ldap://localhost:10389 -s useTruststoreSpi=ldapsOnly
 ----
 
 
