@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import * as React from 'react';
+import React, { Component, ReactNode } from 'react';
 import {withRouter, RouteComponentProps} from 'react-router-dom';
 
 import {AIACommand} from '../../util/AIACommand';
@@ -51,7 +51,7 @@ interface AppInitiatedActionPageProps extends RouteComponentProps {
 /**
  * @author Stan Silvert
  */
-class ApplicationInitiatedActionPage extends React.Component<AppInitiatedActionPageProps> {
+class ApplicationInitiatedActionPage extends Component<AppInitiatedActionPageProps> {
     
     public constructor(props: AppInitiatedActionPageProps) {
         super(props);
@@ -61,7 +61,7 @@ class ApplicationInitiatedActionPage extends React.Component<AppInitiatedActionP
         new AIACommand(this.props.pageDef.kcAction, this.props.location.pathname).execute();
     }
 
-    public render(): React.ReactNode {
+    public render(): ReactNode {
         return (
             <EmptyState variant={EmptyStateVariant.full}>
                 <EmptyStateIcon icon={PassportIcon} />

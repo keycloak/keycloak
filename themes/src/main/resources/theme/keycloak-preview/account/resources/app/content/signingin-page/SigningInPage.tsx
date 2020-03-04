@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-import * as React from 'react';
-import * as moment from 'moment';
+import React, { Component, ReactNode, Fragment } from 'react';
+import moment from 'moment';
 import {AxiosResponse} from 'axios';
 
 import {withRouter, RouteComponentProps} from 'react-router-dom';
@@ -84,7 +84,7 @@ interface SigningInPageState {
 /**
  * @author Stan Silvert ssilvert@redhat.com (C) 2018 Red Hat Inc.
  */
-class SigningInPage extends React.Component<SigningInPageProps, SigningInPageState> {
+class SigningInPage extends Component<SigningInPageProps, SigningInPageState> {
     private readonly updatePassword: AIACommand = new AIACommand('UPDATE_PASSWORD', this.props.location.pathname);
     private readonly setUpTOTP: AIACommand = new AIACommand('CONFIGURE_TOTP', this.props.location.pathname);
 
@@ -128,7 +128,7 @@ class SigningInPage extends React.Component<SigningInPageProps, SigningInPageSta
         return `${credType}-${item}-${credId.substring(0,8)}`;
     }
 
-    public render(): React.ReactNode {
+    public render(): ReactNode {
         return (
             <ContentPage title="signingIn"
                      introMessage="signingInSubMessage">
@@ -139,7 +139,7 @@ class SigningInPage extends React.Component<SigningInPageProps, SigningInPageSta
         );
     }
 
-    private renderCategories(): React.ReactNode {
+    private renderCategories(): ReactNode {
         return (<> {
             Array.from(this.state.credentialContainers.keys()).map(category => (
                 <StackItem key={category} isFilled>
@@ -155,7 +155,7 @@ class SigningInPage extends React.Component<SigningInPageProps, SigningInPageSta
         }</>)
     }
 
-    private renderTypes(credTypeMap: CredTypeMap): React.ReactNode {
+    private renderTypes(credTypeMap: CredTypeMap): ReactNode {
         return (<> {
             Array.from(credTypeMap.keys()).map((credType: CredType, index: number, typeArray: string[]) => ([
                 this.renderCredTypeTitle(credTypeMap.get(credType)!),
@@ -165,7 +165,7 @@ class SigningInPage extends React.Component<SigningInPageProps, SigningInPageSta
         }</>)
     }
 
-    private renderEmptyRow(type: string, isLast: boolean): React.ReactNode {
+    private renderEmptyRow(type: string, isLast: boolean): ReactNode {
         if (isLast) return; // don't put empty row at the end
 
         return (
@@ -177,7 +177,7 @@ class SigningInPage extends React.Component<SigningInPageProps, SigningInPageSta
         )
     }
 
-    private renderUserCredentials(credTypeMap: CredTypeMap, credType: CredType): React.ReactNode {
+    private renderUserCredentials(credTypeMap: CredTypeMap, credType: CredType): ReactNode {
         const credContainer: CredentialContainer = credTypeMap.get(credType)!;
         const userCredentials: UserCredential[] = credContainer.userCredentials;
         const removeable: boolean = credContainer.removeable;
@@ -211,7 +211,7 @@ class SigningInPage extends React.Component<SigningInPageProps, SigningInPageSta
         }
 
         return (
-            <React.Fragment key='userCredentials'> {
+            <Fragment key='userCredentials'> {
                 userCredentials.map(credential => (
                     <DataListItem id={`${SigningInPage.credElementId(type, credential.id, 'row')}`} key={'credential-list-item-' + credential.id} aria-labelledby={'credential-list-item-' + credential.userLabel}>
                         <DataListItemRow key={'userCredentialRow-' + credential.id}>
@@ -225,11 +225,11 @@ class SigningInPage extends React.Component<SigningInPageProps, SigningInPageSta
                     </DataListItem>
                 ))
             }
-            </React.Fragment>)
+            </Fragment>)
     }
 
-    private credentialRowCells(credential: UserCredential, type: string): React.ReactNode[] {
-        const credRowCells: React.ReactNode[] = [];
+    private credentialRowCells(credential: UserCredential, type: string): ReactNode[] {
+        const credRowCells: ReactNode[] = [];
         credRowCells.push(<DataListCell id={`${SigningInPage.credElementId(type, credential.id, 'label')}`} key={'userLabel-' + credential.id}>{credential.userLabel}</DataListCell>);
         if (credential.strCreatedDate) {
             credRowCells.push(<DataListCell id={`${SigningInPage.credElementId(type, credential.id, 'created-at')}`} key={'created-' + credential.id}><strong><Msg msgKey='credentialCreatedAt'/>: </strong>{credential.strCreatedDate}</DataListCell>);
@@ -239,7 +239,7 @@ class SigningInPage extends React.Component<SigningInPageProps, SigningInPageSta
         return credRowCells;
     }
 
-    private renderCredTypeTitle(credContainer: CredentialContainer): React.ReactNode {
+    private renderCredTypeTitle(credContainer: CredentialContainer): ReactNode {
         if (!credContainer.hasOwnProperty('helptext') && !credContainer.hasOwnProperty('createAction')) return;
 
         let setupAction: AIACommand;
@@ -249,7 +249,7 @@ class SigningInPage extends React.Component<SigningInPageProps, SigningInPageSta
         const credContainerDisplayName: string = Msg.localize(credContainer.displayName);
 
         return (
-            <React.Fragment key={'credTypeTitle-' + credContainer.type}>
+            <Fragment key={'credTypeTitle-' + credContainer.type}>
                 <DataListItem aria-labelledby={'type-datalistitem-' + credContainer.type}>
                     <DataListItemRow key={'credTitleRow-' + credContainer.type}>
                         <DataListItemCells
@@ -273,7 +273,7 @@ class SigningInPage extends React.Component<SigningInPageProps, SigningInPageSta
                         </DataListAction>}
                     </DataListItemRow>
                 </DataListItem>
-            </React.Fragment>
+            </Fragment>
         )
     }
 
@@ -284,9 +284,9 @@ interface CredentialActionProps {credential: UserCredential;
                                 removeable: boolean;
                                 updateAction: AIACommand;
                                 credRemover: CredRemover;};
-class CredentialAction extends React.Component<CredentialActionProps> {
+class CredentialAction extends Component<CredentialActionProps> {
 
-    render(): React.ReactNode {
+    render(): ReactNode {
         if (this.props.updateAction) {
             return (
                 <DataListAction aria-labelledby='foo' aria-label='foo action' id={'updateAction-' + this.props.credential.id}>

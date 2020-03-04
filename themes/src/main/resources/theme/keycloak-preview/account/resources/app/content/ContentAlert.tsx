@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import * as React from 'react';
+import React, { Component, ReactNode, Fragment } from 'react';
 import {Alert, AlertActionCloseButton} from '@patternfly/react-core';
 import {Msg} from '../widgets/Msg';
  
@@ -26,7 +26,7 @@ interface ContentAlertState {
     message: string;
     variant: AlertVariant;
 }
-export class ContentAlert extends React.Component<ContentAlertProps, ContentAlertState> {
+export class ContentAlert extends Component<ContentAlertProps, ContentAlertState> {
     private static instance: ContentAlert;
 
     private constructor(props: ContentAlertProps) {
@@ -78,9 +78,9 @@ export class ContentAlert extends React.Component<ContentAlertProps, ContentAler
         }
     }
     
-    public render(): React.ReactNode {
+    public render(): ReactNode {
         return (
-            <React.Fragment>
+            <Fragment>
             { this.state.isVisible &&
                 <section className="pf-c-page__main-section pf-m-light">
                     <Alert
@@ -95,7 +95,7 @@ export class ContentAlert extends React.Component<ContentAlertProps, ContentAler
                     </Alert>
                 </section>
             }
-            </React.Fragment>
+            </Fragment>
         );
     }
 }

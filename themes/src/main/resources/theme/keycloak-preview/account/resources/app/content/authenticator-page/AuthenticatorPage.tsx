@@ -14,18 +14,18 @@
  * limitations under the License.
  */
 
-import * as React from 'react';
- 
+import React, { Component, ReactNode } from 'react';
+
 export interface AuthenticatorPageProps {
 }
  
-export class AuthenticatorPage extends React.Component<AuthenticatorPageProps> {
+export class AuthenticatorPage extends Component<AuthenticatorPageProps> {
     
     public constructor(props: AuthenticatorPageProps) {
         super(props);
     }
 
-    public render(): React.ReactNode {
+    public render(): ReactNode {
         return (
             <div>
               <h2>Hello Authenticator Page</h2>

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import * as React from 'react';
+import React, { Component, ReactNode } from 'react';
 import {withRouter, RouteComponentProps} from 'react-router-dom';
 import {AxiosResponse} from 'axios';
 
@@ -76,7 +76,7 @@ interface LinkedAccountsPageState {
 /**
  * @author Stan Silvert
  */
-class LinkedAccountsPage extends React.Component<LinkedAccountsPageProps, LinkedAccountsPageState> {
+class LinkedAccountsPage extends Component<LinkedAccountsPageProps, LinkedAccountsPageState> {
     
     public constructor(props: LinkedAccountsPageProps) {
         super(props);
@@ -120,7 +120,7 @@ class LinkedAccountsPage extends React.Component<LinkedAccountsPageProps, Linked
             });
     }
 
-    public render(): React.ReactNode {
+    public render(): ReactNode {
 
         return (
             <ContentPage title={Msg.localize('linkedAccountsTitle')} introMessage={Msg.localize('linkedAccountsIntroMessage')}>
@@ -147,7 +147,7 @@ class LinkedAccountsPage extends React.Component<LinkedAccountsPageProps, Linked
         );
     }
 
-    private emptyRow(isLinked: boolean): React.ReactNode {
+    private emptyRow(isLinked: boolean): ReactNode {
         let isEmptyMessage = '';
         if (isLinked) {
             isEmptyMessage = Msg.localize('linkedEmpty');
@@ -166,7 +166,7 @@ class LinkedAccountsPage extends React.Component<LinkedAccountsPageProps, Linked
         )
     }
 
-    private makeRows(accounts: LinkedAccount[], isLinked: boolean): React.ReactNode {
+    private makeRows(accounts: LinkedAccount[], isLinked: boolean): ReactNode {
         if (accounts.length === 0) {
             return this.emptyRow(isLinked);
         }
@@ -196,7 +196,7 @@ class LinkedAccountsPage extends React.Component<LinkedAccountsPageProps, Linked
         )
     }
 
-    private badge(account: LinkedAccount): React.ReactNode {
+    private badge(account: LinkedAccount): ReactNode {
         if (account.social) {
             return (<Badge><Msg msgKey='socialLogin'/></Badge>);
         }
@@ -204,7 +204,7 @@ class LinkedAccountsPage extends React.Component<LinkedAccountsPageProps, Linked
         return (<Badge style={{backgroundColor: "green"}} ><Msg msgKey='systemDefined'/></Badge>);
     }
 
-    private findIcon(account: LinkedAccount): React.ReactNode {
+    private findIcon(account: LinkedAccount): ReactNode {
         const socialIconId = `${account.providerAlias}-idp-icon-social`;
         if (account.providerName.toLowerCase().includes('github')) return (<GithubIcon id={socialIconId} size='xl'/>);
         if (account.providerName.toLowerCase().includes('linkedin')) return (<LinkedinIcon id={socialIconId} size='xl'/>);

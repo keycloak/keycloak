@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import * as React from 'react';
+import React, { Component, ReactNode, Fragment } from 'react';
 import {AxiosResponse} from 'axios';
 
 import {
@@ -49,7 +49,7 @@ export interface ResourcesTableProps {
     noResourcesMessage: string;
 }
 
-export class ResourcesTable extends React.Component<ResourcesTableProps, ResourcesTableState> {
+export class ResourcesTable extends Component<ResourcesTableProps, ResourcesTableState> {
 
     public constructor(props: ResourcesTableProps) {
         super(props);
@@ -95,18 +95,18 @@ export class ResourcesTable extends React.Component<ResourcesTableProps, Resourc
         return this.state.permissions.get(row)!.length - 1;
     }
 
-    public sharedWithUsersMessage(row: number): React.ReactNode {
-        if (!this.hasPermissions(row)) return (<React.Fragment><Msg msgKey='resourceNotShared'/></React.Fragment>);
+    public sharedWithUsersMessage(row: number): ReactNode {
+        if (!this.hasPermissions(row)) return (<Fragment><Msg msgKey='resourceNotShared'/></Fragment>);
 
         // TODO: Not using a parameterized message because I want to use <strong> tag.  Need to figure out a good solution to this.
         if (this.numOthers(row) > 0) {
-            return (<React.Fragment><Msg msgKey='resourceSharedWith'/> <strong>{this.firstUser(row)}</strong> <Msg msgKey='and'/> <strong>{this.numOthers(row)}</strong> <Msg msgKey='otherUsers'/>.</React.Fragment>)
+            return (<Fragment><Msg msgKey='resourceSharedWith'/> <strong>{this.firstUser(row)}</strong> <Msg msgKey='and'/> <strong>{this.numOthers(row)}</strong> <Msg msgKey='otherUsers'/>.</Fragment>)
         } else {
-            return (<React.Fragment><Msg msgKey='resourceSharedWith'/> <strong>{this.firstUser(row)}</strong>.</React.Fragment>)
+            return (<Fragment><Msg msgKey='resourceSharedWith'/> <strong>{this.firstUser(row)}</strong>.</Fragment>)
         }
     }
 
-    public render(): React.ReactNode {
+    public render(): ReactNode {
         return (
             <DataList aria-label={Msg.localize('resources')}>
                 <DataListItem key='resource-header' aria-labelledby='resource-header'>

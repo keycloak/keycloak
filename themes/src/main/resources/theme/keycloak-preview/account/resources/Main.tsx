@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-import * as React from 'react';
-import * as ReactDOM from 'react-dom';
+import React, { Component, createElement, ReactNode } from 'react';
+import ReactDOM from 'react-dom';
 import {System} from 'systemjs';
 
 import {HashRouter} from 'react-router-dom';
@@ -27,7 +27,7 @@ declare let isReactLoading: boolean;
 declare function toggleReact(): void;
 
 export interface MainProps {}
-export class Main extends React.Component<MainProps> {
+export class Main extends Component<MainProps> {
     
     public constructor(props: MainProps) {
         super(props);
@@ -38,7 +38,7 @@ export class Main extends React.Component<MainProps> {
         toggleReact();
     }
 
-    public render(): React.ReactNode {
+    public render(): ReactNode {
         return (
             <HashRouter>
                 <App/>
@@ -49,7 +49,7 @@ export class Main extends React.Component<MainProps> {
 
 declare const resourceUrl: string;
 declare let content: ContentItem[];
-const e = React.createElement;
+const e = createElement;
 
 function removeHidden(items: ContentItem[]): ContentItem[] {
     const visible: ContentItem[] = [];
@@ -76,7 +76,7 @@ initGroupAndItemIds();
 
 function loadModule(modulePage: ModulePageDef): Promise<ModulePageDef> {
     return new Promise ((resolve, reject) => {
-        System.import(resourceUrl + modulePage.modulePath).then( (module: React.Component) => {
+        System.import(resourceUrl + modulePage.modulePath).then( (module: Component) => {
             modulePage.module = module;
             resolve(modulePage);
         }).catch((error: Error) => {

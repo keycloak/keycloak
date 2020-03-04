@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-import * as React from 'react';
-import * as moment from 'moment';
+import React, { Component, ChangeEvent, FormEvent, ReactNode } from 'react';
+import moment from 'moment';
 import {AxiosResponse} from 'axios';
 
 import {AccountServiceClient} from '../../account-service/account.service';
@@ -37,7 +37,7 @@ interface PasswordPageState {
     readonly formFields: FormFields;
 }
 
-export class PasswordPage extends React.Component<PasswordPageProps, PasswordPageState> {
+export class PasswordPage extends Component<PasswordPageProps, PasswordPageState> {
     public state: PasswordPageState = {
         canSubmit: false,
         registered: false,
@@ -57,7 +57,7 @@ export class PasswordPage extends React.Component<PasswordPageProps, PasswordPag
             });
     }
     
-    private handleChange = (event: React.ChangeEvent<HTMLInputElement>): void => {
+    private handleChange = (event: ChangeEvent<HTMLInputElement>): void => {
         const target: HTMLInputElement = event.target;
         const value: string = target.value;
         const name: string = target.name;
@@ -69,7 +69,7 @@ export class PasswordPage extends React.Component<PasswordPageProps, PasswordPag
         });
     }
     
-    private handleSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
+    private handleSubmit = (event: FormEvent<HTMLFormElement>): void => {
         event.preventDefault();
         const reqData: FormFields = {...this.state.formFields};
         AccountServiceClient.Instance.doPost("/credentials/password", {data: reqData})
@@ -89,7 +89,7 @@ export class PasswordPage extends React.Component<PasswordPageProps, PasswordPag
         return true;
     }
 
-    public render(): React.ReactNode {
+    public render(): ReactNode {
         const displayNone = {display: 'none'};
         
         return (

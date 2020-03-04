@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import * as React from 'react';
+import React, { Component, ReactNode } from 'react';
 import {withRouter, RouteComponentProps} from 'react-router-dom';
 import {Nav, NavList} from '@patternfly/react-core';
 
@@ -26,7 +26,7 @@ export interface PageNavProps extends RouteComponentProps {}
  
 export interface PageNavState {}
 
-class PageNavigation extends React.Component<PageNavProps, PageNavState> {
+class PageNavigation extends Component<PageNavProps, PageNavState> {
     
     public constructor(props: PageNavProps) {
         super(props);
@@ -46,7 +46,7 @@ class PageNavigation extends React.Component<PageNavProps, PageNavState> {
         return firstItem;
     }
   
-    public render(): React.ReactNode {
+    public render(): ReactNode {
         const activeItem: PageDef = this.findActiveItem();
         return (
             <Nav aria-label="Nav">

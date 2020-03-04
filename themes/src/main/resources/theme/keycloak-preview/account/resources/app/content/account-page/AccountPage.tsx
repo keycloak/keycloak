@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import * as React from 'react';
+import React, { Component, FormEvent, ReactNode } from 'react';
 import { AxiosResponse } from 'axios';
 import { ActionGroup, Button, Form, FormGroup, TextInput } from '@patternfly/react-core';
 
@@ -44,7 +44,7 @@ interface AccountPageState {
 /**
  * @author Stan Silvert ssilvert@redhat.com (C) 2018 Red Hat Inc.
  */
-export class AccountPage extends React.Component<AccountPageProps, AccountPageState> {
+export class AccountPage extends Component<AccountPageProps, AccountPageState> {
     private isRegistrationEmailAsUsername: boolean = features.isRegistrationEmailAsUsername;
     private isEditUserNameAllowed: boolean = features.isEditUserNameAllowed;
     private readonly DEFAULT_STATE: AccountPageState = {
@@ -81,7 +81,7 @@ export class AccountPage extends React.Component<AccountPageProps, AccountPageSt
         this.fetchPersonalInfo();
     }
 
-    private handleChange = (value: string, event: React.FormEvent<HTMLInputElement>) => {
+    private handleChange = (value: string, event: FormEvent<HTMLInputElement>) => {
         const target = event.currentTarget;
         const name = target.name;
 
@@ -91,7 +91,7 @@ export class AccountPage extends React.Component<AccountPageProps, AccountPageSt
         });
     }
 
-    private handleSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
+    private handleSubmit = (event: FormEvent<HTMLFormElement>): void => {
         event.preventDefault();
         const form = event.target as HTMLFormElement;
         const isValid = form.checkValidity();
@@ -115,7 +115,7 @@ export class AccountPage extends React.Component<AccountPageProps, AccountPageSt
 
     }
 
-    public render(): React.ReactNode {
+    public render(): ReactNode {
         const fields: FormFields = this.state.formFields;
         return (
             <ContentPage title="personalInfoHtmlTitle"

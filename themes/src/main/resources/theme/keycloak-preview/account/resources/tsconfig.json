@@ -4,6 +4,7 @@
     "module": "commonjs",
     "moduleResolution": "node",
     "sourceMap": true,
+    "esModuleInterop": true,
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
     "lib": [ "es2015", "dom", "dom.iterable" ],

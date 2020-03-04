@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import * as React from 'react';
+import React, { ComponentType, Component, createElement, ReactNode, Fragment, ReactElement } from 'react';
 import {Route, Switch} from 'react-router-dom';
 import {NavItem, NavExpandable} from '@patternfly/react-core';
 import {Msg} from './widgets/Msg';
@@ -38,13 +38,13 @@ export interface PageDef extends ContentItem {
 }
 
 export interface ComponentPageDef extends PageDef {
-    component: React.ComponentType;
+    component: ComponentType;
 }
 
 export interface ModulePageDef extends PageDef {
     modulePath: string;
     componentName: string;
-    module: React.Component; // computed value
+    module: Component; // computed value
 }
 
 export function isModulePageDef(item: ContentItem): item is ModulePageDef {
@@ -74,10 +74,10 @@ function isChildOf(parent: Expansion, child: PageDef): boolean {
     return false;
 }
 
-function createNavItems(activePage: PageDef, contentParam: ContentItem[], groupNum: number): React.ReactNode {
-    if (typeof content === 'undefined') return (<React.Fragment/>);
+function createNavItems(activePage: PageDef, contentParam: ContentItem[], groupNum: number): ReactNode {
+    if (typeof content === 'undefined') return (<Fragment/>);
 
-    const links: React.ReactElement[] = contentParam.map((item: ContentItem) => {
+    const links: ReactElement[] = contentParam.map((item: ContentItem) => {
         const navLinkId = `nav-link-${item.id}`;
         if (isExpansion(item)) {
             return <NavExpandable id={navLinkId}
@@ -101,10 +101,10 @@ function createNavItems(activePage: PageDef, contentParam: ContentItem[], groupN
         }
     });
 
-    return (<React.Fragment>{links}</React.Fragment>);
+    return (<Fragment>{links}</Fragment>);
 }
 
-export function makeNavItems(activePage: PageDef): React.ReactNode {
+export function makeNavItems(activePage: PageDef): ReactNode {
     console.log({activePage});
     return createNavItems(activePage, content, 0);
 }
@@ -150,14 +150,14 @@ export function flattenContent(pageDefs: ContentItem[]): PageDef[] {
     return flat;
 }
 
-export function makeRoutes(): React.ReactNode {
+export function makeRoutes(): ReactNode {
     if (typeof content === 'undefined') return (<span/>);
 
     const pageDefs: PageDef[] = flattenContent(content); 
 
-    const routes: React.ReactElement<Route>[] = pageDefs.map((page: PageDef) => {
+    const routes: ReactElement<Route>[] = pageDefs.map((page: PageDef) => {
         if (isModulePageDef(page)) {
-            const node: React.ReactNode = React.createElement(page.module[page.componentName], {'pageDef': page});
+            const node: ReactNode = createElement(page.module[page.componentName], {'pageDef': page});
             return <Route key={page.itemId} path={'/app/' + page.path} exact render={() => node} />;
         } else {
             const pageDef: ComponentPageDef = page as ComponentPageDef;

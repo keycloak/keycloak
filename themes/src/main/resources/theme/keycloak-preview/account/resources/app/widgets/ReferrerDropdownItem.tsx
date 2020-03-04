@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import * as React from 'react';
+import React, { Component, ReactNode } from 'react';
 
 import {Msg} from '../widgets/Msg';
 
@@ -30,13 +30,13 @@ export interface ReferrerDropdownItemProps {
 /**
  * @author Stan Silvert ssilvert@redhat.com (C) 2018 Red Hat Inc.
  */
-export class ReferrerDropdownItem extends React.Component<ReferrerDropdownItemProps> {
+export class ReferrerDropdownItem extends Component<ReferrerDropdownItemProps> {
     
     public constructor(props: ReferrerDropdownItemProps) {
         super(props);
     }
 
-    public render(): React.ReactNode {
+    public render(): ReactNode {
         
         return (
             <DropdownItem id="referrerMobileLink" href={referrerUri}>

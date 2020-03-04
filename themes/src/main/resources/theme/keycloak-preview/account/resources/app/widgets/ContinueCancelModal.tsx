@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import * as React from 'react';
+import React, { Component, ReactNode, Fragment } from 'react';
 import { Modal, Button, ButtonProps } from '@patternfly/react-core';
 import {Msg} from './Msg';
  
@@ -44,7 +44,7 @@ interface ContinueCancelModalState {
  * 
  * @author Stan Silvert ssilvert@redhat.com (C) 2019 Red Hat Inc.
  */
-export class ContinueCancelModal extends React.Component<ContinueCancelModalProps, ContinueCancelModalState> {
+export class ContinueCancelModal extends Component<ContinueCancelModalProps, ContinueCancelModalState> {
     protected static defaultProps = {
         buttonVariant: 'primary',
         modalContinueButtonLabel: 'continue',
@@ -70,11 +70,11 @@ export class ContinueCancelModal extends React.Component<ContinueCancelModalProp
         this.props.onContinue();
     }
 
-    public render(): React.ReactNode {
+    public render(): ReactNode {
         const { isModalOpen } = this.state;
 
         return (
-            <React.Fragment>
+            <Fragment>
                 <Button id={this.props.buttonId} variant={this.props.buttonVariant} onClick={this.handleModalToggle} isDisabled={this.props.isDisabled}>
                     <Msg msgKey={this.props.buttonTitle}/>
                 </Button>
@@ -94,7 +94,7 @@ export class ContinueCancelModal extends React.Component<ContinueCancelModalProp
                 >
                     <Msg msgKey={this.props.modalMessage}/>
                 </Modal>
-            </React.Fragment>
+            </Fragment>
         );
     }
 };

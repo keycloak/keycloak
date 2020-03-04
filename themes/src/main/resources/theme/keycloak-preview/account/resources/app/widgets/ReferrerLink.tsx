@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import * as React from 'react';
+import React, { Component, ReactNode } from 'react';
 
 import {Msg} from '../widgets/Msg';
 
@@ -29,13 +29,13 @@ export interface ReferrerLinkProps {
 /**
  * @author Stan Silvert ssilvert@redhat.com (C) 2018 Red Hat Inc.
  */
-export class ReferrerLink extends React.Component<ReferrerLinkProps> {
+export class ReferrerLink extends Component<ReferrerLinkProps> {
     
     public constructor(props: ReferrerLinkProps) {
         super(props);
     }
 
-    public render(): React.ReactNode {
+    public render(): ReactNode {
         return (
             // '_hash_' is a workaround for when uri encoding is not
             // sufficient to escape the # character properly.

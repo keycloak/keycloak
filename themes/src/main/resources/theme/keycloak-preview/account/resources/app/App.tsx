@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-import * as React from 'react';
+import React, { Component, ReactNode } from 'react';
 
-import * as moment from 'moment';
+import moment from 'moment';
 
 import {KeycloakService} from './keycloak-service/keycloak.service';
 
@@ -44,7 +44,7 @@ const brandImg = resourceUrl + '/public/logo.svg';
 const avatarImg = pFlyImages + 'img_avatar.svg';
 
 export interface AppProps {};
-export class App extends React.Component<AppProps> {
+export class App extends Component<AppProps> {
     private kcSvc: KeycloakService = KeycloakService.Instance;
 
     public constructor(props: AppProps) {
@@ -52,7 +52,7 @@ export class App extends React.Component<AppProps> {
         toggleReact();
     }
 
-    public render(): React.ReactNode {
+    public render(): ReactNode {
         toggleReact();
 
         // check login

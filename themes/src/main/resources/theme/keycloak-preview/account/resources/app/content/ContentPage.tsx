@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import * as React from 'react';
+import React, { ReactNode, Component, Fragment } from 'react';
 import {Button, Grid, GridItem, Title, Tooltip} from '@patternfly/react-core';
 import {RedoIcon} from '@patternfly/react-icons';
 
@@ -25,21 +25,21 @@ interface ContentPageProps {
     title: string; // Literal title or key into message bundle
     introMessage?: string; // Literal message or key into message bundle
     onRefresh?: () => void;
-    children: React.ReactNode;
+    children: ReactNode;
 }
 
 /**
  * @author Stan Silvert ssilvert@redhat.com (C) 2019 Red Hat Inc.
  */
-export class ContentPage extends React.Component<ContentPageProps> {
+export class ContentPage extends Component<ContentPageProps> {
     
     public constructor(props: ContentPageProps) {
         super(props);
     }
 
-    public render(): React.ReactNode {
+    public render(): ReactNode {
         return (
-            <React.Fragment>
+            <Fragment>
                 <ContentAlert/>
                 <section id="page-heading" className="pf-c-page__main-section pf-m-light">
                     <Grid>
@@ -56,7 +56,7 @@ export class ContentPage extends React.Component<ContentPageProps> {
                 <section className="pf-c-page__main-section">
                     {this.props.children}
                 </section>
-            </React.Fragment>
+            </Fragment>
         );
     }
 };

@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-import * as React from 'react';
+import React, { Component, ReactNode, MouseEvent } from 'react';
 import {AxiosResponse} from 'axios';
 
-import * as parse from 'parse-link-header';
+import parse from 'parse-link-header';
 
 import { Button, Level, LevelItem, Stack, StackItem, Tab, Tabs, TextInput } from '@patternfly/react-core';
 
@@ -82,7 +82,7 @@ export interface Permission {
 const MY_RESOURCES_TAB = 0;
 const SHARED_WITH_ME_TAB = 1;
 
-export class MyResourcesPage extends React.Component<MyResourcesPageProps, MyResourcesPageState> {
+export class MyResourcesPage extends Component<MyResourcesPageProps, MyResourcesPageState> {
     private first = 0;
     private max = 5;
 
@@ -200,7 +200,7 @@ export class MyResourcesPage extends React.Component<MyResourcesPageProps, MyRes
         return {nextUrl: next, prevUrl: prev, data: resources};
     }
 
-    private makeTab(eventKey: number, title: string, resources: PaginatedResources, noResourcesMessage: string): React.ReactNode {
+    private makeTab(eventKey: number, title: string, resources: PaginatedResources, noResourcesMessage: string): ReactNode {
         return (
             <Tab eventKey={eventKey} title={Msg.localize(title)}>
                 <Stack gutter="md">
@@ -220,7 +220,7 @@ export class MyResourcesPage extends React.Component<MyResourcesPageProps, MyRes
         )
     }
 
-    public render(): React.ReactNode {
+    public render(): ReactNode {
         return (
             <ContentPage title="resources" onRefresh={this.fetchInitialResources.bind(this)}>
                 <Tabs isFilled activeKey={this.state.activeTabKey} onSelect={this.handleTabClick}>
@@ -277,7 +277,7 @@ export class MyResourcesPage extends React.Component<MyResourcesPageProps, MyRes
         }
     }
 
-    private handleTabClick = (event: React.MouseEvent<HTMLInputElement>, tabIndex: number) => {
+    private handleTabClick = (_event: MouseEvent<HTMLInputElement>, tabIndex: number) => {
         if (this.state.activeTabKey === tabIndex) return;
 
         this.setState({

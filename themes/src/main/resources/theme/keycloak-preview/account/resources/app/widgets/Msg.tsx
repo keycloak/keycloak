@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import * as React from 'react';
+import React, { Component, ReactNode, Fragment } from 'react';
  
 declare const l18nMsg: {[key: string]: string};
 
@@ -23,15 +23,15 @@ export interface MsgProps {
     readonly params?: string[];
 }
  
-export class Msg extends React.Component<MsgProps> {
+export class Msg extends Component<MsgProps> {
 
     public constructor(props: MsgProps) {
         super(props);
     }
     
-    public render(): React.ReactNode {
+    public render(): ReactNode {
         return (
-            <React.Fragment>{Msg.localize(this.props.msgKey, this.props.params)}</React.Fragment>
+            <Fragment>{Msg.localize(this.props.msgKey, this.props.params)}</Fragment>
         );
     }
     

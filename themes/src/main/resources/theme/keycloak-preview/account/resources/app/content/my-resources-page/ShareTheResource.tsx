@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import * as React from 'react';
+import React, { ReactNode, Component, Fragment, KeyboardEvent } from 'react';
 
 import { 
     Button, 
@@ -41,7 +41,7 @@ import {ContentAlert} from '../ContentAlert';
 interface ShareTheResourceProps {
     resource: Resource;
     permissions: Permission[];
-    sharedWithUsersMsg: React.ReactNode;
+    sharedWithUsersMsg: ReactNode;
     onClose: (resource: Resource, row: number) => void;
     row: number;
 }
@@ -57,7 +57,7 @@ interface ShareTheResourceState {
 /**
  * @author Stan Silvert ssilvert@redhat.com (C) 2019 Red Hat Inc.
  */
-export class ShareTheResource extends React.Component<ShareTheResourceProps, ShareTheResourceState> {
+export class ShareTheResource extends Component<ShareTheResourceProps, ShareTheResourceState> {
     protected static defaultProps = {permissions: [], row: 0};
 
     public constructor(props: ShareTheResourceProps) {
@@ -124,7 +124,7 @@ export class ShareTheResource extends React.Component<ShareTheResourceProps, Sha
         }
     }
 
-    private handleEnterKeyInAddField = (event: React.KeyboardEvent) => {
+    private handleEnterKeyInAddField = (event: KeyboardEvent) => {
         if (event.key === "Enter") {
             event.preventDefault();
             this.handleAddUsername();
@@ -167,10 +167,10 @@ export class ShareTheResource extends React.Component<ShareTheResourceProps, Sha
         return (this.state.usernames.length === 0) || (this.state.permissionsSelected.length === 0);
     }
 
-    public render(): React.ReactNode {
+    public render(): ReactNode {
 
         return (
-            <React.Fragment>
+            <Fragment>
                 <Button variant="link" onClick={this.handleToggleDialog}>
                     <ShareAltIcon/> Share
                 </Button>
@@ -268,7 +268,7 @@ export class ShareTheResource extends React.Component<ShareTheResourceProps, Sha
                     
                     </Stack>
                 </Modal>
-            </React.Fragment>
+            </Fragment>
         );
     }
 }

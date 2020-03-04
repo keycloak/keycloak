@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import * as React from 'react';
+import React, { Component, ReactNode } from 'react';
 
 import {Msg} from './Msg';
 import {KeycloakService} from '../keycloak-service/keycloak.service';
@@ -28,8 +28,8 @@ function handleLogout(): void {
 }
     
 interface LogoutProps {}
-export class LogoutButton extends React.Component<LogoutProps> {
-    public render(): React.ReactNode {
+export class LogoutButton extends Component<LogoutProps> {
+    public render(): ReactNode {
         return (
             <Button id="signOutButton" onClick={handleLogout}><Msg msgKey="doSignOut"/></Button>
         );
@@ -37,8 +37,8 @@ export class LogoutButton extends React.Component<LogoutProps> {
 }
 
 interface LogoutDropdownItemProps {}
-export class LogoutDropdownItem extends React.Component<LogoutDropdownItemProps> {
-    public render(): React.ReactNode {
+export class LogoutDropdownItem extends Component<LogoutDropdownItemProps> {
+    public render(): ReactNode {
         return (
             <DropdownItem id="signOutLink" key="logout" onClick={handleLogout}>
                 {Msg.localize('doSignOut')}

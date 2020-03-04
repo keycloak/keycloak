@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import * as React from 'react';
+import React, { Component, ReactNode, Fragment } from 'react';
 import {withRouter, RouteComponentProps} from 'react-router-dom';
 
 import {Msg} from './Msg';
@@ -50,7 +50,7 @@ if ((typeof referrer !== 'undefined') &&
     
 interface LocaleKebabItemProps extends RouteComponentProps {}
 interface LocaleKebabItemState {activeGroup: string; activeItem: string}
-class LocaleKebabItem extends React.Component<LocaleKebabItemProps, LocaleKebabItemState> {
+class LocaleKebabItem extends Component<LocaleKebabItemProps, LocaleKebabItemState> {
     public constructor(props: LocaleKebabItemProps) {
         super(props);
         this.state = {
@@ -59,7 +59,7 @@ class LocaleKebabItem extends React.Component<LocaleKebabItemProps, LocaleKebabI
         };
     }
      
-    public render(): React.ReactNode {        
+    public render(): ReactNode {
         const appPath = this.props.location.pathname;
         const localeNavItems = availLocales.map((availableLocale: AvailableLocale) => {
             const url = baseUrl + '?kc_locale=' + availableLocale.locale + referrerFragment + '#' + appPath;
@@ -85,7 +85,7 @@ class LocaleKebabItem extends React.Component<LocaleKebabItemProps, LocaleKebabI
 
 interface LocaleDropdownComponentProps extends RouteComponentProps {}
 interface LocaleDropdownComponentState {isDropdownOpen: boolean}
-class LocaleDropdownComponent extends React.Component<LocaleDropdownComponentProps, LocaleDropdownComponentState> {
+class LocaleDropdownComponent extends Component<LocaleDropdownComponentProps, LocaleDropdownComponentState> {
     public constructor(props: LocaleDropdownComponentProps) {
         super(props);
         this.state = {isDropdownOpen: false};
@@ -103,7 +103,7 @@ class LocaleDropdownComponent extends React.Component<LocaleDropdownComponentPro
         });
     };
 
-    public render(): React.ReactNode {
+    public render(): ReactNode {
         const appPath = this.props.location.pathname;
         const localeDropdownItems = availLocales.map((availableLocale: AvailableLocale) => {
             const url = baseUrl + '?kc_locale=' + availableLocale.locale + referrerFragment + '#' + appPath;
@@ -115,7 +115,7 @@ class LocaleDropdownComponent extends React.Component<LocaleDropdownComponentPro
                     </DropdownItem> );
         });
 
-        if (localeDropdownItems.length < 2) return (<React.Fragment/>);
+        if (localeDropdownItems.length < 2) return (<Fragment/>);
         
         return (
             <Dropdown

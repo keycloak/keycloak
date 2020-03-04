@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-import * as React from 'react';
-import * as moment from 'moment';
+import React, { Component, ReactNode, Fragment } from 'react';
+import moment from 'moment'
 import {AxiosResponse} from 'axios';
 
 import {AccountServiceClient} from '../../account-service/account.service';
@@ -91,7 +91,7 @@ interface Client {
 /**
  * @author Stan Silvert ssilvert@redhat.com (C) 2019 Red Hat Inc.
  */
-export class DeviceActivityPage extends React.Component<DeviceActivityPageProps, DeviceActivityPageState> {
+export class DeviceActivityPage extends Component<DeviceActivityPageProps, DeviceActivityPageState> {
  
     public constructor(props: DeviceActivityPageProps) {
         super(props);
@@ -162,7 +162,7 @@ export class DeviceActivityPage extends React.Component<DeviceActivityPageProps,
         return `session-${session.id.substring(0,7)}-${item}`;
     }
 
-    private findBrowserIcon(session: Session): React.ReactNode {
+    private findBrowserIcon(session: Session): ReactNode {
       const browserName: string = session.browser.toLowerCase();
       if (browserName.includes("chrom")) return (<ChromeIcon id={this.elementId('icon-chrome', session)} size='lg'/>); // chrome or chromium
       if (browserName.includes("firefox")) return (<FirefoxIcon id={this.elementId('icon-firefox', session)} size='lg'/>);
@@ -214,7 +214,7 @@ export class DeviceActivityPage extends React.Component<DeviceActivityPageProps,
       return false;
     }
 
-    public render(): React.ReactNode {
+    public render(): ReactNode {
       
       return (
         <ContentPage title="device-activity" onRefresh={this.fetchDevices.bind(this)}>
@@ -253,10 +253,10 @@ export class DeviceActivityPage extends React.Component<DeviceActivityPageProps,
                     <GridItem span={12}/> {/* <-- top spacing */}
                       {this.state.devices.map((device: Device, deviceIndex: number) => {
                         return (
-                          <React.Fragment>
+                          <Fragment>
                             {device.sessions.map((session: Session, sessionIndex: number) => {
                               return (
-                                <React.Fragment key={'device-' + deviceIndex + '-session-' + sessionIndex}>
+                                <Fragment key={'device-' + deviceIndex + '-session-' + sessionIndex}>
                                   
                                   <GridItem span={3}>
                                    <Stack>
@@ -297,11 +297,11 @@ export class DeviceActivityPage extends React.Component<DeviceActivityPageProps,
                                     } 
                                     
                                   </GridItem>
-                                </React.Fragment>
+                                </Fragment>
                               );
                               
                             })}
-                          </React.Fragment>
+                          </Fragment>
                         )
                       })}
                     <GridItem span={12}/> {/* <-- bottom spacing */}

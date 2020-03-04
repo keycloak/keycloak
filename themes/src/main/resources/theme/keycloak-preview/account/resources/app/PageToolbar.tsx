@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import * as React from 'react';
+import React, { Component, ReactNode } from 'react';
  
 import {Dropdown, KebabToggle, Toolbar, ToolbarGroup, ToolbarItem} from '@patternfly/react-core';
 
@@ -29,7 +29,7 @@ declare const features: Features;
 
 interface PageToolbarProps {}
 interface PageToolbarState {isKebabDropdownOpen: boolean}
-export class PageToolbar extends React.Component<PageToolbarProps, PageToolbarState> {
+export class PageToolbar extends Component<PageToolbarProps, PageToolbarState> {
     private hasReferrer: boolean = typeof referrerName !== 'undefined';
 
     public constructor(props: PageToolbarProps) {
@@ -46,7 +46,7 @@ export class PageToolbar extends React.Component<PageToolbarProps, PageToolbarSt
         });
     };
     
-    public render(): React.ReactNode {
+    public render(): ReactNode {
         const kebabDropdownItems = [];
         if (this.hasReferrer) {
             kebabDropdownItems.push(

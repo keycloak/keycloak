@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import * as React from 'react';
+import React, { Component, ReactNode, Fragment } from 'react';
 import { AxiosResponse } from 'axios';
 
 import {
@@ -69,7 +69,7 @@ interface Application {
   scope: string[];
 }
 
-export class ApplicationsPage extends React.Component<ApplicationsPageProps, ApplicationsPageState> {
+export class ApplicationsPage extends Component<ApplicationsPageProps, ApplicationsPageState> {
 
   public constructor(props: ApplicationsPageProps) {
     super(props);
@@ -109,7 +109,7 @@ export class ApplicationsPage extends React.Component<ApplicationsPageProps, App
     return `application-${item}-${application.clientId}`;
   }
 
-  public render(): React.ReactNode {
+  public render(): ReactNode {
     return (
       <ContentPage title={Msg.localize('applicationsPageTitle')}>
         <DataList id="applications-list" aria-label={Msg.localize('applicationsPageTitle')}>
@@ -160,15 +160,15 @@ export class ApplicationsPage extends React.Component<ApplicationsPageProps, App
                       }
                       <GridItem><strong>{Msg.localize('baseUrl') + ': '}</strong> {application.baseUrl}</GridItem>
                       {application.consent &&
-                        <React.Fragment>
+                        <Fragment>
                           <GridItem span={12}>
                             <strong>Has access to:</strong>
                           </GridItem>
                           {application.consent.grantedScopes.map((scope: GrantedScope, scopeIndex: number) => {
                             return (
-                              <React.Fragment key={'scope-' + scopeIndex} >
+                              <Fragment key={'scope-' + scopeIndex} >
                                 <GridItem offset={1}><CheckIcon /> {scope.name}</GridItem>
-                              </React.Fragment>
+                              </Fragment>
                             )
                           })}
                           <GridItem><strong>{Msg.localize('accessGrantedOn') + ': '}</strong>
@@ -181,7 +181,7 @@ export class ApplicationsPage extends React.Component<ApplicationsPageProps, App
                               second: 'numeric'
                             }).format(application.consent.createDate)}
                           </GridItem>
-                        </React.Fragment>
+                        </Fragment>
                       }
                     </div>
                   </Grid>
@@ -189,7 +189,7 @@ export class ApplicationsPage extends React.Component<ApplicationsPageProps, App
                     <hr />
                     {application.consent &&
                       <GridItem>
-                        <React.Fragment>
+                        <Fragment>
                           <ContinueCancelModal
                             buttonTitle={Msg.localize('removeButton')} // required
                             buttonVariant='secondary' // defaults to 'primary'
@@ -198,7 +198,7 @@ export class ApplicationsPage extends React.Component<ApplicationsPageProps, App
                             modalContinueButtonLabel={Msg.localize('confirmButton')} // defaults to 'Continue'
                             onContinue={() => this.removeConsent(application.clientId)} // required
                           />
-                        </React.Fragment>
+                        </Fragment>
                       </GridItem>
                     }
                     <GridItem><InfoAltIcon /> {Msg.localize('infoMessage')}</GridItem>
