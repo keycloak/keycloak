@@ -183,7 +183,7 @@ public class IdentityProvidersResource {
         this.auth.realm().requireManageIdentityProviders();
 
         try {
-            IdentityProviderModel identityProvider = RepresentationToModel.toModel(realm, representation);
+            IdentityProviderModel identityProvider = RepresentationToModel.toModel(realm, representation, session);
             this.realm.addIdentityProvider(identityProvider);
 
             representation.setInternalId(identityProvider.getInternalId());
@@ -191,6 +191,8 @@ public class IdentityProvidersResource {
                     .representation(StripSecretsUtils.strip(representation)).success();
             
             return Response.created(session.getContext().getUri().getAbsolutePathBuilder().path(representation.getAlias()).build()).build();
+        } catch (IllegalArgumentException e) {
+            return ErrorResponse.error("Invalid request", BAD_REQUEST);
         } catch (ModelDuplicateException e) {
             return ErrorResponse.exists("Identity Provider " + representation.getAlias() + " already exists");
         }

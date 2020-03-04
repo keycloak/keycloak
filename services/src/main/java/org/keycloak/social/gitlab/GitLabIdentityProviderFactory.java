@@ -16,7 +16,6 @@
  */
 package org.keycloak.social.gitlab;
 
-import org.keycloak.broker.oidc.OAuth2IdentityProviderConfig;
 import org.keycloak.broker.oidc.OIDCIdentityProviderConfig;
 import org.keycloak.broker.provider.AbstractIdentityProviderFactory;
 import org.keycloak.broker.social.SocialIdentityProviderFactory;
@@ -38,6 +37,11 @@ public class GitLabIdentityProviderFactory extends AbstractIdentityProviderFacto
     @Override
     public GitLabIdentityProvider create(KeycloakSession session, IdentityProviderModel model) {
         return new GitLabIdentityProvider(session, new OIDCIdentityProviderConfig(model));
+    }
+
+    @Override
+    public OIDCIdentityProviderConfig createConfig() {
+        return new OIDCIdentityProviderConfig();
     }
 
     @Override

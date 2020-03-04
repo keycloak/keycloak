@@ -17,9 +17,13 @@
 
 package org.keycloak.testsuite.admin;
 
+import org.hamcrest.Matchers;
 import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataOutput;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 import org.keycloak.admin.client.resource.IdentityProviderResource;
+import org.keycloak.common.enums.SslRequired;
 import org.keycloak.dom.saml.v2.metadata.EndpointType;
 import org.keycloak.dom.saml.v2.metadata.EntityDescriptorType;
 import org.keycloak.dom.saml.v2.metadata.IndexedEndpointType;
@@ -35,12 +39,15 @@ import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.IdentityProviderMapperTypeRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
+import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.saml.common.exceptions.ParsingException;
 import org.keycloak.saml.processing.core.parsers.saml.SAMLParser;
 import org.keycloak.testsuite.Assert;
+import org.keycloak.testsuite.broker.OIDCIdentityProviderConfigRep;
 import org.keycloak.testsuite.util.AdminEventPaths;
 import org.w3c.dom.NodeList;
 
+import javax.ws.rs.ClientErrorException;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -59,6 +66,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.containsString;
@@ -75,6 +83,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
+import static org.keycloak.testsuite.arquillian.AuthServerTestEnricher.AUTH_SERVER_SSL_REQUIRED;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -101,6 +110,9 @@ public class IdentityProviderTest extends AbstractAdminTest {
       + "CAqeyLv00yj6foqdJjxh5SZ5z+na+M7Y2OxIBVxYRAxWEnfUvAgMBAAEwDQYJKoZIhvcNAQELBQADgYEAhet"
       + "vOU8TyqfZF5jpv0IcrviLl/DoFrbjByeHR+pu/vClcAOjL/u7oQELuuTfNsBI4tpexUj5G8q/YbEz0gk7idf"
       + "LXrAUVcsR73oTngrhRfwUSmPrjjK0kjcRb6HL9V/+wh3R/6mEd59U08ExT8N38rhmn0CI3ehMdebReprP7U8=";
+
+    @Rule
+    public ExpectedException expectedException = ExpectedException.none();
 
     @Test
     public void testFindAll() {
@@ -143,6 +155,71 @@ public class IdentityProviderTest extends AbstractAdminTest {
         assertEquals(ComponentRepresentation.SECRET_VALUE, rep.getConfig().get("clientSecret"));
     }
 
+    @Test
+    public void failCreateInvalidUrl() {
+        RealmRepresentation realmRep = realm.toRepresentation();
+
+        realmRep.setSslRequired(SslRequired.ALL.name());
+
+        try {
+            realm.update(realmRep);
+
+            IdentityProviderRepresentation newIdentityProvider = createRep("new-identity-provider", "oidc");
+
+            newIdentityProvider.getConfig().put("clientId", "clientId");
+            newIdentityProvider.getConfig().put("clientSecret", "some secret value");
+
+            OIDCIdentityProviderConfigRep oidcConfig = new OIDCIdentityProviderConfigRep(newIdentityProvider);
+
+            oidcConfig.setAuthorizationUrl("invalid://test");
+
+            try (Response response = this.realm.identityProviders().create(newIdentityProvider)) {
+                assertEquals(AUTH_SERVER_SSL_REQUIRED ? Response.Status.BAD_REQUEST.getStatusCode() :
+                        Response.Status.CREATED.getStatusCode(), response.getStatus());
+            }
+
+            oidcConfig.setAuthorizationUrl(null);
+            oidcConfig.setTokenUrl("http://test");
+
+            try (Response response = this.realm.identityProviders().create(newIdentityProvider)) {
+                assertEquals(AUTH_SERVER_SSL_REQUIRED ? Response.Status.BAD_REQUEST.getStatusCode() :
+                        Response.Status.CREATED.getStatusCode(), response.getStatus());
+            }
+
+            oidcConfig.setAuthorizationUrl(null);
+            oidcConfig.setTokenUrl(null);
+            oidcConfig.setJwksUrl("http://test");
+
+            try (Response response = this.realm.identityProviders().create(newIdentityProvider)) {
+                assertEquals(AUTH_SERVER_SSL_REQUIRED ? Response.Status.BAD_REQUEST.getStatusCode() :
+                        Response.Status.CREATED.getStatusCode(), response.getStatus());
+            }
+
+            oidcConfig.setAuthorizationUrl(null);
+            oidcConfig.setTokenUrl(null);
+            oidcConfig.setJwksUrl(null);
+            oidcConfig.setLogoutUrl("http://test");
+
+            try (Response response = this.realm.identityProviders().create(newIdentityProvider)) {
+                assertEquals(AUTH_SERVER_SSL_REQUIRED ? Response.Status.BAD_REQUEST.getStatusCode() :
+                        Response.Status.CREATED.getStatusCode(), response.getStatus());
+            }
+
+            oidcConfig.setAuthorizationUrl(null);
+            oidcConfig.setTokenUrl(null);
+            oidcConfig.setJwksUrl(null);
+            oidcConfig.setLogoutUrl(null);
+            oidcConfig.setUserInfoUrl("http://test");
+
+            try (Response response = this.realm.identityProviders().create(newIdentityProvider)) {
+                assertEquals(AUTH_SERVER_SSL_REQUIRED ? Response.Status.BAD_REQUEST.getStatusCode() :
+                        Response.Status.CREATED.getStatusCode(), response.getStatus());
+            }
+        } finally {
+            realmRep.setSslRequired(SslRequired.NONE.name());
+            realm.update(realmRep);
+        }
+    }
 
     @Test
     public void testCreateWithBasicAuth() {
@@ -256,6 +333,84 @@ public class IdentityProviderTest extends AbstractAdminTest {
 
         assertThat(identityProviderResource.toRepresentation().getConfig(), hasEntry("clientSecret", "${vault.key}"));
         assertEquals("${vault.key}", testingClient.testing("admin-client-test").getIdentityProviderConfig("changed-alias").get("clientSecret"));
+    }
+
+    @Test
+    public void failUpdateInvalidUrl() {
+        RealmRepresentation realmRep = realm.toRepresentation();
+
+        realmRep.setSslRequired(SslRequired.ALL.name());
+
+        try {
+            realm.update(realmRep);
+
+            IdentityProviderRepresentation representation = createRep(UUID.randomUUID().toString(), "oidc");
+
+            representation.getConfig().put("clientId", "clientId");
+            representation.getConfig().put("clientSecret", "some secret value");
+
+            try (Response response = realm.identityProviders().create(representation)) {
+                assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
+            }
+
+            IdentityProviderResource resource = this.realm.identityProviders().get(representation.getAlias());
+            representation = resource.toRepresentation();
+
+            OIDCIdentityProviderConfigRep oidcConfig = new OIDCIdentityProviderConfigRep(representation);
+
+            oidcConfig.setAuthorizationUrl("invalid://test");
+
+            this.expectedException.expect(
+                    Matchers.allOf(Matchers.instanceOf(ClientErrorException.class), Matchers.hasProperty("response",
+                            Matchers.hasProperty("status", Matchers.is(
+                                    Response.Status.BAD_REQUEST.getStatusCode())))));
+            resource.update(representation);
+
+            oidcConfig.setAuthorizationUrl(null);
+            oidcConfig.setTokenUrl("http://test");
+
+            this.expectedException.expect(
+                    Matchers.allOf(Matchers.instanceOf(ClientErrorException.class), Matchers.hasProperty("response",
+                            Matchers.hasProperty("status", Matchers.is(
+                                    Response.Status.BAD_REQUEST.getStatusCode())))));
+            resource.update(representation);
+
+            oidcConfig.setAuthorizationUrl(null);
+            oidcConfig.setTokenUrl(null);
+            oidcConfig.setJwksUrl("http://test");
+
+            this.expectedException.expect(
+                    Matchers.allOf(Matchers.instanceOf(ClientErrorException.class), Matchers.hasProperty("response",
+                            Matchers.hasProperty("status", Matchers.is(
+                                    Response.Status.BAD_REQUEST.getStatusCode())))));
+            resource.update(representation);
+
+            oidcConfig.setAuthorizationUrl(null);
+            oidcConfig.setTokenUrl(null);
+            oidcConfig.setJwksUrl(null);
+            oidcConfig.setLogoutUrl("http://test");
+
+            this.expectedException.expect(
+                    Matchers.allOf(Matchers.instanceOf(ClientErrorException.class), Matchers.hasProperty("response",
+                            Matchers.hasProperty("status", Matchers.is(
+                                    Response.Status.BAD_REQUEST.getStatusCode())))));
+            resource.update(representation);
+
+            oidcConfig.setAuthorizationUrl(null);
+            oidcConfig.setTokenUrl(null);
+            oidcConfig.setJwksUrl(null);
+            oidcConfig.setLogoutUrl(null);
+            oidcConfig.setUserInfoUrl("http://test");
+
+            this.expectedException.expect(
+                    Matchers.allOf(Matchers.instanceOf(ClientErrorException.class), Matchers.hasProperty("response",
+                            Matchers.hasProperty("status", Matchers.is(
+                                    Response.Status.BAD_REQUEST.getStatusCode())))));
+            resource.update(representation);
+        } finally {
+            realmRep.setSslRequired(SslRequired.NONE.name());
+            realm.update(realmRep);
+        }
     }
 
     @Test
