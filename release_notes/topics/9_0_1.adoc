@@ -1,3 +1,11 @@
+= Highlights
+
+== PromiseType removed from JavaScript adapter
+
+The promiseType init option has been removed from the JavaScript adapter. Instead a promise that supports
+both native promise API and legacy Keycloak promise API is returned. This allows gradually migration of
+applications from the legacy/deprecated API to the native promise API.
+
 = Other improvements
 
 == Reverted breaking API changes to LocaleSelectorSPI

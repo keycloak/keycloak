@@ -28,7 +28,7 @@ The following example shows how to initialize the JavaScript adapter:
     <script src="keycloak.js"></script>
     <script>
         var keycloak = new Keycloak();
-        keycloak.init({ promiseType: 'native' }).then(function(authenticated) {
+        keycloak.init().then(function(authenticated) {
             alert(authenticated ? 'authenticated' : 'not authenticated');
         }).catch(function() {
             alert('failed to initialize');
@@ -71,8 +71,7 @@ This URI needs to be a valid endpoint in the application (and of course it must 
 ----
 keycloak.init({
     onLoad: 'check-sso',
-    silentCheckSsoRedirectUri: window.location.origin + '/silent-check-sso.html',
-    promiseType: 'native',
+    silentCheckSsoRedirectUri: window.location.origin + '/silent-check-sso.html'
 })
 ----
 
@@ -100,8 +99,7 @@ To enable `login-required` set `onLoad` to `login-required` and pass to the init
 [source,javascript]
 ----
 keycloak.init({
-    onLoad: 'login-required',
-    promiseType: 'native',
+    onLoad: 'login-required'
 })
 ----
 
@@ -182,8 +180,7 @@ You also need to pass the parameter `flow` with value `implicit` to `init` metho
 [source,javascript]
 ----
 keycloak.init({
-    flow: 'implicit',
-    promiseType: 'native',
+    flow: 'implicit'
 })
 ----
 
@@ -205,8 +202,7 @@ For the Hybrid flow, you need to pass the parameter `flow` with value `hybrid` t
 [source,javascript]
 ----
 keycloak.init({
-    flow: 'hybrid',
-    promiseType: 'native',
+    flow: 'hybrid'
 })
 ----
 
@@ -236,8 +232,7 @@ You can activate the native mode by passing the adapter type `cordova-native` to
 [source,javascript]
 ----
 keycloak.init({
-    adapter: 'cordova-native',
-    promiseType: 'native',
+    adapter: 'cordova-native'
 })
 ----
 
@@ -276,27 +271,6 @@ Example polyfill libraries:
 * Base64 - https://github.com/davidchambers/Base64.js
 * HTML5 History - https://github.com/devote/HTML5-History-API
 * Promise - https://github.com/stefanpenner/es6-promise
-
-==== A note about `promiseType`
-
-Throughout the examples in the documentation you will find `promiseType: 'native'` specified wherever {project_name} is initialized.
-Historically {project_name} has used its own implementation of promises that is not compatible with native promises as provided by the browser.
-By default {project_name}'s own promise implementation (also known as `promiseType: 'legacy'`) will be used if no promise type is specified.
-
-In future versions of {project_name} the default promise type will change from `legacy` to `native`. Eventually, support for legacy promises will be removed entirely. It is therefore highly recommended that you always specify `promiseType: 'native'` to future-proof your code.
-
-==== Native promises and TypeScript
-
-If you want to use native promises and get correct type information when using TypeScript you will have to specify the `promiseType` when constructing a new instance of Keycloak.
-
-[source,javascript]
-----
-// Typescript assumes this is a 'legacy' promise, all methods return .success() and .error()
-const keycloak = new Keycloak();
-
-// Typescript assumes this is a native promise, all methods return standard promises
-const keycloak = new Keycloak<'native'>();
-----
 
 ==== JavaScript Adapter Reference
 
@@ -381,7 +355,6 @@ Options is an Object, where:
 * checkLoginIframeInterval - Set the interval to check login state (default is 5 seconds).
 * responseMode - Set the OpenID Connect response mode send to {project_name} server at login request. Valid values are `query` or `fragment`. Default value is `fragment`, which means that after successful authentication will {project_name} redirect to JavaScript application with OpenID Connect parameters added in URL fragment. This is generally safer and recommended over `query`.
 * flow - Set the OpenID Connect flow. Valid values are `standard`, `implicit` or `hybrid`.
-* promiseType - If set to `native` all methods returning a promise will return a native JavaScript promise. If not set will return Keycloak specific promise objects.
 * enableLogging - Enables logging messages from Keycloak to the console (default is `false`).
 * pkceMethod - The method for Proof Key Code Exchange (https://tools.ietf.org/html/rfc7636[PKCE]) to use. Configuring this value enables the PKCE mechanism. Available options:
     - "S256" - The SHA256 based PKCE method
