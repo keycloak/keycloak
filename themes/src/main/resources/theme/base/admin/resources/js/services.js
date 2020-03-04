@@ -429,28 +429,12 @@ module.factory('RegisterRequiredAction', function($resource) {
 module.factory('RealmLDAPConnectionTester', function($resource, $httpParamSerializer) {
     return $resource(authUrl + '/admin/realms/:realm/testLDAPConnection', {
         realm : '@realm'
-    }, {
-        save: {
-            method: 'POST',
-            headers : { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
-            transformRequest: function (data) {
-                return $httpParamSerializer(data)
-            }
-        }
     });
 });
 
 module.factory('RealmSMTPConnectionTester', function($resource, $httpParamSerializer) {
     return $resource(authUrl + '/admin/realms/:realm/testSMTPConnection', {
         realm : '@realm'
-    }, {
-        send: {
-            method: 'POST',
-            headers : { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
-            transformRequest: function (data) {
-                return $httpParamSerializer(data)
-            }
-        }
     });
 });
 

@@ -1661,20 +1661,19 @@ module.controller('LDAPUserStorageCtrl', function($scope, $location, Notificatio
     var initConnectionTest = function(testAction, ldapConfig) {
         return {
             action: testAction,
-            realm: $scope.realm.realm,
-            connectionUrl: ldapConfig.connectionUrl,
-            bindDn: ldapConfig.bindDn,
-            bindCredential: ldapConfig.bindCredential,
-            useTruststoreSpi: ldapConfig.useTruststoreSpi,
-            connectionTimeout: ldapConfig.connectionTimeout,
-            startTls: ldapConfig.startTls,
+            connectionUrl: ldapConfig.connectionUrl && ldapConfig.connectionUrl[0],
+            bindDn: ldapConfig.bindDn && ldapConfig.bindDn[0],
+            bindCredential: ldapConfig.bindCredential && ldapConfig.bindCredential[0],
+            useTruststoreSpi: ldapConfig.useTruststoreSpi && ldapConfig.useTruststoreSpi[0],
+            connectionTimeout: ldapConfig.connectionTimeout && ldapConfig.connectionTimeout[0],
+            startTls: ldapConfig.startTls && ldapConfig.startTls[0],
             componentId: instance.id
         };
     };
 
     $scope.testConnection = function() {
         console.log('LDAPCtrl: testConnection');
-        RealmLDAPConnectionTester.save(initConnectionTest("testConnection", $scope.instance.config), function() {
+        RealmLDAPConnectionTester.save({realm: realm.realm}, initConnectionTest("testConnection", $scope.instance.config), function() {
             Notifications.success("LDAP connection successful.");
         }, function() {
             Notifications.error("Error when trying to connect to LDAP. See server.log for details.");
