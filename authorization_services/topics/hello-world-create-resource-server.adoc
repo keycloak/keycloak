@@ -11,12 +11,13 @@ To create a new client, complete the following steps:
 image:{project_images}/getting-started/hello-world/create-client.png[alt="Create Client Application"]
 
 . Click *Save*. The Client Details page is displayed.
+
+. On the Client Details page, select *confidential* in the *Access Type* field, change the *Authorization Enabled* switch to *ON*, and then click *Save*. A new *Authorization* tab is displayed for the client.
+
 +
 .Client Details
 image:{project_images}/getting-started/hello-world/enable-authz.png[alt="Client Details"]
 
-. On the Client Details page, select *confidential* in the *Access Type* field, change the *Authorization Enabled* switch to *ON*, and then click *Save*.
-A new *Authorization* tab is displayed for the client.
 
 . Click the *Authorization* tab and an Authorization Settings page similar to the following is displayed:
 +
