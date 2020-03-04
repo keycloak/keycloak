@@ -1,5 +1,13 @@
 == Migration Changes
 
+=== Migrating to 9.0.1
+
+==== Legacy promise in JavaScript adapter
+
+It is no longer necessary to set promiseType in the JavaScript adapter, and both are available at the same time. It is
+recommended to update applications to use native promise API (`then` and `catch`) as soon as possible, as the legacy API
+(`success` and `error`) will be removed at some point.
+
 === Migrating to 9.0.0
 
 ===== Improved handling of user locale
