@@ -336,19 +336,7 @@ public class LDAPStorageProvider implements UserStorageProvider,
     @Override
     public List<UserModel> searchForUser(String search, RealmModel realm, int firstResult, int maxResults) {
         Map<String, String> attributes = new HashMap<String, String>();
-        int spaceIndex = search.lastIndexOf(' ');
-        if (spaceIndex > -1) {
-            String firstName = search.substring(0, spaceIndex).trim();
-            String lastName = search.substring(spaceIndex).trim();
-            attributes.put(UserModel.FIRST_NAME, firstName);
-            attributes.put(UserModel.LAST_NAME, lastName);
-        } else if (search.indexOf('@') > -1) {
-            attributes.put(UserModel.USERNAME, search.trim().toLowerCase());
-            attributes.put(UserModel.EMAIL, search.trim().toLowerCase());
-        } else {
-            attributes.put(UserModel.LAST_NAME, search.trim());
-            attributes.put(UserModel.USERNAME, search.trim().toLowerCase());
-        }
+        attributes.put(UserModel.SEARCH,search);
         return searchForUser(attributes, realm, firstResult, maxResults);
     }
 
@@ -359,6 +347,23 @@ public class LDAPStorageProvider implements UserStorageProvider,
 
     @Override
     public List<UserModel> searchForUser(Map<String, String> params, RealmModel realm, int firstResult, int maxResults) {
+        String search = params.get(UserModel.SEARCH);
+        if(search!=null) {
+            int spaceIndex = search.lastIndexOf(' ');
+            if (spaceIndex > -1) {
+                String firstName = search.substring(0, spaceIndex).trim();
+                String lastName = search.substring(spaceIndex).trim();
+                params.put(UserModel.FIRST_NAME, firstName);
+                params.put(UserModel.LAST_NAME, lastName);
+            } else if (search.indexOf('@') > -1) {
+                params.put(UserModel.USERNAME, search.trim().toLowerCase());
+                params.put(UserModel.EMAIL, search.trim().toLowerCase());
+            } else {
+                params.put(UserModel.LAST_NAME, search.trim());
+                params.put(UserModel.USERNAME, search.trim().toLowerCase());
+            }
+        }
+
         List<UserModel> searchResults =new LinkedList<UserModel>();
 
         List<LDAPObject> ldapUsers = searchLDAP(realm, params, maxResults + firstResult);

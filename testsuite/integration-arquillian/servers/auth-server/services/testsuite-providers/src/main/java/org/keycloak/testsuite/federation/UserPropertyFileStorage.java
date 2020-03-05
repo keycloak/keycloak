@@ -37,6 +37,7 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Properties;
 
 /**
@@ -191,9 +192,10 @@ public class UserPropertyFileStorage implements UserLookupProvider, UserStorageP
 
     @Override
     public List<UserModel> searchForUser(Map<String, String> attributes, RealmModel realm, int firstResult, int maxResults) {
-        String username = attributes.get(UserModel.USERNAME);
-        if (username == null) return Collections.EMPTY_LIST;
-        return searchForUser(username, realm, firstResult, maxResults);
+        String search = Optional.ofNullable(attributes.get(UserModel.USERNAME))
+                .orElseGet(()-> attributes.get(UserModel.SEARCH));
+        if (search == null) return Collections.EMPTY_LIST;
+        return searchForUser(search, realm, firstResult, maxResults);
     }
 
     @Override

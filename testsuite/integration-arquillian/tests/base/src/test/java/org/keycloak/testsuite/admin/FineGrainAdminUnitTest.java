@@ -894,7 +894,6 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
             GroupModel customerAGroup = session.realms().createGroup(realm, "Customer A");
             UserModel customerAManager = session.users().addUser(realm, "customer-a-manager");
             session.userCredentialManager().updateCredential(realm, customerAManager, UserCredentialModel.password("password"));
-            customerAManager.joinGroup(customerAGroup);
             ClientModel realmAdminClient = realm.getClientByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID);
             customerAManager.grantRole(realmAdminClient.getRole(AdminRoles.QUERY_USERS));
             customerAManager.setEnabled(true);
@@ -965,6 +964,11 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
                 "test", "customer-a-manager", "password", Constants.ADMIN_CLI_CLIENT_ID, TLSUtils.initializeTLS())) {
 
             List<UserRepresentation> result = client.realm("test").users().search(null, null, null, null, -1, 20);
+
+            Assert.assertEquals(20, result.size());
+            Assert.assertThat(result, Matchers.everyItem(Matchers.hasProperty("username", Matchers.startsWith("b"))));
+
+            result = client.realm("test").users().search("test", -1, 20, false);
 
             Assert.assertEquals(20, result.size());
             Assert.assertThat(result, Matchers.everyItem(Matchers.hasProperty("username", Matchers.startsWith("b"))));

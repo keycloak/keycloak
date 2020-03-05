@@ -849,6 +849,21 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
             }
 
             switch (key) {
+                case UserModel.SEARCH:
+                    List<Predicate> orPredicates = new ArrayList();
+
+                    orPredicates.add(builder.like(builder.lower(root.get(UserModel.USERNAME)), "%" + value.toLowerCase() + "%"));
+                    orPredicates.add(builder.like(builder.lower(root.get(UserModel.EMAIL)), "%" + value.toLowerCase() + "%"));
+                    orPredicates.add(builder.like(
+                            builder.lower(builder.concat(builder.concat(
+                                    builder.coalesce(root.get(UserModel.FIRST_NAME), builder.literal("")), " "),
+                                    builder.coalesce(root.get(UserModel.LAST_NAME), builder.literal("")))),
+                            "%" + value.toLowerCase() + "%"));
+
+                    predicates.add(builder.or(orPredicates.toArray(new Predicate[orPredicates.size()])));
+
+                    break;
+
                 case UserModel.USERNAME:
                 case UserModel.FIRST_NAME:
                 case UserModel.LAST_NAME:
