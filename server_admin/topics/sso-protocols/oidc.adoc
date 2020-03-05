@@ -104,5 +104,7 @@ _/auth_:  i.e. $$https://localhost:8080/auth$$
   This is the URL endpoint for performing logouts.
 /realms/{realm-name}/protocol/openid-connect/userinfo::
   This is the URL endpoint for the User Info service described in the OIDC specification.
+/realms/{realm-name}/protocol/openid-connect/revoke::
+  This is the URL endpoint for OAuth 2.0 Token Revocation described in https://tools.ietf.org/html/rfc7009[RFC7009].
 
 In all of these replace _{realm-name}_ with the name of the realm.

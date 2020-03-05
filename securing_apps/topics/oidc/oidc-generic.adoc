@@ -84,6 +84,16 @@ The dynamic client registration endpoint is used to dynamically register clients
 For more details see the <<_client_registration,Client Registration chapter>> and the
 https://openid.net/specs/openid-connect-registration-1_0.html[OpenID Connect Dynamic Client Registration specification].
 
+[[_token_revocation_endpoint]]
+===== Token Revocation Endpoint
+....
+/realms/{realm-name}/protocol/openid-connect/revoke
+....
+
+The token revocation endpoint is used to revoke tokens.
+
+For more details on how to invoke on this endpoint, see https://tools.ietf.org/html/rfc7009[OAuth 2.0 Token Revocation specification].
+
 ==== Validating Access Tokens
 
 If you need to manually validate access tokens issued by {project_name} you can invoke the <<_token_introspection_endpoint,Introspection Endpoint>>.
