@@ -55,7 +55,6 @@ public interface IdentityProvider<C extends IdentityProviderModel> extends Provi
 
     void preprocessFederatedIdentity(KeycloakSession session, RealmModel realm, BrokeredIdentityContext context);
     void authenticationFinished(AuthenticationSessionModel authSession, BrokeredIdentityContext context);
-    void importNewUser(KeycloakSession session, RealmModel realm, UserModel user, BrokeredIdentityContext context);
     void updateBrokeredUser(KeycloakSession session, RealmModel realm, UserModel user, BrokeredIdentityContext context);
 
     /**

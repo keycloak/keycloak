@@ -153,11 +153,6 @@ public abstract class AbstractIdentityProvider<C extends IdentityProviderModel> 
     }
 
     @Override
-    public void importNewUser(KeycloakSession session, RealmModel realm, UserModel user, BrokeredIdentityContext context) {
-
-    }
-
-    @Override
     public void updateBrokeredUser(KeycloakSession session, RealmModel realm, UserModel user, BrokeredIdentityContext context) {
 
     }

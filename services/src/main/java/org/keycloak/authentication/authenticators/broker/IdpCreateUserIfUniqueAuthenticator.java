@@ -22,18 +22,24 @@ import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.authenticators.broker.util.ExistingUserInfo;
 import org.keycloak.authentication.authenticators.broker.util.SerializedBrokeredIdentityContext;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
+import org.keycloak.broker.provider.IdentityProviderMapper;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.models.AuthenticatorConfigModel;
+import org.keycloak.models.FederatedIdentityModel;
+import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.messages.Messages;
+import org.keycloak.services.validation.Validation;
 
 import javax.ws.rs.core.Response;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -86,6 +92,28 @@ public class IdpCreateUserIfUniqueAuthenticator extends AbstractIdpAuthenticator
             if (config != null && Boolean.parseBoolean(config.getConfig().get(IdpCreateUserIfUniqueAuthenticatorFactory.REQUIRE_PASSWORD_UPDATE_AFTER_REGISTRATION))) {
                 logger.debugf("User '%s' required to update password", federatedUser.getUsername());
                 federatedUser.addRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
+            }
+
+            // Add federated identity link here
+            FederatedIdentityModel federatedIdentityModel = new FederatedIdentityModel(brokerContext.getIdpConfig().getAlias(), brokerContext.getId(),
+                    brokerContext.getUsername(), brokerContext.getToken());
+            session.users().addFederatedIdentity(realm, federatedUser, federatedIdentityModel);
+
+
+            logger.debugf("Registered new user '%s' after first login with identity provider '%s'. Identity provider username is '%s' . ", federatedUser.getUsername(), brokerContext.getIdpConfig().getAlias(), brokerContext.getUsername());
+
+            Set<IdentityProviderMapperModel> mappers = realm.getIdentityProviderMappersByAlias(brokerContext.getIdpConfig().getAlias());
+            if (mappers != null) {
+                KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
+                for (IdentityProviderMapperModel mapper : mappers) {
+                    IdentityProviderMapper target = (IdentityProviderMapper)sessionFactory.getProviderFactory(IdentityProviderMapper.class, mapper.getIdentityProviderMapper());
+                    target.importNewUser(session, realm, federatedUser, mapper, brokerContext);
+                }
+            }
+
+            if (brokerContext.getIdpConfig().isTrustEmail() && !Validation.isBlank(federatedUser.getEmail()) && !Boolean.parseBoolean(context.getAuthenticationSession().getAuthNote(AbstractIdpAuthenticator.UPDATE_PROFILE_EMAIL_CHANGED))) {
+                logger.debugf("Email verified automatically after registration of user '%s' through Identity provider '%s' ", federatedUser.getUsername(), brokerContext.getIdpConfig().getAlias());
+                federatedUser.setEmailVerified(true);
             }
 
             userRegisteredSuccess(context, federatedUser, serializedCtx, brokerContext);

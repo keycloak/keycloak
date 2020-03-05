@@ -670,31 +670,8 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
                 federatedUser.grantRole(readTokenRole);
             }
 
-            // Add federated identity link here
-            FederatedIdentityModel federatedIdentityModel = new FederatedIdentityModel(context.getIdpConfig().getAlias(), context.getId(),
-                    context.getUsername(), context.getToken());
-            session.users().addFederatedIdentity(realmModel, federatedUser, federatedIdentityModel);
-
-
             String isRegisteredNewUser = authSession.getAuthNote(AbstractIdpAuthenticator.BROKER_REGISTERED_NEW_USER);
             if (Boolean.parseBoolean(isRegisteredNewUser)) {
-
-                logger.debugf("Registered new user '%s' after first login with identity provider '%s'. Identity provider username is '%s' . ", federatedUser.getUsername(), providerId, context.getUsername());
-
-                context.getIdp().importNewUser(session, realmModel, federatedUser, context);
-                Set<IdentityProviderMapperModel> mappers = realmModel.getIdentityProviderMappersByAlias(providerId);
-                if (mappers != null) {
-                    KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
-                    for (IdentityProviderMapperModel mapper : mappers) {
-                        IdentityProviderMapper target = (IdentityProviderMapper)sessionFactory.getProviderFactory(IdentityProviderMapper.class, mapper.getIdentityProviderMapper());
-                        target.importNewUser(session, realmModel, federatedUser, mapper, context);
-                    }
-                }
-
-                if (context.getIdpConfig().isTrustEmail() && !Validation.isBlank(federatedUser.getEmail()) && !Boolean.parseBoolean(authSession.getAuthNote(AbstractIdpAuthenticator.UPDATE_PROFILE_EMAIL_CHANGED))) {
-                    logger.debugf("Email verified automatically after registration of user '%s' through Identity provider '%s' ", federatedUser.getUsername(), context.getIdpConfig().getAlias());
-                    federatedUser.setEmailVerified(true);
-                }
 
                 event.event(EventType.REGISTER)
                         .detail(Details.REGISTER_METHOD, "broker")
@@ -702,6 +679,11 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
                         .success();
 
             } else {
+                // Add federated identity link here
+                FederatedIdentityModel federatedIdentityModel = new FederatedIdentityModel(context.getIdpConfig().getAlias(), context.getId(),
+                        context.getUsername(), context.getToken());
+                session.users().addFederatedIdentity(realmModel, federatedUser, federatedIdentityModel);
+
                 logger.debugf("Linked existing keycloak user '%s' with identity provider '%s' . Identity provider username is '%s' .", federatedUser.getUsername(), providerId, context.getUsername());
 
                 event.event(EventType.FEDERATED_IDENTITY_LINK)

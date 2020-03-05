@@ -1035,7 +1035,6 @@ public class TokenEndpoint {
                     context.getUsername(), context.getToken());
             session.users().addFederatedIdentity(realm, user, federatedIdentityModel);
 
-            context.getIdp().importNewUser(session, realm, user, context);
             if (mappers != null) {
                 KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
                 for (IdentityProviderMapperModel mapper : mappers) {
