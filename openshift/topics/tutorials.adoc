@@ -686,8 +686,8 @@ The administration console import allows you to *overwrite* resources if you cho
 ====
 
 [[OSE-SSO-AUTH-TUTE]]
-=== Example Workflow: Configuring OpenShift to use {project_name} for Authentication
-Configure OpenShift to use the {project_name} deployment as the authorization gateway for OpenShift. This follows on from xref:Example-Deploying-SSO[Example Workflow: Preparing and Deploying the {project_openshift_product_name} image], in which {project_name} was deployed on OpenShift.
+=== Example Workflow: Configuring OpenShift 3.11 to use {project_name} for Authentication
+Configure OpenShift 3.11 to use the {project_name} deployment as the authorization gateway for OpenShift. This follows on from xref:Example-Deploying-SSO[Example Workflow: Preparing and Deploying the {project_openshift_product_name} image], in which {project_name} was deployed on OpenShift.
 
 This example adds {project_name} as an authentication method alongside https://docs.openshift.com/container-platform/latest/install_config/configuring_authentication.html#identity-providers-configuring[the identity providers] configured during https://docs.openshift.com/container-platform/latest/install/index.html[the installation of the OpenShift Container Platform cluster]. Once configured, the {project_name} method will be also available (together with the configured identity providers) for the user login to your OpenShift web console.
 
