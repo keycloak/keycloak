@@ -67,6 +67,8 @@ public class Keycloak implements AutoCloseable {
 
         if (customJacksonProvider != null) {
             clientBuilder.register(customJacksonProvider, 100);
+        } else {
+            clientBuilder.register(JacksonProvider.class, 100);
         }
 
         return clientBuilder.build();
