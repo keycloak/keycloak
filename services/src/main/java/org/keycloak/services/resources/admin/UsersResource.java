@@ -211,7 +211,9 @@ public class UsersResource {
                     userModels = Arrays.asList(userModel);
                 }
             } else {
-                userModels = session.users().searchForUser(search.trim(), realm, firstResult, maxResults);
+                Map<String, String> attributes = new HashMap<>();
+                attributes.put(UserModel.SEARCH, search.trim());
+                return searchForUser(attributes, realm, userPermissionEvaluator, briefRepresentation, firstResult, maxResults, false);
             }
         } else if (last != null || first != null || email != null || username != null) {
             Map<String, String> attributes = new HashMap<>();
