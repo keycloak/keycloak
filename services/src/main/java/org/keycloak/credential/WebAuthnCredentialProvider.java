@@ -75,9 +75,9 @@ public class WebAuthnCredentialProvider implements CredentialProvider<WebAuthnCr
     }
 
     @Override
-    public void deleteCredential(RealmModel realm, UserModel user, String credentialId) {
+    public boolean deleteCredential(RealmModel realm, UserModel user, String credentialId) {
         logger.debugv("Delete WebAuthn credential. username = {0}, credentialId = {1}", user.getUsername(), credentialId);
-        getCredentialStore().removeStoredCredential(realm, user, credentialId);
+        return getCredentialStore().removeStoredCredential(realm, user, credentialId);
     }
 
     @Override

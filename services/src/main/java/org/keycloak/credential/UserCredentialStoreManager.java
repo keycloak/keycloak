@@ -198,15 +198,15 @@ public class UserCredentialStoreManager implements UserCredentialManager, OnUser
     }
 
     @Override
-    public void updateCredential(RealmModel realm, UserModel user, CredentialInput input) {
+    public boolean updateCredential(RealmModel realm, UserModel user, CredentialInput input) {
         if (!StorageId.isLocalStorage(user)) {
             String providerId = StorageId.resolveProviderId(user);
             UserStorageProvider provider = UserStorageManager.getStorageProvider(session, realm, providerId);
             if (provider instanceof CredentialInputUpdater) {
-                if (!UserStorageManager.isStorageProviderEnabled(realm, providerId)) return;
+                if (!UserStorageManager.isStorageProviderEnabled(realm, providerId)) return false;
                 CredentialInputUpdater updater = (CredentialInputUpdater) provider;
                 if (updater.supportsCredentialType(input.getType())) {
-                    if (updater.updateCredential(realm, user, input)) return;
+                    if (updater.updateCredential(realm, user, input)) return true;
                 }
 
             }
@@ -215,8 +215,8 @@ public class UserCredentialStoreManager implements UserCredentialManager, OnUser
             if (user.getFederationLink() != null) {
                 UserStorageProvider provider = UserStorageManager.getStorageProvider(session, realm, user.getFederationLink());
                 if (provider instanceof CredentialInputUpdater) {
-                    if (!UserStorageManager.isStorageProviderEnabled(realm, user.getFederationLink())) return;
-                    if (((CredentialInputUpdater) provider).updateCredential(realm, user, input)) return;
+                    if (!UserStorageManager.isStorageProviderEnabled(realm, user.getFederationLink())) return false;
+                    if (((CredentialInputUpdater) provider).updateCredential(realm, user, input)) return true;
                 }
             }
         }
@@ -224,9 +224,11 @@ public class UserCredentialStoreManager implements UserCredentialManager, OnUser
         List<CredentialInputUpdater> credentialProviders = getCredentialProviders(session, realm, CredentialInputUpdater.class);
         for (CredentialInputUpdater updater : credentialProviders) {
             if (!updater.supportsCredentialType(input.getType())) continue;
-            if (updater.updateCredential(realm, user, input)) return;
+            if (updater.updateCredential(realm, user, input)) return true;
 
         }
+
+        return false;
     }
 
     @Override

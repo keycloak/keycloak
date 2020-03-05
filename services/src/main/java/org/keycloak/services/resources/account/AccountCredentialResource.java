@@ -41,6 +41,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.keycloak.models.AuthenticationExecutionModel.Requirement.DISABLED;
+import static org.keycloak.utils.CredentialHelper.createUserStorageCredentialRepresentation;
 
 public class AccountCredentialResource {
 
@@ -201,11 +202,7 @@ public class AccountCredentialResource {
                     session.userCredentialManager().isConfiguredFor(realm, user, credentialProviderType)) {
                 // In case user is federated in the userStorage, he may have credential configured on the userStorage side. We're
                 // creating "dummy" credential representing the credential provided by userStorage
-                CredentialRepresentation credential = new CredentialRepresentation();
-                credential.setId(credentialProviderType + "-id");
-                credential.setType(credentialProviderType);
-                credential.setCreatedDate(-1L);
-                credential.setPriority(0);
+                CredentialRepresentation credential = createUserStorageCredentialRepresentation(credentialProviderType);
 
                 userCredentialModels = Collections.singletonList(credential);
             }

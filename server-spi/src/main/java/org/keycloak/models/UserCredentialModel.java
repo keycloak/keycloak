@@ -52,15 +52,18 @@ public class UserCredentialModel implements CredentialInput {
     public static final String KERBEROS = CredentialModel.KERBEROS;
     public static final String CLIENT_CERT = CredentialModel.CLIENT_CERT;
 
-    private final String credentialId;
+    private String credentialId;
     private String type;
     private String challengeResponse;
     private String device;
     private String algorithm;
-    private final boolean adminRequest;
+    private boolean adminRequest;
 
     // Additional context informations
     protected Map<String, Object> notes = new HashMap<>();
+
+    public UserCredentialModel() {
+    }
 
     public UserCredentialModel(String credentialId, String type, String challengeResponse) {
         this.credentialId = credentialId;
