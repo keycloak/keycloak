@@ -31,16 +31,17 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import org.keycloak.testsuite.arquillian.annotation.ModelTest;
 
+import javax.persistence.OptimisticLockException;
 import java.util.Arrays;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
-
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -213,29 +214,12 @@ public class ConcurrentTransactionsTest extends AbstractTestRealmKeycloakTest {
 
                 Runnable runnable = () -> {
                     try {
-                        KeycloakModelUtils.runJobInTransaction(sessionFactory, session1 -> {
-                            try {
-                                // Read user attribute
-                                RealmModel realm = session1.realms().getRealmByName("original");
-                                UserModel john = session1.users().getUserByUsername("john", realm);
-                                String attrVal = john.getFirstAttribute("foo");
-
-                                UserModel john2 = session1.users().getUserByUsername("john2", realm);
-                                String attrVal2 = john2.getFirstAttribute("foo");
-
-                                // Wait until it's read in both threads
-                                readAttrLatch.countDown();
-                                readAttrLatch.await();
-
-                                // KEYCLOAK-3296 : Remove user attribute in both threads
-                                john.removeAttribute("foo");
-
-                                // KEYCLOAK-3494 : Set single attribute in both threads
-                                john2.setSingleAttribute("foo", "bar");
-                            } catch (Exception e) {
-                                throw new RuntimeException(e);
-                            }
-                        });
+                        try {
+                            removeUserAttrTransaction(session, readAttrLatch);
+                        } catch (OptimisticLockException ole) {
+                            // KEYCLOAK-12241 Try to repeat transaction to recover from OptimisticLockException.
+                            removeUserAttrTransaction(session, readAttrLatch);
+                        }
                     } catch (Exception e) {
                         reference.set(e);
                         throw new RuntimeException(e);
@@ -265,6 +249,33 @@ public class ConcurrentTransactionsTest extends AbstractTestRealmKeycloakTest {
         } finally {
             tearDownRealm(session, "john", "john2");
         }
+    }
+
+    public void removeUserAttrTransaction(KeycloakSession session, CountDownLatch readAttrLatch) {
+        KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), session1 -> {
+            try {
+                // Read user attribute
+                RealmModel realm = session1.realms().getRealmByName("original");
+                UserModel john = session1.users().getUserByUsername("john", realm);
+                String attrVal = john.getFirstAttribute("foo");
+
+                UserModel john2 = session1.users().getUserByUsername("john2", realm);
+                String attrVal2 = john2.getFirstAttribute("foo");
+
+                // Wait until it's read in both threads
+                readAttrLatch.countDown();
+                readAttrLatch.await();
+
+                // KEYCLOAK-3296 : Remove user attribute in both threads
+                john.removeAttribute("foo");
+
+                // KEYCLOAK-3494 : Set single attribute in both threads
+                john2.setSingleAttribute("foo", "bar");
+
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        });
     }
 
     private void tearDownRealm(KeycloakSession session, String user1, String user2) {
