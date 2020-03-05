@@ -57,9 +57,9 @@ public interface UserCredentialManager extends UserCredentialStore {
      *
      * @param realm
      * @param user
-     * @return
+     * @return true if credential was successfully updated by UserStorage or any CredentialInputUpdater
      */
-    void updateCredential(RealmModel realm, UserModel user, CredentialInput input);
+    boolean updateCredential(RealmModel realm, UserModel user, CredentialInput input);
 
     /**
      * Creates a credential from the credentialModel, by looping through the providers to find a match for the type

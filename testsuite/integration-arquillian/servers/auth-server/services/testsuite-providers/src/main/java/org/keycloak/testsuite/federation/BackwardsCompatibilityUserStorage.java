@@ -19,6 +19,7 @@
 package org.keycloak.testsuite.federation;
 
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -31,12 +32,14 @@ import org.keycloak.credential.CredentialInputValidator;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.credential.hash.PasswordHashProvider;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.OTPPolicy;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.cache.UserCache;
 import org.keycloak.models.credential.PasswordUserCredentialModel;
+import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.storage.StorageId;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.adapter.AbstractUserAdapterFederatedStorage;
@@ -94,7 +97,19 @@ public class BackwardsCompatibilityUserStorage implements UserLookupProvider, Us
 
     @Override
     public boolean supportsCredentialType(String credentialType) {
-        return CredentialModel.PASSWORD.equals(credentialType);
+        if (CredentialModel.PASSWORD.equals(credentialType)
+                || isOTPType(credentialType)) {
+            return true;
+        } else {
+            log.infof("Unsupported credential type: %s", credentialType);
+            return false;
+        }
+    }
+
+    private boolean isOTPType(String credentialType) {
+        return CredentialModel.OTP.equals(credentialType)
+                || CredentialModel.HOTP.equals(credentialType)
+                || CredentialModel.TOTP.equals(credentialType);
     }
 
     @Override
@@ -138,7 +153,31 @@ public class BackwardsCompatibilityUserStorage implements UserLookupProvider, Us
                 userCache.evict(realm, user);
             }
             return true;
+        } else if (isOTPType(input.getType())) {
+            UserCredentialModel otpCredential = (UserCredentialModel) input;
+
+            // Those are not supposed to be set when calling this method in Keycloak 4.8.3 for password credential
+            assertNull(otpCredential.getDevice());
+            assertNull(otpCredential.getAlgorithm());
+
+            OTPPolicy otpPolicy = session.getContext().getRealm().getOTPPolicy();
+
+            CredentialModel newOTP = new CredentialModel();
+            newOTP.setType(input.getType());
+            long createdDate = Time.currentTimeMillis();
+            newOTP.setCreatedDate(createdDate);
+            newOTP.setValue(otpCredential.getValue());
+
+            newOTP.setCounter(otpPolicy.getInitialCounter());
+            newOTP.setDigits(otpPolicy.getDigits());
+            newOTP.setAlgorithm(otpPolicy.getAlgorithm());
+            newOTP.setPeriod(otpPolicy.getPeriod());
+
+            users.get(user.getUsername()).otp = newOTP;
+
+            return true;
         } else {
+            log.infof("Attempt to update unsupported credential of type: %s", input.getType());
             return false;
         }
     }
@@ -154,24 +193,53 @@ public class BackwardsCompatibilityUserStorage implements UserLookupProvider, Us
 
     @Override
     public void disableCredentialType(RealmModel realm, UserModel user, String credentialType) {
+        if (isOTPType(credentialType)) {
+            MyUser myUser = getMyUser(user);
+            myUser.otp = null;
+        } else {
+            log.infof("Unsupported to disable credential of type: %s", credentialType);
+        }
+    }
 
+    private MyUser getMyUser(UserModel user) {
+        return users.get(user.getUsername());
     }
 
     @Override
     public Set<String> getDisableableCredentialTypes(RealmModel realm, UserModel user) {
-        return Collections.EMPTY_SET;
+        Set<String> types = new HashSet<>();
+
+        MyUser myUser = getMyUser(user);
+        if (myUser != null && myUser.otp != null) {
+            types.add(CredentialModel.OTP);
+        }
+
+        return types;
     }
 
     @Override
     public boolean isConfiguredFor(RealmModel realm, UserModel user, String credentialType) {
-        return CredentialModel.PASSWORD.equals(credentialType);
+        // Always assume that password is supported
+        if (CredentialModel.PASSWORD.equals(credentialType)) return true;
+        MyUser myUser = getMyUser(user);
+        if (myUser == null) return false;
+
+        if (isOTPType(credentialType) && myUser.otp != null) {
+            return true;
+        } else {
+            log.infof("Not supported credentialType '%s' for user '%s'", credentialType, user.getUsername());
+            return false;
+        }
     }
 
     @Override
     public boolean isValid(RealmModel realm, UserModel user, CredentialInput input) {
-        if (!(input instanceof PasswordUserCredentialModel)) return false;
+        MyUser myUser = users.get(user.getUsername());
+        if (myUser == null) return false;
+
         if (input.getType().equals(UserCredentialModel.PASSWORD)) {
-            CredentialModel hashedPassword = users.get(user.getUsername()).hashedPassword;
+            if (!(input instanceof PasswordUserCredentialModel)) return false;
+            CredentialModel hashedPassword = myUser.hashedPassword;
             if (hashedPassword == null) {
                 log.warnf("Password not set for user %s", user.getUsername());
                 return false;
@@ -190,7 +258,25 @@ public class BackwardsCompatibilityUserStorage implements UserLookupProvider, Us
 
             // Compatibility with 4.8.3 - using "legacy" signature of this method
             return hashProvider.verify(rawPassword, hashedPassword);
+        } else if (isOTPType(input.getType())) {
+            UserCredentialModel otpCredential = (UserCredentialModel) input;
+
+            // Special hardcoded OTP, which is always considered valid
+            if ("123456".equals(otpCredential.getValue())) {
+                return true;
+            }
+
+            CredentialModel storedOTPCredential = myUser.otp;
+            if (storedOTPCredential == null) {
+                log.warnf("Not found credential for the user %s", user.getUsername());
+                return false;
+            }
+
+            TimeBasedOTP validator = new TimeBasedOTP(storedOTPCredential.getAlgorithm(), storedOTPCredential.getDigits(),
+                    storedOTPCredential.getPeriod(), realm.getOTPPolicy().getLookAheadWindow());
+            return validator.validateTOTP(otpCredential.getValue(), storedOTPCredential.getValue().getBytes());
         } else {
+            log.infof("Not supported to validate credential of type '%s' for user '%s'", input.getType(), user.getUsername());
             return false;
         }
     }
@@ -227,11 +313,15 @@ public class BackwardsCompatibilityUserStorage implements UserLookupProvider, Us
 
         private String username;
         private CredentialModel hashedPassword;
+        private CredentialModel otp;
 
         private MyUser(String username) {
             this.username = username;
         }
 
+        public CredentialModel getOtp() {
+            return otp;
+        }
     }
 
 
@@ -254,4 +344,3 @@ public class BackwardsCompatibilityUserStorage implements UserLookupProvider, Us
     }
 
 }
-

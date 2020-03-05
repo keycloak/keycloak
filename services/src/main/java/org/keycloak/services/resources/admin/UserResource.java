@@ -581,7 +581,12 @@ public class UserResource {
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
     public void disableCredentialType(List<String> credentialTypes) {
-        throw new NotSupportedException("Not supported to disable credentials. Only credentials removal is supported");
+        auth.users().requireManage(user);
+        if (credentialTypes == null) return;
+        for (String type : credentialTypes) {
+            session.userCredentialManager().disableCredentialType(realm, user, type);
+
+        }
     }
 
     /**

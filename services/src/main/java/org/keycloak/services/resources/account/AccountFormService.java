@@ -77,6 +77,7 @@ import org.keycloak.services.validation.Validation;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.storage.ReadOnlyException;
 import org.keycloak.util.JsonSerialization;
+import org.keycloak.utils.CredentialHelper;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.FormParam;
@@ -494,14 +495,13 @@ public class AccountFormService extends AbstractSecuredLocalService {
 
         UserModel user = auth.getUser();
 
-        OTPCredentialProvider otpCredentialProvider = (OTPCredentialProvider) session.getProvider(CredentialProvider.class, "keycloak-otp");
         if (action != null && action.equals("Delete")) {
             String credentialId = formData.getFirst("credentialId");
             if (credentialId == null) {
                 setReferrerOnPage();
                 return account.setError(Status.OK, Messages.UNEXPECTED_ERROR_HANDLING_REQUEST).createResponse(AccountPages.TOTP);
             }
-            otpCredentialProvider.deleteCredential(realm, user, credentialId);
+            CredentialHelper.deleteOTPCredential(session, realm, user, credentialId);
             event.event(EventType.REMOVE_TOTP).client(auth.getClient()).user(auth.getUser()).success();
             setReferrerOnPage();
             return account.setSuccess(Messages.SUCCESS_TOTP_REMOVED).createResponse(AccountPages.TOTP);
@@ -520,10 +520,7 @@ public class AccountFormService extends AbstractSecuredLocalService {
                 return account.setError(Status.OK, Messages.INVALID_TOTP).createResponse(AccountPages.TOTP);
             }
 
-
-            CredentialModel createdCredential = otpCredentialProvider.createCredential(realm, user, credentialModel);
-            UserCredentialModel credential = new UserCredentialModel(createdCredential.getId(), otpCredentialProvider.getType(), challengeResponse);
-            if (!otpCredentialProvider.isValid(realm, user, credential)) {
+            if (!CredentialHelper.createOTPCredential(session, realm, user, challengeResponse, credentialModel)) {
                 setReferrerOnPage();
                 return account.setError(Status.OK, Messages.INVALID_TOTP).createResponse(AccountPages.TOTP);
             }

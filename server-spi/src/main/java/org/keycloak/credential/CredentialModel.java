@@ -23,6 +23,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.keycloak.common.util.Base64;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.models.credential.PasswordCredentialModel;
@@ -134,6 +135,7 @@ public class CredentialModel implements Serializable {
      * @deprecated Recommended to use PasswordCredentialModel.getSecretData().getValue() or OTPCredentialModel.getSecretData().getValue()
      */
     @Deprecated
+    @JsonIgnore
     public String getValue() {
         return readString("value", true);
     }
@@ -150,6 +152,7 @@ public class CredentialModel implements Serializable {
      * @deprecated Recommended to use OTPCredentialModel.getCredentialData().getDevice()
      */
     @Deprecated
+    @JsonIgnore
     public String getDevice() {
         return readString("device", false);
     }
@@ -166,6 +169,7 @@ public class CredentialModel implements Serializable {
      * @deprecated Recommended to use PasswordCredentialModel.getSecretData().getSalt()
      */
     @Deprecated
+    @JsonIgnore
     public byte[] getSalt() {
         try {
             String saltStr = readString("salt", true);
@@ -188,6 +192,7 @@ public class CredentialModel implements Serializable {
      * @deprecated Recommended to use PasswordCredentialModel.getCredentialData().getHashIterations()
      */
     @Deprecated
+    @JsonIgnore
     public int getHashIterations() {
         return readInt("hashIterations", false);
     }
@@ -204,6 +209,7 @@ public class CredentialModel implements Serializable {
      * @deprecated Recommended to use OTPCredentialModel.getCredentialData().getCounter()
      */
     @Deprecated
+    @JsonIgnore
     public int getCounter() {
         return readInt("counter", false);
     }
@@ -220,6 +226,7 @@ public class CredentialModel implements Serializable {
      * @deprecated Recommended to use PasswordCredentialModel.getCredentialData().getAlgorithm() or OTPCredentialModel.getCredentialData().getAlgorithm()
      */
     @Deprecated
+    @JsonIgnore
     public String getAlgorithm() {
         return readString("algorithm", false);
     }
@@ -236,6 +243,7 @@ public class CredentialModel implements Serializable {
      * @deprecated Recommended to use OTPCredentialModel.getCredentialData().getDigits()
      */
     @Deprecated
+    @JsonIgnore
     public int getDigits() {
         return readInt("digits", false);
     }
@@ -252,6 +260,7 @@ public class CredentialModel implements Serializable {
      * @deprecated Recommended to use OTPCredentialModel.getCredentialData().getPeriod()
      */
     @Deprecated
+    @JsonIgnore
     public int getPeriod() {
         return readInt("period", false);
     }
@@ -268,6 +277,7 @@ public class CredentialModel implements Serializable {
      * @deprecated Recommended to use {@link #getCredentialData()} instead and use the subtype of CredentialData specific to your credential
      */
     @Deprecated
+    @JsonIgnore
     public MultivaluedHashMap<String, String> getConfig() {
         Map<String, Object> credentialData = readMapFromJson(false);
         if (credentialData == null) {
