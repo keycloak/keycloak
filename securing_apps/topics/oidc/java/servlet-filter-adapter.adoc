@@ -156,6 +156,6 @@ public class Activator implements BundleActivator {
 }
 ----
 
-Please refer to http://felix.apache.org/documentation/subprojects/apache-felix-http-service.html#using-the-osgi-http-whiteboard[Apache Felix HTTP Service] for more info on programmatic registration.
+Please refer to https://github.com/apache/felix-dev/tree/master/http#using-the-osgi-http-whiteboard[Apache Felix HTTP Service] for more info on programmatic registration.
 
 endif::[]
