@@ -24,6 +24,7 @@ import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.Authenticator;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakUriInfo;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.services.resources.LoginActionsService;
@@ -45,7 +46,8 @@ public class NoCookieFlowRedirectAuthenticator implements Authenticator {
 
         // only do redirects for GET requests
         if (HttpMethod.GET.equalsIgnoreCase(httpRequest.getHttpMethod())) {
-            if (!httpRequest.getUri().getQueryParameters().containsKey(LoginActionsService.AUTH_SESSION_ID)) {
+            KeycloakUriInfo uriInfo = context.getSession().getContext().getUri();
+            if (!uriInfo.getQueryParameters().containsKey(LoginActionsService.AUTH_SESSION_ID)) {
                 Response response = Response.status(302).header(HttpHeaders.LOCATION, context.getRefreshUrl(true)).build();
                 context.challenge(response);
                 return;

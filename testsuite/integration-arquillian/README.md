@@ -42,6 +42,26 @@ route add -net 224.0.0.0 netmask 240.0.0.0 dev lo
 ifconfig lo multicast
 ```
 
+#### Quarkus
+
+To run the tests against a Quarkus Server:
+
+```
+ mvn -Pauth-server-quarkus -Dauth.server.ssl.required=false clean verify
+```
+
+NOTE: At the moment the Quarkus server does not support SSL, thus it *must* be disabled.
+
+To debug the server:
+
+```
+ mvn -Pauth-server-quarkus -Dauth.server.ssl.required=false -Dauth.server.debug=true clean verify
+```
+
+By default, debug port is `5005`. To change it, set the `auth.server.debug.port` system property to another port.
+
+NOTE: Not all tests are passing, this is a working in progress.
+
 ### App Servers / Adapter Tests
 
 Lifecycle of application server is always tied to a particular TestClass.

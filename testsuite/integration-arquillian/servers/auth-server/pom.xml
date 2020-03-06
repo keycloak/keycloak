@@ -39,5 +39,14 @@
         <module>jboss</module>
         <module>undertow</module>
     </modules>
+    
+    <profiles>
+        <profile>
+            <id>quarkus</id>
+            <modules>
+                <module>quarkus</module>
+            </modules>
+        </profile>
+    </profiles>
 
 </project>

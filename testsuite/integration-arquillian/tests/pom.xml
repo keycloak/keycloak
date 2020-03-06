@@ -82,6 +82,8 @@
         <auth.server.jboss.jvm.debug.args>-agentlib:jdwp=transport=dt_socket,server=y,suspend=${auth.server.debug.suspend},address=${auth.server.host}:${auth.server.debug.port}</auth.server.jboss.jvm.debug.args>
 
         <auth.server.remote>false</auth.server.remote>
+        <auth.server.quarkus>false</auth.server.quarkus>
+
         <auth.server.profile/>
         <auth.server.feature/>
 
@@ -487,6 +489,7 @@
                             <backends.console.output>${backend.console.output}</backends.console.output>
 
                             <auth.server.remote>${auth.server.remote}</auth.server.remote>
+                            <auth.server.quarkus>${auth.server.quarkus}</auth.server.quarkus>
 
                             <adapter.test.props>${adapter.test.props}</adapter.test.props>
                             <examples.home>${examples.home}</examples.home>
@@ -658,6 +661,16 @@
                     <version>${wildfly.core.version}</version>
                 </dependency>
             </dependencies>
+        </profile>
+
+        <profile>
+            <id>auth-server-quarkus</id>
+            <properties>
+                <auth.server>quarkus</auth.server>
+                <auth.server.quarkus>true</auth.server.quarkus>
+                <auth.server.jboss>false</auth.server.jboss>
+                <auth.server.undertow>false</auth.server.undertow>
+            </properties>
         </profile>
 
         <profile>
