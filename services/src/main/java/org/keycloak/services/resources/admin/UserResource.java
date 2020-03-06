@@ -242,7 +242,10 @@ public class UserResource {
 
         if (rep.getAttributes() != null) {
             for (Map.Entry<String, List<String>> attr : rep.getAttributes().entrySet()) {
-                user.setAttribute(attr.getKey(), attr.getValue());
+                List<String> currentValue = user.getAttribute(attr.getKey());
+                if (currentValue == null || currentValue.size() != attr.getValue().size() || !currentValue.containsAll(attr.getValue())) {
+                    user.setAttribute(attr.getKey(), attr.getValue());
+                }
             }
 
             for (String attr : attrsToRemove) {
