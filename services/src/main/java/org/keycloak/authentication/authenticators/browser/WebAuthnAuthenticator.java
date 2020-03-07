@@ -76,8 +76,7 @@ public class WebAuthnAuthenticator implements Authenticator, CredentialValidator
         form.setAttribute(WebAuthnConstants.CHALLENGE, challengeValue);
 
         WebAuthnPolicy policy = getWebAuthnPolicy(context);
-        String rpId = policy.getRpId();
-        if (rpId == null || rpId.isEmpty()) rpId =  context.getUriInfo().getBaseUri().getHost();
+        String rpId = getRpID(context);
         form.setAttribute(WebAuthnConstants.RP_ID, rpId);
 
         UserModel user = context.getUser();
@@ -108,6 +107,13 @@ public class WebAuthnAuthenticator implements Authenticator, CredentialValidator
         return context.getRealm().getWebAuthnPolicy();
     }
 
+    protected String getRpID(AuthenticationFlowContext context){
+        WebAuthnPolicy policy = getWebAuthnPolicy(context);
+        String rpId = policy.getRpId();
+        if (rpId == null || rpId.isEmpty()) rpId = context.getUriInfo().getBaseUri().getHost();
+        return rpId;
+    }
+
     protected String getCredentialType() {
         return WebAuthnCredentialModel.TYPE_TWOFACTOR;
     }
@@ -126,7 +132,7 @@ public class WebAuthnAuthenticator implements Authenticator, CredentialValidator
         }
 
         String baseUrl = UriUtils.getOrigin(context.getUriInfo().getBaseUri());
-        String rpId = context.getUriInfo().getBaseUri().getHost();
+        String rpId = getRpID(context);
 
         Origin origin = new Origin(baseUrl);
         Challenge challenge = new DefaultChallenge(context.getAuthenticationSession().getAuthNote(WebAuthnConstants.AUTH_CHALLENGE_NOTE));
