@@ -324,6 +324,16 @@
             "secret": "password"
         },
         {
+            "clientId": "token-refresh",
+            "enabled": true,
+            "adminUrl": "/token-refresh",
+            "baseUrl": "/token-refresh",
+            "redirectUris": [
+                "/token-refresh/*"
+            ],
+            "secret": "password"
+        },
+        {
             "clientId": "third-party",
             "enabled": true,
             "redirectUris": [
