@@ -329,7 +329,8 @@ public class SigningInTest extends BaseAccountPageTest {
     private SigningInPage.UserCredential addWebAuthnCredential(String label, boolean passwordless) {
         SigningInPage.CredentialType credentialType = passwordless ? webAuthnPwdlessCredentialType : webAuthnCredentialType;
 
-        credentialType.clickSetUpLink(true);
+        credentialType.clickSetUpLink();
+        webAuthnRegisterPage.confirmAIA();
         webAuthnRegisterPage.registerWebAuthnCredential(label);
         waitForPageToLoad();
         // TODO uncomment this once KEYCLOAK-12852 is resolved
