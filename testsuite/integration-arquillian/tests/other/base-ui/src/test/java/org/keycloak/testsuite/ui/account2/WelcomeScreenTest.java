@@ -101,7 +101,7 @@ public class WelcomeScreenTest extends AbstractAccountTest {
         accountWelcomeScreen.navigateTo();
         accountWelcomeScreen.assertLinkedAccountsLinkVisible(false);
         // add simple IdP
-        testRealmResource().identityProviders().create(createIdentityProviderRepresentation("test-idp", "test-provider"));
+        testRealmResource().identityProviders().create(createIdentityProviderRepresentation("test-idp", "google"));
         // test link appeared
         accountWelcomeScreen.navigateTo();
         accountWelcomeScreen.clickLinkedAccountsLink();
