@@ -180,6 +180,15 @@ public class SigningInPage extends AbstractLoggedInPage {
             return getTextFromItem(LABEL);
         }
 
+        public boolean hasCreatedAt() {
+            boolean result = false;
+            try {
+                result = getItemElement(CREATED_AT).isDisplayed();
+            } catch (NoSuchElementException e) {}
+
+            return result;
+        }
+
         public String getCreatedAtStr() {
             return getTextFromItem(CREATED_AT).split("Created: ")[1];
         }
