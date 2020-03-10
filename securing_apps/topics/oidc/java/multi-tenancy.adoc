@@ -2,7 +2,7 @@
 ==== Multi Tenancy
 
 Multi Tenancy, in our context, means that a single target application (WAR) can be secured with multiple {project_name} realms. The realms can be located
-one the same {project_name} instance or on different instances.
+on the same {project_name} instance or on different instances.
 
 In practice, this means that the application needs to have multiple `keycloak.json` adapter configuration files.
 
