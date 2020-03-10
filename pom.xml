@@ -1686,6 +1686,9 @@
                     <name>!skipExamples</name>
                 </property>
             </activation>
+            <modules>
+                <module>examples</module>
+            </modules>
         </profile>
 
         <profile>

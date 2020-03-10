@@ -23,6 +23,7 @@ import org.keycloak.credential.CredentialInputValidator;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.credential.CredentialProvider;
 import org.keycloak.credential.CredentialTypeMetadata;
+import org.keycloak.credential.CredentialTypeMetadataContext;
 import org.keycloak.credential.UserCredentialStore;
 import org.keycloak.examples.authenticator.credential.SecretQuestionCredentialModel;
 import org.keycloak.models.KeycloakSession;
@@ -96,7 +97,7 @@ public class SecretQuestionCredentialProvider implements CredentialProvider<Secr
     }
 
     @Override
-    public CredentialTypeMetadata getCredentialTypeMetadata() {
+    public CredentialTypeMetadata getCredentialTypeMetadata(CredentialTypeMetadataContext metadataContext) {
         return CredentialTypeMetadata.builder()
                 .type(getType())
                 .category(CredentialTypeMetadata.Category.TWO_FACTOR)
