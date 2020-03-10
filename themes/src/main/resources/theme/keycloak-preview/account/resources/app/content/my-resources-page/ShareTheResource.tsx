@@ -33,7 +33,7 @@ import {
 
 import { ShareAltIcon } from '@patternfly/react-icons';
 
-import {AccountServiceClient} from '../../account-service/account.service';
+import accountServiceClient from '../../account-service/account.service';
 import { Resource, Permission, Scope } from './MyResourcesPage';
 import { Msg } from '../../widgets/Msg';
 import {ContentAlert} from '../ContentAlert';
@@ -97,7 +97,7 @@ export class ShareTheResource extends React.Component<ShareTheResourceProps, Sha
 
         this.handleToggleDialog();
 
-        AccountServiceClient.Instance.doPut('/resources/' + rscId + '/permissions', {data: permissions})
+        accountServiceClient.doPut('/resources/' + rscId + '/permissions', {data: permissions})
             .then(() => {
                 ContentAlert.success(Msg.localize('shareSuccess'));
                 this.props.onClose(this.props.resource, this.props.row);

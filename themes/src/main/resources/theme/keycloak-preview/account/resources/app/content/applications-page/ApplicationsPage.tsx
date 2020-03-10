@@ -32,7 +32,7 @@ import {
 import { InfoAltIcon, CheckIcon, BuilderImageIcon } from '@patternfly/react-icons';
 import { ContentPage } from '../ContentPage';
 import { ContinueCancelModal } from '../../widgets/ContinueCancelModal';
-import { AccountServiceClient } from '../../account-service/account.service';
+import accountServiceClient from '../../account-service/account.service';
 import { Msg } from '../../widgets/Msg';
 
 declare const locale: string;
@@ -82,7 +82,7 @@ export class ApplicationsPage extends React.Component<ApplicationsPageProps, App
   }
 
   private removeConsent = (clientId: string) => {
-    AccountServiceClient.Instance.doDelete("/applications/" + clientId + "/consent")
+    accountServiceClient.doDelete("/applications/" + clientId + "/consent")
       .then(() => {
         this.fetchApplications();
       });
@@ -95,7 +95,7 @@ export class ApplicationsPage extends React.Component<ApplicationsPageProps, App
   };
 
   private fetchApplications(): void {
-    AccountServiceClient.Instance.doGet("/applications")
+    accountServiceClient.doGet("/applications")
       .then((response: AxiosResponse<Application[]>) => {
         const applications = response.data;
         this.setState({

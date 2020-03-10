@@ -34,7 +34,7 @@ import {
     } from '@patternfly/react-core';
 
 import {AIACommand} from '../../util/AIACommand';
-import {AccountServiceClient} from '../../account-service/account.service';
+import accountServiceClient from '../../account-service/account.service';
 import {ContinueCancelModal} from '../../widgets/ContinueCancelModal';
 import {Features} from '../../widgets/features';
 import {Msg} from '../../widgets/Msg';
@@ -98,7 +98,7 @@ class SigningInPage extends React.Component<SigningInPageProps, SigningInPageSta
     }
 
     private getCredentialContainers(): void {
-        AccountServiceClient.Instance.doGet("/credentials")
+        accountServiceClient.doGet("/credentials")
             .then((response: AxiosResponse<CredentialContainer[]>) => {
 
                 const allContainers: CredContainerMap = new Map();
@@ -117,7 +117,7 @@ class SigningInPage extends React.Component<SigningInPageProps, SigningInPageSta
     }
 
     private handleRemove = (credentialId: string, userLabel: string) => {
-      AccountServiceClient.Instance.doDelete("/credentials/" + credentialId)
+        accountServiceClient.doDelete("/credentials/" + credentialId)
         .then(() => {
             this.getCredentialContainers();
             ContentAlert.success('successRemovedMessage', [userLabel]);

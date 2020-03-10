@@ -15,12 +15,9 @@
  * the License.
  */
 
-//import {KeycloakNotificationService} from '../notification/keycloak-notification.service';
-import {KeycloakService} from '../keycloak-service/keycloak.service';
+import kcSvc from '../keycloak-service/keycloak.service';
 import Axios, {AxiosRequestConfig, AxiosResponse, AxiosError} from 'axios';
 import {ContentAlert} from '../content/ContentAlert';
-
-//import {NotificationType} from 'patternfly-ng/notification';*/
 
 type AxiosResolve = (response: AxiosResponse) => void;
 type ConfigResolve = (config: AxiosRequestConfig) => void;
@@ -30,17 +27,8 @@ type ErrorReject = (error: Error) => void;
  *
  * @author Stan Silvert ssilvert@redhat.com (C) 2018 Red Hat Inc.
  */
-export class AccountServiceClient {
-    private static instance: AccountServiceClient = new AccountServiceClient();
-
-    private kcSvc: KeycloakService = KeycloakService.Instance;
-    private accountUrl: string = this.kcSvc.authServerUrl() + 'realms/' + this.kcSvc.realm() + '/account';
-
-    private constructor() {}
-
-    public static get Instance(): AccountServiceClient  {
-        return AccountServiceClient.instance;
-    }
+class AccountServiceClient {
+    private accountUrl: string = kcSvc.authServerUrl() + 'realms/' + kcSvc.realm() + '/account';
 
     public doGet(endpoint: string,
                 config?: AxiosRequestConfig): Promise<AxiosResponse> {
@@ -97,7 +85,7 @@ export class AccountServiceClient {
     private handleError(error: AxiosError): void {
         if (error != null && error.response != null && error.response.status === 401) {
             // session timed out?
-            this.kcSvc.login();
+            kcSvc.login();
         }
         console.log(error);
 
@@ -110,7 +98,7 @@ export class AccountServiceClient {
 
     private makeConfig(endpoint: string, config: AxiosRequestConfig = {}): Promise<AxiosRequestConfig> {
         return new Promise( (resolve: ConfigResolve) => {
-            this.kcSvc.getToken()
+            kcSvc.token
                 .then( (token: string) => {
                     resolve( {
                         ...config,
@@ -119,8 +107,10 @@ export class AccountServiceClient {
                         headers: {...config.headers, Authorization: 'Bearer ' + token}
                     });
                 }).catch(() => {
-                    this.kcSvc.login();
+                    kcSvc.login();
                 });
         });
     }
 }
+
+export default new AccountServiceClient();

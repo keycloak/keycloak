@@ -18,7 +18,7 @@ import * as React from 'react';
 import { AxiosResponse } from 'axios';
 import { ActionGroup, Button, Form, FormGroup, TextInput } from '@patternfly/react-core';
 
-import { AccountServiceClient } from '../../account-service/account.service';
+import accountServiceClient from '../../account-service/account.service';
 import { Features } from '../../widgets/features';
 import { Msg } from '../../widgets/Msg';
 import { ContentPage } from '../ContentPage';
@@ -70,7 +70,7 @@ export class AccountPage extends React.Component<AccountPageProps, AccountPageSt
     }
 
     private fetchPersonalInfo(): void {
-        AccountServiceClient.Instance.doGet("/")
+        accountServiceClient.doGet("/")
             .then((response: AxiosResponse<FormFields>) => {
                 this.setState(this.DEFAULT_STATE);
                 this.setState({...{ formFields: response.data }});
@@ -97,7 +97,7 @@ export class AccountPage extends React.Component<AccountPageProps, AccountPageSt
         const isValid = form.checkValidity();
         if (isValid) {
             const reqData: FormFields = { ...this.state.formFields };
-            AccountServiceClient.Instance.doPost("/", { data: reqData })
+            accountServiceClient.doPost("/", { data: reqData })
                 .then(() => { // to use response, say ((response: AxiosResponse<FormFields>) => {
                     ContentAlert.success('accountUpdatedMessage');
                 });

@@ -34,7 +34,7 @@ import {
 
 import { EditAltIcon, Remove2Icon, UserCheckIcon } from '@patternfly/react-icons';
 
-import {AccountServiceClient} from '../../account-service/account.service';
+import accountServiceClient from '../../account-service/account.service';
 import {ShareTheResource} from "./ShareTheResource";
 import {Client, PaginatedResources, Permission, Resource} from "./MyResourcesPage";
 import { Msg } from '../../widgets/Msg';
@@ -68,7 +68,7 @@ export class ResourcesTable extends React.Component<ResourcesTableProps, Resourc
 
     private fetchPermissions(resource: Resource, row: number): void {
         console.log('**** fetchPermissions');
-        AccountServiceClient.Instance.doGet('resources/' + resource._id + '/permissions')
+        accountServiceClient.doGet('resources/' + resource._id + '/permissions')
           .then((response: AxiosResponse<Permission[]>) => {
             console.log('Fetching Permissions row: ' + row);
             console.log({response});

@@ -18,7 +18,7 @@ import * as React from 'react';
 import * as moment from 'moment';
 import {AxiosResponse} from 'axios';
 
-import {AccountServiceClient} from '../../account-service/account.service';
+import accountServiceClient from '../../account-service/account.service';
 import {Msg} from '../../widgets/Msg';
  
 export interface PasswordPageProps {
@@ -50,7 +50,7 @@ export class PasswordPage extends React.Component<PasswordPageProps, PasswordPag
     public constructor(props: PasswordPageProps) {
         super(props);
         
-        AccountServiceClient.Instance.doGet("/credentials/password")
+        accountServiceClient.doGet("/credentials/password")
             .then((response: AxiosResponse<PasswordPageState>) => {
                 this.setState({...response.data});
                 console.log({response});
@@ -72,7 +72,7 @@ export class PasswordPage extends React.Component<PasswordPageProps, PasswordPag
     private handleSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
         event.preventDefault();
         const reqData: FormFields = {...this.state.formFields};
-        AccountServiceClient.Instance.doPost("/credentials/password", {data: reqData})
+        accountServiceClient.doPost("/credentials/password", {data: reqData})
             .then((response: AxiosResponse<FormFields>) => {
                 this.setState({canSubmit: false});
                 alert('Data posted:' + response.statusText);

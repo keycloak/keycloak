@@ -17,14 +17,14 @@
 import * as React from 'react';
 
 import {Msg} from './Msg';
-import {KeycloakService} from '../keycloak-service/keycloak.service';
+import keycloakService from '../keycloak-service/keycloak.service';
 
 import {Button, DropdownItem} from '@patternfly/react-core';
  
 declare const baseUrl: string;
 
 function handleLogout(): void {
-    KeycloakService.Instance.logout(baseUrl);
+    keycloakService.logout(baseUrl);
 }
     
 interface LogoutProps {}

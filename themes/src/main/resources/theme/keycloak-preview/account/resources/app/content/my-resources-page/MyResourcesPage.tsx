@@ -21,7 +21,7 @@ import * as parse from 'parse-link-header';
 
 import { Button, Level, LevelItem, Stack, StackItem, Tab, Tabs, TextInput } from '@patternfly/react-core';
 
-import {AccountServiceClient} from '../../account-service/account.service';
+import accountServiceClient from '../../account-service/account.service';
 
 import {ResourcesTable} from './ResourcesTable';
 import {ContentPage} from '../ContentPage';
@@ -137,7 +137,7 @@ export class MyResourcesPage extends React.Component<MyResourcesPageProps, MyRes
     }
 
     private fetchResources(url: string, extraParams?: Record<string, string|number>): void {
-        AccountServiceClient.Instance.doGet(url, 
+        accountServiceClient.doGet(url, 
                                             {params: extraParams}
                                             )
             .then((response: AxiosResponse<Resource[]>) => {
@@ -171,7 +171,7 @@ export class MyResourcesPage extends React.Component<MyResourcesPageProps, MyRes
     }
 
     private fetchShareRequests(resource: Resource): void {
-        AccountServiceClient.Instance.doGet('/resources/' + resource._id + '/permissions/requests')
+        accountServiceClient.doGet('/resources/' + resource._id + '/permissions/requests')
             .then((response: AxiosResponse<Permission[]>) => {
                 //console.log('Share requests for ' + resource.name);
                 //console.log({response});

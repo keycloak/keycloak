@@ -18,7 +18,7 @@ import * as React from 'react';
 import * as moment from 'moment';
 import {AxiosResponse} from 'axios';
 
-import {AccountServiceClient} from '../../account-service/account.service';
+import accountServiceClient from '../../account-service/account.service';
 
 import {
   Bullseye,
@@ -47,7 +47,7 @@ import {
 
 import {Msg} from '../../widgets/Msg';
 import {ContinueCancelModal} from '../../widgets/ContinueCancelModal';
-import {KeycloakService} from '../../keycloak-service/keycloak.service';
+import keycloakService from '../../keycloak-service/keycloak.service';
 import {ContentPage} from '../ContentPage';
 import { ContentAlert } from '../ContentAlert';
  
@@ -104,14 +104,14 @@ export class DeviceActivityPage extends React.Component<DeviceActivityPageProps,
     }
 
     private signOutAll = () => {
-      AccountServiceClient.Instance.doDelete("/sessions")
+      accountServiceClient.doDelete("/sessions")
         .then( () => {
-          KeycloakService.Instance.logout(baseUrl);
+          keycloakService.logout(baseUrl);
         });
     }
 
     private signOutSession = (device: Device, session: Session) => {
-      AccountServiceClient.Instance.doDelete("/sessions/" + session.id)
+      accountServiceClient.doDelete("/sessions/" + session.id)
           .then (() => {
             this.fetchDevices();
             ContentAlert.success(Msg.localize('signedOutSession', [session.browser, device.os]));
@@ -119,7 +119,7 @@ export class DeviceActivityPage extends React.Component<DeviceActivityPageProps,
     }
 
     private fetchDevices(): void {
-      AccountServiceClient.Instance.doGet("/sessions/devices")
+      accountServiceClient.doGet("/sessions/devices")
           .then((response: AxiosResponse<Device[]>) => {
             console.log({response});
 

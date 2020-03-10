@@ -18,7 +18,7 @@ import * as React from 'react';
 
 import * as moment from 'moment';
 
-import {KeycloakService} from './keycloak-service/keycloak.service';
+import kcSvc from './keycloak-service/keycloak.service';
 
 import {PageNav} from './PageNav';
 import {PageToolbar} from './PageToolbar';
@@ -45,7 +45,6 @@ const avatarImg = pFlyImages + 'img_avatar.svg';
 
 export interface AppProps {};
 export class App extends React.Component<AppProps> {
-    private kcSvc: KeycloakService = KeycloakService.Instance;
 
     public constructor(props: AppProps) {
         super(props);
@@ -56,8 +55,8 @@ export class App extends React.Component<AppProps> {
         toggleReact();
 
         // check login
-        if (!this.kcSvc.authenticated() && !isWelcomePage()) {
-            this.kcSvc.login();
+        if (!kcSvc.authenticated() && !isWelcomePage()) {
+            kcSvc.login();
         }
 
         // globally set up locale for date formatting

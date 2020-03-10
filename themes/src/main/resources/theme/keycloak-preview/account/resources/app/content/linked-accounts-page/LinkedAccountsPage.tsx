@@ -51,7 +51,7 @@ import {
     UnlinkIcon
 } from '@patternfly/react-icons';
 
-import {AccountServiceClient} from '../../account-service/account.service';
+import accountServiceClient from '../../account-service/account.service';
 import {Msg} from '../../widgets/Msg';
 import {ContentPage} from '../ContentPage';
 import {createRedirect} from '../../util/RedirectUri';
@@ -89,7 +89,7 @@ class LinkedAccountsPage extends React.Component<LinkedAccountsPageProps, Linked
     }
 
     private getLinkedAccounts(): void {
-        AccountServiceClient.Instance.doGet("/linked-accounts")
+        accountServiceClient.doGet("/linked-accounts")
             .then((response: AxiosResponse<LinkedAccount[]>) => {
                 console.log({response});
                 const linkedAccounts = response.data.filter((account) => account.connected);
@@ -101,7 +101,7 @@ class LinkedAccountsPage extends React.Component<LinkedAccountsPageProps, Linked
     private unLinkAccount(account: LinkedAccount): void {
         const url = '/linked-accounts/' + account.providerName;
 
-        AccountServiceClient.Instance.doDelete(url)
+        accountServiceClient.doDelete(url)
             .then((response: AxiosResponse) => {
                 console.log({response});
                 this.getLinkedAccounts();
@@ -113,7 +113,7 @@ class LinkedAccountsPage extends React.Component<LinkedAccountsPageProps, Linked
 
         const redirectUri: string = createRedirect(this.props.location.pathname);
 
-        AccountServiceClient.Instance.doGet(url, { params: {providerId: account.providerName, redirectUri}})
+        accountServiceClient.doGet(url, { params: {providerId: account.providerName, redirectUri}})
             .then((response: AxiosResponse<{accountLinkUri: string}>) => {
                 console.log({response});
                 window.location.href = response.data.accountLinkUri;
