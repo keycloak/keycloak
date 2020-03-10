@@ -23,4 +23,8 @@
         </createIndex>
     </changeSet>
 
+    <changeSet id="9.0.1-add-unique-constraint-groups" author="keycloak">
+        <addUniqueConstraint columnNames="PARENT_GROUP, NAME" constraintName="UK_GROUP_NAME" tableName="KEYCLOAK_GROUP"/>
+    </changeSet>
+
 </databaseChangeLog>

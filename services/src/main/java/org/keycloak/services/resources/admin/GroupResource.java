@@ -129,11 +129,11 @@ public class GroupResource {
     public Response addChild(GroupRepresentation rep) {
         this.auth.groups().requireManage(group);
 
-        for (GroupModel group : group.getSubGroups()) {
-            if (group.getName().equals(rep.getName())) {
-                return ErrorResponse.exists("Parent already contains subgroup named '" + rep.getName() + "'");
-            }
-        }
+//        for (GroupModel group : group.getSubGroups()) {
+//            if (group.getName().equals(rep.getName())) {
+//                return ErrorResponse.exists("Parent already contains subgroup named '" + rep.getName() + "'");
+//            }
+//        }
 
         Response.ResponseBuilder builder = Response.status(204);
         GroupModel child = null;
