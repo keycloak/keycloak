@@ -377,7 +377,7 @@
                                     <resource>
                                         <directory>src/test/resources</directory>
                                         <includes>
-                                            <include>keystore/keycloak.truststore</include>
+                                            <include>keystore/**</include>
                                         </includes>
                                     </resource>
                                 </resources>

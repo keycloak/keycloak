@@ -22,8 +22,11 @@ import org.junit.rules.ExternalResource;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.util.ldap.LDAPEmbeddedServer;
 
+import java.io.File;
 import java.util.Map;
 import java.util.Properties;
+
+import static org.keycloak.testsuite.utils.io.IOUtil.PROJECT_BUILD_DIRECTORY;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -36,7 +39,7 @@ public class LDAPRule extends ExternalResource {
 
     private static final String PROPERTY_KEYSTORE_FILE = "keystoreFile";
 
-    private static final String PRIVATE_KEY = "keystore/keycloak.jks";
+    private static final String PRIVATE_KEY = "dependency/keystore/keycloak.jks";
 
     private static final String PROPERTY_CERTIFICATE_PASSWORD = "certificatePassword";
 
@@ -87,7 +90,7 @@ public class LDAPRule extends ExternalResource {
         defaultProperties.setProperty(LDAPEmbeddedServer.PROPERTY_LDIF_FILE, "classpath:ldap/users.ldif");
         defaultProperties.setProperty(PROPERTY_ENABLE_SSL, "true");
         defaultProperties.setProperty(PROPERTY_CERTIFICATE_PASSWORD, "secret");
-        defaultProperties.setProperty(PROPERTY_KEYSTORE_FILE, this.getClass().getClassLoader().getResource(LDAPRule.PRIVATE_KEY).getFile());
+        defaultProperties.setProperty(PROPERTY_KEYSTORE_FILE, new File(PROJECT_BUILD_DIRECTORY, PRIVATE_KEY).getAbsolutePath());
 
         return new LDAPEmbeddedServer(defaultProperties);
     }
