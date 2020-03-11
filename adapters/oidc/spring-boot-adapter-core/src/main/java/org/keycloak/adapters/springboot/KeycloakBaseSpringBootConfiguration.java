@@ -39,6 +39,7 @@ import org.keycloak.adapters.jetty.KeycloakJettyAuthenticator;
 import org.keycloak.adapters.undertow.KeycloakServletExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.Import;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -49,6 +50,7 @@ import java.util.Set;
 /**
  * Keycloak authentication base integration for Spring Boot - base to be extended for particular boot versions.
  */
+@Import({ KeycloakSpringBootConfigResolver.class })
 public class KeycloakBaseSpringBootConfiguration {
 	
     protected KeycloakSpringBootProperties keycloakProperties;
