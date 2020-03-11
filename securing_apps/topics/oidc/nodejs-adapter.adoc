@@ -255,8 +255,21 @@ Explicit user-triggered logout::
 By default, the middleware catches calls to `/logout` to send the user through a
 {project_name}-centric logout workflow. This can be changed by specifying a `logout`
 configuration parameter to the `middleware()` call:
+
 [source,javascript]
+----
     app.use( keycloak.middleware( { logout: '/logoff' } ));
+----
+    
+When the user-triggered logout is invoked a query parameter `redirect_url` can be passed:
+
+[source]
+----
+https://example.com/logoff?redirect_url=https%3A%2F%2Fexample.com%3A3000%2Flogged%2Fout
+----
+
+This parameter is then used as the redirect url of the OIDC logout endpoint and the user will be redirected to
+`\https://example.com/logged/out`.
 
 {project_name} Admin Callbacks::
 
