@@ -662,6 +662,12 @@ public class UserResource {
     @NoCache
     public void removeCredential(final @PathParam("credentialId") String credentialId) {
         auth.users().requireManage(user);
+        CredentialModel credential = session.userCredentialManager().getStoredCredentialById(realm, user, credentialId);
+        if (credential == null) {
+            // we do this to make sure somebody can't phish ids
+            if (auth.users().canQuery()) throw new NotFoundException("Credential not found");
+            else throw new ForbiddenException();
+        }
         session.userCredentialManager().removeStoredCredential(realm, user, credentialId);
         adminEvent.operation(OperationType.ACTION).resourcePath(session.getContext().getUri()).success();
     }
@@ -677,7 +683,7 @@ public class UserResource {
         CredentialModel credential = session.userCredentialManager().getStoredCredentialById(realm, user, credentialId);
         if (credential == null) {
             // we do this to make sure somebody can't phish ids
-            if (auth.users().canQuery()) throw new NotFoundException("User not found");
+            if (auth.users().canQuery()) throw new NotFoundException("Credential not found");
             else throw new ForbiddenException();
         }
         session.userCredentialManager().updateCredentialLabel(realm, user, credentialId, userLabel);
@@ -705,7 +711,7 @@ public class UserResource {
         CredentialModel credential = session.userCredentialManager().getStoredCredentialById(realm, user, credentialId);
         if (credential == null) {
             // we do this to make sure somebody can't phish ids
-            if (auth.users().canQuery()) throw new NotFoundException("User not found");
+            if (auth.users().canQuery()) throw new NotFoundException("Credential not found");
             else throw new ForbiddenException();
         }
         session.userCredentialManager().moveCredentialTo(realm, user, credentialId, newPreviousCredentialId);

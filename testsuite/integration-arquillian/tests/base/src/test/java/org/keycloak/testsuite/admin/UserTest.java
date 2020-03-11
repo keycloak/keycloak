@@ -32,14 +32,17 @@ import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.RoleMappingResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.admin.client.resource.UsersResource;
+import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.Base64;
+import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.Constants;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.AccessToken;
@@ -1957,6 +1960,47 @@ public class UserTest extends AbstractAdminTest {
         credPasswd.setValue("password");
         user.resetPassword(credPasswd);
         Assert.assertEquals(1, user.credentials().size());
+    }
+
+    @Test
+    public void testCRUDCredentialsOfDifferentUser() {
+        // Get credential ID of the OTP credential of the user1
+        UserResource user1 = ApiUtil.findUserByUsernameId(testRealm(), "user-with-one-configured-otp");
+        CredentialRepresentation otpCredential = user1.credentials().stream()
+                .filter(credentialRep -> OTPCredentialModel.TYPE.equals(credentialRep.getType()))
+                .findFirst()
+                .get();
+
+        // Test that when admin operates on user "user2", he can't update, move or remove credentials of different user "user1"
+        UserResource user2 = ApiUtil.findUserByUsernameId(testRealm(), "test-user@localhost");
+        try {
+            user2.setCredentialUserLabel(otpCredential.getId(), "new-label");
+            Assert.fail("Not expected to successfully update user label");
+        } catch (NotFoundException nfe) {
+            // Expected
+        }
+
+        try {
+            user2.moveCredentialToFirst(otpCredential.getId());
+            Assert.fail("Not expected to successfully move credential");
+        } catch (NotFoundException nfe) {
+            // Expected
+        }
+
+        try {
+            user2.removeCredential(otpCredential.getId());
+            Assert.fail("Not expected to successfully remove credential");
+        } catch (NotFoundException nfe) {
+            // Expected
+        }
+
+        // Assert credential was not removed or updated
+        CredentialRepresentation otpCredentialLoaded = user1.credentials().stream()
+                .filter(credentialRep -> OTPCredentialModel.TYPE.equals(credentialRep.getType()))
+                .findFirst()
+                .get();
+        Assert.assertTrue(ObjectUtil.isEqualOrBothNull(otpCredential.getUserLabel(), otpCredentialLoaded.getUserLabel()));
+        Assert.assertTrue(ObjectUtil.isEqualOrBothNull(otpCredential.getPriority(), otpCredentialLoaded.getPriority()));
     }
     
     @Test

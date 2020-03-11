@@ -11,6 +11,7 @@ import org.junit.Test;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.common.util.MultivaluedHashMap;
+import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.credential.CredentialAuthentication;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.credential.UserCredentialStoreManager;
@@ -22,6 +23,7 @@ import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.ComponentRepresentation;
+import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
@@ -76,6 +78,8 @@ import static org.keycloak.storage.UserStorageProviderModel.IMPORT_ENABLED;
 import static org.keycloak.storage.UserStorageProviderModel.MAX_LIFESPAN;
 import static org.keycloak.testsuite.actions.RequiredActionEmailVerificationTest.getPasswordResetEmailLink;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
+import org.keycloak.testsuite.util.WaitUtils;
+
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlDoesntStartWith;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
 
@@ -958,6 +962,57 @@ public class UserStorageTest extends AbstractAuthTest {
             List<CredentialModel> list = currentSession.userCredentialManager().getStoredCredentials(realm, user);
             assertOrder(list, otp1Id.get(), otp2Id.get());
         });
+    }
+
+    @Test
+    public void testCRUDCredentialsOfDifferentUser() {
+        // Create OTP credential for user1 in the federated storage
+        testingClient.server().run(session -> {
+            RealmModel realm = session.realms().getRealmByName("test");
+
+            UserModel user = session.users().getUserByUsername("thor", realm);
+            Assert.assertFalse(StorageId.isLocalStorage(user));
+
+            CredentialModel otp1 = OTPCredentialModel.createFromPolicy(realm, "secret1");
+            session.userCredentialManager().createCredential(realm, user, otp1);
+        });
+
+        UserResource user1 = ApiUtil.findUserByUsernameId(testRealmResource(), "thor");
+        CredentialRepresentation otpCredential = user1.credentials().stream()
+                .filter(credentialRep -> OTPCredentialModel.TYPE.equals(credentialRep.getType()))
+                .findFirst()
+                .get();
+
+        // Test that when admin operates on user "user2", who is saved in user-storage, he can't update, move or remove credentials of different user "user1"
+        UserResource user2 = ApiUtil.findUserByUsernameId(testRealmResource(), "tbrady");
+        try {
+            user2.setCredentialUserLabel(otpCredential.getId(), "new-label");
+            Assert.fail("Not expected to successfully update user label");
+        } catch (NotFoundException nfe) {
+            // Expected
+        }
+
+        try {
+            user2.moveCredentialToFirst(otpCredential.getId());
+            Assert.fail("Not expected to successfully move credential");
+        } catch (NotFoundException nfe) {
+            // Expected
+        }
+
+        try {
+            user2.removeCredential(otpCredential.getId());
+            Assert.fail("Not expected to successfully remove credential");
+        } catch (NotFoundException nfe) {
+            // Expected
+        }
+
+        // Assert credential was not removed or updated
+        CredentialRepresentation otpCredentialLoaded = user1.credentials().stream()
+                .filter(credentialRep -> OTPCredentialModel.TYPE.equals(credentialRep.getType()))
+                .findFirst()
+                .get();
+        Assert.assertTrue(ObjectUtil.isEqualOrBothNull(otpCredential.getUserLabel(), otpCredentialLoaded.getUserLabel()));
+        Assert.assertTrue(ObjectUtil.isEqualOrBothNull(otpCredential.getPriority(), otpCredentialLoaded.getPriority()));
     }
 
 

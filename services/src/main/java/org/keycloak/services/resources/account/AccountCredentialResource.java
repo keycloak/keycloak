@@ -1,6 +1,7 @@
 package org.keycloak.services.resources.account;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.keycloak.authentication.Authenticator;
 import org.keycloak.authentication.AuthenticatorFactory;
@@ -17,13 +18,16 @@ import org.keycloak.models.*;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.ErrorResponse;
+import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.managers.Auth;
 import org.keycloak.services.messages.Messages;
+import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.MediaType;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
+import javax.ws.rs.NotFoundException;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
@@ -44,6 +48,8 @@ import static org.keycloak.models.AuthenticationExecutionModel.Requirement.DISAB
 import static org.keycloak.utils.CredentialHelper.createUserStorageCredentialRepresentation;
 
 public class AccountCredentialResource {
+
+    private static final Logger logger = Logger.getLogger(AccountCredentialResource.class);
 
     public static final String TYPE = "type";
     public static final String ENABLED_ONLY = "enabled-only";
@@ -279,6 +285,10 @@ public class AccountCredentialResource {
     @NoCache
     public void removeCredential(final @PathParam("credentialId") String credentialId) {
         auth.require(AccountRoles.MANAGE_ACCOUNT);
+        CredentialModel credential = session.userCredentialManager().getStoredCredentialById(realm, user, credentialId);
+        if (credential == null) {
+            throw new NotFoundException("Credential not found");
+        }
         session.userCredentialManager().removeStoredCredential(realm, user, credentialId);
     }
 
@@ -287,14 +297,25 @@ public class AccountCredentialResource {
      * Update a user label of specified credential of current user
      *
      * @param credentialId ID of the credential, which will be updated
-     * @param userLabel new user label
+     * @param userLabel new user label as JSON string
      */
     @PUT
-    @Consumes(javax.ws.rs.core.MediaType.TEXT_PLAIN)
+    @Consumes(MediaType.APPLICATION_JSON)
     @Path("{credentialId}/label")
+    @NoCache
     public void setLabel(final @PathParam("credentialId") String credentialId, String userLabel) {
         auth.require(AccountRoles.MANAGE_ACCOUNT);
-        session.userCredentialManager().updateCredentialLabel(realm, user, credentialId, userLabel);
+        CredentialModel credential = session.userCredentialManager().getStoredCredentialById(realm, user, credentialId);
+        if (credential == null) {
+            throw new NotFoundException("Credential not found");
+        }
+
+        try {
+            String label = JsonSerialization.readValue(userLabel, String.class);
+            session.userCredentialManager().updateCredentialLabel(realm, user, credentialId, label);
+        } catch (IOException ioe) {
+            throw new ErrorResponseException(ErrorResponse.error(Messages.INVALID_REQUEST, Response.Status.BAD_REQUEST));
+        }
     }
 
     // TODO: This is kept here for now and commented.

@@ -27,6 +27,7 @@ import org.keycloak.authentication.requiredactions.WebAuthnPasswordlessRegisterF
 import org.keycloak.authentication.requiredactions.WebAuthnRegisterFactory;
 import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.common.Profile;
+import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.credential.CredentialTypeMetadata;
 import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticationExecutionModel;
@@ -392,6 +393,40 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         password = credentials.get(0);
         Assert.assertEquals(PasswordCredentialModel.TYPE, password.getType());
         Assert.assertNull(password.getUserCredentials());
+    }
+
+
+    @Test
+    public void testCRUDCredentialOfDifferentUser() throws IOException {
+        // Get credential ID of the OTP credential of the different user thant currently logged user
+        UserResource user = ApiUtil.findUserByUsernameId(testRealm(), "user-with-one-configured-otp");
+        CredentialRepresentation otpCredential = user.credentials().stream()
+                .filter(credentialRep -> OTPCredentialModel.TYPE.equals(credentialRep.getType()))
+                .findFirst()
+                .get();
+
+        // Test that current user can't update the credential, which belongs to the different user
+        SimpleHttp.Response response = SimpleHttp
+                .doPut(getAccountUrl("credentials/" + otpCredential.getId() + "/label"), httpClient)
+                .auth(tokenUtil.getToken())
+                .json("new-label")
+                .asResponse();
+        assertEquals(404, response.getStatus());
+
+        // Test that current user can't delete the credential, which belongs to the different user
+        response = SimpleHttp
+                .doDelete(getAccountUrl("credentials/" + otpCredential.getId()), httpClient)
+                .acceptJson()
+                .auth(tokenUtil.getToken())
+                .asResponse();
+        assertEquals(404, response.getStatus());
+
+        // Assert credential was not updated or removed
+        CredentialRepresentation otpCredentialLoaded = user.credentials().stream()
+                .filter(credentialRep -> OTPCredentialModel.TYPE.equals(credentialRep.getType()))
+                .findFirst()
+                .get();
+        Assert.assertTrue(ObjectUtil.isEqualOrBothNull(otpCredential.getUserLabel(), otpCredentialLoaded.getUserLabel()));
     }
 
     // Send REST request to get all credential containers and credentials of current user
