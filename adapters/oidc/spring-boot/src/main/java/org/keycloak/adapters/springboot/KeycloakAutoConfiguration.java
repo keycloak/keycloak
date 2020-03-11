@@ -49,13 +49,6 @@ public class KeycloakAutoConfiguration extends KeycloakBaseSpringBootConfigurati
 
     private KeycloakSpringBootProperties keycloakProperties;
 
-    @Autowired
-    public void setKeycloakSpringBootProperties(KeycloakSpringBootProperties keycloakProperties, KeycloakSpringBootConfigResolver resolver) {
-        this.keycloakProperties = keycloakProperties;
-        resolver.setAdapterConfig(keycloakProperties);
-    }
-
-
     @Bean
     public EmbeddedServletContainerCustomizer getKeycloakContainerCustomizer() {
         return new EmbeddedServletContainerCustomizer() {

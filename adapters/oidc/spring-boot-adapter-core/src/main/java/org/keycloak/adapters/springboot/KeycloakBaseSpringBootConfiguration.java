@@ -21,7 +21,6 @@ import io.undertow.servlet.api.DeploymentInfo;
 import io.undertow.servlet.api.SecurityInfo.EmptyRoleSemantic;
 import io.undertow.servlet.api.WebResourceCollection;
 import org.apache.catalina.Context;
-import org.apache.log4j.Logger;
 import org.apache.tomcat.util.descriptor.web.LoginConfig;
 import org.apache.tomcat.util.descriptor.web.SecurityCollection;
 import org.apache.tomcat.util.descriptor.web.SecurityConstraint;
@@ -34,7 +33,6 @@ import org.eclipse.jetty.server.handler.HandlerList;
 import org.eclipse.jetty.server.handler.HandlerWrapper;
 import org.eclipse.jetty.util.security.Constraint;
 import org.eclipse.jetty.webapp.WebAppContext;
-import org.keycloak.adapters.KeycloakDeploymentBuilder;
 import org.keycloak.adapters.jetty.KeycloakJettyAuthenticator;
 import org.keycloak.adapters.undertow.KeycloakServletExtension;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -54,9 +52,9 @@ public class KeycloakBaseSpringBootConfiguration {
     protected KeycloakSpringBootProperties keycloakProperties;
 
     @Autowired
-    public void setKeycloakSpringBootProperties(KeycloakSpringBootProperties keycloakProperties, KeycloakSpringBootConfigResolver resolver) {
+    public void setKeycloakSpringBootProperties(KeycloakSpringBootProperties keycloakProperties) {
         this.keycloakProperties = keycloakProperties;
-        resolver.setAdapterConfig(keycloakProperties);
+        KeycloakSpringBootConfigResolverWrapper.setAdapterConfig(keycloakProperties);
     }
 
     @Autowired
