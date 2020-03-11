@@ -44,5 +44,14 @@
         </preConditions>
         <addUniqueConstraint columnNames="REALM_ID,PARENT_GROUP,NAME" constraintName="SIBLING_NAMES" tableName="KEYCLOAK_GROUP"/>
     </changeSet>
+  
+    <changeSet author="nthomas" id="9.0.1-create-indexes-on-EVENT_ENTITY">
+        <createIndex indexName="IDX_EVENT_ENTITY_REALM_ID" tableName="EVENT_ENTITY">
+            <column name="REALM_ID"/>
+        </createIndex>
+        <createIndex indexName="IDX_EVENT_ENTITY_EVENT_TIME" tableName="EVENT_ENTITY">
+            <column name="EVENT_TIME"/>
+        </createIndex>
+     </changeSet>
 
 </databaseChangeLog>
