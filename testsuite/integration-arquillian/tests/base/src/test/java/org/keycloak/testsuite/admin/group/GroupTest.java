@@ -190,6 +190,55 @@ public class GroupTest extends AbstractGroupTest {
         response.close();
         assertEquals(409, response.getStatus()); // conflict status 409 - same name not allowed
     }
+    
+    @Test
+    // KEYCLOAK-11412 Unintended Groups with same names
+    public void doNotAllowSameGroupNameAtSameLevelWhenUpdatingName() throws Exception {
+        RealmResource realm = adminClient.realms().realm("test");
+
+        GroupRepresentation topGroup = new GroupRepresentation();
+        topGroup.setName("top1");
+        topGroup = createGroup(realm, topGroup);
+
+        GroupRepresentation anotherTopGroup = new GroupRepresentation();
+        anotherTopGroup.setName("top2");
+        anotherTopGroup = createGroup(realm, anotherTopGroup);
+        
+        anotherTopGroup.setName("top1");
+        
+        try {
+            realm.groups().group(anotherTopGroup.getId()).update(anotherTopGroup);
+            Assert.fail("Expected ClientErrorException");
+        } catch (ClientErrorException e) {
+            // conflict status 409 - same name not allowed
+            assertEquals("HTTP 409 Conflict", e.getMessage());
+        }
+
+        GroupRepresentation level2Group = new GroupRepresentation();
+        level2Group.setName("level2-1");
+        addSubGroup(realm, topGroup, level2Group);
+
+        GroupRepresentation anotherlevel2Group = new GroupRepresentation();
+        anotherlevel2Group.setName("level2-2");
+        addSubGroup(realm, topGroup, anotherlevel2Group);
+
+        anotherlevel2Group.setName("level2-1");
+        
+        try {
+            realm.groups().group(anotherlevel2Group.getId()).update(anotherlevel2Group);
+            Assert.fail("Expected ClientErrorException");
+        } catch (ClientErrorException e) {
+            // conflict status 409 - same name not allowed
+            assertEquals("HTTP 409 Conflict", e.getMessage());
+        }  
+    }
+    
+    private void addSubGroup(RealmResource realm, GroupRepresentation parent, GroupRepresentation child) {
+        Response response = realm.groups().add(child);
+        child.setId(ApiUtil.getCreatedId(response));
+        response = realm.groups().group(parent.getId()).subGroup(child);
+        response.close();
+    }
 
     @Test
     public void allowSameGroupNameAtDifferentLevel() throws Exception {
