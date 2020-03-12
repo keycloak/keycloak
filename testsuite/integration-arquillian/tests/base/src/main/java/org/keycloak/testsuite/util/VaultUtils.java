@@ -40,7 +40,9 @@ public class VaultUtils {
             OnlineManagementClient client = AuthServerTestEnricher.getManagementClient();
             // configure the selected provider and set it as the default vault provider.
             client.execute("/subsystem=keycloak-server/spi=vault/:add(default-provider=" + provider.getName() + ")");
-            client.execute(provider.getCliInstallationCommand());
+            for (String command : provider.getCliInstallationCommands()) {
+                client.execute(command);
+            }
             client.close();
         }
     }
@@ -50,6 +52,9 @@ public class VaultUtils {
             System.setProperty("keycloak.vault." + provider.getName() + ".provider.enabled", "false");
         } else {
             OnlineManagementClient client = AuthServerTestEnricher.getManagementClient();
+            for (String command : provider.getCliRemovalCommands()) {
+                client.execute(command);
+            }
             client.execute("/subsystem=keycloak-server/spi=vault/:remove");
             client.close();
         }

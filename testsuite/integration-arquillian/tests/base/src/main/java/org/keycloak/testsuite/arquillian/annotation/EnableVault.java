@@ -29,29 +29,56 @@ import java.lang.annotation.Target;
 @Target({ElementType.TYPE})
 public @interface EnableVault {
 
+    ;
+
     enum PROVIDER_ID {
 
-        PLAINTEXT("files-plaintext", "/subsystem=keycloak-server/spi=vault/provider=files-plaintext/:add(enabled=true, " +
-                        "properties={dir => \"${jboss.home.dir}/standalone/configuration/vault\"})"),
+        PLAINTEXT("files-plaintext",
+                new String[] {
+                    "/subsystem=keycloak-server/spi=vault/provider=files-plaintext/:add(enabled=true, " +
+                        "properties={dir => \"${jboss.home.dir}/standalone/configuration/vault\"})"},
+                new String[] {}),
 
-        ELYTRON_CS_KEYSTORE("elytron-cs-keystore", "/subsystem=keycloak-server/spi=vault/provider=elytron-cs-keystore/:add(enabled=true, " +
-                        "properties={location => \"${jboss.home.dir}/standalone/configuration/vault/credential-store.p12\", " +
-                        "secret => \"MASK-3u2HNQaMogJJ8VP7J6gRIl;12345678;321\", keyStoreType => \"PKCS12\"})");
+        ELYTRON_CS_KEYSTORE("elytron-cs-keystore",
+                new String[] {
+                    // create and populate an elytron credential store on the fly.
+                    "/subsystem=elytron/credential-store=test-cred-store:add(location=standalone/configuration/vault/cred-store.jceks, create=true," +
+                            "relative-to=jboss.home.dir, credential-reference={clear-text => \"secretpwd1!\"})",
+                    "/subsystem=elytron/credential-store=test-cred-store:add-alias(alias=master_smtp__key, secret-value=secure_master_smtp_secret)",
+                    "/subsystem=elytron/credential-store=test-cred-store:add-alias(alias=test_smtp__key, secret-value=secure_test_smtp_secret)",
+                    // create the elytron-cs-keystore provider (using the masked form of the credential store password.
+                    "/subsystem=keycloak-server/spi=vault/provider=elytron-cs-keystore/:add(enabled=true, " +
+                            "properties={location => \"${jboss.home.dir}/standalone/configuration/vault/cred-store.jceks\", " +
+                            "secret => \"MASK-2RukbhkyMOXq1WzXkcUcuK;abcd9876;321\", keyStoreType => \"JCEKS\"})"},
+                new String[] {
+                    // remove the aliases from the credential store.
+                    "/subsystem=elytron/credential-store=test-cred-store:remove-alias(alias=test_smtp__key)",
+                    "/subsystem=elytron/credential-store=test-cred-store:remove-alias(alias=master_smtp__key)",
+                    // remove the elytron credential store.
+                    "/subsystem=elytron/credential-store=test-cred-store:remove"
+                });
+
 
         final String name;
-        final String cliInstallationCommand;
+        final String[] cliInstallationCommands;
+        final String[] cliRemovalCommands;
 
-        PROVIDER_ID(final String name, final String cliInstallationCommand) {
+        PROVIDER_ID(final String name, final String[] cliInstallationCommands, final String[] cliRemovalCommands) {
             this.name = name;
-            this.cliInstallationCommand = cliInstallationCommand;
+            this.cliInstallationCommands = cliInstallationCommands;
+            this.cliRemovalCommands = cliRemovalCommands;
         }
 
         public String getName() {
             return this.name;
         }
 
-        public String getCliInstallationCommand() {
-            return this.cliInstallationCommand;
+        public String[] getCliInstallationCommands() {
+            return this.cliInstallationCommands;
+        }
+
+        public String[] getCliRemovalCommands() {
+            return this.cliRemovalCommands;
         }
     };
 
