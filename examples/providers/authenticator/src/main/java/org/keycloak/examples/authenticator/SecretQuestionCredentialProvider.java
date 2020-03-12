@@ -87,8 +87,8 @@ public class SecretQuestionCredentialProvider implements CredentialProvider<Secr
     }
 
     @Override
-    public void deleteCredential(RealmModel realm, UserModel user, String credentialId) {
-        getCredentialStore().removeStoredCredential(realm, user, credentialId);
+    public boolean deleteCredential(RealmModel realm, UserModel user, String credentialId) {
+        return getCredentialStore().removeStoredCredential(realm, user, credentialId);
     }
 
     @Override
