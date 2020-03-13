@@ -130,7 +130,7 @@ public class JPAResourceStore implements ResourceStore {
             queryName = pagination ? "findAnyResourceIdByOwnerOrdered" : "findAnyResourceIdByOwner";
         }
 
-        TypedQuery<ResourceEntity> query = entityManager.createNamedQuery(queryName, ResourceEntity.class);
+        TypedQuery<String> query = entityManager.createNamedQuery(queryName, String.class);
 
         query.setFlushMode(FlushModeType.COMMIT);
         query.setParameter("owner", ownerId);
@@ -145,10 +145,10 @@ public class JPAResourceStore implements ResourceStore {
         }
 
         ResourceStore resourceStore = provider.getStoreFactory().getResourceStore();
-        List<ResourceEntity> result = query.getResultList();
+        List<String> result = query.getResultList();
 
-        for (ResourceEntity entity : result) {
-            Resource cached = resourceStore.findById(entity.getId(), resourceServerId);
+        for (String entity : result) {
+            Resource cached = resourceStore.findById(entity, resourceServerId);
             
             if (cached != null) {
                 consumer.accept(cached);
