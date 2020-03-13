@@ -44,7 +44,17 @@ To ensure that everything is working as expected, on the client machine, run:
 
 You should be prompted for the password. After that, you can add users to the IPA server using this command:
 
- $ ipa user-add john --first=John --last=Smith --email=john@smith.com --phone=042424242 --street="Testing street" \      --city="Testing city" --state="Testing State" --postalcode=0000000000
+ $ ipa user-add john --first=John --last=Smith --email=john@smith.com --phone=042424242 --street="Testing street" \      --city="Testing city" --state="Testing State" --postalcode=0000000000 --password
+
+To force setting the user's password, use kinit.  Given the user john, you would enter this command:
+
+ kinit john
+
+To restore normal IPA operation, you would enter these commands:
+
+ kdestroy -A
+ kinit admin
+
 
 ==== SSSD and D-Bus
 
