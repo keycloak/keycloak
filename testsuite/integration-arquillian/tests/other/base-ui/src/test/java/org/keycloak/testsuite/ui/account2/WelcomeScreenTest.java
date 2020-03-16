@@ -24,6 +24,7 @@ import org.keycloak.testsuite.ui.account2.page.DeviceActivityPage;
 import org.keycloak.testsuite.ui.account2.page.LinkedAccountsPage;
 import org.keycloak.testsuite.ui.account2.page.PersonalInfoPage;
 
+import static org.junit.Assert.assertEquals;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWithLoginUrlOf;
 
 /**
@@ -43,12 +44,14 @@ public class WelcomeScreenTest extends AbstractAccountTest {
     public void loginLogoutTest() {
         accountWelcomeScreen.assertCurrent();
         accountWelcomeScreen.header().assertLogoutBtnVisible(false);
+        assertEquals("", accountWelcomeScreen.header().getToolbarLoggedInUser());
 
         // login
         accountWelcomeScreen.header().clickLoginBtn();
         loginToAccount();
         accountWelcomeScreen.assertCurrent();
         accountWelcomeScreen.header().assertLoginBtnVisible(false);
+        assertEquals("test user", accountWelcomeScreen.header().getToolbarLoggedInUser());
 
         // try if we're really logged in
         personalInfoPage.navigateTo();
@@ -62,6 +65,7 @@ public class WelcomeScreenTest extends AbstractAccountTest {
         accountWelcomeScreen.assertCurrent();
         accountWelcomeScreen.header().assertLogoutBtnVisible(false);
         accountWelcomeScreen.header().assertLoginBtnVisible(true);
+        assertEquals("", accountWelcomeScreen.header().getToolbarLoggedInUser());
         personalInfoPage.navigateTo();
         assertCurrentUrlStartsWithLoginUrlOf(personalInfoPage);
     }
@@ -92,6 +96,7 @@ public class WelcomeScreenTest extends AbstractAccountTest {
 //        accountWelcomeScreen.accountSecurityCard().clickAuthenticator();
 //        authenticatorPage.assertCurrent();
 
+        assertEquals("", accountWelcomeScreen.header().getToolbarLoggedInUser());
         // device activity link
         accountWelcomeScreen.navigateTo();
         accountWelcomeScreen.clickDeviceActivityLink();

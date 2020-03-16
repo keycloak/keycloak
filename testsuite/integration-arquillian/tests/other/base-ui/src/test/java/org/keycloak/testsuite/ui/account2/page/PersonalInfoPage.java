@@ -27,6 +27,8 @@ import static org.keycloak.testsuite.util.UIAssert.assertInputElementValid;
 import static org.keycloak.testsuite.util.UIUtils.getTextInputValue;
 import static org.keycloak.testsuite.util.UIUtils.setTextInputValue;
 
+import static org.junit.Assert.assertEquals;
+
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */

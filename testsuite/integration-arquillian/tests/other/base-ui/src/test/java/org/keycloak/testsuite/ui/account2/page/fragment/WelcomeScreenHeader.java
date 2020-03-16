@@ -21,6 +21,7 @@ import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
 import static org.keycloak.testsuite.util.UIUtils.clickLink;
+import static org.keycloak.testsuite.util.UIUtils.getTextFromElement;
 
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
@@ -49,6 +50,9 @@ public class WelcomeScreenHeader extends AbstractHeader {
     @FindBy(id = "landingMobileDropdown")
     private WebElement mobileKebab;
 
+    @FindBy(id = "landingLoggedInUser")
+    private WebElement toolbarLoggedInUser;
+
     @Override
     public void clickMobileKebab() {
         clickLink(mobileKebab);
@@ -75,5 +79,9 @@ public class WelcomeScreenHeader extends AbstractHeader {
     @Override
     protected String getLocaleElementIdPrefix() {
         return "landing-" + super.getLocaleElementIdPrefix();
+    }
+
+    public String getToolbarLoggedInUser() {
+        return getTextFromElement(toolbarLoggedInUser);
     }
 }

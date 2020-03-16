@@ -25,7 +25,6 @@ import {PageToolbar} from './PageToolbar';
 import {makeRoutes} from './ContentPages';
 
 import {
-    Avatar,
     Brand,
     Page,
     PageHeader,
@@ -35,6 +34,7 @@ import {
 
 declare function toggleReact(): void;
 declare function isWelcomePage(): boolean;
+declare function loggedInUserName(): string;
 
 declare const locale: string;
 declare const resourceUrl: string;
@@ -42,8 +42,6 @@ declare const resourceUrl: string;
 declare const brandImg: string;
 declare const brandUrl: string;
 
-const pFlyImages = resourceUrl + '/node_modules/@patternfly/patternfly/assets/images/';
-const avatarImg = pFlyImages + 'img_avatar.svg';
 
 export interface AppProps {};
 export class App extends React.Component<AppProps> {
@@ -65,11 +63,14 @@ export class App extends React.Component<AppProps> {
         // globally set up locale for date formatting
         moment.locale(locale);
 
+        const username = (
+            <span style={{marginLeft: '10px'}} id="loggedInUser">{loggedInUserName()}</span>
+        );
         const Header = (
             <PageHeader
                 logo={<a id="brandLink" href={brandUrl}><Brand src={brandImg} alt="Logo" className="brand"/></a>}
                 toolbar={<PageToolbar/>}
-                avatar={<Avatar src={avatarImg} alt="Avatar image" />}
+                avatar={username}
                 showNavToggle
             />
         );
