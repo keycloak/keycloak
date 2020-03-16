@@ -20,6 +20,7 @@ package org.keycloak.email;
 import org.keycloak.models.UserModel;
 import org.keycloak.provider.Provider;
 
+import java.io.InputStream;
 import java.util.Map;
 
 /**
@@ -27,5 +28,14 @@ import java.util.Map;
  */
 public interface EmailSenderProvider extends Provider {
 
+    /**
+     * @deprecated use send method with embeddables map
+     */
+    @Deprecated
     void send(Map<String, String> config, UserModel user, String subject, String textBody, String htmlBody) throws EmailException;
+
+    //make a default impl to be backward compatible
+    default void send(Map<String, String> config, UserModel user, String subject, String textBody, String htmlBody, Map<String, InputStream> embeddables) throws EmailException {
+        send(config, user, subject, textBody, htmlBody);
+    }
 }

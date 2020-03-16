@@ -17,6 +17,7 @@
 
 package org.keycloak.email;
 
+import com.google.common.io.ByteStreams;
 import com.sun.mail.smtp.SMTPMessage;
 import org.jboss.logging.Logger;
 import org.keycloak.models.KeycloakSession;
@@ -26,7 +27,11 @@ import org.keycloak.truststore.HostnameVerificationPolicy;
 import org.keycloak.truststore.JSSETruststoreConfigurator;
 import org.keycloak.vault.VaultStringSecret;
 
+import javax.activation.DataHandler;
+import javax.activation.DataSource;
 import javax.mail.Address;
+import javax.mail.BodyPart;
+import javax.mail.EncodingAware;
 import javax.mail.MessagingException;
 import javax.mail.Multipart;
 import javax.mail.Session;
@@ -36,7 +41,12 @@ import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeBodyPart;
 import javax.mail.internet.MimeMultipart;
 import javax.net.ssl.SSLSocketFactory;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
+import java.net.URLConnection;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Date;
@@ -58,6 +68,11 @@ public class DefaultEmailSenderProvider implements EmailSenderProvider {
 
     @Override
     public void send(Map<String, String> config, UserModel user, String subject, String textBody, String htmlBody) throws EmailException {
+        send(config, user, subject, textBody, htmlBody, null);
+    }
+
+    @Override
+    public void send(Map<String, String> config, UserModel user, String subject, String textBody, String htmlBody, Map<String, InputStream> embeddables) throws EmailException {
         Transport transport = null;
         try {
             String address = retrieveEmailAddress(user);
@@ -114,7 +129,24 @@ public class DefaultEmailSenderProvider implements EmailSenderProvider {
             if (htmlBody != null) {
                 MimeBodyPart htmlPart = new MimeBodyPart();
                 htmlPart.setContent(htmlBody, "text/html; charset=UTF-8");
-                multipart.addBodyPart(htmlPart);
+                
+                if (embeddables == null || embeddables.isEmpty()) {
+                    multipart.addBodyPart(htmlPart);
+                } else {
+                    MimeMultipart related = new MimeMultipart("related");
+                    MimeBodyPart relatedBodyPart = new MimeBodyPart();
+                    relatedBodyPart.setContent(related);
+                    multipart.addBodyPart(relatedBodyPart);
+                    related.addBodyPart(htmlPart);
+                    
+                    for (Map.Entry<String, InputStream> entry: embeddables.entrySet()) {
+                        MimeBodyPart embeddedPart = new MimeBodyPart();
+                        embeddedPart.setHeader("Content-ID", "<" + entry.getKey() + ">");
+                        embeddedPart.setDataHandler(new DataHandler(new StreamDataSource(entry.getValue(), entry.getKey())));
+                        embeddedPart.setDisposition(BodyPart.INLINE);
+                        related.addBodyPart(embeddedPart);
+                    }
+                }
             }
 
             SMTPMessage msg = new SMTPMessage(session);
@@ -188,4 +220,58 @@ public class DefaultEmailSenderProvider implements EmailSenderProvider {
     public void close() {
 
     }
+
+    private static class StreamDataSource implements DataSource, EncodingAware {
+
+        private InputStream stream;
+        private String name;
+        private String contentType;
+
+        public StreamDataSource(InputStream is, String name) {
+            this.name = name;
+            try {
+                stream = new ByteArrayInputStream(ByteStreams.toByteArray(is)) {
+                    //inputstream can be used multiple times (MimeUtility.getEncoding() from old javax.mail package), so close will reset
+                    public void close() throws IOException {
+                        pos = 0;
+                        mark = 0;
+                    };
+                };
+            } catch (IOException e) {
+                throw new IllegalArgumentException(e);
+            }
+
+            try {
+                contentType = URLConnection.guessContentTypeFromStream(stream);
+            } catch (IOException e) {
+                throw new IllegalArgumentException(e);
+            }
+        }
+
+        @Override
+        public OutputStream getOutputStream() throws IOException {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public String getName() {
+            return name;
+        }
+
+        @Override
+        public InputStream getInputStream() throws IOException {
+            return stream;
+        }
+
+        @Override
+        public String getContentType() {
+            return contentType;
+        }
+
+        @Override
+        public String getEncoding() {
+            return "base64";
+        }
+    }
+
 }

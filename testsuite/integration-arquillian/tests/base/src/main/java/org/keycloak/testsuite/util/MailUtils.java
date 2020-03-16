@@ -17,14 +17,18 @@
 
 package org.keycloak.testsuite.util;
 
-import javax.mail.MessagingException;
-import javax.mail.Multipart;
-import javax.mail.internet.MimeMessage;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static org.junit.Assert.assertEquals;
+import javax.mail.MessagingException;
+import javax.mail.Multipart;
+import javax.mail.internet.MimeMessage;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -67,10 +71,13 @@ public class MailUtils {
 
         private String text;
         private String html;
+        private Map<String, Object> embedded;
 
         private EmailBody(MimeMessage message) throws IOException {
             try {
                 Multipart multipart = (Multipart) message.getContent();
+
+                multipart.writeTo(System.out);
 
                 String textContentType = multipart.getBodyPart(0).getContentType();
 
@@ -78,11 +85,26 @@ public class MailUtils {
 
                 text = (String) multipart.getBodyPart(0).getContent();
 
-                String htmlContentType = multipart.getBodyPart(1).getContentType();
+                String contentTypePart2 = multipart.getBodyPart(1).getContentType();
+                if (contentTypePart2 != null && contentTypePart2.startsWith("multipart/related")) {
+                    Multipart related = (Multipart) multipart.getBodyPart(1).getContent();
+                    
+                    assertEquals("text/html; charset=UTF-8", related.getBodyPart(0).getContentType());
+                    
+                    html = (String) related.getBodyPart(0).getContent();
 
-                assertEquals("text/html; charset=UTF-8", htmlContentType);
-
-                html = (String) multipart.getBodyPart(1).getContent();
+                    embedded = new HashMap<>();
+                    for (int i = 1; i < related.getCount(); i++) {
+                        assertEquals("image/png", related.getBodyPart(i).getContentType());
+                        assertNotNull(related.getBodyPart(i).getHeader("Content-ID"));
+                        assertEquals(1, related.getBodyPart(i).getHeader("Content-ID").length);
+                        embedded.put(related.getBodyPart(i).getHeader("Content-ID")[0],    related.getBodyPart(i).getContent());
+                    }
+                } else {
+                    assertEquals("text/html; charset=UTF-8", contentTypePart2);
+    
+                    html = (String) multipart.getBodyPart(1).getContent();
+                }
             } catch (MessagingException e) {
                 throw new RuntimeException(e);
             }
@@ -94,6 +116,10 @@ public class MailUtils {
 
         public String getHtml() {
             return html;
+        }
+
+        public Map<String, Object> getEmbedded() {
+            return embedded;
         }
     }
 

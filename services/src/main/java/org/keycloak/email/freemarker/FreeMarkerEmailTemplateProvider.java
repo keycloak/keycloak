@@ -18,6 +18,7 @@
 package org.keycloak.email.freemarker;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.text.MessageFormat;
 import java.util.Arrays;
@@ -27,6 +28,9 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
+import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.jboss.logging.Logger;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
@@ -54,6 +58,11 @@ import org.keycloak.theme.beans.MessageFormatterMethod;
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class FreeMarkerEmailTemplateProvider implements EmailTemplateProvider {
+    
+    /**
+     * Pattern for searching <code>src="embed:..."</code> blocks to get embedding images
+     */
+    private static final Pattern SRC_EMBED = Pattern.compile("src[\\s]*=[\\s]*\"(embed:)([^\"]+)\"", Pattern.CASE_INSENSITIVE);
 
     protected KeycloakSession session;
     /**
@@ -133,7 +142,7 @@ public class FreeMarkerEmailTemplateProvider implements EmailTemplateProvider {
         attributes.put("realmName", realm.getName());
 
         EmailTemplate email = processTemplate("emailTestSubject", Collections.emptyList(), "email-test.ftl", attributes);
-        send(config, email.getSubject(), email.getTextBody(), email.getHtmlBody());
+        send(config, email.getSubject(), email.getTextBody(), email.getHtmlBody(), email.getEmbeddables());
     }
 
     @Override
@@ -226,8 +235,28 @@ public class FreeMarkerEmailTemplateProvider implements EmailTemplateProvider {
             } catch (final FreeMarkerException e) {
                 throw new EmailException("Failed to template html email.", e);
             }
+            
+            //processing embedded images
+            Matcher matcher = SRC_EMBED.matcher(htmlBody);
+            StringBuilder htmlBuilder = new StringBuilder();
+            int index = 0;
+            Map<String, InputStream> embeddables = new HashMap<>();
+            while (matcher.find()) {
+                String fileName = matcher.group(2);
+                String cid = UUID.randomUUID().toString();
+                InputStream fileStream = theme.getResourceAsStream(fileName);
+                if (fileStream != null) {
+                    embeddables.put(cid, fileStream);
+                }
+                htmlBuilder.append(htmlBody.substring(index, matcher.start(1)));
+                htmlBuilder.append("cid:");
+                htmlBuilder.append(cid);
+                index = matcher.end(2);
+            }
+            htmlBuilder.append(htmlBody.substring(index));
+            htmlBody = htmlBuilder.toString();
 
-            return new EmailTemplate(subject, textBody, htmlBody);
+            return new EmailTemplate(subject, textBody, htmlBody, embeddables);
         } catch (Exception e) {
             throw new EmailException("Failed to template email", e);
         }
@@ -241,7 +270,7 @@ public class FreeMarkerEmailTemplateProvider implements EmailTemplateProvider {
     public void send(String subjectFormatKey, List<Object> subjectAttributes, String bodyTemplate, Map<String, Object> bodyAttributes) throws EmailException {
         try {
             EmailTemplate email = processTemplate(subjectFormatKey, subjectAttributes, bodyTemplate, bodyAttributes);
-            send(email.getSubject(), email.getTextBody(), email.getHtmlBody());
+            send(email.getSubject(), email.getTextBody(), email.getHtmlBody(), email.getEmbeddables());
         } catch (EmailException e) {
             throw e;
         } catch (Exception e) {
@@ -249,13 +278,13 @@ public class FreeMarkerEmailTemplateProvider implements EmailTemplateProvider {
         }
     }
 
-    protected void send(String subject, String textBody, String htmlBody) throws EmailException {
-        send(realm.getSmtpConfig(), subject, textBody, htmlBody);
+    protected void send(String subject, String textBody, String htmlBody, Map<String, InputStream> embeddables) throws EmailException {
+        send(realm.getSmtpConfig(), subject, textBody, htmlBody, embeddables);
     }
 
-    protected void send(Map<String, String> config, String subject, String textBody, String htmlBody) throws EmailException {
+    protected void send(Map<String, String> config, String subject, String textBody, String htmlBody, Map<String, InputStream> embeddables) throws EmailException {
         EmailSenderProvider emailSender = session.getProvider(EmailSenderProvider.class);
-        emailSender.send(config, user, subject, textBody, htmlBody);
+        emailSender.send(config, user, subject, textBody, htmlBody, embeddables);
     }
 
     @Override
@@ -275,11 +304,13 @@ public class FreeMarkerEmailTemplateProvider implements EmailTemplateProvider {
         private String subject;
         private String textBody;
         private String htmlBody;
+        private Map<String, InputStream> embeddables;
 
-        public EmailTemplate(String subject, String textBody, String htmlBody) {
+        public EmailTemplate(String subject, String textBody, String htmlBody, Map<String, InputStream> embeddables) {
             this.subject = subject;
             this.textBody = textBody;
             this.htmlBody = htmlBody;
+            this.embeddables = embeddables;
         }
 
         public String getSubject() {
@@ -292,6 +323,10 @@ public class FreeMarkerEmailTemplateProvider implements EmailTemplateProvider {
 
         public String getHtmlBody() {
             return htmlBody;
+        }
+
+        public Map<String, InputStream> getEmbeddables() {
+            return embeddables;
         }
     }
 
