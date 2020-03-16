@@ -41,7 +41,8 @@ export class ReferrerLink extends React.Component<ReferrerLinkProps> {
             // sufficient to escape the # character properly.
             // See AppInitiatedActionPage for more details.
             <a id="referrerLink" href={referrerUri.replace('_hash_', '#')}>
-               <ArrowIcon/> <Msg msgKey="backTo" params={[referrerName]}/>
+               { !this.props.children && <React.Fragment><ArrowIcon/> <Msg msgKey="backTo" params={[referrerName]}/></React.Fragment> }
+               { this.props.children }
             </a>
         );
     }

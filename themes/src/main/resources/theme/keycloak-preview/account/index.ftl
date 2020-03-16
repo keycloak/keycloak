@@ -144,7 +144,7 @@
     <div class="pf-c-page" id="page-layout-default-nav">
       <header role="banner" class="pf-c-page__header">
         <div class="pf-c-page__header-brand">
-          <a class="pf-c-page__header-brand-link">
+          <a class="pf-c-page__header-brand-link" href="${referrer_uri}">
             <img class="pf-c-brand brand" src="${resourceUrl}/public/logo.svg" alt="Logo">
           </a>
         </div>

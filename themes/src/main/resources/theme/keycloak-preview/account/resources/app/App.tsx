@@ -32,6 +32,7 @@ import {
     PageSection,
     PageSidebar,
 } from '@patternfly/react-core';
+import { ReferrerLink } from './widgets/ReferrerLink';
 
 declare function toggleReact(): void;
 declare function isWelcomePage(): boolean;
@@ -65,7 +66,7 @@ export class App extends React.Component<AppProps> {
 
         const Header = (
             <PageHeader
-                logo={<Brand src={brandImg} alt="Logo" className="brand"/>}
+                logo={<ReferrerLink><Brand src={brandImg} alt="Logo" className="brand"/></ReferrerLink>}
                 toolbar={<PageToolbar/>}
                 avatar={<Avatar src={avatarImg} alt="Avatar image" />}
                 showNavToggle
