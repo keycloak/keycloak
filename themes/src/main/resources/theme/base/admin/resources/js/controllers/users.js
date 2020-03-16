@@ -523,12 +523,10 @@ module.controller('UserDetailCtrl', function($scope, realm, user, BruteForceUser
 });
 
 module.controller('UserCredentialsCtrl', function($scope, realm, user, $route, $location, RequiredActions, User, UserExecuteActionsEmail,
-                                                  UserCredentials, Notifications, Dialog, TimeUnit2, Components, UserStorageOperations) {
+                                                  UserCredentials, Notifications, Dialog, TimeUnit2, Components, UserStorageOperations, $modal) {
     console.log('UserCredentialsCtrl');
 
     $scope.hasPassword = false;
-
-    $scope.showData = {};
 
     loadCredentials();
 
@@ -540,10 +538,6 @@ module.controller('UserCredentialsCtrl', function($scope, realm, user, $route, $
 
     $scope.getUserStorageProviderLink = function() {
         return user.federationLink ? $scope.federationLink : $scope.originLink;
-    }
-
-    $scope.keys = function(object) {
-        return object ? Object.keys(object) : [];
     }
 
     $scope.updateCredentialLabel = function(credential) {
@@ -628,6 +622,18 @@ module.controller('UserCredentialsCtrl', function($scope, realm, user, $route, $
                 Notifications.error("Error while moving the credential down. See console for more information.");
                 console.log(err);
             });
+    }
+
+    $scope.showData = function(credentialData) {
+        $modal.open({
+            templateUrl: resourceUrl + '/partials/modal/user-credential-data.html',
+            controller: 'UserCredentialsDataModalCtrl',
+            resolve: {
+                credentialData: function () {
+                    return credentialData;
+                }
+            }
+        })
     }
 
     $scope.realm = realm;
@@ -770,6 +776,14 @@ module.controller('UserCredentialsCtrl', function($scope, realm, user, $route, $
         $scope.pwdChange = false;
         $scope.userChange = false;
     };
+});
+
+module.controller('UserCredentialsDataModalCtrl', function($scope, credentialData) {
+    $scope.credentialData = credentialData;
+
+    $scope.keys = function(object) {
+        return object ? Object.keys(object) : [];
+    }
 });
 
 module.controller('UserFederationCtrl', function($scope, $location, $route, realm, serverInfo, Components, Notifications, Dialog) {
