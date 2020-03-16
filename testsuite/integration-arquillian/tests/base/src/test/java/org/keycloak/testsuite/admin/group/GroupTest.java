@@ -248,15 +248,34 @@ public class GroupTest extends AbstractGroupTest {
         GroupRepresentation topGroup = new GroupRepresentation();
         topGroup.setName("test-group");
         topGroup = createGroup(realm, topGroup);
+        getCleanup().addGroupId(topGroup.getId());
 
         // creating "/test-group/test-group"
         GroupRepresentation childGroup = new GroupRepresentation();
         childGroup.setName("test-group");
         try (Response response = realm.groups().group(topGroup.getId()).subGroup(childGroup)) {
             assertEquals(201, response.getStatus());
+            getCleanup().addGroupId(ApiUtil.getCreatedId(response));
         }
 
         assertNotNull(realm.getGroupByPath("/test-group/test-group"));
+    }
+
+    @Test
+    public void doNotAllowSameGroupNameAtTopLevel() throws Exception {
+        RealmResource realm = adminClient.realms().realm("test");
+
+        // creating "/test-group"
+        GroupRepresentation topGroup = new GroupRepresentation();
+        topGroup.setName("test-group");
+        topGroup = createGroup(realm, topGroup);
+        getCleanup().addGroupId(topGroup.getId());
+
+        GroupRepresentation group2 = new GroupRepresentation();
+        group2.setName("test-group");
+        try (Response response = realm.groups().add(group2)) {
+            assertEquals(Status.CONFLICT.getStatusCode(), response.getStatus());
+        }
     }
 
     @Test
