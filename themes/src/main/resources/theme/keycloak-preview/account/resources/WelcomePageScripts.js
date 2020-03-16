@@ -53,6 +53,23 @@ var loadPatternFly = function () {
     patternFlyHasLoaded = true;
 }
 
+function loggedInUserName() {
+    let userName = l18nMsg['unknownUser'];
+    if (keycloak.tokenParsed) {
+        const givenName = keycloak.tokenParsed.given_name;
+        const familyName = keycloak.tokenParsed.family_name;
+        const preferredUsername = keycloak.tokenParsed.preferred_username;
+        if (givenName && familyName) {
+            userName = [givenName, familyName].reduce((acc, value, index) =>
+                acc.replace('{{param_'+ index + '}}', value), l18nMsg['fullName']
+            );
+        } else {
+            userName = (givenName || familyName) || preferredUsername || userName;
+        }
+    }
+    return userName;
+}
+
 var loadjs = function (url, loadListener) {
     const script = document.createElement("script");
     script.src = resourceUrl + url;
