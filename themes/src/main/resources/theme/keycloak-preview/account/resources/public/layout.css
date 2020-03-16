@@ -1,3 +1,14 @@
 .brand {
   height: 35px;
 }
+
+
+.welcome-items {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.welcome-item {
+  width: 300px;
+  margin: 10px auto;
+}
