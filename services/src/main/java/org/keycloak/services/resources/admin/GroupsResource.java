@@ -23,6 +23,7 @@ import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
@@ -141,28 +142,27 @@ public class GroupsResource {
     public Response addTopLevelGroup(GroupRepresentation rep) {
         auth.groups().requireManage();
 
-        List<GroupRepresentation> search = ModelToRepresentation.searchForGroupByName(realm, false, rep.getName(), 0, 1);
-        if (search != null && !search.isEmpty() && Objects.equals(search.get(0).getName(), rep.getName())) {
-            return ErrorResponse.exists("Top level group named '" + rep.getName() + "' already exists.");
-        }
-
         GroupModel child;
         Response.ResponseBuilder builder = Response.status(204);
-        if (rep.getId() != null) {
-            child = realm.getGroupById(rep.getId());
-            if (child == null) {
-                throw new NotFoundException("Could not find child by id");
-            }
-            adminEvent.operation(OperationType.UPDATE).resourcePath(session.getContext().getUri());
-        } else {
-            child = realm.createGroup(rep.getName());
-            GroupResource.updateGroup(rep, child);
-            URI uri = session.getContext().getUri().getAbsolutePathBuilder()
-                    .path(child.getId()).build();
-            builder.status(201).location(uri);
+        try {
+            if (rep.getId() != null) {
+                child = realm.getGroupById(rep.getId());
+                if (child == null) {
+                    throw new NotFoundException("Could not find child by id");
+                }
+                adminEvent.operation(OperationType.UPDATE).resourcePath(session.getContext().getUri());
+            } else {
+                child = realm.createGroup(rep.getName());
+                GroupResource.updateGroup(rep, child);
+                URI uri = session.getContext().getUri().getAbsolutePathBuilder()
+                        .path(child.getId()).build();
+                builder.status(201).location(uri);
 
-            rep.setId(child.getId());
-            adminEvent.operation(OperationType.CREATE).resourcePath(session.getContext().getUri(), child.getId());
+                rep.setId(child.getId());
+                adminEvent.operation(OperationType.CREATE).resourcePath(session.getContext().getUri(), child.getId());
+            }
+        } catch (ModelDuplicateException mde) {
+            return ErrorResponse.exists("Top level group named '" + rep.getName() + "' already exists.");
         }
 
         adminEvent.representation(rep).success();
