@@ -431,26 +431,20 @@ table.credentials-table {
     margin-bottom: 20px;
 }
 
-table.credentials-table td.kc-action-cell {
-    vertical-align: middle;
+table.credentials-table td {
+    vertical-align: middle !important;
 }
 
 table.credentials-table input[type='text'] {
     width: 100%;
 }
 
+td.credential-arrows-cell {
+    width: 75px;
+}
+
 td.credential-label-cell {
     padding: 5px !important;
-}
-
-td.credential-data-cell {
-    padding: 0 !important;
-}
-
-td.credential-data-cell a {
-    margin-left: 5px;
-    line-height: 2.5em;
-    cursor: pointer;
 }
 
 td.credential-action-cell {
@@ -467,8 +461,8 @@ td.credential-action-cell.expanded div.kc-action-cell {
     border-bottom: 1px solid #d1d1d1;
 }
 
-table.credential-data-table {
-    margin-top: 0;
+table.credential-data-table td {
+    word-break: break-all;
 }
 
 table.credential-data-table tr:first-child td {
