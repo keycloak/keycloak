@@ -45,4 +45,12 @@
         <addUniqueConstraint columnNames="REALM_ID,PARENT_GROUP,NAME" constraintName="SIBLING_NAMES" tableName="KEYCLOAK_GROUP"/>
     </changeSet>
 
+    <changeSet author="keycloak" id="9.0.1-add-index-to-events">
+        <createIndex indexName="IDX_EVENT_TIME" tableName="EVENT_ENTITY">
+            <column name="REALM_ID" type="VARCHAR(255)"/>
+            <column name="EVENT_TIME" type="BIGINT"/>
+        </createIndex>
+    </changeSet>
+
+
 </databaseChangeLog>
