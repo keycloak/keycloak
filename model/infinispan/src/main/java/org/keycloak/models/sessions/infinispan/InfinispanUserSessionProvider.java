@@ -250,14 +250,17 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
     }
 
     protected UserSessionAdapter getUserSession(RealmModel realm, String id, boolean offline) {
-        UserSessionEntity entity = getUserSessionEntity(id, offline);
+        UserSessionEntity entity = getUserSessionEntity(realm, id, offline);
         return wrap(realm, entity, offline);
     }
 
-    private UserSessionEntity getUserSessionEntity(String id, boolean offline) {
+    private UserSessionEntity getUserSessionEntity(RealmModel realm, String id, boolean offline) {
         InfinispanChangelogBasedTransaction<String, UserSessionEntity> tx = getTransaction(offline);
         SessionEntityWrapper<UserSessionEntity> entityWrapper = tx.get(id);
-        return entityWrapper==null ? null : entityWrapper.getEntity();
+        if (entityWrapper==null) return null;
+        UserSessionEntity entity = entityWrapper.getEntity();
+        if (!entity.getRealmId().equals(realm.getId())) return null;
+        return entity;
     }
 
 
@@ -455,7 +458,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
 
     @Override
     public void removeUserSession(RealmModel realm, UserSessionModel session) {
-        UserSessionEntity entity = getUserSessionEntity(session, false);
+        UserSessionEntity entity = getUserSessionEntity(realm, session, false);
         if (entity != null) {
             removeUserSession(entity, false);
         }
@@ -801,11 +804,12 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
         return entity != null ? new UserLoginFailureAdapter(this, key, entity) : null;
     }
 
-    UserSessionEntity getUserSessionEntity(UserSessionModel userSession, boolean offline) {
+    UserSessionEntity getUserSessionEntity(RealmModel realm, UserSessionModel userSession, boolean offline) {
         if (userSession instanceof UserSessionAdapter) {
+            if (!userSession.getRealm().equals(realm)) return null;
             return ((UserSessionAdapter) userSession).getEntity();
         } else {
-            return getUserSessionEntity(userSession.getId(), offline);
+            return getUserSessionEntity(realm, userSession.getId(), offline);
         }
     }
 
@@ -829,7 +833,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
 
     @Override
     public void removeOfflineUserSession(RealmModel realm, UserSessionModel userSession) {
-        UserSessionEntity userSessionEntity = getUserSessionEntity(userSession, true);
+        UserSessionEntity userSessionEntity = getUserSessionEntity(realm, userSession, true);
         if (userSessionEntity != null) {
             removeUserSession(userSessionEntity, true);
         }
