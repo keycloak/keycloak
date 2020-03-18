@@ -82,8 +82,6 @@ public class Messages {
 
     public static final String NESTED_FIRST_BROKER_FLOW_MESSAGE = "nestedFirstBrokerFlowMessage";
 
-    public static final String IDENTITY_PROVIDER_DIFFERENT_USER_MESSAGE = "identityProviderDifferentUserMessage";
-
     public static final String CONFIGURE_TOTP = "configureTotpMessage";
 
     public static final String UPDATE_PROFILE = "updateProfileMessage";

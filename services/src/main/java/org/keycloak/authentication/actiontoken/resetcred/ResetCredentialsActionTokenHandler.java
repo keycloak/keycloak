@@ -84,14 +84,6 @@ public class ResetCredentialsActionTokenHandler extends AbstractActionTokenHande
             if (firstBrokerLoginInProgress) {
 
                 UserModel linkingUser = AbstractIdpAuthenticator.getExistingUser(session, realm, authenticationSession);
-                if (!linkingUser.getId().equals(authenticationSession.getAuthenticatedUser().getId())) {
-                    return ErrorPage.error(session, authenticationSession, Response.Status.INTERNAL_SERVER_ERROR,
-                      Messages.IDENTITY_PROVIDER_DIFFERENT_USER_MESSAGE,
-                      authenticationSession.getAuthenticatedUser().getUsername(),
-                      linkingUser.getUsername()
-                    );
-                }
-
                 SerializedBrokeredIdentityContext serializedCtx = SerializedBrokeredIdentityContext.readFromAuthenticationSession(authenticationSession, AbstractIdpAuthenticator.BROKERED_CONTEXT_NOTE);
                 authenticationSession.setAuthNote(AbstractIdpAuthenticator.FIRST_BROKER_LOGIN_SUCCESS, serializedCtx.getIdentityProviderId());
 

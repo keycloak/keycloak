@@ -812,15 +812,6 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
             if (firstBrokerLoginInProgress) {
                 logger.debugf("Reauthenticated with broker '%s' when linking user '%s' with other broker", context.getIdpConfig().getAlias(), federatedUser.getUsername());
 
-                try {
-                    UserModel linkingUser = AbstractIdpAuthenticator.getExistingUser(session, realmModel, authSession);
-                    if (!linkingUser.getId().equals(federatedUser.getId())) {
-                        return redirectToErrorPage(authSession, Response.Status.BAD_REQUEST, Messages.IDENTITY_PROVIDER_DIFFERENT_USER_MESSAGE, federatedUser.getUsername(), linkingUser.getUsername());
-                    }
-                } catch (AuthenticationFlowException e) {
-                    logger.debug("No existing user in authSession", e);
-                }
-
                 SerializedBrokeredIdentityContext serializedCtx = SerializedBrokeredIdentityContext.readFromAuthenticationSession(authSession, AbstractIdpAuthenticator.BROKERED_CONTEXT_NOTE);
                 authSession.setAuthNote(AbstractIdpAuthenticator.FIRST_BROKER_LOGIN_SUCCESS, serializedCtx.getIdentityProviderId());
 
