@@ -364,6 +364,10 @@ public class JpaRealmProvider implements RealmProvider {
             container.removeDefaultRoles(role.getName());
         }
         RoleEntity roleEntity = em.getReference(RoleEntity.class, role.getId());
+        if (roleEntity == null || !roleEntity.getRealmId().equals(realm.getId())) {
+            // Throw model exception to ensure transaction rollback and revert previous operations (removing default roles) as well
+            throw new ModelException("Role not found or trying to remove role from incorrect realm");
+        }
         String compositeRoleTable = JpaUtils.getTableNameForNativeQuery("COMPOSITE_ROLE", em);
         em.createNativeQuery("delete from " + compositeRoleTable + " where CHILD_ROLE = :role").setParameter("role", roleEntity).executeUpdate();
         realm.getClients().forEach(c -> c.deleteScopeMapping(role));
@@ -786,20 +790,18 @@ public class JpaRealmProvider implements RealmProvider {
     @Override
     public ClientInitialAccessModel getClientInitialAccessModel(RealmModel realm, String id) {
         ClientInitialAccessEntity entity = em.find(ClientInitialAccessEntity.class, id);
-        if (entity == null) {
-            return null;
-        } else {
-            return entityToModel(entity);
-        }
+        if (entity == null) return null;
+        if (!entity.getRealm().getId().equals(realm.getId())) return null;
+        return entityToModel(entity);
     }
 
     @Override
     public void removeClientInitialAccessModel(RealmModel realm, String id) {
         ClientInitialAccessEntity entity = em.find(ClientInitialAccessEntity.class, id, LockModeType.PESSIMISTIC_WRITE);
-        if (entity != null) {
-            em.remove(entity);
-            em.flush();
-        }
+        if (entity == null) return;
+        if (!entity.getRealm().getId().equals(realm.getId())) return;
+        em.remove(entity);
+        em.flush();
     }
 
     @Override

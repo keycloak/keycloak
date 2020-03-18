@@ -1651,7 +1651,7 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
 
     @Override
     public AuthenticationFlowModel getAuthenticationFlowById(String id) {
-        AuthenticationFlowEntity entity = em.find(AuthenticationFlowEntity.class, id);
+        AuthenticationFlowEntity entity = getAuthenticationFlowEntity(id, false);
         if (entity == null) return null;
         return entityToModel(entity);
     }
@@ -1661,15 +1661,15 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
         if (KeycloakModelUtils.isFlowUsed(this, model)) {
             throw new ModelException("Cannot remove authentication flow, it is currently in use");
         }
-        AuthenticationFlowEntity entity = em.find(AuthenticationFlowEntity.class, model.getId(), LockModeType.PESSIMISTIC_WRITE);
-
+        AuthenticationFlowEntity entity = getAuthenticationFlowEntity(model.getId(), true);
+        if (entity == null) return;
         em.remove(entity);
         em.flush();
     }
 
     @Override
     public void updateAuthenticationFlow(AuthenticationFlowModel model) {
-        AuthenticationFlowEntity entity = em.find(AuthenticationFlowEntity.class, model.getId());
+        AuthenticationFlowEntity entity = getAuthenticationFlowEntity(model.getId(), false);
         if (entity == null) return;
         entity.setAlias(model.getAlias());
         entity.setDescription(model.getDescription());
@@ -1677,6 +1677,15 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
         entity.setBuiltIn(model.isBuiltIn());
         entity.setTopLevel(model.isTopLevel());
 
+    }
+
+    private AuthenticationFlowEntity getAuthenticationFlowEntity(String id, boolean readForRemove) {
+        AuthenticationFlowEntity entity = readForRemove
+                ? em.find(AuthenticationFlowEntity.class, id, LockModeType.PESSIMISTIC_WRITE)
+                : em.find(AuthenticationFlowEntity.class, id);
+        if (entity == null) return null;
+        if (!entity.getRealm().equals(getEntity())) return null;
+        return entity;
     }
 
     @Override
@@ -1723,7 +1732,7 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
 
     @Override
     public AuthenticationExecutionModel getAuthenticationExecutionById(String id) {
-        AuthenticationExecutionEntity entity = em.find(AuthenticationExecutionEntity.class, id);
+        AuthenticationExecutionEntity entity = getAuthenticationExecution(id, false);
         if (entity == null) return null;
         return entityToModel(entity);
     }
@@ -1761,7 +1770,7 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
 
     @Override
     public void updateAuthenticatorExecution(AuthenticationExecutionModel model) {
-        AuthenticationExecutionEntity entity = em.find(AuthenticationExecutionEntity.class, model.getId());
+        AuthenticationExecutionEntity entity = getAuthenticationExecution(model.getId(), false);
         if (entity == null) return;
         entity.setAutheticatorFlow(model.isAuthenticatorFlow());
         entity.setAuthenticator(model.getAuthenticator());
@@ -1778,11 +1787,20 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
 
     @Override
     public void removeAuthenticatorExecution(AuthenticationExecutionModel model) {
-        AuthenticationExecutionEntity entity = em.find(AuthenticationExecutionEntity.class, model.getId(), LockModeType.PESSIMISTIC_WRITE);
+        AuthenticationExecutionEntity entity = getAuthenticationExecution(model.getId(), true);
         if (entity == null) return;
         em.remove(entity);
         em.flush();
 
+    }
+
+    private AuthenticationExecutionEntity getAuthenticationExecution(String id, boolean readForRemove) {
+        AuthenticationExecutionEntity entity = readForRemove
+                ? em.find(AuthenticationExecutionEntity.class, id, LockModeType.PESSIMISTIC_WRITE)
+                : em.find(AuthenticationExecutionEntity.class, id);
+        if (entity == null) return null;
+        if (!entity.getRealm().equals(getEntity())) return null;
+        return entity;
     }
 
     @Override
@@ -1801,7 +1819,7 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
 
     @Override
     public void removeAuthenticatorConfig(AuthenticatorConfigModel model) {
-        AuthenticatorConfigEntity entity = em.find(AuthenticatorConfigEntity.class, model.getId(), LockModeType.PESSIMISTIC_WRITE);
+        AuthenticatorConfigEntity entity = getAuthenticatorConfigEntity(model.getId(), true);
         if (entity == null) return;
         em.remove(entity);
         em.flush();
@@ -1810,7 +1828,7 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
 
     @Override
     public AuthenticatorConfigModel getAuthenticatorConfigById(String id) {
-        AuthenticatorConfigEntity entity = em.find(AuthenticatorConfigEntity.class, id);
+        AuthenticatorConfigEntity entity = getAuthenticatorConfigEntity(id, false);
         if (entity == null) return null;
         return entityToModel(entity);
     }
@@ -1827,7 +1845,7 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
 
     @Override
     public void updateAuthenticatorConfig(AuthenticatorConfigModel model) {
-        AuthenticatorConfigEntity entity = em.find(AuthenticatorConfigEntity.class, model.getId());
+        AuthenticatorConfigEntity entity = getAuthenticatorConfigEntity(model.getId(), false);
         if (entity == null) return;
         entity.setAlias(model.getAlias());
         if (entity.getConfig() == null) {
@@ -1840,6 +1858,15 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
         }
         em.flush();
 
+    }
+
+    private AuthenticatorConfigEntity getAuthenticatorConfigEntity(String id, boolean readForRemove) {
+        AuthenticatorConfigEntity entity = readForRemove
+                ? em.find(AuthenticatorConfigEntity.class, id, LockModeType.PESSIMISTIC_WRITE)
+                : em.find(AuthenticatorConfigEntity.class, id);
+        if (entity == null) return null;
+        if (!entity.getRealm().equals(getEntity())) return null;
+        return entity;
     }
 
     @Override
@@ -1875,7 +1902,7 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
 
     @Override
     public void removeRequiredActionProvider(RequiredActionProviderModel model) {
-        RequiredActionProviderEntity entity = em.find(RequiredActionProviderEntity.class, model.getId(), LockModeType.PESSIMISTIC_WRITE);
+        RequiredActionProviderEntity entity = getRequiredProviderEntity(model.getId(), true);
         if (entity == null) return;
         em.remove(entity);
         em.flush();
@@ -1884,7 +1911,7 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
 
     @Override
     public RequiredActionProviderModel getRequiredActionProviderById(String id) {
-        RequiredActionProviderEntity entity = em.find(RequiredActionProviderEntity.class, id);
+        RequiredActionProviderEntity entity = getRequiredProviderEntity(id, false);
         if (entity == null) return null;
         return entityToModel(entity);
     }
@@ -1906,7 +1933,7 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
 
     @Override
     public void updateRequiredActionProvider(RequiredActionProviderModel model) {
-        RequiredActionProviderEntity entity = em.find(RequiredActionProviderEntity.class, model.getId());
+        RequiredActionProviderEntity entity = getRequiredProviderEntity(model.getId(), false);
         if (entity == null) return;
         entity.setAlias(model.getAlias());
         entity.setProviderId(model.getProviderId());
@@ -1936,6 +1963,15 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
         }
         Collections.sort(actions, RequiredActionProviderModel.RequiredActionComparator.SINGLETON);
         return Collections.unmodifiableList(actions);
+    }
+
+    private RequiredActionProviderEntity getRequiredProviderEntity(String id, boolean readForRemove) {
+        RequiredActionProviderEntity entity = readForRemove
+                ? em.find(RequiredActionProviderEntity.class, id, LockModeType.PESSIMISTIC_WRITE)
+                : em.find(RequiredActionProviderEntity.class, id);
+        if (entity == null) return null;
+        if (!entity.getRealm().equals(getEntity())) return null;
+        return entity;
     }
 
     @Override
@@ -2178,7 +2214,7 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
     public void updateComponent(ComponentModel component) {
         ComponentUtil.getComponentFactory(session, component).validateConfiguration(session, this, component);
 
-        ComponentEntity c = em.find(ComponentEntity.class, component.getId());
+        ComponentEntity c = getComponentEntity(component.getId());
         if (c == null) return;
         ComponentModel old = entityToModel(c);
         c.setName(component.getName());
@@ -2194,7 +2230,7 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
 
     @Override
     public void removeComponent(ComponentModel component) {
-        ComponentEntity c = em.find(ComponentEntity.class, component.getId());
+        ComponentEntity c = getComponentEntity(component.getId());
         if (c == null) return;
         session.users().preRemove(this, component);
         ComponentUtil.notifyPreRemove(session, this, component);
@@ -2260,8 +2296,14 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
 
     @Override
     public ComponentModel getComponent(String id) {
+        ComponentEntity c = getComponentEntity(id);
+        return c==null ? null : entityToModel(c);
+    }
+
+    private ComponentEntity getComponentEntity(String id) {
         ComponentEntity c = em.find(ComponentEntity.class, id);
         if (c == null) return null;
-        return entityToModel(c);
+        if (!c.getRealm().equals(getEntity())) return null;
+        return c;
     }
 }
