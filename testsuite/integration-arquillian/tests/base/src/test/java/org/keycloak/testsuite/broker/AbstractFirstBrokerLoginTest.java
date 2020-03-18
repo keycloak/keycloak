@@ -185,6 +185,72 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
     }
 
     /**
+     * KEYCLOAK-12870
+     */
+    @Test
+    public void testLinkAccountByReauthenticationResetPassword() {
+        updateExecutions(AbstractBrokerTest::disableUpdateProfileOnFirstLogin);
+        String existingUser = createUser("consumer");
+
+        driver.navigate().to(getAccountUrl(bc.consumerRealmName()));
+        logInWithBroker(bc);
+
+        waitForPage(driver, "account already exists", false);
+        assertTrue(idpConfirmLinkPage.isCurrent());
+        assertEquals("User with email user@localhost.com already exists. How do you want to continue?", idpConfirmLinkPage.getMessage());
+        idpConfirmLinkPage.clickLinkAccount();
+
+        assertEquals("Authenticate to link your account with " + bc.getIDPAlias(), loginPage.getInfoMessage());
+
+        try {
+            this.loginPage.findSocialButton(bc.getIDPAlias());
+            Assert.fail("Not expected to see social button with " + bc.getIDPAlias());
+        } catch (NoSuchElementException expected) {
+        }
+
+        try {
+            this.loginPage.clickRegister();
+            Assert.fail("Not expected to see register link");
+        } catch (NoSuchElementException expected) {
+        }
+
+        loginPage.resetPassword();
+        loginPasswordResetPage.assertCurrent();
+        assertEquals("consumer", loginPasswordResetPage.getUsername());
+    }
+
+    /**
+     * KEYCLOAK-12870
+     */
+    @Test
+    public void testLinkAccountByReauthenticationResetPasswordNoExistingUser() {
+        updateExecutions(AbstractBrokerTest::disableUpdateProfileOnFirstLogin);
+        updateExecutions(AbstractBrokerTest::disableExistingUser);
+        String existingUser = createUser("consumer");
+
+        driver.navigate().to(getAccountUrl(bc.consumerRealmName()));
+        logInWithBroker(bc);
+
+        assertEquals("Authenticate to link your account with " + bc.getIDPAlias(), loginPage.getInfoMessage());
+
+        try {
+            this.loginPage.findSocialButton(bc.getIDPAlias());
+            Assert.fail("Not expected to see social button with " + bc.getIDPAlias());
+        } catch (NoSuchElementException expected) {
+        }
+
+        try {
+            this.loginPage.clickRegister();
+            Assert.fail("Not expected to see register link");
+        } catch (NoSuchElementException expected) {
+        }
+
+        loginPage.resetPassword();
+        loginPasswordResetPage.assertCurrent();
+        assertTrue(loginPasswordResetPage.getUsername().isEmpty());
+    }
+
+    /**
      * Refers to in old test suite: org.keycloak.testsuite.broker.AbstractFirstBrokerLoginTest#testLinkAccountByReauthenticationWithPassword_browserButtons
      */
     @Test

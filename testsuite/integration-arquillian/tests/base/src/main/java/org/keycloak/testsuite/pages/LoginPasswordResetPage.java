@@ -62,6 +62,10 @@ public class LoginPasswordResetPage extends LanguageComboboxAwarePage {
         return emailErrorMessage != null ? emailErrorMessage.getText() : null;
     }
 
+    public String getUsername() {
+        return usernameInput.getAttribute("value");
+    }
+
     public void backToLogin() {
         backToLogin.click();
     }
