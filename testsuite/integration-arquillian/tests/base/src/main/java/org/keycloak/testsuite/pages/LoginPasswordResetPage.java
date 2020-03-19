@@ -39,6 +39,10 @@ public class LoginPasswordResetPage extends LanguageComboboxAwarePage {
     @FindBy(partialLinkText = "Back to Login")
     private WebElement backToLogin;
 
+    public void changePassword() {
+        submitButton.click();
+    }
+
     public void changePassword(String username) {
         usernameInput.clear();
         usernameInput.sendKeys(username);

@@ -354,6 +354,8 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         configureSMTPServer();
 
         this.loginPage.resetPassword();
+        this.loginPasswordResetPage.assertCurrent();
+        this.loginPasswordResetPage.changePassword();
         assertEquals("You should receive an email shortly with further instructions.", this.loginPage.getSuccessMessage());
         assertEquals(1, MailServer.getReceivedMessages().length);
         MimeMessage message = MailServer.getLastReceivedMessage();
@@ -405,6 +407,8 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         configureSMTPServer();
 
         this.loginPage.resetPassword();
+        this.loginPasswordResetPage.assertCurrent();
+        this.loginPasswordResetPage.changePassword();
         assertEquals("You should receive an email shortly with further instructions.", this.loginPage.getSuccessMessage());
         assertEquals(1, MailServer.getReceivedMessages().length);
         MimeMessage message = MailServer.getLastReceivedMessage();
