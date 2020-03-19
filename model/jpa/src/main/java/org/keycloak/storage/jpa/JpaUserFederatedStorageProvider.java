@@ -27,6 +27,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.GroupModel;
+import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelException;
@@ -208,6 +209,13 @@ public class JpaUserFederatedStorageProvider implements
         if (entity == null) return false;
         em.remove(entity);
         return true;
+    }
+
+    @Override 
+    public void preRemove(RealmModel realm, IdentityProviderModel provider) {
+        em.createNamedQuery("deleteBrokerLinkByIdentityProvider")
+                .setParameter("realmId", realm.getId())
+                .setParameter("providerAlias", provider.getAlias());
     }
 
     private BrokerLinkEntity getBrokerLinkEntity(RealmModel realm, String userId, String socialProvider) {

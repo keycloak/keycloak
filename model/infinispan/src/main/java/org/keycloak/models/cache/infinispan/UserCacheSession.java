@@ -20,6 +20,7 @@ package org.keycloak.models.cache.infinispan;
 import org.jboss.logging.Logger;
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.models.ClientScopeModel;
+import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.cache.infinispan.events.InvalidationEvent;
 import org.keycloak.common.constants.ServiceAccountConstants;
 import org.keycloak.component.ComponentModel;
@@ -48,6 +49,7 @@ import org.keycloak.models.cache.infinispan.events.UserFederationLinkRemovedEven
 import org.keycloak.models.cache.infinispan.events.UserFederationLinkUpdatedEvent;
 import org.keycloak.models.cache.infinispan.events.UserFullInvalidationEvent;
 import org.keycloak.models.cache.infinispan.events.UserUpdatedEvent;
+import org.keycloak.models.cache.infinispan.stream.InIdentityProviderPredicate;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ReadOnlyUserModelDelegate;
 import org.keycloak.storage.CacheableStorageProviderModel;
@@ -842,6 +844,12 @@ public class UserCacheSession implements UserCache {
         invalidationEvents.add(event);
 
         return getDelegate().removeFederatedIdentity(realm, user, socialProvider);
+    }
+
+    @Override
+    public void preRemove(RealmModel realm, IdentityProviderModel provider) {
+        cache.addInvalidations(InIdentityProviderPredicate.create().provider(provider.getAlias()), invalidations);
+        getDelegate().preRemove(realm, provider);
     }
 
     @Override

@@ -130,6 +130,7 @@ public class IdentityProviderResource {
         }
 
         String alias = this.identityProviderModel.getAlias();
+        session.users().preRemove(realm, identityProviderModel);
         this.realm.removeIdentityProviderByAlias(alias);
 
         Set<IdentityProviderMapperModel> mappers = this.realm.getIdentityProviderMappersByAlias(alias);

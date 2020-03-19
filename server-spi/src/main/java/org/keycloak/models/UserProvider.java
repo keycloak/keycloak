@@ -40,6 +40,7 @@ public interface UserProvider extends Provider,
 
     void addFederatedIdentity(RealmModel realm, UserModel user, FederatedIdentityModel socialLink);
     boolean removeFederatedIdentity(RealmModel realm, UserModel user, String socialProvider);
+    void preRemove(RealmModel realm, IdentityProviderModel provider);
     void updateFederatedIdentity(RealmModel realm, UserModel federatedUser, FederatedIdentityModel federatedIdentityModel);
     Set<FederatedIdentityModel> getFederatedIdentities(UserModel user, RealmModel realm);
     FederatedIdentityModel getFederatedIdentity(UserModel user, String socialProvider, RealmModel realm);
@@ -97,5 +98,4 @@ public interface UserProvider extends Provider,
     void close();
 
     void preRemove(RealmModel realm, ComponentModel component);
-
 }
