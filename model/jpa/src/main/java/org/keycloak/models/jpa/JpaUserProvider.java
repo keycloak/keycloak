@@ -26,6 +26,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.GroupModel;
+import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelException;
@@ -189,6 +190,13 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
         } else {
             return false;
         }
+    }
+
+    @Override
+    public void preRemove(RealmModel realm, IdentityProviderModel provider) {
+        em.createNamedQuery("deleteFederatedIdentityByProvider")
+                .setParameter("realmId", realm.getId())
+                .setParameter("providerAlias", provider.getAlias()).executeUpdate();
     }
 
     @Override

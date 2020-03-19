@@ -29,7 +29,7 @@ import java.util.Set;
  * 
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class CachedFederatedIdentityLinks extends AbstractRevisioned implements InRealm {
+public class CachedFederatedIdentityLinks extends AbstractRevisioned implements InRealm, InIdentityProvider {
 
     private final String realmId;
     private final Set<FederatedIdentityModel> federatedIdentities = new HashSet<>();
@@ -47,5 +47,11 @@ public class CachedFederatedIdentityLinks extends AbstractRevisioned implements 
 
     public Set<FederatedIdentityModel> getFederatedIdentities() {
         return federatedIdentities;
+    }
+
+    @Override 
+    public boolean contains(String alias) {
+        return federatedIdentities.stream().anyMatch(
+                federatedIdentityModel -> federatedIdentityModel.getIdentityProvider().equals(alias));
     }
 }

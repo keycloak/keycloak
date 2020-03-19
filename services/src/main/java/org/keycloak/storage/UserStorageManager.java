@@ -25,6 +25,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.GroupModel;
+import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionTask;
 import org.keycloak.models.ModelException;
@@ -224,6 +225,13 @@ public class UserStorageManager implements UserProvider, OnUserCache, OnCreateCo
             return getFederatedStorage().removeFederatedIdentity(realm, user.getId(), socialProvider);
         }
     }
+    
+    @Override
+    public void preRemove(RealmModel realm, IdentityProviderModel provider) {
+        localStorage().preRemove(realm, provider);
+        getFederatedStorage().preRemove(realm, provider);
+    }
+    
 
     @Override
     public void addConsent(RealmModel realm, String userId, UserConsentModel consent) {
