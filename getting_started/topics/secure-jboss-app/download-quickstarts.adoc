@@ -31,7 +31,7 @@ $ mvn clean wildfly:deploy
 
 During installation, you will see some text scroll by in the application server console window.
 
-To confirm that the application is successfully deployed, go to http://localhost:8080/vanilla and a login page should appear.
+To confirm that the application is successfully deployed, go to http://localhost:8180/vanilla and a login page should appear.
 
 NOTE: If you click *Login*, the browser will pop up a BASIC auth login dialog. However, the application is not yet secured by any identity provider, so anything you enter in the dialog box will result in a `Forbidden` message being sent back by the server. You can confirm that the application is currently secured via `BASIC` authentication by finding the setting in the application's `web.xml` file. 
 
