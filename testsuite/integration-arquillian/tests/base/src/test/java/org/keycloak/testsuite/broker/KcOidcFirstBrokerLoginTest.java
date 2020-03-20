@@ -52,7 +52,7 @@ public class KcOidcFirstBrokerLoginTest extends AbstractFirstBrokerLoginTest {
             assertEquals("User with email user@localhost.com already exists. How do you want to continue?", idpConfirmLinkPage.getMessage());
             idpConfirmLinkPage.clickLinkAccount();
 
-            assertEquals("Authenticate as testuser to link your account with " + bc.getIDPAlias(), loginPage.getInfoMessage());
+            assertEquals("Authenticate to link your account with " + bc.getIDPAlias(), loginPage.getInfoMessage());
 
             try {
                 this.loginPage.findSocialButton(bc.getIDPAlias());
@@ -72,6 +72,51 @@ public class KcOidcFirstBrokerLoginTest extends AbstractFirstBrokerLoginTest {
         }
     }
 
+    /**
+     * Tests that nested first broker flows are not allowed. The user wants to link federatedIdentity with existing account. He will try link by reauthentication
+     * with different broker not linked to his account. Error message should be shown, and reauthentication should be resumed.
+     */
+    @Test
+    public void testNestedFirstBrokerFlow() {
+        KcSamlBrokerConfiguration samlBrokerConfig = KcSamlBrokerConfiguration.INSTANCE;
+        ClientRepresentation samlClient = samlBrokerConfig.createProviderClients(suiteContext).get(0);
+        IdentityProviderRepresentation samlBroker = samlBrokerConfig.setUpIdentityProvider(suiteContext);
+        RealmResource consumerRealm = adminClient.realm(bc.consumerRealmName());
+
+        try {
+            updateExecutions(AbstractBrokerTest::disableUpdateProfileOnFirstLogin);
+            adminClient.realm(bc.providerRealmName()).clients().create(samlClient);
+            consumerRealm.identityProviders().create(samlBroker);
+
+            driver.navigate().to(getAccountUrl(bc.consumerRealmName()));
+
+            createUser(bc.getUserLogin());
+
+            logInWithBroker(bc);
+
+            waitForPage(driver, "account already exists", false);
+            assertTrue(idpConfirmLinkPage.isCurrent());
+            assertEquals("User with email user@localhost.com already exists. How do you want to continue?", idpConfirmLinkPage.getMessage());
+            idpConfirmLinkPage.clickLinkAccount();
+
+            assertEquals("Authenticate to link your account with " + bc.getIDPAlias(), loginPage.getInfoMessage());
+
+            try {
+                this.loginPage.findSocialButton(bc.getIDPAlias());
+                org.junit.Assert.fail("Not expected to see social button with " + samlBrokerConfig.getIDPAlias());
+            } catch (NoSuchElementException expected) {
+            }
+
+            log.debug("Clicking social " + samlBrokerConfig.getIDPAlias());
+            loginPage.clickSocial(samlBrokerConfig.getIDPAlias());
+            assertEquals(String.format("The %s user %s is not linked to any known user.", samlBrokerConfig.getIDPAlias(), samlBrokerConfig.getUserLogin()), loginPage.getError());
+
+            assertNumFederatedIdentities(consumerRealm.users().search(samlBrokerConfig.getUserLogin()).get(0).getId(), 0);
+        } finally {
+            updateExecutions(AbstractBrokerTest::setUpMissingUpdateProfileOnFirstLogin);
+            removeUserByUsername(consumerRealm, "consumer");
+        }
+    }
 
     /**
      * Refers to in old test suite: OIDCFirstBrokerLoginTest#testMoreIdpAndBackButtonWhenLinkingAccount

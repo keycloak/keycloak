@@ -51,6 +51,7 @@ public class KcSamlBrokerConfiguration implements BrokerConfiguration {
 
         realm.setEnabled(true);
         realm.setRealm(REALM_CONS_NAME);
+        realm.setResetPasswordAllowed(true);
 
         return realm;
     }

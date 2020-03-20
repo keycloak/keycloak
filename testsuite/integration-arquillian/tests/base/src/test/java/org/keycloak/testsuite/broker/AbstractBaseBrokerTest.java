@@ -45,6 +45,7 @@ import org.keycloak.testsuite.pages.InfoPage;
 import org.keycloak.testsuite.pages.LoginConfigTotpPage;
 import org.keycloak.testsuite.pages.LoginExpiredPage;
 import org.keycloak.testsuite.pages.LoginPage;
+import org.keycloak.testsuite.pages.LoginPasswordResetPage;
 import org.keycloak.testsuite.pages.LoginTotpPage;
 import org.keycloak.testsuite.pages.OAuthGrantPage;
 import org.keycloak.testsuite.pages.ProceedPage;
@@ -113,6 +114,9 @@ public abstract class AbstractBaseBrokerTest extends AbstractKeycloakTest {
     protected LoginConfigTotpPage totpPage;
 
     @Page
+    protected LoginPasswordResetPage loginPasswordResetPage;
+
+    @Page
     protected VerifyEmailPage verifyEmailPage;
 
     @Page
@@ -172,11 +176,16 @@ public abstract class AbstractBaseBrokerTest extends AbstractKeycloakTest {
     }
 
 
-    protected String createUser(String username) {
-        UserRepresentation newUser = UserBuilder.create().username(username).email(USER_EMAIL).enabled(true).build();
+    protected String createUser(String username, String email) {
+        UserRepresentation newUser = UserBuilder.create().username(username).email(email).enabled(true).build();
         String userId = createUserWithAdminClient(adminClient.realm(bc.consumerRealmName()), newUser);
         resetUserPassword(adminClient.realm(bc.consumerRealmName()).users().get(userId), "password", false);
         return userId;
+    }
+
+
+    protected String createUser(String username) {
+        return createUser(username, USER_EMAIL);
     }
 
 

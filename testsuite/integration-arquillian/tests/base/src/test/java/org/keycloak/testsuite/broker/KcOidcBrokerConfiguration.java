@@ -44,6 +44,7 @@ public class KcOidcBrokerConfiguration implements BrokerConfiguration {
         RealmRepresentation realm = new RealmRepresentation();
         realm.setRealm(REALM_CONS_NAME);
         realm.setEnabled(true);
+        realm.setResetPasswordAllowed(true);
 
         return realm;
     }
