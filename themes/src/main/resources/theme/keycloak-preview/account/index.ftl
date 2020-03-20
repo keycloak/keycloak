@@ -44,7 +44,7 @@
             <#if referrer??>
                 var referrer = '${referrer}';
                 var referrerName = '${referrerName}';
-                var referrerUri = '${referrer_uri}';
+                var referrerUri = '${referrer_uri?no_esc}';
             </#if>
 
             <#if msg??>

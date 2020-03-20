@@ -163,8 +163,6 @@ public class ReferrerTest extends AbstractAccountTest {
         // we need to use some page which host exists – Firefox is throwing exceptions like crazy if we try to load
         // a page on a non-existing host, like e.g. http://non-existing-server/
         // also we need to do this here as getAuthServerRoot is not ready when firing this class' constructor
-        return getAuthServerRoot() + "auth/non-existing-page/?foo=bar";
-        // TODO replace ^^ with the following once KEYCLOAK-12173 and KEYCLOAK-12189 are resolved
-        // return getAuthServerRoot() + "auth/non-existing-page/?foo=bar&bar=foo#anchor";
+         return getAuthServerRoot() + "auth/non-existing-page/?foo=bar&bar=foo#anchor";
     }
 }
