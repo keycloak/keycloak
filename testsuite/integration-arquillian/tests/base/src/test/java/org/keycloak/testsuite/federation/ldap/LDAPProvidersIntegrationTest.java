@@ -361,7 +361,7 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
     // KEYCLOAK-12340
     @Test
     public void ldapPasswordChangeWithAdminEndpointAndRequiredAction() throws Exception {
-        String username = "adminEndpointAndRequiredActionTest";
+        String username = "adminEndpointReqAct";
         String email = username + "@email.cz";
 
         // Register new LDAP user with password, logout user

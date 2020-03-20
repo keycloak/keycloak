@@ -400,8 +400,11 @@ public class LDAPRoleMappingsTest extends AbstractLDAPTest {
             RoleLDAPStorageMapper roleMapper = LDAPTestUtils.getRoleMapper(roleMapperModel, ldapProvider, appRealm);
 
             LDAPObject johnLdap = ldapProvider.loadLDAPUserByUsername(appRealm, "johnrolemapper");
-            roleMapper.addRoleMappingInLDAP("realmRole1", johnLdap);
-            roleMapper.addRoleMappingInLDAP("realmRole2", johnLdap);
+            //not sure why it is here for second time, but it is failing for Active directory - mapping already exists
+            if (!ctx.getLdapProvider().getLdapIdentityStore().getConfig().isActiveDirectory()){
+                roleMapper.addRoleMappingInLDAP("realmRole1", johnLdap);
+                roleMapper.addRoleMappingInLDAP("realmRole2", johnLdap);
+            }
 
             UserStorageSyncManager usersSyncManager = new UserStorageSyncManager();
             SynchronizationResult syncResult = usersSyncManager.syncChangedUsers(session.getKeycloakSessionFactory(),
