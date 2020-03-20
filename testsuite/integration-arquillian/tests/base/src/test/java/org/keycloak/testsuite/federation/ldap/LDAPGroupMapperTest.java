@@ -212,6 +212,7 @@ public class LDAPGroupMapperTest extends AbstractLDAPTest {
             john.leaveGroup(groupTeamChild20182019);
 
             mary.leaveGroup(group1);
+            mary.leaveGroup(group11);
             mary.leaveGroup(group12);
             mary.leaveGroup(groupTeam20162017);
             mary.leaveGroup(groupTeamChild20182019);
@@ -466,15 +467,15 @@ public class LDAPGroupMapperTest extends AbstractLDAPTest {
             LDAPTestContext ctx = LDAPTestContext.init(session);
             RealmModel appRealm = ctx.getRealm();
 
+            ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(appRealm, ctx.getLdapModel(), "groupsMapper");
+            LDAPTestUtils.updateGroupMapperConfigOptions(mapperModel, GroupMapperConfig.MODE, LDAPGroupMapperMode.LDAP_ONLY.toString());
+            appRealm.updateComponent(mapperModel);
+
             // Ignoring this test on ActiveDirectory as it's not allowed to have LDAP group referencing nonexistent member. KEYCLOAK-2682 was related to OpenLDAP TODO: Better solution than programmatic...
             LDAPConfig config = ctx.getLdapProvider().getLdapIdentityStore().getConfig();
             if (config.isActiveDirectory()) {
                 return;
             }
-
-            ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(appRealm, ctx.getLdapModel(), "groupsMapper");
-            LDAPTestUtils.updateGroupMapperConfigOptions(mapperModel, GroupMapperConfig.MODE, LDAPGroupMapperMode.LDAP_ONLY.toString());
-            appRealm.updateComponent(mapperModel);
 
             String descriptionAttrName = getGroupDescriptionLDAPAttrName(ctx.getLdapProvider());
 
@@ -705,6 +706,12 @@ public class LDAPGroupMapperTest extends AbstractLDAPTest {
             LDAPTestUtils.updateGroupMapperConfigOptions(mapperModel, GroupMapperConfig.MODE, LDAPGroupMapperMode.LDAP_ONLY.toString());
             appRealm.updateComponent(mapperModel);
 
+            // Ignoring this test on ActiveDirectory and rhds as it's currently impossible to import more than 60 users without timeout
+            LDAPConfig ldapConfig = ctx.getLdapProvider().getLdapIdentityStore().getConfig();
+            if (ldapConfig.isActiveDirectory() || LDAPConstants.VENDOR_RHDS.equals(ldapConfig.getVendor())) {
+                return;
+            }
+
             // create big grups that use ranged search
             String descriptionAttrName = getGroupDescriptionLDAPAttrName(ctx.getLdapProvider());
             LDAPObject bigGroup = LDAPTestUtils.createLDAPGroup(session, appRealm, ctx.getLdapModel(), "biggroup", descriptionAttrName, "biggroup - description");
@@ -750,6 +757,12 @@ public class LDAPGroupMapperTest extends AbstractLDAPTest {
             LDAPTestContext ctx = LDAPTestContext.init(session);
             RealmModel appRealm = ctx.getRealm();
             ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(appRealm, ctx.getLdapModel(), "groupsMapper");
+
+            // Ignoring this test on ActiveDirectory (same for rhds) as it's not allowed to have LDAP group referencing nonexistent member. KEYCLOAK-2682 was related to OpenLDAP TODO: Better solution than programmatic...
+            LDAPConfig ldapConfig = ctx.getLdapProvider().getLdapIdentityStore().getConfig();
+            if (ldapConfig.isActiveDirectory() || LDAPConstants.VENDOR_RHDS.equals(ldapConfig.getVendor())) {
+                return;
+            }
 
             // create a group with an existing user alone
             String descriptionAttrName = getGroupDescriptionLDAPAttrName(ctx.getLdapProvider());
