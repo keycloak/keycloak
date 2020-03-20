@@ -997,7 +997,8 @@ public class RealmCacheSession implements CacheRealmProvider {
         listInvalidations.add(realm.getId());
         invalidateGroup(group.getId(), realm.getId(), true);
         if (toParent != null) invalidateGroup(toParent.getId(), realm.getId(), false); // Queries already invalidated
-        invalidationEvents.add(GroupAddedEvent.create(group.getId(), realm.getId()));
+        String parentId = toParent == null ? null : toParent.getId();
+        invalidationEvents.add(GroupAddedEvent.create(group.getId(), parentId, realm.getId()));
         return group;
     }
 

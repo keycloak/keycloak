@@ -486,6 +486,45 @@ public class GroupTest extends AbstractGroupTest {
     }
 
     @Test
+    public void moveGroups() {
+        RealmResource realm = adminClient.realms().realm("test");
+
+        // Create 2 top level groups "mygroup1" and "mygroup2"
+        GroupRepresentation group = GroupBuilder.create()
+                .name("mygroup1")
+                .build();
+        GroupRepresentation group1 = createGroup(realm, group);
+
+        group = GroupBuilder.create()
+                .name("mygroup2")
+                .build();
+        GroupRepresentation group2 = createGroup(realm, group);
+
+        // Move "mygroup2" as child of "mygroup1" . Assert it was moved
+        Response response = realm.groups().group(group1.getId()).subGroup(group2);
+        Assert.assertEquals(204, response.getStatus());
+        response.close();
+
+        // Assert "mygroup2" was moved
+        group1 = realm.groups().group(group1.getId()).toRepresentation();
+        group2 = realm.groups().group(group2.getId()).toRepresentation();
+        assertNames(group1.getSubGroups(), "mygroup2");
+        Assert.assertEquals("/mygroup1/mygroup2", group2.getPath());
+
+
+        // Move "mygroup2" back under parent
+        response = realm.groups().add(group2);
+        Assert.assertEquals(204, response.getStatus());
+        response.close();
+
+        // Assert "mygroup2" was moved
+        group1 = realm.groups().group(group1.getId()).toRepresentation();
+        group2 = realm.groups().group(group2.getId()).toRepresentation();
+        assertTrue(group1.getSubGroups().isEmpty());
+        Assert.assertEquals("/mygroup2", group2.getPath());
+    }
+
+    @Test
     public void groupMembership() {
         RealmResource realm = adminClient.realms().realm("test");
 

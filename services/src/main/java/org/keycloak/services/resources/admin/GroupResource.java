@@ -158,6 +158,7 @@ public class GroupResource {
             if (child == null) {
                 throw new NotFoundException("Could not find child by id");
             }
+            realm.moveGroup(child, group);
             adminEvent.operation(OperationType.UPDATE);
         } else {
             child = realm.createGroup(rep.getName(), group);
