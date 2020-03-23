@@ -44,6 +44,7 @@ import org.keycloak.saml.common.exceptions.ParsingException;
 import org.keycloak.saml.processing.core.parsers.saml.SAMLParser;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.broker.OIDCIdentityProviderConfigRep;
+import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.AdminEventPaths;
 import org.w3c.dom.NodeList;
 
@@ -83,6 +84,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.keycloak.testsuite.arquillian.AuthServerTestEnricher.AUTH_SERVER_SSL_REQUIRED;
 
 /**
@@ -110,9 +112,6 @@ public class IdentityProviderTest extends AbstractAdminTest {
       + "CAqeyLv00yj6foqdJjxh5SZ5z+na+M7Y2OxIBVxYRAxWEnfUvAgMBAAEwDQYJKoZIhvcNAQELBQADgYEAhet"
       + "vOU8TyqfZF5jpv0IcrviLl/DoFrbjByeHR+pu/vClcAOjL/u7oQELuuTfNsBI4tpexUj5G8q/YbEz0gk7idf"
       + "LXrAUVcsR73oTngrhRfwUSmPrjjK0kjcRb6HL9V/+wh3R/6mEd59U08ExT8N38rhmn0CI3ehMdebReprP7U8=";
-
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
 
     @Test
     public void testFindAll() {
@@ -167,14 +166,11 @@ public class IdentityProviderTest extends AbstractAdminTest {
     }
 
     @Test
-    public void failCreateInvalidUrl() {
-        RealmRepresentation realmRep = realm.toRepresentation();
-
-        realmRep.setSslRequired(SslRequired.ALL.name());
-
-        try {
-            realm.update(realmRep);
-
+    public void failCreateInvalidUrl() throws Exception {
+        try (AutoCloseable c = new RealmAttributeUpdater(realmsResouce().realm("test"))
+                .updateWith(r -> r.setSslRequired(SslRequired.ALL.name()))
+                .update()
+        ) {
             IdentityProviderRepresentation newIdentityProvider = createRep("new-identity-provider", "oidc");
 
             newIdentityProvider.getConfig().put("clientId", "clientId");
@@ -226,9 +222,6 @@ public class IdentityProviderTest extends AbstractAdminTest {
                 assertEquals(AUTH_SERVER_SSL_REQUIRED ? Response.Status.BAD_REQUEST.getStatusCode() :
                         Response.Status.CREATED.getStatusCode(), response.getStatus());
             }
-        } finally {
-            realmRep.setSslRequired(SslRequired.NONE.name());
-            realm.update(realmRep);
         }
     }
 
@@ -347,14 +340,11 @@ public class IdentityProviderTest extends AbstractAdminTest {
     }
 
     @Test
-    public void failUpdateInvalidUrl() {
-        RealmRepresentation realmRep = realm.toRepresentation();
-
-        realmRep.setSslRequired(SslRequired.ALL.name());
-
-        try {
-            realm.update(realmRep);
-
+    public void failUpdateInvalidUrl() throws Exception {
+        try (RealmAttributeUpdater rau = new RealmAttributeUpdater(realm)
+                .updateWith(r -> r.setSslRequired(SslRequired.ALL.name()))
+                .update()
+        ) {
             IdentityProviderRepresentation representation = createRep(UUID.randomUUID().toString(), "oidc");
 
             representation.getConfig().put("clientId", "clientId");
@@ -370,57 +360,64 @@ public class IdentityProviderTest extends AbstractAdminTest {
             OIDCIdentityProviderConfigRep oidcConfig = new OIDCIdentityProviderConfigRep(representation);
 
             oidcConfig.setAuthorizationUrl("invalid://test");
-
-            this.expectedException.expect(
-                    Matchers.allOf(Matchers.instanceOf(ClientErrorException.class), Matchers.hasProperty("response",
-                            Matchers.hasProperty("status", Matchers.is(
-                                    Response.Status.BAD_REQUEST.getStatusCode())))));
-            resource.update(representation);
+            try {
+                resource.update(representation);
+                fail("Invalid URL");
+            } catch (Exception e) {
+                assertTrue(e instanceof  ClientErrorException);
+                assertEquals( Response.Status.BAD_REQUEST.getStatusCode(), ClientErrorException.class.cast(e).getResponse().getStatus());
+            }
 
             oidcConfig.setAuthorizationUrl(null);
             oidcConfig.setTokenUrl("http://test");
 
-            this.expectedException.expect(
-                    Matchers.allOf(Matchers.instanceOf(ClientErrorException.class), Matchers.hasProperty("response",
-                            Matchers.hasProperty("status", Matchers.is(
-                                    Response.Status.BAD_REQUEST.getStatusCode())))));
-            resource.update(representation);
+            try {
+                resource.update(representation);
+                fail("Invalid URL");
+            } catch (Exception e) {
+                assertTrue(e instanceof  ClientErrorException);
+                assertEquals( Response.Status.BAD_REQUEST.getStatusCode(), ClientErrorException.class.cast(e).getResponse().getStatus());
+            }
 
             oidcConfig.setAuthorizationUrl(null);
             oidcConfig.setTokenUrl(null);
             oidcConfig.setJwksUrl("http://test");
-
-            this.expectedException.expect(
-                    Matchers.allOf(Matchers.instanceOf(ClientErrorException.class), Matchers.hasProperty("response",
-                            Matchers.hasProperty("status", Matchers.is(
-                                    Response.Status.BAD_REQUEST.getStatusCode())))));
-            resource.update(representation);
+            try {
+                resource.update(representation);
+                fail("Invalid URL");
+            } catch (Exception e) {
+                assertTrue(e instanceof  ClientErrorException);
+                assertEquals( Response.Status.BAD_REQUEST.getStatusCode(), ClientErrorException.class.cast(e).getResponse().getStatus());
+            }
 
             oidcConfig.setAuthorizationUrl(null);
             oidcConfig.setTokenUrl(null);
             oidcConfig.setJwksUrl(null);
             oidcConfig.setLogoutUrl("http://test");
-
-            this.expectedException.expect(
-                    Matchers.allOf(Matchers.instanceOf(ClientErrorException.class), Matchers.hasProperty("response",
-                            Matchers.hasProperty("status", Matchers.is(
-                                    Response.Status.BAD_REQUEST.getStatusCode())))));
-            resource.update(representation);
+            try {
+                resource.update(representation);
+                fail("Invalid URL");
+            } catch (Exception e) {
+                assertTrue(e instanceof  ClientErrorException);
+                assertEquals( Response.Status.BAD_REQUEST.getStatusCode(), ClientErrorException.class.cast(e).getResponse().getStatus());
+            }
 
             oidcConfig.setAuthorizationUrl(null);
             oidcConfig.setTokenUrl(null);
             oidcConfig.setJwksUrl(null);
             oidcConfig.setLogoutUrl(null);
-            oidcConfig.setUserInfoUrl("http://test");
+            oidcConfig.setUserInfoUrl("http://localhost");
 
-            this.expectedException.expect(
-                    Matchers.allOf(Matchers.instanceOf(ClientErrorException.class), Matchers.hasProperty("response",
-                            Matchers.hasProperty("status", Matchers.is(
-                                    Response.Status.BAD_REQUEST.getStatusCode())))));
+            try {
+                resource.update(representation);
+                fail("Invalid URL");
+            } catch (Exception e) {
+                assertTrue(e instanceof  ClientErrorException);
+                assertEquals( Response.Status.BAD_REQUEST.getStatusCode(), ClientErrorException.class.cast(e).getResponse().getStatus());
+            }
+
+            rau.updateWith(r -> r.setSslRequired(SslRequired.EXTERNAL.name())).update();
             resource.update(representation);
-        } finally {
-            realmRep.setSslRequired(SslRequired.NONE.name());
-            realm.update(realmRep);
         }
     }
 
