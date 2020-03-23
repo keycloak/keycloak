@@ -86,6 +86,8 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.keycloak.testsuite.arquillian.AuthServerTestEnricher.AUTH_SERVER_SSL_REQUIRED;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
+import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.REMOTE;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -166,6 +168,7 @@ public class IdentityProviderTest extends AbstractAdminTest {
     }
 
     @Test
+    @AuthServerContainerExclude(REMOTE)
     public void failCreateInvalidUrl() throws Exception {
         try (AutoCloseable c = new RealmAttributeUpdater(realmsResouce().realm("test"))
                 .updateWith(r -> r.setSslRequired(SslRequired.ALL.name()))
