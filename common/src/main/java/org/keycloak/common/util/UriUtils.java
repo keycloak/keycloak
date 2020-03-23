@@ -108,7 +108,7 @@ public class UriUtils {
             throw new IllegalArgumentException("Invalid protocol/scheme for url [" + name + "]");
         }
 
-        if (!"https".equals(protocol) && sslRequired.isRequired(url)) {
+        if (!"https".equals(protocol) && sslRequired.isRequired(parsed.getHost())) {
             throw new IllegalArgumentException("The url [" + name + "] requires secure connections");
         }
     }
