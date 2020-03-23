@@ -291,23 +291,6 @@ public class WebAuthnRegisterAndLoginTest extends AbstractTestRealmKeycloakTest 
         }
     }
 
-    @Test
-    public void testWebAuthnEnabled() {
-        testWebAuthnAvailability(true);
-    }
-
-    @Test
-    @DisableFeature(value = Profile.Feature.WEB_AUTHN, skipRestart = true)
-    public void testWebAuthnDisabled() {
-        testWebAuthnAvailability(false);
-    }
-
-    private void testWebAuthnAvailability(boolean expectedAvailability) {
-        ServerInfoRepresentation serverInfo = adminClient.serverInfo().getInfo();
-        Set<String> authenticatorProviderIds = serverInfo.getProviders().get(AuthenticatorSpi.SPI_NAME).getProviders().keySet();
-        Assert.assertEquals(expectedAvailability, authenticatorProviderIds.contains(WebAuthnAuthenticatorFactory.PROVIDER_ID));
-    }
-
     private void assertUserRegistered(String userId, String username, String email) {
         UserRepresentation user = getUser(userId);
         Assert.assertNotNull(user);
