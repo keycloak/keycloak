@@ -16,6 +16,6 @@
     "./**/*.ts?"
   ],
   "files": [
-    "../../../../../../../../adapters/oidc/js/src/main/resources/keycloak.d.ts",
+    "../../../../../../../../adapters/oidc/js/src/main/resources/keycloak.d.ts"
   ]
 }
