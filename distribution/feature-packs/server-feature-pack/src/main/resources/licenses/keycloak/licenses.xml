@@ -422,11 +422,11 @@
     <dependency>
       <groupId>org.eclipse.jdt.core.compiler</groupId>
       <artifactId>ecj</artifactId>
-      <version>4.4.2</version>
+      <version>4.6.1</version>
       <licenses>
         <license>
           <name>Eclipse Public License 1.0</name>
-          <url>http://git.eclipse.org/c/jdt/eclipse.jdt.core.git/plain/README.md?h=I20140606-1215</url>
+          <url>https://www.eclipse.org/org/documents/epl-1.0/EPL-1.0.txt</url>
         </license>
       </licenses>
     </dependency>
@@ -639,6 +639,18 @@
       </licenses>
     </other>
     <other>
+      <description>safename</description>
+      <locations>
+        <directory>themes/src/main/resources/theme/keycloak/common/resources/node_modules/safename</directory>
+      </locations>
+      <licenses>
+        <license>
+          <name>MIT License</name>
+          <url>https://raw.githubusercontent.com/jacoborus/safename/master/LICENSE</url>
+        </license>
+      </licenses>
+    </other>
+    <other>
       <description>Select2</description>
       <locations>
         <directory>themes/keycloak/common/resources/node_modules/select2</directory>
@@ -651,6 +663,18 @@
         <license>
           <name>GNU General Public License v2.0 only</name>
           <url>https://raw.githubusercontent.com/select2/select2/3.4.1/LICENSE</url>
+        </license>
+      </licenses>
+    </other>
+    <other>
+      <description>text-security</description>
+      <locations>
+        <directory>themes/src/main/resources/theme/keycloak/common/resources/node_modules/text-security</directory>
+      </locations>
+      <licenses>
+        <license>
+          <name>MIT License</name>
+          <url>https://raw.githubusercontent.com/noppa/text-security/master/LICENSE</url>
         </license>
       </licenses>
     </other>
@@ -706,12 +730,24 @@
     <other>
       <description>Font Awesome (Font)</description>
       <locations>
-        <directory>themes/keycloak/common/resources/lib/components/font-awesome/fonts</directory>
+        <directory>themes/src/main/resources/theme/keycloak/common/resources/node_modules/font-awesome/fonts</directory>
       </locations>
       <licenses>
         <license>
           <name>SIL Open Font License 1.1</name>
           <url>https://raw.githubusercontent.com/FortAwesome/Font-Awesome/v4.3.0/README.md</url>
+        </license>
+      </licenses>
+    </other>
+    <other>
+      <description>RCUE</description>
+      <locations>
+        <directory>themes/src/main/resources/theme/keycloak/common/resources/node_modules/rcue</directory>
+      </locations>
+      <licenses>
+        <license>
+          <name>Apache Software License 2.0</name>
+          <url>https://raw.githubusercontent.com/redhat-rcue/rcue/master/LICENSE.txt</url>
         </license>
       </licenses>
     </other>
@@ -734,54 +770,64 @@
       </locations>
       <licenses>
         <license>
-          <name>Apache Software License 2.0</name>
-          <url>https://raw.githubusercontent.com/patternfly/patternfly/v1.1.4-32-ge6a8fd5/LICENSE.txt</url>
+          <name>MIT License</name>
+          <url>https://raw.githubusercontent.com/patternfly/patternfly/v3.59.4/LICENSE.txt</url>
         </license>
       </licenses>
     </other>
     <other>
       <description>OpenSans</description>
       <locations>
-        <file>themes/keycloak/common/resources/lib/patternfly/fonts/OpenSans-LightItalic-webfont.ttf</file>
-        <file>themes/keycloak/common/resources/lib/patternfly/fonts/OpenSans-BoldItalic-webfont.woff</file>
-        <file>themes/keycloak/common/resources/lib/patternfly/fonts/OpenSans-BoldItalic-webfont.ttf</file>
-        <file>themes/keycloak/common/resources/lib/patternfly/fonts/OpenSans-Regular-webfont.woff</file>
-        <file>themes/keycloak/common/resources/lib/patternfly/fonts/OpenSans-ExtraBold-webfont.ttf</file>
-        <file>themes/keycloak/common/resources/lib/patternfly/fonts/OpenSans-ExtraBoldItalic-webfont.ttf</file>
-        <file>themes/keycloak/common/resources/lib/patternfly/fonts/OpenSans-Regular-webfont.eot</file>
-        <file>themes/keycloak/common/resources/lib/patternfly/fonts/OpenSans-ExtraBoldItalic-webfont.woff</file>
-        <file>themes/keycloak/common/resources/lib/patternfly/fonts/OpenSans-SemiboldItalic-webfont.ttf</file>
-        <file>themes/keycloak/common/resources/lib/patternfly/fonts/OpenSans-ExtraBold-webfont.eot</file>
-        <file>themes/keycloak/common/resources/lib/patternfly/fonts/OpenSans-LightItalic-webfont.woff</file>
-        <file>themes/keycloak/common/resources/lib/patternfly/fonts/OpenSans-SemiboldItalic-webfont.eot</file>
-        <file>themes/keycloak/common/resources/lib/patternfly/fonts/OpenSans-Regular-webfont.svg</file>
-        <file>themes/keycloak/common/resources/lib/patternfly/fonts/OpenSans-BoldItalic-webfont.eot</file>
-        <file>themes/keycloak/common/resources/lib/patternfly/fonts/OpenSans-Light-webfont.svg</file>
-        <file>themes/keycloak/common/resources/lib/patternfly/fonts/OpenSans-Bold-webfont.svg</file>
-        <file>themes/keycloak/common/resources/lib/patternfly/fonts/OpenSans-ExtraBoldItalic-webfont.eot</file>
-        <file>themes/keycloak/common/resources/lib/patternfly/fonts/OpenSans-Italic-webfont.woff</file>
-        <file>themes/keycloak/common/resources/lib/patternfly/fonts/OpenSans-Bold-webfont.ttf</file>
-        <file>themes/keycloak/common/resources/lib/patternfly/fonts/OpenSans-Semibold-webfont.eot</file>
-        <file>themes/keycloak/common/resources/lib/patternfly/fonts/OpenSans-Italic-webfont.svg</file>
-        <file>themes/keycloak/common/resources/lib/patternfly/fonts/OpenSans-ExtraBold-webfont.woff</file>
-        <file>themes/keycloak/common/resources/lib/patternfly/fonts/OpenSans-Semibold-webfont.woff</file>
-        <file>themes/keycloak/common/resources/lib/patternfly/fonts/OpenSans-Bold-webfont.woff</file>
-        <file>themes/keycloak/common/resources/lib/patternfly/fonts/OpenSans-Semibold-webfont.svg</file>
-        <file>themes/keycloak/common/resources/lib/patternfly/fonts/OpenSans-SemiboldItalic-webfont.svg</file>
-        <file>themes/keycloak/common/resources/lib/patternfly/fonts/OpenSans-ExtraBoldItalic-webfont.svg</file>
-        <file>themes/keycloak/common/resources/lib/patternfly/fonts/OpenSans-Light-webfont.eot</file>
-        <file>themes/keycloak/common/resources/lib/patternfly/fonts/OpenSans-LightItalic-webfont.eot</file>
-        <file>themes/keycloak/common/resources/lib/patternfly/fonts/OpenSans-SemiboldItalic-webfont.woff</file>
-        <file>themes/keycloak/common/resources/lib/patternfly/fonts/OpenSans-Semibold-webfont.ttf</file>
-        <file>themes/keycloak/common/resources/lib/patternfly/fonts/OpenSans-Italic-webfont.eot</file>
-        <file>themes/keycloak/common/resources/lib/patternfly/fonts/OpenSans-ExtraBold-webfont.svg</file>
-        <file>themes/keycloak/common/resources/lib/patternfly/fonts/OpenSans-Bold-webfont.eot</file>
-        <file>themes/keycloak/common/resources/lib/patternfly/fonts/OpenSans-BoldItalic-webfont.svg</file>
-        <file>themes/keycloak/common/resources/lib/patternfly/fonts/OpenSans-LightItalic-webfont.svg</file>
-        <file>themes/keycloak/common/resources/lib/patternfly/fonts/OpenSans-Light-webfont.ttf</file>
-        <file>themes/keycloak/common/resources/lib/patternfly/fonts/OpenSans-Light-webfont.woff</file>
-        <file>themes/keycloak/common/resources/lib/patternfly/fonts/OpenSans-Italic-webfont.ttf</file>
-        <file>themes/keycloak/common/resources/lib/patternfly/fonts/OpenSans-Regular-webfont.ttf</file>
+        <file>themes/src/main/resources/theme/keycloak/common/resources/node_modules/patternfly/dist/fonts/OpenSans-Bold-webfont.ttf</file>
+        <file>themes/src/main/resources/theme/keycloak/common/resources/node_modules/patternfly/dist/fonts/OpenSans-BoldItalic-webfont.svg</file>
+        <file>themes/src/main/resources/theme/keycloak/common/resources/node_modules/patternfly/dist/fonts/OpenSans-Semibold-webfont.eot</file>
+        <file>themes/src/main/resources/theme/keycloak/common/resources/node_modules/patternfly/dist/fonts/OpenSans-ExtraBoldItalic-webfont.woff</file>
+        <file>themes/src/main/resources/theme/keycloak/common/resources/node_modules/patternfly/dist/fonts/OpenSans-ExtraBoldItalic-webfont.eot</file>
+        <file>themes/src/main/resources/theme/keycloak/common/resources/node_modules/patternfly/dist/fonts/OpenSans-ExtraBoldItalic-webfont.ttf</file>
+        <file>themes/src/main/resources/theme/keycloak/common/resources/node_modules/patternfly/dist/fonts/OpenSans-SemiboldItalic-webfont.woff</file>
+        <file>themes/src/main/resources/theme/keycloak/common/resources/node_modules/patternfly/dist/fonts/OpenSans-BoldItalic-webfont.woff</file>
+        <file>themes/src/main/resources/theme/keycloak/common/resources/node_modules/patternfly/dist/fonts/OpenSans-Italic-webfont.ttf</file>
+        <file>themes/src/main/resources/theme/keycloak/common/resources/node_modules/patternfly/dist/fonts/OpenSans-Bold-webfont.woff</file>
+        <file>themes/src/main/resources/theme/keycloak/common/resources/node_modules/patternfly/dist/fonts/OpenSans-ExtraBoldItalic-webfont.svg</file>
+        <file>themes/src/main/resources/theme/keycloak/common/resources/node_modules/patternfly/dist/fonts/OpenSans-Regular-webfont.ttf</file>
+        <file>themes/src/main/resources/theme/keycloak/common/resources/node_modules/patternfly/dist/fonts/OpenSans-Bold-webfont.eot</file>
+        <file>themes/src/main/resources/theme/keycloak/common/resources/node_modules/patternfly/dist/fonts/OpenSans-Italic-webfont.svg</file>
+        <file>themes/src/main/resources/theme/keycloak/common/resources/node_modules/patternfly/dist/fonts/OpenSans-LightItalic-webfont.ttf</file>
+        <file>themes/src/main/resources/theme/keycloak/common/resources/node_modules/patternfly/dist/fonts/OpenSans-ExtraBold-webfont.eot</file>
+        <file>themes/src/main/resources/theme/keycloak/common/resources/node_modules/patternfly/dist/fonts/OpenSans-Light-webfont.ttf</file>
+        <file>themes/src/main/resources/theme/keycloak/common/resources/node_modules/patternfly/dist/fonts/OpenSans-SemiboldItalic-webfont.eot</file>
+        <file>themes/src/main/resources/theme/keycloak/common/resources/node_modules/patternfly/dist/fonts/OpenSans-Regular-webfont.woff</file>
+        <file>themes/src/main/resources/theme/keycloak/common/resources/node_modules/patternfly/dist/fonts/OpenSans-ExtraBold-webfont.woff</file>
+        <file>themes/src/main/resources/theme/keycloak/common/resources/node_modules/patternfly/dist/fonts/OpenSans-Regular-webfont.eot</file>
+        <file>themes/src/main/resources/theme/keycloak/common/resources/node_modules/patternfly/dist/fonts/OpenSans-LightItalic-webfont.eot</file>
+        <file>themes/src/main/resources/theme/keycloak/common/resources/node_modules/patternfly/dist/fonts/OpenSans-Italic-webfont.eot</file>
+        <file>themes/src/main/resources/theme/keycloak/common/resources/node_modules/patternfly/dist/fonts/OpenSans-Light-webfont.woff</file>
+        <file>themes/src/main/resources/theme/keycloak/common/resources/node_modules/patternfly/dist/fonts/OpenSans-SemiboldItalic-webfont.ttf</file>
+        <file>themes/src/main/resources/theme/keycloak/common/resources/node_modules/patternfly/dist/fonts/OpenSans-SemiboldItalic-webfont.woff2</file>
+        <file>themes/src/main/resources/theme/keycloak/common/resources/node_modules/patternfly/dist/fonts/OpenSans-Regular-webfont.woff2</file>
+        <file>themes/src/main/resources/theme/keycloak/common/resources/node_modules/patternfly/dist/fonts/OpenSans-Semibold-webfont.woff</file>
+        <file>themes/src/main/resources/theme/keycloak/common/resources/node_modules/patternfly/dist/fonts/OpenSans-Light-webfont.eot</file>
+        <file>themes/src/main/resources/theme/keycloak/common/resources/node_modules/patternfly/dist/fonts/OpenSans-ExtraBold-webfont.woff2</file>
+        <file>themes/src/main/resources/theme/keycloak/common/resources/node_modules/patternfly/dist/fonts/OpenSans-Semibold-webfont.woff2</file>
+        <file>themes/src/main/resources/theme/keycloak/common/resources/node_modules/patternfly/dist/fonts/OpenSans-Light-webfont.woff2</file>
+        <file>themes/src/main/resources/theme/keycloak/common/resources/node_modules/patternfly/dist/fonts/OpenSans-BoldItalic-webfont.woff2</file>
+        <file>themes/src/main/resources/theme/keycloak/common/resources/node_modules/patternfly/dist/fonts/OpenSans-LightItalic-webfont.woff</file>
+        <file>themes/src/main/resources/theme/keycloak/common/resources/node_modules/patternfly/dist/fonts/OpenSans-ExtraBold-webfont.ttf</file>
+        <file>themes/src/main/resources/theme/keycloak/common/resources/node_modules/patternfly/dist/fonts/OpenSans-ExtraBold-webfont.svg</file>
+        <file>themes/src/main/resources/theme/keycloak/common/resources/node_modules/patternfly/dist/fonts/OpenSans-Bold-webfont.svg</file>
+        <file>themes/src/main/resources/theme/keycloak/common/resources/node_modules/patternfly/dist/fonts/OpenSans-LightItalic-webfont.svg</file>
+        <file>themes/src/main/resources/theme/keycloak/common/resources/node_modules/patternfly/dist/fonts/OpenSans-Regular-webfont.svg</file>
+        <file>themes/src/main/resources/theme/keycloak/common/resources/node_modules/patternfly/dist/fonts/OpenSans-Italic-webfont.woff2</file>
+        <file>themes/src/main/resources/theme/keycloak/common/resources/node_modules/patternfly/dist/fonts/OpenSans-Semibold-webfont.svg</file>
+        <file>themes/src/main/resources/theme/keycloak/common/resources/node_modules/patternfly/dist/fonts/OpenSans-LightItalic-webfont.woff2</file>
+        <file>themes/src/main/resources/theme/keycloak/common/resources/node_modules/patternfly/dist/fonts/OpenSans-Italic-webfont.woff</file>
+        <file>themes/src/main/resources/theme/keycloak/common/resources/node_modules/patternfly/dist/fonts/OpenSans-Semibold-webfont.ttf</file>
+        <file>themes/src/main/resources/theme/keycloak/common/resources/node_modules/patternfly/dist/fonts/OpenSans-Light-webfont.svg</file>
+        <file>themes/src/main/resources/theme/keycloak/common/resources/node_modules/patternfly/dist/fonts/OpenSans-BoldItalic-webfont.ttf</file>
+        <file>themes/src/main/resources/theme/keycloak/common/resources/node_modules/patternfly/dist/fonts/OpenSans-BoldItalic-webfont.eot</file>
+        <file>themes/src/main/resources/theme/keycloak/common/resources/node_modules/patternfly/dist/fonts/OpenSans-SemiboldItalic-webfont.svg</file>
+        <file>themes/src/main/resources/theme/keycloak/common/resources/node_modules/patternfly/dist/fonts/OpenSans-ExtraBoldItalic-webfont.woff2</file>
+        <file>themes/src/main/resources/theme/keycloak/common/resources/node_modules/patternfly/dist/fonts/OpenSans-Bold-webfont.woff2</file>
       </locations>
       <licenses>
         <license>
