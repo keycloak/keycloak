@@ -36,6 +36,7 @@ import org.keycloak.models.utils.StripSecretsUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.idm.AdminEventRepresentation;
 import org.keycloak.representations.idm.ComponentRepresentation;
+import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.IdentityProviderMapperTypeRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
@@ -183,6 +184,8 @@ public class IdentityProviderTest extends AbstractAdminTest {
             try (Response response = this.realm.identityProviders().create(newIdentityProvider)) {
                 assertEquals(AUTH_SERVER_SSL_REQUIRED ? Response.Status.BAD_REQUEST.getStatusCode() :
                         Response.Status.CREATED.getStatusCode(), response.getStatus());
+                ErrorRepresentation error = response.readEntity(ErrorRepresentation.class);
+                assertEquals("The url [authorization_url] is malformed", error.getErrorMessage());
             }
 
             oidcConfig.setAuthorizationUrl(null);
@@ -191,6 +194,8 @@ public class IdentityProviderTest extends AbstractAdminTest {
             try (Response response = this.realm.identityProviders().create(newIdentityProvider)) {
                 assertEquals(AUTH_SERVER_SSL_REQUIRED ? Response.Status.BAD_REQUEST.getStatusCode() :
                         Response.Status.CREATED.getStatusCode(), response.getStatus());
+                ErrorRepresentation error = response.readEntity(ErrorRepresentation.class);
+                assertEquals("The url [token_url] requires secure connections", error.getErrorMessage());
             }
 
             oidcConfig.setAuthorizationUrl(null);
@@ -200,6 +205,8 @@ public class IdentityProviderTest extends AbstractAdminTest {
             try (Response response = this.realm.identityProviders().create(newIdentityProvider)) {
                 assertEquals(AUTH_SERVER_SSL_REQUIRED ? Response.Status.BAD_REQUEST.getStatusCode() :
                         Response.Status.CREATED.getStatusCode(), response.getStatus());
+                ErrorRepresentation error = response.readEntity(ErrorRepresentation.class);
+                assertEquals("The url [jwks_url] requires secure connections", error.getErrorMessage());
             }
 
             oidcConfig.setAuthorizationUrl(null);
@@ -210,6 +217,8 @@ public class IdentityProviderTest extends AbstractAdminTest {
             try (Response response = this.realm.identityProviders().create(newIdentityProvider)) {
                 assertEquals(AUTH_SERVER_SSL_REQUIRED ? Response.Status.BAD_REQUEST.getStatusCode() :
                         Response.Status.CREATED.getStatusCode(), response.getStatus());
+                ErrorRepresentation error = response.readEntity(ErrorRepresentation.class);
+                assertEquals("The url [logout_url] requires secure connections", error.getErrorMessage());
             }
 
             oidcConfig.setAuthorizationUrl(null);
@@ -221,6 +230,8 @@ public class IdentityProviderTest extends AbstractAdminTest {
             try (Response response = this.realm.identityProviders().create(newIdentityProvider)) {
                 assertEquals(AUTH_SERVER_SSL_REQUIRED ? Response.Status.BAD_REQUEST.getStatusCode() :
                         Response.Status.CREATED.getStatusCode(), response.getStatus());
+                ErrorRepresentation error = response.readEntity(ErrorRepresentation.class);
+                assertEquals("The url [userinfo_url] requires secure connections", error.getErrorMessage());
             }
         }
     }
@@ -365,7 +376,10 @@ public class IdentityProviderTest extends AbstractAdminTest {
                 fail("Invalid URL");
             } catch (Exception e) {
                 assertTrue(e instanceof  ClientErrorException);
-                assertEquals( Response.Status.BAD_REQUEST.getStatusCode(), ClientErrorException.class.cast(e).getResponse().getStatus());
+                Response response = ClientErrorException.class.cast(e).getResponse();
+                assertEquals( Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+                ErrorRepresentation error = ((ClientErrorException) e).getResponse().readEntity(ErrorRepresentation.class);
+                assertEquals("The url [authorization_url] is malformed", error.getErrorMessage());
             }
 
             oidcConfig.setAuthorizationUrl(null);
@@ -376,7 +390,10 @@ public class IdentityProviderTest extends AbstractAdminTest {
                 fail("Invalid URL");
             } catch (Exception e) {
                 assertTrue(e instanceof  ClientErrorException);
-                assertEquals( Response.Status.BAD_REQUEST.getStatusCode(), ClientErrorException.class.cast(e).getResponse().getStatus());
+                Response response = ClientErrorException.class.cast(e).getResponse();
+                assertEquals( Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+                ErrorRepresentation error = ((ClientErrorException) e).getResponse().readEntity(ErrorRepresentation.class);
+                assertEquals("The url [token_url] requires secure connections", error.getErrorMessage());
             }
 
             oidcConfig.setAuthorizationUrl(null);
@@ -387,7 +404,10 @@ public class IdentityProviderTest extends AbstractAdminTest {
                 fail("Invalid URL");
             } catch (Exception e) {
                 assertTrue(e instanceof  ClientErrorException);
-                assertEquals( Response.Status.BAD_REQUEST.getStatusCode(), ClientErrorException.class.cast(e).getResponse().getStatus());
+                Response response = ClientErrorException.class.cast(e).getResponse();
+                assertEquals( Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+                ErrorRepresentation error = ((ClientErrorException) e).getResponse().readEntity(ErrorRepresentation.class);
+                assertEquals("The url [jwks_url] requires secure connections", error.getErrorMessage());
             }
 
             oidcConfig.setAuthorizationUrl(null);
@@ -399,7 +419,10 @@ public class IdentityProviderTest extends AbstractAdminTest {
                 fail("Invalid URL");
             } catch (Exception e) {
                 assertTrue(e instanceof  ClientErrorException);
-                assertEquals( Response.Status.BAD_REQUEST.getStatusCode(), ClientErrorException.class.cast(e).getResponse().getStatus());
+                Response response = ClientErrorException.class.cast(e).getResponse();
+                assertEquals( Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+                ErrorRepresentation error = ((ClientErrorException) e).getResponse().readEntity(ErrorRepresentation.class);
+                assertEquals("The url [logout_url] requires secure connections", error.getErrorMessage());
             }
 
             oidcConfig.setAuthorizationUrl(null);
@@ -413,7 +436,10 @@ public class IdentityProviderTest extends AbstractAdminTest {
                 fail("Invalid URL");
             } catch (Exception e) {
                 assertTrue(e instanceof  ClientErrorException);
-                assertEquals( Response.Status.BAD_REQUEST.getStatusCode(), ClientErrorException.class.cast(e).getResponse().getStatus());
+                Response response = ClientErrorException.class.cast(e).getResponse();
+                assertEquals( Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+                ErrorRepresentation error = ((ClientErrorException) e).getResponse().readEntity(ErrorRepresentation.class);
+                assertEquals("The url [userinfo_url] requires secure connections", error.getErrorMessage());
             }
 
             rau.updateWith(r -> r.setSslRequired(SslRequired.EXTERNAL.name())).update();
