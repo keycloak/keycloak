@@ -104,7 +104,7 @@ public class UriUtils {
 
         String protocol = parsed.getProtocol().toLowerCase();
 
-        if (!("http".equalsIgnoreCase(protocol) || "https".equalsIgnoreCase(protocol))) {
+        if (!("http".equals(protocol) || "https".equals(protocol))) {
             throw new IllegalArgumentException("Invalid protocol/scheme for url [" + name + "]");
         }
 

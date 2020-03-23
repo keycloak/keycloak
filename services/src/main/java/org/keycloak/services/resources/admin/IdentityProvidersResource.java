@@ -198,7 +198,13 @@ public class IdentityProvidersResource {
             
             return Response.created(session.getContext().getUri().getAbsolutePathBuilder().path(representation.getAlias()).build()).build();
         } catch (IllegalArgumentException e) {
-            return ErrorResponse.error("Invalid request", BAD_REQUEST);
+            String message = e.getMessage();
+            
+            if (message == null) {
+                message = "Invalid request";
+            }
+            
+            return ErrorResponse.error(message, BAD_REQUEST);
         } catch (ModelDuplicateException e) {
             return ErrorResponse.exists("Identity Provider " + representation.getAlias() + " already exists");
         }
