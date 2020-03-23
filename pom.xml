@@ -57,10 +57,10 @@
         <apache.mime4j.version>0.6</apache.mime4j.version>
         <jboss.dmr.version>1.5.0.Final</jboss.dmr.version>
         <bouncycastle.version>1.60</bouncycastle.version>
-        <cxf.version>3.3.3</cxf.version>
-        <cxf.jetty.version>3.3.3</cxf.jetty.version>
-        <cxf.jaxrs.version>3.3.3</cxf.jaxrs.version>
-        <cxf.undertow.version>3.3.3</cxf.undertow.version>
+        <cxf.version>3.3.4</cxf.version>
+        <cxf.jetty.version>3.3.4</cxf.jetty.version>
+        <cxf.jaxrs.version>3.3.4</cxf.jaxrs.version>
+        <cxf.undertow.version>3.3.4</cxf.undertow.version>
         <dom4j.version>2.1.1</dom4j.version>
         <github.relaxng.version>2.3.1</github.relaxng.version>
         <h2.version>1.4.193</h2.version>
@@ -73,7 +73,7 @@
         <jackson.databind.version>${jackson.version}</jackson.databind.version>
         <jakarta.mail.version>1.6.4</jakarta.mail.version>
         <jboss.logging.version>3.4.1.Final</jboss.logging.version>
-        <jboss.logging.tools.version>2.2.0.Final</jboss.logging.tools.version>
+        <jboss.logging.tools.version>2.2.1.Final</jboss.logging.tools.version>
         <jboss-jaxrs-api_2.1_spec>2.0.1.Final</jboss-jaxrs-api_2.1_spec>
         <jboss-transaction-api_1.3_spec>2.0.0.Final</jboss-transaction-api_1.3_spec>
         <jboss.spec.javax.xml.bind.jboss-jaxb-api_2.3_spec.version>2.0.0.Final</jboss.spec.javax.xml.bind.jboss-jaxb-api_2.3_spec.version>
@@ -125,7 +125,7 @@
         <mariadb.version>2.2.4</mariadb.version>
         <mssql.version>7.4.1.jre8</mssql.version>
         <servlet.api.30.version>1.0.2.Final</servlet.api.30.version>
-        <servlet.api.40.version>1.0.0.Final</servlet.api.40.version>
+        <servlet.api.40.version>2.0.0.Final</servlet.api.40.version>
         <twitter4j.version>4.0.7</twitter4j.version>
         <jna.version>4.1.0</jna.version>
 
@@ -313,8 +313,8 @@
                 <version>${ua-parser.version}</version>
             </dependency>
             <dependency>
-                <groupId>jakarta.mail</groupId>
-                <artifactId>jakarta.mail-api</artifactId>
+                <groupId>com.sun.mail</groupId>
+                <artifactId>jakarta.mail</artifactId>
                 <version>${jakarta.mail.version}</version>
             </dependency>
             <dependency>
