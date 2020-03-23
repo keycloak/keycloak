@@ -22,8 +22,7 @@ public class ProfileTest {
     public void checkDefaultsKeycloak() {
         Assert.assertEquals("community", Profile.getName());
         assertEquals(Profile.getDisabledFeatures(), Profile.Feature.ACCOUNT2, Profile.Feature.ACCOUNT_API, Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ, Profile.Feature.DOCKER, Profile.Feature.SCRIPTS, Profile.Feature.TOKEN_EXCHANGE, Profile.Feature.OPENSHIFT_INTEGRATION, Profile.Feature.UPLOAD_SCRIPTS);
-        assertEquals(Profile.getPreviewFeatures(), Profile.Feature.ACCOUNT_API, Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ, Profile.Feature.SCRIPTS, Profile.Feature.TOKEN_EXCHANGE, Profile.Feature.OPENSHIFT_INTEGRATION);
-        assertEquals(Profile.getExperimentalFeatures(), Profile.Feature.ACCOUNT2);
+        assertEquals(Profile.getPreviewFeatures(), Profile.Feature.ACCOUNT2, Profile.Feature.ACCOUNT_API, Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ, Profile.Feature.SCRIPTS, Profile.Feature.TOKEN_EXCHANGE, Profile.Feature.OPENSHIFT_INTEGRATION);
         assertEquals(Profile.getDeprecatedFeatures(), Profile.Feature.UPLOAD_SCRIPTS);
 
         Assert.assertTrue(Profile.Feature.WEB_AUTHN.hasDifferentProductType());
@@ -39,8 +38,7 @@ public class ProfileTest {
 
         Assert.assertEquals("product", Profile.getName());
         assertEquals(Profile.getDisabledFeatures(), Profile.Feature.ACCOUNT2, Profile.Feature.ACCOUNT_API, Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ, Profile.Feature.DOCKER, Profile.Feature.SCRIPTS, Profile.Feature.TOKEN_EXCHANGE, Profile.Feature.OPENSHIFT_INTEGRATION, Profile.Feature.UPLOAD_SCRIPTS, Profile.Feature.WEB_AUTHN);
-        assertEquals(Profile.getPreviewFeatures(), Profile.Feature.ACCOUNT_API, Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ, Profile.Feature.SCRIPTS, Profile.Feature.TOKEN_EXCHANGE, Profile.Feature.OPENSHIFT_INTEGRATION, Profile.Feature.WEB_AUTHN);
-        assertEquals(Profile.getExperimentalFeatures(), Profile.Feature.ACCOUNT2);
+        assertEquals(Profile.getPreviewFeatures(), Profile.Feature.ACCOUNT2, Profile.Feature.ACCOUNT_API, Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ, Profile.Feature.SCRIPTS, Profile.Feature.TOKEN_EXCHANGE, Profile.Feature.OPENSHIFT_INTEGRATION, Profile.Feature.WEB_AUTHN);
         assertEquals(Profile.getDeprecatedFeatures(), Profile.Feature.UPLOAD_SCRIPTS);
 
         Assert.assertTrue(Profile.Feature.WEB_AUTHN.hasDifferentProductType());
