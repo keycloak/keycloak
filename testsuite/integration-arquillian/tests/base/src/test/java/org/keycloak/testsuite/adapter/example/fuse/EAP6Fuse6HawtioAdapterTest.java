@@ -105,7 +105,6 @@ public class EAP6Fuse6HawtioAdapterTest extends AbstractExampleAdapterTest imple
     }
 
     @Test
-    @Ignore("KEYCLOAK-10797")
     public void hawtioLoginAndLogoutTest() {
         testRealmLoginPageFuse.setAuthRealm(DEMO);
 
