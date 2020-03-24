@@ -24,7 +24,7 @@
     <parent>
         <groupId>org.jboss</groupId>
         <artifactId>jboss-parent</artifactId>
-        <version>34</version>
+        <version>35</version>
     </parent>
 
     <name>Keycloak</name>
@@ -41,10 +41,10 @@
 
         <product.build-time>${timestamp}</product.build-time>
 
-        <wildfly.version>18.0.1.Final</wildfly.version>
-        <wildfly.build-tools.version>1.2.12.Final</wildfly.build-tools.version>
+        <wildfly.version>19.0.0.Final</wildfly.version>
+        <wildfly.build-tools.version>1.2.13.Final</wildfly.build-tools.version>
         <eap.version>7.3.0.GA-redhat-00004</eap.version>
-        <wildfly.core.version>10.0.3.Final</wildfly.core.version>
+        <wildfly.core.version>11.0.0.Final</wildfly.core.version>
 
         <jboss.as.version>7.2.0.Final</jboss.as.version>
         <jboss.as.subsystem.test.version>7.5.22.Final-redhat-1</jboss.as.subsystem.test.version>
@@ -52,22 +52,21 @@
         <!-- Versions used mostly for Undertow server, aligned with WildFly -->
         <jboss.aesh.version>0.66.19</jboss.aesh.version>
         <aesh.version>2.4</aesh.version>
-        <apache.httpcomponents.version>4.5.4</apache.httpcomponents.version>
-        <apache.httpcomponents.httpcore.version>4.4.5</apache.httpcomponents.httpcore.version>
+        <apache.httpcomponents.version>4.5.11</apache.httpcomponents.version>
+        <apache.httpcomponents.httpcore.version>4.4.13</apache.httpcomponents.httpcore.version>
         <apache.mime4j.version>0.6</apache.mime4j.version>
         <jboss.dmr.version>1.5.0.Final</jboss.dmr.version>
-        <bouncycastle.version>1.60</bouncycastle.version>
-        <cxf.version>3.3.4</cxf.version>
-        <cxf.jetty.version>3.3.4</cxf.jetty.version>
-        <cxf.jaxrs.version>3.3.4</cxf.jaxrs.version>
-        <cxf.undertow.version>3.3.4</cxf.undertow.version>
+        <bouncycastle.version>1.62</bouncycastle.version>
+        <cxf.version>3.3.5</cxf.version>
+        <cxf.jetty.version>3.3.5</cxf.jetty.version>
+        <cxf.jaxrs.version>3.3.5</cxf.jaxrs.version>
+        <cxf.undertow.version>3.3.5</cxf.undertow.version>
         <dom4j.version>2.1.1</dom4j.version>
-        <github.relaxng.version>2.3.1</github.relaxng.version>
-        <h2.version>1.4.193</h2.version>
+        <h2.version>1.4.197</h2.version>
         <jakarta.persistence.version>2.2.3</jakarta.persistence.version>
-        <hibernate.core.version>5.3.14.Final</hibernate.core.version>
-        <hibernate.c3p0.version>5.3.14.Final</hibernate.c3p0.version>
-        <infinispan.version>9.4.16.Final</infinispan.version>
+        <hibernate.core.version>5.3.15.Final</hibernate.core.version>
+        <hibernate.c3p0.version>5.3.15.Final</hibernate.c3p0.version>
+        <infinispan.version>9.4.18.Final</infinispan.version>
         <!-- Will be used in the product. Upstream versions are overridden in the community profile -->
         <jackson.version>2.10.0</jackson.version>
         <jackson.databind.version>${jackson.version}</jackson.databind.version>
@@ -85,22 +84,22 @@
         <owasp.html.sanitizer.version>20191001.1</owasp.html.sanitizer.version>
         <slf4j-api.version>1.7.22</slf4j-api.version>
         <slf4j.version>1.7.22</slf4j.version>
-        <sun.istack.version>3.0.7</sun.istack.version>
-        <sun.xml.bind.version>2.3.1</sun.xml.bind.version>
-        <javax.xml.bind.jaxb.version>2.3.1</javax.xml.bind.jaxb.version>
+        <sun.istack.version>3.0.10</sun.istack.version>
+        <sun.xml.bind.version>2.3.3-b02</sun.xml.bind.version>
+        <javax.xml.bind.jaxb.version>2.4.0-b180830.0359</javax.xml.bind.jaxb.version>
         <sun.xml.ws.version>2.3.1</sun.xml.ws.version>
         <sun.activation.version>1.2.1</sun.activation.version>
-        <org.glassfish.jaxb.xsom.version>2.3.1</org.glassfish.jaxb.xsom.version>
-        <undertow.version>2.0.28.Final</undertow.version>
-        <elytron.version>1.10.4.Final</elytron.version>
-        <elytron.undertow-server.version>1.6.0.Final</elytron.undertow-server.version>
+        <org.glassfish.jaxb.xsom.version>2.3.3-b02</org.glassfish.jaxb.xsom.version>
+        <undertow.version>2.0.30.Final</undertow.version>
+        <elytron.version>1.11.2.Final</elytron.version>
+        <elytron.undertow-server.version>1.7.0.Final</elytron.undertow-server.version>
         <jetty92.version>9.2.4.v20141103</jetty92.version>
         <jetty93.version>9.3.9.v20160517</jetty93.version>
         <jetty94.version>9.4.2.v20170220</jetty94.version>
-        <woodstox.version>5.0.3</woodstox.version>
+        <woodstox.version>6.0.3</woodstox.version>
         <xmlsec.version>2.1.4</xmlsec.version>
         <glassfish.json.version>1.1.6</glassfish.json.version>
-        <wildfly.common.version>1.5.1.Final</wildfly.common.version>
+        <wildfly.common.version>1.5.2.Final</wildfly.common.version>
         <ua-parser.version>1.4.3</ua-parser.version>        
         <picketbox.version>5.0.3.Final</picketbox.version>
         <google.guava.version>25.0-jre</google.guava.version>
@@ -111,8 +110,9 @@
         <!-- Others -->
         <commons-lang.version>2.6</commons-lang.version>
         <commons-lang3.version>3.9</commons-lang3.version>
-        <apacheds.version>2.0.0-M21</apacheds.version>
-        <apacheds.codec.version>1.0.0-M33</apacheds.codec.version>
+        <commons-io.version>2.6</commons-io.version>
+        <apacheds.version>2.0.0-M24</apacheds.version>
+        <apacheds.codec.version>1.0.0</apacheds.codec.version>
         <google.zxing.version>3.4.0</google.zxing.version>
         <freemarker.version>2.3.29</freemarker.version>
 
@@ -146,7 +146,7 @@
         <jmeter.analysis.plugin.version>1.0.4</jmeter.analysis.plugin.version>
         <minify.plugin.version>1.7.6</minify.plugin.version>
         <osgi.bundle.plugin.version>2.3.7</osgi.bundle.plugin.version>
-        <wildfly.plugin.version>1.2.1.Final</wildfly.plugin.version>
+        <wildfly.plugin.version>2.0.0.Final</wildfly.plugin.version>
         <nexus.staging.plugin.version>1.6.5</nexus.staging.plugin.version>
         <frontend.plugin.version>1.8.0</frontend.plugin.version>
         <docker.maven.plugin.version>0.28.0</docker.maven.plugin.version>
@@ -246,11 +246,6 @@
                 <groupId>org.jboss</groupId>
                 <artifactId>jboss-dmr</artifactId>
                 <version>${jboss.dmr.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.github.relaxng</groupId>
-                <artifactId>relaxngDatatype</artifactId>
-                <version>${github.relaxng.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.sun.istack</groupId>
@@ -1475,6 +1470,11 @@
                 <artifactId>commons-lang3</artifactId>
                 <version>${commons-lang3.version}</version>
             </dependency>
+            <dependency>
+                <groupId>commons-io</groupId>
+                <artifactId>commons-io</artifactId>
+                <version>${commons-io.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -1617,9 +1617,9 @@
                 <product.name-html>\u003Cdiv class="kc-logo-text"\u003E\u003Cspan\u003EKeycloak\u003C\u002Fspan\u003E\u003C\u002Fdiv\u003E</product.name-html>
                 <product.version>${project.version}</product.version>
                 <product.default-profile>community</product.default-profile>
-                <jackson.version>2.9.10</jackson.version>
-                <jackson.databind.version>2.9.10.1</jackson.databind.version>
-                <resteasy.version>3.9.1.Final</resteasy.version>
+                <jackson.version>2.10.1</jackson.version>
+                <jackson.databind.version>${jackson.version}</jackson.databind.version>
+                <resteasy.version>3.11.0.Final</resteasy.version>
                 <resteasy.undertow.version>${resteasy.version}</resteasy.undertow.version>
             </properties>
         </profile>
