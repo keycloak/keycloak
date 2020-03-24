@@ -144,19 +144,14 @@ public class FuseAdapterTest extends AbstractExampleAdapterTest {
 
         testRealmLoginPageFuse.form().login("root", "password");
         assertCurrentUrlStartsWith(hawtioPage.toString() + "/welcome");
-        hawtioPage.logout();
+        hawtioPage.logout(jsDriver);
         assertCurrentUrlStartsWith(testRealmLoginPageFuse);
 
         hawtioPage.navigateTo();
         log.debug("logging in as mary");
         testRealmLoginPageFuse.form().login("mary", "password");
         log.debug("Previous WARN waitForPageToLoad time exceeded! is expected");
-        assertThat(DroneUtils.getCurrentDriver().getPageSource(), 
-                allOf(
-                    containsString("Unauthorized User"),
-                    not(containsString("welcome"))
-                )
-        );
+        assertThat(DroneUtils.getCurrentDriver().getCurrentUrl(), not(containsString("welcome")));
     }
 
     @Test
@@ -227,7 +222,7 @@ public class FuseAdapterTest extends AbstractExampleAdapterTest {
     @AppServerContainer(value = ContainerConstants.APP_SERVER_FUSE63, skip = true)
     public void sshLoginTestFuse7() throws Exception {
         assertCommand("mary", "password", "shell:date", Result.NOT_FOUND);
-        assertCommand("john", "password", "shell:info", Result.NOT_FOUND);
+        assertCommand("john", "password", "shell:info", Result.OK);
         assertCommand("john", "password", "shell:date", Result.OK);
         assertRoles("root", 
           "ssh",
