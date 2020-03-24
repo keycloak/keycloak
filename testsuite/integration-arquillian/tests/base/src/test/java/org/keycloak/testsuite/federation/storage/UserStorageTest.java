@@ -1,6 +1,7 @@
 package org.keycloak.testsuite.federation.storage;
 
 import org.apache.commons.io.FileUtils;
+import org.hamcrest.Matchers;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.After;
 import org.junit.Assert;
@@ -472,6 +473,13 @@ public class UserStorageTest extends AbstractAuthTest {
             Assert.assertEquals(1, userModels.size());
             Assert.assertEquals("thor", userModels.get(0).getUsername());
         });
+    }
+
+    @Test
+    public void testQueryExactMatch() {
+        Assert.assertThat(testRealmResource().users().search("a", true), Matchers.hasSize(0));
+        Assert.assertThat(testRealmResource().users().search("apollo", true), Matchers.hasSize(1));
+        Assert.assertThat(testRealmResource().users().search("tbrady", true), Matchers.hasSize(1));
     }
 
     private void setDailyEvictionTime(int hour, int minutes) {

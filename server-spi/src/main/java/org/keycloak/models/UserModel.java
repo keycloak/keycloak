@@ -38,6 +38,7 @@ public interface UserModel extends RoleMapperModel {
     String INCLUDE_SERVICE_ACCOUNT = "keycloak.session.realm.users.query.include_service_account";
     String GROUPS = "keycloak.session.realm.users.query.groups";
     String SEARCH = "keycloak.session.realm.users.query.search";
+    String EXACT = "keycloak.session.realm.users.query.exact";
 
     interface UserRemovedEvent extends ProviderEvent {
         RealmModel getRealm();

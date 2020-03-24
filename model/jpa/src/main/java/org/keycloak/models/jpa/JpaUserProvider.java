@@ -868,7 +868,11 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
                 case UserModel.FIRST_NAME:
                 case UserModel.LAST_NAME:
                 case UserModel.EMAIL:
-                    predicates.add(builder.like(builder.lower(root.get(key)), "%" + value.toLowerCase() + "%"));
+                    if (Boolean.valueOf(attributes.getOrDefault(UserModel.EXACT, Boolean.FALSE.toString()))) {
+                        predicates.add(builder.equal(builder.lower(root.get(key)), value.toLowerCase()));           
+                    } else {
+                        predicates.add(builder.like(builder.lower(root.get(key)), "%" + value.toLowerCase() + "%"));
+                    }
             }
         }
 

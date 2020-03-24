@@ -39,6 +39,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
+import java.util.function.Predicate;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -174,20 +175,7 @@ public class UserPropertyFileStorage implements UserLookupProvider, UserStorageP
 
     @Override
     public List<UserModel> searchForUser(String search, RealmModel realm, int firstResult, int maxResults) {
-        if (maxResults == 0) return Collections.EMPTY_LIST;
-        List<UserModel> users = new LinkedList<>();
-        int count = 0;
-        for (Object un : userPasswords.keySet()) {
-            String username = (String)un;
-            if (username.contains(search)) {
-                if (count++ < firstResult) {
-                    continue;
-                }
-                users.add(createUser(realm, username));
-                if (users.size() + 1 > maxResults) break;
-            }
-        }
-        return users;
+        return searchForUser(search, realm, firstResult, maxResults, username -> username.contains(search));
     }
 
     @Override
@@ -195,7 +183,10 @@ public class UserPropertyFileStorage implements UserLookupProvider, UserStorageP
         String search = Optional.ofNullable(attributes.get(UserModel.USERNAME))
                 .orElseGet(()-> attributes.get(UserModel.SEARCH));
         if (search == null) return Collections.EMPTY_LIST;
-        return searchForUser(search, realm, firstResult, maxResults);
+        Predicate<String> p = Boolean.valueOf(attributes.getOrDefault(UserModel.EXACT, Boolean.FALSE.toString()))
+            ? username -> username.equals(search)
+            : username -> username.contains(search);
+        return searchForUser(search, realm, firstResult, maxResults, p);
     }
 
     @Override
@@ -221,5 +212,22 @@ public class UserPropertyFileStorage implements UserLookupProvider, UserStorageP
     @Override
     public void close() {
 
+    }
+
+    private List<UserModel> searchForUser(String search, RealmModel realm, int firstResult, int maxResults, Predicate<String> matcher) {
+        if (maxResults == 0) return Collections.EMPTY_LIST;
+        List<UserModel> users = new LinkedList<>();
+        int count = 0;
+        for (Object un : userPasswords.keySet()) {
+            String username = (String)un;
+            if (matcher.test(username)) {
+                if (count++ < firstResult) {
+                    continue;
+                }
+                users.add(createUser(realm, username));
+                if (users.size() + 1 > maxResults) break;
+            }
+        }
+        return users;
     }
 }

@@ -350,7 +350,11 @@ public class UserMapStorage implements UserLookupProvider, UserStorageProvider, 
             switch (key) {
                 case UserModel.USERNAME:
                 case UserModel.SEARCH:
-                    userStream = userStream.filter(s -> s.toLowerCase().contains(value.toLowerCase()));
+                    if (Boolean.valueOf(params.getOrDefault(UserModel.EXACT, Boolean.FALSE.toString()))) {
+                        userStream = userStream.filter(s -> s.toLowerCase().equals(value.toLowerCase()));           
+                    } else {
+                        userStream = userStream.filter(s -> s.toLowerCase().contains(value.toLowerCase()));
+                    }
             }
         }
 
