@@ -583,6 +583,22 @@ public class UserTest extends AbstractAdminTest {
     }
 
     @Test
+    public void searchByUsernameExactMatch() {
+        createUsers();
+
+        UserRepresentation user = new UserRepresentation();
+        user.setUsername("username11");
+        
+        createUser(user);
+        
+        List<UserRepresentation> users = realm.users().search("username1", true);
+        assertEquals(1, users.size());
+
+        users = realm.users().search("user", true);
+        assertEquals(0, users.size());
+    }
+
+    @Test
     public void searchByFirstNameNullForLastName() {
         UserRepresentation user = new UserRepresentation();
         user.setUsername("user1");

@@ -203,7 +203,8 @@ public class UsersResource {
                                              @QueryParam("username") String username,
                                              @QueryParam("first") Integer firstResult,
                                              @QueryParam("max") Integer maxResults,
-                                             @QueryParam("briefRepresentation") Boolean briefRepresentation) {
+                                             @QueryParam("briefRepresentation") Boolean briefRepresentation,
+                                             @QueryParam("exact") Boolean exact) {
         UserPermissionEvaluator userPermissionEvaluator = auth.users();
 
         userPermissionEvaluator.requireQuery();
@@ -236,6 +237,9 @@ public class UsersResource {
             }
             if (username != null) {
                 attributes.put(UserModel.USERNAME, username);
+            }
+            if (exact != null) {
+                attributes.put(UserModel.EXACT, exact.toString());
             }
             return searchForUser(attributes, realm, userPermissionEvaluator, briefRepresentation, firstResult, maxResults, true);
         } else {
