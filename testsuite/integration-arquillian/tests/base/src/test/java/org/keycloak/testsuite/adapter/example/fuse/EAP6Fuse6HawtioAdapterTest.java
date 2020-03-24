@@ -119,7 +119,7 @@ public class EAP6Fuse6HawtioAdapterTest extends AbstractExampleAdapterTest imple
 
         waitUntilUrlStartsWith(hawtioPage.toString() + "/welcome", 180);
 
-        hawtioPage.logout();
+        hawtioPage.logout(jsDriver);
         WaitUtils.waitForPageToLoad();
         
         assertCurrentUrlStartsWith(testRealmLoginPageFuse);
