@@ -114,6 +114,7 @@ public class JavascriptTestExecutor {
         jsExecutor.executeScript("window.keycloak.onAuthRefreshError = function () {event('Auth Refresh Error')}");
         jsExecutor.executeScript("window.keycloak.onAuthLogout = function () {event('Auth Logout')}");
         jsExecutor.executeScript("window.keycloak.onTokenExpired = function () {event('Access token expired.')}");
+        jsExecutor.executeScript("window.keycloak.onActionUpdate = function (status) {event('AIA status: ' + status)}");
 
         configured = true;
 
