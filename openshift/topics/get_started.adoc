@@ -34,12 +34,9 @@ $ oc login -u system:admin
 ----
 $ for resource in {project_templates_version}-image-stream.json \
   {project_templates_version}-https.json \
-  {project_templates_version}-mysql.json \
-  {project_templates_version}-mysql-persistent.json \
   {project_templates_version}-postgresql.json \
   {project_templates_version}-postgresql-persistent.json \
   {project_templates_version}-x509-https.json \
-  {project_templates_version}-x509-mysql-persistent.json \
   {project_templates_version}-x509-postgresql-persistent.json
 do
   oc replace -n openshift --force -f \
@@ -82,12 +79,9 @@ $ oc policy add-role-to-user view system:serviceaccount:$(oc project -q):default
 ----
 $ oc get templates -n openshift -o name | grep -o '{project_templates_version}.\+'
 {project_templates_version}-https
-{project_templates_version}-mysql
-{project_templates_version}-mysql-persistent
 {project_templates_version}-postgresql
 {project_templates_version}-postgresql-persistent
 {project_templates_version}-x509-https
-{project_templates_version}-x509-mysql-persistent
 {project_templates_version}-x509-postgresql-persistent
 ----
 . Deploy the selected one:

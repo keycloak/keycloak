@@ -52,10 +52,12 @@
 :openshift_openjdk_name: Red Hat Single Sign-On for OpenShift on OpenJDK
 :openshift_openjdk_link: {project_doc_base_url}/red_hat_single_sign-on_for_openshift/
 :openshift_openjdk_platforms: x86_64
+:openshift_openjdk_image: redhat-sso-7/sso74-openshift-rhel8
 :openshift_openjdk_project_templates_version: sso74
 :openshift_openj9_name: Red Hat Single Sign-On for OpenShift on OpenJ9
 :openshift_openj9_link: {project_doc_base_url}/red_hat_single_sign-on_for_openshift_on_openj9/
 :openshift_openj9_platforms: s390x
+:openshift_openj9_image: redhat-sso-7/sso74-openj9-openshift-rhel8
 :openshift_openj9_project_templates_version: sso74-openj9
 :installguide_name: Server Installation and Configuration Guide
 :installguide_link: {project_doc_base_url}/server_installation_and_configuration_guide/

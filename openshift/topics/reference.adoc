@@ -367,7 +367,7 @@ for {project_openshift_product_name} can combine the xref:conf_env_vars[aforemen
 configuration variables] with common OpenShift variables (for example
 *_APPLICATION_NAME_* or *_SOURCE_REPOSITORY_URL_*), product specific variables
 (e.g. *_HORNETQ_CLUSTER_PASSWORD_*), or configuration variables typical to
-database images (e.g. *_MYSQL_FT_MAX_WORD_LEN_*) yet. All of these different
+database images (e.g. *_POSTGRESQL_MAX_CONNECTIONS_*) yet. All of these different
 types of configuration variables can be adjusted as desired to achieve the
 deployed {project_name}-enabled application will align with the intended use case as much
 as possible. The list of configuration variables, available for each category
@@ -477,40 +477,6 @@ if this environment variable is provided.
 |The password for the truststore and certificate.
 |===
 
-==== Template variables specific to *_{project_templates_version}-mysql_*, *_{project_templates_version}-mysql-persistent_*, and *_{project_templates_version}-x509-mysql-persistent_*
-
-.Configuration Variables Specific To {project_name}-enabled MySQL Applications With Ephemeral Or Persistent Storage
-[cols="2*", options="header"]
-|===
-|Variable
-|Description
-|*_DB_USERNAME_*
-|Database user name.
-
-|*_DB_PASSWORD_*
-|Database user password.
-
-|*_DB_JNDI_*
-|Database JNDI name used by application to resolve the datasource,
-e.g. _java:/jboss/datasources/mysql_.
-
-|*_MYSQL_AIO_*
-|Controls the _innodb_use_native_aio_ setting value if the native AIO is
-broken.
-
-|*_MYSQL_FT_MAX_WORD_LEN_*
-|The maximum length of the word to be included in a FULLTEXT index.
-
-|*_MYSQL_FT_MIN_WORD_LEN_*
-|The minimum length of the word to be included in a FULLTEXT index.
-
-|*_MYSQL_LOWER_CASE_TABLE_NAMES_*
-|Sets how the table names are stored and compared.
-
-|*_MYSQL_MAX_CONNECTIONS_*
-|The maximum permitted number of simultaneous client connections.
-|===
-
 ==== Template variables specific to *_{project_templates_version}-postgresql_*, *_{project_templates_version}-postgresql-persistent_*, and *_{project_templates_version}-x509-postgresql-persistent_*
 
 .Configuration Variables Specific To {project_name}-enabled PostgreSQL Applications With Ephemeral Or Persistent Storage
@@ -534,17 +500,6 @@ number of prepared transactions.
 
 |*_POSTGRESQL_SHARED_BUFFERS_*
 |Configures how much memory is dedicated to PostgreSQL for caching data.
-|===
-
-==== Template variables specific to *_{project_templates_version}-mysql-persistent_*, *_{project_templates_version}-x509-mysql-persistent_*, *_{project_templates_version}-postgresql-persistent_*, and *_{project_templates_version}-x509-postgresql-persistent_*
-
-.Configuration Variables Specific To {project_name}-enabled MySQL / PostgreSQL Applications With Persistent Storage
-[cols="2*", options="header"]
-|===
-|Variable
-|Description
-|*_VOLUME_CAPACITY_*
-|Size of persistent storage for database volume.
 |===
 
 ==== Template variables for general *eap64* and *eap71* S2I images

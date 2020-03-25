@@ -18,7 +18,7 @@ By default the database is automatically migrated when you start {project_name} 
 
 [[automatic-db-migration]]
 ==== Automatic Database Migration
-This process assumes that you are link:{openshift_link}#Example-Deploying-SSO[running] some previous version of the {project_openshift_product_name} image, backed by MySQL or PostgreSQL database (deployed in ephemeral or persistent mode), running on a separate pod.
+This process assumes that you are link:{openshift_link}#Example-Deploying-SSO[running] some previous version of the {project_openshift_product_name} image, backed by a PostgreSQL database (deployed in ephemeral or persistent mode), running in a separate pod.
 
 [IMPORTANT]
 ====
@@ -97,7 +97,7 @@ See link:https://access.redhat.com/documentation/en-us/red_hat_single_sign-on/7.
 The database migration process handles the data schema update and performs manipulation of the data, therefore, stop all pods running the previous version of the {project_openshift_product_name} image before dynamic generation of the SQL migration file.
 ====
 
-This process assumes that you are link:{openshift_link}#Example-Deploying-SSO[running] some previous version of the {project_openshift_product_name} image, backed by MySQL or PostgreSQL database (deployed in ephemeral or persistent mode), running on a separate pod.
+This process assumes that you are link:{openshift_link}#Example-Deploying-SSO[running] some previous version of the {project_openshift_product_name} image, backed by a PostgreSQL database (deployed in ephemeral or persistent mode), running on a separate pod.
 
 Perform the following to generate and get the SQL migration file for the database:
 
@@ -469,53 +469,6 @@ INSERT 0 1
 Replace `<PREFIX>_USERNAME` and `<PREFIX>_DATABASE` with the actual database credentials retrieved xref:get-db-credentials[in previous section]. Also use value of `<PREFIX>_PASSWORD` as the password for the database, when prompted.
 ====
 ... Close the shell session to the PostgreSQL pod. Continue with xref:image-change-trigger-update-step[updating image change trigger step].
-* Run the following commands if running some previous version of the {project_openshift_product_name} image, backed by the MySQL database deployed in ephemeral or persistent mode, running on a separate pod:
-... Given the pod situation similar to the following:
-+
-[source,bash,subs="attributes+,macros+"]
-----
-$ oc get pods
-NAME                                  READY     STATUS      RESTARTS   AGE
-sso-mysql-1-zvhk3                     1/1       Running     0          1h
-job-to-migrate-db-to-{project_templates_version}-m202t   1/1       Running     0          11m
-{project_templates_version}-db-migration-image-1-build      0/1       Completed   0          13m
-----
-... Copy the generated SQL migration file to the MySQL pod.
-+
-[source,bash,subs="attributes+,macros+"]
-----
-$ oc rsync --no-perms=true ./db-update/ sso-mysql-1-zvhk3:/tmp
-sending incremental file list
-keycloak-database-update.sql
-
-sent 24,718 bytes  received 34 bytes  49,504.00 bytes/sec
-total size is 24,594  speedup is 0.99
-----
-... Start a shell session to the MySQL pod.
-+
-[source,bash,subs="attributes+,macros+"]
-----
-$ oc rsh sso-mysql-1-zvhk3
-sh-4.2$
-----
-... Use the `mysql` tool to apply database update manually.
-+
-[source,bash,subs="attributes+,macros+"]
-----
-sh-4.2$ alias mysql="/opt/rh/rh-mysql57/root/bin/mysql"
-sh-4.2$ mysql --version
-/opt/rh/rh-mysql57/root/bin/mysql  Ver 14.14 Distrib 5.7.16, for Linux (x86_64) using  EditLine wrapper
-sh-4.2$ mysql -D <PREFIX>_DATABASE -u <PREFIX>_USERNAME -p < /tmp/keycloak-database-update.sql
-Enter password:
-sh-4.2$ echo $?
-0
-----
-+
-[IMPORTANT]
-====
-Replace `<PREFIX>_USERNAME` and `<PREFIX>_DATABASE` with the actual database credentials retrieved xref:get-db-credentials[in previous section]. Also use value of `<PREFIX>_PASSWORD` as the password for the database, when prompted.
-====
-... Close the shell session to the MySQL pod. Continue with xref:image-change-trigger-update-step[updating image change trigger step].
 
 [[image-change-trigger-update-step]]
 [start=12]
@@ -544,12 +497,12 @@ deploymentconfig "sso" scaled
 === Example Workflow: Migrating The {project_name} Server's Database Across Environments
 This tutorial focuses on migrating the Red Hat Single Sign-On server database from one environment to another or migrating to a different database. It assumes steps described in xref:Preparing-SSO-Authentication-for-OpenShift-Deployment[Preparing {project_name} Authentication for OpenShift Deployment] section have been performed already.
 
-==== Deploying the {project_name} MySQL Application Template
+==== Deploying the {project_name} PostgreSQL Application Template
 
 . Log in to the OpenShift web console and select the _sso-app-demo_ project space.
 . Click *Add to project* to list the default image streams and templates.
 . Use the *Filter by keyword* search bar to limit the list to those that match _sso_. You may need to click *See all* to show the desired application template.
-. Select *_{project_templates_version}-mysql_* {project_name} application template. When deploying the template ensure to *keep the _SSO_REALM_ variable unset* (default value).
+. Select *_{project_templates_version}-postgresql_* {project_name} application template. When deploying the template ensure to *keep the _SSO_REALM_ variable unset* (default value).
 +
 [IMPORTANT]
 ====
@@ -589,7 +542,7 @@ Upon their creation xref:sso-export-the-database[the database can be exported.]
 ----
 $ oc get dc -o name
 deploymentconfig/sso
-deploymentconfig/sso-mysql
+deploymentconfig/sso-postgresql
 
 $ oc scale --replicas=0 dc sso
 deploymentconfig "sso" scaled
@@ -616,9 +569,9 @@ deploymentconfig "sso" scaled
 [source,bash,subs="attributes+,macros+"]
 ----
 $ oc get pods
-NAME                READY     STATUS    RESTARTS   AGE
-sso-4-ejr0k         1/1       Running   0          27m
-sso-mysql-1-ozzl0   1/1       Running   0          4h
+NAME                     READY     STATUS    RESTARTS   AGE
+sso-4-ejr0k              1/1       Running   0          27m
+sso-postgresql-1-ozzl0   1/1       Running   0          4h
 
 $ oc logs sso-4-ejr0k | grep 'Export'
 09:24:59,503 INFO  [org.keycloak.exportimport.singlefile.SingleFileExportProvider] (ServerService Thread Pool -- 57) Exporting model into file /tmp/demorealm-export.json
@@ -632,9 +585,9 @@ $ oc logs sso-4-ejr0k | grep 'Export'
 [source,bash,subs="attributes+,macros+"]
 ----
 $ oc get pods
-NAME                READY     STATUS    RESTARTS   AGE
-sso-4-ejr0k         1/1       Running   0          2m
-sso-mysql-1-ozzl0   1/1       Running   0          4h
+NAME                     READY     STATUS    RESTARTS   AGE
+sso-4-ejr0k              1/1       Running   0          2m
+sso-postgresql-1-ozzl0   1/1       Running   0          4h
 
 $ oc rsync sso-4-ejr0k:/tmp/demorealm-export.json .
 ----
@@ -812,11 +765,8 @@ The following example uses both link:https://github.com/keycloak/keycloak-quicks
 ====
 This guide assumes the {project_openshift_product_name} image has been previously link:{openshift_link}#Example-Deploying-SSO[deployed using one of the following templates:]
 
-* *_{project_templates_version}-mysql_*
-* *_{project_templates_version}-mysql-persistent_*
 * *_{project_templates_version}-postgresql_*
 * *_{project_templates_version}-postgresql-persistent_*
-* *_{project_templates_version}-x509-mysql-persistent_*
 * *_{project_templates_version}-x509-postgresql-persistent_*
 ====
 

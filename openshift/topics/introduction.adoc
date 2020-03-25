@@ -12,16 +12,16 @@ Red Hat offers multiple OpenShift application templates utilizing the {project_o
 * Templates using HTTPS and JGroups keystores and a truststore for the {project_name} server, all prepared beforehand. These secure the TLS communication using link:https://docs.openshift.com/container-platform/latest/architecture/networking/routes.html#passthrough-termination[passthrough TLS termination]:
 
 ** *_{project_templates_version}-https_*: {project_name} {project_version} backed by internal H2 database on the same pod.
-** *_{project_templates_version}-mysql_*: {project_name} {project_version} backed by ephemeral MySQL database on a separate pod.
-** *_{project_templates_version}-mysql-persistent_*: {project_name} {project_version} backed by persistent MySQL database on a separate pod.
 ** *_{project_templates_version}-postgresql_*: {project_name} {project_version} backed by ephemeral PostgreSQL database on a separate pod.
 ** *_{project_templates_version}-postgresql-persistent_*: {project_name} {project_version} backed by persistent PostgreSQL database on a separate pod.
+
+[NOTE]
+Templates for using {project_name} with MySQL / MariaDB databases have been removed and are not available since {project_name} version 7.4.
 
 [[reencrypt-templates]]
 * Templates using OpenShift's internal link:https://docs.openshift.com/container-platform/latest/dev_guide/secrets.html#service-serving-certificate-secrets[service serving x509 certificate secrets] to automatically create the HTTPS keystore used for serving secure content. The JGroups cluster traffic is authenticated using the `AUTH` protocol and encrypted using the `ASYM_ENCRYPT` protocol. The {project_name} server truststore is also created automatically, containing the */var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt* CA certificate file, which is used to sign the certificate for HTTPS keystore. Moreover, the truststore for the {project_name} server is pre-populated with the all known, trusted CA certificate files found in the Java system path. These templates secure the TLS communication using link:https://docs.openshift.com/container-platform/latest/architecture/networking/routes.html#re-encryption-termination[re-encryption TLS termination]:
 
 ** *_{project_templates_version}-x509-https_*: {project_name} {project_version} with auto-generated HTTPS keystore and {project_name} truststore, backed by internal H2 database. The `ASYM_ENCRYPT` JGroups protocol is used for encryption of cluster traffic.
-** *_{project_templates_version}-x509-mysql-persistent_*: {project_name} {project_version} with auto-generated HTTPS keystore and {project_name} truststore, backed by persistent MySQL database. The `ASYM_ENCRYPT` JGroups protocol is used for encryption of cluster traffic.
 ** *_{project_templates_version}-x509-postgresql-persistent_*: {project_name} {project_version} with auto-generated HTTPS keystore and {project_name} truststore, backed by persistent PostgreSQL database. The `ASYM_ENCRYPT` JGroups protocol is used for encryption of cluster traffic.
 
 Other templates that integrate with {project_name} are also available:

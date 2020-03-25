@@ -282,11 +282,75 @@ route "sso" patched
 ----
 
 [[sso-connecting-to-an-external-database]]
-==== Connecting to an external database
+=== Connecting to an external database
 
 {project_name} can be configured to connect to an external (to OpenShift cluster) database. In order to achieve this, you need to modify the `sso-{database name}` Endpoints object to point to the proper address. The procedure is described in the https://docs.openshift.com/container-platform/latest/networking/configuring-ingress-cluster-traffic/configuring-ingress-cluster-traffic-service-external-ip.html#nw-service-external-ip_configuring-ingress-cluster-traffic-service-external-ip[OpenShift manual].
 
 Tip: The easiest way to get started is to deploy {project_name} from a template and then modify the Endpoints object. You might also need to update some of the datasource configuration variables in the DeploymentConfig. Once you're done, just roll a new deployment out.
+
+[[sso-using-custom-jdbc-driver]]
+=== Using Custom JDBC Driver
+
+To connect to any database, the JDBC driver for that database must be present and {project_name} configured
+properly. Currently, the only JDBC driver available in the image is the PostgreSQL JDBC driver. For any other
+database, you need to extend the {project_name} image with a custom JDBC driver and a CLI script to register
+it and set up the connection properties. The following steps illustrate how to do that, taking MariaDB driver
+as an example. Update the example for other database drivers accordingly.
+
+. Create an empty directory.
+. Download the JDBC driver binaries into this directory.
+. Create a new `Dockerfile` file in this directory with the following contents. For other databases, replace `mariadb-java-client-2.5.4.jar` with the filename of the respective driver:
++
+[source,subs="attributes+,macros+,+quotes"]
+----
+*FROM* {openshift_image}:latest
+
+*COPY* sso-extensions.cli /opt/eap/extensions/
+*COPY* mariadb-java-client-2.5.4.jar /opt/eap/extensions/jdbc-driver.jar
+----
+. Create a new `sso-extensions.cli` file in this directory with the following contents. Update the values of the variables in italics according to the deployment needs:
++
+[source,bash,subs="attributes+,macros+,+quotes"]
+----
+batch
+
+set DB_DRIVER_NAME=_mariadb_
+set DB_USERNAME=_username_
+set DB_PASSWORD=_password_
+set DB_DRIVER=_org.mariadb.jdbc.Driver_
+set DB_XA_DRIVER=_org.mariadb.jdbc.MariaDbDataSource_
+set DB_JDBC_URL=_jdbc:mariadb://jdbc-host/keycloak_
+set DB_EAP_MODULE=_org.mariadb_
+
+set FILE=/opt/eap/extensions/jdbc-driver.jar
+
+module add --name=$DB_EAP_MODULE --resources=$FILE --dependencies=javax.api,javax.resource.api
+/subsystem=datasources/jdbc-driver=$DB_DRIVER_NAME:add( \
+  driver-name=$DB_DRIVER_NAME, \
+  driver-module-name=$DB_EAP_MODULE, \
+  driver-class-name=$DB_DRIVER, \
+  driver-xa-datasource-class-name=$DB_XA_DRIVER \
+)
+/subsystem=datasources/data-source=KeycloakDS:remove()
+/subsystem=datasources/data-source=KeycloakDS:add( \
+  jndi-name=java:jboss/datasources/KeycloakDS, \
+  enabled=true, \
+  use-java-context=true, \
+  connection-url=$DB_JDBC_URL, \
+  driver-name=$DB_DRIVER_NAME, \
+  user-name=$DB_USERNAME, \
+  password=$DB_PASSWORD \
+)
+
+run-batch
+----
+. In this directory, build your image by typing the following command, replacing the `project/name:tag` with arbitrary name. `docker` can be used instead of `podman`.
++
+[source,bash,subs="attributes+,macros+,+quotes"]
+----
+podman build -t docker-registry-default/project/name:tag .
+----
+. After the build finishes, push your image to the registry used by OpenShift to deploy your image. Refer to the https://docs.openshift.com/container-platform/latest/registry/accessing-the-registry.html#registry-accessing-directly_accessing-the-registry[OpenShift guide] for details.
 
 [[sso-administrator-setup]]
 === Creating the Administrator Account for {project_name} Server
@@ -317,9 +381,9 @@ When deploying {project_name} application template, the *_SSO_ADMIN_USERNAME_* a
 ====
 The lifespan of the {project_name} server's administrator account depends upon the storage type used to store the {project_name} server's database:
 
-* For an in-memory database mode (*_{project_templates_version}-https_* and *_{project_templates_version}-x509-https_* templates) the account exists throughout the lifecycle of the particular {project_name} pod (stored account data is lost upon pod destruction),
-* For an ephemeral database mode (*_{project_templates_version}-mysql_* and *_{project_templates_version}-postgresql_* templates) the account exists throughout the lifecycle of the database pod (even if the {project_name} pod is destructed, the stored account data is preserved under the assumption that the database pod is still running),
-* For persistent database mode (*_{project_templates_version}-mysql-persistent_*, *_{project_templates_version}-x509-mysql-persistent_*, *_{project_templates_version}-postgresql-persistent_*, and *_{project_templates_version}-x509-postgresql-persistent_* templates) the account exists throughout the lifecycle of the persistent medium used to hold the database data. This means that the stored account data is preserved even when both the {project_name} and the database pods are destructed.
+* For an in-memory database mode (*_{project_templates_version}-https_* and *_{project_templates_version}-x509-https_* templates), the account exists throughout the lifecycle of the particular {project_name} pod (stored account data is lost upon pod destruction),
+* For an ephemeral database mode *_{project_templates_version}-postgresql_* templates), the account exists throughout the lifecycle of the database pod. Even if the {project_name} pod is destructed, the stored account data is preserved under the assumption that the database pod is still running,
+* For persistent database mode (*_{project_templates_version}-postgresql-persistent_*, and *_{project_templates_version}-x509-postgresql-persistent_* templates), the account exists throughout the lifecycle of the persistent medium used to hold the database data. This means that the stored account data is preserved even when both the {project_name} and the database pods are destructed.
 
 It is a common practice to deploy an {project_name} application template to get the corresponding OpenShift deployment config for the application, and then reuse that deployment config multiple times (every time a new {project_name} application needs to be instantiated).
 ====
@@ -339,7 +403,7 @@ Run the following commands to prepare the previously created deployment config o
 ----
 $ oc get dc -o name
 deploymentconfig/sso
-deploymentconfig/sso-mysql
+deploymentconfig/sso-postgresql
 ----
 . Clear the *_SSO_ADMIN_USERNAME_* and *_SSO_ADMIN_PASSWORD_* variables setting.
 +
@@ -361,9 +425,9 @@ Run following commands to create an administrator account for the `master` realm
 [source,bash,subs="attributes+,macros+"]
 ----
 $ oc get pods
-NAME                READY     STATUS    RESTARTS   AGE
-sso-12-pt93n        1/1       Running   0          1m
-sso-mysql-6-d97pf   1/1       Running   0          2m
+NAME                     READY     STATUS    RESTARTS   AGE
+sso-12-pt93n             1/1       Running   0          1m
+sso-postgresql-6-d97pf   1/1       Running   0          2m
 ----
 . Open a remote shell session to the {project_openshift_product_name} container.
 +
@@ -414,11 +478,8 @@ You can change the default behavior of the {project_name} image such as enabling
 
 This procedure assumes that the {project_openshift_product_name} image has been previously link:https://access.redhat.com/documentation/en-us/red_hat_single_sign-on/7.3/html-single/red_hat_single_sign-on_for_openshift/index#Example-Deploying-SSO[deployed using one of the following templates:]
 
-* *_{project_templates_version}-mysql_*
-* *_{project_templates_version}-mysql-persistent_*
 * *_{project_templates_version}-postgresql_*
 * *_{project_templates_version}-postgresql-persistent_*
-* *_{project_templates_version}-x509-mysql-persistent_*
 * *_{project_templates_version}-x509-postgresql-persistent_*
 
 .Procedure
@@ -441,7 +502,7 @@ If you use the CLI, use the following commands to enable TechPreview features wh
 ----
 $ oc get dc -o name
 deploymentconfig/sso
-deploymentconfig/sso-mysql
+deploymentconfig/sso-postgresql
 
 $ oc scale --replicas=0 dc sso
 deploymentconfig "sso" scaled
@@ -450,7 +511,7 @@ deploymentconfig "sso" scaled
 +
 [NOTE]
 ====
-In the preceding command, ``sso-mysql`` appears because a MySQL template was used to deploy the {project_openshift_product_name} image. However, if a PostgreSQL template was used, the name of the deployment config of the PostgreSQL pod would be ``sso-postgresql``.
+In the preceding command, ``sso-postgresql`` appears because a PostgreSQL template was used to deploy the {project_openshift_product_name} image.
 ====
 
 . Edit the deployment config to set the JAVA_OPTS_APPEND variable. For example, to enable TechPreview features, you set the variable as follows:
@@ -475,7 +536,7 @@ deploymentconfig "sso" scaled
 
 === Deployment Process
 
-Once deployed, the *_{project_templates_version}-https_* and *_{project_templates_version}-x509-https_* templates create a single pod that contains both the database and the {project_name} servers. The *_{project_templates_version}-mysql_*, *_{project_templates_version}-mysql-persistent_*, *_{project_templates_version}-x509-mysql-persistent_*, *_{project_templates_version}-postgresql_*, *_{project_templates_version}-postgresql-persistent_*, and *_{project_templates_version}-x509-postgresql-persistent_* templates create two pods, one for the database server and one for the {project_name} web server.
+Once deployed, the *_{project_templates_version}-https_* and *_{project_templates_version}-x509-https_* templates create a single pod that contains both the database and the {project_name} servers. The *_{project_templates_version}-postgresql_*, *_{project_templates_version}-postgresql-persistent_*, and *_{project_templates_version}-x509-postgresql-persistent_* templates create two pods, one for the database server and one for the {project_name} web server.
 
 After the {project_name} web server pod has started, it can be accessed at its custom configured hostnames, or at the default hostnames:
 
@@ -597,10 +658,10 @@ See xref:Example-EAP-Manual[Example Workflow: Manually Configure an Application 
 === Using {project_name} vault with OpenShift secrets
 Several fields in the {project_name} administration support obtaining the value
  of a secret from an external vault, see link:{adminguide_link}#_vault-administration[{adminguide_name}].
-The following example shows how to set up the files plaintext vault in OpenShift 
-and set it up to be used for obtaining SMTP password.
+The following example shows how to set up the files plaintext vault in OpenShift
+and set it up to be used for obtaining an SMTP password.
 
-. Specify a directory for the vault using the *_SSO_VAULT_DIR_* environment variable. 
+. Specify a directory for the vault using the *_SSO_VAULT_DIR_* environment variable.
 You can introduce the *_SSO_VAULT_DIR_* environment variable directly in the environment in your deployment configuration. It can also be included in the template by addding the following snippets at the appropriate places in the template:
 +
 [source,json,subs="attributes+,macros+"]
@@ -649,9 +710,9 @@ For a deployment that is already running:
 oc set volume dc/sso --add --mount-path=${SSO_VAULT_DIR} --secret-name=rhsso-vault-secrets
 ----
 
-. After a pod is created you can use a customized string within your {project_name} 
-configuration to refer to the secret. For example, for using `mySMTPPsswd` secret 
-created in this tutorial, you can use `${vault.smtp-password}` within the `master` 
+. After a pod is created you can use a customized string within your {project_name}
+configuration to refer to the secret. For example, for using `mySMTPPsswd` secret
+created in this tutorial, you can use `${vault.smtp-password}` within the `master`
 realm in the configuration of the smtp password and it will be replaced by `mySMTPPsswd` when used.
 
 
