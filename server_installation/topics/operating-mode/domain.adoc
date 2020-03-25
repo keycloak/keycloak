@@ -5,7 +5,7 @@
 Domain mode is a way to centrally manage and publish the configuration for your servers.
 
 Running a cluster in standard mode can quickly become aggravating as the cluster grows in size.  Every time you need
-to make a configuration change, you have perform it on each node in the cluster.  Domain mode solves this problem by providing
+to make a configuration change, you have to perform it on each node in the cluster.  Domain mode solves this problem by providing
 a central place to store and publish configuration.  It can be quite complex to set up, but it is worth it in the end.
 This capability is built into the {appserver_name} Application Server which {project_name} derives from.
 
@@ -198,7 +198,7 @@ $ .../bin/domain.sh --host-config=host-master.xml
 > ...\bin\domain.bat --host-config=host-master.xml
 ----
 
-When running the boot script you will need pass in the host controlling configuration file you are going to use via the
+When running the boot script you will need to pass in the host controlling configuration file you are going to use via the
 `--host-config` switch.
 
 [[_clustered-domain-example]]
