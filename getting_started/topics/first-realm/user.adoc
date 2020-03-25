@@ -12,9 +12,9 @@ To create a new user in the `demo` realm, along with a temporary password for th
 
 . Click the *Credentials* tab to set a temporary password for the new user.
 
-. Type a new password and confirm it. Click *Reset Password* to set the user password to the new one you specified.  
+. Type a new password and confirm it. Click *Set Password* to set the user password.  
 
-NOTE: This password is temporary and the user will be required to change it after the first login. To create a password that is persistent, flip the *Temporary* switch from *On* to *Off* before clicking *Reset Password*.
+NOTE: This password is temporary and the user will be required to change it after the first login. To create a password that is persistent, flip the *Temporary* switch from *On* to *Off* before clicking *Set Password*.
 
 
 
