@@ -1719,6 +1719,19 @@ module.controller('LDAPMapperListCtrl', function($scope, $location, Notification
 
 });
 
+function wrapConfigValuesAsArrays(config) {
+    if (config) {
+        var keys = Object.keys(config);
+        for (var i = 0; i < keys.length; i++) {
+            var propertyValue = config[keys[i]];
+            if (propertyValue && !Array.isArray(propertyValue)) {
+                console.log("Wrapping config value as array: " + keys[i]);
+                config[keys[i]] = [config[keys[i]]];
+            }
+        }
+    }
+}
+
 module.controller('LDAPMapperCtrl', function($scope, $route, realm,  provider, mapperTypes, mapper, clients, Components, LDAPMapperSync, Notifications, Dialog, $location) {
     console.log('LDAPMapperCtrl');
     $scope.realm = realm;
@@ -1760,6 +1773,7 @@ module.controller('LDAPMapperCtrl', function($scope, $route, realm,  provider, m
     }, true);
 
     $scope.save = function() {
+        wrapConfigValuesAsArrays($scope.mapper.config);
         Components.update({realm: realm.realm,
                 componentId: mapper.id
             },
@@ -1845,9 +1859,7 @@ module.controller('LDAPMapperCreateCtrl', function($scope, realm, provider, mapp
         $scope.mapper.providerType = 'org.keycloak.storage.ldap.mappers.LDAPStorageMapper';
         $scope.mapper.parentId = provider.id;
 
-        if ($scope.mapper.config && $scope.mapper.config["role"] && !Array.isArray($scope.mapper.config["role"])) {
-            $scope.mapper.config["role"] = [$scope.mapper.config["role"]];
-        }
+        wrapConfigValuesAsArrays($scope.mapper.config);
 
         Components.save({realm: realm.realm}, $scope.mapper,  function (data, headers) {
             var l = headers().location;
