@@ -69,7 +69,7 @@ public class ValidateUsername extends AbstractDirectGrantAuthenticator {
 
 
         if (user == null) {
-            context.getEvent().error(Errors.INVALID_USER_CREDENTIALS);
+            context.getEvent().error(Errors.USER_NOT_FOUND);
             Response challengeResponse = errorResponse(Response.Status.UNAUTHORIZED.getStatusCode(), "invalid_grant", "Invalid user credentials");
             context.failure(AuthenticationFlowError.INVALID_USER, challengeResponse);
             return;

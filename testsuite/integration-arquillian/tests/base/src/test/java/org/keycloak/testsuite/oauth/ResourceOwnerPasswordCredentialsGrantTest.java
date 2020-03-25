@@ -600,7 +600,7 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
                 .removeDetail(Details.CODE_ID)
                 .removeDetail(Details.REDIRECT_URI)
                 .removeDetail(Details.CONSENT)
-                .error(Errors.INVALID_USER_CREDENTIALS)
+                .error(Errors.USER_NOT_FOUND)
                 .assertEvent();
     }
 
