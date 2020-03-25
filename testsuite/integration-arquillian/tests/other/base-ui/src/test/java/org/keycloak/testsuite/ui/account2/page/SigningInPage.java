@@ -91,6 +91,7 @@ public class SigningInPage extends AbstractLoggedInPage {
 
         public boolean isSetUp() {
             boolean notSetUpLabelPresent;
+
             try {
                 notSetUpLabelPresent = getItemElement(NOT_SET_UP).isDisplayed();
             }
@@ -118,6 +119,24 @@ public class SigningInPage extends AbstractLoggedInPage {
         public boolean isSetUpLinkVisible() {
             try {
                 return getItemElement(SET_UP).isDisplayed();
+            }
+            catch (NoSuchElementException e) {
+                return false;
+            }
+        }
+
+        public boolean isNotSetUpLabelVisible() {
+            try {
+                return getItemElement(NOT_SET_UP).isDisplayed();
+            }
+            catch (NoSuchElementException e) {
+                return false;
+            }
+        }
+
+        public boolean isTitleVisible() {
+            try {
+                return getItemElement(TITLE).isDisplayed();
             }
             catch (NoSuchElementException e) {
                 return false;
