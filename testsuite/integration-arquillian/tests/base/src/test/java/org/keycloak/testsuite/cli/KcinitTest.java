@@ -17,6 +17,7 @@
 
 package org.keycloak.testsuite.cli;
 
+import java.io.File;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
 import org.junit.Before;
@@ -63,6 +64,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import org.junit.Assume;
+import org.junit.BeforeClass;
 
 /**
  * Test that clients can override auth flows
@@ -83,6 +86,11 @@ public class KcinitTest extends AbstractTestRealmKeycloakTest {
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
+    }
+
+    @BeforeClass
+    public static void kcinitAvailable() {
+        Assume.assumeTrue(new File(KcinitExec.WORK_DIR + File.separator + KcinitExec.CMD).exists());
     }
 
     @Before
