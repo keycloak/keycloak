@@ -802,6 +802,17 @@ public class RealmAdapter implements CachedRealmModel {
 
         return null;
     }
+    
+    @Override
+    public IdentityProviderModel getIdentityProviderById(String internalId) {
+    	if (isUpdated()) return updated.getIdentityProviderById(internalId);
+    	for (IdentityProviderModel identityProviderModel : getIdentityProviders()) {
+            if (identityProviderModel.getInternalId().equals(internalId)) {
+                return identityProviderModel;
+            }
+        }
+    	return null;
+    }
 
     @Override
     public void addIdentityProvider(IdentityProviderModel identityProvider) {

@@ -39,7 +39,8 @@ import java.util.Map;
 @Entity
 @Table(name="IDENTITY_PROVIDER")
 @NamedQueries({
-        @NamedQuery(name="findIdentityProviderByAlias", query="select identityProvider from IdentityProviderEntity identityProvider where identityProvider.alias = :alias")
+        @NamedQuery(name="findIdentityProvidersByAlias", query="select identityProvider from IdentityProviderEntity identityProvider where identityProvider.alias = :alias"),
+        @NamedQuery(name="findIdentityProviderByRealmAndAlias", query="select identityProvider from IdentityProviderEntity identityProvider where identityProvider.alias = :alias and identityProvider.realm.id = :realmId" )
 })
 public class IdentityProviderEntity {
 

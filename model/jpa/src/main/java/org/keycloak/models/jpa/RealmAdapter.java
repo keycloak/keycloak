@@ -1269,13 +1269,17 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
 
     @Override
     public IdentityProviderModel getIdentityProviderByAlias(String alias) {
-        for (IdentityProviderModel identityProviderModel : getIdentityProviders()) {
-            if (identityProviderModel.getAlias().equals(alias)) {
-                return identityProviderModel;
-            }
-        }
-
-        return null;
+    	TypedQuery<IdentityProviderEntity> query = em.createNamedQuery("findIdentityProviderByRealmAndAlias", IdentityProviderEntity.class);
+        query.setParameter("alias", alias);
+        query.setParameter("realmId", realm.getId());
+    	IdentityProviderEntity identityProvider = query.getResultList().stream().findAny().orElse(null);
+    	return identityProvider !=null ? entityToModel(identityProvider) : null;
+    }
+    
+    @Override
+    public IdentityProviderModel getIdentityProviderById(String internalId) {
+    	IdentityProviderEntity identityProvider = em.find(IdentityProviderEntity.class, internalId);
+    	return entityToModel(identityProvider);
     }
 
     @Override
@@ -1310,53 +1314,52 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
 
     @Override
     public void removeIdentityProviderByAlias(String alias) {
-        for (IdentityProviderEntity entity : realm.getIdentityProviders()) {
-            if (entity.getAlias().equals(alias)) {
+    	TypedQuery<IdentityProviderEntity> query = em.createNamedQuery("findIdentityProviderByRealmAndAlias", IdentityProviderEntity.class);
+        query.setParameter("alias", alias);
+        query.setParameter("realmId", realm.getId());
+        IdentityProviderEntity identityProvider = query.getSingleResult();
+        IdentityProviderModel model = entityToModel(identityProvider);
+    	em.remove(identityProvider);
+    	em.flush();
+        
+        session.getKeycloakSessionFactory().publish(new RealmModel.IdentityProviderRemovedEvent() {
 
-                IdentityProviderModel model = entityToModel(entity);
-                em.remove(entity);
-                em.flush();
-
-                session.getKeycloakSessionFactory().publish(new RealmModel.IdentityProviderRemovedEvent() {
-
-                    @Override
-                    public RealmModel getRealm() {
-                        return RealmAdapter.this;
-                    }
-
-                    @Override
-                    public IdentityProviderModel getRemovedIdentityProvider() {
-                        return model;
-                    }
-
-                    @Override
-                    public KeycloakSession getKeycloakSession() {
-                        return session;
-                    }
-                });
-
+            @Override
+            public RealmModel getRealm() {
+                return RealmAdapter.this;
             }
-        }
+
+            @Override
+            public IdentityProviderModel getRemovedIdentityProvider() {
+                return model;
+            }
+
+            @Override
+            public KeycloakSession getKeycloakSession() {
+                return session;
+            }
+        });
+        
     }
 
     @Override
     public void updateIdentityProvider(IdentityProviderModel identityProvider) {
-        for (IdentityProviderEntity entity : this.realm.getIdentityProviders()) {
-            if (entity.getInternalId().equals(identityProvider.getInternalId())) {
-                entity.setAlias(identityProvider.getAlias());
-                entity.setDisplayName(identityProvider.getDisplayName());
-                entity.setEnabled(identityProvider.isEnabled());
-                entity.setTrustEmail(identityProvider.isTrustEmail());
-                entity.setAuthenticateByDefault(identityProvider.isAuthenticateByDefault());
-                entity.setFirstBrokerLoginFlowId(identityProvider.getFirstBrokerLoginFlowId());
-                entity.setPostBrokerLoginFlowId(identityProvider.getPostBrokerLoginFlowId());
-                entity.setAddReadTokenRoleOnCreate(identityProvider.isAddReadTokenRoleOnCreate());
-                entity.setStoreToken(identityProvider.isStoreToken());
-                entity.setConfig(identityProvider.getConfig());
-                entity.setLinkOnly(identityProvider.isLinkOnly());
-            }
-        }
-
+    	
+    	IdentityProviderEntity entity = em.find(IdentityProviderEntity.class, identityProvider.getInternalId());
+    	if(entity!=null) {
+    		entity.setAlias(identityProvider.getAlias());
+            entity.setDisplayName(identityProvider.getDisplayName());
+            entity.setEnabled(identityProvider.isEnabled());
+            entity.setTrustEmail(identityProvider.isTrustEmail());
+            entity.setAuthenticateByDefault(identityProvider.isAuthenticateByDefault());
+            entity.setFirstBrokerLoginFlowId(identityProvider.getFirstBrokerLoginFlowId());
+            entity.setPostBrokerLoginFlowId(identityProvider.getPostBrokerLoginFlowId());
+            entity.setAddReadTokenRoleOnCreate(identityProvider.isAddReadTokenRoleOnCreate());
+            entity.setStoreToken(identityProvider.isStoreToken());
+            entity.setConfig(identityProvider.getConfig());
+            entity.setLinkOnly(identityProvider.isLinkOnly());
+    	}
+    	
         em.flush();
 
         session.getKeycloakSessionFactory().publish(new RealmModel.IdentityProviderUpdatedEvent() {

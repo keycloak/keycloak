@@ -206,26 +206,20 @@ public class IdentityProviderResource {
 
     // return ID of IdentityProvider from realm based on internalId of this provider
     private static String getProviderIdByInternalId(RealmModel realm, String providerInternalId) {
-        List<IdentityProviderModel> providerModels = realm.getIdentityProviders();
-        for (IdentityProviderModel providerModel : providerModels) {
-            if (providerModel.getInternalId().equals(providerInternalId)) {
-                return providerModel.getAlias();
-            }
-        }
-
+        IdentityProviderModel identityProviderModel = realm.getIdentityProviderById(providerInternalId);
+        if(identityProviderModel != null)
+        	return identityProviderModel.getAlias();
         return null;
     }
 
     // sets internalId to IdentityProvider based on alias
     private static void lookUpProviderIdByAlias(RealmModel realm, IdentityProviderRepresentation providerRep) {
-        List<IdentityProviderModel> providerModels = realm.getIdentityProviders();
-        for (IdentityProviderModel providerModel : providerModels) {
-            if (providerModel.getAlias().equals(providerRep.getAlias())) {
-                providerRep.setInternalId(providerModel.getInternalId());
-                return;
-            }
-        }
-        throw new javax.ws.rs.NotFoundException();
+    	IdentityProviderModel providerModel = realm.getIdentityProviderByAlias(providerRep.getAlias());
+    	if(providerModel != null) {
+    		providerRep.setInternalId(providerModel.getInternalId());
+    		return;
+    	}
+    	throw new javax.ws.rs.NotFoundException();
     }
 
     private static void updateUsersAfterProviderAliasChange(List<UserModel> users, String oldProviderId, String newProviderId, RealmModel realm, KeycloakSession session) {
