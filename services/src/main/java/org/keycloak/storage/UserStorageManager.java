@@ -588,7 +588,11 @@ public class UserStorageManager implements UserProvider, OnUserCache, OnCreateCo
     public List<UserModel> searchForUser(Map<String, String> attributes, RealmModel realm, int firstResult, int maxResults) {
         List<UserModel> results = query((provider, first, max) -> {
             if (provider instanceof UserQueryProvider) {
-                return ((UserQueryProvider)provider).searchForUser(attributes, realm, first, max);
+                if (attributes.containsKey(UserModel.SEARCH)) {
+                    return ((UserQueryProvider)provider).searchForUser(attributes.get(UserModel.SEARCH), realm, first, max);
+                } else {
+                    return ((UserQueryProvider)provider).searchForUser(attributes, realm, first, max);
+                }
 
             }
             return Collections.EMPTY_LIST;

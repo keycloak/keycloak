@@ -250,6 +250,17 @@ public class BackwardsCompatibilityUserStorageTest extends AbstractAuthTest {
         loginSuccessAndLogout("otp1", "pass");
     }
 
+
+    @Test
+    public void testSearchUserStorage() {
+        String userId = addUserAndResetPassword("searching", "pass");
+        getCleanup().addUserId(userId);
+
+        // Uses same parameters as admin console when searching users
+        List<UserRepresentation> users = testRealmResource().users().search("searching", 0, 20, true);
+        Assert.assertNames(users, "searching");
+    }
+
     // return created totpSecret
     private String setupOTPForUserWithRequiredAction(String userId) {
         // Add required action to the user to reset OTP
