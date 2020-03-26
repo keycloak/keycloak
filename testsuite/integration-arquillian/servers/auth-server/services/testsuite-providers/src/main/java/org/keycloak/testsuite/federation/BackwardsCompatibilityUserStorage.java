@@ -18,10 +18,13 @@
 
 package org.keycloak.testsuite.federation;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.Time;
@@ -31,6 +34,7 @@ import org.keycloak.credential.CredentialInputUpdater;
 import org.keycloak.credential.CredentialInputValidator;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.credential.hash.PasswordHashProvider;
+import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OTPPolicy;
 import org.keycloak.models.PasswordPolicy;
@@ -44,6 +48,7 @@ import org.keycloak.storage.StorageId;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.adapter.AbstractUserAdapterFederatedStorage;
 import org.keycloak.storage.user.UserLookupProvider;
+import org.keycloak.storage.user.UserQueryProvider;
 import org.keycloak.storage.user.UserRegistrationProvider;
 
 /**
@@ -54,7 +59,8 @@ import org.keycloak.storage.user.UserRegistrationProvider;
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class BackwardsCompatibilityUserStorage implements UserLookupProvider, UserStorageProvider, UserRegistrationProvider, CredentialInputUpdater, CredentialInputValidator {
+public class BackwardsCompatibilityUserStorage implements UserLookupProvider, UserStorageProvider, UserRegistrationProvider,
+        CredentialInputUpdater, CredentialInputValidator, UserQueryProvider {
 
     private static final Logger log = Logger.getLogger(BackwardsCompatibilityUserStorage.class);
 
@@ -302,6 +308,69 @@ public class BackwardsCompatibilityUserStorage implements UserLookupProvider, Us
     @Override
     public boolean removeUser(RealmModel realm, UserModel user) {
         return users.remove(user.getUsername()) != null;
+    }
+
+
+    // UserQueryProvider methods
+
+    @Override
+    public int getUsersCount(RealmModel realm) {
+        return users.size();
+    }
+
+    @Override
+    public List<UserModel> getUsers(RealmModel realm) {
+        return getUsers(realm, -1, -1);
+    }
+
+    @Override
+    public List<UserModel> getUsers(RealmModel realm, int firstResult, int maxResults) {
+        return users.values()
+                .stream()
+                .skip(firstResult).limit(maxResults)
+                .map(myUser -> createUser(realm, myUser.username))
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<UserModel> searchForUser(String search, RealmModel realm) {
+        return searchForUser(search, realm, -1, -1);
+    }
+
+    @Override
+    public List<UserModel> searchForUser(String search, RealmModel realm, int firstResult, int maxResults) {
+        UserModel user = getUserByUsername(search, realm);
+        return user == null ? Collections.emptyList() : Arrays.asList(user);
+    }
+
+    @Override
+    public List<UserModel> searchForUser(Map<String, String> params, RealmModel realm) {
+        // Assume that this is not supported
+        return Collections.emptyList();
+    }
+
+    @Override
+    public List<UserModel> searchForUser(Map<String, String> params, RealmModel realm, int firstResult, int maxResults) {
+        // Assume that this is not supported
+        return Collections.emptyList();
+    }
+
+    @Override
+    public List<UserModel> getGroupMembers(RealmModel realm, GroupModel group, int firstResult, int maxResults) {
+        // Assume that this is not supported
+        return Collections.emptyList();
+    }
+
+    @Override
+    public List<UserModel> getGroupMembers(RealmModel realm, GroupModel group) {
+        // Assume that this is not supported
+        return Collections.emptyList();
+    }
+
+    @Override
+    public List<UserModel> searchForUserByUserAttribute(String attrName, String attrValue, RealmModel realm) {
+        // Assume that this is not supported
+        return Collections.emptyList();
     }
 
     @Override
