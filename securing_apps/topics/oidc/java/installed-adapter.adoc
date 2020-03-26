@@ -10,9 +10,6 @@ variant. The desktop variant uses the system browser
 to gather the user credentials. The manual variant
 reads the user credentials from `STDIN`.
 
-Tip: Google provides some more information about this approach on at 
-https://developers.google.com/identity/protocols/OAuth2InstalledApp[OAuth2InstalledApp].
-
 ===== How it works
 
 To authenticate a user with the `desktop` variant the `KeycloakInstalled` 

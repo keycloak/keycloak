@@ -1,68 +1,104 @@
 package org.keycloak.documentation.test.utils;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.http.HttpEntity;
+import org.apache.http.client.config.CookieSpecs;
+import org.apache.http.client.config.RequestConfig;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpHead;
+import org.apache.http.cookie.CookieSpec;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.DefaultHttpRequestRetryHandler;
+import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.io.IOException;
 import java.io.StringWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 
 public class HttpUtils {
 
-    private static final Logger logger = LogManager.getLogger(HttpUtils.class);
+    public Response load(String url) {
+        CloseableHttpClient client = createClient();
+        Response response = new Response();
 
-    public boolean isValid(String url) {
-        Response response = load(url, false, false);
-        return response.isSuccess();
-    }
+        try {
+            HttpGet h = new HttpGet(url);
+            CloseableHttpResponse r = client.execute(h);
+            int status = r.getStatusLine().getStatusCode();
 
-    public Response load(String url, boolean readContent, boolean followRedirects) {
-        int retryCount = Constants.HTTP_RETRY;
+            if (status == 200) {
+                response.setSuccess(true);
 
-        while (true) {
-            HttpURLConnection.setFollowRedirects(followRedirects);
-            HttpURLConnection connection = null;
-            Response response = new Response();
-            try {
-                connection = (HttpURLConnection) new URL(url).openConnection();
-                connection.setConnectTimeout(Constants.HTTP_CONNECTION_TIMEOUT);
-                connection.setReadTimeout(Constants.HTTP_READ_TIMEOUT);
-                int status = connection.getResponseCode();
-                if (status == 200) {
-                    if (readContent) {
-                        StringWriter w = new StringWriter();
-                        IOUtils.copy(connection.getInputStream(), w, "utf-8");
-                        response.setContent(w.toString());
-                    }
-                    response.setSuccess(true);
-                } else if (status == 301 || status == 302) {
-                    String location = URLDecoder.decode(connection.getHeaderField("Location"), "utf-8");
-                    response.setRedirectLocation(location);
-                    response.setSuccess(false);
-                } else {
-                    response.setError("invalid status code " + status);
-                    response.setSuccess(false);
-                }
+                HttpEntity entity = r.getEntity();
+                String c = IOUtils.toString(entity.getContent(), StandardCharsets.UTF_8);
 
-                return response;
-            } catch (Exception e) {
-                response.setError("exception " + e.getMessage());
+                response.setContent(c);
+            } else if (status == 301 || status == 302) {
+                String location = r.getFirstHeader("Location").getValue();
+                response.setRedirectLocation(location);
                 response.setSuccess(false);
-
-                retryCount--;
-                if (retryCount == 0) {
-                    return response;
-                }
-
-                logger.info("Retrying " + url);
-            } finally {
-                if (connection != null) {
-                    connection.disconnect();
-                }
+            } else {
+                response.setError("invalid status code " + status);
+                response.setSuccess(false);
+            }
+        } catch (Exception e) {
+            response.setError("exception " + e.getMessage());
+            response.setSuccess(false);
+        } finally {
+            try {
+                client.close();
+            } catch (IOException e) {
             }
         }
+
+        return response;
+    }
+
+    private CloseableHttpClient createClient() {
+        return HttpClientBuilder.create()
+                    .setRetryHandler(new DefaultHttpRequestRetryHandler(Constants.HTTP_RETRY, true))
+                    .setDefaultRequestConfig(
+                            RequestConfig.custom().setCookieSpec(CookieSpecs.IGNORE_COOKIES).build()
+                    )
+                    .build();
+    }
+
+    public Response isValid(String url) {
+        CloseableHttpClient client = createClient();
+        Response response = new Response();
+
+        try {
+            HttpHead h = new HttpHead(url);
+            CloseableHttpResponse r = client.execute(h);
+            int status = r.getStatusLine().getStatusCode();
+
+            if (status == 200) {
+                response.setSuccess(true);
+            } else if (status == 301 || status == 302) {
+                String location = r.getFirstHeader("Location").getValue();
+                response.setRedirectLocation(location);
+                response.setSuccess(false);
+            } else {
+                response.setError("invalid status code " + status);
+                response.setSuccess(false);
+            }
+        } catch (Exception e) {
+            response.setError("exception " + e.getMessage());
+            response.setSuccess(false);
+        } finally {
+            try {
+                client.close();
+            } catch (IOException e) {
+            }
+        }
+
+        return response;
     }
 
     public static class Response {

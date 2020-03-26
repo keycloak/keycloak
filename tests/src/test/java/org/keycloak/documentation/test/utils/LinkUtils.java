@@ -63,7 +63,7 @@ public class LinkUtils {
                     String anchor = link.contains("#") ? link.split("#")[1] : null;
                     String error = null;
 
-                    HttpUtils.Response response = http.load(link, anchor != null, false);
+                    HttpUtils.Response response = anchor != null ? http.load(link) : http.isValid(link);
 
                     if (response.getRedirectLocation() != null) {
                         if (!validRedirect(response.getRedirectLocation(), ignoredLinkRedirects)) {
@@ -127,7 +127,7 @@ public class LinkUtils {
                 }
 
                 if (!verifiedLinks.containsKey(image)) {
-                    boolean valid = http.isValid(image);
+                    boolean valid = http.isValid(image).isSuccess();
                     if (valid) {
                         verifiedLinks.put(image, System.currentTimeMillis());
 

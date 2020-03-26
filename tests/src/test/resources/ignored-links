@@ -31,3 +31,6 @@ https://api.linkedin.com/v2/me
 https://raw.githubusercontent.com/jboss-container-images/redhat-sso-7-openshift-image/sso-cd-dev/templates/${resource}
 https://raw.githubusercontent.com/jboss-container-images/redhat-sso-7-openshift-image/sso73-dev/templates/${resource}
 https://issues.redhat.com/secure/CreateIssueDetails*
+https://developer.paypal.com/developer/applications
+https://account.live.com/developers/applications/create
+https://developer.twitter.com/apps/
