@@ -47,8 +47,6 @@ import org.springframework.context.annotation.Configuration;
 @ConditionalOnProperty(value = "keycloak.enabled", matchIfMissing = true)
 public class KeycloakAutoConfiguration extends KeycloakBaseSpringBootConfiguration  {
 
-    private KeycloakSpringBootProperties keycloakProperties;
-
     @Bean
     public EmbeddedServletContainerCustomizer getKeycloakContainerCustomizer() {
         return new EmbeddedServletContainerCustomizer() {
