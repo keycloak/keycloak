@@ -6,7 +6,7 @@ Domain mode is a way to centrally manage and publish the configuration for your 
 
 Running a cluster in standard mode can quickly become aggravating as the cluster grows in size.  Every time you need
 to make a configuration change, you have to perform it on each node in the cluster.  Domain mode solves this problem by providing
-a central place to store and publish configuration.  It can be quite complex to set up, but it is worth it in the end.
+a central place to store and publish configurations.  It can be quite complex to set up, but it is worth it in the end.
 This capability is built into the {appserver_name} Application Server which {project_name} derives from.
 
 NOTE:  The guide will go over the very basics of domain mode.  Detailed steps on how to set up domain mode in a cluster should be obtained from the
@@ -93,7 +93,7 @@ If you scroll down further, you'll see various `socket-binding-groups` defined.
 ----
 
 
-This config defines the default port mappings for various connectors that are opened with each
+This configration defines the default port mappings for various connectors that are opened with each
 {project_name} server instance.  Any value that contains `${...}` is a value that can be overridden on the command line
 with the `-D` switch, i.e.
 
@@ -211,7 +211,7 @@ domain is meant to run on one machine and boots up:
 * an HTTP load balancer
 * 2 {project_name} server instances
 
-To simulate running a cluster on two machines, you'll run the `domain.sh` script twice to start two separate
+To simulate running a cluster on two machines, you'll need to run the `domain.sh` script twice to start two separate
 host controllers.  The first will be the master host controller which will start a domain controller, an HTTP load balancer, and one
 {project_name} authentication server instance.  The second will be a slave host controller that only starts
 up an authentication server instance.
@@ -259,7 +259,7 @@ $ add-user.sh
 
 NOTE: The add-user.sh does not add user to {project_name} server but to the underlying JBoss Enterprise Application Platform. The credentials used and generated in the above script are only for example purpose. Please use the ones generated on your system.
 
-Now cut and paste the secret value into the _.../domain/configuration/host-slave.xml_ file as follows:
+Next, cut and paste the secret value into the _.../domain/configuration/host-slave.xml_ file as follows:
 
 [source,xml]
 ----
