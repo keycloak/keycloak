@@ -168,8 +168,8 @@
                                     <resource>
                                         <directory>${project.basedir}</directory>
                                         <includes>
-                                            <include>images/**</include>
-                                            <include>${imagesDir}/**</include>
+                                            <include>images/**/*.png</include>
+                                            <include>${imagesDir}/**/*.png</include>
                                         </includes>
                                     </resource>
                                 </resources>

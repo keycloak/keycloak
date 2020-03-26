@@ -1,0 +1,181 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="421.5" viewBox="0 0 760 421.5">
+  <defs>
+    <style>
+      .a {
+        font-size: 10px;
+        fill: #f3f3f3;
+        font-family: RedHatText-Regular, Red Hat Text;
+      }
+
+      .b, .f, .j, .k, .o, .p, .r {
+        fill: none;
+      }
+
+      .c {
+        fill: #e8e8e8;
+      }
+
+      .d {
+        font-size: 14px;
+      }
+
+      .d, .g, .h, .m, .n {
+        fill: #151515;
+      }
+
+      .d, .m {
+        font-family: RedHatText-Bold, Red Hat Text;
+        font-weight: 700;
+      }
+
+      .e, .h, .m, .n {
+        font-size: 11px;
+      }
+
+      .e {
+        font-family: LiberationMono, Liberation Mono;
+        font-weight: 400;
+        letter-spacing: 0em;
+      }
+
+      .f {
+        stroke: #151515;
+      }
+
+      .f, .i, .j, .k, .o, .p, .r {
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+
+      .h {
+        font-family: RedHatText-Medium, Red Hat Text;
+        font-weight: 500;
+      }
+
+      .i, .l {
+        fill: #fff;
+      }
+
+      .i, .j, .k {
+        stroke: #5b5b5b;
+      }
+
+      .i, .k {
+        stroke-width: 1.5px;
+      }
+
+      .j {
+        stroke-width: 2px;
+      }
+
+      .n {
+        font-family: RedHatText-Italic, Red Hat Text;
+        font-style: italic;
+      }
+
+      .o, .p, .r {
+        stroke: #06c;
+      }
+
+      .p {
+        stroke-dasharray: 3.009 3.009;
+      }
+
+      .q {
+        fill: #06c;
+      }
+
+      .r {
+        stroke-dasharray: 2.984 2.984;
+      }
+    </style>
+  </defs>
+  <title>cross-datacenter-arch</title>
+  <g>
+    <text class="a" transform="translate(679.802 404.517)">70_RHSSO_0320</text>
+    <rect class="b" y="381.5" width="760" height="40"/>
+  </g>
+  <rect class="c" x="475" y="99" width="285" height="282.5"/>
+  <rect class="c" y="99" width="285" height="282.5"/>
+  <text class="d" transform="translate(20 362.23)">Datacenter <tspan class="e" x="81.646" y="0">(site1)</tspan></text>
+  <g>
+    <line class="f" x1="64.236" y1="169" x2="64.236" y2="271.824"/>
+    <polygon class="g" points="59.25 270.365 64.236 279 69.223 270.365 59.25 270.365"/>
+  </g>
+  <g>
+    <line class="f" x1="142.5" y1="168.695" x2="142.5" y2="193.824"/>
+    <polygon class="g" points="137.514 192.365 142.5 201 147.486 192.365 137.514 192.365"/>
+  </g>
+  <g>
+    <polyline class="f" points="372.5 63.25 372.5 78.25 142.568 78.25 142.568 109.574"/>
+    <polygon class="g" points="137.581 108.115 142.568 116.75 147.554 108.115 137.581 108.115"/>
+  </g>
+  <g>
+    <polyline class="f" points="387.5 63.25 387.5 78.25 617.432 78.25 617.432 109.574"/>
+    <polygon class="g" points="612.446 108.115 617.432 116.75 622.419 108.115 612.446 108.115"/>
+  </g>
+  <g>
+    <text class="h" transform="translate(343.469 55.095)">Load balancer</text>
+    <g>
+      <rect class="i" x="352.5" y="24.75" width="55" height="13.75"/>
+      <line class="j" x1="401.621" y1="30.647" x2="401.621" y2="30.647"/>
+      <line class="k" x1="358.393" y1="30.113" x2="358.393" y2="33.077"/>
+      <line class="k" x1="364.286" y1="30.113" x2="364.286" y2="33.077"/>
+      <line class="k" x1="370.179" y1="30.113" x2="370.179" y2="33.077"/>
+      <line class="k" x1="376.071" y1="30.113" x2="376.071" y2="33.077"/>
+      <line class="k" x1="381.964" y1="30.113" x2="381.964" y2="33.077"/>
+      <line class="k" x1="387.857" y1="30.113" x2="387.857" y2="33.077"/>
+    </g>
+  </g>
+  <rect class="l" x="20" y="281.5" width="245" height="50"/>
+  <text class="m" transform="translate(95.296 310.713)">Infinispan cluster</text>
+  <rect class="l" x="20" y="119" width="245" height="50"/>
+  <text class="m" transform="translate(97.436 148.213)">Keycloak cluster</text>
+  <g>
+    <text class="h" transform="translate(117.921 251.215)">Database</text>
+    <g>
+      <path class="i" d="M124.051,214.192v10.193c0,5.629,8.259,10.192,18.449,10.192s18.449-4.563,18.449-10.192V214.192"/>
+      <ellipse class="i" cx="142.5" cy="214.192" rx="18.449" ry="10.192"/>
+    </g>
+  </g>
+  <rect class="c" x="46.457" y="205.192" width="35.56" height="29.115"/>
+  <text class="n" transform="translate(45.025 216.874)">Remote<tspan x="6.71" y="12">store</tspan></text>
+  <text class="d" transform="translate(495 362.23)">Datacenter <tspan class="e" x="81.646" y="0">(site2)</tspan></text>
+  <g>
+    <line class="f" x1="695.764" y1="169" x2="695.764" y2="271.824"/>
+    <polygon class="g" points="690.777 270.365 695.764 279 700.75 270.365 690.777 270.365"/>
+  </g>
+  <g>
+    <line class="f" x1="617.5" y1="168.695" x2="617.5" y2="193.824"/>
+    <polygon class="g" points="612.514 192.365 617.5 201 622.486 192.365 612.514 192.365"/>
+  </g>
+  <rect class="l" x="495" y="281.5" width="245" height="50" transform="translate(1235 613) rotate(-180)"/>
+  <text class="m" transform="translate(570.296 310.713)">Infinispan cluster</text>
+  <rect class="l" x="495" y="119" width="245" height="50"/>
+  <text class="m" transform="translate(572.436 148.213)">Keycloak cluster</text>
+  <g>
+    <text class="h" transform="translate(592.921 251.215)">Database</text>
+    <g>
+      <path class="i" d="M599.051,214.192v10.193c0,5.629,8.259,10.192,18.449,10.192s18.449-4.563,18.449-10.192V214.192"/>
+      <ellipse class="i" cx="617.5" cy="214.192" rx="18.449" ry="10.192"/>
+    </g>
+  </g>
+  <rect class="c" x="677.984" y="205.192" width="35.56" height="29.115"/>
+  <text class="n" transform="translate(676.553 216.874)">Remote<tspan x="6.71" y="12">store</tspan></text>
+  <g>
+    <line class="o" x1="485.324" y1="306.5" x2="483.824" y2="306.5"/>
+    <line class="p" x1="480.814" y1="306.5" x2="277.681" y2="306.5"/>
+    <line class="o" x1="276.176" y1="306.5" x2="274.676" y2="306.5"/>
+    <polygon class="q" points="483.865 301.514 492.5 306.5 483.865 311.486 483.865 301.514"/>
+    <polygon class="q" points="276.135 301.514 267.5 306.5 276.135 311.486 276.135 301.514"/>
+  </g>
+  <g>
+    <line class="o" x1="588.875" y1="219.752" x2="587.375" y2="219.752"/>
+    <line class="r" x1="584.391" y1="219.752" x2="174.116" y2="219.752"/>
+    <line class="o" x1="172.624" y1="219.752" x2="171.124" y2="219.752"/>
+    <polygon class="q" points="587.416 214.766 596.051 219.752 587.416 224.739 587.416 214.766"/>
+    <polygon class="q" points="172.583 214.766 163.948 219.752 172.583 224.739 172.583 214.766"/>
+  </g>
+  <text class="n" transform="translate(308.154 298.472)">Cross-Datacenter Replication</text>
+  <text class="n" transform="translate(323.438 211.724)">Active/Active database</text>
+</svg>

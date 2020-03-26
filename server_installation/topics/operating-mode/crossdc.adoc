@@ -8,7 +8,7 @@ include::../templates/techpreview.adoc[]
 
 Cross-Datacenter Replication mode is for when you want to run {project_name} in a cluster across multiple data centers, most typically using data center sites that are in different geographic regions. When using this mode, each data center will have its own cluster of {project_name} servers.
 
-This documentation will refer the following example architecture diagram to illustrate and describe a simple Cross-Datacenter Replication use case.
+This documentation will refer to the following example architecture diagram to illustrate and describe a simple Cross-Datacenter Replication use case.
 
 [[archdiagram]]
 .Example Architecture Diagram
