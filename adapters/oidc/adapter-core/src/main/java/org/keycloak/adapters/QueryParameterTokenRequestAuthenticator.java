@@ -26,11 +26,11 @@ import org.keycloak.adapters.spi.HttpFacade;
  * @author <a href="mailto:john.ament@spartasystems.com">John D. Ament</a>
  * @version $Revision: 1 $
  */
-public class QueryParamterTokenRequestAuthenticator extends BearerTokenRequestAuthenticator {
+public class QueryParameterTokenRequestAuthenticator extends BearerTokenRequestAuthenticator {
     public static final String ACCESS_TOKEN = "access_token";
-    protected Logger log = Logger.getLogger(QueryParamterTokenRequestAuthenticator.class);
+    protected Logger log = Logger.getLogger(QueryParameterTokenRequestAuthenticator.class);
 
-    public QueryParamterTokenRequestAuthenticator(KeycloakDeployment deployment) {
+    public QueryParameterTokenRequestAuthenticator(KeycloakDeployment deployment) {
         super(deployment);
     }
 
@@ -39,7 +39,7 @@ public class QueryParamterTokenRequestAuthenticator extends BearerTokenRequestAu
             return AuthOutcome.NOT_ATTEMPTED;
         }
         tokenString = null;
-        tokenString = getAccessTokenFromQueryParamter(exchange);
+        tokenString = getAccessTokenFromQueryParameter(exchange);
         if (tokenString == null || tokenString.trim().isEmpty()) {
             challenge = challengeResponse(exchange, OIDCAuthenticationError.Reason.NO_QUERY_PARAMETER_ACCESS_TOKEN, null, null);
             return AuthOutcome.NOT_ATTEMPTED;
@@ -47,7 +47,7 @@ public class QueryParamterTokenRequestAuthenticator extends BearerTokenRequestAu
         return (authenticateToken(exchange, tokenString));
     }
 
-    String getAccessTokenFromQueryParamter(HttpFacade exchange) {
+    String getAccessTokenFromQueryParameter(HttpFacade exchange) {
         try {
             if (exchange != null && exchange.getRequest() != null) {
                 return exchange.getRequest().getQueryParamValue(ACCESS_TOKEN);
