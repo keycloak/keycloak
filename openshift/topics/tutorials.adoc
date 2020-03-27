@@ -1345,7 +1345,7 @@ Log in to the encrypted {project_name} web server at *$$https://secure-sso-$$_<p
 
 *Create a Realm*
 
-. Hover your cursor over the realm namespace at the top of the sidebar and click*Add Realm*.
+. Hover your cursor over the realm namespace at the top of the sidebar and click *Add Realm*.
 . Enter a realm name (this example uses _eap-demo_) and click *Create*.
 
 *Copy the Public Key*
