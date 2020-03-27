@@ -93,7 +93,8 @@ public class MigrateTo9_0_0 implements Migration {
 
             client.setProtocol("openid-connect");
 
-            client.addScopeMapping(realm.getClientByClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID).getRole(AccountRoles.MANAGE_ACCOUNT));
+            RoleModel role = realm.getClientByClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID).getRole(AccountRoles.MANAGE_ACCOUNT);
+            if (role != null) client.addScopeMapping(role);
 
             ProtocolMapperModel audienceMapper = new ProtocolMapperModel();
             audienceMapper.setName("audience resolve");
