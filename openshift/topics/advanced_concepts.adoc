@@ -13,7 +13,7 @@ Log in to the OpenShift CLI with a user that holds the _cluster:admin_ role.
 ----
 $ oc new-project sso-app-demo
 ----
-. Add the `view` role to the link:https://docs.openshift.com/container-platform/latest/dev_guide/service_accounts.html#default-service-accounts-and-roles[`default`] service account. This enables the service account to view all the resources in the sso-app-demo namespace, which is necessary for managing the cluster.
+. Add the `view` role to the link:{ocpdocs_default_service_accounts_link}[`default`] service account. This enables the service account to view all the resources in the sso-app-demo namespace, which is necessary for managing the cluster.
 +
 [source,bash,subs="attributes+,macros+"]
 ----
@@ -33,7 +33,7 @@ the {project_openshift_product_name} image to be deployed properly.
 
 [IMPORTANT]
 ====
-The {project_name} application templates using xref:../introduction/introduction.adoc#reencrypt-templates[re-encryption TLS termination] do not *require* or *expect* the aforementioned HTTPS and JGroups keystores and {project_name} server truststore to be prepared beforehand. The templates use OpenShift's internal link:https://docs.openshift.com/container-platform/latest/dev_guide/secrets.html#service-serving-certificate-secrets[service serving x509 certificate secrets] to automatically create the HTTPS and JGroups keystores. The {project_name} server truststore is also created automatically, containing the */var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt* CA certificate file, which is used to create these cluster certificates. Moreover, the truststore for the {project_name} server is pre-populated with the all known, trusted CA certificate files found in the Java system path.
+The {project_name} application templates using xref:../introduction/introduction.adoc#reencrypt-templates[re-encryption TLS termination] do not *require* or *expect* the aforementioned HTTPS and JGroups keystores and {project_name} server truststore to be prepared beforehand. The templates use OpenShift's internal link:{ocpdocs_serving_x509_secrets_link}[service serving x509 certificate secrets] to automatically create the HTTPS and JGroups keystores. The {project_name} server truststore is also created automatically, containing the */var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt* CA certificate file, which is used to create these cluster certificates. Moreover, the truststore for the {project_name} server is pre-populated with the all known, trusted CA certificate files found in the Java system path.
 ====
 
 The *_openssl_* toolkit is used in the following example to generate a CA certificate to sign the HTTPS keystore, and create a truststore for the {project_name} server. *_keytool_*, a package *included with the Java Development Kit*, is then utilized to the generate self-signed certificates for these keystores.
@@ -112,7 +112,7 @@ $ keytool -import -file xpaas.crt -alias xpaas.ca -keystore truststore.jks
 [[Configuring-Secrets]]
 ==== Secrets
 
-OpenShift uses objects called link:https://docs.openshift.com/container-platform/latest/dev_guide/secrets.html[secrets] to hold sensitive information, such as passwords or keystores.
+OpenShift uses objects called link:{ocpdocs_secrets_link}[secrets] to hold sensitive information, such as passwords or keystores.
 
 . Create the secrets for the HTTPS and JGroups keystores, and {project_name} server truststore, generated in the xref:Configuring-Keystores[previous section].
 +
@@ -120,7 +120,7 @@ OpenShift uses objects called link:https://docs.openshift.com/container-platform
 ----
 $ oc create secret generic sso-app-secret --from-file=keystore.jks --from-file=jgroups.jceks --from-file=truststore.jks
 ----
-. Link these secrets to the link:https://docs.openshift.com/container-platform/latest/dev_guide/service_accounts.html#default-service-accounts-and-roles[default] service account, which is used to run {project_name} pods.
+. Link these secrets to the link:{ocpdocs_default_service_accounts_link}[default] service account, which is used to run {project_name} pods.
 +
 [source,bash,subs="attributes+,macros+"]
 ----
@@ -293,7 +293,7 @@ route "sso" patched
 [[sso-connecting-to-an-external-database]]
 === Connecting to an external database
 
-{project_name} can be configured to connect to an external (to OpenShift cluster) database. In order to achieve this, you need to modify the `sso-{database name}` Endpoints object to point to the proper address. The procedure is described in the https://docs.openshift.com/container-platform/latest/networking/configuring-ingress-cluster-traffic/configuring-ingress-cluster-traffic-service-external-ip.html#nw-service-external-ip_configuring-ingress-cluster-traffic-service-external-ip[OpenShift manual].
+{project_name} can be configured to connect to an external (to OpenShift cluster) database. In order to achieve this, you need to modify the `sso-{database name}` Endpoints object to point to the proper address. The procedure is described in the link:{ocpdocs_ingress_service_external_ip_link}[OpenShift manual].
 
 Tip: The easiest way to get started is to deploy {project_name} from a template and then modify the Endpoints object. You might also need to update some of the datasource configuration variables in the DeploymentConfig. Once you're done, just roll a new deployment out.
 
@@ -359,7 +359,7 @@ run-batch
 ----
 podman build -t docker-registry-default/project/name:tag .
 ----
-. After the build finishes, push your image to the registry used by OpenShift to deploy your image. Refer to the https://docs.openshift.com/container-platform/latest/registry/accessing-the-registry.html#registry-accessing-directly_accessing-the-registry[OpenShift guide] for details.
+. After the build finishes, push your image to the registry used by OpenShift to deploy your image. Refer to the link:{ocpdocs_cluster_local_registry_access_link}[OpenShift guide] for details.
 
 [[sso-administrator-setup]]
 === Creating the Administrator Account for {project_name} Server

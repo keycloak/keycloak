@@ -18,7 +18,7 @@ The {project_openshift_product_name} image version number between 7.0 and 7.3 ar
 ====
 
 === Initial Setup
-The Tutorials in this guide follow on from and assume an OpenShift instance similar to that created by performing https://docs.openshift.com/container-platform/latest/install/index.html[the installation of the OpenShift Container Platform cluster].
+The Tutorials in this guide follow on from and assume an OpenShift instance similar to that created by performing link:{ocpdocs_install_cluster_link}[the installation of the OpenShift Container Platform cluster].
 
 [IMPORTANT]
 ====

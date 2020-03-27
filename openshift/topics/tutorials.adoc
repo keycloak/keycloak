@@ -101,7 +101,7 @@ This process assumes that you are link:{openshift_link}#Example-Deploying-SSO[ru
 
 Perform the following to generate and get the SQL migration file for the database:
 
-. Prepare template of OpenShift link:https://docs.openshift.com/container-platform/latest/dev_guide/jobs.html[database migration job] to generate the SQL file.
+. Prepare template of OpenShift link:{ocpdocs_jobs_link}[database migration job] to generate the SQL file.
 +
 [source,yaml,subs="verbatim,macros,attributes"]
 ----
@@ -642,7 +642,7 @@ The administration console import allows you to *overwrite* resources if you cho
 === Example Workflow: Configuring OpenShift 3.11 to use {project_name} for Authentication
 Configure OpenShift 3.11 to use the {project_name} deployment as the authorization gateway for OpenShift. This follows on from xref:Example-Deploying-SSO[Example Workflow: Preparing and Deploying the {project_openshift_product_name} image], in which {project_name} was deployed on OpenShift.
 
-This example adds {project_name} as an authentication method alongside https://docs.openshift.com/container-platform/latest/install_config/configuring_authentication.html#identity-providers-configuring[the identity providers] configured during https://docs.openshift.com/container-platform/latest/install/index.html[the installation of the OpenShift Container Platform cluster]. Once configured, the {project_name} method will be also available (together with the configured identity providers) for the user login to your OpenShift web console.
+This example adds {project_name} as an authentication method alongside link:{ocpdocs_idp_config_link}[the identity providers] configured during link:{ocpdocs_install_cluster_link}[the installation of the OpenShift Container Platform cluster]. Once configured, the {project_name} method will be also available (together with the configured identity providers) for the user login to your OpenShift web console.
 
 ==== Configuring {project_name} Credentials
 Log in to the encrypted {project_name} web server at *$$https://secure-sso-$$_sso-app-demo_._openshift32.example.com_/auth/admin* using the xref:sso-administrator-setup[administrator account] created during the {project_name} deployment.
@@ -678,7 +678,7 @@ The client *Secret* is needed to configure OpenID-Connect on the OpenShift maste
 ==== Configuring OpenShift Master for {project_name} Authentication
 Log in to the OpenShift master CLI. You must have the required permissions to edit the */etc/origin/master/master-config.yaml* file.
 
-. Edit the */etc/origin/master/master-config.yaml* file and find the *identityProviders*. For example, in the case the OpenShift master is configured with the https://docs.openshift.com/container-platform/latest/install_config/configuring_authentication.html#HTPasswdPasswordIdentityProvider[HTPassword identity provider], the *identityProviders* section will look similar to the following one:
+. Edit the */etc/origin/master/master-config.yaml* file and find the *identityProviders*. For example, in the case the OpenShift master is configured with the link:{ocpdocs_htpasswd_idp_link}[HTPassword identity provider], the *identityProviders* section will look similar to the following one:
 +
 [source,bash,subs="attributes+,macros+"]
 ----
@@ -753,7 +753,7 @@ $ oc adm policy add-role-to-user view testuser -n sso-app-demo
 [[binary-builds]]
 === Example Workflow: Creating OpenShift Application from Existing Maven Binaries and Securing it Using {project_name}
 
-To deploy existing applications on OpenShift, you can use the link:https://docs.openshift.com/container-platform/latest/dev_guide/builds/build_inputs.html#binary-source[binary source] capability.
+To deploy existing applications on OpenShift, you can use the link:{ocpdocs_binary_source_link}[binary source] capability.
 
 ==== Deploy Binary Build of EAP 6.4 / 7.1 JSP Service Invocation Application and Secure it Using {project_name}
 
@@ -850,7 +850,7 @@ You can select multiple items at once by holding the *Ctrl* key and simultaneous
 ----
 $ oc new-project eap-app-demo
 ----
-. Add the `view` role to the link:https://docs.openshift.com/container-platform/latest/dev_guide/service_accounts.html#default-service-accounts-and-roles[`default`] service account. This enables the service account to view all the resources in the `eap-app-demo` namespace, which is necessary for managing the cluster.
+. Add the `view` role to the link:{ocpdocs_default_service_accounts_link}[`default`] service account. This enables the service account to view all the resources in the `eap-app-demo` namespace, which is necessary for managing the cluster.
 +
 [source,bash,subs="attributes+,macros+"]
 ----
@@ -887,7 +887,7 @@ $ oc create secret generic eap-ssl-secret --from-file=eapkeystore.jks
 ----
 $ oc create secret generic eap-jgroup-secret --from-file=eapjgroups.jceks
 ----
-.. Add the EAP application secret to the link:https://docs.openshift.com/container-platform/latest/dev_guide/service_accounts.html#default-service-accounts-and-roles[`default`] service account.
+.. Add the EAP application secret to the link:{ocpdocs_default_service_accounts_link}[`default`] service account.
 +
 [source,bash,subs="attributes+,macros+"]
 ----
@@ -1306,7 +1306,7 @@ $ oc new-project eap-app-demo
 //----
 //$ oc create serviceaccount eap-service-account
 //----
-. Add the `view` role to the link:https://docs.openshift.com/container-platform/latest/dev_guide/service_accounts.html#default-service-accounts-and-roles[`default`] service account. This enables the service account to view all the resources in the `eap-app-demo` namespace, which is necessary for managing the cluster.
+. Add the `view` role to the link:{ocpdocs_default_service_accounts_link}[`default`] service account. This enables the service account to view all the resources in the `eap-app-demo` namespace, which is necessary for managing the cluster.
 +
 [source,bash,subs="attributes+,macros+"]
 ----
@@ -1554,7 +1554,7 @@ $ oc new-project eap-app-demo
 //----
 //$ oc create serviceaccount app-service-account
 //----
-. Add the `view` role to the link:https://docs.openshift.com/container-platform/latest/dev_guide/service_accounts.html#default-service-accounts-and-roles[`default`] service account. This enables the service account to view all the resources in the `eap-app-demo` namespace, which is necessary for managing the cluster.
+. Add the `view` role to the link:{ocpdocs_default_service_accounts_link}[`default`] service account. This enables the service account to view all the resources in the `eap-app-demo` namespace, which is necessary for managing the cluster.
 +
 [source,bash,subs="attributes+,macros+"]
 ----

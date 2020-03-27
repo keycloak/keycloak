@@ -62,7 +62,7 @@ Log in to the OpenShift CLI with a user that holds the _cluster:admin_ role.
 ----
 $ oc new-project sso-app-demo
 ----
-. Add the `view` role to the link:https://docs.openshift.com/container-platform/latest/dev_guide/service_accounts.html#default-service-accounts-and-roles[`default`] service account. This enables the service account to view all the resources in the sso-app-demo namespace, which is necessary for managing the cluster.
+. Add the `view` role to the link:{ocpdocs_default_service_accounts_link}[`default`] service account. This enables the service account to view all the resources in the sso-app-demo namespace, which is necessary for managing the cluster.
 +
 [source,bash,subs="attributes+,macros+"]
 ----

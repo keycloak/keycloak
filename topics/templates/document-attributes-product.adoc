@@ -59,6 +59,23 @@
 :openshift_openj9_platforms: s390x
 :openshift_openj9_image: redhat-sso-7/sso74-openj9-openshift-rhel8
 :openshift_openj9_project_templates_version: sso74-openj9
+
+// Aggregate various frequently referred links to the official OCP documentation
+:official_ocp_docs_link: https://docs.openshift.com/container-platform
+:ocpdocs_secrets_link:  {official_ocp_docs_link}/latest/builds/creating-build-inputs.html#builds-secrets-overview_creating-build-inputs
+:ocpdocs_serving_x509_secrets_link: {official_ocp_docs_link}/latest/builds/creating-build-inputs.html#builds-service-serving-certificate-secrets_creating-build-inputs
+:ocpdocs_binary_source_link: {official_ocp_docs_link}/latest/builds/creating-build-inputs.html#builds-binary-source_creating-build-inputs
+:ocpdocs_templates_link: {official_ocp_docs_link}/latest/openshift_images/using-templates.html
+:ocpdocs_idp_config_link: {official_ocp_docs_link}/latest/authentication/understanding-identity-provider.html
+:ocpdocs_htpasswd_idp_link: {official_ocp_docs_link}/latest/authentication/identity_providers/configuring-htpasswd-identity-provider.html
+:ocpdocs_install_cluster_link: {official_ocp_docs_link}/latest/architecture/architecture-installation.html
+:ocpdocs_default_service_accounts_link: {official_ocp_docs_link}/latest/authentication/using-service-accounts-in-applications.html#default-service-accounts-and-roles_using-service-accounts
+:ocpdocs_jobs_link: {official_ocp_docs_link}/latest/nodes/jobs/nodes-nodes-jobs.html
+:ocpdocs_ingress_service_external_ip_link: {official_ocp_docs_link}/latest/networking/configuring_ingress_cluster_traffic/configuring-ingress-cluster-traffic-service-external-ip.html#nw-service-external-ip_configuring-ingress-cluster-traffic-service-external-ip
+:ocpdocs_cluster_local_registry_access_link: {official_ocp_docs_link}/latest/registry/accessing-the-registry.html#registry-accessing-directly_accessing-the-registry
+:ocp311docs_passthrough_route_link: {official_ocp_docs_link}/3.11/architecture/networking/routes.html#passthrough-termination
+:ocp311docs_reencrypt_route_link: {official_ocp_docs_link}/3.11/architecture/networking/routes.html#re-encryption-termination
+
 :installguide_name: Server Installation and Configuration Guide
 :installguide_link: {project_doc_base_url}/server_installation_and_configuration_guide/
 :installguide_clustering_name: Clustering
