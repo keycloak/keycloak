@@ -38,6 +38,9 @@ import java.util.Set;
  */
 public class RedirectUtils {
 
+    private static final String PATH_MATCH = "(/.*|)$";
+    private static final String WILDCARD_SUBDOMAIN_MATCH = "^https?://\\*\\.[^/*]+\\.[^/*.]+";
+
     private static final Logger logger = Logger.getLogger(RedirectUtils.class);
 
     public static String verifyRealmRedirectUri(KeycloakSession session, String redirectUri) {
@@ -168,7 +171,7 @@ public class RedirectUtils {
         return sb.toString();
     }
 
-    private static boolean matchesRedirects(Set<String> validRedirects, String redirect) {
+    protected static boolean matchesRedirects(Set<String> validRedirects, String redirect) {
         for (String validRedirect : validRedirects) {
             if (validRedirect.endsWith("*") && !validRedirect.contains("?")) {
                 // strip off the query component - we don't check them when wildcards are effective
@@ -180,8 +183,24 @@ public class RedirectUtils {
                 // strip off trailing '/'
                 if (length - 1 > 0 && validRedirect.charAt(length - 1) == '/') length--;
                 validRedirect = validRedirect.substring(0, length);
-                if (validRedirect.equals(r)) return true;
-            } else if (validRedirect.equals(redirect)) return true;
+                if (validRedirect.equals(r) || matchesWildcardSubdomain(validRedirect, r, false)) {
+                    return true;
+                }
+            } else if (validRedirect.equals(redirect) || matchesWildcardSubdomain(validRedirect, redirect, true)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean matchesWildcardSubdomain(String validRedirect, String redirect, boolean strict) {
+        String strictPath = strict ? "$" : PATH_MATCH;
+        String pattern = WILDCARD_SUBDOMAIN_MATCH + PATH_MATCH;
+
+        if (validRedirect.matches(pattern)) {
+            String regex = validRedirect.replaceAll("[.]", "\\\\$0").replaceFirst("\\*", "[^/.]{1,63}") + strictPath;
+            boolean isValid = redirect.matches(regex);
+            return isValid;
         }
         return false;
     }
