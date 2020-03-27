@@ -249,7 +249,7 @@ GC times.
 |The maximum metaspace size.
 |*_100_*
 
-|*_GGC_TIME_RATIOC_MIN_HEAP_FREE_RATIO_*
+|*_GC_TIME_RATIO_MIN_HEAP_FREE_RATIO_*
 |Minimum percentage of heap free after GC to avoid expansion.
 |*_20_*
 
