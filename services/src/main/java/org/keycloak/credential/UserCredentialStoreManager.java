@@ -74,7 +74,10 @@ public class UserCredentialStoreManager implements UserCredentialManager, OnUser
     public boolean removeStoredCredential(RealmModel realm, UserModel user, String id) {
         throwExceptionIfInvalidUser(user);
         boolean removalResult = getStoreForUser(user).removeStoredCredential(realm, user, id);
-        session.userCache().evict(realm, user);
+        UserCache userCache = session.userCache();
+        if (userCache != null) {          
+          userCache.evict(realm, user);
+        }
         return removalResult;
     }
 
