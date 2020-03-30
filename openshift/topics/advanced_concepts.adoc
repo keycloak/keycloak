@@ -118,7 +118,7 @@ OpenShift uses objects called link:https://docs.openshift.com/container-platform
 +
 [source,bash,subs="attributes+,macros+"]
 ----
-$ oc secret new sso-app-secret keystore.jks jgroups.jceks truststore.jks
+$ oc create secret generic sso-app-secret --from-file=keystore.jks --from-file=jgroups.jceks --from-file=truststore.jks
 ----
 . Link these secrets to the link:https://docs.openshift.com/container-platform/latest/dev_guide/service_accounts.html#default-service-accounts-and-roles[default] service account, which is used to run {project_name} pods.
 +

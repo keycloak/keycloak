@@ -880,12 +880,12 @@ $ keytool -genseckey \
 +
 [source,bash,subs="attributes+,macros+"]
 ----
-$ oc secret new eap-ssl-secret eapkeystore.jks
+$ oc create secret generic eap-ssl-secret --from-file=eapkeystore.jks
 ----
 +
 [source,bash,subs="attributes+,macros+"]
 ----
-$ oc secret new eap-jgroup-secret eapjgroups.jceks
+$ oc create secret generic eap-jgroup-secret --from-file=eapjgroups.jceks
 ----
 .. Add the EAP application secret to the link:https://docs.openshift.com/container-platform/latest/dev_guide/service_accounts.html#default-service-accounts-and-roles[`default`] service account.
 +
@@ -1330,8 +1330,8 @@ $ keytool -genseckey -alias jgroups -storetype JCEKS -keystore eapjgroups.jceks
 +
 [source,bash,subs="attributes+,macros+"]
 ----
-$ oc secret new eap-ssl-secret eapkeystore.jks
-$ oc secret new eap-jgroup-secret eapjgroups.jceks
+$ oc create secret generic eap-ssl-secret --from-file=eapkeystore.jks
+$ oc create secret generic eap-jgroup-secret --from-file=eapjgroups.jceks
 ----
 . Add the EAP secret to the `default` service account:
 +
@@ -1579,8 +1579,8 @@ $ keytool -genseckey -alias jgroups -storetype JCEKS -keystore eapjgroups.jceks
 +
 [source,bash,subs="attributes+,macros+"]
 ----
-$ oc secret new eap-ssl-secret eapkeystore.jks
-$ oc secret new eap-jgroup-secret eapjgroups.jceks
+$ oc create secret generic eap-ssl-secret --from-file=eapkeystore.jks
+$ oc create secret generic eap-jgroup-secret --from-file=eapjgroups.jceks
 ----
 . Add the EAP application secret to the EAP service account created earlier:
 +
