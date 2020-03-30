@@ -149,7 +149,7 @@ image:images/Passwordless-browser-login-common.png[]
 * Using the `Actions` menu on the right-hand side of the "Forms" subflow, select "Add execution". Using the drop-down select
   "Username Form". After pressing "Save", set its Requirement to _Required_.
 
-The Username form is similar to "Browser" flow's Username Password Form, but only asks for a username, allowing a user to do perform a password-less login.
+The Username form is similar to "Browser" flow's Username Password Form, but only asks for a username, allowing a user to perform a password-less login.
 However, note that this inevitably allows a user enumeration attack on your {project_name} server. This is an unavoidable security risk for the convenience,
 so the flow should make sure that an attacker cannot just have to guess a password to be able to enter.
 
