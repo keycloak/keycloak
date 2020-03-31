@@ -567,7 +567,7 @@ public class TokenEndpoint {
             event.error(Errors.CONSENT_DENIED);
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_CLIENT, "Client requires user consent", Response.Status.BAD_REQUEST);
         }
-        String scope = formParams.getFirst(OAuth2Constants.SCOPE);
+        String scope = getRequestedScopes();
 
         RootAuthenticationSessionModel rootAuthSession = new AuthenticationSessionManager(session).createAuthenticationSession(realm, false);
         AuthenticationSessionModel authSession = rootAuthSession.createAuthenticationSession(client);
@@ -657,7 +657,7 @@ public class TokenEndpoint {
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "User '" + clientUsername + "' disabled", Response.Status.UNAUTHORIZED);
         }
 
-        String scope = formParams.getFirst(OAuth2Constants.SCOPE);
+        String scope = getRequestedScopes();
 
         RootAuthenticationSessionModel rootAuthSession = new AuthenticationSessionManager(session).createAuthenticationSession(realm, false);
         AuthenticationSessionModel authSession = rootAuthSession.createAuthenticationSession(client);
@@ -696,6 +696,18 @@ public class TokenEndpoint {
         event.success();
 
         return cors.builder(Response.ok(res, MediaType.APPLICATION_JSON_TYPE)).build();
+    }
+
+    private String getRequestedScopes() {
+        String scope = formParams.getFirst(OAuth2Constants.SCOPE);
+
+        if (!TokenManager.isValidScope(scope, client)) {
+            event.error(Errors.INVALID_REQUEST);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_SCOPE, "Invalid scopes: " + scope,
+                    Status.BAD_REQUEST);
+        }
+
+        return scope;
     }
 
     public Response tokenExchange() {
