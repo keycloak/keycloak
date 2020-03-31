@@ -143,6 +143,13 @@
                     <include>**/node_modules/systemjs/dist/system.src.js</include>
                     <include>**/node_modules/tippy.js/dist/tippy.min.js</include>
                     <include>**/node_modules/upper-case/upper-case.js</include>
+                    <include>**/node_modules/parse-link-header/index.js</include>
+                    <include>**/node_modules/querystring/*.js</include>
+                    <include>**/node_modules/url/url.js</include>
+                    <include>**/node_modules/url/util.js</include>
+                    <include>**/node_modules/xtend/*.js</include>
+                    <include>**/node_modules/punycode/punycode.js</include>
+                    <include>**/node_modules/object-keys/*.js</include>
                     <include>**/node_modules/@patternfly/patternfly/assets/fonts/overpass-webfont/overpass-bold.ttf</include>
                     <include>**/node_modules/@patternfly/patternfly/assets/fonts/overpass-webfont/overpass-bold.woff2</include>
                     <include>**/node_modules/@patternfly/patternfly/assets/fonts/overpass-webfont/overpass-bold.woff</include>

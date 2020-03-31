@@ -150,14 +150,14 @@ export class ResourcesTable extends AbstractResourcesTable<CollapsibleResourcesT
                         <DataListContent
                             noPadding={false}
                             aria-label="Session Details"
-                            id="ex-expand1"
+                            id={'ex-expand' + row}
                             isHidden={!this.state.isRowOpen[row]}
                         >
                             <Stack gutter='md'>
                                 <StackItem isFilled>
                                     <Level gutter='md'>
                                         <LevelItem><span/></LevelItem>
-                                        <LevelItem>{this.sharedWithUsersMessage(row)}</LevelItem>
+                                        <LevelItem id={'shared-with-user-message-' + row}>{this.sharedWithUsersMessage(row)}</LevelItem>
                                         <LevelItem><span/></LevelItem>
                                     </Level>
                                 </StackItem>

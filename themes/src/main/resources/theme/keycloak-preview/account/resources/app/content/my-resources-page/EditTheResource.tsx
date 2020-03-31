@@ -89,11 +89,10 @@ export class EditTheResource extends React.Component<EditTheResourceProps, EditT
                 <Modal
                     title={'Edit the resource - ' + this.props.resource.name}
                     isLarge={true}
-                    width={'45%'}
                     isOpen={this.state.isOpen}
                     onClose={this.handleToggleDialog}
                     actions={[
-                        <Button key="done" variant="link" onClick={this.handleToggleDialog}>
+                        <Button key="done" variant="link" id="done" onClick={this.handleToggleDialog}>
                             <Msg msgKey='done' />
                         </Button>,
                     ]}
