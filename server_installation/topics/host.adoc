@@ -1,4 +1,5 @@
 
+[[_hostname]]
 == Hostname
 
 {project_name} uses the public hostname for a number of things. For example, in the token issuer fields and URLs sent in
