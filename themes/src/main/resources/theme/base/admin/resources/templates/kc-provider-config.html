@@ -3,7 +3,7 @@
         <label class="col-md-2 control-label">{{:: option.label | translate}}</label>
 
         <div class="col-md-6" data-ng-if="option.type == 'String'">
-            <input kc-no-reserved-chars class="form-control" type="text" data-ng-model="config[ option.name ]" >
+            <input class="form-control" type="text" data-ng-model="config[ option.name ]" >
         </div>
         <div class="col-md-6" data-ng-if="option.type == 'Password'">
             <input class="form-control" type="password" data-ng-model="config[ option.name ]" >
