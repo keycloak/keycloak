@@ -31,8 +31,8 @@
     <packaging>bundle</packaging>
 
     <properties>
-        <maven.compiler.target>1.7</maven.compiler.target>
-        <maven.compiler.source>1.7</maven.compiler.source>
+        <maven.compiler.target>1.8</maven.compiler.target>
+        <maven.compiler.source>1.8</maven.compiler.source>
 
         <keycloak.osgi.export>
             org.keycloak.adapters.camel.undertow;version="${project.version}"
@@ -90,12 +90,12 @@
         <dependency>
             <groupId>org.apache.camel</groupId>
             <artifactId>camel-undertow</artifactId>
-            <version>2.21.2</version>
+            <version>3.2.0-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>org.apache.camel</groupId>
             <artifactId>camel-core</artifactId>
-            <version>2.21.2</version>
+            <version>3.2.0-SNAPSHOT</version>
         </dependency>
     </dependencies>
 
@@ -131,6 +131,14 @@
                         <Export-Package>${keycloak.osgi.export}</Export-Package>
                         <Export-Service>org.apache.camel.spi.ComponentResolver;component=undertow-keycloak</Export-Service>
                     </instructions>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <source>8</source>
+                    <target>8</target>
                 </configuration>
             </plugin>
         </plugins>
