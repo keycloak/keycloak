@@ -77,7 +77,9 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Stateless object that creates tokens and manages oauth access codes
@@ -510,8 +512,7 @@ public class TokenManager {
         }
 
         // Add optional client scopes requested by scope parameter
-        String[] scopes = scopeParam.split(" ");
-        Collection<String> scopeParamParts = Arrays.asList(scopes);
+        Collection<String> scopeParamParts = parseScopeParameter(scopeParam);
         Map<String, ClientScopeModel> allOptionalScopes = client.getClientScopes(false, true);
         for (String scopeParamPart : scopeParamParts) {
             ClientScopeModel scope = allOptionalScopes.get(scopeParamPart);
@@ -521,6 +522,39 @@ public class TokenManager {
         }
 
         return clientScopes;
+    }
+    
+    public static boolean isValidScope(String scopes, ClientModel client) {
+        if (scopes == null) {
+            return true;
+        }
+
+        Set<String> clientScopes = getRequestedClientScopes(scopes, client).stream()
+                .filter(obj -> !ClientModel.class.isInstance(obj))
+                .map(ClientScopeModel::getName)
+                .collect(Collectors.toSet());
+        Collection<String> requestedScopes = TokenManager.parseScopeParameter(scopes);
+
+        if (TokenUtil.isOIDCRequest(scopes)) {
+            requestedScopes.remove(OAuth2Constants.SCOPE_OPENID);
+        }
+
+        if (!requestedScopes.isEmpty() && clientScopes.isEmpty()) {
+            return false;
+        }
+
+        for (String requestedScope : requestedScopes) {
+            // we also check dynamic scopes in case the client is from a provider that dynamically provides scopes to their clients
+            if (!clientScopes.contains(requestedScope) && client.getDynamicClientScope(requestedScope) == null) {
+                return false;
+            }
+        }
+        
+        return true;
+    }
+
+    public static Collection<String> parseScopeParameter(String scopeParam) {
+        return new HashSet<>(Arrays.asList(scopeParam.split(" ")));
     }
 
     // Check if user still has granted consents to all requested client scopes

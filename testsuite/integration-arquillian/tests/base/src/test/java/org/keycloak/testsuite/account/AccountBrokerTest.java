@@ -89,7 +89,7 @@ public class AccountBrokerTest extends AbstractBaseBrokerTest {
                 log.debug("adding client " + client.getName() + " to realm " + bc.providerRealmName());
 
                 // Remove default client scopes for this test
-                client.setDefaultClientScopes(Collections.emptyList());
+//                client.setDefaultClientScopes(Collections.emptyList());
 
                 fixAuthServerHostAndPortForClientRepresentation(client);
 
@@ -150,7 +150,7 @@ public class AccountBrokerTest extends AbstractBaseBrokerTest {
         Assert.assertEquals(1, identities.size());
 
         Assert.assertEquals("kc-oidc-idp", identities.get(0).getProvider());
-        Assert.assertEquals("user@localhost.com", identities.get(0).getSubject());
+        Assert.assertEquals("testuser", identities.get(0).getSubject());
         Assert.assertEquals("remove-link-kc-oidc-idp", identities.get(0).getAction().getAttribute("id"));
 
         identities.get(0).getAction().click();

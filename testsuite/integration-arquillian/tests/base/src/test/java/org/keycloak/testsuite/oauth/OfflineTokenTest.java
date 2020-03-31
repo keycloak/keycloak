@@ -163,30 +163,8 @@ public class OfflineTokenTest extends AbstractKeycloakTest {
         oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
         oauth.clientId("offline-client");
         oauth.redirectUri(offlineClientAppUri);
-        oauth.doLogin("test-user@localhost", "password");
-
-        EventRepresentation loginEvent = events.expectLogin()
-                .client("offline-client")
-                .detail(Details.REDIRECT_URI, offlineClientAppUri)
-                .assertEvent();
-
-        String sessionId = loginEvent.getSessionId();
-        String codeId = loginEvent.getDetails().get(Details.CODE_ID);
-
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-
-        OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "secret1");
-        String offlineTokenString = tokenResponse.getRefreshToken();
-        RefreshToken refreshToken = oauth.parseRefreshToken(offlineTokenString);
-
-        // Token is refreshed, but it's not offline token
-        events.expectCodeToToken(codeId, sessionId)
-                .client("offline-client")
-                .detail(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_REFRESH)
-                .assertEvent();
-
-        assertEquals(TokenUtil.TOKEN_TYPE_REFRESH, refreshToken.getType());
-        assertFalse(tokenResponse.getScope().contains(OAuth2Constants.OFFLINE_ACCESS));
+        oauth.openLoginForm();
+        assertTrue(driver.getCurrentUrl().contains("error_description=Invalid+scopes"));
 
         // Revert changes
         ClientManager.realm(adminClient.realm("test")).clientId("offline-client")
