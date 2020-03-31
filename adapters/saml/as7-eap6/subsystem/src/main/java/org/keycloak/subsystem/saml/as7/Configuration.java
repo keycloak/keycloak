@@ -16,6 +16,9 @@
  */
 package org.keycloak.subsystem.saml.as7;
 
+import java.util.List;
+
+import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.server.deployment.DeploymentUnit;
 import org.jboss.as.web.deployment.WarMetaData;
 import org.jboss.dmr.ModelNode;
@@ -34,19 +37,27 @@ public class Configuration {
     private Configuration() {
     }
 
-    void updateModel(ModelNode operation, ModelNode model) {
-        ModelNode node = config;
-        ModelNode addr = operation.get("address");
-        for (Property item : addr.asPropertyList()) {
-            node = getNodeForAddressElement(node, item);
-        }
-        node.set(model);
+    void updateModel(ModelNode operation, ModelNode model) throws OperationFailedException {
+        this.updateModel(operation, model, false);
     }
 
-    private ModelNode getNodeForAddressElement(ModelNode node, Property item) {
-        String key = item.getValue().asString();
-        ModelNode keymodel = node.get(item.getName());
-        return keymodel.get(key);
+    void updateModel(final ModelNode operation, final ModelNode model, final boolean checkSingleton) throws OperationFailedException {
+        ModelNode node = config;
+
+        final List<Property> addressNodes = operation.get("address").asPropertyList();
+        final int lastIndex = addressNodes.size() - 1;
+        for (int i = 0; i < addressNodes.size(); i++) {
+            Property addressNode = addressNodes.get(i);
+            // if checkSingleton is true, we verify if the key for the last element (e.g. SP or IDP) in the address path is already defined
+            if (i == lastIndex && checkSingleton) {
+                if (node.get(addressNode.getName()).isDefined()) {
+                    // found an existing resource, throw an exception
+                    throw new OperationFailedException("Duplicate resource: " + addressNode.getName());
+                }
+            }
+            node = node.get(addressNode.getName()).get(addressNode.getValue().asString());
+        }
+        node.set(model);
     }
 
     public ModelNode getSecureDeployment(DeploymentUnit deploymentUnit) {
