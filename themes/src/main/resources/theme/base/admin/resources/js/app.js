@@ -2387,7 +2387,7 @@ module.directive('kcEnter', function() {
 // Don't allow URI reserved characters
 module.directive('kcNoReservedChars', function (Notifications, $translate) {
     return function($scope, element) {
-        element.bind("keydown keypress", function(event) {
+        element.bind("keypress", function(event) {
             var keyPressed = String.fromCharCode(event.which || event.keyCode || 0);
             
             // ] and ' can not be used inside a character set on POSIX and GNU
