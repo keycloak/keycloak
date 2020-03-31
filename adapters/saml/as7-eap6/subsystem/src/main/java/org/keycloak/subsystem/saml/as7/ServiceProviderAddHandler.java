@@ -38,7 +38,7 @@ class ServiceProviderAddHandler extends AbstractAddStepHandler {
 
     @Override
     protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model, ServiceVerificationHandler verificationHandler, List<ServiceController<?>> newControllers) throws OperationFailedException {
-        Configuration.INSTANCE.updateModel(operation, model);
+        Configuration.INSTANCE.updateModel(operation, model, true);
     }
 
     @Override

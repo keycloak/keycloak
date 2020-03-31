@@ -33,8 +33,10 @@ import org.jboss.staxmapper.XMLExtendedStreamWriter;
 import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 
 /**
  * The subsystem parser, which uses stax to read and write to and from xml
@@ -74,13 +76,19 @@ class KeycloakSubsystemParser implements XMLStreamConstants, XMLElementReader<Li
         ModelNode addSecureDeployment = Util.createAddOperation(addr);
         list.add(addSecureDeployment);
 
+        Set<String> parsedElements = new HashSet<>();
         while (reader.hasNext() && nextTag(reader) != END_ELEMENT) {
             String tagName = reader.getLocalName();
+            if (parsedElements.contains(tagName)) {
+                // all sub-elements of the secure deployment type should occur only once.
+                throw ParseUtils.unexpectedElement(reader);
+            }
             if (tagName.equals(Constants.XML.SERVICE_PROVIDER)) {
                 readServiceProvider(reader, list, addr);
             } else {
                 throw ParseUtils.unexpectedElement(reader);
             }
+            parsedElements.add(tagName);
         }
     }
 
@@ -107,9 +115,13 @@ class KeycloakSubsystemParser implements XMLStreamConstants, XMLElementReader<Li
             attr.parseAndSetParameter(value, addServiceProvider, reader);
         }
 
+        Set<String> parsedElements = new HashSet<>();
         while (reader.hasNext() && nextTag(reader) != END_ELEMENT) {
             String tagName = reader.getLocalName();
-
+            if (parsedElements.contains(tagName)) {
+                // all sub-elements of the service provider type should occur only once.
+                throw ParseUtils.unexpectedElement(reader);
+            }
             if (Constants.XML.KEYS.equals(tagName)) {
                 readKeys(list, reader, addr);
             } else if (Constants.XML.PRINCIPAL_NAME_MAPPING.equals(tagName)) {
@@ -123,6 +135,7 @@ class KeycloakSubsystemParser implements XMLStreamConstants, XMLElementReader<Li
             } else {
                 throw ParseUtils.unexpectedElement(reader);
             }
+            parsedElements.add(tagName);
         }
     }
 
@@ -150,8 +163,13 @@ class KeycloakSubsystemParser implements XMLStreamConstants, XMLElementReader<Li
             attr.parseAndSetParameter(value, addIdentityProvider, reader);
         }
 
+        Set<String> parsedElements = new HashSet<>();
         while (reader.hasNext() && nextTag(reader) != END_ELEMENT) {
             String tagName = reader.getLocalName();
+            if (parsedElements.contains(tagName)) {
+                // all sub-elements of the identity provider type should occur only once.
+                throw ParseUtils.unexpectedElement(reader);
+            }
 
             if (Constants.XML.SINGLE_SIGN_ON.equals(tagName)) {
                 readSingleSignOn(addIdentityProvider, reader);
@@ -166,6 +184,7 @@ class KeycloakSubsystemParser implements XMLStreamConstants, XMLElementReader<Li
             } else {
                 throw ParseUtils.unexpectedElement(reader);
             }
+            parsedElements.add(tagName);
         }
     }
 
@@ -263,8 +282,13 @@ class KeycloakSubsystemParser implements XMLStreamConstants, XMLElementReader<Li
             attr.parseAndSetParameter(value, addKey, reader);
         }
 
+        Set<String> parsedElements = new HashSet<>();
         while (reader.hasNext() && nextTag(reader) != END_ELEMENT) {
             String tagName = reader.getLocalName();
+            if (parsedElements.contains(tagName)) {
+                // all sub-elements of the key type should occur only once.
+                throw ParseUtils.unexpectedElement(reader);
+            }
 
             if (Constants.XML.KEY_STORE.equals(tagName)) {
                 readKeyStore(addKey, reader);
@@ -276,6 +300,7 @@ class KeycloakSubsystemParser implements XMLStreamConstants, XMLElementReader<Li
             } else {
                 throw ParseUtils.unexpectedElement(reader);
             }
+            parsedElements.add(tagName);
         }
     }
 
@@ -306,8 +331,13 @@ class KeycloakSubsystemParser implements XMLStreamConstants, XMLElementReader<Li
             throw ParseUtils.missingRequired(reader, Constants.XML.PASSWORD);
         }
 
+        Set<String> parsedElements = new HashSet<>();
         while (reader.hasNext() && nextTag(reader) != END_ELEMENT) {
             String tagName = reader.getLocalName();
+            if (parsedElements.contains(tagName)) {
+                // all sub-elements of the keystore type should occur only once.
+                throw ParseUtils.unexpectedElement(reader);
+            }
             if (Constants.XML.PRIVATE_KEY.equals(tagName)) {
                 readPrivateKey(reader, addKeyStore);
             } else if (Constants.XML.CERTIFICATE.equals(tagName)) {
@@ -315,6 +345,7 @@ class KeycloakSubsystemParser implements XMLStreamConstants, XMLElementReader<Li
             } else {
                 throw ParseUtils.unexpectedElement(reader);
             }
+            parsedElements.add(tagName);
         }
     }
 
@@ -498,8 +529,8 @@ class KeycloakSubsystemParser implements XMLStreamConstants, XMLElementReader<Li
             writeKeys(writer, idpAttributes.get(Constants.Model.KEY));
             writeHttpClient(writer, idpAttributes.get(Constants.Model.HTTP_CLIENT));
             writeAllowedClockSkew(writer, idpAttributes.get(Constants.Model.ALLOWED_CLOCK_SKEW));
+            writer.writeEndElement();
         }
-        writer.writeEndElement();
     }
 
     void writeSingleSignOn(XMLExtendedStreamWriter writer, ModelNode model) throws XMLStreamException {
