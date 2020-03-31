@@ -178,14 +178,13 @@ export class ShareTheResource extends React.Component<ShareTheResourceProps, Sha
                 <Modal
                 title={'Share the resource - ' + this.props.resource.name}
                 isLarge={true}
-                width={'45%'}
                 isOpen={this.state.isOpen}
                 onClose={this.handleToggleDialog}
                 actions={[
                     <Button key="cancel" variant="link" onClick={this.handleToggleDialog}>
                         <Msg msgKey='cancel'/>
                     </Button>,
-                    <Button key="confirm" variant="primary" onClick={this.handleAddPermission} isDisabled={this.isFormInvalid()}>
+                    <Button key="confirm" variant="primary" id="done" onClick={this.handleAddPermission} isDisabled={this.isFormInvalid()}>
                         <Msg msgKey='done'/>
                     </Button>
                 ]}
@@ -214,7 +213,7 @@ export class ShareTheResource extends React.Component<ShareTheResourceProps, Sha
                                             />
                                         </GalleryItem>
                                         <GalleryItem>
-                                            <Button key="add-user" variant="primary" onClick={this.handleAddUsername} isDisabled={this.isAddDisabled()}>
+                                            <Button key="add-user" variant="primary" id="add" onClick={this.handleAddUsername} isDisabled={this.isAddDisabled()}>
                                                 <Msg msgKey="add"/>
                                             </Button>
                                         </GalleryItem>

@@ -19,7 +19,6 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.authorization.PermissionTicketRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
-import org.keycloak.testsuite.ui.account2.page.AbstractLoggedInPage;
 import org.keycloak.testsuite.ui.account2.page.MyResourcesPage;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
@@ -34,15 +33,15 @@ import java.util.Map;
 
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
+import static org.keycloak.representations.idm.CredentialRepresentation.PASSWORD;
 import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
 
-public class MyResourcesTest extends BaseAccountPageTest {
-    private static final String[] userNames = new String[]{"alice", "jdoe", "bob"};
+public class MyResourcesTest extends AbstractAccountTest {
+    private static final String[] userNames = new String[]{"alice", "jdoe"};
 
     @Page
     private MyResourcesPage myResourcesPage;
 
-    private AuthzClient authzClient;
     private RealmRepresentation testRealm;
     private CloseableHttpClient httpClient;
 
@@ -53,7 +52,7 @@ public class MyResourcesTest extends BaseAccountPageTest {
         testRealm.setUserManagedAccessAllowed(true);
 
         testRealm.setUsers(Arrays.asList(createUser("alice"),
-                createUser("jdoe"), createUser("bob")));
+                createUser("jdoe")));
 
         ClientRepresentation client = ClientBuilder.create()
                 .clientId("my-resource-server")
@@ -71,37 +70,35 @@ public class MyResourcesTest extends BaseAccountPageTest {
         return UserBuilder.create()
                 .username(userName)
                 .enabled(true)
-                .password("password")
+                .password(PASSWORD)
                 .role("account", AccountRoles.MANAGE_ACCOUNT)
                 .build();
     }
 
-    @Before
-    public void before() {
-        httpClient = HttpClientBuilder.create().build();
-    }
-
     @After
     public void after() {
-        try {
-            httpClient.close();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+        if (httpClient != null) {
+            try {
+                httpClient.close();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 
     @Before
     public void setup() throws Exception {
+        if (this.testRealm == null) return;
         ClientResource resourceServer = getResourceServer();
-        authzClient = createAuthzClient(resourceServer.toRepresentation());
+        AuthzClient authzClient = createAuthzClient(resourceServer.toRepresentation());
         AuthorizationResource authorization = resourceServer.authorization();
 
-        for (int i = 0; i < 30; i++) {
+        for (int i = 0; i < 15; i++) {
             ResourceRepresentation resource = new ResourceRepresentation();
 
             resource.setOwnerManagedAccess(true);
 
-            final byte[] content = new JWSInput(authzClient.obtainAccessToken("jdoe", "password").getToken()).getContent();
+            final byte[] content = new JWSInput(authzClient.obtainAccessToken("jdoe", PASSWORD).getToken()).getContent();
             final AccessToken accessToken = JsonSerialization.readValue(content, AccessToken.class);
             resource.setOwner(accessToken.getSubject());
 
@@ -124,22 +121,52 @@ public class MyResourcesTest extends BaseAccountPageTest {
                 ticket.setResource(resource.getId());
                 ticket.setScopeName(scope);
 
-                authzClient.protection("jdoe", "password").permission().create(ticket);
+                authzClient.protection("jdoe", PASSWORD).permission().create(ticket);
             }
         }
     }
 
     @Test
-    public void shouldShowMyResourcesInTable() {
+    public void shouldShowMyResourcesAndUpdatePermissions() {
+        myResourcesPage.navigateTo();
+        loginPage.form().login(createUser("jdoe"));
         myResourcesPage.assertCurrent();
 
-        assertEquals(10, myResourcesPage.getResourcesListCount());
+        assertEquals(6, myResourcesPage.getResourcesListCount());
+
+        final int row = 2;
+        myResourcesPage.clickExpandButton(row);
+
+        assertEquals("Resource is shared with alice.", myResourcesPage.getSharedWith(row));
+
+        myResourcesPage.clickEditButton(row);
+        myResourcesPage.removeAllPermissions();
+
+        assertEquals("This resource is not shared.", myResourcesPage.getSharedWith(row));
+    }
+
+    @Test
+    public void shouldShowMyResourcesAndShare() {
+        myResourcesPage.navigateTo();
+        loginPage.form().login(createUser("jdoe"));
+        myResourcesPage.assertCurrent();
+
+        final int row = 3;
+        myResourcesPage.clickExpandButton(row);
+
+        assertEquals("Resource is shared with jdoe.", myResourcesPage.getSharedWith(row));
+
+        myResourcesPage.clickShareButton(row);
+        myResourcesPage.createShare("alice");
+
+        assertEquals("Resource is shared with alice and 1 other users.", myResourcesPage.getSharedWith(row));
     }
 
     private AuthzClient createAuthzClient(ClientRepresentation client) {
         Map<String, Object> credentials = new HashMap<>();
 
         credentials.put("secret", "secret");
+        httpClient = HttpClientBuilder.create().build();
 
         return AuthzClient
                 .create(new Configuration(suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth",
@@ -150,10 +177,5 @@ public class MyResourcesTest extends BaseAccountPageTest {
     private ClientResource getResourceServer() {
         ClientsResource clients = adminClient.realm(TEST).clients();
         return clients.get(clients.findByClientId("my-resource-server").get(0).getId());
-    }
-
-    @Override
-    protected AbstractLoggedInPage getAccountPage() {
-        return myResourcesPage;
     }
 }
