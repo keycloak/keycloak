@@ -37,6 +37,7 @@ import org.keycloak.jose.jws.crypto.RSAProvider;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.RoleRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.util.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
@@ -594,7 +595,8 @@ public class UserInfoTest extends AbstractKeycloakTest {
                 .detail(Details.SIGNATURE_REQUIRED, "false")
                 .client(expectedClientId)
                 .assertEvent();
-        UserInfoClientUtil.testSuccessfulUserInfoResponse(response, "test-user@localhost", "test-user@localhost");
+        UserRepresentation user = adminClient.realm("test").users().search("test-user@localhost").get(0);
+        UserInfoClientUtil.testSuccessfulUserInfoResponse(response, user.getId(), "test-user@localhost", "test-user@localhost");
     }
 
     private void testSuccessSignedResponse(Algorithm sigAlg) throws Exception {
