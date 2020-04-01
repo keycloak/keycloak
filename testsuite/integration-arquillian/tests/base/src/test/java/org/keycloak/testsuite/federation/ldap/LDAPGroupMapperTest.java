@@ -490,7 +490,7 @@ public class LDAPGroupMapperTest extends AbstractLDAPTest {
 
             // 3 - Add non-existing user to LDAP group
             LDAPDn nonExistentDn = LDAPDn.fromString(ldapProvider.getLdapIdentityStore().getConfig().getUsersDn());
-            nonExistentDn.addFirst(jamesLdap.getRdnAttributeName(), "nonexistent");
+            nonExistentDn.addFirst(jamesLdap.getRdnAttributeNames().get(0), "nonexistent");
             LDAPObject nonExistentLdapUser = new LDAPObject();
             nonExistentLdapUser.setDn(nonExistentDn);
             LDAPUtils.addMember(ldapProvider, MembershipType.DN, LDAPConstants.MEMBER, "not-used", group2, nonExistentLdapUser);
