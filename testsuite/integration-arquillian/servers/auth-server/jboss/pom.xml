@@ -522,43 +522,6 @@
         </profile>
 
         <profile>
-            <id>auth-server-apply-patch</id>
-            <activation>
-                <property>
-                    <name>auth.server.patch.zips</name>
-                </property>
-            </activation>
-            <build>
-                <pluginManagement>
-                    <plugins>
-                        <plugin>
-                            <groupId>org.codehaus.mojo</groupId>
-                            <artifactId>exec-maven-plugin</artifactId>
-                            <executions>
-                                <execution>
-                                    <id>install-patch</id>
-                                    <phase>process-resources</phase>
-                                    <goals>
-                                        <goal>exec</goal>
-                                    </goals>
-                                </execution>
-                            </executions>
-                            <configuration>
-                                <executable>${common.resources}/install-patch.${script.suffix}</executable>
-                                <workingDirectory>${auth.server.home}/bin</workingDirectory>
-                                <environmentVariables>
-                                    <JAVA_HOME>${auth.server.java.home}</JAVA_HOME>
-                                    <JBOSS_HOME>${auth.server.home}</JBOSS_HOME>
-                                    <AUTH_PATCH_ZIPS>${auth.server.patch.zips}</AUTH_PATCH_ZIPS>
-                                </environmentVariables>
-                            </configuration>
-                        </plugin>
-                    </plugins>
-                </pluginManagement>
-            </build>
-        </profile>
-        
-        <profile>
             <id>auth-servers-crossdc-jboss</id>
             <properties>
                 <ant.scenario>scenario-crossdc</ant.scenario>
