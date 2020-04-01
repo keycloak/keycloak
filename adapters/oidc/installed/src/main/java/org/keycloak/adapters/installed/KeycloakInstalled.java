@@ -637,7 +637,11 @@ public class KeycloakInstalled {
         }
 
         public void stop() {
-            server.stop();
+            try {
+                server.stop();
+            } catch (Exception ignore) {
+                // it is OK to happen if thread is modified while stopping the server, specially when a security manager is enabled
+            }
         }
 
         public int getLocalPort() {
