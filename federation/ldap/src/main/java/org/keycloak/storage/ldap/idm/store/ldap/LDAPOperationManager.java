@@ -45,18 +45,13 @@ import javax.naming.ldap.LdapContext;
 import javax.naming.ldap.LdapName;
 import javax.naming.ldap.PagedResultsControl;
 import javax.naming.ldap.PagedResultsResponseControl;
-import javax.naming.ldap.StartTlsRequest;
 import javax.naming.ldap.StartTlsResponse;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.List;
-import java.util.Map;
-import java.util.Properties;
 import java.util.Set;
 
 /**
@@ -237,8 +232,9 @@ public class LDAPOperationManager {
 
     private String findNextDNForFallback(String newDn, int counter) {
         LDAPDn dn = LDAPDn.fromString(newDn);
-        String rdnAttrName = dn.getFirstRdnAttrName();
-        String rdnAttrVal = dn.getFirstRdnAttrValue();
+        LDAPDn.RDN firstRdn = dn.getFirstRdn();
+        String rdnAttrName = firstRdn.getAllKeys().get(0);
+        String rdnAttrVal = firstRdn.getAttrValue(rdnAttrName);
         LDAPDn parentDn = dn.getParentDn();
         parentDn.addFirst(rdnAttrName, rdnAttrVal + counter);
         return parentDn.toString();

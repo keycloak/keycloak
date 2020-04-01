@@ -238,7 +238,8 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
             if (config.isPreserveGroupsInheritance()) {
                 Set<String> subgroupNames = new HashSet<>();
                 for (LDAPDn groupDn : getLDAPSubgroups(ldapGroup)) {
-                    subgroupNames.add(groupDn.getFirstRdnAttrValue());
+                    String subGroupName = groupDn.getFirstRdn().getAttrValue(groupsRdnAttr);
+                    subgroupNames.add(subGroupName);
                 }
 
                 ldapGroupsRep.add(new GroupTreeResolver.Group(groupName, subgroupNames));
