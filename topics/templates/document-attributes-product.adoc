@@ -1,8 +1,8 @@
 :project_community: false
 :project_product: true
 :project_name: Red Hat Single Sign-On
-:project_versionMvn: 4.8.3.Final-redhat-00001
-:project_versionNpm: 4.8.3.Final-redhat-00001
+:project_versionMvn: 9.0.3.redhat-00002
+:project_versionNpm: 9.0.3.redhat-00002
 :project_images: rhsso-images
 
 :project_name_full: Red Hat Single Sign-On
