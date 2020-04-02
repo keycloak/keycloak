@@ -442,7 +442,11 @@ public class HttpUtil {
     public static String getAttrForType(String rootUrl, String realm, String auth, String resourceEndpoint, String attrName, String attrValue, String returnAttrName) {
 
         String resourceUrl = composeResourceUrl(rootUrl, realm, resourceEndpoint);
-        resourceUrl = HttpUtil.addQueryParamsToUri(resourceUrl, attrName, attrValue, "first", "0", "max", "2");
+        if ("roles".equals(resourceEndpoint)) {
+            resourceUrl = HttpUtil.addQueryParamsToUri(resourceUrl, "search", attrValue, "first", "0", "max", "2");
+        } else {
+            resourceUrl = HttpUtil.addQueryParamsToUri(resourceUrl, attrName, attrValue, "first", "0", "max", "2");
+        }
 
         List<ObjectNode> users = doGetJSON(RoleOperations.LIST_OF_NODES.class, resourceUrl, auth);
 
