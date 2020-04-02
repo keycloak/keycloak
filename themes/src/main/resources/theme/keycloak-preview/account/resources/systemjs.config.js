@@ -36,14 +36,6 @@
       'axios': 'npm:axios/dist/axios.min.js',
 
       'history': 'npm:history/umd/history.min.js',
-
-      // libraries required for parse-link-header to work
-      'parse-link-header': 'npm:parse-link-header/index.js',
-      'xtend': 'npm:xtend/index.js',
-      'querystring': 'npm:querystring/index.js',
-      'url': 'npm:url/url.js',
-      'punycode': 'npm:punycode/punycode.js',
-      'object-keys': 'npm:object-keys/index.js',
     },
 
     bundles: {
