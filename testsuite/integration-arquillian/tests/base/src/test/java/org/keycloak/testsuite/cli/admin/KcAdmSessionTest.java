@@ -197,4 +197,33 @@ public class KcAdmSessionTest extends AbstractAdmCliTest {
             assertExitCodeAndStreamSizes(exe, 0, 0, 0);
         }
     }
+
+    @Test
+    public void testCompositeRoleCreationWithHigherVolumeOfRoles() throws Exception {
+
+        FileConfigHandler handler = initCustomConfigFile();
+        try (TempFileResource configFile = new TempFileResource(handler.getConfigFile())) {
+
+            // login as admin
+            loginAsUser(configFile.getFile(), serverUrl, "master", "admin", "admin");
+
+            final String realmName = "HigherVolumeRolesRealm";
+
+            // create realm
+            KcAdmExec exe = execute(String.format("create realms --config '%s' -s realm=%s -s enabled=true", configFile.getName(), realmName));
+            assertExitCodeAndStreamSizes(exe, 0, 0, 1);
+
+            for (int i = 0; i < 20; i++) {
+                exe = execute(String.format("create roles --config '%s' -r %s -s name=ROLE%d", configFile.getName(), realmName, i));
+                assertExitCodeAndStdErrSize(exe, 0, 1);
+            }
+
+            exe = execute(String.format("add-roles --config '%s' -r %s --rname ROLE11 --cclientid realm-management --rolename impersonation --rolename view-users --rolename view-realm --rolename manage-users", configFile.getName(), realmName));
+            assertExitCodeAndStreamSizes(exe, 0, 0, 0);
+
+        }
+
+    }
+
+
 }
