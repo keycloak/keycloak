@@ -20,6 +20,7 @@ package org.keycloak.testsuite.console.users;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
 import org.junit.Test;
+import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.console.page.users.UserAttributes;
 
@@ -53,6 +54,17 @@ public class UserAttributesTest extends AbstractUserTest {
 
         userAttributesPage.backToUsersViaBreadcrumb();
         assertNull(usersPage.table().findUser(testUsername));
+    }
+
+    @Test
+    public void createUserEmailAsUserName() {
+        RealmRepresentation representation = testRealmResource().toRepresentation();
+        representation.setRegistrationEmailAsUsername(true);
+        testRealmResource().update(representation);
+        
+        newTestRealmUser.setEmail("test@keycloak.org");
+        createUser(newTestRealmUser);
+        assertAlertSuccess();
     }
 
     @Test
