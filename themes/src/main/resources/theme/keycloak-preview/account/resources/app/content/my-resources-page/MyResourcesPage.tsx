@@ -17,7 +17,7 @@
 import * as React from 'react';
 import {AxiosResponse} from 'axios';
 
-import * as parse from 'parse-link-header';
+import parse from '../../util/ParseLink';
 
 import { Button, Level, LevelItem, Stack, StackItem, Tab, Tabs, TextInput } from '@patternfly/react-core';
 
@@ -187,14 +187,14 @@ export class MyResourcesPage extends React.Component<MyResourcesPageProps, MyRes
 
     private parseResourceResponse(response: AxiosResponse<Resource[]>): PaginatedResources {
         const links: string = response.headers.link;
-        const parsed: (parse.Links | null) = parse(links);
+        const parsed = parse(links);
 
         let next = '';
         let prev = '';
 
         if (parsed !== null) {
-            if (parsed.hasOwnProperty('next')) next = parsed.next.url;
-            if (parsed.hasOwnProperty('prev')) prev = parsed.prev.url;
+            if (parsed.next) next = parsed.next;
+            if (parsed.prev) prev = parsed.prev;
         }
 
         const resources = response.data;
