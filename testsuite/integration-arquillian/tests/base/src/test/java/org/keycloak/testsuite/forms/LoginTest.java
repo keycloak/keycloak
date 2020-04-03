@@ -82,6 +82,7 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.admin.ApiUtil.findClientByClientId;
 import static org.keycloak.testsuite.util.OAuthClient.AUTH_SERVER_ROOT;
+import static org.keycloak.testsuite.util.OAuthClient.SERVER_ROOT;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWithLoginUrlOf;
 
 /**
@@ -802,7 +803,7 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
     @Test
     public void openLoginFormWithDifferentApplication() throws Exception {
         oauth.clientId("root-url-client");
-        oauth.redirectUri("http://localhost:8180/foo/bar/");
+        oauth.redirectUri(SERVER_ROOT + "/foo/bar/");
         oauth.openLoginForm();
 
         // Login form shown after redirect from app
