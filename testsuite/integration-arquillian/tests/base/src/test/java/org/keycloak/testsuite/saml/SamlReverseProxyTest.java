@@ -35,6 +35,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.saml.SAML2LogoutRequestBuilder;
 import org.keycloak.saml.processing.api.saml.v2.request.SAML2Request;
 import org.keycloak.services.resources.RealmsResource;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.util.ReverseProxy;
 import org.keycloak.testsuite.util.SamlClient;
 import org.w3c.dom.Document;
@@ -49,6 +50,7 @@ import static org.keycloak.testsuite.util.Matchers.statusCodeIsHC;
  *
  * @author <a href="mailto:sguilhen@redhat.com">Stefan Guilhen</a>
  */
+@AuthServerContainerExclude(AuthServerContainerExclude.AuthServer.REMOTE)
 public class SamlReverseProxyTest extends AbstractSamlTest {
 
     @ClassRule

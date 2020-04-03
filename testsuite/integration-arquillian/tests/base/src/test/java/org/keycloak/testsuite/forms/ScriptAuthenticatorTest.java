@@ -54,7 +54,7 @@ import java.util.Map;
  *
  * @author <a href="mailto:thomas.darimont@gmail.com">Thomas Darimont</a>
  */
-@EnableFeature(Profile.Feature.UPLOAD_SCRIPTS)
+@EnableFeature(value = Profile.Feature.UPLOAD_SCRIPTS, skipRestart = true)
 public class ScriptAuthenticatorTest extends AbstractFlowTest {
 
     @Page
