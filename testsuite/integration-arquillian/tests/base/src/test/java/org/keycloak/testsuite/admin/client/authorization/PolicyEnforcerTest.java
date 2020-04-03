@@ -404,6 +404,13 @@ public class PolicyEnforcerTest extends AbstractKeycloakTest {
         context = policyEnforcer.enforce(httpFacade);
         assertTrue(context.isGranted());
 
+        // create a PATCH scope without associated it with the resource so that a PATCH request is denied accordingly even though
+        // the scope exists on the server
+        clientResource.authorization().scopes().create(new ScopeRepresentation("PATCH"));
+        httpFacade = createHttpFacade("/api/resource-with-scope", token, "PATCH");
+        context = policyEnforcer.enforce(httpFacade);
+        assertFalse(context.isGranted());
+
         ScopePermissionRepresentation postPermission = new ScopePermissionRepresentation();
 
         postPermission.setName("GET permission");

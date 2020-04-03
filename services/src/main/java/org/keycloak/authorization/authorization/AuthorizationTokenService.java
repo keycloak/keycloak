@@ -506,6 +506,11 @@ public class AuthorizationTokenService {
 
                     if (perm == null) {
                         perm = Permissions.createResourcePermissions(resource, requestedScopesModel, authorization, request);
+                        //if scopes were requested, check if the permission to evaluate resolves to any of the requested scopes.
+                        // if it is not the case, then the requested scope is invalid and we don't need to evaluate
+                        if (!requestedScopesModel.isEmpty() && perm.getScopes().isEmpty()) {
+                            continue;
+                        }
                         permissionsToEvaluate.put(resource.getId(), perm);
                         if (limit != null) {
                             limit.decrementAndGet();
