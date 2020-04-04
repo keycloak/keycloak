@@ -172,6 +172,8 @@ public class BaseWriter {
                         writeStringAttributeValue((String) attributeValue);
                     } else if (attributeValue instanceof NameIDType) {
                     	writeNameIDTypeAttributeValue((NameIDType) attributeValue);
+                    } else if (attributeValue instanceof XMLGregorianCalendar) {
+                        writeDateAttributeValue((XMLGregorianCalendar) attributeValue);
                     } else
                         throw logger.writerUnsupportedAttributeValueError(attributeValue.getClass().getName());
                 } else {
@@ -198,6 +200,22 @@ public class BaseWriter {
             StaxUtil.writeAttribute(writer, "xsi", JBossSAMLURIConstants.XSI_NSURI.get(), "nil", "true");
         } else {
             StaxUtil.writeCharacters(writer, attributeValue);
+        }
+
+        StaxUtil.writeEndElement(writer);
+    }
+
+    public void writeDateAttributeValue(XMLGregorianCalendar attributeValue) throws ProcessingException {
+        StaxUtil.writeStartElement(writer, ASSERTION_PREFIX, JBossSAMLConstants.ATTRIBUTE_VALUE.get(), ASSERTION_NSURI.get());
+
+        StaxUtil.writeNameSpace(writer, JBossSAMLURIConstants.XSI_PREFIX.get(), JBossSAMLURIConstants.XSI_NSURI.get());
+        StaxUtil.writeNameSpace(writer, "xs", JBossSAMLURIConstants.XMLSCHEMA_NSURI.get());
+        StaxUtil.writeAttribute(writer, "xsi", JBossSAMLURIConstants.XSI_NSURI.get(), "type", "xs:" + attributeValue.getXMLSchemaType().getLocalPart());
+
+        if (attributeValue == null) {
+            StaxUtil.writeAttribute(writer, "xsi", JBossSAMLURIConstants.XSI_NSURI.get(), "nil", "true");
+        } else {
+            StaxUtil.writeCharacters(writer, attributeValue.toString());
         }
 
         StaxUtil.writeEndElement(writer);
