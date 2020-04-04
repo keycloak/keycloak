@@ -208,6 +208,13 @@ declare namespace Keycloak {
 		cordovaOptions?: { [optionName: string]: string };
 	}
 
+	interface KeycloakLogoutOptions {
+		/**
+		 * Specifies the uri to redirect to after logout.
+		 */
+		redirectUri?: string;
+	}
+
 	type KeycloakPromiseCallback<T> = (result: T) => void;
 
 	class KeycloakPromise<TSuccess, TError> extends Promise<TSuccess> {
@@ -233,7 +240,7 @@ declare namespace Keycloak {
 
 	interface KeycloakAdapter {
 		login(options?: KeycloakLoginOptions): KeycloakPromise<void, void>;
-		logout(options?: any): KeycloakPromise<void, void>;
+		logout(options?: KeycloakLogoutOptions): KeycloakPromise<void, void>;
 		register(options?: KeycloakLoginOptions): KeycloakPromise<void, void>;
 		accountManagement(): KeycloakPromise<void, void>;
 		redirectUri(options: { redirectUri: string; }, encodeHash: boolean): string;
@@ -454,9 +461,8 @@ declare namespace Keycloak {
 		/**
 		 * Redirects to logout.
 		 * @param options Logout options.
-		 * @param options.redirectUri Specifies the uri to redirect to after logout.
 		 */
-		logout(options?: any): KeycloakPromise<void, void>;
+		logout(options?: KeycloakLogoutOptions): KeycloakPromise<void, void>;
 
 		/**
 		 * Redirects to registration form.
@@ -479,9 +485,8 @@ declare namespace Keycloak {
 		/**
 		 * Returns the URL to logout the user.
 		 * @param options Logout options.
-		 * @param options.redirectUri Specifies the uri to redirect to after logout.
 		 */
-		createLogoutUrl(options?: any): string;
+		createLogoutUrl(options?: KeycloakLogoutOptions): string;
 
 		/**
 		 * Returns the URL to registration page.
