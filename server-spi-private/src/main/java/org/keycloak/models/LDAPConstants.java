@@ -35,6 +35,8 @@ public class LDAPConstants {
     public static final String VENDOR_TIVOLI = "tivoli";
     public static final String VENDOR_NOVELL_EDIRECTORY="edirectory" ;
 
+    public static final String USE_PASSWORD_MODIFY_EXTENDED_OP = "usePasswordModifyExtendedOp";
+
     public static final String USERNAME_LDAP_ATTRIBUTE = "usernameLDAPAttribute";
     public static final String RDN_LDAP_ATTRIBUTE = "rdnLDAPAttribute";
     public static final String UUID_LDAP_ATTRIBUTE = "uuidLDAPAttribute";

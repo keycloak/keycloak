@@ -329,6 +329,14 @@ public class LDAPIdentityStore implements IdentityStore {
 
         if (getConfig().isActiveDirectory()) {
             updateADPassword(userDN, password, passwordUpdateDecorator);
+        } else if (config.useExtendedPasswordModifyOp()) {
+            try {
+                operationManager.passwordModifyExtended(userDN, password, passwordUpdateDecorator);
+            } catch (ModelException me) {
+                throw me;
+            } catch (Exception e) {
+                throw new ModelException("Error in the password modify extended op.", e);
+            }
         } else {
             ModificationItem[] mods = new ModificationItem[1];
 

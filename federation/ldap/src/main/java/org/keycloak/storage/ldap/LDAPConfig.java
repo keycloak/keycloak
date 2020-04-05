@@ -60,6 +60,11 @@ public class LDAPConfig {
         }
     }
 
+    public boolean useExtendedPasswordModifyOp() {
+        String value = config.getFirst(LDAPConstants.USE_PASSWORD_MODIFY_EXTENDED_OP);
+        return Boolean.parseBoolean(value);
+    }
+
     public String getUseTruststoreSpi() {
         return config.getFirst(LDAPConstants.USE_TRUSTSTORE_SPI);
     }

@@ -83,6 +83,13 @@
                 <kc-tooltip>{{:: 'ldap.vendor.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group clearfix">
+                <label class="col-md-2 control-label" for="usePasswordModifyExtendedOp">{{:: 'enable-usePasswordModifyExtendedOp' | translate}}</label>
+                <div class="col-md-6">
+                    <input ng-model="instance.config['usePasswordModifyExtendedOp'][0]" name="usePasswordModifyExtendedOp" id="usePasswordModifyExtendedOp" onoffswitchvalue on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" />
+                </div>
+                <kc-tooltip>{{:: 'ldap.usePasswordModifyExtendedOp.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group clearfix">
                 <label class="col-md-2 control-label" for="usernameLDAPAttribute"><span class="required">*</span> {{:: 'username-ldap-attribute' | translate}}</label>
                 <div class="col-md-6">
                     <input class="form-control" id="usernameLDAPAttribute" type="text" ng-model="instance.config['usernameLDAPAttribute'][0]" placeholder="{{:: 'ldap-attribute-name-for-username' | translate}}" required>
