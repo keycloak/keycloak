@@ -42,6 +42,7 @@ import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.SingleUseTokenStoreProvider;
+import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.provider.ProviderConfigProperty;
@@ -114,6 +115,20 @@ public class JWTClientAuthenticator extends AbstractClientAuthenticator {
 
             if (!client.isEnabled()) {
                 context.failure(AuthenticationFlowError.CLIENT_DISABLED, null);
+                return;
+            }
+
+            String expectedSignatureAlg = OIDCAdvancedConfigWrapper.fromClientModel(client).getTokenEndpointAuthSigningAlg();
+            if (jws.getHeader().getAlgorithm() == null || jws.getHeader().getAlgorithm().name() == null) {
+                Response challengeResponse = ClientAuthUtil.errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), "invalid_client", "invalid signature algorithm");
+                context.challenge(challengeResponse);
+                return;
+            }
+
+            String actualSignatureAlg = jws.getHeader().getAlgorithm().name();
+            if (expectedSignatureAlg != null && !expectedSignatureAlg.equals(actualSignatureAlg)) {
+                Response challengeResponse = ClientAuthUtil.errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), "invalid_client", "invalid signature algorithm");
+                context.challenge(challengeResponse);
                 return;
             }
 
