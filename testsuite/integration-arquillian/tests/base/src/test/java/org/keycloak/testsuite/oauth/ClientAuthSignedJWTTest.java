@@ -52,6 +52,7 @@ import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
+import org.keycloak.jose.jwe.JWEException;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
@@ -84,6 +85,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.security.KeyFactory;
@@ -302,6 +304,27 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
         testECDSASignatureLength(getClientSignedToken(Algorithm.ES256), Algorithm.ES256);
         testECDSASignatureLength(getClientSignedToken(Algorithm.ES384), Algorithm.ES384);
         testECDSASignatureLength(getClientSignedToken(Algorithm.ES512), Algorithm.ES512);
+    }
+
+    @Test
+    public void testCodeToTokenRequestSuccessES256Enforced() throws Exception {
+        ClientResource clientResource = null;
+        ClientRepresentation clientRep = null;
+        try {
+            clientResource = ApiUtil.findClientByClientId(adminClient.realm("test"), "client2");
+            clientRep = clientResource.toRepresentation();
+            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setTokenEndpointAuthSigningAlg(Algorithm.ES256);
+            clientResource.update(clientRep);
+
+            testCodeToTokenRequestSuccess(Algorithm.ES256);
+        } catch (Exception e) {
+            Assert.fail();
+        } finally {
+            clientResource = ApiUtil.findClientByClientId(adminClient.realm("test"), "client2");
+            clientRep = clientResource.toRepresentation();
+            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setTokenEndpointAuthSigningAlg(null);
+            clientResource.update(clientRep);
+        }
     }
 
     private void testECDSASignatureLength(String clientSignedToken, String alg) {
@@ -911,10 +934,31 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
 
     @Test
     public void testCodeToTokenRequestFailureRS256() throws Exception {
-        testCodeToTokenRequestFailure(Algorithm.RS256);
+        testCodeToTokenRequestFailure(Algorithm.RS256, "unauthorized_client", "client_credentials_setup_required");
     }
 
-    private void testCodeToTokenRequestFailure(String algorithm) throws Exception {
+    @Test
+    public void testCodeToTokenRequestFailureES256Enforced() throws Exception {
+        ClientResource clientResource = null;
+        ClientRepresentation clientRep = null;
+        try {
+            clientResource = ApiUtil.findClientByClientId(adminClient.realm("test"), "client2");
+            clientRep = clientResource.toRepresentation();
+            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setTokenEndpointAuthSigningAlg(Algorithm.ES256);
+            clientResource.update(clientRep);
+
+            testCodeToTokenRequestFailure(Algorithm.RS256, "invalid_client", "invalid_client_credentials");
+        } catch (Exception e) {
+            Assert.fail();
+        } finally {
+            clientResource = ApiUtil.findClientByClientId(adminClient.realm("test"), "client2");
+            clientRep = clientResource.toRepresentation();
+            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setTokenEndpointAuthSigningAlg(null);
+            clientResource.update(clientRep);
+        }
+    }
+
+    private void testCodeToTokenRequestFailure(String algorithm, String error, String description) throws Exception {
         ClientRepresentation clientRepresentation = app2;
         ClientResource clientResource = getClient(testRealm.getRealm(), clientRepresentation.getId());
         clientRepresentation = clientResource.toRepresentation();
@@ -935,13 +979,13 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
             OAuthClient.AccessTokenResponse response = doAccessTokenRequest(code, getClient2SignedJWT());
 
             assertEquals(400, response.getStatusCode());
-            assertEquals("unauthorized_client", response.getError());
+            assertEquals(error, response.getError());
 
             events.expect(EventType.CODE_TO_TOKEN_ERROR)
                     .client("client2")
                     .session((String) null)
                     .clearDetails()
-                    .error("client_credentials_setup_required")
+                    .error(description)
                     .user((String) null)
                     .assertEvent();
         } finally {

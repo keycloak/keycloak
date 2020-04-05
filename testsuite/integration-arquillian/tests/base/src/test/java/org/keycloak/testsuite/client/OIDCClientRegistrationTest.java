@@ -348,6 +348,37 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
     }
 
     @Test
+    public void testTokenEndpointSigningAlg() throws Exception {
+        OIDCClientRepresentation response = null;
+        OIDCClientRepresentation updated = null;
+        try {
+            OIDCClientRepresentation clientRep = createRep();
+            clientRep.setTokenEndpointAuthSigningAlg(Algorithm.ES256.toString());
+
+            response = reg.oidc().create(clientRep);
+            Assert.assertEquals(Algorithm.ES256.toString(), response.getTokenEndpointAuthSigningAlg());
+
+            ClientRepresentation kcClient = getClient(response.getClientId());
+            OIDCAdvancedConfigWrapper config = OIDCAdvancedConfigWrapper.fromClientRepresentation(kcClient);
+            Assert.assertEquals(Algorithm.ES256.toString(), config.getTokenEndpointAuthSigningAlg());
+
+            reg.auth(Auth.token(response));
+            response.setTokenEndpointAuthSigningAlg(null);
+            updated = reg.oidc().update(response);
+            Assert.assertEquals(null, response.getTokenEndpointAuthSigningAlg());
+
+            kcClient = getClient(updated.getClientId());
+            config = OIDCAdvancedConfigWrapper.fromClientRepresentation(kcClient);
+            Assert.assertEquals(null, config.getTokenEndpointAuthSigningAlg());
+        } finally {
+            // revert
+            reg.auth(Auth.token(updated));
+            updated.setTokenEndpointAuthSigningAlg(null);
+            reg.oidc().update(updated);
+        }
+    }
+
+    @Test
     public void testOIDCEndpointCreateWithSamlClient() throws Exception {
         ClientsResource clientsResource = adminClient.realm(TEST).clients();
         ClientRepresentation samlClient = clientsResource.findByClientId("saml-client").get(0);

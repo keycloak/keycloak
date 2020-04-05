@@ -48,6 +48,8 @@ public final class OIDCConfigAttributes {
     public static final String CLIENT_SESSION_MAX_LIFESPAN = "client.session.max.lifespan";
     public static final String PKCE_CODE_CHALLENGE_METHOD = "pkce.code.challenge.method";
 
+    public static final String TOKEN_ENDPOINT_AUTH_SIGNING_ALG = "token.endpoint.auth.signing.alg";
+
     private OIDCConfigAttributes() {
     }
 
