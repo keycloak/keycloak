@@ -377,6 +377,9 @@ public class ResourceSetService {
         if (deep == null) {
             deep = true;
         }
+        if (this.resourceServer == null) {
+            return Response.ok().build();
+        }
         if (id != null || name != null || uri != null || type != null) {
             return find(id, name, uri, owner, type, scope, matchingUri, deep, firstResult, maxResult, (BiFunction<Resource, Boolean, ResourceRepresentation>) (resource, deep1) -> toResourceHierarchy(resource, resourceServer, authorization, deep1));
         }
@@ -387,9 +390,6 @@ public class ResourceSetService {
                          Integer firstResult,
                          Integer maxResult,
                          BiFunction<Resource, Boolean, ?> toRepresentation) {
-        if (this.resourceServer == null) {
-            return Response.ok().build();
-        }
         StoreFactory storeFactory = authorization.getStoreFactory();
         List<Resource> resources = storeFactory.getResourceStore().findTopLevel(this.resourceServer.getId(), firstResult != null ? firstResult : -1, maxResult != null ? maxResult : Constants.DEFAULT_MAX_RESULTS);
 

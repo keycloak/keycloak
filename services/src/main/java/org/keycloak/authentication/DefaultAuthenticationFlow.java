@@ -140,7 +140,7 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
                     .filter(authSelectionOption -> authExecId.equals(authSelectionOption.getAuthExecId()))
                     .findFirst()
                     .orElseThrow(() -> new AuthenticationFlowException("Requested authentication execution is not allowed", AuthenticationFlowError.INTERNAL_ERROR)
-            );
+                    );
 
             model = processor.getRealm().getAuthenticationExecutionById(authExecId);
 
@@ -343,19 +343,21 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
 
     /**
      * Checks if the conditional subflow passed in parameter is disabled.
+     *
      * @param model
      * @return
      */
     private boolean isConditionalSubflowDisabled(AuthenticationExecutionModel model) {
         if (model == null || !model.isAuthenticatorFlow() || !model.isConditional()) {
             return false;
-        };
+        }
+        ;
         List<AuthenticationExecutionModel> modelList = processor.getRealm().getAuthenticationExecutions(model.getFlowId());
         List<AuthenticationExecutionModel> conditionalAuthenticatorList = modelList.stream()
                 .filter(this::isConditionalAuthenticator)
                 .filter(s -> s.isEnabled())
                 .collect(Collectors.toList());
-        return conditionalAuthenticatorList.isEmpty() || conditionalAuthenticatorList.stream().anyMatch(m-> conditionalNotMatched(m, modelList));
+        return conditionalAuthenticatorList.isEmpty() || conditionalAuthenticatorList.stream().anyMatch(m -> conditionalNotMatched(m, modelList));
     }
 
     private boolean isConditionalAuthenticator(AuthenticationExecutionModel model) {
@@ -375,7 +377,7 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
         ConditionalAuthenticator authenticator = (ConditionalAuthenticator) createAuthenticator(factory);
         AuthenticationProcessor.Result context = processor.createAuthenticatorContext(model, authenticator, executionList);
 
-       boolean matchCondition;
+        boolean matchCondition;
 
         // Retrieve previous evaluation result if any, else evaluate and store result for future re-evaluation
         if (processor.isEvaluatedTrue(model)) {
@@ -429,7 +431,8 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
         //If executions are alternative, get the actual execution to show based on user preference
         List<AuthenticationSelectionOption> selectionOptions = createAuthenticationSelectionList(model);
         if (!selectionOptions.isEmpty() && calledFromFlow) {
-            List<AuthenticationSelectionOption> finalSelectionOptions = selectionOptions.stream().filter(aso -> !aso.getAuthenticationExecution().isAuthenticatorFlow() && !isProcessed(aso.getAuthenticationExecution())).collect(Collectors.toList());;
+            List<AuthenticationSelectionOption> finalSelectionOptions = selectionOptions.stream().filter(aso -> !aso.getAuthenticationExecution().isAuthenticatorFlow() && !isProcessed(aso.getAuthenticationExecution())).collect(Collectors.toList());
+            ;
             if (finalSelectionOptions.isEmpty()) {
                 //move to next
                 return null;
@@ -556,7 +559,9 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
         switch (status) {
             case SUCCESS:
                 UserModel authUser = processor.getAuthenticationSession().getAuthenticatedUser();
-                processor.session.users().updateLoginTimestamp(authUser);
+                if (authUser != null) {
+                    processor.session.users().updateLoginTimestamp(authUser);
+                }
 
                 logger.debugv("authenticator SUCCESS: {0}", execution.getAuthenticator());
                 if (isAction) {
@@ -614,7 +619,7 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
     }
 
     @Override
-    public List<AuthenticationFlowException> getFlowExceptions(){
+    public List<AuthenticationFlowException> getFlowExceptions() {
         return afeList;
     }
 }
